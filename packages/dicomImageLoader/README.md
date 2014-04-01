@@ -3,10 +3,15 @@ cornerstone WADO Image Loader
 
 A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for WADO images.
 
+
 Live Examples
 ---------------
 
 [Click here for a list of all live examples](https://rawgithub.com/chafey/dicomParser/master/examples/index.html)
+
+Project Status
+---------------
+Alpha
 
 Install
 -------
