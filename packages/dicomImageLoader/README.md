@@ -7,7 +7,7 @@ A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for WADO ima
 Live Examples
 ---------------
 
-[Click here for a list of all live examples](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
+[Click here for a live example of this library in use!](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
 
 Project Status
 ---------------
@@ -21,18 +21,12 @@ Get a packaged source file:
 * [cornerstoneWADOImageLoader.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.js)
 * [cornerstoneWADOImageLoader.min.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.min.js)
 
-Or install via [Bower](http://bower.io/):
-
-> bower install cornerstoneWADOImageLoader
-
 Usage
 -------
 
 ```
 TODO
 ```
-
-[See the live examples for more in depth usage of the library](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
 
 Key Features
 ------------
@@ -75,8 +69,16 @@ Automatically running the build and unit tests after each source change:
 Backlog
 ------------
 
-*
-
+* Support images with Pixel Padding
+* Support MONOCHROME1 images
+* Support color images
+* Mask out burned in overlays?
+* Consider alternatives to jQuery for deffered (when.js?)
+* Add error handling to the example
+* Find a way to access the parsed dicom elements for updating the overlays
+* Add example of creating a stack from multiple images
+* Add support for multiframe
+* Add support for compressed transfer syntaxes
 
 Why is this a separate library from cornerstone?
 ================================================
