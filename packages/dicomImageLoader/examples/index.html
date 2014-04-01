@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* prevents selection when left click dragging */
+        .disable-selection {
+            -moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;
+        }
+        /* prevents cursor from changing to the i bar on the overlays*/
+        .noIbar {
+            cursor:default;
+        }
+    </style>
+
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h1>Example of display a WADO image using Cornerstone</h1>
+        <p class="lead">
+            Enter a URL for a WADO DICOM object below to view it using cornerstone
+        </p>
+        <p>
+            This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
+            image from a WADO server and display it using cornerstone.  Note that this image loader
+            only has support for uncompressed little endian transfer syntaxes.  Use of an explicit
+            little endian transfer syntax is recommended.  Cornerstone only displays grayscale images,
+            color images will not display yet.
+            Note that the WADO DICOM objects are not uploaded anywhere, all processing
+            is done inside your web browser in Javascript.
+        </p>
+        <strong>If you get an HTTP error and your URL is correct, it is probably because the server is not configured to
+            allow <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross Origin Requests</a>.
+            Most browsers will allow you to enable cross domain requests via settings or command line switches,
+            you can start chrome with the command line switch <code>--disable-web-security</code> to allow cross origin requests.
+            See the  <a href="http://enable-cors.org/">Enable CORS site</a> for information about CORS.
+        </strong>
+        <br>
+        <br>
+        <strong>Use of this example require IE10+ or any other modern browser.</strong>
+
+        <h3>Functionality</h3>
+        <ul>
+            <li>Adjust WW/WC by dragging the left mouse button</li>
+            <li>Pan by dragging the middle mouse button</li>
+            <li>Zoom by dragging the right mouse button</li>
+            <li>Text overlays in the four corners using HTML elements updated by listening for the CornerstoneViewportUpdated event</li>
+        </ul>
+
+    </div>
+
+    <div class="row">
+        <form class="form-horizontal">
+            <div class="form-group">
+                <label class="control-label col-sm-1" for="wadoURL">URL</label>
+                <div class="col-sm-8">
+                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="http://x.babymri.org/?53320924&.dcm">
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="downloadAndView" class="btn btn-primary">Download and View</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
+         oncontextmenu="return false"
+         class='disable-selection noIbar'
+         unselectable='on'
+         onselectstart='return false;'
+         onmousedown='return false;'>
+        <div id="dicomImage"
+             style="width:512px;height:512px;top:0px;left:0px; position:absolute">
+        </div>
+        <div id="mrtopleft" style="position: absolute;top:0px; left:0px">
+            Patient Name
+        </div>
+        <div id="mrtopright" style="position: absolute;top:0px; right:0px">
+            Hospital
+        </div>
+        <div id="mrbottomright" style="position: absolute;bottom:0px; right:0px">
+            Zoom:
+        </div>
+        <div id="mrbottomleft" style="position: absolute;bottom:0px; left:0px">
+            WW/WC:
+        </div>
+
+    </div>
+
+</div>
+</body>
+
+
+<!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
+<script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
+
+<!-- include the cornerstone library -->
+<script src="cornerstone.js"></script>
+
+<!-- include the cornerstone tools library -->
+<script src="cornerstone-tools.js"></script>
+
+<!-- include the cornerstoneWADOImageLoader library -->
+<script src="../../dist/cornerstoneWADOImageLoader.js"></script>
+
+<script>
+
+    $(document).ready(function() {
+
+        $('#downloadAndView').click(function(e) {
+
+            var url = $('#wadoURL').val();
+
+            // image enable the dicomImage element and activate a few tools
+            var element = $('#dicomImage').get(0);
+            cornerstone.enable(element, url);
+            cornerstoneTools.wwwc.activate(element, 1); //
+            cornerstoneTools.pan.activate(element, 2); //
+            cornerstoneTools.zoom.activate(element, 3); //
+        });
+    });
+
+</script>
+</html>
