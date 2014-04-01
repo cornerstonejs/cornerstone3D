@@ -7,7 +7,7 @@ A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for WADO ima
 Live Examples
 ---------------
 
-[Click here for a list of all live examples](https://rawgithub.com/chafey/dicomParser/master/examples/index.html)
+[Click here for a list of all live examples](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
 
 Project Status
 ---------------
@@ -32,7 +32,7 @@ Usage
 TODO
 ```
 
-[See the live examples for more in depth usage of the library](https://rawgithub.com/chafey/dicomParser/master/examples/index.html)
+[See the live examples for more in depth usage of the library](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
 
 Key Features
 ------------
