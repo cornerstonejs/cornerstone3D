@@ -1,0 +1,32 @@
+{
+    "name": "cornerstoneWADOImageLoader",
+    "version": "0.1.0",
+    "description": "Cornerstone ImageLoader for DICOM WADO",
+    "keywords": [
+        "DICOM",
+        "WADO",
+        "cornerstone",
+        "medical",
+        "imaging"
+    ],
+    "author": "Chris Hafey",
+    "homepage": "https://github.com/chafey/cornerstoneWADOImageLoader",
+    "licnense": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/chafey/cornerstoneWADOImageLoader.git"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "devDependencies": {
+        "grunt-contrib-copy": "0.4.x",
+        "grunt-contrib-qunit": "^0.4.0",
+        "grunt-contrib-concat": "^0.3.0",
+        "grunt-contrib-watch": "^0.6.1",
+        "grunt-contrib-clean": "^0.5.0",
+        "grunt-contrib-jshint": "^0.8.0",
+        "grunt-contrib-uglify": "^0.4.0",
+        "load-grunt-tasks": "^0.2.1"
+    }
+}
