@@ -74,7 +74,7 @@ Backlog
 * Support color images
 * Mask out burned in overlays?
 * Consider alternatives to jQuery for deffered (when.js?)
-* Add error handling to the example
+* Add error handling
 * Find a way to access the parsed dicom elements for updating the overlays
 * Add example of creating a stack from multiple images
 * Add support for multiframe

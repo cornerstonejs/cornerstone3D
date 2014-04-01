@@ -1,6 +1,6 @@
-/*! cornerstoneWADOImageLoader - v0.1.0 - 2014-04-01 | (c) 2014 Chris Hafey | https://github.com/chafey/dicomParser */
+/*! cornerstoneWADOImageLoader - v0.1.0 - 2014-04-01 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
-// This is a cornerstone image loader for WADO requests.  It currently does not support WADO compressed
+// This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
 // syntaxes but explicit little endian is strongly preferred to avoid any parsing issues related
 // to SQ elements.  To request that the WADO object be returned as explicit little endian, append
@@ -191,17 +191,20 @@
         oReq.responseType = "arraybuffer";
         oReq.onreadystatechange = function(oEvent) {
             // TODO: consider sending out progress messages here as we receive the pixel data
-            if(oReq.readyState == 4 && oReq.status == 200) {
-                // request succeeded, create an image object and resolve the deferred
-                // TODO: do error handling here in case something goes wrong parsing the response
-                var image = createImageObject(oReq.response);
+            if (oReq.readyState === 4)
+            {
+                if (oReq.status == 200) {
+                    // request succeeded, create an image object and resolve the deferred
+                    var image = createImageObject(oReq.response);
 
-                deferred.resolve(image);
-            }
-            // TODO: Check for errors and reject the deferred if they happened
-            else {
-                // request failed, reject the deferred
-                //deferred.reject();
+                    deferred.resolve(image);
+                }
+                // TODO: Check for errors and reject the deferred if they happened
+                else {
+                    // TODO: add some error handling here
+                    // request failed, reject the deferred
+                    deferred.reject();
+                }
             }
         };
         oReq.send();
