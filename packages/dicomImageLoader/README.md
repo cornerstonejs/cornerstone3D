@@ -4,14 +4,14 @@ cornerstone WADO Image Loader
 A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for WADO images.
 
 
+Project Status
+---------------
+Alpha - don't even bother trying to use this right now but the live example works well enough to see where this is going
+
 Live Examples
 ---------------
 
 [Click here for a live example of this library in use!](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
-
-Project Status
----------------
-Alpha
 
 Install
 -------
