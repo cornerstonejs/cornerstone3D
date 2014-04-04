@@ -70,7 +70,6 @@ Backlog
 ------------
 
 * Support images with Pixel Padding
-* Support MONOCHROME1 images
 * Support color images
 * Mask out burned in overlays?
 * Consider alternatives to jQuery for deffered (when.js?)

@@ -130,20 +130,6 @@
         image.maxPixelValue = max;
     }
 
-
-    function invertPixels(image)
-    {
-        var min = image.minPixelValue;
-        var max = image.maxPixelValue;
-        var numPixels = image.width * image.height;
-        var pixelData = image.storedPixelData;
-        for(var index = 0; index < numPixels; index++) {
-            var spv = pixelData[index];
-            pixelData[index] = min + max - spv;
-        }
-    }
-
-
     function createImageObject(dicomPart10AsArrayBuffer)
     {
         // Parse the DICOM File
@@ -173,7 +159,8 @@
             color: false,
             columnPixelSpacing: pixelSpacing.column,
             rowPixelSpacing: pixelSpacing.row,
-            data: dataSet
+            data: dataSet,
+            invert: false
         };
 
 
@@ -188,7 +175,7 @@
         if(photometricInterpretation !== undefined) {
             if(photometricInterpretation.trim() === "MONOCHROME1")
             {
-                invertPixels(image);
+                image.invert = true;
             }
         }
 

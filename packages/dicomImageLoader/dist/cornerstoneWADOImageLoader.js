@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.1.0 - 2014-04-03 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.1.0 - 2014-04-04 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -131,20 +131,6 @@
         image.maxPixelValue = max;
     }
 
-
-    function invertPixels(image)
-    {
-        var min = image.minPixelValue;
-        var max = image.maxPixelValue;
-        var numPixels = image.width * image.height;
-        var pixelData = image.storedPixelData;
-        for(var index = 0; index < numPixels; index++) {
-            var spv = pixelData[index];
-            pixelData[index] = min + max - spv;
-        }
-    }
-
-
     function createImageObject(dicomPart10AsArrayBuffer)
     {
         // Parse the DICOM File
@@ -174,12 +160,12 @@
             color: false,
             columnPixelSpacing: pixelSpacing.column,
             rowPixelSpacing: pixelSpacing.row,
-            data: dataSet
+            data: dataSet,
+            invert: false
         };
 
 
         // TODO: deal with pixel padding and all of the various issues by setting it to min pixel value (or lower)
-        // TODO: deal with MONOCHROME1 - either invert pixel data or add support to cornerstone
         // TODO: Add support for color by converting all formats to RGB
         // TODO: Mask out overlays embedded in pixel data above high bit
 
@@ -190,7 +176,7 @@
         if(photometricInterpretation !== undefined) {
             if(photometricInterpretation.trim() === "MONOCHROME1")
             {
-                invertPixels(image);
+                image.invert = true;
             }
         }
 
