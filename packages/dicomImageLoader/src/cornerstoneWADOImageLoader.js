@@ -8,15 +8,15 @@
 
 (function ($, cornerstone) {
 
-    function getPixelSpacing(dicomElements)
+    function getPixelSpacing(dataSet)
     {
         // NOTE - these are not required for all SOP Classes
         // so we return them as undefined.  We also do not
         // deal with the complexity associated with projection
         // radiographs here and leave that to a higher layer
-        var pixelSpacingAttr  = dicomElements.x00280030;
-        if(pixelSpacingAttr && pixelSpacingAttr.str.length > 0) {
-            var split = pixelSpacingAttr.str.split('\\');
+        var pixelSpacing = dataSet.string('x00280030');
+        if(pixelSpacing && pixelSpacing.length > 0) {
+            var split = pixelSpacing.split('\\');
             return {
                 row: parseFloat(split[0]),
                 column: parseFloat(split[1])
@@ -30,10 +30,10 @@
         }
     }
 
-    function getPixelFormat(dicomElements) {
+    function getPixelFormat(dataSet) {
         // NOTE - this should work for color images too - need to test
-        var pixelRepresentation = dicomElements.x00280103.uint16;
-        var bitsAllocated = dicomElements.x00280100.uint16;
+        var pixelRepresentation = dataSet.uint16('x00280103');
+        var bitsAllocated = dataSet.uint16('x00280100');
         if(pixelRepresentation === 0 && bitsAllocated === 8) {
             return 1; // unsigned 8 bit
         } else if(pixelRepresentation === 0 && bitsAllocated === 16) {
@@ -43,26 +43,26 @@
         }
     }
 
-    function extractStoredPixels(dicomElements, dicomPart10AsArrayBuffer)
+    function extractStoredPixels(dataSet, byteArray)
     {
-        var pixelFormat = getPixelFormat(dicomElements);
-        var pixelDataElement = dicomElements.x7fe00010;
+        var pixelFormat = getPixelFormat(dataSet);
+        var pixelDataElement = dataSet.elements.x7fe00010;
         var pixelDataOffset = pixelDataElement.dataOffset;
 
         // Note - we may want to sanity check the rows * columns * bitsAllocated * samplesPerPixel against the buffer size
 
         if(pixelFormat === 1) {
-            return new Uint8Array(dicomPart10AsArrayBuffer, pixelDataOffset);
+            return new Uint8Array(byteArray.buffer, pixelDataOffset);
         }
         else if(pixelFormat === 2) {
-            return new Uint16Array(dicomPart10AsArrayBuffer, pixelDataOffset);
+            return new Uint16Array(byteArray.buffer, pixelDataOffset);
         }
         else if(pixelFormat === 3) {
-            return new Int16Array(dicomPart10AsArrayBuffer, pixelDataOffset);
+            return new Int16Array(byteArray.buffer, pixelDataOffset);
         }
     }
 
-    function getRescaleSlopeAndIntercept(dicomElements)
+    function getRescaleSlopeAndIntercept(dataSet)
     {
         // NOTE - we default these to an identity transform since modality LUT
         // module is not required for all SOP Classes
@@ -71,20 +71,21 @@
             slope: 1.0
         };
 
-        var rescaleIntercept  = dicomElements.x00281052;
-        var rescaleSlope  = dicomElements.x00281053;
+        //var rescaleIntercept  = dicomElements.x00281052;
+        //var rescaleSlope  = dicomElements.x00281053;
+        var rescaleIntercept = dataSet.floatString('x00281052');
+        var rescaleSlope = dataSet.floatString('x00281053');
 
-
-        if(rescaleIntercept && rescaleIntercept.str.length > 0) {
-            result.intercept = parseFloat(rescaleIntercept.str);
+        if(rescaleIntercept ) {
+            result.intercept = rescaleIntercept;
         }
-        if(rescaleSlope && rescaleSlope.str.length > 0) {
-            result.slope = parseFloat(rescaleSlope.str);
+        if(rescaleSlope ) {
+            result.slope = rescaleSlope;
         }
         return result;
     }
 
-    function getWindowWidthAndCenter(dicomElements)
+    function getWindowWidthAndCenter(dataSet)
     {
         // NOTE - Default these to undefined since they may not be present as
         // they are not present or required for all sop classes.  We leave it up
@@ -97,16 +98,14 @@
             windowWidth: undefined
         };
 
-        var windowCenter  = dicomElements.x00281050;
-        var windowWidth  = dicomElements.x00281051;
+        var windowCenter = dataSet.floatString('x00281050');
+        var windowWidth = dataSet.floatString('x00281051');
 
-        if(windowCenter && windowCenter.str.length > 0) {
-            var wcSplit = windowCenter.str.split('\\');
-            result.windowCenter = parseFloat(wcSplit[0]);
+        if(windowCenter) {
+            result.windowCenter = windowCenter;
         }
-        if(windowWidth && windowWidth.str.length > 0) {
-            var wwSplit = windowWidth.str.split('\\');
-            result.windowWidth = parseFloat(wwSplit[0]);
+        if(windowWidth ) {
+            result.windowWidth = windowWidth;
         }
         return result;
     }
@@ -131,17 +130,32 @@
         image.maxPixelValue = max;
     }
 
+
+    function invertPixels(image)
+    {
+        var min = image.minPixelValue;
+        var max = image.maxPixelValue;
+        var numPixels = image.width * image.height;
+        var pixelData = image.storedPixelData;
+        for(var index = 0; index < numPixels; index++) {
+            var spv = pixelData[index];
+            pixelData[index] = min + max - spv;
+        }
+    }
+
+
     function createImageObject(dicomPart10AsArrayBuffer)
     {
         // Parse the DICOM File
-        var dicomElements = cornerstone.parseDicom(dicomPart10AsArrayBuffer);
+        var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+        var dataSet = dicomParser.parseDicom(byteArray);
 
         // extract the DICOM attributes we need
-        var pixelSpacing = getPixelSpacing(dicomElements);
-        var rows = dicomElements.x00280010.uint16;
-        var columns = dicomElements.x00280010.uint16;
-        var rescaleSlopeAndIntercept = getRescaleSlopeAndIntercept(dicomElements);
-        var windowWidthAndCenter = getWindowWidthAndCenter(dicomElements);
+        var pixelSpacing = getPixelSpacing(dataSet);
+        var rows = dataSet.uint16('x00280010');
+        var columns = dataSet.uint16('x00280011');
+        var rescaleSlopeAndIntercept = getRescaleSlopeAndIntercept(dataSet);
+        var windowWidthAndCenter = getWindowWidthAndCenter(dataSet);
 
         // Extract the various attributes we need
         var image = {
@@ -151,7 +165,7 @@
             intercept: rescaleSlopeAndIntercept.intercept,
             windowCenter : windowWidthAndCenter.windowCenter,
             windowWidth : windowWidthAndCenter.windowWidth,
-            storedPixelData: extractStoredPixels(dicomElements, dicomPart10AsArrayBuffer),
+            storedPixelData: extractStoredPixels(dataSet, byteArray),
             rows: rows,
             columns: columns,
             height: rows,
@@ -159,15 +173,32 @@
             color: false,
             columnPixelSpacing: pixelSpacing.column,
             rowPixelSpacing: pixelSpacing.row,
-            data: dicomElements
+            data: dataSet
         };
 
+
         // TODO: deal with pixel padding and all of the various issues by setting it to min pixel value (or lower)
-        // TODO: deal with MONOCHROME1 - either invert pixel data or add support to cornerstone
         // TODO: Add support for color by converting all formats to RGB
         // TODO: Mask out overlays embedded in pixel data above high bit
 
         setMinMaxPixelValue(image);
+
+        // invert pixels if monochrome1
+        var photometricInterpretation = dataSet.string('x00280004');
+        if(photometricInterpretation !== undefined) {
+            if(photometricInterpretation.trim() === "MONOCHROME1")
+            {
+                invertPixels(image);
+            }
+        }
+
+        if(image.windowCenter === undefined) {
+            var maxVoi = image.maxPixelValue * image.slope + image.intercept;
+            var minVoi = image.minPixelValue * image.slope + image.intercept;
+            image.windowWidth = maxVoi - minVoi;
+            image.windowCenter = (maxVoi + minVoi) / 2;
+        }
+
 
         return image;
     }
