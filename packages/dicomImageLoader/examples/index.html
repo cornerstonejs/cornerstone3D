@@ -75,19 +75,6 @@
         <div id="dicomImage"
              style="width:512px;height:512px;top:0px;left:0px; position:absolute">
         </div>
-        <div id="mrtopleft" style="position: absolute;top:0px; left:0px">
-            Patient Name
-        </div>
-        <div id="mrtopright" style="position: absolute;top:0px; right:0px">
-            Hospital
-        </div>
-        <div id="mrbottomright" style="position: absolute;bottom:0px; right:0px">
-            Zoom:
-        </div>
-        <div id="mrbottomleft" style="position: absolute;bottom:0px; left:0px">
-            WW/WC:
-        </div>
-
     </div>
 
 </div>
@@ -120,9 +107,11 @@
             // image enable the dicomImage element and activate a few tools
             var element = $('#dicomImage').get(0);
             cornerstone.enable(element, url);
+            cornerstoneTools.mouseInput.enable(element);
+            cornerstoneTools.mouseWheelInput.enable(element);
             cornerstoneTools.wwwc.activate(element, 1); //
             cornerstoneTools.pan.activate(element, 2); //
-            cornerstoneTools.zoom.activate(element, 3); //
+            cornerstoneTools.zoom.activate(element, 4); //
         });
     });
 
