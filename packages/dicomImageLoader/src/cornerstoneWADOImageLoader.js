@@ -130,7 +130,7 @@
         image.maxPixelValue = max;
     }
 
-    function createImageObject(dicomPart10AsArrayBuffer)
+    function createImageObject(dicomPart10AsArrayBuffer, imageId)
     {
         // Parse the DICOM File
         var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
@@ -145,6 +145,7 @@
 
         // Extract the various attributes we need
         var image = {
+            imageId : imageId,
             minPixelValue : -32767, // calculated below
             maxPixelValue : 65535, // calculated below
             slope: rescaleSlopeAndIntercept.slope,
@@ -210,9 +211,9 @@
             // TODO: consider sending out progress messages here as we receive the pixel data
             if (oReq.readyState === 4)
             {
-                if (oReq.status == 200) {
+                if (oReq.status === 200) {
                     // request succeeded, create an image object and resolve the deferred
-                    var image = createImageObject(oReq.response);
+                    var image = createImageObject(oReq.response, imageId);
 
                     deferred.resolve(image);
                 }
