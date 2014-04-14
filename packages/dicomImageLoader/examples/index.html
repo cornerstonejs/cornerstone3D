@@ -3,16 +3,8 @@
 <head>
     <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* prevents selection when left click dragging */
-        .disable-selection {
-            -moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;
-        }
-        /* prevents cursor from changing to the i bar on the overlays*/
-        .noIbar {
-            cursor:default;
-        }
-    </style>
+
+    <link href="../cornerstone.min.css" rel="stylesheet">
 
 </head>
 <body>
@@ -76,7 +68,6 @@
              style="width:512px;height:512px;top:0px;left:0px; position:absolute">
         </div>
     </div>
-
 </div>
 </body>
 
@@ -85,13 +76,13 @@
 <script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
 
 <!-- include the cornerstone library -->
-<script src="cornerstone.js"></script>
+<script src="cornerstone.min.js"></script>
 
 <!-- include the cornerstone tools library -->
-<script src="cornerstone-tools.js"></script>
+<script src="cornerstoneTools.min.js"></script>
 
 <!-- include the dicomParser library as the WADO image loader depends on it -->
-<script src="dicomParser.js"></script>
+<script src="dicomParser.min.js"></script>
 
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../dist/cornerstoneWADOImageLoader.js"></script>

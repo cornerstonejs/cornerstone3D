@@ -12,6 +12,19 @@ module.exports = function(grunt) {
                 ]
             }
         },
+        copy : {
+            bower: {
+                src: [
+                    'bower_components/cornerstone/dist/cornerstone.min.css',
+                    'bower_components/cornerstone/dist/cornerstone.min.js',
+                    'bower_components/cornerstoneTools/dist/cornerstoneTools.min.js',
+                    'bower_components/dicomParser/dist/dicomParser.min.js'
+                ],
+                dest: 'examples',
+                expand: true,
+                flatten: true
+            }
+        },
         concat: {
             build: {
                 src : ['src/cornerstoneWADOImageLoader.js', 'src/*.js'],

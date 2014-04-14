@@ -78,6 +78,8 @@ Backlog
 * Add example of creating a stack from multiple images
 * Add support for multiframe
 * Add support for compressed transfer syntaxes
+* Use browser acceleration for decoding JPEG images (http://stackoverflow.com/questions/18976327/binary-array-to-canvas)
+
 
 Why is this a separate library from cornerstone?
 ================================================
