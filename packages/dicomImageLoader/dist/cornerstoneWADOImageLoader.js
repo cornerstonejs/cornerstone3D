@@ -106,6 +106,79 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
     return cornerstoneWADOImageLoader;
 }($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ */
+var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
+
+    "use strict";
+
+    if(cornerstoneWADOImageLoader === undefined) {
+        cornerstoneWADOImageLoader = {};
+    }
+
+    function decodeRGB(rgbBuffer, rgbaBuffer) {
+        if(rgbBuffer === undefined) {
+            throw "decodeRGB: rgbBuffer must not be undefined";
+        }
+        if(rgbBuffer.length % 3 !== 0) {
+            throw "decodeRGB: rgbBuffer length must be divisble by 3";
+        }
+
+        var numPixels = rgbBuffer.length / 3;
+        var rgbIndex = 0;
+        var rgbaIndex = 0;
+        for(var i= 0; i < numPixels; i++) {
+            rgbaBuffer[rgbaIndex++] = rgbBuffer[rgbIndex++]; // red
+            rgbaBuffer[rgbaIndex++] = rgbBuffer[rgbIndex++]; // green
+            rgbaBuffer[rgbaIndex++] = rgbBuffer[rgbIndex++]; // blue
+            rgbaBuffer[rgbaIndex++] = 255; //alpha
+        }
+
+    }
+
+    // module exports
+    cornerstoneWADOImageLoader.decodeRGB = decodeRGB;
+
+    return cornerstoneWADOImageLoader;
+}(cornerstoneWADOImageLoader));
+/**
+ */
+var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
+
+    "use strict";
+
+    if(cornerstoneWADOImageLoader === undefined) {
+        cornerstoneWADOImageLoader = {};
+    }
+
+    function decodeYBRFull(ybrBuffer, rgbaBuffer) {
+        if(ybrBuffer === undefined) {
+            throw "decodeRGB: ybrBuffer must not be undefined";
+        }
+        if(ybrBuffer.length % 3 !== 0) {
+            throw "decodeRGB: ybrBuffer length must be divisble by 3";
+        }
+
+        var numPixels = ybrBuffer.length / 3;
+        var ybrIndex = 0;
+        var rgbaIndex = 0;
+        for(var i= 0; i < numPixels; i++) {
+            var y = ybrBuffer[ybrIndex++];
+            var cb = ybrBuffer[ybrIndex++];
+            var cr = ybrBuffer[ybrIndex++];
+            rgbaBuffer[rgbaIndex++] = y + 1.40200 * (cr - 128);// red
+            rgbaBuffer[rgbaIndex++] = y - 0.34414 * (cb -128) - 0.71414 * (cr- 128); // green
+            rgbaBuffer[rgbaIndex++] = y + 1.77200 * (cb - 128); // blue
+            rgbaBuffer[rgbaIndex++] = 255; //alpha
+        }
+
+    }
+
+    // module exports
+    cornerstoneWADOImageLoader.decodeYBRFull = decodeYBRFull;
+
+    return cornerstoneWADOImageLoader;
+}(cornerstoneWADOImageLoader));
 var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
     "use strict";
@@ -215,7 +288,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
     return cornerstoneWADOImageLoader;
 }(cornerstoneWADOImageLoader));
-var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorImageDecoder) {
+var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
     "use strict";
 
@@ -232,6 +305,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
 
         var pixelDataElement = dataSet.elements.x7fe00010;
         var pixelDataOffset = pixelDataElement.dataOffset;
+        var transferSyntax = dataSet.string('x00020010');
 
         var frameSize = width * height * 3;
         var frameOffset = pixelDataOffset + frame * frameSize;
@@ -240,15 +314,36 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
         var imageData = context.createImageData(width, height);
 
         if (photometricInterpretation === "RGB") {
-            colorImageDecoder.decodeRGB(encodedPixelData, imageData.data);
+            cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
             return imageData;
         }
         else if (photometricInterpretation === "YBR_FULL")
         {
-            colorImageDecoder.decodeYBRFull(encodedPixelData, imageData.data);
+            cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
             return imageData;
-
         }
+        /*
+        else if(photometricInterpretation === "YBR_FULL_422" &&
+                transferSyntax === "1.2.840.10008.1.2.4.50")
+        {
+        // need to read the encapsulated stream here i think
+            var imgBlob = new Blob([encodedPixelData], {type: "image/png"});
+            var r = new FileReader();
+            r.readAsBinaryString(imgBlob);
+            r.onload = function(){
+                var img=new Image();
+                img.onload = function() {
+                    context.drawImage(this, 0, 0);
+                };
+                img.onerror = function(z) {
+
+                };
+                img.src = "data:image/jpeg;base64,"+window.btoa(r.result);
+            };
+            return context.getImageData(0, 0, width, height);
+        }
+        */
+        throw "no codec for " + photometricInterpretation;
     }
 
     function makeColorImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
@@ -323,7 +418,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
     cornerstoneWADOImageLoader.makeColorImage = makeColorImage;
 
     return cornerstoneWADOImageLoader;
-}(cornerstoneWADOImageLoader, colorImageDecoder));
+}(cornerstoneWADOImageLoader));
 var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
     "use strict";
