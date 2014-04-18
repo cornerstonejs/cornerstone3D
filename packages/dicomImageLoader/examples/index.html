@@ -4,7 +4,7 @@
     <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
 
-    <link href="../cornerstone.min.css" rel="stylesheet">
+    <link href="cornerstone.min.css" rel="stylesheet">
 
 </head>
 <body>
@@ -97,12 +97,16 @@
 
             // image enable the dicomImage element and activate a few tools
             var element = $('#dicomImage').get(0);
-            cornerstone.enable(element, url);
-            cornerstoneTools.mouseInput.enable(element);
-            cornerstoneTools.mouseWheelInput.enable(element);
-            cornerstoneTools.wwwc.activate(element, 1); //
-            cornerstoneTools.pan.activate(element, 2); //
-            cornerstoneTools.zoom.activate(element, 4); //
+            cornerstone.enable(element);
+            cornerstone.loadImage(url).then(function(image) {
+                cornerstone.displayImage(element, image);
+                cornerstoneTools.mouseInput.enable(element);
+                cornerstoneTools.mouseWheelInput.enable(element);
+                cornerstoneTools.wwwc.activate(element, 1); //
+                cornerstoneTools.pan.activate(element, 2); //
+                cornerstoneTools.zoom.activate(element, 4); //
+
+            });
         });
     });
 

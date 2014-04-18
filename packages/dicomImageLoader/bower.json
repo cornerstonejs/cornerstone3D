@@ -13,8 +13,8 @@
         ".gitignore"
     ],
     "dependencies": {
-        "dicomParser": "~0.2.0",
-        "cornerstone": "~0.1.0",
+        "dicomParser": "~0.3.0",
+        "cornerstone": "~0.2.0",
         "cornerstoneTools": "~0.1.0"
     },
     "devDependencies": {

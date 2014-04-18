@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.1.0 - 2014-04-13 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.1.0 - 2014-04-17 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -131,6 +131,18 @@
         image.maxPixelValue = max;
     }
 
+    function getBytesPerPixel(dataSet)
+    {
+        var pixelFormat = getPixelFormat(dataSet);
+        if(pixelFormat ===1) {
+            return 1;
+        }
+        else if(pixelFormat ===2 || pixelFormat ===3){
+            return 2;
+        }
+        throw "unknown pixel format";
+    }
+
     function createImageObject(dicomPart10AsArrayBuffer, imageId)
     {
         // Parse the DICOM File
@@ -144,6 +156,14 @@
         var rescaleSlopeAndIntercept = getRescaleSlopeAndIntercept(dataSet);
         var windowWidthAndCenter = getWindowWidthAndCenter(dataSet);
 
+        function getPixelData() {
+            return image.storedPixelData;
+        }
+
+        var bytesPerPixel = getBytesPerPixel(dataSet);
+
+        var storedPixelData = extractStoredPixels(dataSet, byteArray);
+
         // Extract the various attributes we need
         var image = {
             imageId : imageId,
@@ -153,7 +173,8 @@
             intercept: rescaleSlopeAndIntercept.intercept,
             windowCenter : windowWidthAndCenter.windowCenter,
             windowWidth : windowWidthAndCenter.windowWidth,
-            storedPixelData: extractStoredPixels(dataSet, byteArray),
+            storedPixelData : extractStoredPixels(dataSet, byteArray),
+            getPixelData: getPixelData,
             rows: rows,
             columns: columns,
             height: rows,
@@ -162,7 +183,8 @@
             columnPixelSpacing: pixelSpacing.column,
             rowPixelSpacing: pixelSpacing.row,
             data: dataSet,
-            invert: false
+            invert: false,
+            sizeInBytes: rows * columns * bytesPerPixel
         };
 
 
