@@ -9,23 +9,26 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height, frame)
-    {
+    function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height, frame) {
         canvas.height = height;
         canvas.width = width;
 
         var pixelDataElement = dataSet.elements.x7fe00010;
         var pixelDataOffset = pixelDataElement.dataOffset;
 
+        var frameSize = width * height * 3;
+        var frameOffset = pixelDataOffset + frame * frameSize;
+        var encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
+        var context = canvas.getContext('2d');
+        var imageData = context.createImageData(width, height);
 
-        if(photometricInterpretation === "RGB")
-        {
-            var frameSize = width * height * 3;
-            var frameOffset = pixelDataOffset + frame * frameSize;
-            var encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
-            var context = canvas.getContext('2d');
-            var imageData = context.createImageData(width, height);
+        if (photometricInterpretation === "RGB") {
             colorImageDecoder.decodeRGB(encodedPixelData, imageData.data);
+            return imageData;
+        }
+        else if (photometricInterpretation === "YBR_FULL")
+        {
+            colorImageDecoder.decodeYBRFull(encodedPixelData, imageData.data);
             return imageData;
         }
     }
