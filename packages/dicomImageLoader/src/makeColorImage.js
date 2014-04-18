@@ -9,18 +9,20 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height)
+    function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height, frame)
     {
-        var pixelDataElement = dataSet.elements.x7fe00010;
-        var pixelDataOffset = pixelDataElement.dataOffset;
-
         canvas.height = height;
         canvas.width = width;
 
+        var pixelDataElement = dataSet.elements.x7fe00010;
+        var pixelDataOffset = pixelDataElement.dataOffset;
 
-        var encodedPixelData = new Uint8Array(byteArray.buffer, pixelDataOffset);
+
         if(photometricInterpretation === "RGB")
         {
+            var frameSize = width * height * 3;
+            var frameOffset = pixelDataOffset + frame * frameSize;
+            var encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
             var context = canvas.getContext('2d');
             var imageData = context.createImageData(width, height);
             colorImageDecoder.decodeRGB(encodedPixelData, imageData.data);
@@ -28,7 +30,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
         }
     }
 
-    function makeColorImage(imageId, dataSet, byteArray, photometricInterpretation) {
+    function makeColorImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
@@ -41,7 +43,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
         // Decompress and decode the pixel data for this image
-        var imageData = extractStoredPixels(dataSet, byteArray, photometricInterpretation, columns, rows);
+        var imageData = extractStoredPixels(dataSet, byteArray, photometricInterpretation, columns, rows, frame);
 
         function getPixelData() {
             return imageData.data;

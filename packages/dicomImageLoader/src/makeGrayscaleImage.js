@@ -20,22 +20,27 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
         }
     }
 
-    function extractStoredPixels(dataSet, byteArray)
+    function extractStoredPixels(dataSet, byteArray, width, height, frame)
     {
         var pixelFormat = getPixelFormat(dataSet);
         var pixelDataElement = dataSet.elements.x7fe00010;
         var pixelDataOffset = pixelDataElement.dataOffset;
+        var numPixels = width * height;
 
         // Note - we may want to sanity check the rows * columns * bitsAllocated * samplesPerPixel against the buffer size
 
+        var frameOffset = 0;
         if(pixelFormat === 1) {
-            return new Uint8Array(byteArray.buffer, pixelDataOffset);
+            frameOffset = pixelDataOffset + frame * numPixels;
+            return new Uint8Array(byteArray.buffer, frameOffset);
         }
         else if(pixelFormat === 2) {
-            return new Uint16Array(byteArray.buffer, pixelDataOffset);
+            frameOffset = pixelDataOffset + frame * numPixels * 2;
+            return new Uint16Array(byteArray.buffer, frameOffset);
         }
         else if(pixelFormat === 3) {
-            return new Int16Array(byteArray.buffer, pixelDataOffset);
+            frameOffset = pixelDataOffset + frame * numPixels * 2;
+            return new Int16Array(byteArray.buffer, frameOffset);
         }
     }
 
@@ -74,7 +79,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
     }
 
 
-    function makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation) {
+    function makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
@@ -88,7 +93,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
         // Decompress and decode the pixel data for this image
-        var storedPixelData = extractStoredPixels(dataSet, byteArray);
+        var storedPixelData = extractStoredPixels(dataSet, byteArray, columns, rows, frame);
         var minMax = getMinMax(storedPixelData);
 
         function getPixelData() {

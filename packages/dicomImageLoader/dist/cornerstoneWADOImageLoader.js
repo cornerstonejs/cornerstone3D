@@ -33,7 +33,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         }
     }
 
-    function createImageObject(dicomPart10AsArrayBuffer, imageId)
+    function createImageObject(dicomPart10AsArrayBuffer, imageId, frame)
     {
         // Parse the DICOM File
         var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
@@ -43,9 +43,9 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var photometricInterpretation = dataSet.string('x00280004');
         var isColor = isColorImage(photometricInterpretation);
         if(isColor === false) {
-            return cornerstoneWADOImageLoader.makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation);
+            return cornerstoneWADOImageLoader.makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation, frame);
         } else {
-            return cornerstoneWADOImageLoader.makeColorImage(imageId, dataSet, byteArray, photometricInterpretation);
+            return cornerstoneWADOImageLoader.makeColorImage(imageId, dataSet, byteArray, photometricInterpretation, frame);
         }
     }
 
@@ -60,10 +60,22 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         // TODO: Consider not using jquery for deferred - maybe cujo's when library
         var deferred = $.Deferred();
 
+        // build a url by parsing out the url scheme and frame index from the imageId
+        var url = imageId;
+        url = url.replace('dicomweb', 'http');
+        url = url.replace('dicomwebs', 'https');
+        var frameIndex = url.indexOf('frame=');
+        var frame = 0;
+        if(frameIndex !== -1) {
+            var frameStr = url.substr(frameIndex + 6);
+            frame = parseInt(frameStr);
+            url = url.substr(0, frameIndex-1);
+        }
+
         // Make the request for the DICOM data
         // TODO: consider using cujo's REST library here?
         var oReq = new XMLHttpRequest();
-        oReq.open("get", imageId, true);
+        oReq.open("get", url, true);
         oReq.responseType = "arraybuffer";
         oReq.onreadystatechange = function(oEvent) {
             // TODO: consider sending out progress messages here as we receive the pixel data
@@ -71,7 +83,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             {
                 if (oReq.status === 200) {
                     // request succeeded, create an image object and resolve the deferred
-                    var image = createImageObject(oReq.response, imageId);
+                    var image = createImageObject(oReq.response, imageId, frame);
 
                     deferred.resolve(image);
                 }
@@ -89,8 +101,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
     }
 
     // steam the http and https prefixes so we can use wado URL's directly
-    cornerstone.registerImageLoader('http', loadImage);
-    cornerstone.registerImageLoader('https', loadImage);
+    cornerstone.registerImageLoader('dicomweb', loadImage);
+    cornerstone.registerImageLoader('dicomwebs', loadImage);
 
     return cornerstoneWADOImageLoader;
 }($, cornerstone, cornerstoneWADOImageLoader));
@@ -214,18 +226,20 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height)
+    function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height, frame)
     {
-        var pixelDataElement = dataSet.elements.x7fe00010;
-        var pixelDataOffset = pixelDataElement.dataOffset;
-
         canvas.height = height;
         canvas.width = width;
 
+        var pixelDataElement = dataSet.elements.x7fe00010;
+        var pixelDataOffset = pixelDataElement.dataOffset;
 
-        var encodedPixelData = new Uint8Array(byteArray.buffer, pixelDataOffset);
+
         if(photometricInterpretation === "RGB")
         {
+            var frameSize = width * height * 3;
+            var frameOffset = pixelDataOffset + frame * frameSize;
+            var encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
             var context = canvas.getContext('2d');
             var imageData = context.createImageData(width, height);
             colorImageDecoder.decodeRGB(encodedPixelData, imageData.data);
@@ -233,7 +247,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
         }
     }
 
-    function makeColorImage(imageId, dataSet, byteArray, photometricInterpretation) {
+    function makeColorImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
@@ -246,7 +260,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader, colorIma
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
         // Decompress and decode the pixel data for this image
-        var imageData = extractStoredPixels(dataSet, byteArray, photometricInterpretation, columns, rows);
+        var imageData = extractStoredPixels(dataSet, byteArray, photometricInterpretation, columns, rows, frame);
 
         function getPixelData() {
             return imageData.data;
@@ -328,22 +342,27 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
         }
     }
 
-    function extractStoredPixels(dataSet, byteArray)
+    function extractStoredPixels(dataSet, byteArray, width, height, frame)
     {
         var pixelFormat = getPixelFormat(dataSet);
         var pixelDataElement = dataSet.elements.x7fe00010;
         var pixelDataOffset = pixelDataElement.dataOffset;
+        var numPixels = width * height;
 
         // Note - we may want to sanity check the rows * columns * bitsAllocated * samplesPerPixel against the buffer size
 
+        var frameOffset = 0;
         if(pixelFormat === 1) {
-            return new Uint8Array(byteArray.buffer, pixelDataOffset);
+            frameOffset = pixelDataOffset + frame * numPixels;
+            return new Uint8Array(byteArray.buffer, frameOffset);
         }
         else if(pixelFormat === 2) {
-            return new Uint16Array(byteArray.buffer, pixelDataOffset);
+            frameOffset = pixelDataOffset + frame * numPixels * 2;
+            return new Uint16Array(byteArray.buffer, frameOffset);
         }
         else if(pixelFormat === 3) {
-            return new Int16Array(byteArray.buffer, pixelDataOffset);
+            frameOffset = pixelDataOffset + frame * numPixels * 2;
+            return new Int16Array(byteArray.buffer, frameOffset);
         }
     }
 
@@ -382,7 +401,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
     }
 
 
-    function makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation) {
+    function makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
@@ -396,7 +415,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
         // Decompress and decode the pixel data for this image
-        var storedPixelData = extractStoredPixels(dataSet, byteArray);
+        var storedPixelData = extractStoredPixels(dataSet, byteArray, columns, rows, frame);
         var minMax = getMinMax(storedPixelData);
 
         function getPixelData() {
