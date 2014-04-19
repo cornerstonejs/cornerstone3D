@@ -1,4 +1,4 @@
-var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
+var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
 
     "use strict";
 
@@ -133,6 +133,8 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
             image.windowCenter = (maxVoi + minVoi) / 2;
         }
 
+        var deferred = $.Deferred();
+        deferred.resolve(image);
         return image;
     }
 
@@ -140,4 +142,4 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
     cornerstoneWADOImageLoader.makeGrayscaleImage = makeGrayscaleImage;
 
     return cornerstoneWADOImageLoader;
-}(cornerstoneWADOImageLoader));
+}($, cornerstoneWADOImageLoader));

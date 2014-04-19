@@ -83,9 +83,12 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             {
                 if (oReq.status === 200) {
                     // request succeeded, create an image object and resolve the deferred
-                    var image = createImageObject(oReq.response, imageId, frame);
-
-                    deferred.resolve(image);
+                    var imagePromise = createImageObject(oReq.response, imageId, frame);
+                    imagePromise.then(function(image) {
+                        deferred.resolve(image);
+                    }, function() {
+                        deferred.reject();
+                    });
                 }
                 // TODO: Check for errors and reject the deferred if they happened
                 else {
@@ -288,7 +291,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
     return cornerstoneWADOImageLoader;
 }(cornerstoneWADOImageLoader));
-var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
+var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
 
     "use strict";
 
@@ -309,40 +312,47 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
         var frameSize = width * height * 3;
         var frameOffset = pixelDataOffset + frame * frameSize;
-        var encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
+        var encodedPixelData;// = new Uint8Array(byteArray.buffer, frameOffset);
         var context = canvas.getContext('2d');
         var imageData = context.createImageData(width, height);
 
+        var deferred = $.Deferred();
+
         if (photometricInterpretation === "RGB") {
+            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
             cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
-            return imageData;
+            deferred.resolve(imageData);
+            return deferred;
         }
         else if (photometricInterpretation === "YBR_FULL")
         {
+            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
             cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
-            return imageData;
+            deferred.resolve(imageData);
+            return deferred;
         }
-        /*
         else if(photometricInterpretation === "YBR_FULL_422" &&
                 transferSyntax === "1.2.840.10008.1.2.4.50")
         {
-        // need to read the encapsulated stream here i think
-            var imgBlob = new Blob([encodedPixelData], {type: "image/png"});
+            encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, frame);
+            // need to read the encapsulated stream here i think
+            var imgBlob = new Blob([encodedPixelData], {type: "image/jpeg"});
             var r = new FileReader();
             r.readAsBinaryString(imgBlob);
             r.onload = function(){
                 var img=new Image();
                 img.onload = function() {
                     context.drawImage(this, 0, 0);
+                    imageData = context.getImageData(0, 0, width, height);
+                    deferred.resolve(imageData);
                 };
                 img.onerror = function(z) {
-
+                    deferred.reject();
                 };
                 img.src = "data:image/jpeg;base64,"+window.btoa(r.result);
             };
-            return context.getImageData(0, 0, width, height);
+            return deferred;
         }
-        */
         throw "no codec for " + photometricInterpretation;
     }
 
@@ -358,68 +368,74 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
         var sizeInBytes = numPixels * bytesPerPixel;
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
+        var deferred = $.Deferred();
+
         // Decompress and decode the pixel data for this image
-        var imageData = extractStoredPixels(dataSet, byteArray, photometricInterpretation, columns, rows, frame);
+        var imageDataPromise = extractStoredPixels(dataSet, byteArray, photometricInterpretation, columns, rows, frame);
+        imageDataPromise.then(function(imageData) {
+            function getPixelData() {
+                return imageData.data;
+            }
 
-        function getPixelData() {
-            return imageData.data;
-        }
+            function getImageData() {
+                return imageData;
+            }
 
-        function getImageData() {
-            return imageData;
-        }
+            function getCanvas() {
+                if(lastImageIdDrawn === imageId) {
+                    return canvas;
+                }
 
-        function getCanvas() {
-            if(lastImageIdDrawn === imageId) {
+                canvas.height = rows;
+                canvas.width = columns;
+                var context = canvas.getContext('2d');
+                context.putImageData(imageData, 0, 0 );
+                lastImageIdDrawn = imageId;
                 return canvas;
             }
 
-            canvas.height = rows;
-            canvas.width = columns;
-            var context = canvas.getContext('2d');
-            context.putImageData(imageData, 0, 0 );
-            lastImageIdDrawn = imageId;
-            return canvas;
-        }
+            // Extract the various attributes we need
+            var image = {
+                imageId : imageId,
+                minPixelValue : 0,
+                maxPixelValue : 255,
+                slope: rescaleSlopeAndIntercept.slope,
+                intercept: rescaleSlopeAndIntercept.intercept,
+                windowCenter : windowWidthAndCenter.windowCenter,
+                windowWidth : windowWidthAndCenter.windowWidth,
+                getPixelData: getPixelData,
+                getImageData: getImageData,
+                getCanvas: getCanvas,
+                rows: rows,
+                columns: columns,
+                height: rows,
+                width: columns,
+                color: true,
+                columnPixelSpacing: pixelSpacing.column,
+                rowPixelSpacing: pixelSpacing.row,
+                data: dataSet,
+                invert: false,
+                sizeInBytes: sizeInBytes
+            };
 
-        // Extract the various attributes we need
-        var image = {
-            imageId : imageId,
-            minPixelValue : 0,
-            maxPixelValue : 255,
-            slope: rescaleSlopeAndIntercept.slope,
-            intercept: rescaleSlopeAndIntercept.intercept,
-            windowCenter : windowWidthAndCenter.windowCenter,
-            windowWidth : windowWidthAndCenter.windowWidth,
-            getPixelData: getPixelData,
-            getImageData: getImageData,
-            getCanvas: getCanvas,
-            rows: rows,
-            columns: columns,
-            height: rows,
-            width: columns,
-            color: true,
-            columnPixelSpacing: pixelSpacing.column,
-            rowPixelSpacing: pixelSpacing.row,
-            data: dataSet,
-            invert: false,
-            sizeInBytes: sizeInBytes
-        };
+            if(image.windowCenter === undefined) {
+                image.windowWidth = 256;
+                image.windowCenter = 127;
+            }
+            deferred.resolve(image);
+        }, function() {
+            deferred.reject();
+        });
 
-        if(image.windowCenter === undefined) {
-            image.windowWidth = 256;
-            image.windowCenter = 127;
-        }
-
-        return image;
+        return deferred;
     }
 
     // module exports
     cornerstoneWADOImageLoader.makeColorImage = makeColorImage;
 
     return cornerstoneWADOImageLoader;
-}(cornerstoneWADOImageLoader));
-var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
+}($, cornerstoneWADOImageLoader));
+var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
 
     "use strict";
 
@@ -554,6 +570,8 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
             image.windowCenter = (maxVoi + minVoi) / 2;
         }
 
+        var deferred = $.Deferred();
+        deferred.resolve(image);
         return image;
     }
 
@@ -561,4 +579,4 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
     cornerstoneWADOImageLoader.makeGrayscaleImage = makeGrayscaleImage;
 
     return cornerstoneWADOImageLoader;
-}(cornerstoneWADOImageLoader));
+}($, cornerstoneWADOImageLoader));

@@ -82,9 +82,12 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             {
                 if (oReq.status === 200) {
                     // request succeeded, create an image object and resolve the deferred
-                    var image = createImageObject(oReq.response, imageId, frame);
-
-                    deferred.resolve(image);
+                    var imagePromise = createImageObject(oReq.response, imageId, frame);
+                    imagePromise.then(function(image) {
+                        deferred.resolve(image);
+                    }, function() {
+                        deferred.reject();
+                    });
                 }
                 // TODO: Check for errors and reject the deferred if they happened
                 else {
