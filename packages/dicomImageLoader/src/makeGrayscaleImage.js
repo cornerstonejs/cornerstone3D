@@ -135,7 +135,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
 
         var deferred = $.Deferred();
         deferred.resolve(image);
-        return image;
+        return deferred;
     }
 
     // module exports

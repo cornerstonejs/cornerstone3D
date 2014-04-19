@@ -32,21 +32,23 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         }
     }
 
-    function createImageObject(dicomPart10AsArrayBuffer, imageId, frame)
+    function createImageObject(dataSet, imageId, frame)
     {
-        // Parse the DICOM File
-        var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-        var dataSet = dicomParser.parseDicom(byteArray);
+        if(frame === undefined) {
+            frame = 0;
+        }
 
         // make the image based on whether it is color or not
         var photometricInterpretation = dataSet.string('x00280004');
         var isColor = isColorImage(photometricInterpretation);
         if(isColor === false) {
-            return cornerstoneWADOImageLoader.makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation, frame);
+            return cornerstoneWADOImageLoader.makeGrayscaleImage(imageId, dataSet, dataSet.byteArray, photometricInterpretation, frame);
         } else {
-            return cornerstoneWADOImageLoader.makeColorImage(imageId, dataSet, byteArray, photometricInterpretation, frame);
+            return cornerstoneWADOImageLoader.makeColorImage(imageId, dataSet, dataSet.byteArray, photometricInterpretation, frame);
         }
     }
+
+    var multiFrameCacheHack = {};
 
     // Loads an image given an imageId
     // wado url example:
@@ -64,11 +66,25 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         url = url.replace('dicomweb', 'http');
         url = url.replace('dicomwebs', 'https');
         var frameIndex = url.indexOf('frame=');
-        var frame = 0;
+        var frame;
         if(frameIndex !== -1) {
             var frameStr = url.substr(frameIndex + 6);
             frame = parseInt(frameStr);
             url = url.substr(0, frameIndex-1);
+        }
+
+        // if multiframe and cached, use the cached data set to extract the frame
+        if(frame !== undefined &&
+            multiFrameCacheHack.hasOwnProperty(url))
+        {
+            var dataSet = multiFrameCacheHack[url];
+            var imagePromise = createImageObject(dataSet, imageId, frame);
+            imagePromise.then(function(image) {
+                deferred.resolve(image);
+            }, function() {
+                deferred.reject();
+            });
+            return deferred;
         }
 
         // Make the request for the DICOM data
@@ -82,7 +98,19 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             {
                 if (oReq.status === 200) {
                     // request succeeded, create an image object and resolve the deferred
-                    var imagePromise = createImageObject(oReq.response, imageId, frame);
+
+                    // Parse the DICOM File
+                    var dicomPart10AsArrayBuffer = oReq.response;
+                    var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+                    var dataSet = dicomParser.parseDicom(byteArray);
+
+                    // if multiframe, cache the parsed data set to speed up subsequent
+                    // requests for the other frames
+                    if(frame !== undefined) {
+                        multiFrameCacheHack[url] = dataSet;
+                    }
+
+                    var imagePromise = createImageObject(dataSet, imageId, frame);
                     imagePromise.then(function(image) {
                         deferred.resolve(image);
                     }, function() {

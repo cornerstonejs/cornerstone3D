@@ -126,8 +126,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
             };
 
             if(image.windowCenter === undefined) {
-                image.windowWidth = 256;
-                image.windowCenter = 127;
+                image.windowWidth = 255;
+                image.windowCenter = 128;
             }
             deferred.resolve(image);
         }, function() {
