@@ -1,17 +1,20 @@
 cornerstone WADO Image Loader
 =============================
 
-A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for WADO images.
-
+A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for DICOM P10 instances over
+HTTP (e.g. WADO).
 
 Project Status
 ---------------
-Alpha - don't even bother trying to use this right now but the live example works well enough to see where this is going
+Alpha but usable, see key features and backlog below.
 
 Live Examples
 ---------------
 
 [Click here for a live example of this library in use!](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
+
+You can also see it in action with the
+(cornerstoneDemo application)[https://github.com/chafey/cornerstoneDemo].
 
 Install
 -------
@@ -31,8 +34,20 @@ TODO
 Key Features
 ------------
 
-* Provides a bridge between the cornerstone library and WADO servers
+* Implements a (cornerstoneImageLoader)[https://github.com/chafey/cornerstone/wiki/ImageLoader] for DICOM P10 Instances via a HTTP get request.  This will work
+  with WADO.
+* Supports multiframe
+* Supported pixel formats:
+    * 8 bit grayscale
+    * 16 bit grayscale (unsigned and signed)
+    * RGB Color
+    * YBRFull Color
+    * YBRFull422 Color (including encapsulated)
+* Supported transfer syntaxes
+    * Implicit Little Endian
+    * Explicit Little Endian
 
+NOTE: JPEG2000 is not supported!
 
 Build System
 ============
@@ -70,19 +85,19 @@ Backlog
 ------------
 
 * Support images with Pixel Padding
-* Support color images
 * Mask out burned in overlays?
-* Consider alternatives to jQuery for deffered (when.js?)
+* Consider alternatives to jQuery for deferred (when.js?)
 * Add error handling
-* Find a way to access the parsed dicom elements for updating the overlays
-* Add example of creating a stack from multiple images
-* Add support for multiframe
 * Add support for compressed transfer syntaxes
-* Use browser acceleration for decoding JPEG images (http://stackoverflow.com/questions/18976327/binary-array-to-canvas)
+  * JPEG 2000
+  * JPEG
+  * RLE
+* Add support for less common pixel formats
 
+FAQ
+===
 
-Why is this a separate library from cornerstone?
-================================================
+_Why is this a separate library from cornerstone?_
 
 Mainly to avoid adding a dependency to cornerstone for the DICOM parsing library.  While cornerstone is
 intended to be used to display medical images that are stored in DICOM, cornerstone aims to simplify
