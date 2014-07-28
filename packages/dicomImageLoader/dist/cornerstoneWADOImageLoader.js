@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.2.2 - 2014-04-19 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.3.0 - 2014-07-28 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -93,6 +93,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var oReq = new XMLHttpRequest();
         oReq.open("get", url, true);
         oReq.responseType = "arraybuffer";
+        //oReq.setRequestHeader("Accept", "multipart/related; type=application/dicom");
+
         oReq.onreadystatechange = function(oEvent) {
             // TODO: consider sending out progress messages here as we receive the pixel data
             if (oReq.readyState === 4)
@@ -319,7 +321,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
     return cornerstoneWADOImageLoader;
 }(cornerstoneWADOImageLoader));
-var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
+var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
     "use strict";
 
@@ -431,6 +433,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
                 intercept: rescaleSlopeAndIntercept.intercept,
                 windowCenter : windowWidthAndCenter.windowCenter,
                 windowWidth : windowWidthAndCenter.windowWidth,
+                render: cornerstone.renderColorImage,
                 getPixelData: getPixelData,
                 getImageData: getImageData,
                 getCanvas: getCanvas,
@@ -462,8 +465,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
     cornerstoneWADOImageLoader.makeColorImage = makeColorImage;
 
     return cornerstoneWADOImageLoader;
-}($, cornerstoneWADOImageLoader));
-var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
+}($, cornerstone, cornerstoneWADOImageLoader));
+var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
     "use strict";
 
@@ -574,6 +577,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
             intercept: rescaleSlopeAndIntercept.intercept,
             windowCenter : windowWidthAndCenter.windowCenter,
             windowWidth : windowWidthAndCenter.windowWidth,
+            render: cornerstone.renderGrayscaleImage,
             getPixelData: getPixelData,
             rows: rows,
             columns: columns,
@@ -607,4 +611,4 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
     cornerstoneWADOImageLoader.makeGrayscaleImage = makeGrayscaleImage;
 
     return cornerstoneWADOImageLoader;
-}($, cornerstoneWADOImageLoader));
+}($, cornerstone, cornerstoneWADOImageLoader));

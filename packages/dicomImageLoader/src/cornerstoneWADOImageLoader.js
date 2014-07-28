@@ -92,6 +92,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var oReq = new XMLHttpRequest();
         oReq.open("get", url, true);
         oReq.responseType = "arraybuffer";
+        //oReq.setRequestHeader("Accept", "multipart/related; type=application/dicom");
+
         oReq.onreadystatechange = function(oEvent) {
             // TODO: consider sending out progress messages here as we receive the pixel data
             if (oReq.readyState === 4)

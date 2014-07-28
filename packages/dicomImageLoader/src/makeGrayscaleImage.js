@@ -1,4 +1,4 @@
-var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
+var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
     "use strict";
 
@@ -109,6 +109,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
             intercept: rescaleSlopeAndIntercept.intercept,
             windowCenter : windowWidthAndCenter.windowCenter,
             windowWidth : windowWidthAndCenter.windowWidth,
+            render: cornerstone.renderGrayscaleImage,
             getPixelData: getPixelData,
             rows: rows,
             columns: columns,
@@ -142,4 +143,4 @@ var cornerstoneWADOImageLoader = (function ($, cornerstoneWADOImageLoader) {
     cornerstoneWADOImageLoader.makeGrayscaleImage = makeGrayscaleImage;
 
     return cornerstoneWADOImageLoader;
-}($, cornerstoneWADOImageLoader));
+}($, cornerstone, cornerstoneWADOImageLoader));

@@ -77,9 +77,6 @@
 <!-- include the cornerstone library -->
 <script src="cornerstone.min.js"></script>
 
-<!-- include the cornerstone tools library -->
-<script src="cornerstoneTools.min.js"></script>
-
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="dicomParser.min.js"></script>
 
@@ -99,11 +96,6 @@
             cornerstone.enable(element);
             cornerstone.loadImage(url).then(function(image) {
                 cornerstone.displayImage(element, image);
-                cornerstoneTools.mouseInput.enable(element);
-                cornerstoneTools.mouseWheelInput.enable(element);
-                cornerstoneTools.wwwc.activate(element, 1); //
-                cornerstoneTools.pan.activate(element, 2); //
-                cornerstoneTools.zoom.activate(element, 4); //
             });
         });
     });
