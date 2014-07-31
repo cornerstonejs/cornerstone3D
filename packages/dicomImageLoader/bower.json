@@ -1,6 +1,6 @@
 {
     "name": "cornerstoneWADOImageLoader",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Cornerstone ImageLoader for DICOM WADO",
     "main" : "dist/cornerstoneWADOImageLoader.js",
     "ignore": [
@@ -13,7 +13,7 @@
         ".gitignore"
     ],
     "dependencies": {
-        "dicomParser": "~0.3.0",
+        "dicomParser": "~0.4.0",
         "cornerstone": "~0.4.1"
     },
     "devDependencies": {
