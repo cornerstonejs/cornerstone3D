@@ -63,8 +63,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
         // build a url by parsing out the url scheme and frame index from the imageId
         var url = imageId;
-        url = url.replace('dicomweb', 'http');
-        url = url.replace('dicomwebs', 'https');
+        url = url.substring(9);
         var frameIndex = url.indexOf('frame=');
         var frame;
         if(frameIndex !== -1) {
@@ -134,7 +133,6 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
     // steam the http and https prefixes so we can use wado URL's directly
     cornerstone.registerImageLoader('dicomweb', loadImage);
-    cornerstone.registerImageLoader('dicomwebs', loadImage);
 
     return cornerstoneWADOImageLoader;
 }($, cornerstone, cornerstoneWADOImageLoader));

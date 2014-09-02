@@ -17,19 +17,16 @@
         </p>
         <p>
             This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
-            image from a web server and display it using cornerstone.  Note that this image loader
-            only has support for uncompressed little endian transfer syntaxes.  Use of an explicit
-            little endian transfer syntax is recommended.  Cornerstone only displays grayscale images,
-            color images will not display yet.
-            Note that the WADO DICOM objects are not uploaded anywhere, all processing
-            is done inside your web browser in Javascript.
+            SOP instance using HTTP and display it in your web browser using cornerstone.  Only
+            uncompressed little endian transfer syntaxes are currently supported and use of an
+            explicit little endian transfer syntax is recommended.  For WADO requests,
+            you can request that the server return the SOP Instance in explicit little endian by
+            appending the following query string to your URL:
+            <code>&transferSyntax=1.2.840.10008.1.2.1</code>
         </p>
         <P>
-            NOTE: use the url scheme 'dicomweb' or 'dicomwebs' in place of 'http' and 'https' respectively as that is the
-            url scheme this image loader registers itself with.  Use the query string parameter frame to specify which
-            frame to display from a multiframe object (defaults to frame 0 if not specified).
-            <br>
-            dicomweb://server:port/path?frame=2
+            Use the query string parameter <i>frame</i> to specify which frame to display from a multiframe
+            object (defaults to frame 0 if not specified). <code>?frame=2</code>
         </P>
         <strong>If you get an HTTP error and your URL is correct, it is probably because the server is not configured to
             allow <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross Origin Requests</a>.
@@ -48,7 +45,7 @@
             <div class="form-group">
                 <label class="control-label col-sm-1" for="wadoURL">URL</label>
                 <div class="col-sm-8">
-                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="dicomweb://cornerstonetech.org/images/ClearCanvas/USEcho/IM00001">
+                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="http://cornerstonetech.org/images/ClearCanvas/USEcho/IM00001">
                 </div>
                 <div class="col-sm-3">
                     <button class="form-control" type="button" id="downloadAndView" class="btn btn-primary">Download and View</button>
@@ -72,7 +69,7 @@
 
 
 <!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
-<script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
+<script src="jquery.min.js"></script>
 
 <!-- include the cornerstone library -->
 <script src="cornerstone.min.js"></script>
@@ -85,18 +82,33 @@
 
 <script>
 
+    function downloadAndView()
+    {
+        var url = $('#wadoURL').val();
+
+        // prefix the url with dicomweb: so cornerstone can find the image loader
+        url = "dicomweb:" + url;
+
+        var element = $('#dicomImage').get(0);
+
+        // image enable the dicomImage element and activate a few tools
+        cornerstone.loadImage(url).then(function(image) {
+            cornerstone.displayImage(element, image);
+        });
+    }
+
     $(document).ready(function() {
 
+        var element = $('#dicomImage').get(0);
+        cornerstone.enable(element);
+
         $('#downloadAndView').click(function(e) {
+            downloadAndView();
+        });
 
-            var url = $('#wadoURL').val();
-
-            // image enable the dicomImage element and activate a few tools
-            var element = $('#dicomImage').get(0);
-            cornerstone.enable(element);
-            cornerstone.loadImage(url).then(function(image) {
-                cornerstone.displayImage(element, image);
-            });
+        $('form').submit(function() {
+            downloadAndView();
+            return false;
         });
     });
 

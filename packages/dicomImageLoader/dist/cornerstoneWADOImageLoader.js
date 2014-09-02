@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.3.1 - 2014-07-31 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.4.0 - 2014-09-02 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -64,8 +64,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
         // build a url by parsing out the url scheme and frame index from the imageId
         var url = imageId;
-        url = url.replace('dicomweb', 'http');
-        url = url.replace('dicomwebs', 'https');
+        url = url.substring(9);
         var frameIndex = url.indexOf('frame=');
         var frame;
         if(frameIndex !== -1) {
@@ -135,7 +134,6 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
     // steam the http and https prefixes so we can use wado URL's directly
     cornerstone.registerImageLoader('dicomweb', loadImage);
-    cornerstone.registerImageLoader('dicomwebs', loadImage);
 
     return cornerstoneWADOImageLoader;
 }($, cornerstone, cornerstoneWADOImageLoader));
