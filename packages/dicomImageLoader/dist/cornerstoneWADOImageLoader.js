@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.4.0 - 2014-09-02 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.4.0 - 2014-09-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -498,15 +498,15 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var frameOffset = 0;
         if(pixelFormat === 1) {
             frameOffset = pixelDataOffset + frame * numPixels;
-            return new Uint8Array(byteArray.buffer, frameOffset);
+            return new Uint8Array(byteArray.buffer, frameOffset, numPixels);
         }
         else if(pixelFormat === 2) {
             frameOffset = pixelDataOffset + frame * numPixels * 2;
-            return new Uint16Array(byteArray.buffer, frameOffset);
+            return new Uint16Array(byteArray.buffer, frameOffset, numPixels * 2);
         }
         else if(pixelFormat === 3) {
             frameOffset = pixelDataOffset + frame * numPixels * 2;
-            return new Int16Array(byteArray.buffer, frameOffset);
+            return new Int16Array(byteArray.buffer, frameOffset, numPixels * 2);
         }
     }
 

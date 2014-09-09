@@ -32,15 +32,15 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var frameOffset = 0;
         if(pixelFormat === 1) {
             frameOffset = pixelDataOffset + frame * numPixels;
-            return new Uint8Array(byteArray.buffer, frameOffset);
+            return new Uint8Array(byteArray.buffer, frameOffset, numPixels);
         }
         else if(pixelFormat === 2) {
             frameOffset = pixelDataOffset + frame * numPixels * 2;
-            return new Uint16Array(byteArray.buffer, frameOffset);
+            return new Uint16Array(byteArray.buffer, frameOffset, numPixels * 2);
         }
         else if(pixelFormat === 3) {
             frameOffset = pixelDataOffset + frame * numPixels * 2;
-            return new Int16Array(byteArray.buffer, frameOffset);
+            return new Int16Array(byteArray.buffer, frameOffset, numPixels * 2);
         }
     }
 
