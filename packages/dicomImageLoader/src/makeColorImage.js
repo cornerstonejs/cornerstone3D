@@ -26,14 +26,14 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var deferred = $.Deferred();
 
         if (photometricInterpretation === "RGB") {
-            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
+            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
             cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
             deferred.resolve(imageData);
             return deferred;
         }
         else if (photometricInterpretation === "YBR_FULL")
         {
-            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
+            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
             cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
             deferred.resolve(imageData);
             return deferred;

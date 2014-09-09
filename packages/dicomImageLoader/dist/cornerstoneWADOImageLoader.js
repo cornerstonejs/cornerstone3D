@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.4.1 - 2014-09-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.4.2 - 2014-09-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -347,14 +347,14 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var deferred = $.Deferred();
 
         if (photometricInterpretation === "RGB") {
-            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
+            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
             cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
             deferred.resolve(imageData);
             return deferred;
         }
         else if (photometricInterpretation === "YBR_FULL")
         {
-            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset);
+            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
             cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
             deferred.resolve(imageData);
             return deferred;
