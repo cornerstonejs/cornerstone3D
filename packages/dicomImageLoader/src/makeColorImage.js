@@ -9,6 +9,25 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
+    function arrayBufferToString(buffer) {
+        return binaryToString(String.fromCharCode.apply(null, Array.prototype.slice.apply(new Uint8Array(buffer))));
+    }
+
+    function binaryToString(binary) {
+        var error;
+
+        try {
+            return decodeURIComponent(escape(binary));
+        } catch (_error) {
+            error = _error;
+            if (error instanceof URIError) {
+                return binary;
+            } else {
+                throw error;
+            }
+        }
+    }
+
     function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height, frame) {
         canvas.height = height;
         canvas.width = width;
@@ -45,7 +64,12 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             // need to read the encapsulated stream here i think
             var imgBlob = new Blob([encodedPixelData], {type: "image/jpeg"});
             var r = new FileReader();
-            r.readAsBinaryString(imgBlob);
+            if(r.readAsBinaryString === undefined) {
+                r.readAsArrayBuffer(imgBlob);
+            }
+            else {
+                r.readAsBinaryString(imgBlob); // doesn't work on IE11
+            }
             r.onload = function(){
                 var img=new Image();
                 img.onload = function() {
@@ -56,7 +80,13 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
                 img.onerror = function(z) {
                     deferred.reject();
                 };
-                img.src = "data:image/jpeg;base64,"+window.btoa(r.result);
+                if(r.readAsBinaryString === undefined) {
+                    img.src = "data:image/jpeg;base64,"+window.btoa(arrayBufferToString(r.result));
+                }
+                else {
+                    img.src = "data:image/jpeg;base64,"+window.btoa(r.result); // doesn't work on IE11
+                }
+
             };
             return deferred;
         }

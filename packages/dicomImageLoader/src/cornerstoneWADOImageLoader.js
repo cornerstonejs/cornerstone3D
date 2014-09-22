@@ -14,6 +14,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         cornerstoneWADOImageLoader = {};
     }
 
+
+
     function isColorImage(photoMetricInterpretation)
     {
         if(photoMetricInterpretation === "RGB" ||
