@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.4.5 - 2014-09-21 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.4.5 - 2014-11-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -129,6 +129,25 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
                 }
             }
         };
+        oReq.onprogress = function(oProgress) {
+            // console.log('progress:',oProgress)
+
+            if (oProgress.lengthComputable) {  //evt.loaded the bytes browser receive
+                //evt.total the total bytes seted by the header
+                //
+                var loaded = oProgress.loaded;
+                var total = oProgress.total;
+                var percentComplete = Math.round((loaded / total)*100);
+
+                $(cornerstone).trigger('CornerstoneImageLoadProgress', {
+                    imageId: imageId,
+                    loaded: loaded,
+                    total: total,
+                    percentComplete: percentComplete
+                });
+            }
+        };
+
         oReq.send();
 
         return deferred;

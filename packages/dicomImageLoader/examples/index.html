@@ -40,6 +40,8 @@
 
     </div>
 
+    <div id="loadProgress">Image Load Progress:</div>
+
     <div class="row">
         <form class="form-horizontal">
             <div class="form-group">
@@ -96,6 +98,10 @@
             cornerstone.displayImage(element, image);
         });
     }
+
+    $(cornerstone).bind('CornerstoneImageLoadProgress', function(eventData) {
+        $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");
+    });
 
     $(document).ready(function() {
 

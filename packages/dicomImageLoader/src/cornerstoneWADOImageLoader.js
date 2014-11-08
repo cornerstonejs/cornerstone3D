@@ -128,6 +128,25 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
                 }
             }
         };
+        oReq.onprogress = function(oProgress) {
+            // console.log('progress:',oProgress)
+
+            if (oProgress.lengthComputable) {  //evt.loaded the bytes browser receive
+                //evt.total the total bytes seted by the header
+                //
+                var loaded = oProgress.loaded;
+                var total = oProgress.total;
+                var percentComplete = Math.round((loaded / total)*100);
+
+                $(cornerstone).trigger('CornerstoneImageLoadProgress', {
+                    imageId: imageId,
+                    loaded: loaded,
+                    total: total,
+                    percentComplete: percentComplete
+                });
+            }
+        };
+
         oReq.send();
 
         return deferred;
