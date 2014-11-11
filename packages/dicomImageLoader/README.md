@@ -12,7 +12,7 @@ Alpha but usable, see key features and backlog below.
 Live Examples
 ---------------
 
-[Click here for a live example of this library in use!](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
+[Click here for a live example of this library in use!](http://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
 
 You can also see it in action with the
 [cornerstoneDemo application](https://github.com/chafey/cornerstoneDemo).
