@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.4.6 - 2014-11-11 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.4.7 - 2015-02-24 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
