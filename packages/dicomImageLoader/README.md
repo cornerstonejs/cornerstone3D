@@ -25,6 +25,10 @@ Get a packaged source file:
 * [cornerstoneWADOImageLoader.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.js)
 * [cornerstoneWADOImageLoader.min.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.min.js)
 
+or form bower:
+
+> bower install cornerstoneWADOImageLoader
+
 Usage
 -------
 
@@ -32,9 +36,10 @@ The cornerstoneWADOImageLoader depends on the following libraries:
 
 1. [jQuery](https://github.com/jquery/jquery)
 2. [dicomParser](https://github.com/chafey/dicomParser) 
-3. [cornerestone](https://github.com/chafey/cornerStone)
+3. [cornerstone](https://github.com/chafey/cornerStone)
+4. [JPEG2000 Codec](https://github.com/OHIF/image-JPEG2000)
 
-All three of these libraries should be loaded before the cornerstoneWADOImageLoader.js.  See the source code 
+All of these libraries should be loaded before the cornerstoneWADOImageLoader.js.  See the source code
 for the [example](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html).
 
 The image loader prefix is 'dicomweb'.  Here are some example imageId's:
@@ -82,12 +87,7 @@ Key Features
     * RGB Color
     * YBRFull Color
     * YBRFull422 Color (including encapsulated)
-* Supported transfer syntaxes
-    * Implicit Little Endian
-    * Explicit Little Endian
-    * JPEG 2000 Lossless
-    * JPEG 2000 Lossy
-    * JPEG Baseline (Process 1)
+* Supports most popular transfer syntaxes [see full list](docs/TransferSynxtaxes.md)
 
 Build System
 ============

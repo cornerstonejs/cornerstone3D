@@ -1,5 +1,5 @@
 {
-    "name": "cornerstoneWADOImageLoader",
+    "name": "cornerstone-wado-image-loader",
     "version": "0.5.0",
     "description": "Cornerstone ImageLoader for DICOM WADO",
     "keywords": [
