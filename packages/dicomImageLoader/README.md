@@ -87,7 +87,7 @@ Key Features
     * RGB Color
     * YBRFull Color
     * YBRFull422 Color (including encapsulated)
-* Supports most popular transfer syntaxes [see full list](docs/TransferSynxtaxes.md)
+* Supports most popular transfer syntaxes [see full list](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md)
 
 Build System
 ============
