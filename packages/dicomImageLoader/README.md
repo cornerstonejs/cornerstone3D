@@ -124,15 +124,15 @@ Automatically running the build and unit tests after each source change:
 Backlog
 ------------
 
+* Refactor out code not specific to XMLHttpRequest into a separate library so it can be more easily re-used (e.g. by the cornerstoneFileImageLoader)
 * Support images with Pixel Padding
 * Mask out burned in overlays?
-* Consider alternatives to jQuery for deferred (when.js?)
 * Add error handling
-* Add support for compressed transfer syntaxes
-  * JPEG 2000
-  * JPEG
+* Add support for less commonly used transfer syntaxes
+  * JPEG-LS
   * RLE
-* Add support for less common pixel formats
+* Add support for less commonlu used pixel formats
+  * Pallete color
 
 
 FAQ
