@@ -60,7 +60,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         else if(photometricInterpretation === "YBR_FULL_422" &&
                 transferSyntax === "1.2.840.10008.1.2.4.50")
         {
-            encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, frame);
+            encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
             // need to read the encapsulated stream here i think
             var imgBlob = new Blob([encodedPixelData], {type: "image/jpeg"});
             var r = new FileReader();

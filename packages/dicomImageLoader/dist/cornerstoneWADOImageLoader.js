@@ -1,4 +1,4 @@
-/*! cornerstoneWADOImageLoader - v0.4.7 - 2015-02-24 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstoneWADOImageLoader - v0.4.7 - 2015-02-26 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -402,7 +402,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         else if(photometricInterpretation === "YBR_FULL_422" &&
                 transferSyntax === "1.2.840.10008.1.2.4.50")
         {
-            encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, frame);
+            encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
             // need to read the encapsulated stream here i think
             var imgBlob = new Blob([encodedPixelData], {type: "image/jpeg"});
             var r = new FileReader();
@@ -524,10 +524,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
     }
 
     function getPixelFormat(dataSet) {
-        // NOTE - this should work for color images too - need to test
         var pixelRepresentation = dataSet.uint16('x00280103');
         var bitsAllocated = dataSet.uint16('x00280100');
-        var photometricInterpretation = dataSet.string('x00280004');
         if(pixelRepresentation === 0 && bitsAllocated === 8) {
             return 1; // unsigned 8 bit
         } else if(pixelRepresentation === 0 && bitsAllocated === 16) {
@@ -537,28 +535,67 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         }
     }
 
-    function extractStoredPixels(dataSet, byteArray, width, height, frame)
+    function extractJPEG2000Pixels(dataSet, width, height, frame)
+    {
+        var compressedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
+        var jpxImage = new JpxImage();
+        jpxImage.parse(compressedPixelData);
+
+        var j2kWidth = jpxImage.width;
+        var j2kHeight = jpxImage.height;
+        if(j2kWidth !== width) {
+            throw 'JPEG2000 decoder returned width of ' + j2kWidth + ', when ' + width + ' is expected';
+        }
+        if(j2kHeight !== height) {
+            throw 'JPEG2000 decoder returned width of ' + j2kHeight + ', when ' + height + ' is expected';
+        }
+        var componentsCount = jpxImage.componentsCount;
+        if(componentsCount !== 1) {
+            throw 'JPEG2000 decoder returned a componentCount of ' + componentsCount + ', when 1 is expected';
+        }
+        var tileCount = jpxImage.tiles.length;
+        if(tileCount !== 1) {
+            throw 'JPEG2000 decoder returned a tileCount of ' + tileCount + ', when 1 is expected';
+        }
+        var tileComponents = jpxImage.tiles[0];
+        var pixelData = tileComponents.items;
+        return pixelData;
+    }
+
+    function extractUncompressedPixels(dataSet, width, height, frame)
     {
         var pixelFormat = getPixelFormat(dataSet);
         var pixelDataElement = dataSet.elements.x7fe00010;
         var pixelDataOffset = pixelDataElement.dataOffset;
         var numPixels = width * height;
-
         // Note - we may want to sanity check the rows * columns * bitsAllocated * samplesPerPixel against the buffer size
 
         var frameOffset = 0;
         if(pixelFormat === 1) {
             frameOffset = pixelDataOffset + frame * numPixels;
-            return new Uint8Array(byteArray.buffer, frameOffset, numPixels);
+            return new Uint8Array(dataSet.byteArray.buffer, frameOffset, numPixels);
         }
         else if(pixelFormat === 2) {
             frameOffset = pixelDataOffset + frame * numPixels * 2;
-            return new Uint16Array(byteArray.buffer, frameOffset, numPixels);
+            return new Uint16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
         }
         else if(pixelFormat === 3) {
             frameOffset = pixelDataOffset + frame * numPixels * 2;
-            return new Int16Array(byteArray.buffer, frameOffset, numPixels);
+            return new Int16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
         }
+    }
+
+    function extractStoredPixels(dataSet, width, height, frame)
+    {
+        var transferSyntax = dataSet.string('x00020010');
+
+        if(transferSyntax === "1.2.840.10008.1.2.4.90" || // JPEG 2000 lossless
+            transferSyntax === "1.2.840.10008.1.2.4.91") // JPEG 2000 lossy
+        {
+            return extractJPEG2000Pixels(dataSet, width, height, frame);
+        }
+
+        return extractUncompressedPixels(dataSet, width, height, frame);
     }
 
     function getBytesPerPixel(dataSet)
@@ -595,7 +632,6 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         };
     }
 
-
     function makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
 
         // extract the DICOM attributes we need
@@ -610,7 +646,7 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
         // Decompress and decode the pixel data for this image
-        var storedPixelData = extractStoredPixels(dataSet, byteArray, columns, rows, frame);
+        var storedPixelData = extractStoredPixels(dataSet, columns, rows, frame);
         var minMax = getMinMax(storedPixelData);
 
         function getPixelData() {
@@ -639,7 +675,6 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             invert: invert,
             sizeInBytes: sizeInBytes
         };
-
 
         // TODO: deal with pixel padding and all of the various issues by setting it to min pixel value (or lower)
         // TODO: Mask out overlays embedded in pixel data above high bit

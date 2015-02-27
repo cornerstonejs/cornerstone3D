@@ -85,8 +85,9 @@ Key Features
 * Supported transfer syntaxes
     * Implicit Little Endian
     * Explicit Little Endian
-
-NOTE: JPEG2000 is not supported!
+    * JPEG 2000 Lossless
+    * JPEG 2000 Lossy
+    * JPEG Baseline (Process 1)
 
 Build System
 ============

@@ -13,9 +13,11 @@
         ".gitignore"
     ],
     "dependencies": {
-      "dicomParser" : "~0.7.1",
-      "cornerstone": "~0.7.0",
-      "jquery" : "~2.1.1"
+      "dicomParser" : "~0.8.3",
+      "cornerstone": "~0.7.1",
+      "jquery" : "~2.1.1",
+      "image-jpeg2000" : "~0.0.1"
+
     },
     "devDependencies": {
         "qunit": "~1.14.0"
