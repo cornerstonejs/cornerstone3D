@@ -17,7 +17,12 @@
         </p>
         <p>
             This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
-            SOP instance using HTTP and display it in your web browser using cornerstone.  For WADO requests,
+            SOP instance using HTTP and display it in your web browser using cornerstone.
+            Not all transfer syntaxes are currently supported,
+            <a href="https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
+                click here for the full list.
+            </a>
+            For WADO requests,
             you can request that the server return the SOP Instance in explicit little endian by
             appending the following query string to your URL:
             <code>&transferSyntax=1.2.840.10008.1.2.1</code>
