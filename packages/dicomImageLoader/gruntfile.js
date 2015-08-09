@@ -7,7 +7,6 @@ module.exports = function(grunt) {
             default: {
                 src: [
                     'dist',
-                    'docs',
                     'build'
                 ]
             }
@@ -73,7 +72,7 @@ module.exports = function(grunt) {
 
     require('load-grunt-tasks')(grunt);
 
-    grunt.registerTask('buildAll', ['clean','concat:build', 'concat:dist', 'uglify', 'jshint']);
+    grunt.registerTask('buildAll', ['clean', 'concat:build', 'concat:dist', 'uglify', 'jshint']);
     grunt.registerTask('default', ['buildAll']);
 };
 

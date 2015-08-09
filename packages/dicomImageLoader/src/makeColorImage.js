@@ -46,14 +46,22 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
         if (photometricInterpretation === "RGB") {
             encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
-            cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
+            try {
+                cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
+            } catch (error) {
+                deferred.reject(error);
+            }
             deferred.resolve(imageData);
             return deferred;
         }
         else if (photometricInterpretation === "YBR_FULL")
         {
             encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
-            cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
+            try {
+                cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
+            } catch (error) {
+                deferred.reject(error);
+            }
             deferred.resolve(imageData);
             return deferred;
         }
@@ -161,8 +169,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
                 image.windowCenter = 128;
             }
             deferred.resolve(image);
-        }, function() {
-            deferred.reject();
+        }, function(error) {
+            deferred.reject(error);
         });
 
         return deferred;

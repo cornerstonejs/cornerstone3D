@@ -116,13 +116,22 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
     }
 
     function makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
+        var deferred = $.Deferred();
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
         var rows = dataSet.uint16('x00280010');
         var columns = dataSet.uint16('x00280011');
         var rescaleSlopeAndIntercept = cornerstoneWADOImageLoader.getRescaleSlopeAndIntercept(dataSet);
-        var bytesPerPixel = getBytesPerPixel(dataSet);
+        
+        var bytesPerPixel;
+        try {
+            bytesPerPixel = getBytesPerPixel(dataSet);
+        } catch(error) {
+            deferred.reject(error);
+            return deferred;
+        }
+
         var numPixels = rows * columns;
         var sizeInBytes = numPixels * bytesPerPixel;
         var invert = (photometricInterpretation === "MONOCHROME1");
@@ -169,7 +178,6 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             image.windowCenter = (maxVoi + minVoi) / 2;
         }
 
-        var deferred = $.Deferred();
         deferred.resolve(image);
         return deferred;
     }

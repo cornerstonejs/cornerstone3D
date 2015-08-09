@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.5.2 - 2015-04-04 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.5.2 - 2015-07-27 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO requests.  It currently does not support compressed
 // transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
@@ -83,8 +83,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             var imagePromise = createImageObject(dataSet, imageId, frame);
             imagePromise.then(function(image) {
                 deferred.resolve(image);
-            }, function() {
-                deferred.reject();
+            }, function(error) {
+                deferred.reject(error);
             });
             return deferred;
         }
@@ -117,15 +117,15 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
                     var imagePromise = createImageObject(dataSet, imageId, frame);
                     imagePromise.then(function(image) {
                         deferred.resolve(image);
-                    }, function() {
-                        deferred.reject();
+                    }, function(error) {
+                        deferred.reject(error);
                     });
                 }
                 // TODO: Check for errors and reject the deferred if they happened
                 else {
                     // TODO: add some error handling here
                     // request failed, reject the deferred
-                    deferred.reject();
+                    deferred.reject(oReq.response);
                 }
             }
         };
@@ -173,7 +173,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
             throw "decodeRGB: rgbBuffer must not be undefined";
         }
         if(rgbBuffer.length % 3 !== 0) {
-            throw "decodeRGB: rgbBuffer length must be divisble by 3";
+            throw "decodeRGB: rgbBuffer length must be divisible by 3";
         }
 
         var numPixels = rgbBuffer.length / 3;
@@ -388,14 +388,22 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
         if (photometricInterpretation === "RGB") {
             encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
-            cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
+            try {
+                cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
+            } catch (error) {
+                deferred.reject(error);
+            }
             deferred.resolve(imageData);
             return deferred;
         }
         else if (photometricInterpretation === "YBR_FULL")
         {
             encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
-            cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
+            try {
+                cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
+            } catch (error) {
+                deferred.reject(error);
+            }
             deferred.resolve(imageData);
             return deferred;
         }
@@ -503,8 +511,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
                 image.windowCenter = 128;
             }
             deferred.resolve(image);
-        }, function() {
-            deferred.reject();
+        }, function(error) {
+            deferred.reject(error);
         });
 
         return deferred;
@@ -633,13 +641,22 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
     }
 
     function makeGrayscaleImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
+        var deferred = $.Deferred();
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
         var rows = dataSet.uint16('x00280010');
         var columns = dataSet.uint16('x00280011');
         var rescaleSlopeAndIntercept = cornerstoneWADOImageLoader.getRescaleSlopeAndIntercept(dataSet);
-        var bytesPerPixel = getBytesPerPixel(dataSet);
+        
+        var bytesPerPixel;
+        try {
+            bytesPerPixel = getBytesPerPixel(dataSet);
+        } catch(error) {
+            deferred.reject(error);
+            return deferred;
+        }
+
         var numPixels = rows * columns;
         var sizeInBytes = numPixels * bytesPerPixel;
         var invert = (photometricInterpretation === "MONOCHROME1");
@@ -686,7 +703,6 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             image.windowCenter = (maxVoi + minVoi) / 2;
         }
 
-        var deferred = $.Deferred();
         deferred.resolve(image);
         return deferred;
     }

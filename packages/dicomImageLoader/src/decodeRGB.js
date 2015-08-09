@@ -13,7 +13,7 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
             throw "decodeRGB: rgbBuffer must not be undefined";
         }
         if(rgbBuffer.length % 3 !== 0) {
-            throw "decodeRGB: rgbBuffer length must be divisble by 3";
+            throw "decodeRGB: rgbBuffer length must be divisible by 3";
         }
 
         var numPixels = rgbBuffer.length / 3;

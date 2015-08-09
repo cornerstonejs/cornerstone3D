@@ -82,8 +82,8 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             var imagePromise = createImageObject(dataSet, imageId, frame);
             imagePromise.then(function(image) {
                 deferred.resolve(image);
-            }, function() {
-                deferred.reject();
+            }, function(error) {
+                deferred.reject(error);
             });
             return deferred;
         }
@@ -116,15 +116,15 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
                     var imagePromise = createImageObject(dataSet, imageId, frame);
                     imagePromise.then(function(image) {
                         deferred.resolve(image);
-                    }, function() {
-                        deferred.reject();
+                    }, function(error) {
+                        deferred.reject(error);
                     });
                 }
                 // TODO: Check for errors and reject the deferred if they happened
                 else {
                     // TODO: add some error handling here
                     // request failed, reject the deferred
-                    deferred.reject();
+                    deferred.reject(oReq.response);
                 }
             }
         };
