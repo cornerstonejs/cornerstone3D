@@ -1,11 +1,6 @@
-var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
+(function (cornerstoneWADOImageLoader) {
 
     "use strict";
-
-    if(cornerstoneWADOImageLoader === undefined) {
-        cornerstoneWADOImageLoader = {};
-    }
-
 
     function getWindowWidthAndCenter(dataSet)
     {
@@ -34,6 +29,4 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
 
     // module exports
     cornerstoneWADOImageLoader.getWindowWidthAndCenter = getWindowWidthAndCenter;
-
-    return cornerstoneWADOImageLoader;
 }(cornerstoneWADOImageLoader));

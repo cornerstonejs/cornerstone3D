@@ -1,107 +1,24 @@
-var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImageLoader) {
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
 
     "use strict";
-
-    if(cornerstoneWADOImageLoader === undefined) {
-        cornerstoneWADOImageLoader = {};
-    }
 
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function arrayBufferToString(buffer) {
-        return binaryToString(String.fromCharCode.apply(null, Array.prototype.slice.apply(new Uint8Array(buffer))));
-    }
+    function extractStoredPixels(dataSet, frame) {
 
-    function binaryToString(binary) {
-        var error;
-
-        try {
-            return decodeURIComponent(escape(binary));
-        } catch (_error) {
-            error = _error;
-            if (error instanceof URIError) {
-                return binary;
-            } else {
-                throw error;
-            }
-        }
-    }
-
-    function extractStoredPixels(dataSet, byteArray, photometricInterpretation, width, height, frame) {
-        canvas.height = height;
-        canvas.width = width;
-
-        var pixelDataElement = dataSet.elements.x7fe00010;
-        var pixelDataOffset = pixelDataElement.dataOffset;
-        var transferSyntax = dataSet.string('x00020010');
-
-        var frameSize = width * height * 3;
-        var frameOffset = pixelDataOffset + frame * frameSize;
-        var encodedPixelData;// = new Uint8Array(byteArray.buffer, frameOffset);
-        var context = canvas.getContext('2d');
-        var imageData = context.createImageData(width, height);
-
-        var deferred = $.Deferred();
-
-        if (photometricInterpretation === "RGB") {
-            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
-            try {
-                cornerstoneWADOImageLoader.decodeRGB(encodedPixelData, imageData.data);
-            } catch (error) {
-                deferred.reject(error);
-            }
-            deferred.resolve(imageData);
-            return deferred;
-        }
-        else if (photometricInterpretation === "YBR_FULL")
+        // special case for JPEG Baseline 8 bit
+        if(cornerstoneWADOImageLoader.isJPEGBaseline8Bit(dataSet) === true)
         {
-            encodedPixelData = new Uint8Array(byteArray.buffer, frameOffset, frameSize);
-            try {
-                cornerstoneWADOImageLoader.decodeYBRFull(encodedPixelData, imageData.data);
-            } catch (error) {
-                deferred.reject(error);
-            }
-            deferred.resolve(imageData);
-            return deferred;
+          return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(canvas, dataSet, frame);
         }
-        else if(photometricInterpretation === "YBR_FULL_422" &&
-                transferSyntax === "1.2.840.10008.1.2.4.50")
-        {
-            encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
-            // need to read the encapsulated stream here i think
-            var imgBlob = new Blob([encodedPixelData], {type: "image/jpeg"});
-            var r = new FileReader();
-            if(r.readAsBinaryString === undefined) {
-                r.readAsArrayBuffer(imgBlob);
-            }
-            else {
-                r.readAsBinaryString(imgBlob); // doesn't work on IE11
-            }
-            r.onload = function(){
-                var img=new Image();
-                img.onload = function() {
-                    context.drawImage(this, 0, 0);
-                    imageData = context.getImageData(0, 0, width, height);
-                    deferred.resolve(imageData);
-                };
-                img.onerror = function(z) {
-                    deferred.reject();
-                };
-                if(r.readAsBinaryString === undefined) {
-                    img.src = "data:image/jpeg;base64,"+window.btoa(arrayBufferToString(r.result));
-                }
-                else {
-                    img.src = "data:image/jpeg;base64,"+window.btoa(r.result); // doesn't work on IE11
-                }
 
-            };
-            return deferred;
-        }
-        throw "no codec for " + photometricInterpretation;
+        var decodedImageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+
+        return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame);
     }
 
-    function makeColorImage(imageId, dataSet, byteArray, photometricInterpretation, frame) {
+    function makeColorImage(imageId, dataSet, frame) {
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
@@ -116,7 +33,15 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
         var deferred = $.Deferred();
 
         // Decompress and decode the pixel data for this image
-        var imageDataPromise = extractStoredPixels(dataSet, byteArray, photometricInterpretation, columns, rows, frame);
+        var imageDataPromise;
+        try {
+          imageDataPromise = extractStoredPixels(dataSet, frame);
+        }
+        catch(err) {
+          deferred.reject(err);
+          return deferred;
+        }
+
         imageDataPromise.then(function(imageData) {
             function getPixelData() {
                 return imageData.data;
@@ -178,6 +103,4 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
     // module exports
     cornerstoneWADOImageLoader.makeColorImage = makeColorImage;
-
-    return cornerstoneWADOImageLoader;
 }($, cornerstone, cornerstoneWADOImageLoader));

@@ -1,56 +1,7 @@
-//
-// This is a cornerstone image loader for WADO requests.  It currently does not support compressed
-// transfer syntaxes or big endian transfer syntaxes.  It will support implicit little endian transfer
-// syntaxes but explicit little endian is strongly preferred to avoid any parsing issues related
-// to SQ elements.  To request that the WADO object be returned as explicit little endian, append
-// the following on your WADO url: &transferSyntax=1.2.840.10008.1.2.1
-//
 
-var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImageLoader) {
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
 
     "use strict";
-
-    if(cornerstoneWADOImageLoader === undefined) {
-        cornerstoneWADOImageLoader = {};
-    }
-
-
-
-    function isColorImage(photoMetricInterpretation)
-    {
-        if(photoMetricInterpretation === "RGB" ||
-            photoMetricInterpretation === "PALETTE COLOR" ||
-            photoMetricInterpretation === "YBR_FULL" ||
-            photoMetricInterpretation === "YBR_FULL_422" ||
-            photoMetricInterpretation === "YBR_PARTIAL_422" ||
-            photoMetricInterpretation === "YBR_PARTIAL_420" ||
-            photoMetricInterpretation === "YBR_RCT")
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    function createImageObject(dataSet, imageId, frame)
-    {
-        if(frame === undefined) {
-            frame = 0;
-        }
-
-        // make the image based on whether it is color or not
-        var photometricInterpretation = dataSet.string('x00280004');
-        var isColor = isColorImage(photometricInterpretation);
-        if(isColor === false) {
-            return cornerstoneWADOImageLoader.makeGrayscaleImage(imageId, dataSet, dataSet.byteArray, photometricInterpretation, frame);
-        } else {
-            return cornerstoneWADOImageLoader.makeColorImage(imageId, dataSet, dataSet.byteArray, photometricInterpretation, frame);
-        }
-    }
-
-    var multiFrameCacheHack = {};
 
     // Loads an image given an imageId
     // wado url example:
@@ -60,12 +11,10 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
     // stored as.
     function loadImage(imageId) {
         // create a deferred object
-        // TODO: Consider not using jquery for deferred - maybe cujo's when library
-        var deferred = $.Deferred();
 
         // build a url by parsing out the url scheme and frame index from the imageId
-        var url = imageId;
-        url = url.substring(9);
+        var firstColonIndex = imageId.indexOf(':');
+        var url = imageId.substring(firstColonIndex + 1);
         var frameIndex = url.indexOf('frame=');
         var frame;
         if(frameIndex !== -1) {
@@ -76,10 +25,11 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
 
         // if multiframe and cached, use the cached data set to extract the frame
         if(frame !== undefined &&
-            multiFrameCacheHack.hasOwnProperty(url))
+          cornerstoneWADOImageLoader.internal.multiFrameCacheHack.hasOwnProperty(url))
         {
-            var dataSet = multiFrameCacheHack[url];
-            var imagePromise = createImageObject(dataSet, imageId, frame);
+            var deferred = $.Deferred();
+            var dataSet = cornerstoneWADOImageLoader.internal.multiFrameCacheHack[url];
+            var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame);
             imagePromise.then(function(image) {
                 deferred.resolve(image);
             }, function(error) {
@@ -88,72 +38,12 @@ var cornerstoneWADOImageLoader = (function ($, cornerstone, cornerstoneWADOImage
             return deferred;
         }
 
-        // Make the request for the DICOM data
-        // TODO: consider using cujo's REST library here?
-        var oReq = new XMLHttpRequest();
-        oReq.open("get", url, true);
-        oReq.responseType = "arraybuffer";
-        //oReq.setRequestHeader("Accept", "multipart/related; type=application/dicom");
-
-        oReq.onreadystatechange = function(oEvent) {
-            // TODO: consider sending out progress messages here as we receive the pixel data
-            if (oReq.readyState === 4)
-            {
-                if (oReq.status === 200) {
-                    // request succeeded, create an image object and resolve the deferred
-
-                    // Parse the DICOM File
-                    var dicomPart10AsArrayBuffer = oReq.response;
-                    var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-                    var dataSet = dicomParser.parseDicom(byteArray);
-
-                    // if multiframe, cache the parsed data set to speed up subsequent
-                    // requests for the other frames
-                    if(frame !== undefined) {
-                        multiFrameCacheHack[url] = dataSet;
-                    }
-
-                    var imagePromise = createImageObject(dataSet, imageId, frame);
-                    imagePromise.then(function(image) {
-                        deferred.resolve(image);
-                    }, function(error) {
-                        deferred.reject(error);
-                    });
-                }
-                // TODO: Check for errors and reject the deferred if they happened
-                else {
-                    // TODO: add some error handling here
-                    // request failed, reject the deferred
-                    deferred.reject(oReq.response);
-                }
-            }
-        };
-        oReq.onprogress = function(oProgress) {
-            // console.log('progress:',oProgress)
-
-            if (oProgress.lengthComputable) {  //evt.loaded the bytes browser receive
-                //evt.total the total bytes seted by the header
-                //
-                var loaded = oProgress.loaded;
-                var total = oProgress.total;
-                var percentComplete = Math.round((loaded / total)*100);
-
-                $(cornerstone).trigger('CornerstoneImageLoadProgress', {
-                    imageId: imageId,
-                    loaded: loaded,
-                    total: total,
-                    percentComplete: percentComplete
-                });
-            }
-        };
-
-        oReq.send();
-
-        return deferred;
+        return cornerstoneWADOImageLoader.internal.xhrRequest(imageId, frame, url);
     }
 
-    // steam the http and https prefixes so we can use wado URL's directly
+    // registery dicomweb and wadouri image loader prefixes
+    cornerstone.loadImage = loadImage;
     cornerstone.registerImageLoader('dicomweb', loadImage);
+    cornerstone.registerImageLoader('wadouri', loadImage);
 
-    return cornerstoneWADOImageLoader;
 }($, cornerstone, cornerstoneWADOImageLoader));

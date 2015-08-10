@@ -1,10 +1,6 @@
-var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
+(function (cornerstoneWADOImageLoader) {
 
     "use strict";
-
-    if(cornerstoneWADOImageLoader === undefined) {
-        cornerstoneWADOImageLoader = {};
-    }
 
     function getPixelSpacing(dataSet)
     {
@@ -29,6 +25,4 @@ var cornerstoneWADOImageLoader = (function (cornerstoneWADOImageLoader) {
     }
     // module exports
     cornerstoneWADOImageLoader.getPixelSpacing = getPixelSpacing;
-
-    return cornerstoneWADOImageLoader;
 }(cornerstoneWADOImageLoader));

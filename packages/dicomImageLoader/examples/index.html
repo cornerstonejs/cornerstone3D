@@ -39,6 +39,30 @@
         </strong>
         <br>
         <br>
+        <p>
+            Looking for a CORS proxy?  Try <a href="https://www.npmjs.com/package/corsproxy">CORSProxy</a>
+        </p>
+        <ul>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/ile/gray16.DCM</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/ile/gray8.DCM</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/ile/ybrFull.DCM</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/rle/paletteColor.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/rle/gray16.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/rle/rgb.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull422.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/gray8.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.51/grayu16.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.70/gray8.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grayu16.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grays16.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/ybrrct.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grays16.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grayu16.dcm</li>
+            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/ybrict.dcm</li>
+
+        </ul>
+        <br>
         <strong>Use of this example require IE10+ or any other modern browser.</strong>
 
     </div>
@@ -78,6 +102,8 @@
 
 <!-- include the cornerstone library -->
 <script src="cornerstone.min.js"></script>
+<SCRIPT src="cornerstoneMath.js"></SCRIPT>
+<SCRIPT src="cornerstoneTools.js"></SCRIPT>
 
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="dicomParser.min.js"></script>
@@ -90,6 +116,15 @@
 
 <script>
 
+    cornerstoneWADOImageLoader.configure({
+        beforeSend: function(xhr) {
+            // Add custom headers here (e.g. auth tokens)
+            //xhr.setRequestHeader('x-auth-token', 'my auth token');
+        }
+    });
+
+    var loaded = false;
+
     function downloadAndView()
     {
         var url = $('#wadoURL').val();
@@ -100,9 +135,26 @@
         var element = $('#dicomImage').get(0);
 
         // image enable the dicomImage element and activate a few tools
-        cornerstone.loadImage(url).then(function(image) {
-            cornerstone.displayImage(element, image);
-        });
+        try {
+            cornerstone.loadImage(url).then(function(image) {
+                var viewport = cornerstone.getDefaultViewportForImage(element, image);
+                cornerstone.displayImage(element, image, viewport);
+                if(loaded === false) {
+                    cornerstoneTools.mouseInput.enable(element);
+                    cornerstoneTools.mouseWheelInput.enable(element);
+                    cornerstoneTools.wwwc.activate(element, 1); // ww/wc is the default tool for left mouse button
+                    cornerstoneTools.pan.activate(element, 2); // pan is the default tool for middle mouse button
+                    cornerstoneTools.zoom.activate(element, 4); // zoom is the default tool for right mouse button
+                    cornerstoneTools.zoomWheel.activate(element); // zoom is the default tool for middle mouse wheel
+                    loaded = true;
+                }
+            }, function(err) {
+                alert(err);
+            });
+        }
+        catch(err) {
+            alert(err);
+        }
     }
 
     $(cornerstone).bind('CornerstoneImageLoadProgress', function(eventData) {

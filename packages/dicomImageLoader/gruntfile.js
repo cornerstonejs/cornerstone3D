@@ -11,6 +11,13 @@ module.exports = function(grunt) {
                 ]
             }
         },
+        version: {
+          // options: {},
+          defaults: {
+            src: ['src/version.js', 'bower.json']
+          }
+        },
+
         copy : {
             bower: {
                 src: [
@@ -19,7 +26,9 @@ module.exports = function(grunt) {
                     'bower_components/cornerstone/dist/cornerstone.min.js',
                     'bower_components/dicomParser/dist/dicomParser.min.js',
                     'bower_components/jquery/dist/jquery.min.js',
-                    'bower_components/jquery/dist/jquery.min.map'
+                    'bower_components/jquery/dist/jquery.min.map',
+                    'bower_components/cornerstoneTools/dist/cornerstoneTools.js',
+                    'bower_components/cornerstoneMath/dist/cornerstoneMath.js'
                 ],
                 dest: 'examples',
                 expand: true,
@@ -28,7 +37,7 @@ module.exports = function(grunt) {
         },
         concat: {
             build: {
-                src : ['src/cornerstoneWADOImageLoader.js', 'src/*.js', 'ext/**/*.js'],
+                src : ['src/header.js', 'src/**/*.js'],
                 dest: 'build/built.js'
             },
             dist: {
@@ -64,7 +73,7 @@ module.exports = function(grunt) {
         },
         watch: {
             scripts: {
-                files: ['src/*.js', 'test/*.js'],
+                files: ['src/**/*.js', 'test/*.js'],
                 tasks: ['concat:build', 'concat:dist', 'jshint', 'qunit']
             }
         }

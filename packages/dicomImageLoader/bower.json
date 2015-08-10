@@ -1,6 +1,6 @@
 {
     "name": "cornerstoneWADOImageLoader",
-    "version": "0.5.2",
+    "version": "0.6.0",
     "description": "Cornerstone ImageLoader for DICOM WADO",
     "main" : "dist/cornerstoneWADOImageLoader.js",
     "ignore": [
@@ -13,14 +13,15 @@
         ".gitignore"
     ],
     "dependencies": {
-      "dicomParser" : "~0.8.3",
-      "cornerstone": "~0.7.3",
+      "dicomParser" : "~1.1.4",
+      "cornerstone": "~0.8.1",
       "jquery" : "~2.1.1",
-      "image-jpeg2000" : "~0.0.1"
+      "image-jpeg2000" : "~0.3.0"
 
     },
     "devDependencies": {
-        "qunit": "~1.14.0"
+        "qunit": "~1.14.0",
+      "cornerstoneTools": "~0.6.2"
     },
     "license": "MIT",
     "authors" : ["Chris Hafey"],
