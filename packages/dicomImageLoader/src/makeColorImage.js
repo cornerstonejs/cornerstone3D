@@ -30,6 +30,9 @@
         var sizeInBytes = numPixels * bytesPerPixel;
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
+        // clear the lastImageIdDrawn so we update the canvas
+        lastImageIdDrawn = undefined;
+
         var deferred = $.Deferred();
 
         // Decompress and decode the pixel data for this image

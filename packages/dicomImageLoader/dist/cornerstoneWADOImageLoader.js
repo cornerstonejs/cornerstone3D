@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.6.0 - 2015-08-10 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.6.1 - 2015-08-15 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -1835,6 +1835,9 @@ var JpegImage = (function jpegImage() {
         var sizeInBytes = numPixels * bytesPerPixel;
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
+        // clear the lastImageIdDrawn so we update the canvas
+        lastImageIdDrawn = undefined;
+
         var deferred = $.Deferred();
 
         // Decompress and decode the pixel data for this image
@@ -2031,7 +2034,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.6.0';
+  cornerstoneWADOImageLoader.version = '0.6.1';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
