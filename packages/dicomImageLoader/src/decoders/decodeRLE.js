@@ -16,7 +16,7 @@
     var buffer;
     if( pixelFormat===1 ) {
       buffer = new ArrayBuffer(frameSize*samplesPerPixel);
-      decode8( frameData, buffer, frameSize);
+      decode8( frameData, buffer, frameSize, samplesPerPixel);
       return new Uint8Array(buffer);
     } else if( pixelFormat===2 ) {
       buffer = new ArrayBuffer(frameSize*samplesPerPixel*2);
@@ -29,7 +29,7 @@
     }
   }
 
-  function decode8( frameData, outFrame, frameSize ) {
+  function decode8( frameData, outFrame, frameSize, samplesSize ) {
     var header=new DataView(frameData.buffer, frameData.byteOffset);
     var data=new DataView( frameData.buffer, frameData.byteOffset );
     var out=new DataView( outFrame );
@@ -37,7 +37,7 @@
     var outIndex=0;
     var numSegments = header.getInt32(0,true);
     for( var s=0 ; s < numSegments ; ++s ) {
-      outIndex = s * frameSize;
+      outIndex = s;
 
       var inIndex=header.getInt32( (s+1)*4,true);
       var maxIndex=header.getInt32( (s+2)*4,true);
@@ -49,13 +49,17 @@
       while( inIndex < maxIndex ) {
         var n=data.getInt8(inIndex++);
         if( n >=0 && n <=127 ) {
+          // copy n bytes
           for( var i=0 ; i < n+1 && outIndex < endOfSegment; ++i ) {
-            out.setInt8(outIndex++, data.getInt8(inIndex++));
+            out.setInt8(outIndex, data.getInt8(inIndex++));
+            outIndex+=samplesSize;
           }
         } else if( n<= -1 && n>=-127 ) {
           var value=data.getInt8(inIndex++);
+          // run of n bytes
           for( var j=0 ; j < -n+1 && outIndex < endOfSegment; ++j ) {
-            out.setInt8(outIndex++, value );
+            out.setInt8(outIndex, value );
+            outIndex+=samplesSize;
           }
         } else if (n===-128)
           ; // do nothing
