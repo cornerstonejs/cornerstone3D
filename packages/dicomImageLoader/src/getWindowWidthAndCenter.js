@@ -18,11 +18,9 @@
         var windowCenter = dataSet.floatString('x00281050');
         var windowWidth = dataSet.floatString('x00281051');
 
-        if(windowCenter) {
-            result.windowCenter = windowCenter;
-        }
-        if(windowWidth ) {
-            result.windowWidth = windowWidth;
+        if(windowCenter && windowWidth) {
+          result.windowCenter = windowCenter;
+          result.windowWidth = windowWidth;
         }
         return result;
     }

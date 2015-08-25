@@ -14,10 +14,8 @@
         var rescaleIntercept = dataSet.floatString('x00281052');
         var rescaleSlope = dataSet.floatString('x00281053');
 
-        if(rescaleIntercept ) {
+        if(rescaleIntercept && rescaleSlope) {
             result.intercept = rescaleIntercept;
-        }
-        if(rescaleSlope ) {
             result.slope = rescaleSlope;
         }
         return result;

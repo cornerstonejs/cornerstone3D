@@ -138,6 +138,7 @@
         // image enable the dicomImage element and activate a few tools
         try {
             cornerstone.loadImage(url).then(function(image) {
+                console.log(image);
                 var viewport = cornerstone.getDefaultViewportForImage(element, image);
                 cornerstone.displayImage(element, image, viewport);
                 if(loaded === false) {

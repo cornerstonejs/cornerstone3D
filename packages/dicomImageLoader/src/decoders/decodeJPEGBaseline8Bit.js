@@ -53,8 +53,8 @@
         var imageData = context.getImageData(0, 0, width, height);
         deferred.resolve(imageData);
       };
-      img.onerror = function(z) {
-        deferred.reject();
+      img.onerror = function(error) {
+        deferred.reject(error);
       };
       if(r.readAsBinaryString === undefined) {
         img.src = "data:image/jpeg;base64,"+window.btoa(arrayBufferToString(r.result));
