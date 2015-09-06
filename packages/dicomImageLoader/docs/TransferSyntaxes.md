@@ -14,8 +14,12 @@ Compressed
 * 1.2.840.10008.1.2.5 RLE Lossless
 * 1.2.840.10008.1.2.4.50 JPEG Baseline (Process 1 - 8 bit)
 * 1.2.840.10008.1.2.4.51 JPEG Baseline (Processes 2 & 4 - 12 bit)
+* 1.2.840.10008.1.2.4.57 JPEG Lossless, Nonhierarchical (Processes 14)
+* 1.2.840.10008.1.2.4.70 JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
 * 1.2.840.10008.1.2.4.90 JPEG 2000 Image Compression (Lossless Only)
 * 1.2.840.10008.1.2.4.91 JPEG 2000 Image Compression
+
+NOTE: The JPEG 2000 decoder is not complete, [click there to see the issues](https://github.com/OHIF/image-JPEG2000/issues)
 
 Photometric Interpretations
 ---------------------------

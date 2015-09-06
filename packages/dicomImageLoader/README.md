@@ -2,12 +2,8 @@ cornerstone WADO Image Loader
 =============================
 
 A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for DICOM P10 instances over
-HTTP.  This can be used to integrate cornerstone with WADO servers or any other HTTP based server
-that returns DICOM P10 instances (e.g. [Orthanc](http://www.orthanc-server.com/) or custom built)
-
-Project Status
----------------
-Beta, see key features and backlog below.
+HTTP.  This can be used to integrate cornerstone with WADO-URI servers or any other HTTP based server
+that returns DICOM P10 instances (e.g. [Orthanc](http://www.orthanc-server.com/) or custom servers)
 
 Live Examples
 ---------------
@@ -25,14 +21,14 @@ Get a packaged source file:
 * [cornerstoneWADOImageLoader.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.js)
 * [cornerstoneWADOImageLoader.min.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.min.js)
 
-or form bower:
+or from bower:
 
 > bower install cornerstoneWADOImageLoader
 
 Usage
 -------
 
-The cornerstoneWADOImageLoader depends on the following libraries:
+The cornerstoneWADOImageLoader depends on the following external libraries:
 
 1. [jQuery](https://github.com/jquery/jquery)
 2. [dicomParser](https://github.com/chafey/dicomParser) 
@@ -42,30 +38,31 @@ The cornerstoneWADOImageLoader depends on the following libraries:
 All of these libraries should be loaded before the cornerstoneWADOImageLoader.js.  See the source code
 for the [example](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html).
 
-The image loader prefix is 'dicomweb'.  Here are some example imageId's:
+The image loader prefix is 'wadouri' (note that the prefix dicomweb is also supported but is deprecated and will eventually
+be removed).  Here are some example imageId's:
 
 absolute url:
 
 ```
-dicomweb:http://cornerstonetech.org/images/ClearCanvas/USEcho/IM00001
+wadouri:http://cornerstonetech.org/images/ClearCanvas/USEcho/IM00001
 ```
 
 relative url:
 
 ```
-dicomweb:/images/ClearCanvas/USEcho/IM00001
+wadouri:/images/ClearCanvas/USEcho/IM00001
 ```
 
 WADO-URI url:
 
 ```
-dicomweb:http://localhost:3333/wado?requestType=WADO&studyUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075541.1&seriesUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075541.2&objectUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075557.1&contentType=application%2Fdicom&transferSyntax=1.2.840.10008.1.2.1
+wadouri:http://localhost:3333/wado?requestType=WADO&studyUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075541.1&seriesUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075541.2&objectUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075557.1&contentType=application%2Fdicom&transferSyntax=1.2.840.10008.1.2.1
 ```
 
 [Orthanc](http://www.orthanc-server.com/) file endpoint URL:
 
 ```
-dicomweb:http://localhost:8042/instances/8cce70aa-576ad738-b76cb63f-caedb3c7-2b213aae/file
+wadouri:http://localhost:8042/instances/8cce70aa-576ad738-b76cb63f-caedb3c7-2b213aae/file
 ```
 
 Note that the web server must support [Cross origin resource sharing](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing) 
@@ -80,6 +77,7 @@ Key Features
 * Implements a [cornerstone ImageLoader](https://github.com/chafey/cornerstone/wiki/ImageLoader) for DICOM P10 Instances via a HTTP get request. 
   * Can be used with a WADO server
   * Can be used with Orthanc's file endpoint
+  * Can be used with any server that returns DICOM P10 instances via HTTP GET
 * Supports many popular transfer syntaxes and photometric interpretations [see full list](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md)
 
 Build System
@@ -117,7 +115,6 @@ Automatically running the build and unit tests after each source change:
 Backlog
 ------------
 
-* Refactor out code not specific to XMLHttpRequest into a separate library so it can be more easily re-used (e.g. by the cornerstoneFileImageLoader)
 * Support images with Pixel Padding?
 * Mask out burned in overlays?
 * Better cache management for multiframe (may require enhancement in cornerstone)

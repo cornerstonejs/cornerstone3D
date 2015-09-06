@@ -50,6 +50,16 @@
     {
       return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
     }
+    // JPEG Lossless, Nonhierarchical (Processes 14)
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.57" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+    }
+    // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.70" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+    }
     else
     {
       throw "no decoder for transfer syntax " + transferSyntax;

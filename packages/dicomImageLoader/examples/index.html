@@ -2,7 +2,7 @@
 <html>
 <head>
     <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bootstrap.min.css" rel="stylesheet">
 
     <link href="cornerstone.min.css" rel="stylesheet">
 
@@ -14,7 +14,37 @@
         <h1>Example of displaying a DICOM P10 image using Cornerstone</h1>
         <p class="lead">
             Enter a URL for a DICOM P10 object below to view it using cornerstone.
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseInfo" aria-expanded="false" aria-controls="collapseInfo">
+                Click for more info
+            </button>
         </p>
+
+
+        <ul>
+            <!--
+            <li>/cornerstoneWADOImageLoader/examples/testImages/ile/gray16.DCM</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/ile/gray8.DCM</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/ile/ybrFull.DCM</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/rle/paletteColor.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/rle/gray16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/rle/rgb.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull422.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/gray8.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.51/grayu16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.57/grayu16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.70/gray8.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.70/grays16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grayu16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grays16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/ybrrct.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grays16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grayu16.dcm</li>
+            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/ybrict.dcm</li>
+            -->
+        </ul>
+    </div>
+    <div class="collapse" id="collapseInfo">
         <p>
             This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
             SOP instance using HTTP and display it in your web browser using cornerstone.
@@ -22,14 +52,14 @@
             <a href="https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
                 click here for the full list.
             </a>
-            For WADO requests,
+            For WADO-URI requests,
             you can request that the server return the SOP Instance in explicit little endian by
             appending the following query string to your URL:
             <code>&transferSyntax=1.2.840.10008.1.2.1</code>
         </p>
         <P>
             Use the query string parameter <i>frame</i> to specify which frame to display from a multiframe
-            object (defaults to frame 0 if not specified). <code>?frame=2</code>
+            object (defaults to the first frame if not specified). <code>?frame=2</code>
         </P>
         <strong>If you get an HTTP error and your URL is correct, it is probably because the server is not configured to
             allow <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross Origin Requests</a>.
@@ -42,32 +72,9 @@
         <p>
             Looking for a CORS proxy?  Try <a href="https://www.npmjs.com/package/corsproxy">CORSProxy</a>
         </p>
-        <ul>
-            <!--
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/ile/gray16.DCM</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/ile/gray8.DCM</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/ile/ybrFull.DCM</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/rle/paletteColor.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/rle/gray16.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/rle/rgb.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull422.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/gray8.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.51/grayu16.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg.70/gray8.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grayu16.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grays16.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/ybrrct.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grays16.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grayu16.dcm</li>
-            <li>http://localhost:63342/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/ybrict.dcm</li>
-            -->
-        </ul>
-        <br>
         <strong>Use of this example require IE10+ or any other modern browser.</strong>
-
+        <hr>
     </div>
-
     <div id="loadProgress">Image Load Progress:</div>
 
     <div class="row">
@@ -101,6 +108,9 @@
 <!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
 <script src="jquery.min.js"></script>
 
+<!-- bootstrap -->
+<script src="bootstrap.min.js"></script>
+
 <!-- include the cornerstone library -->
 <script src="cornerstone.min.js"></script>
 <SCRIPT src="cornerstoneMath.js"></SCRIPT>
@@ -114,6 +124,8 @@
 
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../dist/cornerstoneWADOImageLoader.js"></script>
+
+
 
 <script>
 
@@ -130,8 +142,8 @@
     {
         var url = $('#wadoURL').val();
 
-        // prefix the url with dicomweb: so cornerstone can find the image loader
-        url = "dicomweb:" + url;
+        // prefix the url with wadouri: so cornerstone can find the image loader
+        url = "wadouri:" + url;
 
         var element = $('#dicomImage').get(0);
 
