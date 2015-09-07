@@ -1,194 +1,27 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
+    <!-- twitter bootstrap CSS stylesheet - not required by cornerstone -->
     <link href="bootstrap.min.css" rel="stylesheet">
-
-    <link href="cornerstone.min.css" rel="stylesheet">
-
 </head>
 <body>
+
 <div class="container">
+    <h1>
+        CornerstoneWADOImageLoader Examples
+    </h1>
 
-    <div class="page-header">
-        <h1>Example of displaying a DICOM P10 image using Cornerstone</h1>
-        <p class="lead">
-            Enter a URL for a DICOM P10 object below to view it using cornerstone.
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseInfo" aria-expanded="false" aria-controls="collapseInfo">
-                Click for more info
-            </button>
-        </p>
+    <strong>The following examples should work on any browser that supports the HTML5 canvas element.  We currently
+        recommend using Chrome for development and the best end user experience.</strong>
+    <br>
+    <br>
 
+    <ul>
+        <li><a href="wadouri/index.html">WADO-URI</a></li>
+        <li><a href="wadors/index.html">WADO-RS RetrieveFrame</a></li>
+    </ul>
 
-        <ul>
-            <!--
-            <li>/cornerstoneWADOImageLoader/examples/testImages/ile/gray16.DCM</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/ile/gray8.DCM</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/ile/ybrFull.DCM</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/rle/paletteColor.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/rle/gray16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/rle/rgb.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull422.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/gray8.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.51/grayu16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.57/grayu16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.70/gray8.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.70/grays16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grayu16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/grays16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.90/ybrrct.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grays16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/grayu16.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg2000.91/ybrict.dcm</li>
-            -->
-        </ul>
-    </div>
-    <div class="collapse" id="collapseInfo">
-        <p>
-            This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
-            SOP instance using HTTP and display it in your web browser using cornerstone.
-            Not all transfer syntaxes are currently supported,
-            <a href="https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
-                click here for the full list.
-            </a>
-            For WADO-URI requests,
-            you can request that the server return the SOP Instance in explicit little endian by
-            appending the following query string to your URL:
-            <code>&transferSyntax=1.2.840.10008.1.2.1</code>
-        </p>
-        <P>
-            Use the query string parameter <i>frame</i> to specify which frame to display from a multiframe
-            object (defaults to the first frame if not specified). <code>?frame=2</code>
-        </P>
-        <strong>If you get an HTTP error and your URL is correct, it is probably because the server is not configured to
-            allow <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross Origin Requests</a>.
-            Most browsers will allow you to enable cross domain requests via settings or command line switches,
-            you can start chrome with the command line switch <code>--disable-web-security</code> to allow cross origin requests.
-            See the  <a href="http://enable-cors.org/">Enable CORS site</a> for information about CORS.
-        </strong>
-        <br>
-        <br>
-        <p>
-            Looking for a CORS proxy?  Try <a href="https://www.npmjs.com/package/corsproxy">CORSProxy</a>
-        </p>
-        <strong>Use of this example require IE10+ or any other modern browser.</strong>
-        <hr>
-    </div>
-    <div id="loadProgress">Image Load Progress:</div>
-
-    <div class="row">
-        <form class="form-horizontal">
-            <div class="form-group">
-                <label class="control-label col-sm-1" for="wadoURL">URL</label>
-                <div class="col-sm-8">
-                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="http://cornerstonetech.org/images/ClearCanvas/USEcho/IM00001">
-                </div>
-                <div class="col-sm-3">
-                    <button class="form-control" type="button" id="downloadAndView" class="btn btn-primary">Download and View</button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
-         oncontextmenu="return false"
-         class='disable-selection noIbar'
-         unselectable='on'
-         onselectstart='return false;'
-         onmousedown='return false;'>
-        <div id="dicomImage"
-             style="width:512px;height:512px;top:0px;left:0px; position:absolute">
-        </div>
-    </div>
 </div>
+
 </body>
-
-
-<!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
-<script src="jquery.min.js"></script>
-
-<!-- bootstrap -->
-<script src="bootstrap.min.js"></script>
-
-<!-- include the cornerstone library -->
-<script src="cornerstone.min.js"></script>
-<SCRIPT src="cornerstoneMath.js"></SCRIPT>
-<SCRIPT src="cornerstoneTools.js"></SCRIPT>
-
-<!-- include the dicomParser library as the WADO image loader depends on it -->
-<script src="dicomParser.min.js"></script>
-
-<!-- jpeg 2000 codec -->
-<script src="jpx.min.js"></script>
-
-<!-- include the cornerstoneWADOImageLoader library -->
-<script src="../dist/cornerstoneWADOImageLoader.js"></script>
-
-
-
-<script>
-
-    cornerstoneWADOImageLoader.configure({
-        beforeSend: function(xhr) {
-            // Add custom headers here (e.g. auth tokens)
-            //xhr.setRequestHeader('x-auth-token', 'my auth token');
-        }
-    });
-
-    var loaded = false;
-
-    function downloadAndView()
-    {
-        var url = $('#wadoURL').val();
-
-        // prefix the url with wadouri: so cornerstone can find the image loader
-        url = "wadouri:" + url;
-
-        var element = $('#dicomImage').get(0);
-
-        // image enable the dicomImage element and activate a few tools
-        try {
-            cornerstone.loadImage(url).then(function(image) {
-                console.log(image);
-                var viewport = cornerstone.getDefaultViewportForImage(element, image);
-                cornerstone.displayImage(element, image, viewport);
-                if(loaded === false) {
-                    cornerstoneTools.mouseInput.enable(element);
-                    cornerstoneTools.mouseWheelInput.enable(element);
-                    cornerstoneTools.wwwc.activate(element, 1); // ww/wc is the default tool for left mouse button
-                    cornerstoneTools.pan.activate(element, 2); // pan is the default tool for middle mouse button
-                    cornerstoneTools.zoom.activate(element, 4); // zoom is the default tool for right mouse button
-                    cornerstoneTools.zoomWheel.activate(element); // zoom is the default tool for middle mouse wheel
-                    loaded = true;
-                }
-            }, function(err) {
-                alert(err);
-            });
-        }
-        catch(err) {
-            alert(err);
-        }
-    }
-
-    $(cornerstone).bind('CornerstoneImageLoadProgress', function(eventData) {
-        $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");
-    });
-
-    $(document).ready(function() {
-
-        var element = $('#dicomImage').get(0);
-        cornerstone.enable(element);
-
-        $('#downloadAndView').click(function(e) {
-            downloadAndView();
-        });
-
-        $('form').submit(function() {
-            downloadAndView();
-            return false;
-        });
-    });
-
-</script>
 </html>
