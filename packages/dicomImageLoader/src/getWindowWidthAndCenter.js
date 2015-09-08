@@ -15,13 +15,11 @@
             windowWidth: undefined
         };
 
-        var windowCenter = dataSet.floatString('x00281050');
-        var windowWidth = dataSet.floatString('x00281051');
-
-        if(windowCenter && windowWidth) {
-          result.windowCenter = windowCenter;
-          result.windowWidth = windowWidth;
+        if(dataSet.elements.x00281050 && dataSet.elements.x00281051) {
+          result.windowCenter = dataSet.floatString('x00281050');
+          result.windowWidth = dataSet.floatString('x00281051');
         }
+
         return result;
     }
 

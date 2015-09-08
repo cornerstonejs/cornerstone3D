@@ -11,13 +11,11 @@
             slope: 1.0
         };
 
-        var rescaleIntercept = dataSet.floatString('x00281052');
-        var rescaleSlope = dataSet.floatString('x00281053');
-
-        if(rescaleIntercept && rescaleSlope) {
-            result.intercept = rescaleIntercept;
-            result.slope = rescaleSlope;
+        if(dataSet.elements.x00281052 && dataSet.elements.x00281053) {
+          result.intercept = dataSet.floatString('x00281052');
+          result.slope = dataSet.floatString('x00281053');
         }
+
         return result;
     }
 

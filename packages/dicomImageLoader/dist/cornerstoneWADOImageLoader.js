@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.7.0 - 2015-09-06 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.7.0 - 2015-09-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -3507,13 +3507,11 @@ var JpegImage = (function jpegImage() {
             slope: 1.0
         };
 
-        var rescaleIntercept = dataSet.floatString('x00281052');
-        var rescaleSlope = dataSet.floatString('x00281053');
-
-        if(rescaleIntercept && rescaleSlope) {
-            result.intercept = rescaleIntercept;
-            result.slope = rescaleSlope;
+        if(dataSet.elements.x00281052 && dataSet.elements.x00281053) {
+          result.intercept = dataSet.floatString('x00281052');
+          result.slope = dataSet.floatString('x00281053');
         }
+
         return result;
     }
 
@@ -3537,13 +3535,11 @@ var JpegImage = (function jpegImage() {
             windowWidth: undefined
         };
 
-        var windowCenter = dataSet.floatString('x00281050');
-        var windowWidth = dataSet.floatString('x00281051');
-
-        if(windowCenter && windowWidth) {
-          result.windowCenter = windowCenter;
-          result.windowWidth = windowWidth;
+        if(dataSet.elements.x00281050 && dataSet.elements.x00281051) {
+          result.windowCenter = dataSet.floatString('x00281050');
+          result.windowWidth = dataSet.floatString('x00281051');
         }
+
         return result;
     }
 
