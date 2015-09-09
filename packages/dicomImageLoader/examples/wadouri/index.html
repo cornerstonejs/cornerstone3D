@@ -149,7 +149,8 @@
             cornerstone.loadImage(imageId).then(function(image) {
                 console.log(image);
                 var viewport = cornerstone.getDefaultViewportForImage(element, image);
-
+                $('#toggleModalityLUT').attr("checked",viewport.modalityLUT !== undefined);
+                $('#toggleVOILUT').attr("checked",viewport.voiLUT !== undefined);
                 cornerstone.displayImage(element, image, viewport);
                 if(loaded === false) {
                     cornerstoneTools.mouseInput.enable(element);
