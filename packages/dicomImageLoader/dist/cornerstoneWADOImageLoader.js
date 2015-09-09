@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.7.0 - 2015-09-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.7.1 - 2015-09-09 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -3790,7 +3790,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.7.0';
+  cornerstoneWADOImageLoader.version = '0.7.1';
 
 }(cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
