@@ -82,7 +82,7 @@
             <div class="form-group">
                 <label class="control-label col-sm-1" for="wadoURL">URL</label>
                 <div class="col-sm-8">
-                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="http://cornerstonetech.org/images/ClearCanvas/USEcho/IM00001">
+                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="/cornerstoneWADOImageLoader/examples/VOILUTPHI.dcm">
                 </div>
                 <div class="col-sm-3">
                     <button class="form-control" type="button" id="downloadAndView" class="btn btn-primary">Download and View</button>
@@ -93,7 +93,9 @@
             </div>
         </form>
     </div>
-
+    <input type="checkbox" id="toggleModalityLUT">Apply Modality LUT</input>
+    <input type="checkbox" id="toggleVOILUT">Apply VOI LUT</input>
+    <br>
     <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
          oncontextmenu="return false"
          class='disable-selection noIbar'
@@ -147,6 +149,7 @@
             cornerstone.loadImage(imageId).then(function(image) {
                 console.log(image);
                 var viewport = cornerstone.getDefaultViewportForImage(element, image);
+
                 cornerstone.displayImage(element, image, viewport);
                 if(loaded === false) {
                     cornerstoneTools.mouseInput.enable(element);
@@ -203,6 +206,34 @@
             var imageId = cornerstoneWADOImageLoader.fileManager.add(file);
             loadAndViewImage(imageId);
         });
+
+        $('#toggleModalityLUT').on('click', function() {
+            var applyModalityLUT = $('#toggleModalityLUT').is(":checked");
+            console.log('applyModalityLUT=', applyModalityLUT);
+            var image = cornerstone.getImage(element);
+            var viewport = cornerstone.getViewport(element);
+            if(applyModalityLUT) {
+                viewport.modalityLUT = image.modalityLUT;
+            } else {
+                viewport.modalityLUT = undefined;
+            }
+            cornerstone.setViewport(element, viewport);
+        });
+
+        $('#toggleVOILUT').on('click', function() {
+            var applyVOILUT = $('#toggleVOILUT').is(":checked");
+            console.log('applyVOILUT=', applyVOILUT);
+            var image = cornerstone.getImage(element);
+            var viewport = cornerstone.getViewport(element);
+            if(applyVOILUT) {
+                viewport.voiLUT = image.voiLUT;
+            } else {
+                viewport.voiLUT = undefined;
+            }
+            cornerstone.setViewport(element, viewport);
+        });
+
+
     });
 
 </script>
