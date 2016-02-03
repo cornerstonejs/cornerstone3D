@@ -1,0 +1,183 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
+    <link href="../bootstrap.min.css" rel="stylesheet">
+
+    <link href="../cornerstone.min.css" rel="stylesheet">
+
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h1>Example of displaying a DICOM P10 from the local file system</h1>
+        <p class="lead">
+            Click "Choose File" and select a DICOM P10 file on your local file system.
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseInfo" aria-expanded="false" aria-controls="collapseInfo">
+                Click for more info
+            </button>
+        </p>
+
+
+
+    </div>
+    <div class="collapse" id="collapseInfo">
+        <p>
+            This example illustrates how to use the cornerstoneWADOImageLoader to read a DICOM P10
+            SOP instance from the local file system and display it in your web browser using cornerstone.
+            Not all transfer syntaxes are currently supported,
+            <a href="https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
+                click here for the full list.
+            </a>
+        </p>
+        <P>
+            NOTE: If the DICOM P10 file is multiframe, only the first frame will be displayed.  Access to
+            other frames is possible by adding the query string parameter <i>frame</i> to specify which frame
+            to display from a multiframe object (defaults to the first frame if not specified). <code>?frame=2</code>
+        </P>
+        <P>
+            NOTE: Browser security prevents javascript from reading the file system directly - files must be
+            chosen manually by the user via the <input> element as shown in this example or via drag and drop.
+        </P>
+        <br>
+        <br>
+        <strong>Use of this example require IE10+ or any other modern browser.</strong>
+        <hr>
+    </div>
+    <div id="loadProgress">Image Load Progress:</div>
+
+    <div class="row">
+        <form class="form-horizontal">
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <input type="file" id="selectFile" >
+                </div>
+            </div>
+        </form>
+    </div>
+    <input type="checkbox" id="toggleModalityLUT">Apply Modality LUT</input>
+    <input type="checkbox" id="toggleVOILUT">Apply VOI LUT</input>
+    <br>
+    <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
+         oncontextmenu="return false"
+         class='disable-selection noIbar'
+         unselectable='on'
+         onselectstart='return false;'
+         onmousedown='return false;'>
+        <div id="dicomImage"
+             style="width:512px;height:512px;top:0px;left:0px; position:absolute">
+        </div>
+    </div>
+</div>
+</body>
+
+
+<!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
+<script src="../jquery.min.js"></script>
+
+<!-- bootstrap -->
+<script src="../bootstrap.min.js"></script>
+
+<!-- include the cornerstone library -->
+<script src="../cornerstone.min.js"></script>
+<SCRIPT src="../cornerstoneMath.js"></SCRIPT>
+<SCRIPT src="../cornerstoneTools.js"></SCRIPT>
+
+<!-- include the dicomParser library as the WADO image loader depends on it -->
+<script src="../dicomParser.min.js"></script>
+
+<!-- jpeg 2000 codec -->
+<script src="../jpx.min.js"></script>
+
+<!-- include the cornerstoneWADOImageLoader library -->
+<script src="../../dist/cornerstoneWADOImageLoader.js"></script>
+
+
+
+<script>
+
+    cornerstoneWADOImageLoader.configure({
+        beforeSend: function(xhr) {
+            // Add custom headers here (e.g. auth tokens)
+            //xhr.setRequestHeader('x-auth-token', 'my auth token');
+        }
+    });
+
+    var loaded = false;
+
+    function loadAndViewImage(imageId) {
+        var element = $('#dicomImage').get(0);
+        //try {
+        cornerstone.loadImage(imageId).then(function(image) {
+            console.log(image);
+            var viewport = cornerstone.getDefaultViewportForImage(element, image);
+            $('#toggleModalityLUT').attr("checked",viewport.modalityLUT !== undefined);
+            $('#toggleVOILUT').attr("checked",viewport.voiLUT !== undefined);
+            cornerstone.displayImage(element, image, viewport);
+            if(loaded === false) {
+                cornerstoneTools.mouseInput.enable(element);
+                cornerstoneTools.mouseWheelInput.enable(element);
+                cornerstoneTools.wwwc.activate(element, 1); // ww/wc is the default tool for left mouse button
+                cornerstoneTools.pan.activate(element, 2); // pan is the default tool for middle mouse button
+                cornerstoneTools.zoom.activate(element, 4); // zoom is the default tool for right mouse button
+                cornerstoneTools.zoomWheel.activate(element); // zoom is the default tool for middle mouse wheel
+                loaded = true;
+            }
+        }, function(err) {
+            alert(err);
+        });
+        /*}
+         catch(err) {
+         alert(err);
+         }*/
+    }
+
+    $(cornerstone).bind('CornerstoneImageLoadProgress', function(eventData) {
+        $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");
+    });
+
+    $(document).ready(function() {
+
+        var element = $('#dicomImage').get(0);
+        cornerstone.enable(element);
+
+        $('#selectFile').on('change', function(e) {
+            // Add the file to the cornerstoneFileImageLoader and get unique
+            // number for that file
+            var file = e.target.files[0];
+            var imageId = cornerstoneWADOImageLoader.fileManager.add(file);
+            loadAndViewImage(imageId);
+        });
+
+        $('#toggleModalityLUT').on('click', function() {
+            var applyModalityLUT = $('#toggleModalityLUT').is(":checked");
+            console.log('applyModalityLUT=', applyModalityLUT);
+            var image = cornerstone.getImage(element);
+            var viewport = cornerstone.getViewport(element);
+            if(applyModalityLUT) {
+                viewport.modalityLUT = image.modalityLUT;
+            } else {
+                viewport.modalityLUT = undefined;
+            }
+            cornerstone.setViewport(element, viewport);
+        });
+
+        $('#toggleVOILUT').on('click', function() {
+            var applyVOILUT = $('#toggleVOILUT').is(":checked");
+            console.log('applyVOILUT=', applyVOILUT);
+            var image = cornerstone.getImage(element);
+            var viewport = cornerstone.getViewport(element);
+            if(applyVOILUT) {
+                viewport.voiLUT = image.voiLUT;
+            } else {
+                viewport.voiLUT = undefined;
+            }
+            cornerstone.setViewport(element, viewport);
+        });
+
+
+    });
+
+</script>
+</html>

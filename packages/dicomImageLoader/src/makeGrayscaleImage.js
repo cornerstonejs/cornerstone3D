@@ -45,7 +45,7 @@
       return lut;
     }
 
-    function makeGrayscaleImage(imageId, dataSet, frame) {
+    function makeGrayscaleImage(imageId, dataSet, frame, sharedCacheKey) {
         var deferred = $.Deferred();
 
         // extract the DICOM attributes we need
@@ -63,7 +63,8 @@
         }
 
         var numPixels = rows * columns;
-        var sizeInBytes = numPixels * bytesPerPixel;
+        //var sizeInBytes = numPixels * bytesPerPixel;
+        var sizeInBytes = dataSet.byteArray.length;
         var photometricInterpretation = dataSet.string('x00280004');
         var invert = (photometricInterpretation === "MONOCHROME1");
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
@@ -105,7 +106,8 @@
             rowPixelSpacing: pixelSpacing.row,
             data: dataSet,
             invert: invert,
-            sizeInBytes: sizeInBytes
+            sizeInBytes: sizeInBytes,
+            sharedCacheKey: sharedCacheKey
         };
 
         // modality LUT

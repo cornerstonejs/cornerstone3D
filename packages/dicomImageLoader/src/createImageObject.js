@@ -2,7 +2,7 @@
 
   "use strict";
 
-  function createImageObject( dataSet, imageId, frame ) {
+  function createImageObject( dataSet, imageId, frame, sharedCacheKey ) {
     if(frame === undefined) {
       frame = 0;
     }
@@ -11,9 +11,9 @@
     var photometricInterpretation = dataSet.string('x00280004');
     var isColor = cornerstoneWADOImageLoader.isColorImage(photometricInterpretation);
     if(isColor === false) {
-      return cornerstoneWADOImageLoader.makeGrayscaleImage(imageId, dataSet, frame);
+      return cornerstoneWADOImageLoader.makeGrayscaleImage(imageId, dataSet, frame, sharedCacheKey);
     } else {
-      return cornerstoneWADOImageLoader.makeColorImage(imageId, dataSet, frame);
+      return cornerstoneWADOImageLoader.makeColorImage(imageId, dataSet, frame, sharedCacheKey);
     }
   }
 

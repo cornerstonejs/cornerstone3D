@@ -18,7 +18,7 @@
         return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame);
     }
 
-    function makeColorImage(imageId, dataSet, frame) {
+    function makeColorImage(imageId, dataSet, frame, sharedCacheKey) {
 
         // extract the DICOM attributes we need
         var pixelSpacing = cornerstoneWADOImageLoader.getPixelSpacing(dataSet);
@@ -27,7 +27,8 @@
         var rescaleSlopeAndIntercept = cornerstoneWADOImageLoader.getRescaleSlopeAndIntercept(dataSet);
         var bytesPerPixel = 4;
         var numPixels = rows * columns;
-        var sizeInBytes = numPixels * bytesPerPixel;
+        //var sizeInBytes = numPixels * bytesPerPixel;
+        var sizeInBytes = dataSet.byteArray.length;
         var windowWidthAndCenter = cornerstoneWADOImageLoader.getWindowWidthAndCenter(dataSet);
 
         // clear the lastImageIdDrawn so we update the canvas
@@ -89,7 +90,8 @@
                 rowPixelSpacing: pixelSpacing.row,
                 data: dataSet,
                 invert: false,
-                sizeInBytes: sizeInBytes
+                sizeInBytes: sizeInBytes,
+                sharedCacheKey: sharedCacheKey
             };
 
             if(image.windowCenter === undefined) {

@@ -16,7 +16,7 @@
     var mediaType;// = 'image/dicom+jp2';
 
     cornerstoneWADOImageLoader.internal.getImageFrame(image.uri, mediaType).then(function(result) {
-      console.log(result);
+      //console.log(result);
       // TODO: add support for retrieving compressed pixel data
       var storedPixelData;
       if(image.instance.bitsAllocated === 16) {
