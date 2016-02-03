@@ -8,8 +8,8 @@
 
     // Make the request for the DICOM P10 SOP Instance
     var xhr = new XMLHttpRequest();
-    xhr.responseType = "arraybuffer";
     xhr.open("get", url, true);
+    xhr.responseType = "arraybuffer";
     cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
     xhr.onreadystatechange = function (oEvent) {
       // TODO: consider sending out progress messages here as we receive the pixel data

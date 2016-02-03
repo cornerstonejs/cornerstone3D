@@ -195,11 +195,10 @@
     this.yDim = 0;
     this.xLoc = 0;
     this.yLoc = 0;
+    this.numBytes = 0;
     this.outputData = null;
 
-    if (typeof numBytes === "undefined") {
-      this.numBytes = 2;
-    } else {
+    if (typeof numBytes !== "undefined") {
       this.numBytes = numBytes;
     }
   };
@@ -217,6 +216,12 @@
 
   /*** Prototype Methods ***/
 
+  jpeg.lossless.Decoder.prototype.decompress = function (buffer, offset, length) {
+    return this.decode(buffer, offset, length).buffer;
+  };
+
+
+
   jpeg.lossless.Decoder.prototype.decode = function (buffer, offset, length, numBytes) {
     /*jslint bitwise: true */
 
@@ -228,14 +233,6 @@
 
     if (typeof numBytes !== "undefined") {
       this.numBytes = numBytes;
-    }
-
-    if (this.numBytes === 2) {
-      this.getter = this.getValue16;
-      this.setter = this.setValue16;
-    } else if (this.numBytes === 1) {
-      this.getter = this.getValue8;
-      this.setter = this.setValue8;
     }
 
     this.stream = new jpeg.lossless.DataStream(this.buffer, offset, length);
@@ -348,9 +345,53 @@
       this.precision = this.frame.precision;
       this.components = this.frame.components;
 
+      if (!this.numBytes) {
+        this.numBytes = parseInt(this.precision / 8);
+      }
+
       this.scan.read(this.stream);
       this.numComp = this.scan.numComp;
       this.selection = this.scan.selection;
+
+      if (this.numBytes === 1) {
+        if (this.numComp === 3) {
+          this.getter = this.getValueRGB;
+          this.setter = this.setValueRGB;
+          this.output = this.outputRGB;
+        } else {
+          this.getter = this.getValue8;
+          this.setter = this.setValue8;
+          this.output = this.outputSingle;
+        }
+      } else {
+        this.getter = this.getValue16;
+        this.setter = this.setValue16;
+        this.output = this.outputSingle;
+      }
+
+      switch (this.selection) {
+        case 2:
+          this.selector = this.select2;
+          break;
+        case 3:
+          this.selector = this.select3;
+          break;
+        case 4:
+          this.selector = this.select4;
+          break;
+        case 5:
+          this.selector = this.select5;
+          break;
+        case 6:
+          this.selector = this.select6;
+          break;
+        case 7:
+          this.selector = this.select7;
+          break;
+        default:
+          this.selector = this.select1;
+          break;
+      }
 
       this.scanComps = this.scan.components;
       this.quantTables = this.quantTable.quantTables;
@@ -365,7 +406,7 @@
 
       this.xDim = this.frame.dimX;
       this.yDim = this.frame.dimY;
-      this.outputData = new DataView(new ArrayBuffer(this.xDim * this.yDim * this.numBytes));
+      this.outputData = new DataView(new ArrayBuffer(this.xDim * this.yDim * this.numBytes * this.numComp));
 
       scanNum+=1;
 
@@ -423,88 +464,128 @@
 
 
   jpeg.lossless.Decoder.prototype.decodeUnit = function (prev, temp, index) {
+    if (this.numComp == 1) {
+      return this.decodeSingle(prev, temp, index);
+    } else if (this.numComp == 3) {
+      return this.decodeRGB(prev, temp, index);
+    } else {
+      return -1;
+    }
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.select1 = function (compOffset) {
+    return this.getPreviousX(compOffset);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.select2 = function (compOffset) {
+    return this.getPreviousY(compOffset);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.select3 = function (compOffset) {
+    return this.getPreviousXY(compOffset);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.select4 = function (compOffset) {
+    return (this.getPreviousX(compOffset) + this.getPreviousY(compOffset)) - this.getPreviousXY(compOffset);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.select5 = function (compOffset) {
+    return this.getPreviousX(compOffset) + ((this.getPreviousY(compOffset) - this.getPreviousXY(compOffset)) >> 1);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.select6 = function (compOffset) {
+    return this.getPreviousY(compOffset) + ((this.getPreviousX(compOffset) - this.getPreviousXY(compOffset)) >> 1);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.select7 = function (compOffset) {
+    return ((this.getPreviousX(compOffset) + this.getPreviousY(compOffset)) / 2);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.decodeRGB = function (prev, temp, index) {
     /*jslint bitwise: true */
 
     var value, actab, dctab, qtab, ctrC, i, k, j;
 
-    switch (this.selection) {
-      case 2:
-        prev[0] = this.getPreviousY();
-        break;
-      case 3:
-        prev[0] = this.getPreviousXY();
-        break;
-      case 4:
-        prev[0] = (this.getPreviousX() + this.getPreviousY()) - this.getPreviousXY();
-        break;
-      case 5:
-        prev[0] = this.getPreviousX() + ((this.getPreviousY() - this.getPreviousXY()) >> 1);
-        break;
-      case 6:
-        prev[0] = this.getPreviousY() + ((this.getPreviousX() - this.getPreviousXY()) >> 1);
-        break;
-      case 7:
-        prev[0] = ((this.getPreviousX() + this.getPreviousY()) / 2);
-        break;
-      default:
-        prev[0] = this.getPreviousX();
-        break;
-    }
+    prev[0] = this.selector(0);
+    prev[1] = this.selector(1);
+    prev[2] = this.selector(2);
 
-    if (this.numComp > 1) {
-      for (ctrC = 0; ctrC < this.numComp; ctrC+=1) {
-        qtab = this.qTab[ctrC];
-        actab = this.acTab[ctrC];
-        dctab = this.dcTab[ctrC];
-        for (i = 0; i < this.nBlock[ctrC]; i+=1) {
-          for (k = 0; k < this.IDCT_Source.length; k+=1) {
-            this.IDCT_Source[k] = 0;
-          }
+    for (ctrC = 0; ctrC < this.numComp; ctrC+=1) {
+      qtab = this.qTab[ctrC];
+      actab = this.acTab[ctrC];
+      dctab = this.dcTab[ctrC];
+      for (i = 0; i < this.nBlock[ctrC]; i+=1) {
+        for (k = 0; k < this.IDCT_Source.length; k+=1) {
+          this.IDCT_Source[k] = 0;
+        }
 
-          value = this.getHuffmanValue(dctab, temp, index);
+        value = this.getHuffmanValue(dctab, temp, index);
+
+        if (value >= 0xFF00) {
+          return value;
+        }
+
+        prev[ctrC] = this.IDCT_Source[0] = prev[ctrC] + this.getn(index, value, temp, index);
+        this.IDCT_Source[0] *= qtab[0];
+
+        for (j = 1; j < 64; j+=1) {
+          value = this.getHuffmanValue(actab, temp, index);
 
           if (value >= 0xFF00) {
             return value;
           }
 
-          prev[ctrC] = this.IDCT_Source[0] = prev[ctrC] + this.getn(index, value, temp, index);
-          this.IDCT_Source[0] *= qtab[0];
+          j += (value >> 4);
 
-          for (j = 1; j < 64; j+=1) {
-            value = this.getHuffmanValue(actab, temp, index);
-
-            if (value >= 0xFF00) {
-              return value;
+          if ((value & 0x0F) === 0) {
+            if ((value >> 4) === 0) {
+              break;
             }
-
-            j += (value >> 4);
-
-            if ((value & 0x0F) === 0) {
-              if ((value >> 4) === 0) {
-                break;
-              }
-            } else {
-              this.IDCT_Source[jpeg.lossless.Decoder.IDCT_P[j]] = this.getn(index, value & 0x0F, temp, index) * qtab[j];
-            }
+          } else {
+            this.IDCT_Source[jpeg.lossless.Decoder.IDCT_P[j]] = this.getn(index, value & 0x0F, temp, index) * qtab[j];
           }
-
-          this.scaleIDCT(this.DU[ctrC][i]);
         }
       }
-
-      return 0;
-    } else {
-      for (i = 0; i < this.nBlock[0]; i+=1) {
-        value = this.getHuffmanValue(this.dcTab[0], temp, index);
-        if (value >= 0xFF00) {
-          return value;
-        }
-
-        prev[0] += this.getn(prev, value, temp, index);
-      }
-
-      return 0;
     }
+
+    return 0;
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.decodeSingle = function (prev, temp, index) {
+    /*jslint bitwise: true */
+
+    var value, i;
+
+    prev[0] = this.selector();
+
+    for (i = 0; i < this.nBlock[0]; i+=1) {
+      value = this.getHuffmanValue(this.dcTab[0], temp, index);
+      if (value >= 0xFF00) {
+        return value;
+      }
+
+      prev[0] += this.getn(prev, value, temp, index);
+    }
+
+    return 0;
   };
 
 
@@ -687,13 +768,13 @@
 
 
 
-  jpeg.lossless.Decoder.prototype.getPreviousX = function () {
+  jpeg.lossless.Decoder.prototype.getPreviousX = function (compOffset) {
     /*jslint bitwise: true */
 
     if (this.xLoc > 0) {
-      return this.getter((((this.yLoc * this.xDim) + this.xLoc) - 1));
+      return this.getter((((this.yLoc * this.xDim) + this.xLoc) - 1), compOffset);
     } else if (this.yLoc > 0) {
-      return this.getPreviousY();
+      return this.getPreviousY(compOffset);
     } else {
       return (1 << (this.frame.precision - 1));
     }
@@ -701,25 +782,25 @@
 
 
 
-  jpeg.lossless.Decoder.prototype.getPreviousXY = function () {
+  jpeg.lossless.Decoder.prototype.getPreviousXY = function (compOffset) {
     /*jslint bitwise: true */
 
     if ((this.xLoc > 0) && (this.yLoc > 0)) {
-      return this.getter(((((this.yLoc - 1) * this.xDim) + this.xLoc) - 1));
+      return this.getter(((((this.yLoc - 1) * this.xDim) + this.xLoc) - 1), compOffset);
     } else {
-      return this.getPreviousY();
+      return this.getPreviousY(compOffset);
     }
   };
 
 
 
-  jpeg.lossless.Decoder.prototype.getPreviousY = function () {
+  jpeg.lossless.Decoder.prototype.getPreviousY = function (compOffset) {
     /*jslint bitwise: true */
 
     if (this.yLoc > 0) {
-      return this.getter((((this.yLoc - 1) * this.xDim) + this.xLoc));
+      return this.getter((((this.yLoc - 1) * this.xDim) + this.xLoc), compOffset);
     } else {
-      return this.getPreviousX();
+      return this.getPreviousX(compOffset);
     }
   };
 
@@ -731,9 +812,28 @@
 
 
 
-  jpeg.lossless.Decoder.prototype.output = function (PRED) {
+  jpeg.lossless.Decoder.prototype.outputSingle = function (PRED) {
     if ((this.xLoc < this.xDim) && (this.yLoc < this.yDim)) {
       this.setter((((this.yLoc * this.xDim) + this.xLoc)), PRED[0]);
+
+      this.xLoc+=1;
+
+      if (this.xLoc >= this.xDim) {
+        this.yLoc+=1;
+        this.xLoc = 0;
+      }
+    }
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.outputRGB = function (PRED) {
+    var offset = ((this.yLoc * this.xDim) + this.xLoc);
+
+    if ((this.xLoc < this.xDim) && (this.yLoc < this.yDim)) {
+      this.setter(offset, PRED[0], 0);
+      this.setter(offset, PRED[1], 1);
+      this.setter(offset, PRED[2], 2);
 
       this.xLoc+=1;
 
@@ -766,6 +866,18 @@
 
   jpeg.lossless.Decoder.prototype.getValue8 = function (index) {
     return this.outputData.getInt8(index);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.setValueRGB = function (index, val, compOffset) {
+    this.outputData.setUint8(index * 3 + compOffset, val);
+  };
+
+
+
+  jpeg.lossless.Decoder.prototype.getValueRGB = function (index, compOffset) {
+    return this.outputData.getUint8(index * 3 + compOffset);
   };
 
 
@@ -808,103 +920,6 @@
     }
 
     return this.stream.get16();
-  };
-
-
-
-  jpeg.lossless.Decoder.prototype.scaleIDCT = function (matrix) {
-    /*jslint bitwise: true */
-
-    var p = jpeg.lossless.Utils.createArray(8, 8), t0, t1, t2, t3, i, src0, src1, src2, src3, src4, src5, src6, src7, det0, det1, det2, det3, det4,
-      det5, det6, det7, mindex = 0;
-
-    for (i = 0; i < 8; i+=1) {
-      src0 = this.IDCT_Source[(0) + i];
-      src1 = this.IDCT_Source[(8) + i];
-      src2 = this.IDCT_Source[(16) + i] - this.IDCT_Source[(24) + i];
-      src3 = this.IDCT_Source[(24) + i] + this.IDCT_Source[(16) + i];
-      src4 = this.IDCT_Source[(32) + i] - this.IDCT_Source[(56) + i];
-      src6 = this.IDCT_Source[(40) + i] - this.IDCT_Source[(48) + i];
-      t0 = this.IDCT_Source[(40) + i] + this.IDCT_Source[(48) + i];
-      t1 = this.IDCT_Source[(32) + i] + this.IDCT_Source[(56) + i];
-      src5 = t0 - t1;
-      src7 = t0 + t1;
-
-      det4 = (-src4 * 480) - (src6 * 192);
-      det5 = src5 * 384;
-      det6 = (src6 * 480) - (src4 * 192);
-      det7 = src7 * 256;
-      t0 = src0 * 256;
-      t1 = src1 * 256;
-      t2 = src2 * 384;
-      t3 = src3 * 256;
-      det3 = t3;
-      det0 = t0 + t1;
-      det1 = t0 - t1;
-      det2 = t2 - t3;
-
-      src0 = det0 + det3;
-      src1 = det1 + det2;
-      src2 = det1 - det2;
-      src3 = det0 - det3;
-      src4 = det6 - det4 - det5 - det7;
-      src5 = (det5 - det6) + det7;
-      src6 = det6 - det7;
-      src7 = det7;
-
-      p[0][i] = (src0 + src7 + (1 << 12)) >> 13;
-      p[1][i] = (src1 + src6 + (1 << 12)) >> 13;
-      p[2][i] = (src2 + src5 + (1 << 12)) >> 13;
-      p[3][i] = (src3 + src4 + (1 << 12)) >> 13;
-      p[4][i] = ((src3 - src4) + (1 << 12)) >> 13;
-      p[5][i] = ((src2 - src5) + (1 << 12)) >> 13;
-      p[6][i] = ((src1 - src6) + (1 << 12)) >> 13;
-      p[7][i] = ((src0 - src7) + (1 << 12)) >> 13;
-    }
-
-    for (i = 0; i < 8; i+=1) {
-      src0 = p[i][0];
-      src1 = p[i][1];
-      src2 = p[i][2] - p[i][3];
-      src3 = p[i][3] + p[i][2];
-      src4 = p[i][4] - p[i][7];
-      src6 = p[i][5] - p[i][6];
-      t0 = p[i][5] + p[i][6];
-      t1 = p[i][4] + p[i][7];
-      src5 = t0 - t1;
-      src7 = t0 + t1;
-
-      det4 = (-src4 * 480) - (src6 * 192);
-      det5 = src5 * 384;
-      det6 = (src6 * 480) - (src4 * 192);
-      det7 = src7 * 256;
-      t0 = src0 * 256;
-      t1 = src1 * 256;
-      t2 = src2 * 384;
-      t3 = src3 * 256;
-      det3 = t3;
-      det0 = t0 + t1;
-      det1 = t0 - t1;
-      det2 = t2 - t3;
-
-      src0 = det0 + det3;
-      src1 = det1 + det2;
-      src2 = det1 - det2;
-      src3 = det0 - det3;
-      src4 = det6 - det4 - det5 - det7;
-      src5 = (det5 - det6) + det7;
-      src6 = det6 - det7;
-      src7 = det7;
-
-      matrix[mindex+=1] = (src0 + src7 + (1 << 12)) >> 13;
-      matrix[mindex+=1] = (src1 + src6 + (1 << 12)) >> 13;
-      matrix[mindex+=1] = (src2 + src5 + (1 << 12)) >> 13;
-      matrix[mindex+=1] = (src3 + src4 + (1 << 12)) >> 13;
-      matrix[mindex+=1] = ((src3 - src4) + (1 << 12)) >> 13;
-      matrix[mindex+=1] = ((src2 - src5) + (1 << 12)) >> 13;
-      matrix[mindex+=1] = ((src1 - src6) + (1 << 12)) >> 13;
-      matrix[mindex+=1] = ((src0 - src7) + (1 << 12)) >> 13;
-    }
   };
 
 
