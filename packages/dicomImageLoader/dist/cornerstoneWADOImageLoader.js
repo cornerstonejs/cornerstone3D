@@ -4260,7 +4260,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.7.2';
+  cornerstoneWADOImageLoader.version = '0.8.0';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
@@ -4275,7 +4275,7 @@ var JpegImage = (function jpegImage() {
     var xhr = new XMLHttpRequest();
     xhr.open("get", url, true);
     xhr.responseType = "arraybuffer";
-    cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
+      cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
     xhr.onreadystatechange = function (oEvent) {
       // TODO: consider sending out progress messages here as we receive the pixel data
       if (xhr.readyState === 4) {
