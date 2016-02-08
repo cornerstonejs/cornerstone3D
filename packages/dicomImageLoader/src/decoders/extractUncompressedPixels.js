@@ -10,6 +10,9 @@
     var samplesPerPixel = dataSet.uint16('x00280002');
     var pixelDataOffset = pixelDataElement.dataOffset;
     var numPixels = width * height * samplesPerPixel;
+    if (!numPixels) {
+      throw "Sanity check failed when calculating the number of pixels";
+    }
     // Note - we may want to sanity check the rows * columns * bitsAllocated * samplesPerPixel against the buffer size
 
     var frameOffset = 0;

@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.8.1 - 2016-02-03 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.8.1 - 2016-02-04 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -3297,6 +3297,9 @@ var JpegImage = (function jpegImage() {
     var samplesPerPixel = dataSet.uint16('x00280002');
     var pixelDataOffset = pixelDataElement.dataOffset;
     var numPixels = width * height * samplesPerPixel;
+    if (!numPixels) {
+      throw "Sanity check failed when calculating the number of pixels";
+    }
     // Note - we may want to sanity check the rows * columns * bitsAllocated * samplesPerPixel against the buffer size
 
     var frameOffset = 0;
