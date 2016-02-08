@@ -82,6 +82,6 @@
     };
     xhr.send();
 
-    return deferred;
+    return deferred.promise();
   };
 }(cornerstoneWADOImageLoader));

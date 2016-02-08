@@ -10,7 +10,7 @@
     var image = cornerstoneWADOImageLoader.imageManager.get(index);
     if(image === undefined) {
       deferred.reject('unknown imageId');
-      return deferred;
+      return deferred.promise();
     }
 
     var mediaType;// = 'image/dicom+jp2';
@@ -45,7 +45,7 @@
       deferred.reject(reason);
     });
 
-    return deferred;
+    return deferred.promise();
   }
 
   // registery dicomweb and wadouri image loader prefixes

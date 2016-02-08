@@ -59,7 +59,7 @@
             bytesPerPixel = getBytesPerPixel(dataSet);
         } catch(error) {
             deferred.reject(error);
-            return deferred;
+            return deferred.promise();
         }
 
         var numPixels = rows * columns;
@@ -76,7 +76,7 @@
         }
         catch(err) {
           deferred.reject(err);
-          return deferred;
+          return deferred.promise();
         }
 
         var minMax = cornerstoneWADOImageLoader.getMinMax(storedPixelData);
@@ -129,7 +129,8 @@
         // TODO: deal with pixel padding and all of the various issues by setting it to min pixel value (or lower)
         // TODO: Mask out overlays embedded in pixel data above high bit
 
-        if(image.windowCenter === undefined) {
+        if(image.windowCenter === undefined || isNaN(image.windowCenter) ||
+           image.windowWidth === undefined || isNaN(image.windowWidth)) {
             var maxVoi = image.maxPixelValue * image.slope + image.intercept;
             var minVoi = image.minPixelValue * image.slope + image.intercept;
             image.windowWidth = maxVoi - minVoi;
@@ -137,7 +138,7 @@
         }
 
         deferred.resolve(image);
-        return deferred;
+        return deferred.promise();
     }
 
     // module exports

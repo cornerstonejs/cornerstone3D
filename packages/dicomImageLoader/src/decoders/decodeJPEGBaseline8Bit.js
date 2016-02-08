@@ -64,7 +64,7 @@
       }
 
     };
-    return deferred;
+    return deferred.promise();
   }
 
   function isJPEGBaseline8Bit(dataSet) {

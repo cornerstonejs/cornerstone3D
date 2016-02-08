@@ -29,14 +29,14 @@
       }, function(error) {
         deferred.reject(error);
       });
-      return deferred;
+      return deferred.promise();
     }
 
     var fileIndex = parseInt(url);
     var file = cornerstoneWADOImageLoader.fileManager.get(fileIndex);
     if(file === undefined) {
       deferred.reject('unknown file index ' + url);
-      return deferred;
+      return deferred.promise();
     }
 
 
@@ -57,19 +57,19 @@
         }, function(error) {
           deferred.reject(error);
         });
-        return deferred;
+        return deferred.promise();
       }
 
       var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame);
       imagePromise.then(function(image) {
         deferred.resolve(image);
-      }, function() {
-        deferred.reject();
+      }, function(error) {
+        deferred.reject(error);
       });
     };
     fileReader.readAsArrayBuffer(file);
 
-    return deferred;
+    return deferred.promise();
   }
 
   // registery dicomweb and wadouri image loader prefixes

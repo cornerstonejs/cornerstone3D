@@ -51,7 +51,7 @@
 
     xhr.send();
 
-    return deferred;
+    return deferred.promise();
   }
 
   cornerstoneWADOImageLoader.internal.xhrRequest = xhrRequest;

@@ -12,8 +12,8 @@
         };
 
         if(dataSet.elements.x00281052 && dataSet.elements.x00281053) {
-          result.intercept = dataSet.floatString('x00281052');
-          result.slope = dataSet.floatString('x00281053');
+          result.intercept = dataSet.floatString('x00281052') || result.intercept;
+          result.slope = dataSet.floatString('x00281053') || result.slope;
         }
 
         return result;

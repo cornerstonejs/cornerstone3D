@@ -13,6 +13,11 @@
     else if( transferSyntax === "1.2.840.10008.1.2.1") {
       return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame);
     }
+    // Explicit VR Big Endian (retired)
+    else if ( transferSyntax === "1.2.840.10008.1.2.2" )
+    {
+      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
+    }
     // JPEG 2000 Lossless
     else if(transferSyntax === "1.2.840.10008.1.2.4.90")
     {
@@ -62,6 +67,9 @@
     }
     else
     {
+      if(console && console.log) {
+        console.log("Image cannot be decoded due to Unsupported transfer syntax " + transferSyntax);
+      }
       throw "no decoder for transfer syntax " + transferSyntax;
     }
   }

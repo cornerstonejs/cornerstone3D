@@ -43,7 +43,7 @@
         }
         catch(err) {
           deferred.reject(err);
-          return deferred;
+          return deferred.promise();
         }
 
         imageDataPromise.then(function(imageData) {
@@ -94,7 +94,8 @@
                 sharedCacheKey: sharedCacheKey
             };
 
-            if(image.windowCenter === undefined) {
+          if(image.windowCenter === undefined || isNaN(image.windowCenter) ||
+            image.windowWidth === undefined || isNaN(image.windowWidth)) {
                 image.windowWidth = 255;
                 image.windowCenter = 128;
             }
@@ -103,7 +104,7 @@
             deferred.reject(error);
         });
 
-        return deferred;
+        return deferred.promise();
     }
 
     // module exports

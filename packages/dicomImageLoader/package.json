@@ -1,6 +1,6 @@
 {
     "name": "cornerstone-wado-image-loader",
-    "version": "0.8.1",
+    "version": "0.9.0",
     "description": "Cornerstone ImageLoader for DICOM WADO-URI",
     "keywords": [
         "DICOM",

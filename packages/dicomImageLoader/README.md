@@ -117,7 +117,6 @@ Backlog
 
 * Support images with Pixel Padding?
 * Mask out burned in overlays?
-* Better cache management for multiframe (may require enhancement in cornerstone)
 * Add support for additional transfer syntaxes
   * JPEG-LS 
 
