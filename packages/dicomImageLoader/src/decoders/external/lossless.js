@@ -197,6 +197,8 @@
     this.yLoc = 0;
     this.numBytes = 0;
     this.outputData = null;
+    this.restarting = false;
+    this.mask = 0;
 
     if (typeof numBytes !== "undefined") {
       this.numBytes = numBytes;
@@ -212,7 +214,8 @@
     10, 19, 23, 32, 39, 45, 52, 54, 20, 22, 33, 38, 46, 51, 55, 60, 21, 34, 37, 47, 50, 56, 59, 61, 35, 36, 48, 49, 57, 58, 62, 63];
   jpeg.lossless.Decoder.MAX_HUFFMAN_SUBTREE = 50;
   jpeg.lossless.Decoder.MSB = 0x80000000;
-
+  jpeg.lossless.Decoder.RESTART_MARKER_BEGIN = 0xFFD0;
+  jpeg.lossless.Decoder.RESTART_MARKER_END = 0xFFD7;
 
   /*** Prototype Methods ***/
 
@@ -346,7 +349,13 @@
       this.components = this.frame.components;
 
       if (!this.numBytes) {
-        this.numBytes = parseInt(this.precision / 8);
+        this.numBytes = parseInt(Math.ceil(this.precision / 8));
+      }
+
+      if (this.numBytes == 1) {
+        this.mask = 0xFF;
+      } else {
+        this.mask = 0xFFFF;
       }
 
       this.scan.read(this.stream);
@@ -430,6 +439,7 @@
         }
 
         for (mcuNum = 0; mcuNum < this.restartInterval; mcuNum+=1) {
+          this.restarting = (mcuNum == 0);
           current = this.decodeUnit(pred, temp, index);
           this.output(pred);
 
@@ -447,7 +457,8 @@
           }
         }
 
-        if (!((current >= 0xFFD0) && (current <= 0xFFD7))) {
+        if (!((current >= jpeg.lossless.Decoder.RESTART_MARKER_BEGIN) &&
+          (current <= jpeg.lossless.Decoder.RESTART_MARKER_END))) {
           break; //current=MARKER
         }
       }
@@ -572,9 +583,14 @@
   jpeg.lossless.Decoder.prototype.decodeSingle = function (prev, temp, index) {
     /*jslint bitwise: true */
 
-    var value, i;
+    var value, i, n, nRestart;
 
-    prev[0] = this.selector();
+    if (this.restarting) {
+      this.restarting = false;
+      prev[0] = (1 << (this.frame.precision - 1));
+    } else {
+      prev[0] = this.selector();
+    }
 
     for (i = 0; i < this.nBlock[0]; i+=1) {
       value = this.getHuffmanValue(this.dcTab[0], temp, index);
@@ -582,7 +598,14 @@
         return value;
       }
 
-      prev[0] += this.getn(prev, value, temp, index);
+      n = this.getn(prev, value, temp, index);
+      nRestart = (n >> 8);
+
+      if ((nRestart >= jpeg.lossless.Decoder.RESTART_MARKER_BEGIN) && (nRestart <= jpeg.lossless.Decoder.RESTART_MARKER_END)) {
+        return nRestart;
+      }
+
+      prev[0] += n;
     }
 
     return 0;
@@ -814,7 +837,7 @@
 
   jpeg.lossless.Decoder.prototype.outputSingle = function (PRED) {
     if ((this.xLoc < this.xDim) && (this.yLoc < this.yDim)) {
-      this.setter((((this.yLoc * this.xDim) + this.xLoc)), PRED[0]);
+      this.setter((((this.yLoc * this.xDim) + this.xLoc)), this.mask & PRED[0]);
 
       this.xLoc+=1;
 
@@ -853,7 +876,7 @@
 
 
   jpeg.lossless.Decoder.prototype.getValue16 = function (index) {
-    return this.outputData.getInt16(index * 2, true);
+    return this.outputData.getInt16(index * 2, true) & this.mask;
   };
 
 
@@ -865,7 +888,7 @@
 
 
   jpeg.lossless.Decoder.prototype.getValue8 = function (index) {
-    return this.outputData.getInt8(index);
+    return this.outputData.getInt8(index) & this.mask;
   };
 
 
@@ -1240,7 +1263,7 @@
 
   "use strict";
 
-  /*** Imports ***/
+  /*** Imports ****/
   var jpeg = jpeg || {};
   jpeg.lossless = jpeg.lossless || {};
   jpeg.lossless.ComponentSpec = jpeg.lossless.ComponentSpec || ((typeof require !== 'undefined') ? require('./component-spec.js') : null);
@@ -1650,6 +1673,32 @@
     }
 
     return arr;
+  };
+
+
+// http://stackoverflow.com/questions/18638900/javascript-crc32
+  jpeg.lossless.Utils.makeCRCTable = function(){
+    var c;
+    var crcTable = [];
+    for(var n =0; n < 256; n++){
+      c = n;
+      for(var k =0; k < 8; k++){
+        c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+      }
+      crcTable[n] = c;
+    }
+    return crcTable;
+  };
+
+  jpeg.lossless.Utils.crc32 = function(dataView) {
+    var crcTable = jpeg.lossless.Utils.crcTable || (jpeg.lossless.Utils.crcTable = jpeg.lossless.Utils.makeCRCTable());
+    var crc = 0 ^ (-1);
+
+    for (var i = 0; i < dataView.byteLength; i++ ) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ dataView.getUint8(i)) & 0xFF];
+    }
+
+    return (crc ^ (-1)) >>> 0;
   };
 
 
