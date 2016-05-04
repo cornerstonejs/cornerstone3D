@@ -4,7 +4,7 @@
 
     "use strict";
 
-    function convertYBRFull(imageFrame, rgbaBuffer) {
+    function convertYBRFullByPixel(imageFrame, rgbaBuffer) {
         if(imageFrame === undefined) {
             throw "decodeRGB: ybrBuffer must not be undefined";
         }
@@ -27,5 +27,5 @@
     }
 
     // module exports
-    cornerstoneWADOImageLoader.convertYBRFull = convertYBRFull;
+    cornerstoneWADOImageLoader.convertYBRFullByPixel = convertYBRFullByPixel;
 }(cornerstoneWADOImageLoader));

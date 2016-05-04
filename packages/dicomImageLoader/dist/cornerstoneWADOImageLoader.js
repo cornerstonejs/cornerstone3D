@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.9.2 - 2016-02-17 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.10.0 - 2016-05-03 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -19,6 +19,9 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       options : {
         // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
         beforeSend: function (xhr) {
+        },
+        // callback allowing modification of newly created image objects
+        imageCreated : function(image) {
         }
       },
       multiFrameCacheHack : {}
@@ -40,6 +43,15 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
   }
 
+  function convertYBRFull(dataSet, decodedImageFrame, rgbaBuffer) {
+    var planarConfiguration = dataSet.uint16('x00280006');
+    if(planarConfiguration === 0) {
+      cornerstoneWADOImageLoader.convertYBRFullByPixel(decodedImageFrame, rgbaBuffer);
+    } else {
+      cornerstoneWADOImageLoader.convertYBRFullByPlane(decodedImageFrame, rgbaBuffer);
+    }
+  }
+
   function convertColorSpace(canvas, dataSet, imageFrame) {
     // extract the fields we need
     var height = dataSet.uint16('x00280010');
@@ -51,7 +63,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     canvas.width = width;
     var context = canvas.getContext('2d');
     var imageData = context.createImageData(width, height);
-
 
     // convert based on the photometric interpretation
     var deferred = $.Deferred();
@@ -74,11 +85,11 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       }
       else if( photometricInterpretation === "YBR_FULL_422" )
       {
-        cornerstoneWADOImageLoader.convertYBRFull(imageFrame, imageData.data);
+        convertYBRFull(dataSet, imageFrame, imageData.data);
       }
       else if(photometricInterpretation === "YBR_FULL" )
       {
-        cornerstoneWADOImageLoader.convertYBRFull(imageFrame, imageData.data);
+        convertYBRFull(dataSet, imageFrame, imageData.data);
       }
       else
       {
@@ -180,16 +191,14 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     var numPixels = imageFrame.length / 3;
     var rgbaIndex = 0;
+    var rIndex = 0;
+    var gIndex = numPixels;
+    var bIndex = numPixels*2;
     for(var i= 0; i < numPixels; i++) {
-      var rIndex = 0;
-      var gIndex = numPixels;
-      var bIndex = numPixels*2;
-      for(var i= 0; i < numPixels; i++) {
-        rgbaBuffer[rgbaIndex++] = imageFrame[rIndex++]; // red
-        rgbaBuffer[rgbaIndex++] = imageFrame[gIndex++]; // green
-        rgbaBuffer[rgbaIndex++] = imageFrame[bIndex++]; // blue
-        rgbaBuffer[rgbaIndex++] = 255; //alpha
-      }
+      rgbaBuffer[rgbaIndex++] = imageFrame[rIndex++]; // red
+      rgbaBuffer[rgbaIndex++] = imageFrame[gIndex++]; // green
+      rgbaBuffer[rgbaIndex++] = imageFrame[bIndex++]; // blue
+      rgbaBuffer[rgbaIndex++] = 255; //alpha
     }
   }
 
@@ -202,7 +211,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     "use strict";
 
-    function convertYBRFull(imageFrame, rgbaBuffer) {
+    function convertYBRFullByPixel(imageFrame, rgbaBuffer) {
         if(imageFrame === undefined) {
             throw "decodeRGB: ybrBuffer must not be undefined";
         }
@@ -225,7 +234,40 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
 
     // module exports
-    cornerstoneWADOImageLoader.convertYBRFull = convertYBRFull;
+    cornerstoneWADOImageLoader.convertYBRFullByPixel = convertYBRFullByPixel;
+}(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function convertYBRFullByPlane(imageFrame, rgbaBuffer) {
+    if (imageFrame === undefined) {
+      throw "decodeRGB: ybrBuffer must not be undefined";
+    }
+    if (imageFrame.length % 3 !== 0) {
+      throw "decodeRGB: ybrBuffer length must be divisble by 3";
+    }
+
+
+    var numPixels = imageFrame.length / 3;
+    var rgbaIndex = 0;
+    var yIndex = 0;
+    var cbIndex = numPixels;
+    var crIndex = numPixels * 2;
+    for (var i = 0; i < numPixels; i++) {
+      var y = imageFrame[yIndex++];
+      var cb = imageFrame[cbIndex++];
+      var cr = imageFrame[crIndex++];
+      rgbaBuffer[rgbaIndex++] = y + 1.40200 * (cr - 128);// red
+      rgbaBuffer[rgbaIndex++] = y - 0.34414 * (cb - 128) - 0.71414 * (cr - 128); // green
+      rgbaBuffer[rgbaIndex++] = y + 1.77200 * (cb - 128); // blue
+      rgbaBuffer[rgbaIndex++] = 255; //alpha
+    }
+  }
+  // module exports
+  cornerstoneWADOImageLoader.convertYBRFullByPlane = convertYBRFullByPlane;
 }(cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
@@ -4181,6 +4223,11 @@ var JpegImage = (function jpegImage() {
                 image.windowWidth = 255;
                 image.windowCenter = 128;
             }
+
+            // invoke the callback to allow external code to modify the newly created image object if needed - e.g.
+            // apply vendor specific workarounds and such
+            cornerstoneWADOImageLoader.internal.options.imageCreated(image);
+
             deferred.resolve(image);
         }, function(error) {
             deferred.reject(error);
@@ -4331,6 +4378,10 @@ var JpegImage = (function jpegImage() {
             image.windowCenter = (maxVoi + minVoi) / 2;
         }
 
+        // invoke the callback to allow external code to modify the newly created image object if needed - e.g.
+        // apply vendor specific workarounds and such
+        cornerstoneWADOImageLoader.internal.options.imageCreated(image);
+      
         deferred.resolve(image);
         return deferred.promise();
     }
@@ -4343,7 +4394,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.9.2';
+  cornerstoneWADOImageLoader.version = '0.10.0';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {

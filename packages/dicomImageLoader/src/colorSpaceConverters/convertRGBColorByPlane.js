@@ -14,16 +14,14 @@
 
     var numPixels = imageFrame.length / 3;
     var rgbaIndex = 0;
+    var rIndex = 0;
+    var gIndex = numPixels;
+    var bIndex = numPixels*2;
     for(var i= 0; i < numPixels; i++) {
-      var rIndex = 0;
-      var gIndex = numPixels;
-      var bIndex = numPixels*2;
-      for(var i= 0; i < numPixels; i++) {
-        rgbaBuffer[rgbaIndex++] = imageFrame[rIndex++]; // red
-        rgbaBuffer[rgbaIndex++] = imageFrame[gIndex++]; // green
-        rgbaBuffer[rgbaIndex++] = imageFrame[bIndex++]; // blue
-        rgbaBuffer[rgbaIndex++] = 255; //alpha
-      }
+      rgbaBuffer[rgbaIndex++] = imageFrame[rIndex++]; // red
+      rgbaBuffer[rgbaIndex++] = imageFrame[gIndex++]; // green
+      rgbaBuffer[rgbaIndex++] = imageFrame[bIndex++]; // blue
+      rgbaBuffer[rgbaIndex++] = 255; //alpha
     }
   }
 

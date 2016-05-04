@@ -137,6 +137,10 @@
             image.windowCenter = (maxVoi + minVoi) / 2;
         }
 
+        // invoke the callback to allow external code to modify the newly created image object if needed - e.g.
+        // apply vendor specific workarounds and such
+        cornerstoneWADOImageLoader.internal.options.imageCreated(image);
+      
         deferred.resolve(image);
         return deferred.promise();
     }
