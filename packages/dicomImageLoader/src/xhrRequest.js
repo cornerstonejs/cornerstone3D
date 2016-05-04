@@ -26,7 +26,7 @@
         }
         else {
           // request failed, reject the deferred
-          deferred.reject(xhr.response);
+          deferred.reject(xhr);
         }
       }
     };

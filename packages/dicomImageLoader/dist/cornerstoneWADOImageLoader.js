@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.10.0 - 2016-05-03 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.10.1 - 2016-05-03 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -113,6 +113,17 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   function convertPALETTECOLOR( imageFrame, rgbaBuffer, dataSet ) {
     var len=dataSet.int16('x00281101',0);
+
+    // Account for zero-values for the lookup table length
+    //
+    // "The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
+    //  When the number of table entries is equal to 2^16 then this value shall be 0."
+    //
+    // See: http://dicom.nema.org/MEDICAL/Dicom/2015c/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.5
+    if (!len) {
+      len = 65536;
+    }
+
     var start=dataSet.int16('x00281101',1);
     var bits=dataSet.int16('x00281101',2);
     var shift = (bits===8 ? 0 : 8 );
@@ -4394,7 +4405,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.10.0';
+  cornerstoneWADOImageLoader.version = '0.10.1';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
@@ -4425,7 +4436,7 @@ var JpegImage = (function jpegImage() {
         }
         else {
           // request failed, reject the deferred
-          deferred.reject(xhr.response);
+          deferred.reject(xhr);
         }
       }
     };
