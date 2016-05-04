@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.10.1 - 2016-05-03 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.10.1 - 2016-05-04 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -4237,7 +4237,9 @@ var JpegImage = (function jpegImage() {
 
             // invoke the callback to allow external code to modify the newly created image object if needed - e.g.
             // apply vendor specific workarounds and such
-            cornerstoneWADOImageLoader.internal.options.imageCreated(image);
+            if(cornerstoneWADOImageLoader.internal.options.imageCreated) {
+                cornerstoneWADOImageLoader.internal.options.imageCreated(image);
+            }
 
             deferred.resolve(image);
         }, function(error) {
@@ -4391,7 +4393,9 @@ var JpegImage = (function jpegImage() {
 
         // invoke the callback to allow external code to modify the newly created image object if needed - e.g.
         // apply vendor specific workarounds and such
+      if(cornerstoneWADOImageLoader.internal.options.imageCreated) {
         cornerstoneWADOImageLoader.internal.options.imageCreated(image);
+      }
       
         deferred.resolve(image);
         return deferred.promise();

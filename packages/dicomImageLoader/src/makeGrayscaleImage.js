@@ -139,7 +139,9 @@
 
         // invoke the callback to allow external code to modify the newly created image object if needed - e.g.
         // apply vendor specific workarounds and such
+      if(cornerstoneWADOImageLoader.internal.options.imageCreated) {
         cornerstoneWADOImageLoader.internal.options.imageCreated(image);
+      }
       
         deferred.resolve(image);
         return deferred.promise();
