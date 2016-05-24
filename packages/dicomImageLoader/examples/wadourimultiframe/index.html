@@ -120,7 +120,7 @@
         // so we know the number of frames it has so we can create the stack.  Calling load() will increment the reference
         // count so it will stay in memory until unload() is explicitly called and all other reference counts
         // held by the cornerstone cache are gone.  See below for more info
-        cornerstoneWADOImageLoader.dataSetCacheManager.load(url).then(function(dataSet) {
+        cornerstoneWADOImageLoader.dataSetCacheManager.load(url, cornerstoneWADOImageLoader.internal.xhrRequest).then(function(dataSet) {
             // dataset is now loaded, get the # of frames so we can build the array of imageIds
             var numFrames = dataSet.intString('x00280008');
             if(!numFrames) {

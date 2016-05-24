@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.11.0 - 2016-05-24 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.12.0 - 2016-05-24 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -23,13 +23,87 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         // callback allowing modification of newly created image objects
         imageCreated : function(image) {
         }
-      },
-      multiFrameCacheHack : {}
+      }
     }
   };
 }
 
 
+
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  // add a decache callback function to clear out our dataSetCacheManager
+  function addDecache(image) {
+    image.decache = function() {
+      //console.log('decache');
+      var parsedImageId = cornerstoneWADOImageLoader.parseImageId(image.imageId);
+      cornerstoneWADOImageLoader.dataSetCacheManager.unload(parsedImageId.url);
+    };
+  }
+
+  function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey) {
+    var deferred = $.Deferred();
+    xhrRequestPromise.then(function(dataSet) {
+      var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame, sharedCacheKey);
+      imagePromise.then(function(image) {
+        addDecache(image);
+        deferred.resolve(image);
+      }, function(error) {
+        deferred.reject(error);
+      });
+    }, function(error) {
+      deferred.reject(error);
+    });
+    return deferred;
+  }
+
+  function getLoaderForScheme(scheme) {
+    if(scheme === 'dicomweb' || scheme === 'wadouri') {
+      return cornerstoneWADOImageLoader.internal.xhrRequest;
+    }
+    else if(scheme === 'dicomfile') {
+      return cornerstoneWADOImageLoader.internal.loadFileRequest;
+    }
+  }
+
+  function loadImage(imageId) {
+    var parsedImageId = cornerstoneWADOImageLoader.parseImageId(imageId);
+
+    var loader = getLoaderForScheme(parsedImageId.scheme);
+
+    // if the dataset for this url is already loaded, use it
+    if(cornerstoneWADOImageLoader.dataSetCacheManager.isLoaded(parsedImageId.url)) {
+      return loadDataSetFromPromise(cornerstoneWADOImageLoader.dataSetCacheManager.load(parsedImageId.url, loader), imageId, parsedImageId.frame, parsedImageId.url);
+    }
+
+    // if multiframe, load the dataSet via the dataSetCacheManager to keep it in memory
+    if(parsedImageId.frame !== undefined) {
+      return loadDataSetFromPromise(cornerstoneWADOImageLoader.dataSetCacheManager.load(parsedImageId.url, loader), imageId, parsedImageId.frame, parsedImageId.url);
+    }
+
+    // not multiframe, load it directly and let cornerstone cache manager its lifetime
+    var deferred = $.Deferred();
+    var xhrRequestPromise =  loader(parsedImageId.url);
+    xhrRequestPromise.then(function(dataSet) {
+      var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, parsedImageId.frame);
+      imagePromise.then(function(image) {
+        addDecache(image);
+        deferred.resolve(image);
+      }, function(error) {
+        deferred.reject(error);
+      });
+    }, function(error) {
+      deferred.reject(error);
+    });
+    return deferred;
+  }
+
+  // register dicomweb and wadouri image loader prefixes
+  cornerstoneWADOImageLoader.internal.loadImage = loadImage;
+
+}($, cornerstone, cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
   "use strict";
@@ -315,20 +389,102 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   cornerstoneWADOImageLoader.createImageObject = createImageObject;
 
 }(cornerstoneWADOImageLoader));
+/**
+ * This object supports loading of DICOM P10 dataset from a uri and caching it so it can be accessed
+ * by the caller.  This allows a caller to access the datasets without having to go through cornerstone's
+ * image loader mechanism.  One reason a caller may need to do this is to determine the number of frames
+ * in a multiframe sop instance so it can create the imageId's correctly.
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  var loadedDataSets = {};
+  var promises = {};
+
+  // returns true if the wadouri for the specified index has been loaded
+  function isLoaded(uri) {
+    return loadedDataSets[uri] !== undefined;
+  }
+
+  // loads the dicom dataset from the wadouri sp
+  function load(uri, loadRequest) {
+
+    // if already loaded return it right away
+    if(loadedDataSets[uri]) {
+      //console.log('using loaded dataset ' + uri);
+      var alreadyLoadedpromise = $.Deferred();
+      loadedDataSets[uri].cacheCount++;
+      alreadyLoadedpromise.resolve(loadedDataSets[uri].dataSet);
+      return alreadyLoadedpromise;
+    }
+
+    // if we are currently loading this uri, return its promise
+    if(promises[uri]) {
+      //console.log('returning existing load promise for ' + uri);
+      return promises[uri];
+    }
+
+    //console.log('loading ' + uri);
+
+    // This uri is not loaded or being loaded, load it via an xhrRequest
+    var promise = loadRequest(uri);
+    promises[uri] = promise;
+
+    // handle success and failure of the XHR request load
+    promise.then(function(dataSet) {
+      loadedDataSets[uri] = {
+        dataSet: dataSet,
+        cacheCount: 1
+      };
+      // done loading, remove the promise
+      delete promises[uri];
+    }, function () {
+    }).always(function() {
+        // error thrown, remove the promise
+        delete promises[uri];
+      });
+    return promise;
+  }
+
+  // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
+  function unload(uri) {
+    //console.log('unload for ' + uri);
+    if(loadedDataSets[uri]) {
+      loadedDataSets[uri].cacheCount--;
+      if(loadedDataSets[uri].cacheCount === 0) {
+        //console.log('removing loaded dataset for ' + uri);
+        delete loadedDataSets[uri];
+      }
+    }
+  }
+
+  // removes all cached datasets from memory
+  function purge() {
+    loadedDataSets = {};
+    promises = {};
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.dataSetCacheManager = {
+    isLoaded: isLoaded,
+    load: load,
+    unload: unload,
+    purge: purge
+  };
+
+}(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
 
-
-  function decodeJPEG2000(dataSet, frame)
-  {
+  function decodeJpx(dataSet, frame) {
     var height = dataSet.uint16('x00280010');
     var width = dataSet.uint16('x00280011');
 
     var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
 
     var jpxImage = new JpxImage();
-
     jpxImage.parse(encodedImageFrame);
 
     var j2kWidth = jpxImage.width;
@@ -345,7 +501,43 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
     var tileComponents = jpxImage.tiles[0];
     var pixelData = tileComponents.items;
+
     return pixelData;
+  }
+
+  function decodeOpenJpeg2000(dataSet, frame) {
+    var height = dataSet.uint16('x00280010');
+    var width = dataSet.uint16('x00280011');
+
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+
+    var image = Module.opj_decode(encodedImageFrame);
+    var j2kWidth = image.sx;
+    var j2kHeight = image.sy;
+
+    if(j2kWidth !== width) {
+      throw 'JPEG2000 decoder returned width of ' + j2kWidth + ', when ' + width + ' is expected';
+    }
+    if(j2kHeight !== height) {
+      throw 'JPEG2000 decoder returned width of ' + j2kHeight + ', when ' + height + ' is expected';
+    }
+
+    var pixelData = new Int16Array(image.pixelData);
+    return pixelData;
+  }
+
+  function decodeJPEG2000(dataSet, frame)
+  {
+    // OpenJPEG2000 https://github.com/jpambrun/openjpeg
+    if(Module && Module.opj_decode) {
+      return decodeOpenJpeg2000(dataSet, frame);
+    }
+
+    // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
+    if(JpxImage) {
+      return decodeJpx(dataSet, frame);
+    }
+    throw 'No JPEG2000 decoder loaded';
   }
 
   cornerstoneWADOImageLoader.decodeJPEG2000 = decodeJPEG2000;
@@ -3436,15 +3628,23 @@ var JpegImage = (function jpegImage() {
     var frameOffset = 0;
     if(pixelFormat === 1) {
       frameOffset = pixelDataOffset + frame * numPixels;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
       return new Uint8Array(dataSet.byteArray.buffer, frameOffset, numPixels);
     }
     else if(pixelFormat === 2) {
       frameOffset = pixelDataOffset + frame * numPixels * 2;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
       return new Uint16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
-      return imageFrame;
     }
     else if(pixelFormat === 3) {
       frameOffset = pixelDataOffset + frame * numPixels * 2;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
       return new Int16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
     }
     throw "Unknown pixel format";
@@ -3643,77 +3843,8 @@ var JpegImage = (function jpegImage() {
 
   "use strict";
 
-  function loadImage(imageId) {
-    // create a deferred object
-    var deferred = $.Deferred();
-
-    // build a url by parsing out the url scheme and frame index from the imageId
-    var firstColonIndex = imageId.indexOf(':');
-    var url = imageId.substring(firstColonIndex + 1);
-    var frameIndex = url.indexOf('frame=');
-    var frame;
-    if(frameIndex !== -1) {
-      var frameStr = url.substr(frameIndex + 6);
-      frame = parseInt(frameStr);
-      url = url.substr(0, frameIndex-1);
-    }
-
-    // if multiframe and cached, use the cached data set to extract the frame
-    if(frame !== undefined &&
-      cornerstoneWADOImageLoader.internal.multiFrameCacheHack.hasOwnProperty(url))
-    {
-      var dataSet = cornerstoneWADOImageLoader.internal.multiFrameCacheHack[url];
-      var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame);
-      imagePromise.then(function(image) {
-        deferred.resolve(image);
-      }, function(error) {
-        deferred.reject(error);
-      });
-      return deferred.promise();
-    }
-
-    var fileIndex = parseInt(url);
-    var file = cornerstoneWADOImageLoader.fileManager.get(fileIndex);
-    if(file === undefined) {
-      deferred.reject('unknown file index ' + url);
-      return deferred.promise();
-    }
-
-
-    var fileReader = new FileReader();
-    fileReader.onload = function(e) {
-      // Parse the DICOM File
-      var dicomPart10AsArrayBuffer = e.target.result;
-      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-      var dataSet = dicomParser.parseDicom(byteArray);
-
-      // if multiframe, cache the parsed data set to speed up subsequent
-      // requests for the other frames
-      if(frame !== undefined) {
-        var dataSet = cornerstoneWADOImageLoader.internal.multiFrameCacheHack[url];
-        var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame);
-        imagePromise.then(function(image) {
-          deferred.resolve(image);
-        }, function(error) {
-          deferred.reject(error);
-        });
-        return deferred.promise();
-      }
-
-      var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame);
-      imagePromise.then(function(image) {
-        deferred.resolve(image);
-      }, function(error) {
-        deferred.reject(error);
-      });
-    };
-    fileReader.readAsArrayBuffer(file);
-
-    return deferred.promise();
-  }
-
-  // registery dicomweb and wadouri image loader prefixes
-  cornerstone.registerImageLoader('dicomfile', loadImage);
+  // register dicomfile image loader prefixes
+  cornerstone.registerImageLoader('dicomfile', cornerstoneWADOImageLoader.internal.loadImage);
 
 }($, cornerstone, cornerstoneWADOImageLoader));
 /**
@@ -3750,6 +3881,35 @@ var JpegImage = (function jpegImage() {
   };
 
 }(cornerstoneWADOImageLoader));
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function loadFileRequest(uri) {
+
+    var parsedImageId = cornerstoneWADOImageLoader.parseImageId(uri);
+    var fileIndex = parseInt(parsedImageId.url);
+    var file = cornerstoneWADOImageLoader.fileManager.get(fileIndex);
+    
+    // create a deferred object
+    var deferred = $.Deferred();
+
+    var fileReader = new FileReader();
+    fileReader.onload = function (e) {
+      // Parse the DICOM File
+      var dicomPart10AsArrayBuffer = e.target.result;
+      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+      var dataSet = dicomParser.parseDicom(byteArray);
+
+      deferred.resolve(dataSet);
+    };
+    fileReader.readAsArrayBuffer(file);
+
+    return deferred.promise();
+  }
+  cornerstoneWADOImageLoader.internal.loadFileRequest = loadFileRequest;
+}($, cornerstone, cornerstoneWADOImageLoader));
+
 (function (cornerstoneWADOImageLoader) {
 
   function checkToken(token, data, dataOffset) {
@@ -3977,178 +4137,14 @@ var JpegImage = (function jpegImage() {
   cornerstone.registerImageLoader('wadors', loadImage);
 
 }($, cornerstone, cornerstoneWADOImageLoader));
-/**
- * This object supports loading of DICOM P10 dataset from a uri and caching it so it can be accessed
- * by the caller.  This allows a caller to access the datasets without having to go through cornerstone's
- * image loader mechanism.  One reason a caller may need to do this is to determine the number of frames
- * in a multiframe sop instance so it can create the imageId's correctly.
- */
-(function (cornerstoneWADOImageLoader) {
-
-  "use strict";
-
-  var loadedDataSets = {};
-  var promises = {};
-
-  // returns true if the wadouri for the specified index has been loaded
-  function isLoaded(uri) {
-    return loadedDataSets[uri] !== undefined;
-  }
-
-  // loads the dicom dataset from the wadouri sp
-  function load(uri) {
-
-    // if already loaded return it right away
-    if(loadedDataSets[uri]) {
-      //console.log('using loaded dataset ' + uri);
-      var alreadyLoadedpromise = $.Deferred();
-      loadedDataSets[uri].cacheCount++;
-      alreadyLoadedpromise.resolve(loadedDataSets[uri].dataSet);
-      return alreadyLoadedpromise;
-    }
-
-    // if we are currently loading this uri, return its promise
-    if(promises[uri]) {
-      //console.log('returning existing load promise for ' + uri);
-      return promises[uri];
-    }
-
-    //console.log('loading ' + uri);
-
-    // This uri is not loaded or being loaded, load it via an xhrRequest
-    var promise = cornerstoneWADOImageLoader.internal.xhrRequest(uri);
-    promises[uri] = promise;
-
-    // handle success and failure of the XHR request load
-    promise.then(function(dataSet) {
-      loadedDataSets[uri] = {
-        dataSet: dataSet,
-        cacheCount: 1
-      };
-      // done loading, remove the promise
-      delete promises[uri];
-    }, function () {
-    }).always(function() {
-        // error thrown, remove the promise
-        delete promises[uri];
-      });
-    return promise;
-  }
-
-  // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
-  function unload(uri) {
-    //console.log('unload for ' + uri);
-    if(loadedDataSets[uri]) {
-      loadedDataSets[uri].cacheCount--;
-      if(loadedDataSets[uri].cacheCount === 0) {
-        //console.log('removing loaded dataset for ' + uri);
-        delete loadedDataSets[uri];
-      }
-    }
-  }
-
-  // removes all cached datasets from memory
-  function purge() {
-    loadedDataSets = {};
-    promises = {};
-  }
-
-  // module exports
-  cornerstoneWADOImageLoader.dataSetCacheManager = {
-    isLoaded: isLoaded,
-    load: load,
-    unload: unload,
-    purge: purge
-  };
-
-}(cornerstoneWADOImageLoader));
 
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
 
-  function parseImageId(imageId) {
-    // build a url by parsing out the url scheme and frame index from the imageId
-    var firstColonIndex = imageId.indexOf(':');
-    var url = imageId.substring(firstColonIndex + 1);
-    var frameIndex = url.indexOf('frame=');
-    var frame;
-    if(frameIndex !== -1) {
-      var frameStr = url.substr(frameIndex + 6);
-      frame = parseInt(frameStr);
-      url = url.substr(0, frameIndex-1);
-    }
-    return {
-      url : url,
-      frame: frame
-    };
-  }
-
-  // add a decache callback function to clear out our dataSetCacheManager
-  function addDecache(image) {
-    image.decache = function() {
-      //console.log('decache');
-      var parsedImageId = parseImageId(image.imageId);
-      cornerstoneWADOImageLoader.dataSetCacheManager.unload(parsedImageId.url);
-    };
-  }
-
-  function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey) {
-    var deferred = $.Deferred();
-    xhrRequestPromise.then(function(dataSet) {
-      var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame, sharedCacheKey);
-      imagePromise.then(function(image) {
-        addDecache(image);
-        deferred.resolve(image);
-      }, function(error) {
-        deferred.reject(error);
-      });
-    }, function(error) {
-      deferred.reject(error);
-    });
-    return deferred;
-  }
-
-  // Loads an image given an imageId
-  // wado url example:
-  // http://localhost:3333/wado?requestType=WADO&studyUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075541.1&seriesUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075541.2&objectUID=1.3.6.1.4.1.25403.166563008443.5076.20120418075557.1&contentType=application%2Fdicom&transferSyntax=1.2.840.10008.1.2.1
-  // NOTE: supposedly the instance will be returned in Explicit Little Endian transfer syntax if you don't
-  // specify a transferSyntax but Osirix doesn't do this and seems to return it with the transfer syntax it is
-  // stored as.
-  function loadImage(imageId) {
-    // build a url by parsing out the url scheme and frame index from the imageId
-    var parsedImageId = parseImageId(imageId);
-
-    // if the dataset for this url is already loaded, use it
-    if(cornerstoneWADOImageLoader.dataSetCacheManager.isLoaded(parsedImageId.url)) {
-      return loadDataSetFromPromise(cornerstoneWADOImageLoader.dataSetCacheManager.load(parsedImageId.url), imageId, parsedImageId.frame, parsedImageId.url);
-    }
-
-    // if multiframe, load the dataSet via the dataSetCacheManager to keep it in memory
-    if(parsedImageId.frame !== undefined) {
-      return loadDataSetFromPromise(cornerstoneWADOImageLoader.dataSetCacheManager.load(parsedImageId.url), imageId, parsedImageId.frame, parsedImageId.url);
-    }
-
-    // not multiframe, load it directly and let cornerstone cache manager its lifetime
-    var deferred = $.Deferred();
-    var xhrRequestPromise =  cornerstoneWADOImageLoader.internal.xhrRequest(parsedImageId.url, imageId);
-    xhrRequestPromise.then(function(dataSet) {
-      var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, parsedImageId.frame);
-      imagePromise.then(function(image) {
-        addDecache(image);
-        deferred.resolve(image);
-      }, function(error) {
-        deferred.reject(error);
-      });
-    }, function(error) {
-      deferred.reject(error);
-    });
-    return deferred;
-  }
-
-  // registery dicomweb and wadouri image loader prefixes
-  cornerstone.registerImageLoader('dicomweb', loadImage);
-  cornerstone.registerImageLoader('wadouri', loadImage);
+  // register dicomweb and wadouri image loader prefixes
+  cornerstone.registerImageLoader('dicomweb', cornerstoneWADOImageLoader.internal.loadImage);
+  cornerstone.registerImageLoader('wadouri', cornerstoneWADOImageLoader.internal.loadImage);
 
 }($, cornerstone, cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
@@ -4352,6 +4348,14 @@ var JpegImage = (function jpegImage() {
       return lut;
     }
 
+    function isModalityLUTForDisplay(dataSet) {
+      // special case for XA and XRF
+      // https://groups.google.com/forum/#!searchin/comp.protocols.dicom/Modality$20LUT$20XA/comp.protocols.dicom/UBxhOZ2anJ0/D0R_QP8V2wIJ
+      var sopClassUid = dataSet.string('x00080016');
+      return  sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.1' && // XA
+              sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1	'; // XRF
+    }
+
     function makeGrayscaleImage(imageId, dataSet, frame, sharedCacheKey) {
         var deferred = $.Deferred();
 
@@ -4419,7 +4423,7 @@ var JpegImage = (function jpegImage() {
 
         // modality LUT
         var pixelRepresentation = dataSet.uint16('x00280103');
-        if(dataSet.elements.x00283000) {
+        if(dataSet.elements.x00283000 && isModalityLUTForDisplay(dataSet)) {
           image.modalityLUT = getLUT(image, pixelRepresentation, dataSet.elements.x00283000.items[0].dataSet);
         }
 
@@ -4460,9 +4464,34 @@ var JpegImage = (function jpegImage() {
 (function (cornerstoneWADOImageLoader) {
 
   "use strict";
+  function parseImageId(imageId) {
+    // build a url by parsing out the url scheme and frame index from the imageId
+    var firstColonIndex = imageId.indexOf(':');
+    var url = imageId.substring(firstColonIndex + 1);
+    var frameIndex = url.indexOf('frame=');
+    var frame;
+    if(frameIndex !== -1) {
+      var frameStr = url.substr(frameIndex + 6);
+      frame = parseInt(frameStr);
+      url = url.substr(0, frameIndex-1);
+    }
+    return {
+      scheme: imageId.substr(0, firstColonIndex),
+      url : url,
+      frame: frame
+    };
+  }
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.11.0';
+  cornerstoneWADOImageLoader.parseImageId = parseImageId;
+  
+}(cornerstoneWADOImageLoader));
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  // module exports
+  cornerstoneWADOImageLoader.version = '0.12.0';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {

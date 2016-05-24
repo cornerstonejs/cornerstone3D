@@ -45,6 +45,14 @@
       return lut;
     }
 
+    function isModalityLUTForDisplay(dataSet) {
+      // special case for XA and XRF
+      // https://groups.google.com/forum/#!searchin/comp.protocols.dicom/Modality$20LUT$20XA/comp.protocols.dicom/UBxhOZ2anJ0/D0R_QP8V2wIJ
+      var sopClassUid = dataSet.string('x00080016');
+      return  sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.1' && // XA
+              sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1	'; // XRF
+    }
+
     function makeGrayscaleImage(imageId, dataSet, frame, sharedCacheKey) {
         var deferred = $.Deferred();
 
@@ -112,7 +120,7 @@
 
         // modality LUT
         var pixelRepresentation = dataSet.uint16('x00280103');
-        if(dataSet.elements.x00283000) {
+        if(dataSet.elements.x00283000 && isModalityLUTForDisplay(dataSet)) {
           image.modalityLUT = getLUT(image, pixelRepresentation, dataSet.elements.x00283000.items[0].dataSet);
         }
 

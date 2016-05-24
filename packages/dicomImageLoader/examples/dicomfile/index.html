@@ -90,6 +90,7 @@
 
 <!-- jpeg 2000 codec -->
 <script src="../jpx.min.js"></script>
+<script src="../libopenjpeg.js"></script>
 
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
@@ -159,11 +160,6 @@
          alert(err);
          }*/
     }
-
-    $('#dicomImage').on("CornerstoneImageRendered", function(e, eventData) {
-        console.log(eventData);
-    });
-
 
     $(cornerstone).bind('CornerstoneImageLoadProgress', function(eventData) {
         $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");

@@ -21,6 +21,9 @@ Compressed
 
 NOTE: The JPEG 2000 decoder is not complete, [click there to see the issues](https://github.com/OHIF/image-JPEG2000/issues)
 
+NOTE: An alternative JPEG2000 codec based on OpenJPEG is now available that should support more files, see the
+[cornerstoneWADOImageLoader README](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/README.md) for details.
+
 Photometric Interpretations
 ---------------------------
 * MONOCHROME1

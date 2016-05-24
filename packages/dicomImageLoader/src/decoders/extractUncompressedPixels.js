@@ -35,15 +35,23 @@
     var frameOffset = 0;
     if(pixelFormat === 1) {
       frameOffset = pixelDataOffset + frame * numPixels;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
       return new Uint8Array(dataSet.byteArray.buffer, frameOffset, numPixels);
     }
     else if(pixelFormat === 2) {
       frameOffset = pixelDataOffset + frame * numPixels * 2;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
       return new Uint16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
-      return imageFrame;
     }
     else if(pixelFormat === 3) {
       frameOffset = pixelDataOffset + frame * numPixels * 2;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
       return new Int16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
     }
     throw "Unknown pixel format";

@@ -5,6 +5,12 @@ A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for DICOM P1
 HTTP.  This can be used to integrate cornerstone with WADO-URI servers or any other HTTP based server
 that returns DICOM P10 instances (e.g. [Orthanc](http://www.orthanc-server.com/) or custom servers)
 
+Troubleshooting
+---------------
+
+Having problems viewing your images with cornerstonWADOImageLoader?  Check out the
+[troubleshooting guide](https://github.com/chafey/cornerstoneWADOImageLoader/wiki/troubleshooting).
+
 Live Examples
 ---------------
 
@@ -33,7 +39,8 @@ The cornerstoneWADOImageLoader depends on the following external libraries:
 1. [jQuery](https://github.com/jquery/jquery)
 2. [dicomParser](https://github.com/chafey/dicomParser) 
 3. [cornerstone](https://github.com/chafey/cornerStone)
-4. [JPEG2000 Codec](https://github.com/OHIF/image-JPEG2000)
+
+Additional libraries are required for JPEG2000 support, see below
 
 All of these libraries should be loaded before the cornerstoneWADOImageLoader.js.  See the source code
 for the [example](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html).
@@ -70,6 +77,32 @@ or the image will fail to load.  If you are unable to get CORS enabled on the we
 instances from, you can use a [reverse proxy](http://en.wikipedia.org/wiki/Reverse_proxy).  Here is a 
 [simple Node.js based http-proxy](http://chafey.blogspot.com/2014/09/working-around-cors.html) that adds CORS headers
 that you might find useful.
+
+JPEG 2000 Support
+-----------------
+
+CornerstoneWADOImageLoader supports JPEG2000 via one of two codecs each of which have different levels of performance
+and support for JPEG2000:
+
+###### PDF.js based
+
+[OHIF/image-JPEG2000](https://github.com/OHIF/image-JPEG2000)
+
+This is the first JPEG2000 codec that cornerstone integrated.  It is based on the
+[pdf.js](https://github.com/mozilla/pdf.js) project with fixes/enhancements made by @jpambrun.  It decodes many
+JPEG2000 files but not all and is generally faster than OpenJPEG codec.
+
+###### OpenJPEG
+
+[OpenJPEG based JPEG2000 Codec](https://github.com/jpambrun/openjpeg)
+
+This is a newer JPEG2000 codec (support added May 24, 2016).  It is based on the openJPEG project with fixes/enhancements
+made by @jpambrun.  It should decode most (if not all) JPEG2000 files but is generally slower than the PDF.js codec.
+
+Since these codecs are large (and have different licenses associated with them), they must be loaded separately from
+cornerstoneWADOImageLoader.  Note that JPEG 2000 is complex and these codecs may have bugs or your file may have been
+encoded with a buggy encoder.  If you are having problems displaying your JPEG2000 files, you can try posting
+on the [cornerstone forum](https://groups.google.com/forum/#!forum/cornerstone-platform), but support may be limited.
 
 Key Features
 ------------
@@ -126,6 +159,7 @@ Acknowledgements
 * [rii-mango](https://github.com/rii-mango) for the [JPEGLossless decoder](https://github.com/rii-mango/JPEGLosslessDecoderJS)
 * [gSquared](https://github.com/g-squared) for the JPEG lossy decoder, RLE and PALETTE_COLOR support
 * [jpambrun](https://github.com/jpambrun) and [pdf.js](https://github.com/mozilla/pdf.js) for the JPEG 2000 decoder
+* [jpambrun](https://github.com/jpambrun) and [OpenJPEG](http://www.openjpeg.org/) for another JPEG 2000 decoder
 
 FAQ
 ===

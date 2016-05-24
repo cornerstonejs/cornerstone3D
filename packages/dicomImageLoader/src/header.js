@@ -22,8 +22,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         // callback allowing modification of newly created image objects
         imageCreated : function(image) {
         }
-      },
-      multiFrameCacheHack : {}
+      }
     }
   };
 }
