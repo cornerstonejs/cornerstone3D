@@ -33,9 +33,9 @@
     canvas.height = height;
     canvas.width = width;
 
-    var encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
 
-    var imgBlob = new Blob([encodedPixelData], {type: "image/jpeg"});
+    var imgBlob = new Blob([encodedImageFrame], {type: "image/jpeg"});
 
     var r = new FileReader();
     if(r.readAsBinaryString === undefined) {

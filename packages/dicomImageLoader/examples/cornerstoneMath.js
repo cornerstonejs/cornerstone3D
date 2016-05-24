@@ -1,4 +1,4 @@
-/*! cornerstoneMath - v0.1.2 - 2015-08-31 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneMath */
+/*! cornerstoneMath - v0.1.3 - 2016-02-04 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneMath */
 // Begin Source: src/vector3.js
 // Based on THREE.JS
 
@@ -976,10 +976,86 @@ var cornerstoneMath = (function (cornerstoneMath) {
         return Math.sqrt(distanceToPointSquared(lineSegment, point));
     }
 
+    // Returns intersection points of two lines
+    function intersectLine(lineSegment1, lineSegment2) {
+        var intersectionPoint = {};
+
+        var x1 = lineSegment1.start.x, y1 = lineSegment1.start.y, x2 = lineSegment1.end.x, y2 = lineSegment1.end.y,
+            x3 = lineSegment2.start.x, y3 = lineSegment2.start.y, x4 = lineSegment2.end.x, y4 = lineSegment2.end.y;
+
+        var a1, a2, b1, b2, c1, c2; // Coefficients of line equations
+        var r1, r2, r3, r4; // Sign values
+
+        var denom, num; //Intermediate values
+
+        // Compute a1, b1, c1, where line joining points 1 and 2 is "a1 x  +  b1 y  +  c1  =  0"
+        a1 = y2 - y1;
+        b1 = x1 - x2;
+        c1 = x2 * y1 - x1 * y2;
+
+        // Compute r3 and r4
+        r3 = a1 * x3 + b1 * y3 + c1;
+        r4 = a1 * x4 + b1 * y4 + c1;
+
+        /* Check signs of r3 and r4.  If both point 3 and point 4 lie on
+         * same side of line 1, the line segments do not intersect.
+         */
+
+        if (r3 !== 0 &&
+            r4 !== 0 &&
+            cornerstoneMath.sign(r3) === cornerstoneMath.sign(r4)) {
+            return;
+        }
+
+        /* Compute a2, b2, c2 */
+
+        a2 = y4 - y3;
+        b2 = x3 - x4;
+        c2 = x4 * y3 - x3 * y4;
+
+        /* Compute r1 and r2 */
+
+        r1 = a2 * x1 + b2 * y1 + c2;
+        r2 = a2 * x2 + b2 * y2 + c2;
+
+        /* Check signs of r1 and r2.  If both point 1 and point 2 lie
+         * on same side of second line segment, the line segments do
+         * not intersect.
+         */
+
+        if (r1 !== 0 &&
+            r2 !== 0 &&
+            cornerstoneMath.sign(r1) === cornerstoneMath.sign(r2)) {
+            return;
+        }
+
+        /* Line segments intersect: compute intersection point.
+         */
+
+        denom = (a1 * b2) - (a2 * b1);
+
+        /* The denom/2 is to get rounding instead of truncating.  It
+         * is added or subtracted to the numerator, depending upon the
+         * sign of the numerator.
+         */
+
+        num = (b1 * c2) - (b2 * c1);
+        var x = parseFloat(num / denom);
+
+        num = (a2 * c1) - (a1 * c2);
+        var y = parseFloat(num / denom);
+
+        intersectionPoint.x = x;
+        intersectionPoint.y = y;
+
+        return intersectionPoint;
+    }
+
     // module exports
     cornerstoneMath.lineSegment =
     {
-        distanceToPoint : distanceToPoint
+        distanceToPoint : distanceToPoint,
+        intersectLine: intersectLine
     };
 
 
@@ -1012,9 +1088,15 @@ var cornerstoneMath = (function (cornerstoneMath) {
         return radians * radianToDegreesFactor;
     }
 
+    // Returns sign of number
+    function sign(x) {
+        return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
+    }
+
     cornerstoneMath.clamp = clamp;
     cornerstoneMath.degToRad = degToRad;
     cornerstoneMath.radToDeg = radToDeg;
+    cornerstoneMath.sign = sign;
 
     return cornerstoneMath;
 }(cornerstoneMath)); 
@@ -1569,6 +1651,31 @@ var cornerstoneMath = (function (cornerstoneMath) {
         return true;
     }
 
+    /**
+     * Returns the closest source point to a target point
+     * given an array of source points.
+     *
+     * @param sources An Array of source Points
+     * @param target The target Point
+     * @returns Point The closest point from the points array
+     */
+    function findClosestPoint(sources, target) {
+        var distances = [];
+        var minDistance;
+        sources.forEach(function(source, index) {
+            var distance = cornerstoneMath.point.distance(source, target);
+            distances.push(distance);
+            
+            if (index === 0) {
+                minDistance = distance;
+            } else {
+                minDistance = Math.min(distance, minDistance);
+            }
+        });
+
+        var index = distances.indexOf(minDistance);
+        return sources[index];
+    }
 
     // module exports
     cornerstoneMath.point =
@@ -1578,7 +1685,8 @@ var cornerstoneMath = (function (cornerstoneMath) {
         pageToPoint: pageToPoint,
         distance: distance,
         distanceSquared: distanceSquared,
-        insideRect: insideRect
+        insideRect: insideRect,
+        findClosestPoint: findClosestPoint
     };
 
 
@@ -1767,10 +1875,118 @@ var cornerstoneMath = (function (cornerstoneMath) {
         return minDistance;
     }
 
+    // Returns top-left and bottom-right points of the rectangle
+    function rectToPoints (rect) {
+        var rectPoints = {
+            topLeft: {
+                x: rect.left,
+                y: rect.top
+            },
+            bottomRight: {
+                x: rect.left + rect.width,
+                y: rect.top + rect.height
+            }
+        };
+
+        return rectPoints;
+    }
+
+    // Returns whether two non-rotated rectangles are intersected
+    function doesIntersect (rect1, rect2) {
+        var intersectLeftRight;
+        var intersectTopBottom;
+
+        var rect1Points = rectToPoints(rect1);
+        var rect2Points = rectToPoints(rect2);
+
+        if (rect1.width >= 0) {
+            if (rect2.width >= 0)
+                intersectLeftRight = !((rect1Points.bottomRight.x <= rect2Points.topLeft.x) || (rect2Points.bottomRight.x <= rect1Points.topLeft.x));
+            else
+                intersectLeftRight = !((rect1Points.bottomRight.x <= rect2Points.bottomRight.x) || (rect2Points.topLeft.x <= rect1Points.topLeft.x));
+        } else {
+            if (rect2.width >= 0)
+                intersectLeftRight = !((rect1Points.topLeft.x <= rect2Points.topLeft.x) || (rect2Points.bottomRight.x <= rect1Points.bottomRight.x));
+            else
+                intersectLeftRight = !((rect1Points.topLeft.x <= rect2Points.bottomRight.x) || (rect2Points.topLeft.x <= rect1Points.bottomRight.x));
+        }
+
+        if (rect1.height >= 0) {
+            if (rect2.height >= 0)
+                intersectTopBottom = !((rect1Points.bottomRight.y <= rect2Points.topLeft.y) || (rect2Points.bottomRight.y  <= rect1Points.topLeft.y));
+            else
+                intersectTopBottom = !((rect1Points.bottomRight.y <= rect2Points.bottomRight.y ) || (rect2Points.topLeft.y <= rect1Points.topLeft.y));
+        } else {
+            if (rect2.height >= 0)
+                intersectTopBottom = !((rect1Points.topLeft.y <= rect2Points.topLeft.y) || (rect2Points.bottomRight.y  <= rect1Points.bottomRight.y ));
+            else
+                intersectTopBottom = !((rect1Points.topLeft.y <= rect2Points.bottomRight.y ) || (rect2Points.top <= rect1Points.bottomRight.y ));
+        }
+
+        return intersectLeftRight && intersectTopBottom;
+    }
+
+    // Returns intersection points of two non-rotated rectangles
+    function getIntersectionRect(rect1, rect2) {
+        var intersectRect = {
+            topLeft: {},
+            bottomRight: {}
+        };
+
+        if (!doesIntersect(rect1, rect2)) {
+            return;
+        }
+
+        var rect1Points = rectToPoints(rect1);
+        var rect2Points = rectToPoints(rect2);
+
+        if (rect1.width >= 0) {
+            if (rect2.width >= 0) {
+                intersectRect.topLeft.x = Math.max(rect1Points.topLeft.x, rect2Points.topLeft.x);
+                intersectRect.bottomRight.x = Math.min(rect1Points.bottomRight.x, rect2Points.bottomRight.x);
+            } else {
+                intersectRect.topLeft.x = Math.max(rect1Points.topLeft.x, rect2Points.bottomRight.x);
+                intersectRect.bottomRight.x = Math.min(rect1Points.bottomRight.x, rect2Points.topLeft.x);
+            }
+        } else {
+            if (rect2.width >= 0) {
+                intersectRect.topLeft.x = Math.min(rect1Points.topLeft.x, rect2Points.bottomRight.x);
+                intersectRect.bottomRight.x = Math.max(rect1Points.bottomRight.x, rect2Points.topLeft.x);
+            } else {
+                intersectRect.topLeft.x = Math.min(rect1Points.topLeft.x, rect2Points.topLeft.x);
+                intersectRect.bottomRight.x = Math.max(rect1Points.bottomRight.x, rect2Points.bottomRight.x);
+            }
+        }
+
+        if (rect1.height >= 0) {
+            if (rect2.height >= 0) {
+                intersectRect.topLeft.y = Math.max(rect1Points.topLeft.y, rect2Points.topLeft.y);
+                intersectRect.bottomRight.y = Math.min(rect1Points.bottomRight.y, rect2Points.bottomRight.y);
+            } else {
+                intersectRect.topLeft.y = Math.max(rect1Points.topLeft.y, rect2Points.bottomRight.y);
+                intersectRect.bottomRight.y = Math.min(rect1Points.bottomRight.y, rect2Points.topLeft.y);
+            }
+        } else {
+            if (rect2.height >= 0) {
+                intersectRect.topLeft.y = Math.min(rect1Points.topLeft.y, rect2Points.bottomRight.y);
+                intersectRect.bottomRight.y = Math.max(rect1Points.bottomRight.y, rect2Points.topLeft.y);
+            } else {
+                intersectRect.topLeft.y = Math.min(rect1Points.topLeft.y, rect2Points.topLeft.y);
+                intersectRect.bottomRight.y = Math.max(rect1Points.bottomRight.y, rect2Points.bottomRight.y);
+            }
+        }
+
+        // Returns top-left and bottom-right points of intersected rectangle
+        return intersectRect;
+
+    }
+
     // module exports
     cornerstoneMath.rect =
     {
-        distanceToPoint : distanceToPoint
+        distanceToPoint : distanceToPoint,
+        getIntersectionRect : getIntersectionRect
+
     };
 
 

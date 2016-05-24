@@ -1,13 +1,18 @@
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
+
+
   function decodeJPEG2000(dataSet, frame)
   {
     var height = dataSet.uint16('x00280010');
     var width = dataSet.uint16('x00280011');
-    var compressedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
+
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+
     var jpxImage = new JpxImage();
-    jpxImage.parse(compressedPixelData);
+
+    jpxImage.parse(encodedImageFrame);
 
     var j2kWidth = jpxImage.width;
     var j2kHeight = jpxImage.height;

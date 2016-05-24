@@ -8,7 +8,7 @@
     var samplesPerPixel = dataSet.uint16('x00280002');
     var pixelDataElement = dataSet.elements.x7fe00010;
 
-    var frameData = dicomParser.readEncapsulatedPixelData(dataSet, pixelDataElement, frame);
+    var frameData = dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, frame);
     var pixelFormat = cornerstoneWADOImageLoader.getPixelFormat(dataSet);
 
 

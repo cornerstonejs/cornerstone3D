@@ -1,4 +1,4 @@
-/*! cornerstoneTools - v0.7.5 - 2015-09-17 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstoneTools - v0.7.8 - 2016-02-12 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 // Begin Source: src/header.js
 if (typeof cornerstone === 'undefined') {
     cornerstone = {};
@@ -6,7 +6,8 @@ if (typeof cornerstone === 'undefined') {
 
 if (typeof cornerstoneTools === 'undefined') {
     cornerstoneTools = {
-        referenceLines: {}, orientation: {}
+        referenceLines: {},
+        orientation: {}
     };
 }
  
@@ -39,7 +40,14 @@ if (typeof cornerstoneTools === 'undefined') {
         var direction = Math.max(-1, Math.min(1, (wheelDelta)));
 
         var mouseWheelData = {
-            element: element, viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, direction: direction, pageX: e.pageX || e.originalEvent.pageX, pageY: e.pageY || e.originalEvent.pageY, imageX: startingCoords.x, imageY: startingCoords.y
+            element: element,
+            viewport: cornerstone.getViewport(element),
+            image: cornerstone.getEnabledElement(element).image,
+            direction: direction,
+            pageX: e.pageX || e.originalEvent.pageX,
+            pageY: e.pageY || e.originalEvent.pageY,
+            imageX: startingCoords.x,
+            imageY: startingCoords.y
         };
 
         $(element).trigger('CornerstoneToolsMouseWheel', mouseWheelData);
@@ -48,6 +56,9 @@ if (typeof cornerstoneTools === 'undefined') {
     var mouseWheelEvents = 'mousewheel DOMMouseScroll';
 
     function enable(element) {
+        // Prevent handlers from being attached multiple times
+        disable(element);
+        
         $(element).on(mouseWheelEvents, mouseWheel);
     }
 
@@ -57,7 +68,8 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module exports
     cornerstoneTools.mouseWheelInput = {
-        enable: enable, disable: disable
+        enable: enable,
+        disable: disable
     };
 
 })($, cornerstone, cornerstoneTools);
@@ -83,53 +95,81 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function mouseDoubleClick(e) {
         var element = e.currentTarget;
+        var eventType = 'CornerstoneToolsMouseDoubleClick';
 
         var startPoints = {
-            page: cornerstoneMath.point.pageToPoint(e), image: cornerstone.pageToPixel(element, e.pageX, e.pageY), client: {
-                x: e.clientX, y: e.clientY
+            page: cornerstoneMath.point.pageToPoint(e),
+            image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
+            client: {
+                x: e.clientX,
+                y: e.clientY
             }
         };
         startPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
 
         var lastPoints = cornerstoneTools.copyPoints(startPoints);
-        var mouseEventDetail = {
-            event: e, which: e.which, viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, element: element, startPoints: startPoints, lastPoints: lastPoints, currentPoints: startPoints, deltaPoints: {
-                x: 0, y: 0
-            }
+        var eventData = {
+            event: e,
+            which: e.which,
+            viewport: cornerstone.getViewport(element),
+            image: cornerstone.getEnabledElement(element).image,
+            element: element,
+            startPoints: startPoints,
+            lastPoints: lastPoints,
+            currentPoints: startPoints,
+            deltaPoints: {
+                x: 0,
+                y: 0
+            },
+            type: eventType
         };
 
-        var event = $.Event('CornerstoneToolsMouseDoubleClick', mouseEventDetail);
-        $(mouseEventDetail.element).trigger(event, mouseEventDetail);
+        var event = $.Event(eventType, eventData);
+        $(eventData.element).trigger(event, eventData);
     }
 
     function mouseDown(e) {
         preventClickTimeout = setTimeout(preventClickHandler, clickDelay);
 
         var element = e.currentTarget;
+        var eventType = 'CornerstoneToolsMouseDown';
 
         // Prevent CornerstoneToolsMouseMove while mouse is down
         $(element).off('mousemove', mouseMove);
 
         var startPoints = {
-            page: cornerstoneMath.point.pageToPoint(e), image: cornerstone.pageToPixel(element, e.pageX, e.pageY), client: {
-                x: e.clientX, y: e.clientY
+            page: cornerstoneMath.point.pageToPoint(e),
+            image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
+            client: {
+                x: e.clientX,
+                y: e.clientY
             }
         };
         startPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
 
         var lastPoints = cornerstoneTools.copyPoints(startPoints);
-        var mouseEventDetail = {
-                event: e, which: e.which, viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, element: element, startPoints: startPoints, lastPoints: lastPoints, currentPoints: startPoints, deltaPoints: {
-                    x: 0, y: 0
-                }
-            };
+        var eventData = {
+            event: e,
+            which: e.which,
+            viewport: cornerstone.getViewport(element),
+            image: cornerstone.getEnabledElement(element).image,
+            element: element,
+            startPoints: startPoints,
+            lastPoints: lastPoints,
+            currentPoints: startPoints,
+            deltaPoints: {
+                x: 0,
+                y: 0
+            },
+            type: eventType
+        };
 
-        var event = $.Event('CornerstoneToolsMouseDown', mouseEventDetail);
-        $(mouseEventDetail.element).trigger(event, mouseEventDetail);
+        var event = $.Event(eventType, eventData);
+        $(eventData.element).trigger(event, eventData);
 
         if (event.isImmediatePropagationStopped() === false) {
             // no tools responded to this event, give the active tool a chance
-            if (activateMouseDown(mouseEventDetail) === true) {
+            if (activateMouseDown(eventData) === true) {
                 return cornerstoneTools.pauseEvent(e);
             }
         }
@@ -138,25 +178,38 @@ if (typeof cornerstoneTools === 'undefined') {
 
         function onMouseMove(e) {
             // calculate our current points in page and image coordinates
+            var eventType = 'CornerstoneToolsMouseDrag';
             var currentPoints = {
-                page: cornerstoneMath.point.pageToPoint(e), image: cornerstone.pageToPixel(element, e.pageX, e.pageY), client: {
-                    x: e.clientX, y: e.clientY
+                page: cornerstoneMath.point.pageToPoint(e),
+                image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
+                client: {
+                    x: e.clientX,
+                    y: e.clientY
                 }
             };
             currentPoints.canvas = cornerstone.pixelToCanvas(element, currentPoints.image);
 
             // Calculate delta values in page and image coordinates
             var deltaPoints = {
-                page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page), image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image), client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client), canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
+                page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
+                image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
+                client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
+                canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
             };
 
             var eventData = {
-                which: whichMouseButton, viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, element: element, startPoints: startPoints, lastPoints: lastPoints, currentPoints: currentPoints, deltaPoints: deltaPoints
+                which: whichMouseButton,
+                viewport: cornerstone.getViewport(element),
+                image: cornerstone.getEnabledElement(element).image,
+                element: element,
+                startPoints: startPoints,
+                lastPoints: lastPoints,
+                currentPoints: currentPoints,
+                deltaPoints: deltaPoints,
+                type: eventType
             };
 
-            //element.dispatchEvent(event);
-
-            $(mouseEventDetail.element).trigger('CornerstoneToolsMouseDrag', eventData);
+            $(eventData.element).trigger(eventType, eventData);
 
             // update the last points
             lastPoints = cornerstoneTools.copyPoints(currentPoints);
@@ -200,19 +253,21 @@ if (typeof cornerstoneTools === 'undefined') {
                 which: whichMouseButton,
                 viewport: cornerstone.getViewport(element),
                 image: cornerstone.getEnabledElement(element).image,
-                element: element, startPoints: startPoints,
+                element: element,
+                startPoints: startPoints,
                 lastPoints: lastPoints,
                 currentPoints: currentPoints,
-                deltaPoints: deltaPoints
+                deltaPoints: deltaPoints,
+                type: eventType
             };
 
             var event = $.Event(eventType, eventData);
-            $(mouseEventDetail.element).trigger(event, eventData);
+            $(eventData.element).trigger(event, eventData);
 
             $(document).off('mousemove', onMouseMove);
             $(document).off('mouseup', onMouseUp);
 
-            $(mouseEventDetail.element).on('mousemove', mouseMove);
+            $(eventData.element).on('mousemove', mouseMove);
 
             isClickEvent = true;
         }
@@ -225,10 +280,14 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function mouseMove(e) {
         var element = e.currentTarget;
+        var eventType = 'CornerstoneToolsMouseMove';
 
         var startPoints = {
-            page: cornerstoneMath.point.pageToPoint(e), image: cornerstone.pageToPixel(element, e.pageX, e.pageY), client: {
-                x: e.clientX, y: e.clientY
+            page: cornerstoneMath.point.pageToPoint(e),
+            image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
+            client: {
+                x: e.clientX,
+                y: e.clientY
             }
         };
         startPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
@@ -239,21 +298,35 @@ if (typeof cornerstoneTools === 'undefined') {
 
         // calculate our current points in page and image coordinates
         var currentPoints = {
-            page: cornerstoneMath.point.pageToPoint(e), image: cornerstone.pageToPixel(element, e.pageX, e.pageY), client: {
-                x: e.clientX, y: e.clientY
+            page: cornerstoneMath.point.pageToPoint(e),
+            image: cornerstone.pageToPixel(element, e.pageX, e.pageY),
+            client: {
+                x: e.clientX,
+                y: e.clientY
             }
         };
         currentPoints.canvas = cornerstone.pixelToCanvas(element, currentPoints.image);
 
         // Calculate delta values in page and image coordinates
         var deltaPoints = {
-            page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page), image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image), client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client), canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
+            page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
+            image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
+            client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
+            canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
         };
 
-        var mouseMoveEventData = {
-            which: whichMouseButton, viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, element: element, startPoints: startPoints, lastPoints: lastPoints, currentPoints: currentPoints, deltaPoints: deltaPoints
+        var eventData = {
+            which: whichMouseButton,
+            viewport: cornerstone.getViewport(element),
+            image: cornerstone.getEnabledElement(element).image,
+            element: element,
+            startPoints: startPoints,
+            lastPoints: lastPoints,
+            currentPoints: currentPoints,
+            deltaPoints: deltaPoints,
+            type: eventType
         };
-        $(element).trigger('CornerstoneToolsMouseMove', mouseMoveEventData);
+        $(element).trigger(eventType, eventData);
 
         // update the last points
         lastPoints = cornerstoneTools.copyPoints(currentPoints);
@@ -297,13 +370,17 @@ if (typeof cornerstoneTools === 'undefined') {
         currentPoints,
         lastPoints,
         deltaPoints,
-        eventData;
+        eventData,
+        touchStartDelay,
+        pressDelay = 700,
+        pressTimeout,
+        isPress = false,
+        pressMaxDistance = 5,
+        pageDistanceMoved,
+        preventNextPinch = false;
     
-    function activateMouseDown(eventData) {
-        $(eventData.element).trigger('CornerstoneToolsDragStartActive', eventData);
-    }
-
     function onTouch(e) {
+        ///console.log(e.type);
         var element = e.target.parentNode,
             event,
             eventType;
@@ -311,8 +388,18 @@ if (typeof cornerstoneTools === 'undefined') {
         // Prevent mouse events from occurring alongside touch events
         e.preventDefault();
 
+        // If more than one finger is placed on the element, stop the press timeout
+        if ((e.pointers && e.pointers.length > 1) ||
+            (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 1)) {
+            isPress = false;
+            clearTimeout(pressTimeout);
+        }
+
         switch (e.type) {
             case 'tap':
+                isPress = false;
+                clearTimeout(pressTimeout);
+
                 // calculate our current points in page and image coordinates
                 currentPoints = {
                     page: cornerstoneMath.point.pageToPoint(e.pointers[0]),
@@ -331,7 +418,8 @@ if (typeof cornerstoneTools === 'undefined') {
                     image: cornerstone.getEnabledElement(element).image,
                     element: element,
                     currentPoints: currentPoints,
-                    type: eventType
+                    type: eventType,
+                    isTouchEvent: true
                 };
 
                 event = $.Event(eventType, eventData);
@@ -339,6 +427,9 @@ if (typeof cornerstoneTools === 'undefined') {
                 break;
 
             case 'doubletap':
+                isPress = false;
+                clearTimeout(pressTimeout);
+
                 // calculate our current points in page and image coordinates
                 currentPoints = {
                     page: cornerstoneMath.point.pageToPoint(e.pointers[0]),
@@ -357,89 +448,179 @@ if (typeof cornerstoneTools === 'undefined') {
                     image: cornerstone.getEnabledElement(element).image,
                     element: element,
                     currentPoints: currentPoints,
-                    type: eventType
+                    type: eventType,
+                    isTouchEvent: true
                 };
 
                 event = $.Event(eventType, eventData);
                 $(element).trigger(event, eventData);
                 break;
 
-            case 'press':
-                // calculate our current points in page and image coordinates
-                currentPoints = {
-                    page: cornerstoneMath.point.pageToPoint(e.pointers[0]),
-                    image: cornerstone.pageToPixel(element, e.pointers[0].pageX, e.pointers[0].pageY),
-                    client: {
-                        x: e.pointers[0].clientX,
-                        y: e.pointers[0].clientY
-                    }
-                };
-                currentPoints.canvas = cornerstone.pixelToCanvas(element, currentPoints.image);
-
-                eventType = 'CornerstoneToolsTouchPress';
-                eventData = {
-                    event: e,
-                    viewport: cornerstone.getViewport(element),
-                    image: cornerstone.getEnabledElement(element).image,
-                    element: element,
-                    currentPoints: currentPoints,
-                    type: eventType
-                };
-
-                event = $.Event(eventType, eventData);
-                $(element).trigger(event, eventData);
-                break;
-
-            case 'pinch':
-                var scale = lastScale - e.scale;
-                lastScale = e.scale;
+            case 'pinchstart':
+                isPress = false;
+                clearTimeout(pressTimeout);
                 
+                lastScale = 1.0;
+                break;
+
+            case 'pinchmove':
+                isPress = false;
+                clearTimeout(pressTimeout);
+
+                if (preventNextPinch === true) {
+                    lastScale = e.scale;
+                    preventNextPinch = false;
+                    break;
+                }
+
+                var scaleChange = (e.scale - lastScale) / lastScale;
+
+                startPoints = {
+                    page: e.center,
+                    image: cornerstone.pageToPixel(element, e.center.x, e.center.y),
+                };
+                startPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
+
                 eventType = 'CornerstoneToolsTouchPinch';
                 eventData = {
                     event: e,
+                    startPoints: startPoints,
                     viewport: cornerstone.getViewport(element),
                     image: cornerstone.getEnabledElement(element).image,
                     element: element,
-                    direction: scale < 0 ? 1 : -1,
-                    type: eventType
+                    direction: e.scale < 1 ? 1 : -1,
+                    scaleChange: scaleChange,
+                    type: eventType,
+                    isTouchEvent: true
                 };
 
                 event = $.Event(eventType, eventData);
                 $(element).trigger(event, eventData);
+
+                lastScale = e.scale;
                 break;
 
-            case 'panstart':
+            case 'touchstart':
+                lastScale = 1.0;
+
+                clearTimeout(pressTimeout);
+
+                clearTimeout(touchStartDelay);
+                touchStartDelay = setTimeout(function() {
+                    startPoints = {
+                        page: cornerstoneMath.point.pageToPoint(e.originalEvent.touches[0]),
+                        image: cornerstone.pageToPixel(element, e.originalEvent.touches[0].pageX, e.originalEvent.touches[0].pageY),
+                        client: {
+                            x: e.originalEvent.touches[0].clientX,
+                            y: e.originalEvent.touches[0].clientY
+                        }
+                    };
+                    startPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
+
+                    eventType = 'CornerstoneToolsTouchStart';
+                    if (e.originalEvent.touches.length > 1) {
+                        eventType = 'CornerstoneToolsMultiTouchStart';
+                    }
+
+                    eventData = {
+                        event: e,
+                        viewport: cornerstone.getViewport(element),
+                        image: cornerstone.getEnabledElement(element).image,
+                        element: element,
+                        startPoints: startPoints,
+                        currentPoints: startPoints,
+                        type: eventType,
+                        isTouchEvent: true
+                    };
+
+                    event = $.Event(eventType, eventData);
+                    $(element).trigger(event, eventData);
+
+                    if (event.isImmediatePropagationStopped() === false) {
+                        //isPress = false;
+                        //clearTimeout(pressTimeout);
+
+                        // No current tools responded to the drag action.
+                        // Create new tool measurement
+                        eventType = 'CornerstoneToolsTouchStartActive';
+                        if (e.originalEvent.touches.length > 1) {
+                            eventType = 'CornerstoneToolsMultiTouchStartActive';
+                        }
+
+                        eventData.type = eventType;
+                        $(element).trigger(eventType, eventData);
+                    }
+
+                    //console.log(eventType);
+                    lastPoints = cornerstoneTools.copyPoints(startPoints);
+                }, 50);
+
+                isPress = true;
+                pageDistanceMoved = 0;
+                pressTimeout = setTimeout(function() {
+                    if (!isPress) {
+                        return;
+                    }
+
+                    currentPoints = {
+                        page: cornerstoneMath.point.pageToPoint(e.originalEvent.touches[0]),
+                        image: cornerstone.pageToPixel(element, e.originalEvent.touches[0].pageX, e.originalEvent.touches[0].pageY),
+                        client: {
+                            x: e.originalEvent.touches[0].clientX,
+                            y: e.originalEvent.touches[0].clientY
+                        }
+                    };
+                    currentPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
+
+                    eventType = 'CornerstoneToolsTouchPress';
+                    eventData = {
+                        event: e,
+                        viewport: cornerstone.getViewport(element),
+                        image: cornerstone.getEnabledElement(element).image,
+                        element: element,
+                        currentPoints: currentPoints,
+                        type: eventType,
+                        isTouchEvent: true
+                    };
+
+                    event = $.Event(eventType, eventData);
+                    $(element).trigger(event, eventData);
+
+                    //console.log(eventType);
+                }, pressDelay);
+                break;
+
+            case 'touchend':
+                lastScale = 1.0;
+
+                isPress = false;
+                clearTimeout(pressTimeout);
+
                 startPoints = {
-                    page: cornerstoneMath.point.pageToPoint(e.pointers[0]), image: cornerstone.pageToPixel(element, e.pointers[0].pageX, e.pointers[0].pageY), client: {
-                        x: e.pointers[0].clientX,
-                        y: e.pointers[0].clientY
+                    page: cornerstoneMath.point.pageToPoint(e.originalEvent.changedTouches[0]),
+                    image: cornerstone.pageToPixel(element, e.originalEvent.changedTouches[0].pageX, e.originalEvent.changedTouches[0].pageY),
+                    client: {
+                        x: e.originalEvent.changedTouches[0].clientX,
+                        y: e.originalEvent.changedTouches[0].clientY
                     }
                 };
                 startPoints.canvas = cornerstone.pixelToCanvas(element, startPoints.image);
 
-                if (e.pointers.length === 1) {
-                    eventType = 'CornerstoneToolsDragStart';
-                } else {
-                    eventType = 'CornerstoneToolsMultiTouchDragStart';
-                }
+                eventType = 'CornerstoneToolsTouchEnd';
 
                 eventData = {
-                    event: e.srcEvent, viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, element: element, startPoints: startPoints, lastPoints: lastPoints, currentPoints: startPoints, deltaPoints: {
-                        x: 0, y: 0
-                    },
-                    type: eventType
+                    event: e,
+                    viewport: cornerstone.getViewport(element),
+                    image: cornerstone.getEnabledElement(element).image,
+                    element: element,
+                    startPoints: startPoints,
+                    currentPoints: startPoints,
+                    type: eventType,
+                    isTouchEvent: true
                 };
 
                 event = $.Event(eventType, eventData);
-                $(eventData.element).trigger(event, eventData);
-                lastPoints = cornerstoneTools.copyPoints(startPoints);
-
-                if (event.isImmediatePropagationStopped() === false) {
-                    // No current tools responded to the drag action.
-                    // Create new tool measurement
-                    activateMouseDown(eventData);
-                }
-
+                $(element).trigger(event, eventData);
                 break;
 
             case 'panmove':
@@ -456,8 +637,19 @@ if (typeof cornerstoneTools === 'undefined') {
 
                 // Calculate delta values in page and image coordinates
                 deltaPoints = {
-                    page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page), image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image), client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client), canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
+                    page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
+                    image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
+                    client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
+                    canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
                 };
+
+                pageDistanceMoved += Math.sqrt(deltaPoints.page.x * deltaPoints.page.x + deltaPoints.page.y * deltaPoints.page.y);
+                //console.log("pageDistanceMoved: " + pageDistanceMoved);
+                if (pageDistanceMoved > pressMaxDistance) {
+                    //console.log('Press event aborted due to movement');
+                    isPress = false;
+                    clearTimeout(pressTimeout);
+                }
               
                 eventType = 'CornerstoneToolsTouchDrag';
                 if (e.pointers.length > 1) {
@@ -465,8 +657,16 @@ if (typeof cornerstoneTools === 'undefined') {
                 }
 
                 eventData = {
-                    viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, element: element, startPoints: startPoints, lastPoints: lastPoints, currentPoints: currentPoints, deltaPoints: deltaPoints,
-                    type: eventType
+                    viewport: cornerstone.getViewport(element),
+                    image: cornerstone.getEnabledElement(element).image,
+                    element: element,
+                    startPoints: startPoints,
+                    lastPoints: lastPoints,
+                    currentPoints: currentPoints,
+                    deltaPoints: deltaPoints,
+                    numPointers: e.pointers.length,
+                    type: eventType,
+                    isTouchEvent: true
                 };
 
                 event = $.Event(eventType, eventData);
@@ -475,7 +675,23 @@ if (typeof cornerstoneTools === 'undefined') {
                 lastPoints = cornerstoneTools.copyPoints(currentPoints);
                 break;
 
+            case 'panstart':
+                currentPoints = {
+                    page: cornerstoneMath.point.pageToPoint(e.pointers[0]),
+                    image: cornerstone.pageToPixel(element, e.pointers[0].pageX, e.pointers[0].pageY),
+                    client: {
+                        x: e.pointers[0].clientX,
+                        y: e.pointers[0].clientY
+                    }
+                };
+                currentPoints.canvas = cornerstone.pixelToCanvas(element, currentPoints.image);
+                lastPoints = cornerstoneTools.copyPoints(currentPoints);
+                break;
+
             case 'panend':
+                isPress = false;
+                clearTimeout(pressTimeout);
+
                 // If lastPoints is not yet set, it means panend fired without panstart or pan,
                 // so we can ignore this event
                 if (!lastPoints) {
@@ -494,13 +710,13 @@ if (typeof cornerstoneTools === 'undefined') {
 
                 // Calculate delta values in page and image coordinates
                 deltaPoints = {
-                    page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page), image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image), client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client), canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
+                    page: cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
+                    image: cornerstoneMath.point.subtract(currentPoints.image, lastPoints.image),
+                    client: cornerstoneMath.point.subtract(currentPoints.client, lastPoints.client),
+                    canvas: cornerstoneMath.point.subtract(currentPoints.canvas, lastPoints.canvas)
                 };
 
                 eventType = 'CornerstoneToolsDragEnd';
-                if (e.pointers.length > 1) {
-                    eventType = 'CornerstoneToolsMultiTouchDragEnd';
-                }
 
                 eventData = {
                     event: e.srcEvent,
@@ -511,14 +727,24 @@ if (typeof cornerstoneTools === 'undefined') {
                     lastPoints: lastPoints,
                     currentPoints: currentPoints,
                     deltaPoints: deltaPoints,
-                    type: eventType
+                    type: eventType,
+                    isTouchEvent: true
                 };
 
                 event = $.Event(eventType, eventData);
                 $(element).trigger(event, eventData);
+
+                var remainingPointers = e.pointers.length - e.changedPointers.length;
+                if (remainingPointers === 2) {
+                    preventNextPinch = true;
+                }
+
                 return cornerstoneTools.pauseEvent(e);
 
-            case 'rotate':
+            case 'rotatemove':
+                isPress = false;
+                clearTimeout(pressTimeout);
+
                 var rotation = e.rotation - lastRotation;
                 lastRotation = e.rotation;
 
@@ -535,38 +761,32 @@ if (typeof cornerstoneTools === 'undefined') {
                 $(element).trigger(event, eventData);
                 break;
         }
+
+        //console.log(eventType);
         return false;
     }
 
     function enable(element) {
         disable(element);
+
         var hammerOptions = {
-            transform_always_block: true,
-            transform_min_scale: 0.01,
-            drag_block_horizontal: true,
-            drag_block_vertical: true,
-            drag_min_distance: 0
+            inputClass: Hammer.SUPPORT_POINTER_EVENTS ? Hammer.PointerEventInput : Hammer.TouchInput
         };
 
-        var mc = new Hammer(element, {
-            inputClass: Hammer.SUPPORT_POINTER_EVENTS ? Hammer.PointerEventInput : Hammer.TouchInput
-        });
-        mc.set(hammerOptions);
+        var mc = new Hammer.Manager(element, hammerOptions);
 
         var panOptions = {
             pointers: 0,
-            direction: Hammer.DIRECTION_ALL
+            direction: Hammer.DIRECTION_ALL,
+            threshold: 0
         };
 
         var pan = new Hammer.Pan(panOptions);
         var pinch = new Hammer.Pinch({
-            threshold: 0.25
+            threshold: 0
         });
         var rotate = new Hammer.Rotate({
-            threshold: 0.05
-        });
-        var press = new Hammer.Press({
-            threshold: 10
+            threshold: 0
         });
         
         // we want to detect both the same time
@@ -574,24 +794,30 @@ if (typeof cornerstoneTools === 'undefined') {
         pinch.recognizeWith(rotate);
 
         // add to the Manager
-        mc.add([ press, pan, pinch, rotate ]);
+        mc.add([ pan, rotate, pinch ]);
+        mc.on('tap doubletap panstart panmove panend pinchstart pinchmove rotatemove', onTouch);
 
-        mc.on('press tap doubletap panstart panmove panend pinch rotate', onTouch);
-
+        cornerstoneTools.preventGhostClick.enable(element);
+        $(element).on('touchstart touchend', onTouch);
         $(element).data('hammer', mc);
-        cornerstoneTools.preventGhostClick(element);
+        //console.log('touchInput enabled');
     }
 
     function disable(element) {
+        cornerstoneTools.preventGhostClick.disable(element);
+        $(element).off('touchstart touchend', onTouch);
         var mc = $(element).data('hammer');
         if (mc) {
-            mc.off('press tap doubletap panstart panmove panend pinch rotate', onTouch);
+            mc.off('tap doubletap panstart panmove panend pinchmove rotatemove', onTouch);
         }
+
+        //console.log('touchInput disabled');
     }
 
     // module exports
     cornerstoneTools.touchInput = {
-        enable: enable, disable: disable
+        enable: enable,
+        disable: disable
     };
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
@@ -610,7 +836,8 @@ if (typeof cornerstoneTools === 'undefined') {
             activate: function(element, mouseButtonMask, options) {
                 $(element).off('CornerstoneToolsMouseDownActivate', mouseDownCallback);
                 var eventData = {
-                    mouseButtonMask: mouseButtonMask, options: options
+                    mouseButtonMask: mouseButtonMask,
+                    options: options
                 };
                 $(element).on('CornerstoneToolsMouseDownActivate', eventData, mouseDownCallback);
             },
@@ -648,7 +875,7 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             var eventData = {
-                mouseButtonMask: mouseEventData.which,
+                mouseButtonMask: mouseEventData.which
             };
 
             // associate this data with this imageId so we can render it and manipulate it
@@ -665,7 +892,22 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             cornerstone.updateImage(element);
-            cornerstoneTools.moveNewHandle(mouseEventData, measurementData.handles.end, function() {
+
+            var handleMover;
+            if (Object.keys(measurementData.handles).length === 1) {
+                handleMover = cornerstoneTools.moveHandle;
+            } else {
+                handleMover = cornerstoneTools.moveNewHandle;
+            }
+
+            var preventHandleOutsideImage;
+            if (mouseToolInterface.options && mouseToolInterface.options.preventHandleOutsideImage !== undefined) {
+                preventHandleOutsideImage = mouseToolInterface.options.preventHandleOutsideImage;
+            } else {
+                preventHandleOutsideImage = false;
+            }
+
+            handleMover(mouseEventData, mouseToolInterface.toolType, measurementData, measurementData.handles.end, function() {
                 measurementData.active = false;
                 measurementData.invalidated = true;
                 if (cornerstoneTools.anyHandlesOutsideImage(mouseEventData, measurementData.handles)) {
@@ -682,7 +924,7 @@ if (typeof cornerstoneTools === 'undefined') {
                 }
 
                 cornerstone.updateImage(element);
-            });
+            }, preventHandleOutsideImage);
         }
 
         function mouseDownActivateCallback(e, eventData) {
@@ -710,7 +952,7 @@ if (typeof cornerstoneTools === 'undefined') {
           
             // if we have no tool data for this element, do nothing
             var toolData = cornerstoneTools.getToolState(eventData.element, mouseToolInterface.toolType);
-            if (toolData === undefined) {
+            if (!toolData) {
                 return;
             }
             
@@ -740,17 +982,18 @@ if (typeof cornerstoneTools === 'undefined') {
 
         function mouseDownCallback(e, eventData) {
             var data;
+            var element = eventData.element;
 
             function handleDoneMove() {
                 data.active = false;
                 data.invalidated = true;
                 if (cornerstoneTools.anyHandlesOutsideImage(eventData, data.handles)) {
                     // delete the measurement
-                    cornerstoneTools.removeToolState(eventData.element, mouseToolInterface.toolType, data);
+                    cornerstoneTools.removeToolState(element, mouseToolInterface.toolType, data);
                 }
 
-                cornerstone.updateImage(eventData.element);
-                $(eventData.element).on('CornerstoneToolsMouseMove', eventData, mouseMoveCallback);
+                cornerstone.updateImage(element);
+                $(element).on('CornerstoneToolsMouseMove', eventData, mouseToolInterface.mouseMoveCallback || mouseMoveCallback);
             }
 
             if (cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
@@ -760,15 +1003,23 @@ if (typeof cornerstoneTools === 'undefined') {
                 var i;
 
                 // now check to see if there is a handle we can move
-                if (toolData !== undefined) {
+                if (toolData) {
+
+                    var preventHandleOutsideImage;
+                    if (mouseToolInterface.options && mouseToolInterface.options.preventHandleOutsideImage !== undefined) {
+                        preventHandleOutsideImage = mouseToolInterface.options.preventHandleOutsideImage;
+                    } else {
+                        preventHandleOutsideImage = false;
+                    }
+
                     for (i = 0; i < toolData.data.length; i++) {
                         data = toolData.data[i];
                         var distanceSq = 25;
-                        var handle = cornerstoneTools.getHandleNearImagePoint(eventData.element, data, coords, distanceSq);
-                        if (handle !== undefined) {
-                            $(eventData.element).off('CornerstoneToolsMouseMove', mouseToolInterface.mouseMoveCallback || mouseMoveCallback);
+                        var handle = cornerstoneTools.getHandleNearImagePoint(element, data.handles, coords, distanceSq);
+                        if (handle) {
+                            $(element).off('CornerstoneToolsMouseMove', mouseToolInterface.mouseMoveCallback || mouseMoveCallback);
                             data.active = true;
-                            cornerstoneTools.moveHandle(eventData, handle, handleDoneMove);
+                            cornerstoneTools.moveHandle(eventData, mouseToolInterface.toolType, data, handle, handleDoneMove, preventHandleOutsideImage);
                             e.stopImmediatePropagation();
                             return false;
                         }
@@ -777,13 +1028,17 @@ if (typeof cornerstoneTools === 'undefined') {
 
                 // Now check to see if there is a line we can move
                 // now check to see if we have a tool that we can move
-                if (toolData !== undefined && mouseToolInterface.pointNearTool !== undefined) {
+                if (toolData && mouseToolInterface.pointNearTool) {
+                    var options = mouseToolInterface.options || {
+                        deleteIfHandleOutsideImage: true,
+                        preventHandleOutsideImage: false
+                    };
+
                     for (i = 0; i < toolData.data.length; i++) {
                         data = toolData.data[i];
-                        if (mouseToolInterface.pointNearTool(eventData.element, data, coords)) {
-                            $(eventData.element).off('CornerstoneToolsMouseMove', mouseToolInterface.mouseMoveCallback || mouseMoveCallback);
-                            cornerstoneTools.moveAllHandles(e, data, toolData, true);
-                            $(eventData.element).on('CornerstoneToolsMouseMove', eventData, mouseToolInterface.mouseMoveCallback || mouseMoveCallback);
+                        if (mouseToolInterface.pointNearTool(element, data, coords)) {
+                            $(element).off('CornerstoneToolsMouseMove', mouseToolInterface.mouseMoveCallback || mouseMoveCallback);
+                            cornerstoneTools.moveAllHandles(e, data, toolData, mouseToolInterface.toolType, options, handleDoneMove);
                             e.stopImmediatePropagation();
                             return false;
                         }
@@ -826,7 +1081,7 @@ if (typeof cornerstoneTools === 'undefined') {
         // visible, interactive and can create
         function activate(element, mouseButtonMask) {
             var eventData = {
-                mouseButtonMask: mouseButtonMask,
+                mouseButtonMask: mouseButtonMask
             };
 
             $(element).off('CornerstoneImageRendered', mouseToolInterface.onImageRendered);
@@ -850,7 +1105,7 @@ if (typeof cornerstoneTools === 'undefined') {
         // visible, interactive
         function deactivate(element, mouseButtonMask) {
             var eventData = {
-                mouseButtonMask: mouseButtonMask,
+                mouseButtonMask: mouseButtonMask
             };
 
             $(element).off('CornerstoneImageRendered', mouseToolInterface.onImageRendered);
@@ -934,7 +1189,7 @@ if (typeof cornerstoneTools === 'undefined') {
             // since we are dragging to another place to drop the end point, we can just activate
             // the end point and let the moveHandle move it for us.
             $(mouseEventData.element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
-            cornerstoneTools.moveHandle(mouseEventData, measurementData.handles.end, function() {
+            cornerstoneTools.moveHandle(mouseEventData, mouseToolInterface.toolType, measurementData, measurementData.handles.end, function() {
                 measurementData.active = false;
                 if (cornerstoneTools.anyHandlesOutsideImage(mouseEventData, measurementData.handles)) {
                     // delete the measurement
@@ -1013,14 +1268,16 @@ if (typeof cornerstoneTools === 'undefined') {
                 var i;
 
                 // now check to see if there is a handle we can move
+                var distanceSq = 25;
+
                 if (toolData !== undefined) {
                     for (i = 0; i < toolData.data.length; i++) {
                         data = toolData.data[i];
-                        var handle = cornerstoneTools.getHandleNearImagePoint(eventData.element, data, coords);
+                        var handle = cornerstoneTools.getHandleNearImagePoint(eventData.element, data.handles, coords, distanceSq);
                         if (handle !== undefined) {
                             $(eventData.element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
                             data.active = true;
-                            cornerstoneTools.moveHandle(eventData, handle, handleDoneMove, preventHandleOutsideImage);
+                            cornerstoneTools.moveHandle(eventData, mouseToolInterface.toolType, data, handle, handleDoneMove, preventHandleOutsideImage);
                             e.stopImmediatePropagation();
                             return false;
                         }
@@ -1029,12 +1286,17 @@ if (typeof cornerstoneTools === 'undefined') {
 
                 // Now check to see if there is a line we can move
                 // now check to see if we have a tool that we can move
+                var options = {
+                    deleteIfHandleOutsideImage: true,
+                    preventHandleOutsideImage: preventHandleOutsideImage
+                };
+                
                 if (toolData !== undefined && mouseToolInterface.pointInsideRect !== undefined) {
                     for (i = 0; i < toolData.data.length; i++) {
                         data = toolData.data[i];
                         if (mouseToolInterface.pointInsideRect(eventData.element, data, coords)) {
                             $(eventData.element).off('CornerstoneToolsMouseMove', mouseMoveCallback);
-                            cornerstoneTools.moveAllHandles(e, data, toolData, false, preventHandleOutsideImage);
+                            cornerstoneTools.moveAllHandles(e, data, toolData, mouseToolInterface.toolType, options, handleDoneMove);
                             $(eventData.element).on('CornerstoneToolsMouseMove', mouseMoveCallback);
                             e.stopImmediatePropagation();
                             return false;
@@ -1070,7 +1332,7 @@ if (typeof cornerstoneTools === 'undefined') {
         // visible, interactive and can create
         function activate(element, mouseButtonMask) {
             var eventData = {
-                mouseButtonMask: mouseButtonMask,
+                mouseButtonMask: mouseButtonMask
             };
 
             $(element).off('CornerstoneImageRendered', mouseToolInterface.onImageRendered);
@@ -1089,7 +1351,7 @@ if (typeof cornerstoneTools === 'undefined') {
         // visible, interactive
         function deactivate(element, mouseButtonMask) {
             var eventData = {
-                mouseButtonMask: mouseButtonMask,
+                mouseButtonMask: mouseButtonMask
             };
 
             $(element).off('CornerstoneImageRendered', mouseToolInterface.onImageRendered);
@@ -1105,7 +1367,10 @@ if (typeof cornerstoneTools === 'undefined') {
         }
 
         var toolInterface = {
-            enable: enable, disable: disable, activate: activate, deactivate: deactivate
+            enable: enable,
+            disable: disable,
+            activate: activate,
+            deactivate: deactivate
         };
 
         return toolInterface;
@@ -1130,7 +1395,10 @@ if (typeof cornerstoneTools === 'undefined') {
                 var eventData = {
                 };
                 $(element).on('CornerstoneToolsMouseWheel', eventData, mouseWheelCallback);
-            }, disable: function(element) {$(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);}, enable: function(element) {$(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);}, deactivate: function(element) {$(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);}
+            },
+            disable: function(element) {$(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);},
+            enable: function(element) {$(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);},
+            deactivate: function(element) {$(element).off('CornerstoneToolsMouseWheel', mouseWheelCallback);}
         };
         return toolInterface;
     }
@@ -1147,12 +1415,44 @@ if (typeof cornerstoneTools === 'undefined') {
 
     'use strict';
 
-    function touchDragTool(touchDragCallback) {
+    function touchDragTool(touchDragCallback, options) {
+        var events = 'CornerstoneToolsTouchDrag';
+        if (options && options.fireOnTouchStart === true) {
+            events += ' CornerstoneToolsTouchStart';
+        }
+
         var toolInterface = {
             activate: function(element) {
-                $(element).off('CornerstoneToolsTouchDrag', touchDragCallback);
-                $(element).on('CornerstoneToolsTouchDrag', touchDragCallback);
-            }, disable: function(element) {$(element).off('CornerstoneToolsTouchDrag', touchDragCallback);}, enable: function(element) {$(element).off('CornerstoneToolsTouchDrag', touchDragCallback);}, deactivate: function(element) {$(element).off('CornerstoneToolsTouchDrag', touchDragCallback);}
+                $(element).off(events, touchDragCallback);
+
+                if (options && options.eventData) {
+                    $(element).on(events, options.eventData, touchDragCallback);
+                } else {
+                    $(element).on(events, touchDragCallback);
+                }
+
+                if (options && options.activateCallback) {
+                    options.activateCallback(element);
+                }
+            },
+            disable: function(element) {
+                $(element).off(events, touchDragCallback);
+                if (options && options.disableCallback) {
+                    options.disableCallback(element);
+                }
+            },
+            enable: function(element) {
+                $(element).off(events, touchDragCallback);
+                if (options && options.enableCallback) {
+                    options.enableCallback(element);
+                }
+            },
+            deactivate: function(element) {
+                $(element).off(events, touchDragCallback);
+                if (options && options.deactivateCallback) {
+                    options.deactivateCallback(element);
+                }
+            }
         };
         return toolInterface;
     }
@@ -1178,7 +1478,10 @@ if (typeof cornerstoneTools === 'undefined') {
                 var eventData = {
                 };
                 $(element).on('CornerstoneToolsTouchPinch', eventData, touchPinchCallback);
-            }, disable: function(element) {$(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);}, enable: function(element) {$(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);}, deactivate: function(element) {$(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);}
+            },
+            disable: function(element) {$(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);},
+            enable: function(element) {$(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);},
+            deactivate: function(element) {$(element).off('CornerstoneToolsTouchPinch', touchPinchCallback);}
         };
         return toolInterface;
     }
@@ -1222,6 +1525,7 @@ if (typeof cornerstoneTools === 'undefined') {
         ///////// BEGIN ACTIVE TOOL ///////
 
         function addNewMeasurement(touchEventData) {
+            //console.log('touchTool addNewMeasurement');
             var element = touchEventData.element;
 
             var measurementData = touchToolInterface.createNewMeasurement(touchEventData);
@@ -1245,12 +1549,11 @@ if (typeof cornerstoneTools === 'undefined') {
                 return;
             }
 
-            $(element).off('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
-            $(element).off('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
+            $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
             $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
 
             cornerstone.updateImage(element);
-            cornerstoneTools.moveNewHandleTouch(touchEventData, measurementData.handles.end, function() {
+            cornerstoneTools.moveNewHandleTouch(touchEventData, touchToolInterface.toolType, measurementData, measurementData.handles.end, function() {
                 measurementData.active = false;
                 measurementData.invalidated = true;
                 if (cornerstoneTools.anyHandlesOutsideImage(touchEventData, measurementData.handles)) {
@@ -1258,14 +1561,14 @@ if (typeof cornerstoneTools === 'undefined') {
                     cornerstoneTools.removeToolState(element, touchToolInterface.toolType, measurementData);
                 }
 
-                $(element).on('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
-                $(element).on('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
+                $(element).on('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
                 $(element).on('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
                 cornerstone.updateImage(element);
             });
         }
 
         function touchDownActivateCallback(e, eventData) {
+            //console.log('touchTool touchDownActivateCallback');
             if (touchToolInterface.addNewMeasurement) {
                 touchToolInterface.addNewMeasurement(eventData);
             } else {
@@ -1277,37 +1580,8 @@ if (typeof cornerstoneTools === 'undefined') {
         ///////// END ACTIVE TOOL ///////
 
         ///////// BEGIN INACTIVE TOOL ///////
-        function touchMoveCallback(e, eventData) {
-            cornerstoneTools.toolCoordinates.setCoords(eventData);
-      
-            // if we have no tool data for this element, do nothing
-            var toolData = cornerstoneTools.getToolState(eventData.element, touchToolInterface.toolType);
-            if (toolData === undefined) {
-                return;
-            }
-
-            // We have tool data, search through all data
-            // and see if we can activate a handle
-            var imageNeedsUpdate = false;
-            for (var i = 0; i < toolData.data.length; i++) {
-                // get the touch position in canvas coordinates
-                var coords = eventData.currentPoints.canvas;
-
-                var data = toolData.data[i];
-                if (cornerstoneTools.handleActivator(eventData.element, data.handles, coords) === true) {
-                    imageNeedsUpdate = true;
-                }
-            }
-
-            // Handle activation status changed, redraw the image
-            if (imageNeedsUpdate === true) {
-                cornerstone.updateImage(eventData.element);
-            }
-
-            return false;
-        }
-
         function tapCallback(e, eventData) {
+            //console.log('touchTool tapCallback');
             var element = eventData.element;
             var coords = eventData.currentPoints.canvas;
             var toolData = cornerstoneTools.getToolState(e.currentTarget, touchToolInterface.toolType);
@@ -1318,6 +1592,7 @@ if (typeof cornerstoneTools === 'undefined') {
             deactivateAllToolInstances(toolData);
 
             function doneMovingCallback() {
+                console.log('touchTool tapCallback doneMovingCallback');
                 deactivateAllToolInstances(toolData);
                 if (cornerstoneTools.anyHandlesOutsideImage(eventData, data.handles)) {
                     // delete the measurement
@@ -1325,8 +1600,7 @@ if (typeof cornerstoneTools === 'undefined') {
                 }
 
                 cornerstone.updateImage(element);
-                $(element).on('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-                $(element).on('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+                $(element).on('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
                 $(element).on('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
             }
 
@@ -1334,16 +1608,15 @@ if (typeof cornerstoneTools === 'undefined') {
             if (toolData) {
                 for (i = 0; i < toolData.data.length; i++) {
                     data = toolData.data[i];
-                    var distanceSq = 75; // Should probably make this a settable property later
-                    var handle = cornerstoneTools.getHandleNearImagePoint(element, data, coords, distanceSq);
+                    var distanceSq = 25; // Should probably make this a settable property later
+                    var handle = cornerstoneTools.getHandleNearImagePoint(element, data.handles, coords, distanceSq);
                     if (handle) {
-                        $(element).off('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-                        $(element).off('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+                        $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
                         $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
                         data.active = true;
                         handle.active = true;
                         cornerstone.updateImage(element);
-                        cornerstoneTools.touchMoveHandle(e, handle, doneMovingCallback);
+                        cornerstoneTools.touchMoveHandle(e, touchToolInterface.toolType, data, handle, doneMovingCallback);
                         e.stopImmediatePropagation();
                         return false; // false = causes jquery to preventDefault() and stopPropagation() this event
                     }
@@ -1355,21 +1628,19 @@ if (typeof cornerstoneTools === 'undefined') {
                 for (i = 0; i < toolData.data.length; i++) {
                     data = toolData.data[i];
                     if (touchToolInterface.pointNearTool(element, data, coords)) {
-                        $(element).off('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-                        $(element).off('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+                        $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
                         $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
                         data.active = true;
                         cornerstone.updateImage(element);
-                        cornerstoneTools.touchMoveAllHandles(e, data, toolData, true, doneMovingCallback);
+                        cornerstoneTools.touchMoveAllHandles(e, data, toolData, touchToolInterface.toolType, true, doneMovingCallback);
                         e.stopImmediatePropagation();
                         return false; // false = causes jquery to preventDefault() and stopPropagation() this event
                     }
                 }
             }
-            // If there is nothing to move, add a new instance of the tool
-            
-            // Need to check here to see if activation is allowed!
 
+            // If there is nothing to move, add a new instance of the tool
+            // Need to check here to see if activation is allowed!
             if (touchToolInterface.touchDownActivateCallback) {
                 touchToolInterface.touchDownActivateCallback(e, eventData);
             } else {
@@ -1378,13 +1649,69 @@ if (typeof cornerstoneTools === 'undefined') {
 
             return false;
         }
+
+        function touchStartCallback(e, eventData) {
+            //console.log('touchTool touchStartCallback');
+            var element = eventData.element;
+            var coords = eventData.startPoints.canvas;
+            var data;
+            var toolData = cornerstoneTools.getToolState(e.currentTarget, touchToolInterface.toolType);
+            var i;
+
+            function doneMovingCallback() {
+                //console.log('touchTool touchStartCallback doneMovingCallback');
+                data.active = false;
+                data.invalidated = true;
+                if (cornerstoneTools.anyHandlesOutsideImage(eventData, data.handles)) {
+                    // delete the measurement
+                    cornerstoneTools.removeToolState(eventData.element, touchToolInterface.toolType, data);
+                }
+
+                cornerstone.updateImage(eventData.element);
+                $(element).on('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+                $(element).on('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
+            }
+
+            // now check to see if there is a handle we can move
+            var distanceFromTouch = cornerstoneTools.touchSettings.getToolDistanceFromTouch();
+            var distanceSq = Math.max(Math.abs(distanceFromTouch.x), Math.abs(distanceFromTouch.y));
+            if (toolData) {
+                for (i = 0; i < toolData.data.length; i++) {
+                    data = toolData.data[i];
+
+                    var handle = cornerstoneTools.getHandleNearImagePoint(eventData.element, data.handles, coords, distanceSq);
+                    if (handle) {
+                        $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+                        $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
+                        data.active = true;
+                        cornerstoneTools.touchMoveHandle(e, touchToolInterface.toolType, data, handle, doneMovingCallback);
+                        e.stopImmediatePropagation();
+                        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
+                    }
+                }
+            }
+
+            // Now check to see if we have a tool that we can move
+            if (toolData && touchToolInterface.pointNearTool) {
+                for (i = 0; i < toolData.data.length; i++) {
+                    data = toolData.data[i];
+                    if (touchToolInterface.pointNearTool(eventData.element, data, coords)) {
+                        $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+                        $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
+                        cornerstoneTools.touchMoveAllHandles(e, data, toolData, touchToolInterface.toolType, true, doneMovingCallback);
+                        e.stopImmediatePropagation();
+                        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
+                    }
+                }
+            }
+        }
         ///////// END INACTIVE TOOL ///////
 
         // not visible, not interactive
         function disable(element) {
             $(element).off('CornerstoneImageRendered', touchToolInterface.onImageRendered);
-            $(element).off('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-            $(element).off('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+            $(element).off('CornerstoneToolsTouchStart', touchToolInterface.touchStartCallback || touchStartCallback);
+            $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
             $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
 
             if (touchToolInterface.doubleTapCallback) {
@@ -1401,8 +1728,8 @@ if (typeof cornerstoneTools === 'undefined') {
         // visible but not interactive
         function enable(element) {
             $(element).off('CornerstoneImageRendered', touchToolInterface.onImageRendered);
-            $(element).off('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-            $(element).off('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+            $(element).off('CornerstoneToolsTouchStart', touchToolInterface.touchStartCallback || touchStartCallback);
+            $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
             $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
 
             $(element).on('CornerstoneImageRendered', touchToolInterface.onImageRendered);
@@ -1420,14 +1747,16 @@ if (typeof cornerstoneTools === 'undefined') {
 
         // visible, interactive and can create
         function activate(element) {
+            //console.log('activate touchTool');
+
             $(element).off('CornerstoneImageRendered', touchToolInterface.onImageRendered);
-            $(element).off('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-            $(element).off('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+            $(element).off('CornerstoneToolsTouchStart', touchToolInterface.touchStartCallback || touchStartCallback);
+            $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
             $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
 
             $(element).on('CornerstoneImageRendered', touchToolInterface.onImageRendered);
-            $(element).on('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-            $(element).on('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+            $(element).on('CornerstoneToolsTouchStart', touchToolInterface.touchStartCallback || touchStartCallback);
+            $(element).on('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
             $(element).on('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
 
             if (touchToolInterface.doubleTapCallback) {
@@ -1445,13 +1774,14 @@ if (typeof cornerstoneTools === 'undefined') {
 
         // visible, interactive
         function deactivate(element) {
+            //console.log('deactivate touchTool');
+            
             $(element).off('CornerstoneImageRendered', touchToolInterface.onImageRendered);
-            $(element).off('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
-            $(element).off('CornerstoneToolsDragStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
+            $(element).off('CornerstoneToolsTouchStart', touchToolInterface.touchStartCallback || touchStartCallback);
+            $(element).off('CornerstoneToolsTouchStartActive', touchToolInterface.touchDownActivateCallback || touchDownActivateCallback);
             $(element).off('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
 
             $(element).on('CornerstoneImageRendered', touchToolInterface.onImageRendered);
-            $(element).on('CornerstoneToolsTouchDrag', touchToolInterface.touchMoveCallback || touchMoveCallback);
             //$(element).on('CornerstoneToolsTap', touchToolInterface.tapCallback || tapCallback);
 
             if (touchToolInterface.doubleTapCallback) {
@@ -1472,10 +1802,15 @@ if (typeof cornerstoneTools === 'undefined') {
             disable: disable,
             activate: activate,
             deactivate: deactivate,
-            touchMoveCallback: touchMoveCallback,
-            touchDownActivateCallback: touchDownActivateCallback,
-            tapCallback: tapCallback
+            touchStartCallback: touchToolInterface.touchStartCallback || touchStartCallback,
+            touchDownActivateCallback: touchToolInterface.touchDownActivateCallback || touchDownActivateCallback,
+            tapCallback: touchToolInterface.tapCallback || tapCallback
         };
+
+        // Expose pointNearTool if available
+        if (touchToolInterface.pointNearTool) {
+            toolInterface.pointNearTool = touchToolInterface.pointNearTool;
+        }
 
         if (touchToolInterface.doubleTapCallback) {
             toolInterface.doubleTapCallback = touchToolInterface.doubleTapCallback;
@@ -1487,10 +1822,6 @@ if (typeof cornerstoneTools === 'undefined') {
 
         if (touchToolInterface.addNewMeasurement) {
             toolInterface.addNewMeasurement = touchToolInterface.addNewMeasurement;
-        }
-
-        if (touchToolInterface.touchStartCallback) {
-            toolInterface.touchStartCallback = touchToolInterface.touchStartCallback;
         }
 
         return toolInterface;
@@ -1514,15 +1845,32 @@ if (typeof cornerstoneTools === 'undefined') {
     function createNewMeasurement(mouseEventData) {
         // create the measurement data for this tool with the end handle activated
         var angleData = {
-            visible: true, active: true, handles: {
+            visible: true,
+            active: true,
+            handles: {
                 start: {
-                    x: mouseEventData.currentPoints.image.x - 20, y: mouseEventData.currentPoints.image.y + 10, highlight: true, active: false
-                }, end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: true
-                }, start2: {
-                    x: mouseEventData.currentPoints.image.x - 20, y: mouseEventData.currentPoints.image.y + 10, highlight: true, active: false
-                }, end2: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y + 20, highlight: true, active: false
+                    x: mouseEventData.currentPoints.image.x - 20,
+                    y: mouseEventData.currentPoints.image.y + 10,
+                    highlight: true,
+                    active: false
+                },
+                end: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: true
+                },
+                start2: {
+                    x: mouseEventData.currentPoints.image.x - 20,
+                    y: mouseEventData.currentPoints.image.y + 10,
+                    highlight: true,
+                    active: false
+                },
+                end2: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y + 20,
+                    highlight: true,
+                    active: false
                 }
             }
         };
@@ -1533,7 +1881,8 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function pointNearTool(element, data, coords) {
         var lineSegment = {
-            start: cornerstone.pixelToCanvas(element, data.handles.start), end: cornerstone.pixelToCanvas(element, data.handles.end)
+            start: cornerstone.pixelToCanvas(element, data.handles.start),
+            end: cornerstone.pixelToCanvas(element, data.handles.end)
         };
         
         var distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, coords);
@@ -1572,9 +1921,9 @@ if (typeof cornerstoneTools === 'undefined') {
 
             // configurable shadow
             if (config && config.shadow) {
-                context.shadowColor = '#000000';
-                context.shadowOffsetX = +1;
-                context.shadowOffsetY = +1;
+                context.shadowColor = config.shadowColor || '#000000';
+                context.shadowOffsetX = config.shadowOffsetX || 1;
+                context.shadowOffsetY = config.shadowOffsetY || 1;
             }
 
             var data = toolData.data[i];
@@ -1636,11 +1985,17 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module exports
     cornerstoneTools.angle = cornerstoneTools.mouseButtonTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
     
     cornerstoneTools.angleTouch = cornerstoneTools.touchTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
@@ -1660,8 +2015,13 @@ if (typeof cornerstoneTools === 'undefined') {
         doneChangingTextCallback(prompt('Enter your annotation:'));
     }
 
+    function changeTextCallback(data, doneChangingTextCallback) {
+        doneChangingTextCallback(prompt('Change your annotation:'));
+    }
+
     var configuration = {
         getTextCallback: getTextCallback,
+        changeTextCallback: changeTextCallback,
         drawHandles: false,
         drawHandlesOnHover: true,
         arrowFirst: true
@@ -1672,9 +2032,11 @@ if (typeof cornerstoneTools === 'undefined') {
     ///////// BEGIN ACTIVE TOOL ///////
     function addNewMeasurement(mouseEventData) {
 
-        function doneChangingTextCallback(annotationText) {
-            if (annotationText !== null) {
-                measurementData.annotationText = annotationText;
+        var measurementData = createNewMeasurement(mouseEventData);
+
+        function doneChangingTextCallback(text) {
+            if (text !== null) {
+                measurementData.text = text;
             } else {
                 cornerstoneTools.removeToolState(mouseEventData.element, toolType, measurementData);
             }
@@ -1682,8 +2044,6 @@ if (typeof cornerstoneTools === 'undefined') {
             measurementData.active = false;
             cornerstone.updateImage(mouseEventData.element);
         }
-
-        var measurementData = createNewMeasurement(mouseEventData);
 
         var eventData = {
             mouseButtonMask: mouseEventData.which,
@@ -1699,14 +2059,14 @@ if (typeof cornerstoneTools === 'undefined') {
         $(mouseEventData.element).off('CornerstoneToolsMouseDownActivate', cornerstoneTools.arrowAnnotate.mouseDownActivateCallback);
 
         cornerstone.updateImage(mouseEventData.element);
-        cornerstoneTools.moveNewHandle(mouseEventData, measurementData.handles.end, function() {
+        cornerstoneTools.moveNewHandle(mouseEventData, toolType, measurementData, measurementData.handles.end, function() {
             if (cornerstoneTools.anyHandlesOutsideImage(mouseEventData, measurementData.handles)) {
                 // delete the measurement
                 cornerstoneTools.removeToolState(mouseEventData.element, toolType, measurementData);
             }
 
             var config = cornerstoneTools.arrowAnnotate.getConfiguration();
-            if (measurementData.annotationText === undefined) {
+            if (measurementData.text === undefined) {
                 config.getTextCallback(doneChangingTextCallback);
             }
 
@@ -1720,11 +2080,20 @@ if (typeof cornerstoneTools === 'undefined') {
     function createNewMeasurement(mouseEventData) {
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            visible: true, active: true, handles: {
+            visible: true,
+            active: true,
+            handles: {
                 start: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
-                }, end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
+                },
+                end: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
                 }
             }
         };
@@ -1735,45 +2104,29 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function pointNearTool(element, data, coords) {
         var lineSegment = {
-            start: cornerstone.pixelToCanvas(element, data.handles.start), end: cornerstone.pixelToCanvas(element, data.handles.end)
+            start: cornerstone.pixelToCanvas(element, data.handles.start),
+            end: cornerstone.pixelToCanvas(element, data.handles.end)
         };
 
         var distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, coords);
-        return (distanceToPoint < 25);
-    }
+        if (distanceToPoint < 25) {
+            return true;
+        }
 
-    function drawArrow(context, start, end, color, lineWidth) {
-        //variables to be used when creating the arrow
-        var headLength = 10;
+        if (data.textCoords) {
+            var padding = 5;
+            var fontSize = cornerstoneTools.textStyle.getFontSize();
+            
+            var rect = {
+                left: data.textCoords.x,
+                top: data.textCoords.y,
+                width: data.textWidth + (padding * 2),
+                height: fontSize + (padding * 2)
+            };
 
-        var angle = Math.atan2(end.y - start.y, end.x - start.x);
-
-        //starting path of the arrow from the start square to the end square and drawing the stroke
-        context.beginPath();
-        context.moveTo(start.x, start.y);
-        context.lineTo(end.x, end.y);
-        context.strokeStyle = color;
-        context.lineWidth = lineWidth;
-        context.stroke();
-
-        //starting a new path from the head of the arrow to one of the sides of the point
-        context.beginPath();
-        context.moveTo(end.x, end.y);
-        context.lineTo(end.x - headLength * Math.cos(angle - Math.PI / 7), end.y - headLength * Math.sin(angle - Math.PI / 7));
-
-        //path from the side point of the arrow, to the other side point
-        context.lineTo(end.x - headLength * Math.cos(angle + Math.PI / 7), end.y - headLength * Math.sin(angle + Math.PI / 7));
-
-        //path from the side point back to the tip of the arrow, and then again to the opposite side point
-        context.lineTo(end.x, end.y);
-        context.lineTo(end.x - headLength * Math.cos(angle - Math.PI / 7), end.y - headLength * Math.sin(angle - Math.PI / 7));
-
-        //draws the paths created above
-        context.strokeStyle = color;
-        context.lineWidth = lineWidth;
-        context.stroke();
-        context.fillStyle = color;
-        context.fill();
+            var distanceToTextRect = cornerstoneMath.rect.distanceToPoint(rect, coords);
+            return (distanceToTextRect < 25);
+        }
     }
 
     ///////// BEGIN IMAGE RENDERING ///////
@@ -1796,6 +2149,12 @@ if (typeof cornerstoneTools === 'undefined') {
         for (var i = 0; i < toolData.data.length; i++) {
             context.save();
 
+            if (config && config.shadow) {
+                context.shadowColor = config.shadowColor || '#000000';
+                context.shadowOffsetX = config.shadowOffsetX || 1;
+                context.shadowOffsetY = config.shadowOffsetY || 1;
+            }
+
             var data = toolData.data[i];
 
             if (data.active) {
@@ -1809,9 +2168,9 @@ if (typeof cornerstoneTools === 'undefined') {
             var handleEndCanvas = cornerstone.pixelToCanvas(eventData.element, data.handles.end);
 
             if (config.arrowFirst) {
-                drawArrow(context, handleEndCanvas, handleStartCanvas, color, lineWidth);
+                cornerstoneTools.drawArrow(context, handleEndCanvas, handleStartCanvas, color, lineWidth);
             } else {
-                drawArrow(context, handleStartCanvas, handleEndCanvas, color, lineWidth);
+                cornerstoneTools.drawArrow(context, handleStartCanvas, handleEndCanvas, color, lineWidth);
             }
 
             if (config.drawHandles) {
@@ -1823,7 +2182,7 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             // Draw the text
-            if (data.annotationText && data.annotationText !== '') {
+            if (data.text && data.text !== '') {
                 context.font = font;
                 
                 var distance = 13;
@@ -1832,35 +2191,43 @@ if (typeof cornerstoneTools === 'undefined') {
                 var vector;
                 
                 var displacement = {
-                    x: distance, y: distance / 2
+                    x: distance,
+                    y: distance / 2
                 };
 
                 vector = {
-                    x: handleEndCanvas.x - handleStartCanvas.x, y: handleEndCanvas.y - handleStartCanvas.y
+                    x: handleEndCanvas.x - handleStartCanvas.x,
+                    y: handleEndCanvas.y - handleStartCanvas.y
                 };
+
+                var textWidth = context.measureText(data.text).width;
 
                 var textCoords;
                 if (config.arrowFirst) {
                     // Fix text placement if arrow faces right
                     if (vector.x < 0) {
-                        displacement.x = -displacement.x - context.measureText(data.annotationText).width;
+                        displacement.x = -displacement.x - textWidth;
                     }
 
                     textCoords = {
-                        x: vector.x + handleStartCanvas.x + displacement.x, y: vector.y + handleStartCanvas.y + displacement.y
+                        x: vector.x + handleStartCanvas.x + displacement.x,
+                        y: vector.y + handleStartCanvas.y + displacement.y
                     };
                 } else {
                     // Fix text placement if arrow faces right
                     if (vector.x > 0) {
-                        displacement.x = -displacement.x - context.measureText(data.annotationText).width;
+                        displacement.x = -displacement.x - textWidth;
                     }
 
                     textCoords = {
-                        x: -vector.x + handleEndCanvas.x + displacement.x, y: -vector.y + handleEndCanvas.y + displacement.y
+                        x: -vector.x + handleEndCanvas.x + displacement.x,
+                        y: -vector.y + handleEndCanvas.y + displacement.y
                     };
                 }
 
-                cornerstoneTools.drawTextBox(context, data.annotationText, textCoords.x, textCoords.y, color);
+                data.textCoords = textCoords;
+                data.textWidth = textWidth;
+                cornerstoneTools.drawTextBox(context, data.text, textCoords.x, textCoords.y, color);
             }
 
             context.restore();
@@ -1871,10 +2238,11 @@ if (typeof cornerstoneTools === 'undefined') {
     ///////// BEGIN ACTIVE TOOL ///////
     function addNewMeasurementTouch(touchEventData) {
         var element = touchEventData.element;
-
-        function doneChangingTextCallback(annotationText) {
-            if (annotationText !== null) {
-                measurementData.annotationText = annotationText;
+        var measurementData = createNewMeasurement(touchEventData);
+        
+        function doneChangingTextCallback(text) {
+            if (text !== null) {
+                measurementData.text = text;
             } else {
                 cornerstoneTools.removeToolState(element, toolType, measurementData);
             }
@@ -1882,15 +2250,13 @@ if (typeof cornerstoneTools === 'undefined') {
             measurementData.active = false;
             cornerstone.updateImage(element);
         }
-
-        var measurementData = createNewMeasurement(touchEventData);
+        
         cornerstoneTools.addToolState(element, toolType, measurementData);
-        $(element).off('CornerstoneToolsTouchDrag', cornerstoneTools.arrowAnnotateTouch.touchMoveCallback);
-        $(element).off('CornerstoneToolsDragStartActive', cornerstoneTools.arrowAnnotateTouch.touchDownActivateCallback);
+        $(element).off('CornerstoneToolsTouchStartActive', cornerstoneTools.arrowAnnotateTouch.touchDownActivateCallback);
         $(element).off('CornerstoneToolsTap', cornerstoneTools.arrowAnnotateTouch.tapCallback);
         cornerstone.updateImage(element);
 
-        cornerstoneTools.moveNewHandleTouch(touchEventData, measurementData.handles.end, function() {
+        cornerstoneTools.moveNewHandleTouch(touchEventData, toolType, measurementData, measurementData.handles.end, function() {
             cornerstone.updateImage(element);
 
             if (cornerstoneTools.anyHandlesOutsideImage(touchEventData, measurementData.handles)) {
@@ -1899,14 +2265,107 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             var config = cornerstoneTools.arrowAnnotate.getConfiguration();
-            if (measurementData.annotationText === undefined) {
+            if (measurementData.text === undefined) {
                 config.getTextCallback(doneChangingTextCallback);
             }
 
-            $(element).on('CornerstoneToolsTouchDrag', cornerstoneTools.arrowAnnotateTouch.touchMoveCallback);
-            $(element).on('CornerstoneToolsDragStartActive', cornerstoneTools.arrowAnnotateTouch.touchDownActivateCallback);
+            $(element).on('CornerstoneToolsTouchStartActive', cornerstoneTools.arrowAnnotateTouch.touchDownActivateCallback);
             $(element).on('CornerstoneToolsTap', cornerstoneTools.arrowAnnotateTouch.tapCallback);
         });
+    }
+
+    function doubleClickCallback(e, eventData) {
+        var element = eventData.element;
+        var data;
+
+        function doneChangingTextCallback(data, updatedText, deleteTool) {
+            if (deleteTool === true) {
+                cornerstoneTools.removeToolState(element, toolType, data);
+            } else {
+                data.text = updatedText;
+            }
+
+            data.active = false;
+            cornerstone.updateImage(element);
+        }
+
+        if (e.data && e.data.mouseButtonMask && !cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
+            return false;
+        }
+
+        var config = cornerstoneTools.arrowAnnotate.getConfiguration();
+
+        var coords = eventData.currentPoints.canvas;
+        var toolData = cornerstoneTools.getToolState(element, toolType);
+
+        // now check to see if there is a handle we can move
+        if (!toolData) {
+            return false;
+        }
+
+        for (var i = 0; i < toolData.data.length; i++) {
+            data = toolData.data[i];
+            if (pointNearTool(element, data, coords)) {
+                data.active = true;
+                cornerstone.updateImage(element);
+                // Allow relabelling via a callback
+                config.changeTextCallback(data, doneChangingTextCallback);
+                
+                e.stopImmediatePropagation();
+                return false;
+            }
+        }
+
+        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
+    }
+
+    function pressCallback(e, eventData) {
+        var element = eventData.element;
+        var data;
+
+        function doneChangingTextCallback(data, updatedText, deleteTool) {
+            if (deleteTool === true) {
+                cornerstoneTools.removeToolState(element, toolType, data);
+            } else {
+                data.text = updatedText;
+            }
+
+            data.active = false;
+            cornerstone.updateImage(element);
+            $(element).on('CornerstoneToolsTouchStart', cornerstoneTools.arrowAnnotateTouch.touchStartCallback);
+            $(element).on('CornerstoneToolsTouchStartActive', cornerstoneTools.arrowAnnotateTouch.touchDownActivateCallback);
+        }
+
+        if (e.data && e.data.mouseButtonMask && !cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
+            return false;
+        }
+
+        var config = cornerstoneTools.arrowAnnotate.getConfiguration();
+
+        var coords = eventData.currentPoints.canvas;
+        var toolData = cornerstoneTools.getToolState(element, toolType);
+
+        // now check to see if there is a handle we can move
+        if (!toolData) {
+            return false;
+        }
+
+        for (var i = 0; i < toolData.data.length; i++) {
+            data = toolData.data[i];
+            if (pointNearTool(element, data, coords)) {
+                data.active = true;
+                cornerstone.updateImage(element);
+                // Allow relabelling via a callback
+                $(element).off('CornerstoneToolsTouchStart', cornerstoneTools.arrowAnnotateTouch.touchStartCallback);
+                $(element).off('CornerstoneToolsTouchStartActive', cornerstoneTools.arrowAnnotateTouch.touchDownActivateCallback);
+                config.changeTextCallback(data, doneChangingTextCallback);
+                
+                e.stopImmediatePropagation();
+                return false;
+            }
+        }
+
+        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
     }
 
     cornerstoneTools.arrowAnnotate = cornerstoneTools.mouseButtonTool({
@@ -1914,7 +2373,8 @@ if (typeof cornerstoneTools === 'undefined') {
         createNewMeasurement: createNewMeasurement,
         onImageRendered: onImageRendered,
         pointNearTool: pointNearTool,
-        toolType: toolType
+        toolType: toolType,
+        mouseDoubleClickCallback: doubleClickCallback
     });
 
     cornerstoneTools.arrowAnnotate.setConfiguration(configuration);
@@ -1924,7 +2384,8 @@ if (typeof cornerstoneTools === 'undefined') {
         createNewMeasurement: createNewMeasurement,
         onImageRendered: onImageRendered,
         pointNearTool: pointNearTool,
-        toolType: toolType
+        toolType: toolType,
+        pressCallback: pressCallback
     });
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
@@ -1939,6 +2400,8 @@ if (typeof cornerstoneTools === 'undefined') {
     var toolType = 'crosshairs';
 
     function chooseLocation(e, eventData) {
+        e.stopImmediatePropagation(); // Prevent CornerstoneToolsTouchStartActive from killing any press events
+        
         // if we have no toolData for this element, return immediately as there is nothing to do
         var toolData = cornerstoneTools.getToolState(e.currentTarget, toolType);
         if (!toolData) {
@@ -2007,7 +2470,14 @@ if (typeof cornerstoneTools === 'undefined') {
                     startLoadingHandler(targetElement);
                 }
 
-                cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]).then(function(image) {
+                var loader;
+                if (stackData.preventCache === true) {
+                    loader = cornerstone.loadImage(stackData.imageIds[newImageIdIndex]);
+                } else {
+                    loader = cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]);
+                }
+
+                loader.then(function(image) {
                     var viewport = cornerstone.getViewport(targetElement);
                     stackData.currentImageIdIndex = newImageIdIndex;
                     cornerstone.displayImage(targetElement, image, viewport);
@@ -2100,14 +2570,14 @@ if (typeof cornerstoneTools === 'undefined') {
             synchronizationContext: synchronizationContext,
         });
 
-        $(element).off('CornerstoneToolsDragStart', dragStartCallback);
+        $(element).off('CornerstoneToolsTouchStart', dragStartCallback);
 
-        $(element).on('CornerstoneToolsDragStart', dragStartCallback);
+        $(element).on('CornerstoneToolsTouchStart', dragStartCallback);
     }
 
     // disables the reference line tool for the given element
     function disableTouch(element) {
-        $(element).off('CornerstoneToolsDragStart', dragStartCallback);
+        $(element).off('CornerstoneToolsTouchStart', dragStartCallback);
     }
 
     cornerstoneTools.crosshairsTouch = {
@@ -2130,11 +2600,14 @@ if (typeof cornerstoneTools === 'undefined') {
         var configuration = {};
 
         var toolInterface = {
-            disable: function(element) {$(element).off('CornerstoneImageRendered', onImageRendered);}, enable: function(element) {
+            disable: function(element) {$(element).off('CornerstoneImageRendered', onImageRendered);},
+            enable: function(element) {
                 $(element).off('CornerstoneImageRendered', onImageRendered);
                 $(element).on('CornerstoneImageRendered', onImageRendered);
                 cornerstone.updateImage(element);
-            }, getConfiguration: function() { return configuration; }, setConfiguration: function(config) {configuration = config;}
+            },
+            getConfiguration: function() { return configuration; },
+            setConfiguration: function(config) {configuration = config;}
         };
 
         return toolInterface;
@@ -2163,8 +2636,15 @@ if (typeof cornerstoneTools === 'undefined') {
         var color = cornerstoneTools.toolColors.getActiveColor();
         var font = cornerstoneTools.textStyle.getFont();
         var fontHeight = cornerstoneTools.textStyle.getFontSize();
+        var config = cornerstoneTools.dragProbe.getConfiguration();
 
         context.save();
+
+        if (config && config.shadow) {
+            context.shadowColor = config.shadowColor || '#000000';
+            context.shadowOffsetX = config.shadowOffsetX || 1;
+            context.shadowOffsetY = config.shadowOffsetY || 1;
+        }
 
         var x = Math.round(eventData.currentPoints.image.x);
         var y = Math.round(eventData.currentPoints.image.y);
@@ -2198,7 +2678,8 @@ if (typeof cornerstoneTools === 'undefined') {
         // Draw text
         var coords = {
             // translate the x/y away from the cursor
-            x: eventData.currentPoints.image.x + 3, y: eventData.currentPoints.image.y - 3
+            x: eventData.currentPoints.image.x + 3,
+            y: eventData.currentPoints.image.y - 3
         };
         var textCoords = cornerstone.pixelToCanvas(eventData.element, coords);
         
@@ -2211,66 +2692,101 @@ if (typeof cornerstoneTools === 'undefined') {
     }
 
     function minimalStrategy(eventData) {
-        var enabledElement = cornerstone.getEnabledElement(eventData.element);
+        var element = eventData.element;
+        var enabledElement = cornerstone.getEnabledElement(element);
+        var image = enabledElement.image;
 
-        cornerstone.updateImage(eventData.element);
+        cornerstone.updateImage(element);
 
         var context = enabledElement.canvas.getContext('2d');
         context.setTransform(1, 0, 0, 1, 0, 0);
 
         var color = cornerstoneTools.toolColors.getActiveColor();
         var font = cornerstoneTools.textStyle.getFont();
-
+        var config = cornerstoneTools.dragProbe.getConfiguration();
+        
         context.save();
 
-        var x = Math.round(eventData.currentPoints.image.x);
-        var y = Math.round(eventData.currentPoints.image.y);
+        if (config && config.shadow) {
+            context.shadowColor = config.shadowColor || '#000000';
+            context.shadowOffsetX = config.shadowOffsetX || 1;
+            context.shadowOffsetY = config.shadowOffsetY || 1;
+        }
+
+        var toolCoords;
+        if (eventData.isTouchEvent === true) {
+            toolCoords = cornerstone.pageToPixel(element, eventData.currentPoints.page.x,
+                eventData.currentPoints.page.y - cornerstoneTools.textStyle.getFontSize() * 4);
+        } else {
+            toolCoords = eventData.currentPoints.image;
+        }
 
         var storedPixels;
         var text;
 
-        if (x < 0 || y < 0 || x >= eventData.image.columns || y >= eventData.image.rows) {
+        if (toolCoords.x < 0 || toolCoords.y < 0 ||
+            toolCoords.x >= image.columns || toolCoords.y >= image.rows) {
             return;
         }
         
-        if (eventData.image.color) {
-            storedPixels = cornerstone.getStoredPixels(eventData.element, x, y, 3, 1);
+        if (image.color) {
+            storedPixels = cornerstone.getStoredPixels(element, toolCoords.x, toolCoords.y, 3, 1);
             text = 'R: ' + storedPixels[0] + ' G: ' + storedPixels[1] + ' B: ' + storedPixels[2];
         } else {
-            storedPixels = cornerstone.getStoredPixels(eventData.element, x, y, 1, 1);
-            var huValue = storedPixels[0] * eventData.image.slope + eventData.image.intercept;
+            storedPixels = cornerstone.getStoredPixels(element, toolCoords.x, toolCoords.y, 1, 1);
+            var huValue = storedPixels[0] * image.slope + image.intercept;
             text = parseFloat(huValue.toFixed(3));
         }
 
-        // Draw text
-        var coords = {
-            // translate the x/y away from the cursor
-            x: eventData.currentPoints.image.x + 4, y: eventData.currentPoints.image.y - 4
-        };
-        var textCoords = cornerstone.pixelToCanvas(eventData.element, coords);
-        
+        // Prepare text
+        var textCoords = cornerstone.pixelToCanvas(element, toolCoords);
         context.font = font;
         context.fillStyle = color;
-        cornerstoneTools.drawTextBox(context, text, textCoords.x, textCoords.y, color);
+
+        // Translate the x/y away from the cursor
+        var translation;
+        if (eventData.isTouchEvent === true) {
+            var width = context.measureText(text).width;
+            translation = {
+                x: -width / 2 - 5,
+                y: -cornerstoneTools.textStyle.getFontSize() * 1.5
+            };
+
+            var handleRadius = 6;
+
+            context.beginPath();
+            context.strokeStyle = color;
+            context.arc(textCoords.x, textCoords.y, handleRadius, 0, 2 * Math.PI);
+            context.stroke();
+        } else {
+            translation = {
+                x: 4,
+                y: -4
+            };
+        }
+
+        cornerstoneTools.drawTextBox(context, text, textCoords.x + translation.x, textCoords.y + translation.y, color);
         context.restore();
     }
 
     function mouseUpCallback(e, eventData) {
-        $(eventData.element).off('CornerstoneToolsMouseDrag', onDrag);
+        $(eventData.element).off('CornerstoneToolsMouseDrag', dragCallback);
         $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(eventData.element).off('CornerstoneToolsMouseClick', mouseUpCallback);
         cornerstone.updateImage(eventData.element);
     }
 
     function mouseDownCallback(e, eventData) {
         if (cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
-            $(eventData.element).on('CornerstoneToolsMouseDrag', onDrag);
+            $(eventData.element).on('CornerstoneToolsMouseDrag', dragCallback);
             $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(eventData.element).on('CornerstoneToolsMouseClick', mouseUpCallback);
             cornerstoneTools.dragProbe.strategy(eventData);
             return false; // false = causes jquery to preventDefault() and stopPropagation() this event
         }
     }
 
-    function onDrag(e, eventData) {
+    function dragCallback(e, eventData) {
         cornerstoneTools.dragProbe.strategy(eventData);
         return false; // false = causes jquery to preventDefault() and stopPropagation() this event
     }
@@ -2278,11 +2794,15 @@ if (typeof cornerstoneTools === 'undefined') {
     cornerstoneTools.dragProbe = cornerstoneTools.simpleMouseButtonTool(mouseDownCallback);
     
     cornerstoneTools.dragProbe.strategies = {
-        default: defaultStrategy, minimal: minimalStrategy
+        default: defaultStrategy,
+        minimal: minimalStrategy
     };
     cornerstoneTools.dragProbe.strategy = defaultStrategy;
 
-    cornerstoneTools.dragProbeTouch = cornerstoneTools.touchDragTool(onDrag);
+    var options = {
+        fireOnTouchStart: true
+    };
+    cornerstoneTools.dragProbeTouch = cornerstoneTools.touchDragTool(dragCallback, options);
 
 })($, cornerstone, cornerstoneTools);
  
@@ -2299,11 +2819,21 @@ if (typeof cornerstoneTools === 'undefined') {
     function createNewMeasurement(mouseEventData) {
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            visible: true, active: true, invalidated: true, handles: {
+            visible: true,
+            active: true,
+            invalidated: true,
+            handles: {
                 start: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
-                }, end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: true
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
+                },
+                end: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: true
                 }
             }
         };
@@ -2311,38 +2841,6 @@ if (typeof cornerstoneTools === 'undefined') {
         return measurementData;
     }
     ///////// END ACTIVE TOOL ///////
-
-    function pointNearTool(element, data, coords) {
-        // TODO: Find a formula for shortest distance between point and ellipse.  Rectangle is close enough
-        var startCanvas = cornerstone.pixelToCanvas(element, data.handles.start);
-        var endCanvas = cornerstone.pixelToCanvas(element, data.handles.end);
-
-        var rect = {
-            left: Math.min(startCanvas.x, endCanvas.x),
-            top: Math.min(startCanvas.y, endCanvas.y),
-            width: Math.abs(startCanvas.x - endCanvas.x),
-            height: Math.abs(startCanvas.y - endCanvas.y)
-        };
-
-        var distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, coords);
-        return (distanceToPoint < 5);
-    }
-
-    function pointNearToolTouch(element, data, coords) {
-        // TODO: Find a formula for shortest distance between point and ellipse.  Rectangle is close enough
-        var startCanvas = cornerstone.pixelToCanvas(element, data.handles.start);
-        var endCanvas = cornerstone.pixelToCanvas(element, data.handles.end);
-
-        var rect = {
-            left: Math.min(startCanvas.x, endCanvas.x),
-            top: Math.min(startCanvas.y, endCanvas.y),
-            width: Math.abs(startCanvas.x - endCanvas.x),
-            height: Math.abs(startCanvas.y - endCanvas.y)
-        };
-
-        var distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, coords);
-        return (distanceToPoint < 15);
-    }
 
     ///////// BEGIN IMAGE RENDERING ///////
     function pointInEllipse(ellipse, location) {
@@ -2354,7 +2852,8 @@ if (typeof cornerstoneTools === 'undefined') {
         }
 
         var center = {
-            x: ellipse.left + xRadius, y: ellipse.top + yRadius
+            x: ellipse.left + xRadius,
+            y: ellipse.top + yRadius
         };
 
         /* This is a more general form of the circle equation
@@ -2363,7 +2862,8 @@ if (typeof cornerstoneTools === 'undefined') {
          */
 
         var normalized = {
-            x: location.x - center.x, y: location.y - center.y
+            x: location.x - center.x,
+            y: location.y - center.y
         };
 
         var inEllipse = ((normalized.x * normalized.x) / (xRadius * xRadius)) + ((normalized.y * normalized.y) / (yRadius * yRadius)) <= 1.0;
@@ -2381,7 +2881,8 @@ if (typeof cornerstoneTools === 'undefined') {
         for (var y = ellipse.top; y < ellipse.top + ellipse.height; y++) {
             for (var x = ellipse.left; x < ellipse.left + ellipse.width; x++) {
                 if (pointInEllipse(ellipse, {
-                    x: x, y: y
+                    x: x,
+                    y: y
                 }) === true) {
                     sum += sp[index];
                     sumSquared += sp[index] * sp[index];
@@ -2394,7 +2895,10 @@ if (typeof cornerstoneTools === 'undefined') {
 
         if (count === 0) {
             return {
-                count: count, mean: 0.0, variance: 0.0, stdDev: 0.0
+                count: count,
+                mean: 0.0,
+                variance: 0.0,
+                stdDev: 0.0
             };
         }
 
@@ -2402,8 +2906,47 @@ if (typeof cornerstoneTools === 'undefined') {
         var variance = sumSquared / count - mean * mean;
 
         return {
-            count: count, mean: mean, variance: variance, stdDev: Math.sqrt(variance)
+            count: count,
+            mean: mean,
+            variance: variance,
+            stdDev: Math.sqrt(variance)
         };
+    }
+
+    function pointNearEllipse(element, data, coords, distance) {
+        var startCanvas = cornerstone.pixelToCanvas(element, data.handles.start);
+        var endCanvas = cornerstone.pixelToCanvas(element, data.handles.end);
+
+        var minorEllipse = {
+            left: Math.min(startCanvas.x, endCanvas.x) + distance / 2,
+            top: Math.min(startCanvas.y, endCanvas.y) + distance / 2 ,
+            width: Math.abs(startCanvas.x - endCanvas.x) - distance,
+            height: Math.abs(startCanvas.y - endCanvas.y) - distance
+        };
+        
+        var majorEllipse = {
+            left: Math.min(startCanvas.x, endCanvas.x) - distance / 2,
+            top: Math.min(startCanvas.y, endCanvas.y) - distance / 2 ,
+            width: Math.abs(startCanvas.x - endCanvas.x) + distance,
+            height: Math.abs(startCanvas.y - endCanvas.y) + distance
+        };
+
+        var pointInMinorEllipse = pointInEllipse(minorEllipse, coords);
+        var pointInMajorEllipse = pointInEllipse(majorEllipse, coords);
+
+        if (pointInMajorEllipse && !pointInMinorEllipse) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function pointNearTool(element, data, coords) {
+        return pointNearEllipse(element, data, coords, 15);
+    }
+
+    function pointNearToolTouch(element, data, coords) {
+        return pointNearEllipse(element, data, coords, 25);
     }
 
     function onImageRendered(e, eventData) {
@@ -2423,9 +2966,16 @@ if (typeof cornerstoneTools === 'undefined') {
         var lineWidth = cornerstoneTools.toolStyle.getToolWidth();
         var font = cornerstoneTools.textStyle.getFont();
         var fontHeight = cornerstoneTools.textStyle.getFontSize();
+        var config = cornerstoneTools.ellipticalRoi.getConfiguration();
 
         for (var i = 0; i < toolData.data.length; i++) {
             context.save();
+            
+            if (config && config.shadow) {
+                context.shadowColor = config.shadowColor || '#000000';
+                context.shadowOffsetX = config.shadowOffsetX || 1;
+                context.shadowOffsetY = config.shadowOffsetY || 1;
+            }
 
             var data = toolData.data[i];
 
@@ -2454,11 +3004,14 @@ if (typeof cornerstoneTools === 'undefined') {
             context.closePath();
 
             // draw the handles
-            cornerstoneTools.drawHandles(context, eventData, data.handles);
+            cornerstoneTools.drawHandles(context, eventData, data.handles, color);
             
             context.font = font;
 
-            var textX, textY, meanStdDev, area, areaText, textSize;
+            var textX,
+                textY,
+                area,
+                meanStdDev;
 
             if (!data.invalidated) {
                 textX = data.textX;
@@ -2475,7 +3028,10 @@ if (typeof cornerstoneTools === 'undefined') {
                 var pixels = cornerstone.getPixels(eventData.element, left, top, width, height);
 
                 var ellipse = {
-                    left: left, top: top, width: width, height: height
+                    left: left,
+                    top: top,
+                    width: width,
+                    height: height
                 };
 
                 // Calculate the mean, stddev, and area
@@ -2491,22 +3047,31 @@ if (typeof cornerstoneTools === 'undefined') {
                     data.meanStdDev = meanStdDev;
                 }
             }
+
             // Draw text
+
+            var areaText,
+                areaTextWidth = 0;
             if (area !== undefined) {
                 areaText = 'Area: ' + area.toFixed(2) + ' mm' + String.fromCharCode(178);
-                textSize = context.measureText(areaText);
-            } else {
-                var stdDevText = 'StdDev: ' + meanStdDev.stdDev.toFixed(2);
-                textSize = context.measureText(stdDevText);
+                areaTextWidth = context.measureText(areaText).width;
             }
 
-            textX = centerX < (eventData.image.columns / 2) ? centerX + (widthCanvas / 2): centerX - (widthCanvas / 2) - textSize.width;
+            var meanText = 'Mean: ' + meanStdDev.mean.toFixed(2);
+            var meanTextWidth = context.measureText(meanText).width;
+
+            var stdDevText = 'StdDev: ' + meanStdDev.stdDev.toFixed(2);
+            var stdDevTextWidth = context.measureText(stdDevText).width;
+
+            var longestTextWidth = Math.max(meanTextWidth, areaTextWidth, stdDevTextWidth);
+
+            textX = centerX < (eventData.image.columns / 2) ? centerX + (widthCanvas / 2) + longestTextWidth: centerX - (widthCanvas / 2) - longestTextWidth - 15;
             textY = centerY < (eventData.image.rows / 2) ? centerY + (heightCanvas / 2): centerY - (heightCanvas / 2);
 
             context.fillStyle = color;
             if (meanStdDev) {
-                cornerstoneTools.drawTextBox(context, 'Mean: ' + meanStdDev.mean.toFixed(2), textX, textY - fontHeight - 5, color);
-                cornerstoneTools.drawTextBox(context, 'StdDev: ' + meanStdDev.stdDev.toFixed(2), textX, textY, color);
+                cornerstoneTools.drawTextBox(context, meanText, textX, textY - fontHeight - 5, color);
+                cornerstoneTools.drawTextBox(context, stdDevText, textX, textY, color);
             }
             
             // Char code 178 is a superscript 2 for mm^2
@@ -2547,10 +3112,15 @@ if (typeof cornerstoneTools === 'undefined') {
         mouseLocation: {
             handles: {
                 start: {
-                    highlight: true, active: true,
+                    highlight: true,
+                    active: true,
                 }
             }
-        }, freehand: false, modifying: false, currentHandle: 0, currentTool: -1
+        },
+        freehand: false,
+        modifying: false,
+        currentHandle: 0,
+        currentTool: -1
     };
 
     ///////// BEGIN ACTIVE TOOL ///////
@@ -2567,7 +3137,11 @@ if (typeof cornerstoneTools === 'undefined') {
         var data = toolData.data[config.currentTool];
 
         var handleData = {
-            x: eventData.currentPoints.image.x, y: eventData.currentPoints.image.y, highlight: true, active: true, lines: []
+            x: eventData.currentPoints.image.x,
+            y: eventData.currentPoints.image.y,
+            highlight: true,
+            active: true,
+            lines: []
         };
 
         // If this is not the first handle
@@ -2613,7 +3187,7 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function pointNearHandleAllTools(eventData) {
         var toolData = cornerstoneTools.getToolState(eventData.element, toolType);
-        if (toolData === undefined) {
+        if (!toolData) {
             return;
         }
 
@@ -2622,12 +3196,11 @@ if (typeof cornerstoneTools === 'undefined') {
             handleNearby = pointNearHandle(eventData, toolIndex);
             if (handleNearby !== undefined) {
                 return {
-                    handleNearby: handleNearby, toolIndex: toolIndex
+                    handleNearby: handleNearby,
+                    toolIndex: toolIndex
                 };
             }
         }
-
-        return; // Maybe this should return false?
     }
 
     // --- Drawing loop ---
@@ -2657,7 +3230,7 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function mouseMoveCallback(e, eventData) {
         var toolData = cornerstoneTools.getToolState(eventData.element, toolType);
-        if (toolData === undefined) {
+        if (!toolData) {
             return;
         }
 
@@ -2666,8 +3239,13 @@ if (typeof cornerstoneTools === 'undefined') {
         var data = toolData.data[config.currentTool];
 
         // Set the mouseLocation handle
-        config.mouseLocation.handles.start.x = eventData.currentPoints.image.x;
-        config.mouseLocation.handles.start.y = eventData.currentPoints.image.y;
+        var x = Math.max(eventData.currentPoints.image.x, 0);
+        x = Math.min(x, eventData.image.width);
+        config.mouseLocation.handles.start.x = x;
+
+        var y = Math.max(eventData.currentPoints.image.y, 0);
+        y = Math.min(y, eventData.image.height);
+        config.mouseLocation.handles.start.y = y;
 
         var currentHandle = config.currentHandle;
 
@@ -2708,7 +3286,9 @@ if (typeof cornerstoneTools === 'undefined') {
         $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
 
         var measurementData = {
-            visible: true, active: true, handles: [],
+            visible: true,
+            active: true,
+            handles: []
         };
 
         var config = cornerstoneTools.freehand.getConfiguration();
@@ -2723,7 +3303,7 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function endDrawing(eventData, handleNearby) {
         var toolData = cornerstoneTools.getToolState(eventData.element, toolType);
-        if (toolData === undefined) {
+        if (!toolData) {
             return;
         }
 
@@ -2931,7 +3511,12 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module/private exports
     cornerstoneTools.freehand = {
-        enable: enable, disable: disable, activate: activate, deactivate: deactivate, getConfiguration: getConfiguration, setConfiguration: setConfiguration
+        enable: enable,
+        disable: disable,
+        activate: activate,
+        deactivate: deactivate,
+        getConfiguration: getConfiguration,
+        setConfiguration: setConfiguration
     };
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
@@ -2955,11 +3540,20 @@ if (typeof cornerstoneTools === 'undefined') {
     
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            visible: true, active: true, handles: {
+            visible: true,
+            active: true,
+            handles: {
                 start: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
-                }, end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: true
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
+                },
+                end: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: true
                 }
             }
         };
@@ -2973,7 +3567,10 @@ if (typeof cornerstoneTools === 'undefined') {
         var endCanvas = cornerstone.pixelToCanvas(element, data.handles.end);
 
         var rect = {
-            left: Math.min(startCanvas.x, endCanvas.x), top: Math.min(startCanvas.y, endCanvas.y), width: Math.abs(startCanvas.x - endCanvas.x), height: Math.abs(startCanvas.y - endCanvas.y)
+            left: Math.min(startCanvas.x, endCanvas.x),
+            top: Math.min(startCanvas.y, endCanvas.y),
+            width: Math.abs(startCanvas.x - endCanvas.x),
+            height: Math.abs(startCanvas.y - endCanvas.y)
         };
 
         var insideBox = false;
@@ -2989,7 +3586,10 @@ if (typeof cornerstoneTools === 'undefined') {
         var endCanvas = cornerstone.pixelToCanvas(element, data.handles.end);
 
         var rect = {
-            left: Math.min(startCanvas.x, endCanvas.x), top: Math.min(startCanvas.y, endCanvas.y), width: Math.abs(startCanvas.x - endCanvas.x), height: Math.abs(startCanvas.y - endCanvas.y)
+            left: Math.min(startCanvas.x, endCanvas.x),
+            top: Math.min(startCanvas.y, endCanvas.y),
+            width: Math.abs(startCanvas.x - endCanvas.x),
+            height: Math.abs(startCanvas.y - endCanvas.y)
         };
 
         var distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, coords);
@@ -3031,7 +3631,10 @@ if (typeof cornerstoneTools === 'undefined') {
         var handleEndCanvas = cornerstone.pixelToCanvas(eventData.element, data.handles.end);
 
         var rect = {
-            left: Math.min(handleStartCanvas.x, handleEndCanvas.x), top: Math.min(handleStartCanvas.y, handleEndCanvas.y), width: Math.abs(handleStartCanvas.x - handleEndCanvas.x), height: Math.abs(handleStartCanvas.y - handleEndCanvas.y)
+            left: Math.min(handleStartCanvas.x, handleEndCanvas.x),
+            top: Math.min(handleStartCanvas.y, handleEndCanvas.y),
+            width: Math.abs(handleStartCanvas.x - handleEndCanvas.x),
+            height: Math.abs(handleStartCanvas.y - handleEndCanvas.y)
         };
 
         // draw dark fill outside the rectangle
@@ -3066,11 +3669,19 @@ if (typeof cornerstoneTools === 'undefined') {
     var preventHandleOutsideImage = true;
 
     cornerstoneTools.highlight = cornerstoneTools.mouseButtonRectangleTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, pointInsideRect: pointInsideRect, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        pointInsideRect: pointInsideRect,
+        toolType: toolType
     }, preventHandleOutsideImage);
     
     cornerstoneTools.highlightTouch = cornerstoneTools.touchTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, pointInsideRect: pointInsideRect, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        pointInsideRect: pointInsideRect,
+        toolType: toolType
     }, preventHandleOutsideImage);
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
@@ -3089,7 +3700,12 @@ if (typeof cornerstoneTools === 'undefined') {
             activate: function(element) {
                 $(element).off('CornerstoneToolsKeyDown', keyDownCallback);
                 $(element).on('CornerstoneToolsKeyDown', keyDownCallback);
-            }, disable: function(element) {$(element).off('CornerstoneToolsKeyDown', keyDownCallback);}, enable: function(element) {$(element).off('CornerstoneToolsKeyDown', keyDownCallback);}, deactivate: function(element) {$(element).off('CornerstoneToolsKeyDown', keyDownCallback);}, getConfiguration: function() { return configuration; }, setConfiguration: function(config) {configuration = config;}
+            },
+            disable: function(element) {$(element).off('CornerstoneToolsKeyDown', keyDownCallback);},
+            enable: function(element) {$(element).off('CornerstoneToolsKeyDown', keyDownCallback);},
+            deactivate: function(element) {$(element).off('CornerstoneToolsKeyDown', keyDownCallback);},
+            getConfiguration: function() { return configuration; },
+            setConfiguration: function(config) {configuration = config;}
         };
         return toolInterface;
     }
@@ -3112,11 +3728,20 @@ if (typeof cornerstoneTools === 'undefined') {
     function createNewMeasurement(mouseEventData) {
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            visible: true, active: true, handles: {
+            visible: true,
+            active: true,
+            handles: {
                 start: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
-                }, end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: true
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
+                },
+                end: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: true
                 }
             }
         };
@@ -3127,7 +3752,8 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function pointNearTool(element, data, coords) {
         var lineSegment = {
-            start: cornerstone.pixelToCanvas(element, data.handles.start), end: cornerstone.pixelToCanvas(element, data.handles.end)
+            start: cornerstone.pixelToCanvas(element, data.handles.start),
+            end: cornerstone.pixelToCanvas(element, data.handles.end)
         };
         var distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, coords);
         return (distanceToPoint < 25);
@@ -3138,7 +3764,7 @@ if (typeof cornerstoneTools === 'undefined') {
 
         // if we have no toolData for this element, return immediately as there is nothing to do
         var toolData = cornerstoneTools.getToolState(e.currentTarget, toolType);
-        if (toolData === undefined) {
+        if (!toolData) {
             return;
         }
 
@@ -3146,32 +3772,27 @@ if (typeof cornerstoneTools === 'undefined') {
         var context = eventData.canvasContext.canvas.getContext('2d');
         context.setTransform(1, 0, 0, 1, 0, 0);
 
-        var color;
         var lineWidth = cornerstoneTools.toolStyle.getToolWidth();
-        var font = cornerstoneTools.textStyle.getFont();
         var config = cornerstoneTools.length.getConfiguration();
 
         for (var i = 0; i < toolData.data.length; i++) {
             context.save();
+
             // configurable shadow
             if (config && config.shadow) {
-                context.shadowColor = '#000000';
-                context.shadowOffsetX = +1;
-                context.shadowOffsetY = +1;
+                context.shadowColor = config.shadowColor || '#000000';
+                context.shadowOffsetX = config.shadowOffsetX || 1;
+                context.shadowOffsetY = config.shadowOffsetY || 1;
             }
-            
+
             var data = toolData.data[i];
+            var color = cornerstoneTools.toolColors.getColorIfActive(data.active);
 
-            if (data.active) {
-                color = cornerstoneTools.toolColors.getActiveColor();
-            } else {
-                color = cornerstoneTools.toolColors.getToolColor();
-            }
-
-            // draw the line
+            // Get the handle positions in canvas coordinates
             var handleStartCanvas = cornerstone.pixelToCanvas(eventData.element, data.handles.start);
             var handleEndCanvas = cornerstone.pixelToCanvas(eventData.element, data.handles.end);
 
+            // Draw the measurement line
             context.beginPath();
             context.strokeStyle = color;
             context.lineWidth = lineWidth;
@@ -3179,30 +3800,50 @@ if (typeof cornerstoneTools === 'undefined') {
             context.lineTo(handleEndCanvas.x, handleEndCanvas.y);
             context.stroke();
 
-            // draw the handles
+            // Draw the handles
             cornerstoneTools.drawHandles(context, eventData, data.handles, color);
 
             // Draw the text
             context.fillStyle = color;
-            context.font = font;
 
+            // Set rowPixelSpacing and columnPixelSpacing to 1 if they are undefined (or zero)
+            var dx = (data.handles.end.x - data.handles.start.x) * (eventData.image.columnPixelSpacing || 1);
+            var dy = (data.handles.end.y - data.handles.start.y) * (eventData.image.rowPixelSpacing || 1);
+
+            // Calculate the length, and create the text variable with the millimeters or pixels suffix            
+            var length = Math.sqrt(dx * dx + dy * dy);
+
+            // Set the length text suffix depending on whether or not pixelSpacing is available
             var suffix = ' mm';
             if (!eventData.image.rowPixelSpacing || !eventData.image.columnPixelSpacing) {
                 suffix = ' pixels';
             }
 
-            // Set rowPixelSpacing and columnPixelSpacing to 1 if they are undefined (or zero)
-            var dx = (data.handles.start.x - data.handles.end.x) * (eventData.image.columnPixelSpacing || 1);
-            var dy = (data.handles.start.y - data.handles.end.y) * (eventData.image.rowPixelSpacing || 1);
-            
-            var length = Math.sqrt(dx * dx + dy * dy);
+            // Store the length measurement text
             var text = '' + length.toFixed(2) + suffix;
 
+            // Place the length measurement text next to the right-most handle
+            var fontSize = cornerstoneTools.textStyle.getFontSize();
             var textCoords = {
-                x: (handleStartCanvas.x + handleEndCanvas.x) / 2 + 5, y: (handleStartCanvas.y + handleEndCanvas.y) / 2
+                x: Math.max(handleStartCanvas.x, handleEndCanvas.x),
             };
 
+            // Depending on which handle has the largest x-value, 
+            // set the y-value for the text box
+            if (textCoords.x === handleStartCanvas.x) {
+                textCoords.y = handleStartCanvas.y;
+            } else {
+                textCoords.y = handleEndCanvas.y;
+            }
+
+            // Move the textbox slightly to the right and upwards
+            // so that it sits beside the length tool handle
+            textCoords.x += 10;
+            textCoords.y -= fontSize / 2 + 7;
+
+            // Draw the textbox
             cornerstoneTools.drawTextBox(context, text, textCoords.x, textCoords.y, color);
+
             context.restore();
         }
     }
@@ -3210,10 +3851,17 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module exports
     cornerstoneTools.length = cornerstoneTools.mouseButtonTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
+
     cornerstoneTools.lengthTouch = cornerstoneTools.touchTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
@@ -3226,8 +3874,11 @@ if (typeof cornerstoneTools === 'undefined') {
     'use strict';
 
     var configuration = {
-        magnifySize: 100, magnificationLevel: 2,
+        magnifySize: 100,
+        magnificationLevel: 2,
     };
+
+    var browserName;
 
     /** Remove the magnifying glass when the mouse event ends */
     function mouseUpCallback(e, eventData) {
@@ -3252,9 +3903,20 @@ if (typeof cornerstoneTools === 'undefined') {
         }
     }
 
-    /** Drag callback is triggers by both the touch and mouse magnify tools */
+    function dragEndCallback(e, eventData) {
+        $(eventData.element).off('CornerstoneToolsDragEnd', dragEndCallback);
+        $(eventData.element).off('CornerstoneToolsTouchEnd', dragEndCallback);
+        hideTool(eventData);
+    }
+
+    /** Drag callback is triggered by both the touch and mouse magnify tools */
     function dragCallback(e, eventData) {
         drawMagnificationTool(eventData);
+        if (eventData.isTouchEvent === true) {
+            $(eventData.element).on('CornerstoneToolsDragEnd', dragEndCallback);
+            $(eventData.element).on('CornerstoneToolsTouchEnd', dragEndCallback);
+        }
+
         return false; // false = causes jquery to preventDefault() and stopPropagation() this event
     }
 
@@ -3262,7 +3924,7 @@ if (typeof cornerstoneTools === 'undefined') {
     function drawMagnificationTool(eventData) {
         var magnify = $(eventData.element).find('.magnifyTool').get(0);
 
-        if (magnify === undefined) {
+        if (!magnify) {
             createMagnificationCanvas(eventData.element);
         }
 
@@ -3280,8 +3942,14 @@ if (typeof cornerstoneTools === 'undefined') {
         var zoomCtx = magnify.getContext('2d');
         zoomCtx.setTransform(1, 0, 0, 1, 0, 0);
 
+        var getSize = magnifySize / magnificationLevel;
+
         // Calculate the on-canvas location of the mouse pointer / touch
         var canvasLocation = cornerstone.pixelToCanvas(eventData.element, eventData.currentPoints.image);
+
+        if (eventData.isTouchEvent === true) {
+            canvasLocation.y -= 1.25 * getSize;
+        }
 
         canvasLocation.x = Math.max(canvasLocation.x, 0);
         canvasLocation.x = Math.min(canvasLocation.x, canvas.width);
@@ -3296,17 +3964,31 @@ if (typeof cornerstoneTools === 'undefined') {
         // Fill it with the pixels that the mouse is clicking on
         zoomCtx.fillRect(0, 0, magnifySize, magnifySize);
         
-        var scaledMagnifySize = magnifySize * magnificationLevel;
-        var getSize = magnifySize / magnificationLevel;
         var copyFrom = {
-            x: canvasLocation.x - 0.5 * getSize, y: canvasLocation.y - 0.5 * getSize
+            x: canvasLocation.x - 0.5 * getSize,
+            y: canvasLocation.y - 0.5 * getSize
         };
 
-        zoomCtx.drawImage(canvas, copyFrom.x, copyFrom.y, magnifySize, magnifySize, 0, 0, scaledMagnifySize, scaledMagnifySize);
+        if (browserName === 'Safari') {
+            // Safari breaks when trying to copy pixels with negative indices
+            // This prevents proper Magnify usage
+            copyFrom.x = Math.max(copyFrom.x, 0);
+            copyFrom.y = Math.max(copyFrom.y, 0);
+        }
+
+        copyFrom.x = Math.min(copyFrom.x, canvas.width);
+        copyFrom.y = Math.min(copyFrom.y, canvas.height);
+
+        var scaledMagnify = {
+            x: (canvas.width - copyFrom.x) * magnificationLevel,
+            y: (canvas.height - copyFrom.y) * magnificationLevel
+        };
+        zoomCtx.drawImage(canvas, copyFrom.x, copyFrom.y, canvas.width - copyFrom.x, canvas.height - copyFrom.y, 0, 0, scaledMagnify.x, scaledMagnify.y);
 
         // Place the magnification tool at the same location as the pointer
         magnify.style.top = canvasLocation.y - 0.5 * magnifySize + 'px';
         magnify.style.left = canvasLocation.x - 0.5 * magnifySize + 'px';
+
         magnify.style.display = 'block';
 
         // Hide the mouse cursor, so the user can see better
@@ -3345,6 +4027,13 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function enable(element) {
         var config = cornerstoneTools.magnify.getConfiguration(config);
+
+        if (!browserName) {
+            var infoString = cornerstoneTools.getBrowserInfo();
+            var info = infoString.split(' ');
+            browserName = info[0];
+        }
+
         createMagnificationCanvas(element);
     }
 
@@ -3360,21 +4049,6 @@ if (typeof cornerstoneTools === 'undefined') {
     }
 
     // --- Touch tool activate / disable --- //
-    function disableTouchDrag(element) {
-        $(element).off('CornerstoneToolsTouchDrag', dragCallback);
-        $(element).off('CornerstoneToolsDragStart', dragCallback);
-        removeMagnificationCanvas(element);
-    }
-
-    function activateTouchDrag(element) {
-        $(element).off('CornerstoneToolsTouchDrag', dragCallback);
-        $(element).off('CornerstoneToolsDragStart', dragCallback);
-
-        $(element).on('CornerstoneToolsTouchDrag', dragCallback);
-        $(element).on('CornerstoneToolsDragStart', dragCallback);
-        createMagnificationCanvas(element);
-    }
-
     function getConfiguration() {
         return configuration;
     }
@@ -3385,16 +4059,64 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module exports
     cornerstoneTools.magnify = {
-        enable: enable, activate: activate, deactivate: disable, disable: disable, getConfiguration: getConfiguration, setConfiguration: setConfiguration
+        enable: enable,
+        activate: activate,
+        deactivate: disable,
+        disable: disable,
+        getConfiguration: getConfiguration,
+        setConfiguration: setConfiguration
     };
 
-    cornerstoneTools.magnifyTouchDrag = {
-        enable: enable, activate: activateTouchDrag, deactivate: disableTouchDrag, disable: disableTouchDrag
+    var options = {
+        fireOnTouchStart: true,
+        activateCallback: createMagnificationCanvas,
+        disableCallback: removeMagnificationCanvas
     };
+    cornerstoneTools.magnifyTouchDrag = cornerstoneTools.touchDragTool(dragCallback, options);
 
 })($, cornerstone, cornerstoneTools);
  
 // End Source; src/imageTools/magnify.js
+
+// Begin Source: src/imageTools/multiTouchDragTool.js
+(function($, cornerstone, cornerstoneTools) {
+
+    'use strict';
+
+    function multiTouchDragTool(touchDragCallback) {
+        var configuration = {};
+        var events = 'CornerstoneToolsMultiTouchDrag';
+        
+        var toolInterface = {
+            activate: function(element) {
+                $(element).off(events, touchDragCallback);
+                $(element).on(events, touchDragCallback);
+            },
+            disable: function(element) {
+                $(element).off(events, touchDragCallback);
+            },
+            enable: function(element) {
+                $(element).off(events, touchDragCallback);
+            },
+            deactivate: function(element) {
+                $(element).off(events, touchDragCallback);
+            },
+            getConfiguration: function() {
+                return configuration;
+            },
+            setConfiguration: function(config) {
+                configuration = config;
+            }
+        };
+        return toolInterface;
+    }
+
+    // module exports
+    cornerstoneTools.multiTouchDragTool = multiTouchDragTool;
+
+})($, cornerstone, cornerstoneTools);
+ 
+// End Source; src/imageTools/multiTouchDragTool.js
 
 // Begin Source: src/imageTools/orientationMarkers.js
 (function($, cornerstone, cornerstoneTools) {
@@ -3416,7 +4138,10 @@ if (typeof cornerstoneTools === 'undefined') {
         var oppositeColumnString = cornerstoneTools.orientation.invertOrientationString(columnString);
 
         return {
-            top: oppositeColumnString, bottom: columnString, left: oppositeRowString, right: rowString
+            top: oppositeColumnString,
+            bottom: columnString,
+            left: oppositeRowString,
+            right: rowString
         };
     }
 
@@ -3425,27 +4150,34 @@ if (typeof cornerstoneTools === 'undefined') {
         var coords;
 
         coords = {
-            x: enabledElement.image.width / 2, y: 5
+            x: enabledElement.image.width / 2,
+            y: 5
         };
         var topCoords = cornerstone.pixelToCanvas(element, coords);
 
         coords = {
-            x: enabledElement.image.width / 2, y: enabledElement.image.height - 5
+            x: enabledElement.image.width / 2,
+            y: enabledElement.image.height - 5
         };
         var bottomCoords = cornerstone.pixelToCanvas(element, coords);
 
         coords = {
-            x: 5, y: enabledElement.image.height / 2
+            x: 5,
+            y: enabledElement.image.height / 2
         };
         var leftCoords = cornerstone.pixelToCanvas(element, coords);
 
         coords = {
-            x: enabledElement.image.width - 10, y: enabledElement.image.height / 2
+            x: enabledElement.image.width - 10,
+            y: enabledElement.image.height / 2
         };
         var rightCoords = cornerstone.pixelToCanvas(element, coords);
 
         return {
-            top: topCoords, bottom: bottomCoords, left: leftCoords, right: rightCoords
+            top: topCoords,
+            bottom: bottomCoords,
+            left: leftCoords,
+            right: rightCoords
         };
     }
 
@@ -3466,7 +4198,10 @@ if (typeof cornerstoneTools === 'undefined') {
         var color = cornerstoneTools.toolColors.getToolColor();
 
         var textWidths = {
-            top: context.measureText(markers.top).width, left: context.measureText(markers.left).width, right: context.measureText(markers.right).width, bottom: context.measureText(markers.bottom).width
+            top: context.measureText(markers.top).width,
+            left: context.measureText(markers.left).width,
+            right: context.measureText(markers.right).width,
+            bottom: context.measureText(markers.bottom).width
         };
 
         cornerstoneTools.drawTextBox(context, markers.top, coords.top.x - textWidths.top / 2, coords.top.y, color);
@@ -3493,35 +4228,29 @@ if (typeof cornerstoneTools === 'undefined') {
     'use strict';
 
     function mouseUpCallback(e, eventData) {
-        $(eventData.element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
+        $(eventData.element).off('CornerstoneToolsMouseDrag', dragCallback);
         $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(eventData.element).off('CornerstoneToolsMouseClick', mouseUpCallback);
     }
 
     function mouseDownCallback(e, eventData) {
         if (cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
-            $(eventData.element).on('CornerstoneToolsMouseDrag', mouseDragCallback);
+            $(eventData.element).on('CornerstoneToolsMouseDrag', dragCallback);
             $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
-            return false; // false = cases jquery to preventDefault() and stopPropagation() this event
+            $(eventData.element).on('CornerstoneToolsMouseClick', mouseUpCallback);
+            return false; // false = causes jquery to preventDefault() and stopPropagation() this event
         }
     }
-
-    function mouseDragCallback(e, eventData) {
+    
+    function dragCallback(e, eventData) {
         eventData.viewport.translation.x += (eventData.deltaPoints.page.x / eventData.viewport.scale);
         eventData.viewport.translation.y += (eventData.deltaPoints.page.y / eventData.viewport.scale);
         cornerstone.setViewport(eventData.element, eventData.viewport);
-        return false; // false = cases jquery to preventDefault() and stopPropagation() this event
-    }
-
-    function onDrag(e, eventData) {
-        var dragData = eventData;
-        dragData.viewport.translation.x += (dragData.deltaPoints.page.x / dragData.viewport.scale);
-        dragData.viewport.translation.y += (dragData.deltaPoints.page.y / dragData.viewport.scale);
-        cornerstone.setViewport(dragData.element, dragData.viewport);
-        return false; // false = cases jquery to preventDefault() and stopPropagation() this event
+        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
     }
 
     cornerstoneTools.pan = cornerstoneTools.simpleMouseButtonTool(mouseDownCallback);
-    cornerstoneTools.panTouchDrag = cornerstoneTools.touchDragTool(onDrag);
+    cornerstoneTools.panTouchDrag = cornerstoneTools.touchDragTool(dragCallback);
 
 })($, cornerstone, cornerstoneTools);
  
@@ -3533,24 +4262,23 @@ if (typeof cornerstoneTools === 'undefined') {
     'use strict';
 
     function touchPanCallback(e, eventData) {
-        eventData.viewport.translation.x += (eventData.deltaPoints.page.x / eventData.viewport.scale);
-        eventData.viewport.translation.y += (eventData.deltaPoints.page.y / eventData.viewport.scale);
-        cornerstone.setViewport(eventData.element, eventData.viewport);
-        return false; // false = cases jquery to preventDefault() and stopPropagation() this event
+        var config = cornerstoneTools.panMultiTouch.getConfiguration();
+        if (config && config.testPointers(eventData)) {
+            eventData.viewport.translation.x += (eventData.deltaPoints.page.x / eventData.viewport.scale);
+            eventData.viewport.translation.y += (eventData.deltaPoints.page.y / eventData.viewport.scale);
+            cornerstone.setViewport(eventData.element, eventData.viewport);
+            return false; // false = causes jquery to preventDefault() and stopPropagation() this event
+        }
     }
 
-    function disable(element) {
-        $(element).off('CornerstoneToolsMultiTouchDrag', touchPanCallback);
-    }
-
-    function activate(element) {
-        $(element).off('CornerstoneToolsMultiTouchDrag', touchPanCallback);
-        $(element).on('CornerstoneToolsMultiTouchDrag', touchPanCallback);
-    }
-
-    cornerstoneTools.panMultiTouch = {
-        activate: activate, disable: disable
+    var configuration = {
+        testPointers: function(eventData) {
+            return (eventData.numPointers >= 2);
+        }
     };
+
+    cornerstoneTools.panMultiTouch = cornerstoneTools.multiTouchDragTool(touchPanCallback);
+    cornerstoneTools.panMultiTouch.setConfiguration(configuration);
 
 })($, cornerstone, cornerstoneTools);
  
@@ -3567,9 +4295,14 @@ if (typeof cornerstoneTools === 'undefined') {
     function createNewMeasurement(mouseEventData) {
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            visible: true, active: true, handles: {
+            visible: true,
+            active: true,
+            handles: {
                 end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: true
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: true
                 }
             }
         };
@@ -3643,7 +4376,8 @@ if (typeof cornerstoneTools === 'undefined') {
 
             var coords = {
                 // translate the x/y away from the cursor
-                x: data.handles.end.x + 3, y: data.handles.end.y - 3
+                x: data.handles.end.x + 3,
+                y: data.handles.end.y - 3
             };
             var textCoords = cornerstone.pixelToCanvas(eventData.element, coords);
             
@@ -3659,10 +4393,16 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module exports
     cornerstoneTools.probe = cornerstoneTools.mouseButtonTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
     cornerstoneTools.probeTouch = cornerstoneTools.touchTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
 
 })($, cornerstone, cornerstoneTools);
@@ -3680,11 +4420,20 @@ if (typeof cornerstoneTools === 'undefined') {
     function createNewMeasurement(mouseEventData) {
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            visible: true, active: true, handles: {
+            visible: true,
+            active: true,
+            handles: {
                 start: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
-                }, end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: true
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
+                },
+                end: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: true
                 }
             }
         };
@@ -3698,7 +4447,10 @@ if (typeof cornerstoneTools === 'undefined') {
         var endCanvas = cornerstone.pixelToCanvas(element, data.handles.end);
 
         var rect = {
-            left: Math.min(startCanvas.x, endCanvas.x), top: Math.min(startCanvas.y, endCanvas.y), width: Math.abs(startCanvas.x - endCanvas.x), height: Math.abs(startCanvas.y - endCanvas.y)
+            left: Math.min(startCanvas.x, endCanvas.x),
+            top: Math.min(startCanvas.y, endCanvas.y),
+            width: Math.abs(startCanvas.x - endCanvas.x),
+            height: Math.abs(startCanvas.y - endCanvas.y)
         };
 
         var distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, coords);
@@ -3726,7 +4478,10 @@ if (typeof cornerstoneTools === 'undefined') {
 
         if (count === 0) {
             return {
-                count: count, mean: 0.0, variance: 0.0, stdDev: 0.0
+                count: count,
+                mean: 0.0,
+                variance: 0.0,
+                stdDev: 0.0
             };
         }
 
@@ -3734,7 +4489,10 @@ if (typeof cornerstoneTools === 'undefined') {
         var variance = sumSquared / count - mean * mean;
 
         return {
-            count: count, mean: mean, variance: variance, stdDev: Math.sqrt(variance)
+            count: count,
+            mean: mean,
+            variance: variance,
+            stdDev: Math.sqrt(variance)
         };
     }
 
@@ -3798,7 +4556,10 @@ if (typeof cornerstoneTools === 'undefined') {
             var pixels = cornerstone.getPixels(eventData.element, left, top, width, height);
 
             var ellipse = {
-                left: left, top: top, width: width, height: height
+                left: left,
+                top: top,
+                width: width,
+                height: height
             };
 
             var meanStdDev = calculateMeanStdDev(pixels, ellipse);
@@ -3824,10 +4585,16 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module exports
     cornerstoneTools.rectangleRoi = cornerstoneTools.mouseButtonTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
     cornerstoneTools.rectangleRoiTouch = cornerstoneTools.touchTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, pointNearTool: pointNearTool, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        pointNearTool: pointNearTool,
+        toolType: toolType
     });
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
@@ -3845,7 +4612,8 @@ if (typeof cornerstoneTools === 'undefined') {
         var rect = eventData.element.getBoundingClientRect(eventData.element);
 
         var points = {
-            x: eventData.currentPoints.client.x, y: eventData.currentPoints.client.y
+            x: eventData.currentPoints.client.x,
+            y: eventData.currentPoints.client.y
         };
 
         var width = eventData.element.clientWidth;
@@ -3861,38 +4629,36 @@ if (typeof cornerstoneTools === 'undefined') {
         var rotationDegrees = rotationRadians * (180 / Math.PI);
         var rotation = -1 * rotationDegrees + 90;
         eventData.viewport.rotation = rotation;
+        cornerstone.setViewport(eventData.element, eventData.viewport);
     }
 
     function horizontalStrategy(eventData) {
         eventData.viewport.rotation += (eventData.deltaPoints.page.x / eventData.viewport.scale);
+        cornerstone.setViewport(eventData.element, eventData.viewport);
     }
 
     function verticalStrategy(eventData) {
         eventData.viewport.rotation += (eventData.deltaPoints.page.y / eventData.viewport.scale);
+        cornerstone.setViewport(eventData.element, eventData.viewport);
     }
 
     // --- Mouse event callbacks --- //
     function mouseUpCallback(e, eventData) {
-        $(eventData.element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
+        $(eventData.element).off('CornerstoneToolsMouseDrag', dragCallback);
         $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(eventData.element).off('CornerstoneToolsMouseClick', mouseUpCallback);
     }
 
     function mouseDownCallback(e, eventData) {
         if (cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
-            $(eventData.element).on('CornerstoneToolsMouseDrag', mouseDragCallback);
+            $(eventData.element).on('CornerstoneToolsMouseDrag', dragCallback);
             $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(eventData.element).on('CornerstoneToolsMouseClick', mouseUpCallback);
             return false; // false = causes jquery to preventDefault() and stopPropagation() this event
         }
     }
 
-    function mouseDragCallback(e, eventData) {
-        cornerstoneTools.rotate.strategy(eventData);
-        cornerstone.setViewport(eventData.element, eventData.viewport);
-        e.stopPropagation();
-        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
-    }
-
-    function onDrag(e, eventData) {
+    function dragCallback(e, eventData) {
         cornerstoneTools.rotate.strategy(eventData);
         cornerstone.setViewport(eventData.element, eventData.viewport);
         return false; // false = causes jquery to preventDefault() and stopPropagation() this event
@@ -3900,12 +4666,14 @@ if (typeof cornerstoneTools === 'undefined') {
 
     cornerstoneTools.rotate = cornerstoneTools.simpleMouseButtonTool(mouseDownCallback);
     cornerstoneTools.rotate.strategies = {
-        default: defaultStrategy, horizontal: horizontalStrategy, vertical: verticalStrategy
+        default: defaultStrategy,
+        horizontal: horizontalStrategy,
+        vertical: verticalStrategy
     };
     
     cornerstoneTools.rotate.strategy = defaultStrategy;
 
-    cornerstoneTools.rotateTouchDrag = cornerstoneTools.touchDragTool(onDrag);
+    cornerstoneTools.rotateTouchDrag = cornerstoneTools.touchDragTool(dragCallback);
 
 })($, cornerstone, cornerstoneTools);
  
@@ -3932,7 +4700,8 @@ if (typeof cornerstoneTools === 'undefined') {
     }
 
     cornerstoneTools.rotateTouch = {
-        activate: activate, disable: disable
+        activate: activate,
+        disable: disable
     };
 
 })($, cornerstone, cornerstoneTools);
@@ -3990,13 +4759,26 @@ if (typeof cornerstoneTools === 'undefined') {
     function createNewMeasurement(mouseEventData) {
         // create the measurement data for this tool with the end handle activated
         var angleData = {
-            visible: true, active: true, handles: {
+            visible: true,
+            active: true,
+            handles: {
                 start: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
-                }, middle: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: true
-                }, end: {
-                    x: mouseEventData.currentPoints.image.x, y: mouseEventData.currentPoints.image.y, highlight: true, active: false
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
+                },
+                middle: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: true
+                },
+                end: {
+                    x: mouseEventData.currentPoints.image.x,
+                    y: mouseEventData.currentPoints.image.y,
+                    highlight: true,
+                    active: false
                 }
             }
         };
@@ -4007,11 +4789,12 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function pointNearTool(element, data, coords) {
         var lineSegment = {
-            start: cornerstone.pixelToCanvas(element, data.handles.start), end: cornerstone.pixelToCanvas(element, data.handles.middle)
+            start: cornerstone.pixelToCanvas(element, data.handles.start),
+            end: cornerstone.pixelToCanvas(element, data.handles.middle)
         };
 
         var distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, coords);
-        if (distanceToPoint < 5) {
+        if (distanceToPoint < 25) {
             return true;
         }
 
@@ -4019,7 +4802,7 @@ if (typeof cornerstoneTools === 'undefined') {
         lineSegment.end = cornerstone.pixelToCanvas(element, data.handles.end);
 
         distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, coords);
-        return (distanceToPoint < 5);
+        return (distanceToPoint < 25);
     }
 
     function length(vector) {
@@ -4043,9 +4826,16 @@ if (typeof cornerstoneTools === 'undefined') {
         var color;
         var lineWidth = cornerstoneTools.toolStyle.getToolWidth();
         var font = cornerstoneTools.textStyle.getFont();
+        var config = cornerstoneTools.simpleAngle.getConfiguration();
 
         for (var i = 0; i < toolData.data.length; i++) {
             context.save();
+
+            if (config && config.shadow) {
+                context.shadowColor = config.shadowColor || '#000000';
+                context.shadowOffsetX = config.shadowOffsetX || 1;
+                context.shadowOffsetY = config.shadowOffsetY || 1;
+            }
 
             var data = toolData.data[i];
 
@@ -4073,7 +4863,7 @@ if (typeof cornerstoneTools === 'undefined') {
             context.stroke();
 
             // draw the handles
-            cornerstoneTools.drawHandles(context, eventData, data.handles);
+            cornerstoneTools.drawHandles(context, eventData, data.handles, color);
 
             // Draw the text
             context.fillStyle = color;
@@ -4087,15 +4877,18 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             var sideA = {
-                x: (Math.ceil(data.handles.middle.x) - Math.ceil(data.handles.start.x)) * columnPixelSpacing, y: (Math.ceil(data.handles.middle.y) - Math.ceil(data.handles.start.y)) * rowPixelSpacing
+                x: (Math.ceil(data.handles.middle.x) - Math.ceil(data.handles.start.x)) * columnPixelSpacing,
+                y: (Math.ceil(data.handles.middle.y) - Math.ceil(data.handles.start.y)) * rowPixelSpacing
             };
 
             var sideB = {
-                x: (Math.ceil(data.handles.end.x) - Math.ceil(data.handles.middle.x)) * columnPixelSpacing, y: (Math.ceil(data.handles.end.y) - Math.ceil(data.handles.middle.y)) * rowPixelSpacing
+                x: (Math.ceil(data.handles.end.x) - Math.ceil(data.handles.middle.x)) * columnPixelSpacing,
+                y: (Math.ceil(data.handles.end.y) - Math.ceil(data.handles.middle.y)) * rowPixelSpacing
             };
 
             var sideC = {
-                x: (Math.ceil(data.handles.end.x) - Math.ceil(data.handles.start.x)) * columnPixelSpacing, y: (Math.ceil(data.handles.end.y) - Math.ceil(data.handles.start.y)) * rowPixelSpacing
+                x: (Math.ceil(data.handles.end.x) - Math.ceil(data.handles.start.x)) * columnPixelSpacing,
+                y: (Math.ceil(data.handles.end.y) - Math.ceil(data.handles.start.y)) * rowPixelSpacing
             };
 
             var sideALength = length(sideA);
@@ -4155,7 +4948,7 @@ if (typeof cornerstoneTools === 'undefined') {
         $(element).off('CornerstoneToolsMouseDownActivate', cornerstoneTools.simpleAngle.mouseDownActivateCallback);
         cornerstone.updateImage(element);
 
-        cornerstoneTools.moveNewHandle(mouseEventData, measurementData.handles.middle, function() {
+        cornerstoneTools.moveNewHandle(mouseEventData, toolType, measurementData, measurementData.handles.middle, function() {
             measurementData.active = false;
             if (cornerstoneTools.anyHandlesOutsideImage(mouseEventData, measurementData.handles)) {
                 // delete the measurement
@@ -4165,7 +4958,7 @@ if (typeof cornerstoneTools === 'undefined') {
             measurementData.handles.end.active = true;
             cornerstone.updateImage(element);
 
-            cornerstoneTools.moveNewHandle(mouseEventData, measurementData.handles.end, function() {
+            cornerstoneTools.moveNewHandle(mouseEventData, toolType, measurementData, measurementData.handles.end, function() {
                 measurementData.active = false;
                 if (cornerstoneTools.anyHandlesOutsideImage(mouseEventData, measurementData.handles)) {
                     // delete the measurement
@@ -4191,7 +4984,8 @@ if (typeof cornerstoneTools === 'undefined') {
         // since we are dragging to another place to drop the end point, we can just activate
         // the end point and let the moveHandle move it for us.
         $(element).off('CornerstoneToolsTouchDrag', cornerstoneTools.simpleAngleTouch.touchMoveCallback);
-        $(element).off('CornerstoneToolsDragStartActive', cornerstoneTools.simpleAngleTouch.touchDownActivateCallback);
+        $(element).off('CornerstoneToolsTouchStartActive', cornerstoneTools.simpleAngleTouch.touchDownActivateCallback);
+        $(element).off('CornerstoneToolsTouchStart', cornerstoneTools.simpleAngleTouch.touchStartCallback);
         $(element).off('CornerstoneToolsTap', cornerstoneTools.simpleAngleTouch.tapCallback);
         cornerstone.updateImage(element);
 
@@ -4213,7 +5007,8 @@ if (typeof cornerstoneTools === 'undefined') {
                 }
 
                 $(element).on('CornerstoneToolsTouchDrag', cornerstoneTools.simpleAngleTouch.touchMoveCallback);
-                $(element).on('CornerstoneToolsDragStartActive', cornerstoneTools.simpleAngleTouch.touchDownActivateCallback);
+                $(element).on('CornerstoneToolsTouchStart', cornerstoneTools.simpleAngleTouch.touchStartCallback);
+                $(element).on('CornerstoneToolsTouchStartActive', cornerstoneTools.simpleAngleTouch.touchDownActivateCallback);
                 $(element).on('CornerstoneToolsTap', cornerstoneTools.simpleAngleTouch.tapCallback);
                 cornerstone.updateImage(element);
             });
@@ -4257,7 +5052,10 @@ if (typeof cornerstoneTools === 'undefined') {
 
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            visible: true, active: true, text: config.current, handles: {
+            visible: true,
+            active: true,
+            text: config.current,
+            handles: {
                 end: {
                     x: mouseEventData.currentPoints.image.x,
                     y: mouseEventData.currentPoints.image.y,
@@ -4323,6 +5121,7 @@ if (typeof cornerstoneTools === 'undefined') {
 
         var font = cornerstoneTools.textStyle.getFont();
         var fontSize = cornerstoneTools.textStyle.getFontSize();
+        var config = cornerstoneTools.textMarker.getConfiguration();
 
         for (var i = 0; i < toolData.data.length; i++) {
             var data = toolData.data[i];
@@ -4334,6 +5133,12 @@ if (typeof cornerstoneTools === 'undefined') {
 
             context.save();
 
+            if (config && config.shadow) {
+                context.shadowColor = config.shadowColor || '#000000';
+                context.shadowOffsetX = config.shadowOffsetX || 1;
+                context.shadowOffsetY = config.shadowOffsetY || 1;
+            }
+
             // Draw text
             context.font = font;
             context.fillStyle = color;
@@ -4343,13 +5148,13 @@ if (typeof cornerstoneTools === 'undefined') {
             data.textHeight = fontSize;
 
             var coords = {
-                x: data.handles.end.x - data.textWidth / 2,
+                x: data.handles.end.x,
                 y: data.handles.end.y
             };
 
             var textCoords = cornerstone.pixelToCanvas(eventData.element, coords);
 
-            cornerstoneTools.drawTextBox(context, data.text, textCoords.x, textCoords.y, color);
+            cornerstoneTools.drawTextBox(context, data.text, textCoords.x - data.textWidth / 2, textCoords.y, color);
 
             context.restore();
         }
@@ -4368,6 +5173,10 @@ if (typeof cornerstoneTools === 'undefined') {
 
             data.active = false;
             cornerstone.updateImage(element);
+            $(element).on('CornerstoneToolsMouseMove', eventData, cornerstoneTools.textMarker.mouseMoveCallback);
+            $(element).on('CornerstoneToolsMouseDown', eventData, cornerstoneTools.textMarker.mouseDownCallback);
+            $(element).on('CornerstoneToolsMouseDownActivate', eventData, cornerstoneTools.textMarker.mouseDownActivateCallback);
+            $(element).on('CornerstoneToolsMouseDoubleClick', eventData, cornerstoneTools.textMarker.mouseDoubleClickCallback);
         }
 
         if (e.data && e.data.mouseButtonMask && !cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
@@ -4389,6 +5198,73 @@ if (typeof cornerstoneTools === 'undefined') {
             if (pointNearTool(element, data, coords)) {
                 data.active = true;
                 cornerstone.updateImage(element);
+
+                $(element).off('CornerstoneToolsMouseMove', cornerstoneTools.textMarker.mouseMoveCallback);
+                $(element).off('CornerstoneToolsMouseDown', cornerstoneTools.textMarker.mouseDownCallback);
+                $(element).off('CornerstoneToolsMouseDownActivate', cornerstoneTools.textMarker.mouseDownActivateCallback);
+                $(element).off('CornerstoneToolsMouseDoubleClick', cornerstoneTools.textMarker.mouseDoubleClickCallback);
+                // Allow relabelling via a callback
+                config.changeTextCallback(data, doneChangingTextCallback);
+                
+                e.stopImmediatePropagation();
+                return false;
+            }
+        }
+
+        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
+    }
+
+    function touchPressCallback(e, eventData) {
+        var element = eventData.element;
+        var data;
+
+        function doneChangingTextCallback(data, updatedText, deleteTool) {
+            if (deleteTool === true) {
+                cornerstoneTools.removeToolState(element, toolType, data);
+            } else {
+                data.text = updatedText;
+            }
+
+            data.active = false;
+            cornerstone.updateImage(element);
+            $(element).off('CornerstoneToolsTouchDrag', cornerstoneTools.textMarkerTouch.touchMoveCallback);
+            $(element).off('CornerstoneToolsTouchStartActive', cornerstoneTools.textMarkerTouch.touchDownActivateCallback);
+            $(element).off('CornerstoneToolsTouchStart', cornerstoneTools.textMarkerTouch.touchStartCallback);
+            $(element).off('CornerstoneToolsTap', cornerstoneTools.textMarkerTouch.tapCallback);
+            $(element).off('CornerstoneToolsTouchPress', cornerstoneTools.textMarkerTouch.pressCallback);
+
+            $(element).on('CornerstoneToolsTouchDrag', cornerstoneTools.textMarkerTouch.touchMoveCallback);
+            $(element).on('CornerstoneToolsTouchStartActive', cornerstoneTools.textMarkerTouch.touchDownActivateCallback);
+            $(element).on('CornerstoneToolsTouchStart', cornerstoneTools.textMarkerTouch.touchStartCallback);
+            $(element).on('CornerstoneToolsTap', cornerstoneTools.textMarkerTouch.tapCallback);
+            $(element).on('CornerstoneToolsTouchPress', cornerstoneTools.textMarkerTouch.pressCallback);
+        }
+
+        if (e.data && e.data.mouseButtonMask && !cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
+            return false;
+        }
+
+        var config = cornerstoneTools.textMarker.getConfiguration();
+
+        var coords = eventData.currentPoints.canvas;
+        var toolData = cornerstoneTools.getToolState(element, toolType);
+
+        // now check to see if there is a handle we can move
+        if (!toolData) {
+            return false;
+        }
+
+        for (var i = 0; i < toolData.data.length; i++) {
+            data = toolData.data[i];
+            if (pointNearTool(element, data, coords)) {
+                data.active = true;
+                cornerstone.updateImage(element);
+
+                $(element).off('CornerstoneToolsTouchDrag', cornerstoneTools.textMarkerTouch.touchMoveCallback);
+                $(element).off('CornerstoneToolsTouchStartActive', cornerstoneTools.textMarkerTouch.touchDownActivateCallback);
+                $(element).off('CornerstoneToolsTouchStart', cornerstoneTools.textMarkerTouch.touchStartCallback);
+                $(element).off('CornerstoneToolsTap', cornerstoneTools.textMarkerTouch.tapCallback);
+                $(element).off('CornerstoneToolsTouchPress', cornerstoneTools.textMarkerTouch.pressCallback);
                 // Allow relabelling via a callback
                 config.changeTextCallback(data, doneChangingTextCallback);
                 
@@ -4413,7 +5289,7 @@ if (typeof cornerstoneTools === 'undefined') {
         onImageRendered: onImageRendered,
         pointNearTool: pointNearTool,
         toolType: toolType,
-        pressCallback: doubleClickCallback
+        pressCallback: touchPressCallback
     });
 
     ///////// END IMAGE RENDERING ///////
@@ -4430,12 +5306,14 @@ if (typeof cornerstoneTools === 'undefined') {
     function mouseUpCallback(e, eventData) {
         $(eventData.element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
         $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(eventData.element).off('CornerstoneToolsMouseClick', mouseUpCallback);
     }
 
     function mouseDownCallback(e, eventData) {
         if (cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
             $(eventData.element).on('CornerstoneToolsMouseDrag', mouseDragCallback);
             $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(eventData.element).on('CornerstoneToolsMouseClick', mouseUpCallback);
             return false; // false = cases jquery to preventDefault() and stopPropagation() this event
         }
     }
@@ -4464,6 +5342,7 @@ if (typeof cornerstoneTools === 'undefined') {
     }
 
     function touchDragCallback(e, eventData) {
+        e.stopImmediatePropagation(); // Prevent CornerstoneToolsTouchStartActive from killing any press events
         var dragData = eventData;
 
         var maxVOI = dragData.image.maxPixelValue * dragData.image.slope + dragData.image.intercept;
@@ -4520,7 +5399,7 @@ if (typeof cornerstoneTools === 'undefined') {
             return {
                 min: globalMin,
                 max: globalMax,
-                mean: globalMin
+                mean: (globalMin + globalMax) / 2
             };
         }
 
@@ -4578,7 +5457,7 @@ if (typeof cornerstoneTools === 'undefined') {
     /** Calculates the minimum and maximum value in the given pixel array */
     function applyWWWCRegion(eventData) {
         var toolData = cornerstoneTools.getToolState(eventData.element, toolType);
-        if (toolData === undefined) {
+        if (!toolData) {
             return;
         }
 
@@ -4613,6 +5492,10 @@ if (typeof cornerstoneTools === 'undefined') {
         // Adjust the viewport window width and center based on the calculated values
         var config = cornerstoneTools.wwwcRegion.getConfiguration();
         var viewport = cornerstone.getViewport(eventData.element);
+        if (config.minWindowWidth === undefined) {
+            config.minWindowWidth = 10;
+        }
+
         viewport.voi.windowWidth = Math.max(Math.abs(minMaxMean.max - minMaxMean.min), config.minWindowWidth);
         viewport.voi.windowCenter = minMaxMean.mean;
         cornerstone.setViewport(eventData.element, viewport);
@@ -4692,7 +5575,7 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function onImageRendered(e, eventData) {
         var toolData = cornerstoneTools.getToolState(eventData.element, toolType);
-        if (toolData === undefined) {
+        if (!toolData) {
             return;
         }
 
@@ -4703,7 +5586,7 @@ if (typeof cornerstoneTools === 'undefined') {
         var startPoint = toolData.data[0].startPoint;
         var endPoint = toolData.data[0].endPoint;
 
-        if (!startPoint) {
+        if (!startPoint || !endPoint) {
             return;
         }
 
@@ -4725,9 +5608,16 @@ if (typeof cornerstoneTools === 'undefined') {
         var height = Math.abs(startPointCanvas.y - endPointCanvas.y);
 
         var lineWidth = cornerstoneTools.toolStyle.getToolWidth();
+        var config = cornerstoneTools.wwwcRegion.getConfiguration();
 
         // Draw the rectangle
         context.save();
+
+        if (config && config.shadow) {
+            context.shadowColor = config.shadowColor || '#000000';
+            context.shadowOffsetX = config.shadowOffsetX || 1;
+            context.shadowOffsetY = config.shadowOffsetY || 1;
+        }
 
         context.beginPath();
         context.strokeStyle = color;
@@ -4770,7 +5660,7 @@ if (typeof cornerstoneTools === 'undefined') {
     // --- Touch tool enable / disable --- //
     function disableTouchDrag(element) {
         $(element).off('CornerstoneToolsTouchDrag', dragCallback);
-        $(element).off('CornerstoneToolsDragStart', recordStartPoint);
+        $(element).off('CornerstoneToolsTouchStart', recordStartPoint);
         $(element).off('CornerstoneToolsDragEnd', applyWWWCRegion);
         $(element).off('CornerstoneImageRendered', onImageRendered);
     }
@@ -4783,12 +5673,12 @@ if (typeof cornerstoneTools === 'undefined') {
         }
 
         $(element).off('CornerstoneToolsTouchDrag', dragCallback);
-        $(element).off('CornerstoneToolsDragStart', recordStartPoint);
+        $(element).off('CornerstoneToolsTouchStart', recordStartPoint);
         $(element).off('CornerstoneToolsDragEnd', applyWWWCRegion);
         $(element).off('CornerstoneImageRendered', onImageRendered);
 
         $(element).on('CornerstoneToolsTouchDrag', dragCallback);
-        $(element).on('CornerstoneToolsDragStart', recordStartPoint);
+        $(element).on('CornerstoneToolsTouchStart', recordStartPoint);
         $(element).on('CornerstoneToolsDragEnd', applyWWWCRegion);
         $(element).on('CornerstoneImageRendered', onImageRendered);
     }
@@ -4835,12 +5725,12 @@ if (typeof cornerstoneTools === 'undefined') {
         var factor = oldFactor + ticks;
         
         var scale = Math.pow(pow, factor);
-        viewport.scale = scale;
-        
         if (config.maxScale && scale > config.maxScale) {
             viewport.scale = config.maxScale;
         } else if (config.minScale && scale < config.minScale) {
             viewport.scale = config.minScale;
+        } else {
+            viewport.scale = scale;
         }
 
         return viewport;
@@ -4985,6 +5875,7 @@ if (typeof cornerstoneTools === 'undefined') {
     function mouseUpCallback(e, eventData) {
         $(eventData.element).off('CornerstoneToolsMouseDrag', dragCallback);
         $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(eventData.element).off('CornerstoneToolsMouseClick', mouseUpCallback);
     }
 
     function mouseDownCallback(e, eventData) {
@@ -4992,6 +5883,7 @@ if (typeof cornerstoneTools === 'undefined') {
             startPoints = eventData.startPoints; // Used for translateStrategy
             $(eventData.element).on('CornerstoneToolsMouseDrag', dragCallback);
             $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(eventData.element).on('CornerstoneToolsMouseClick', mouseUpCallback);
             return false; // false = cases jquery to preventDefault() and stopPropagation() this event
         }
     }
@@ -5013,9 +5905,32 @@ if (typeof cornerstoneTools === 'undefined') {
     }
 
     function touchPinchCallback(e, eventData) {
-        var ticks = eventData.direction / 4;
-        var viewport = changeViewportScale(eventData.viewport, ticks);
-        cornerstone.setViewport(eventData.element, viewport);
+        var config = cornerstoneTools.zoom.getConfiguration();
+        var viewport = eventData.viewport;
+        var element = eventData.element;
+
+        // Change the scale based on the pinch gesture's scale change
+        viewport.scale += eventData.scaleChange * viewport.scale;
+        if (config.maxScale && viewport.scale > config.maxScale) {
+            viewport.scale = config.maxScale;
+        } else if (config.minScale && viewport.scale < config.minScale) {
+            viewport.scale = config.minScale;
+        }
+
+        cornerstone.setViewport(element, viewport);
+
+        // Now that the scale has been updated, determine the offset we need to apply to the center so we can
+        // keep the original start location in the same position
+        var newCoords = cornerstone.pageToPixel(element, eventData.startPoints.page.x, eventData.startPoints.page.y);
+        var shift = {
+            x: eventData.startPoints.image.x - newCoords.x,
+            y: eventData.startPoints.image.y - newCoords.y
+        };
+
+        shift = correctShift(shift, viewport);
+        viewport.translation.x -= shift.x;
+        viewport.translation.y -= shift.y;
+        cornerstone.setViewport(element, viewport);
     }
 
     cornerstoneTools.zoom = cornerstoneTools.simpleMouseButtonTool(mouseDownCallback);
@@ -5042,21 +5957,33 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function keyPress(e) {
         var element = e.currentTarget;
-        var startingCoords = cornerstone.pageToPixel(element, mouseX, mouseY);
-
-        e = window.event || e; // old IE support
 
         var keyPressData = {
-            element: element, viewport: cornerstone.getViewport(element), image: cornerstone.getEnabledElement(element).image, pageX: mouseX, pageY: mouseY, imageX: startingCoords.x, imageY: startingCoords.y, keyCode: e.keyCode, which: e.which
+            event: window.event || e, // old IE support
+            element: element,
+            viewport: cornerstone.getViewport(element),
+            image: cornerstone.getEnabledElement(element).image,
+            currentPoints: {
+                page: {
+                    x: mouseX,
+                    y: mouseY
+                },
+                image: cornerstone.pageToPixel(element, mouseX, mouseY),
+            },
+            keyCode: e.keyCode,
+            which: e.which
         };
 
-        if (e.type === 'keydown') {
-            $(element).trigger('CornerstoneToolsKeyDown', keyPressData);
-        } else if (e.type === 'keypress') {
-            $(element).trigger('CornerstoneToolsKeyPress', keyPressData);
-        } else if (e.type === 'keyup') {
-            $(element).trigger('CornerstoneToolsKeyUp', keyPressData);
-        }
+        keyPressData.currentPoints.canvas = cornerstone.pixelToCanvas(element, keyPressData.currentPoints.image);
+
+        var keyPressEvents = {
+            keydown: 'CornerstoneToolsKeyDown',
+            keypress: 'CornerstoneToolsKeyPress',
+            keyup: 'CornerstoneToolsKeyUp',
+
+        };
+
+        $(element).trigger(keyPressEvents[e.type], keyPressData);
     }
 
     function mouseMove(e) {
@@ -5067,17 +5994,22 @@ if (typeof cornerstoneTools === 'undefined') {
     var keyboardEvent = 'keydown keypress keyup';
 
     function enable(element) {
-        $(element).bind(keyboardEvent, keyPress);
+        // Prevent handlers from being attached multiple times
+        disable(element);
+
+        $(element).on(keyboardEvent, keyPress);
         $(element).on('mousemove', mouseMove);
     }
 
     function disable(element) {
-        $(element).unbind(keyboardEvent, keyPress);
+        $(element).off(keyboardEvent, keyPress);
+        $(element).off('mousemove', mouseMove);
     }
 
     // module exports
     cornerstoneTools.keyboardInput = {
-        enable: enable, disable: disable
+        enable: enable,
+        disable: disable
     };
 
 })($, cornerstone, cornerstoneTools);
@@ -5093,47 +6025,68 @@ if (typeof cornerstoneTools === 'undefined') {
     // All credit to @kosich
     // https://gist.github.com/kosich/23188dd86633b6c2efb7
 
-    var antiGhostDelay = 2000;
+    var antiGhostDelay = 2000,
+        pointerType = {
+            mouse: 0,
+            touch: 1
+        },
+        lastInteractionType,
+        lastInteractionTime;
 
-    var pointerType = {
-        mouse: 0,
-        touch: 1
-    };
-
-    function preventGhostClick(element) {
-        var lastInteractionType,
-            lastInteractionTime;
-
-        function handleTap(type, e) {
-            var now = Date.now();
-            if (type !== lastInteractionType) {
-                if (now - lastInteractionTime <= antiGhostDelay) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    return false;
-                }
-
-                lastInteractionType = type;
+    function handleTap(type, e) {
+        var now = Date.now();
+        if (type !== lastInteractionType) {
+            if (now - lastInteractionTime <= antiGhostDelay) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                return false;
             }
 
-            lastInteractionTime = now;
+            lastInteractionType = type;
         }
 
-        function attachEvents(eventList, interactionType) {
-            eventList.forEach(function(eventName) {
-                element.addEventListener(eventName, handleTap.bind(null, interactionType), true);
-            });
-        }
-
-        var mouseEvents = [ 'mousedown', 'mouseup', 'mousemove' ];
-        var touchEvents = [ 'touchstart', 'touchend' ];
-
-        attachEvents(mouseEvents, pointerType.mouse);
-        attachEvents(touchEvents, pointerType.touch);
+        lastInteractionTime = now;
     }
 
-    cornerstoneTools.preventGhostClick = preventGhostClick;
+    // Cacheing the function references
+    // Necessary because a new function reference is created after .bind() is called
+    // http://stackoverflow.com/questions/11565471/removing-event-listener-which-was-added-with-bind
+    var handleTapMouse = handleTap.bind(null, pointerType.mouse);
+    var handleTapTouch = handleTap.bind(null, pointerType.touch);
+
+    function attachEvents(element, eventList, interactionType) {
+        var tapHandler = interactionType ? handleTapMouse : handleTapTouch;
+        eventList.forEach(function(eventName) {
+            element.addEventListener(eventName, tapHandler, true);
+        });
+    }
+
+    function removeEvents(element, eventList, interactionType) {
+        var tapHandler = interactionType ? handleTapMouse : handleTapTouch;
+        eventList.forEach(function(eventName) {
+            element.removeEventListener(eventName, tapHandler, true);
+        });
+    }
+
+    var mouseEvents = [ 'mousedown', 'mouseup' ];
+    var touchEvents = [ 'touchstart', 'touchend' ];
+
+    function disable(element) {
+        removeEvents(element, mouseEvents, pointerType.mouse);
+        removeEvents(element, touchEvents, pointerType.touch);
+    }
+
+    function enable(element) {
+        disable(element);
+        attachEvents(element, mouseEvents, pointerType.mouse);
+        attachEvents(element, touchEvents, pointerType.touch);
+    }
+
+    cornerstoneTools.preventGhostClick = {
+        enable: enable,
+        disable: disable
+    };
 
 })(cornerstoneTools);
  
@@ -5157,6 +6110,10 @@ if (typeof cornerstoneTools === 'undefined') {
 
         Object.keys(handles).forEach(function(name) {
             var handle = handles[name];
+            if (handle.allowedOutsideImage === true) {
+                return;
+            }
+            
             if (cornerstoneMath.point.insideRect(handle, imageRect) === false) {
                 handleOutsideImage = true;
             }
@@ -5184,6 +6141,10 @@ if (typeof cornerstoneTools === 'undefined') {
 
         Object.keys(handles).forEach(function(name) {
             var handle = handles[name];
+            if (handle.drawnIndependently === true) {
+                return;
+            }
+
             context.beginPath();
 
             if (handle.active) {
@@ -5216,20 +6177,27 @@ if (typeof cornerstoneTools === 'undefined') {
 
     'use strict';
 
-    function getHandleNearImagePoint(element, data, coords, distanceSq) {
+    function getHandleNearImagePoint(element, handles, coords, distanceThreshold) {
         var nearbyHandle;
         
-        if (!data.handles) {
+        if (!handles) {
             return;
         }
 
-        Object.keys(data.handles).forEach(function(name) {
-            var handle = data.handles[name];
-            var handleCanvas = cornerstone.pixelToCanvas(element, handle);
-            var distanceSquared = cornerstoneMath.point.distanceSquared(handleCanvas, coords);
-            if (distanceSquared < distanceSq) {
-                nearbyHandle = handle;
-                return;
+        Object.keys(handles).forEach(function(name) {
+            var handle = handles[name];
+            if (handle.hasOwnProperty('pointNearHandle')) {
+                if (handle.pointNearHandle(element, handle, coords)) {
+                    nearbyHandle = handle;
+                    return;
+                }
+            } else {
+                var handleCanvas = cornerstone.pixelToCanvas(element, handle);
+                var distance = cornerstoneMath.point.distance(handleCanvas, coords);
+                if (distance <= distanceThreshold) {
+                    nearbyHandle = handle;
+                    return;
+                }
             }
         });
         
@@ -5248,22 +6216,6 @@ if (typeof cornerstoneTools === 'undefined') {
 
     'use strict';
 
-    function findHandleNear(element, handles, canvasPoint) {
-        var nearbyHandle;
-
-        Object.keys(handles).forEach(function(name) {
-            var handle = handles[name];
-            var handleCanvas = cornerstone.pixelToCanvas(element, handle);
-            var distance = cornerstoneMath.point.distance(handleCanvas, canvasPoint);
-            if (distance <= 36) {
-                nearbyHandle = handle;
-                return;
-            }
-        });
-
-        return nearbyHandle;
-    }
-
     function getActiveHandle(handles) {
         var activeHandle;
 
@@ -5278,9 +6230,13 @@ if (typeof cornerstoneTools === 'undefined') {
         return activeHandle;
     }
 
-    function handleActivator(element, handles, canvasPoint) {
+    function handleActivator(element, handles, canvasPoint, distanceThreshold) {
+        if (!distanceThreshold) {
+            distanceThreshold = 36;
+        }
+
         var activeHandle = getActiveHandle(handles);
-        var nearbyHandle = findHandleNear(element, handles, canvasPoint);
+        var nearbyHandle = cornerstoneTools.getHandleNearImagePoint(element, handles, canvasPoint, distanceThreshold);
         if (activeHandle !== nearbyHandle) {
             if (nearbyHandle !== undefined) {
                 nearbyHandle.active = true;
@@ -5303,96 +6259,12 @@ if (typeof cornerstoneTools === 'undefined') {
  
 // End Source; src/manipulators/handleActivator.js
 
-// Begin Source: src/manipulators/handleMover.js
-(function($, cornerstone, cornerstoneTools) {
-
-    'use strict';
-
-    function moveHandle(mouseEventData, handle, doneMovingCallback, preventHandleOutsideImage) {
-        var element = mouseEventData.element;
-
-        function mouseDragCallback(e, eventData) {
-            handle.active = true;
-            handle.x = eventData.currentPoints.image.x;
-            handle.y = eventData.currentPoints.image.y;
-            if (preventHandleOutsideImage) {
-                handle.x = Math.max(handle.x, 0);
-                handle.x = Math.min(handle.x, eventData.image.width);
-
-                handle.y = Math.max(handle.y, 0);
-                handle.y = Math.min(handle.y, eventData.image.height);
-            }
-
-            cornerstone.updateImage(element);
-        }
-
-        $(element).on('CornerstoneToolsMouseDrag', mouseDragCallback);
-
-        function mouseUpCallback() {
-            handle.active = false;
-            $(element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
-            $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
-            cornerstone.updateImage(element);
-
-            doneMovingCallback();
-        }
-
-        $(element).on('CornerstoneToolsMouseUp', mouseUpCallback);
-    }
-
-    // module/private exports
-    cornerstoneTools.moveHandle = moveHandle;
-
-})($, cornerstone, cornerstoneTools);
- 
-// End Source; src/manipulators/handleMover.js
-
-// Begin Source: src/manipulators/handleTouchMove.js
-(function($, cornerstone, cornerstoneTools) {
-
-    'use strict';
-
-    function touchMoveHandle(touchEventData, handle, doneMovingCallback) {
-        var element = touchEventData.element;
-
-        function touchDragCallback(e, eventData) {
-            handle.active = true;
-            var touchMoveData = eventData;
-            handle.x = touchMoveData.currentPoints.image.x;
-            handle.y = touchMoveData.currentPoints.image.y;
-            cornerstone.updateImage(element);
-        }
-
-        $(element).on('CornerstoneToolsTouchDrag', touchDragCallback);
-
-        function touchEndCallback() {
-            handle.active = false;
-            $(element).off('CornerstoneToolsTouchDrag', touchDragCallback);
-            $(element).off('CornerstoneToolsDragEnd', touchEndCallback);
-            $(element).off('CornerstoneToolsTap', touchEndCallback);
-            cornerstone.updateImage(element);
-
-            doneMovingCallback();
-        }
-
-        $(element).on('CornerstoneToolsDragEnd', touchEndCallback);
-        $(element).on('CornerstoneToolsTap', touchEndCallback);
-    }
-
-    // module/private exports
-    cornerstoneTools.touchMoveHandle = touchMoveHandle;
-
-})($, cornerstone, cornerstoneTools);
- 
-// End Source; src/manipulators/handleTouchMove.js
-
 // Begin Source: src/manipulators/moveAllHandles.js
 (function($, cornerstone, cornerstoneMath, cornerstoneTools) {
 
     'use strict';
 
-    function moveAllHandles(e, data, toolData, deleteIfHandleOutsideImage, preventHandleOutsideImage) {
-        var mouseEventData = e;
+    function moveAllHandles(mouseEventData, data, toolData, toolType, options, doneMovingCallback) {
         var element = mouseEventData.element;
 
         function mouseDragCallback(e, eventData) {
@@ -5400,10 +6272,14 @@ if (typeof cornerstoneTools === 'undefined') {
 
             Object.keys(data.handles).forEach(function(name) {
                 var handle = data.handles[name];
+                if (handle.movesIndependently === true) {
+                    return;
+                }
+
                 handle.x += eventData.deltaPoints.image.x;
                 handle.y += eventData.deltaPoints.image.y;
                 
-                if (preventHandleOutsideImage) {
+                if (options.preventHandleOutsideImage === true) {
                     handle.x = Math.max(handle.x, 0);
                     handle.x = Math.min(handle.x, eventData.image.width);
 
@@ -5411,7 +6287,17 @@ if (typeof cornerstoneTools === 'undefined') {
                     handle.y = Math.min(handle.y, eventData.image.height);
                 }
             });
+
             cornerstone.updateImage(element);
+
+            var eventType = 'CornerstoneToolsMeasurementModified';
+            var modifiedEventData = {
+                toolType: toolType,
+                element: element,
+                measurementData: data
+            };
+            $(element).trigger(eventType, modifiedEventData);
+
             return false; // false = causes jquery to preventDefault() and stopPropagation() this event
         }
 
@@ -5423,13 +6309,17 @@ if (typeof cornerstoneTools === 'undefined') {
 
             $(element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
             $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(element).off('CornerstoneToolsMouseClick', mouseUpCallback);
 
             // If any handle is outside the image, delete the tool data
-            if (deleteIfHandleOutsideImage === true) {
+            if (options.deleteIfHandleOutsideImage === true) {
                 var image = eventData.image;
                 var handleOutsideImage = false;
                 var rect = {
-                    top: 0, left: 0, width: image.width, height: image.height
+                    top: 0,
+                    left: 0,
+                    width: image.width,
+                    height: image.height
                 };
                 
                 Object.keys(data.handles).forEach(function(name) {
@@ -5437,7 +6327,7 @@ if (typeof cornerstoneTools === 'undefined') {
                     handle.active = false;
                     if (cornerstoneMath.point.insideRect(handle, rect) === false) {
                         handleOutsideImage = true;
-                        return;
+                        return false;
                     }
                 });
 
@@ -5447,7 +6337,7 @@ if (typeof cornerstoneTools === 'undefined') {
                     toolData.data.forEach(function(thisToolData, index) {
                         if (thisToolData === data) {
                             indexOfData = index;
-                            return;
+                            return false;
                         }
                     });
 
@@ -5458,9 +6348,14 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             cornerstone.updateImage(element);
+
+            if (typeof doneMovingCallback === 'function') {
+                doneMovingCallback();
+            }
         }
 
         $(element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(element).on('CornerstoneToolsMouseClick', mouseUpCallback);
         return true;
     }
 
@@ -5471,12 +6366,73 @@ if (typeof cornerstoneTools === 'undefined') {
  
 // End Source; src/manipulators/moveAllHandles.js
 
+// Begin Source: src/manipulators/moveHandle.js
+(function($, cornerstone, cornerstoneTools) {
+
+    'use strict';
+
+    function moveHandle(mouseEventData, toolType, data, handle, doneMovingCallback, preventHandleOutsideImage) {
+        var element = mouseEventData.element;
+        var distanceFromTool = {
+            x: handle.x - mouseEventData.currentPoints.image.x,
+            y: handle.y - mouseEventData.currentPoints.image.y
+        };
+
+        function mouseDragCallback(e, eventData) {
+            handle.active = true;
+            handle.x = eventData.currentPoints.image.x + distanceFromTool.x;
+            handle.y = eventData.currentPoints.image.y + distanceFromTool.y;
+
+            if (preventHandleOutsideImage) {
+                handle.x = Math.max(handle.x, 0);
+                handle.x = Math.min(handle.x, eventData.image.width);
+
+                handle.y = Math.max(handle.y, 0);
+                handle.y = Math.min(handle.y, eventData.image.height);
+            }
+
+            cornerstone.updateImage(element);
+
+            var eventType = 'CornerstoneToolsMeasurementModified';
+            var modifiedEventData = {
+                toolType: toolType,
+                element: element,
+                measurementData: data
+            };
+            $(element).trigger(eventType, modifiedEventData);
+        }
+
+        $(element).on('CornerstoneToolsMouseDrag', mouseDragCallback);
+
+        function mouseUpCallback() {
+            handle.active = false;
+            $(element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
+            $(element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(element).off('CornerstoneToolsMouseClick', mouseUpCallback);
+            cornerstone.updateImage(element);
+
+            if (typeof doneMovingCallback === 'function') {
+                doneMovingCallback();
+            }
+        }
+
+        $(element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(element).on('CornerstoneToolsMouseClick', mouseUpCallback);
+    }
+
+    // module/private exports
+    cornerstoneTools.moveHandle = moveHandle;
+
+})($, cornerstone, cornerstoneTools);
+ 
+// End Source; src/manipulators/moveHandle.js
+
 // Begin Source: src/manipulators/moveNewHandle.js
 (function($, cornerstone, cornerstoneTools) {
 
     'use strict';
 
-    function moveNewHandle(mouseEventData, handle, doneMoveCallback, preventHandleOutsideImage) {
+    function moveNewHandle(mouseEventData, toolType, data, handle, doneMovingCallback, preventHandleOutsideImage) {
         var element = mouseEventData.element;
 
         function moveCallback(e, eventData) {
@@ -5493,6 +6449,14 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             cornerstone.updateImage(element);
+
+            var eventType = 'CornerstoneToolsMeasurementModified';
+            var modifiedEventData = {
+                toolType: toolType,
+                element: element,
+                measurementData: data
+            };
+            $(element).trigger(eventType, modifiedEventData);
         }
 
         function whichMovement(e) {
@@ -5508,19 +6472,29 @@ if (typeof cornerstoneTools === 'undefined') {
             }
         }
 
+        function measurementRemovedCallback(e, eventData) {
+            if (eventData.measurementData === data) {
+                moveEndCallback();
+            }
+        }
+
         $(element).on('CornerstoneToolsMouseDrag', whichMovement);
         $(element).on('CornerstoneToolsMouseMove', whichMovement);
-        
+        $(element).on('CornerstoneToolsMeasurementRemoved', measurementRemovedCallback);
+
         function moveEndCallback() {
             $(element).off('CornerstoneToolsMouseMove', moveCallback);
             $(element).off('CornerstoneToolsMouseDrag', moveCallback);
             $(element).off('CornerstoneToolsMouseClick', moveEndCallback);
             $(element).off('CornerstoneToolsMouseUp', moveEndCallback);
+            $(element).off('CornerstoneToolsMeasurementRemoved', measurementRemovedCallback);
 
             handle.active = false;
             cornerstone.updateImage(element);
 
-            doneMoveCallback();
+            if (typeof doneMovingCallback === 'function') {
+                doneMovingCallback();
+            }
         }
     }
 
@@ -5536,13 +6510,18 @@ if (typeof cornerstoneTools === 'undefined') {
 
     'use strict';
 
-    function moveNewHandleTouch(eventData, handle, doneMoveCallback, preventHandleOutsideImage) {
+    function moveNewHandleTouch(eventData, toolType, data, handle, doneMovingCallback, preventHandleOutsideImage) {
         var element = eventData.element;
+        var imageCoords = cornerstone.pageToPixel(element, eventData.currentPoints.page.x, eventData.currentPoints.page.y + 50);
+        var distanceFromTouch = {
+            x: handle.x - imageCoords.x,
+            y: handle.y - imageCoords.y
+        };
 
         function moveCallback(e, eventData) {
             handle.active = true;
-            handle.x = eventData.currentPoints.image.x;
-            handle.y = eventData.currentPoints.image.y;
+            handle.x = eventData.currentPoints.image.x + distanceFromTouch.x;
+            handle.y = eventData.currentPoints.image.y + distanceFromTouch.y;
             
             if (preventHandleOutsideImage) {
                 handle.x = Math.max(handle.x, 0);
@@ -5553,16 +6532,34 @@ if (typeof cornerstoneTools === 'undefined') {
             }
 
             cornerstone.updateImage(element);
+
+            var eventType = 'CornerstoneToolsMeasurementModified';
+            var modifiedEventData = {
+                toolType: toolType,
+                element: element,
+                measurementData: data
+            };
+            $(element).trigger(eventType, modifiedEventData);
         }
         
         function moveEndCallback(e, eventData) {
             $(element).off('CornerstoneToolsTouchDrag', moveCallback);
-            $(element).off('CornerstoneToolsTap', moveEndCallback);
+            $(element).off('CornerstoneToolsTouchPinch', moveEndCallback);
+            $(element).off('CornerstoneToolsTouchPress', moveEndCallback);
+            $(element).off('CornerstoneToolsTouchEnd', moveEndCallback);
             $(element).off('CornerstoneToolsDragEnd', moveEndCallback);
+            $(element).off('CornerstoneToolsTap', moveEndCallback);
+
+            if (e.type === 'CornerstoneToolsTouchPinch' || e.type === 'CornerstoneToolsTouchPress') {
+                handle.active = false;
+                cornerstone.updateImage(element);
+                doneMovingCallback();
+                return;
+            }
 
             handle.active = false;
-            handle.x = eventData.currentPoints.image.x;
-            handle.y = eventData.currentPoints.image.y;
+            handle.x = eventData.currentPoints.image.x + distanceFromTouch.x;
+            handle.y = eventData.currentPoints.image.y + distanceFromTouch.y;
             
             if (preventHandleOutsideImage) {
                 handle.x = Math.max(handle.x, 0);
@@ -5574,10 +6571,15 @@ if (typeof cornerstoneTools === 'undefined') {
 
             cornerstone.updateImage(element);
 
-            doneMoveCallback();
+            if (typeof doneMovingCallback === 'function') {
+                doneMovingCallback();
+            }
         }
 
         $(element).on('CornerstoneToolsTouchDrag', moveCallback);
+        $(element).on('CornerstoneToolsTouchPinch', moveEndCallback);
+        $(element).on('CornerstoneToolsTouchPress', moveEndCallback);
+        $(element).on('CornerstoneToolsTouchEnd', moveEndCallback);
         $(element).on('CornerstoneToolsDragEnd', moveEndCallback);
         $(element).on('CornerstoneToolsTap', moveEndCallback);
     }
@@ -5589,33 +6591,52 @@ if (typeof cornerstoneTools === 'undefined') {
  
 // End Source; src/manipulators/moveNewHandleTouch.js
 
-// Begin Source: src/manipulators/touchmoveAllHandles.js
+// Begin Source: src/manipulators/touchMoveAllHandles.js
 (function($, cornerstone, cornerstoneMath, cornerstoneTools) {
 
     'use strict';
 
-    function touchMoveAllHandles(touchEventData, data, toolData, deleteIfHandleOutsideImage, doneMovingCallback) {
+    function touchMoveAllHandles(touchEventData, data, toolData, toolType, deleteIfHandleOutsideImage, doneMovingCallback) {
+        //console.log('touchMoveAllHandles');
         var element = touchEventData.element;
 
         function touchDragCallback(e, eventData) {
+            //console.log('touchMoveAllHandles touchDragCallback');
             data.active = true;
             
             Object.keys(data.handles).forEach(function(name) {
                 var handle = data.handles[name];
+                if (handle.movesIndependently === true) {
+                    return;
+                }
+                
                 handle.x += eventData.deltaPoints.image.x;
                 handle.y += eventData.deltaPoints.image.y;
             });
             cornerstone.updateImage(element);
+
+            var eventType = 'CornerstoneToolsMeasurementModified';
+            var modifiedEventData = {
+                toolType: toolType,
+                element: element,
+                measurementData: data
+            };
+            $(element).trigger(eventType, modifiedEventData);
+
             return false; // false = causes jquery to preventDefault() and stopPropagation() this event
         }
 
         $(element).on('CornerstoneToolsTouchDrag', touchDragCallback);
 
         function touchEndCallback(e, eventData) {
+            //console.log('touchMoveAllHandles touchEndCallback');
             data.active = false;
             data.invalidated = false;
 
             $(element).off('CornerstoneToolsTouchDrag', touchDragCallback);
+            $(element).off('CornerstoneToolsTouchPinch', touchEndCallback);
+            $(element).off('CornerstoneToolsTouchPress', touchEndCallback);
+            $(element).off('CornerstoneToolsTouchEnd', touchEndCallback);
             $(element).off('CornerstoneToolsDragEnd', touchEndCallback);
             $(element).off('CornerstoneToolsTap', touchEndCallback);
 
@@ -5624,7 +6645,10 @@ if (typeof cornerstoneTools === 'undefined') {
                 var image = eventData.image;
                 var handleOutsideImage = false;
                 var rect = {
-                    top: 0, left: 0, width: image.width, height: image.height
+                    top: 0,
+                    left: 0,
+                    width: image.width,
+                    height: image.height
                 };
                 
                 Object.keys(data.handles).forEach(function(name) {
@@ -5650,10 +6674,16 @@ if (typeof cornerstoneTools === 'undefined') {
                 }
             }
 
-            doneMovingCallback();
+            if (typeof doneMovingCallback === 'function') {
+                doneMovingCallback();
+            }
+
             cornerstone.updateImage(element);
         }
 
+        $(element).on('CornerstoneToolsTouchPinch', touchEndCallback);
+        $(element).on('CornerstoneToolsTouchPress', touchEndCallback);
+        $(element).on('CornerstoneToolsTouchEnd', touchEndCallback);
         $(element).on('CornerstoneToolsDragEnd', touchEndCallback);
         $(element).on('CornerstoneToolsTap', touchEndCallback);
         return true;
@@ -5664,7 +6694,65 @@ if (typeof cornerstoneTools === 'undefined') {
 
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
  
-// End Source; src/manipulators/touchmoveAllHandles.js
+// End Source; src/manipulators/touchMoveAllHandles.js
+
+// Begin Source: src/manipulators/touchMoveHandle.js
+(function($, cornerstone, cornerstoneTools) {
+
+    'use strict';
+
+    function touchMoveHandle(touchEventData, toolType, data, handle, doneMovingCallback) {
+        //console.log('touchMoveHandle');
+        var element = touchEventData.element;
+        var distanceFromTouch = {
+            x: handle.x - touchEventData.currentPoints.image.x,
+            y: handle.y - touchEventData.currentPoints.image.y
+        };
+
+        function touchDragCallback(e, eventData) {
+            handle.active = true;
+            var touchMoveData = eventData;
+            handle.x = touchMoveData.currentPoints.image.x + distanceFromTouch.x;
+            handle.y = touchMoveData.currentPoints.image.y + distanceFromTouch.y;
+            cornerstone.updateImage(element);
+
+            var eventType = 'CornerstoneToolsMeasurementModified';
+            var modifiedEventData = {
+                toolType: toolType,
+                element: element,
+                measurementData: data
+            };
+            $(element).trigger(eventType, modifiedEventData);
+        }
+
+        $(element).on('CornerstoneToolsTouchDrag', touchDragCallback);
+
+        function touchEndCallback() {
+            handle.active = false;
+            $(element).off('CornerstoneToolsTouchDrag', touchDragCallback);
+            $(element).off('CornerstoneToolsTouchPinch', touchEndCallback);
+            $(element).off('CornerstoneToolsTouchEnd', touchEndCallback);
+            $(element).off('CornerstoneToolsDragEnd', touchEndCallback);
+            $(element).off('CornerstoneToolsTap', touchEndCallback);
+            cornerstone.updateImage(element);
+
+            if (typeof doneMovingCallback === 'function') {
+                doneMovingCallback();
+            }
+        }
+
+        $(element).on('CornerstoneToolsTouchPinch', touchEndCallback);
+        $(element).on('CornerstoneToolsTouchEnd', touchEndCallback);
+        $(element).on('CornerstoneToolsDragEnd', touchEndCallback);
+        $(element).on('CornerstoneToolsTap', touchEndCallback);
+    }
+
+    // module/private exports
+    cornerstoneTools.touchMoveHandle = touchMoveHandle;
+
+})($, cornerstone, cornerstoneTools);
+ 
+// End Source; src/manipulators/touchMoveHandle.js
 
 // Begin Source: src/measurementManager/lineSample.js
 (function($, cornerstoneTools) {
@@ -5708,7 +6796,8 @@ if (typeof cornerstoneTools === 'undefined') {
             var index = that.measurements.push(measurement);
             // fire event
             var eventDetail = {
-                index: index, measurement: measurement
+                index: index,
+                measurement: measurement
             };
             $(that).trigger('CornerstoneMeasurementAdded', eventDetail);
         };
@@ -5718,7 +6807,8 @@ if (typeof cornerstoneTools === 'undefined') {
             that.measurements.splice(index, 1);
             // fire event
             var eventDetail = {
-                index: index, measurement: measurement
+                index: index,
+                measurement: measurement
             };
             $(that).trigger('CornerstoneMeasurementRemoved', eventDetail);
         };
@@ -5913,7 +7003,8 @@ if (typeof cornerstoneTools === 'undefined') {
         renderer = renderer || cornerstoneTools.referenceLines.renderActiveReferenceLine;
 
         cornerstoneTools.addToolState(element, toolType, {
-            synchronizationContext: synchronizationContext, renderer: renderer
+            synchronizationContext: synchronizationContext,
+            renderer: renderer
         });
         $(element).on('CornerstoneImageRendered', onImageRendered);
         cornerstone.updateImage(element);
@@ -5927,7 +7018,8 @@ if (typeof cornerstoneTools === 'undefined') {
 
     // module/private exports
     cornerstoneTools.referenceLines.tool = {
-        enable: enable, disable: disable
+        enable: enable,
+        disable: disable
 
     };
 
@@ -5952,6 +7044,11 @@ if (typeof cornerstoneTools === 'undefined') {
 
         var targetImagePlane = cornerstoneTools.metaData.get('imagePlane', targetImage.imageId);
         var referenceImagePlane = cornerstoneTools.metaData.get('imagePlane', referenceImage.imageId);
+
+        // Make sure the target and reference actually have image plane metadata
+        if (!targetImagePlane || !referenceImagePlane) {
+            return;
+        }
 
         // the image planes must be in the same frame of reference
         if (targetImagePlane.frameOfReferenceUID !== referenceImagePlane.frameOfReferenceUID) {
@@ -6028,7 +7125,7 @@ if (typeof cornerstoneTools === 'undefined') {
 
     function requestPoolManager() {
 
-        function addRequest(element, imageId, type, doneCallback, failCallback) {
+        function addRequest(element, imageId, type, preventCache, doneCallback, failCallback) {
             if (!requestPool.hasOwnProperty(type)) {
                 throw 'Request type must be one of interaction, thumbnail, or prefetch';
             }
@@ -6041,6 +7138,7 @@ if (typeof cornerstoneTools === 'undefined') {
             var requestDetails = {
                 type: type,
                 imageId: imageId,
+                preventCache: preventCache,
                 doneCallback: doneCallback,
                 failCallback: failCallback
             };
@@ -6085,7 +7183,6 @@ if (typeof cornerstoneTools === 'undefined') {
             setTimeout(function() {
                 var requestDetails = getNextRequest();
                 if (!requestDetails) {
-                    awake = false;
                     return;
                 }
 
@@ -6122,8 +7219,15 @@ if (typeof cornerstoneTools === 'undefined') {
                 return;
             }
 
+            var loader;
+            if (requestDetails.preventCache === true) {
+                loader = cornerstone.loadImage(imageId);
+            } else {
+                loader = cornerstone.loadAndCacheImage(imageId);
+            }
+
             // Load and cache the image
-            cornerstone.loadAndCacheImage(imageId).then(function(image) {
+            loader.then(function(image) {
                 numRequests[type]--;
                 // console.log(numRequests);
                 doneCallback(image);
@@ -6238,7 +7342,11 @@ if (typeof cornerstoneTools === 'undefined') {
         
         if (playClipToolData === undefined || playClipToolData.data.length === 0) {
             playClipData = {
-                intervalId: undefined, framesPerSecond: framesPerSecond, lastFrameTimeStamp: undefined, frameRate: 0, loop: true
+                intervalId: undefined,
+                framesPerSecond: framesPerSecond,
+                lastFrameTimeStamp: undefined,
+                frameRate: 0,
+                loop: true
             };
             cornerstoneTools.addToolState(element, toolType, playClipData);
         } else {
@@ -6293,7 +7401,15 @@ if (typeof cornerstoneTools === 'undefined') {
                 }
 
                 var viewport = cornerstone.getViewport(element);
-                cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]).then(function(image) {
+
+                var loader;
+                if (stackData.preventCache === true) {
+                    loader = cornerstone.loadImage(stackData.imageIds[newImageIdIndex]);
+                } else {
+                    loader = cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]);
+                }
+
+                loader.then(function(image) {
                     stackData.currentImageIdIndex = newImageIdIndex;
                     cornerstone.displayImage(element, image, viewport);
                     if (endLoadingHandler) {
@@ -6538,7 +7654,8 @@ Display scroll progress bar across bottom of image.
         var nearest = nearestIndex(stackPrefetch.indicesToRequest, stack.currentImageIdIndex);
 
         var imageId,
-            nextImageIdIndex;
+            nextImageIdIndex,
+            preventCache = false;
 
         // Prefetch images around the current image (before and after)
         var lowerIndex = nearest.low;
@@ -6547,13 +7664,13 @@ Display scroll progress bar across bottom of image.
             if (lowerIndex >= 0 ) {
                 nextImageIdIndex = stackPrefetch.indicesToRequest[lowerIndex--];
                 imageId = stack.imageIds[nextImageIdIndex];
-                requestPoolManager.addRequest(element, imageId, requestType, doneCallback, failCallback);
+                requestPoolManager.addRequest(element, imageId, requestType, preventCache, doneCallback, failCallback);
             }
 
             if (higherIndex < stackPrefetch.indicesToRequest.length) {
                 nextImageIdIndex = stackPrefetch.indicesToRequest[higherIndex++];
                 imageId = stack.imageIds[nextImageIdIndex];
-                requestPoolManager.addRequest(element, imageId, requestType, doneCallback, failCallback);
+                requestPoolManager.addRequest(element, imageId, requestType, preventCache, doneCallback, failCallback);
             }
         }
 
@@ -6629,6 +7746,12 @@ Display scroll progress bar across bottom of image.
 
         var stack = stackData.data[0];
 
+        // Check if we are allowed to cache images in this stack
+        if (stack.preventCache === true) {
+            console.warn('A stack that should not be cached was given the stackPrefetch');
+            return;
+        }
+
         // Use the currentImageIdIndex from the stack as the initalImageIdIndex
         var stackPrefetchData = {
             indicesToRequest: range(0, stack.imageIds.length - 1),
@@ -6659,6 +7782,7 @@ Display scroll progress bar across bottom of image.
     }
 
     function disable(element) {
+        clearTimeout(resetPrefetchTimeout);
         $(element).off('CornerstoneNewImage', onImageUpdated);
 
         $(cornerstone).off('CornerstoneImageCacheFull', handleCacheFull);
@@ -6700,51 +7824,22 @@ Display scroll progress bar across bottom of image.
     'use strict';
 
     function mouseUpCallback(e, eventData) {
-        $(eventData.element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
+        $(eventData.element).off('CornerstoneToolsMouseDrag', dragCallback);
         $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(eventData.element).off('CornerstoneToolsMouseClick', mouseUpCallback);
     }
 
     function mouseDownCallback(e, eventData) {
         if (cornerstoneTools.isMouseButtonEnabled(eventData.which, e.data.mouseButtonMask)) {
-
             var mouseDragEventData = {
-                deltaY: 0, options: e.data.options
+                deltaY: 0
             };
-            $(eventData.element).on('CornerstoneToolsMouseDrag', mouseDragEventData, mouseDragCallback);
+            $(eventData.element).on('CornerstoneToolsMouseDrag', mouseDragEventData, dragCallback);
             $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(eventData.element).on('CornerstoneToolsMouseClick', mouseUpCallback);
             e.stopImmediatePropagation();
             return false;
         }
-    }
-
-    function mouseDragCallback(e, eventData) {
-        e.data.deltaY += eventData.deltaPoints.page.y;
-
-        var element = eventData.element;
-
-        var toolData = cornerstoneTools.getToolState(eventData.element, 'stack');
-        if (toolData === undefined || toolData.data === undefined || toolData.data.length === 0) {
-            return;
-        }
-
-        var stackData = toolData.data[0];
-
-        // The Math.max here makes it easier to mouseDrag-scroll small image stacks
-        var pixelsPerImage = $(eventData.element).height() / Math.max(stackData.imageIds.length, 8);
-        if (e.data.options !== undefined && e.data.options.stackScrollSpeed !== undefined) {
-            pixelsPerImage = e.data.options.stackScrollSpeed;
-        }
-
-        if (e.data.deltaY >= pixelsPerImage || e.data.deltaY <= -pixelsPerImage) {
-            var imageDelta = e.data.deltaY / pixelsPerImage;
-            var imageDeltaMod = e.data.deltaY % pixelsPerImage;
-            var imageIdIndexOffset = Math.round(imageDelta);
-            e.data.deltaY = imageDeltaMod;
-
-            cornerstoneTools.scroll(element, imageIdIndexOffset);
-        }
-
-        return false; // false = cases jquery to preventDefault() and stopPropagation() this event
     }
 
     function mouseWheelCallback(e, eventData) {
@@ -6752,32 +7847,47 @@ Display scroll progress bar across bottom of image.
         cornerstoneTools.scroll(eventData.element, images);
     }
 
-    function onDrag(e, eventData) {
+    function dragCallback(e, eventData) {
         var element = eventData.element;
-        eventData.deltaY = eventData.deltaY || 0;
-        eventData.deltaY += eventData.deltaPoints.page.y;
 
-        var toolData = cornerstoneTools.getToolState(eventData.element, 'stack');
-        if (toolData === undefined || toolData.data === undefined || toolData.data.length === 0) {
+        var toolData = cornerstoneTools.getToolState(element, 'stack');
+        if (!toolData || !toolData.data || !toolData.data.length) {
             return;
         }
+        
+        var stackData = toolData.data[0];
 
-        if (eventData.deltaY >= 3 || eventData.deltaY <= -3) {
-            var imageDelta = eventData.deltaY / 3;
-            var imageDeltaMod = eventData.deltaY % 3;
+        var config = cornerstoneTools.stackScroll.getConfiguration();
+
+        // The Math.max here makes it easier to mouseDrag-scroll small image stacks
+        var pixelsPerImage = $(element).height() / Math.max(stackData.imageIds.length, 8);
+        if (config && config.stackScrollSpeed) {
+            pixelsPerImage = config.stackScrollSpeed;
+        }
+
+        e.data.deltaY = e.data.deltaY || 0;
+        e.data.deltaY += eventData.deltaPoints.page.y;
+        if (Math.abs(e.data.deltaY) >= pixelsPerImage) {
+            var imageDelta = e.data.deltaY / pixelsPerImage;
             var imageIdIndexOffset = Math.round(imageDelta);
-            eventData.deltaY = imageDeltaMod;
-
+            var imageDeltaMod = e.data.deltaY % pixelsPerImage;
+            e.data.deltaY = imageDeltaMod;
             cornerstoneTools.scroll(element, imageIdIndexOffset);
         }
 
-        return false; // false = cases jquery to preventDefault() and stopPropagation() this event
+        return false; // false = causes jquery to preventDefault() and stopPropagation() this event
     }
 
     // module/private exports
     cornerstoneTools.stackScroll = cornerstoneTools.simpleMouseButtonTool(mouseDownCallback);
     cornerstoneTools.stackScrollWheel = cornerstoneTools.mouseWheelTool(mouseWheelCallback);
-    cornerstoneTools.stackScrollTouchDrag = cornerstoneTools.touchDragTool(onDrag);
+
+    var options = {
+        eventData: {
+            deltaY: 0
+        }
+    };
+    cornerstoneTools.stackScrollTouchDrag = cornerstoneTools.touchDragTool(dragCallback, options);
 
 })($, cornerstone, cornerstoneTools);
  
@@ -6789,7 +7899,8 @@ Display scroll progress bar across bottom of image.
     'use strict';
 
     var keys = {
-        UP: 38, DOWN: 40
+        UP: 38,
+        DOWN: 40
     };
 
     function keyDownCallback(e, eventData) {
@@ -7352,7 +8463,8 @@ Display scroll progress bar across bottom of image.
         }
 
         var imageIdToolStateManager = {
-            get: getStackSpecificToolState, add: addStackSpecificToolState
+            get: getStackSpecificToolState,
+            add: addStackSpecificToolState
         };
         return imageIdToolStateManager;
     }
@@ -7384,33 +8496,37 @@ Display scroll progress bar across bottom of image.
 
     'use strict';
 
-    function toolColorManager(){
+    function toolColorManager() {
         var defaultColor = 'white',
             activeColor = 'greenyellow',
             fillColor = 'transparent';
 
-        function setFillColor(color){
+        function setFillColor(color) {
             fillColor = color;
         }
 
-        function getFillColor(){
+        function getFillColor() {
             return fillColor;
         }
 
-        function setToolColor(color){
+        function setToolColor(color) {
             defaultColor = color;
         }
 
-        function getToolColor(){
+        function getToolColor() {
             return defaultColor;
         }
 
-        function setActiveToolColor(color){
+        function setActiveToolColor(color) {
             activeColor = color;
         }
 
-        function getActiveToolColor(){
+        function getActiveToolColor() {
             return activeColor;
+        }
+
+        function getColorIfActive(active) {
+            return active ? activeColor : defaultColor;
         }
 
         var toolColors = {
@@ -7419,7 +8535,8 @@ Display scroll progress bar across bottom of image.
             setToolColor: setToolColor,
             getToolColor: getToolColor,
             setActiveColor: setActiveToolColor,
-            getActiveColor: getActiveToolColor
+            getActiveColor: getActiveToolColor,
+            getColorIfActive: getColorIfActive
         };
 
         return toolColors;
@@ -7449,7 +8566,8 @@ Display scroll progress bar across bottom of image.
         }
 
         var toolCoords = {
-            setCoords: setActiveToolCoords, getCoords: getActiveToolCoords
+            setCoords: setActiveToolCoords,
+            getCoords: getActiveToolCoords
         };
 
         return toolCoords;
@@ -7483,6 +8601,14 @@ Display scroll progress bar across bottom of image.
     function addToolState(element, toolType, data) {
         var toolStateManager = getElementToolStateManager(element);
         toolStateManager.add(element, toolType, data);
+
+        var eventType = 'CornerstoneToolsMeasurementAdded';
+        var eventData = {
+            toolType: toolType,
+            element: element,
+            measurementData: data
+        };
+        $(element).trigger(eventType, eventData);
         // TODO: figure out how to broadcast this change to all enabled elements so they can update the image
         // if this change effects them
     }
@@ -7507,6 +8633,14 @@ Display scroll progress bar across bottom of image.
 
         if (indexOfData !== -1) {
             toolData.data.splice(indexOfData, 1);
+
+            var eventType = 'CornerstoneToolsMeasurementRemoved';
+            var eventData = {
+                toolType: toolType,
+                element: element,
+                measurementData: data
+            };
+            $(element).trigger(eventType, eventData);
         }
     }
 
@@ -7580,6 +8714,40 @@ Display scroll progress bar across bottom of image.
  
 // End Source; src/stateManagement/toolStyleManager.js
 
+// Begin Source: src/stateManagement/touchSettingsManager.js
+(function(cornerstoneTools) {
+
+    'use strict';
+
+    function touchSettingsManager() {
+        var defaultDistanceFromTouch = {
+            x: 0,
+            y: -55
+        };
+
+        function setToolDistanceFromTouch(distance){
+            defaultDistanceFromTouch = distance;
+        }
+
+        function getToolDistanceFromTouch(){
+            return defaultDistanceFromTouch;
+        }
+
+        var touchSettings = {
+            setToolDistanceFromTouch: setToolDistanceFromTouch,
+            getToolDistanceFromTouch: getToolDistanceFromTouch,
+        };
+
+        return touchSettings;
+    }
+
+    // module/private exports
+    cornerstoneTools.touchSettings = touchSettingsManager();
+
+})(cornerstoneTools);
+ 
+// End Source; src/stateManagement/touchSettingsManager.js
+
 // Begin Source: src/synchronization/panZoomSynchronizer.js
 (function($, cornerstone, cornerstoneTools) {
 
@@ -7652,7 +8820,14 @@ Display scroll progress bar across bottom of image.
             startLoadingHandler(targetElement);
         }
 
-        cornerstone.loadAndCacheImage(targetStackData.imageIds[newImageIdIndex]).then(function(image) {
+        var loader;
+        if (targetStackData.preventCache === true) {
+            loader = cornerstone.loadImage(targetStackData.imageIds[newImageIdIndex]);
+        } else {
+            loader = cornerstone.loadAndCacheImage(targetStackData.imageIds[newImageIdIndex]);
+        }
+
+        loader.then(function(image) {
             var viewport = cornerstone.getViewport(targetElement);
             targetStackData.currentImageIdIndex = newImageIdIndex;
             synchronizer.displayImage(targetElement, image, viewport);
@@ -7673,6 +8848,91 @@ Display scroll progress bar across bottom of image.
 })($, cornerstone, cornerstoneTools);
  
 // End Source; src/synchronization/stackImageIndexSynchronizer.js
+
+// Begin Source: src/synchronization/stackImagePositionOffsetSynchronizer.js
+(function($, cornerstone, cornerstoneTools) {
+
+    'use strict';
+
+    // This function causes the image in the target stack to be set to the one closest
+    // to the image in the source stack by image position
+
+    // In the future we will want to have a way to manually register links sets of the same orientation (e.g. an axial link set from a prior with an axial link set of a current).  The user could do this by scrolling the two stacks to a similar location and then doing a user action (e.g. right click link) at which point the system will capture the delta between the image position (patient) of both stacks and use that to sync them.  This offset will need to be adjustable.
+
+    function stackImagePositionOffsetSynchronizer(synchronizer, sourceElement, targetElement, eventData, positionDifference) {
+
+        // ignore the case where the source and target are the same enabled element
+        if (targetElement === sourceElement) {
+            return;
+        }
+
+        var sourceEnabledElement = cornerstone.getEnabledElement(sourceElement);
+        var sourceImagePlane = cornerstoneTools.metaData.get('imagePlane', sourceEnabledElement.image.imageId);
+        var sourceImagePosition = sourceImagePlane.imagePositionPatient;
+
+        var stackToolDataSource = cornerstoneTools.getToolState(targetElement, 'stack');
+        var stackData = stackToolDataSource.data[0];
+
+        var minDistance = Number.MAX_VALUE;
+        var newImageIdIndex = -1;
+
+        if (!positionDifference) {
+            return;
+        }
+
+        var finalPosition = sourceImagePosition.clone().add(positionDifference);
+
+        stackData.imageIds.forEach(function(imageId, index) {
+            var imagePlane = cornerstoneTools.metaData.get('imagePlane', imageId);
+            var imagePosition = imagePlane.imagePositionPatient;
+            var distance = finalPosition.distanceToSquared(imagePosition);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                newImageIdIndex = index;
+            }
+        });
+
+        if (newImageIdIndex === stackData.currentImageIdIndex || newImageIdIndex === -1) {
+            return;
+        }
+
+        var startLoadingHandler = cornerstoneTools.loadHandlerManager.getStartLoadHandler();
+        var endLoadingHandler = cornerstoneTools.loadHandlerManager.getEndLoadHandler();
+        var errorLoadingHandler = cornerstoneTools.loadHandlerManager.getErrorLoadingHandler();
+
+        if (startLoadingHandler) {
+            startLoadingHandler(targetElement);
+        }
+
+        var loader;
+        if (stackData.preventCache === true) {
+            loader = cornerstone.loadImage(stackData.imageIds[newImageIdIndex]);
+        } else {
+            loader = cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]);
+        }
+
+        loader.then(function(image) {
+            var viewport = cornerstone.getViewport(targetElement);
+            stackData.currentImageIdIndex = newImageIdIndex;
+            synchronizer.displayImage(targetElement, image, viewport);
+            if (endLoadingHandler) {
+                endLoadingHandler(targetElement);
+            }
+        }, function(error) {
+            var imageId = stackData.imageIds[newImageIdIndex];
+            if (errorLoadingHandler) {
+                errorLoadingHandler(targetElement, imageId, error);
+            }
+        });
+    }
+
+    // module/private exports
+    cornerstoneTools.stackImagePositionOffsetSynchronizer = stackImagePositionOffsetSynchronizer;
+
+})($, cornerstone, cornerstoneTools);
+ 
+// End Source; src/synchronization/stackImagePositionOffsetSynchronizer.js
 
 // Begin Source: src/synchronization/stackImagePositionSynchronizer.js
 (function($, cornerstone, cornerstoneTools) {
@@ -7722,7 +8982,14 @@ Display scroll progress bar across bottom of image.
         }
 
         if (newImageIdIndex !== -1) {
-            cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]).then(function(image) {
+            var loader;
+            if (stackData.preventCache === true) {
+                loader = cornerstone.loadImage(stackData.imageIds[newImageIdIndex]);
+            } else {
+                loader = cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]);
+            }
+
+            loader.then(function(image) {
                 var viewport = cornerstone.getViewport(targetElement);
                 stackData.currentImageIdIndex = newImageIdIndex;
                 synchronizer.displayImage(targetElement, image, viewport);
@@ -7786,7 +9053,14 @@ Display scroll progress bar across bottom of image.
             startLoadingHandler(targetElement);
         }
 
-        cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]).then(function(image) {
+        var loader;
+        if (stackData.preventCache === true) {
+            loader = cornerstone.loadImage(stackData.imageIds[newImageIdIndex]);
+        } else {
+            loader = cornerstone.loadAndCacheImage(stackData.imageIds[newImageIdIndex]);
+        }
+
+        loader.then(function(image) {
             var viewport = cornerstone.getViewport(targetElement);
             stackData.currentImageIdIndex = newImageIdIndex;
             synchronizer.displayImage(targetElement, image, viewport);
@@ -7822,13 +9096,117 @@ Display scroll progress bar across bottom of image.
         var targetElements = []; // target elements we want to synchronize to source elements
 
         var ignoreFiredEvents = false;
+        var initialData = {};
+        var eventHandler = handler;
 
-        function fireEvent(sourceEnabledElement, eventData) {
+        this.setHandler = function(handler) {
+            eventHandler = handler;
+        };
 
+        this.getHandler = function() {
+            return eventHandler;
+        };
+
+        this.getDistances = function() {
+            if (!sourceElements.length || !targetElements.length) {
+                return;
+            }
+
+            initialData.distances = {};
+            initialData.imageIds = {
+                sourceElements: [],
+                targetElements: []
+            };
+
+            sourceElements.forEach(function(sourceElement) {
+                var sourceEnabledElement = cornerstone.getEnabledElement(sourceElement);
+                if (!sourceEnabledElement || !sourceEnabledElement.image) {
+                    return;
+                }
+
+                var sourceImageId = sourceEnabledElement.image.imageId;
+                var sourceImagePlane = cornerstoneTools.metaData.get('imagePlane', sourceImageId);
+                if (!sourceImagePlane || !sourceImagePlane.imagePositionPatient) {
+                    return;
+                }
+
+                var sourceImagePosition = sourceImagePlane.imagePositionPatient;
+
+                if (initialData.hasOwnProperty(sourceEnabledElement)) {
+                    return;
+                } else {
+                    initialData.distances[sourceImageId] = {};
+                }
+
+                initialData.imageIds.sourceElements.push(sourceImageId);
+
+                targetElements.forEach(function(targetElement) {
+                    var targetEnabledElement = cornerstone.getEnabledElement(targetElement);
+                    if (!targetEnabledElement || !targetEnabledElement.image) {
+                        return;
+                    }
+
+                    var targetImageId = targetEnabledElement.image.imageId;
+
+                    initialData.imageIds.targetElements.push(targetImageId);
+
+                    if (sourceElement === targetElement) {
+                        return;
+                    }
+
+                    if (sourceImageId === targetImageId) {
+                        return;
+                    }
+
+                    if (initialData.distances[sourceImageId].hasOwnProperty(targetImageId)) {
+                        return;
+                    }
+
+                    var targetImagePlane = cornerstoneTools.metaData.get('imagePlane', targetImageId);
+                    if (!targetImagePlane || !targetImagePlane.imagePositionPatient) {
+                        return;
+                    }
+
+                    var targetImagePosition = targetImagePlane.imagePositionPatient;
+
+                    initialData.distances[sourceImageId][targetImageId] = targetImagePosition.clone().sub(sourceImagePosition);
+                });
+
+                if (!Object.keys(initialData.distances[sourceImageId]).length) {
+                    delete initialData.distances[sourceImageId];
+                }
+            });
+        };
+
+        function fireEvent(sourceElement, eventData) {
             // Broadcast an event that something changed
+            if (!sourceElements.length || !targetElements.length) {
+                return;
+            }
+
             ignoreFiredEvents = true;
-            $.each(targetElements, function(index, targetEnabledElement) {
-                handler(that, sourceEnabledElement, targetEnabledElement, eventData);
+            targetElements.forEach(function(targetElement) {
+                var targetIndex = targetElements.indexOf(targetElement);
+                if (targetIndex === -1) {
+                    return;
+                }
+
+                var targetImageId = initialData.imageIds.targetElements[targetIndex];
+                var sourceIndex = sourceElements.indexOf(sourceElement);
+                if (sourceIndex === -1) {
+                    return;
+                }
+
+                var sourceImageId = initialData.imageIds.sourceElements[sourceIndex];
+                
+                var positionDifference;
+                if (sourceImageId === targetImageId) {
+                    positionDifference = 0;
+                } else {
+                    positionDifference = initialData.distances[sourceImageId][targetImageId];
+                }
+                
+                eventHandler(that, sourceElement, targetElement, eventData, positionDifference);
             });
             ignoreFiredEvents = false;
         }
@@ -7855,8 +9233,10 @@ Display scroll progress bar across bottom of image.
             // subscribe to the event
             $(element).on(event, onEvent);
 
-            // Update everyone listening for events
-            fireEvent(element);
+            // Update the inital distances between elements
+            that.getDistances();
+
+            that.updateDisableHandlers();
         };
 
         // adds an element as a target
@@ -7870,8 +9250,13 @@ Display scroll progress bar across bottom of image.
             // Add to our list of enabled elements
             targetElements.push(element);
 
+            // Update the inital distances between elements
+            that.getDistances();
+
             // Invoke the handler for this new target element
-            handler(that, element, element);
+            eventHandler(that, element, element, 0);
+
+            that.updateDisableHandlers();
         };
 
         // adds an element as both a source and a target
@@ -7894,8 +9279,12 @@ Display scroll progress bar across bottom of image.
             // stop listening for the event
             $(element).off(event, onEvent);
 
+            // Update the inital distances between elements
+            that.getDistances();
+
             // Update everyone listening for events
             fireEvent(element);
+            that.updateDisableHandlers();
         };
 
         // removes an element as a target
@@ -7909,8 +9298,12 @@ Display scroll progress bar across bottom of image.
             // remove this element from the array
             targetElements.splice(index, 1);
 
+            // Update the inital distances between elements
+            that.getDistances();
+
             // Invoke the handler for the removed target
-            handler(that, element, element);
+            eventHandler(that, element, element, 0);
+            that.updateDisableHandlers();
         };
 
         // removes an element as both a source and target
@@ -7924,6 +9317,11 @@ Display scroll progress bar across bottom of image.
             return sourceElements;
         };
 
+        // returns the target elements
+        this.getTargetElements = function() {
+            return targetElements;
+        };
+
         this.displayImage = function(element, image, viewport) {
             ignoreFiredEvents = true;
             cornerstone.displayImage(element, image, viewport);
@@ -7934,6 +9332,26 @@ Display scroll progress bar across bottom of image.
             ignoreFiredEvents = true;
             cornerstone.setViewport(element, viewport);
             ignoreFiredEvents = false;
+        };
+
+        function disableHandler(e, eventData) {
+            var element = eventData.element;
+            that.remove(element);
+        }
+
+        this.updateDisableHandlers = function() {
+            var elements = $.unique(sourceElements.concat(targetElements));
+            elements.forEach(function(element) {
+                $(element).off('CornerstoneElementDisabled', disableHandler);
+                $(element).on('CornerstoneElementDisabled', disableHandler);
+            });
+        };
+
+        this.destroy = function() {
+            var elements = $.unique(sourceElements.concat(targetElements));
+            elements.forEach(function(element) {
+                that.remove(element);
+            });
         };
     }
 
@@ -8013,7 +9431,14 @@ Display scroll progress bar across bottom of image.
         var samples = [];
 
         measurementData.timeSeries.stacks.forEach(function(stack) {
-            cornerstone.loadAndCacheImage(stack.imageIds[measurementData.imageIdIndex]).then(function(image) {
+            var loader;
+            if (stack.preventCache === true) {
+                loader = cornerstone.loadImage(stack.imageIds[measurementData.imageIdIndex]);
+            } else {
+                loader = cornerstone.loadAndCacheImage(stack.imageIds[measurementData.imageIdIndex]);
+            }
+
+            loader.then(function(image) {
                 var offset = Math.round(measurementData.handles.end.x) + Math.round(measurementData.handles.end.y) * image.width;
                 var sample = image.getPixelData()[offset];
                 samples.push(sample);
@@ -8034,7 +9459,11 @@ Display scroll progress bar across bottom of image.
 
         // create the measurement data for this tool with the end handle activated
         var measurementData = {
-            timeSeries: timeSeries, lineSample: new cornerstoneTools.LineSampleMeasurement(), imageIdIndex: timeSeries.stacks[timeSeries.currentStackIndex].currentImageIdIndex, visible: true, handles: {
+            timeSeries: timeSeries,
+            lineSample: new cornerstoneTools.LineSampleMeasurement(),
+            imageIdIndex: timeSeries.stacks[timeSeries.currentStackIndex].currentImageIdIndex,
+            visible: true,
+            handles: {
                 end: {
                     x: mouseEventData.currentPoints.image.x,
                     y: mouseEventData.currentPoints.image.y,
@@ -8094,7 +9523,9 @@ Display scroll progress bar across bottom of image.
 
     // module exports
     cornerstoneTools.probeTool4D = cornerstoneTools.mouseButtonTool({
-        createNewMeasurement: createNewMeasurement, onImageRendered: onImageRendered, toolType: toolType
+        createNewMeasurement: createNewMeasurement,
+        onImageRendered: onImageRendered,
+        toolType: toolType
     });
 
 })($, cornerstone, cornerstoneTools);
@@ -8143,7 +9574,14 @@ Display scroll progress bar across bottom of image.
                 startLoadingHandler(element);
             }
 
-            cornerstone.loadAndCacheImage(newStack.imageIds[currentImageIdIndex]).then(function(image) {
+            var loader;
+            if (newStack.preventCache === true) {
+                loader = cornerstone.loadImage(newStack.imageIds[currentImageIdIndex]);
+            } else {
+                loader = cornerstone.loadAndCacheImage(newStack.imageIds[currentImageIdIndex]);
+            }
+
+            loader.then(function(image) {
                 if (timeSeriesData.currentImageIdIndex !== currentImageIdIndex) {
                     newStack.currentImageIdIndex = currentImageIdIndex;
                     timeSeriesData.currentStackIndex = newStackIndex;
@@ -8200,7 +9638,10 @@ Display scroll progress bar across bottom of image.
         var playClipData;
         if (playClipToolData === undefined || playClipToolData.data.length === 0) {
             playClipData = {
-                intervalId: undefined, framesPerSecond: framesPerSecond, lastFrameTimeStamp: undefined, frameRate: 0
+                intervalId: undefined,
+                framesPerSecond: framesPerSecond,
+                lastFrameTimeStamp: undefined,
+                frameRate: 0
             };
             cornerstoneTools.addToolState(element, toolType, playClipData);
         } else {
@@ -8241,7 +9682,8 @@ Display scroll progress bar across bottom of image.
 
     // module/private exports
     cornerstoneTools.timeSeriesPlayer = {
-        start: playClip, stop: stopClip
+        start: playClip,
+        stop: stopClip
     };
 
 })($, cornerstone, cornerstoneTools);
@@ -8256,6 +9698,7 @@ Display scroll progress bar across bottom of image.
     function mouseUpCallback(e, eventData) {
         $(eventData.element).off('CornerstoneToolsMouseDrag', mouseDragCallback);
         $(eventData.element).off('CornerstoneToolsMouseUp', mouseUpCallback);
+        $(eventData.element).off('CornerstoneToolsMouseClick', mouseUpCallback);
     }
 
     function mouseDownCallback(e, eventData) {
@@ -8267,6 +9710,7 @@ Display scroll progress bar across bottom of image.
             };
             $(eventData.element).on('CornerstoneToolsMouseDrag', mouseDragEventData, mouseDragCallback);
             $(eventData.element).on('CornerstoneToolsMouseUp', mouseUpCallback);
+            $(eventData.element).on('CornerstoneToolsMouseClick', mouseUpCallback);
             e.stopImmediatePropagation();
             return false;
         }
@@ -8415,7 +9859,10 @@ Display scroll progress bar across bottom of image.
         var client = cornerstoneMath.point.copy(points.client);
         var canvas = cornerstoneMath.point.copy(points.canvas);
         return {
-            page: page, image: image, client: client, canvas: canvas
+            page: page,
+            image: image,
+            client: client,
+            canvas: canvas
         };
     }
 
@@ -8425,6 +9872,52 @@ Display scroll progress bar across bottom of image.
 })($, cornerstone, cornerstoneMath, cornerstoneTools);
  
 // End Source; src/util/copyPoints.js
+
+// Begin Source: src/util/drawArrow.js
+(function(cornerstoneTools) {
+
+    'use strict';
+
+    function drawArrow(context, start, end, color, lineWidth) {
+        //variables to be used when creating the arrow
+        var headLength = 10;
+
+        var angle = Math.atan2(end.y - start.y, end.x - start.x);
+
+        //starting path of the arrow from the start square to the end square and drawing the stroke
+        context.beginPath();
+        context.moveTo(start.x, start.y);
+        context.lineTo(end.x, end.y);
+        context.strokeStyle = color;
+        context.lineWidth = lineWidth;
+        context.stroke();
+
+        //starting a new path from the head of the arrow to one of the sides of the point
+        context.beginPath();
+        context.moveTo(end.x, end.y);
+        context.lineTo(end.x - headLength * Math.cos(angle - Math.PI / 7), end.y - headLength * Math.sin(angle - Math.PI / 7));
+
+        //path from the side point of the arrow, to the other side point
+        context.lineTo(end.x - headLength * Math.cos(angle + Math.PI / 7), end.y - headLength * Math.sin(angle + Math.PI / 7));
+
+        //path from the side point back to the tip of the arrow, and then again to the opposite side point
+        context.lineTo(end.x, end.y);
+        context.lineTo(end.x - headLength * Math.cos(angle - Math.PI / 7), end.y - headLength * Math.sin(angle - Math.PI / 7));
+
+        //draws the paths created above
+        context.strokeStyle = color;
+        context.lineWidth = lineWidth;
+        context.stroke();
+        context.fillStyle = color;
+        context.fill();
+    }
+
+    // Module exports
+    cornerstoneTools.drawArrow = drawArrow;
+
+})(cornerstoneTools);
+ 
+// End Source; src/util/drawArrow.js
 
 // Begin Source: src/util/drawEllipse.js
 (function(cornerstoneTools) {
@@ -8463,28 +9956,54 @@ Display scroll progress bar across bottom of image.
 
     'use strict';
 
-    function drawTextBox(context, text, x, y, color) {
+    function drawTextBox(context, textLines, x, y, color) {
+        if (Object.prototype.toString.call(textLines) !== '[object Array]') {
+            textLines = [ textLines ];
+        }
+
         var padding = 5,
             font = cornerstoneTools.textStyle.getFont(),
             fontSize = cornerstoneTools.textStyle.getFontSize(),
             backgroundColor = cornerstoneTools.textStyle.getBackgroundColor();
 
         context.save();
-
-        // Get the text width in the current font
         context.font = font;
-        var width = context.measureText(text).width;
+        context.textBaseline = 'top';
+        context.strokeStyle = color;
+
+        // Find the longest text width in the array of text data
+        var maxWidth = 0;
+        textLines.forEach(function(text) {
+            // Get the text width in the current font
+            var width = context.measureText(text).width;
+
+            // Find the maximum with for all the text rows;
+            maxWidth = Math.max(maxWidth, width);
+        });
 
         // Draw the background box with padding
-        context.textBaseline = 'top';
         context.fillStyle = backgroundColor;
-        context.fillRect(x, y - fontSize, width + (padding * 2), fontSize + (padding * 2));
-        
-        // Draw the text
-        context.fillStyle = color;
-        context.fillText(text, x + padding, y - fontSize + padding);
-        
+
+        // Calculate the bounding box for this text box
+        var boundingBox = {
+            left: x,
+            top: y,
+            width: maxWidth + (padding * 2),
+            height: textLines.length * (fontSize + (padding * 2))
+        };
+        context.fillRect(boundingBox.left, boundingBox.top, boundingBox.width, boundingBox.height);
+
+        // Draw each of the text lines on top of the background box
+        textLines.forEach(function(text, index) {
+            context.fillStyle = color;
+            context.fillText(text, x + padding, y + fontSize * index + padding);
+
+        });
+
         context.restore();
+
+        // Return the bounding box so it can be used for pointNearHandle
+        return boundingBox;
     }
 
     // module exports
@@ -8507,17 +10026,18 @@ Display scroll progress bar across bottom of image.
         x = Math.round(x);
         y = Math.round(y);
         var enabledElement = cornerstone.getEnabledElement(element);
+        var image = enabledElement.image;
         var luminance = [];
         var index = 0;
-        var pixelData = enabledElement.image.getPixelData();
+        var pixelData = image.getPixelData();
         var spIndex,
             row,
             column;
 
-        if (enabledElement.image.color) {
+        if (image.color) {
             for (row = 0; row < height; row++) {
                 for (column = 0; column < width; column++) {
-                    spIndex = (((row + y) * enabledElement.image.columns) + (column + x)) * 4;
+                    spIndex = (((row + y) * image.columns) + (column + x)) * 4;
                     var red = pixelData[spIndex];
                     var green = pixelData[spIndex + 1];
                     var blue = pixelData[spIndex + 2];
@@ -8527,8 +10047,8 @@ Display scroll progress bar across bottom of image.
         } else {
             for (row = 0; row < height; row++) {
                 for (column = 0; column < width; column++) {
-                    spIndex = ((row + y) * enabledElement.image.columns) + (column + x);
-                    luminance[index++] = pixelData[spIndex];
+                    spIndex = ((row + y) * image.columns) + (column + x);
+                    luminance[index++] = pixelData[spIndex] * image.slope + image.intercept;
                 }
             }
         }
@@ -8628,6 +10148,7 @@ Display scroll progress bar across bottom of image.
 
     // module exports
     cornerstoneTools.getMaxSimultaneousRequests = getMaxSimultaneousRequests;
+    cornerstoneTools.getBrowserInfo = getBrowserInfo;
 
 })(cornerstone, cornerstoneTools);
  
@@ -8740,7 +10261,8 @@ Display scroll progress bar across bottom of image.
         var x = imagePlane.rowCosines.dot(point) / imagePlane.columnPixelSpacing;
         var y = imagePlane.columnCosines.dot(point) / imagePlane.rowPixelSpacing;
         return {
-            x: x, y: y
+            x: x,
+            y: y
         };
     }
 
@@ -8900,6 +10422,8 @@ Display scroll progress bar across bottom of image.
         var endLoadingHandler = cornerstoneTools.loadHandlerManager.getEndLoadHandler();
         var errorLoadingHandler = cornerstoneTools.loadHandlerManager.getErrorLoadingHandler();
 
+        var viewport = cornerstone.getViewport(element);
+
         function doneCallback(image) {
             //console.log('interaction done: ' + image.imageId);
             if (stackData.currentImageIdIndex === newImageIdIndex) {
@@ -8931,7 +10455,7 @@ Display scroll progress bar across bottom of image.
         };
 
         stackData.currentImageIdIndex = newImageIdIndex;
-        var viewport = cornerstone.getViewport(element);
+
         var newImageId = stackData.imageIds[newImageIdIndex];
 
         // Retry image loading in cases where previous image promise
@@ -8949,7 +10473,10 @@ Display scroll progress bar across bottom of image.
 
         cornerstoneTools.requestPoolManager.clearRequestStack(type);
 
-        requestPoolManager.addRequest(element, newImageId, type, doneCallback, failCallback);
+        // Convert the preventCache value in stack data to a boolean
+        var preventCache = !!stackData.preventCache;
+
+        requestPoolManager.addRequest(element, newImageId, type, preventCache, doneCallback, failCallback);
         requestPoolManager.startGrabbing();
 
         $(element).trigger('CornerstoneStackScroll', eventData);
@@ -8991,7 +10518,9 @@ Display scroll progress bar across bottom of image.
         // TODO: actually calculate this?
         var lineHeight = fontSize / ee.viewport.scale / fontScale;
         return {
-            fontSize: scaledFontSize, lineHeight: lineHeight, fontScale: fontScale
+            fontSize: scaledFontSize,
+            lineHeight: lineHeight,
+            fontScale: fontScale
         };
     }
 

@@ -52,8 +52,6 @@
   // specify a transferSyntax but Osirix doesn't do this and seems to return it with the transfer syntax it is
   // stored as.
   function loadImage(imageId) {
-    // create a deferred object
-
     // build a url by parsing out the url scheme and frame index from the imageId
     var parsedImageId = parseImageId(imageId);
 

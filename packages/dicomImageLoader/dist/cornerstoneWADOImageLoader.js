@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.10.1 - 2016-05-04 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.11.0 - 2016-05-24 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -318,13 +318,18 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
+
+
   function decodeJPEG2000(dataSet, frame)
   {
     var height = dataSet.uint16('x00280010');
     var width = dataSet.uint16('x00280011');
-    var compressedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
+
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+
     var jpxImage = new JpxImage();
-    jpxImage.parse(compressedPixelData);
+
+    jpxImage.parse(encodedImageFrame);
 
     var j2kWidth = jpxImage.width;
     var j2kHeight = jpxImage.height;
@@ -348,15 +353,15 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
+
   function decodeJPEGBaseline(dataSet, frame)
   {
-    var pixelDataElement = dataSet.elements.x7fe00010;
     var height = dataSet.uint16('x00280010');
     var width = dataSet.uint16('x00280011');
     var bitsAllocated = dataSet.uint16('x00280100');
-    var frameData = dicomParser.readEncapsulatedPixelData(dataSet, pixelDataElement, frame);
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
     var jpeg = new JpegImage();
-    jpeg.parse( frameData );
+    jpeg.parse( encodedImageFrame );
     if(bitsAllocated === 8) {
       return jpeg.getData(width, height);
     }
@@ -402,9 +407,9 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     canvas.height = height;
     canvas.width = width;
 
-    var encodedPixelData = dicomParser.readEncapsulatedPixelData(dataSet, dataSet.elements.x7fe00010, frame);
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
 
-    var imgBlob = new Blob([encodedPixelData], {type: "image/jpeg"});
+    var imgBlob = new Blob([encodedImageFrame], {type: "image/jpeg"});
 
     var r = new FileReader();
     if(r.readAsBinaryString === undefined) {
@@ -457,14 +462,13 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 (function (cornerstoneWADOImageLoader) {
 
   function decodeJPEGLossless(dataSet, frame) {
-    var pixelDataElement = dataSet.elements.x7fe00010;
     var bitsAllocated = dataSet.uint16('x00280100');
     var pixelRepresentation = dataSet.uint16('x00280103');
-    var frameData = dicomParser.readEncapsulatedPixelData(dataSet, pixelDataElement, frame);
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
     var byteOutput = bitsAllocated <= 8 ? 1 : 2;
     //console.time('jpeglossless');
     var decoder = new jpeg.lossless.Decoder();
-    var decompressedData = decoder.decode(frameData.buffer, frameData.byteOffset, frameData.length, byteOutput);
+    var decompressedData = decoder.decode(encodedImageFrame.buffer, encodedImageFrame.byteOffset, encodedImageFrame.length, byteOutput);
     //console.timeEnd('jpeglossless');
     if (pixelRepresentation === 0) {
       if (byteOutput === 2) {
@@ -491,7 +495,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     var samplesPerPixel = dataSet.uint16('x00280002');
     var pixelDataElement = dataSet.elements.x7fe00010;
 
-    var frameData = dicomParser.readEncapsulatedPixelData(dataSet, pixelDataElement, frame);
+    var frameData = dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, frame);
     var pixelFormat = cornerstoneWADOImageLoader.getPixelFormat(dataSet);
 
 
@@ -3448,6 +3452,57 @@ var JpegImage = (function jpegImage() {
 
   cornerstoneWADOImageLoader.extractUncompressedPixels = extractUncompressedPixels;
 }($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ * Function to deal with extracting an image frame from an encapsulated data set.
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function isMultiFrame(dataSet) {
+    var numberOfFrames = dataSet.intString('x00280008');
+    return numberOfFrames > 1;
+  }
+
+  function isFragmented(dataSet) {
+    var numberOfFrames = dataSet.intString('x00280008');
+    var pixelDataElement = dataSet.elements.x7fe00010;
+    if(numberOfFrames != pixelDataElement.fragments.length) {
+      return true;
+    }
+  }
+
+  function getEncodedImageFrameEmptyBasicOffsetTable(dataSet, frame) {
+    var pixelDataElement = dataSet.elements.x7fe00010;
+
+    if(isMultiFrame(dataSet)) {
+      if(isFragmented(dataSet)) {
+        // decoding multi-frame with an empty basic offset table requires parsing the fragments
+        // to find frame boundaries.
+        throw 'multi-frame sop instance with no basic offset table is not currently supported';
+      }
+
+      // not fragmented, a frame maps to the fragment
+      return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, frame);
+    }
+
+    // Single frame - all fragments are for the one image frame
+    var startFragment = 0;
+    var numFragments = pixelDataElement.fragments.length;
+    return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, startFragment, numFragments);
+  }
+
+  function getEncodedImageFrame(dataSet, frame) {
+    // Empty basic offset table
+    if(!dataSet.elements.x7fe00010.basicOffsetTable.length) {
+      return getEncodedImageFrameEmptyBasicOffsetTable(dataSet, frame);
+    }
+
+    // Basic Offset Table is not empty
+    return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
+  }
+  cornerstoneWADOImageLoader.getEncodedImageFrame = getEncodedImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
   "use strict";
@@ -4061,8 +4116,6 @@ var JpegImage = (function jpegImage() {
   // specify a transferSyntax but Osirix doesn't do this and seems to return it with the transfer syntax it is
   // stored as.
   function loadImage(imageId) {
-    // create a deferred object
-
     // build a url by parsing out the url scheme and frame index from the imageId
     var parsedImageId = parseImageId(imageId);
 
@@ -4409,7 +4462,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.10.1';
+  cornerstoneWADOImageLoader.version = '0.11.0';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
