@@ -54,7 +54,7 @@
 
     // not multiframe, load it directly and let cornerstone cache manager its lifetime
     var deferred = $.Deferred();
-    var xhrRequestPromise =  loader(parsedImageId.url);
+    var xhrRequestPromise =  loader(parsedImageId.url, imageId);
     xhrRequestPromise.then(function(dataSet) {
       var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, parsedImageId.frame);
       imagePromise.then(function(image) {

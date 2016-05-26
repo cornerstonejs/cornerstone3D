@@ -60,14 +60,42 @@
     <input type="checkbox" id="toggleModalityLUT">Apply Modality LUT</input>
     <input type="checkbox" id="toggleVOILUT">Apply VOI LUT</input>
     <br>
-    <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
-         oncontextmenu="return false"
-         class='disable-selection noIbar'
-         unselectable='on'
-         onselectstart='return false;'
-         onmousedown='return false;'>
-        <div id="dicomImage"
-             style="width:512px;height:512px;top:0px;left:0px; position:absolute">
+    <div class="row">
+        <div class="col-md-6">
+            <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
+                 oncontextmenu="return false"
+                 class='disable-selection noIbar'
+                 unselectable='on'
+                 onselectstart='return false;'
+                 onmousedown='return false;'>
+                <div id="dicomImage"
+                     style="width:512px;height:512px;top:0px;left:0px; position:absolute">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <span>Transfer Syntax: </span><span id="transferSyntax"></span><br>
+            <span>SOP Class: </span><span id="sopClass"></span><br>
+            <span>Samples Per Pixel: </span><span id="samplesPerPixel"></span><br>
+            <span>Photometric Interpretation: </span><span id="photometricInterpretation"></span><br>
+            <span>Number Of Frames: </span><span id="numberOfFrames"></span><br>
+            <span>Planar Configuration: </span><span id="planarConfiguration"></span><br>
+            <span>Rows: </span><span id="rows"></span><br>
+            <span>Columns: </span><span id="columns"></span><br>
+            <span>Pixel Spacing: </span><span id="pixelSpacing"></span><br>
+            <span>Bits Allocated: </span><span id="bitsAllocated"></span><br>
+            <span>Bits Stored: </span><span id="bitsStored"></span><br>
+            <span>High Bit: </span><span id="highBit"></span><br>
+            <span>Pixel Representation: </span><span id="pixelRepresentation"></span><br>
+            <span>WindowCenter: </span><span id="windowCenter"></span><br>
+            <span>WindowWidth: </span><span id="windowWidth"></span><br>
+            <span>RescaleIntercept: </span><span id="rescaleIntercept"></span><br>
+            <span>RescaleSlope: </span><span id="rescaleSlope"></span><br>
+            <span>Basic Offset Table Entries: </span><span id="basicOffsetTable"></span><br>
+            <span>Fragments: </span><span id="fragments"></span><br>
+            <span>Max Stored Pixel Value: </span><span id="minStoredPixelValue"></span><br>
+            <span>Min Stored Pixel Value: </span><span id="maxStoredPixelValue"></span><br>
+
         </div>
     </div>
 </div>
@@ -95,6 +123,7 @@
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
 
+<script src="uids.js"></script>
 
 
 <script>
@@ -152,6 +181,77 @@
                 cornerstoneTools.zoomWheel.activate(element); // zoom is the default tool for middle mouse wheel
                 loaded = true;
             }
+
+            function getTransferSyntax() {
+                var value = image.data.string('x00020010');
+                return value + ' [' + uids[value] + ']';
+            }
+
+            function getSopClass() {
+                var value = image.data.string('x00080016');
+                return value + ' [' + uids[value] + ']';
+            }
+
+            function getPixelRepresentation() {
+                var value = image.data.uint16('x00280103');
+                if(value === undefined) {
+                    return;
+                }
+                return value + (value === 0 ? ' (unsigned)' : ' (signed)');
+            }
+
+            function getPlanarConfiguration() {
+                var value = image.data.uint16('x00280006');
+                if(value === undefined) {
+                    return;
+                }
+                return value + (value === 0 ? ' (pixel)' : ' (plane)');
+            }
+
+            $('#transferSyntax').text(getTransferSyntax());
+            $('#sopClass').text(getSopClass());
+            $('#samplesPerPixel').text(image.data.uint16('x00280002'));
+            $('#photometricInterpretation').text(image.data.string('x00280004'));
+            $('#numberOfFrames').text(image.data.string('x00280008'));
+            $('#planarConfiguration').text(getPlanarConfiguration());
+            $('#rows').text(image.data.uint16('x00280010'));
+            $('#columns').text(image.data.uint16('x00280011'));
+            $('#pixelSpacing').text(image.data.string('x00280030'));
+            $('#bitsAllocated').text(image.data.uint16('x00280100'));
+            $('#bitsStored').text(image.data.uint16('x00280101'));
+            $('#highBit').text(image.data.uint16('x00280102'));
+            $('#pixelRepresentation').text(getPixelRepresentation());
+            $('#windowCenter').text(image.data.string('x00281050'));
+            $('#windowWidth').text(image.data.string('x00281051'));
+            $('#rescaleIntercept').text(image.data.string('x00281052'));
+            $('#rescaleSlope').text(image.data.string('x00281053'));
+            $('#basicOffsetTable').text(image.data.elements.x7fe00010.basicOffsetTable ? image.data.elements.x7fe00010.basicOffsetTable.length : '');
+            $('#fragments').text(image.data.elements.x7fe00010.fragments ? image.data.elements.x7fe00010.fragments.length : '');
+            $('#minStoredPixelValue').text(image.minPixelValue);
+            $('#maxStoredPixelValue').text(image.maxPixelValue);
+
+            /*
+                        <span>Transfer Syntax:</span><span id="transferSyntax"></span><br>
+                                <span>SOP Class:</span><span id="sopClass"></span><br>
+                                <span>Samples PerP ixel:</span><span id="samplesPerPixel"></span><br>
+                                <span>Photometric Interpretation:</span><span id="photometricInterpretation"></span><br>
+                                <span>Number Of Frames:</span><span id="numberOfFrames"></span><br>
+                                <span>Planar Configuration:</span><span id="planarConfiguration"></span><br>
+                                <span>Rows:</span><span id="rows"></span><br>
+                                <span>Columns:</span><span id="columns"></span><br>
+                                <span>Bits Allocated:</span><span id="bitsAllocated"></span><br>
+                                <span>Bits Stored:</span><span id="bitsStored"></span><br>
+                                <span>High Bit:</span><span id="highBit"></span><br>
+                                <span>Pixel Representation:</span><span id="pixelRepresentation"></span><br>
+                                <span>WindowCenter:</span><span id="windowCenter"></span><br>
+                                <span>WindowWidth:</span><span id="windowWidth"></span><br>
+                                <span>RescaleIntercept:</span><span id="rescaleIntercept"></span><br>
+                                <span>RescaleSlope:</span><span id="rescaleSlope"></span><br>
+                                <span>Basic Offset Table Entries:</span><span id="basicOffsetTable"></span><br>
+                                <span>Fragments:</span><span id="fragments"></span><br>
+            */
+
+
         }, function(err) {
             alert(err);
         });
