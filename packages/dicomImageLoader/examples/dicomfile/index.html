@@ -95,6 +95,7 @@
             <span>Fragments: </span><span id="fragments"></span><br>
             <span>Max Stored Pixel Value: </span><span id="minStoredPixelValue"></span><br>
             <span>Min Stored Pixel Value: </span><span id="maxStoredPixelValue"></span><br>
+            <span>Load Time: </span><span id="loadTime"></span><br>
 
         </div>
     </div>
@@ -167,6 +168,7 @@
     function loadAndViewImage(imageId) {
         var element = $('#dicomImage').get(0);
         //try {
+        var start = new Date().getTime();
         cornerstone.loadImage(imageId).then(function(image) {
             console.log(image);
             var viewport = cornerstone.getDefaultViewportForImage(element, image);
@@ -230,7 +232,9 @@
             $('#fragments').text(image.data.elements.x7fe00010.fragments ? image.data.elements.x7fe00010.fragments.length : '');
             $('#minStoredPixelValue').text(image.minPixelValue);
             $('#maxStoredPixelValue').text(image.maxPixelValue);
-
+            var end = new Date().getTime();
+            var time = end - start;
+            $('#loadTime').text(time + "ms");
             /*
                         <span>Transfer Syntax:</span><span id="transferSyntax"></span><br>
                                 <span>SOP Class:</span><span id="sopClass"></span><br>
