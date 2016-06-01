@@ -42,6 +42,9 @@ The cornerstoneWADOImageLoader depends on the following external libraries:
 
 Additional libraries are required for JPEG2000 support, see below
 
+JPEG-LS requires the [EMSCRIPTEN build](https://github.com/chafey/charls) of the
+[CharLS](https://github.com/team-charls/charls) library
+
 All of these libraries should be loaded before the cornerstoneWADOImageLoader.js.  See the source code
 for the [example](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html).
 
@@ -150,8 +153,6 @@ Backlog
 
 * Support images with Pixel Padding?
 * Mask out burned in overlays?
-* Add support for additional transfer syntaxes
-  * JPEG-LS 
 
 Acknowledgements
 ----------------
@@ -160,6 +161,7 @@ Acknowledgements
 * [gSquared](https://github.com/g-squared) for the JPEG lossy decoder, RLE and PALETTE_COLOR support
 * [jpambrun](https://github.com/jpambrun) and [pdf.js](https://github.com/mozilla/pdf.js) for the JPEG 2000 decoder
 * [jpambrun](https://github.com/jpambrun) and [OpenJPEG](http://www.openjpeg.org/) for another JPEG 2000 decoder
+* [CharLS](https://github.com/team-charls/charls) for JPEG-LS
 
 FAQ
 ===
@@ -175,4 +177,4 @@ makes sense.
 
 Copyright
 ============
-Copyright 2015 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)
+Copyright 2016 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)

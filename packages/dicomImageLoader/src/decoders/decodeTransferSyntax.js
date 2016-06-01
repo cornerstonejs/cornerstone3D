@@ -18,28 +18,6 @@
     {
       return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
     }
-    // JPEG 2000 Lossless
-    else if(transferSyntax === "1.2.840.10008.1.2.4.90")
-    {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-    }
-    // JPEG 2000 Lossy
-    else if(transferSyntax === "1.2.840.10008.1.2.4.91")
-    {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-    }
-    /* Don't know if these work...
-    // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
-    else if(transferSyntax === "1.2.840.10008.1.2.4.92")
-    {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-    }
-    // JPEG 2000 Part 2 Multicomponent Image Compression
-    else if(transferSyntax === "1.2.840.10008.1.2.4.93")
-    {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-    }
-    */
     // RLE Lossless
     else if ( transferSyntax === "1.2.840.10008.1.2.5" )
     {
@@ -65,6 +43,38 @@
     {
       return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
     }
+    // JPEG-LS Lossless Image Compression
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.80" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+    }
+    // JPEG-LS Lossy (Near-Lossless) Image Compression
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.81" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+    }
+    // JPEG 2000 Lossless
+    else if(transferSyntax === "1.2.840.10008.1.2.4.90")
+    {
+      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+    }
+    // JPEG 2000 Lossy
+    else if(transferSyntax === "1.2.840.10008.1.2.4.91")
+    {
+      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+    }
+    /* Don't know if these work...
+     // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
+     else if(transferSyntax === "1.2.840.10008.1.2.4.92")
+     {
+     return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+     }
+     // JPEG 2000 Part 2 Multicomponent Image Compression
+     else if(transferSyntax === "1.2.840.10008.1.2.4.93")
+     {
+     return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+     }
+     */
     else
     {
       if(console && console.log) {
