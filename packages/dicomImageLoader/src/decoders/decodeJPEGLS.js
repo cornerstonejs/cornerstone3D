@@ -63,26 +63,15 @@
     var imagePtr = charLS.getValue(imagePtrPtr, '*');
     if(image.bitsPerSample <= 8) {
       image.pixelData = new Uint8Array(image.width * image.height * image.components);
+      var src8 = new Uint8Array(charLS.HEAP8.buffer, imagePtr, image.pixelData.length);
+      image.pixelData.set(src8);
     } else {
       // I have seen 16 bit signed images, but I don't know if 16 bit unsigned is valid, hoping to get
       // answer here:
       // https://github.com/team-charls/charls/issues/14
       image.pixelData = new Int16Array(image.width * image.height * image.components);
-    }
-    var pixelData = image.pixelData;
-    var offset = 0;
-    for(var y=0; y < image.height; y++) {
-      var firstPixel = imagePtr + image.stride * y;
-      for(var x=0; x < image.width; x++) {
-        for(var c=0; c < image.components; c++) {
-          if(image.bitsPerSample <= 8) {
-            pixelData[offset++] = charLS.getValue(firstPixel++, 'i8');
-          } else {
-            pixelData[offset++] = charLS.getValue(firstPixel, 'i16');
-            firstPixel += 2;
-          }
-        }
-      }
+      var src16 = new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
+      image.pixelData.set(src16);
     }
 
     // free memory and return image object
@@ -108,7 +97,7 @@
     }
 
     // CharLS https://github.com/chafey/charls
-    if(!charLS || !charLS.jpegLSDecode) {
+    if(!charLS || !charLS._jpegls_decode) {
       throw 'No JPEG-LS decoder loaded';
     }
 

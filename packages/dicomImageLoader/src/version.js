@@ -3,6 +3,6 @@
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.13.0';
+  cornerstoneWADOImageLoader.version = '0.13.1';
 
 }(cornerstoneWADOImageLoader));
