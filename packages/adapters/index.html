@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dicom to JSON Model</title>
+    <script type="text/javascript" src="DicomMetaDictionary.js"></script>
+    <script type="text/javascript" src="FileSaver.min.js"></script>
+    <script type="text/javascript" src="BufferStream.js"></script>
+    <script type="text/javascript" src="ValueRepresentation.js"></script>
+    <script type="text/javascript" src="Tag.js"></script>
+    <script type="text/javascript" src="DicomMessage.js"></script>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script type="text/javascript">
+        $.fn.extend({
+            filedrop: function (options) {
+                var defaults = {
+                    callback : null
+                }
+                options =  $.extend(defaults, options)
+                return this.each(function() {
+                    var files = []
+                    var $this = $(this)
+
+                    // Stop default browser actions
+                    $this.bind('dragover dragleave', function(event) {
+                        event.stopPropagation()
+                        event.preventDefault()
+                    })
+
+                    // Catch drop event
+                    $this.bind('drop', function(event) {
+                        // Stop default browser actions
+                        event.stopPropagation()
+                        event.preventDefault()
+
+                        // Get all files that are dropped
+                        files = event.originalEvent.target.files || event.originalEvent.dataTransfer.files
+
+                        // Convert uploaded file to data URL and pass trought callback
+                        if(options.callback) {
+                            var reader = new FileReader()
+                            reader.onload = function(event) {
+                                options.callback(event.target.result)
+                            }
+                            reader.readAsArrayBuffer(files[0])
+                        }
+                        return false
+                    })
+                })
+            }
+        })
+    </script>
+    <script type="text/javascript">
+    $(function(){
+        var dicomData = null;
+        $('#select').change(function(evt) {
+            var e = evt.originalEvent, files = e.target.files;
+
+            var reader = new FileReader()
+            reader.onload = function(e) {
+                var startTime = new Date();
+                dicomData = DicomMessage.readFile(e.target.result); 
+
+                var readIn = (new Date()) - startTime;
+                var string = JSON.stringify(dicomData.dict, null, 4);
+                $('#jsonContent').html(string);
+                $('#read-time').html("Read in "+readIn+"ms");
+            }
+            reader.readAsArrayBuffer(files[0]);
+        });
+
+        $('#convertToDicom').click(function(){
+            if (dicomData !== null) {
+                var dataDict = dicomData.dict;
+                /*
+                dataDict['00080070']['Value'] = ['TOSHIBA'];
+                dataDict['00080090']['Value'] = ['TEST^Patient']; // changing scalar values
+                dataDict['00081110']['Value'][0]['00081150']['Value'] = ["3.3.3.3.3.3"]; //changing sq value
+                delete dataDict['00081070']; //delete entry
+                dataDict['00200037']['Value'].pop(); //changing multiple value entry
+                */
+
+                var startTime = new Date();
+                var buffer = dicomData.write();
+                var writeIn = (new Date()) - startTime;
+                $('#write-time').html("Write in "+writeIn+"ms");
+
+                //var str = new ReadBufferStream(buffer);
+                //str.increment(128);console.log(str.readUint8());
+                saveAs(new Blob([buffer], {type: "application/dicom"}), "test.dicom", true);
+            }
+        });
+    });
+    </script>
+    <style type="text/css">
+    #jsonContent {
+        width: 800px;
+        height: 800px;
+    }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <input type="file" value="Select dicom" id="select"></input>
+    <span id="read-time"></span>
+    <div class="json">
+        <textarea id="jsonContent"></textarea>
+    </div>
+
+    <div><button id="convertToDicom">To DICOM</button><span id="write-time"></span></div>
+</div>
+</body>
+</html>
