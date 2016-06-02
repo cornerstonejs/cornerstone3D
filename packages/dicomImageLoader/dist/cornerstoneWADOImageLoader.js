@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.13.1 - 2016-06-01 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.13.2 - 2016-06-02 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -505,13 +505,83 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return pixelData;
   }
 
+  var openJPEG;
+
+  function decodeOpenJPEG(data, bytesPerPixel, signed) {
+    var dataPtr = openJPEG._malloc(data.length);
+    openJPEG.writeArrayToMemory(data, dataPtr);
+
+    // create param outpout
+    var imagePtrPtr=openJPEG._malloc(4);
+    var imageSizePtr=openJPEG._malloc(4);
+    var imageSizeXPtr=openJPEG._malloc(4);
+    var imageSizeYPtr=openJPEG._malloc(4);
+    var imageSizeCompPtr=openJPEG._malloc(4);
+
+    var t0 = Date.now();
+    var ret = openJPEG.ccall('jp2_decode','number', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+      [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
+    // add num vomp..etc
+    if(ret !== 0){
+      console.log('[opj_decode] decoding failed!')
+      openJPEG._free(dataPtr);
+      openJPEG._free(openJPEG.getValue(imagePtrPtr, '*'));
+      openJPEG._free(imageSizeXPtr);
+      openJPEG._free(imageSizeYPtr);
+      openJPEG._free(imageSizePtr);
+      openJPEG._free(imageSizeCompPtr);
+      return undefined;
+    }
+
+    var imagePtr = openJPEG.getValue(imagePtrPtr, '*')
+
+    var image = {
+      length : openJPEG.getValue(imageSizePtr,'i32'),
+      sx :  openJPEG.getValue(imageSizeXPtr,'i32'),
+      sy :  openJPEG.getValue(imageSizeYPtr,'i32'),
+      nbChannels : openJPEG.getValue(imageSizeCompPtr,'i32'), // hard coded for now
+      perf_timetodecode : undefined,
+      pixelData : undefined
+    };
+
+    // Copy the data from the EMSCRIPTEN heap into the correct type array
+    var length = image.sx*image.sy*image.nbChannels;
+    var src32 = new Uint32Array(openJPEG.HEAP32.buffer, imagePtr, length);
+    if(bytesPerPixel === 1) {
+      image.pixelData = Uint8Array.from(src32);
+    } else {
+      if (signed) {
+        image.pixelData = Int16Array.from(src32);
+      } else {
+        image.pixelData = Uint16Array.from(src32);
+      }
+    }
+
+    var t1 = Date.now();
+    image.perf_timetodecode = t1-t0;
+
+    // free
+    openJPEG._free(dataPtr);
+    openJPEG._free(imagePtrPtr);
+    openJPEG._free(imagePtr);
+    openJPEG._free(imageSizePtr);
+    openJPEG._free(imageSizeXPtr);
+    openJPEG._free(imageSizeYPtr);
+    openJPEG._free(imageSizeCompPtr);
+
+    return image;
+  }
+
   function decodeOpenJpeg2000(dataSet, frame) {
     var height = dataSet.uint16('x00280010');
     var width = dataSet.uint16('x00280011');
 
     var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
 
-    var image = Module.opj_decode(encodedImageFrame);
+    var bytesPerPixel = dataSet.uint16('x00280100') <= 8 ? 1 : 2;
+    var signed = dataSet.uint16('x00280103') ? true : false;
+
+    var image = decodeOpenJPEG(encodedImageFrame, bytesPerPixel, signed);
     var j2kWidth = image.sx;
     var j2kHeight = image.sy;
 
@@ -521,15 +591,21 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     if(j2kHeight !== height) {
       throw 'JPEG2000 decoder returned width of ' + j2kHeight + ', when ' + height + ' is expected';
     }
-
-    var pixelData = new Int16Array(image.pixelData);
-    return pixelData;
+    return image.pixelData;
   }
 
   function decodeJPEG2000(dataSet, frame)
   {
+    // Try to initialize OpenJPEG
+    if(OpenJPEG && !openJPEG) {
+      openJPEG = OpenJPEG();
+      if(!openJPEG || !openJPEG._jp2_decode) {
+        throw 'OpenJPEG failed to initialize';
+      }
+    }
+
     // OpenJPEG2000 https://github.com/jpambrun/openjpeg
-    if(Module && Module.opj_decode) {
+    if(openJPEG && openJPEG._jp2_decode) {
       return decodeOpenJpeg2000(dataSet, frame);
     }
 
@@ -682,23 +758,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       [dataPtr, data.length, imagePtrPtr, imageSizePtr, widthPtr, heightPtr, bitsPerSamplePtr, stridePtr, componentsPtr, allowedLossyErrorPtr, interleaveModePtr]
     );
 
-    // If error, free memory and return error code
-    if(result !== 0) {
-      charLS._free(dataPtr);
-      charLS._free(imagePtrPtr);
-      charLS._free(imageSizePtr);
-      charLS._free(widthPtr);
-      charLS._free(heightPtr);
-      charLS._free(bitsPerSamplePtr);
-      charLS._free(stridePtr);
-      charLS._free(componentsPtr);
-      charLS._free(interleaveModePtr);
-      return {
-        result : result
-      };
-    }
-
-    // No error, extract result values into object
+    // Extract result values into object
     var image = {
       result : result,
       width : charLS.getValue(widthPtr,'i32'),
@@ -711,7 +771,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       pixelData: undefined
     };
 
-    // No error = copy image from emscripten heap into appropriate array buffer type
+    // Copy image from emscripten heap into appropriate array buffer type
     var imagePtr = charLS.getValue(imagePtrPtr, '*');
     if(image.bitsPerSample <= 8) {
       image.pixelData = new Uint8Array(image.width * image.height * image.components);
@@ -760,10 +820,13 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     var image = jpegLSDecode(encodedImageFrame);
     //console.log(image);
-    if(image.result) {
+
+    // throw error if not success or too much data
+    if(image.result !== 0 && image.result !== 6) {
       throw 'JPEG-LS decoder failed to decode frame (error code ' + image.result + ')';
     }
 
+    // Sanity check the size
     if(image.width !== width) {
       throw 'JPEG-LS decoder returned width of ' + image.width + ', when ' + width + ' is expected';
     }
@@ -773,7 +836,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     return image.pixelData;
   }
-
 
   // module exports
   cornerstoneWADOImageLoader.decodeJPEGLS = decodeJPEGLS;
@@ -4630,7 +4692,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.13.1';
+  cornerstoneWADOImageLoader.version = '0.13.2';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {

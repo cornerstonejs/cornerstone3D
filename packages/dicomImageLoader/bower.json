@@ -1,6 +1,6 @@
 {
     "name": "cornerstoneWADOImageLoader",
-    "version": "0.13.1",
+    "version": "0.13.2",
     "description": "Cornerstone ImageLoader for DICOM WADO-URI",
     "main" : "dist/cornerstoneWADOImageLoader.js",
     "ignore": [

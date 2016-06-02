@@ -30,23 +30,7 @@
       [dataPtr, data.length, imagePtrPtr, imageSizePtr, widthPtr, heightPtr, bitsPerSamplePtr, stridePtr, componentsPtr, allowedLossyErrorPtr, interleaveModePtr]
     );
 
-    // If error, free memory and return error code
-    if(result !== 0) {
-      charLS._free(dataPtr);
-      charLS._free(imagePtrPtr);
-      charLS._free(imageSizePtr);
-      charLS._free(widthPtr);
-      charLS._free(heightPtr);
-      charLS._free(bitsPerSamplePtr);
-      charLS._free(stridePtr);
-      charLS._free(componentsPtr);
-      charLS._free(interleaveModePtr);
-      return {
-        result : result
-      };
-    }
-
-    // No error, extract result values into object
+    // Extract result values into object
     var image = {
       result : result,
       width : charLS.getValue(widthPtr,'i32'),
@@ -59,7 +43,7 @@
       pixelData: undefined
     };
 
-    // No error = copy image from emscripten heap into appropriate array buffer type
+    // Copy image from emscripten heap into appropriate array buffer type
     var imagePtr = charLS.getValue(imagePtrPtr, '*');
     if(image.bitsPerSample <= 8) {
       image.pixelData = new Uint8Array(image.width * image.height * image.components);
@@ -108,10 +92,13 @@
 
     var image = jpegLSDecode(encodedImageFrame);
     //console.log(image);
-    if(image.result) {
+
+    // throw error if not success or too much data
+    if(image.result !== 0 && image.result !== 6) {
       throw 'JPEG-LS decoder failed to decode frame (error code ' + image.result + ')';
     }
 
+    // Sanity check the size
     if(image.width !== width) {
       throw 'JPEG-LS decoder returned width of ' + image.width + ', when ' + width + ' is expected';
     }
@@ -121,7 +108,6 @@
 
     return image.pixelData;
   }
-
 
   // module exports
   cornerstoneWADOImageLoader.decodeJPEGLS = decodeJPEGLS;
