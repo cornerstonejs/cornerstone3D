@@ -110,7 +110,7 @@ there are several [known issues](https://github.com/OHIF/image-JPEG2000/issues) 
 
 ###### Performance Comparison
 
-Images from [here](ftp://medical.nema.org/MEDICAL/Dicom/DataSets/WG04/compsamples_j2k.tar)
+Images from ftp://medical.nema.org/MEDICAL/Dicom/DataSets/WG04/compsamples_j2k.tar
 
 iMac Retina 5k Late 2014 4GHz Intel Core i7 Chrome 50.0.2661.102 (64 bit)
 
