@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.13.2 - 2016-06-02 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.13.3 - 2016-06-02 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -548,12 +548,33 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     var length = image.sx*image.sy*image.nbChannels;
     var src32 = new Uint32Array(openJPEG.HEAP32.buffer, imagePtr, length);
     if(bytesPerPixel === 1) {
-      image.pixelData = Uint8Array.from(src32);
+      if(Uint8Array.from) {
+        image.pixelData = Uint8Array.from(src32);
+      } else {
+        image.pixelData = new Uint8Array(length);
+        for(var i=0; i < length; i++) {
+          image.pixelData[i] = src32[i];
+        }
+      }
     } else {
       if (signed) {
-        image.pixelData = Int16Array.from(src32);
+        if(Int16Array.from) {
+          image.pixelData = Int16Array.from(src32);
+        } else {
+          image.pixelData = new Int16Array(length);
+          for(var i=0; i < length; i++) {
+            image.pixelData[i] = src32[i];
+          }
+        }
       } else {
-        image.pixelData = Uint16Array.from(src32);
+        if(Uint16Array.from) {
+          image.pixelData = Uint16Array.from(src32);
+        } else {
+          image.pixelData = new Uint16Array(length);
+          for(var i=0; i < length; i++) {
+            image.pixelData[i] = src32[i];
+          }
+        }
       }
     }
 
@@ -597,7 +618,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   function decodeJPEG2000(dataSet, frame)
   {
     // Try to initialize OpenJPEG
-    if(OpenJPEG && !openJPEG) {
+    if(typeof OpenJPEG !== 'undefined' && !openJPEG) {
       openJPEG = OpenJPEG();
       if(!openJPEG || !openJPEG._jp2_decode) {
         throw 'OpenJPEG failed to initialize';
@@ -610,7 +631,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
 
     // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
-    if(JpxImage) {
+    if(typeof JpxImage !== 'undefined') {
       return decodeJpx(dataSet, frame);
     }
     throw 'No JPEG2000 decoder loaded';
@@ -4692,7 +4713,7 @@ var JpegImage = (function jpegImage() {
   "use strict";
 
   // module exports
-  cornerstoneWADOImageLoader.version = '0.13.2';
+  cornerstoneWADOImageLoader.version = '0.13.3';
 
 }(cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {

@@ -117,16 +117,21 @@
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
 
-<!-- jpeg 2000 codec -->
-<script src="../jpx.min.js"></script>
+<!-- OpenJPEG based jpeg 2000 codec -->
+<script src="../libopenjpeg.js2"></script>
+
+<!-- JPEG-LS codec -->
 <script src="../libCharLS.js"></script>
-<script src="../libopenjpeg.js"></script>
+
+<!-- PDF.js based jpeg 2000 codec -->
+<!-- NOTE: do not load the OpenJPEG codec if you use this one -->
+<script src="../jpx.min.js"></script>
 
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
 
+<!-- uids -->
 <script src="uids.js"></script>
-
 
 <script>
 
@@ -235,28 +240,6 @@
             var end = new Date().getTime();
             var time = end - start;
             $('#loadTime').text(time + "ms");
-            /*
-                        <span>Transfer Syntax:</span><span id="transferSyntax"></span><br>
-                                <span>SOP Class:</span><span id="sopClass"></span><br>
-                                <span>Samples PerP ixel:</span><span id="samplesPerPixel"></span><br>
-                                <span>Photometric Interpretation:</span><span id="photometricInterpretation"></span><br>
-                                <span>Number Of Frames:</span><span id="numberOfFrames"></span><br>
-                                <span>Planar Configuration:</span><span id="planarConfiguration"></span><br>
-                                <span>Rows:</span><span id="rows"></span><br>
-                                <span>Columns:</span><span id="columns"></span><br>
-                                <span>Bits Allocated:</span><span id="bitsAllocated"></span><br>
-                                <span>Bits Stored:</span><span id="bitsStored"></span><br>
-                                <span>High Bit:</span><span id="highBit"></span><br>
-                                <span>Pixel Representation:</span><span id="pixelRepresentation"></span><br>
-                                <span>WindowCenter:</span><span id="windowCenter"></span><br>
-                                <span>WindowWidth:</span><span id="windowWidth"></span><br>
-                                <span>RescaleIntercept:</span><span id="rescaleIntercept"></span><br>
-                                <span>RescaleSlope:</span><span id="rescaleSlope"></span><br>
-                                <span>Basic Offset Table Entries:</span><span id="basicOffsetTable"></span><br>
-                                <span>Fragments:</span><span id="fragments"></span><br>
-            */
-
-
         }, function(err) {
             alert(err);
         });

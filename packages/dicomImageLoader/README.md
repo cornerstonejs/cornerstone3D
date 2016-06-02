@@ -40,13 +40,18 @@ The cornerstoneWADOImageLoader depends on the following external libraries:
 2. [dicomParser](https://github.com/chafey/dicomParser) 
 3. [cornerstone](https://github.com/chafey/cornerStone)
 
-Additional libraries are required for JPEG2000 support, see below
+For JPEG 2000 support, you must load one of the following codecs (see below for more information):
 
-JPEG-LS requires the [EMSCRIPTEN build](https://github.com/chafey/charls) of the
-[CharLS](https://github.com/team-charls/charls) library
+1. [OpenJPEG based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/examples/libopenjpeg.js)
+2. [PDF.js based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/examples/jpx.min.js)
+
+For JPEG-LS support, you must load the following codec:
+
+1. [CharLS Based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/examples/libCharLS.js)
 
 All of these libraries should be loaded before the cornerstoneWADOImageLoader.js.  See the source code
-for the [example](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html).
+for the [examples](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html) for how
+these codecs are loaded.
 
 The image loader prefix is 'wadouri' (note that the prefix dicomweb is also supported but is deprecated and will eventually
 be removed).  Here are some example imageId's:
@@ -87,25 +92,54 @@ JPEG 2000 Support
 CornerstoneWADOImageLoader supports JPEG2000 via one of two codecs each of which have different levels of performance
 and support for JPEG2000:
 
+###### OpenJPEG
+
+[OpenJPEG based JPEG2000 Codec](https://github.com/chafey/openjpeg)
+
+This is the recommended codec as it is based on the [OpenJPEG](https://github.com/uclouvain/openjpeg)
+project which is fairly complete and actively maintained.  If you have problems decoding a JPEG2000 file, you should
+seek out support from the OpenJPEG community.  Special thanks to @jpambrun for creating the EMSCRIPTEN build.
+
 ###### PDF.js based
 
 [OHIF/image-JPEG2000](https://github.com/OHIF/image-JPEG2000)
 
-This is the first JPEG2000 codec that cornerstone integrated.  It is based on the
-[pdf.js](https://github.com/mozilla/pdf.js) project with fixes/enhancements made by @jpambrun.  It decodes many
-JPEG2000 files but not all and is generally faster than OpenJPEG codec.
+This codec is based on the [pdf.js](https://github.com/mozilla/pdf.js) project with fixes/enhancements
+made by @jpambrun specific to medical imaging.  It generally runs faster than the OpenJPEG codec, but
+there are several [known issues](https://github.com/OHIF/image-JPEG2000/issues) that may never be fixed.
 
-###### OpenJPEG
+###### Performance Comparison
 
-[OpenJPEG based JPEG2000 Codec](https://github.com/jpambrun/openjpeg)
+Images from [here](ftp://medical.nema.org/MEDICAL/Dicom/DataSets/WG04/compsamples_j2k.tar)
 
-This is a newer JPEG2000 codec (support added May 24, 2016).  It is based on the openJPEG project with fixes/enhancements
-made by @jpambrun.  It should decode most (if not all) JPEG2000 files but is generally slower than the PDF.js codec.
+iMac Retina 5k Late 2014 4GHz Intel Core i7 Chrome 50.0.2661.102 (64 bit)
 
-Since these codecs are large (and have different licenses associated with them), they must be loaded separately from
-cornerstoneWADOImageLoader.  Note that JPEG 2000 is complex and these codecs may have bugs or your file may have been
-encoded with a buggy encoder.  If you are having problems displaying your JPEG2000 files, you can try posting
-on the [cornerstone forum](https://groups.google.com/forum/#!forum/cornerstone-platform), but support may be limited.
+| Image         | OpenJPEG      | PDF.js   |
+| --------------| ------------- | -------- |
+| NM1_J2KR      | 233 ms        | 103 ms   |
+| CT1_J2KR      | 424 ms        | 147 ms   |
+| RG1_J2KR      | 6058 ms       | 2311 ms  |
+| MG1_J2KR      | 19312 ms      | 7380 ms  |
+
+
+iMac Retina 5k Late 2014 4GHz Intel Core i7 FireFox 46.0.1
+
+| Image         | OpenJPEG      | PDF.js   |
+| --------------| ------------- | -------- |
+| NM1_J2KR      | 240 ms        | 102 ms   |
+| CT1_J2KR      | 185 ms        | 91 ms    |
+| RG1_J2KR      | 3445 ms       | 1594 ms  |
+| MG1_J2KR      | 10295 ms      | 14207 ms |
+
+iMac Retina 5k Late 2014 4GHz Intel Core i7 Safari 9.1.1
+
+| Image         | OpenJPEG      | PDF.js   |
+| --------------| ------------- | -------- |
+| NM1_J2KR      | 64 ms         | 56 ms    |
+| CT1_J2KR      | 115 ms        | 94 ms    |
+| RG1_J2KR      | 2367 ms       | 1567 ms  |
+| MG1_J2KR      | 6496 ms       | 18547 ms |
+
 
 Key Features
 ------------

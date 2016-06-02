@@ -62,8 +62,15 @@
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
 
-<!-- jpeg 2000 codec -->
-<script src="../jpx.min.js"></script>
+<!-- OpenJPEG based jpeg 2000 codec -->
+<script src="../libopenjpeg.js"></script>
+
+<!-- JPEG-LS codec -->
+<script src="../libCharLS.js"></script>
+
+<!-- PDF.js based jpeg 2000 codec -->
+<!-- NOTE: do not load the OpenJPEG codec if you use this one -->
+<!--<script src="../jpx.min.js"></script>-->
 
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
