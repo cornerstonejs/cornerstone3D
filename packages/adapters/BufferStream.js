@@ -50,6 +50,9 @@ function toFloat(val) {
 class BufferStream {
     constructor(sizeOrBuffer, littleEndian) {
         this.buffer = typeof sizeOrBuffer == 'number' ? new ArrayBuffer(sizeOrBuffer) : sizeOrBuffer;
+        if (!this.buffer) {
+            this.buffer = new ArrayBuffer(0);
+        }
         this.view = new DataView(this.buffer);
         this.offset = 0;
         this.isLittleEndian = littleEndian || false;

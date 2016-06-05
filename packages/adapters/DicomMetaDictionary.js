@@ -55,6 +55,16 @@ class DicomMetaDictionary {
     }
     return(naturalDataset);
   }
+
+  static keyByName() {
+    DicomMetaDictionary.nameMap = {};
+    for (var tag in DicomMetaDictionary.dictionary) {
+      var dict = DicomMetaDictionary.dictionary[tag];
+      if (dict.version != 'PrivateTag') {
+        DicomMetaDictionary.nameMap[dict.name] = dict;
+      }
+    }
+  }
 }
 
 DicomMetaDictionary.dictionary = {
@@ -48118,3 +48128,4 @@ DicomMetaDictionary.dictionary = {
 }
 
 
+DicomMetaDictionary.keyByName();

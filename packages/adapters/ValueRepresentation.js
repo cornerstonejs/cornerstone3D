@@ -87,22 +87,26 @@ class ValueRepresentation {
 
     write(stream, type) {
         var args = Array.from(arguments);
-        if (args[2] === null || args[2] === "") {
+        if (args[2] === null || args[2] === "" || args[2] === undefined) {
             return [stream.writeString("")];
         } else {
             var written = [], valueArgs = args.slice(2), func = stream["write"+type];
             if (Array.isArray(valueArgs[0])) {
-                var self = this;
-                valueArgs[0].forEach(function(v, k){
-                    if (self.allowMultiple() && k > 0) {
-                        stream.writeHex("5C");
-                        //byteCount++;
-                    }                    
-                    var singularArgs = [v].concat(valueArgs.slice(1));
-                    
-                    var byteCount = func.apply(stream, singularArgs);
-                    written.push(byteCount);
-                });
+                if (valueArgs[0].length < 1) {
+                    written.push(0);
+                } else {
+                    var self = this;
+                    valueArgs[0].forEach(function(v, k){
+                        if (self.allowMultiple() && k > 0) {
+                            stream.writeHex("5C");
+                            //byteCount++;
+                        }
+                        var singularArgs = [v].concat(valueArgs.slice(1));
+                        
+                        var byteCount = func.apply(stream, singularArgs);
+                        written.push(byteCount);
+                    });
+                }
             } else {
                 written.push(func.apply(stream, valueArgs));
             }
@@ -136,7 +140,7 @@ class ValueRepresentation {
           total += checklen;
       }
       if (this.allowMultiple()) {
-        total += valarr.length - 1;
+        total += valarr.length ? valarr.length - 1 : 0;
       }
 
       //check for odd

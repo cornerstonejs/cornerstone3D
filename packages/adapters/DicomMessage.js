@@ -20,6 +20,14 @@ class DicomDict {
       this.dict = {};
     }
 
+    upsertTag(tag, vr, values) {
+      if (this.dict[tag]) {
+        this.dict[tag].Value = values;
+      } else {
+        this.dict[tag] = {vr: vr, Value: values};
+      }
+    }
+
     write() {
       var metaSyntax = EXPLICIT_LITTLE_ENDIAN;
       var fileStream = new WriteBufferStream(4096, true);

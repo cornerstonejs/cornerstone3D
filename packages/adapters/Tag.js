@@ -39,6 +39,12 @@ class Tag {
         return Tag.fromNumbers(group, element);
     }
 
+    static fromPString(str) {
+        var group = parseInt(str.substring(1,5), 16), 
+            element = parseInt(str.substring(6,10), 16);
+        return Tag.fromNumbers(group, element); 
+    }
+
     static fromNumbers(group, element) {
       return new Tag(((group << 16) | element) >>> 0);
     }    
