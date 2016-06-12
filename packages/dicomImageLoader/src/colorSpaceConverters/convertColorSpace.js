@@ -53,7 +53,9 @@
       }
       else if( photometricInterpretation === "YBR_FULL_422" )
       {
-        convertYBRFull(dataSet, imageFrame, imageData.data);
+        convertRGB(dataSet, imageFrame, imageData.data);
+
+        //convertYBRFull(dataSet, imageFrame, imageData.data);
       }
       else if(photometricInterpretation === "YBR_FULL" )
       {

@@ -7,7 +7,6 @@
       | ((val >> 8) & 0xFF);
   }
 
-
   function extractUncompressedPixels(dataSet, frame, bigEndian)
   {
     var pixelFormat = cornerstoneWADOImageLoader.getPixelFormat(dataSet);

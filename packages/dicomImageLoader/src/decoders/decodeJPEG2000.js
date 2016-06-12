@@ -141,16 +141,21 @@
 
   function decodeJPEG2000(dataSet, frame)
   {
-    // Try to initialize OpenJPEG
-    if(typeof OpenJPEG !== 'undefined' && !openJPEG) {
-      openJPEG = OpenJPEG();
-      if(!openJPEG || !openJPEG._jp2_decode) {
-        throw 'OpenJPEG failed to initialize';
-      }
+    // check to make sure codec is loaded
+    if(typeof OpenJPEG === 'undefined' &&
+      typeof JpxImage === 'undefined') {
+      throw 'No JPEG2000 decoder loaded';
     }
 
     // OpenJPEG2000 https://github.com/jpambrun/openjpeg
-    if(openJPEG && openJPEG._jp2_decode) {
+    if(typeof OpenJPEG !== 'undefined') {
+      // Initialize if it isn't already initialized
+      if (!openJPEG) {
+        openJPEG = OpenJPEG();
+        if (!openJPEG || !openJPEG._jp2_decode) {
+          throw 'OpenJPEG failed to initialize';
+        }
+      }
       return decodeOpenJpeg2000(dataSet, frame);
     }
 
@@ -158,7 +163,6 @@
     if(typeof JpxImage !== 'undefined') {
       return decodeJpx(dataSet, frame);
     }
-    throw 'No JPEG2000 decoder loaded';
   }
 
   cornerstoneWADOImageLoader.decodeJPEG2000 = decodeJPEG2000;

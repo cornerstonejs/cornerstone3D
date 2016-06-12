@@ -40,18 +40,42 @@ The cornerstoneWADOImageLoader depends on the following external libraries:
 2. [dicomParser](https://github.com/chafey/dicomParser) 
 3. [cornerstone](https://github.com/chafey/cornerStone)
 
-For JPEG 2000 support, you must load one of the following codecs (see below for more information):
 
-1. [OpenJPEG based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/examples/libopenjpeg.js)
-2. [PDF.js based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/examples/jpx.min.js)
 
-For JPEG-LS support, you must load the following codec:
 
-1. [CharLS Based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/examples/libCharLS.js)
+##### Optional Codecs
+
+cornerstoneWADOImageLoader supports all non retired transfer syntaxes except for JPIP
+[see full list](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md).
+Each compressed transfer syntax requires a separate codec to be loaded to operate:
+
+For JPEG 2000 (.90, .91) support, you must load one of the following (see below for more information):
+
+1. [OpenJPEG based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/libopenjpeg.js)
+2. [PDF.js based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/jpx.min.js)
+
+For JPEG-LS (.80, .81) support, you must load the following:
+
+1. [CharLS Based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/libCharLS.js)
+
+For JPEG Lossless (.57) support, you must load the following:
+
+1. [JPEG Lossless codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/jpeg.js)
+
+For JPEG Baseline (.51) support, you must load the following:
+
+1. [JPEG baseline codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/jpegLossless.js)
+
+For Deflate (.99) support, you must load the following:
+
+1. [Pako.js](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/pako.min.js)
 
 All of these libraries should be loaded before the cornerstoneWADOImageLoader.js.  See the source code
 for the [examples](https://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html) for how
 these codecs are loaded.
+
+ImageIds
+--------
 
 The image loader prefix is 'wadouri' (note that the prefix dicomweb is also supported but is deprecated and will eventually
 be removed).  Here are some example imageId's:

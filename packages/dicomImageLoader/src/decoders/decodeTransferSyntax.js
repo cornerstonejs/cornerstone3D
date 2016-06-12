@@ -14,8 +14,11 @@
       return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame);
     }
     // Explicit VR Big Endian (retired)
-    else if ( transferSyntax === "1.2.840.10008.1.2.2" )
-    {
+    else if ( transferSyntax === "1.2.840.10008.1.2.2" ) {
+      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
+    }
+    // Deflate transfer syntax (deflated by dicomParser)
+    else if(transferSyntax === '1.2.840.10008.1.2.1.99') {
       return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
     }
     // RLE Lossless

@@ -4,7 +4,7 @@
 
   var charLS;
 
-  function jpegLSDecode(data) {
+  function jpegLSDecode(data, isSigned) {
 
     // prepare input parameters
     var dataPtr = charLS._malloc(data.length);
@@ -19,7 +19,6 @@
     var stridePtr=charLS._malloc(4);
     var allowedLossyErrorPtr =charLS._malloc(4);
     var componentsPtr=charLS._malloc(4);
-
     var interleaveModePtr=charLS._malloc(4);
 
     // Decode the image
@@ -53,9 +52,15 @@
       // I have seen 16 bit signed images, but I don't know if 16 bit unsigned is valid, hoping to get
       // answer here:
       // https://github.com/team-charls/charls/issues/14
-      image.pixelData = new Int16Array(image.width * image.height * image.components);
-      var src16 = new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
-      image.pixelData.set(src16);
+      if(isSigned) {
+        image.pixelData = new Int16Array(image.width * image.height * image.components);
+        var src16 = new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
+        image.pixelData.set(src16);
+      } else {
+        image.pixelData = new Uint16Array(image.width * image.height * image.components);
+        var src16 = new Uint16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
+        image.pixelData.set(src16);
+      }
     }
 
     // free memory and return image object
@@ -75,22 +80,28 @@
 
   function decodeJPEGLS(dataSet, frame)
   {
-    // Try to initialize CharLS
-    if(CharLS && !charLS) {
-      charLS = CharLS();
+    // check to make sure codec is loaded
+    if(typeof CharLS === 'undefined') {
+      throw 'No JPEG-LS decoder loaded';
     }
 
+    // Try to initialize CharLS
     // CharLS https://github.com/chafey/charls
-    if(!charLS || !charLS._jpegls_decode) {
-      throw 'No JPEG-LS decoder loaded';
+    if(!charLS) {
+      charLS = CharLS();
+      if(!charLS || !charLS._jpegls_decode) {
+        throw 'JPEG-LS failed to initialize';
+      }
     }
 
     var height = dataSet.uint16('x00280010');
     var width = dataSet.uint16('x00280011');
+    var pixelRepresentation = dataSet.uint16('x00280103');
+    var isSigned = pixelRepresentation !== 0;
 
     var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
 
-    var image = jpegLSDecode(encodedImageFrame);
+    var image = jpegLSDecode(encodedImageFrame, isSigned);
     //console.log(image);
 
     // throw error if not success or too much data

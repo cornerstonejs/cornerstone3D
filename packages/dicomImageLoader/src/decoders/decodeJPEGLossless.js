@@ -2,6 +2,13 @@
 (function (cornerstoneWADOImageLoader) {
 
   function decodeJPEGLossless(dataSet, frame) {
+    // check to make sure codec is loaded
+    if(typeof jpeg === 'undefined' ||
+      typeof jpeg.lossless === 'undefined' ||
+      typeof jpeg.lossless.Decoder === 'undefined') {
+      throw 'No JPEG Lossless decoder loaded';
+    }
+
     var bitsAllocated = dataSet.uint16('x00280100');
     var pixelRepresentation = dataSet.uint16('x00280103');
     var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);

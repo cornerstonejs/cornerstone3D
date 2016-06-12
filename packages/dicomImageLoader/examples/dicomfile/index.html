@@ -93,8 +93,8 @@
             <span>RescaleSlope: </span><span id="rescaleSlope"></span><br>
             <span>Basic Offset Table Entries: </span><span id="basicOffsetTable"></span><br>
             <span>Fragments: </span><span id="fragments"></span><br>
-            <span>Max Stored Pixel Value: </span><span id="minStoredPixelValue"></span><br>
-            <span>Min Stored Pixel Value: </span><span id="maxStoredPixelValue"></span><br>
+            <span>Min Stored Pixel Value: </span><span id="minStoredPixelValue"></span><br>
+            <span>Max Stored Pixel Value: </span><span id="maxStoredPixelValue"></span><br>
             <span>Load Time: </span><span id="loadTime"></span><br>
 
         </div>
@@ -117,18 +117,34 @@
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
 
+
+<!-- BEGIN Optional Codecs -->
+
 <!-- OpenJPEG based jpeg 2000 codec -->
-<script src="../libopenjpeg.js"></script>
+<script src="../../codecs/openJPEG-FixedMemory.js"></script>
 
 <!-- PDF.js based jpeg 2000 codec -->
 <!-- NOTE: do not load the OpenJPEG codec if you use this one -->
 <!-- <script src="../jpx.min.js"></script> -->
 
 <!-- JPEG-LS codec -->
-<script src="../libCharLS.js"></script>
+<script src="../../codecs/libCharLS.js"></script>
+
+<!-- JPEG Lossless codec -->
+<script src="../../codecs/jpegLossless.js"></script>
+
+<!-- JPEG Baseline codec -->
+<script src="../../codecs/jpeg.js"></script>
+
+<!-- Deflate transfer syntax codec -->
+<script src="../../codecs/pako.min.js"></script>
+
+<!-- END Optional Codecs -->
 
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
+
+
 
 <!-- uids -->
 <script src="uids.js"></script>

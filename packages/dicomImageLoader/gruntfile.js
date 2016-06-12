@@ -21,7 +21,6 @@ module.exports = function(grunt) {
         copy : {
             bower: {
                 src: [
-                    'bower_components/image-jpeg2000/dist/jpx.min.js',
                     'bower_components/cornerstone/dist/cornerstone.min.css',
                     'bower_components/cornerstone/dist/cornerstone.min.js',
                     'bower_components/dicomParser/dist/dicomParser.min.js',

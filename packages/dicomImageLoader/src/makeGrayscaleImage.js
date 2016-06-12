@@ -14,37 +14,6 @@
         throw "unknown pixel format";
     }
 
-    function getLUT(image, pixelRepresentation, lutDataSet) {
-      var numLUTEntries = lutDataSet.uint16('x00283002', 0);
-      if(numLUTEntries === 0) {
-        numLUTEntries = 65535;
-      }
-      var firstValueMapped = 0;
-      if(pixelRepresentation === 0) {
-        firstValueMapped = lutDataSet.uint16('x00283002', 1);
-      } else {
-         firstValueMapped = lutDataSet.int16('x00283002', 1);
-      }
-      var numBitsPerEntry = lutDataSet.uint16('x00283002', 2);
-      //console.log('LUT(', numLUTEntries, ',', firstValueMapped, ',', numBitsPerEntry, ')');
-      var lut = {
-        id : '1',
-        firstValueMapped: firstValueMapped,
-        numBitsPerEntry : numBitsPerEntry,
-        lut : []
-      };
-
-      //console.log("minValue=", minValue, "; maxValue=", maxValue);
-      for (var i = 0; i < numLUTEntries; i++) {
-        if(pixelRepresentation === 0) {
-          lut.lut[i] = lutDataSet.uint16('x00283006', i);
-        } else {
-          lut.lut[i] = lutDataSet.int16('x00283006', i);
-        }
-      }
-      return lut;
-    }
-
     function isModalityLUTForDisplay(dataSet) {
       // special case for XA and XRF
       // https://groups.google.com/forum/#!searchin/comp.protocols.dicom/Modality$20LUT$20XA/comp.protocols.dicom/UBxhOZ2anJ0/D0R_QP8V2wIJ
@@ -70,8 +39,6 @@
             return deferred.promise();
         }
 
-        var numPixels = rows * columns;
-        //var sizeInBytes = numPixels * bytesPerPixel;
         var sizeInBytes = dataSet.byteArray.length;
         var photometricInterpretation = dataSet.string('x00280004');
         var invert = (photometricInterpretation === "MONOCHROME1");
@@ -79,8 +46,10 @@
 
         // Decompress and decode the pixel data for this image
         var storedPixelData;
+        var imageFrame;
         try {
-          storedPixelData = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+          imageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+          storedPixelData = imageFrame.storedPixelData;
         }
         catch(err) {
           deferred.reject(err);
@@ -118,10 +87,11 @@
             sharedCacheKey: sharedCacheKey
         };
 
-        // modality LUT
         var pixelRepresentation = dataSet.uint16('x00280103');
+
+        // modality LUT
         if(dataSet.elements.x00283000 && isModalityLUTForDisplay(dataSet)) {
-          image.modalityLUT = getLUT(image, pixelRepresentation, dataSet.elements.x00283000.items[0].dataSet);
+          image.modalityLUT = cornerstoneWADOImageLoader.getLUT(pixelRepresentation, dataSet.elements.x00283000.items[0].dataSet);
         }
 
         // VOI LUT
@@ -131,7 +101,7 @@
           if(image.minPixelValue * image.slope + image.intercept < 0) {
             pixelRepresentation = 1;
           }
-          image.voiLUT = getLUT(image, pixelRepresentation, dataSet.elements.x00283010.items[0].dataSet);
+          image.voiLUT = getLUT(pixelRepresentation, dataSet.elements.x00283010.items[0].dataSet);
         }
 
         // TODO: deal with pixel padding and all of the various issues by setting it to min pixel value (or lower)
