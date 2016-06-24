@@ -108,69 +108,57 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function convertRGB(dataSet, decodedImageFrame, rgbaBuffer) {
-    var planarConfiguration = dataSet.uint16('x00280006');
-    if(planarConfiguration === 0) {
-      cornerstoneWADOImageLoader.convertRGBColorByPixel(decodedImageFrame, rgbaBuffer);
+  function convertRGB(imageFrame, rgbaBuffer) {
+    if(imageFrame.planarConfiguration === 0) {
+      cornerstoneWADOImageLoader.convertRGBColorByPixel(imageFrame.pixelData, rgbaBuffer);
     } else {
-      cornerstoneWADOImageLoader.convertRGBColorByPlane(decodedImageFrame, rgbaBuffer);
+      cornerstoneWADOImageLoader.convertRGBColorByPlane(imageFrame.pixelData, rgbaBuffer);
     }
   }
 
-  function convertYBRFull(dataSet, decodedImageFrame, rgbaBuffer) {
-    var planarConfiguration = dataSet.uint16('x00280006');
-    if(planarConfiguration === 0) {
-      cornerstoneWADOImageLoader.convertYBRFullByPixel(decodedImageFrame, rgbaBuffer);
+  function convertYBRFull(imageFrame, rgbaBuffer) {
+    if(imageFrame.planarConfiguration === 0) {
+      cornerstoneWADOImageLoader.convertYBRFullByPixel(imageFrame.pixelData, rgbaBuffer);
     } else {
-      cornerstoneWADOImageLoader.convertYBRFullByPlane(decodedImageFrame, rgbaBuffer);
+      cornerstoneWADOImageLoader.convertYBRFullByPlane(imageFrame.pixelData, rgbaBuffer);
     }
   }
 
-  function convertColorSpace(canvas, dataSet, imageFrame) {
-    // extract the fields we need
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    var photometricInterpretation = dataSet.string('x00280004');
-
-    // setup the canvas context
-    canvas.height = height;
-    canvas.width = width;
-    var context = canvas.getContext('2d');
-    var imageData = context.createImageData(width, height);
+  function convertColorSpace(imageFrame, imageData) {
+    var rgbaBuffer = imageData.data;
 
     // convert based on the photometric interpretation
     var deferred = $.Deferred();
     try {
-      if (photometricInterpretation === "RGB" )
+      if (imageFrame.photometricInterpretation === "RGB" )
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if (photometricInterpretation === "YBR_RCT")
+      else if (imageFrame.photometricInterpretation === "YBR_RCT")
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if (photometricInterpretation === "YBR_ICT")
+      else if (imageFrame.photometricInterpretation === "YBR_ICT")
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if( photometricInterpretation === "PALETTE COLOR" )
+      else if( imageFrame.photometricInterpretation === "PALETTE COLOR" )
       {
-        cornerstoneWADOImageLoader.convertPALETTECOLOR(imageFrame, imageData.data, dataSet );
+        cornerstoneWADOImageLoader.convertPALETTECOLOR(imageFrame, rgbaBuffer);
       }
-      else if( photometricInterpretation === "YBR_FULL_422" )
+      else if( imageFrame.photometricInterpretation === "YBR_FULL_422" )
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
-
-        //convertYBRFull(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if(photometricInterpretation === "YBR_FULL" )
+      else if(imageFrame.photometricInterpretation === "YBR_FULL" )
       {
-        convertYBRFull(dataSet, imageFrame, imageData.data);
+        convertYBRFull(imageFrame, rgbaBuffer);
       }
       else
       {
-        throw "no color space conversion for photometric interpretation " + photometricInterpretation;
+        throw "no color space conversion for photometric interpretation " + imageFrame.photometricInterpretation;
       }
+      
       deferred.resolve(imageData);
       return deferred.promise();
     } catch (error) {
@@ -187,34 +175,20 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function convertPALETTECOLOR( imageFrame, rgbaBuffer, dataSet ) {
-    var len=dataSet.int16('x00281101',0);
-
-    // Account for zero-values for the lookup table length
-    //
-    // "The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
-    //  When the number of table entries is equal to 2^16 then this value shall be 0."
-    //
-    // See: http://dicom.nema.org/MEDICAL/Dicom/2015c/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.5
-    if (!len) {
-      len = 65536;
-    }
-
-    var start=dataSet.int16('x00281101',1);
-    var bits=dataSet.int16('x00281101',2);
-    var shift = (bits===8 ? 0 : 8 );
-
-    var buffer = dataSet.byteArray.buffer;
-    var rData=new Uint16Array( buffer, dataSet.elements.x00281201.dataOffset, len );
-    var gData=new Uint16Array( buffer, dataSet.elements.x00281202.dataOffset, len );
-    var bData=new Uint16Array( buffer, dataSet.elements.x00281203.dataOffset, len );
-
-    var numPixels = dataSet.uint16('x00280010') * dataSet.uint16('x00280011');
+  function convertPALETTECOLOR( imageFrame, rgbaBuffer ) {
+    var numPixels = imageFrame.columns * imageFrame.rows;
     var palIndex=0;
     var rgbaIndex=0;
+    var pixelData = imageFrame.pixelData;
+    var start = imageFrame.palette.start;
+    var rData = imageFrame.palette.rData;
+    var gData = imageFrame.palette.gData;
+    var bData = imageFrame.palette.bData;
+    var shift = imageFrame.palette.bits ===8 ? 0 : 8;
+    var len = imageFrame.palette.rData.length;
 
     for( var i=0 ; i < numPixels ; ++i ) {
-      var value=imageFrame[palIndex++];
+      var value=pixelData[palIndex++];
       if( value < start )
         value=0;
       else if( value > start + len -1 )
@@ -227,7 +201,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       rgbaBuffer[ rgbaIndex++ ] = bData[value] >> shift;
       rgbaBuffer[ rgbaIndex++ ] = 255;
     }
-
   }
 
   // module exports
@@ -803,8 +776,12 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     canvas.height = height;
     canvas.width = width;
 
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+    var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
 
+    imageFrame = cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, frame);
+    //var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+    var encodedImageFrame = imageFrame.pixelData;
+    
     var imgBlob = new Blob([encodedImageFrame], {type: "image/jpeg"});
 
     var r = new FileReader();
@@ -1129,61 +1106,9 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function isMultiFrame(imageFrame) {
-    return imageFrame.numberOfFrames > 1;
-  }
+  // new path....
 
-  function isFragmented(imageFrame, pixelDataElement) {
-    if(imageFrame.numberOfFrames != pixelDataElement.fragments.length) {
-      return true;
-    }
-  }
-
-  function getEncodedImageFrameEmptyBasicOffsetTable(dataSet, imageFrame, pixelDataElement, frameIndex) {
-
-    if(isMultiFrame(imageFrame)) {
-      if(isFragmented(imageFrame, pixelDataElement)) {
-        // decoding multi-frame with an empty basic offset table requires parsing the fragments
-        // to find frame boundaries.
-        throw 'multi-frame sop instance with no basic offset table is not currently supported';
-      }
-
-      // not fragmented, a frame maps to the fragment
-      return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, frameIndex);
-    }
-
-    // Single frame - all fragments are for the one image frame
-    var startFragment = 0;
-    var numFragments = pixelDataElement.fragments.length;
-    return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, startFragment, numFragments);
-  }
-
-  function getEncapsulatedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex) {
-    // Empty basic offset table
-    if(!pixelDataElement.basicOffsetTable.length) {
-      imageFrame.pixelData = getEncodedImageFrameEmptyBasicOffsetTable(dataSet, imageFrame, pixelDataElement, frameIndex);
-      return imageFrame;
-    }
-
-    // Basic Offset Table is not empty
-    imageFrame.pixelData = dicomParser.readEncapsulatedImageFrame(dataSet, pixelDataElement, frameIndex);
-    return imageFrame;
-  }
-  cornerstoneWADOImageLoader.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
-}($, cornerstone, cornerstoneWADOImageLoader));
-/**
- * Function to deal with extracting an image frame from an encapsulated data set.
- */
-(function ($, cornerstone, cornerstoneWADOImageLoader) {
-
-  "use strict";
-
-  function isMultiFrame(dataSet) {
-    var numberOfFrames = dataSet.intString('x00280008');
-    return numberOfFrames > 1;
-  }
-
-  function isFragmented(dataSet) {
+  function framesAreFragmented(dataSet) {
     var numberOfFrames = dataSet.intString('x00280008');
     var pixelDataElement = dataSet.elements.x7fe00010;
     if(numberOfFrames != pixelDataElement.fragments.length) {
@@ -1191,42 +1116,33 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
   }
 
-  function getEncodedImageFrameEmptyBasicOffsetTable(dataSet, frame) {
-    var pixelDataElement = dataSet.elements.x7fe00010;
-
-    if(isMultiFrame(dataSet)) {
-      if(isFragmented(dataSet)) {
-        // decoding multi-frame with an empty basic offset table requires parsing the fragments
-        // to find frame boundaries.
-        throw 'multi-frame sop instance with no basic offset table is not currently supported';
-      }
-
-      // not fragmented, a frame maps to the fragment
-      return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, frame);
-    }
-
-    // Single frame - all fragments are for the one image frame
-    var startFragment = 0;
-    var numFragments = pixelDataElement.fragments.length;
-    return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, startFragment, numFragments);
-  }
-
   function getEncodedImageFrame(dataSet, frame) {
     // Empty basic offset table
     if(!dataSet.elements.x7fe00010.basicOffsetTable.length) {
-      return getEncodedImageFrameEmptyBasicOffsetTable(dataSet, frame);
+      if(framesAreFragmented(dataSet)) {
+        var basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(dataSet, dataSet.elements.x7fe00010);
+        return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame, basicOffsetTable);
+      } else {
+        return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, dataSet.elements.x7fe00010, frame);
+      }
     }
 
     // Basic Offset Table is not empty
     return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
   }
-  cornerstoneWADOImageLoader.getEncodedImageFrame = getEncodedImageFrame;
+
+  function getEncapsulatedImageFrame(dataSet, imageFrame, frameIndex) {
+    imageFrame.pixelData = getEncodedImageFrame(dataSet, frameIndex);
+    return imageFrame;
+  }
+  cornerstoneWADOImageLoader.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
 }($, cornerstone, cornerstoneWADOImageLoader));
 /**
  */
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
+
 
   function getRawImageFrame(dataSet, frameIndex) {
     var imageFrame = {
@@ -1239,13 +1155,14 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       columns : dataSet.uint16('x00280011'),
       bitsAllocated : dataSet.uint16('x00280100'),
       pixelRepresentation : dataSet.uint16('x00280103'), // 0 = unsigned,
+      palette: cornerstoneWADOImageLoader.getPalette(dataSet),
       pixelData: undefined
     };
-
+    
     var pixelDataElement = dataSet.elements.x7fe00010;
 
     if(pixelDataElement.encapsulatedPixelData) {
-      return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex);
+      return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, frameIndex);
     } else {
       return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex);
     }
@@ -1381,6 +1298,54 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 }(cornerstoneWADOImageLoader));
 
 
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getPaletteLength(dataSet) {
+    var len=dataSet.int16('x00281101',0);
+
+    // Account for zero-values for the lookup table length
+    //
+    // "The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
+    //  When the number of table entries is equal to 2^16 then this value shall be 0."
+    //
+    // See: http://dicom.nema.org/MEDICAL/Dicom/2015c/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.5
+    if (!len) {
+      len = 65536;
+    }
+
+    return len;
+  }
+
+
+  function getPalette(dataSet) {
+
+    // if no palette return undefined
+    if(!dataSet.elements.x00281101 ||
+      !dataSet.elements.x00281201 ||
+      !dataSet.elements.x00281202 ||
+      !dataSet.elements.x00281203) {
+      return;
+    }
+
+    // Build the palette object
+    var len = getPaletteLength(dataSet);
+
+    var buffer = dataSet.byteArray.buffer;
+
+    return {
+      start: dataSet.int16('x00281101',1),
+      bits: dataSet.int16('x00281101',2),
+      rData : new Uint16Array(buffer, dataSet.elements.x00281201.dataOffset, len),
+      gData : new Uint16Array(buffer, dataSet.elements.x00281202.dataOffset, len),
+      bData : new Uint16Array(buffer, dataSet.elements.x00281203.dataOffset, len)
+    };
+
+  }
+  // module exports
+  cornerstoneWADOImageLoader.getPalette = getPalette;
+}(cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
   "use strict";
@@ -1843,9 +1808,15 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
           return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(canvas, dataSet, frame);
         }
 
-        var decodedImageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+        var imageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
 
-        return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame.pixelData);
+        // setup the canvas context
+        canvas.height = imageFrame.rows;
+        canvas.width = imageFrame.columns;
+
+        var context = canvas.getContext('2d');
+        var imageData = context.createImageData(imageFrame.columns, imageFrame.rows);
+        return cornerstoneWADOImageLoader.convertColorSpace(imageFrame, imageData);
     }
 
     function makeColorImage(imageId, dataSet, frame, sharedCacheKey) {

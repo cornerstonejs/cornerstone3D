@@ -4,6 +4,7 @@
 
   "use strict";
 
+
   function getRawImageFrame(dataSet, frameIndex) {
     var imageFrame = {
       transferSyntax : dataSet.string('x00020010'),
@@ -15,13 +16,14 @@
       columns : dataSet.uint16('x00280011'),
       bitsAllocated : dataSet.uint16('x00280100'),
       pixelRepresentation : dataSet.uint16('x00280103'), // 0 = unsigned,
+      palette: cornerstoneWADOImageLoader.getPalette(dataSet),
       pixelData: undefined
     };
-
+    
     var pixelDataElement = dataSet.elements.x7fe00010;
 
     if(pixelDataElement.encapsulatedPixelData) {
-      return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex);
+      return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, frameIndex);
     } else {
       return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex);
     }

@@ -2,34 +2,20 @@
 
   "use strict";
 
-  function convertPALETTECOLOR( imageFrame, rgbaBuffer, dataSet ) {
-    var len=dataSet.int16('x00281101',0);
-
-    // Account for zero-values for the lookup table length
-    //
-    // "The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
-    //  When the number of table entries is equal to 2^16 then this value shall be 0."
-    //
-    // See: http://dicom.nema.org/MEDICAL/Dicom/2015c/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.5
-    if (!len) {
-      len = 65536;
-    }
-
-    var start=dataSet.int16('x00281101',1);
-    var bits=dataSet.int16('x00281101',2);
-    var shift = (bits===8 ? 0 : 8 );
-
-    var buffer = dataSet.byteArray.buffer;
-    var rData=new Uint16Array( buffer, dataSet.elements.x00281201.dataOffset, len );
-    var gData=new Uint16Array( buffer, dataSet.elements.x00281202.dataOffset, len );
-    var bData=new Uint16Array( buffer, dataSet.elements.x00281203.dataOffset, len );
-
-    var numPixels = dataSet.uint16('x00280010') * dataSet.uint16('x00280011');
+  function convertPALETTECOLOR( imageFrame, rgbaBuffer ) {
+    var numPixels = imageFrame.columns * imageFrame.rows;
     var palIndex=0;
     var rgbaIndex=0;
+    var pixelData = imageFrame.pixelData;
+    var start = imageFrame.palette.start;
+    var rData = imageFrame.palette.rData;
+    var gData = imageFrame.palette.gData;
+    var bData = imageFrame.palette.bData;
+    var shift = imageFrame.palette.bits ===8 ? 0 : 8;
+    var len = imageFrame.palette.rData.length;
 
     for( var i=0 ; i < numPixels ; ++i ) {
-      var value=imageFrame[palIndex++];
+      var value=pixelData[palIndex++];
       if( value < start )
         value=0;
       else if( value > start + len -1 )
@@ -42,7 +28,6 @@
       rgbaBuffer[ rgbaIndex++ ] = bData[value] >> shift;
       rgbaBuffer[ rgbaIndex++ ] = 255;
     }
-
   }
 
   // module exports

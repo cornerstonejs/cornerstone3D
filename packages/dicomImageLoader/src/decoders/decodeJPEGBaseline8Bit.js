@@ -33,8 +33,12 @@
     canvas.height = height;
     canvas.width = width;
 
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+    var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
 
+    imageFrame = cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, frame);
+    //var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+    var encodedImageFrame = imageFrame.pixelData;
+    
     var imgBlob = new Blob([encodedImageFrame], {type: "image/jpeg"});
 
     var r = new FileReader();

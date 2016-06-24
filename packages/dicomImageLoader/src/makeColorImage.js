@@ -13,9 +13,15 @@
           return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(canvas, dataSet, frame);
         }
 
-        var decodedImageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+        var imageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
 
-        return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame.pixelData);
+        // setup the canvas context
+        canvas.height = imageFrame.rows;
+        canvas.width = imageFrame.columns;
+
+        var context = canvas.getContext('2d');
+        var imageData = context.createImageData(imageFrame.columns, imageFrame.rows);
+        return cornerstoneWADOImageLoader.convertColorSpace(imageFrame, imageData);
     }
 
     function makeColorImage(imageId, dataSet, frame, sharedCacheKey) {

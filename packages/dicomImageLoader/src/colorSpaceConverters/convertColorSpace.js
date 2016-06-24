@@ -2,69 +2,57 @@
 
   "use strict";
 
-  function convertRGB(dataSet, decodedImageFrame, rgbaBuffer) {
-    var planarConfiguration = dataSet.uint16('x00280006');
-    if(planarConfiguration === 0) {
-      cornerstoneWADOImageLoader.convertRGBColorByPixel(decodedImageFrame, rgbaBuffer);
+  function convertRGB(imageFrame, rgbaBuffer) {
+    if(imageFrame.planarConfiguration === 0) {
+      cornerstoneWADOImageLoader.convertRGBColorByPixel(imageFrame.pixelData, rgbaBuffer);
     } else {
-      cornerstoneWADOImageLoader.convertRGBColorByPlane(decodedImageFrame, rgbaBuffer);
+      cornerstoneWADOImageLoader.convertRGBColorByPlane(imageFrame.pixelData, rgbaBuffer);
     }
   }
 
-  function convertYBRFull(dataSet, decodedImageFrame, rgbaBuffer) {
-    var planarConfiguration = dataSet.uint16('x00280006');
-    if(planarConfiguration === 0) {
-      cornerstoneWADOImageLoader.convertYBRFullByPixel(decodedImageFrame, rgbaBuffer);
+  function convertYBRFull(imageFrame, rgbaBuffer) {
+    if(imageFrame.planarConfiguration === 0) {
+      cornerstoneWADOImageLoader.convertYBRFullByPixel(imageFrame.pixelData, rgbaBuffer);
     } else {
-      cornerstoneWADOImageLoader.convertYBRFullByPlane(decodedImageFrame, rgbaBuffer);
+      cornerstoneWADOImageLoader.convertYBRFullByPlane(imageFrame.pixelData, rgbaBuffer);
     }
   }
 
-  function convertColorSpace(canvas, dataSet, imageFrame) {
-    // extract the fields we need
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    var photometricInterpretation = dataSet.string('x00280004');
-
-    // setup the canvas context
-    canvas.height = height;
-    canvas.width = width;
-    var context = canvas.getContext('2d');
-    var imageData = context.createImageData(width, height);
+  function convertColorSpace(imageFrame, imageData) {
+    var rgbaBuffer = imageData.data;
 
     // convert based on the photometric interpretation
     var deferred = $.Deferred();
     try {
-      if (photometricInterpretation === "RGB" )
+      if (imageFrame.photometricInterpretation === "RGB" )
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if (photometricInterpretation === "YBR_RCT")
+      else if (imageFrame.photometricInterpretation === "YBR_RCT")
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if (photometricInterpretation === "YBR_ICT")
+      else if (imageFrame.photometricInterpretation === "YBR_ICT")
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if( photometricInterpretation === "PALETTE COLOR" )
+      else if( imageFrame.photometricInterpretation === "PALETTE COLOR" )
       {
-        cornerstoneWADOImageLoader.convertPALETTECOLOR(imageFrame, imageData.data, dataSet );
+        cornerstoneWADOImageLoader.convertPALETTECOLOR(imageFrame, rgbaBuffer);
       }
-      else if( photometricInterpretation === "YBR_FULL_422" )
+      else if( imageFrame.photometricInterpretation === "YBR_FULL_422" )
       {
-        convertRGB(dataSet, imageFrame, imageData.data);
-
-        //convertYBRFull(dataSet, imageFrame, imageData.data);
+        convertRGB(imageFrame, rgbaBuffer);
       }
-      else if(photometricInterpretation === "YBR_FULL" )
+      else if(imageFrame.photometricInterpretation === "YBR_FULL" )
       {
-        convertYBRFull(dataSet, imageFrame, imageData.data);
+        convertYBRFull(imageFrame, rgbaBuffer);
       }
       else
       {
-        throw "no color space conversion for photometric interpretation " + photometricInterpretation;
+        throw "no color space conversion for photometric interpretation " + imageFrame.photometricInterpretation;
       }
+      
       deferred.resolve(imageData);
       return deferred.promise();
     } catch (error) {
