@@ -18,7 +18,7 @@
   function getEncodedImageFrameEmptyBasicOffsetTable(dataSet, imageFrame, pixelDataElement, frameIndex) {
 
     if(isMultiFrame(imageFrame)) {
-      if(isFragmented(imageFrame)) {
+      if(isFragmented(imageFrame, pixelDataElement)) {
         // decoding multi-frame with an empty basic offset table requires parsing the fragments
         // to find frame boundaries.
         throw 'multi-frame sop instance with no basic offset table is not currently supported';
@@ -37,12 +37,13 @@
   function getEncapsulatedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex) {
     // Empty basic offset table
     if(!pixelDataElement.basicOffsetTable.length) {
-      imageFrame.pixelData = getEncodedImageFrameEmptyBasicOffsetTable(dataSet, pixelDataElement, frameIndex);
+      imageFrame.pixelData = getEncodedImageFrameEmptyBasicOffsetTable(dataSet, imageFrame, pixelDataElement, frameIndex);
       return imageFrame;
     }
 
     // Basic Offset Table is not empty
-    return dicomParser.readEncapsulatedImageFrame(dataSet, pixelDataElement, frameIndex);
+    imageFrame.pixelData = dicomParser.readEncapsulatedImageFrame(dataSet, pixelDataElement, frameIndex);
+    return imageFrame;
   }
   cornerstoneWADOImageLoader.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
 }($, cornerstone, cornerstoneWADOImageLoader));

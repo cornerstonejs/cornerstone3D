@@ -2,34 +2,21 @@
  */
 (function (cornerstoneWADOImageLoader) {
 
-  function decodeRLE(dataSet, frame) {
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    var samplesPerPixel = dataSet.uint16('x00280002');
-    var pixelDataElement = dataSet.elements.x7fe00010;
+  function decodeRLE(imageFrame) {
 
-    var frameData = dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, frame);
-    var pixelFormat = cornerstoneWADOImageLoader.getPixelFormat(dataSet);
-
-
-    var frameSize = width*height;
-    var buffer;
-    if( pixelFormat===1 ) {
-      buffer = new ArrayBuffer(frameSize*samplesPerPixel);
-      decode8( frameData, buffer, frameSize, samplesPerPixel);
-      return new Uint8Array(buffer);
-    } else if( pixelFormat===2 ) {
-      buffer = new ArrayBuffer(frameSize*samplesPerPixel*2);
-      decode16( frameData, buffer, frameSize );
-      return new Uint16Array(buffer);
-    } else if( pixelFormat===3 ) {
-      buffer = new ArrayBuffer(frameSize*samplesPerPixel*2);
-      decode16( frameData, buffer, frameSize );
-      return new Int16Array(buffer);
+    if(imageFrame.bitsAllocated === 8) {
+      return decode8(imageFrame);
+    } else if( imageFrame.bitsAllocated === 16) {
+      return decode16(imageFrame);
+    } else {
+      throw 'unsupported pixel format for RLE'
     }
   }
 
-  function decode8( frameData, outFrame, frameSize, samplesSize ) {
+  function decode8(imageFrame ) {
+    var frameData = imageFrame.pixelData;
+    var frameSize = imageFrame.rows * imageFrame.columns;
+    var outFrame = new ArrayBuffer(frameSize*imageFrame.samplesPerPixel);
     var header=new DataView(frameData.buffer, frameData.byteOffset);
     var data=new DataView( frameData.buffer, frameData.byteOffset );
     var out=new DataView( outFrame );
@@ -52,22 +39,28 @@
           // copy n bytes
           for( var i=0 ; i < n+1 && outIndex < endOfSegment; ++i ) {
             out.setInt8(outIndex, data.getInt8(inIndex++));
-            outIndex+=samplesSize;
+            outIndex+=imageFrame.samplesPerPixel;
           }
         } else if( n<= -1 && n>=-127 ) {
           var value=data.getInt8(inIndex++);
           // run of n bytes
           for( var j=0 ; j < -n+1 && outIndex < endOfSegment; ++j ) {
             out.setInt8(outIndex, value );
-            outIndex+=samplesSize;
+            outIndex+=imageFrame.samplesPerPixel;
           }
         } else if (n===-128)
           ; // do nothing
       }
     }
+    imageFrame.pixelData = new Uint8Array(outFrame);
+    return imageFrame;
   }
 
-  function decode16( frameData, outFrame, frameSize ) {
+  function decode16( imageFrame ) {
+    var frameData = imageFrame.pixelData;
+    var frameSize = imageFrame.rows * imageFrame.columns;
+    var outFrame = new ArrayBuffer(frameSize*imageFrame.samplesPerPixel*2);
+
     var header=new DataView(frameData.buffer, frameData.byteOffset);
     var data=new DataView( frameData.buffer, frameData.byteOffset );
     var out=new DataView( outFrame );
@@ -99,6 +92,12 @@
           ; // do nothing
       }
     }
+    if(imageFrame.pixelRepresentation === 0) {
+      imageFrame.pixelData = new Uint16Array(outFrame);
+    } else {
+      imageFrame.pixelData = new Int16Array(outFrame);
+    }
+    return imageFrame;
   }
 
   // module exports
