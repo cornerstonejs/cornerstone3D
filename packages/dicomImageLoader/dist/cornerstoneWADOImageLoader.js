@@ -531,45 +531,45 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     {
       return cornerstoneWADOImageLoader.decodeRLE(imageFrame);
     }
-/*    // JPEG Baseline lossy process 1 (8 bit)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.50" )
+    // JPEG Baseline lossy process 1 (8 bit)
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
     {
-      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame);
     }
     // JPEG Baseline lossy process 2 & 4 (12 bit)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.51" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.51")
     {
-      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame);
     }
     // JPEG Lossless, Nonhierarchical (Processes 14)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.57" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.57")
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame);
     }
     // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.70" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.70" )
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame);
     }
     // JPEG-LS Lossless Image Compression
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.80" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.80" )
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame);
     }
     // JPEG-LS Lossy (Near-Lossless) Image Compression
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.81" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.81" )
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame);
     }
-    // JPEG 2000 Lossless
-    else if(transferSyntax === "1.2.840.10008.1.2.4.90")
+     // JPEG 2000 Lossless
+    else if(imageFrame.transferSyntax === "1.2.840.10008.1.2.4.90")
     {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame);
     }
     // JPEG 2000 Lossy
-    else if(transferSyntax === "1.2.840.10008.1.2.4.91")
+    else if(imageFrame.transferSyntax === "1.2.840.10008.1.2.4.91")
     {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame);
     }
     /* Don't know if these work...
      // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
@@ -600,31 +600,20 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function decodeJpx(dataSet, frame) {
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+  function decodeJpx(imageFrame) {
 
     var jpxImage = new JpxImage();
-    jpxImage.parse(encodedImageFrame);
+    jpxImage.parse(imageFrame.pixelData);
 
-    var j2kWidth = jpxImage.width;
-    var j2kHeight = jpxImage.height;
-    if(j2kWidth !== width) {
-      throw 'JPEG2000 decoder returned width of ' + j2kWidth + ', when ' + width + ' is expected';
-    }
-    if(j2kHeight !== height) {
-      throw 'JPEG2000 decoder returned width of ' + j2kHeight + ', when ' + height + ' is expected';
-    }
     var tileCount = jpxImage.tiles.length;
     if(tileCount !== 1) {
       throw 'JPEG2000 decoder returned a tileCount of ' + tileCount + ', when 1 is expected';
     }
-    var tileComponents = jpxImage.tiles[0];
-    var pixelData = tileComponents.items;
 
-    return pixelData;
+    imageFrame.columns = jpxImage.width;
+    imageFrame.rows = jpxImage.height;
+    imageFrame.pixelData = jpxImage.tiles[0].items;
+    return imageFrame;
   }
 
   var openJPEG;
@@ -715,29 +704,19 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return image;
   }
 
-  function decodeOpenJpeg2000(dataSet, frame) {
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
+  function decodeOpenJpeg2000(imageFrame) {
+    var bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
+    var signed = imageFrame.pixelRepresentation === 1;
 
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+    var image = decodeOpenJPEG(imageFrame.pixelData, bytesPerPixel, signed);
 
-    var bytesPerPixel = dataSet.uint16('x00280100') <= 8 ? 1 : 2;
-    var signed = dataSet.uint16('x00280103') ? true : false;
-
-    var image = decodeOpenJPEG(encodedImageFrame, bytesPerPixel, signed);
-    var j2kWidth = image.sx;
-    var j2kHeight = image.sy;
-
-    if(j2kWidth !== width) {
-      throw 'JPEG2000 decoder returned width of ' + j2kWidth + ', when ' + width + ' is expected';
-    }
-    if(j2kHeight !== height) {
-      throw 'JPEG2000 decoder returned width of ' + j2kHeight + ', when ' + height + ' is expected';
-    }
-    return image.pixelData;
+    imageFrame.columns = image.sx;
+    imageFrame.rows = image.sy;
+    imageFrame.pixelData = image.pixelData;
+    return imageFrame;
   }
 
-  function decodeJPEG2000(dataSet, frame)
+  function decodeJPEG2000(imageFrame)
   {
     // check to make sure codec is loaded
     if(typeof OpenJPEG === 'undefined' &&
@@ -754,12 +733,12 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
           throw 'OpenJPEG failed to initialize';
         }
       }
-      return decodeOpenJpeg2000(dataSet, frame);
+      return decodeOpenJpeg2000(imageFrame);
     }
 
     // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
     if(typeof JpxImage !== 'undefined') {
-      return decodeJpx(dataSet, frame);
+      return decodeJpx(imageFrame);
     }
   }
 
@@ -769,23 +748,21 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function decodeJPEGBaseline(dataSet, frame)
+  function decodeJPEGBaseline(imageFrame)
   {
     // check to make sure codec is loaded
     if(typeof JpegImage === 'undefined') {
       throw 'No JPEG Baseline decoder loaded';
     }
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    var bitsAllocated = dataSet.uint16('x00280100');
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
     var jpeg = new JpegImage();
-    jpeg.parse( encodedImageFrame );
-    if(bitsAllocated === 8) {
-      return jpeg.getData(width, height);
+    jpeg.parse( imageFrame.pixelData);
+    if(imageFrame.bitsAllocated === 8) {
+      imageFrame.pixelData = jpeg.getData(imageFrame.columns, imageFrame.rows);
+      return imageFrame;
     }
-    else if(bitsAllocated === 16) {
-      return jpeg.getData16(width, height);
+    else if(imageFrame.bitsAllocated === 16) {
+      imageFrame.pixelData = jpeg.getData16(imageFrame.columns, imageFrame.rows);
+      return imageFrame;
     }
   }
 
@@ -880,7 +857,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 "use strict";
 (function (cornerstoneWADOImageLoader) {
 
-  function decodeJPEGLossless(dataSet, frame) {
+  function decodeJPEGLossless(imageFrame) {
     // check to make sure codec is loaded
     if(typeof jpeg === 'undefined' ||
       typeof jpeg.lossless === 'undefined' ||
@@ -888,23 +865,24 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       throw 'No JPEG Lossless decoder loaded';
     }
 
-    var bitsAllocated = dataSet.uint16('x00280100');
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
-    var byteOutput = bitsAllocated <= 8 ? 1 : 2;
+    var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
     //console.time('jpeglossless');
+    var buffer = imageFrame.pixelData.buffer;
     var decoder = new jpeg.lossless.Decoder();
-    var decompressedData = decoder.decode(encodedImageFrame.buffer, encodedImageFrame.byteOffset, encodedImageFrame.length, byteOutput);
+    var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
     //console.timeEnd('jpeglossless');
-    if (pixelRepresentation === 0) {
-      if (byteOutput === 2) {
-        return new Uint16Array(decompressedData.buffer);
+    if (imageFrame.pixelRepresentation === 0) {
+      if (imageFrame.bitsAllocated === 16) {
+        imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
+        return imageFrame;
       } else {
         // untested!
-        return new Uint8Array(decompressedData.buffer);
+        imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
+        return imageFrame;
       }
     } else {
-      return new Int16Array(decompressedData.buffer);
+      imageFrame.pixelData = new Int16Array(decompressedData.buffer);
+      return imageFrame;
     }
   }
   // module exports
@@ -991,7 +969,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return image;
   }
 
-  function decodeJPEGLS(dataSet, frame)
+  function decodeJPEGLS(imageFrame)
   {
     // check to make sure codec is loaded
     if(typeof CharLS === 'undefined') {
@@ -1007,14 +985,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       }
     }
 
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    var isSigned = pixelRepresentation !== 0;
-
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
-
-    var image = jpegLSDecode(encodedImageFrame, isSigned);
+    var image = jpegLSDecode(imageFrame.pixelData, imageFrame.pixelRepresentation === 1);
     //console.log(image);
 
     // throw error if not success or too much data
@@ -1022,15 +993,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       throw 'JPEG-LS decoder failed to decode frame (error code ' + image.result + ')';
     }
 
-    // Sanity check the size
-    if(image.width !== width) {
-      throw 'JPEG-LS decoder returned width of ' + image.width + ', when ' + width + ' is expected';
-    }
-    if(image.height !== height) {
-      throw 'JPEG-LS decoder returned width of ' + image.height + ', when ' + height + ' is expected';
-    }
-
-    return image.pixelData;
+    imageFrame.columns = image.width;
+    imageFrame.rows = image.height;
+    imageFrame.pixelData = image.pixelData;
+    return imageFrame;
   }
 
   // module exports
@@ -1150,157 +1116,12 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   function decodeTransferSyntax(dataSet, frame) {
     var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
     return cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
-    /*
-
-    var transferSyntax = dataSet.string('x00020010');
-
-    // Implicit VR Little Endian
-    if( transferSyntax === "1.2.840.10008.1.2") {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame);
-    }
-    // Explicit VR Little Endian
-    else if( transferSyntax === "1.2.840.10008.1.2.1") {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame);
-    }
-    // Explicit VR Big Endian (retired)
-    else if ( transferSyntax === "1.2.840.10008.1.2.2" ) {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
-    }
-    // Deflate transfer syntax (deflated by dicomParser)
-    else if(transferSyntax === '1.2.840.10008.1.2.1.99') {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
-    }
-    // RLE Lossless
-    else if ( transferSyntax === "1.2.840.10008.1.2.5" )
-    {
-      return cornerstoneWADOImageLoader.decodeRLE( dataSet, frame);
-    }
-    // JPEG Baseline lossy process 1 (8 bit)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.50" )
-    {
-      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
-    }
-    // JPEG Baseline lossy process 2 & 4 (12 bit)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.51" )
-    {
-      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
-    }
-    // JPEG Lossless, Nonhierarchical (Processes 14)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.57" )
-    {
-      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
-    }
-    // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.70" )
-    {
-      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
-    }
-    // JPEG-LS Lossless Image Compression
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.80" )
-    {
-      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
-    }
-    // JPEG-LS Lossy (Near-Lossless) Image Compression
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.81" )
-    {
-      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
-    }
-    // JPEG 2000 Lossless
-    else if(transferSyntax === "1.2.840.10008.1.2.4.90")
-    {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-    }
-    // JPEG 2000 Lossy
-    else if(transferSyntax === "1.2.840.10008.1.2.4.91")
-    {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-    }
-    /* Don't know if these work...
-     // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
-     else if(transferSyntax === "1.2.840.10008.1.2.4.92")
-     {
-     return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-     }
-     // JPEG 2000 Part 2 Multicomponent Image Compression
-     else if(transferSyntax === "1.2.840.10008.1.2.4.93")
-     {
-     return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
-     }
-    else
-    {
-      if(console && console.log) {
-        console.log("Image cannot be decoded due to Unsupported transfer syntax " + transferSyntax);
-      }
-      throw "no decoder for transfer syntax " + transferSyntax;
-    }
-     */
-
   }
 
   // module exports
   cornerstoneWADOImageLoader.decodeTransferSyntax = decodeTransferSyntax;
 
 }(cornerstoneWADOImageLoader));
-(function ($, cornerstone, cornerstoneWADOImageLoader) {
-
-  "use strict";
-
-  function swap16(val) {
-    return ((val & 0xFF) << 8)
-      | ((val >> 8) & 0xFF);
-  }
-
-  function extractUncompressedPixels(dataSet, frame, bigEndian)
-  {
-    var pixelFormat = cornerstoneWADOImageLoader.getPixelFormat(dataSet);
-    var imageFrame = getImageFrame(dataSet, frame, pixelFormat);
-    // byte swap 16 bit data if bigEndian
-    if(bigEndian && (pixelFormat === 2 || pixelFormat === 3)) {
-      for(var i=0; i < imageFrame.length; i++) {
-        imageFrame[i] = swap16(imageFrame[i]);
-      }
-    }
-    return imageFrame;
-  }
-
-  function getImageFrame(dataSet, frame, pixelFormat) {
-    // Note - we may want to sanity check the rows * columns * bitsAllocated * samplesPerPixel against the buffer size
-    var pixelDataElement = dataSet.elements.x7fe00010;
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    var samplesPerPixel = dataSet.uint16('x00280002');
-    var pixelDataOffset = pixelDataElement.dataOffset;
-    var numPixels = width * height * samplesPerPixel;
-    if (!numPixels) {
-      throw "Sanity check failed when calculating the number of pixels";
-    }
-    var frameOffset = 0;
-    if(pixelFormat === 1) {
-      frameOffset = pixelDataOffset + frame * numPixels;
-      if(frameOffset >= dataSet.byteArray.length) {
-        throw 'frame exceeds size of pixelData';
-      }
-      return new Uint8Array(dataSet.byteArray.buffer, frameOffset, numPixels);
-    }
-    else if(pixelFormat === 2) {
-      frameOffset = pixelDataOffset + frame * numPixels * 2;
-      if(frameOffset >= dataSet.byteArray.length) {
-        throw 'frame exceeds size of pixelData';
-      }
-      return new Uint16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
-    }
-    else if(pixelFormat === 3) {
-      frameOffset = pixelDataOffset + frame * numPixels * 2;
-      if(frameOffset >= dataSet.byteArray.length) {
-        throw 'frame exceeds size of pixelData';
-      }
-      return new Int16Array(dataSet.byteArray.buffer, frameOffset, numPixels);
-    }
-    throw "Unknown pixel format";
-  }
-
-  cornerstoneWADOImageLoader.extractUncompressedPixels = extractUncompressedPixels;
-}($, cornerstone, cornerstoneWADOImageLoader));
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.
  */

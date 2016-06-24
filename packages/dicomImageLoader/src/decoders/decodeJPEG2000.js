@@ -2,31 +2,20 @@
 
   "use strict";
 
-  function decodeJpx(dataSet, frame) {
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+  function decodeJpx(imageFrame) {
 
     var jpxImage = new JpxImage();
-    jpxImage.parse(encodedImageFrame);
+    jpxImage.parse(imageFrame.pixelData);
 
-    var j2kWidth = jpxImage.width;
-    var j2kHeight = jpxImage.height;
-    if(j2kWidth !== width) {
-      throw 'JPEG2000 decoder returned width of ' + j2kWidth + ', when ' + width + ' is expected';
-    }
-    if(j2kHeight !== height) {
-      throw 'JPEG2000 decoder returned width of ' + j2kHeight + ', when ' + height + ' is expected';
-    }
     var tileCount = jpxImage.tiles.length;
     if(tileCount !== 1) {
       throw 'JPEG2000 decoder returned a tileCount of ' + tileCount + ', when 1 is expected';
     }
-    var tileComponents = jpxImage.tiles[0];
-    var pixelData = tileComponents.items;
 
-    return pixelData;
+    imageFrame.columns = jpxImage.width;
+    imageFrame.rows = jpxImage.height;
+    imageFrame.pixelData = jpxImage.tiles[0].items;
+    return imageFrame;
   }
 
   var openJPEG;
@@ -117,29 +106,19 @@
     return image;
   }
 
-  function decodeOpenJpeg2000(dataSet, frame) {
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
+  function decodeOpenJpeg2000(imageFrame) {
+    var bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
+    var signed = imageFrame.pixelRepresentation === 1;
 
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+    var image = decodeOpenJPEG(imageFrame.pixelData, bytesPerPixel, signed);
 
-    var bytesPerPixel = dataSet.uint16('x00280100') <= 8 ? 1 : 2;
-    var signed = dataSet.uint16('x00280103') ? true : false;
-
-    var image = decodeOpenJPEG(encodedImageFrame, bytesPerPixel, signed);
-    var j2kWidth = image.sx;
-    var j2kHeight = image.sy;
-
-    if(j2kWidth !== width) {
-      throw 'JPEG2000 decoder returned width of ' + j2kWidth + ', when ' + width + ' is expected';
-    }
-    if(j2kHeight !== height) {
-      throw 'JPEG2000 decoder returned width of ' + j2kHeight + ', when ' + height + ' is expected';
-    }
-    return image.pixelData;
+    imageFrame.columns = image.sx;
+    imageFrame.rows = image.sy;
+    imageFrame.pixelData = image.pixelData;
+    return imageFrame;
   }
 
-  function decodeJPEG2000(dataSet, frame)
+  function decodeJPEG2000(imageFrame)
   {
     // check to make sure codec is loaded
     if(typeof OpenJPEG === 'undefined' &&
@@ -156,12 +135,12 @@
           throw 'OpenJPEG failed to initialize';
         }
       }
-      return decodeOpenJpeg2000(dataSet, frame);
+      return decodeOpenJpeg2000(imageFrame);
     }
 
     // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
     if(typeof JpxImage !== 'undefined') {
-      return decodeJpx(dataSet, frame);
+      return decodeJpx(imageFrame);
     }
   }
 

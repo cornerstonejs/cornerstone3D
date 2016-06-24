@@ -26,45 +26,45 @@
     {
       return cornerstoneWADOImageLoader.decodeRLE(imageFrame);
     }
-/*    // JPEG Baseline lossy process 1 (8 bit)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.50" )
+    // JPEG Baseline lossy process 1 (8 bit)
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
     {
-      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame);
     }
     // JPEG Baseline lossy process 2 & 4 (12 bit)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.51" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.51")
     {
-      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame);
     }
     // JPEG Lossless, Nonhierarchical (Processes 14)
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.57" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.57")
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame);
     }
     // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.70" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.70" )
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame);
     }
     // JPEG-LS Lossless Image Compression
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.80" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.80" )
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame);
     }
     // JPEG-LS Lossy (Near-Lossless) Image Compression
-    else if ( transferSyntax === "1.2.840.10008.1.2.4.81" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.81" )
     {
-      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame);
     }
-    // JPEG 2000 Lossless
-    else if(transferSyntax === "1.2.840.10008.1.2.4.90")
+     // JPEG 2000 Lossless
+    else if(imageFrame.transferSyntax === "1.2.840.10008.1.2.4.90")
     {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame);
     }
     // JPEG 2000 Lossy
-    else if(transferSyntax === "1.2.840.10008.1.2.4.91")
+    else if(imageFrame.transferSyntax === "1.2.840.10008.1.2.4.91")
     {
-      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame);
     }
     /* Don't know if these work...
      // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)

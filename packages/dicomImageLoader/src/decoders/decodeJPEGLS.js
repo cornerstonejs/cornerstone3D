@@ -78,7 +78,7 @@
     return image;
   }
 
-  function decodeJPEGLS(dataSet, frame)
+  function decodeJPEGLS(imageFrame)
   {
     // check to make sure codec is loaded
     if(typeof CharLS === 'undefined') {
@@ -94,14 +94,7 @@
       }
     }
 
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    var isSigned = pixelRepresentation !== 0;
-
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
-
-    var image = jpegLSDecode(encodedImageFrame, isSigned);
+    var image = jpegLSDecode(imageFrame.pixelData, imageFrame.pixelRepresentation === 1);
     //console.log(image);
 
     // throw error if not success or too much data
@@ -109,15 +102,10 @@
       throw 'JPEG-LS decoder failed to decode frame (error code ' + image.result + ')';
     }
 
-    // Sanity check the size
-    if(image.width !== width) {
-      throw 'JPEG-LS decoder returned width of ' + image.width + ', when ' + width + ' is expected';
-    }
-    if(image.height !== height) {
-      throw 'JPEG-LS decoder returned width of ' + image.height + ', when ' + height + ' is expected';
-    }
-
-    return image.pixelData;
+    imageFrame.columns = image.width;
+    imageFrame.rows = image.height;
+    imageFrame.pixelData = image.pixelData;
+    return imageFrame;
   }
 
   // module exports

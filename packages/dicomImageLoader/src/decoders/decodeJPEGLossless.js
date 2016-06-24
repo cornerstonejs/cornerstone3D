@@ -1,7 +1,7 @@
 "use strict";
 (function (cornerstoneWADOImageLoader) {
 
-  function decodeJPEGLossless(dataSet, frame) {
+  function decodeJPEGLossless(imageFrame) {
     // check to make sure codec is loaded
     if(typeof jpeg === 'undefined' ||
       typeof jpeg.lossless === 'undefined' ||
@@ -9,23 +9,24 @@
       throw 'No JPEG Lossless decoder loaded';
     }
 
-    var bitsAllocated = dataSet.uint16('x00280100');
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
-    var byteOutput = bitsAllocated <= 8 ? 1 : 2;
+    var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
     //console.time('jpeglossless');
+    var buffer = imageFrame.pixelData.buffer;
     var decoder = new jpeg.lossless.Decoder();
-    var decompressedData = decoder.decode(encodedImageFrame.buffer, encodedImageFrame.byteOffset, encodedImageFrame.length, byteOutput);
+    var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
     //console.timeEnd('jpeglossless');
-    if (pixelRepresentation === 0) {
-      if (byteOutput === 2) {
-        return new Uint16Array(decompressedData.buffer);
+    if (imageFrame.pixelRepresentation === 0) {
+      if (imageFrame.bitsAllocated === 16) {
+        imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
+        return imageFrame;
       } else {
         // untested!
-        return new Uint8Array(decompressedData.buffer);
+        imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
+        return imageFrame;
       }
     } else {
-      return new Int16Array(decompressedData.buffer);
+      imageFrame.pixelData = new Int16Array(decompressedData.buffer);
+      return imageFrame;
     }
   }
   // module exports
