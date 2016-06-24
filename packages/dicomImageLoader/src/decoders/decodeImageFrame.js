@@ -1,36 +1,32 @@
-(function (cornerstoneWADOImageLoader) {
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
 
-  function decodeTransferSyntax(dataSet, frame) {
-    var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
-    return cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
-    /*
-
-    var transferSyntax = dataSet.string('x00020010');
-
+  function decodeImageFrame(imageFrame) {
     // Implicit VR Little Endian
-    if( transferSyntax === "1.2.840.10008.1.2") {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame);
+    if( imageFrame.transferSyntax === "1.2.840.10008.1.2") {
+      return imageFrame;
     }
     // Explicit VR Little Endian
-    else if( transferSyntax === "1.2.840.10008.1.2.1") {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame);
+    else if( imageFrame.transferSyntax === "1.2.840.10008.1.2.1") {
+      return imageFrame;
     }
     // Explicit VR Big Endian (retired)
-    else if ( transferSyntax === "1.2.840.10008.1.2.2" ) {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
+    else if ( imageFrame.transferSyntax === "1.2.840.10008.1.2.2" ) {
+      return cornerstoneWADOImageLoader.decodeBigEndian(imageFrame);
     }
     // Deflate transfer syntax (deflated by dicomParser)
-    else if(transferSyntax === '1.2.840.10008.1.2.1.99') {
-      return cornerstoneWADOImageLoader.extractUncompressedPixels(dataSet, frame, true);
+    else if(imageFrame.transferSyntax === '1.2.840.10008.1.2.1.99') {
+      return imageFrame;
     }
     // RLE Lossless
-    else if ( transferSyntax === "1.2.840.10008.1.2.5" )
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.5" )
     {
-      return cornerstoneWADOImageLoader.decodeRLE( dataSet, frame);
+      return cornerstoneWADOImageLoader.decodeRLE(imageFrame);
     }
-    // JPEG Baseline lossy process 1 (8 bit)
+/*    // JPEG Baseline lossy process 1 (8 bit)
     else if ( transferSyntax === "1.2.840.10008.1.2.4.50" )
     {
       return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
@@ -81,6 +77,7 @@
      {
      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
      }
+     */
     else
     {
       if(console && console.log) {
@@ -88,11 +85,9 @@
       }
       throw "no decoder for transfer syntax " + transferSyntax;
     }
-     */
+   
 
   }
 
-  // module exports
-  cornerstoneWADOImageLoader.decodeTransferSyntax = decodeTransferSyntax;
-
-}(cornerstoneWADOImageLoader));
+  cornerstoneWADOImageLoader.decodeImageFrame = decodeImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));

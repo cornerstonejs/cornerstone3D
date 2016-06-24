@@ -48,8 +48,8 @@
         var storedPixelData;
         var imageFrame;
         try {
-          storedPixelData = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
-          //storedPixelData = imageFrame.storedPixelData;
+          imageFrame =  cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+          storedPixelData = imageFrame.pixelData;
         }
         catch(err) {
           deferred.reject(err);

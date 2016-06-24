@@ -15,7 +15,7 @@
 
         var decodedImageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
 
-        return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame);
+        return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame.pixelData);
     }
 
     function makeColorImage(imageId, dataSet, frame, sharedCacheKey) {

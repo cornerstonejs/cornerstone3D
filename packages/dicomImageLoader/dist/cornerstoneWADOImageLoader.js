@@ -476,6 +476,126 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   };
 
 }(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  function swap16(val) {
+    return ((val & 0xFF) << 8)
+      | ((val >> 8) & 0xFF);
+  }
+
+
+  function decodeBigEndian(imageFrame) {
+    if(imageFrame.bitsAllocated === 8) {
+      return imageFrame;
+    }
+    else if(imageFrame.bitsAllocated === 16) {
+      for(var i=0; i < imageFrame.pixelData.length; i++) {
+        imageFrame[i] = swap16(imageFrame.pixelData[i]);
+      }
+      return imageFrame;
+    }
+    throw 'unsupported bits allocated for big endian transfer syntax';
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.decodeBigEndian = decodeBigEndian;
+
+}(cornerstoneWADOImageLoader));
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function decodeImageFrame(imageFrame) {
+    // Implicit VR Little Endian
+    if( imageFrame.transferSyntax === "1.2.840.10008.1.2") {
+      return imageFrame;
+    }
+    // Explicit VR Little Endian
+    else if( imageFrame.transferSyntax === "1.2.840.10008.1.2.1") {
+      return imageFrame;
+    }
+    // Explicit VR Big Endian (retired)
+    else if ( imageFrame.transferSyntax === "1.2.840.10008.1.2.2" ) {
+      return cornerstoneWADOImageLoader.decodeBigEndian(imageFrame);
+    }
+    // Deflate transfer syntax (deflated by dicomParser)
+    else if(imageFrame.transferSyntax === '1.2.840.10008.1.2.1.99') {
+      return imageFrame;
+    }
+    // RLE Lossless
+    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.5" )
+    {
+      return cornerstoneWADOImageLoader.decodeRLE(imageFrame);
+    }
+/*    // JPEG Baseline lossy process 1 (8 bit)
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.50" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
+    }
+    // JPEG Baseline lossy process 2 & 4 (12 bit)
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.51" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGBaseline(dataSet, frame);
+    }
+    // JPEG Lossless, Nonhierarchical (Processes 14)
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.57" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+    }
+    // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.70" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLossless(dataSet, frame);
+    }
+    // JPEG-LS Lossless Image Compression
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.80" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+    }
+    // JPEG-LS Lossy (Near-Lossless) Image Compression
+    else if ( transferSyntax === "1.2.840.10008.1.2.4.81" )
+    {
+      return cornerstoneWADOImageLoader.decodeJPEGLS(dataSet, frame);
+    }
+    // JPEG 2000 Lossless
+    else if(transferSyntax === "1.2.840.10008.1.2.4.90")
+    {
+      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+    }
+    // JPEG 2000 Lossy
+    else if(transferSyntax === "1.2.840.10008.1.2.4.91")
+    {
+      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+    }
+    /* Don't know if these work...
+     // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
+     else if(transferSyntax === "1.2.840.10008.1.2.4.92")
+     {
+     return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+     }
+     // JPEG 2000 Part 2 Multicomponent Image Compression
+     else if(transferSyntax === "1.2.840.10008.1.2.4.93")
+     {
+     return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+     }
+     */
+    else
+    {
+      if(console && console.log) {
+        console.log("Image cannot be decoded due to Unsupported transfer syntax " + transferSyntax);
+      }
+      throw "no decoder for transfer syntax " + transferSyntax;
+    }
+   
+
+  }
+
+  cornerstoneWADOImageLoader.decodeImageFrame = decodeImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
@@ -1029,6 +1149,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   "use strict";
 
   function decodeTransferSyntax(dataSet, frame) {
+    var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
+    return cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
+    /*
+
     var transferSyntax = dataSet.string('x00020010');
 
     // Implicit VR Little Endian
@@ -1103,7 +1227,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
      {
      return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
      }
-     */
     else
     {
       if(console && console.log) {
@@ -1111,6 +1234,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       }
       throw "no decoder for transfer syntax " + transferSyntax;
     }
+     */
+
   }
 
   // module exports
@@ -1184,6 +1309,54 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
+  function isMultiFrame(imageFrame) {
+    return imageFrame.numberOfFrames > 1;
+  }
+
+  function isFragmented(imageFrame, pixelDataElement) {
+    if(imageFrame.numberOfFrames != pixelDataElement.fragments.length) {
+      return true;
+    }
+  }
+
+  function getEncodedImageFrameEmptyBasicOffsetTable(dataSet, imageFrame, pixelDataElement, frameIndex) {
+
+    if(isMultiFrame(imageFrame)) {
+      if(isFragmented(imageFrame)) {
+        // decoding multi-frame with an empty basic offset table requires parsing the fragments
+        // to find frame boundaries.
+        throw 'multi-frame sop instance with no basic offset table is not currently supported';
+      }
+
+      // not fragmented, a frame maps to the fragment
+      return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, frameIndex);
+    }
+
+    // Single frame - all fragments are for the one image frame
+    var startFragment = 0;
+    var numFragments = pixelDataElement.fragments.length;
+    return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, pixelDataElement, startFragment, numFragments);
+  }
+
+  function getEncapsulatedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex) {
+    // Empty basic offset table
+    if(!pixelDataElement.basicOffsetTable.length) {
+      imageFrame.pixelData = getEncodedImageFrameEmptyBasicOffsetTable(dataSet, pixelDataElement, frameIndex);
+      return imageFrame;
+    }
+
+    // Basic Offset Table is not empty
+    return dicomParser.readEncapsulatedImageFrame(dataSet, pixelDataElement, frameIndex);
+  }
+  cornerstoneWADOImageLoader.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ * Function to deal with extracting an image frame from an encapsulated data set.
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
   function isMultiFrame(dataSet) {
     var numberOfFrames = dataSet.intString('x00280008');
     return numberOfFrames > 1;
@@ -1227,6 +1400,76 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
   }
   cornerstoneWADOImageLoader.getEncodedImageFrame = getEncodedImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getRawImageFrame(dataSet, frameIndex) {
+    var imageFrame = {
+      transferSyntax : dataSet.string('x00020010'),
+      samplesPerPixel : dataSet.uint16('x00280002'),
+      photometricInterpretation : dataSet.string('x00280004'),
+      planarConfiguration : dataSet.uint16('x00280006'),
+      numberOfFrames : dataSet.intString('x00280008'),
+      rows : dataSet.uint16('x00280010'),
+      columns : dataSet.uint16('x00280011'),
+      bitsAllocated : dataSet.uint16('x00280100'),
+      pixelRepresentation : dataSet.uint16('x00280103'), // 0 = unsigned,
+      pixelData: undefined
+    };
+
+    var pixelDataElement = dataSet.elements.x7fe00010;
+
+    if(pixelDataElement.encapsulatedPixelData) {
+      return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex);
+    } else {
+      return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex);
+    }
+  }
+
+  cornerstoneWADOImageLoader.getRawImageFrame = getRawImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ * Function to deal with extracting an image frame from an encapsulated data set.
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getUncompressedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex) {
+
+    var pixelDataOffset = pixelDataElement.dataOffset;
+    var frameSize = imageFrame.rows * imageFrame.columns * imageFrame.samplesPerPixel;
+
+    if(imageFrame.bitsAllocated === 8) {
+      var frameOffset = pixelDataOffset + frameIndex * frameSize;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
+      imageFrame.pixelData = new Uint8Array(dataSet.byteArray.buffer, frameOffset, frameSize);
+      return imageFrame;
+    }
+    else if(imageFrame.bitsAllocated === 16) {
+      var frameOffset = pixelDataOffset + frameIndex * frameSize * 2;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
+      if(imageFrame.pixelRepresentation === 0) {
+        imageFrame.pixelData = new Uint16Array(dataSet.byteArray.buffer, frameOffset, frameSize);
+        return imageFrame;
+      } else {
+        imageFrame.pixelData = new Int16Array(dataSet.byteArray.buffer, frameOffset, frameSize);
+        return imageFrame;
+      }
+    }
+
+    throw 'unsupported pixel format';
+  }
+
+  cornerstoneWADOImageLoader.getUncompressedImageFrame = getUncompressedImageFrame;
 }($, cornerstone, cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
@@ -1781,7 +2024,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
         var decodedImageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
 
-        return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame);
+        return cornerstoneWADOImageLoader.convertColorSpace(canvas, dataSet, decodedImageFrame.pixelData);
     }
 
     function makeColorImage(imageId, dataSet, frame, sharedCacheKey) {
@@ -1933,8 +2176,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         var storedPixelData;
         var imageFrame;
         try {
-          storedPixelData = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
-          //storedPixelData = imageFrame.storedPixelData;
+          imageFrame =  cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+          storedPixelData = imageFrame.pixelData;
         }
         catch(err) {
           deferred.reject(err);
