@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-06-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-06-24 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -760,6 +760,40 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 "use strict";
 (function (cornerstoneWADOImageLoader) {
 
+  function decodeJPEGLossless(dataSet, frame) {
+    // check to make sure codec is loaded
+    if(typeof jpeg === 'undefined' ||
+      typeof jpeg.lossless === 'undefined' ||
+      typeof jpeg.lossless.Decoder === 'undefined') {
+      throw 'No JPEG Lossless decoder loaded';
+    }
+
+    var bitsAllocated = dataSet.uint16('x00280100');
+    var pixelRepresentation = dataSet.uint16('x00280103');
+    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
+    var byteOutput = bitsAllocated <= 8 ? 1 : 2;
+    //console.time('jpeglossless');
+    var decoder = new jpeg.lossless.Decoder();
+    var decompressedData = decoder.decode(encodedImageFrame.buffer, encodedImageFrame.byteOffset, encodedImageFrame.length, byteOutput);
+    //console.timeEnd('jpeglossless');
+    if (pixelRepresentation === 0) {
+      if (byteOutput === 2) {
+        return new Uint16Array(decompressedData.buffer);
+      } else {
+        // untested!
+        return new Uint8Array(decompressedData.buffer);
+      }
+    } else {
+      return new Int16Array(decompressedData.buffer);
+    }
+  }
+  // module exports
+  cornerstoneWADOImageLoader.decodeJPEGLossless = decodeJPEGLossless;
+
+}(cornerstoneWADOImageLoader));
+"use strict";
+(function (cornerstoneWADOImageLoader) {
+
 
   var charLS;
 
@@ -881,40 +915,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   // module exports
   cornerstoneWADOImageLoader.decodeJPEGLS = decodeJPEGLS;
-
-}(cornerstoneWADOImageLoader));
-"use strict";
-(function (cornerstoneWADOImageLoader) {
-
-  function decodeJPEGLossless(dataSet, frame) {
-    // check to make sure codec is loaded
-    if(typeof jpeg === 'undefined' ||
-      typeof jpeg.lossless === 'undefined' ||
-      typeof jpeg.lossless.Decoder === 'undefined') {
-      throw 'No JPEG Lossless decoder loaded';
-    }
-
-    var bitsAllocated = dataSet.uint16('x00280100');
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
-    var byteOutput = bitsAllocated <= 8 ? 1 : 2;
-    //console.time('jpeglossless');
-    var decoder = new jpeg.lossless.Decoder();
-    var decompressedData = decoder.decode(encodedImageFrame.buffer, encodedImageFrame.byteOffset, encodedImageFrame.length, byteOutput);
-    //console.timeEnd('jpeglossless');
-    if (pixelRepresentation === 0) {
-      if (byteOutput === 2) {
-        return new Uint16Array(decompressedData.buffer);
-      } else {
-        // untested!
-        return new Uint8Array(decompressedData.buffer);
-      }
-    } else {
-      return new Int16Array(decompressedData.buffer);
-    }
-  }
-  // module exports
-  cornerstoneWADOImageLoader.decodeJPEGLossless = decodeJPEGLossless;
 
 }(cornerstoneWADOImageLoader));
 /**
@@ -1933,8 +1933,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         var storedPixelData;
         var imageFrame;
         try {
-          imageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
-          storedPixelData = imageFrame.storedPixelData;
+          storedPixelData = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+          //storedPixelData = imageFrame.storedPixelData;
         }
         catch(err) {
           deferred.reject(err);

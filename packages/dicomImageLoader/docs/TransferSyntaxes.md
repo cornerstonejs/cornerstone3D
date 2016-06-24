@@ -49,12 +49,12 @@ another based on [PDF.js](https://mozilla.github.io/pdf.js/)
 
 For JPEG 2000 (.90, .91) support, you must load one of the following (see below for more information):
 
-1. [OpenJPEG based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/libopenjpeg.js)
+1. [OpenJPEG based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/openJPEG-FixedMemory.js)
 2. [PDF.js based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/jpx.min.js)
 
 For JPEG-LS (.80, .81) support, you must load the following:
 
-1. [CharLS Based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/libCharLS.js)
+1. [CharLS Based codec](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/codecs/charLS-FixedMemory-browser.js)
 
 For JPEG Lossless (.57) support, you must load the following:
 
