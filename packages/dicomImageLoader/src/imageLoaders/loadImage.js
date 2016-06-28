@@ -38,6 +38,8 @@
   }
 
   function loadImage(imageId) {
+    var start = new Date().getTime();
+
     var parsedImageId = cornerstoneWADOImageLoader.parseImageId(imageId);
 
     var loader = getLoaderForScheme(parsedImageId.scheme);
@@ -59,6 +61,8 @@
       var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, parsedImageId.frame);
       imagePromise.then(function(image) {
         addDecache(image);
+        var end = new Date().getTime();
+        image.loadTimeInMS = end - start;
         deferred.resolve(image);
       }, function(error) {
         deferred.reject(error);

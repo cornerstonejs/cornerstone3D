@@ -2,18 +2,6 @@
 
     "use strict";
 
-    function getBytesPerPixel(dataSet)
-    {
-        var pixelFormat = cornerstoneWADOImageLoader.getPixelFormat(dataSet);
-        if(pixelFormat ===1) {
-            return 1;
-        }
-        else if(pixelFormat ===2 || pixelFormat ===3){
-            return 2;
-        }
-        throw "unknown pixel format";
-    }
-
     function isModalityLUTForDisplay(dataSet) {
       // special case for XA and XRF
       // https://groups.google.com/forum/#!searchin/comp.protocols.dicom/Modality$20LUT$20XA/comp.protocols.dicom/UBxhOZ2anJ0/D0R_QP8V2wIJ
@@ -30,14 +18,6 @@
         var rows = dataSet.uint16('x00280010');
         var columns = dataSet.uint16('x00280011');
         var rescaleSlopeAndIntercept = cornerstoneWADOImageLoader.getRescaleSlopeAndIntercept(dataSet);
-
-        var bytesPerPixel;
-        try {
-            bytesPerPixel = getBytesPerPixel(dataSet);
-        } catch(error) {
-            deferred.reject(error);
-            return deferred.promise();
-        }
 
         var sizeInBytes = dataSet.byteArray.length;
         var photometricInterpretation = dataSet.string('x00280004');
@@ -84,7 +64,8 @@
             data: dataSet,
             invert: invert,
             sizeInBytes: sizeInBytes,
-            sharedCacheKey: sharedCacheKey
+            sharedCacheKey: sharedCacheKey,
+            decodeTimeInMS : imageFrame.decodeTimeInMS
         };
 
         var pixelRepresentation = dataSet.uint16('x00280103');
