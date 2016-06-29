@@ -5,7 +5,7 @@
   "use strict";
 
   function decodeImageFrame(imageFrame) {
-``    
+
     var start = new Date().getTime();
 
     // Implicit VR Little Endian

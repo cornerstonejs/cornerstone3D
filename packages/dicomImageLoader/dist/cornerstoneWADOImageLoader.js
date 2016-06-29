@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-06-25 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-06-29 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -487,7 +487,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   "use strict";
 
   function decodeImageFrame(imageFrame) {
-    
+
     var start = new Date().getTime();
 
     // Implicit VR Little Endian
@@ -641,7 +641,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     // Copy the data from the EMSCRIPTEN heap into the correct type array
     var length = image.sx*image.sy*image.nbChannels;
-    var src32 = new Uint32Array(openJPEG.HEAP32.buffer, imagePtr, length);
+    var src32 = new Int32Array(openJPEG.HEAP32.buffer, imagePtr, length);
     if(bytesPerPixel === 1) {
       if(Uint8Array.from) {
         image.pixelData = Uint8Array.from(src32);
@@ -697,6 +697,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     imageFrame.columns = image.sx;
     imageFrame.rows = image.sy;
     imageFrame.pixelData = image.pixelData;
+    imageFrame.photometricInterpretation = "RGB";
     return imageFrame;
   }
 
@@ -778,22 +779,11 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
   }
 
-  function decodeJPEGBaseline8Bit(canvas, dataSet, frame) {
+  function decodeJPEGBaseline8Bit(imageFrame, canvas) {
+    var start = new Date().getTime();
     var deferred = $.Deferred();
 
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    // resize the canvas
-    canvas.height = height;
-    canvas.width = width;
-
-    var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
-
-    imageFrame = cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, frame);
-    //var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
-    var encodedImageFrame = imageFrame.pixelData;
-    
-    var imgBlob = new Blob([encodedImageFrame], {type: "image/jpeg"});
+    var imgBlob = new Blob([imageFrame.pixelData], {type: "image/jpeg"});
 
     var r = new FileReader();
     if(r.readAsBinaryString === undefined) {
@@ -806,9 +796,15 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     r.onload = function(){
       var img=new Image();
       img.onload = function() {
+        canvas.height = img.height;
+        canvas.width = img.width;
+        imageFrame.rows = img.height;
+        imageFrame.columns = img.width;
         var context = canvas.getContext('2d');
         context.drawImage(this, 0, 0);
-        var imageData = context.getImageData(0, 0, width, height);
+        var imageData = context.getImageData(0, 0, img.width, img.height);
+        var end = new Date().getTime();
+        imageFrame.decodeTimeInMS = end - start;
         deferred.resolve(imageData);
       };
       img.onerror = function(error) {
@@ -825,12 +821,9 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return deferred.promise();
   }
 
-  function isJPEGBaseline8Bit(dataSet) {
-    var transferSyntax = dataSet.string('x00020010');
-    var bitsAllocated = dataSet.uint16('x00280100');
-
-    if((bitsAllocated === 8) &&
-      transferSyntax === "1.2.840.10008.1.2.4.50")
+  function isJPEGBaseline8Bit(imageFrame) {
+    if((imageFrame.bitsAllocated === 8) &&
+      imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
     {
       return true;
     }
@@ -1811,15 +1804,14 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function extractStoredPixels(dataSet, frame) {
-
+    function extractStoredPixels(imageFrame) {
         // special case for JPEG Baseline 8 bit
-        if(cornerstoneWADOImageLoader.isJPEGBaseline8Bit(dataSet) === true)
+        if(cornerstoneWADOImageLoader.isJPEGBaseline8Bit(imageFrame) === true)
         {
-          return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(canvas, dataSet, frame);
+            return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, canvas);
         }
 
-        var imageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+        imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
 
         // setup the canvas context
         canvas.height = imageFrame.rows;
@@ -1849,9 +1841,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         var deferred = $.Deferred();
 
         // Decompress and decode the pixel data for this image
+        var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
         var imageDataPromise;
         try {
-          imageDataPromise = extractStoredPixels(dataSet, frame);
+          imageDataPromise = extractStoredPixels(imageFrame);
         }
         catch(err) {
           deferred.reject(err);
@@ -1903,7 +1896,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
                 data: dataSet,
                 invert: false,
                 sizeInBytes: sizeInBytes,
-                sharedCacheKey: sharedCacheKey
+                sharedCacheKey: sharedCacheKey,
+                decodeTimeInMS : imageFrame.decodeTimeInMS
             };
 
           if(image.windowCenter === undefined || isNaN(image.windowCenter) ||
@@ -2013,7 +2007,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
           if(image.minPixelValue * image.slope + image.intercept < 0) {
             pixelRepresentation = 1;
           }
-          image.voiLUT = getLUT(pixelRepresentation, dataSet.elements.x00283010.items[0].dataSet);
+          image.voiLUT = cornerstoneWADOImageLoader.getLUT(pixelRepresentation, dataSet.elements.x00283010.items[0].dataSet);
         }
 
         // TODO: deal with pixel padding and all of the various issues by setting it to min pixel value (or lower)

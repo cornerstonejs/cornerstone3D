@@ -5,15 +5,14 @@
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function extractStoredPixels(dataSet, frame) {
-
+    function extractStoredPixels(imageFrame) {
         // special case for JPEG Baseline 8 bit
-        if(cornerstoneWADOImageLoader.isJPEGBaseline8Bit(dataSet) === true)
+        if(cornerstoneWADOImageLoader.isJPEGBaseline8Bit(imageFrame) === true)
         {
-          return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(canvas, dataSet, frame);
+            return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, canvas);
         }
 
-        var imageFrame = cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+        imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
 
         // setup the canvas context
         canvas.height = imageFrame.rows;
@@ -43,9 +42,10 @@
         var deferred = $.Deferred();
 
         // Decompress and decode the pixel data for this image
+        var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
         var imageDataPromise;
         try {
-          imageDataPromise = extractStoredPixels(dataSet, frame);
+          imageDataPromise = extractStoredPixels(imageFrame);
         }
         catch(err) {
           deferred.reject(err);
@@ -97,7 +97,8 @@
                 data: dataSet,
                 invert: false,
                 sizeInBytes: sizeInBytes,
-                sharedCacheKey: sharedCacheKey
+                sharedCacheKey: sharedCacheKey,
+                decodeTimeInMS : imageFrame.decodeTimeInMS
             };
 
           if(image.windowCenter === undefined || isNaN(image.windowCenter) ||

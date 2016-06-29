@@ -82,7 +82,7 @@
           if(image.minPixelValue * image.slope + image.intercept < 0) {
             pixelRepresentation = 1;
           }
-          image.voiLUT = getLUT(pixelRepresentation, dataSet.elements.x00283010.items[0].dataSet);
+          image.voiLUT = cornerstoneWADOImageLoader.getLUT(pixelRepresentation, dataSet.elements.x00283010.items[0].dataSet);
         }
 
         // TODO: deal with pixel padding and all of the various issues by setting it to min pixel value (or lower)

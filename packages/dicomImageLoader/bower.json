@@ -13,7 +13,7 @@
         ".gitignore"
     ],
     "dependencies": {
-      "dicomParser" : "~1.7.0",
+      "dicomParser" : "~1.7.2",
       "cornerstone": "~0.9.0",
       "jquery" : "~2.1.1",
       "image-jpeg2000" : "~0.3.1"

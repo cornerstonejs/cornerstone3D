@@ -24,22 +24,11 @@
     }
   }
 
-  function decodeJPEGBaseline8Bit(canvas, dataSet, frame) {
+  function decodeJPEGBaseline8Bit(imageFrame, canvas) {
+    var start = new Date().getTime();
     var deferred = $.Deferred();
 
-    var height = dataSet.uint16('x00280010');
-    var width = dataSet.uint16('x00280011');
-    // resize the canvas
-    canvas.height = height;
-    canvas.width = width;
-
-    var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
-
-    imageFrame = cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, frame);
-    //var encodedImageFrame = cornerstoneWADOImageLoader.getEncodedImageFrame(dataSet, frame);
-    var encodedImageFrame = imageFrame.pixelData;
-    
-    var imgBlob = new Blob([encodedImageFrame], {type: "image/jpeg"});
+    var imgBlob = new Blob([imageFrame.pixelData], {type: "image/jpeg"});
 
     var r = new FileReader();
     if(r.readAsBinaryString === undefined) {
@@ -52,9 +41,15 @@
     r.onload = function(){
       var img=new Image();
       img.onload = function() {
+        canvas.height = img.height;
+        canvas.width = img.width;
+        imageFrame.rows = img.height;
+        imageFrame.columns = img.width;
         var context = canvas.getContext('2d');
         context.drawImage(this, 0, 0);
-        var imageData = context.getImageData(0, 0, width, height);
+        var imageData = context.getImageData(0, 0, img.width, img.height);
+        var end = new Date().getTime();
+        imageFrame.decodeTimeInMS = end - start;
         deferred.resolve(imageData);
       };
       img.onerror = function(error) {
@@ -71,12 +66,9 @@
     return deferred.promise();
   }
 
-  function isJPEGBaseline8Bit(dataSet) {
-    var transferSyntax = dataSet.string('x00020010');
-    var bitsAllocated = dataSet.uint16('x00280100');
-
-    if((bitsAllocated === 8) &&
-      transferSyntax === "1.2.840.10008.1.2.4.50")
+  function isJPEGBaseline8Bit(imageFrame) {
+    if((imageFrame.bitsAllocated === 8) &&
+      imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
     {
       return true;
     }

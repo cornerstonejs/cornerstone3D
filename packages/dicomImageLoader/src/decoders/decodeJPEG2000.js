@@ -59,7 +59,7 @@
 
     // Copy the data from the EMSCRIPTEN heap into the correct type array
     var length = image.sx*image.sy*image.nbChannels;
-    var src32 = new Uint32Array(openJPEG.HEAP32.buffer, imagePtr, length);
+    var src32 = new Int32Array(openJPEG.HEAP32.buffer, imagePtr, length);
     if(bytesPerPixel === 1) {
       if(Uint8Array.from) {
         image.pixelData = Uint8Array.from(src32);
@@ -115,6 +115,7 @@
     imageFrame.columns = image.sx;
     imageFrame.rows = image.sy;
     imageFrame.pixelData = image.pixelData;
+    imageFrame.photometricInterpretation = "RGB";
     return imageFrame;
   }
 
