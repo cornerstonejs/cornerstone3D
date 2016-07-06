@@ -13,12 +13,8 @@
 
     var fileReader = new FileReader();
     fileReader.onload = function (e) {
-      // Parse the DICOM File
       var dicomPart10AsArrayBuffer = e.target.result;
-      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-      var dataSet = dicomParser.parseDicom(byteArray);
-
-      deferred.resolve(dataSet);
+      deferred.resolve(dicomPart10AsArrayBuffer);
     };
     fileReader.readAsArrayBuffer(file);
 

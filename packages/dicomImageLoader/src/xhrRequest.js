@@ -2,27 +2,26 @@
 
   "use strict";
 
-  function xhrRequest(url, imageId) {
-
+  function xhrRequest(url, imageId, headers) {
+    headers = headers || {};
+    
     var deferred = $.Deferred();
 
     // Make the request for the DICOM P10 SOP Instance
     var xhr = new XMLHttpRequest();
     xhr.open("get", url, true);
     xhr.responseType = "arraybuffer";
-      cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
+    cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
+    Object.keys(headers).forEach(function (key) {
+      xhr.setRequestHeader(key, headers[key]);
+    });
+    
+    // handle response data
     xhr.onreadystatechange = function (oEvent) {
       // TODO: consider sending out progress messages here as we receive the pixel data
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
-          // request succeeded, create an image object and resolve the deferred
-
-          // Parse the DICOM File
-          var dicomPart10AsArrayBuffer = xhr.response;
-          var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-          var dataSet = dicomParser.parseDicom(byteArray);
-
-          deferred.resolve(dataSet);
+          deferred.resolve(xhr.response, xhr);
         }
         else {
           // request failed, reject the deferred

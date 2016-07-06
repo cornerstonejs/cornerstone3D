@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-06-29 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-07-06 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -45,7 +45,9 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey) {
     var deferred = $.Deferred();
-    xhrRequestPromise.then(function(dataSet) {
+    xhrRequestPromise.then(function(dicomPart10AsArrayBuffer, xhr) {
+      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+      var dataSet = dicomParser.parseDicom(byteArray);
       var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame, sharedCacheKey);
       imagePromise.then(function(image) {
         addDecache(image);
@@ -88,7 +90,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     // not multiframe, load it directly and let cornerstone cache manager its lifetime
     var deferred = $.Deferred();
     var xhrRequestPromise =  loader(parsedImageId.url, imageId);
-    xhrRequestPromise.then(function(dataSet) {
+    xhrRequestPromise.then(function(dicomPart10AsArrayBuffer, xhr) {
+      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+      var dataSet = dicomParser.parseDicom(byteArray);
+
       var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, parsedImageId.frame);
       imagePromise.then(function(image) {
         addDecache(image);
@@ -1511,12 +1516,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     var fileReader = new FileReader();
     fileReader.onload = function (e) {
-      // Parse the DICOM File
       var dicomPart10AsArrayBuffer = e.target.result;
-      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-      var dataSet = dicomParser.parseDicom(byteArray);
-
-      deferred.resolve(dataSet);
+      deferred.resolve(dicomPart10AsArrayBuffer);
     };
     fileReader.readAsArrayBuffer(file);
 
@@ -1609,59 +1610,50 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return str;
   };
 
-  cornerstoneWADOImageLoader.internal.getImageFrame = function(uri, mediaType) {
+  cornerstoneWADOImageLoader.internal.getImageFrame = function(uri, imageId, mediaType) {
     mediaType = mediaType || 'application/octet-stream';
+    var headers = {
+      accept : mediaType
+    };
 
     var deferred = $.Deferred();
 
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = "arraybuffer";
-    xhr.open("get", uri, true);
-    xhr.setRequestHeader('Accept', 'multipart/related;type=' + mediaType);
-    xhr.onreadystatechange = function (oEvent) {
-      // TODO: consider sending out progress messages here as we receive the pixel data
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          // request succeeded, Parse the multi-part mime response
-          var imageFrameAsArrayBuffer = xhr.response;
-          var response = new Uint8Array(xhr.response);
-          // First look for the multipart mime header
-          var tokenIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, '\n\r\n');
-          if(tokenIndex === -1) {
-            deferred.reject('invalid response - no multipart mime header');
-          }
-          var header = uint8ArrayToString(response, 0, tokenIndex);
-          // Now find the boundary  marker
-          var split = header.split('\r\n');
-          var boundary = findBoundary(split);
-          if(!boundary) {
-            deferred.reject('invalid response - no boundary marker')
-          }
-          var offset = tokenIndex + 4; // skip over the \n\r\n
+    var loadPromise = cornerstoneWADOImageLoader.internal.xhrRequest(uri, imageId, headers);
+    loadPromise.then(function(imageFrameAsArrayBuffer, xhr) {
 
-          // find the terminal boundary marker
-          var endIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, boundary, offset);
-          if(endIndex === -1) {
-            deferred.reject('invalid response - terminating boundary not found');
-          }
-          // return the info for this pixel data
-          var length = endIndex - offset - 1;
-          deferred.resolve({
-            contentType: findContentType(split),
-            arrayBuffer: imageFrameAsArrayBuffer,
-            offset: offset,
-            length: length
-          });
-        }
-        else {
-          // request failed, reject the deferred
-          deferred.reject(xhr.response);
-        }
+      // request succeeded, Parse the multi-part mime response
+      var response = new Uint8Array(imageFrameAsArrayBuffer);
+
+      // First look for the multipart mime header
+      var tokenIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, '\n\r\n');
+      if(tokenIndex === -1) {
+        deferred.reject('invalid response - no multipart mime header');
       }
-    };
-    xhr.send();
+      var header = uint8ArrayToString(response, 0, tokenIndex);
+      // Now find the boundary  marker
+      var split = header.split('\r\n');
+      var boundary = findBoundary(split);
+      if(!boundary) {
+        deferred.reject('invalid response - no boundary marker')
+      }
+      var offset = tokenIndex + 3; // skip over the \n\r\n
 
-    return deferred.promise();
+      // find the terminal boundary marker
+      var endIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, boundary, offset);
+      if(endIndex === -1) {
+        deferred.reject('invalid response - terminating boundary not found');
+      }
+      // return the info for this pixel data
+      var length = endIndex - offset;
+      deferred.resolve({
+        contentType: findContentType(split),
+        arrayBuffer: imageFrameAsArrayBuffer,
+        offset: offset,
+        length: length
+      });
+    });
+    return deferred.promise();    
+
   };
 }(cornerstoneWADOImageLoader));
 /**
@@ -1703,7 +1695,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-
   function loadImage(imageId) {
     var deferred = $.Deferred();
     var index = imageId.substring(7);
@@ -1715,15 +1706,25 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     var mediaType;// = 'image/dicom+jp2';
 
-    cornerstoneWADOImageLoader.internal.getImageFrame(image.uri, mediaType).then(function(result) {
+    cornerstoneWADOImageLoader.internal.getImageFrame(image.uri, imageId, mediaType).then(function(result) {
       //console.log(result);
       // TODO: add support for retrieving compressed pixel data
       var storedPixelData;
       if(image.instance.bitsAllocated === 16) {
+        var arrayBuffer = result.arrayBuffer;
+        var offset = result.offset;
+
+        // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
+        // buffers on it
+        if(offset % 2) {
+          arrayBuffer = result.arrayBuffer.slice(result.offset);
+          offset = 0;
+        }
+
         if(image.instance.pixelRepresentation === 0) {
-          storedPixelData = new Uint16Array(result.arrayBuffer, result.offset, result.length / 2);
+          storedPixelData = new Uint16Array(arrayBuffer, offset, result.length / 2);
         } else {
-          storedPixelData = new Int16Array(result.arrayBuffer, result.offset, result.length / 2);
+          storedPixelData = new Int16Array(arrayBuffer, offset, result.length / 2);
         }
       } else if(image.instance.bitsAllocated === 8) {
         storedPixelData = new Uint8Array(result.arrayBuffer, result.offset, result.length);
@@ -2071,27 +2072,26 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function xhrRequest(url, imageId) {
-
+  function xhrRequest(url, imageId, headers) {
+    headers = headers || {};
+    
     var deferred = $.Deferred();
 
     // Make the request for the DICOM P10 SOP Instance
     var xhr = new XMLHttpRequest();
     xhr.open("get", url, true);
     xhr.responseType = "arraybuffer";
-      cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
+    cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
+    Object.keys(headers).forEach(function (key) {
+      xhr.setRequestHeader(key, headers[key]);
+    });
+    
+    // handle response data
     xhr.onreadystatechange = function (oEvent) {
       // TODO: consider sending out progress messages here as we receive the pixel data
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
-          // request succeeded, create an image object and resolve the deferred
-
-          // Parse the DICOM File
-          var dicomPart10AsArrayBuffer = xhr.response;
-          var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-          var dataSet = dicomParser.parseDicom(byteArray);
-
-          deferred.resolve(dataSet);
+          deferred.resolve(xhr.response, xhr);
         }
         else {
           // request failed, reject the deferred

@@ -14,7 +14,9 @@
 
   function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey) {
     var deferred = $.Deferred();
-    xhrRequestPromise.then(function(dataSet) {
+    xhrRequestPromise.then(function(dicomPart10AsArrayBuffer, xhr) {
+      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+      var dataSet = dicomParser.parseDicom(byteArray);
       var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, frame, sharedCacheKey);
       imagePromise.then(function(image) {
         addDecache(image);
@@ -57,7 +59,10 @@
     // not multiframe, load it directly and let cornerstone cache manager its lifetime
     var deferred = $.Deferred();
     var xhrRequestPromise =  loader(parsedImageId.url, imageId);
-    xhrRequestPromise.then(function(dataSet) {
+    xhrRequestPromise.then(function(dicomPart10AsArrayBuffer, xhr) {
+      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+      var dataSet = dicomParser.parseDicom(byteArray);
+
       var imagePromise = cornerstoneWADOImageLoader.createImageObject(dataSet, imageId, parsedImageId.frame);
       imagePromise.then(function(image) {
         addDecache(image);

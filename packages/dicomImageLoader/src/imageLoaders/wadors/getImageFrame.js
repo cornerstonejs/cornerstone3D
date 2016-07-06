@@ -30,58 +30,49 @@
     return str;
   };
 
-  cornerstoneWADOImageLoader.internal.getImageFrame = function(uri, mediaType) {
+  cornerstoneWADOImageLoader.internal.getImageFrame = function(uri, imageId, mediaType) {
     mediaType = mediaType || 'application/octet-stream';
+    var headers = {
+      accept : mediaType
+    };
 
     var deferred = $.Deferred();
 
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = "arraybuffer";
-    xhr.open("get", uri, true);
-    xhr.setRequestHeader('Accept', 'multipart/related;type=' + mediaType);
-    xhr.onreadystatechange = function (oEvent) {
-      // TODO: consider sending out progress messages here as we receive the pixel data
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          // request succeeded, Parse the multi-part mime response
-          var imageFrameAsArrayBuffer = xhr.response;
-          var response = new Uint8Array(xhr.response);
-          // First look for the multipart mime header
-          var tokenIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, '\n\r\n');
-          if(tokenIndex === -1) {
-            deferred.reject('invalid response - no multipart mime header');
-          }
-          var header = uint8ArrayToString(response, 0, tokenIndex);
-          // Now find the boundary  marker
-          var split = header.split('\r\n');
-          var boundary = findBoundary(split);
-          if(!boundary) {
-            deferred.reject('invalid response - no boundary marker')
-          }
-          var offset = tokenIndex + 4; // skip over the \n\r\n
+    var loadPromise = cornerstoneWADOImageLoader.internal.xhrRequest(uri, imageId, headers);
+    loadPromise.then(function(imageFrameAsArrayBuffer, xhr) {
 
-          // find the terminal boundary marker
-          var endIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, boundary, offset);
-          if(endIndex === -1) {
-            deferred.reject('invalid response - terminating boundary not found');
-          }
-          // return the info for this pixel data
-          var length = endIndex - offset - 1;
-          deferred.resolve({
-            contentType: findContentType(split),
-            arrayBuffer: imageFrameAsArrayBuffer,
-            offset: offset,
-            length: length
-          });
-        }
-        else {
-          // request failed, reject the deferred
-          deferred.reject(xhr.response);
-        }
+      // request succeeded, Parse the multi-part mime response
+      var response = new Uint8Array(imageFrameAsArrayBuffer);
+
+      // First look for the multipart mime header
+      var tokenIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, '\n\r\n');
+      if(tokenIndex === -1) {
+        deferred.reject('invalid response - no multipart mime header');
       }
-    };
-    xhr.send();
+      var header = uint8ArrayToString(response, 0, tokenIndex);
+      // Now find the boundary  marker
+      var split = header.split('\r\n');
+      var boundary = findBoundary(split);
+      if(!boundary) {
+        deferred.reject('invalid response - no boundary marker')
+      }
+      var offset = tokenIndex + 3; // skip over the \n\r\n
 
-    return deferred.promise();
+      // find the terminal boundary marker
+      var endIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, boundary, offset);
+      if(endIndex === -1) {
+        deferred.reject('invalid response - terminating boundary not found');
+      }
+      // return the info for this pixel data
+      var length = endIndex - offset;
+      deferred.resolve({
+        contentType: findContentType(split),
+        arrayBuffer: imageFrameAsArrayBuffer,
+        offset: offset,
+        length: length
+      });
+    });
+    return deferred.promise();    
+
   };
 }(cornerstoneWADOImageLoader));
