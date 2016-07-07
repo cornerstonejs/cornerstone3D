@@ -4,7 +4,7 @@ class DicomMetaDictionary {
       return (rawTag);
     }
     if (rawTag.length == 8 && rawTag == rawTag.match(/[0-9a-fA-F]*/)[0]) {
-      tag = rawTag.toUpperCase();
+      var tag = rawTag.toUpperCase();
       return ("("+tag.substring(0,4)+","+tag.substring(4,8)+")");
     }
   }
@@ -16,12 +16,12 @@ class DicomMetaDictionary {
       if (data.vr == "SQ") {
         var namedValues = [];
         for (var index in data.Value) {
-          namedValues.push(dicomMetadictionary.namifyDataset(data.Value[index]))
+          namedValues.push(DicomMetaDictionary.namifyDataset(data.Value[index]))
         }
         data.Value = namedValues;
       }
-      var punctuatedTag = dicomMetadictionary.punctuateTag(tag);
-      var entry = dicomMetadictionary.byTag[punctuatedTag];
+      var punctuatedTag = DicomMetaDictionary.punctuateTag(tag);
+      var entry = DicomMetaDictionary.dictionary[punctuatedTag];
       var name = tag;
       if (entry) {
         name = entry.name;
@@ -38,12 +38,12 @@ class DicomMetaDictionary {
       if (data.vr == "SQ") {
         var naturalValues = [];
         for (var index in data.Value) {
-          naturalValues.push(dicomMetadictionary.naturalizeDataset(data.Value[index]))
+          naturalValues.push(DicomMetaDictionary.naturalizeDataset(data.Value[index]))
         }
         data.Value = naturalValues;
       }
-      var punctuatedTag = dicomMetadictionary.punctuateTag(tag);
-      var entry = dicomMetadictionary.byTag[punctuatedTag];
+      var punctuatedTag = DicomMetaDictionary.punctuateTag(tag);
+      var entry = DicomMetaDictionary.dictionary[punctuatedTag];
       var name = tag;
       if (entry) {
         name = entry.name;
