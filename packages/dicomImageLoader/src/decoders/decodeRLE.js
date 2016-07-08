@@ -2,19 +2,19 @@
  */
 (function (cornerstoneWADOImageLoader) {
 
-  function decodeRLE(imageFrame) {
+  function decodeRLE(imageFrame, pixelData) {
 
     if(imageFrame.bitsAllocated === 8) {
-      return decode8(imageFrame);
+      return decode8(imageFrame, pixelData);
     } else if( imageFrame.bitsAllocated === 16) {
-      return decode16(imageFrame);
+      return decode16(imageFrame, pixelData);
     } else {
       throw 'unsupported pixel format for RLE'
     }
   }
 
-  function decode8(imageFrame ) {
-    var frameData = imageFrame.pixelData;
+  function decode8(imageFrame, pixelData ) {
+    var frameData = pixelData;
     var frameSize = imageFrame.rows * imageFrame.columns;
     var outFrame = new ArrayBuffer(frameSize*imageFrame.samplesPerPixel);
     var header=new DataView(frameData.buffer, frameData.byteOffset);
@@ -56,8 +56,8 @@
     return imageFrame;
   }
 
-  function decode16( imageFrame ) {
-    var frameData = imageFrame.pixelData;
+  function decode16( imageFrame, pixelData ) {
+    var frameData = pixelData;
     var frameSize = imageFrame.rows * imageFrame.columns;
     var outFrame = new ArrayBuffer(frameSize*imageFrame.samplesPerPixel*2);
 

@@ -2,14 +2,14 @@
 
   "use strict";
 
-  function decodeJPEGBaseline(imageFrame)
+  function decodeJPEGBaseline(imageFrame, pixelData)
   {
     // check to make sure codec is loaded
     if(typeof JpegImage === 'undefined') {
       throw 'No JPEG Baseline decoder loaded';
     }
     var jpeg = new JpegImage();
-    jpeg.parse( imageFrame.pixelData);
+    jpeg.parse(pixelData);
     if(imageFrame.bitsAllocated === 8) {
       imageFrame.pixelData = jpeg.getData(imageFrame.columns, imageFrame.rows);
       return imageFrame;

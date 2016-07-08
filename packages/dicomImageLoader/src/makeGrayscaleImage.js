@@ -10,6 +10,22 @@
               sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1	'; // XRF
     }
 
+    function getPixelData(dataSet, frameIndex) {
+      var pixelDataElement = dataSet.elements.x7fe00010;
+
+      if(pixelDataElement.encapsulatedPixelData) {
+        return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, frameIndex);
+      } else {
+        return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, frameIndex);
+      }
+    }
+  
+    function decodeImageFrame(imageFrame, dataSet, frameIndex) {
+      var pixelData = getPixelData(dataSet, frameIndex);
+      var transferSyntax =  dataSet.string('x00020010');
+      return cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData);
+    }
+
     function makeGrayscaleImage(imageId, dataSet, frame, sharedCacheKey) {
         var deferred = $.Deferred();
 
@@ -28,7 +44,8 @@
         var storedPixelData;
         var imageFrame;
         try {
-          imageFrame =  cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+          imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet);
+          imageFrame = decodeImageFrame(imageFrame, dataSet, frame);
           storedPixelData = imageFrame.pixelData;
         }
         catch(err) {

@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-07-06 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-07-08 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -15,6 +15,9 @@ if(typeof cornerstone === 'undefined'){
 }
 if(typeof cornerstoneWADOImageLoader === 'undefined'){
   cornerstoneWADOImageLoader = {
+    wadors: {
+      
+    },
     internal: {
       options : {
         // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
@@ -468,17 +471,32 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   }
 
 
-  function decodeBigEndian(imageFrame) {
-    if(imageFrame.bitsAllocated === 8) {
-      return imageFrame;
-    }
-    else if(imageFrame.bitsAllocated === 16) {
+  function decodeBigEndian(imageFrame, pixelData) {
+    if(imageFrame.bitsAllocated === 16) {
+      var arrayBuffer = pixelData.buffer;
+      var offset = pixelData.byteOffset;
+      var length = pixelData.length;
+      // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
+      // buffers on it
+      if(offset % 2) {
+        arrayBuffer = arrayBuffer.slice(offset);
+        offset = 0;
+      }
+
+      if(imageFrame.pixelRepresentation === 0) {
+        imageFrame.pixelData = new Uint16Array(arrayBuffer, offset, length / 2);
+      } else {
+        imageFrame.pixelData = new Int16Array(arrayBuffer, offset, length / 2);
+      }
+      // Do the byte swap
       for(var i=0; i < imageFrame.pixelData.length; i++) {
         imageFrame[i] = swap16(imageFrame.pixelData[i]);
       }
-      return imageFrame;
+
+    } else if(imageFrame.bitsAllocated === 8) {
+      imageFrame.pixelData = pixelData;
     }
-    throw 'unsupported bits allocated for big endian transfer syntax';
+    return imageFrame;
   }
 
   // module exports
@@ -491,70 +509,69 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function decodeImageFrame(imageFrame) {
-
+  function decodeImageFrame(imageFrame, transferSyntax, pixelData) {
     var start = new Date().getTime();
 
     // Implicit VR Little Endian
-    if( imageFrame.transferSyntax === "1.2.840.10008.1.2") {
-      imageFrame = imageFrame;
+    if(transferSyntax === "1.2.840.10008.1.2") {
+      imageFrame = cornerstoneWADOImageLoader.decodeLittleEndian(imageFrame, pixelData);
     }
     // Explicit VR Little Endian
-    else if( imageFrame.transferSyntax === "1.2.840.10008.1.2.1") {
-      imageFrame = imageFrame;
+    else if(transferSyntax === "1.2.840.10008.1.2.1") {
+      imageFrame = cornerstoneWADOImageLoader.decodeLittleEndian(imageFrame, pixelData);
     }
     // Explicit VR Big Endian (retired)
-    else if ( imageFrame.transferSyntax === "1.2.840.10008.1.2.2" ) {
-      imageFrame = cornerstoneWADOImageLoader.decodeBigEndian(imageFrame);
+    else if (transferSyntax === "1.2.840.10008.1.2.2" ) {
+      imageFrame = cornerstoneWADOImageLoader.decodeBigEndian(imageFrame, pixelData);
     }
     // Deflate transfer syntax (deflated by dicomParser)
-    else if(imageFrame.transferSyntax === '1.2.840.10008.1.2.1.99') {
-      imageFrame = imageFrame;
+    else if(transferSyntax === '1.2.840.10008.1.2.1.99') {
+      imageFrame = cornerstoneWADOImageLoader.decodeLittleEndian(imageFrame, pixelData);
     }
     // RLE Lossless
-    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.5" )
+    else if (transferSyntax === "1.2.840.10008.1.2.5" )
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeRLE(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeRLE(imageFrame, pixelData);
     }
     // JPEG Baseline lossy process 1 (8 bit)
-    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
+    else if (transferSyntax === "1.2.840.10008.1.2.4.50")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame, pixelData);
     }
     // JPEG Baseline lossy process 2 & 4 (12 bit)
-    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.51")
+    else if (transferSyntax === "1.2.840.10008.1.2.4.51")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame, pixelData);
     }
     // JPEG Lossless, Nonhierarchical (Processes 14)
-    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.57")
+    else if (transferSyntax === "1.2.840.10008.1.2.4.57")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame, pixelData);
     }
     // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.70" )
+    else if (transferSyntax === "1.2.840.10008.1.2.4.70" )
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLossless(imageFrame, pixelData);
     }
     // JPEG-LS Lossless Image Compression
-    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.80" )
+    else if (transferSyntax === "1.2.840.10008.1.2.4.80" )
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame, pixelData);
     }
     // JPEG-LS Lossy (Near-Lossless) Image Compression
-    else if (imageFrame.transferSyntax === "1.2.840.10008.1.2.4.81" )
+    else if (transferSyntax === "1.2.840.10008.1.2.4.81" )
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEGLS(imageFrame, pixelData);
     }
      // JPEG 2000 Lossless
-    else if(imageFrame.transferSyntax === "1.2.840.10008.1.2.4.90")
+    else if (transferSyntax === "1.2.840.10008.1.2.4.90")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData);
     }
     // JPEG 2000 Lossy
-    else if(imageFrame.transferSyntax === "1.2.840.10008.1.2.4.91")
+    else if (transferSyntax === "1.2.840.10008.1.2.4.91")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData);
     }
     /* Don't know if these work...
      // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
@@ -589,10 +606,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function decodeJpx(imageFrame) {
+  function decodeJpx(imageFrame, pixelData) {
 
     var jpxImage = new JpxImage();
-    jpxImage.parse(imageFrame.pixelData);
+    jpxImage.parse(pixelData);
 
     var tileCount = jpxImage.tiles.length;
     if(tileCount !== 1) {
@@ -693,11 +710,11 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return image;
   }
 
-  function decodeOpenJpeg2000(imageFrame) {
+  function decodeOpenJpeg2000(imageFrame, pixelData) {
     var bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
     var signed = imageFrame.pixelRepresentation === 1;
 
-    var image = decodeOpenJPEG(imageFrame.pixelData, bytesPerPixel, signed);
+    var image = decodeOpenJPEG(pixelData, bytesPerPixel, signed);
 
     imageFrame.columns = image.sx;
     imageFrame.rows = image.sy;
@@ -706,7 +723,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return imageFrame;
   }
 
-  function decodeJPEG2000(imageFrame)
+  function decodeJPEG2000(imageFrame, pixelData)
   {
     // check to make sure codec is loaded
     if(typeof OpenJPEG === 'undefined' &&
@@ -723,12 +740,12 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
           throw 'OpenJPEG failed to initialize';
         }
       }
-      return decodeOpenJpeg2000(imageFrame);
+      return decodeOpenJpeg2000(imageFrame, pixelData);
     }
 
     // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
     if(typeof JpxImage !== 'undefined') {
-      return decodeJpx(imageFrame);
+      return decodeJpx(imageFrame, pixelData);
     }
   }
 
@@ -738,14 +755,14 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function decodeJPEGBaseline(imageFrame)
+  function decodeJPEGBaseline(imageFrame, pixelData)
   {
     // check to make sure codec is loaded
     if(typeof JpegImage === 'undefined') {
       throw 'No JPEG Baseline decoder loaded';
     }
     var jpeg = new JpegImage();
-    jpeg.parse( imageFrame.pixelData);
+    jpeg.parse(pixelData);
     if(imageFrame.bitsAllocated === 8) {
       imageFrame.pixelData = jpeg.getData(imageFrame.columns, imageFrame.rows);
       return imageFrame;
@@ -843,7 +860,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 "use strict";
 (function (cornerstoneWADOImageLoader) {
 
-  function decodeJPEGLossless(imageFrame) {
+  function decodeJPEGLossless(imageFrame, pixelData) {
     // check to make sure codec is loaded
     if(typeof jpeg === 'undefined' ||
       typeof jpeg.lossless === 'undefined' ||
@@ -853,7 +870,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
     var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
     //console.time('jpeglossless');
-    var buffer = imageFrame.pixelData.buffer;
+    var buffer = pixelData.buffer;
     var decoder = new jpeg.lossless.Decoder();
     var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
     //console.timeEnd('jpeglossless');
@@ -955,7 +972,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return image;
   }
 
-  function decodeJPEGLS(imageFrame)
+  function decodeJPEGLS(imageFrame, pixelData)
   {
     // check to make sure codec is loaded
     if(typeof CharLS === 'undefined') {
@@ -971,7 +988,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       }
     }
 
-    var image = jpegLSDecode(imageFrame.pixelData, imageFrame.pixelRepresentation === 1);
+    var image = jpegLSDecode(pixelData, imageFrame.pixelRepresentation === 1);
     //console.log(image);
 
     // throw error if not success or too much data
@@ -993,19 +1010,50 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
  */
 (function (cornerstoneWADOImageLoader) {
 
-  function decodeRLE(imageFrame) {
+  function decodeLittleEndian(imageFrame, pixelData) {
+    if(imageFrame.bitsAllocated === 16) {
+      var arrayBuffer = pixelData.buffer;
+      var offset = pixelData.byteOffset;
+      var length = pixelData.length;
+      // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
+      // buffers on it
+      if(offset % 2) {
+        arrayBuffer = arrayBuffer.slice(offset);
+        offset = 0;
+      }
+
+      if(imageFrame.pixelRepresentation === 0) {
+        imageFrame.pixelData = new Uint16Array(arrayBuffer, offset, length / 2);
+      } else {
+        imageFrame.pixelData = new Int16Array(arrayBuffer, offset, length / 2);
+      }
+    } else if(imageFrame.bitsAllocated === 8) {
+      imageFrame.pixelData = pixelData;
+    }
+    return imageFrame;
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.decodeLittleEndian = decodeLittleEndian;
+
+}(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  function decodeRLE(imageFrame, pixelData) {
 
     if(imageFrame.bitsAllocated === 8) {
-      return decode8(imageFrame);
+      return decode8(imageFrame, pixelData);
     } else if( imageFrame.bitsAllocated === 16) {
-      return decode16(imageFrame);
+      return decode16(imageFrame, pixelData);
     } else {
       throw 'unsupported pixel format for RLE'
     }
   }
 
-  function decode8(imageFrame ) {
-    var frameData = imageFrame.pixelData;
+  function decode8(imageFrame, pixelData ) {
+    var frameData = pixelData;
     var frameSize = imageFrame.rows * imageFrame.columns;
     var outFrame = new ArrayBuffer(frameSize*imageFrame.samplesPerPixel);
     var header=new DataView(frameData.buffer, frameData.byteOffset);
@@ -1047,8 +1095,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return imageFrame;
   }
 
-  function decode16( imageFrame ) {
-    var frameData = imageFrame.pixelData;
+  function decode16( imageFrame, pixelData ) {
+    var frameData = pixelData;
     var frameSize = imageFrame.rows * imageFrame.columns;
     var outFrame = new ArrayBuffer(frameSize*imageFrame.samplesPerPixel*2);
 
@@ -1115,8 +1163,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  // new path....
-
   function framesAreFragmented(dataSet) {
     var numberOfFrames = dataSet.intString('x00280008');
     var pixelDataElement = dataSet.elements.x7fe00010;
@@ -1140,9 +1186,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
   }
 
-  function getEncapsulatedImageFrame(dataSet, imageFrame, frameIndex) {
-    imageFrame.pixelData = getEncodedImageFrame(dataSet, frameIndex);
-    return imageFrame;
+  function getEncapsulatedImageFrame(dataSet, frameIndex) {
+    return getEncodedImageFrame(dataSet, frameIndex);
   }
   cornerstoneWADOImageLoader.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
 }($, cornerstone, cornerstoneWADOImageLoader));
@@ -1153,31 +1198,29 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function getUncompressedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex) {
+  function getUncompressedImageFrame(dataSet, frameIndex) {
+    var pixelDataElement = dataSet.elements.x7fe00010;
+    var bitsAllocated = dataSet.uint16('x00280100');
+    var rows = dataSet.uint16('x00280010');
+    var columns = dataSet.uint16('x00280011');
+    var samplesPerPixel = dataSet.uint16('x00280002');
 
     var pixelDataOffset = pixelDataElement.dataOffset;
-    var frameSize = imageFrame.rows * imageFrame.columns * imageFrame.samplesPerPixel;
+    var pixelsPerFrame = rows * columns * samplesPerPixel;
 
-    if(imageFrame.bitsAllocated === 8) {
-      var frameOffset = pixelDataOffset + frameIndex * frameSize;
+    if(bitsAllocated === 8) {
+      var frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame;
       if(frameOffset >= dataSet.byteArray.length) {
         throw 'frame exceeds size of pixelData';
       }
-      imageFrame.pixelData = new Uint8Array(dataSet.byteArray.buffer, frameOffset, frameSize);
-      return imageFrame;
+      return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame);
     }
-    else if(imageFrame.bitsAllocated === 16) {
-      var frameOffset = pixelDataOffset + frameIndex * frameSize * 2;
+    else if(bitsAllocated === 16) {
+      var frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
       if(frameOffset >= dataSet.byteArray.length) {
         throw 'frame exceeds size of pixelData';
       }
-      if(imageFrame.pixelRepresentation === 0) {
-        imageFrame.pixelData = new Uint16Array(dataSet.byteArray.buffer, frameOffset, frameSize);
-        return imageFrame;
-      } else {
-        imageFrame.pixelData = new Int16Array(dataSet.byteArray.buffer, frameOffset, frameSize);
-        return imageFrame;
-      }
+      return new Uint8Array(dataSet.byteArray.buffer, frameOffset,pixelsPerFrame * 2);
     }
 
     throw 'unsupported pixel format';
@@ -1380,28 +1423,22 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   "use strict";
 
 
-  function getRawImageFrame(dataSet, frameIndex) {
+  function getRawImageFrame(dataSet) {
     var imageFrame = {
       transferSyntax : dataSet.string('x00020010'),
       samplesPerPixel : dataSet.uint16('x00280002'),
       photometricInterpretation : dataSet.string('x00280004'),
       planarConfiguration : dataSet.uint16('x00280006'),
-      numberOfFrames : dataSet.intString('x00280008'),
       rows : dataSet.uint16('x00280010'),
       columns : dataSet.uint16('x00280011'),
       bitsAllocated : dataSet.uint16('x00280100'),
       pixelRepresentation : dataSet.uint16('x00280103'), // 0 = unsigned,
       palette: cornerstoneWADOImageLoader.getPalette(dataSet),
-      pixelData: undefined
+      storedPixelData: undefined // populated later after decoding
     };
     
-    var pixelDataElement = dataSet.elements.x7fe00010;
-
-    if(pixelDataElement.encapsulatedPixelData) {
-      return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, imageFrame, frameIndex);
-    } else {
-      return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex);
-    }
+    
+    return imageFrame;
   }
 
   cornerstoneWADOImageLoader.getRawImageFrame = getRawImageFrame;
@@ -1526,6 +1563,83 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   cornerstoneWADOImageLoader.internal.loadFileRequest = loadFileRequest;
 }($, cornerstone, cornerstoneWADOImageLoader));
 
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+
+  function getSizeInBytes(imageFrame) {
+    var bytesPerPixel = Math.round(imageFrame.bitsAllocated);
+    var sizeInBytes = imageFrame.rows * imageFrame.columns * bytesPerPixel * imageFrame.samplesPerPixel;
+    return sizeInBytes;
+  }
+
+  function createImage(imageId, imageFrame) {
+    var metaDataProvider = cornerstoneWADOImageLoader.wadors.metaDataProvider;
+
+    //var imagePixelModule = metaDataProvider('imagePixelModule', imageId);
+    var imagePlaneModule = metaDataProvider('imagePlaneModule', imageId);
+    var voiLutModule = metaDataProvider('voiLutModule', imageId);
+    var modalityLutModule = metaDataProvider('modalityLutModule', imageId);
+
+    var image = {
+      imageId: imageId,
+      color: cornerstoneWADOImageLoader.isColorImage(imageFrame.photometricInterpretation),
+      columnPixelSpacing: imagePlaneModule.pixelSpacing ? imagePlaneModule.pixelSpacing[1] : undefined,
+      columns: imageFrame.columns,
+      height: imageFrame.rows,
+      intercept: modalityLutModule.rescaleIntercept ? modalityLutModule.rescaleIntercept: 0,
+      invert: imageFrame.photometricInterpretation === "MONOCHROME1",
+      minPixelValue : imageFrame.smallestPixelValue,
+      maxPixelValue : imageFrame.largestPixelValue,
+      render: cornerstone.renderGrayscaleImage,
+      rowPixelSpacing: imagePlaneModule.pixelSpacing ? imagePlaneModule.pixelSpacing[0] : undefined,
+      rows: imageFrame.rows,
+      sizeInBytes: getSizeInBytes(imageFrame),
+      slope: modalityLutModule.rescaleSlope ? modalityLutModule.rescaleSlope: 1,
+      width: imageFrame.columns,
+      windowCenter: voiLutModule.windowCenter ? voiLutModule.windowCenter[0] : undefined,
+      windowWidth: voiLutModule.windowWidth ? voiLutModule.windowWidth[0] : undefined,
+      decodeTimeInMS : imageFrame.decodeTimeInMS
+    };
+
+      // add function to return pixel data
+    image.getPixelData = function() {
+      return imageFrame.pixelData;
+    };
+
+    // Setup the renderer
+    if(image.color) {
+      image.renderer = cornerstone.renderColorImage;
+    } else {
+      image.renderer = cornerstone.renderGrayscaleImage;
+    }
+
+    // calculate min/max if not supplied
+    if(image.minPixelValue === undefined || image.maxPixelValue === undefined) {
+      var minMax = cornerstoneWADOImageLoader.getMinMax(imageFrame.pixelData);
+      image.minPixelValue = minMax.min;
+      image.maxPixelValue = minMax.max;
+    }
+
+    // set the ww/wc to cover the dynamic range of the image if no values are supplied
+    if(image.windowCenter === undefined || image.windowWidth === undefined) {
+      var maxVoi = image.maxPixelValue * image.slope + image.intercept;
+      var minVoi = image.minPixelValue * image.slope + image.intercept;
+      image.windowWidth = maxVoi - minVoi;
+      image.windowCenter = (maxVoi + minVoi) / 2;
+    }
+
+    // TODO: VOILUT
+    // TODO: ModalityLUT
+    
+    return image;
+  }
+
+  cornerstoneWADOImageLoader.wadors.createImage = createImage;
+}($, cornerstone, cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
   function checkToken(token, data, dataOffset) {
@@ -1575,9 +1689,94 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
     return -1;
   }
-  cornerstoneWADOImageLoader.internal.findIndexOfString = findIndexOfString;
+  cornerstoneWADOImageLoader.wadors.findIndexOfString = findIndexOfString;
 
 }(cornerstoneWADOImageLoader));
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getImageFrame(imageId) {
+    var imagePixelModule = cornerstoneWADOImageLoader.wadors.metaDataProvider('imagePixelModule', imageId);
+
+    var imageFrame = {
+      samplesPerPixel : imagePixelModule.samplesPerPixel,
+      photometricInterpretation : imagePixelModule.photometricInterpretation,
+      planarConfiguration : imagePixelModule.planarConfiguration,
+      rows : imagePixelModule.rows,
+      columns : imagePixelModule.columns,
+      bitsAllocated : imagePixelModule.bitsAllocated,
+      pixelRepresentation : imagePixelModule.pixelRepresentation, // 0 = unsigned,
+      smallestPixelValue: imagePixelModule.smallestPixelValue,
+      largestPixelValue: imagePixelModule.largestPixelValue,
+      palette: undefined, // todo cornerstoneWADOImageLoader.getPalette(dataSet),
+      storedPixelData: undefined // populated later after decoding
+    };
+
+    return imageFrame;
+  }
+
+  cornerstoneWADOImageLoader.wadors.getImageFrame = getImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+  /**
+   * Returns the first string value as a Javascript number
+   *
+   * @param element - The javascript object for the specified element in the metadata
+   * @param [index] - the index of the value in a multi-valued element, default is 0
+   * @param [defaultValue] - The default value to return if the element does not exist
+   * @returns {*}
+   */
+  function getNumberString(element, index, defaultValue) {
+    var value = cornerstoneWADOImageLoader.wadors.getValue(element, index, defaultValue);
+    if(value === undefined) {
+      return;
+    }
+    return parseFloat(value);
+  }
+
+  cornerstoneWADOImageLoader.wadors.getNumberString = getNumberString;
+}($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+  /**
+   * Returns the values as an array of javascript numbers
+   *
+   * @param element - The javascript object for the specified element in the metadata
+   * @param [minimumLength] - the minimum number of values
+   * @returns {*}
+   */
+  function getNumberValues(element, minimumLength) {
+    if (!element) {
+      return;
+    }
+    // Value is not present if the attribute has a zero length value
+    if (!element.Value) {
+      return;
+    }
+    // make sure we have the expected length
+    if (minimumLength && element.Value.length < minimumLength) {
+      return;
+    }
+
+    var values = [];
+    for(var i=0; i < element.Value.length; i++) {
+      values.push(parseFloat(element.Value[i]));
+    }
+    return values;
+  }
+
+  cornerstoneWADOImageLoader.wadors.getNumberValues = getNumberValues;
+}($, cornerstone, cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
   "use strict";
@@ -1610,7 +1809,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return str;
   };
 
-  cornerstoneWADOImageLoader.internal.getImageFrame = function(uri, imageId, mediaType) {
+  cornerstoneWADOImageLoader.wadors.getPixelData = function(uri, imageId, mediaType) {
     mediaType = mediaType || 'application/octet-stream';
     var headers = {
       accept : mediaType
@@ -1625,7 +1824,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       var response = new Uint8Array(imageFrameAsArrayBuffer);
 
       // First look for the multipart mime header
-      var tokenIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, '\n\r\n');
+      var tokenIndex = cornerstoneWADOImageLoader.wadors.findIndexOfString(response, '\n\r\n');
       if(tokenIndex === -1) {
         deferred.reject('invalid response - no multipart mime header');
       }
@@ -1639,7 +1838,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       var offset = tokenIndex + 3; // skip over the \n\r\n
 
       // find the terminal boundary marker
-      var endIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, boundary, offset);
+      var endIndex = cornerstoneWADOImageLoader.wadors.findIndexOfString(response, boundary, offset);
       if(endIndex === -1) {
         deferred.reject('invalid response - terminating boundary not found');
       }
@@ -1647,9 +1846,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       var length = endIndex - offset;
       deferred.resolve({
         contentType: findContentType(split),
-        arrayBuffer: imageFrameAsArrayBuffer,
-        offset: offset,
-        length: length
+        imageFrame: new Uint8Array(imageFrameAsArrayBuffer, offset, length)
       });
     });
     return deferred.promise();    
@@ -1658,31 +1855,61 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 }(cornerstoneWADOImageLoader));
 /**
  */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+  /**
+   * Returns the raw value
+   *
+   * @param element - The javascript object for the specified element in the metadata
+   * @param [index] - the index of the value in a multi-valued element, default is 0
+   * @param [defaultValue] - The default value to return if the element does not exist
+   * @returns {*}
+   */
+  function getValue(element, index, defaultValue) {
+    index = index || 0;
+    if (!element) {
+      return defaultValue;
+    }
+    // Value is not present if the attribute has a zero length value
+    if (!element.Value) {
+      return defaultValue;
+    }
+    // make sure we have the specified index
+    if (element.Value.length <= index ) {
+      return defaultValue;
+    }
+    return element.Value[index];
+  }
+
+  cornerstoneWADOImageLoader.wadors.getValue = getValue;
+}($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ */
 (function (cornerstoneWADOImageLoader) {
 
   "use strict";
 
-  var images = [];
+  var imageIds = [];
 
-  function add(image) {
-    var fileIndex =  images.push(image);
-    return 'wadors:' + (fileIndex - 1);
+  function add(imageId, metadata) {
+    imageIds[imageId] = metadata;
   }
 
-  function get(index) {
-    return images[index];
+  function get(imageId) {
+    return imageIds[imageId];
   }
 
-  function remove(index) {
-    images[index] = undefined;
+  function remove(imageId) {
+    imageIds[imageId] = undefined;
   }
 
   function purge() {
-    images = [];
+    imageIds = [];
   }
 
   // module exports
-  cornerstoneWADOImageLoader.imageManager = {
+  cornerstoneWADOImageLoader.wadors.metaDataManager = {
     add : add,
     get : get,
     remove:remove,
@@ -1690,58 +1917,123 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   };
 
 }(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  var getNumberValues = cornerstoneWADOImageLoader.wadors.getNumberValues;
+  var getValue = cornerstoneWADOImageLoader.wadors.getValue;
+
+  function getNumberValue(element, index) {
+    var value = getValue(element, index);
+    if(value === undefined) {
+      return;
+    }
+    return parseFloat(value);
+  }
+
+  function metaDataProvider(type, imageId) {
+    var metaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+    if(!metaData) {
+      return;
+    }
+
+    if (type === 'imagePlaneModule') {
+      return {
+        pixelSpacing: getNumberValues(metaData['00280030'], 2),
+        imageOrientationPatient: getNumberValues(metaData['00200037'], 6),
+        imagePositionPatient: getNumberValues(metaData['00200032'], 3),
+        sliceThickness: getNumberValue(metaData['00180050']),
+        sliceLocation: getNumberValue(metaData['00201041'])
+      };
+    }
+
+    if (type === 'imagePixelModule') {
+      return {
+        samplesPerPixel: getValue(metaData['00280002']),
+        photometricInterpretation: getValue(metaData['00280004']),
+        rows: getValue(metaData['00280010']),
+        columns: getValue(metaData['00280011']),
+        bitsAllocated: getValue(metaData['00280100']),
+        bitsStored: getValue(metaData['00280101']),
+        highBit: getValue(metaData['00280102']),
+        pixelRepresentation: getValue(metaData['00280103']),
+        planarConfiguration: getValue(metaData['00280006']),
+        pixelAspectRatio: getValue(metaData['00280034']),
+        smallestPixelValue: getValue(metaData['00280106']),
+        largestPixelValue: getValue(metaData['00280107']),
+        // TODO Color Palette
+      };
+    }
+
+    if (type === 'voiLutModule') {
+      return {
+        // TODO VOT LUT Sequence
+        windowCenter : getNumberValues(metaData['00281050'], 1),
+        windowWidth : getNumberValues(metaData['00281051'], 1),
+      };
+    }
+
+    if (type === 'modalityLutModule') {
+      return {
+        // TODO VOT LUT Sequence
+        rescaleIntercept : getNumberValue(metaData['00281052']),
+        rescaleSlope : getNumberValue(metaData['00281053']),
+        rescaleType: getValue(metaData['00281054'])
+      };
+    }
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.wadors.metaDataProvider = metaDataProvider
+
+}(cornerstoneWADOImageLoader));
 
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
 
+  function getTransferSyntaxForContentType(contentType) {
+    return '1.2.840.10008.1.2'; // hard code to ILE for now
+  }
+
   function loadImage(imageId) {
+    var start = new Date().getTime();
+
     var deferred = $.Deferred();
-    var index = imageId.substring(7);
-    var image = cornerstoneWADOImageLoader.imageManager.get(index);
-    if(image === undefined) {
-      deferred.reject('unknown imageId');
+    
+    var uri = imageId.substring(7);
+    
+    // check to make sure we have metadata for this imageId
+    var metaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+    if(metaData === undefined) {
+      deferred.reject('no metadata for imageId ' + imageId);
       return deferred.promise();
     }
 
     var mediaType;// = 'image/dicom+jp2';
 
-    cornerstoneWADOImageLoader.internal.getImageFrame(image.uri, imageId, mediaType).then(function(result) {
-      //console.log(result);
-      // TODO: add support for retrieving compressed pixel data
-      var storedPixelData;
-      if(image.instance.bitsAllocated === 16) {
-        var arrayBuffer = result.arrayBuffer;
-        var offset = result.offset;
+    // get the pixel data from the server
+    cornerstoneWADOImageLoader.wadors.getPixelData(uri, imageId, mediaType).then(function(result) {
 
-        // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
-        // buffers on it
-        if(offset % 2) {
-          arrayBuffer = result.arrayBuffer.slice(result.offset);
-          offset = 0;
-        }
+      // get the image frame
+      var imageFrame = cornerstoneWADOImageLoader.wadors.getImageFrame(imageId);
 
-        if(image.instance.pixelRepresentation === 0) {
-          storedPixelData = new Uint16Array(arrayBuffer, offset, result.length / 2);
-        } else {
-          storedPixelData = new Int16Array(arrayBuffer, offset, result.length / 2);
-        }
-      } else if(image.instance.bitsAllocated === 8) {
-        storedPixelData = new Uint8Array(result.arrayBuffer, result.offset, result.length);
-      }
+      // decode the pixel data
+      var transferSyntax = getTransferSyntaxForContentType(result.contentType);
+      imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, result.imageFrame);
 
-      // TODO: handle various color space conversions
+      // create the image
+      var image = cornerstoneWADOImageLoader.wadors.createImage(imageId, imageFrame);
 
-      var minMax = cornerstoneWADOImageLoader.getMinMax(storedPixelData);
-      image.imageId = imageId;
-      image.minPixelValue = minMax.min;
-      image.maxPixelValue = minMax.max;
-      image.render = cornerstone.renderGrayscaleImage;
-      image.getPixelData = function() {
-        return storedPixelData;
-      };
-      //console.log(image);
+      // add the loadTimeInMS property
+      var end = new Date().getTime();
+      image.loadTimeInMS = end - start;
+
       deferred.resolve(image);
+
     }).fail(function(reason) {
       deferred.reject(reason);
     });
@@ -1749,7 +2041,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return deferred.promise();
   }
 
-  // registery dicomweb and wadouri image loader prefixes
+  // register wadors scheme
   cornerstone.registerImageLoader('wadors', loadImage);
 
 }($, cornerstone, cornerstoneWADOImageLoader));
@@ -1805,14 +2097,32 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function extractStoredPixels(imageFrame) {
+    function getPixelData(dataSet, frameIndex) {
+        var pixelDataElement = dataSet.elements.x7fe00010;
+
+        if(pixelDataElement.encapsulatedPixelData) {
+            return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, frameIndex);
+        } else {
+            return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, frameIndex);
+        }
+    }
+
+    function decodeImageFrame(imageFrame, dataSet, frameIndex) {
+        var pixelData = getPixelData(dataSet, frameIndex);
+        var transferSyntax =  dataSet.string('x00020010');
+        return cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData);
+    }
+
+    function extractStoredPixels(imageFrame, dataSet, frameIndex) {
         // special case for JPEG Baseline 8 bit
         if(cornerstoneWADOImageLoader.isJPEGBaseline8Bit(imageFrame) === true)
         {
             return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, canvas);
         }
 
-        imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
+        imageFrame = decodeImageFrame(imageFrame, dataSet, frameIndex);
+
+        //imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
 
         // setup the canvas context
         canvas.height = imageFrame.rows;
@@ -1842,10 +2152,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         var deferred = $.Deferred();
 
         // Decompress and decode the pixel data for this image
-        var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
+        var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet);
         var imageDataPromise;
         try {
-          imageDataPromise = extractStoredPixels(imageFrame);
+          imageDataPromise = extractStoredPixels(imageFrame, dataSet, frame);
         }
         catch(err) {
           deferred.reject(err);
@@ -1936,6 +2246,22 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
               sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1	'; // XRF
     }
 
+    function getPixelData(dataSet, frameIndex) {
+      var pixelDataElement = dataSet.elements.x7fe00010;
+
+      if(pixelDataElement.encapsulatedPixelData) {
+        return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, frameIndex);
+      } else {
+        return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, frameIndex);
+      }
+    }
+  
+    function decodeImageFrame(imageFrame, dataSet, frameIndex) {
+      var pixelData = getPixelData(dataSet, frameIndex);
+      var transferSyntax =  dataSet.string('x00020010');
+      return cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData);
+    }
+
     function makeGrayscaleImage(imageId, dataSet, frame, sharedCacheKey) {
         var deferred = $.Deferred();
 
@@ -1954,7 +2280,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         var storedPixelData;
         var imageFrame;
         try {
-          imageFrame =  cornerstoneWADOImageLoader.decodeTransferSyntax(dataSet, frame);
+          imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet);
+          imageFrame = decodeImageFrame(imageFrame, dataSet, frame);
           storedPixelData = imageFrame.pixelData;
         }
         catch(err) {

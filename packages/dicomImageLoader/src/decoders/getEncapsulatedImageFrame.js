@@ -5,8 +5,6 @@
 
   "use strict";
 
-  // new path....
-
   function framesAreFragmented(dataSet) {
     var numberOfFrames = dataSet.intString('x00280008');
     var pixelDataElement = dataSet.elements.x7fe00010;
@@ -30,9 +28,8 @@
     return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
   }
 
-  function getEncapsulatedImageFrame(dataSet, imageFrame, frameIndex) {
-    imageFrame.pixelData = getEncodedImageFrame(dataSet, frameIndex);
-    return imageFrame;
+  function getEncapsulatedImageFrame(dataSet, frameIndex) {
+    return getEncodedImageFrame(dataSet, frameIndex);
   }
   cornerstoneWADOImageLoader.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
 }($, cornerstone, cornerstoneWADOImageLoader));

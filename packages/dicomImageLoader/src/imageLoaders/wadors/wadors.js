@@ -3,53 +3,45 @@
 
   "use strict";
 
+  function getTransferSyntaxForContentType(contentType) {
+    return '1.2.840.10008.1.2'; // hard code to ILE for now
+  }
+
   function loadImage(imageId) {
+    var start = new Date().getTime();
+
     var deferred = $.Deferred();
-    var index = imageId.substring(7);
-    var image = cornerstoneWADOImageLoader.imageManager.get(index);
-    if(image === undefined) {
-      deferred.reject('unknown imageId');
+    
+    var uri = imageId.substring(7);
+    
+    // check to make sure we have metadata for this imageId
+    var metaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+    if(metaData === undefined) {
+      deferred.reject('no metadata for imageId ' + imageId);
       return deferred.promise();
     }
 
     var mediaType;// = 'image/dicom+jp2';
 
-    cornerstoneWADOImageLoader.internal.getImageFrame(image.uri, imageId, mediaType).then(function(result) {
-      //console.log(result);
-      // TODO: add support for retrieving compressed pixel data
-      var storedPixelData;
-      if(image.instance.bitsAllocated === 16) {
-        var arrayBuffer = result.arrayBuffer;
-        var offset = result.offset;
+    // get the pixel data from the server
+    cornerstoneWADOImageLoader.wadors.getPixelData(uri, imageId, mediaType).then(function(result) {
 
-        // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
-        // buffers on it
-        if(offset % 2) {
-          arrayBuffer = result.arrayBuffer.slice(result.offset);
-          offset = 0;
-        }
+      // get the image frame
+      var imageFrame = cornerstoneWADOImageLoader.wadors.getImageFrame(imageId);
 
-        if(image.instance.pixelRepresentation === 0) {
-          storedPixelData = new Uint16Array(arrayBuffer, offset, result.length / 2);
-        } else {
-          storedPixelData = new Int16Array(arrayBuffer, offset, result.length / 2);
-        }
-      } else if(image.instance.bitsAllocated === 8) {
-        storedPixelData = new Uint8Array(result.arrayBuffer, result.offset, result.length);
-      }
+      // decode the pixel data
+      var transferSyntax = getTransferSyntaxForContentType(result.contentType);
+      imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, result.imageFrame);
 
-      // TODO: handle various color space conversions
+      // create the image
+      var image = cornerstoneWADOImageLoader.wadors.createImage(imageId, imageFrame);
 
-      var minMax = cornerstoneWADOImageLoader.getMinMax(storedPixelData);
-      image.imageId = imageId;
-      image.minPixelValue = minMax.min;
-      image.maxPixelValue = minMax.max;
-      image.render = cornerstone.renderGrayscaleImage;
-      image.getPixelData = function() {
-        return storedPixelData;
-      };
-      //console.log(image);
+      // add the loadTimeInMS property
+      var end = new Date().getTime();
+      image.loadTimeInMS = end - start;
+
       deferred.resolve(image);
+
     }).fail(function(reason) {
       deferred.reject(reason);
     });
@@ -57,7 +49,7 @@
     return deferred.promise();
   }
 
-  // registery dicomweb and wadouri image loader prefixes
+  // register wadors scheme
   cornerstone.registerImageLoader('wadors', loadImage);
 
 }($, cornerstone, cornerstoneWADOImageLoader));

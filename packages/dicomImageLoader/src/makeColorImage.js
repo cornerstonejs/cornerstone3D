@@ -5,14 +5,32 @@
     var canvas = document.createElement('canvas');
     var lastImageIdDrawn = "";
 
-    function extractStoredPixels(imageFrame) {
+    function getPixelData(dataSet, frameIndex) {
+        var pixelDataElement = dataSet.elements.x7fe00010;
+
+        if(pixelDataElement.encapsulatedPixelData) {
+            return cornerstoneWADOImageLoader.getEncapsulatedImageFrame(dataSet, frameIndex);
+        } else {
+            return cornerstoneWADOImageLoader.getUncompressedImageFrame(dataSet, frameIndex);
+        }
+    }
+
+    function decodeImageFrame(imageFrame, dataSet, frameIndex) {
+        var pixelData = getPixelData(dataSet, frameIndex);
+        var transferSyntax =  dataSet.string('x00020010');
+        return cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData);
+    }
+
+    function extractStoredPixels(imageFrame, dataSet, frameIndex) {
         // special case for JPEG Baseline 8 bit
         if(cornerstoneWADOImageLoader.isJPEGBaseline8Bit(imageFrame) === true)
         {
             return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, canvas);
         }
 
-        imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
+        imageFrame = decodeImageFrame(imageFrame, dataSet, frameIndex);
+
+        //imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame);
 
         // setup the canvas context
         canvas.height = imageFrame.rows;
@@ -42,10 +60,10 @@
         var deferred = $.Deferred();
 
         // Decompress and decode the pixel data for this image
-        var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet, frame);
+        var imageFrame = cornerstoneWADOImageLoader.getRawImageFrame(dataSet);
         var imageDataPromise;
         try {
-          imageDataPromise = extractStoredPixels(imageFrame);
+          imageDataPromise = extractStoredPixels(imageFrame, dataSet, frame);
         }
         catch(err) {
           deferred.reject(err);

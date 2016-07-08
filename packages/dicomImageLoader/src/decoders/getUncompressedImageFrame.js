@@ -5,31 +5,29 @@
 
   "use strict";
 
-  function getUncompressedImageFrame(dataSet, imageFrame, pixelDataElement, frameIndex) {
+  function getUncompressedImageFrame(dataSet, frameIndex) {
+    var pixelDataElement = dataSet.elements.x7fe00010;
+    var bitsAllocated = dataSet.uint16('x00280100');
+    var rows = dataSet.uint16('x00280010');
+    var columns = dataSet.uint16('x00280011');
+    var samplesPerPixel = dataSet.uint16('x00280002');
 
     var pixelDataOffset = pixelDataElement.dataOffset;
-    var frameSize = imageFrame.rows * imageFrame.columns * imageFrame.samplesPerPixel;
+    var pixelsPerFrame = rows * columns * samplesPerPixel;
 
-    if(imageFrame.bitsAllocated === 8) {
-      var frameOffset = pixelDataOffset + frameIndex * frameSize;
+    if(bitsAllocated === 8) {
+      var frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame;
       if(frameOffset >= dataSet.byteArray.length) {
         throw 'frame exceeds size of pixelData';
       }
-      imageFrame.pixelData = new Uint8Array(dataSet.byteArray.buffer, frameOffset, frameSize);
-      return imageFrame;
+      return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame);
     }
-    else if(imageFrame.bitsAllocated === 16) {
-      var frameOffset = pixelDataOffset + frameIndex * frameSize * 2;
+    else if(bitsAllocated === 16) {
+      var frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
       if(frameOffset >= dataSet.byteArray.length) {
         throw 'frame exceeds size of pixelData';
       }
-      if(imageFrame.pixelRepresentation === 0) {
-        imageFrame.pixelData = new Uint16Array(dataSet.byteArray.buffer, frameOffset, frameSize);
-        return imageFrame;
-      } else {
-        imageFrame.pixelData = new Int16Array(dataSet.byteArray.buffer, frameOffset, frameSize);
-        return imageFrame;
-      }
+      return new Uint8Array(dataSet.byteArray.buffer, frameOffset,pixelsPerFrame * 2);
     }
 
     throw 'unsupported pixel format';

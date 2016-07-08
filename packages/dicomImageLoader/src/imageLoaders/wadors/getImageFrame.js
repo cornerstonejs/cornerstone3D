@@ -1,78 +1,28 @@
-(function (cornerstoneWADOImageLoader) {
+/**
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
 
-  function findBoundary(header) {
-    for(var i=0; i < header.length; i++) {
-      if(header[i].substr(0,2) === '--') {
-        return header[i];
-      }
-    }
-    return undefined;
-  }
+  function getImageFrame(imageId) {
+    var imagePixelModule = cornerstoneWADOImageLoader.wadors.metaDataProvider('imagePixelModule', imageId);
 
-  function findContentType(header) {
-    for(var i=0; i < header.length; i++) {
-      if(header[i].substr(0,13) === 'Content-Type:') {
-        return header[i].substr(13).trim();
-      }
-    }
-    return undefined;
-  }
-
-  function uint8ArrayToString(data, offset, length) {
-    offset = offset || 0;
-    length = length || data.length - offset;
-    var str = "";
-    for(var i=offset; i < offset + length; i++) {
-      str += String.fromCharCode(data[i]);
-    }
-    return str;
-  };
-
-  cornerstoneWADOImageLoader.internal.getImageFrame = function(uri, imageId, mediaType) {
-    mediaType = mediaType || 'application/octet-stream';
-    var headers = {
-      accept : mediaType
+    var imageFrame = {
+      samplesPerPixel : imagePixelModule.samplesPerPixel,
+      photometricInterpretation : imagePixelModule.photometricInterpretation,
+      planarConfiguration : imagePixelModule.planarConfiguration,
+      rows : imagePixelModule.rows,
+      columns : imagePixelModule.columns,
+      bitsAllocated : imagePixelModule.bitsAllocated,
+      pixelRepresentation : imagePixelModule.pixelRepresentation, // 0 = unsigned,
+      smallestPixelValue: imagePixelModule.smallestPixelValue,
+      largestPixelValue: imagePixelModule.largestPixelValue,
+      palette: undefined, // todo cornerstoneWADOImageLoader.getPalette(dataSet),
+      storedPixelData: undefined // populated later after decoding
     };
 
-    var deferred = $.Deferred();
+    return imageFrame;
+  }
 
-    var loadPromise = cornerstoneWADOImageLoader.internal.xhrRequest(uri, imageId, headers);
-    loadPromise.then(function(imageFrameAsArrayBuffer, xhr) {
-
-      // request succeeded, Parse the multi-part mime response
-      var response = new Uint8Array(imageFrameAsArrayBuffer);
-
-      // First look for the multipart mime header
-      var tokenIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, '\n\r\n');
-      if(tokenIndex === -1) {
-        deferred.reject('invalid response - no multipart mime header');
-      }
-      var header = uint8ArrayToString(response, 0, tokenIndex);
-      // Now find the boundary  marker
-      var split = header.split('\r\n');
-      var boundary = findBoundary(split);
-      if(!boundary) {
-        deferred.reject('invalid response - no boundary marker')
-      }
-      var offset = tokenIndex + 3; // skip over the \n\r\n
-
-      // find the terminal boundary marker
-      var endIndex = cornerstoneWADOImageLoader.internal.findIndexOfString(response, boundary, offset);
-      if(endIndex === -1) {
-        deferred.reject('invalid response - terminating boundary not found');
-      }
-      // return the info for this pixel data
-      var length = endIndex - offset;
-      deferred.resolve({
-        contentType: findContentType(split),
-        arrayBuffer: imageFrameAsArrayBuffer,
-        offset: offset,
-        length: length
-      });
-    });
-    return deferred.promise();    
-
-  };
-}(cornerstoneWADOImageLoader));
+  cornerstoneWADOImageLoader.wadors.getImageFrame = getImageFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));

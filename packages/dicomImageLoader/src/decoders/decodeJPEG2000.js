@@ -2,10 +2,10 @@
 
   "use strict";
 
-  function decodeJpx(imageFrame) {
+  function decodeJpx(imageFrame, pixelData) {
 
     var jpxImage = new JpxImage();
-    jpxImage.parse(imageFrame.pixelData);
+    jpxImage.parse(pixelData);
 
     var tileCount = jpxImage.tiles.length;
     if(tileCount !== 1) {
@@ -106,11 +106,11 @@
     return image;
   }
 
-  function decodeOpenJpeg2000(imageFrame) {
+  function decodeOpenJpeg2000(imageFrame, pixelData) {
     var bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
     var signed = imageFrame.pixelRepresentation === 1;
 
-    var image = decodeOpenJPEG(imageFrame.pixelData, bytesPerPixel, signed);
+    var image = decodeOpenJPEG(pixelData, bytesPerPixel, signed);
 
     imageFrame.columns = image.sx;
     imageFrame.rows = image.sy;
@@ -119,7 +119,7 @@
     return imageFrame;
   }
 
-  function decodeJPEG2000(imageFrame)
+  function decodeJPEG2000(imageFrame, pixelData)
   {
     // check to make sure codec is loaded
     if(typeof OpenJPEG === 'undefined' &&
@@ -136,12 +136,12 @@
           throw 'OpenJPEG failed to initialize';
         }
       }
-      return decodeOpenJpeg2000(imageFrame);
+      return decodeOpenJpeg2000(imageFrame, pixelData);
     }
 
     // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
     if(typeof JpxImage !== 'undefined') {
-      return decodeJpx(imageFrame);
+      return decodeJpx(imageFrame, pixelData);
     }
   }
 

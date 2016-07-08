@@ -47,6 +47,6 @@
     }
     return -1;
   }
-  cornerstoneWADOImageLoader.internal.findIndexOfString = findIndexOfString;
+  cornerstoneWADOImageLoader.wadors.findIndexOfString = findIndexOfString;
 
 }(cornerstoneWADOImageLoader));

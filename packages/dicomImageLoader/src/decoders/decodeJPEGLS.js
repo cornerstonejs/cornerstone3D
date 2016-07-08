@@ -78,7 +78,7 @@
     return image;
   }
 
-  function decodeJPEGLS(imageFrame)
+  function decodeJPEGLS(imageFrame, pixelData)
   {
     // check to make sure codec is loaded
     if(typeof CharLS === 'undefined') {
@@ -94,7 +94,7 @@
       }
     }
 
-    var image = jpegLSDecode(imageFrame.pixelData, imageFrame.pixelRepresentation === 1);
+    var image = jpegLSDecode(pixelData, imageFrame.pixelRepresentation === 1);
     //console.log(image);
 
     // throw error if not success or too much data

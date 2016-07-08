@@ -2,13 +2,7 @@
  */
 (function (cornerstoneWADOImageLoader) {
 
-  function swap16(val) {
-    return ((val & 0xFF) << 8)
-      | ((val >> 8) & 0xFF);
-  }
-
-
-  function decodeBigEndian(imageFrame, pixelData) {
+  function decodeLittleEndian(imageFrame, pixelData) {
     if(imageFrame.bitsAllocated === 16) {
       var arrayBuffer = pixelData.buffer;
       var offset = pixelData.byteOffset;
@@ -25,11 +19,6 @@
       } else {
         imageFrame.pixelData = new Int16Array(arrayBuffer, offset, length / 2);
       }
-      // Do the byte swap
-      for(var i=0; i < imageFrame.pixelData.length; i++) {
-        imageFrame[i] = swap16(imageFrame.pixelData[i]);
-      }
-
     } else if(imageFrame.bitsAllocated === 8) {
       imageFrame.pixelData = pixelData;
     }
@@ -37,6 +26,6 @@
   }
 
   // module exports
-  cornerstoneWADOImageLoader.decodeBigEndian = decodeBigEndian;
+  cornerstoneWADOImageLoader.decodeLittleEndian = decodeLittleEndian;
 
 }(cornerstoneWADOImageLoader));

@@ -1,7 +1,7 @@
 "use strict";
 (function (cornerstoneWADOImageLoader) {
 
-  function decodeJPEGLossless(imageFrame) {
+  function decodeJPEGLossless(imageFrame, pixelData) {
     // check to make sure codec is loaded
     if(typeof jpeg === 'undefined' ||
       typeof jpeg.lossless === 'undefined' ||
@@ -11,7 +11,7 @@
 
     var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
     //console.time('jpeglossless');
-    var buffer = imageFrame.pixelData.buffer;
+    var buffer = pixelData.buffer;
     var decoder = new jpeg.lossless.Decoder();
     var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
     //console.timeEnd('jpeglossless');

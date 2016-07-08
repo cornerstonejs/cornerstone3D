@@ -14,6 +14,9 @@ if(typeof cornerstone === 'undefined'){
 }
 if(typeof cornerstoneWADOImageLoader === 'undefined'){
   cornerstoneWADOImageLoader = {
+    wadors: {
+      
+    },
     internal: {
       options : {
         // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
