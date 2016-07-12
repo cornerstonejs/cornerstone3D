@@ -3,7 +3,6 @@
   function checkToken(token, data, dataOffset) {
 
     if(dataOffset + token.length > data.length) {
-      //console.log('dataOffset >> ', dataOffset);
       return false;
     }
 
@@ -11,12 +10,6 @@
 
     for(var i = 0; i < token.length; i++) {
       if(token[i] !== data[endIndex++]) {
-        if(endIndex > 520000) {
-          //console.log('token=',uint8ArrayToString(token));
-          //console.log('data=', uint8ArrayToString(data, dataOffset, endIndex-dataOffset));
-          //console.log('miss at %d %s dataOffset=%d', i, String.fromCharCode(data[endIndex]), endIndex);
-          //console.log('miss at %d %s dataOffset=%d', i, String.fromCharCode(token[endIndex]), endIndex);
-        }
         return false;
       }
     }

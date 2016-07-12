@@ -65,6 +65,14 @@
         rescaleType: getValue(metaData['00281054'])
       };
     }
+
+    if (type === 'sopCommonModule') {
+      return {
+        sopClassUID : getValue(metaData['00080016']),
+        sopInstanceUID : getValue(metaData['00080018']),
+      };
+    }
+
   }
 
   // module exports

@@ -7,12 +7,15 @@
     var palIndex=0;
     var rgbaIndex=0;
     var pixelData = imageFrame.pixelData;
-    var start = imageFrame.palette.start;
-    var rData = imageFrame.palette.rData;
-    var gData = imageFrame.palette.gData;
-    var bData = imageFrame.palette.bData;
-    var shift = imageFrame.palette.bits ===8 ? 0 : 8;
-    var len = imageFrame.palette.rData.length;
+    var start = imageFrame.redPaletteColorLookupTableDescriptor[1];
+    var rData = imageFrame.redPaletteColorLookupTableData;
+    var gData = imageFrame.greenPaletteColorLookupTableData;
+    var bData = imageFrame.bluePaletteColorLookupTableData;
+    var shift = imageFrame.redPaletteColorLookupTableDescriptor[2] === 8 ? 0 : 8;
+    var len = imageFrame.redPaletteColorLookupTableData.length;
+    if(len === 0) {
+      len = 65535;
+    }
 
     for( var i=0 ; i < numPixels ; ++i ) {
       var value=pixelData[palIndex++];

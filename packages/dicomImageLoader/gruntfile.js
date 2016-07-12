@@ -39,7 +39,7 @@ module.exports = function(grunt) {
         },
         concat: {
             build: {
-                src : ['src/header.js', 'src/imageLoaders/loadImage.js', 'src/**/*.js'],
+                src : ['src/header.js', 'src/wadouri/loadImage.js', 'src/**/*.js'],
                 dest: 'build/built.js'
             },
             dist: {

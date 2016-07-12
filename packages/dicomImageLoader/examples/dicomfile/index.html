@@ -162,7 +162,7 @@
 
         // this UI is only built for a single file so just dump the first one
         file = files[0];
-        var imageId = cornerstoneWADOImageLoader.fileManager.add(file);
+        var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
         loadAndViewImage(imageId);    }
 
     function handleDragOver(evt) {
@@ -278,7 +278,7 @@
             // Add the file to the cornerstoneFileImageLoader and get unique
             // number for that file
             var file = e.target.files[0];
-            var imageId = cornerstoneWADOImageLoader.fileManager.add(file);
+            var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
             loadAndViewImage(imageId);
         });
 

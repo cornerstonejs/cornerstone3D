@@ -14,6 +14,9 @@ if(typeof cornerstone === 'undefined'){
 }
 if(typeof cornerstoneWADOImageLoader === 'undefined'){
   cornerstoneWADOImageLoader = {
+    wadouri: {
+
+    },
     wadors: {
       
     },

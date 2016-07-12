@@ -49,8 +49,10 @@
         context.drawImage(this, 0, 0);
         var imageData = context.getImageData(0, 0, img.width, img.height);
         var end = new Date().getTime();
+        imageFrame.pixelData = imageData.data;
+        imageFrame.imageData = imageData;
         imageFrame.decodeTimeInMS = end - start;
-        deferred.resolve(imageData);
+        deferred.resolve(imageFrame);
       };
       img.onerror = function(error) {
         deferred.reject(error);

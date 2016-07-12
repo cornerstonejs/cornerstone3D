@@ -4,7 +4,7 @@
 
   "use strict";
 
-  function decodeImageFrame(imageFrame, transferSyntax, pixelData) {
+  function decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas) {
     var start = new Date().getTime();
 
     // Implicit VR Little Endian
@@ -31,7 +31,12 @@
     // JPEG Baseline lossy process 1 (8 bit)
     else if (transferSyntax === "1.2.840.10008.1.2.4.50")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame, pixelData);
+      if(imageFrame.bitsAllocated === 8)
+      {
+        return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, canvas);
+      } else {
+        imageFrame = cornerstoneWADOImageLoader.decodeJPEGBaseline(imageFrame, pixelData);
+      }
     }
     // JPEG Baseline lossy process 2 & 4 (12 bit)
     else if (transferSyntax === "1.2.840.10008.1.2.4.51")
@@ -91,8 +96,22 @@
     var end = new Date().getTime();
     imageFrame.decodeTimeInMS = end - start;
 
-    return imageFrame;
+    // Convert color space for color images
+    if(cornerstoneWADOImageLoader.isColorImage(imageFrame.photometricInterpretation)) {
+      // setup the canvas context
+      canvas.height = imageFrame.rows;
+      canvas.width = imageFrame.columns;
 
+      var context = canvas.getContext('2d');
+      var imageData = context.createImageData(imageFrame.columns, imageFrame.rows);
+      cornerstoneWADOImageLoader.convertColorSpace(imageFrame, imageData);
+      imageFrame.imageData = imageData;
+      imageFrame.pixelData = imageData.data;
+    }
+    
+    var deferred = $.Deferred();
+    deferred.resolve(imageFrame);
+    return deferred.promise();
   }
 
   cornerstoneWADOImageLoader.decodeImageFrame = decodeImageFrame;

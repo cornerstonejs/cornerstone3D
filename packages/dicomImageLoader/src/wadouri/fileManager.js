@@ -24,7 +24,7 @@
   }
 
   // module exports
-  cornerstoneWADOImageLoader.fileManager = {
+  cornerstoneWADOImageLoader.wadouri.fileManager = {
     add : add,
     get : get,
     remove:remove,

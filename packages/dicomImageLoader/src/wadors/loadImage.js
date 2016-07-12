@@ -26,22 +26,16 @@
     // get the pixel data from the server
     cornerstoneWADOImageLoader.wadors.getPixelData(uri, imageId, mediaType).then(function(result) {
 
-      // get the image frame
-      var imageFrame = cornerstoneWADOImageLoader.wadors.getImageFrame(imageId);
-
-      // decode the pixel data
+      var metaDataProvider = cornerstoneWADOImageLoader.wadors.metaDataProvider;
       var transferSyntax = getTransferSyntaxForContentType(result.contentType);
-      imageFrame = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, result.imageFrame);
-
-      // create the image
-      var image = cornerstoneWADOImageLoader.wadors.createImage(imageId, imageFrame);
-
-      // add the loadTimeInMS property
-      var end = new Date().getTime();
-      image.loadTimeInMS = end - start;
-
-      deferred.resolve(image);
-
+      var pixelData = result.imageFrame;
+      var imagePromise = cornerstoneWADOImageLoader.createImage(imageId, pixelData, transferSyntax, metaDataProvider);
+      imagePromise.then(function(image) {
+        // add the loadTimeInMS property
+        var end = new Date().getTime();
+        image.loadTimeInMS = end - start;
+        deferred.resolve(image);
+      })
     }).fail(function(reason) {
       deferred.reject(reason);
     });

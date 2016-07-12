@@ -20,6 +20,6 @@
   }
 
   // module exports
-  cornerstoneWADOImageLoader.parseImageId = parseImageId;
+  cornerstoneWADOImageLoader.wadouri.parseImageId = parseImageId;
   
 }(cornerstoneWADOImageLoader));

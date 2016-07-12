@@ -33,5 +33,5 @@
     throw 'unsupported pixel format';
   }
 
-  cornerstoneWADOImageLoader.getUncompressedImageFrame = getUncompressedImageFrame;
+  cornerstoneWADOImageLoader.wadouri.getUncompressedImageFrame = getUncompressedImageFrame;
 }($, cornerstone, cornerstoneWADOImageLoader));

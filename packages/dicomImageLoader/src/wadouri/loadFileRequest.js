@@ -4,9 +4,9 @@
 
   function loadFileRequest(uri) {
 
-    var parsedImageId = cornerstoneWADOImageLoader.parseImageId(uri);
+    var parsedImageId = cornerstoneWADOImageLoader.wadouri.parseImageId(uri);
     var fileIndex = parseInt(parsedImageId.url);
-    var file = cornerstoneWADOImageLoader.fileManager.get(fileIndex);
+    var file = cornerstoneWADOImageLoader.wadouri.fileManager.get(fileIndex);
     
     // create a deferred object
     var deferred = $.Deferred();
@@ -20,5 +20,5 @@
 
     return deferred.promise();
   }
-  cornerstoneWADOImageLoader.internal.loadFileRequest = loadFileRequest;
+  cornerstoneWADOImageLoader.wadouri.loadFileRequest = loadFileRequest;
 }($, cornerstone, cornerstoneWADOImageLoader));

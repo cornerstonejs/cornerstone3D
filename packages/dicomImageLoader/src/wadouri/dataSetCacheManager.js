@@ -16,7 +16,18 @@
     return loadedDataSets[uri] !== undefined;
   }
 
-  // loads the dicom dataset from the wadouri sp
+  function get(uri) {
+
+    // if already loaded return it right away
+    if(!loadedDataSets[uri]) {
+      return;
+    }
+
+    return loadedDataSets[uri].dataSet;
+  }
+
+
+    // loads the dicom dataset from the wadouri sp
   function load(uri, loadRequest) {
 
     // if already loaded return it right away
@@ -41,7 +52,10 @@
     promises[uri] = promise;
 
     // handle success and failure of the XHR request load
-    promise.then(function(dataSet) {
+    promise.then(function(dicomPart10AsArrayBuffer, xhr) {
+      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+      var dataSet = dicomParser.parseDicom(byteArray);
+
       loadedDataSets[uri] = {
         dataSet: dataSet,
         cacheCount: 1
@@ -75,11 +89,12 @@
   }
 
   // module exports
-  cornerstoneWADOImageLoader.dataSetCacheManager = {
+  cornerstoneWADOImageLoader.wadouri.dataSetCacheManager = {
     isLoaded: isLoaded,
     load: load,
     unload: unload,
-    purge: purge
+    purge: purge,
+    get: get
   };
 
 }(cornerstoneWADOImageLoader));

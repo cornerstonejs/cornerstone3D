@@ -31,5 +31,5 @@
   function getEncapsulatedImageFrame(dataSet, frameIndex) {
     return getEncodedImageFrame(dataSet, frameIndex);
   }
-  cornerstoneWADOImageLoader.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
+  cornerstoneWADOImageLoader.wadouri.getEncapsulatedImageFrame = getEncapsulatedImageFrame;
 }($, cornerstone, cornerstoneWADOImageLoader));
