@@ -136,42 +136,33 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     var rgbaBuffer = imageData.data;
 
     // convert based on the photometric interpretation
-    var deferred = $.Deferred();
-    try {
-      if (imageFrame.photometricInterpretation === "RGB" )
-      {
-        convertRGB(imageFrame, rgbaBuffer);
-      }
-      else if (imageFrame.photometricInterpretation === "YBR_RCT")
-      {
-        convertRGB(imageFrame, rgbaBuffer);
-      }
-      else if (imageFrame.photometricInterpretation === "YBR_ICT")
-      {
-        convertRGB(imageFrame, rgbaBuffer);
-      }
-      else if( imageFrame.photometricInterpretation === "PALETTE COLOR" )
-      {
-        cornerstoneWADOImageLoader.convertPALETTECOLOR(imageFrame, rgbaBuffer);
-      }
-      else if( imageFrame.photometricInterpretation === "YBR_FULL_422" )
-      {
-        convertRGB(imageFrame, rgbaBuffer);
-      }
-      else if(imageFrame.photometricInterpretation === "YBR_FULL" )
-      {
-        convertYBRFull(imageFrame, rgbaBuffer);
-      }
-      else
-      {
-        throw "no color space conversion for photometric interpretation " + imageFrame.photometricInterpretation;
-      }
-      
-      deferred.resolve(imageData);
-      return deferred.promise();
-    } catch (error) {
-      deferred.reject(error);
-      return deferred.promise();
+    if (imageFrame.photometricInterpretation === "RGB" )
+    {
+      convertRGB(imageFrame, rgbaBuffer);
+    }
+    else if (imageFrame.photometricInterpretation === "YBR_RCT")
+    {
+      convertRGB(imageFrame, rgbaBuffer);
+    }
+    else if (imageFrame.photometricInterpretation === "YBR_ICT")
+    {
+      convertRGB(imageFrame, rgbaBuffer);
+    }
+    else if( imageFrame.photometricInterpretation === "PALETTE COLOR" )
+    {
+      cornerstoneWADOImageLoader.convertPALETTECOLOR(imageFrame, rgbaBuffer);
+    }
+    else if( imageFrame.photometricInterpretation === "YBR_FULL_422" )
+    {
+      convertRGB(imageFrame, rgbaBuffer);
+    }
+    else if(imageFrame.photometricInterpretation === "YBR_FULL" )
+    {
+      convertYBRFull(imageFrame, rgbaBuffer);
+    }
+    else
+    {
+      throw "no color space conversion for photometric interpretation " + imageFrame.photometricInterpretation;
     }
   }
 
@@ -452,8 +443,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         image.voiLUT  = voiLutModule.voiLUTSequence[0];
       }
 
-      
-
       // set the ww/wc to cover the dynamic range of the image if no values are supplied
       if(image.windowCenter === undefined || image.windowWidth === undefined) {
         if(image.color) {
@@ -609,9 +598,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       }
       throw "no decoder for transfer syntax " + transferSyntax;
     }
-    
-    var end = new Date().getTime();
-    imageFrame.decodeTimeInMS = end - start;
 
     // Convert color space for color images
     if(cornerstoneWADOImageLoader.isColorImage(imageFrame.photometricInterpretation)) {
@@ -625,7 +611,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       imageFrame.imageData = imageData;
       imageFrame.pixelData = imageData.data;
     }
-    
+
+    var end = new Date().getTime();
+    imageFrame.decodeTimeInMS = end - start;
+
     var deferred = $.Deferred();
     deferred.resolve(imageFrame);
     return deferred.promise();
@@ -1428,6 +1417,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       return deferred.promise();
     }
 
+    // TODO: load bulk data items that we might need
+
     var mediaType;// = 'image/dicom+jp2';
 
     // get the pixel data from the server
@@ -1477,6 +1468,25 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   cornerstoneWADOImageLoader.wadors.getNumberString = getNumberString;
 }($, cornerstone, cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getNumberValue(element, index) {
+    var value = cornerstoneWADOImageLoader.wadors.getValue(element, index);
+    if(value === undefined) {
+      return;
+    }
+    return parseFloat(value);
+  }
+
+
+  // module exports
+  cornerstoneWADOImageLoader.wadors.getNumberValue = getNumberValue
+
+}(cornerstoneWADOImageLoader));
 /**
  */
 (function ($, cornerstone, cornerstoneWADOImageLoader) {
@@ -1550,15 +1560,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   var getNumberValues = cornerstoneWADOImageLoader.wadors.getNumberValues;
   var getValue = cornerstoneWADOImageLoader.wadors.getValue;
-
-  function getNumberValue(element, index) {
-    var value = getValue(element, index);
-    if(value === undefined) {
-      return;
-    }
-    return parseFloat(value);
-  }
-
+  var getNumberValue = cornerstoneWADOImageLoader.wadors.getNumberValue
+  
   function metaDataProvider(type, imageId) {
     var metaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
     if(!metaData) {
@@ -1893,112 +1896,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  function getNumberValues(dataSet, tag, minimumLength) {
-    var values = [];
-    var valueAsString = dataSet.string(tag);
-    if(!valueAsString) {
-      return;
-    }
-    var split = valueAsString.split('\\');
-    if(minimumLength && split.length < minimumLength) {
-      return;
-    }
-    for(var i=0;i < split.length; i++) {
-      values.push(parseFloat(split[i]));
-    }
-    return values;
-  }
-
-  function getLUT(pixelRepresentation, lutDataSet) {
-    var numLUTEntries = lutDataSet.uint16('x00283002', 0);
-    if(numLUTEntries === 0) {
-      numLUTEntries = 65535;
-    }
-    var firstValueMapped = 0;
-    if(pixelRepresentation === 0) {
-      firstValueMapped = lutDataSet.uint16('x00283002', 1);
-    } else {
-      firstValueMapped = lutDataSet.int16('x00283002', 1);
-    }
-    var numBitsPerEntry = lutDataSet.uint16('x00283002', 2);
-    //console.log('LUT(', numLUTEntries, ',', firstValueMapped, ',', numBitsPerEntry, ')');
-    var lut = {
-      id : '1',
-      firstValueMapped: firstValueMapped,
-      numBitsPerEntry : numBitsPerEntry,
-      lut : []
-    };
-
-    //console.log("minValue=", minValue, "; maxValue=", maxValue);
-    for (var i = 0; i < numLUTEntries; i++) {
-      if(pixelRepresentation === 0) {
-        lut.lut[i] = lutDataSet.uint16('x00283006', i);
-      } else {
-        lut.lut[i] = lutDataSet.int16('x00283006', i);
-      }
-    }
-    return lut;
-  }
-
-
-  function getLUTs(pixelRepresentation, lutSequence) {
-    if(!lutSequence || !lutSequence.items.length) {
-      return;
-    }
-    var luts = [];
-    for(var i=0; i < lutSequence.items.length; i++) {
-      var lutDataSet = lutSequence.items[i].dataSet;
-      var lut = getLUT(pixelRepresentation, lutDataSet);
-      if(lut) {
-        luts.push(lut);
-      }
-    }
-    return luts;
-  }
-
-  function getMinStoredPixelValue(dataSet) {
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    var bitsStored = dataSet.uint16('x00280101');
-    if(pixelRepresentation === 0) {
-      return 0;
-    }
-    return -1 << (bitsStored -1);
-  }
-
-  // 0 = unsigned / US, 1 = signed / SS
-  function getModalityLUTOutputPixelRepresentation(dataSet) {
-
-    // CT SOP Classes are always signed
-    var sopClassUID = dataSet.string('x00080016');
-    if(sopClassUID === '1.2.840.10008.5.1.4.1.1.2' ||
-      sopClassUID === '1.2.840.10008.5.1.4.1.1.2.1') {
-      return 1;
-    }
-
-    // if rescale intercept and rescale slope are present, pass the minimum stored
-    // pixel value through them to see if we get a signed output range
-    var rescaleIntercept = dataSet.floatString('x00281052');
-    var rescaleSlope = dataSet.floatString('x00281053');
-    if(rescaleIntercept !== undefined && rescaleSlope !== undefined) {
-      var minStoredPixelValue = getMinStoredPixelValue(dataSet); //
-      var minModalityLutValue = minStoredPixelValue * rescaleSlope + rescaleIntercept;
-      if (minModalityLutValue < 0) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
-
-    // Output of non linear modality lut is always unsigned
-    if(dataSet.elements.x00283000 && dataSet.elements.x00283000.length > 0) {
-      return 0;
-    }
-
-    // If no modality lut transform, output is same as pixel representation
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    return pixelRepresentation;
-  }
-
   function getLutDescriptor(dataSet, tag) {
     if(!dataSet.elements[tag] || dataSet.elements[tag].length != 6) {
       return;
@@ -2047,6 +1944,175 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
   }
 
+  function getImagePixelModule(dataSet) {
+
+    var imagePixelModule = {
+      samplesPerPixel: dataSet.uint16('x00280002'),
+      photometricInterpretation: dataSet.string('x00280004'),
+      rows: dataSet.uint16('x00280010'),
+      columns: dataSet.uint16('x00280011'),
+      bitsAllocated: dataSet.uint16('x00280100'),
+      bitsStored: dataSet.uint16('x00280101'),
+      highBit: dataSet.uint16('x00280102'),
+      pixelRepresentation: dataSet.uint16('x00280103'),
+      planarConfiguration: dataSet.uint16('x00280006'),
+      pixelAspectRatio: dataSet.string('x00280034'),
+    };
+    populateSmallestLargestPixelValues(dataSet, imagePixelModule);
+    populatePaletteColorLut(dataSet, imagePixelModule);
+    return imagePixelModule;
+
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.wadouri.getImagePixelModule = getImagePixelModule
+
+}(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getLUT(pixelRepresentation, lutDataSet) {
+    var numLUTEntries = lutDataSet.uint16('x00283002', 0);
+    if(numLUTEntries === 0) {
+      numLUTEntries = 65535;
+    }
+    var firstValueMapped = 0;
+    if(pixelRepresentation === 0) {
+      firstValueMapped = lutDataSet.uint16('x00283002', 1);
+    } else {
+      firstValueMapped = lutDataSet.int16('x00283002', 1);
+    }
+    var numBitsPerEntry = lutDataSet.uint16('x00283002', 2);
+    //console.log('LUT(', numLUTEntries, ',', firstValueMapped, ',', numBitsPerEntry, ')');
+    var lut = {
+      id : '1',
+      firstValueMapped: firstValueMapped,
+      numBitsPerEntry : numBitsPerEntry,
+      lut : []
+    };
+
+    //console.log("minValue=", minValue, "; maxValue=", maxValue);
+    for (var i = 0; i < numLUTEntries; i++) {
+      if(pixelRepresentation === 0) {
+        lut.lut[i] = lutDataSet.uint16('x00283006', i);
+      } else {
+        lut.lut[i] = lutDataSet.int16('x00283006', i);
+      }
+    }
+    return lut;
+  }
+
+
+  function getLUTs(pixelRepresentation, lutSequence) {
+    if(!lutSequence || !lutSequence.items.length) {
+      return;
+    }
+    var luts = [];
+    for(var i=0; i < lutSequence.items.length; i++) {
+      var lutDataSet = lutSequence.items[i].dataSet;
+      var lut = getLUT(pixelRepresentation, lutDataSet);
+      if(lut) {
+        luts.push(lut);
+      }
+    }
+    return luts;
+  }
+
+
+  // module exports
+  cornerstoneWADOImageLoader.wadouri.getLUTs = getLUTs
+
+}(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getMinStoredPixelValue(dataSet) {
+    var pixelRepresentation = dataSet.uint16('x00280103');
+    var bitsStored = dataSet.uint16('x00280101');
+    if(pixelRepresentation === 0) {
+      return 0;
+    }
+    return -1 << (bitsStored -1);
+  }
+
+  // 0 = unsigned / US, 1 = signed / SS
+  function getModalityLUTOutputPixelRepresentation(dataSet) {
+
+    // CT SOP Classes are always signed
+    var sopClassUID = dataSet.string('x00080016');
+    if(sopClassUID === '1.2.840.10008.5.1.4.1.1.2' ||
+      sopClassUID === '1.2.840.10008.5.1.4.1.1.2.1') {
+      return 1;
+    }
+
+    // if rescale intercept and rescale slope are present, pass the minimum stored
+    // pixel value through them to see if we get a signed output range
+    var rescaleIntercept = dataSet.floatString('x00281052');
+    var rescaleSlope = dataSet.floatString('x00281053');
+    if(rescaleIntercept !== undefined && rescaleSlope !== undefined) {
+      var minStoredPixelValue = getMinStoredPixelValue(dataSet); //
+      var minModalityLutValue = minStoredPixelValue * rescaleSlope + rescaleIntercept;
+      if (minModalityLutValue < 0) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+
+    // Output of non linear modality lut is always unsigned
+    if(dataSet.elements.x00283000 && dataSet.elements.x00283000.length > 0) {
+      return 0;
+    }
+
+    // If no modality lut transform, output is same as pixel representation
+    var pixelRepresentation = dataSet.uint16('x00280103');
+    return pixelRepresentation;
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.wadouri.getModalityLUTOutputPixelRepresentation = getModalityLUTOutputPixelRepresentation
+
+}(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getNumberValues(dataSet, tag, minimumLength) {
+    var values = [];
+    var valueAsString = dataSet.string(tag);
+    if(!valueAsString) {
+      return;
+    }
+    var split = valueAsString.split('\\');
+    if(minimumLength && split.length < minimumLength) {
+      return;
+    }
+    for(var i=0;i < split.length; i++) {
+      values.push(parseFloat(split[i]));
+    }
+    return values;
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.wadouri.getNumberValues = getNumberValues
+
+}(cornerstoneWADOImageLoader));
+/**
+ */
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  var getNumberValues = cornerstoneWADOImageLoader.wadouri.getNumberValues;
+
   function metaDataProvider(type, imageId) {
     var parsedImageId = cornerstoneWADOImageLoader.wadouri.parseImageId(imageId);
 
@@ -2066,21 +2132,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
 
     if (type === 'imagePixelModule') {
-      var imagePixelModule = {
-        samplesPerPixel: dataSet.uint16('x00280002'),
-        photometricInterpretation: dataSet.string('x00280004'),
-        rows: dataSet.uint16('x00280010'),
-        columns: dataSet.uint16('x00280011'),
-        bitsAllocated: dataSet.uint16('x00280100'),
-        bitsStored: dataSet.uint16('x00280101'),
-        highBit: dataSet.uint16('x00280102'),
-        pixelRepresentation: dataSet.uint16('x00280103'),
-        planarConfiguration: dataSet.uint16('x00280006'),
-        pixelAspectRatio: dataSet.string('x00280034'),
-      };
-      populateSmallestLargestPixelValues(dataSet, imagePixelModule);
-      populatePaletteColorLut(dataSet, imagePixelModule);
-      return imagePixelModule;
+      return cornerstoneWADOImageLoader.wadouri.getImagePixelModule(dataSet);
     }
 
     if (type === 'modalityLutModule') {
@@ -2088,15 +2140,16 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         rescaleIntercept : dataSet.floatString('x00281052'),
         rescaleSlope : dataSet.floatString('x00281053'),
         rescaleType: dataSet.string('x00281054'),
-        modalityLUTSequence : getLUTs(dataSet.uint16('x00280103'), dataSet.elements.x00283000)
+        modalityLUTSequence : cornerstoneWADOImageLoader.wadouri.getLUTs(dataSet.uint16('x00280103'), dataSet.elements.x00283000)
       };
     }
 
     if (type === 'voiLutModule') {
+      var modalityLUTOutputPixelRepresentation = cornerstoneWADOImageLoader.wadouri.getModalityLUTOutputPixelRepresentation(dataSet);
       return {
         windowCenter : getNumberValues(dataSet, 'x00281050', 1),
         windowWidth : getNumberValues(dataSet, 'x00281051', 1),
-        voiLUTSequence : getLUTs(getModalityLUTOutputPixelRepresentation(dataSet), dataSet.elements.x00283010)
+        voiLUTSequence : cornerstoneWADOImageLoader.wadouri.getLUTs(modalityLUTOutputPixelRepresentation, dataSet.elements.x00283010)
       };
     }
 

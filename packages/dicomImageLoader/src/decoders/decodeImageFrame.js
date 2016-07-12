@@ -92,9 +92,6 @@
       }
       throw "no decoder for transfer syntax " + transferSyntax;
     }
-    
-    var end = new Date().getTime();
-    imageFrame.decodeTimeInMS = end - start;
 
     // Convert color space for color images
     if(cornerstoneWADOImageLoader.isColorImage(imageFrame.photometricInterpretation)) {
@@ -108,7 +105,10 @@
       imageFrame.imageData = imageData;
       imageFrame.pixelData = imageData.data;
     }
-    
+
+    var end = new Date().getTime();
+    imageFrame.decodeTimeInMS = end - start;
+
     var deferred = $.Deferred();
     deferred.resolve(imageFrame);
     return deferred.promise();

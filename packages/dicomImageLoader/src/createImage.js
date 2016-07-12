@@ -98,8 +98,6 @@
         image.voiLUT  = voiLutModule.voiLUTSequence[0];
       }
 
-      
-
       // set the ww/wc to cover the dynamic range of the image if no values are supplied
       if(image.windowCenter === undefined || image.windowWidth === undefined) {
         if(image.color) {

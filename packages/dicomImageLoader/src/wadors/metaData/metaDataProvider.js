@@ -6,14 +6,7 @@
 
   var getNumberValues = cornerstoneWADOImageLoader.wadors.getNumberValues;
   var getValue = cornerstoneWADOImageLoader.wadors.getValue;
-
-  function getNumberValue(element, index) {
-    var value = getValue(element, index);
-    if(value === undefined) {
-      return;
-    }
-    return parseFloat(value);
-  }
+  var getNumberValue = cornerstoneWADOImageLoader.wadors.getNumberValue;
 
   function metaDataProvider(type, imageId) {
     var metaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);

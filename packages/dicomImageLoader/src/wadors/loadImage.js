@@ -21,6 +21,8 @@
       return deferred.promise();
     }
 
+    // TODO: load bulk data items that we might need
+
     var mediaType;// = 'image/dicom+jp2';
 
     // get the pixel data from the server
