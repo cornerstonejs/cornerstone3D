@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-07-12 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-07-13 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.  It has limited support for compressed
 // transfer syntaxes, check here to see what is currently supported:
@@ -80,7 +80,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }, function(error) {
       deferred.reject(error);
     });
-    return deferred;
+    return deferred.promise();
   }
 
   function getLoaderForScheme(scheme) {
@@ -739,7 +739,9 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     imageFrame.columns = image.sx;
     imageFrame.rows = image.sy;
     imageFrame.pixelData = image.pixelData;
-    imageFrame.photometricInterpretation = "RGB";
+    if(image.nbChannels > 1) {
+      imageFrame.photometricInterpretation = "RGB";
+    }
     return imageFrame;
   }
 
@@ -1560,8 +1562,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   var getNumberValues = cornerstoneWADOImageLoader.wadors.getNumberValues;
   var getValue = cornerstoneWADOImageLoader.wadors.getValue;
-  var getNumberValue = cornerstoneWADOImageLoader.wadors.getNumberValue
-  
+  var getNumberValue = cornerstoneWADOImageLoader.wadors.getNumberValue;
+
   function metaDataProvider(type, imageId) {
     var metaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
     if(!metaData) {

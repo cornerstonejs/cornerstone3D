@@ -115,7 +115,9 @@
     imageFrame.columns = image.sx;
     imageFrame.rows = image.sy;
     imageFrame.pixelData = image.pixelData;
-    imageFrame.photometricInterpretation = "RGB";
+    if(image.nbChannels > 1) {
+      imageFrame.photometricInterpretation = "RGB";
+    }
     return imageFrame;
   }
 

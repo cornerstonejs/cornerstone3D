@@ -43,7 +43,7 @@
     }, function(error) {
       deferred.reject(error);
     });
-    return deferred;
+    return deferred.promise();
   }
 
   function getLoaderForScheme(scheme) {
