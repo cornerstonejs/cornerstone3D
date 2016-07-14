@@ -105,6 +105,9 @@ DicomMetaDictionary.sopClassNamesByUID = {
   "1.2.840.10008.5.1.4.1.1.88.11" : "BasicTextSR",
   "1.2.840.10008.5.1.4.1.1.88.22" : "EnhancedSR",
   "1.2.840.10008.5.1.4.1.1.88.33" : "ComprehensiveSR",
+  "1.2.840.10008.5.1.4.1.1.128" : "Positron Emission Tomography Image",
+  "1.2.840.10008.5.1.4.1.1.130" : "Enhanced PET Image",
+  "1.2.840.10008.5.1.4.1.1.128.1" : "Legacy Converted Enhanced PET Image",
 }
 
 DicomMetaDictionary.dictionary = {
