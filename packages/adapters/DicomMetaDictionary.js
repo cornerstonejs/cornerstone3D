@@ -36,6 +36,7 @@ class DicomMetaDictionary {
     for (var tag in dataset) {
       var data = dataset[tag];
       if (data.vr == "SQ") {
+        // convert sequence to list of values
         var naturalValues = [];
         for (var index in data.Value) {
           naturalValues.push(DicomMetaDictionary.naturalizeDataset(data.Value[index]))
@@ -49,9 +50,21 @@ class DicomMetaDictionary {
         name = entry.name;
       }
       if (/.*Sequence/.test(name)) {
+        // remove Sequence from name of list
         name = name.substring(0, name.length - 'Sequence'.length);
       }
       naturalDataset[name] = data.Value;
+      if (naturalDataset[name].length == 1) {
+        // only one value is not a list
+        naturalDataset[name] = naturalDataset[name][0];
+      }
+      if (/.*SOPClassUID/.test(name)) {
+        // give natural language name to UID if available
+        var sopClassName = DicomMetaDictionary.sopClassNamesByUID[naturalDataset[name]];
+        if (sopClassName) {
+          naturalDataset[name] = sopClassName;
+        }
+      }
     }
     return(naturalDataset);
   }
@@ -65,6 +78,30 @@ class DicomMetaDictionary {
       }
     }
   }
+}
+
+// Subset of those listed at:
+// http://dicom.nema.org/medical/dicom/current/output/html/part04.html#sect_B.5
+DicomMetaDictionary.sopClassNamesByUID = {
+  "1.2.840.10008.5.1.4.1.1.2" : "CTImage",
+  "1.2.840.10008.5.1.4.1.1.2.1" : "EnhancedCTImage",
+  "1.2.840.10008.5.1.4.1.1.2.2" : "LegacyConvertedEnhancedCTImage",
+  "1.2.840.10008.5.1.4.1.1.3.1" : "UltrasoundMultiframeImage",
+  "1.2.840.10008.5.1.4.1.1.4" : "MRImage",
+  "1.2.840.10008.5.1.4.1.1.4.1" : "EnhancedMRImage",
+  "1.2.840.10008.5.1.4.1.1.4.2" : "MRSpectroscopy",
+  "1.2.840.10008.5.1.4.1.1.4.3" : "EnhancedMRColorImage",
+  "1.2.840.10008.5.1.4.1.1.4.4" : "LegacyConvertedEnhancedMRImage",
+  "1.2.840.10008.5.1.4.1.1.6.1" : "UltrasoundImage",
+  "1.2.840.10008.5.1.4.1.1.6.2" : "EnhancedUSVolume",
+  "1.2.840.10008.5.1.4.1.1.7" : "SecondaryCaptureImage",
+  "1.2.840.10008.5.1.4.1.1.6.1" : "Ultrasound Image",
+  "1.2.840.10008.5.1.4.1.1.66" : "Raw Data",
+  "1.2.840.10008.5.1.4.1.1.66.1" : "Spatial Registration",
+  "1.2.840.10008.5.1.4.1.1.66.2" : "Spatial Fiducials",
+  "1.2.840.10008.5.1.4.1.1.66.3" : "Deformable Spatial Registration",
+  "1.2.840.10008.5.1.4.1.1.66.4" : "Segmentation",
+  "1.2.840.10008.5.1.4.1.1.67" : "Real World Value Mapping",
 }
 
 DicomMetaDictionary.dictionary = {
