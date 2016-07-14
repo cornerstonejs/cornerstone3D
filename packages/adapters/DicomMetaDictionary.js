@@ -102,6 +102,9 @@ DicomMetaDictionary.sopClassNamesByUID = {
   "1.2.840.10008.5.1.4.1.1.66.3" : "Deformable Spatial Registration",
   "1.2.840.10008.5.1.4.1.1.66.4" : "Segmentation",
   "1.2.840.10008.5.1.4.1.1.67" : "Real World Value Mapping",
+  "1.2.840.10008.5.1.4.1.1.88.11" : "BasicTextSR",
+  "1.2.840.10008.5.1.4.1.1.88.22" : "EnhancedSR",
+  "1.2.840.10008.5.1.4.1.1.88.33" : "ComprehensiveSR",
 }
 
 DicomMetaDictionary.dictionary = {
