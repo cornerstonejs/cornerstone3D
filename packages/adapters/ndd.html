@@ -53,25 +53,41 @@
     </script>
     <script type="text/javascript">
     var dicomData = null;
+    var dataset = null;
+
+    function readDICOM(arrayBuffer) {
+
+      var startTime = new Date();
+      dicomData = DicomMessage.readFile(arrayBuffer);
+      var readTime = (new Date()) - startTime;
+
+      dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+
+      var string = JSON.stringify(dataset, null, 4);
+      $('#jsonContent').html(string);
+      $('#read-time').html("Read in "+readTime+"ms");
+    }
+
     $(function(){
         $('#select').change(function(evt) {
             var e = evt.originalEvent, files = e.target.files;
-
-            var reader = new FileReader()
+            var reader = new FileReader();
             reader.onload = function(e) {
-                var startTime = new Date();
-                dicomData = DicomMessage.readFile(e.target.result); 
-
-                var dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-
-                var readIn = (new Date()) - startTime;
-                var string = JSON.stringify(dataset, null, 4);
-                $('#jsonContent').html(string);
-                $('#read-time').html("Read in "+readIn+"ms");
-
-                //console.log(dicomData.dict['00080090'].Value[0].length);
+                readDICOM(e.target.result);
             }
             reader.readAsArrayBuffer(files[0]);
+        });
+
+        $('#fetch').click(function(){
+          var url = 'https://s3.amazonaws.com/IsomicsPublic/4-T2-multiframe-IPP_sorted_UID_fixed.dcm';
+          var dataRequest = new XMLHttpRequest();
+          dataRequest.open("GET", url, true);
+          dataRequest.responseType = "arraybuffer";
+          dataRequest.onload = function (event) {
+            readDICOM(dataRequest.response);
+          };
+          dataRequest.send(null);
+
         });
 
         $('#convertToDicom').click(function(){
@@ -94,7 +110,7 @@
             }
         });
 
-        $('#anonymize').click(function(){ 
+        $('#anonymize').click(function(){
             if (dicomData !== null) {
                 var dataDict = dicomData.dict;
                 cleanTags(dataDict);
@@ -116,6 +132,7 @@
 <body>
 <div class="wrapper">
     <input type="file" value="Select dicom" id="select"></input>
+    <button id="fetch">Download example DICOM</button>
     <span id="read-time"></span>
     <div class="json">
         <textarea id="jsonContent"></textarea>
