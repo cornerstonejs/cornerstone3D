@@ -62,7 +62,13 @@ class DicomMetaDictionary {
         // give natural language name to UID if available
         var sopClassName = DicomMetaDictionary.sopClassNamesByUID[naturalDataset[name]];
         if (sopClassName) {
-          naturalDataset[name] = sopClassName;
+          var uidlessName = name;
+          if (/.*UID/.test(name)) {
+            // strip the UID at the end, since this is now a name not a UID
+            uidlessName = name.substring(0, name.length-3);
+          }
+          delete naturalDataset[name];
+          naturalDataset[uidlessName] = sopClassName;
         }
       }
     }
