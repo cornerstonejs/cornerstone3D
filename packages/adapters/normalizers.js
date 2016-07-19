@@ -7,7 +7,7 @@ class Normalizer {
 
   static consistentSOPClass(datasets) {
     // return sopClass if all exist and match, otherwise undefined
-    var sopClass;
+    let sopClass;
     datasets.forEach(function(dataset) {
       console.log(dataset);
       if (!dataset.SOPClass) {
@@ -37,22 +37,45 @@ class Normalizer {
   }
 
   static normalizeToDataset(datasets) {
-    var sopClass = Normalizer.consistentSOPClass(datasets);
-    var normalizerClass = Normalizer.sopClassMap()[sopClass];
+    let sopClass = Normalizer.consistentSOPClass(datasets);
+    let normalizerClass = Normalizer.sopClassMap()[sopClass];
     if (!normalizerClass) {
       return(undefined);
     }
-    var normalizer = new normalizerClass(datasets);
+    let normalizer = new normalizerClass(datasets);
     return(normalizer.normalize());
   }
 }
 
 class ImageNormalizer extends Normalizer {
+  normalize() {
+    let dataset = this.datasets[0];
+    if (!dataset.PixelRepresentation) {
+      // Required tag: guess signed
+      dataset.PixelRepresentation = 1;
+    }
+    if (!dataset.NumberOfFrames) {
+      dataset.NumberOfFrames = 1;
+    }
+    if (!Array.isArray(dataset.WindowCenter)) {
+      if (dataset.WindowCenter) {
+        // assume both are specified as single string value
+        dataset.WindowCenter = [dataset.WindowCenter];
+        dataset.WindowWidth = [dataset.WindowWidth];
+      } else {
+        // pick a probably bad default
+        dataset.WindowCenter = ["200"];
+        dataset.WindowWidth = ["500"];
+      }
+    }
+    return(dataset);
+  }
 }
 
 class MRImageNormalizer extends ImageNormalizer {
   normalize() {
-    return("MRImageNormalizer");
+    let dataset = super.normalize();
+    return(dataset);
   }
 }
 
@@ -61,13 +84,25 @@ class EnhancedMRImageNormalizer extends ImageNormalizer {
     if (this.datasets.length != 1) {
       return(undefined);
     }
-    return(this.datasets[0]);
+    dataset = this.datasets[0];
+
+    // provide a volume-level window/level estimate
+    let wcww = {center: 0, width: 0};
+    dataset.PerFrameFunctionalGroups.forEach(function(functionalGroup) {
+      wcww.center += Number(functionalGroup.FrameVOILUT.WindowCenter);
+      wcww.width += Number(functionalGroup.FrameVOILUT.WindowWidth);
+    });
+    dataset.WindowCenter = [String(wcww.center / Number(dataset.NumberOfFrames))];
+    dataset.WindowWidth = [String(wcww.width / Number(dataset.NumberOfFrames))];
+
+    return(dataset);
   }
 }
 
 class CTImageNormalizer extends ImageNormalizer {
   normalize() {
-    return("CTImageNormalizer");
+    let dataset = super.normalize();
+    return(dataset);
   }
 }
 
