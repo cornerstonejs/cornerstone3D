@@ -519,7 +519,7 @@ class ShortString extends StringRepresentation {
 
 class SignedLong extends ValueRepresentation {
     constructor() {
-        super(this, "SL");
+        super("SL");
         this.maxLength = 4;
         this.padByte = "00";
         this.fixed = true;
