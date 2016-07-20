@@ -1,4 +1,4 @@
-(function ($, cornerstone, cornerstoneWADOImageLoader) {
+(function (cornerstoneWADOImageLoader) {
 
   "use strict";
 
@@ -21,4 +21,4 @@
   }
 
   cornerstoneWADOImageLoader.decodeJPEGBaseline = decodeJPEGBaseline;
-}($, cornerstone, cornerstoneWADOImageLoader));
+}(cornerstoneWADOImageLoader));

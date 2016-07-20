@@ -5,7 +5,6 @@
   "use strict";
 
   var canvas = document.createElement('canvas');
-  console.log(canvas);
   var lastImageIdDrawn = "";
 
   function isModalityLUTForDisplay(sopClassUid) {
@@ -16,7 +15,7 @@
   }
 
   function getSizeInBytes(imageFrame) {
-    var bytesPerPixel = Math.round(imageFrame.bitsAllocated);
+    var bytesPerPixel = Math.round(imageFrame.bitsAllocated / 8);
     var sizeInBytes = imageFrame.rows * imageFrame.columns * bytesPerPixel * imageFrame.samplesPerPixel;
     return sizeInBytes;
   }
@@ -50,7 +49,8 @@
         width: imageFrame.columns,
         windowCenter: voiLutModule.windowCenter ? voiLutModule.windowCenter[0] : undefined,
         windowWidth: voiLutModule.windowWidth ? voiLutModule.windowWidth[0] : undefined,
-        decodeTimeInMS : imageFrame.decodeTimeInMS
+        decodeTimeInMS : imageFrame.decodeTimeInMS,
+        webWorkerTimeInMS: imageFrame.webWorkerTimeInMS
       };
 
 
@@ -58,6 +58,19 @@
       image.getPixelData = function() {
         return imageFrame.pixelData;
       };
+
+      // convert color space
+      if(image.color) {
+        // setup the canvas context
+        canvas.height = imageFrame.rows;
+        canvas.width = imageFrame.columns;
+
+        var context = canvas.getContext('2d');
+        var imageData = context.createImageData(imageFrame.columns, imageFrame.rows);
+        cornerstoneWADOImageLoader.convertColorSpace(imageFrame, imageData);
+        imageFrame.imageData = imageData;
+        imageFrame.pixelData = imageData.data;
+      }
 
       // Setup the renderer
       if(image.color) {
@@ -74,6 +87,7 @@
           lastImageIdDrawn = imageId;
           return canvas;
         };
+
       } else {
         image.render = cornerstone.renderGrayscaleImage;
       }

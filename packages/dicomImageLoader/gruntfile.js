@@ -38,25 +38,57 @@ module.exports = function(grunt) {
             }
         },
         concat: {
-            build: {
-                src : ['src/header.js', 'src/wadouri/loadImage.js', 'src/**/*.js'],
-                dest: 'build/built.js'
+            buildImageLoader: {
+                src : ['src/imageLoader/header.js', 'src/imageLoader/wadouri/loadImage.js', 'src/imageLoader/**/*.js'],
+                dest: 'build/cornerstoneWADOImageLoader.js'
             },
-            dist: {
+            distImageLoader: {
                 options: {
                     stripBanners: true,
                     banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
                         '<%= grunt.template.today("yyyy-mm-dd") %> ' +
                         '| (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
                 },
-                src : ['build/built.js'],
+                src : ['build/cornerstoneWADOImageLoader.js'],
                 dest: 'dist/cornerstoneWADOImageLoader.js'
-            }
+            },
+            buildCodecs: {
+                src : ['codecs/*.js'],
+                dest: 'build/cornerstoneWADOImageLoaderCodecs.js'
+            },
+            distCodecs: {
+                options: {
+                    stripBanners: true,
+                    banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+                    '<%= grunt.template.today("yyyy-mm-dd") %> ' +
+                    '| (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
+                },
+                src : ['build/cornerstoneWADOImageLoaderCodecs.js'],
+                dest: 'dist/cornerstoneWADOImageLoaderCodecs.js'
+            },
+            buildWebWorker: {
+                src : ['src/webWorker/main.js', 'src/webWorker/**/*.js'],
+                dest: 'build/cornerstoneWADOImageLoaderWebWorker.js'
+            },
+            distWebWorker: {
+                options: {
+                    stripBanners: true,
+                    banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+                    '<%= grunt.template.today("yyyy-mm-dd") %> ' +
+                    '| (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
+                },
+                src : ['build/cornerstoneWADOImageLoaderWebWorker.js'],
+                dest: 'dist/cornerstoneWADOImageLoaderWebWorker.js'
+            },
+
         },
         uglify: {
             dist: {
                 files: {
-                    'dist/cornerstoneWADOImageLoader.min.js': ['dist/cornerstoneWADOImageLoader.js']
+                    'dist/cornerstoneWADOImageLoader.min.js': ['dist/cornerstoneWADOImageLoader.js'],
+                    'dist/cornerstoneWADOImageLoaderWebWorker.min.js': ['dist/cornerstoneWADOImageLoaderWebWorker.js'],
+                    'dist/cornerstoneWADOImageLoaderCodecs.min.js': ['dist/cornerstoneWADOImageLoaderCodecs.js']
+
                 }
             },
             options: {
@@ -74,17 +106,24 @@ module.exports = function(grunt) {
             all: ['test/*.html']
         },
         watch: {
-            scripts: {
-                files: ['src/**/*.js', 'test/*.js'],
-                tasks: ['buildAll', 'qunit']
+            imageLoaderScripts: {
+                files: ['src/imageLoader/**/*.js', 'test/*.js'],
+                tasks: ['buildImageLoader', 'qunit']
+            },
+            webWorkerScripts: {
+                files: ['src/webWorker/**/*.js'],
+                tasks: ['buildWebWorker', 'qunit']
             }
+
         }
     });
 
     require('load-grunt-tasks')(grunt);
 
-    grunt.registerTask('buildAll', ['clean', 'concat:build', 'concat:dist', 'uglify', 'jshint']);
-    grunt.registerTask('default', ['buildAll']);
+    grunt.registerTask('buildCodecs', ['concat:buildCodecs', 'concat:distCodecs', 'uglify', 'jshint']);
+    grunt.registerTask('buildWebWorker', ['concat:buildWebWorker', 'concat:distWebWorker', 'uglify', 'jshint']);
+    grunt.registerTask('buildImageLoader', ['concat:buildImageLoader', 'concat:distImageLoader', 'uglify', 'jshint']);
+    grunt.registerTask('default', ['clean', 'buildImageLoader', 'buildWebWorker', 'buildCodecs']);
 };
 
 // Release process:
