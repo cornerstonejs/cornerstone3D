@@ -9,7 +9,6 @@ class Normalizer {
     // return sopClass if all exist and match, otherwise undefined
     let sopClass;
     datasets.forEach(function(dataset) {
-      console.log(dataset);
       if (!dataset.SOPClass) {
         return(undefined);
       }
@@ -84,7 +83,7 @@ class EnhancedMRImageNormalizer extends ImageNormalizer {
     if (this.datasets.length != 1) {
       return(undefined);
     }
-    dataset = this.datasets[0];
+    let dataset = this.datasets[0];
 
     // provide a volume-level window/level estimate
     let wcww = {center: 0, width: 0};
