@@ -2,7 +2,8 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes
 class Normalizer {
   constructor (datasets) {
-    this.datasets = datasets;
+    this.datasets = datasets; // one or more dicom-like object instances
+    this.dataset = undefined; // a normalized multiframe dicom object instance
   }
 
   static consistentSOPClass(datasets) {
@@ -16,6 +17,7 @@ class Normalizer {
        sopClass = dataset.SOPClass;
       }
       if (dataset.SOPClass != sopClass) {
+        console.log('inconsistent sopClasses: ', dataset.SOPClass, sopClass);
         return(undefined);
       }
     });
@@ -31,6 +33,15 @@ class Normalizer {
     });
   }
 
+  static isMultiframe(ds=this.dataset) {
+    return ([
+      "EnhancedMRImage",
+      "EnhancedCTImage",
+      "EnhancedUSImage",
+      "EnhancedPETImage",
+    ].indexOf(ds.SOPClass) != -1);
+  }
+
   normalize() {
     return("No normalization defined");
   }
@@ -39,74 +50,143 @@ class Normalizer {
     let sopClass = Normalizer.consistentSOPClass(datasets);
     let normalizerClass = Normalizer.sopClassMap()[sopClass];
     if (!normalizerClass) {
+      console.log('no normalizerClass for ', sopClass);
       return(undefined);
     }
     let normalizer = new normalizerClass(datasets);
-    return(normalizer.normalize());
+    normalizer.normalize();
+    return(normalizer.dataset);
   }
 }
 
 class ImageNormalizer extends Normalizer {
   normalize() {
-    let dataset = this.datasets[0];
-    if (!dataset.PixelRepresentation) {
+    this.normalizeToMultiframe();
+    this.normalizeMultiframe();
+  }
+
+  normalizeToMultiframe() {
+    if (this.datasets.length == 1 && Normalizer.isMultiframe(this.datasets[0])) {
+      // already a multiframe, so just pass use it
+      this.dataset = this.datasets[0];
+      return;
+    }
+    this.dataset = {};
+    let ds = this.dataset;
+    // create a new multiframe from the source datasets
+    // fill in only those elements required to make a valid image
+    // for volumetric processing
+    let referenceDataset = this.datasets[0];
+    ds.NumberOfFrames = this.datasets.length;
+
+    ds.SOPClass = referenceDataset.SOPClass;
+    ds.Rows = referenceDataset.Rows;
+    ds.Columns = referenceDataset.Columns;
+    ds.BitsAllocated = referenceDataset.BitsAllocated;
+    ds.PixelRepresentation = referenceDataset.PixelRepresentation;
+
+    // sort
+    // https://github.com/pieper/Slicer3/blob/master/Base/GUI/Tcl/LoadVolume.tcl
+    let referencePosition = vec3.create();
+    referencePosition.set(referenceDataset.ImagePositionPatient);
+    let rowVector = vec3.create();
+    rowVector.set(referenceDataset.ImageOrientationPatient.slice(0,3));
+    let columnVector = vec3.create();
+    columnVector.set(referenceDataset.ImageOrientationPatient.slice(3,6));
+    let scanAxis = vec3.create();
+    vec3.cross(scanAxis,rowVector,columnVector);
+    let distanceDatasetPairs = [];
+    this.datasets.forEach(function(dataset) {
+      let position = vec3.create();
+      position.set(dataset.ImagePositionPatient);
+      let positionVector = vec3.create();
+      vec3.subtract(positionVector, position, referencePosition);
+      let distance = vec3.dot(positionVector, scanAxis);
+      distanceDatasetPairs.push([distance, dataset]);
+    });
+    distanceDatasetPairs.sort(function(a,b) {
+      return (b[0]-a[0]);
+    });
+
+    // assign array buffers
+    if (ds.BitsAllocated != 16) {
+      alert('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
+    }
+    let frameSize = referenceDataset.PixelData.byteLength;
+    ds.PixelData = new ArrayBuffer(ds.NumberOfFrames * frameSize);
+    let frame = 0;
+    distanceDatasetPairs.forEach(function(pair) {
+      let [distance, dataset] = pair;
+      let pixels = new Uint16Array(dataset.PixelData);
+      let frameView = new Uint16Array(ds.PixelData, frame * frameSize, frameSize/2);
+      frameView.set(pixels);
+      frame++;
+    });
+  }
+
+  normalizeMultiframe() {
+    let ds = this.dataset;
+    if (!ds.NumberOfFrames) {
+      ds.NumberOfFrames = 1;
+    }
+    if (!ds.PixelRepresentation) {
       // Required tag: guess signed
-      dataset.PixelRepresentation = 1;
+      ds.PixelRepresentation = 1;
     }
-    if (!dataset.NumberOfFrames) {
-      dataset.NumberOfFrames = 1;
-    }
-    if (!Array.isArray(dataset.WindowCenter)) {
-      if (dataset.WindowCenter) {
-        // assume both are specified as single string value
-        dataset.WindowCenter = [dataset.WindowCenter];
-        dataset.WindowWidth = [dataset.WindowWidth];
-      } else {
-        // pick a probably bad default
-        dataset.WindowCenter = ["200"];
-        dataset.WindowWidth = ["500"];
+
+    if (ds.WindowCenter && ds.WindowWidth) {
+      // if they exist as single values, make them lists for consistency
+      if (!Array.isArray(ds.WindowCenter)) {
+        ds.WindowCenter = [ds.WindowCenter];
+      }
+      if (!Array.isArray(ds.WindowWidth)) {
+        ds.WindowWidth = [ds.WindowWidth];
       }
     }
-    return(dataset);
+    if (!ds.WindowCenter || !ds.WindowWidth) {
+      // if they don't exist, make them empty lists and try to initialize them
+      ds.WindowCenter = []; // both must exist and be the same length
+      ds.WindowWidth = [];
+      // provide a volume-level window/level guess (mean of per-frame)
+      if (ds.PerFrameFunctionalGroups) {
+        let wcww = {center: 0, width: 0, count: 0};
+        ds.PerFrameFunctionalGroups.forEach(function(functionalGroup) {
+          wcww.center += Number(functionalGroup.FrameVOILUT.WindowCenter);
+          wcww.width += Number(functionalGroup.FrameVOILUT.WindowWidth);
+          wcww.count++;
+        });
+        if (wcww.count > 0) {
+          ds.WindowCenter.push(String(wcww.center / wcww.count));
+          ds.WindowWidth.push(String(wcww.width / wcww.count));
+        }
+      }
+    }
+    // last gasp, pick an arbitrary default
+    if (ds.WindowCenter.length == 0) { ds.WindowCenter = [300] }
+    if (ds.WindowWidth.length == 0) { ds.WindowWidth = [500] }
   }
 }
 
 class MRImageNormalizer extends ImageNormalizer {
   normalize() {
-    let dataset = super.normalize();
-    return(dataset);
+    super.normalize();
   }
 }
 
 class EnhancedMRImageNormalizer extends ImageNormalizer {
   normalize() {
-    if (this.datasets.length != 1) {
-      return(undefined);
-    }
-    let dataset = this.datasets[0];
-
-    // provide a volume-level window/level estimate
-    let wcww = {center: 0, width: 0};
-    dataset.PerFrameFunctionalGroups.forEach(function(functionalGroup) {
-      wcww.center += Number(functionalGroup.FrameVOILUT.WindowCenter);
-      wcww.width += Number(functionalGroup.FrameVOILUT.WindowWidth);
-    });
-    dataset.WindowCenter = [String(wcww.center / Number(dataset.NumberOfFrames))];
-    dataset.WindowWidth = [String(wcww.width / Number(dataset.NumberOfFrames))];
-
-    return(dataset);
+    super.normalize();
   }
 }
 
 class CTImageNormalizer extends ImageNormalizer {
   normalize() {
-    let dataset = super.normalize();
-    return(dataset);
+    super.normalize();
   }
 }
 
 class PETImageNormalizer extends ImageNormalizer {
   normalize() {
-    return("PETImageNormalizer");
+    super.normalize();
   }
 }
