@@ -79,6 +79,7 @@ class ImageNormalizer extends Normalizer {
     let referenceDataset = this.datasets[0];
     ds.NumberOfFrames = this.datasets.length;
 
+    // TODO: develop sets of elements to copy over in loops
     ds.SOPClass = referenceDataset.SOPClass;
     ds.Rows = referenceDataset.Rows;
     ds.Columns = referenceDataset.Columns;
@@ -87,6 +88,9 @@ class ImageNormalizer extends Normalizer {
 
     // sort
     // https://github.com/pieper/Slicer3/blob/master/Base/GUI/Tcl/LoadVolume.tcl
+    // TODO: add spacing checks:
+    // https://github.com/Slicer/Slicer/blob/master/Modules/Scripted/DICOMPlugins/DICOMScalarVolumePlugin.py#L228-L250
+    // TODO: develop PixelToPatient and PatientToPixel transforms
     let referencePosition = vec3.create();
     referencePosition.set(referenceDataset.ImagePositionPatient);
     let rowVector = vec3.create();
