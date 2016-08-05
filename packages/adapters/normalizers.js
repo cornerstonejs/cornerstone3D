@@ -30,6 +30,7 @@ class Normalizer {
       "MRImage" : MRImageNormalizer,
       "EnhancedMRImage" : EnhancedMRImageNormalizer,
       "PETImage" : PETImageNormalizer,
+      "Segmentation" : SEGImageNormalizer,
     });
   }
 
@@ -39,6 +40,7 @@ class Normalizer {
       "EnhancedCTImage",
       "EnhancedUSImage",
       "EnhancedPETImage",
+      "Segmentation",
     ].indexOf(ds.SOPClass) != -1);
   }
 
@@ -155,9 +157,13 @@ class ImageNormalizer extends Normalizer {
       if (ds.PerFrameFunctionalGroups) {
         let wcww = {center: 0, width: 0, count: 0};
         ds.PerFrameFunctionalGroups.forEach(function(functionalGroup) {
-          wcww.center += Number(functionalGroup.FrameVOILUT.WindowCenter);
-          wcww.width += Number(functionalGroup.FrameVOILUT.WindowWidth);
-          wcww.count++;
+          if (functionalGroup.FrameVOILUT &&
+              functionalGroup.FrameVOILUT.WindowCenter &&
+              functionalGroup.FrameVOILUT.WindowWidth) {
+            wcww.center += Number(functionalGroup.FrameVOILUT.WindowCenter);
+            wcww.width += Number(functionalGroup.FrameVOILUT.WindowWidth);
+            wcww.count++;
+          }
         });
         if (wcww.count > 0) {
           ds.WindowCenter.push(String(wcww.center / wcww.count));
@@ -190,6 +196,12 @@ class CTImageNormalizer extends ImageNormalizer {
 }
 
 class PETImageNormalizer extends ImageNormalizer {
+  normalize() {
+    super.normalize();
+  }
+}
+
+class SEGImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
   }
