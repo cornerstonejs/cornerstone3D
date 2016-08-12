@@ -92,7 +92,7 @@ class ImageNormalizer extends Normalizer {
     // https://github.com/pieper/Slicer3/blob/master/Base/GUI/Tcl/LoadVolume.tcl
     // TODO: add spacing checks:
     // https://github.com/Slicer/Slicer/blob/master/Modules/Scripted/DICOMPlugins/DICOMScalarVolumePlugin.py#L228-L250
-    // TODO: develop PixelToPatient and PatientToPixel transforms
+    // TODO: put this information into the Shared and PerFrame functional groups
     let referencePosition = vec3.create();
     referencePosition.set(referenceDataset.ImagePositionPatient);
     let rowVector = vec3.create();
@@ -116,7 +116,7 @@ class ImageNormalizer extends Normalizer {
 
     // assign array buffers
     if (ds.BitsAllocated != 16) {
-      alert('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
+      console.error('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
     }
     let frameSize = referenceDataset.PixelData.byteLength;
     ds.PixelData = new ArrayBuffer(ds.NumberOfFrames * frameSize);
@@ -128,6 +128,31 @@ class ImageNormalizer extends Normalizer {
       frameView.set(pixels);
       frame++;
     });
+
+    if (ds.NumberOfFrames < 2) {
+      // TODO
+      console.error('Cannot populate shared groups uniquely without multiple frames');
+    }
+    let [distance0, dataset0]  = distanceDatasetPairs[0];
+    let [distance1, dataset1] = distanceDatasetPairs[1];
+    // make the functional groups
+    ds.SharedFunctionalGroups = {
+      PlaneOrientation : {
+        ImageOrientationPatient : dataset0.ImageOrientationPatient,
+      },
+      PixelMeasures : {
+        PixelSpacing : dataset0.PixelSpacing,
+        SpacingBetweenSlices : Math.abs(distance1 - distance0),
+      },
+    };
+    ds.PerFrameFunctionalGroups = [];
+    distanceDatasetPairs.forEach(function(pair) {
+      ds.PerFrameFunctionalGroups.push({
+        PlanePosition : {
+          ImagePositionPatient: pair[1].ImagePositionPatient,
+        },
+      });
+    });
   }
 
   normalizeMultiframe() {
@@ -138,6 +163,10 @@ class ImageNormalizer extends Normalizer {
     if (!ds.PixelRepresentation) {
       // Required tag: guess signed
       ds.PixelRepresentation = 1;
+    }
+
+    if (!ds.SharedFunctionalGroups) {
+      console.error('Can only process multiframe data with SharedFunctionalGroups');
     }
 
     if (ds.WindowCenter && ds.WindowWidth) {
