@@ -30,6 +30,7 @@ class Normalizer {
       "MRImage" : MRImageNormalizer,
       "EnhancedMRImage" : EnhancedMRImageNormalizer,
       "PETImage" : PETImageNormalizer,
+      "PositronEmissionTomographyImage" : PETImageNormalizer,
       "Segmentation" : SEGImageNormalizer,
     });
   }
