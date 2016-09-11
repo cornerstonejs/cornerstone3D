@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-09-01 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-09-11 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 
 cornerstoneWADOImageLoaderWebWorker = {
   registerTaskHandler : undefined
@@ -151,8 +151,8 @@ cornerstoneWADOImageLoader = {};
     // Initialize the codecs
     if (config.decodeTask.initializeCodecsOnStartup) {
       //console.time('initializeCodecs');
-      cornerstoneWADOImageLoader.initializeJPEG2000();
-      cornerstoneWADOImageLoader.initializeJPEGLS();
+      cornerstoneWADOImageLoader.initializeJPEG2000(config.decodeTask);
+      cornerstoneWADOImageLoader.initializeJPEGLS(config.decodeTask);
       //console.timeEnd('initializeCodecs');
     }
   }
@@ -543,6 +543,41 @@ cornerstoneWADOImageLoader = {};
 "use strict";
 (function (cornerstoneWADOImageLoader) {
 
+  function decodeJPEGLossless(imageFrame, pixelData) {
+    // check to make sure codec is loaded
+    if(typeof jpeg === 'undefined' ||
+      typeof jpeg.lossless === 'undefined' ||
+      typeof jpeg.lossless.Decoder === 'undefined') {
+      throw 'No JPEG Lossless decoder loaded';
+    }
+
+    var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
+    //console.time('jpeglossless');
+    var buffer = pixelData.buffer;
+    var decoder = new jpeg.lossless.Decoder();
+    var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
+    //console.timeEnd('jpeglossless');
+    if (imageFrame.pixelRepresentation === 0) {
+      if (imageFrame.bitsAllocated === 16) {
+        imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
+        return imageFrame;
+      } else {
+        // untested!
+        imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
+        return imageFrame;
+      }
+    } else {
+      imageFrame.pixelData = new Int16Array(decompressedData.buffer);
+      return imageFrame;
+    }
+  }
+  // module exports
+  cornerstoneWADOImageLoader.decodeJPEGLossless = decodeJPEGLossless;
+
+}(cornerstoneWADOImageLoader));
+"use strict";
+(function (cornerstoneWADOImageLoader) {
+
 
   var charLS;
 
@@ -655,41 +690,6 @@ cornerstoneWADOImageLoader = {};
   // module exports
   cornerstoneWADOImageLoader.decodeJPEGLS = decodeJPEGLS;
   cornerstoneWADOImageLoader.initializeJPEGLS = initializeJPEGLS;
-
-}(cornerstoneWADOImageLoader));
-"use strict";
-(function (cornerstoneWADOImageLoader) {
-
-  function decodeJPEGLossless(imageFrame, pixelData) {
-    // check to make sure codec is loaded
-    if(typeof jpeg === 'undefined' ||
-      typeof jpeg.lossless === 'undefined' ||
-      typeof jpeg.lossless.Decoder === 'undefined') {
-      throw 'No JPEG Lossless decoder loaded';
-    }
-
-    var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
-    //console.time('jpeglossless');
-    var buffer = pixelData.buffer;
-    var decoder = new jpeg.lossless.Decoder();
-    var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
-    //console.timeEnd('jpeglossless');
-    if (imageFrame.pixelRepresentation === 0) {
-      if (imageFrame.bitsAllocated === 16) {
-        imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
-        return imageFrame;
-      } else {
-        // untested!
-        imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
-        return imageFrame;
-      }
-    } else {
-      imageFrame.pixelData = new Int16Array(decompressedData.buffer);
-      return imageFrame;
-    }
-  }
-  // module exports
-  cornerstoneWADOImageLoader.decodeJPEGLossless = decodeJPEGLossless;
 
 }(cornerstoneWADOImageLoader));
 /**

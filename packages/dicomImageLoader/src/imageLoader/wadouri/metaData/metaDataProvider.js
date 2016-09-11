@@ -20,7 +20,8 @@
         imageOrientationPatient: getNumberValues(dataSet, 'x00200037', 6),
         imagePositionPatient: getNumberValues(dataSet, 'x00200032', 3),
         sliceThickness: dataSet.floatString('x00180050'),
-        sliceLocation: dataSet.floatString('x00201041')
+        sliceLocation: dataSet.floatString('x00201041'),
+        frameOfReferenceUID: dataSet.string('x00200052')
       };
     }
 

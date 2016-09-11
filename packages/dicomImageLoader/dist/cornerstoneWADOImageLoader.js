@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-09-01 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-09-11 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.
 //
@@ -1639,7 +1639,8 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         imageOrientationPatient: getNumberValues(dataSet, 'x00200037', 6),
         imagePositionPatient: getNumberValues(dataSet, 'x00200032', 3),
         sliceThickness: dataSet.floatString('x00180050'),
-        sliceLocation: dataSet.floatString('x00201041')
+        sliceLocation: dataSet.floatString('x00201041'),
+        frameOfReferenceUID: dataSet.string('x00200052')
       };
     }
 
