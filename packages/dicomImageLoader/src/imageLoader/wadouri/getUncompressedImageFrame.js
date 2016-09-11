@@ -15,15 +15,16 @@
     var pixelDataOffset = pixelDataElement.dataOffset;
     var pixelsPerFrame = rows * columns * samplesPerPixel;
 
+    var frameOffset;
     if(bitsAllocated === 8) {
-      var frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame;
+      frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame;
       if(frameOffset >= dataSet.byteArray.length) {
         throw 'frame exceeds size of pixelData';
       }
       return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame);
     }
     else if(bitsAllocated === 16) {
-      var frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
+      frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
       if(frameOffset >= dataSet.byteArray.length) {
         throw 'frame exceeds size of pixelData';
       }

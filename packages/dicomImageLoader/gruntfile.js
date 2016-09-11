@@ -47,7 +47,7 @@ module.exports = function(grunt) {
                     stripBanners: true,
                     banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
                         '<%= grunt.template.today("yyyy-mm-dd") %> ' +
-                        '| (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
+                        '| (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
                 },
                 src : ['build/cornerstoneWADOImageLoader.js'],
                 dest: 'dist/cornerstoneWADOImageLoader.js'
@@ -61,13 +61,13 @@ module.exports = function(grunt) {
                     stripBanners: true,
                     banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %> ' +
-                    '| (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
+                    '| (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
                 },
                 src : ['build/cornerstoneWADOImageLoaderCodecs.js'],
                 dest: 'dist/cornerstoneWADOImageLoaderCodecs.js'
             },
             buildWebWorker: {
-                src : ['src/webWorker/main.js', 'src/webWorker/**/*.js'],
+                src : ['src/webWorker/main.js', 'src/webWorker/decodeTask/decodeTask.js', 'src/webWorker/**/*.js'],
                 dest: 'build/cornerstoneWADOImageLoaderWebWorker.js'
             },
             distWebWorker: {
@@ -75,7 +75,7 @@ module.exports = function(grunt) {
                     stripBanners: true,
                     banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %> ' +
-                    '| (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
+                    '| (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */\n'
                 },
                 src : ['build/cornerstoneWADOImageLoaderWebWorker.js'],
                 dest: 'dist/cornerstoneWADOImageLoaderWebWorker.js'

@@ -64,7 +64,7 @@
       highBit: dataSet.uint16('x00280102'),
       pixelRepresentation: dataSet.uint16('x00280103'),
       planarConfiguration: dataSet.uint16('x00280006'),
-      pixelAspectRatio: dataSet.string('x00280034'),
+      pixelAspectRatio: dataSet.string('x00280034')
     };
     populateSmallestLargestPixelValues(dataSet, imagePixelModule);
     populatePaletteColorLut(dataSet, imagePixelModule);

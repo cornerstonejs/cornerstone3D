@@ -16,20 +16,38 @@
 
   function getSizeInBytes(imageFrame) {
     var bytesPerPixel = Math.round(imageFrame.bitsAllocated / 8);
-    var sizeInBytes = imageFrame.rows * imageFrame.columns * bytesPerPixel * imageFrame.samplesPerPixel;
-    return sizeInBytes;
+    return imageFrame.rows * imageFrame.columns * bytesPerPixel * imageFrame.samplesPerPixel;
   }
 
-  function createImage(imageId, pixelData, transferSyntax, metaDataProvider) {
+  /**
+   * Helper function to set pixel data to the right typed array.  This is needed because web workers
+   * can transfer array buffers but not typed arrays
+   * @param imageFrame
+   */
+  function setPixelDataType(imageFrame) {
+    if(imageFrame.bitsAllocated === 16) {
+      if(imageFrame.pixelRepresentation === 0) {
+        imageFrame.pixelData = new Uint16Array(imageFrame.pixelData);
+      } else {
+        imageFrame.pixelData = new Int16Array(imageFrame.pixelData);
+      }
+    } else {
+      imageFrame.pixelData = new Uint8Array(imageFrame.pixelData);
+    }
+  }
+
+  function createImage(imageId, pixelData, transferSyntax, options) {
     var deferred = $.Deferred();
-    var imageFrame = cornerstoneWADOImageLoader.getImageFrame(imageId, metaDataProvider);
-    var decodePromise = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas);
+    var imageFrame = cornerstoneWADOImageLoader.getImageFrame(imageId);
+    var decodePromise = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options);
     decodePromise.then(function(imageFrame) {
+      setPixelDataType(imageFrame);
+
       //var imagePixelModule = metaDataProvider('imagePixelModule', imageId);
-      var imagePlaneModule = metaDataProvider('imagePlaneModule', imageId);
-      var voiLutModule = metaDataProvider('voiLutModule', imageId);
-      var modalityLutModule = metaDataProvider('modalityLutModule', imageId);
-      var sopCommonModule = metaDataProvider('sopCommonModule', imageId);
+      var imagePlaneModule = cornerstone.metaData.get('imagePlaneModule', imageId);
+      var voiLutModule = cornerstone.metaData.get('voiLutModule', imageId);
+      var modalityLutModule = cornerstone.metaData.get('modalityLutModule', imageId);
+      var sopCommonModule = cornerstone.metaData.get('sopCommonModule', imageId);
 
       var image = {
         imageId: imageId,

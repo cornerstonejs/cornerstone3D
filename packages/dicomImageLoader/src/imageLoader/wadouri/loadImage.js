@@ -22,21 +22,21 @@
     }
   }
 
-  function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey) {
+  function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey, options) {
+
     var start = new Date().getTime();
     frame = frame || 0;
     var deferred = $.Deferred();
-    xhrRequestPromise.then(function(dicomPart10AsArrayBuffer, xhr) {
-      var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-      var dataSet = dicomParser.parseDicom(byteArray);
+    xhrRequestPromise.then(function(dataSet/*, xhr*/) {
       var pixelData = getPixelData(dataSet, frame);
-      var metaDataProvider = cornerstoneWADOImageLoader.wadouri.metaDataProvider;
       var transferSyntax =  dataSet.string('x00020010');
-      var imagePromise = cornerstoneWADOImageLoader.createImage(imageId, pixelData, transferSyntax, metaDataProvider);
+      var loadEnd = new Date().getTime();
+      var imagePromise = cornerstoneWADOImageLoader.createImage(imageId, pixelData, transferSyntax, options);
       imagePromise.then(function(image) {
         image.data = dataSet;
         var end = new Date().getTime();
-        image.loadTimeInMS = end - start;
+        image.loadTimeInMS = loadEnd - start;
+        image.totalTimeInMS = end - start;
         addDecache(image);
         deferred.resolve(image);
       });
@@ -55,19 +55,18 @@
     }
   }
 
-  function loadImage(imageId) {
-
+  function loadImage(imageId, options) {
     var parsedImageId = cornerstoneWADOImageLoader.wadouri.parseImageId(imageId);
 
     var loader = getLoaderForScheme(parsedImageId.scheme);
 
     // if the dataset for this url is already loaded, use it
     if(cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.isLoaded(parsedImageId.url)) {
-      return loadDataSetFromPromise(cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.load(parsedImageId.url, loader), imageId, parsedImageId.frame, parsedImageId.url);
+      return loadDataSetFromPromise(cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.load(parsedImageId.url, loader), imageId, parsedImageId.frame, parsedImageId.url, options);
     }
 
     // load the dataSet via the dataSetCacheManager
-    return loadDataSetFromPromise(cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.load(parsedImageId.url, loader), imageId, parsedImageId.frame, parsedImageId.url);
+    return loadDataSetFromPromise(cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.load(parsedImageId.url, loader), imageId, parsedImageId.frame, parsedImageId.url, options);
   }
 
   // register dicomweb and wadouri image loader prefixes

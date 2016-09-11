@@ -4,7 +4,7 @@
  * image loader mechanism.  One reason a caller may need to do this is to determine the number of frames
  * in a multiframe sop instance so it can create the imageId's correctly.
  */
-(function (cornerstoneWADOImageLoader) {
+(function ($, cornerstoneWADOImageLoader) {
 
   "use strict";
 
@@ -30,6 +30,8 @@
     // loads the dicom dataset from the wadouri sp
   function load(uri, loadRequest) {
 
+    loadRequest = loadRequest ||  cornerstoneWADOImageLoader.internal.xhrRequest;
+
     // if already loaded return it right away
     if(loadedDataSets[uri]) {
       //console.log('using loaded dataset ' + uri);
@@ -52,7 +54,8 @@
     promises[uri] = promise;
 
     // handle success and failure of the XHR request load
-    promise.then(function(dicomPart10AsArrayBuffer, xhr) {
+    var loadDeferred = $.Deferred();
+    promise.then(function(dicomPart10AsArrayBuffer/*, xhr*/) {
       var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
       var dataSet = dicomParser.parseDicom(byteArray);
 
@@ -60,6 +63,7 @@
         dataSet: dataSet,
         cacheCount: 1
       };
+      loadDeferred.resolve(dataSet);
       // done loading, remove the promise
       delete promises[uri];
     }, function () {
@@ -67,7 +71,7 @@
         // error thrown, remove the promise
         delete promises[uri];
       });
-    return promise;
+    return loadDeferred;
   }
 
   // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
@@ -97,4 +101,4 @@
     get: get
   };
 
-}(cornerstoneWADOImageLoader));
+}($, cornerstoneWADOImageLoader));

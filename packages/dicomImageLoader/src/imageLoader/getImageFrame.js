@@ -4,10 +4,10 @@
 
   "use strict";
 
-  function getImageFrame(imageId, metaDataProvider) {
-    var imagePixelModule = metaDataProvider('imagePixelModule', imageId);
+  function getImageFrame(imageId) {
+    var imagePixelModule = cornerstone.metaData.get('imagePixelModule', imageId);
 
-    var imageFrame = {
+    return {
       samplesPerPixel : imagePixelModule.samplesPerPixel,
       photometricInterpretation : imagePixelModule.photometricInterpretation,
       planarConfiguration : imagePixelModule.planarConfiguration,
@@ -25,8 +25,6 @@
       bluePaletteColorLookupTableData : imagePixelModule.bluePaletteColorLookupTableData,
       pixelData: undefined // populated later after decoding
     };
-
-    return imageFrame;
   }
 
   cornerstoneWADOImageLoader.getImageFrame = getImageFrame;

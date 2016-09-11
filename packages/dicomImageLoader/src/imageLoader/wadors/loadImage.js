@@ -7,7 +7,7 @@
     return '1.2.840.10008.1.2'; // hard code to ILE for now
   }
 
-  function loadImage(imageId) {
+  function loadImage(imageId, options) {
     var start = new Date().getTime();
 
     var deferred = $.Deferred();
@@ -28,10 +28,9 @@
     // get the pixel data from the server
     cornerstoneWADOImageLoader.wadors.getPixelData(uri, imageId, mediaType).then(function(result) {
 
-      var metaDataProvider = cornerstoneWADOImageLoader.wadors.metaDataProvider;
       var transferSyntax = getTransferSyntaxForContentType(result.contentType);
-      var pixelData = result.imageFrame;
-      var imagePromise = cornerstoneWADOImageLoader.createImage(imageId, pixelData, transferSyntax, metaDataProvider);
+      var pixelData = result.imageFrame.pixelData;
+      var imagePromise = cornerstoneWADOImageLoader.createImage(imageId, pixelData, transferSyntax, options);
       imagePromise.then(function(image) {
         // add the loadTimeInMS property
         var end = new Date().getTime();

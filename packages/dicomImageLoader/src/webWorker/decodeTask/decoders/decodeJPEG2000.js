@@ -36,7 +36,7 @@
       [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
     // add num vomp..etc
     if(ret !== 0){
-      console.log('[opj_decode] decoding failed!')
+      console.log('[opj_decode] decoding failed!');
       openJPEG._free(dataPtr);
       openJPEG._free(openJPEG.getValue(imagePtrPtr, '*'));
       openJPEG._free(imageSizeXPtr);
@@ -121,31 +121,40 @@
     return imageFrame;
   }
 
-  function decodeJPEG2000(imageFrame, pixelData)
-  {
+  function initializeJPEG2000(decodeConfig) {
     // check to make sure codec is loaded
-    if(typeof OpenJPEG === 'undefined' &&
-      typeof JpxImage === 'undefined') {
-      throw 'No JPEG2000 decoder loaded';
-    }
-
-    // OpenJPEG2000 https://github.com/jpambrun/openjpeg
-    if(typeof OpenJPEG !== 'undefined') {
-      // Initialize if it isn't already initialized
-      if (!openJPEG) {
-        openJPEG = OpenJPEG();
-        if (!openJPEG || !openJPEG._jp2_decode) {
-          throw 'OpenJPEG failed to initialize';
-        }
+    if(!decodeConfig.usePDFJS) {
+      if(typeof OpenJPEG === 'undefined') {
+        throw 'OpenJPEG decoder not loaded';
       }
-      return decodeOpenJpeg2000(imageFrame, pixelData);
     }
 
-    // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
-    if(typeof JpxImage !== 'undefined') {
+    if (!openJPEG) {
+      openJPEG = OpenJPEG();
+      if (!openJPEG || !openJPEG._jp2_decode) {
+        throw 'OpenJPEG failed to initialize';
+      }
+    }
+  }
+
+  function decodeJPEG2000(imageFrame, pixelData, decodeConfig, options)
+  {
+    options = options || {};
+
+    initializeJPEG2000(decodeConfig);
+
+    if(options.usePDFJS || decodeConfig.usePDFJS) {
+      // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
+      //console.log('PDFJS')
       return decodeJpx(imageFrame, pixelData);
+    } else {
+      // OpenJPEG2000 https://github.com/jpambrun/openjpeg
+      //console.log('OpenJPEG')
+      return decodeOpenJpeg2000(imageFrame, pixelData);
     }
   }
 
   cornerstoneWADOImageLoader.decodeJPEG2000 = decodeJPEG2000;
+  cornerstoneWADOImageLoader.initializeJPEG2000 = initializeJPEG2000;
+
 }(cornerstoneWADOImageLoader));

@@ -2,15 +2,6 @@
 
   "use strict";
 
-  var options = {
-    // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-    beforeSend : function(xhr) {}
-  };
-
-  function configure(opts) {
-    options = opts;
-  }
-
   function isColorImage(photoMetricInterpretation)
   {
     if(photoMetricInterpretation === "RGB" ||

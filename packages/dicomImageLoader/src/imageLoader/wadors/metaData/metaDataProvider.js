@@ -1,6 +1,6 @@
 /**
  */
-(function (cornerstoneWADOImageLoader) {
+(function (cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
 
@@ -37,7 +37,7 @@
         planarConfiguration: getValue(metaData['00280006']),
         pixelAspectRatio: getValue(metaData['00280034']),
         smallestPixelValue: getValue(metaData['00280106']),
-        largestPixelValue: getValue(metaData['00280107']),
+        largestPixelValue: getValue(metaData['00280107'])
         // TODO Color Palette
       };
     }
@@ -46,7 +46,7 @@
       return {
         // TODO VOT LUT Sequence
         windowCenter : getNumberValues(metaData['00281050'], 1),
-        windowWidth : getNumberValues(metaData['00281051'], 1),
+        windowWidth : getNumberValues(metaData['00281051'], 1)
       };
     }
 
@@ -62,13 +62,16 @@
     if (type === 'sopCommonModule') {
       return {
         sopClassUID : getValue(metaData['00080016']),
-        sopInstanceUID : getValue(metaData['00080018']),
+        sopInstanceUID : getValue(metaData['00080018'])
       };
     }
 
   }
 
+
+  cornerstone.metaData.addProvider(metaDataProvider);
+
   // module exports
   cornerstoneWADOImageLoader.wadors.metaDataProvider = metaDataProvider
 
-}(cornerstoneWADOImageLoader));
+}(cornerstone, cornerstoneWADOImageLoader));

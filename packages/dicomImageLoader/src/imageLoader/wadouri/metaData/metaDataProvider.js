@@ -1,6 +1,6 @@
 /**
  */
-(function (cornerstoneWADOImageLoader) {
+(function (cornerstone, cornerstoneWADOImageLoader) {
 
   "use strict";
 
@@ -49,13 +49,17 @@
     if (type === 'sopCommonModule') {
       return {
         sopClassUID : dataSet.string('x00080016'),
-        sopInstanceUID : dataSet.string('x00080018'),
+        sopInstanceUID : dataSet.string('x00080018')
       };
     }
 
   }
 
+
+  // register our metadata provider
+  cornerstone.metaData.addProvider(metaDataProvider);
+
   // module exports
   cornerstoneWADOImageLoader.wadouri.metaDataProvider = metaDataProvider
 
-}(cornerstoneWADOImageLoader));
+}(cornerstone, cornerstoneWADOImageLoader));

@@ -1,7 +1,7 @@
 /**
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance
  */
-(function (cornerstoneWADOImageLoader) {
+(function ($, cornerstoneWADOImageLoader) {
 
   "use strict";
 
@@ -81,4 +81,4 @@
   cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit = decodeJPEGBaseline8Bit;
   cornerstoneWADOImageLoader.isJPEGBaseline8Bit = isJPEGBaseline8Bit;
 
-}(cornerstoneWADOImageLoader));
+}($, cornerstoneWADOImageLoader));

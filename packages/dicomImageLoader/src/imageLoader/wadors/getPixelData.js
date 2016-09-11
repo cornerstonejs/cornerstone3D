@@ -28,7 +28,7 @@
       str += String.fromCharCode(data[i]);
     }
     return str;
-  };
+  }
 
   cornerstoneWADOImageLoader.wadors.getPixelData = function(uri, imageId, mediaType) {
     mediaType = mediaType || 'application/octet-stream';
@@ -39,7 +39,7 @@
     var deferred = $.Deferred();
 
     var loadPromise = cornerstoneWADOImageLoader.internal.xhrRequest(uri, imageId, headers);
-    loadPromise.then(function(imageFrameAsArrayBuffer, xhr) {
+    loadPromise.then(function(imageFrameAsArrayBuffer/*, xhr*/) {
 
       // request succeeded, Parse the multi-part mime response
       var response = new Uint8Array(imageFrameAsArrayBuffer);

@@ -1,83 +1,220 @@
-/*! cornerstone-wado-image-loader - v0.14.0 - 2016-07-18 | (c) 2014 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.0 - 2016-09-01 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+
+cornerstoneWADOImageLoaderWebWorker = {
+  registerTaskHandler : undefined
+};
+
+(function () {
+
+
+  // an object of task handlers
+  var taskHandlers = {};
+
+  // Flag to ensure web worker is only initialized once
+  var initialized = false;
+
+  // the configuration object passed in when the web worker manager is initialized
+  var config;
+
+  /**
+   * Initialization function that loads additional web workers and initializes them
+   * @param data
+   */
+  function initialize(data) {
+    //console.log('web worker initialize ', data.workerIndex);
+    // prevent initialization from happening more than once
+    if(initialized) {
+      return;
+    }
+
+    // save the config data
+    config = data.config;
+
+    // load any additional web worker tasks
+    if(data.config.webWorkerTaskPaths) {
+      for(var i=0; i < data.config.webWorkerTaskPaths.length; i++) {
+        self.importScripts(data.config.webWorkerTaskPaths[i]);
+      }
+    }
+
+    // initialize each task handler
+    Object.keys(taskHandlers).forEach(function(key) {
+      taskHandlers[key].initialize(config.taskConfiguration);
+    });
+
+    // tell main ui thread that we have completed initialization
+    self.postMessage({
+      taskType: 'initialize',
+      status: 'success',
+      result: {
+      },
+      workerIndex: data.workerIndex
+    });
+
+    initialized = true;
+  }
+
+  /**
+   * Function exposed to web worker tasks to register themselves
+   * @param taskHandler
+   */
+  cornerstoneWADOImageLoaderWebWorker.registerTaskHandler = function(taskHandler) {
+    if(taskHandlers[taskHandler.taskType]) {
+      console.log('attempt to register duplicate task handler "', taskHandler.taskType, '"');
+      return false;
+    }
+    taskHandlers[taskHandler.taskType] = taskHandler;
+    if(initialized) {
+      taskHandler.initialize(config.taskConfiguration);
+    }
+  };
+
+  /**
+   * Function to load a new web worker task with updated configuration
+   * @param data
+   */
+  function loadWebWorkerTask(data) {
+    config = data.config;
+    self.importScripts(data.sourcePath);
+  }
+
+  /**
+   * Web worker message handler - dispatches messages to the registered task handlers
+   * @param msg
+   */
+  self.onmessage = function(msg) {
+    //console.log('web worker onmessage', msg.data);
+
+    // handle initialize message
+    if(msg.data.taskType === 'initialize') {
+      initialize(msg.data);
+      return;
+    }
+
+    // handle loadWebWorkerTask message
+    if(msg.data.taskType === 'loadWebWorkerTask') {
+      loadWebWorkerTask(msg.data);
+      return;
+    }
+
+    // dispatch the message if there is a handler registered for it
+    if(taskHandlers[msg.data.taskType]) {
+      taskHandlers[msg.data.taskType].handler(msg.data, function(result, transferList) {
+        self.postMessage({
+          taskType: msg.data.taskType,
+          status: 'success',
+          result: result,
+          workerIndex: msg.data.workerIndex
+        }, transferList);
+      });
+      return;
+    }
+
+    // not task handler registered - send a failure message back to ui thread
+    console.log('no task handler for ', msg.data.taskType);
+    console.log(taskHandlers);
+    self.postMessage({
+      taskType: msg.data.taskType,
+      status: 'failed - no task handler registered',
+      workerIndex: msg.data.workerIndex
+    });
+  };
+
+}());
 
 cornerstoneWADOImageLoader = {};
 
-function initializeTask(data) {
-  //console.log('web worker initialize ', data.workerIndex);
+(function () {
 
-  var config = data.config;
+  // flag to ensure codecs are loaded only once
+  var codecsLoaded = false;
 
-  //console.time('loadingCodecs');
-  self.importScripts(config.codecsPath );
-  //console.timeEnd('loadingCodecs');
+  // the configuration object for the decodeTask
+  var decodeConfig;
 
-  self.postMessage({
-    message: 'initializeTaskCompleted',
-    workerIndex: data.workerIndex
-  });
-}
-
-
-function decodeTask(data) {
-  var imageFrame = data.decodeTask.imageFrame;
-  var pixelData = new Uint8Array(data.decodeTask.pixelData);
-  var transferSyntax = data.decodeTask.transferSyntax;
-  
-  cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData);
-  cornerstoneWADOImageLoader.calculateMinMax(imageFrame);
-
-  imageFrame.pixelData = imageFrame.pixelData.buffer;
-
-  self.postMessage({
-    message: 'decodeTaskCompleted',
-    imageFrame: imageFrame,
-    workerIndex: data.workerIndex
-  }, [imageFrame.pixelData]);
-}
-
-
-self.onmessage = function(msg) {
-  //console.log('web worker onmessage', msg.data);
-  if(msg.data.message === 'initializeTask') {
-    initializeTask(msg.data);
-  } else if(msg.data.message === 'decodeTask') {
-    decodeTask(msg.data);
-  }
-};
-(function (cornerstoneWADOImageLoader) {
-
-  "use strict";
-
-  function calculateMinMax(imageFrame)
-  {
-    if(imageFrame.smallestPixelValue !== undefined && imageFrame.largestPixelValue !== undefined) {
+  /**
+   * Function to control loading and initializing the codecs
+   * @param config
+   */
+  function loadCodecs(config) {
+    // prevent loading codecs more than once
+    if (codecsLoaded) {
       return;
     }
-    var storedPixelData = imageFrame.pixelData;
 
-    // we always calculate the min max values since they are not always
-    // present in DICOM and we don't want to trust them anyway as cornerstone
-    // depends on us providing reliable values for these
-    var min = 65535;
-    var max = -32768;
-    var numPixels = storedPixelData.length;
-    var pixelData = storedPixelData;
-    for(var index = 0; index < numPixels; index++) {
-      var spv = pixelData[index];
-      // TODO: test to see if it is faster to use conditional here rather than calling min/max functions
-      min = Math.min(min, spv);
-      max = Math.max(max, spv);
+    // Load the codecs
+    //console.time('loadCodecs');
+    self.importScripts(config.decodeTask.codecsPath);
+    codecsLoaded = true;
+    //console.timeEnd('loadCodecs');
+
+    // Initialize the codecs
+    if (config.decodeTask.initializeCodecsOnStartup) {
+      //console.time('initializeCodecs');
+      cornerstoneWADOImageLoader.initializeJPEG2000();
+      cornerstoneWADOImageLoader.initializeJPEGLS();
+      //console.timeEnd('initializeCodecs');
     }
-
-    imageFrame.smallestPixelValue = min;
-    imageFrame.largestPixelValue = max;
   }
 
-  // module exports
-  cornerstoneWADOImageLoader.calculateMinMax = calculateMinMax;
+  /**
+   * Task initialization function
+   */
+  function decodeTaskInitialize(config) {
+    decodeConfig = config;
+    if (config.decodeTask.loadCodecsOnStartup) {
+      loadCodecs(config);
+    }
+  }
 
-}(cornerstoneWADOImageLoader));
+  function calculateMinMax(imageFrame) {
+    if (imageFrame.smallestPixelValue !== undefined && imageFrame.largestPixelValue !== undefined) {
+      return;
+    }
 
+    var minMax = cornerstoneWADOImageLoader.getMinMax(imageFrame.pixelData);
+    imageFrame.smallestPixelValue = minMax.min;
+    imageFrame.largestPixelValue = minMax.max;
+  }
+
+  /**
+   * Task handler function
+   */
+  function decodeTaskHandler(data, doneCallback) {
+    // Load the codecs if they aren't already loaded
+    loadCodecs(decodeConfig);
+
+    var imageFrame = data.data.imageFrame;
+
+    // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
+    // not typed arrays
+    var pixelData = new Uint8Array(data.data.pixelData);
+
+    cornerstoneWADOImageLoader.decodeImageFrame(
+      imageFrame,
+      data.data.transferSyntax,
+      pixelData,
+      decodeConfig.decodeTask,
+      data.data.options);
+
+    calculateMinMax(imageFrame);
+
+    // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
+    // typed arrays
+    imageFrame.pixelData = imageFrame.pixelData.buffer;
+
+    // invoke the callback with our result and pass the pixelData in the transferList to move it to
+    // UI thread without making a copy
+    doneCallback(imageFrame, [imageFrame.pixelData]);
+  }
+
+  // register our task
+  cornerstoneWADOImageLoaderWebWorker.registerTaskHandler({
+    taskType: 'decodeTask',
+    handler: decodeTaskHandler,
+    initialize: decodeTaskInitialize
+  });
+}());
 
 /**
  */
@@ -85,7 +222,7 @@ self.onmessage = function(msg) {
 
   "use strict";
 
-  function decodeImageFrame(imageFrame, transferSyntax, pixelData) {
+  function decodeImageFrame(imageFrame, transferSyntax, pixelData, decodeConfig, options) {
     var start = new Date().getTime();
 
     // Implicit VR Little Endian
@@ -142,12 +279,12 @@ self.onmessage = function(msg) {
     // JPEG 2000 Lossless
     else if (transferSyntax === "1.2.840.10008.1.2.4.90")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
     }
     // JPEG 2000 Lossy
     else if (transferSyntax === "1.2.840.10008.1.2.4.91")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
     }
     /* Don't know if these work...
      // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
@@ -257,7 +394,7 @@ self.onmessage = function(msg) {
       [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
     // add num vomp..etc
     if(ret !== 0){
-      console.log('[opj_decode] decoding failed!')
+      console.log('[opj_decode] decoding failed!');
       openJPEG._free(dataPtr);
       openJPEG._free(openJPEG.getValue(imagePtrPtr, '*'));
       openJPEG._free(imageSizeXPtr);
@@ -342,33 +479,42 @@ self.onmessage = function(msg) {
     return imageFrame;
   }
 
-  function decodeJPEG2000(imageFrame, pixelData)
-  {
+  function initializeJPEG2000(decodeConfig) {
     // check to make sure codec is loaded
-    if(typeof OpenJPEG === 'undefined' &&
-      typeof JpxImage === 'undefined') {
-      throw 'No JPEG2000 decoder loaded';
-    }
-
-    // OpenJPEG2000 https://github.com/jpambrun/openjpeg
-    if(typeof OpenJPEG !== 'undefined') {
-      // Initialize if it isn't already initialized
-      if (!openJPEG) {
-        openJPEG = OpenJPEG();
-        if (!openJPEG || !openJPEG._jp2_decode) {
-          throw 'OpenJPEG failed to initialize';
-        }
+    if(!decodeConfig.usePDFJS) {
+      if(typeof OpenJPEG === 'undefined') {
+        throw 'OpenJPEG decoder not loaded';
       }
-      return decodeOpenJpeg2000(imageFrame, pixelData);
     }
 
-    // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
-    if(typeof JpxImage !== 'undefined') {
+    if (!openJPEG) {
+      openJPEG = OpenJPEG();
+      if (!openJPEG || !openJPEG._jp2_decode) {
+        throw 'OpenJPEG failed to initialize';
+      }
+    }
+  }
+
+  function decodeJPEG2000(imageFrame, pixelData, decodeConfig, options)
+  {
+    options = options || {};
+
+    initializeJPEG2000(decodeConfig);
+
+    if(options.usePDFJS || decodeConfig.usePDFJS) {
+      // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
+      //console.log('PDFJS')
       return decodeJpx(imageFrame, pixelData);
+    } else {
+      // OpenJPEG2000 https://github.com/jpambrun/openjpeg
+      //console.log('OpenJPEG')
+      return decodeOpenJpeg2000(imageFrame, pixelData);
     }
   }
 
   cornerstoneWADOImageLoader.decodeJPEG2000 = decodeJPEG2000;
+  cornerstoneWADOImageLoader.initializeJPEG2000 = initializeJPEG2000;
+
 }(cornerstoneWADOImageLoader));
 (function (cornerstoneWADOImageLoader) {
 
@@ -393,125 +539,6 @@ self.onmessage = function(msg) {
   }
 
   cornerstoneWADOImageLoader.decodeJPEGBaseline = decodeJPEGBaseline;
-}(cornerstoneWADOImageLoader));
-/**
- * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance
- */
-(function (cornerstoneWADOImageLoader) {
-
-  "use strict";
-
-  function arrayBufferToString(buffer) {
-    return binaryToString(String.fromCharCode.apply(null, Array.prototype.slice.apply(new Uint8Array(buffer))));
-  }
-
-  function binaryToString(binary) {
-    var error;
-
-    try {
-      return decodeURIComponent(escape(binary));
-    } catch (_error) {
-      error = _error;
-      if (error instanceof URIError) {
-        return binary;
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  function decodeJPEGBaseline8Bit(imageFrame, canvas) {
-    var start = new Date().getTime();
-    var deferred = $.Deferred();
-
-    var imgBlob = new Blob([imageFrame.pixelData], {type: "image/jpeg"});
-
-    var r = new FileReader();
-    if(r.readAsBinaryString === undefined) {
-      r.readAsArrayBuffer(imgBlob);
-    }
-    else {
-      r.readAsBinaryString(imgBlob); // doesn't work on IE11
-    }
-
-    r.onload = function(){
-      var img=new Image();
-      img.onload = function() {
-        canvas.height = img.height;
-        canvas.width = img.width;
-        imageFrame.rows = img.height;
-        imageFrame.columns = img.width;
-        var context = canvas.getContext('2d');
-        context.drawImage(this, 0, 0);
-        var imageData = context.getImageData(0, 0, img.width, img.height);
-        var end = new Date().getTime();
-        imageFrame.pixelData = imageData.data;
-        imageFrame.imageData = imageData;
-        imageFrame.decodeTimeInMS = end - start;
-        deferred.resolve(imageFrame);
-      };
-      img.onerror = function(error) {
-        deferred.reject(error);
-      };
-      if(r.readAsBinaryString === undefined) {
-        img.src = "data:image/jpeg;base64,"+window.btoa(arrayBufferToString(r.result));
-      }
-      else {
-        img.src = "data:image/jpeg;base64,"+window.btoa(r.result); // doesn't work on IE11
-      }
-
-    };
-    return deferred.promise();
-  }
-
-  function isJPEGBaseline8Bit(imageFrame) {
-    if((imageFrame.bitsAllocated === 8) &&
-      imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
-    {
-      return true;
-    }
-
-  }
-
-  // module exports
-  cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit = decodeJPEGBaseline8Bit;
-  cornerstoneWADOImageLoader.isJPEGBaseline8Bit = isJPEGBaseline8Bit;
-
-}(cornerstoneWADOImageLoader));
-"use strict";
-(function (cornerstoneWADOImageLoader) {
-
-  function decodeJPEGLossless(imageFrame, pixelData) {
-    // check to make sure codec is loaded
-    if(typeof jpeg === 'undefined' ||
-      typeof jpeg.lossless === 'undefined' ||
-      typeof jpeg.lossless.Decoder === 'undefined') {
-      throw 'No JPEG Lossless decoder loaded';
-    }
-
-    var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
-    //console.time('jpeglossless');
-    var buffer = pixelData.buffer;
-    var decoder = new jpeg.lossless.Decoder();
-    var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
-    //console.timeEnd('jpeglossless');
-    if (imageFrame.pixelRepresentation === 0) {
-      if (imageFrame.bitsAllocated === 16) {
-        imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
-        return imageFrame;
-      } else {
-        // untested!
-        imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
-        return imageFrame;
-      }
-    } else {
-      imageFrame.pixelData = new Int16Array(decompressedData.buffer);
-      return imageFrame;
-    }
-  }
-  // module exports
-  cornerstoneWADOImageLoader.decodeJPEGLossless = decodeJPEGLossless;
-
 }(cornerstoneWADOImageLoader));
 "use strict";
 (function (cornerstoneWADOImageLoader) {
@@ -561,20 +588,17 @@ self.onmessage = function(msg) {
     var imagePtr = charLS.getValue(imagePtrPtr, '*');
     if(image.bitsPerSample <= 8) {
       image.pixelData = new Uint8Array(image.width * image.height * image.components);
-      var src8 = new Uint8Array(charLS.HEAP8.buffer, imagePtr, image.pixelData.length);
-      image.pixelData.set(src8);
+      image.pixelData.set(new Uint8Array(charLS.HEAP8.buffer, imagePtr, image.pixelData.length));
     } else {
       // I have seen 16 bit signed images, but I don't know if 16 bit unsigned is valid, hoping to get
       // answer here:
       // https://github.com/team-charls/charls/issues/14
       if(isSigned) {
         image.pixelData = new Int16Array(image.width * image.height * image.components);
-        var src16 = new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
-        image.pixelData.set(src16);
+        image.pixelData.set(new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length));
       } else {
         image.pixelData = new Uint16Array(image.width * image.height * image.components);
-        var src16 = new Uint16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
-        image.pixelData.set(src16);
+        image.pixelData.set(new Uint16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length));
       }
     }
 
@@ -593,8 +617,7 @@ self.onmessage = function(msg) {
     return image;
   }
 
-  function decodeJPEGLS(imageFrame, pixelData)
-  {
+  function initializeJPEGLS() {
     // check to make sure codec is loaded
     if(typeof CharLS === 'undefined') {
       throw 'No JPEG-LS decoder loaded';
@@ -608,6 +631,12 @@ self.onmessage = function(msg) {
         throw 'JPEG-LS failed to initialize';
       }
     }
+
+  }
+
+  function decodeJPEGLS(imageFrame, pixelData)
+  {
+    initializeJPEGLS();
 
     var image = jpegLSDecode(pixelData, imageFrame.pixelRepresentation === 1);
     //console.log(image);
@@ -625,6 +654,42 @@ self.onmessage = function(msg) {
 
   // module exports
   cornerstoneWADOImageLoader.decodeJPEGLS = decodeJPEGLS;
+  cornerstoneWADOImageLoader.initializeJPEGLS = initializeJPEGLS;
+
+}(cornerstoneWADOImageLoader));
+"use strict";
+(function (cornerstoneWADOImageLoader) {
+
+  function decodeJPEGLossless(imageFrame, pixelData) {
+    // check to make sure codec is loaded
+    if(typeof jpeg === 'undefined' ||
+      typeof jpeg.lossless === 'undefined' ||
+      typeof jpeg.lossless.Decoder === 'undefined') {
+      throw 'No JPEG Lossless decoder loaded';
+    }
+
+    var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
+    //console.time('jpeglossless');
+    var buffer = pixelData.buffer;
+    var decoder = new jpeg.lossless.Decoder();
+    var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
+    //console.timeEnd('jpeglossless');
+    if (imageFrame.pixelRepresentation === 0) {
+      if (imageFrame.bitsAllocated === 16) {
+        imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
+        return imageFrame;
+      } else {
+        // untested!
+        imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
+        return imageFrame;
+      }
+    } else {
+      imageFrame.pixelData = new Int16Array(decompressedData.buffer);
+      return imageFrame;
+    }
+  }
+  // module exports
+  cornerstoneWADOImageLoader.decodeJPEGLossless = decodeJPEGLossless;
 
 }(cornerstoneWADOImageLoader));
 /**
@@ -764,3 +829,33 @@ self.onmessage = function(msg) {
   cornerstoneWADOImageLoader.decodeRLE = decodeRLE;
 
 }(cornerstoneWADOImageLoader));
+(function (cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function getMinMax(storedPixelData)
+  {
+    // we always calculate the min max values since they are not always
+    // present in DICOM and we don't want to trust them anyway as cornerstone
+    // depends on us providing reliable values for these
+    var min = storedPixelData[0];
+    var max = storedPixelData[0];
+    var storedPixel;
+    var numPixels = storedPixelData.length;
+    for(var index = 1; index < numPixels; index++) {
+      storedPixel = storedPixelData[index];
+      min = Math.min(min, storedPixel);
+      max = Math.max(max, storedPixel);
+    }
+
+    return {
+      min: min,
+      max: max
+    };
+  }
+
+  // module exports
+  cornerstoneWADOImageLoader.getMinMax = getMinMax;
+
+}(cornerstoneWADOImageLoader));
+

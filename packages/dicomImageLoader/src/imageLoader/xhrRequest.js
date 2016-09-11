@@ -17,7 +17,7 @@
     });
     
     // handle response data
-    xhr.onreadystatechange = function (oEvent) {
+    xhr.onreadystatechange = function () {
       // TODO: consider sending out progress messages here as we receive the pixel data
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {

@@ -4,7 +4,7 @@
 
   "use strict";
 
-  function decodeImageFrame(imageFrame, transferSyntax, pixelData) {
+  function decodeImageFrame(imageFrame, transferSyntax, pixelData, decodeConfig, options) {
     var start = new Date().getTime();
 
     // Implicit VR Little Endian
@@ -61,12 +61,12 @@
     // JPEG 2000 Lossless
     else if (transferSyntax === "1.2.840.10008.1.2.4.90")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
     }
     // JPEG 2000 Lossy
     else if (transferSyntax === "1.2.840.10008.1.2.4.91")
     {
-      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData);
+      imageFrame = cornerstoneWADOImageLoader.decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
     }
     /* Don't know if these work...
      // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)

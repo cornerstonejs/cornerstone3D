@@ -11,7 +11,7 @@
     var max = storedPixelData[0];
     var storedPixel;
     var numPixels = storedPixelData.length;
-    for(var index = 0; index < numPixels; index++) {
+    for(var index = 1; index < numPixels; index++) {
       storedPixel = storedPixelData[index];
       min = Math.min(min, storedPixel);
       max = Math.max(max, storedPixel);

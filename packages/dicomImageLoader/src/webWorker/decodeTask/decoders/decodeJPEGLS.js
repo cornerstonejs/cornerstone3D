@@ -46,20 +46,17 @@
     var imagePtr = charLS.getValue(imagePtrPtr, '*');
     if(image.bitsPerSample <= 8) {
       image.pixelData = new Uint8Array(image.width * image.height * image.components);
-      var src8 = new Uint8Array(charLS.HEAP8.buffer, imagePtr, image.pixelData.length);
-      image.pixelData.set(src8);
+      image.pixelData.set(new Uint8Array(charLS.HEAP8.buffer, imagePtr, image.pixelData.length));
     } else {
       // I have seen 16 bit signed images, but I don't know if 16 bit unsigned is valid, hoping to get
       // answer here:
       // https://github.com/team-charls/charls/issues/14
       if(isSigned) {
         image.pixelData = new Int16Array(image.width * image.height * image.components);
-        var src16 = new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
-        image.pixelData.set(src16);
+        image.pixelData.set(new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length));
       } else {
         image.pixelData = new Uint16Array(image.width * image.height * image.components);
-        var src16 = new Uint16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length);
-        image.pixelData.set(src16);
+        image.pixelData.set(new Uint16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length));
       }
     }
 
@@ -78,8 +75,7 @@
     return image;
   }
 
-  function decodeJPEGLS(imageFrame, pixelData)
-  {
+  function initializeJPEGLS() {
     // check to make sure codec is loaded
     if(typeof CharLS === 'undefined') {
       throw 'No JPEG-LS decoder loaded';
@@ -93,6 +89,12 @@
         throw 'JPEG-LS failed to initialize';
       }
     }
+
+  }
+
+  function decodeJPEGLS(imageFrame, pixelData)
+  {
+    initializeJPEGLS();
 
     var image = jpegLSDecode(pixelData, imageFrame.pixelRepresentation === 1);
     //console.log(image);
@@ -110,5 +112,6 @@
 
   // module exports
   cornerstoneWADOImageLoader.decodeJPEGLS = decodeJPEGLS;
+  cornerstoneWADOImageLoader.initializeJPEGLS = initializeJPEGLS;
 
 }(cornerstoneWADOImageLoader));

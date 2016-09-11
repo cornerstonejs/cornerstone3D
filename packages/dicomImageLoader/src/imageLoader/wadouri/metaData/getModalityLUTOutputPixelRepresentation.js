@@ -43,8 +43,7 @@
     }
 
     // If no modality lut transform, output is same as pixel representation
-    var pixelRepresentation = dataSet.uint16('x00280103');
-    return pixelRepresentation;
+    return dataSet.uint16('x00280103');
   }
 
   // module exports

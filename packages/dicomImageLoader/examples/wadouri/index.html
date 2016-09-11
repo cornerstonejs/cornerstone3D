@@ -141,7 +141,10 @@
             <span>Fragments: </span><span id="fragments"></span><br>
             <span>Max Stored Pixel Value: </span><span id="minStoredPixelValue"></span><br>
             <span>Min Stored Pixel Value: </span><span id="maxStoredPixelValue"></span><br>
+            <span>Total Time: </span><span id="totalTime"></span><br>
             <span>Load Time: </span><span id="loadTime"></span><br>
+            <span>Decode Time: </span><span id="decodeTime"></span><br>
+            <span>WebWorker Time: </span><span id="webWorkerTime"></span><br>
         </div>
     </div>
 </div>
@@ -196,7 +199,7 @@
     cornerstoneWADOImageLoader.configure({
         beforeSend: function(xhr) {
             // Add custom headers here (e.g. auth tokens)
-            xhr.setRequestHeader('APIKEY', 'my auth token');
+            //xhr.setRequestHeader('APIKEY', 'my auth token');
         }
     });
 
@@ -272,7 +275,10 @@
                 $('#maxStoredPixelValue').text(image.maxPixelValue);
                 var end = new Date().getTime();
                 var time = end - start;
-                $('#loadTime').text(time + "ms");
+                $('#totalTime').text(time + "ms");
+                $('#loadTime').text(image.loadTimeInMS + "ms");
+                $('#decodeTime').text(image.decodeTimeInMS + "ms");
+                $('#webWorkerTime').text(image.webWorkerTimeInMS + "ms");
 
             }, function(err) {
                 alert(err);
@@ -318,11 +324,11 @@
         });
         $('#load').click(function(e) {
             var url = getUrlWithoutFrame();
-            cornerstoneWADOImageLoader.dataSetCacheManager.load(url);
+            cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.load(url);
         });
         $('#unload').click(function(e) {
             var url = getUrlWithoutFrame();
-            cornerstoneWADOImageLoader.dataSetCacheManager.unload(url);
+            cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.unload(url);
         });
 
         $('#purge').click(function(e) {
