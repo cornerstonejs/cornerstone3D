@@ -2019,9 +2019,9 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     xhr.open("get", url, true);
     xhr.responseType = "arraybuffer";
     cornerstoneWADOImageLoader.internal.options.beforeSend(xhr);
-    Object.keys(headers).forEach(function (key) {
+    /*Object.keys(headers).forEach(function (key) {
       xhr.setRequestHeader(key, headers[key]);
-    });
+    });*/
     
     // handle response data
     xhr.onreadystatechange = function () {
