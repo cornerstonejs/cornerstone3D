@@ -149,7 +149,8 @@
             }
 
             var imageIds = [];
-            var imageIdRoot = url.replace('http', 'wadouri');
+            var imageIdRoot = 'wadouri:' + url;
+
             for(var i=1; i < numFrames; i++) {
                 var imageId = imageIdRoot + "?frame="+i;
                 imageIds.push(imageId);
