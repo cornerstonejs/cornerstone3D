@@ -88,8 +88,17 @@ class ImageNormalizer extends Normalizer {
     ds.Columns = referenceDataset.Columns;
     ds.BitsAllocated = referenceDataset.BitsAllocated;
     ds.PixelRepresentation = referenceDataset.PixelRepresentation;
-    ds.RescaleSlope = referenceDataset.RescaleSlope;
-    ds.RescaleIntercept = referenceDataset.RescaleIntercept;
+
+    if (!referenceDataset.RescaleSlope) {
+      ds.RescaleSlope = "1";
+    } else {
+      ds.RescaleSlope = referenceDataset.RescaleSlope;
+    }
+    if (!referenceDataset.RescaleIntercept) {
+      ds.RescaleIntercept = "0";
+    } else {
+      ds.RescaleIntercept = referenceDataset.RescaleIntercept;
+    }
 
     // sort
     // https://github.com/pieper/Slicer3/blob/master/Base/GUI/Tcl/LoadVolume.tcl
