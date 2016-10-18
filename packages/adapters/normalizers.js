@@ -88,17 +88,10 @@ class ImageNormalizer extends Normalizer {
     ds.Columns = referenceDataset.Columns;
     ds.BitsAllocated = referenceDataset.BitsAllocated;
     ds.PixelRepresentation = referenceDataset.PixelRepresentation;
-
-    if (!referenceDataset.RescaleSlope) {
-      ds.RescaleSlope = "1";
-    } else {
-      ds.RescaleSlope = referenceDataset.RescaleSlope;
-    }
-    if (!referenceDataset.RescaleIntercept) {
-      ds.RescaleIntercept = "0";
-    } else {
-      ds.RescaleIntercept = referenceDataset.RescaleIntercept;
-    }
+    ds.WindowWidth = referenceDataset.WindowWidth;
+    ds.WindowCenter = referenceDataset.WindowCenter;
+    ds.RescaleSlope = referenceDataset.RescaleSlope || "1";
+    ds.RescaleIntercept = referenceDataset.RescaleIntercept || "0";
 
     // sort
     // https://github.com/pieper/Slicer3/blob/master/Base/GUI/Tcl/LoadVolume.tcl
@@ -221,6 +214,7 @@ class ImageNormalizer extends Normalizer {
 class MRImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
+    this.dataset.SOPClass = "EnhancedMRImage";
   }
 }
 
