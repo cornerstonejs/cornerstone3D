@@ -17,7 +17,7 @@ class Normalizer {
        sopClass = dataset.SOPClass;
       }
       if (dataset.SOPClass != sopClass) {
-        console.log('inconsistent sopClasses: ', dataset.SOPClass, sopClass);
+        console.error('inconsistent sopClasses: ', dataset.SOPClass, sopClass);
         return(undefined);
       }
     });
@@ -53,7 +53,7 @@ class Normalizer {
     let sopClass = Normalizer.consistentSOPClass(datasets);
     let normalizerClass = Normalizer.sopClassMap()[sopClass];
     if (!normalizerClass) {
-      console.log('no normalizerClass for ', sopClass);
+      console.error('no normalizerClass for ', sopClass);
       return(undefined);
     }
     let normalizer = new normalizerClass(datasets);
@@ -88,8 +88,6 @@ class ImageNormalizer extends Normalizer {
     ds.Columns = referenceDataset.Columns;
     ds.BitsAllocated = referenceDataset.BitsAllocated;
     ds.PixelRepresentation = referenceDataset.PixelRepresentation;
-    ds.WindowWidth = referenceDataset.WindowWidth;
-    ds.WindowCenter = referenceDataset.WindowCenter;
     ds.RescaleSlope = referenceDataset.RescaleSlope || "1";
     ds.RescaleIntercept = referenceDataset.RescaleIntercept || "0";
 
@@ -158,6 +156,16 @@ class ImageNormalizer extends Normalizer {
         },
       });
     });
+
+    // copy over each datasets window/level into the per-frame groups
+    let datasetIndex = 0;
+    this.datasets.forEach(function(dataset) {
+      ds.PerFrameFunctionalGroups[datasetIndex].FrameVOILUT = {
+        WindowCenter: dataset.WindowCenter,
+        WindowWidth: dataset.WindowWidth,
+      };
+      datasetIndex++;
+    });
   }
 
   normalizeMultiframe() {
@@ -191,11 +199,17 @@ class ImageNormalizer extends Normalizer {
       if (ds.PerFrameFunctionalGroups) {
         let wcww = {center: 0, width: 0, count: 0};
         ds.PerFrameFunctionalGroups.forEach(function(functionalGroup) {
-          if (functionalGroup.FrameVOILUT &&
-              functionalGroup.FrameVOILUT.WindowCenter &&
-              functionalGroup.FrameVOILUT.WindowWidth) {
-            wcww.center += Number(functionalGroup.FrameVOILUT.WindowCenter);
-            wcww.width += Number(functionalGroup.FrameVOILUT.WindowWidth);
+          let wc = functionalGroup.FrameVOILUT.WindowCenter;
+          let ww = functionalGroup.FrameVOILUT.WindowWidth;
+          if (functionalGroup.FrameVOILUT && wc && ww) {
+            if (Array.isArray(wc)) {
+              wc = wc[0];
+            }
+            if (Array.isArray(ww)) {
+              ww = ww[0];
+            }
+            wcww.center += Number(wc);
+            wcww.width += Number(ww);
             wcww.count++;
           }
         });
