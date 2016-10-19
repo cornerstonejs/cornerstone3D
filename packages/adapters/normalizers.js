@@ -199,18 +199,20 @@ class ImageNormalizer extends Normalizer {
       if (ds.PerFrameFunctionalGroups) {
         let wcww = {center: 0, width: 0, count: 0};
         ds.PerFrameFunctionalGroups.forEach(function(functionalGroup) {
-          let wc = functionalGroup.FrameVOILUT.WindowCenter;
-          let ww = functionalGroup.FrameVOILUT.WindowWidth;
-          if (functionalGroup.FrameVOILUT && wc && ww) {
-            if (Array.isArray(wc)) {
-              wc = wc[0];
+          if (functionalGroup.FrameVOILUT) {
+            let wc = functionalGroup.FrameVOILUT.WindowCenter;
+            let ww = functionalGroup.FrameVOILUT.WindowWidth;
+            if (functionalGroup.FrameVOILUT && wc && ww) {
+              if (Array.isArray(wc)) {
+                wc = wc[0];
+              }
+              if (Array.isArray(ww)) {
+                ww = ww[0];
+              }
+              wcww.center += Number(wc);
+              wcww.width += Number(ww);
+              wcww.count++;
             }
-            if (Array.isArray(ww)) {
-              ww = ww[0];
-            }
-            wcww.center += Number(wc);
-            wcww.width += Number(ww);
-            wcww.count++;
           }
         });
         if (wcww.count > 0) {
