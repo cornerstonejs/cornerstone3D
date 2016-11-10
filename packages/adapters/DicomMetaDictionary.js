@@ -84,6 +84,26 @@ class DicomMetaDictionary {
       }
     }
   }
+
+  static uid() {
+    let uid = "2.25." + Math.floor(1+ Math.random() * 9);
+    for (let index = 0; index < 38; index++) {
+      uid = uid + Math.floor(Math.random()*10);
+    }
+    return uid;
+  }
+
+  // date and time in UTC
+  static date() {
+    let now = new Date();
+    return now.toISOString().replace(/-/g,'').slice(0,8);
+  }
+
+  static time() {
+    let now = new Date();
+    return now.toISOString().replace(/:/g,'').slice(11,17);
+  }
+
 }
 
 // Subset of those listed at:
