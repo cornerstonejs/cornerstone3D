@@ -64,17 +64,18 @@ class Normalizer {
 
 class ImageNormalizer extends Normalizer {
   normalize() {
-    this.normalizeToMultiframe();
+    this.convertToMultiframe();
     this.normalizeMultiframe();
   }
 
-  normalizeToMultiframe() {
+  convertToMultiframe() {
     if (this.datasets.length == 1 && Normalizer.isMultiframe(this.datasets[0])) {
-      // already a multiframe, so just pass use it
+      // already a multiframe, so just use it
       this.dataset = this.datasets[0];
       return;
     }
-    this.dataset = {};
+    this.derivation = new DerivedPixels(this.datasets);
+    this.dataset = this.derivation.dataset;
     let ds = this.dataset;
     // create a new multiframe from the source datasets
     // fill in only those elements required to make a valid image
@@ -230,7 +231,7 @@ class ImageNormalizer extends Normalizer {
 class MRImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
-    this.dataset.SOPClass = "EnhancedMRImage";
+    this.dataset.SOPClass = "LegacyConvertedEnhancedMRImage";
   }
 }
 
@@ -243,12 +244,14 @@ class EnhancedMRImageNormalizer extends ImageNormalizer {
 class CTImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
+    this.dataset.SOPClass = "LegacyConvertedEnhancedCTImage";
   }
 }
 
 class PETImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
+    this.dataset.SOPClass = "LegacyConvertedEnhancedPETImage";
   }
 }
 
