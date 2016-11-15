@@ -238,7 +238,9 @@ class ImageNormalizer extends Normalizer {
 class MRImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
-    this.dataset.SOPClass = "LegacyConvertedEnhancedMRImage";
+    // TODO: provide option at export to swap in LegacyConverted UID
+    //this.dataset.SOPClass = "LegacyConvertedEnhancedMRImage";
+    this.dataset.SOPClass = "EnhancedMRImage";
   }
 }
 
@@ -251,14 +253,18 @@ class EnhancedMRImageNormalizer extends ImageNormalizer {
 class CTImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
-    this.dataset.SOPClass = "LegacyConvertedEnhancedCTImage";
+    // TODO: provide option at export to swap in LegacyConverted UID
+    //this.dataset.SOPClass = "LegacyConvertedEnhancedCTImage";
+    this.dataset.SOPClass = "EnhancedCTImage";
   }
 }
 
 class PETImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
-    this.dataset.SOPClass = "LegacyConvertedEnhancedPETImage";
+    // TODO: provide option at export to swap in LegacyConverted UID
+    //this.dataset.SOPClass = "LegacyConvertedEnhancedPETImage";
+    this.dataset.SOPClass = "EnhancedPETImage";
   }
 }
 

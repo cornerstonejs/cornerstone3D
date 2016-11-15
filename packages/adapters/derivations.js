@@ -7,7 +7,8 @@ class DerivedDataset {
     o.ManufacturerModelName = options.ManufacturerModelName || "Unspecified";
     o.SeriesDescription = options.SeriesDescription || "Segmentation";
     o.SeriesNumber = options.SeriesNumber || "99";
-    o.SoftwareVersions = options.SoftwareVersions || "";
+    o.SoftwareVersions = options.SoftwareVersions || "0";
+    o.DeviceSerialNumber = options.DeviceSerialNumber || "1";
 
     let date = DicomMetaDictionary.date();
     let time = DicomMetaDictionary.time();
@@ -113,6 +114,8 @@ class DerivedPixels extends DerivedDataset {
 
     this.assignFromOptions([
       "Manufacturer",
+      "SoftwareVersions",
+      "DeviceSerialNumber",
       "ManufacturerModelName",
       "SeriesDescription",
       "SeriesNumber",
@@ -158,6 +161,8 @@ class DerivedImage extends DerivedPixels {
       "WindowWidth",
       "BitsAllocated",
       "PixelRepresentation",
+      "Laterality",
+      "PatientPosition",
     ]);
   }
 }
