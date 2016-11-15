@@ -31,7 +31,10 @@ class DerivedDataset {
 
     this.referencedDatasets = datasets; // list of one or more dicom-like object instances
     this.referencedDataset = this.referencedDatasets[0];
-    this.dataset = {};
+    this.dataset = {
+      _vrMap: this.referencedDataset._vrMap,
+      _meta: this.referencedDataset._meta,
+    };
 
     this.derive();
   }
