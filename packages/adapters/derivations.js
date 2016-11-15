@@ -41,11 +41,11 @@ class DerivedDataset {
   }
 
   assignFromReference(tags) {
-    tags.forEach(tag=>this.dataset[tag] = this.referencedDataset[tag]);
+    tags.forEach(tag=>this.dataset[tag] = this.referencedDataset[tag] || "");
   }
 
   assignFromOptions(tags) {
-    tags.forEach(tag=>this.dataset[tag] = this.options[tag]);
+    tags.forEach(tag=>this.dataset[tag] = this.options[tag] || "");
   }
 
   derive() {
@@ -54,6 +54,7 @@ class DerivedDataset {
       "AccessionNumber",
       "ReferringPhysicianName",
       "StudyDate",
+      "StudyID",
       "StudyTime",
       "PatientName",
       "PatientID",
@@ -86,14 +87,26 @@ class DerivedPixels extends DerivedDataset {
         "PRIMARY"
       ],
       "LossyImageCompression": "00",
+      "InstanceNumber": "1",
     });
 
     this.assignFromReference([
+      "SOPClass",
+      "Modality",
       "FrameOfReferenceUID",
       "PositionReferenceIndicator",
       "NumberOfFrames",
       "Rows",
-      "Columns",]);
+      "Columns",
+      "SamplesPerPixel",
+      "PhotometricInterpretation",
+      "BitsStored",
+      "HighBit",
+      "PixelPresentation",
+      "VolumetricProperties",
+      "VolumeBasedCalculationTechnique",
+      "PresentationLUTShape",
+    ]);
 
     this.assignFromOptions([
       "Manufacturer",
@@ -110,8 +123,39 @@ class DerivedPixels extends DerivedDataset {
       "SOPInstanceUID",
       "SeriesInstanceUID",]);
 
+    //
+    // TODO: more carefully copy only PixelMeasures and related
+    // TODO: add derivation references
+    //
+    if (this.referencedDataset.SharedFunctionalGroups) {
+      this.dataset.SharedFunctionalGroups =
+                    DerivedDataset.copyDataset(
+                      this.referencedDataset.SharedFunctionalGroups);
+    }
+    if (this.referencedDataset.PerFrameFunctionalGroups) {
+      this.dataset.PerFrameFunctionalGroups =
+                    DerivedDataset.copyDataset(
+                      this.referencedDataset.PerFrameFunctionalGroups);
+    }
+
     // make an array of zeros for the pixels
     this.dataset.PixelData = new ArrayBuffer(this.referencedDataset.PixelData.byteLength);
+  }
+}
+
+class DerivedImage extends DerivedPixels {
+  constructor (datasets, options={}) {
+    super(datasets, options);
+  }
+
+  derive() {
+    super.derive();
+    this.assignFromReference([
+      "WindowCenter",
+      "WindowWidth",
+      "BitsAllocated",
+      "PixelRepresentation",
+    ]);
   }
 }
 
@@ -126,15 +170,14 @@ class Segmentation extends DerivedPixels {
     this.assignToDataset({
       "SOPClass": "Segmentation",
       "Modality": "SEG",
-      "SamplesPerPixel": 1,
+      "SamplesPerPixel": "1",
       "PhotometricInterpretation": "MONOCHROME2",
-      "BitsAllocated": 1,
-      "BitsStored": 1,
-      "HighBit": 0,
-      "PixelRepresentation": 1,
+      "BitsAllocated": "1",
+      "BitsStored": "1",
+      "HighBit": "0",
+      "PixelRepresentation": "1",
       "LossyImageCompression": "00",
       "SegmentationType": "BINARY",
-      "InstanceNumber": 1,
     });
 
 
@@ -186,10 +229,6 @@ class Segmentation extends DerivedPixels {
         }
       ],
       */
-
-    this.dataset.SharedFunctionalGroups = 
-                  DerivedDataset.copyDataset(
-                    this.referencedDataset.SharedFunctionalGroups);
 
     //
     // frame-specific data

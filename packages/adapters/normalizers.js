@@ -29,6 +29,7 @@ class Normalizer {
       "CTImage" : CTImageNormalizer,
       "MRImage" : MRImageNormalizer,
       "EnhancedMRImage" : EnhancedMRImageNormalizer,
+      "EnhancedUSVolume" : EnhancedUSVolumeNormalizer,
       "PETImage" : PETImageNormalizer,
       "PositronEmissionTomographyImage" : PETImageNormalizer,
       "Segmentation" : SEGImageNormalizer,
@@ -121,6 +122,12 @@ class ImageNormalizer extends Normalizer {
     // assign array buffers
     if (ds.BitsAllocated != 16) {
       console.error('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
+    }
+    if (referenceDataset._vrMap && referenceDataset._vrMap.PixelData) {
+      console.warn('No vr map given for pixel data, using OW');
+      ds._vrMap = {'PixelData': 'OW'}
+    } else {
+      ds._vrMap = {'PixelData': referenceDataset._vrMap.PixelData}
     }
     let frameSize = referenceDataset.PixelData.byteLength;
     ds.PixelData = new ArrayBuffer(ds.NumberOfFrames * frameSize);
@@ -260,3 +267,10 @@ class SEGImageNormalizer extends ImageNormalizer {
     super.normalize();
   }
 }
+
+class EnhancedUSVolumeNormalizer extends ImageNormalizer {
+  normalize() {
+    super.normalize();
+  }
+}
+

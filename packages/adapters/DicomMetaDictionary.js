@@ -9,6 +9,13 @@ class DicomMetaDictionary {
     }
   }
 
+  static unpunctuateTag(tag) {
+    if (tag.indexOf(',') == -1) {
+      return (tag);
+    }
+    return(tag.substring(1,10).replace(',',''));
+  }
+
   static namifyDataset(dataset) {
     var namedDataset = {};
     for (var tag in dataset) {
@@ -32,7 +39,9 @@ class DicomMetaDictionary {
   }
 
   static naturalizeDataset(dataset) {
-    var naturalDataset = {};
+    var naturalDataset = {
+      _vrMap : {},
+    };
     for (var tag in dataset) {
       var data = dataset[tag];
       if (data.vr == "SQ") {
@@ -45,29 +54,33 @@ class DicomMetaDictionary {
       }
       var punctuatedTag = DicomMetaDictionary.punctuateTag(tag);
       var entry = DicomMetaDictionary.dictionary[punctuatedTag];
-      var name = tag;
+      var naturalName = tag;
       if (entry) {
-        name = entry.name;
+        naturalName = entry.name;
+        if (entry.vr == 'ox') {
+          // when the vr is data-dependent, keep track of the original type
+          naturalDataset._vrMap[naturalName] = data.vr;
+        }
       }
-      if (/.*Sequence/.test(name)) {
+      if (/.*Sequence/.test(naturalName)) {
         // remove Sequence from name of list
-        name = name.substring(0, name.length - 'Sequence'.length);
+        naturalName = naturalName.substring(0, name.length - 'Sequence'.length);
       }
-      naturalDataset[name] = data.Value;
-      if (naturalDataset[name].length == 1) {
+      naturalDataset[naturalName] = data.Value;
+      if (naturalDataset[naturalName].length == 1) {
         // only one value is not a list
-        naturalDataset[name] = naturalDataset[name][0];
+        naturalDataset[naturalName] = naturalDataset[naturalName][0];
       }
-      if (/.*SOPClassUID/.test(name)) {
+      if (/.*SOPClassUID/.test(naturalName)) {
         // give natural language name to UID if available
-        var sopClassName = DicomMetaDictionary.sopClassNamesByUID[naturalDataset[name]];
+        var sopClassName = DicomMetaDictionary.sopClassNamesByUID[naturalDataset[naturalName]];
         if (sopClassName) {
-          var uidlessName = name;
-          if (/.*UID/.test(name)) {
+          var uidlessName = naturalName;
+          if (/.*UID/.test(naturalName)) {
             // strip the UID at the end, since this is now a name not a UID
-            uidlessName = name.substring(0, name.length-3);
+            uidlessName = naturalName.substring(0, naturalName.length-3);
           }
-          delete naturalDataset[name];
+          delete naturalDataset[naturalName];
           naturalDataset[uidlessName] = sopClassName;
         }
       }
@@ -75,14 +88,61 @@ class DicomMetaDictionary {
     return(naturalDataset);
   }
 
-  static keyByName() {
-    DicomMetaDictionary.nameMap = {};
-    for (var tag in DicomMetaDictionary.dictionary) {
-      var dict = DicomMetaDictionary.dictionary[tag];
-      if (dict.version != 'PrivateTag') {
-        DicomMetaDictionary.nameMap[dict.name] = dict;
+  static denaturalizeDataset(dataset) {
+    var unnaturalDataset = {};
+    Object.keys(dataset).forEach(naturalName => {
+      // check if it's a sequence
+      var name = naturalName;
+      var sequenceName = naturalName+"Sequence";
+      if (DicomMetaDictionary.nameMap[sequenceName]) {
+        name = sequenceName;
       }
-    }
+      var uidName = name+"UID";
+      if (DicomMetaDictionary.nameMap[uidName]) {
+        name = uidName;
+      }
+      var entry = DicomMetaDictionary.nameMap[name];
+      if (entry) {
+        // process this one entry
+        var dataItem = {};
+        dataItem.vr = entry.vr;
+        if (entry.vr == 'ox') {
+          if (dataset._vrMap && dataset._vrMap[naturalName]) {
+            dataItem.vr = dataset._vrMap[naturalName];
+          } else {
+            console.error('No value representation given for', naturalName);
+          }
+        }
+        dataItem.Value = dataset[naturalName];
+        // if it's a known UID, map back to numbers
+        var uid = DicomMetaDictionary.uidMap[dataItem.Value];
+        if (uid) {
+          dataItem.Value = uid;
+        }
+        if (dataItem.Value.constructor.name == "Number") {
+          dataItem.Value = String(dataItem.Value);
+          if (dataItem.Value.length > 16) {
+            console.warn("Truncating value of", naturalName, "to 16 characters");
+            dataItem.Value = dataItem.Value.slice(0,16);
+          }
+        }
+        if (!Array.isArray(dataItem.Value)) {
+          dataItem.Value = [dataItem.Value];
+        }
+        if (entry.vr == "SQ") {
+          var unnaturalValues = [];
+          dataItem.Value.forEach(nestedDataset => {
+            unnaturalValues.push(DicomMetaDictionary.denaturalizeDataset(nestedDataset));
+          });
+          dataItem.Value = unnaturalValues;
+        }
+        var tag = DicomMetaDictionary.unpunctuateTag(entry.tag);
+        unnaturalDataset[tag] = dataItem;
+      } else {
+        console.warn("Unknown name in dataset", name, ":", dataset[name]);
+      }
+    });
+    return (unnaturalDataset);
   }
 
   static uid() {
@@ -104,6 +164,23 @@ class DicomMetaDictionary {
     return now.toISOString().replace(/:/g,'').slice(11,17);
   }
 
+  static _generateNameMap() {
+    DicomMetaDictionary.nameMap = {};
+    for (var tag in DicomMetaDictionary.dictionary) {
+      var dict = DicomMetaDictionary.dictionary[tag];
+      if (dict.version != 'PrivateTag') {
+        DicomMetaDictionary.nameMap[dict.name] = dict;
+      }
+    }
+  }
+
+  static _generateUIDMap() {
+    DicomMetaDictionary.uidMap = {};
+    for (var uid in DicomMetaDictionary.sopClassNamesByUID) {
+      var name = DicomMetaDictionary.sopClassNamesByUID[uid];
+      DicomMetaDictionary.uidMap[name] = uid;
+    }
+  }
 }
 
 // Subset of those listed at:
@@ -48196,4 +48273,5 @@ DicomMetaDictionary.dictionary = {
 }
 
 
-DicomMetaDictionary.keyByName();
+DicomMetaDictionary._generateNameMap();
+DicomMetaDictionary._generateUIDMap();
