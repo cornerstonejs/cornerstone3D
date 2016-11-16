@@ -5,7 +5,7 @@ class DerivedDataset {
 
     o.Manufacturer = options.Manufacturer || "Unspecified";
     o.ManufacturerModelName = options.ManufacturerModelName || "Unspecified";
-    o.SeriesDescription = options.SeriesDescription || "Segmentation";
+    o.SeriesDescription = options.SeriesDescription || "Drived series";
     o.SeriesNumber = options.SeriesNumber || "99";
     o.SoftwareVersions = options.SoftwareVersions || "0";
     o.DeviceSerialNumber = options.DeviceSerialNumber || "1";
@@ -20,7 +20,6 @@ class DerivedDataset {
 
     o.SOPInstanceUID = options.SOPInstanceUID || DicomMetaDictionary.uid();
     o.SeriesInstanceUID = options.SeriesInstanceUID || DicomMetaDictionary.uid();
-
 
     o.ClinicalTrialTimePointID = options.ClinicalTrialTimePointID || "";
     o.ClinicalTrialCoordinatingCenterName = options.ClinicalTrialCoordinatingCenterName || "";
@@ -108,6 +107,8 @@ class DerivedPixels extends DerivedDataset {
       "PhotometricInterpretation",
       "BitsStored",
       "HighBit",
+      "RescaleSlope",
+      "RescaleIntercept",
       "PixelPresentation",
       "VolumetricProperties",
       "VolumeBasedCalculationTechnique",
