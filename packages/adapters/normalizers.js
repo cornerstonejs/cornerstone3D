@@ -165,13 +165,23 @@ class ImageNormalizer extends Normalizer {
       });
     });
 
+    ds.ReferencedSeries = {
+      SeriesInstanceUID : dataset0.SeriesInstanceUID,
+      ReferencedInstance : new Array(this.datasets.length),
+    }
+
     // copy over each datasets window/level into the per-frame groups
+    // and set the referenced series uid
     let datasetIndex = 0;
     this.datasets.forEach(function(dataset) {
       ds.PerFrameFunctionalGroups[datasetIndex].FrameVOILUT = {
         WindowCenter: dataset.WindowCenter,
         WindowWidth: dataset.WindowWidth,
       };
+      ds.ReferencedSeries.ReferencedInstance[datasetIndex] = {
+        ReferencedSOPClass: dataset.SOPClass,
+        ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
+      }
       datasetIndex++;
     });
   }

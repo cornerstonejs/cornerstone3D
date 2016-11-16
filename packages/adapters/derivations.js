@@ -30,6 +30,8 @@ class DerivedDataset {
     o.ContentDescription = options.ContentDescription || "";
     o.ContentCreatorName = options.ContentCreatorName || "";
 
+    o.ImageComments = options.ImageComments || "NOT FOR CLINICAL USE";
+
     this.referencedDatasets = datasets; // list of one or more dicom-like object instances
     this.referencedDataset = this.referencedDatasets[0];
     this.dataset = {
@@ -122,6 +124,7 @@ class DerivedPixels extends DerivedDataset {
       "ContentLabel",
       "ContentDescription",
       "ContentCreatorName",
+      "ImageComments",
       "SeriesDate",
       "SeriesTime",
       "ContentDate",
@@ -188,178 +191,103 @@ class Segmentation extends DerivedPixels {
       "SegmentationType": "BINARY",
     });
 
-
-      //
-      // TODO
-      //
-      /*
-      "DimensionOrganization": {
-        "DimensionOrganizationUID": "1.3.6.1.4.1.43046.3.0.42154.1458337731.665797"
-      },
-      "DimensionIndex": [
-        {
-          "DimensionOrganizationUID": "1.3.6.1.4.1.43046.3.0.42154.1458337731.665797",
-          "DimensionIndexPointer": 6422539,
-          "FunctionalGroupPointer": 6422538,
-          "DimensionDescriptionLabel": "ReferencedSegmentNumber"
-        },
-        {
-          "DimensionOrganizationUID": "1.3.6.1.4.1.43046.3.0.42154.1458337731.665797",
-          "DimensionIndexPointer": 2097202,
-          "FunctionalGroupPointer": 2134291,
-          "DimensionDescriptionLabel": "ImagePositionPatient"
-        }
-      ],
-      */
-
-      /*
-      "Segment": [
-        {
-          "SegmentedPropertyCategoryCode": {
-            "CodeValue": "T-D0050",
-            "CodingSchemeDesignator": "SRT",
-            "CodeMeaning": "Tissue"
-          },
-          "SegmentNumber": 1,
-          "SegmentLabel": "Liver",
-          "SegmentAlgorithmType": "SEMIAUTOMATIC",
-          "SegmentAlgorithmName": "SlicerEditor",
-          "RecommendedDisplayCIELabValue": [
-            41661,
-            41167,
-            40792
-          ],
-          "SegmentedPropertyTypeCode": {
-            "CodeValue": "T-62000",
-            "CodingSchemeDesignator": "SRT",
-            "CodeMeaning": "Liver"
-          }
-        }
-      ],
-      */
-
-    //
-    // frame-specific data
-    //
-    /*
-    "PerFrameFunctionalGroups": [
+    let dimensionUID = DicomMetaDictionary.uid();
+    this.dataset.DimensionOrganization = {
+      DimensionOrganizationUID : dimensionUID
+    };
+    this.dataset.DimensionIndex = [
       {
-        "DerivationImage": {
-          "SourceImage": {
-            "ReferencedSOPClass": "CTImage",
-            "ReferencedSOPInstanceUID": "1.2.392.200103.20080913.113635.2.2009.6.22.21.43.10.23433.1",
-            "PurposeOfReferenceCode": {
-              "CodeValue": "121322",
-              "CodingSchemeDesignator": "DCM",
-              "CodeMeaning": "Source image for image processing operation"
-            }
-          },
-          "DerivationCode": {
-            "CodeValue": "113076",
-            "CodingSchemeDesignator": "DCM",
-            "CodeMeaning": "Segmentation"
-          }
-        },
-        "FrameContent": {
-          "DimensionIndexValues": [
-            1,
-            1
-          ]
-        },
-        "PlanePosition": {
-          "ImagePositionPatient": [
-            "-2.352000e+02",
-            "-2.268000e+02",
-            "-1.286900e+02"
-          ]
-        },
-        "SegmentIdentification": {
-          "ReferencedSegmentNumber": 1
-        }
+        DimensionOrganizationUID : dimensionUID,
+        DimensionIndexPointer : 6422539,
+        FunctionalGroupPointer : 6422538, // SegmentIdentificationSequence
+        DimensionDescriptionLabel : "ReferencedSegmentNumber"
       },
       {
-        "DerivationImage": {
-          "SourceImage": {
-            "ReferencedSOPClass": "CTImage",
-            "ReferencedSOPInstanceUID": "1.2.392.200103.20080913.113635.2.2009.6.22.21.43.10.23432.1",
-            "PurposeOfReferenceCode": {
-              "CodeValue": "121322",
-              "CodingSchemeDesignator": "DCM",
-              "CodeMeaning": "Source image for image processing operation"
-            }
-          },
-          "DerivationCode": {
-            "CodeValue": "113076",
-            "CodingSchemeDesignator": "DCM",
-            "CodeMeaning": "Segmentation"
-          }
-        },
-        "FrameContent": {
-          "DimensionIndexValues": [
-            1,
-            2
-          ]
-        },
-        "PlanePosition": {
-          "ImagePositionPatient": [
-            "-2.352000e+02",
-            "-2.268000e+02",
-            "-1.276900e+02"
-          ]
-        },
-        "SegmentIdentification": {
-          "ReferencedSegmentNumber": 1
-        }
-      },
+        DimensionOrganizationUID : dimensionUID,
+        DimensionIndexPointer : 2097202,
+        FunctionalGroupPointer : 2134291, // PlanePositionSequence
+        DimensionDescriptionLabel : "ImagePositionPatient"
+      }
+    ];
+
+    // Example: Slicer tissue green
+    this.dataset.Segment = [
       {
-        "DerivationImage": {
-          "SourceImage": {
-            "ReferencedSOPClass": "CTImage",
-            "ReferencedSOPInstanceUID": "1.2.392.200103.20080913.113635.2.2009.6.22.21.43.10.23431.1",
-            "PurposeOfReferenceCode": {
-              "CodeValue": "121322",
-              "CodingSchemeDesignator": "DCM",
-              "CodeMeaning": "Source image for image processing operation"
-            }
-          },
-          "DerivationCode": {
-            "CodeValue": "113076",
-            "CodingSchemeDesignator": "DCM",
-            "CodeMeaning": "Segmentation"
-          }
+        SegmentedPropertyCategoryCode: {
+          CodeValue: "T-D0050",
+          CodingSchemeDesignator: "SRT",
+          CodeMeaning: "Tissue"
         },
-        "FrameContent": {
-          "DimensionIndexValues": [
-            1,
-            3
-          ]
-        },
-        "PlanePosition": {
-          "ImagePositionPatient": [
-            "-2.352000e+02",
-            "-2.268000e+02",
-            "-1.266900e+02"
-          ]
-        },
-        "SegmentIdentification": {
-          "ReferencedSegmentNumber": 1
+        SegmentNumber: 1,
+        SegmentLabel: "Tissue",
+        SegmentAlgorithmType: "SEMIAUTOMATIC",
+        SegmentAlgorithmName: "Slicer Prototype",
+        RecommendedDisplayCIELabValue: [ 43802, 26566, 37721 ],
+        SegmentedPropertyTypeCode: {
+          CodeValue: "T-D0050",
+          CodingSchemeDesignator: "SRT",
+          CodeMeaning: "Tissue"
         }
       }
-    ],
-    */
+    ];
 
-      /*
-      "ReferencedSeries": {
-        "ReferencedInstance": [
-          {
-            "ReferencedSOPClass": "CTImage",
-            "ReferencedSOPInstanceUID": "1.2.392.200103.20080913.113635.2.2009.6.22.21.43.10.23433.1"
-          },
-          { },
-          { }
-        ],
-        "SeriesInstanceUID": "1.2.392.200103.20080913.113635.1.2009.6.22.21.43.10.23430.1"
-      },
-      */
+    // TODO: check logic here.
+    // If the referenced dataset itself references a series, then copy.
+    // Otherwise, reference the dataset itself.
+    // This should allow Slicer and others to get the correct original
+    // images when loading Legacy Converted Images, but it's a workaround
+    // that really doesn't belong here.
+    if (this.referencedDataset.ReferencedSeries) {
+      this.dataset.ReferencedSeries =
+                    DerivedDataset.copyDataset(
+                      this.referencedDataset.ReferencedSeries);
+    } else {
+      this.dataset.ReferencedSeries = {
+        SeriesInstanceUID : this.referencedDataset.SeriesInstanceUID,
+        ReferencedInstance : [{
+          ReferencedSOPClass: this.referencedDataset.SOPClass,
+          ReferencedSOPInstanceUID: this.referencedDataset.SOPInstanceUID,
+        }]
+      }
+    }
+
+    // copy over each datasets window/level into the per-frame groups
+    // and set the referenced series uid
+    let datasetIndex = 0;
+    this.referencedDatasets.forEach(function(dataset) {
+      ds.PerFrameFunctionalGroups[datasetIndex].DerivationImage = {
+        SourceImage: {
+          ReferencedSOPClass: dataset.SOPClass,
+          ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
+          PurposeOfReferenceCode: {
+            CodeValue: "121322",
+            CodingSchemeDesignator: "DCM",
+            CodeMeaning: "Source image for image processing operation"
+          }
+        },
+        DerivationCode: {
+          CodeValue: "113076",
+          CodingSchemeDesignator: "DCM",
+          CodeMeaning: "Segmentation"
+        }
+      };
+      ds.PerFrameFunctionalGroups[datasetIndex].FrameContent = {
+        DimensionIndexValues: [
+          1,
+          datasetIndex+1
+        ]
+      };
+      ds.PerFrameFunctionalGroups[datasetIndex].SegmentIdentification = {
+        ReferencedSegmentNumber: 1
+      };
+      datasetIndex++;
+    });
+  }
+  // TODO:
+  addSegment(segment) {
+    console.error("Not implemented");
+  }
+  removeSegment(segment) {
+    console.error("Not implemented");
   }
 }
