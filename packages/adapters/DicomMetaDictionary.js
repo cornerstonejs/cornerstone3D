@@ -104,8 +104,10 @@ class DicomMetaDictionary {
       var entry = DicomMetaDictionary.nameMap[name];
       if (entry) {
         // process this one entry
-        var dataItem = {};
-        dataItem.vr = entry.vr;
+        var dataItem = {
+          vr: entry.vr,
+          Value: dataset[naturalName],
+        };
         if (entry.vr == 'ox') {
           if (dataset._vrMap && dataset._vrMap[naturalName]) {
             dataItem.vr = dataset._vrMap[naturalName];
@@ -113,22 +115,17 @@ class DicomMetaDictionary {
             console.error('No value representation given for', naturalName);
           }
         }
-        dataItem.Value = dataset[naturalName];
         // if it's a known UID, map back to numbers
         var uid = DicomMetaDictionary.uidMap[dataItem.Value];
         if (uid) {
           dataItem.Value = uid;
         }
-        if (dataItem.Value.constructor.name == "Number") {
-          dataItem.Value = String(dataItem.Value);
-          if (dataItem.Value.length > 16) {
-            console.warn("Truncating value of", naturalName, "to 16 characters");
-            dataItem.Value = dataItem.Value.slice(0,16);
-          }
-        }
         if (!Array.isArray(dataItem.Value)) {
           dataItem.Value = [dataItem.Value];
         }
+        dataItem.Value = dataItem.Value.map(value=>
+          value.constructor.name == "Number" ? String(value) : value
+        );
         if (entry.vr == "SQ") {
           var unnaturalValues = [];
           dataItem.Value.forEach(nestedDataset => {
@@ -136,6 +133,18 @@ class DicomMetaDictionary {
           });
           dataItem.Value = unnaturalValues;
         }
+        let vr = ValueRepresentation.createByTypeString(dataItem.vr);
+        if (!vr.isBinary() && vr.maxLength) {
+          dataItem.Value = dataItem.Value.map(value=>{
+            if (value.length > vr.maxLength) {
+              console.warn(`Truncating value ${value} of ${naturalName} because it is longer than ${vr.maxLength}`);
+              return (value.slice(0,vr.maxLength));
+            } else {
+              return (value);
+            }
+          });
+        }
+
         var tag = DicomMetaDictionary.unpunctuateTag(entry.tag);
         unnaturalDataset[tag] = dataItem;
       } else {
