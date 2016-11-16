@@ -64,7 +64,7 @@ class DicomMetaDictionary {
       }
       if (/.*Sequence/.test(naturalName)) {
         // remove Sequence from name of list
-        naturalName = naturalName.substring(0, name.length - 'Sequence'.length);
+        naturalName = naturalName.substring(0, naturalName.length - 'Sequence'.length);
       }
       naturalDataset[naturalName] = data.Value;
       if (naturalDataset[naturalName].length == 1) {
