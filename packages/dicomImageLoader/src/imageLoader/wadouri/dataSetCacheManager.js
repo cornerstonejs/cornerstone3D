@@ -57,7 +57,15 @@
     var loadDeferred = $.Deferred();
     promise.then(function(dicomPart10AsArrayBuffer/*, xhr*/) {
       var byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
-      var dataSet = dicomParser.parseDicom(byteArray);
+
+      // Reject the promise if parsing the dicom file fails
+      var dataSet;
+      try {
+        dataSet = dicomParser.parseDicom(byteArray);
+      } catch(error) {
+        loadDeferred.reject(error);
+        return;
+      }
 
       loadedDataSets[uri] = {
         dataSet: dataSet,
