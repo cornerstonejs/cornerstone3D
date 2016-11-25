@@ -107,12 +107,6 @@ class DerivedPixels extends DerivedDataset {
       "PhotometricInterpretation",
       "BitsStored",
       "HighBit",
-      "RescaleSlope",
-      "RescaleIntercept",
-      "PixelPresentation",
-      "VolumetricProperties",
-      "VolumeBasedCalculationTechnique",
-      "PresentationLUTShape",
     ]);
 
     this.assignFromOptions([
@@ -167,6 +161,12 @@ class DerivedImage extends DerivedPixels {
       "PixelRepresentation",
       "Laterality",
       "PatientPosition",
+      "RescaleSlope",
+      "RescaleIntercept",
+      "PixelPresentation",
+      "VolumetricProperties",
+      "VolumeBasedCalculationTechnique",
+      "PresentationLUTShape",
     ]);
   }
 }
@@ -187,9 +187,10 @@ class Segmentation extends DerivedPixels {
       "BitsAllocated": "1",
       "BitsStored": "1",
       "HighBit": "0",
-      "PixelRepresentation": "1",
+      "PixelRepresentation": "0",
       "LossyImageCompression": "00",
       "SegmentationType": "BINARY",
+      "ContentLabel": "EXAMPLE",
     });
 
     let dimensionUID = DicomMetaDictionary.uid();
@@ -252,14 +253,14 @@ class Segmentation extends DerivedPixels {
       }
     }
 
-    // copy over each datasets window/level into the per-frame groups
-    // and set the referenced series uid
-    let datasetIndex = 0;
-    this.referencedDatasets.forEach(function(dataset) {
-      ds.PerFrameFunctionalGroups[datasetIndex].DerivationImage = {
+    // handle the case of a converted multiframe, so point to original source
+    // TODO: only a single segment is created now
+    for (let frameIndex = 0; frameIndex < this.dataset.NumberOfFrames; frameIndex++) {
+      this.dataset.PerFrameFunctionalGroups[frameIndex].DerivationImage = {
         SourceImage: {
-          ReferencedSOPClass: dataset.SOPClass,
-          ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
+          ReferencedSOPClass: this.referencedDataset.SOPClass,
+          ReferencedSOPInstanceUID: this.referencedDataset.SOPInstanceUID,
+          ReferencedFrameNumber: frameIndex+1,
           PurposeOfReferenceCode: {
             CodeValue: "121322",
             CodingSchemeDesignator: "DCM",
@@ -272,18 +273,30 @@ class Segmentation extends DerivedPixels {
           CodeMeaning: "Segmentation"
         }
       };
-      ds.PerFrameFunctionalGroups[datasetIndex].FrameContent = {
+      this.dataset.PerFrameFunctionalGroups[frameIndex].FrameContent = {
         DimensionIndexValues: [
           1,
-          datasetIndex+1
+          frameIndex+1
         ]
       };
-      ds.PerFrameFunctionalGroups[datasetIndex].SegmentIdentification = {
+      this.dataset.PerFrameFunctionalGroups[frameIndex].SegmentIdentification = {
         ReferencedSegmentNumber: 1
       };
-      datasetIndex++;
-    });
+    }
+
+    // these are copied with pixels, but don't belong in segmentation
+    for (let frameIndex = 0; frameIndex < this.dataset.NumberOfFrames; frameIndex++) {
+      // TODO: instead explicitly copy the position sequence
+      let group = this.dataset.PerFrameFunctionalGroups[frameIndex];
+      delete(group.FrameVOILUT);
+    }
+    delete(this.dataset.SharedFunctionalGroups.PixelMeasures.SpacingBetweenSlices);
+
+    // make an array of zeros for the pixels assuming bit packing (one bit per short)
+    // TODO: handle different packing and non-multiple of 8/16 rows and columns
+    this.dataset.PixelData = new ArrayBuffer(this.referencedDataset.PixelData.byteLength/16);
   }
+
   // TODO:
   addSegment(segment) {
     console.error("Not implemented");
