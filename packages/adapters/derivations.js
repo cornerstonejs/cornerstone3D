@@ -172,7 +172,7 @@ class DerivedImage extends DerivedPixels {
 }
 
 class Segmentation extends DerivedPixels {
-  constructor (datasets, options={}) {
+  constructor (datasets, options={includeSliceSpacing: true}) {
     super(datasets, options);
   }
 
@@ -290,7 +290,11 @@ class Segmentation extends DerivedPixels {
       let group = this.dataset.PerFrameFunctionalGroups[frameIndex];
       delete(group.FrameVOILUT);
     }
-    delete(this.dataset.SharedFunctionalGroups.PixelMeasures.SpacingBetweenSlices);
+
+    if (!this.options.includeSliceSpacing) {
+      // per dciodvfy this should not be included, but dcmqi/Slicer requires it
+      delete(this.dataset.SharedFunctionalGroups.PixelMeasures.SpacingBetweenSlices);
+    }
 
     // make an array of zeros for the pixels assuming bit packing (one bit per short)
     // TODO: handle different packing and non-multiple of 8/16 rows and columns
