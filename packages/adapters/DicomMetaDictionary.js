@@ -159,6 +159,27 @@ class DicomMetaDictionary {
     return (unnaturalDataset);
   }
 
+  static datasetToBlob(dataset) {
+    // create a meta dataset,
+    // then associate it with a part 10 binary stream
+    // as a file blob
+    let meta = {
+      // TODO: generate FileMetaInformationVersion de novo
+      FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
+      MediaStorageSOPClass: dataset.SOPClass,
+      MediaStorageSOPInstance: dataset.SOPInstanceUID,
+      TransferSyntaxUID: "1.2.840.10008.1.2",
+      ImplementationClassUID: DicomMetaDictionary.uid(),
+      ImplementationVersionName: "dcmio-0.0",
+    };
+    meta = DicomMetaDictionary.denaturalizeDataset(meta);
+    let dicomDict = new DicomDict(meta);
+    dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
+    var buffer = dicomDict.write();
+    var blob = new Blob([buffer], {type: "application/dicom"});
+    return (blob);
+  }
+
   static uid() {
     let uid = "2.25." + Math.floor(1+ Math.random() * 9);
     for (let index = 0; index < 38; index++) {
