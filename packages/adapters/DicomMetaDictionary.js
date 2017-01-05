@@ -88,19 +88,42 @@ class DicomMetaDictionary {
     return(naturalDataset);
   }
 
+  static denaturalizeName(naturalName) {
+    let name = naturalName;
+    var sequenceName = naturalName+"Sequence";
+    if (DicomMetaDictionary.nameMap[sequenceName]) {
+      name = sequenceName;
+    }
+    var uidName = name+"UID";
+    if (DicomMetaDictionary.nameMap[uidName]) {
+      name = uidName;
+    }
+    return (name);
+  }
+
+  static denaturalizeValue(naturalValue) {
+    let value = naturalValue;
+    // if it's a known UID, map back to numbers
+    var uid = DicomMetaDictionary.uidMap[naturalValue];
+    if (uid) {
+      value = uid;
+    }
+    if (!Array.isArray(value)) {
+      value = [value];
+    }
+    value = value.map(entry=>
+      entry.constructor.name == "Number" ? String(entry) : entry
+    );
+    return (value);
+  }
+
   static denaturalizeDataset(dataset) {
     var unnaturalDataset = {};
     Object.keys(dataset).forEach(naturalName => {
       // check if it's a sequence
       var name = naturalName;
-      var sequenceName = naturalName+"Sequence";
-      if (DicomMetaDictionary.nameMap[sequenceName]) {
-        name = sequenceName;
-      }
-      var uidName = name+"UID";
-      if (DicomMetaDictionary.nameMap[uidName]) {
-        name = uidName;
-      }
+      name = DicomMetaDictionary.denaturalizeName(name);
+
       var entry = DicomMetaDictionary.nameMap[name];
       if (entry) {
         let dataValue = dataset[naturalName];
@@ -120,17 +143,9 @@ class DicomMetaDictionary {
             console.error('No value representation given for', naturalName);
           }
         }
-        // if it's a known UID, map back to numbers
-        var uid = DicomMetaDictionary.uidMap[dataItem.Value];
-        if (uid) {
-          dataItem.Value = uid;
-        }
-        if (!Array.isArray(dataItem.Value)) {
-          dataItem.Value = [dataItem.Value];
-        }
-        dataItem.Value = dataItem.Value.map(value=>
-          value.constructor.name == "Number" ? String(value) : value
-        );
+
+        dataItem.Value = DicomMetaDictionary.denaturalizeValue(dataItem.Value);
+
         if (entry.vr == "SQ") {
           var unnaturalValues = [];
           dataItem.Value.forEach(nestedDataset => {
