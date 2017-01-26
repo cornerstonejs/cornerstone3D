@@ -41,7 +41,7 @@
       deferred.reject(reason);
     });
 
-    return deferred.promise();
+    return deferred;
   }
 
   // register wadors scheme
