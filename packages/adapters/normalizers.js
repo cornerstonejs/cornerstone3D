@@ -75,7 +75,7 @@ class ImageNormalizer extends Normalizer {
       this.dataset = this.datasets[0];
       return;
     }
-    this.derivation = new DerivedPixels(this.datasets);
+    this.derivation = new DerivedImage(this.datasets);
     this.dataset = this.derivation.dataset;
     let ds = this.dataset;
     // create a new multiframe from the source datasets
@@ -92,6 +92,7 @@ class ImageNormalizer extends Normalizer {
     ds.PixelRepresentation = referenceDataset.PixelRepresentation;
     ds.RescaleSlope = referenceDataset.RescaleSlope || "1";
     ds.RescaleIntercept = referenceDataset.RescaleIntercept || "0";
+    //ds.BurnedInAnnotation = referenceDataset.BurnedInAnnotation || "YES";
 
     // sort
     // https://github.com/pieper/Slicer3/blob/master/Base/GUI/Tcl/LoadVolume.tcl
@@ -146,7 +147,13 @@ class ImageNormalizer extends Normalizer {
     }
     let [distance0, dataset0]  = distanceDatasetPairs[0];
     let [distance1, dataset1] = distanceDatasetPairs[1];
+
+    //
     // make the functional groups
+    //
+
+    // shared
+
     ds.SharedFunctionalGroups = {
       PlaneOrientation : {
         ImageOrientationPatient : dataset0.ImageOrientationPatient,
@@ -156,6 +163,9 @@ class ImageNormalizer extends Normalizer {
         SpacingBetweenSlices : Math.abs(distance1 - distance0),
       },
     };
+
+    // per-frame
+
     ds.PerFrameFunctionalGroups = [];
     distanceDatasetPairs.forEach(function(pair) {
       ds.PerFrameFunctionalGroups.push({
@@ -184,6 +194,19 @@ class ImageNormalizer extends Normalizer {
       }
       datasetIndex++;
     });
+
+    let dimensionUID = DicomMetaDictionary.uid();
+    this.dataset.DimensionOrganization = {
+      DimensionOrganizationUID : dimensionUID
+    };
+    this.dataset.DimensionIndex = [
+      {
+        DimensionOrganizationUID : dimensionUID,
+        DimensionIndexPointer : 2097202,
+        FunctionalGroupPointer : 2134291, // PlanePositionSequence
+        DimensionDescriptionLabel : "ImagePositionPatient"
+      },
+    ];
   }
 
   normalizeMultiframe() {
@@ -195,11 +218,62 @@ class ImageNormalizer extends Normalizer {
       // Required tag: guess signed
       ds.PixelRepresentation = 1;
     }
+    if (!ds.StudyID || ds.StudyID == "") {
+      // Required tag: fill in if needed
+      ds.StudyID = "No Study ID";
+    }
+
+    let validLateralities = ["R", "L"];
+    if (validLateralities.indexOf(ds.Laterality) == -1) {
+      delete(ds.Laterality);
+    }
+
+    if (!ds.PresentationLUTShape) {
+      ds.PresentationLUTShape = "IDENTITY";
+    }
 
     if (!ds.SharedFunctionalGroups) {
       console.error('Can only process multiframe data with SharedFunctionalGroups');
     }
 
+    if (ds.BodyPartExamined == "PROSTATE") {
+      ds.SharedFunctionalGroups.FrameAnatomy = {
+        AnatomicRegion: {
+          CodeValue: "T-9200B",
+          CodingSchemeDesignator: "SRT",
+          CodeMeaning: "Prostate",
+        },
+        FrameLaterality: "U",
+      };
+    }
+
+    let rescaleIntercept = ds.RescaleIntercept || 0.;
+    let rescaleSlope = ds.RescaleSlope || 1.;
+    ds.SharedFunctionalGroups.PixelValueTransformation = {
+      RescaleIntercept: rescaleIntercept,
+      RescaleSlope: rescaleSlope,
+      RescaleType: "US",
+    };
+
+    let frameNumber = 1;
+    this.datasets.forEach(dataset=>{
+      let frameTime = dataset.AcquisitionDate + dataset.AcquisitionTime;
+      ds.PerFrameFunctionalGroups[frameNumber-1].FrameContent = {
+        FrameAcquisitionDateTime: frameTime,
+        FrameReferenceDateTime: frameTime,
+        FrameAcquisitionDuration: 0,
+        FrameAcquisitionDuration: 0,
+        StackID: 1,
+        InStackPositionNumber: frameNumber,
+        DimensionIndexValues: frameNumber,
+      };
+      frameNumber++;
+    });
+
+
+    //
+    // TODO: convert this to shared functional group not top level element
+    //
     if (ds.WindowCenter && ds.WindowWidth) {
       // if they exist as single values, make them lists for consistency
       if (!Array.isArray(ds.WindowCenter)) {
@@ -251,6 +325,27 @@ class MRImageNormalizer extends ImageNormalizer {
     // TODO: provide option at export to swap in LegacyConverted UID
     //this.dataset.SOPClass = "LegacyConvertedEnhancedMRImage";
     this.dataset.SOPClass = "EnhancedMRImage";
+  }
+
+  normalizeMultiframe() {
+    super.normalizeMultiframe();
+    let ds = this.dataset;
+
+    if (!ds.ImageType
+          || !ds.ImageType.constructor
+          || ds.ImageType.constructor.name != "Array"
+          || ds.ImageType.length != 4) {
+      ds.ImageType = ["ORIGINAL", "PRIMARY", "OTHER", "NONE",];
+    }
+
+    ds.SharedFunctionalGroups.MRImageFrameType = {
+      FrameType: ds.ImageType,
+      PixelPresentation: "MONOCHROME",
+      VolumetricProperties: "VOLUME",
+      VolumeBasedCalculationTechnique: "NONE",
+      ComplexImageComponent: "MAGNITUDE",
+      AcquisitionContrast: "UNKNOWN",
+    };
   }
 }
 

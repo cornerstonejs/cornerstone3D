@@ -159,6 +159,7 @@ class DerivedImage extends DerivedPixels {
       "WindowWidth",
       "BitsAllocated",
       "PixelRepresentation",
+      "BodyPartExamined",
       "Laterality",
       "PatientPosition",
       "RescaleSlope",

@@ -214,6 +214,11 @@ class DicomMetaDictionary {
     return now.toISOString().replace(/:/g,'').slice(11,17);
   }
 
+  static dateTime() {
+    let now = new Date();
+    return now.toISOString().replace(/:/g,'').slice(11,17);
+  }
+
   static _generateNameMap() {
     DicomMetaDictionary.nameMap = {};
     for (var tag in DicomMetaDictionary.dictionary) {
