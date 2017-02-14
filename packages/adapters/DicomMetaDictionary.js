@@ -16,6 +16,36 @@ class DicomMetaDictionary {
     return(tag.substring(1,10).replace(',',''));
   }
 
+  // fixes some common errors in VRs
+  // TODO: if this gets longer it could go in ValueRepresentation.js
+  // or in a dedicated class
+  static cleanDataset(dataset) {
+    var cleanedDataset = {};
+    for (var tag in dataset) {
+      var data = dataset[tag];
+      if (data.vr == "SQ") {
+        var cleanedValues = [];
+        for (var index in data.Value) {
+          cleanedValues.push(DicomMetaDictionary.cleanDataset(data.Value[index]))
+        }
+        data.Value = cleanedValues;
+      } else {
+        // remove null characters from strings
+        for (var index in data.Value) {
+          let dataItem = data.Value[index];
+          if (dataItem.constructor.name == "String") {
+            data.Value[index] = dataItem.replace(/\0/, "");
+          }
+        }
+      }
+      cleanedDataset[tag] = data;
+    }
+    return(cleanedDataset);
+  }
+
+  // unlike naturalizeDataset, this only
+  // changes the names of the member variables
+  // but leaves the values intact
   static namifyDataset(dataset) {
     var namedDataset = {};
     for (var tag in dataset) {
@@ -38,6 +68,13 @@ class DicomMetaDictionary {
     return(namedDataset);
   }
 
+  // converts from DICOM JSON Model dataset
+  // to a natural dataset
+  // - sequences become lists
+  // - the suffix "Sequence" is dropped
+  // - the suffix "UID" is dropped
+  // - uids are mapped to strings when known
+  // - object member names are dictionary, not group/element tag
   static naturalizeDataset(dataset) {
     var naturalDataset = {
       _vrMap : {},
