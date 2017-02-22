@@ -28,7 +28,7 @@
 
 
     // loads the dicom dataset from the wadouri sp
-  function load(uri, loadRequest) {
+  function load(uri, loadRequest, imageId) {
 
     loadRequest = loadRequest ||  cornerstoneWADOImageLoader.internal.xhrRequest;
 
@@ -50,7 +50,7 @@
     //console.log('loading ' + uri);
 
     // This uri is not loaded or being loaded, load it via an xhrRequest
-    var promise = loadRequest(uri);
+    var promise = loadRequest(uri, imageId);
     promises[uri] = promise;
 
     // handle success and failure of the XHR request load
