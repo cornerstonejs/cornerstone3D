@@ -212,7 +212,12 @@ class ImageNormalizer extends Normalizer {
   normalizeMultiframe() {
     let ds = this.dataset;
     if (!ds.NumberOfFrames) {
-      ds.NumberOfFrames = 1;
+      console.error("Missing number or frames not supported");
+      return;
+    }
+    if (Number(ds.NumberOfFrames) == 1) {
+      console.error("Single frame instance of multiframe class not supported");
+      return;
     }
     if (!ds.PixelRepresentation) {
       // Required tag: guess signed
