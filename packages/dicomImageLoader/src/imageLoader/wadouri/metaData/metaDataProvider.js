@@ -14,6 +14,26 @@
       return;
     }
 
+    if(type === 'generalSeriesModule') {
+      return {
+        modality: dataSet.string('x00080060'),
+        seriesInstanceUID: dataSet.string('x0020000e'),
+        seriesNumber: dataSet.intString('x00200011'),
+        studyInstanceUID: dataSet.string('x0020000d'),
+        seriesInstanceUID: dataSet.string('x0020000e'),
+        seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
+        seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || '')
+      };
+    }
+
+    if(type === 'patientStudyModule') {
+      return {
+        patientAge: dataSet.intString('x00101010'),
+        patientSize: dataSet.floatString('x00101020'),
+        patientWeight: dataSet.floatString('x00101030')
+      }
+    }
+
     if (type === 'imagePlaneModule') {
       return {
         pixelSpacing: getNumberValues(dataSet, 'x00280030', 2),
@@ -52,6 +72,22 @@
         sopClassUID : dataSet.string('x00080016'),
         sopInstanceUID : dataSet.string('x00080018')
       };
+    }
+
+    if (type === 'petIsotopeModule') {
+      var radiopharmaceuticalInfo = dataSet.elements.x00540016;
+      if (radiopharmaceuticalInfo === undefined) {
+        return;
+      }
+
+      var firstRadiopharmaceuticalInfoDataSet = radiopharmaceuticalInfo.items[0].dataSet;
+      return {
+        radiopharmaceuticalInfo: {
+          radiopharmaceuticalStartTime: dicomParser.parseTM(firstRadiopharmaceuticalInfoDataSet.string('x00181072') || ''),
+          radionuclideTotalDose: firstRadiopharmaceuticalInfoDataSet.floatString('x00181074'),
+          radionuclideHalfLife: firstRadiopharmaceuticalInfoDataSet.floatString('x00181075')
+        }
+      }
     }
 
   }
