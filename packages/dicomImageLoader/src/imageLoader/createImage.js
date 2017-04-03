@@ -14,11 +14,6 @@
       sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1	'; // XRF
   }
 
-  function getSizeInBytes(imageFrame) {
-    var bytesPerPixel = Math.round(imageFrame.bitsAllocated / 8);
-    return imageFrame.rows * imageFrame.columns * bytesPerPixel * imageFrame.samplesPerPixel;
-  }
-
   /**
    * Helper function to set pixel data to the right typed array.  This is needed because web workers
    * can transfer array buffers but not typed arrays
@@ -80,7 +75,7 @@
         render: undefined, // set below
         rowPixelSpacing: imagePlaneModule.pixelSpacing ? imagePlaneModule.pixelSpacing[0] : undefined,
         rows: imageFrame.rows,
-        sizeInBytes: getSizeInBytes(imageFrame),
+        sizeInBytes: imageFrame.pixelData.length,
         slope: modalityLutModule.rescaleSlope ? modalityLutModule.rescaleSlope: 1,
         width: imageFrame.columns,
         windowCenter: voiLutModule.windowCenter ? voiLutModule.windowCenter[0] : undefined,

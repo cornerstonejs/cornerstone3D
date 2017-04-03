@@ -56,8 +56,13 @@
         planarConfiguration: getValue(metaData['00280006']),
         pixelAspectRatio: getValue(metaData['00280034']),
         smallestPixelValue: getValue(metaData['00280106']),
-        largestPixelValue: getValue(metaData['00280107'])
-        // TODO Color Palette
+        largestPixelValue: getValue(metaData['00280107']),
+        redPaletteColorLookupTableDescriptor: getNumberValues(metaData['00281101']),
+        greenPaletteColorLookupTableDescriptor: getNumberValues(metaData['00281102']),
+        bluePaletteColorLookupTableDescriptor: getNumberValues(metaData['00281103']),
+        redPaletteColorLookupTableData: getNumberValues(metaData['00281201']),
+        greenPaletteColorLookupTableData: getNumberValues(metaData['00281202']),
+        bluePaletteColorLookupTableData: getNumberValues(metaData['00281203'])
       };
     }
 

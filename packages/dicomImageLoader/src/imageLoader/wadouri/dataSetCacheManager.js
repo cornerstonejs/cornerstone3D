@@ -51,7 +51,6 @@
 
     // This uri is not loaded or being loaded, load it via an xhrRequest
     var promise = loadRequest(uri, imageId);
-    promises[uri] = promise;
 
     // handle success and failure of the XHR request load
     var loadDeferred = $.Deferred();
@@ -79,6 +78,8 @@
         // error thrown, remove the promise
         delete promises[uri];
       });
+
+    promises[uri] = loadDeferred;
     return loadDeferred;
   }
 

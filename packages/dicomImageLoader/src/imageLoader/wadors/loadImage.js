@@ -23,7 +23,7 @@
 
     // TODO: load bulk data items that we might need
 
-    var mediaType;// = 'image/dicom+jp2';
+    var mediaType = 'multipart/related; type=application/octet-stream'; // 'image/dicom+jp2';
 
     // get the pixel data from the server
     cornerstoneWADOImageLoader.wadors.getPixelData(uri, imageId, mediaType).then(function(result) {
