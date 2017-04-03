@@ -47,7 +47,7 @@
     {
       if(imageFrame.bitsAllocated === 8)
       {
-        return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, canvas);
+        return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, pixelData, canvas);
       } else {
         return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
       }

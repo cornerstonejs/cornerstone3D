@@ -24,11 +24,11 @@
     }
   }
 
-  function decodeJPEGBaseline8Bit(imageFrame, canvas) {
+  function decodeJPEGBaseline8Bit(imageFrame, pixelData, canvas) {
     var start = new Date().getTime();
     var deferred = $.Deferred();
 
-    var imgBlob = new Blob([imageFrame.pixelData], {type: "image/jpeg"});
+    var imgBlob = new Blob([pixelData], {type: "image/jpeg"});
 
     var r = new FileReader();
     if(r.readAsBinaryString === undefined) {
@@ -68,10 +68,10 @@
     return deferred.promise();
   }
 
-  function isJPEGBaseline8Bit(imageFrame) {
-    if((imageFrame.bitsAllocated === 8) &&
-      imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
-    {
+  function isJPEGBaseline8Bit(imageFrame, transferSyntax) {
+    transferSyntax = transferSyntax || imageFrame.transferSyntax;
+
+    if((imageFrame.bitsAllocated === 8) && (transferSyntax === "1.2.840.10008.1.2.4.50")) {
       return true;
     }
 
