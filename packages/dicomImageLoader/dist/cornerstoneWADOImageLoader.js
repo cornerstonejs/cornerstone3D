@@ -1409,6 +1409,12 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         throw 'frame exceeds size of pixelData';
       }
       return new Uint8Array(dataSet.byteArray.buffer, frameOffset,pixelsPerFrame * 2);
+    } else if (bitsAllocated === 1) {
+      frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 0.125;
+      if(frameOffset >= dataSet.byteArray.length) {
+        throw 'frame exceeds size of pixelData';
+      }
+      return cornerstoneWADOImageLoader.wadouri.unpackBinaryFrame(dataSet.byteArray, frameOffset, pixelsPerFrame);
     }
 
     throw 'unsupported pixel format';
@@ -1782,6 +1788,40 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   cornerstoneWADOImageLoader.wadouri.parseImageId = parseImageId;
   
 }(cornerstoneWADOImageLoader));
+/**
+ * Function to deal with unpacking a binary frame
+ */
+(function ($, cornerstone, cornerstoneWADOImageLoader) {
+
+  "use strict";
+
+  function isBitSet(byte, bitPos) {
+    return byte & (1 << bitPos);
+  }
+
+  function unpackBinaryFrame(byteArray, frameOffset, pixelsPerFrame) {
+    // Create a new pixel array given the image size
+    var pixelData = new Uint8Array(pixelsPerFrame);
+
+    for (var i = 0; i < pixelsPerFrame; i++) {
+      // Compute byte position
+      var bytePos = Math.floor(i / 8);
+      
+      // Get the current byte
+      var byte = byteArray[bytePos + frameOffset];
+
+      // Bit position (0-7) within byte
+      var bitPos = (i % 8);
+
+      // Check whether bit at bitpos is set
+      pixelData[i] = isBitSet(byte, bitPos) ? 1 : 0;
+    }
+
+    return pixelData;
+  }
+
+  cornerstoneWADOImageLoader.wadouri.unpackBinaryFrame = unpackBinaryFrame;
+}($, cornerstone, cornerstoneWADOImageLoader));
 (function ($, cornerstoneWADOImageLoader) {
 
   "use strict";
