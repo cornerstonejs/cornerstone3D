@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.2 - 2017-02-22 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.2 - 2017-04-03 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.
 //
@@ -378,18 +378,36 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     var deferred = $.Deferred();
     var imageFrame = cornerstoneWADOImageLoader.getImageFrame(imageId);
     var decodePromise = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options);
-    decodePromise.then(function(imageFrame) {
-      setPixelDataType(imageFrame);
-
+    decodePromise.then(function(imageFrame) {      
       //var imagePixelModule = metaDataProvider('imagePixelModule', imageId);
       var imagePlaneModule = cornerstone.metaData.get('imagePlaneModule', imageId);
       var voiLutModule = cornerstone.metaData.get('voiLutModule', imageId);
       var modalityLutModule = cornerstone.metaData.get('modalityLutModule', imageId);
       var sopCommonModule = cornerstone.metaData.get('sopCommonModule', imageId);
+      var isColorImage = cornerstoneWADOImageLoader.isColorImage(imageFrame.photometricInterpretation);
+
+      // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
+      // because it's using a canvas to load and decode images.
+      if(!cornerstoneWADOImageLoader.isJPEGBaseline8Bit(imageFrame, transferSyntax)) {
+        setPixelDataType(imageFrame);
+
+        // convert color space
+        if(isColorImage) {
+          // setup the canvas context
+          canvas.height = imageFrame.rows;
+          canvas.width = imageFrame.columns;
+
+          var context = canvas.getContext('2d');
+          var imageData = context.createImageData(imageFrame.columns, imageFrame.rows);
+          cornerstoneWADOImageLoader.convertColorSpace(imageFrame, imageData);
+          imageFrame.imageData = imageData;
+          imageFrame.pixelData = imageData.data;
+        }
+      }
 
       var image = {
         imageId: imageId,
-        color: cornerstoneWADOImageLoader.isColorImage(imageFrame.photometricInterpretation),
+        color: isColorImage,
         columnPixelSpacing: imagePlaneModule.pixelSpacing ? imagePlaneModule.pixelSpacing[1] : undefined,
         columns: imageFrame.columns,
         height: imageFrame.rows,
@@ -409,24 +427,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         webWorkerTimeInMS: imageFrame.webWorkerTimeInMS
       };
 
-
       // add function to return pixel data
       image.getPixelData = function() {
         return imageFrame.pixelData;
       };
-
-      // convert color space
-      if(image.color) {
-        // setup the canvas context
-        canvas.height = imageFrame.rows;
-        canvas.width = imageFrame.columns;
-
-        var context = canvas.getContext('2d');
-        var imageData = context.createImageData(imageFrame.columns, imageFrame.rows);
-        cornerstoneWADOImageLoader.convertColorSpace(imageFrame, imageData);
-        imageFrame.imageData = imageData;
-        imageFrame.pixelData = imageData.data;
-      }
 
       // Setup the renderer
       if(image.color) {
@@ -536,7 +540,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     {
       if(imageFrame.bitsAllocated === 8)
       {
-        return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, canvas);
+        return cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit(imageFrame, pixelData, canvas);
       } else {
         return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
       }
@@ -625,11 +629,11 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     }
   }
 
-  function decodeJPEGBaseline8Bit(imageFrame, canvas) {
+  function decodeJPEGBaseline8Bit(imageFrame, pixelData, canvas) {
     var start = new Date().getTime();
     var deferred = $.Deferred();
 
-    var imgBlob = new Blob([imageFrame.pixelData], {type: "image/jpeg"});
+    var imgBlob = new Blob([pixelData], {type: "image/jpeg"});
 
     var r = new FileReader();
     if(r.readAsBinaryString === undefined) {
@@ -669,10 +673,10 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     return deferred.promise();
   }
 
-  function isJPEGBaseline8Bit(imageFrame) {
-    if((imageFrame.bitsAllocated === 8) &&
-      imageFrame.transferSyntax === "1.2.840.10008.1.2.4.50")
-    {
+  function isJPEGBaseline8Bit(imageFrame, transferSyntax) {
+    transferSyntax = transferSyntax || imageFrame.transferSyntax;
+
+    if((imageFrame.bitsAllocated === 8) && (transferSyntax === "1.2.840.10008.1.2.4.50")) {
       return true;
     }
 
@@ -1073,6 +1077,25 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       return;
     }
 
+    if(type === 'generalSeriesModule') {
+      return {
+        modality: getValue(metaData['00080060']),
+        seriesInstanceUID: getValue(metaData['0020000e']),
+        seriesNumber: getNumberValue(metaData['00200011']),
+        studyInstanceUID: getValue(metaData['0020000d']),
+        seriesDate: dicomParser.parseDA(getValue(metaData['00080021'])),
+        seriesTime: dicomParser.parseTM(getValue(metaData['00080031'], 0, ''))
+      };
+    }
+
+    if(type === 'patientStudyModule') {
+      return {
+        patientAge: getNumberValue(metaData['00101010']),
+        patientSize: getNumberValue(metaData['00101020']),
+        patientWeight: getNumberValue(metaData['00101030'])
+      }
+    }
+
     if (type === 'imagePlaneModule') {
       return {
         pixelSpacing: getNumberValues(metaData['00280030'], 2),
@@ -1122,6 +1145,21 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       return {
         sopClassUID : getValue(metaData['00080016']),
         sopInstanceUID : getValue(metaData['00080018'])
+      };
+    }
+
+    if (type === 'petIsotopeModule') {
+      var radiopharmaceuticalInfo = getValue(metaData['00540016']);
+      if (radiopharmaceuticalInfo === undefined) {
+        return;
+      }
+
+      return {
+        radiopharmaceuticalInfo: {
+          radiopharmaceuticalStartTime: dicomParser.parseTM(getValue(radiopharmaceuticalInfo['00181072'], 0, '')),
+          radionuclideTotalDose: getNumberValue(radiopharmaceuticalInfo['00181074']),
+          radionuclideHalfLife: getNumberValue(radiopharmaceuticalInfo['00181075'])
+        }
       };
     }
 
@@ -1633,6 +1671,26 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
       return;
     }
 
+    if(type === 'generalSeriesModule') {
+      return {
+        modality: dataSet.string('x00080060'),
+        seriesInstanceUID: dataSet.string('x0020000e'),
+        seriesNumber: dataSet.intString('x00200011'),
+        studyInstanceUID: dataSet.string('x0020000d'),
+        seriesInstanceUID: dataSet.string('x0020000e'),
+        seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
+        seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || '')
+      };
+    }
+
+    if(type === 'patientStudyModule') {
+      return {
+        patientAge: dataSet.intString('x00101010'),
+        patientSize: dataSet.floatString('x00101020'),
+        patientWeight: dataSet.floatString('x00101030')
+      }
+    }
+
     if (type === 'imagePlaneModule') {
       return {
         pixelSpacing: getNumberValues(dataSet, 'x00280030', 2),
@@ -1671,6 +1729,22 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
         sopClassUID : dataSet.string('x00080016'),
         sopInstanceUID : dataSet.string('x00080018')
       };
+    }
+
+    if (type === 'petIsotopeModule') {
+      var radiopharmaceuticalInfo = dataSet.elements.x00540016;
+      if (radiopharmaceuticalInfo === undefined) {
+        return;
+      }
+
+      var firstRadiopharmaceuticalInfoDataSet = radiopharmaceuticalInfo.items[0].dataSet;
+      return {
+        radiopharmaceuticalInfo: {
+          radiopharmaceuticalStartTime: dicomParser.parseTM(firstRadiopharmaceuticalInfoDataSet.string('x00181072') || ''),
+          radionuclideTotalDose: firstRadiopharmaceuticalInfoDataSet.floatString('x00181074'),
+          radionuclideHalfLife: firstRadiopharmaceuticalInfoDataSet.floatString('x00181075')
+        }
+      }
     }
 
   }
