@@ -13,7 +13,7 @@
     //console.time('jpeglossless');
     var buffer = pixelData.buffer;
     var decoder = new jpeg.lossless.Decoder();
-    var decompressedData = decoder.decode(buffer, buffer.byteOffset, buffer.length, byteOutput);
+    var decompressedData = decoder.decode(buffer, pixelData.byteOffset, pixelData.length, byteOutput);
     //console.timeEnd('jpeglossless');
     if (imageFrame.pixelRepresentation === 0) {
       if (imageFrame.bitsAllocated === 16) {
