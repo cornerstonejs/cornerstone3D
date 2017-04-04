@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-03 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-04 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 
 cornerstoneWADOImageLoaderWebWorker = {
   registerTaskHandler : undefined
@@ -528,6 +528,11 @@ cornerstoneWADOImageLoader = {};
     }
     var jpeg = new JpegImage();
     jpeg.parse(pixelData);
+
+    // Do not use the internal jpeg.js color transformation,
+    // since we will handle this afterwards
+    jpeg.colorTransform = false;
+
     if(imageFrame.bitsAllocated === 8) {
       imageFrame.pixelData = jpeg.getData(imageFrame.columns, imageFrame.rows);
       return imageFrame;
