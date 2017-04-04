@@ -24,7 +24,7 @@
     }
   }
 
-  function decodeJPEGBaseline8Bit(imageFrame, pixelData, canvas) {
+  function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
     var start = new Date().getTime();
     var deferred = $.Deferred();
 
@@ -68,17 +68,19 @@
     return deferred.promise();
   }
 
-  function isJPEGBaseline8Bit(imageFrame, transferSyntax) {
+  function isJPEGBaseline8BitColor(imageFrame, transferSyntax) {
     transferSyntax = transferSyntax || imageFrame.transferSyntax;
 
-    if((imageFrame.bitsAllocated === 8) && (transferSyntax === "1.2.840.10008.1.2.4.50")) {
+    if(imageFrame.bitsAllocated === 8 &&
+       transferSyntax === "1.2.840.10008.1.2.4.50" &&
+       (imageFrame.samplesPerPixel === 3 || imageFrame.samplesPerPixel === 4)) {
       return true;
     }
 
   }
 
   // module exports
-  cornerstoneWADOImageLoader.decodeJPEGBaseline8Bit = decodeJPEGBaseline8Bit;
-  cornerstoneWADOImageLoader.isJPEGBaseline8Bit = isJPEGBaseline8Bit;
+  cornerstoneWADOImageLoader.decodeJPEGBaseline8BitColor = decodeJPEGBaseline8BitColor;
+  cornerstoneWADOImageLoader.isJPEGBaseline8BitColor = isJPEGBaseline8BitColor;
 
 }($, cornerstoneWADOImageLoader));

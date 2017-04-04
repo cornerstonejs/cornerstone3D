@@ -45,7 +45,7 @@
 
       // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
       // because it's using a canvas to load and decode images.
-      if(!cornerstoneWADOImageLoader.isJPEGBaseline8Bit(imageFrame, transferSyntax)) {
+      if(!cornerstoneWADOImageLoader.isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
         setPixelDataType(imageFrame);
 
         // convert color space
