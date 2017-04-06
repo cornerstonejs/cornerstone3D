@@ -20,7 +20,6 @@
 
   function convertColorSpace(imageFrame, imageData) {
     var rgbaBuffer = imageData.data;
-    console.time('convertColorSpace');
     // convert based on the photometric interpretation
     if (imageFrame.photometricInterpretation === "RGB" )
     {
@@ -50,7 +49,6 @@
     {
       throw "no color space conversion for photometric interpretation " + imageFrame.photometricInterpretation;
     }
-    console.timeEnd('convertColorSpace');
   }
 
   // module exports

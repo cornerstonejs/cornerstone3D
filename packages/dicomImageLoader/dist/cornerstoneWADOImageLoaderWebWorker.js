@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-04 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-06 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 
 cornerstoneWADOImageLoaderWebWorker = {
   registerTaskHandler : undefined

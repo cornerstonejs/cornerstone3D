@@ -4,7 +4,6 @@
 
   "use strict";
 
-  var canvas = document.createElement('canvas');
   var lastImageIdDrawn = "";
 
   function isModalityLUTForDisplay(sopClassUid) {
@@ -32,6 +31,7 @@
   }
 
   function createImage(imageId, pixelData, transferSyntax, options) {
+    var canvas = document.createElement('canvas');
     var deferred = $.Deferred();
     var imageFrame = cornerstoneWADOImageLoader.getImageFrame(imageId);
     var decodePromise = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options);

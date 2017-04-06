@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-04 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-06 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 //
 // This is a cornerstone image loader for WADO-URI requests.
 //
@@ -299,7 +299,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   function convertColorSpace(imageFrame, imageData) {
     var rgbaBuffer = imageData.data;
-    console.time('convertColorSpace');
     // convert based on the photometric interpretation
     if (imageFrame.photometricInterpretation === "RGB" )
     {
@@ -329,7 +328,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
     {
       throw "no color space conversion for photometric interpretation " + imageFrame.photometricInterpretation;
     }
-    console.timeEnd('convertColorSpace');
   }
 
   // module exports
@@ -342,7 +340,6 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
 
   "use strict";
 
-  var canvas = document.createElement('canvas');
   var lastImageIdDrawn = "";
 
   function isModalityLUTForDisplay(sopClassUid) {
@@ -370,6 +367,7 @@ if(typeof cornerstoneWADOImageLoader === 'undefined'){
   }
 
   function createImage(imageId, pixelData, transferSyntax, options) {
+    var canvas = document.createElement('canvas');
     var deferred = $.Deferred();
     var imageFrame = cornerstoneWADOImageLoader.getImageFrame(imageId);
     var decodePromise = cornerstoneWADOImageLoader.decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options);
