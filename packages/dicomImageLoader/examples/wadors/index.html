@@ -152,7 +152,15 @@
     {
         var url = $('#wadoURL').val();
         var metadataURI = url + "/metadata";
-        $.get(metadataURI, function(data) {
+        $.ajax({
+            url: metadataURI,
+            headers: {
+                accept: 'application/json'
+            }
+        }).done(function(data) {
+            // Make sure it's a JSON document
+            data = JSON.parse(data);
+
             console.log(data);
 
             var metadata = data[0];
@@ -164,9 +172,7 @@
 
             // image enable the dicomImage element and activate a few tools
             loadAndViewImage(imageId);
-        }, 'json');
-
-
+        });
     }
 
     $(cornerstone).bind('CornerstoneImageLoadProgress', function(eventData) {
