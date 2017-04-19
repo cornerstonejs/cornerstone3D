@@ -37,9 +37,37 @@ module.exports = function(grunt) {
                 flatten: true
             }
         },
+
+        babel: {
+            options: {
+                sourceMap: false,
+                presets: ['es2015']
+            },
+            imageLoader: {
+                files: [{
+                    expand: true,
+                    cwd: 'src/imageLoader',
+                    src: ['**/*.js'],
+                    dest: 'build/imageLoader/'
+                }]
+            },
+            webWorker: {
+                files: [{
+                    expand: true,
+                    cwd: 'src/webWorker',
+                    src: ['**/*.js'],
+                    dest: 'build/webWorker/'
+                }]
+            }
+        },
+
         concat: {
             buildImageLoader: {
-                src : ['src/imageLoader/header.js', 'src/imageLoader/wadouri/loadImage.js', 'src/imageLoader/**/*.js'],
+                src : [
+                    'build/imageLoader/header.js',
+                    'build/imageLoader/wadouri/loadImage.js',
+                    'build/imageLoader/**/*.js'
+                ],
                 dest: 'build/cornerstoneWADOImageLoader.js'
             },
             distImageLoader: {
@@ -67,7 +95,11 @@ module.exports = function(grunt) {
                 dest: 'dist/cornerstoneWADOImageLoaderCodecs.js'
             },
             buildWebWorker: {
-                src : ['src/webWorker/main.js', 'src/webWorker/decodeTask/decodeTask.js', 'src/webWorker/**/*.js'],
+                src : [
+                    'build/webWorker/main.js',
+                    'build/webWorker/decodeTask/decodeTask.js',
+                    'build/webWorker/**/*.js'
+                ],
                 dest: 'build/cornerstoneWADOImageLoaderWebWorker.js'
             },
             distWebWorker: {
@@ -121,8 +153,8 @@ module.exports = function(grunt) {
     require('load-grunt-tasks')(grunt);
 
     grunt.registerTask('buildCodecs', ['concat:buildCodecs', 'concat:distCodecs', 'uglify', 'jshint']);
-    grunt.registerTask('buildWebWorker', ['concat:buildWebWorker', 'concat:distWebWorker', 'uglify', 'jshint']);
-    grunt.registerTask('buildImageLoader', ['concat:buildImageLoader', 'concat:distImageLoader', 'uglify', 'jshint']);
+    grunt.registerTask('buildWebWorker', ['babel:webWorker', 'concat:buildWebWorker', 'concat:distWebWorker', 'uglify', 'jshint']);
+    grunt.registerTask('buildImageLoader', ['babel:imageLoader', 'concat:buildImageLoader', 'concat:distImageLoader', 'uglify', 'jshint']);
     grunt.registerTask('default', ['clean', 'buildImageLoader', 'buildWebWorker', 'buildCodecs']);
 };
 

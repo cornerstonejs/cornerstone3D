@@ -1,33 +1,79 @@
 {
-    "name": "cornerstone-wado-image-loader",
-    "version": "0.14.3",
-    "description": "Cornerstone ImageLoader for DICOM WADO-URI",
-    "keywords": [
-        "DICOM",
-        "WADO",
-        "cornerstone",
-        "medical",
-        "imaging"
-    ],
-    "author": "Chris Hafey",
-    "homepage": "https://github.com/chafey/cornerstoneWADOImageLoader",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/chafey/cornerstoneWADOImageLoader.git"
-    },
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "devDependencies": {
-        "grunt-contrib-copy": "0.4.x",
-        "grunt-contrib-qunit": "^0.4.0",
-        "grunt-contrib-concat": "^0.3.0",
-        "grunt-contrib-watch": "^0.6.1",
-        "grunt-contrib-clean": "^0.5.0",
-        "grunt-contrib-jshint": "^0.8.0",
-        "grunt-contrib-uglify": "^0.4.0",
-        "grunt-version": "^1.0.0",
-        "load-grunt-tasks": "^0.2.1"
-    }
+  "name": "cornerstone-wado-image-loader",
+  "version": "0.14.3",
+  "description": "Cornerstone ImageLoader for DICOM WADO-URI",
+  "keywords": [
+    "DICOM",
+    "WADO",
+    "cornerstone",
+    "medical",
+    "imaging"
+  ],
+  "author": "Chris Hafey",
+  "homepage": "https://github.com/chafey/cornerstoneWADOImageLoader",
+  "license": "MIT",
+  "main": "./dist/cornerstoneWADOImageLoader.min.js",
+  "module": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chafey/cornerstoneWADOImageLoader.git"
+  },
+  "scripts": {
+    "clean": "npm run clean:dist && npm run clean:coverage",
+    "clean:dist": "shx rm -rf dist",
+    "clean:docs": "shx rm -rf documentation",
+    "clean:coverage": "shx rm -rf coverage",
+    "doc": "npm run doc:generate && opn documentation/index.html",
+    "doc:generate": "npm run clean:docs && jsdoc -c .jsdocrc",
+    "version": "node -p -e \"'export default \\'' + require('./package.json').version + '\\';'\" > src/version.js",
+    "build": "npm run test && npm run version && npm run webpack && npm run doc:generate",
+    "webpack": "npm run clean:dist && npm run webpack:prod && npm run webpack:dev",
+    "webpack:dev": "ENV=dev webpack --progress --config ./config/webpack",
+    "webpack:prod": "ENV=prod webpack --progress --config ./config/webpack",
+    "webpack:watch": "webpack --progress --debug --watch  --config ./config/webpack",
+    "watch": "npm run webpack:watch",
+    "test": "npm run test:phantom",
+    "test:watch": "karma start config/karma/karma-watch.js",
+    "test:phantom": "karma start config/karma/karma-phantom.js",
+    "test:chrome": "karma start config/karma/karma-chrome.js",
+    "test:firefox": "karma start config/karma/karma-firefox.js",
+    "test:all": "npm run test:phantom && npm run test:chrome && npm run test:firefox"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^6.4.1",
+    "babel-preset-es2015": "^6.24.1",
+    "chai": "^3.5.0",
+    "docdash": "^0.4.0",
+    "eslint": "^3.19.0",
+    "eslint-loader": "^1.7.1",
+    "grunt": "^1.0.1",
+    "grunt-babel": "^6.0.0",
+    "grunt-contrib-clean": "^1.1.0",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-contrib-jshint": "^1.1.0",
+    "grunt-contrib-qunit": "^2.0.0",
+    "grunt-contrib-uglify": "^2.3.0",
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-version": "^1.1.1",
+    "istanbul-instrumenter-loader": "^2.0.0",
+    "jsdoc": "^3.4.3",
+    "karma": "^1.6.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-coverage": "^1.1.1",
+    "karma-firefox-launcher": "^1.0.1",
+    "karma-mocha": "^1.3.0",
+    "karma-phantomjs-launcher": "^1.0.4",
+    "karma-webpack": "^2.0.3",
+    "load-grunt-tasks": "^0.2.1",
+    "loadash": "0.0.1",
+    "mocha": "^3.2.0",
+    "opn-cli": "^3.1.0",
+    "shx": "^0.2.2",
+    "webpack": "^2.4.1"
+  },
+  "dependencies": {
+    "jquery": "^3.2.1"
+  }
 }
