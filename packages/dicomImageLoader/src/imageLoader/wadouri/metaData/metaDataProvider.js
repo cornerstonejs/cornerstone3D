@@ -20,7 +20,6 @@
         seriesInstanceUID: dataSet.string('x0020000e'),
         seriesNumber: dataSet.intString('x00200011'),
         studyInstanceUID: dataSet.string('x0020000d'),
-        seriesInstanceUID: dataSet.string('x0020000e'),
         seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
         seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || '')
       };
