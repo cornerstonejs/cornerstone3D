@@ -1,50 +1,54 @@
+import $ from 'jquery';
+import metaDataManager from './metaDataManager';
+import getPixelData from './getPixelData';
+import createImage from '../createImage';
+// TODO: import cornerstone from 'cornerstone';
 
-(function ($, cornerstone, cornerstoneWADOImageLoader) {
+"use strict";
 
-  "use strict";
+function getTransferSyntaxForContentType(contentType) {
+  return '1.2.840.10008.1.2'; // hard code to ILE for now
+}
 
-  function getTransferSyntaxForContentType(contentType) {
-    return '1.2.840.10008.1.2'; // hard code to ILE for now
+function loadImage(imageId, options) {
+  var start = new Date().getTime();
+
+  var deferred = $.Deferred();
+  
+  var uri = imageId.substring(7);
+  
+  // check to make sure we have metadata for this imageId
+  var metaData = metaDataManager.get(imageId);
+  if(metaData === undefined) {
+    deferred.reject('no metadata for imageId ' + imageId);
+    return deferred.promise();
   }
 
-  function loadImage(imageId, options) {
-    var start = new Date().getTime();
+  // TODO: load bulk data items that we might need
 
-    var deferred = $.Deferred();
-    
-    var uri = imageId.substring(7);
-    
-    // check to make sure we have metadata for this imageId
-    var metaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
-    if(metaData === undefined) {
-      deferred.reject('no metadata for imageId ' + imageId);
-      return deferred.promise();
-    }
+  var mediaType = 'multipart/related; type="application/octet-stream"'; // 'image/dicom+jp2';
 
-    // TODO: load bulk data items that we might need
+  // get the pixel data from the server
+  getPixelData(uri, imageId, mediaType).then(function(result) {
 
-    var mediaType = 'multipart/related; type="application/octet-stream"'; // 'image/dicom+jp2';
+    var transferSyntax = getTransferSyntaxForContentType(result.contentType);
+    var pixelData = result.imageFrame.pixelData;
+    var imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+    imagePromise.then(function(image) {
+      // add the loadTimeInMS property
+      var end = new Date().getTime();
+      image.loadTimeInMS = end - start;
+      deferred.resolve(image);
+    })
+  }).fail(function(reason) {
+    deferred.reject(reason);
+  });
 
-    // get the pixel data from the server
-    cornerstoneWADOImageLoader.wadors.getPixelData(uri, imageId, mediaType).then(function(result) {
+  return deferred;
+}
 
-      var transferSyntax = getTransferSyntaxForContentType(result.contentType);
-      var pixelData = result.imageFrame.pixelData;
-      var imagePromise = cornerstoneWADOImageLoader.createImage(imageId, pixelData, transferSyntax, options);
-      imagePromise.then(function(image) {
-        // add the loadTimeInMS property
-        var end = new Date().getTime();
-        image.loadTimeInMS = end - start;
-        deferred.resolve(image);
-      })
-    }).fail(function(reason) {
-      deferred.reject(reason);
-    });
+// register wadors scheme
+cornerstone.registerImageLoader('wadors', loadImage);
 
-    return deferred;
-  }
+export default loadImage;
 
-  // register wadors scheme
-  cornerstone.registerImageLoader('wadors', loadImage);
-
-}($, cornerstone, cornerstoneWADOImageLoader));

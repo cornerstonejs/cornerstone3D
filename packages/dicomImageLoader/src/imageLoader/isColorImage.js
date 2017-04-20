@@ -1,26 +1,22 @@
-(function (cornerstoneWADOImageLoader) {
+"use strict";
 
-  "use strict";
-
-  function isColorImage(photoMetricInterpretation)
+function isColorImage(photoMetricInterpretation)
+{
+  if(photoMetricInterpretation === "RGB" ||
+    photoMetricInterpretation === "PALETTE COLOR" ||
+    photoMetricInterpretation === "YBR_FULL" ||
+    photoMetricInterpretation === "YBR_FULL_422" ||
+    photoMetricInterpretation === "YBR_PARTIAL_422" ||
+    photoMetricInterpretation === "YBR_PARTIAL_420" ||
+    photoMetricInterpretation === "YBR_RCT" ||
+    photoMetricInterpretation === "YBR_ICT")
   {
-    if(photoMetricInterpretation === "RGB" ||
-      photoMetricInterpretation === "PALETTE COLOR" ||
-      photoMetricInterpretation === "YBR_FULL" ||
-      photoMetricInterpretation === "YBR_FULL_422" ||
-      photoMetricInterpretation === "YBR_PARTIAL_422" ||
-      photoMetricInterpretation === "YBR_PARTIAL_420" ||
-      photoMetricInterpretation === "YBR_RCT" ||
-      photoMetricInterpretation === "YBR_ICT")
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return true;
   }
+  else
+  {
+    return false;
+  }
+}
 
-  cornerstoneWADOImageLoader.isColorImage = isColorImage;
-
-}(cornerstoneWADOImageLoader));
+export default isColorImage;

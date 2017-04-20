@@ -1,24 +1,25 @@
-(function ($, cornerstone, cornerstoneWADOImageLoader) {
+import $ from 'jquery';
+import parseImageId from './parseImageId';
+import fileManager from './fileManager';
 
-  "use strict";
+"use strict";
 
-  function loadFileRequest(uri) {
+function loadFileRequest(uri) {
+  var parsedImageId = parseImageId(uri);
+  var fileIndex = parseInt(parsedImageId.url);
+  var file = fileManager.get(fileIndex);
+  
+  // create a deferred object
+  var deferred = $.Deferred();
 
-    var parsedImageId = cornerstoneWADOImageLoader.wadouri.parseImageId(uri);
-    var fileIndex = parseInt(parsedImageId.url);
-    var file = cornerstoneWADOImageLoader.wadouri.fileManager.get(fileIndex);
-    
-    // create a deferred object
-    var deferred = $.Deferred();
+  var fileReader = new FileReader();
+  fileReader.onload = function (e) {
+    var dicomPart10AsArrayBuffer = e.target.result;
+    deferred.resolve(dicomPart10AsArrayBuffer);
+  };
+  fileReader.readAsArrayBuffer(file);
 
-    var fileReader = new FileReader();
-    fileReader.onload = function (e) {
-      var dicomPart10AsArrayBuffer = e.target.result;
-      deferred.resolve(dicomPart10AsArrayBuffer);
-    };
-    fileReader.readAsArrayBuffer(file);
+  return deferred.promise();
+}
 
-    return deferred.promise();
-  }
-  cornerstoneWADOImageLoader.wadouri.loadFileRequest = loadFileRequest;
-}($, cornerstone, cornerstoneWADOImageLoader));
+export default loadFileRequest;

@@ -1,33 +1,26 @@
-/**
- */
-(function (cornerstoneWADOImageLoader) {
+"use strict";
 
-  "use strict";
+var imageIds = [];
 
-  var imageIds = [];
+function add(imageId, metadata) {
+  imageIds[imageId] = metadata;
+}
 
-  function add(imageId, metadata) {
-    imageIds[imageId] = metadata;
-  }
+function get(imageId) {
+  return imageIds[imageId];
+}
 
-  function get(imageId) {
-    return imageIds[imageId];
-  }
+function remove(imageId) {
+  imageIds[imageId] = undefined;
+}
 
-  function remove(imageId) {
-    imageIds[imageId] = undefined;
-  }
+function purge() {
+  imageIds = [];
+}
 
-  function purge() {
-    imageIds = [];
-  }
-
-  // module exports
-  cornerstoneWADOImageLoader.wadors.metaDataManager = {
-    add : add,
-    get : get,
-    remove:remove,
-    purge: purge
-  };
-
-}(cornerstoneWADOImageLoader));
+export default {
+  add : add,
+  get : get,
+  remove:remove,
+  purge: purge
+};

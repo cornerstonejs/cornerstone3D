@@ -1,4 +1,5 @@
-module.exports = {
+{
+  'parser': 'babel-eslint',
   'env': {
     'browser': true,
     'es6': true,
@@ -11,9 +12,15 @@ module.exports = {
     'sourceType': 'module'
   },
   'globals': {
+    'dicomParser': true,
     'cornerstone': true,
     'cornerstoneWADOImageLoader': true,
-    'cornerstoneWADOImageLoaderWebWorker': true
+    'cornerstoneWADOImageLoaderWebWorker': true,
+    'jpeg': true,
+    'JpegImage': true,
+    'OpenJPEG': true,
+    'JpxImage': true,
+    'CharLS': true
   },
   'rules': {
     'accessor-pairs': 'warn',
@@ -27,7 +34,7 @@ module.exports = {
     'brace-style': 'warn',
     'callback-return': 'warn',
     'camelcase': 'warn',
-    'capitalized-comments': 'warn',
+    'capitalized-comments': 'off',
     'class-methods-use-this': 'warn',
     'comma-dangle': 'warn',
     'comma-spacing': [
@@ -176,7 +183,7 @@ module.exports = {
     'no-trailing-spaces': 'warn',
     'no-undef': 'error',
     'no-undef-init': 'warn',
-    'no-undefined': 'off',
+    'no-undefined': 'warn',
     'no-unused-vars': 'warn',
     'no-underscore-dangle': 'warn',
     'no-unmodified-loop-condition': 'warn',
@@ -189,7 +196,7 @@ module.exports = {
     'no-useless-constructor': 'warn',
     'no-useless-escape': 'warn',
     'no-useless-rename': 'warn',
-    'no-useless-return': 'off',
+    'no-useless-return': 'warn',
     'no-var': 'warn',
     'no-void': 'warn',
     'no-warning-comments': 'warn',
@@ -205,7 +212,7 @@ module.exports = {
     'one-var-declaration-per-line': 'warn',
     'operator-assignment': 'warn',
     'operator-linebreak': 'warn',
-    'padded-blocks': 'off',
+    'padded-blocks': ['warn', 'never'],
     'prefer-arrow-callback': 'off',
     'prefer-const': 'warn',
     'prefer-numeric-literals': 'warn',
@@ -250,4 +257,4 @@ module.exports = {
     'yield-star-spacing': 'warn',
     'yoda': 'warn'
   }
-};
+}
