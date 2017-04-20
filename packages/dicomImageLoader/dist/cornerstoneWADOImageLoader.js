@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-19 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - v0.14.3 - 2017-04-20 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 'use strict';
 
 //
@@ -9,7 +9,7 @@ if (typeof cornerstone === 'undefined') {
   cornerstone = {};
 }
 if (typeof cornerstoneWADOImageLoader === 'undefined') {
-  cornerstoneWADOImageLoader = {
+  var cornerstoneWADOImageLoader = {
     wadouri: {},
     wadors: {},
     internal: {
