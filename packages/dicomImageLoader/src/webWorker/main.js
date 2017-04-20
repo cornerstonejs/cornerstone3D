@@ -1,5 +1,5 @@
 
-cornerstoneWADOImageLoaderWebWorker = {
+var cornerstoneWADOImageLoaderWebWorker = {
   registerTaskHandler : undefined
 };
 

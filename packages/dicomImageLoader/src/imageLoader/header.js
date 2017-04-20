@@ -6,7 +6,7 @@ if(typeof cornerstone === 'undefined'){
   cornerstone = {};
 }
 if(typeof cornerstoneWADOImageLoader === 'undefined'){
-  cornerstoneWADOImageLoader = {
+  var cornerstoneWADOImageLoader = {
     wadouri: {
 
     },
