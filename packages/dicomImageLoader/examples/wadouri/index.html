@@ -301,7 +301,7 @@
         loadAndViewImage(url);
     }
 
-    $(cornerstone).bind('CornerstoneImageLoadProgress', function(eventData) {
+    $(cornerstone).bind('CornerstoneImageLoadProgress', function(event, eventData) {
         $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");
     });
 
