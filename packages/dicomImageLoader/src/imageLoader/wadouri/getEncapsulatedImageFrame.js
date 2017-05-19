@@ -1,4 +1,4 @@
-// TODO: import dicomParser from 'dicomParser';
+import dicomParser from 'dicom-parser';
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.

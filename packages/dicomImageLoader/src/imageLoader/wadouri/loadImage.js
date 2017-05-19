@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import cornerstone from 'cornerstone-core';
 import createImage from '../createImage';
 import parseImageId from './parseImageId';
 import dataSetCacheManager from './dataSetCacheManager';
@@ -6,7 +7,6 @@ import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
 import getUncompressedImageFrame from './getUncompressedImageFrame';
 import loadFileRequest from './loadFileRequest';
 import { xhrRequest } from '../internal';
-// TODO: import cornerstone from 'cornerstone';
 
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache (image) {

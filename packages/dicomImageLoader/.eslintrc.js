@@ -12,9 +12,6 @@ module.exports = {
     'sourceType': 'module'
   },
   'globals': {
-    'cornerstoneWADOImageLoader': true,
-    'cornerstone': true,
-    'dicomParser': true,
     'jpeg': true,
     'JpegImage': true,
     'JpxImage': true,

@@ -14,12 +14,30 @@ module.exports = {
   output: {
     filename: '[name].js',
     library: '[name]',
-    libraryTarget: 'var',
-    path: outputPath
+    libraryTarget: 'umd',
+    path: outputPath,
+    umdNamedDefine: true
   },
   devtool: 'source-map',
   externals: {
-    jquery: 'jQuery'
+    jquery: {
+      commonjs: "jquery",
+      commonjs2: "jquery",
+      amd: "jquery",
+      root: '$'
+    },
+    'cornerstone-core': {
+      commonjs: "cornerstone-core",
+      commonjs2: "cornerstone-core",
+      amd: "cornerstone-core",
+      root: 'cornerstone'
+    },
+    'dicom-parser': {
+      commonjs: "dicom-parser",
+      commonjs2: "dicom-parser",
+      amd: "dicom-parser",
+      root: 'dicomParser'
+    },
   },
   module: {
     rules: [{

@@ -1,5 +1,4 @@
-// TODO: import cornerstone from 'cornerstone';
-
+import cornerstone from 'cornerstone-core';
 
 function getImageFrame (imageId) {
   const imagePixelModule = cornerstone.metaData.get('imagePixelModule', imageId);

@@ -5,7 +5,7 @@ import { default as isColorImageFn } from './isColorImage';
 import convertColorSpace from './convertColorSpace';
 import getMinMax from './getMinMax';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
-// TODO: import cornerstone from 'cornerstone';
+import cornerstone from 'cornerstone-core';
 
 let lastImageIdDrawn = '';
 
