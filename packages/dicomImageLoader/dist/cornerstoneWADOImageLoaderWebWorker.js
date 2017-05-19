@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.14.3 - 2017-41-19 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.14.4 - 2017-05-19 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 var cornerstoneWADOImageLoaderWebWorker =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -79,7 +79,7 @@ var cornerstoneWADOImageLoaderWebWorker =
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = '0.14.3';
+exports.default = '0.14.4';
 
 /***/ }),
 
