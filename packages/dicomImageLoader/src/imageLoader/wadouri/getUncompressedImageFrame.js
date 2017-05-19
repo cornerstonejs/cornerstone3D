@@ -4,37 +4,38 @@ import unpackBinaryFrame from './unpackBinaryFrame';
  * Function to deal with extracting an image frame from an encapsulated data set.
  */
 
-"use strict";
+function getUncompressedImageFrame (dataSet, frameIndex) {
+  const pixelDataElement = dataSet.elements.x7fe00010;
+  const bitsAllocated = dataSet.uint16('x00280100');
+  const rows = dataSet.uint16('x00280010');
+  const columns = dataSet.uint16('x00280011');
+  const samplesPerPixel = dataSet.uint16('x00280002');
 
-function getUncompressedImageFrame(dataSet, frameIndex) {
-  var pixelDataElement = dataSet.elements.x7fe00010;
-  var bitsAllocated = dataSet.uint16('x00280100');
-  var rows = dataSet.uint16('x00280010');
-  var columns = dataSet.uint16('x00280011');
-  var samplesPerPixel = dataSet.uint16('x00280002');
+  const pixelDataOffset = pixelDataElement.dataOffset;
+  const pixelsPerFrame = rows * columns * samplesPerPixel;
 
-  var pixelDataOffset = pixelDataElement.dataOffset;
-  var pixelsPerFrame = rows * columns * samplesPerPixel;
+  let frameOffset;
 
-  var frameOffset;
-  if(bitsAllocated === 8) {
+  if (bitsAllocated === 8) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame;
-    if(frameOffset >= dataSet.byteArray.length) {
+    if (frameOffset >= dataSet.byteArray.length) {
       throw 'frame exceeds size of pixelData';
     }
+
     return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame);
-  }
-  else if(bitsAllocated === 16) {
+  } else if (bitsAllocated === 16) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
-    if(frameOffset >= dataSet.byteArray.length) {
+    if (frameOffset >= dataSet.byteArray.length) {
       throw 'frame exceeds size of pixelData';
     }
-    return new Uint8Array(dataSet.byteArray.buffer, frameOffset,pixelsPerFrame * 2);
+
+    return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame * 2);
   } else if (bitsAllocated === 1) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 0.125;
-    if(frameOffset >= dataSet.byteArray.length) {
+    if (frameOffset >= dataSet.byteArray.length) {
       throw 'frame exceeds size of pixelData';
     }
+
     return unpackBinaryFrame(dataSet.byteArray, frameOffset, pixelsPerFrame);
   }
 

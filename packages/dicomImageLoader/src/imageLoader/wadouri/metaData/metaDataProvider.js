@@ -7,17 +7,16 @@ import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixel
 // TODO: import dicomParser from 'dicomParser';
 // TODO: import cornerstone from 'cornerstone';
 
-"use strict";
+function metaDataProvider (type, imageId) {
+  const parsedImageId = parseImageId(imageId);
 
-function metaDataProvider(type, imageId) {
-  var parsedImageId = parseImageId(imageId);
+  const dataSet = dataSetCacheManager.get(parsedImageId.url);
 
-  var dataSet = dataSetCacheManager.get(parsedImageId.url);
-  if(!dataSet) {
+  if (!dataSet) {
     return;
   }
 
-  if(type === 'generalSeriesModule') {
+  if (type === 'generalSeriesModule') {
     return {
       modality: dataSet.string('x00080060'),
       seriesInstanceUID: dataSet.string('x0020000e'),
@@ -28,12 +27,12 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if(type === 'patientStudyModule') {
+  if (type === 'patientStudyModule') {
     return {
       patientAge: dataSet.intString('x00101010'),
       patientSize: dataSet.floatString('x00101020'),
       patientWeight: dataSet.floatString('x00101030')
-    }
+    };
   }
 
   if (type === 'imagePlaneModule') {
@@ -53,43 +52,48 @@ function metaDataProvider(type, imageId) {
 
   if (type === 'modalityLutModule') {
     return {
-      rescaleIntercept : dataSet.floatString('x00281052'),
-      rescaleSlope : dataSet.floatString('x00281053'),
+      rescaleIntercept: dataSet.floatString('x00281052'),
+      rescaleSlope: dataSet.floatString('x00281053'),
       rescaleType: dataSet.string('x00281054'),
-      modalityLUTSequence : getLUTs(dataSet.uint16('x00280103'), dataSet.elements.x00283000)
+      modalityLUTSequence: getLUTs(dataSet.uint16('x00280103'), dataSet.elements.x00283000)
     };
   }
 
   if (type === 'voiLutModule') {
-    var modalityLUTOutputPixelRepresentation = getModalityLUTOutputPixelRepresentation(dataSet);
+    const modalityLUTOutputPixelRepresentation = getModalityLUTOutputPixelRepresentation(dataSet);
+
+
     return {
-      windowCenter : getNumberValues(dataSet, 'x00281050', 1),
-      windowWidth : getNumberValues(dataSet, 'x00281051', 1),
-      voiLUTSequence : getLUTs(modalityLUTOutputPixelRepresentation, dataSet.elements.x00283010)
+      windowCenter: getNumberValues(dataSet, 'x00281050', 1),
+      windowWidth: getNumberValues(dataSet, 'x00281051', 1),
+      voiLUTSequence: getLUTs(modalityLUTOutputPixelRepresentation, dataSet.elements.x00283010)
     };
   }
 
   if (type === 'sopCommonModule') {
     return {
-      sopClassUID : dataSet.string('x00080016'),
-      sopInstanceUID : dataSet.string('x00080018')
+      sopClassUID: dataSet.string('x00080016'),
+      sopInstanceUID: dataSet.string('x00080018')
     };
   }
 
   if (type === 'petIsotopeModule') {
-    var radiopharmaceuticalInfo = dataSet.elements.x00540016;
+    const radiopharmaceuticalInfo = dataSet.elements.x00540016;
+
     if (radiopharmaceuticalInfo === undefined) {
       return;
     }
 
-    var firstRadiopharmaceuticalInfoDataSet = radiopharmaceuticalInfo.items[0].dataSet;
+    const firstRadiopharmaceuticalInfoDataSet = radiopharmaceuticalInfo.items[0].dataSet;
+
+
     return {
       radiopharmaceuticalInfo: {
         radiopharmaceuticalStartTime: dicomParser.parseTM(firstRadiopharmaceuticalInfoDataSet.string('x00181072') || ''),
         radionuclideTotalDose: firstRadiopharmaceuticalInfoDataSet.floatString('x00181074'),
         radionuclideHalfLife: firstRadiopharmaceuticalInfoDataSet.floatString('x00181075')
       }
-    }
+    };
   }
 
 }

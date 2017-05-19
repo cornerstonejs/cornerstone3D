@@ -1,39 +1,44 @@
-"use strict";
 
-function decodeJpx(imageFrame, pixelData) {
 
-  var jpxImage = new JpxImage();
+function decodeJpx (imageFrame, pixelData) {
+
+  const jpxImage = new JpxImage();
+
   jpxImage.parse(pixelData);
 
-  var tileCount = jpxImage.tiles.length;
-  if(tileCount !== 1) {
-    throw 'JPEG2000 decoder returned a tileCount of ' + tileCount + ', when 1 is expected';
+  const tileCount = jpxImage.tiles.length;
+
+  if (tileCount !== 1) {
+    throw `JPEG2000 decoder returned a tileCount of ${tileCount}, when 1 is expected`;
   }
 
   imageFrame.columns = jpxImage.width;
   imageFrame.rows = jpxImage.height;
   imageFrame.pixelData = jpxImage.tiles[0].items;
+
   return imageFrame;
 }
 
-var openJPEG;
+let openJPEG;
 
-function decodeOpenJPEG(data, bytesPerPixel, signed) {
-  var dataPtr = openJPEG._malloc(data.length);
+function decodeOpenJPEG (data, bytesPerPixel, signed) {
+  const dataPtr = openJPEG._malloc(data.length);
+
   openJPEG.writeArrayToMemory(data, dataPtr);
 
   // create param outpout
-  var imagePtrPtr=openJPEG._malloc(4);
-  var imageSizePtr=openJPEG._malloc(4);
-  var imageSizeXPtr=openJPEG._malloc(4);
-  var imageSizeYPtr=openJPEG._malloc(4);
-  var imageSizeCompPtr=openJPEG._malloc(4);
+  const imagePtrPtr = openJPEG._malloc(4);
+  const imageSizePtr = openJPEG._malloc(4);
+  const imageSizeXPtr = openJPEG._malloc(4);
+  const imageSizeYPtr = openJPEG._malloc(4);
+  const imageSizeCompPtr = openJPEG._malloc(4);
 
-  var t0 = Date.now();
-  var ret = openJPEG.ccall('jp2_decode','number', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+  const t0 = Date.now();
+  const ret = openJPEG.ccall('jp2_decode', 'number', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
     [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
   // add num vomp..etc
-  if(ret !== 0){
+
+  if (ret !== 0) {
     console.log('[opj_decode] decoding failed!');
     openJPEG._free(dataPtr);
     openJPEG._free(openJPEG.getValue(imagePtrPtr, '*'));
@@ -41,56 +46,55 @@ function decodeOpenJPEG(data, bytesPerPixel, signed) {
     openJPEG._free(imageSizeYPtr);
     openJPEG._free(imageSizePtr);
     openJPEG._free(imageSizeCompPtr);
+
     return undefined;
   }
 
-  var imagePtr = openJPEG.getValue(imagePtrPtr, '*')
+  const imagePtr = openJPEG.getValue(imagePtrPtr, '*');
 
-  var image = {
-    length : openJPEG.getValue(imageSizePtr,'i32'),
-    sx :  openJPEG.getValue(imageSizeXPtr,'i32'),
-    sy :  openJPEG.getValue(imageSizeYPtr,'i32'),
-    nbChannels : openJPEG.getValue(imageSizeCompPtr,'i32'), // hard coded for now
-    perf_timetodecode : undefined,
-    pixelData : undefined
+  const image = {
+    length: openJPEG.getValue(imageSizePtr, 'i32'),
+    sx: openJPEG.getValue(imageSizeXPtr, 'i32'),
+    sy: openJPEG.getValue(imageSizeYPtr, 'i32'),
+    nbChannels: openJPEG.getValue(imageSizeCompPtr, 'i32'), // hard coded for now
+    perf_timetodecode: undefined,
+    pixelData: undefined
   };
 
   // Copy the data from the EMSCRIPTEN heap into the correct type array
-  var length = image.sx*image.sy*image.nbChannels;
-  var src32 = new Int32Array(openJPEG.HEAP32.buffer, imagePtr, length);
-  if(bytesPerPixel === 1) {
-    if(Uint8Array.from) {
+  const length = image.sx * image.sy * image.nbChannels;
+  const src32 = new Int32Array(openJPEG.HEAP32.buffer, imagePtr, length);
+
+  if (bytesPerPixel === 1) {
+    if (Uint8Array.from) {
       image.pixelData = Uint8Array.from(src32);
     } else {
       image.pixelData = new Uint8Array(length);
-      for(var i=0; i < length; i++) {
+      for (let i = 0; i < length; i++) {
         image.pixelData[i] = src32[i];
       }
     }
-  } else {
-    if (signed) {
-      if(Int16Array.from) {
-        image.pixelData = Int16Array.from(src32);
-      } else {
-        image.pixelData = new Int16Array(length);
-        for(let i=0; i < length; i++) {
-          image.pixelData[i] = src32[i];
-        }
-      }
+  } else if (signed) {
+    if (Int16Array.from) {
+      image.pixelData = Int16Array.from(src32);
     } else {
-      if(Uint16Array.from) {
-        image.pixelData = Uint16Array.from(src32);
-      } else {
-        image.pixelData = new Uint16Array(length);
-        for(let i=0; i < length; i++) {
-          image.pixelData[i] = src32[i];
-        }
+      image.pixelData = new Int16Array(length);
+      for (let i = 0; i < length; i++) {
+        image.pixelData[i] = src32[i];
       }
+    }
+  } else if (Uint16Array.from) {
+    image.pixelData = Uint16Array.from(src32);
+  } else {
+    image.pixelData = new Uint16Array(length);
+    for (let i = 0; i < length; i++) {
+      image.pixelData[i] = src32[i];
     }
   }
 
-  var t1 = Date.now();
-  image.perf_timetodecode = t1-t0;
+  const t1 = Date.now();
+
+  image.perf_timetodecode = t1 - t0;
 
   // free
   openJPEG._free(dataPtr);
@@ -104,25 +108,26 @@ function decodeOpenJPEG(data, bytesPerPixel, signed) {
   return image;
 }
 
-function decodeOpenJpeg2000(imageFrame, pixelData) {
-  var bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
-  var signed = imageFrame.pixelRepresentation === 1;
+function decodeOpenJpeg2000 (imageFrame, pixelData) {
+  const bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
+  const signed = imageFrame.pixelRepresentation === 1;
 
-  var image = decodeOpenJPEG(pixelData, bytesPerPixel, signed);
+  const image = decodeOpenJPEG(pixelData, bytesPerPixel, signed);
 
   imageFrame.columns = image.sx;
   imageFrame.rows = image.sy;
   imageFrame.pixelData = image.pixelData;
-  if(image.nbChannels > 1) {
-    imageFrame.photometricInterpretation = "RGB";
+  if (image.nbChannels > 1) {
+    imageFrame.photometricInterpretation = 'RGB';
   }
+
   return imageFrame;
 }
 
-function initializeJPEG2000(decodeConfig) {
+function initializeJPEG2000 (decodeConfig) {
   // check to make sure codec is loaded
-  if(!decodeConfig.usePDFJS) {
-    if(typeof OpenJPEG === 'undefined') {
+  if (!decodeConfig.usePDFJS) {
+    if (typeof OpenJPEG === 'undefined') {
       throw 'OpenJPEG decoder not loaded';
     }
   }
@@ -135,22 +140,21 @@ function initializeJPEG2000(decodeConfig) {
   }
 }
 
-function decodeJPEG2000(imageFrame, pixelData, decodeConfig, options)
-{
+function decodeJPEG2000 (imageFrame, pixelData, decodeConfig, options) {
   options = options || {};
 
   initializeJPEG2000(decodeConfig);
 
-  if(options.usePDFJS || decodeConfig.usePDFJS) {
+  if (options.usePDFJS || decodeConfig.usePDFJS) {
     // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
-    //console.log('PDFJS')
+    // console.log('PDFJS')
     return decodeJpx(imageFrame, pixelData);
-  } else {
-    // OpenJPEG2000 https://github.com/jpambrun/openjpeg
-    //console.log('OpenJPEG')
-    return decodeOpenJpeg2000(imageFrame, pixelData);
   }
+
+  // OpenJPEG2000 https://github.com/jpambrun/openjpeg
+  // console.log('OpenJPEG')
+  return decodeOpenJpeg2000(imageFrame, pixelData);
 }
 
 export default decodeJPEG2000;
-export { initializeJPEG2000 } ;
+export { initializeJPEG2000 };

@@ -1,4 +1,5 @@
-"use strict";
+
+
 /**
  * Returns the values as an array of javascript numbers
  *
@@ -6,7 +7,7 @@
  * @param [minimumLength] - the minimum number of values
  * @returns {*}
  */
-function getNumberValues(element, minimumLength) {
+function getNumberValues (element, minimumLength) {
   if (!element) {
     return;
   }
@@ -19,10 +20,12 @@ function getNumberValues(element, minimumLength) {
     return;
   }
 
-  var values = [];
-  for(var i=0; i < element.Value.length; i++) {
+  const values = [];
+
+  for (let i = 0; i < element.Value.length; i++) {
     values.push(parseFloat(element.Value[i]));
   }
+
   return values;
 }
 

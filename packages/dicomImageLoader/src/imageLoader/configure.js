@@ -1,7 +1,6 @@
 import { setOptions } from './internal';
 
-function configure(options) {
-  console.warn('REFACTOR');
+function configure (options) {
   setOptions(options);
 }
 

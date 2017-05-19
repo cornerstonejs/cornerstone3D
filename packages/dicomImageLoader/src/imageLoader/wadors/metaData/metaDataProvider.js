@@ -3,15 +3,14 @@ import getValue from './getValue';
 import getNumberValue from './getNumberValue';
 import metaDataManager from '../metaDataManager';
 
-"use strict";
+function metaDataProvider (type, imageId) {
+  const metaData = metaDataManager.get(imageId);
 
-function metaDataProvider(type, imageId) {
-  var metaData = metaDataManager.get(imageId);
-  if(!metaData) {
+  if (!metaData) {
     return;
   }
 
-  if(type === 'generalSeriesModule') {
+  if (type === 'generalSeriesModule') {
     return {
       modality: getValue(metaData['00080060']),
       seriesInstanceUID: getValue(metaData['0020000e']),
@@ -22,12 +21,12 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if(type === 'patientStudyModule') {
+  if (type === 'patientStudyModule') {
     return {
       patientAge: getNumberValue(metaData['00101010']),
       patientSize: getNumberValue(metaData['00101020']),
       patientWeight: getNumberValue(metaData['00101030'])
-    }
+    };
   }
 
   if (type === 'imagePlaneModule') {
@@ -66,29 +65,30 @@ function metaDataProvider(type, imageId) {
   if (type === 'voiLutModule') {
     return {
       // TODO VOT LUT Sequence
-      windowCenter : getNumberValues(metaData['00281050'], 1),
-      windowWidth : getNumberValues(metaData['00281051'], 1)
+      windowCenter: getNumberValues(metaData['00281050'], 1),
+      windowWidth: getNumberValues(metaData['00281051'], 1)
     };
   }
 
   if (type === 'modalityLutModule') {
     return {
       // TODO VOT LUT Sequence
-      rescaleIntercept : getNumberValue(metaData['00281052']),
-      rescaleSlope : getNumberValue(metaData['00281053']),
+      rescaleIntercept: getNumberValue(metaData['00281052']),
+      rescaleSlope: getNumberValue(metaData['00281053']),
       rescaleType: getValue(metaData['00281054'])
     };
   }
 
   if (type === 'sopCommonModule') {
     return {
-      sopClassUID : getValue(metaData['00080016']),
-      sopInstanceUID : getValue(metaData['00080018'])
+      sopClassUID: getValue(metaData['00080016']),
+      sopInstanceUID: getValue(metaData['00080018'])
     };
   }
 
   if (type === 'petIsotopeModule') {
-    var radiopharmaceuticalInfo = getValue(metaData['00540016']);
+    const radiopharmaceuticalInfo = getValue(metaData['00540016']);
+
     if (radiopharmaceuticalInfo === undefined) {
       return;
     }
@@ -106,4 +106,4 @@ function metaDataProvider(type, imageId) {
 
 cornerstone.metaData.addProvider(metaDataProvider);
 
-export default metaDataProvider
+export default metaDataProvider;

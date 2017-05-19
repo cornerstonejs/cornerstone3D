@@ -8,66 +8,70 @@ import loadFileRequest from './loadFileRequest';
 import { xhrRequest } from '../internal';
 // TODO: import cornerstone from 'cornerstone';
 
-"use strict";
-
 // add a decache callback function to clear out our dataSetCacheManager
-function addDecache(image) {
-  image.decache = function() {
-    //console.log('decache');
-    var parsedImageId = parseImageId(image.imageId);
+function addDecache (image) {
+  image.decache = function () {
+    // console.log('decache');
+    const parsedImageId = parseImageId(image.imageId);
+
     dataSetCacheManager.unload(parsedImageId.url);
   };
 }
 
-function getPixelData(dataSet, frameIndex) {
-  var pixelDataElement = dataSet.elements.x7fe00010;
+function getPixelData (dataSet, frameIndex) {
+  const pixelDataElement = dataSet.elements.x7fe00010;
 
-  if(pixelDataElement.encapsulatedPixelData) {
+  if (pixelDataElement.encapsulatedPixelData) {
     return getEncapsulatedImageFrame(dataSet, frameIndex);
-  } else {
-    return getUncompressedImageFrame(dataSet, frameIndex);
   }
+
+  return getUncompressedImageFrame(dataSet, frameIndex);
+
 }
 
-function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey, options) {
+function loadDataSetFromPromise (xhrRequestPromise, imageId, frame, sharedCacheKey, options) {
 
-  var start = new Date().getTime();
+  const start = new Date().getTime();
+
   frame = frame || 0;
-  var deferred = $.Deferred();
-  xhrRequestPromise.then(function(dataSet/*, xhr*/) {
-    var pixelData = getPixelData(dataSet, frame);
-    var transferSyntax =  dataSet.string('x00020010');
-    var loadEnd = new Date().getTime();
-    var imagePromise = createImage(imageId, pixelData, transferSyntax, options);
-    imagePromise.then(function(image) {
+  const deferred = $.Deferred();
+
+  xhrRequestPromise.then(function (dataSet/* , xhr*/) {
+    const pixelData = getPixelData(dataSet, frame);
+    const transferSyntax = dataSet.string('x00020010');
+    const loadEnd = new Date().getTime();
+    const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+
+    imagePromise.then(function (image) {
       image.data = dataSet;
-      var end = new Date().getTime();
+      const end = new Date().getTime();
+
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
       addDecache(image);
       deferred.resolve(image);
     });
-  }, function(error) {
+  }, function (error) {
     deferred.reject(error);
   });
+
   return deferred;
 }
 
-function getLoaderForScheme(scheme) {
-  if(scheme === 'dicomweb' || scheme === 'wadouri') {
+function getLoaderForScheme (scheme) {
+  if (scheme === 'dicomweb' || scheme === 'wadouri') {
     return xhrRequest;
-  }
-  else if(scheme === 'dicomfile') {
+  } else if (scheme === 'dicomfile') {
     return loadFileRequest;
   }
 }
 
-function loadImage(imageId, options) {
-  var parsedImageId = parseImageId(imageId);
-  var loader = getLoaderForScheme(parsedImageId.scheme);
+function loadImage (imageId, options) {
+  const parsedImageId = parseImageId(imageId);
+  const loader = getLoaderForScheme(parsedImageId.scheme);
 
   // if the dataset for this url is already loaded, use it
-  if(dataSetCacheManager.isLoaded(parsedImageId.url)) {
+  if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
     return loadDataSetFromPromise(dataSetCacheManager.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
   }
 

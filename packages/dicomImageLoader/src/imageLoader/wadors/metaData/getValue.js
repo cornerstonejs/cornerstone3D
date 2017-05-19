@@ -1,4 +1,5 @@
-"use strict";
+
+
 /**
  * Returns the raw value
  *
@@ -7,7 +8,7 @@
  * @param [defaultValue] - The default value to return if the element does not exist
  * @returns {*}
  */
-function getValue(element, index, defaultValue) {
+function getValue (element, index, defaultValue) {
   index = index || 0;
   if (!element) {
     return defaultValue;
@@ -17,9 +18,10 @@ function getValue(element, index, defaultValue) {
     return defaultValue;
   }
   // make sure we have the specified index
-  if (element.Value.length <= index ) {
+  if (element.Value.length <= index) {
     return defaultValue;
   }
+
   return element.Value[index];
 }
 

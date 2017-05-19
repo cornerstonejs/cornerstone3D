@@ -1,6 +1,5 @@
 import getValue from './getValue';
 
-"use strict";
 /**
  * Returns the first string value as a Javascript number
  *
@@ -9,11 +8,13 @@ import getValue from './getValue';
  * @param [defaultValue] - The default value to return if the element does not exist
  * @returns {*}
  */
-function getNumberString(element, index, defaultValue) {
-  var value = getValue(element, index, defaultValue);
-  if(value === undefined) {
+function getNumberString (element, index, defaultValue) {
+  const value = getValue(element, index, defaultValue);
+
+  if (value === undefined) {
     return;
   }
+
   return parseFloat(value);
 }
 

@@ -4,14 +4,12 @@ import $ from 'jquery';
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance
  */
 
-"use strict";
-
-function arrayBufferToString(buffer) {
+function arrayBufferToString (buffer) {
   return binaryToString(String.fromCharCode.apply(null, Array.prototype.slice.apply(new Uint8Array(buffer))));
 }
 
-function binaryToString(binary) {
-  var error;
+function binaryToString (binary) {
+  let error;
 
   try {
     return decodeURIComponent(escape(binary));
@@ -19,53 +17,56 @@ function binaryToString(binary) {
     error = _error;
     if (error instanceof URIError) {
       return binary;
-    } else {
-      throw error;
     }
+    throw error;
+
   }
 }
 
-function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
-  var start = new Date().getTime();
-  var deferred = $.Deferred();
+function decodeJPEGBaseline8BitColor (imageFrame, pixelData, canvas) {
+  const start = new Date().getTime();
+  const deferred = $.Deferred();
 
-  var imgBlob = new Blob([pixelData], {type: "image/jpeg"});
+  const imgBlob = new Blob([pixelData], { type: 'image/jpeg' });
 
-  var r = new FileReader();
-  if(r.readAsBinaryString === undefined) {
+  const r = new FileReader();
+
+  if (r.readAsBinaryString === undefined) {
     r.readAsArrayBuffer(imgBlob);
-  }
-  else {
+  } else {
     r.readAsBinaryString(imgBlob); // doesn't work on IE11
   }
 
-  r.onload = function(){
-    var img=new Image();
-    img.onload = function() {
+  r.onload = function () {
+    const img = new Image();
+
+    img.onload = function () {
       canvas.height = img.height;
       canvas.width = img.width;
       imageFrame.rows = img.height;
       imageFrame.columns = img.width;
-      var context = canvas.getContext('2d');
+      const context = canvas.getContext('2d');
+
       context.drawImage(this, 0, 0);
-      var imageData = context.getImageData(0, 0, img.width, img.height);
-      var end = new Date().getTime();
+      const imageData = context.getImageData(0, 0, img.width, img.height);
+      const end = new Date().getTime();
+
       imageFrame.pixelData = imageData.data;
       imageFrame.imageData = imageData;
       imageFrame.decodeTimeInMS = end - start;
       deferred.resolve(imageFrame);
     };
-    img.onerror = function(error) {
+    img.onerror = function (error) {
       deferred.reject(error);
     };
-    if(r.readAsBinaryString === undefined) {
-      img.src = "data:image/jpeg;base64,"+window.btoa(arrayBufferToString(r.result));
-    }
-    else {
-      img.src = "data:image/jpeg;base64,"+window.btoa(r.result); // doesn't work on IE11
+    if (r.readAsBinaryString === undefined) {
+      img.src = `data:image/jpeg;base64,${window.btoa(arrayBufferToString(r.result))}`;
+    } else {
+      img.src = `data:image/jpeg;base64,${window.btoa(r.result)}`; // doesn't work on IE11
     }
 
   };
+
   return deferred.promise();
 }
 

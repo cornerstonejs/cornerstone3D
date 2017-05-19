@@ -6,73 +6,57 @@ import decodeJPEGLossless from './decoders/decodeJPEGLossless';
 import decodeJPEGLS from './decoders/decodeJPEGLS';
 import decodeJPEG2000 from './decoders/decodeJPEG2000';
 
-"use strict";
+function decodeImageFrame (imageFrame, transferSyntax, pixelData, decodeConfig, options) {
+  const start = new Date().getTime();
 
-function decodeImageFrame(imageFrame, transferSyntax, pixelData, decodeConfig, options) {
-  var start = new Date().getTime();
-
-  // Implicit VR Little Endian
-  if(transferSyntax === "1.2.840.10008.1.2") {
+  if (transferSyntax === '1.2.840.10008.1.2') {
+    // Implicit VR Little Endian
     imageFrame = decodeLittleEndian(imageFrame, pixelData);
-  }
-  // Explicit VR Little Endian
-  else if(transferSyntax === "1.2.840.10008.1.2.1") {
+  } else if (transferSyntax === '1.2.840.10008.1.2.1') {
+    // Explicit VR Little Endian
     imageFrame = decodeLittleEndian(imageFrame, pixelData);
-  }
-  // Explicit VR Big Endian (retired)
-  else if (transferSyntax === "1.2.840.10008.1.2.2" ) {
+  } else if (transferSyntax === '1.2.840.10008.1.2.2') {
+    // Explicit VR Big Endian (retired)
     imageFrame = decodeBigEndian(imageFrame, pixelData);
-  }
-  // Deflate transfer syntax (deflated by dicomParser)
-  else if(transferSyntax === '1.2.840.10008.1.2.1.99') {
+  } else if (transferSyntax === '1.2.840.10008.1.2.1.99') {
+    // Deflate transfer syntax (deflated by dicomParser)
     imageFrame = decodeLittleEndian(imageFrame, pixelData);
-  }
-  // RLE Lossless
-  else if (transferSyntax === "1.2.840.10008.1.2.5" )
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.5') {
+    // RLE Lossless
     imageFrame = decodeRLE(imageFrame, pixelData);
-  }
-  // JPEG Baseline lossy process 1 (8 bit)
-  else if (transferSyntax === "1.2.840.10008.1.2.4.50")
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.50') {
+    // JPEG Baseline lossy process 1 (8 bit)
     imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
-  }
-  // JPEG Baseline lossy process 2 & 4 (12 bit)
-  else if (transferSyntax === "1.2.840.10008.1.2.4.51")
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.51') {
+    // JPEG Baseline lossy process 2 & 4 (12 bit)
     imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
-  }
-  // JPEG Lossless, Nonhierarchical (Processes 14)
-  else if (transferSyntax === "1.2.840.10008.1.2.4.57")
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.57') {
+    // JPEG Lossless, Nonhierarchical (Processes 14)
     imageFrame = decodeJPEGLossless(imageFrame, pixelData);
-  }
-  // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-  else if (transferSyntax === "1.2.840.10008.1.2.4.70" )
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.70') {
+    // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
     imageFrame = decodeJPEGLossless(imageFrame, pixelData);
-  }
-  // JPEG-LS Lossless Image Compression
-  else if (transferSyntax === "1.2.840.10008.1.2.4.80" )
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.80') {
+    // JPEG-LS Lossless Image Compression
     imageFrame = decodeJPEGLS(imageFrame, pixelData);
-  }
-  // JPEG-LS Lossy (Near-Lossless) Image Compression
-  else if (transferSyntax === "1.2.840.10008.1.2.4.81" )
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.81') {
+    // JPEG-LS Lossy (Near-Lossless) Image Compression
     imageFrame = decodeJPEGLS(imageFrame, pixelData);
-  }
-  // JPEG 2000 Lossless
-  else if (transferSyntax === "1.2.840.10008.1.2.4.90")
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.90') {
+    // JPEG 2000 Lossless
     imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
-  }
-  // JPEG 2000 Lossy
-  else if (transferSyntax === "1.2.840.10008.1.2.4.91")
-  {
+  } else if (transferSyntax === '1.2.840.10008.1.2.4.91') {
+    // JPEG 2000 Lossy
     imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
+  } else {
+    if (console && console.log) {
+      console.log(`Image cannot be decoded due to Unsupported transfer syntax ${transferSyntax}`);
+    }
+
+    throw `no decoder for transfer syntax ${transferSyntax}`;
   }
-  /* Don't know if these work...
+
+    /* Don't know if these work...
    // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
    else if(transferSyntax === "1.2.840.10008.1.2.4.92")
    {
@@ -84,15 +68,9 @@ function decodeImageFrame(imageFrame, transferSyntax, pixelData, decodeConfig, o
    return decodeJPEG2000(dataSet, frame);
    }
    */
-  else
-  {
-    if(console && console.log) {
-      console.log("Image cannot be decoded due to Unsupported transfer syntax " + transferSyntax);
-    }
-    throw "no decoder for transfer syntax " + transferSyntax;
-  }
 
-  var end = new Date().getTime();
+  const end = new Date().getTime();
+
   imageFrame.decodeTimeInMS = end - start;
 
   return imageFrame;

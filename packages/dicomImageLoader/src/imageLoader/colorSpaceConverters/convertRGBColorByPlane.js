@@ -1,23 +1,24 @@
-"use strict";
 
-function convertRGBColorByPlane(imageFrame, rgbaBuffer) {
-  if(imageFrame === undefined) {
-    throw "decodeRGB: rgbBuffer must not be undefined";
+
+function convertRGBColorByPlane (imageFrame, rgbaBuffer) {
+  if (imageFrame === undefined) {
+    throw 'decodeRGB: rgbBuffer must not be undefined';
   }
-  if(imageFrame.length % 3 !== 0) {
-    throw "decodeRGB: rgbBuffer length must be divisible by 3";
+  if (imageFrame.length % 3 !== 0) {
+    throw 'decodeRGB: rgbBuffer length must be divisible by 3';
   }
 
-  var numPixels = imageFrame.length / 3;
-  var rgbaIndex = 0;
-  var rIndex = 0;
-  var gIndex = numPixels;
-  var bIndex = numPixels*2;
-  for(var i= 0; i < numPixels; i++) {
+  const numPixels = imageFrame.length / 3;
+  let rgbaIndex = 0;
+  let rIndex = 0;
+  let gIndex = numPixels;
+  let bIndex = numPixels * 2;
+
+  for (let i = 0; i < numPixels; i++) {
     rgbaBuffer[rgbaIndex++] = imageFrame[rIndex++]; // red
     rgbaBuffer[rgbaIndex++] = imageFrame[gIndex++]; // green
     rgbaBuffer[rgbaIndex++] = imageFrame[bIndex++]; // blue
-    rgbaBuffer[rgbaIndex++] = 255; //alpha
+    rgbaBuffer[rgbaIndex++] = 255; // alpha
   }
 }
 

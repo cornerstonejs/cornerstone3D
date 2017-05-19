@@ -1,26 +1,26 @@
-"use strict";
 
-var imageIds = [];
 
-function add(imageId, metadata) {
+let imageIds = [];
+
+function add (imageId, metadata) {
   imageIds[imageId] = metadata;
 }
 
-function get(imageId) {
+function get (imageId) {
   return imageIds[imageId];
 }
 
-function remove(imageId) {
+function remove (imageId) {
   imageIds[imageId] = undefined;
 }
 
-function purge() {
+function purge () {
   imageIds = [];
 }
 
 export default {
-  add : add,
-  get : get,
-  remove:remove,
-  purge: purge
+  add,
+  get,
+  remove,
+  purge
 };

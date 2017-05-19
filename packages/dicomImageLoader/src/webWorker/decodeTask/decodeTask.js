@@ -4,52 +4,53 @@ import getMinMax from './getMinMax';
 import decodeImageFrame from './decodeImageFrame';
 
 // flag to ensure codecs are loaded only once
-var codecsLoaded = false;
+let codecsLoaded = false;
 
 // the configuration object for the decodeTask
-var decodeConfig;
+let decodeConfig;
 
 /**
  * Function to control loading and initializing the codecs
  * @param config
  */
-function loadCodecs(config) {
+function loadCodecs (config) {
   // prevent loading codecs more than once
   if (codecsLoaded) {
     return;
   }
 
   // Load the codecs
-  //console.time('loadCodecs');
+  // console.time('loadCodecs');
   self.importScripts(config.decodeTask.codecsPath);
   codecsLoaded = true;
-  //console.timeEnd('loadCodecs');
+  // console.timeEnd('loadCodecs');
 
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
-    //console.time('initializeCodecs');
+    // console.time('initializeCodecs');
     initializeJPEG2000(config.decodeTask);
     initializeJPEGLS(config.decodeTask);
-    //console.timeEnd('initializeCodecs');
+    // console.timeEnd('initializeCodecs');
   }
 }
 
 /**
  * Task initialization function
  */
-function decodeTaskInitialize(config) {
+function decodeTaskInitialize (config) {
   decodeConfig = config;
   if (config.decodeTask.loadCodecsOnStartup) {
     loadCodecs(config);
   }
 }
 
-function calculateMinMax(imageFrame) {
+function calculateMinMax (imageFrame) {
   if (imageFrame.smallestPixelValue !== undefined && imageFrame.largestPixelValue !== undefined) {
     return;
   }
 
-  var minMax = getMinMax(imageFrame.pixelData);
+  const minMax = getMinMax(imageFrame.pixelData);
+
   imageFrame.smallestPixelValue = minMax.min;
   imageFrame.largestPixelValue = minMax.max;
 }
@@ -57,15 +58,15 @@ function calculateMinMax(imageFrame) {
 /**
  * Task handler function
  */
-function decodeTaskHandler(data, doneCallback) {
+function decodeTaskHandler (data, doneCallback) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
-  var imageFrame = data.data.imageFrame;
+  const imageFrame = data.data.imageFrame;
 
   // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
   // not typed arrays
-  var pixelData = new Uint8Array(data.data.pixelData);
+  const pixelData = new Uint8Array(data.data.pixelData);
 
   decodeImageFrame(
     imageFrame,

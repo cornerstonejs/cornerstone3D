@@ -98,7 +98,6 @@
             <span>Total Time: </span><span id="totalTime"></span><br>
             <span>Load Time: </span><span id="loadTime"></span><br>
             <span>Decode Time: </span><span id="decodeTime"></span><br>
-            <span>WebWorker Time: </span><span id="webWorkerTime"></span><br>
 
         </div>
     </div>
@@ -261,7 +260,6 @@
             $('#totalTime').text(time + "ms");
             $('#loadTime').text(image.loadTimeInMS + "ms");
             $('#decodeTime').text(image.decodeTimeInMS + "ms");
-            $('#webWorkerTime').text(image.webWorkerTimeInMS + "ms");
 
         }, function(err) {
             alert(err);

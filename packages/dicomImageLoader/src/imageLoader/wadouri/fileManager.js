@@ -1,27 +1,29 @@
-"use strict";
 
-var files = [];
 
-function add(file) {
-  var fileIndex =  files.push(file);
-  return 'dicomfile:' + (fileIndex - 1);
+let files = [];
+
+function add (file) {
+  const fileIndex = files.push(file);
+
+
+  return `dicomfile:${fileIndex - 1}`;
 }
 
-function get(index) {
+function get (index) {
   return files[index];
 }
 
-function remove(index) {
+function remove (index) {
   files[index] = undefined;
 }
 
-function purge() {
+function purge () {
   files = [];
 }
 
 export default {
-  add : add,
-  get : get,
-  remove:remove,
-  purge: purge
+  add,
+  get,
+  remove,
+  purge
 };

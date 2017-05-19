@@ -1,20 +1,20 @@
 // an object of task handlers
-var taskHandlers = {};
+const taskHandlers = {};
 
 // Flag to ensure web worker is only initialized once
-var initialized = false;
+let initialized = false;
 
 // the configuration object passed in when the web worker manager is initialized
-var config;
+let config;
 
 /**
  * Initialization function that loads additional web workers and initializes them
  * @param data
  */
-function initialize(data) {
-  //console.log('web worker initialize ', data.workerIndex);
+function initialize (data) {
+  // console.log('web worker initialize ', data.workerIndex);
   // prevent initialization from happening more than once
-  if(initialized) {
+  if (initialized) {
     return;
   }
 
@@ -22,14 +22,14 @@ function initialize(data) {
   config = data.config;
 
   // load any additional web worker tasks
-  if(data.config.webWorkerTaskPaths) {
-    for(var i=0; i < data.config.webWorkerTaskPaths.length; i++) {
+  if (data.config.webWorkerTaskPaths) {
+    for (let i = 0; i < data.config.webWorkerTaskPaths.length; i++) {
       self.importScripts(data.config.webWorkerTaskPaths[i]);
     }
   }
 
   // initialize each task handler
-  Object.keys(taskHandlers).forEach(function(key) {
+  Object.keys(taskHandlers).forEach(function (key) {
     taskHandlers[key].initialize(config.taskConfiguration);
   });
 
@@ -49,13 +49,14 @@ function initialize(data) {
  * Function exposed to web worker tasks to register themselves
  * @param taskHandler
  */
-export function registerTaskHandler(taskHandler) {
-  if(taskHandlers[taskHandler.taskType]) {
+export function registerTaskHandler (taskHandler) {
+  if (taskHandlers[taskHandler.taskType]) {
     console.log('attempt to register duplicate task handler "', taskHandler.taskType, '"');
+
     return false;
   }
   taskHandlers[taskHandler.taskType] = taskHandler;
-  if(initialized) {
+  if (initialized) {
     taskHandler.initialize(config.taskConfiguration);
   }
 }
@@ -64,7 +65,7 @@ export function registerTaskHandler(taskHandler) {
  * Function to load a new web worker task with updated configuration
  * @param data
  */
-function loadWebWorkerTask(data) {
+function loadWebWorkerTask (data) {
   config = data.config;
   self.importScripts(data.sourcePath);
 }
@@ -73,31 +74,34 @@ function loadWebWorkerTask(data) {
  * Web worker message handler - dispatches messages to the registered task handlers
  * @param msg
  */
-self.onmessage = function(msg) {
-  //console.log('web worker onmessage', msg.data);
+self.onmessage = function (msg) {
+  // console.log('web worker onmessage', msg.data);
 
   // handle initialize message
-  if(msg.data.taskType === 'initialize') {
+  if (msg.data.taskType === 'initialize') {
     initialize(msg.data);
+
     return;
   }
 
   // handle loadWebWorkerTask message
-  if(msg.data.taskType === 'loadWebWorkerTask') {
+  if (msg.data.taskType === 'loadWebWorkerTask') {
     loadWebWorkerTask(msg.data);
+
     return;
   }
 
   // dispatch the message if there is a handler registered for it
-  if(taskHandlers[msg.data.taskType]) {
-    taskHandlers[msg.data.taskType].handler(msg.data, function(result, transferList) {
+  if (taskHandlers[msg.data.taskType]) {
+    taskHandlers[msg.data.taskType].handler(msg.data, function (result, transferList) {
       self.postMessage({
         taskType: msg.data.taskType,
         status: 'success',
-        result: result,
+        result,
         workerIndex: msg.data.workerIndex
       }, transferList);
     });
+
     return;
   }
 
