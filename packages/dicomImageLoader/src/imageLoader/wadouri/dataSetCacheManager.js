@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import dicomParser from 'dicom-parser';
+import * as dicomParser from 'dicom-parser';
 import { xhrRequest } from '../internal';
 
 /**

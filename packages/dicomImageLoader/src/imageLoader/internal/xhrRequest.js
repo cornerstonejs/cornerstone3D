@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { getOptions } from './options';
-import cornerstone from 'cornerstone-core';
+import * as cornerstone from 'cornerstone-core';
 
 function xhrRequest (url, imageId, headers) {
   headers = headers || {};

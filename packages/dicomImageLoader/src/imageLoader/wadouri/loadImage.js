@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import cornerstone from 'cornerstone-core';
+import * as cornerstone from 'cornerstone-core';
 import createImage from '../createImage';
 import parseImageId from './parseImageId';
 import dataSetCacheManager from './dataSetCacheManager';
