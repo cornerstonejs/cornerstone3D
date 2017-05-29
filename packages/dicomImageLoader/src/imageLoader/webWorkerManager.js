@@ -91,14 +91,17 @@ function handleMessageFromWorker (msg) {
     webWorkers[msg.data.workerIndex].status = 'ready';
     startTaskOnWebWorker();
   } else {
+    var start = webWorkers[msg.data.workerIndex].task.start;
+    webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
+    webWorkers[msg.data.workerIndex].task = undefined;
+
     statistics.numTasksExecuting--;
     webWorkers[msg.data.workerIndex].status = 'ready';
     statistics.numTasksCompleted++;
-    const end = new Date().getTime();
 
-    statistics.totalTaskTimeInMS += end - webWorkers[msg.data.workerIndex].task.start;
-    webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
-    webWorkers[msg.data.workerIndex].task = undefined;
+    var end = new Date().getTime();
+    statistics.totalTaskTimeInMS += end - start;
+
     startTaskOnWebWorker();
   }
 }
