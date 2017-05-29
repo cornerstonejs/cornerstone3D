@@ -29,14 +29,14 @@ function getPixelData (dataSet, frameIndex) {
 
 }
 
-function loadDataSetFromPromise (xhrRequestPromise, imageId, frame, sharedCacheKey, options) {
+function loadImageFromPromise (dataSetPromise, imageId, frame, sharedCacheKey, options) {
 
   const start = new Date().getTime();
 
   frame = frame || 0;
   const deferred = $.Deferred();
 
-  xhrRequestPromise.then(function (dataSet/* , xhr*/) {
+  dataSetPromise.then(function (dataSet/* , xhr*/) {
     const pixelData = getPixelData(dataSet, frame);
     const transferSyntax = dataSet.string('x00020010');
     const loadEnd = new Date().getTime();
@@ -72,11 +72,11 @@ function loadImage (imageId, options) {
 
   // if the dataset for this url is already loaded, use it
   if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
-    return loadDataSetFromPromise(dataSetCacheManager.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
+    return loadImageFromPromise(dataSetCacheManager.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
   }
 
   // load the dataSet via the dataSetCacheManager
-  return loadDataSetFromPromise(dataSetCacheManager.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
+  return loadImageFromPromise(dataSetCacheManager.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
 }
 
 // register dicomweb and wadouri image loader prefixes
