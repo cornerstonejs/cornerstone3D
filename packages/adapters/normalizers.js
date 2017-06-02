@@ -33,6 +33,7 @@ class Normalizer {
       "PETImage" : PETImageNormalizer,
       "PositronEmissionTomographyImage" : PETImageNormalizer,
       "Segmentation" : SEGImageNormalizer,
+      "DeformableSpatialRegistration" : DSRNormalizer,
     });
   }
 
@@ -360,6 +361,12 @@ class EnhancedMRImageNormalizer extends ImageNormalizer {
   }
 }
 
+class EnhancedUSVolumeNormalizer extends ImageNormalizer {
+  normalize() {
+    super.normalize();
+  }
+}
+
 class CTImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
@@ -384,9 +391,8 @@ class SEGImageNormalizer extends ImageNormalizer {
   }
 }
 
-class EnhancedUSVolumeNormalizer extends ImageNormalizer {
+class DSRNormalizer extends Normalizer {
   normalize() {
-    super.normalize();
+    this.dataset = this.datasets[0]; // only one dataset per series and for now we assume it is normalized
   }
 }
-
