@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.14.4 - 2017-05-22 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.14.4 - 2017-06-02 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("cornerstone-core"), require("dicom-parser"));
@@ -253,7 +253,9 @@ var _isJPEGBaseline8BitColor2 = _interopRequireDefault(_isJPEGBaseline8BitColor)
 
 var _cornerstoneCore = __webpack_require__(1);
 
-var _cornerstoneCore2 = _interopRequireDefault(_cornerstoneCore);
+var cornerstone = _interopRequireWildcard(_cornerstoneCore);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -291,10 +293,10 @@ function createImage(imageId, pixelData, transferSyntax, options) {
 
   decodePromise.then(function (imageFrame) {
     // var imagePixelModule = metaDataProvider('imagePixelModule', imageId);
-    var imagePlaneModule = _cornerstoneCore2.default.metaData.get('imagePlaneModule', imageId);
-    var voiLutModule = _cornerstoneCore2.default.metaData.get('voiLutModule', imageId);
-    var modalityLutModule = _cornerstoneCore2.default.metaData.get('modalityLutModule', imageId);
-    var sopCommonModule = _cornerstoneCore2.default.metaData.get('sopCommonModule', imageId);
+    var imagePlaneModule = cornerstone.metaData.get('imagePlaneModule', imageId);
+    var voiLutModule = cornerstone.metaData.get('voiLutModule', imageId);
+    var modalityLutModule = cornerstone.metaData.get('modalityLutModule', imageId);
+    var sopCommonModule = cornerstone.metaData.get('sopCommonModule', imageId);
     var isColorImage = (0, _isColorImage2.default)(imageFrame.photometricInterpretation);
 
     // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
@@ -345,7 +347,7 @@ function createImage(imageId, pixelData, transferSyntax, options) {
 
     // Setup the renderer
     if (image.color) {
-      image.render = _cornerstoneCore2.default.renderColorImage;
+      image.render = cornerstone.renderColorImage;
       image.getCanvas = function () {
         if (lastImageIdDrawn === imageId) {
           return canvas;
@@ -361,7 +363,7 @@ function createImage(imageId, pixelData, transferSyntax, options) {
         return canvas;
       };
     } else {
-      image.render = _cornerstoneCore2.default.renderGrayscaleImage;
+      image.render = cornerstone.renderGrayscaleImage;
     }
 
     // calculate min/max if not supplied
@@ -457,9 +459,11 @@ var _jquery2 = _interopRequireDefault(_jquery);
 
 var _dicomParser = __webpack_require__(6);
 
-var _dicomParser2 = _interopRequireDefault(_dicomParser);
+var dicomParser = _interopRequireWildcard(_dicomParser);
 
 var _internal = __webpack_require__(2);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -524,7 +528,7 @@ function load(uri, loadRequest, imageId) {
     var dataSet = void 0;
 
     try {
-      dataSet = _dicomParser2.default.parseDicom(byteArray);
+      dataSet = dicomParser.parseDicom(byteArray);
     } catch (error) {
       loadDeferred.reject(error);
 
@@ -890,12 +894,12 @@ Object.defineProperty(exports, "__esModule", {
 
 var _cornerstoneCore = __webpack_require__(1);
 
-var _cornerstoneCore2 = _interopRequireDefault(_cornerstoneCore);
+var cornerstone = _interopRequireWildcard(_cornerstoneCore);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function getImageFrame(imageId) {
-  var imagePixelModule = _cornerstoneCore2.default.metaData.get('imagePixelModule', imageId);
+  var imagePixelModule = cornerstone.metaData.get('imagePixelModule', imageId);
 
   return {
     samplesPerPixel: imagePixelModule.samplesPerPixel,
@@ -1104,14 +1108,17 @@ function handleMessageFromWorker(msg) {
     webWorkers[msg.data.workerIndex].status = 'ready';
     startTaskOnWebWorker();
   } else {
+    var start = webWorkers[msg.data.workerIndex].task.start;
+    webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
+    webWorkers[msg.data.workerIndex].task = undefined;
+
     statistics.numTasksExecuting--;
     webWorkers[msg.data.workerIndex].status = 'ready';
     statistics.numTasksCompleted++;
-    var end = new Date().getTime();
 
-    statistics.totalTaskTimeInMS += end - webWorkers[msg.data.workerIndex].task.start;
-    webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
-    webWorkers[msg.data.workerIndex].task = undefined;
+    var end = new Date().getTime();
+    statistics.totalTaskTimeInMS += end - start;
+
     startTaskOnWebWorker();
   }
 }
@@ -1633,9 +1640,9 @@ Object.defineProperty(exports, "__esModule", {
 
 var _dicomParser = __webpack_require__(6);
 
-var _dicomParser2 = _interopRequireDefault(_dicomParser);
+var dicomParser = _interopRequireWildcard(_dicomParser);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.
@@ -1654,16 +1661,16 @@ function getEncodedImageFrame(dataSet, frame) {
   // Empty basic offset table
   if (!dataSet.elements.x7fe00010.basicOffsetTable.length) {
     if (framesAreFragmented(dataSet)) {
-      var basicOffsetTable = _dicomParser2.default.createJPEGBasicOffsetTable(dataSet, dataSet.elements.x7fe00010);
+      var basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(dataSet, dataSet.elements.x7fe00010);
 
-      return _dicomParser2.default.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame, basicOffsetTable);
+      return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame, basicOffsetTable);
     }
 
-    return _dicomParser2.default.readEncapsulatedPixelDataFromFragments(dataSet, dataSet.elements.x7fe00010, frame);
+    return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, dataSet.elements.x7fe00010, frame);
   }
 
   // Basic Offset Table is not empty
-  return _dicomParser2.default.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
+  return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
 }
 
 function getEncapsulatedImageFrame(dataSet, frameIndex) {
@@ -2563,7 +2570,9 @@ var _options = __webpack_require__(19);
 
 var _cornerstoneCore = __webpack_require__(1);
 
-var _cornerstoneCore2 = _interopRequireDefault(_cornerstoneCore);
+var cornerstone = _interopRequireWildcard(_cornerstoneCore);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2606,7 +2615,7 @@ function xhrRequest(url, imageId, headers) {
       var total = oProgress.total;
       var percentComplete = Math.round(loaded / total * 100);
 
-      (0, _jquery2.default)(_cornerstoneCore2.default).trigger('CornerstoneImageLoadProgress', {
+      (0, _jquery2.default)(cornerstone).trigger('CornerstoneImageLoadProgress', {
         imageId: imageId,
         loaded: loaded,
         total: total,
@@ -2639,7 +2648,7 @@ var _jquery2 = _interopRequireDefault(_jquery);
 
 var _cornerstoneCore = __webpack_require__(1);
 
-var _cornerstoneCore2 = _interopRequireDefault(_cornerstoneCore);
+var cornerstone = _interopRequireWildcard(_cornerstoneCore);
 
 var _metaDataManager = __webpack_require__(8);
 
@@ -2652,6 +2661,8 @@ var _getPixelData2 = _interopRequireDefault(_getPixelData);
 var _createImage = __webpack_require__(7);
 
 var _createImage2 = _interopRequireDefault(_createImage);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2701,7 +2712,7 @@ function loadImage(imageId, options) {
 }
 
 // register wadors scheme
-_cornerstoneCore2.default.registerImageLoader('wadors', loadImage);
+cornerstone.registerImageLoader('wadors', loadImage);
 
 exports.default = loadImage;
 
@@ -2829,11 +2840,13 @@ var _metaDataManager2 = _interopRequireDefault(_metaDataManager);
 
 var _dicomParser = __webpack_require__(6);
 
-var _dicomParser2 = _interopRequireDefault(_dicomParser);
+var dicomParser = _interopRequireWildcard(_dicomParser);
 
 var _cornerstoneCore = __webpack_require__(1);
 
-var _cornerstoneCore2 = _interopRequireDefault(_cornerstoneCore);
+var cornerstone = _interopRequireWildcard(_cornerstoneCore);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2850,8 +2863,8 @@ function metaDataProvider(type, imageId) {
       seriesInstanceUID: (0, _getValue2.default)(metaData['0020000e']),
       seriesNumber: (0, _getNumberValue2.default)(metaData['00200011']),
       studyInstanceUID: (0, _getValue2.default)(metaData['0020000d']),
-      seriesDate: _dicomParser2.default.parseDA((0, _getValue2.default)(metaData['00080021'])),
-      seriesTime: _dicomParser2.default.parseTM((0, _getValue2.default)(metaData['00080031'], 0, ''))
+      seriesDate: dicomParser.parseDA((0, _getValue2.default)(metaData['00080021'])),
+      seriesTime: dicomParser.parseTM((0, _getValue2.default)(metaData['00080031'], 0, ''))
     };
   }
 
@@ -2929,7 +2942,7 @@ function metaDataProvider(type, imageId) {
 
     return {
       radiopharmaceuticalInfo: {
-        radiopharmaceuticalStartTime: _dicomParser2.default.parseTM((0, _getValue2.default)(radiopharmaceuticalInfo['00181072'], 0, '')),
+        radiopharmaceuticalStartTime: dicomParser.parseTM((0, _getValue2.default)(radiopharmaceuticalInfo['00181072'], 0, '')),
         radionuclideTotalDose: (0, _getNumberValue2.default)(radiopharmaceuticalInfo['00181074']),
         radionuclideHalfLife: (0, _getNumberValue2.default)(radiopharmaceuticalInfo['00181075'])
       }
@@ -2937,7 +2950,7 @@ function metaDataProvider(type, imageId) {
   }
 }
 
-_cornerstoneCore2.default.metaData.addProvider(metaDataProvider);
+cornerstone.metaData.addProvider(metaDataProvider);
 
 exports.default = metaDataProvider;
 
@@ -2958,7 +2971,7 @@ var _jquery2 = _interopRequireDefault(_jquery);
 
 var _cornerstoneCore = __webpack_require__(1);
 
-var _cornerstoneCore2 = _interopRequireDefault(_cornerstoneCore);
+var cornerstone = _interopRequireWildcard(_cornerstoneCore);
 
 var _createImage = __webpack_require__(7);
 
@@ -2986,6 +2999,8 @@ var _loadFileRequest2 = _interopRequireDefault(_loadFileRequest);
 
 var _internal = __webpack_require__(2);
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // add a decache callback function to clear out our dataSetCacheManager
@@ -3008,14 +3023,14 @@ function getPixelData(dataSet, frameIndex) {
   return (0, _getUncompressedImageFrame2.default)(dataSet, frameIndex);
 }
 
-function loadDataSetFromPromise(xhrRequestPromise, imageId, frame, sharedCacheKey, options) {
+function loadImageFromPromise(dataSetPromise, imageId, frame, sharedCacheKey, options) {
 
   var start = new Date().getTime();
 
   frame = frame || 0;
   var deferred = _jquery2.default.Deferred();
 
-  xhrRequestPromise.then(function (dataSet /* , xhr*/) {
+  dataSetPromise.then(function (dataSet /* , xhr*/) {
     var pixelData = getPixelData(dataSet, frame);
     var transferSyntax = dataSet.string('x00020010');
     var loadEnd = new Date().getTime();
@@ -3051,17 +3066,17 @@ function loadImage(imageId, options) {
 
   // if the dataset for this url is already loaded, use it
   if (_dataSetCacheManager2.default.isLoaded(parsedImageId.url)) {
-    return loadDataSetFromPromise(_dataSetCacheManager2.default.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
+    return loadImageFromPromise(_dataSetCacheManager2.default.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
   }
 
   // load the dataSet via the dataSetCacheManager
-  return loadDataSetFromPromise(_dataSetCacheManager2.default.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
+  return loadImageFromPromise(_dataSetCacheManager2.default.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
 }
 
 // register dicomweb and wadouri image loader prefixes
-_cornerstoneCore2.default.registerImageLoader('dicomweb', loadImage);
-_cornerstoneCore2.default.registerImageLoader('wadouri', loadImage);
-_cornerstoneCore2.default.registerImageLoader('dicomfile', loadImage);
+cornerstone.registerImageLoader('dicomweb', loadImage);
+cornerstone.registerImageLoader('wadouri', loadImage);
+cornerstone.registerImageLoader('dicomfile', loadImage);
 
 exports.default = loadImage;
 
@@ -3160,11 +3175,13 @@ var _getModalityLUTOutputPixelRepresentation2 = _interopRequireDefault(_getModal
 
 var _dicomParser = __webpack_require__(6);
 
-var _dicomParser2 = _interopRequireDefault(_dicomParser);
+var dicomParser = _interopRequireWildcard(_dicomParser);
 
 var _cornerstoneCore = __webpack_require__(1);
 
-var _cornerstoneCore2 = _interopRequireDefault(_cornerstoneCore);
+var cornerstone = _interopRequireWildcard(_cornerstoneCore);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -3183,8 +3200,8 @@ function metaDataProvider(type, imageId) {
       seriesInstanceUID: dataSet.string('x0020000e'),
       seriesNumber: dataSet.intString('x00200011'),
       studyInstanceUID: dataSet.string('x0020000d'),
-      seriesDate: _dicomParser2.default.parseDA(dataSet.string('x00080021')),
-      seriesTime: _dicomParser2.default.parseTM(dataSet.string('x00080031') || '')
+      seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
+      seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || '')
     };
   }
 
@@ -3248,7 +3265,7 @@ function metaDataProvider(type, imageId) {
 
     return {
       radiopharmaceuticalInfo: {
-        radiopharmaceuticalStartTime: _dicomParser2.default.parseTM(firstRadiopharmaceuticalInfoDataSet.string('x00181072') || ''),
+        radiopharmaceuticalStartTime: dicomParser.parseTM(firstRadiopharmaceuticalInfoDataSet.string('x00181072') || ''),
         radionuclideTotalDose: firstRadiopharmaceuticalInfoDataSet.floatString('x00181074'),
         radionuclideHalfLife: firstRadiopharmaceuticalInfoDataSet.floatString('x00181075')
       }
@@ -3257,7 +3274,7 @@ function metaDataProvider(type, imageId) {
 }
 
 // register our metadata provider
-_cornerstoneCore2.default.metaData.addProvider(metaDataProvider);
+cornerstone.metaData.addProvider(metaDataProvider);
 
 exports.default = metaDataProvider;
 
