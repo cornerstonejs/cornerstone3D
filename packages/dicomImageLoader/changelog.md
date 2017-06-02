@@ -1,3 +1,9 @@
+# Version 0.14.5
+
+- Rename loadDataSetFromPromise to loadImageFromPromise (https://github.com/chafey/cornerstoneWADOImageLoader/pull/94)
+- Set web worker status ready after task is read (https://github.com/chafey/cornerstoneWADOImageLoader/pull/95)
+- Fixes for dependencies after migration to Webpack (@lscoder)
+
 # Version 0.14.4
 
 - Migrate to new build process with Webpack and Babel. Remove grunt from WebWorker and Codec file construction. (@lscoder)

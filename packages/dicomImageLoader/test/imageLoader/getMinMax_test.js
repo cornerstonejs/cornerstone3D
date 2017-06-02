@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import getMinMax from '../../src/imageloader/getMinMax';
+import getMinMax from '../../src/imageLoader/getMinMax';
 
 describe('#getMinMax', function () {
   it('should return the right min and max values', function () {
