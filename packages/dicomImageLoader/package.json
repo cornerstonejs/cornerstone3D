@@ -44,7 +44,7 @@
     "test:chrome": "karma start config/karma/karma-chrome.js",
     "test:firefox": "karma start config/karma/karma-firefox.js",
     "test:all": "npm run test:phantom && npm run test:chrome && npm run test:firefox",
-    "concat:codecs": "concat -o ./dist/cornerstoneWADOImageLoaderCodecs.js codecs/*.js",
+    "concat:codecs": "concat -o ./dist/cornerstoneWADOImageLoaderCodecs.js ./codecs/charLS-FixedMemory-browser.js ./codecs/jpeg.js ./codecs/jpegLossless.js ./codecs/jpx.min.js ./codecs/openJPEG-FixedMemory.js ./codecs/pako.min.js",
     "uglify:codecs": "uglifyjs --comments /^/\\*!/ --stats -o ./dist/cornerstoneWADOImageLoaderCodecs.min.js -- ./dist/cornerstoneWADOImageLoaderCodecs.js"
   },
   "devDependencies": {
