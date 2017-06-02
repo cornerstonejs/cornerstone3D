@@ -1,3 +1,6 @@
+[![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url]
+[![Coverage Status][coverage-image]][coverage-url]
+
 cornerstone WADO Image Loader
 =============================
 
@@ -112,3 +115,16 @@ See the documentation [here](docs/ImageIds.md)
 Copyright
 ============
 Copyright 2016 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)
+
+[license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
+[license-url]: LICENSE
+
+[npm-url]: https://npmjs.org/package/cornerstone-wado-image-loader
+[npm-version-image]: http://img.shields.io/npm/v/cornerstone-wado-image-loader.svg?style=flat
+[npm-downloads-image]: http://img.shields.io/npm/dm/cornerstone-wado-image-loader.svg?style=flat
+
+[travis-url]: http://travis-ci.org/chafey/cornerstoneWADOImageLoader
+[travis-image]: http://img.shields.io/travis/chafey/cornerstoneWADOImageLoader/develop.svg?style=flat
+
+[coverage-url]: https://coveralls.io/github/chafey/cornerstoneWADOImageLoader?branch=master
+[coverage-image]: https://coveralls.io/repos/github/chafey/cornerstoneWADOImageLoader/badge.svg?branch=master
