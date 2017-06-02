@@ -124,7 +124,7 @@ Copyright 2016 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)
 [npm-downloads-image]: http://img.shields.io/npm/dm/cornerstone-wado-image-loader.svg?style=flat
 
 [travis-url]: http://travis-ci.org/chafey/cornerstoneWADOImageLoader
-[travis-image]: http://img.shields.io/travis/chafey/cornerstoneWADOImageLoader/develop.svg?style=flat
+[travis-image]: https://travis-ci.org/chafey/cornerstoneWADOImageLoader.svg?branch=master
 
 [coverage-url]: https://coveralls.io/github/chafey/cornerstoneWADOImageLoader?branch=master
 [coverage-image]: https://coveralls.io/repos/github/chafey/cornerstoneWADOImageLoader/badge.svg?branch=master

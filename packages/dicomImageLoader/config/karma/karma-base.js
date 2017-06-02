@@ -23,6 +23,9 @@ module.exports = {
   frameworks: ['mocha'],
   reporters: ['progress', 'coverage'],
   files: [
+    'node_modules/jquery/dist/jquery.js',
+    'node_modules/cornerstone-core/dist/cornerstone.js',
+    'node_modules/dicom-parser/dist/dicomParser.js',
     'test/**/*_test.js'
   ],
 

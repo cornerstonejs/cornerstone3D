@@ -1,4 +1,9 @@
-import * as metaData from './metaData';
+import { getImagePixelModule,
+         getLUTs,
+         getModalityLUTOutputPixelRepresentation,
+         getNumberValues,
+         metaDataProvider } from './metaData';
+
 import dataSetCacheManager from './dataSetCacheManager';
 import fileManager from './fileManager';
 import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
@@ -8,8 +13,16 @@ import loadImage from './loadImage';
 import parseImageId from './parseImageId';
 import unpackBinaryFrame from './unpackBinaryFrame';
 
+const metaData = {
+  getImagePixelModule,
+  getLUTs,
+  getModalityLUTOutputPixelRepresentation,
+  getNumberValues,
+  metaDataProvider
+};
+
 export default {
-  ...metaData,
+  metaData,
   dataSetCacheManager,
   fileManager,
   getEncapsulatedImageFrame,

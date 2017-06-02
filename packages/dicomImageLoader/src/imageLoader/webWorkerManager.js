@@ -91,7 +91,8 @@ function handleMessageFromWorker (msg) {
     webWorkers[msg.data.workerIndex].status = 'ready';
     startTaskOnWebWorker();
   } else {
-    var start = webWorkers[msg.data.workerIndex].task.start;
+    const start = webWorkers[msg.data.workerIndex].task.start;
+
     webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
     webWorkers[msg.data.workerIndex].task = undefined;
 
@@ -99,7 +100,8 @@ function handleMessageFromWorker (msg) {
     webWorkers[msg.data.workerIndex].status = 'ready';
     statistics.numTasksCompleted++;
 
-    var end = new Date().getTime();
+    const end = new Date().getTime();
+
     statistics.totalTaskTimeInMS += end - start;
 
     startTaskOnWebWorker();

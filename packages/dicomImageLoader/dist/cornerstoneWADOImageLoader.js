@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.14.4 - 2017-06-02 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.14.5 - 2017-06-02 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("cornerstone-core"), require("dicom-parser"));
@@ -130,7 +130,7 @@ exports.internal = internal;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = '0.14.4';
+exports.default = '0.14.5';
 
 /***/ }),
 /* 4 */
@@ -1109,6 +1109,7 @@ function handleMessageFromWorker(msg) {
     startTaskOnWebWorker();
   } else {
     var start = webWorkers[msg.data.workerIndex].task.start;
+
     webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
     webWorkers[msg.data.workerIndex].task = undefined;
 
@@ -1117,6 +1118,7 @@ function handleMessageFromWorker(msg) {
     statistics.numTasksCompleted++;
 
     var end = new Date().getTime();
+
     statistics.totalTaskTimeInMS += end - start;
 
     startTaskOnWebWorker();
@@ -2009,8 +2011,6 @@ exports.default = getModalityLUTOutputPixelRepresentation;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-
 function getNumberValues(dataSet, tag, minimumLength) {
   var values = [];
   var valueAsString = dataSet.string(tag);
@@ -2106,11 +2106,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var _metaData = __webpack_require__(49);
-
-var metaData = _interopRequireWildcard(_metaData);
 
 var _findIndexOfString = __webpack_require__(20);
 
@@ -2130,14 +2126,21 @@ var _loadImage2 = _interopRequireDefault(_loadImage);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+var metaData = {
+  getNumberString: _metaData.getNumberString,
+  getNumberValue: _metaData.getNumberValue,
+  getNumberValues: _metaData.getNumberValues,
+  getValue: _metaData.getValue,
+  metaDataProvider: _metaData.metaDataProvider
+};
 
-exports.default = _extends({}, metaData, {
+exports.default = {
+  metaData: metaData,
   findIndexOfString: _findIndexOfString2.default,
   getPixelData: _getPixelData2.default,
   loadImage: _loadImage2.default,
   metaDataManager: _metaDataManager2.default
-});
+};
 
 /***/ }),
 /* 37 */
@@ -2150,11 +2153,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var _metaData = __webpack_require__(52);
-
-var metaData = _interopRequireWildcard(_metaData);
 
 var _dataSetCacheManager = __webpack_require__(9);
 
@@ -2190,9 +2189,16 @@ var _unpackBinaryFrame2 = _interopRequireDefault(_unpackBinaryFrame);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+var metaData = {
+  getImagePixelModule: _metaData.getImagePixelModule,
+  getLUTs: _metaData.getLUTs,
+  getModalityLUTOutputPixelRepresentation: _metaData.getModalityLUTOutputPixelRepresentation,
+  getNumberValues: _metaData.getNumberValues,
+  metaDataProvider: _metaData.metaDataProvider
+};
 
-exports.default = _extends({}, metaData, {
+exports.default = {
+  metaData: metaData,
   dataSetCacheManager: _dataSetCacheManager2.default,
   fileManager: _fileManager2.default,
   getEncapsulatedImageFrame: _getEncapsulatedImageFrame2.default,
@@ -2201,7 +2207,7 @@ exports.default = _extends({}, metaData, {
   loadImage: _loadImage2.default,
   parseImageId: _parseImageId2.default,
   unpackBinaryFrame: _unpackBinaryFrame2.default
-});
+};
 
 /***/ }),
 /* 38 */,
