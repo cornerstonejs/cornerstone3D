@@ -89,9 +89,7 @@ function createImage (imageId, pixelData, transferSyntax, options) {
     };
 
     // add function to return pixel data
-    image.getPixelData = function () {
-      return imageFrame.pixelData;
-    };
+    image.getPixelData = () => imageFrame.pixelData;
 
     // Setup the renderer
     if (image.color) {

@@ -191,12 +191,11 @@ function loadWebWorkerTask (sourcePath, taskConfig) {
  * @param transferList - optional array of data to transfer to web worker
  * @returns {*}
  */
-function addTask (taskType, data, priority, transferList) {
+function addTask (taskType, data, priority = 0, transferList) {
   if (!config) {
     initialize();
   }
 
-  priority = priority || 0;
   const deferred = $.Deferred();
 
   // find the right spot to insert this decode task (based on priority)
@@ -237,14 +236,14 @@ function addTask (taskType, data, priority, transferList) {
  * @param priority - priority of the task (defaults to 0), > 0 is higher, < 0 is lower
  * @returns boolean - true on success, false if taskId not found
  */
-function setTaskPriority (taskId, priority) {
+function setTaskPriority (taskId, priority = 0) {
   // search for this taskId
   for (let i = 0; i < tasks.length; i++) {
     if (tasks[i].taskId === taskId) {
       // taskId found, remove it
       const task = tasks.splice(i, 1)[0];
 
-      // set its prioirty
+      // set its priority
       task.priority = priority;
 
       // find the right spot to insert this decode task (based on priority)

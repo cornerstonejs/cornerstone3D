@@ -81,11 +81,7 @@ function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, option
    }
    */
 
-  if (console && console.log) {
-    console.log(`Image cannot be decoded due to Unsupported transfer syntax ${transferSyntax}`);
-  }
-  throw `no decoder for transfer syntax ${transferSyntax}`;
-
+  throw new Error(`No decoder for transfer syntax ${transferSyntax}`);
 }
 
 export default decodeImageFrame;

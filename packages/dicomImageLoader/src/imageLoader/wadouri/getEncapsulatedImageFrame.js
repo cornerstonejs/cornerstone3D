@@ -9,31 +9,22 @@ function framesAreFragmented (dataSet) {
   const numberOfFrames = dataSet.intString('x00280008');
   const pixelDataElement = dataSet.elements.x7fe00010;
 
-  if (numberOfFrames !== pixelDataElement.fragments.length) {
-    return true;
-  }
+  return (numberOfFrames !== pixelDataElement.fragments.length);
 }
 
-function getEncodedImageFrame (dataSet, frame) {
+export default function getEncapsulatedImageFrame (dataSet, frameIndex) {
+  if (dataSet.elements.x7fe00010.basicOffsetTable.length) {
+    // Basic Offset Table is not empty
+    return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frameIndex);
+  }
+
   // Empty basic offset table
-  if (!dataSet.elements.x7fe00010.basicOffsetTable.length) {
-    if (framesAreFragmented(dataSet)) {
-      const basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(dataSet, dataSet.elements.x7fe00010);
 
+  if (framesAreFragmented(dataSet)) {
+    const basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(dataSet, dataSet.elements.x7fe00010);
 
-      return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame, basicOffsetTable);
-    }
-
-    return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, dataSet.elements.x7fe00010, frame);
-
+    return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frameIndex, basicOffsetTable);
   }
 
-  // Basic Offset Table is not empty
-  return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
+  return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, dataSet.elements.x7fe00010, frameIndex);
 }
-
-function getEncapsulatedImageFrame (dataSet, frameIndex) {
-  return getEncodedImageFrame(dataSet, frameIndex);
-}
-
-export default getEncapsulatedImageFrame;

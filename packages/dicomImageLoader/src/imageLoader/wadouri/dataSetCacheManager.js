@@ -17,7 +17,6 @@ function isLoaded (uri) {
 }
 
 function get (uri) {
-
   // if already loaded return it right away
   if (!loadedDataSets[uri]) {
     return;
@@ -29,7 +28,6 @@ function get (uri) {
 
   // loads the dicom dataset from the wadouri sp
 function load (uri, loadRequest, imageId) {
-
   loadRequest = loadRequest || xhrRequest;
 
   // if already loaded return it right away
@@ -78,7 +76,6 @@ function load (uri, loadRequest, imageId) {
     loadDeferred.resolve(dataSet);
     // done loading, remove the promise
     delete promises[uri];
-  }, function () {
   }).always(function () {
       // error thrown, remove the promise
     delete promises[uri];

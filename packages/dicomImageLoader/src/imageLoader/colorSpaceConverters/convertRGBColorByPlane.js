@@ -1,11 +1,9 @@
-
-
-function convertRGBColorByPlane (imageFrame, rgbaBuffer) {
+export default function (imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
-    throw 'decodeRGB: rgbBuffer must not be undefined';
+    throw new Error('decodeRGB: rgbBuffer must not be undefined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw 'decodeRGB: rgbBuffer length must be divisible by 3';
+    throw new Error('decodeRGB: rgbBuffer length must be divisible by 3');
   }
 
   const numPixels = imageFrame.length / 3;
@@ -21,5 +19,3 @@ function convertRGBColorByPlane (imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = 255; // alpha
   }
 }
-
-export default convertRGBColorByPlane;

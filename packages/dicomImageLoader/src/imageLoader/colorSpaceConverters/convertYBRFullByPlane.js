@@ -1,13 +1,10 @@
-
-
-function convertYBRFullByPlane (imageFrame, rgbaBuffer) {
+export default function (imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
-    throw 'decodeRGB: ybrBuffer must not be undefined';
+    throw new Error('decodeRGB: ybrBuffer must not be undefined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw 'decodeRGB: ybrBuffer length must be divisble by 3';
+    throw new Error('decodeRGB: ybrBuffer length must be divisble by 3');
   }
-
 
   const numPixels = imageFrame.length / 3;
   let rgbaIndex = 0;
@@ -26,4 +23,3 @@ function convertYBRFullByPlane (imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = 255; // alpha
   }
 }
-export default convertYBRFullByPlane;

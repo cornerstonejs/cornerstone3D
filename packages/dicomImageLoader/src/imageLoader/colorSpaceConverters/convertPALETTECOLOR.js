@@ -1,6 +1,6 @@
 /* eslint no-bitwise: 0 */
 
-function convertPALETTECOLOR (imageFrame, rgbaBuffer) {
+export default function (imageFrame, rgbaBuffer) {
   const numPixels = imageFrame.columns * imageFrame.rows;
   let palIndex = 0;
   let rgbaIndex = 0;
@@ -33,5 +33,3 @@ function convertPALETTECOLOR (imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = 255;
   }
 }
-
-export default convertPALETTECOLOR;

@@ -2,9 +2,7 @@ import $ from 'jquery';
 import { getOptions } from './options';
 import * as cornerstone from 'cornerstone-core';
 
-function xhrRequest (url, imageId, headers) {
-  headers = headers || {};
-
+function xhrRequest (url, imageId, headers = {}) {
   const deferred = $.Deferred();
   const options = getOptions();
 

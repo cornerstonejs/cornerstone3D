@@ -1,10 +1,7 @@
-
-
 let files = [];
 
 function add (file) {
   const fileIndex = files.push(file);
-
 
   return `dicomfile:${fileIndex - 1}`;
 }

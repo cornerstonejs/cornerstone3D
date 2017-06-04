@@ -18,7 +18,7 @@ function convertYBRFull (imageFrame, rgbaBuffer) {
   }
 }
 
-function convertColorSpace (imageFrame, imageData) {
+export default function convertColorSpace (imageFrame, imageData) {
   const rgbaBuffer = imageData.data;
   // convert based on the photometric interpretation
 
@@ -35,8 +35,6 @@ function convertColorSpace (imageFrame, imageData) {
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL') {
     convertYBRFull(imageFrame, rgbaBuffer);
   } else {
-    throw `no color space conversion for photometric interpretation ${imageFrame.photometricInterpretation}`;
+    throw new Error(`No color space conversion for photometric interpretation ${imageFrame.photometricInterpretation}`);
   }
 }
-
-export default convertColorSpace;
