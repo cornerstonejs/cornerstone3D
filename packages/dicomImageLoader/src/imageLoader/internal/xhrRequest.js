@@ -38,7 +38,7 @@ function xhrRequest (url, imageId, headers = {}) {
       const total = oProgress.total;
       const percentComplete = Math.round((loaded / total) * 100);
 
-      $(cornerstone).trigger('CornerstoneImageLoadProgress', {
+      $(cornerstone.events).trigger('CornerstoneImageLoadProgress', {
         imageId,
         loaded,
         total,

@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.14.5 - 2017-06-02 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.14.5 - 2017-06-08 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("cornerstone-core"), require("dicom-parser"));
@@ -482,7 +482,6 @@ function isLoaded(uri) {
 }
 
 function get(uri) {
-
   // if already loaded return it right away
   if (!loadedDataSets[uri]) {
     return;
@@ -493,7 +492,6 @@ function get(uri) {
 
 // loads the dicom dataset from the wadouri sp
 function load(uri, loadRequest, imageId) {
-
   loadRequest = loadRequest || _internal.xhrRequest;
 
   // if already loaded return it right away
@@ -542,7 +540,7 @@ function load(uri, loadRequest, imageId) {
     loadDeferred.resolve(dataSet);
     // done loading, remove the promise
     delete promises[uri];
-  }, function () {}).always(function () {
+  }).always(function () {
     // error thrown, remove the promise
     delete promises[uri];
   });
@@ -646,6 +644,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = convertColorSpace;
 
 var _colorSpaceConverters = __webpack_require__(10);
 
@@ -682,11 +681,9 @@ function convertColorSpace(imageFrame, imageData) {
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL') {
     convertYBRFull(imageFrame, rgbaBuffer);
   } else {
-    throw 'no color space conversion for photometric interpretation ' + imageFrame.photometricInterpretation;
+    throw new Error('No color space conversion for photometric interpretation ' + imageFrame.photometricInterpretation);
   }
 }
-
-exports.default = convertColorSpace;
 
 /***/ }),
 /* 12 */
@@ -786,10 +783,7 @@ function decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options
    }
    */
 
-  if (console && console.log) {
-    console.log('Image cannot be decoded due to Unsupported transfer syntax ' + transferSyntax);
-  }
-  throw 'no decoder for transfer syntax ' + transferSyntax;
+  throw new Error('No decoder for transfer syntax ' + transferSyntax);
 }
 
 exports.default = decodeImageFrame;
@@ -933,8 +927,7 @@ exports.default = getImageFrame;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-
+exports.default = getMinMax;
 function getMinMax(storedPixelData) {
   // we always calculate the min max values since they are not always
   // present in DICOM and we don't want to trust them anyway as cornerstone
@@ -956,8 +949,6 @@ function getMinMax(storedPixelData) {
   };
 }
 
-exports.default = getMinMax;
-
 /***/ }),
 /* 16 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -969,16 +960,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-
-function isColorImage(photoMetricInterpretation) {
-  if (photoMetricInterpretation === 'RGB' || photoMetricInterpretation === 'PALETTE COLOR' || photoMetricInterpretation === 'YBR_FULL' || photoMetricInterpretation === 'YBR_FULL_422' || photoMetricInterpretation === 'YBR_PARTIAL_422' || photoMetricInterpretation === 'YBR_PARTIAL_420' || photoMetricInterpretation === 'YBR_RCT' || photoMetricInterpretation === 'YBR_ICT') {
-    return true;
-  }
-
-  return false;
-}
-
-exports.default = isColorImage;
+exports.default = function (photoMetricInterpretation) {
+  return photoMetricInterpretation === 'RGB' || photoMetricInterpretation === 'PALETTE COLOR' || photoMetricInterpretation === 'YBR_FULL' || photoMetricInterpretation === 'YBR_FULL_422' || photoMetricInterpretation === 'YBR_PARTIAL_422' || photoMetricInterpretation === 'YBR_PARTIAL_420' || photoMetricInterpretation === 'YBR_RCT' || photoMetricInterpretation === 'YBR_ICT';
+};
 
 /***/ }),
 /* 17 */
@@ -1208,12 +1192,14 @@ function loadWebWorkerTask(sourcePath, taskConfig) {
  * @param transferList - optional array of data to transfer to web worker
  * @returns {*}
  */
-function addTask(taskType, data, priority, transferList) {
+function addTask(taskType, data) {
+  var priority = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+  var transferList = arguments[3];
+
   if (!config) {
     initialize();
   }
 
-  priority = priority || 0;
   var deferred = _jquery2.default.Deferred();
 
   // find the right spot to insert this decode task (based on priority)
@@ -1254,14 +1240,16 @@ function addTask(taskType, data, priority, transferList) {
  * @param priority - priority of the task (defaults to 0), > 0 is higher, < 0 is lower
  * @returns boolean - true on success, false if taskId not found
  */
-function setTaskPriority(taskId, priority) {
+function setTaskPriority(taskId) {
+  var priority = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
   // search for this taskId
   for (var i = 0; i < tasks.length; i++) {
     if (tasks[i].taskId === taskId) {
       // taskId found, remove it
       var task = tasks.splice(i, 1)[0];
 
-      // set its prioirty
+      // set its priority
       task.priority = priority;
 
       // find the right spot to insert this decode task (based on priority)
@@ -1600,8 +1588,6 @@ exports.default = getNumberValues;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-
 var files = [];
 
 function add(file) {
@@ -1639,6 +1625,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = getEncapsulatedImageFrame;
 
 var _dicomParser = __webpack_require__(6);
 
@@ -1654,32 +1641,25 @@ function framesAreFragmented(dataSet) {
   var numberOfFrames = dataSet.intString('x00280008');
   var pixelDataElement = dataSet.elements.x7fe00010;
 
-  if (numberOfFrames !== pixelDataElement.fragments.length) {
-    return true;
-  }
-}
-
-function getEncodedImageFrame(dataSet, frame) {
-  // Empty basic offset table
-  if (!dataSet.elements.x7fe00010.basicOffsetTable.length) {
-    if (framesAreFragmented(dataSet)) {
-      var basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(dataSet, dataSet.elements.x7fe00010);
-
-      return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame, basicOffsetTable);
-    }
-
-    return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, dataSet.elements.x7fe00010, frame);
-  }
-
-  // Basic Offset Table is not empty
-  return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frame);
+  return numberOfFrames !== pixelDataElement.fragments.length;
 }
 
 function getEncapsulatedImageFrame(dataSet, frameIndex) {
-  return getEncodedImageFrame(dataSet, frameIndex);
-}
+  if (dataSet.elements.x7fe00010.basicOffsetTable.length) {
+    // Basic Offset Table is not empty
+    return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frameIndex);
+  }
 
-exports.default = getEncapsulatedImageFrame;
+  // Empty basic offset table
+
+  if (framesAreFragmented(dataSet)) {
+    var basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(dataSet, dataSet.elements.x7fe00010);
+
+    return dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frameIndex, basicOffsetTable);
+  }
+
+  return dicomParser.readEncapsulatedPixelDataFromFragments(dataSet, dataSet.elements.x7fe00010, frameIndex);
+}
 
 /***/ }),
 /* 26 */
@@ -2221,9 +2201,8 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-/* eslint no-bitwise: 0 */
 
-function convertPALETTECOLOR(imageFrame, rgbaBuffer) {
+exports.default = function (imageFrame, rgbaBuffer) {
   var numPixels = imageFrame.columns * imageFrame.rows;
   var palIndex = 0;
   var rgbaIndex = 0;
@@ -2255,9 +2234,7 @@ function convertPALETTECOLOR(imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = bData[value] >> shift;
     rgbaBuffer[rgbaIndex++] = 255;
   }
-}
-
-exports.default = convertPALETTECOLOR;
+};
 
 /***/ }),
 /* 41 */
@@ -2270,13 +2247,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-
-function convertRGBColorByPixel(imageFrame, rgbaBuffer) {
+exports.default = function (imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
-    throw 'decodeRGB: rgbBuffer must not be undefined';
+    throw new Error('decodeRGB: rgbBuffer must not be undefined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw 'decodeRGB: rgbBuffer length must be divisible by 3';
+    throw new Error('decodeRGB: rgbBuffer length must be divisible by 3');
   }
 
   var numPixels = imageFrame.length / 3;
@@ -2289,9 +2265,7 @@ function convertRGBColorByPixel(imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = imageFrame[rgbIndex++]; // blue
     rgbaBuffer[rgbaIndex++] = 255; // alpha
   }
-}
-
-exports.default = convertRGBColorByPixel;
+};
 
 /***/ }),
 /* 42 */
@@ -2304,13 +2278,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-
-function convertRGBColorByPlane(imageFrame, rgbaBuffer) {
+exports.default = function (imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
-    throw 'decodeRGB: rgbBuffer must not be undefined';
+    throw new Error('decodeRGB: rgbBuffer must not be undefined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw 'decodeRGB: rgbBuffer length must be divisible by 3';
+    throw new Error('decodeRGB: rgbBuffer length must be divisible by 3');
   }
 
   var numPixels = imageFrame.length / 3;
@@ -2325,9 +2298,7 @@ function convertRGBColorByPlane(imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = imageFrame[bIndex++]; // blue
     rgbaBuffer[rgbaIndex++] = 255; // alpha
   }
-}
-
-exports.default = convertRGBColorByPlane;
+};
 
 /***/ }),
 /* 43 */
@@ -2340,13 +2311,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-
-function convertYBRFullByPixel(imageFrame, rgbaBuffer) {
+exports.default = function (imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
-    throw 'decodeRGB: ybrBuffer must not be undefined';
+    throw new Error('decodeRGB: ybrBuffer must not be undefined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw 'decodeRGB: ybrBuffer length must be divisble by 3';
+    throw new Error('decodeRGB: ybrBuffer length must be divisble by 3');
   }
 
   var numPixels = imageFrame.length / 3;
@@ -2363,9 +2333,7 @@ function convertYBRFullByPixel(imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = y + 1.77200 * (cb - 128); // blue
     rgbaBuffer[rgbaIndex++] = 255; // alpha
   }
-}
-
-exports.default = convertYBRFullByPixel;
+};
 
 /***/ }),
 /* 44 */
@@ -2378,13 +2346,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-
-function convertYBRFullByPlane(imageFrame, rgbaBuffer) {
+exports.default = function (imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
-    throw 'decodeRGB: ybrBuffer must not be undefined';
+    throw new Error('decodeRGB: ybrBuffer must not be undefined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw 'decodeRGB: ybrBuffer length must be divisble by 3';
+    throw new Error('decodeRGB: ybrBuffer length must be divisble by 3');
   }
 
   var numPixels = imageFrame.length / 3;
@@ -2403,8 +2370,7 @@ function convertYBRFullByPlane(imageFrame, rgbaBuffer) {
     rgbaBuffer[rgbaIndex++] = y + 1.77200 * (cb - 128); // blue
     rgbaBuffer[rgbaIndex++] = 255; // alpha
   }
-}
-exports.default = convertYBRFullByPlane;
+};
 
 /***/ }),
 /* 45 */
@@ -2582,8 +2548,8 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function xhrRequest(url, imageId, headers) {
-  headers = headers || {};
+function xhrRequest(url, imageId) {
+  var headers = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
   var deferred = _jquery2.default.Deferred();
   var options = (0, _options.getOptions)();
@@ -2621,7 +2587,7 @@ function xhrRequest(url, imageId, headers) {
       var total = oProgress.total;
       var percentComplete = Math.round(loaded / total * 100);
 
-      (0, _jquery2.default)(cornerstone).trigger('CornerstoneImageLoadProgress', {
+      (0, _jquery2.default)(cornerstone.events).trigger('CornerstoneImageLoadProgress', {
         imageId: imageId,
         loaded: loaded,
         total: total,
