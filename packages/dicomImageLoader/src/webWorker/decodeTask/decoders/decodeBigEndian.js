@@ -25,7 +25,7 @@ function decodeBigEndian (imageFrame, pixelData) {
     }
     // Do the byte swap
     for (let i = 0; i < imageFrame.pixelData.length; i++) {
-      imageFrame[i] = swap16(imageFrame.pixelData[i]);
+      imageFrame.pixelData[i] = swap16(imageFrame.pixelData[i]);
     }
 
   } else if (imageFrame.bitsAllocated === 8) {
