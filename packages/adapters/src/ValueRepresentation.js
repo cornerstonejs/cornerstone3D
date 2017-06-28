@@ -395,7 +395,7 @@ class DecimalString extends StringRepresentation {
 
     readBytes(stream, length) {
       //return this.readNullPaddedString(stream, length).trim();
-      return stream.readString(length).trim();
+      return stream.readString(length).replace(/[^0-9.\\\-e]/gi, "");
     }
 }
 
