@@ -138,7 +138,17 @@ class ImageNormalizer extends Normalizer {
       let [distance, dataset] = pair;
       let pixels = new Uint16Array(dataset.PixelData);
       let frameView = new Uint16Array(ds.PixelData, frame * frameSize, frameSize/2);
-      frameView.set(pixels);
+      try {
+        frameView.set(pixels);
+      } catch (e) {
+        if (e instanceof RangeError) {
+          console.error("Error inserting pixels in PixelData");
+          console.error("frameSize", frameSize);
+          console.error("NumberOfFrames", ds.NumberOfFrames);
+          console.error("pair", pair);
+          console.error("dataset PixelData size", dataset.PixelData.length);
+        }
+      }
       frame++;
     });
 
