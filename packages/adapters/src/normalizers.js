@@ -16,7 +16,7 @@ class Normalizer {
       if (!sopClass) {
        sopClass = dataset.SOPClass;
       }
-      if (dataset.SOPClass != sopClass) {
+      if (dataset.SOPClass !== sopClass) {
         console.error('inconsistent sopClasses: ', dataset.SOPClass, sopClass);
         return(undefined);
       }
@@ -44,7 +44,7 @@ class Normalizer {
       "EnhancedUSImage",
       "EnhancedPETImage",
       "Segmentation",
-    ].indexOf(ds.SOPClass) != -1);
+    ].indexOf(ds.SOPClass) !== -1);
   }
 
   normalize() {
@@ -71,7 +71,7 @@ class ImageNormalizer extends Normalizer {
   }
 
   convertToMultiframe() {
-    if (this.datasets.length == 1 && Normalizer.isMultiframe(this.datasets[0])) {
+    if (this.datasets.length === 1 && Normalizer.isMultiframe(this.datasets[0])) {
       // already a multiframe, so just use it
       this.dataset = this.datasets[0];
       return;
@@ -122,7 +122,7 @@ class ImageNormalizer extends Normalizer {
     });
 
     // assign array buffers
-    if (ds.BitsAllocated != 16) {
+    if (ds.BitsAllocated !== 16) {
       console.error('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
     }
     if (referenceDataset._vrMap && referenceDataset._vrMap.PixelData) {

@@ -1,0 +1,244 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <link href="../css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/cornerstone.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>
+        Create DICOM Segmentation IOD
+      </h1>
+      <p>
+        This example demonstrates how to create a DICOM Segmentation object.
+      </p>
+      <a href="../index.html">Go back to the Examples page</a>
+    </div>
+
+    <div class="row">
+      <input type="file" value="Select dicom" id="select"></input>
+
+      <p id='status'>Drag and drop DICOM files here...</p>
+      <div class="col-xs-9" id="dropZone">
+        <div style="width:512px;height:512px;position:relative;display:inline-block;"
+            oncontextmenu="return false"
+            class='cornerstone-enabled-image'
+            unselectable='on'
+            onselectstart='return false;'
+            onmousedown='return false;'>
+          <div id="dicomImage"
+            style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xs-3">
+        <h5>Controls:</h5>
+        <ul>
+          <li>Left click paint</li>
+          <li>Middle Mouse button drag - pan</li>
+          <li>Right click drag - zoom</li>
+        </ul>
+
+        <div class="row">
+          <button id="drawErase" class="btn btn-primary">Erase</button>
+        </div>
+        
+        <div class="row">
+          <label for="radiusSlider">Radius: <span id="valBox">10</span>px</label>
+          <input id="radiusSlider" type="range" min="1" max="10" value="10" steps="1" style="width: 200px"/>
+        </div>
+
+        <div class="row">
+          <input type="range" class="dicomControls" min="0" max="0" value="0" step="1" id="instanceOffset">
+          <input type="button" class="dicomControls" id="deriveDICOM" value="Download Multiframe and Segmentation"/>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/cornerstone.min.js"></script>
+<script src="../js/cornerstoneMath.min.js"></script>
+<script src="../js/cornerstoneTools.min.js"></script>
+<script src="../js/dicomParser.min.js"></script>
+<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+
+
+<script src="../../src/DicomMetaDictionary.js"></script>
+<script src="../../src/BufferStream.js"></script>
+<script src="../../src/ValueRepresentation.js"></script>
+<script src="../../src/Tag.js"></script>
+<script src="../../src/DicomMessage.js"></script>
+<script src="../../src/normalizers.js"></script>
+<script src="../../src/derivations.js"></script>
+<script src="../../src/colors.js"></script>
+<script src="../js/getConverterSpec.js"></script>
+<script src="../../src/DICOMZero.js"></script>
+
+<script src="../js/FileSaver.min.js"></script>
+<script src="../js/gl-matrix-min.js"></script>
+<script src="../js/jszip.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
+<script>
+  $(document).ready(function() {
+    let dc0 = new DICOMZero();
+
+    function resetDICOMzero() {
+      dc0.reset();
+      $('.dicomControls').attr('disabled', true);
+    }
+
+    function performSegmentation() {
+      // for testing, fill with ones
+      let pixels = new Uint8Array(dc0.seg.dataset.PixelData);
+      pixels.fill(0xff);
+    }
+
+    function drawDatasets() {
+      cornerstone.disable(element);
+      cornerstone.enable(element);
+      cornerstoneTools.clearToolState(element, 'stack');
+
+      var files = dc0.dataTransfer.files;
+      var imageIds = [];
+      files.forEach(function(file) {
+        var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+        imageIds.push(imageId);
+      });
+
+      const stack = {
+        imageIds: imageIds,
+        currentImageIdIndex: 0
+      };
+
+      cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
+        //cornerstone.displayImage(element, image);
+        cornerstone.addLayer(element, image);
+        cornerstone.updateImage(element);
+
+        cornerstoneTools.addStackStateManager(element, ['stack']);
+        cornerstoneTools.addToolState(element, 'stack', stack);
+        //cornerstoneTools.addToolState(element, 'stackRenderer', renderer);
+
+        cornerstoneTools.mouseInput.enable(element);
+        cornerstoneTools.mouseWheelInput.enable(element);
+        cornerstoneTools.keyboardInput.enable(element);
+        cornerstoneTools.wwwc.activate(element, 1);
+        //cornerstoneTools.brush.activate(element, 1);
+
+        cornerstoneTools.pan.activate(element, 2);
+        cornerstoneTools.zoom.activate(element, 4);
+        cornerstoneTools.stackScrollWheel.activate(element);
+        cornerstoneTools.stackScrollKeyboard.activate(element);
+      });
+
+    }
+    function datasetToBlob(dataset) {
+      // create a meta dataset
+      let meta = {
+        FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
+        MediaStorageSOPClass: dataset.SOPClass,
+        MediaStorageSOPInstance: dataset.SOPInstanceUID,
+        TransferSyntaxUID: "1.2.840.10008.1.2",
+        ImplementationClassUID: DicomMetaDictionary.uid(),
+        ImplementationVersionName: "DICOMzero-0.0",
+      };
+      meta = DicomMetaDictionary.denaturalizeDataset(meta);
+      let dicomDict = new DicomDict(meta);
+      dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
+      var buffer = dicomDict.write();
+      var blob = new Blob([buffer], {type: "application/dicom"});
+      return (blob);
+    }
+    function downloadDatasets() {
+      let multiBlob = datasetToBlob(dc0.multiframe);
+      let segBlob = datasetToBlob(dc0.seg.dataset);
+      let zip = new JSZip();
+      zip.file("multiframe.dcm", multiBlob);
+      zip.file("segmentation.dcm", segBlob);
+      zip.generateAsync({type: "blob"})
+        .then(function(contents) {
+          saveAs(contents, "derivedDICOM.zip", true);
+          resetDICOMzero();
+          status(`Finished, waiting for more DICOM files (drop them below).`);
+        });
+    }
+
+    // utility: todo: keep a log for optional download
+    function status(s) {
+      console.log('status: ', s);
+      $('#status').text(s);
+    }
+
+    // once document is loaded...
+
+    resetDICOMzero();
+    let dropZone = document.querySelector('#dropZone');
+    window.addEventListener('resize', function() {
+      dropZone.width = window.innerWidth;
+      dropZone.height = window.innerHeight;
+      if (dc0.renderer) {
+        dc0.renderer.requestRender(dc0.view);
+      }
+    });
+
+    window.dispatchEvent(new Event('resize'));
+
+    $("#deriveDICOM").click(function() {
+      downloadDatasets();
+    });
+
+    var element = document.getElementById('dicomImage');
+
+    var $drawEraseButton = $('#drawErase');
+    $drawEraseButton.click(function () {
+      var configuration = cornerstoneTools.brush.getConfiguration();
+      if (configuration.draw === 0) {
+        configuration.draw = 1;
+        $drawEraseButton.text("Erase");
+      } else {
+        configuration.draw = 0;
+        $drawEraseButton.text("Draw");
+      }
+      cornerstoneTools.brush.setConfiguration(configuration);
+    });
+    
+    var $radiusSlider = $('#radiusSlider');
+    $radiusSlider.on('input', function(){
+      var radius = $radiusSlider.val();
+      $('#valBox').text(radius);
+      configuration.radius = radius;
+      cornerstoneTools.brush.setConfiguration(configuration);
+    });
+
+    function handleFileDrop(e) {
+      console.log('files dropped: ');
+      console.log(e.originalEvent);
+
+      let evt = e.originalEvent;
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      resetDICOMzero();
+      dc0.dataTransfer = {files: []};
+      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
+        dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
+      }
+
+      status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
+      dc0.readOneFile(drawDatasets);
+      $('.dicomControls').attr('disabled', false);
+    }
+
+    $('#dropZone').bind('drop', handleFileDrop);
+  });
+</script>
+</html>
