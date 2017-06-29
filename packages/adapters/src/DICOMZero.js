@@ -37,17 +37,15 @@ class DICOMZero {
       } else {
         this.readers.splice(readerIndex, 1); // remove the reader
       }
+
       if (this.fileIndex === this.dataTransfer.files.length) {
         console.log(`Normalizing...`);
         this.multiframe = Normalizer.normalizeToDataset(this.datasets);
         console.log(`Creating segmentation...`);
         this.seg = new Segmentation([this.multiframe]);
         console.log(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and segmentation.`);
-        let frameMax = this.multiframe.NumberOfFrames-1;
-        //$('#instanceOffset')[0].max = frameMax;
-        let middle = Math.floor((frameMax)/2);
-        //$('#instanceOffset')[0].value = middle;
-        doneCallback()
+
+        doneCallback();
       } else {
         console.log(`Reading... (${this.fileIndex+1}).`);
         this.readOneFile(doneCallback);

@@ -1,0 +1,223 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/cornerstone.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="page-header">
+        <h1>
+            Linear Measurements to Structured Report
+        </h1>
+        <p>
+            This example demonstrates how to create a DICOM Structured Report object from linear measurements.
+        </p>
+        <a href="../index.html">Go back to the Examples page</a>
+    </div>
+
+    <div class="row">
+        <p id='status'>Drag and drop DICOM files here...</p>
+        <div class="col-xs-9" id="dropZone">
+            <div style="width:512px;height:512px;position:relative;display:inline-block;"
+                 oncontextmenu="return false"
+                 class='cornerstone-enabled-image'
+                 unselectable='on'
+                 onselectstart='return false;'
+                 onmousedown='return false;'>
+                <div id="dicomImage"
+                     style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/cornerstone.min.js"></script>
+<script src="../js/cornerstoneMath.min.js"></script>
+<script src="../js/cornerstoneTools.min.js"></script>
+<script src="../js/dicomParser.min.js"></script>
+<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+
+
+<script src="../../src/DicomMetaDictionary.js"></script>
+<script src="../../src/BufferStream.js"></script>
+<script src="../../src/ValueRepresentation.js"></script>
+<script src="../../src/Tag.js"></script>
+<script src="../../src/DicomMessage.js"></script>
+<script src="../../src/normalizers.js"></script>
+<script src="../../src/derivations.js"></script>
+<script src="../../src/colors.js"></script>
+<script src="../js/getConverterSpec.js"></script>
+<script src="../../src/DICOMZero.js"></script>
+<script src="../../src/datasetToBlob.js"></script>
+<script src="../../src/packBitArray.js"></script>
+
+<script src="../js/FileSaver.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
+<script>
+  $(document).ready(function() {
+    const dc0 = new DICOMZero();
+    const element = document.getElementById('dicomImage');
+    const dropZone = document.getElementById('dropZone');
+
+    cornerstone.enable(element);
+
+    function resetDICOMzero() {
+      dc0.reset();
+      $('.dicomControls').attr('disabled', true);
+    }
+
+    const metaData = {};
+    function metaDataProvider(type, imageId) {
+      if (!metaData[imageId]) {
+        return;
+      }
+
+      return metaData[imageId][type];
+    }
+
+    function addMetaData(type, imageId, data) {
+      metaData[imageId] = metaData[imageId] || {};
+      metaData[imageId][type] = data;
+    }
+
+    cornerstone.metaData.addProvider(metaDataProvider);
+
+    function loadMultiFrameAndPopulateMetadata(baseImageId) {
+      var promise = new Promise(function (resolve, reject) {
+        var multiframe;
+        cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
+          var arrayBuffer = image.data.byteArray.buffer;
+          dicomData = DicomMessage.readFile(arrayBuffer);
+          let dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+
+          multiframe = Normalizer.normalizeToDataset([dataset]);
+
+          const numFrames = Number(multiframe.NumberOfFrames);
+          for (let i=0; i < numFrames; i++) {
+            const imageId = baseImageId + '?frame=' + i;
+
+            var funcGroups = multiframe.PerFrameFunctionalGroups[i];
+            var imagePositionArray = funcGroups.PlanePosition.ImagePositionPatient;
+
+            addMetaData('imagePlane', imageId, {
+              imagePositionPatient: {
+                x: imagePositionArray[0],
+                y: imagePositionArray[1],
+                z: imagePositionArray[2],
+              }
+            });
+          }
+
+          resolve(multiframe);
+        });
+      });
+
+      return promise;
+    }
+
+    function getImageIds(multiframe, baseImageId) {
+      const imageIds = [];
+      const numFrames = Number(multiframe.NumberOfFrames);
+      for (let i=0; i < numFrames; i++) {
+        const imageId = baseImageId + '?frame=' + i;
+        imageIds.push(imageId);
+      }
+
+      return imageIds;
+    }
+
+    function drawDatasets() {
+      cornerstone.disable(element);
+      cornerstone.enable(element);
+      cornerstoneTools.clearToolState(element, 'stack');
+
+      const folderPath = 'http://127.0.0.1:8000/examples/data/QIICR_Test3/';
+      const baseImageId = 'dicomweb:' + folderPath + 'QIN_HEADNECK_024_PET_multiframe.dcm';
+      var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
+
+      dataPromise.then(multiframe => {
+        var imageIds = getImageIds(multiframe, baseImageId);
+
+          /*var files = dc0.dataTransfer.files;
+           var imageIds = [];
+           files.forEach(function(file) {
+           var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+           imageIds.push(imageId);
+           });*/
+
+        const baseStack = {
+          imageIds: imageIds,
+          currentImageIdIndex: 0
+        };
+
+        cornerstone.loadAndCacheImage(baseStack.imageIds[0]).then(function(image) {
+          cornerstone.displayImage(element, image);
+
+          cornerstoneTools.addStackStateManager(element, ['stack']);
+          cornerstoneTools.addToolState(element, 'stack', baseStack);
+
+          cornerstoneTools.scrollToIndex(element, 1);
+
+          cornerstoneTools.mouseInput.enable(element);
+          cornerstoneTools.mouseWheelInput.enable(element);
+          cornerstoneTools.keyboardInput.enable(element);
+
+          cornerstoneTools.length.activate(element, 1);
+          cornerstoneTools.pan.activate(element, 2);
+          cornerstoneTools.zoom.activate(element, 4);
+          cornerstoneTools.stackScrollWheel.activate(element);
+          cornerstoneTools.stackScrollKeyboard.activate(element);
+        });
+      });
+    }
+
+    function getToolData() {
+      console.log(cornerstoneTools.globalImageIdSpecificToolStateManager.toolState);
+    }
+
+    drawDatasets();
+
+    // utility: todo: keep a log for optional download
+    function status(s) {
+      console.log('status: ', s);
+      $('#status').text(s);
+    }
+
+    window.addEventListener('resize', function() {
+      dropZone.width = window.innerWidth;
+      dropZone.height = window.innerHeight;
+      cornerstone.resize(element, true);
+    });
+
+    window.dispatchEvent(new Event('resize'));
+
+    function handleFileDrop(e) {
+      let evt = e.originalEvent;
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      resetDICOMzero();
+      dc0.dataTransfer = {files: []};
+      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
+        dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
+      }
+
+      status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
+      dc0.readOneFile(drawDatasets);
+      $('.dicomControls').attr('disabled', false);
+    }
+
+    $('#dropZone').bind('drop', handleFileDrop);
+  });
+</script>
+</html>

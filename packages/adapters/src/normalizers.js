@@ -31,6 +31,7 @@ class Normalizer {
       "EnhancedMRImage" : EnhancedMRImageNormalizer,
       "EnhancedUSVolume" : EnhancedUSVolumeNormalizer,
       "PETImage" : PETImageNormalizer,
+      "EnhancedPETImage": PETImageNormalizer,
       "PositronEmissionTomographyImage" : PETImageNormalizer,
       "Segmentation" : SEGImageNormalizer,
       "DeformableSpatialRegistration" : DSRNormalizer,

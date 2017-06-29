@@ -1,16 +1,16 @@
 class DicomMetaDictionary {
   static punctuateTag(rawTag) {
-    if (rawTag.indexOf(',') != -1) {
+    if (rawTag.indexOf(',') !== -1) {
       return (rawTag);
     }
-    if (rawTag.length == 8 && rawTag == rawTag.match(/[0-9a-fA-F]*/)[0]) {
+    if (rawTag.length === 8 && rawTag === rawTag.match(/[0-9a-fA-F]*/)[0]) {
       var tag = rawTag.toUpperCase();
       return ("("+tag.substring(0,4)+","+tag.substring(4,8)+")");
     }
   }
 
   static unpunctuateTag(tag) {
-    if (tag.indexOf(',') == -1) {
+    if (tag.indexOf(',') === -1) {
       return (tag);
     }
     return(tag.substring(1,10).replace(',',''));

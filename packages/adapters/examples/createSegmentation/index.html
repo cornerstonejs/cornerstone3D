@@ -80,6 +80,8 @@
 <script src="../../src/colors.js"></script>
 <script src="../js/getConverterSpec.js"></script>
 <script src="../../src/DICOMZero.js"></script>
+<script src="../../src/datasetToBlob.js"></script>
+<script src="../../src/packBitArray.js"></script>
 
 <script src="../js/FileSaver.min.js"></script>
 <script src="../js/gl-matrix-min.js"></script>
@@ -89,17 +91,42 @@
 
 <script>
   $(document).ready(function() {
-    let dc0 = new DICOMZero();
+    const dc0 = new DICOMZero();
+    const element = document.getElementById('dicomImage');
+    const dropZone = document.getElementById('dropZone');
+
+    cornerstone.enable(element);
 
     function resetDICOMzero() {
       dc0.reset();
       $('.dicomControls').attr('disabled', true);
     }
 
-    function performSegmentation() {
+    function populateSegmentationMask(dataset) {
       // for testing, fill with ones
-      let pixels = new Uint8Array(dc0.seg.dataset.PixelData);
+      const pixels = new Uint8Array(dataset.PixelData);
+      console.log('pixel data length');
+      console.log(pixels.length);
       pixels.fill(0xff);
+      const layers = cornerstone.getLayers(element);
+
+      // TODO: store the layerId for the brush layer somewhere accessible
+      const paintbrushLayer = layers[1];
+      const brushCanvasImageData = paintbrushLayer.image.getPixelData();
+      const numPixels = paintbrushLayer.image.width * paintbrushLayer.image.height;
+      const pixelData = new Uint8ClampedArray(numPixels);
+      let j = 3;
+      for (let i=0; i < numPixels; i++) {
+        pixelData[i] = brushCanvasImageData[j] > 0;
+        j += 4;
+      }
+
+      // populate the segmentation object pixel data
+      const bitArray = packBitArray(pixelData);
+      const numBitArrayPixels = bitArray.length;
+      for (let i=0; i < numBitArrayPixels; i++) {
+        pixels[i] = bitArray[i];
+      }
     }
 
     function drawDatasets() {
@@ -131,8 +158,8 @@
         cornerstoneTools.mouseInput.enable(element);
         cornerstoneTools.mouseWheelInput.enable(element);
         cornerstoneTools.keyboardInput.enable(element);
-        cornerstoneTools.wwwc.activate(element, 1);
-        //cornerstoneTools.brush.activate(element, 1);
+        //cornerstoneTools.wwwc.activate(element, 1);
+        cornerstoneTools.brush.activate(element, 1);
 
         cornerstoneTools.pan.activate(element, 2);
         cornerstoneTools.zoom.activate(element, 4);
@@ -141,24 +168,9 @@
       });
 
     }
-    function datasetToBlob(dataset) {
-      // create a meta dataset
-      let meta = {
-        FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
-        MediaStorageSOPClass: dataset.SOPClass,
-        MediaStorageSOPInstance: dataset.SOPInstanceUID,
-        TransferSyntaxUID: "1.2.840.10008.1.2",
-        ImplementationClassUID: DicomMetaDictionary.uid(),
-        ImplementationVersionName: "DICOMzero-0.0",
-      };
-      meta = DicomMetaDictionary.denaturalizeDataset(meta);
-      let dicomDict = new DicomDict(meta);
-      dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
-      var buffer = dicomDict.write();
-      var blob = new Blob([buffer], {type: "application/dicom"});
-      return (blob);
-    }
+
     function downloadDatasets() {
+      populateSegmentationMask(dc0.seg.dataset);
       let multiBlob = datasetToBlob(dc0.multiframe);
       let segBlob = datasetToBlob(dc0.seg.dataset);
       let zip = new JSZip();
@@ -178,16 +190,12 @@
       $('#status').text(s);
     }
 
-    // once document is loaded...
-
     resetDICOMzero();
-    let dropZone = document.querySelector('#dropZone');
+
     window.addEventListener('resize', function() {
       dropZone.width = window.innerWidth;
       dropZone.height = window.innerHeight;
-      if (dc0.renderer) {
-        dc0.renderer.requestRender(dc0.view);
-      }
+      cornerstone.resize(element, true);
     });
 
     window.dispatchEvent(new Event('resize'));
@@ -195,8 +203,6 @@
     $("#deriveDICOM").click(function() {
       downloadDatasets();
     });
-
-    var element = document.getElementById('dicomImage');
 
     var $drawEraseButton = $('#drawErase');
     $drawEraseButton.click(function () {
@@ -213,6 +219,7 @@
     
     var $radiusSlider = $('#radiusSlider');
     $radiusSlider.on('input', function(){
+      var configuration = cornerstoneTools.brush.getConfiguration();
       var radius = $radiusSlider.val();
       $('#valBox').text(radius);
       configuration.radius = radius;
@@ -220,9 +227,6 @@
     });
 
     function handleFileDrop(e) {
-      console.log('files dropped: ');
-      console.log(e.originalEvent);
-
       let evt = e.originalEvent;
       evt.stopPropagation();
       evt.preventDefault();
