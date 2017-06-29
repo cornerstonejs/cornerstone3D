@@ -16,19 +16,33 @@ function getBytesForBinaryFrame (numPixels) {
 
 packBitArray = function(pixelData) {
   const numPixels = pixelData.length;
+  console.log('numPixels: ' + numPixels);
+
   const length = getBytesForBinaryFrame(numPixels);
+  //console.log('getBytesForBinaryFrame: ' + length);
+
   const bitPixelData = new Uint8Array(length);
 
   let bytePos = 0;
 
-  for (let count = 0; count < numPixels; count++) {
+  for (let i = 0; i < numPixels; i++) {
     // Compute byte position
-    bytePos = Math.floor(count / 8);
+    bytePos = Math.floor(i / 8);
 
-    const pixValue = (bitPixelData[count] !== 0);
+    const pixValue = (pixelData[i] !== 0);
 
-    bitPixelData[bytePos] |= pixValue << (count % 8);
+    //console.log('i: ' + i);
+    //console.log('pixValue: ' + pixValue);
+    //console.log('bytePos: ' + bytePos);
+
+    const bitPixelValue = pixValue << (i % 8);
+    //console.log('current bitPixelData: ' + bitPixelData[bytePos]);
+    //console.log('this bitPixelValue: ' + bitPixelValue);
+
+    bitPixelData[bytePos] |= bitPixelValue;
+
+    //console.log('new bitPixelValue: ' + bitPixelData[bytePos]);
   }
 
-  return pixelData;
+  return bitPixelData;
 }
