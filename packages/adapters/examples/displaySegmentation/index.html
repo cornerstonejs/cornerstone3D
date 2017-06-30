@@ -90,7 +90,6 @@
 
     function resetDICOMzero() {
       dc0.reset();
-      $('.dicomControls').attr('disabled', true);
     }
 
     const metaData = {};
@@ -378,7 +377,6 @@
 
       status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
       dc0.readOneFile(drawDatasets);
-      $('.dicomControls').attr('disabled', false);
     }
 
     $('#dropZone').bind('drop', handleFileDrop);

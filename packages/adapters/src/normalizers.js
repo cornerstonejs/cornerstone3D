@@ -227,7 +227,7 @@ class ImageNormalizer extends Normalizer {
       console.error("Missing number or frames not supported");
       return;
     }
-    if (Number(ds.NumberOfFrames) == 1) {
+    if (Number(ds.NumberOfFrames) === 1) {
       console.error("Single frame instance of multiframe class not supported");
       return;
     }
@@ -235,13 +235,13 @@ class ImageNormalizer extends Normalizer {
       // Required tag: guess signed
       ds.PixelRepresentation = 1;
     }
-    if (!ds.StudyID || ds.StudyID == "") {
+    if (!ds.StudyID || ds.StudyID === "") {
       // Required tag: fill in if needed
       ds.StudyID = "No Study ID";
     }
 
     let validLateralities = ["R", "L"];
-    if (validLateralities.indexOf(ds.Laterality) == -1) {
+    if (validLateralities.indexOf(ds.Laterality) === -1) {
       delete(ds.Laterality);
     }
 
@@ -253,7 +253,7 @@ class ImageNormalizer extends Normalizer {
       console.error('Can only process multiframe data with SharedFunctionalGroups');
     }
 
-    if (ds.BodyPartExamined == "PROSTATE") {
+    if (ds.BodyPartExamined === "PROSTATE") {
       ds.SharedFunctionalGroups.FrameAnatomy = {
         AnatomicRegion: {
           CodeValue: "T-9200B",
@@ -278,7 +278,6 @@ class ImageNormalizer extends Normalizer {
       ds.PerFrameFunctionalGroups[frameNumber-1].FrameContent = {
         FrameAcquisitionDateTime: frameTime,
         FrameReferenceDateTime: frameTime,
-        FrameAcquisitionDuration: 0,
         FrameAcquisitionDuration: 0,
         StackID: 1,
         InStackPositionNumber: frameNumber,
@@ -331,8 +330,8 @@ class ImageNormalizer extends Normalizer {
       }
     }
     // last gasp, pick an arbitrary default
-    if (ds.WindowCenter.length == 0) { ds.WindowCenter = [300] }
-    if (ds.WindowWidth.length == 0) { ds.WindowWidth = [500] }
+    if (ds.WindowCenter.length === 0) { ds.WindowCenter = [300] }
+    if (ds.WindowWidth.length === 0) { ds.WindowWidth = [500] }
   }
 }
 

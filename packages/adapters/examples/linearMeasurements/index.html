@@ -20,6 +20,7 @@
     </div>
 
     <div class="row">
+        <button id="sampleData">Get Sample Data</button>
         <p id='status'>Drag and drop DICOM files here...</p>
         <div class="col-xs-9" id="dropZone">
             <div style="width:512px;height:512px;position:relative;display:inline-block;"
@@ -31,6 +32,12 @@
                 <div id="dicomImage"
                      style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
                 </div>
+            </div>
+        </div>
+
+        <div class="col-xs-3">
+            <div class="row">
+                <input type="button" class="dicomControls" id="downloadReport" value="Download Structured Report"/>
             </div>
         </div>
     </div>
@@ -136,13 +143,12 @@
       return imageIds;
     }
 
-    function drawDatasets() {
+    function drawSampleDatasets() {
       cornerstone.disable(element);
       cornerstone.enable(element);
       cornerstoneTools.clearToolState(element, 'stack');
 
-      const folderPath = 'http://127.0.0.1:8000/examples/data/QIICR_Test3/';
-      const baseImageId = 'dicomweb:' + folderPath + 'QIN_HEADNECK_024_PET_multiframe.dcm';
+      var baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-8-slices.dcm';
       var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
 
       dataPromise.then(multiframe => {
@@ -181,11 +187,32 @@
       });
     }
 
-    function getToolData() {
+    function populateReport(dataset) {
       console.log(cornerstoneTools.globalImageIdSpecificToolStateManager.toolState);
+      const lengthData = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
+
+      lengthData.data.forEach()
     }
 
-    drawDatasets();
+    function downloadReport() {
+      populateReport(dc0.multiframe);
+      /*let zip = new JSZip();
+      zip.file("report.dcm", multiBlob);
+      zip.generateAsync({type: "blob"})
+        .then(function(contents) {
+          saveAs(contents, "derivedDICOM.zip", true);
+          resetDICOMzero();
+          status(`Finished, waiting for more DICOM files (drop them below).`);
+        });*/
+    }
+
+    $('#sampleData').click(function(event) {
+      drawSampleDatasets();
+    });
+
+    $('#downloadReport').click(function(event) {
+      downloadReport();
+    });
 
     // utility: todo: keep a log for optional download
     function status(s) {
@@ -213,7 +240,7 @@
       }
 
       status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
-      dc0.readOneFile(drawDatasets);
+      dc0.readOneFile(drawSampleDatasets);
       $('.dicomControls').attr('disabled', false);
     }
 
