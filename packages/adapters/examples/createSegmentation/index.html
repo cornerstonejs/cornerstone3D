@@ -20,6 +20,10 @@
     </div>
 
     <div class="row">
+      <button id="sampleData">Get Sample Data</button>
+
+      <p>or</p>
+
       <input type="file" value="Select dicom" id="select"></input>
 
       <p id='status'>Drag and drop DICOM files here...</p>
@@ -35,7 +39,8 @@
           </div>
         </div>
       </div>
-      
+
+
       <div class="col-xs-3">
         <h5>Controls:</h5>
         <ul>
@@ -99,7 +104,6 @@
 
     function resetDICOMzero() {
       dc0.reset();
-      $('.dicomControls').attr('disabled', true);
     }
 
     function populateSegmentationMask(dataset) {
@@ -129,10 +133,122 @@
       }
     }
 
+    $('#sampleData').click(function(event) {
+      drawSampleDatasets();
+    });
+
+    function getImageIds(multiframe, baseImageId, segmentNumber) {
+      const imageIds = [];
+      const numFrames = Number(multiframe.NumberOfFrames);
+      for (let i=0; i < numFrames; i++) {
+        let segNum;
+        if (multiframe.PerFrameFunctionalGroups[i].SegmentIdentification) {
+          segNum = multiframe.PerFrameFunctionalGroups[i].SegmentIdentification.ReferencedSegmentNumber;
+        }
+
+        if (segmentNumber && segNum && segNum === segmentNumber) {
+          const imageId = baseImageId + '?frame=' + i;
+          imageIds.push(imageId);
+        } else {
+          const imageId = baseImageId + '?frame=' + i;
+          imageIds.push(imageId);
+        }
+
+      }
+
+      return imageIds;
+    }
+
+    function drawSampleDatasets() {
+      cornerstone.disable(element);
+      cornerstone.enable(element);
+      cornerstoneTools.clearToolState(element, 'stack');
+
+      var baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-8-slices.dcm'
+      var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
+
+      Promise.all([dataPromise,]).then(values => {
+        dc0.multiframe = values[0];
+        dc0.seg = new Segmentation([dc0.multiframe]);
+        var imageIds = getImageIds(dc0.multiframe, baseImageId);
+
+        const baseStack = {
+          imageIds: imageIds,
+          currentImageIdIndex: 0,
+          options: {
+            name: 'Referenced Image'
+          }
+        };
+
+        cornerstone.loadAndCacheImage(baseStack.imageIds[0]).then(function(image) {
+          cornerstone.addLayer(element, image);
+          cornerstone.updateImage(element);
+          //cornerstone.displayImage(element, image);
+
+          cornerstoneTools.addStackStateManager(element, ['stack']);
+          cornerstoneTools.addToolState(element, 'stack', baseStack);
+
+          cornerstoneTools.mouseInput.enable(element);
+          cornerstoneTools.mouseWheelInput.enable(element);
+          cornerstoneTools.keyboardInput.enable(element);
+
+          //cornerstoneTools.wwwc.activate(element, 1);
+          cornerstoneTools.brush.activate(element, 1);
+          cornerstoneTools.pan.activate(element, 2);
+
+          cornerstoneTools.zoom.activate(element, 4);
+          cornerstoneTools.stackScrollWheel.activate(element);
+          cornerstoneTools.stackScrollKeyboard.activate(element);
+
+        });
+      });
+    }
+
+    var metaData = {};
+
+    function addMetaData(type, imageId, data) {
+      metaData[imageId] = metaData[imageId] || {};
+      metaData[imageId][type] = data;
+    }
+
+    function loadMultiFrameAndPopulateMetadata(baseImageId) {
+      var promise = new Promise(function (resolve, reject) {
+        cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
+          var arrayBuffer = image.data.byteArray.buffer;
+          dicomData = DicomMessage.readFile(arrayBuffer);
+          let dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+
+          var multiframe = Normalizer.normalizeToDataset([dataset]);
+
+          const numFrames = Number(multiframe.NumberOfFrames);
+          for (let i=0; i < numFrames; i++) {
+            const imageId = baseImageId + '?frame=' + i;
+
+            var funcGroups = multiframe.PerFrameFunctionalGroups[i];
+            var imagePositionArray = funcGroups.PlanePosition.ImagePositionPatient;
+
+            addMetaData('imagePlane', imageId, {
+              imagePositionPatient: {
+                x: imagePositionArray[0],
+                y: imagePositionArray[1],
+                z: imagePositionArray[2],
+              }
+            });
+          }
+
+          resolve(multiframe);
+        });
+      });
+
+      return promise;
+    }
+
     function drawDatasets() {
       cornerstone.disable(element);
       cornerstone.enable(element);
       cornerstoneTools.clearToolState(element, 'stack');
+
 
       var files = dc0.dataTransfer.files;
       var imageIds = [];
@@ -239,7 +355,6 @@
 
       status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
       dc0.readOneFile(drawDatasets);
-      $('.dicomControls').attr('disabled', false);
     }
 
     $('#dropZone').bind('drop', handleFileDrop);
