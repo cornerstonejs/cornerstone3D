@@ -21,6 +21,7 @@
 
     <div class="row">
         <button id="sampleData">Get Sample Data</button>
+        <p> or</p>
         <p id='status'>Drag and drop DICOM files here...</p>
         <div class="col-xs-9" id="dropZone">
             <div style="width:512px;height:512px;position:relative;display:inline-block;"
@@ -70,8 +71,9 @@
 <script src="../js/jqueryFileDrop.js"></script>
 
 <script>
+  var dc0;
   $(document).ready(function() {
-    const dc0 = new DICOMZero();
+    dc0 = new DICOMZero();
     const element = document.getElementById('dicomImage');
     const dropZone = document.getElementById('dropZone');
 
@@ -152,6 +154,7 @@
       var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
 
       dataPromise.then(multiframe => {
+        dc0.multiframe = multiframe;
         var imageIds = getImageIds(multiframe, baseImageId);
 
           /*var files = dc0.dataTransfer.files;
@@ -161,16 +164,16 @@
            imageIds.push(imageId);
            });*/
 
-        const baseStack = {
+        dc0.baseStack = {
           imageIds: imageIds,
           currentImageIdIndex: 0
         };
 
-        cornerstone.loadAndCacheImage(baseStack.imageIds[0]).then(function(image) {
+        cornerstone.loadAndCacheImage(dc0.baseStack.imageIds[0]).then(function(image) {
           cornerstone.displayImage(element, image);
 
           cornerstoneTools.addStackStateManager(element, ['stack']);
-          cornerstoneTools.addToolState(element, 'stack', baseStack);
+          cornerstoneTools.addToolState(element, 'stack', dc0.baseStack);
 
           cornerstoneTools.scrollToIndex(element, 1);
 
@@ -188,10 +191,72 @@
     }
 
     function populateReport(dataset) {
-      console.log(cornerstoneTools.globalImageIdSpecificToolStateManager.toolState);
-      const lengthData = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
+      /* 
+      % dcsrdump FromEmel_20150506/jjvector4276015677.84977662.6.74.6217627.81381.667482524.159327.4255.136_extract.dcm 
+: CONTAINER: (126000,DCM,"Imaging Measurement Report")  [SEPARATE] (DCMR,1500)
+        >HAS CONCEPT MOD: CODE: (121049,DCM,"Language of Content Item and Descendants")  = (eng,RFC3066,"English")
+                >>HAS CONCEPT MOD: CODE: (121046,DCM,"Country of Language")  = (US,ISO3166_1,"United States")
+        >HAS OBS CONTEXT: PNAME: (121008,DCM,"Person Observer Name")  = "admin"
+        >HAS OBS CONTEXT: TEXT: (RP-100006,99RPH,"Person Observer's Login Name")  = "admin"
+        >HAS CONCEPT MOD: CODE: (121058,DCM,"Procedure reported")  = (24587-8,LN,"brain mri wo+w contr iv")
+        >CONTAINS: CONTAINER: (111028,DCM,"Image Library")  [SEPARATE]
+                >>CONTAINS: CONTAINER: (126200,DCM,"Image Library Group")  [SEPARATE]
+                        >>>CONTAINS: IMAGE:  = (1.2.840.10008.5.1.4.1.1.4,1.3.12.2.1107.5.2.30.25226.3.2007080608524411252220157)
+        >CONTAINS: CONTAINER: (126010,DCM,"Imaging Measurements")  [SEPARATE]
+                >>CONTAINS: CONTAINER: (125007,DCM,"Measurement Group")  [SEPARATE]
+                        >>>HAS OBS CONTEXT: TEXT: (112039,DCM,"Tracking Identifier")  = "Lesion7~sp1~-~sp1~-1~sp1~#FFFFFF"
+                        >>>HAS OBS CONTEXT: UIDREF: (112040,DCM,"Tracking Unique Identifier")  = "1266843.1.76.1940.865.49429.781249.3097277773.935694841.27403146"
+                        >>>CONTAINS: CODE: (121071,DCM,"Finding")  = (jjv-5,epad-plugin,"epad-plugin")
+                        >>>CONTAINS: NUM: (G-D7FE,SRT,"Length")  = 0.0 (mm,UCUM,"millimeter")
+                                >>>>INFERRED FROM: SCOORD:  = POLYLINE {72.1983489990234,186.446273803711,88.0661163330078,176.92561340332,76.1652908325195,206.280990600586,62.6776847839355,193.586776733398}
+                                        >>>>>SELECTED FROM: IMAGE:  = (1.2.840.10008.5.1.4.1.1.4,1.3.12.2.1107.5.2.30.25226.3.2007080608524411252220157) [Frame 1]
+      */
 
-      lengthData.data.forEach()
+      dc0.report = new StructuredReport([dataset]);
+
+      console.log(cornerstoneTools.globalImageIdSpecificToolStateManager);
+      const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
+
+      // not correct, but with some of the structure
+      dc0.report.dataset.ImagingMeasurementReport = {
+        LanguageOfContentItemAndDescendants: {
+          Language: "English",
+          CountryOfLanguage: "United States"
+        },
+        PersonObserverName: "Web User",
+        PersonObserverLoginName: "user",
+        ImageLibrary: {
+          ImageLibraryGroup: [
+            dataset.SOPInstanceUID,
+          ],
+        },
+        ImagingMeasurements: {
+          MeasurementGroup: [],
+        },
+      };
+      dc0.report.dataset.ProcedureReported = dataset.StudyDescription;
+
+      measurements = dc0.report.dataset.ImagingMeasurementReport.ImagingMeasurements.MeasurementGroup;
+      dc0.baseStack.imageIds.forEach(function(imageId) {
+        if (imageToolState[imageId]) {
+          imageToolState[imageId].length.data.forEach(function(length) {
+            var handles = length.handles;
+            var measurement = {
+              TrackingIdentifier: DicomMetaDictionary.uid(),
+              TrackingUniqueIdentifier: DicomMetaDictionary.uid(),
+              Finding: "No finding specified",
+              Length: length.length,
+              Units: "pixels",
+              InferredFrom: [{
+                SCOORD: {
+                  POLYLINE: [ handles.start.x, handles.start.y, handles.end.x, handles.end.y ]
+                }
+                }]
+            }
+            measurements.push(measurement);
+          });
+        }
+      });
     }
 
     function downloadReport() {

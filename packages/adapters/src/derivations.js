@@ -310,3 +310,41 @@ class Segmentation extends DerivedPixels {
     console.error("Not implemented");
   }
 }
+
+class StructuredReport extends DerivedDataset {
+  constructor (datasets, options={}) {
+    super(datasets, options);
+  }
+
+  // this assumes a normalized multiframe input and will create
+  // a multiframe derived image
+  derive() {
+    super.derive();
+
+    this.assignToDataset({
+      "SOPClass": "ComprehensiveSR",
+      "Modality": "SR",
+    });
+
+    this.assignFromReference([
+      "FrameOfReferenceUID",
+    ]);
+
+    this.assignFromOptions([
+      "Manufacturer",
+      "SoftwareVersions",
+      "DeviceSerialNumber",
+      "ManufacturerModelName",
+      "SeriesDescription",
+      "SeriesNumber",
+      "ContentLabel",
+      "ContentDescription",
+      "ContentCreatorName",
+      "SeriesDate",
+      "SeriesTime",
+      "ContentDate",
+      "ContentTime",
+      "SOPInstanceUID",
+      "SeriesInstanceUID",]);
+  }
+}
