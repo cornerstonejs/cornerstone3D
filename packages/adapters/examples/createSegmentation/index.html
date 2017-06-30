@@ -109,9 +109,6 @@
     function populateSegmentationMask(dataset) {
       // for testing, fill with ones
       const pixels = new Uint8Array(dataset.PixelData);
-      console.log('pixel data length');
-      console.log(pixels.length);
-      pixels.fill(0xff);
       const layers = cornerstone.getLayers(element);
 
       // TODO: store the layerId for the brush layer somewhere accessible
@@ -170,6 +167,9 @@
       Promise.all([dataPromise,]).then(values => {
         dc0.multiframe = values[0];
         dc0.seg = new Segmentation([dc0.multiframe]);
+
+        var cielab = Colors.rgb2DICOMLAB([1, 0, 0]);
+        dc0.seg.dataset.Segment[0].RecommendedDisplayCIELabValue = cielab;
         var imageIds = getImageIds(dc0.multiframe, baseImageId);
 
         const baseStack = {

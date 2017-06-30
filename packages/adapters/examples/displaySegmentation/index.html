@@ -152,14 +152,11 @@
           segNum = multiframe.PerFrameFunctionalGroups[i].SegmentIdentification.ReferencedSegmentNumber;
         }
 
-        if (segmentNumber && segNum && segNum === segmentNumber) {
-          const imageId = baseImageId + '?frame=' + i;
-          imageIds.push(imageId);
-        } else {
+        if ((segmentNumber && segNum && segNum === segmentNumber) ||
+            segmentNumber === undefined) {
           const imageId = baseImageId + '?frame=' + i;
           imageIds.push(imageId);
         }
-
       }
 
       return imageIds;
@@ -184,17 +181,21 @@
 
         const segStacks = [];
         segMultiframe.Segment.forEach(segment => {
-
           const cielab = segment.RecommendedDisplayCIELabValue;
-          let rgba = Colors.lab2RGB(cielab);
+          console.log('cielab: ');
+          console.log(cielab);
+          let rgba = Colors.dicomlab2RGB(cielab).map(x => x * 255);
           rgba.push(255);
+          console.log('rgba');
+          console.log(rgba);
 
-          var colormap = cornerstone.colors.getColormap('segColormap');
+          const colormapId = 'Colormap_' + segment.SegmentNumber;
+          var colormap = cornerstone.colors.getColormap(colormapId);
           colormap.setNumberOfColors(2);
           colormap.insertColor(0, [0, 0, 255, 0]);
           colormap.insertColor(1, rgba);
 
-          var segImageIds = getImageIds(segMultiframe, segBaseImageId, segment.SegmentNumber);
+          const segImageIds = getImageIds(segMultiframe, segBaseImageId, segment.SegmentNumber);
 
           const segStack = {
             imageIds: segImageIds,
@@ -202,10 +203,13 @@
             options: {
               opacity: 0.7,
               visible: true,
-              colormap: 'segColormap',
+              colormap: colormapId,
               name: segment.SegmentLabel
             }
           };
+
+          console.log(segment);
+          console.log(segStack);
 
           segStacks.push(segStack);
         });
@@ -228,8 +232,6 @@
         // Select a renderer and apply the specified options
         var renderer = new cornerstoneTools.stackRenderers.FusionRenderer();
         renderer.findImageFn = function(imageIds, targetImageId) {
-          return targetImageId;
-
           var minDistance = 1;
           var targetImagePlane = cornerstone.metaData.get('imagePlane', targetImageId);
           var imagePositionZ = targetImagePlane.imagePositionPatient.z;
@@ -252,12 +254,13 @@
           cornerstone.displayImage(element, image);
 
           cornerstoneTools.addStackStateManager(element, ['stack']);
+          cornerstoneTools.addToolState(element, 'stackRenderer', renderer);
           cornerstoneTools.addToolState(element, 'stack', baseStack);
+
+          //cornerstoneTools.addToolState(element, 'stack', segStacks[1]);
           segStacks.forEach(segStack => {
             cornerstoneTools.addToolState(element, 'stack', segStack);
           });
-
-          cornerstoneTools.addToolState(element, 'stackRenderer', renderer);
 
           cornerstoneTools.scrollToIndex(element, 1);
 
@@ -318,6 +321,8 @@
     // The layer is added to the dropdown to make it possible to select and interact with it
     $(element).on('CornerstoneLayerAdded', function(e, eventData) {
       var layer = cornerstone.getLayer(eventData.element, eventData.layerId);
+      console.log('layer added');
+      console.log(layer);
       var $layers = $('#layers');
       var $layerOption = $('<option></option>')
         .val(layer.layerId)
