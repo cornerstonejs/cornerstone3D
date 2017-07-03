@@ -13,10 +13,12 @@ Overall the code should:
 * Support reading and writing of correct DICOM objects
 * Provide a programmer-friendly JavaScript environment for using and manipulating DICOM objects
 * Include a set of useful demos to encourage correct usage of dcmjs and modern DICOM objects
+* Encourage correct referencing of instances and composite context when creating derived objects
 
 Architectural goals include:
 * Use modern JavaScript programming methods but avoid heavy frameworks
 * Leverage modern DICOM standards but avoid legacy parts
+* Support straightforward integration with multiple JavaScript deployment targets (browser, node, etc) and frameworks.
 
 Parts of DICOM that dcmjs will focus on:
 * Enhanced Multiframe Images
@@ -25,8 +27,8 @@ Parts of DICOM that dcmjs will focus on:
 * Structured Reports
 
 Parts of DICOM that dcmjs *will not* focus on:
-* DIMSE
-* Physical Media
+* DIMSE (legacy networking like C-FIND, C-MOVE, etc)
+* Physical Media (optical disks)
 
 # History
 * 2014
