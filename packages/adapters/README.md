@@ -32,13 +32,13 @@ Parts of DICOM that dcmjs *will not* focus on:
 
 # Status
 Currently dcmjs is an early-stage development experiment.
-  # Implemented
+  ## Implemented
   * Bidirectional conversion to and from part 10 binary DICOM and DICOM standard JSON encoding (as in [DICOMweb](http://dicomweb.org))
   * Bidirectional convertion to and from DICOM standard JSON and a programmer-friendly high level version.
-  # In development
+  ## In development
   * Creation of (correct) enhanced multiframe DICOM objects from legacy image objects
   * Creation of (correct) derived DICOM objects such as Segmentations and Structured Reports
-  # TODO
+  ## TODO
   * Create a test suite of input and output DICOM objects
   * Test interoperability with other DICOM implementations
 
