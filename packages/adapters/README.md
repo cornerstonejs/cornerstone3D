@@ -1,9 +1,9 @@
 # dcmjs
-Javascript implementation of DICOM manipulation
+JavaScript implementation of DICOM manipulation
 
 This code is an outgrowth of several efforts to implement web applications for medical imaging.
 
-''Note: this code is a work-in-progress and should not be used for production or clinical purposes''
+**Note: this code is a work-in-progress and should not be used for production or clinical purposes**
 
 See [live examples here](https://pieper.github.io/dcmjs/examples/)
 
@@ -16,7 +16,7 @@ Overall the code should:
 * Encourage correct referencing of instances and composite context when creating derived objects
 
 Architectural goals include:
-* Use modern JavaScript programming methods but avoid heavy frameworks
+* Use modern JavaScript programming methods (currently ES6) but avoid heavy frameworks
 * Leverage modern DICOM standards but avoid legacy parts
 * Support straightforward integration with multiple JavaScript deployment targets (browser, node, etc) and frameworks.
 
@@ -29,6 +29,18 @@ Parts of DICOM that dcmjs will focus on:
 Parts of DICOM that dcmjs *will not* focus on:
 * DIMSE (legacy networking like C-FIND, C-MOVE, etc)
 * Physical Media (optical disks)
+
+# Status
+Currently dcmjs is an early-stage development experiment.
+  # Implemented
+  * Bidirectional conversion to and from part 10 binary DICOM and DICOM standard JSON encoding (as in [DICOMweb](http://dicomweb.org))
+  * Bidirectional convertion to and from DICOM standard JSON and a programmer-friendly high level version.
+  # In development
+  * Creation of (correct) enhanced multiframe DICOM objects from legacy image objects
+  * Creation of (correct) derived DICOM objects such as Segmentations and Structured Reports
+  # TODO
+  * Create a test suite of input and output DICOM objects
+  * Test interoperability with other DICOM implementations
 
 # History
 * 2014
