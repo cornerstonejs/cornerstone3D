@@ -46,6 +46,6 @@ the community at RSNA
  The developers gratefully acknowledge their reseach support:
  * Open Health Imaging Foundation ([OHIF](http://ohif.org))
  * Quantitative Image Informatics for Cancer Research ([QIICR](http://qiicr.org))
- * [Radiomics](http://radomics.io)
+ * [Radiomics](http://radiomics.io)
  * The [Neuroimage Analysis Center](http://nac.spl.harvard.edu)
  * The [National Center for Image Guided Therapy](http://ncigt.org)
