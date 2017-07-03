@@ -41,6 +41,7 @@ Currently dcmjs is an early-stage development experiment.
   ## TODO
   * Create a test suite of input and output DICOM objects
   * Test interoperability with other DICOM implementations
+  * Add documentation
 
 # History
 * 2014
