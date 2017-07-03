@@ -35,7 +35,7 @@ While this was useful and powerful, it was heavyweight for typical web usage.
 * 2016
   * A [Medical Imaging Web Appliction meeting at Stanford](http://qiicr.org/web/outreach/Medical-Imaging-Web-Apps/) and
 [follow-on hackfest in Boston](http://qiicr.org/web/outreach/MIWS-hackfest/) helped elaborate the needs for manipulating DICOM in pure Javascript.
-  * Based on DICOM Part 10 read/write code initiated by Weiwei Wu of [OHIF](ohif.org), Steve Pieper [developed further features](https://github.com/pieper/sites/tree/gh-pages/dcmio) and 
+  * Based on [DICOM Part 10 read/write code](https://github.com/OHIF/dicom-dimse) initiated by Weiwei Wu of [OHIF](http://ohif.org), Steve Pieper [developed further features](https://github.com/pieper/sites/tree/gh-pages/dcmio) and 
 [examples of creating multiframe and segmentation objects](https://github.com/pieper/sites/tree/gh-pages/DICOMzero) discussed with
 the community at RSNA
 * 2017
@@ -44,7 +44,8 @@ the community at RSNA
  
  # Support
  The developers gratefully acknowledge their reseach support:
- * Open Health Imaging Foundation ([OHIF](ohif.org))
- * Quantitative Image Informatics for Cancer Research ([QIICR](qiicr.org))
- * [Radiomics](radomics.io)
- * [The Neuroimage Analysis Center](nac.spl.harvard.edu)
+ * Open Health Imaging Foundation ([OHIF](http://ohif.org))
+ * Quantitative Image Informatics for Cancer Research ([QIICR](http://qiicr.org))
+ * [Radiomics](http://radomics.io)
+ * The [Neuroimage Analysis Center](http://nac.spl.harvard.edu)
+ * The [National Center for Image Guided Therapy](http://ncigt.org)
