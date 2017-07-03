@@ -324,6 +324,7 @@ class StructuredReport extends DerivedDataset {
     this.assignToDataset({
       "SOPClass": "ComprehensiveSR",
       "Modality": "SR",
+      "ValueType": "Container",
     });
 
     this.assignFromReference([

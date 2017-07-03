@@ -67,6 +67,7 @@
 <script src="../../src/packBitArray.js"></script>
 
 <script src="../js/FileSaver.min.js"></script>
+<script src="../js/jszip.min.js"></script>
 <script src="../js/initWebWorkers.js"></script>
 <script src="../js/jqueryFileDrop.js"></script>
 
@@ -81,7 +82,6 @@
 
     function resetDICOMzero() {
       dc0.reset();
-      $('.dicomControls').attr('disabled', true);
     }
 
     const metaData = {};
@@ -191,8 +191,8 @@
     }
 
     function populateReport(dataset) {
-      /* 
-      % dcsrdump FromEmel_20150506/jjvector4276015677.84977662.6.74.6217627.81381.667482524.159327.4255.136_extract.dcm 
+      /*
+      % dcsrdump FromEmel_20150506/jjvector4276015677.84977662.6.74.6217627.81381.667482524.159327.4255.136_extract.dcm
 : CONTAINER: (126000,DCM,"Imaging Measurement Report")  [SEPARATE] (DCMR,1500)
         >HAS CONCEPT MOD: CODE: (121049,DCM,"Language of Content Item and Descendants")  = (eng,RFC3066,"English")
                 >>HAS CONCEPT MOD: CODE: (121046,DCM,"Country of Language")  = (US,ISO3166_1,"United States")
@@ -212,48 +212,213 @@
                                         >>>>>SELECTED FROM: IMAGE:  = (1.2.840.10008.5.1.4.1.1.4,1.3.12.2.1107.5.2.30.25226.3.2007080608524411252220157) [Frame 1]
       */
 
-      dc0.report = new StructuredReport([dataset]);
 
       console.log(cornerstoneTools.globalImageIdSpecificToolStateManager);
       const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
 
+      dc0.report = new StructuredReport([dataset]);
+      var measurementGroupContent = [];
+
+      //
       // not correct, but with some of the structure
-      dc0.report.dataset.ImagingMeasurementReport = {
-        LanguageOfContentItemAndDescendants: {
-          Language: "English",
-          CountryOfLanguage: "United States"
-        },
-        PersonObserverName: "Web User",
-        PersonObserverLoginName: "user",
-        ImageLibrary: {
-          ImageLibraryGroup: [
-            dataset.SOPInstanceUID,
-          ],
-        },
-        ImagingMeasurements: {
-          MeasurementGroup: [],
+      //
+      dc0.report.dataset.ConceptNameCode = {
+        CodeValue: '126000',
+        CodingSchemeDesignator: 'DCM',
+        CodeMeaning: 'Imaging Measurement Report',
+      };
+      dc0.report.dataset.ContinuityOfContent = 'SEPARATE';
+      dc0.report.dataset.PerformedProcedureCode = undefined;
+      dc0.report.dataset.CompletionFlag = 'COMPLETE';
+      dc0.report.dataset.VerificationFlag = 'UNVERIFIED';
+      dc0.report.dataset.CurrentRequestedProcedureEvidence = {
+        StudyInstance: dataset.StudyInstance,
+        ReferencedSeries: {
+          SeriesInstance: dataset.SeriesInstance,
+          ReferencedSOP: {
+            ReferencedSOPClass: dataset.SOPClass,
+            ReferencedSOPInstance: dataset.SOPInstance,
+          },
         },
       };
-      dc0.report.dataset.ProcedureReported = dataset.StudyDescription;
 
-      measurements = dc0.report.dataset.ImagingMeasurementReport.ImagingMeasurements.MeasurementGroup;
+      dc0.report.dataset.ContentTemplate = {
+        MappingResource: 'DCMR',
+        TemplateIdentifier: '1500',
+      };
+
+      dc0.report.dataset.Content = [
+        {
+          RelationshipType: 'HAS CONCEPT MOD',
+          ValueType: 'CODE',
+          ConceptNameCode: {
+            CodeValue: '121049',
+            CodingSchemeDesignator: 'DCM',
+            CodeMeaning: 'Language of Content Item and Descendants',
+          },
+          ConceptCode: {
+            CodeValue: 'eng',
+            CodingSchemeDesignator: 'RFC3066',
+            CodeMeaning: 'English',
+          },
+          Content: {
+            RelationshipType: 'HAS CONCEPT MOD',
+            ValueType: 'CODE',
+            ConceptNameCode: {
+              CodeValue: '121046',
+              CodingSchemeDesignator: 'DCM',
+              CodeMeaning: 'Country of Language',
+            },
+            ConceptCode: {
+              CodeValue: 'US',
+              CodingSchemeDesignator: 'ISO3166_1',
+              CodeMeaning: 'United States',
+            },
+          },
+        },
+        {
+          RelationshipType: 'HAS OBS CONTEXT',
+          ValueType: 'PNAME',
+          ConceptNameCode: {
+            CodeValue: '121008',
+            CodingSchemeDesignator: 'DCM',
+            CodeMeaning: 'Person Observer Name',
+          },
+          PersonName: 'web user',
+        },
+        {
+          RelationshipType: 'HAS OBS CONTEXT',
+          ValueType: 'TEXT',
+          ConceptNameCode: {
+            CodeValue: 'RP-100006',
+            CodingSchemeDesignator: '99RPH',
+            CodeMeaning: "Person Observer's Login Name",
+          },
+          TextValue: 'user',
+        },
+        {
+          RelationshipType: 'HAS CONCEPT MOD',
+          ValueType: 'CODE',
+          ConceptNameCode: {
+            CodeValue: '121058',
+            CodingSchemeDesignator: 'DCM',
+            CodeMeaning: 'Procedure reported',
+          },
+          ConceptCode: {
+            CodeValue: '1',
+            CodingSchemeDesignator: '99dcmjs',
+            CodeMeaning: 'Unknown procedure',
+          },
+        },
+        {
+          RelationshipType: 'CONTAINS',
+          ValueType: 'CONTAINER',
+          ConceptNameCode: {
+            CodeValue: '126200',
+            CodingSchemeDesignator: 'DCM',
+            CodeMeaning: 'Image Library Group',
+          },
+          ContinuityOfContent: 'SEPARATE',
+          Content: {
+            RelationshipType: 'CONTAINS',
+            ValueType: 'IMAGE',
+            ReferencedSOP: {
+              ReferencedSOPClass: dataset.SOPClass,
+              ReferencedSOPInstance: dataset.SOPInstance,
+            },
+          },
+        },
+        {
+          RelationshipType: 'CONTAINS',
+          ValueType: 'CONTAINER',
+          ConceptNameCode: {
+            CodeValue: '125007',
+            CodingSchemeDesignator: 'DCM',
+            CodeMeaning: 'Measurement Group',
+          },
+          ContinuityOfContent: 'SEPARATE',
+          Content: measurementGroupContent,
+        },
+      ];
+
+      var measurementGroupContentItem = function(handles, distance, frame) {
+        return ([
+          {
+            RelationshipType: 'HAS OBS CONTEXT',
+            ValueType: 'TEXT',
+            ConceptNameCode: {
+              CodeValue: '112039',
+              CodingSchemeDesignator: 'DCM',
+              CodeMeaning: 'Tracking Identifier',
+            },
+            TextValue: 'web annotation',
+          },
+          {
+            RelationshipType: 'HAS OBS CONTEXT',
+            ValueType: 'UIDREF',
+            ConceptNameCode: {
+              CodeValue: '112040',
+              CodingSchemeDesignator: 'DCM',
+              CodeMeaning: 'Tracking Unique Identifier',
+            },
+            TextValue: DicomMetaDictionary.uid(),
+          },
+          {
+            RelationshipType: 'CONTAINS',
+            ValueType: 'CODE',
+            ConceptNameCode: {
+              CodeValue: '121071',
+              CodingSchemeDesignator: 'DCM',
+              CodeMeaning: 'Finding',
+            },
+            ConceptCode: {
+              CodeValue: 'SAMPLEFINDING',
+              CodingSchemeDesignator: '99dcmjs',
+              CodeMeaning: 'Sample Finding',
+            },
+          },
+          {
+            RelationshipType: 'CONTAINS',
+            ValueType: 'NUM',
+            ConceptNameCode: {
+              CodeValue: 'G-D7FE',
+              CodingSchemeDesignator: 'SRT',
+              CodeMeaning: 'Length',
+            },
+            MeasuredValue: {
+              MeasurementUnitsCode: {
+                CodeValue: 'mm',
+                CodingSchemeDesignator: 'UCUM',
+                CodingSchemeVersion: '1.4',
+                CodeMeaning: 'millimeter',
+              },
+            },
+            NumericValue: distance,
+            Content: {
+              RelationshipType: 'INFERRED FROM',
+              ValueType: 'SCOORD',
+              GraphicType: 'POLYLINE',
+              GraphicData: [ handles.start.x, handles.start.y, handles.end.x, handles.end.y ],
+              Content: {
+                RelationshipType: 'SELECTED FROM',
+                ValueType: 'IMAGE',
+                ReferencedSOP: {
+                  ReferencedSOPClass: dataset.SOPClass,
+                  ReferencedSOPInstance: dataset.SOPInstance,
+                  ReferencedFrameNumber: frame,
+                }
+              },
+            },
+          },
+        ]);
+      }
+
       dc0.baseStack.imageIds.forEach(function(imageId) {
         if (imageToolState[imageId]) {
           imageToolState[imageId].length.data.forEach(function(length) {
             var handles = length.handles;
-            var measurement = {
-              TrackingIdentifier: DicomMetaDictionary.uid(),
-              TrackingUniqueIdentifier: DicomMetaDictionary.uid(),
-              Finding: "No finding specified",
-              Length: length.length,
-              Units: "pixels",
-              InferredFrom: [{
-                SCOORD: {
-                  POLYLINE: [ handles.start.x, handles.start.y, handles.end.x, handles.end.y ]
-                }
-                }]
-            }
-            measurements.push(measurement);
+            var frame = 0; // TODO parse this from imageId
+            measurementGroupContent.push(measurementGroupContentItem(handles, length.length, frame));
           });
         }
       });
@@ -261,14 +426,18 @@
 
     function downloadReport() {
       populateReport(dc0.multiframe);
-      /*let zip = new JSZip();
-      zip.file("report.dcm", multiBlob);
+      let multiframeBlob = datasetToBlob(dc0.multiframe);
+      dc0.report.dataset._meta = dc0.multiframe._meta;
+      let reportBlob = datasetToBlob(dc0.report.dataset);
+      let zip = new JSZip();
+      zip.file("multiframe.dcm", multiframeBlob);
+      zip.file("report.dcm", reportBlob);
       zip.generateAsync({type: "blob"})
         .then(function(contents) {
-          saveAs(contents, "derivedDICOM.zip", true);
+          saveAs(contents, "report.zip", true);
           resetDICOMzero();
           status(`Finished, waiting for more DICOM files (drop them below).`);
-        });*/
+        });
     }
 
     $('#sampleData').click(function(event) {
@@ -306,7 +475,6 @@
 
       status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
       dc0.readOneFile(drawSampleDatasets);
-      $('.dicomControls').attr('disabled', false);
     }
 
     $('#dropZone').bind('drop', handleFileDrop);
