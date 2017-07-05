@@ -33,9 +33,25 @@
                  onselectstart='return false;'
                  onmousedown='return false;'>
                 <div id="dicomImage"
-                     style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
+                     style="width:512px;height:512px;top:0px;left:0px; position:absolute; border: 1px solid black;">
                 </div>
             </div>
+            <table id="reportTable" class="table">
+              <thead>
+                <tr>
+                  <th>Frame</th>
+                  <th>Length</th>
+                </tr>
+              </thead>
+              <tbody id='reportBody'>
+                <tr class='reportRow'>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre id='reportDump'>
+            </pre>
         </div>
 
         <div class="col-xs-3">
@@ -81,9 +97,8 @@
 
     dc0 = new DICOMZero();
     const element = document.getElementById('dicomImage');
+    $(element).on('CornerstoneToolsMeasurementModified', updateMeasurementTable)
     const dropZone = document.getElementById('dropZone');
-
-
     cornerstone.enable(element);
 
     function resetDICOMzero() {
@@ -196,6 +211,21 @@
           $('p#statusLine').text("Now perform length measurements and download report when finished.");
           $('.dicomControls').prop('disabled', false)
         });
+      });
+    }
+
+    function updateMeasurementTable(event) {
+      $('.reportRow').remove();
+      const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
+      dc0.baseStack.imageIds.forEach(function(imageId) {
+        if (imageToolState[imageId]) {
+          imageToolState[imageId].length.data.forEach(function(length) {
+            var handles = length.handles;
+            var frame = Number(imageId.slice(imageId.lastIndexOf('frame')).split('=')[1]); // TODO: frame is explicit somewhere?
+            let row = '<tr class="reportRow"><td>'+frame+'</td><td>'+length.length.toFixed(2)+'</td></tr>';
+            $('#reportBody').append(row);
+          });
+        }
       });
     }
 
@@ -435,6 +465,7 @@
 
     function downloadReport() {
       populateReport(dc0.multiframe);
+      $('#reportDump').text(JSON.stringify(dc0.report.dataset, null,2));
       let multiframeBlob = datasetToBlob(dc0.multiframe);
       dc0.report.dataset._meta = dc0.multiframe._meta;
       let reportBlob = datasetToBlob(dc0.report.dataset);
