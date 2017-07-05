@@ -30,6 +30,7 @@ class DerivedDataset {
     o.ContentCreatorName = options.ContentCreatorName || "";
 
     o.ImageComments = options.ImageComments || "NOT FOR CLINICAL USE";
+    o.ContentQualification = "RESEARCH";
 
     this.referencedDatasets = datasets; // list of one or more dicom-like object instances
     this.referencedDataset = this.referencedDatasets[0];
