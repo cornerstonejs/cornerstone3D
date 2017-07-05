@@ -69,6 +69,25 @@ class DerivedDataset {
       "PatientAge",
       "StudyInstanceUID",
       "StudyID",]);
+
+    this.assignFromOptions([
+      "Manufacturer",
+      "SoftwareVersions",
+      "DeviceSerialNumber",
+      "ManufacturerModelName",
+      "SeriesDescription",
+      "SeriesNumber",
+      "ContentLabel",
+      "ContentDescription",
+      "ContentCreatorName",
+      "ImageComments",
+      "SeriesDate",
+      "SeriesTime",
+      "ContentDate",
+      "ContentTime",
+      "ContentQualification",
+      "SOPInstanceUID",
+      "SeriesInstanceUID",]);
   }
 
   static copyDataset(dataset) {
@@ -109,24 +128,6 @@ class DerivedPixels extends DerivedDataset {
       "BitsStored",
       "HighBit",
     ]);
-
-    this.assignFromOptions([
-      "Manufacturer",
-      "SoftwareVersions",
-      "DeviceSerialNumber",
-      "ManufacturerModelName",
-      "SeriesDescription",
-      "SeriesNumber",
-      "ContentLabel",
-      "ContentDescription",
-      "ContentCreatorName",
-      "ImageComments",
-      "SeriesDate",
-      "SeriesTime",
-      "ContentDate",
-      "ContentTime",
-      "SOPInstanceUID",
-      "SeriesInstanceUID",]);
 
     //
     // TODO: more carefully copy only PixelMeasures and related
