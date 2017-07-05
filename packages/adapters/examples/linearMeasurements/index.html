@@ -465,7 +465,7 @@
 
     function downloadReport() {
       populateReport(dc0.multiframe);
-      $('#reportDump').text(JSON.stringify(dc0.report.dataset, null,2));
+      $('#reportDump').text(JSON.stringify(dc0.report.dataset, null,4));
       let multiframeBlob = datasetToBlob(dc0.multiframe);
       dc0.report.dataset._meta = dc0.multiframe._meta;
       let reportBlob = datasetToBlob(dc0.report.dataset);
