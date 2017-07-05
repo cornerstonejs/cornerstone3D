@@ -326,28 +326,11 @@ class StructuredReport extends DerivedDataset {
     this.assignToDataset({
       "SOPClass": "ComprehensiveSR",
       "Modality": "SR",
-      "ValueType": "Container",
+      "ValueType": "CONTAINER",
     });
 
     this.assignFromReference([
       "FrameOfReferenceUID",
     ]);
-
-    this.assignFromOptions([
-      "Manufacturer",
-      "SoftwareVersions",
-      "DeviceSerialNumber",
-      "ManufacturerModelName",
-      "SeriesDescription",
-      "SeriesNumber",
-      "ContentLabel",
-      "ContentDescription",
-      "ContentCreatorName",
-      "SeriesDate",
-      "SeriesTime",
-      "ContentDate",
-      "ContentTime",
-      "SOPInstanceUID",
-      "SeriesInstanceUID",]);
   }
 }
