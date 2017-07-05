@@ -21,8 +21,10 @@
 
     <div class="row">
         <button id="sampleData">Get Sample Data</button><p id="statusLine"></p>
+        <!--
         <p> or</p>
         <p id='status'>Drag and drop DICOM files here...</p>
+        -->
         <div class="col-xs-9" id="dropZone">
             <div style="width:512px;height:512px;position:relative;display:inline-block;"
                  oncontextmenu="return false"
@@ -74,9 +76,13 @@
 <script>
   var dc0;
   $(document).ready(function() {
+
+    $('.dicomControls').prop('disabled', true)
+
     dc0 = new DICOMZero();
     const element = document.getElementById('dicomImage');
     const dropZone = document.getElementById('dropZone');
+
 
     cornerstone.enable(element);
 
@@ -187,7 +193,8 @@
           cornerstoneTools.stackScrollWheel.activate(element);
           cornerstoneTools.stackScrollKeyboard.activate(element);
 
-          $('p#statusLine').text("");
+          $('p#statusLine').text("Now perform length measurements and download report when finished.");
+          $('.dicomControls').prop('disabled', false)
         });
       });
     }
