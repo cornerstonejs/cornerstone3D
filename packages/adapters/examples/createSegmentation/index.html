@@ -38,6 +38,9 @@
             style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
           </div>
         </div>
+        <p>Segmentation header:</p>
+        <pre id='segmentationDump'>
+        </pre>
       </div>
 
 
@@ -287,6 +290,7 @@
 
     function downloadDatasets() {
       populateSegmentationMask(dc0.seg.dataset);
+      $('#segmentationDump').text(JSON.stringify(dc0.seg.dataset, null,4));
       let multiBlob = datasetToBlob(dc0.multiframe);
       let segBlob = datasetToBlob(dc0.seg.dataset);
       let zip = new JSZip();
