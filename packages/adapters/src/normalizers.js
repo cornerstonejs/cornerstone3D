@@ -6,46 +6,49 @@ class Normalizer {
     this.dataset = undefined; // a normalized multiframe dicom object instance
   }
 
-  static consistentSOPClass(datasets) {
-    // return sopClass if all exist and match, otherwise undefined
-    let sopClass;
+  static consistentSOPClassUIDs(datasets) {
+    // return sopClassUID if all exist and match, otherwise undefined
+    let sopClassUID;
     datasets.forEach(function(dataset) {
-      if (!dataset.SOPClass) {
+      if (!dataset.SOPClassUID) {
         return(undefined);
       }
-      if (!sopClass) {
-       sopClass = dataset.SOPClass;
+      if (!sopClassUID) {
+       sopClassUID = dataset.SOPClassUID;
       }
-      if (dataset.SOPClass !== sopClass) {
-        console.error('inconsistent sopClasses: ', dataset.SOPClass, sopClass);
+      if (dataset.SOPClassUID !== sopClassUID) {
+        console.error('inconsistent sopClassUIDs: ', dataset.SOPClassUID, sopClassUID);
         return(undefined);
       }
     });
-    return(sopClass);
+    return(sopClassUID);
   }
 
-  static sopClassMap() {
-    return ({
-      "CTImage" : CTImageNormalizer,
-      "MRImage" : MRImageNormalizer,
-      "EnhancedMRImage" : EnhancedMRImageNormalizer,
-      "EnhancedUSVolume" : EnhancedUSVolumeNormalizer,
-      "PETImage" : PETImageNormalizer,
-      "EnhancedPETImage": PETImageNormalizer,
-      "PositronEmissionTomographyImage" : PETImageNormalizer,
-      "Segmentation" : SEGImageNormalizer,
-      "DeformableSpatialRegistration" : DSRNormalizer,
-    });
+  static normalizerForSOPClassUID(sopClassUID) {
+    let toUID = DicomMetaDictionary.sopClassUIDsByName;
+    let sopClassUIDMap = {};
+    sopClassUIDMap[toUID.CTImage] = CTImageNormalizer;
+    sopClassUIDMap[toUID.MRImage] = MRImageNormalizer;
+    sopClassUIDMap[toUID.EnhancedMRImage] = EnhancedMRImageNormalizer;
+    sopClassUIDMap[toUID.EnhancedUSVolume] = EnhancedUSVolumeNormalizer;
+    sopClassUIDMap[toUID.PETImage] = PETImageNormalizer;
+    sopClassUIDMap[toUID.EnhancedPETImage] = PETImageNormalizer;
+    sopClassUIDMap[toUID.PositronEmissionTomographyImage] = PETImageNormalizer;
+    sopClassUIDMap[toUID.Segmentation] = SEGImageNormalizer;
+    sopClassUIDMap[toUID.DeformableSpatialRegistration] = DSRNormalizer;
+    return(sopClassUIDMap[sopClassUID]);
   }
 
   static isMultiframe(ds=this.dataset) {
-    return ([
-      "EnhancedMRImage",
-      "EnhancedCTImage",
-      "EnhancedUSImage",
-      "EnhancedPETImage",
-      "Segmentation",
-    ].indexOf(ds.SOPClass) !== -1);
+    let toUID = DicomMetaDictionary.sopClassUIDsByName;
+    let multiframeSOPClasses = [
+      toUID.EnhancedMRImage,
+      toUID.EnhancedCTImage,
+      toUID.EnhancedUSImage,
+      toUID.EnhancedPETImage,
+      toUID.Segmentation,
+    ];
+    return (multiframeSOPClasses.indexOf(ds.SOPClassUID) !== -1);
   }
 
   normalize() {
@@ -53,10 +56,11 @@ class Normalizer {
   }
 
   static normalizeToDataset(datasets) {
-    let sopClass = Normalizer.consistentSOPClass(datasets);
-    let normalizerClass = Normalizer.sopClassMap()[sopClass];
+    console.log(datasets);
+    let sopClassUID = Normalizer.consistentSOPClassUIDs(datasets);
+    let normalizerClass = Normalizer.normalizerForSOPClassUID(sopClassUID);
     if (!normalizerClass) {
-      console.error('no normalizerClass for ', sopClass);
+      console.error('no normalizerClass for ', sopClassUID);
       return(undefined);
     }
     let normalizer = new normalizerClass(datasets);
@@ -87,7 +91,7 @@ class ImageNormalizer extends Normalizer {
     ds.NumberOfFrames = this.datasets.length;
 
     // TODO: develop sets of elements to copy over in loops
-    ds.SOPClass = referenceDataset.SOPClass;
+    ds.SOPClassUID = referenceDataset.SOPClassUID;
     ds.Rows = referenceDataset.Rows;
     ds.Columns = referenceDataset.Columns;
     ds.BitsAllocated = referenceDataset.BitsAllocated;
@@ -166,11 +170,11 @@ class ImageNormalizer extends Normalizer {
 
     // shared
 
-    ds.SharedFunctionalGroups = {
-      PlaneOrientation : {
+    ds.SharedFunctionalGroupsSequence = {
+      PlaneOrientationSequence : {
         ImageOrientationPatient : dataset0.ImageOrientationPatient,
       },
-      PixelMeasures : {
+      PixelMeasuresSequence : {
         PixelSpacing : dataset0.PixelSpacing,
         SpacingBetweenSlices : Math.abs(distance1 - distance0),
       },
@@ -178,16 +182,16 @@ class ImageNormalizer extends Normalizer {
 
     // per-frame
 
-    ds.PerFrameFunctionalGroups = [];
+    ds.PerFrameFunctionalGroupsSequence = [];
     distanceDatasetPairs.forEach(function(pair) {
-      ds.PerFrameFunctionalGroups.push({
-        PlanePosition : {
+      ds.PerFrameFunctionalGroupsSequence.push({
+        PlanePositionSequence : {
           ImagePositionPatient: pair[1].ImagePositionPatient,
         },
       });
     });
 
-    ds.ReferencedSeries = {
+    ds.ReferencedSeriesSequence = {
       SeriesInstanceUID : dataset0.SeriesInstanceUID,
       ReferencedInstance : new Array(this.datasets.length),
     }
@@ -196,22 +200,22 @@ class ImageNormalizer extends Normalizer {
     // and set the referenced series uid
     let datasetIndex = 0;
     this.datasets.forEach(function(dataset) {
-      ds.PerFrameFunctionalGroups[datasetIndex].FrameVOILUT = {
+      ds.PerFrameFunctionalGroupsSequence[datasetIndex].FrameVOILUTSequence = {
         WindowCenter: dataset.WindowCenter,
         WindowWidth: dataset.WindowWidth,
       };
-      ds.ReferencedSeries.ReferencedInstance[datasetIndex] = {
-        ReferencedSOPClass: dataset.SOPClass,
+      ds.ReferencedSeriesSequence.ReferencedInstance[datasetIndex] = {
+        ReferencedSOPClass: dataset.SOPClassUID,
         ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
       }
       datasetIndex++;
     });
 
     let dimensionUID = DicomMetaDictionary.uid();
-    this.dataset.DimensionOrganization = {
+    this.dataset.DimensionOrganizationSequence = {
       DimensionOrganizationUID : dimensionUID
     };
-    this.dataset.DimensionIndex = [
+    this.dataset.DimensionIndexSequence = [
       {
         DimensionOrganizationUID : dimensionUID,
         DimensionIndexPointer : 2097202,
@@ -249,13 +253,14 @@ class ImageNormalizer extends Normalizer {
       ds.PresentationLUTShape = "IDENTITY";
     }
 
-    if (!ds.SharedFunctionalGroups) {
-      console.error('Can only process multiframe data with SharedFunctionalGroups');
+    if (!ds.SharedFunctionalGroupsSequence) {
+      console.error('Can only process multiframe data with SharedFunctionalGroupsSequence');
     }
 
+    // TODO: special case!
     if (ds.BodyPartExamined === "PROSTATE") {
-      ds.SharedFunctionalGroups.FrameAnatomy = {
-        AnatomicRegion: {
+      ds.SharedFunctionalGroupsSequence.FrameAnatomySequence = {
+        AnatomicRegionSequence: {
           CodeValue: "T-9200B",
           CodingSchemeDesignator: "SRT",
           CodeMeaning: "Prostate",
@@ -266,7 +271,7 @@ class ImageNormalizer extends Normalizer {
 
     let rescaleIntercept = ds.RescaleIntercept || 0.;
     let rescaleSlope = ds.RescaleSlope || 1.;
-    ds.SharedFunctionalGroups.PixelValueTransformation = {
+    ds.SharedFunctionalGroupsSequence.PixelValueTransformationSequence = {
       RescaleIntercept: rescaleIntercept,
       RescaleSlope: rescaleSlope,
       RescaleType: "US",
@@ -275,7 +280,7 @@ class ImageNormalizer extends Normalizer {
     let frameNumber = 1;
     this.datasets.forEach(dataset=>{
       let frameTime = dataset.AcquisitionDate + dataset.AcquisitionTime;
-      ds.PerFrameFunctionalGroups[frameNumber-1].FrameContent = {
+      ds.PerFrameFunctionalGroupsSequence[frameNumber-1].FrameContentSequence = {
         FrameAcquisitionDateTime: frameTime,
         FrameReferenceDateTime: frameTime,
         FrameAcquisitionDuration: 0,
@@ -304,13 +309,13 @@ class ImageNormalizer extends Normalizer {
       ds.WindowCenter = []; // both must exist and be the same length
       ds.WindowWidth = [];
       // provide a volume-level window/level guess (mean of per-frame)
-      if (ds.PerFrameFunctionalGroups) {
+      if (ds.PerFrameFunctionalGroupsSequence) {
         let wcww = {center: 0, width: 0, count: 0};
-        ds.PerFrameFunctionalGroups.forEach(function(functionalGroup) {
+        ds.PerFrameFunctionalGroupsSequence.forEach(function(functionalGroup) {
           if (functionalGroup.FrameVOILUT) {
-            let wc = functionalGroup.FrameVOILUT.WindowCenter;
-            let ww = functionalGroup.FrameVOILUT.WindowWidth;
-            if (functionalGroup.FrameVOILUT && wc && ww) {
+            let wc = functionalGroup.FrameVOILUTSequence.WindowCenter;
+            let ww = functionalGroup.FrameVOILUTSequence.WindowWidth;
+            if (functionalGroup.FrameVOILUTSequence && wc && ww) {
               if (Array.isArray(wc)) {
                 wc = wc[0];
               }
@@ -339,8 +344,9 @@ class MRImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
     // TODO: provide option at export to swap in LegacyConverted UID
-    //this.dataset.SOPClass = "LegacyConvertedEnhancedMRImage";
-    this.dataset.SOPClass = "EnhancedMRImage";
+    let toUID = DicomMetaDictionary.sopClassUIDsByName;
+    //this.dataset.SOPClassUID = "LegacyConvertedEnhancedMRImage";
+    this.dataset.SOPClassUID = toUID.EnhancedMRImage;
   }
 
   normalizeMultiframe() {
@@ -354,7 +360,7 @@ class MRImageNormalizer extends ImageNormalizer {
       ds.ImageType = ["ORIGINAL", "PRIMARY", "OTHER", "NONE",];
     }
 
-    ds.SharedFunctionalGroups.MRImageFrameType = {
+    ds.SharedFunctionalGroupsSequence.MRImageFrameType = {
       FrameType: ds.ImageType,
       PixelPresentation: "MONOCHROME",
       VolumetricProperties: "VOLUME",
@@ -381,8 +387,9 @@ class CTImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
     // TODO: provide option at export to swap in LegacyConverted UID
-    //this.dataset.SOPClass = "LegacyConvertedEnhancedCTImage";
-    this.dataset.SOPClass = "EnhancedCTImage";
+    let toUID = DicomMetaDictionary.sopClassUIDsByName;
+    //this.dataset.SOPClassUID = "LegacyConvertedEnhancedCTImage";
+    this.dataset.SOPClassUID = toUID.EnhancedCTImage;
   }
 }
 
@@ -390,8 +397,9 @@ class PETImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
     // TODO: provide option at export to swap in LegacyConverted UID
-    //this.dataset.SOPClass = "LegacyConvertedEnhancedPETImage";
-    this.dataset.SOPClass = "EnhancedPETImage";
+    let toUID = DicomMetaDictionary.sopClassUIDsByName;
+    //this.dataset.SOPClassUID = "LegacyConvertedEnhancedPETImage";
+    this.dataset.SOPClassUID = toUID.EnhancedPETImage;
   }
 }
 

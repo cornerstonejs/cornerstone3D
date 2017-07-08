@@ -142,8 +142,8 @@
       const numFrames = Number(multiframe.NumberOfFrames);
       for (let i=0; i < numFrames; i++) {
         let segNum;
-        if (multiframe.PerFrameFunctionalGroups[i].SegmentIdentification) {
-          segNum = multiframe.PerFrameFunctionalGroups[i].SegmentIdentification.ReferencedSegmentNumber;
+        if (multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence) {
+          segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence.ReferencedSegmentNumber;
         }
 
         if (segmentNumber && segNum && segNum === segmentNumber) {
@@ -172,7 +172,7 @@
         dc0.seg = new Segmentation([dc0.multiframe]);
 
         var cielab = Colors.rgb2DICOMLAB([1, 0, 0]);
-        dc0.seg.dataset.Segment[0].RecommendedDisplayCIELabValue = cielab;
+        dc0.seg.dataset.SegmentSequence[0].RecommendedDisplayCIELabValue = cielab;
         var imageIds = getImageIds(dc0.multiframe, baseImageId);
 
         const baseStack = {
@@ -223,13 +223,14 @@
           dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
 
           var multiframe = Normalizer.normalizeToDataset([dataset]);
+          console.log(multiframe);
 
           const numFrames = Number(multiframe.NumberOfFrames);
           for (let i=0; i < numFrames; i++) {
             const imageId = baseImageId + '?frame=' + i;
 
-            var funcGroups = multiframe.PerFrameFunctionalGroups[i];
-            var imagePositionArray = funcGroups.PlanePosition.ImagePositionPatient;
+            var funcationalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
+            var imagePositionArray = funcationalGroup.PlanePositionSequence.ImagePositionPatient;
 
             addMetaData('imagePlane', imageId, {
               imagePositionPatient: {

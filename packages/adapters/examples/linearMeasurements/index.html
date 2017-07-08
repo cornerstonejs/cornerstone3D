@@ -136,8 +136,8 @@
           for (let i=0; i < numFrames; i++) {
             const imageId = baseImageId + '?frame=' + i;
 
-            var funcGroups = multiframe.PerFrameFunctionalGroups[i];
-            var imagePositionArray = funcGroups.PlanePosition.ImagePositionPatient;
+            var functionalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
+            var imagePositionArray = functionalGroup.PlanePositionSequence.ImagePositionPatient;
 
             addMetaData('imagePlane', imageId, {
               imagePositionPatient: {
@@ -235,59 +235,64 @@
       const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
 
       dc0.report = new StructuredReport([dataset]);
-      var measurementGroupContent = [];
+      var measurementGroupContentSequence = [];
 
-      dc0.report.dataset.ConceptNameCode = {
+      dc0.report.dataset.ConceptNameCodeSequence = {
         CodeValue: '126000',
         CodingSchemeDesignator: 'DCM',
         CodeMeaning: 'Imaging Measurement Report',
       };
       dc0.report.dataset.ContinuityOfContent = 'SEPARATE';
-      dc0.report.dataset.PerformedProcedureCode = undefined;
+      dc0.report.dataset.PerformedProcedureCodeSequence = [];
       dc0.report.dataset.CompletionFlag = 'COMPLETE';
       dc0.report.dataset.VerificationFlag = 'UNVERIFIED';
-      dc0.report.dataset.ReferencedPerformedProcedureStep = [];
-      dc0.report.dataset.PerformedProcedureCode = [];
+      dc0.report.dataset.ReferencedPerformedProcedureStepSequence = [];
       dc0.report.dataset.InstanceNumber = 1;
-      dc0.report.dataset.CurrentRequestedProcedureEvidence = {
-        StudyInstance: dataset.StudyInstanceUID,
-        ReferencedSeries: {
-          SeriesInstance: dataset.SeriesInstanceUID,
-          ReferencedSOP: {
-            ReferencedSOPClass: dataset.SOPClass,
-            ReferencedSOPInstance: dataset.SOPInstanceUID,
+      dc0.report.dataset.CurrentRequestedProcedureEvidenceSequence = {
+        StudyInstanceUID: dataset.StudyInstanceUID,
+        ReferencedSeriesSequence: {
+          SeriesInstanceUID: dataset.SeriesInstanceUID,
+          ReferencedSOPSequence: {
+            ReferencedSOPClassUID: dataset.SOPClassUID,
+            ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
           },
         },
       };
+      dc0.report.dataset.CodingSchemeIdentificationSequence = {
+        CodingSchemeDesignator: "99dcmjs",
+        CodingSchemeName: "Codes used for dcmjs",
+        CodingSchemeVersion: "0",
+        CodingSchemeResponsibleOrganization: "https://github.com/pieper/dcmjs",
+      };
 
-      dc0.report.dataset.ContentTemplate = {
+      dc0.report.dataset.ContentTemplateSequence = {
         MappingResource: 'DCMR',
         TemplateIdentifier: '1500',
       };
 
-      dc0.report.dataset.Content = [
+      dc0.report.dataset.ContentSequence = [
         {
           RelationshipType: 'HAS CONCEPT MOD',
           ValueType: 'CODE',
-          ConceptNameCode: {
+          ConceptNameCodeSequence: {
             CodeValue: '121049',
             CodingSchemeDesignator: 'DCM',
             CodeMeaning: 'Language of Content Item and Descendants',
           },
-          ConceptCode: {
+          ConceptCodeSequence: {
             CodeValue: 'eng',
             CodingSchemeDesignator: 'RFC3066',
             CodeMeaning: 'English',
           },
-          Content: {
+          ContentSequence: {
             RelationshipType: 'HAS CONCEPT MOD',
             ValueType: 'CODE',
-            ConceptNameCode: {
+            ConceptNameCodeSequence: {
               CodeValue: '121046',
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Country of Language',
             },
-            ConceptCode: {
+            ConceptCodeSequence: {
               CodeValue: 'US',
               CodingSchemeDesignator: 'ISO3166_1',
               CodeMeaning: 'United States',
@@ -297,19 +302,19 @@
         {
           RelationshipType: 'HAS OBS CONTEXT',
           ValueType: 'PNAME',
-          ConceptNameCode: {
+          ConceptNameCodeSequence: {
             CodeValue: '121008',
             CodingSchemeDesignator: 'DCM',
             CodeMeaning: 'Person Observer Name',
           },
-          PersonName: 'web user',
+          PersonName: 'user^web',
         },
         {
           RelationshipType: 'HAS OBS CONTEXT',
           ValueType: 'TEXT',
-          ConceptNameCode: {
+          ConceptNameCodeSequence: {
             CodeValue: 'RP-100006',
-            CodingSchemeDesignator: '99RPH',
+            CodingSchemeDesignator: '99dcmjs',
             CodeMeaning: "Person Observer's Login Name",
           },
           TextValue: 'user',
@@ -317,12 +322,12 @@
         {
           RelationshipType: 'HAS CONCEPT MOD',
           ValueType: 'CODE',
-          ConceptNameCode: {
+          ConceptNameCodeSequence: {
             CodeValue: '121058',
             CodingSchemeDesignator: 'DCM',
             CodeMeaning: 'Procedure reported',
           },
-          ConceptCode: {
+          ConceptCodeSequence: {
             CodeValue: '1',
             CodingSchemeDesignator: '99dcmjs',
             CodeMeaning: 'Unknown procedure',
@@ -331,27 +336,27 @@
         {
           RelationshipType: 'CONTAINS',
           ValueType: 'CONTAINER',
-          ConceptNameCode: {
+          ConceptNameCodeSequence: {
             CodeValue: '111028',
             CodingSchemeDesignator: 'DCM',
             CodeMeaning: 'Image Library',
           },
           ContinuityOfContent: 'SEPARATE',
-          Content: {
+          ContentSequence: {
             RelationshipType: 'CONTAINS',
             ValueType: 'CONTAINER',
-            ConceptNameCode: {
+            ConceptNameCodeSequence: {
               CodeValue: '126200',
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Image Library Group',
             },
             ContinuityOfContent: 'SEPARATE',
-            Content: {
+            ContentSequence: {
               RelationshipType: 'CONTAINS',
               ValueType: 'IMAGE',
-              ReferencedSOP: {
-                ReferencedSOPClass: dataset.SOPClass,
-                ReferencedSOPInstance: dataset.SOPInstanceUID,
+              ReferencedSOPSequence: {
+                ReferencedSOPClassUID: dataset.SOPClassUID,
+                ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
               },
             },
           },
@@ -359,22 +364,22 @@
         {
           RelationshipType: 'CONTAINS',
           ValueType: 'CONTAINER',
-          ConceptNameCode: {
+          ConceptNameCodeSequence: {
             CodeValue: '126010',
             CodingSchemeDesignator: 'DCM',
             CodeMeaning: 'Imaging Measurements',
           },
           ContinuityOfContent: 'SEPARATE',
-          Content: {
+          ContentSequence: {
             RelationshipType: 'CONTAINS',
             ValueType: 'CONTAINER',
-            ConceptNameCode: {
+            ConceptNameCodeSequence: {
               CodeValue: '125007',
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Measurement Group',
             },
             ContinuityOfContent: 'SEPARATE',
-            Content: measurementGroupContent,
+            ContentSequence: measurementGroupContentSequence,
           },
         },
       ];
@@ -384,7 +389,7 @@
           {
             RelationshipType: 'HAS OBS CONTEXT',
             ValueType: 'TEXT',
-            ConceptNameCode: {
+            ConceptNameCodeSequence: {
               CodeValue: '112039',
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Tracking Identifier',
@@ -394,7 +399,7 @@
           {
             RelationshipType: 'HAS OBS CONTEXT',
             ValueType: 'UIDREF',
-            ConceptNameCode: {
+            ConceptNameCodeSequence: {
               CodeValue: '112040',
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Tracking Unique Identifier',
@@ -404,12 +409,12 @@
           {
             RelationshipType: 'CONTAINS',
             ValueType: 'CODE',
-            ConceptNameCode: {
+            ConceptNameCodeSequence: {
               CodeValue: '121071',
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Finding',
             },
-            ConceptCode: {
+            ConceptCodeSequence: {
               CodeValue: 'SAMPLEFINDING',
               CodingSchemeDesignator: '99dcmjs',
               CodeMeaning: 'Sample Finding',
@@ -418,13 +423,13 @@
           {
             RelationshipType: 'CONTAINS',
             ValueType: 'NUM',
-            ConceptNameCode: {
+            ConceptNameCodeSequence: {
               CodeValue: 'G-D7FE',
               CodingSchemeDesignator: 'SRT',
               CodeMeaning: 'Length',
             },
-            MeasuredValue: {
-              MeasurementUnitsCode: {
+            MeasuredValueSequence: {
+              MeasurementUnitsCodeSequence: {
                 CodeValue: 'mm',
                 CodingSchemeDesignator: 'UCUM',
                 CodingSchemeVersion: '1.4',
@@ -432,17 +437,17 @@
               },
               NumericValue: distance,
             },
-            Content: {
+            ContentSequence: {
               RelationshipType: 'INFERRED FROM',
               ValueType: 'SCOORD',
               GraphicType: 'POLYLINE',
               GraphicData: [ handles.start.x, handles.start.y, handles.end.x, handles.end.y ],
-              Content: {
+              ContentSequence: {
                 RelationshipType: 'SELECTED FROM',
                 ValueType: 'IMAGE',
-                ReferencedSOP: {
-                  ReferencedSOPClass: dataset.SOPClass,
-                  ReferencedSOPInstance: dataset.SOPInstanceUID,
+                ReferencedSOPSequence: {
+                  ReferencedSOPClassUID: dataset.SOPClassUID,
+                  ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
                   ReferencedFrameNumber: frame,
                 }
               },
@@ -457,7 +462,7 @@
             var handles = length.handles;
             var frame = Number(imageId.slice(imageId.lastIndexOf('frame')).split('=')[1]); // TODO: frame is explicit somewhere?
             // extend list in place
-            measurementGroupContent.push.apply(measurementGroupContent, measurementGroupContentItem(handles, length.length, frame));
+            measurementGroupContentSequence.push.apply(measurementGroupContentSequence, measurementGroupContentItem(handles, length.length, frame));
           });
         }
       });

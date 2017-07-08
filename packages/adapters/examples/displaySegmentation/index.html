@@ -123,7 +123,7 @@
           for (let i=0; i < numFrames; i++) {
             const imageId = baseImageId + '?frame=' + i;
 
-            var funcGroups = multiframe.PerFrameFunctionalGroups[i];
+            var funcGroups = multiframe.PerFrameFunctionalGroupsSequence[i];
             var imagePositionArray = funcGroups.PlanePosition.ImagePositionPatient;
 
             addMetaData('imagePlane', imageId, {
@@ -147,8 +147,8 @@
       const numFrames = Number(multiframe.NumberOfFrames);
       for (let i=0; i < numFrames; i++) {
         let segNum;
-        if (multiframe.PerFrameFunctionalGroups[i].SegmentIdentification) {
-          segNum = multiframe.PerFrameFunctionalGroups[i].SegmentIdentification.ReferencedSegmentNumber;
+        if (multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentification) {
+          segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentification.ReferencedSegmentNumber;
         }
 
         if ((segmentNumber && segNum && segNum === segmentNumber) ||

@@ -14,6 +14,7 @@ Overall the code should:
 * Provide a programmer-friendly JavaScript environment for using and manipulating DICOM objects
 * Include a set of useful demos to encourage correct usage of dcmjs and modern DICOM objects
 * Encourage correct referencing of instances and composite context when creating derived objects
+* Current target is modern web browsers, but a set of node-based utilities also makes sense someday.
 
 Architectural goals include:
 * Use modern JavaScript programming methods (currently ES6) but avoid heavy frameworks

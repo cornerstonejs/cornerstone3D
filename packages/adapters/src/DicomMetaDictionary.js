@@ -71,9 +71,7 @@ class DicomMetaDictionary {
   // converts from DICOM JSON Model dataset
   // to a natural dataset
   // - sequences become lists
-  // - the suffix "Sequence" is dropped
-  // - the suffix "UID" is dropped
-  // - uids are mapped to strings when known
+  // - single element lists are replaced by their first element
   // - object member names are dictionary, not group/element tag
   static naturalizeDataset(dataset) {
     var naturalDataset = {
@@ -99,52 +97,17 @@ class DicomMetaDictionary {
           naturalDataset._vrMap[naturalName] = data.vr;
         }
       }
-      if (/.*Sequence/.test(naturalName)) {
-        // remove Sequence from name of list
-        naturalName = naturalName.substring(0, naturalName.length - 'Sequence'.length);
-      }
       naturalDataset[naturalName] = data.Value;
       if (naturalDataset[naturalName].length == 1) {
         // only one value is not a list
         naturalDataset[naturalName] = naturalDataset[naturalName][0];
       }
-      if (/.*SOPClassUID/.test(naturalName)) {
-        // give natural language name to UID if available
-        var sopClassName = DicomMetaDictionary.sopClassNamesByUID[naturalDataset[naturalName]];
-        if (sopClassName) {
-          var uidlessName = naturalName;
-          if (/.*UID/.test(naturalName)) {
-            // strip the UID at the end, since this is now a name not a UID
-            uidlessName = naturalName.substring(0, naturalName.length-3);
-          }
-          delete naturalDataset[naturalName];
-          naturalDataset[uidlessName] = sopClassName;
-        }
-      }
     }
     return(naturalDataset);
   }
 
-  static denaturalizeName(naturalName) {
-    let name = naturalName;
-    var sequenceName = naturalName+"Sequence";
-    if (DicomMetaDictionary.nameMap[sequenceName]) {
-      name = sequenceName;
-    }
-    var uidName = name+"UID";
-    if (DicomMetaDictionary.nameMap[uidName]) {
-      name = uidName;
-    }
-    return (name);
-  }
-
   static denaturalizeValue(naturalValue) {
     let value = naturalValue;
-    // if it's a known UID, map back to numbers
-    var uid = DicomMetaDictionary.uidMap[naturalValue];
-    if (uid) {
-      value = uid;
-    }
     if (!Array.isArray(value)) {
       value = [value];
     }
@@ -159,8 +122,6 @@ class DicomMetaDictionary {
     Object.keys(dataset).forEach(naturalName => {
       // check if it's a sequence
       var name = naturalName;
-      name = DicomMetaDictionary.denaturalizeName(name);
-
       var entry = DicomMetaDictionary.nameMap[name];
       if (entry) {
         let dataValue = dataset[naturalName];
@@ -205,7 +166,10 @@ class DicomMetaDictionary {
         var tag = DicomMetaDictionary.unpunctuateTag(entry.tag);
         unnaturalDataset[tag] = dataItem;
       } else {
-        console.warn("Unknown name in dataset", name, ":", dataset[name]);
+        const validMetaNames = ["_vrMap", "_meta"];
+        if (validMetaNames.indexOf(name) == -1) {
+          console.warn("Unknown name in dataset", name, ":", dataset[name]);
+        }
       }
     });
     return (unnaturalDataset);
@@ -218,8 +182,8 @@ class DicomMetaDictionary {
     let meta = {
       // TODO: generate FileMetaInformationVersion de novo
       FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
-      MediaStorageSOPClass: dataset.SOPClass,
-      MediaStorageSOPInstance: dataset.SOPInstanceUID,
+      MediaStorageSOPClassUID: dataset.SOPClassUID,
+      MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
       TransferSyntaxUID: "1.2.840.10008.1.2",
       ImplementationClassUID: DicomMetaDictionary.uid(),
       ImplementationVersionName: "dcmio-0.0",
@@ -252,8 +216,9 @@ class DicomMetaDictionary {
   }
 
   static dateTime() {
+    // "2017-07-07T16:09:18.079Z" -> "20170707160918.079"
     let now = new Date();
-    return now.toISOString().replace(/:/g,'').slice(11,17);
+    return now.toISOString().replace(/[:\-TZ]/g,'');
   }
 
   static _generateNameMap() {
@@ -267,10 +232,10 @@ class DicomMetaDictionary {
   }
 
   static _generateUIDMap() {
-    DicomMetaDictionary.uidMap = {};
+    DicomMetaDictionary.sopClassUIDsByName = {};
     for (var uid in DicomMetaDictionary.sopClassNamesByUID) {
       var name = DicomMetaDictionary.sopClassNamesByUID[uid];
-      DicomMetaDictionary.uidMap[name] = uid;
+      DicomMetaDictionary.sopClassUIDsByName[name] = uid;
     }
   }
 }

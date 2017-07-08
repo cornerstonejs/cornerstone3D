@@ -116,7 +116,7 @@ class DerivedPixels extends DerivedDataset {
     });
 
     this.assignFromReference([
-      "SOPClass",
+      "SOPClassUID",
       "Modality",
       "FrameOfReferenceUID",
       "PositionReferenceIndicator",
@@ -133,15 +133,15 @@ class DerivedPixels extends DerivedDataset {
     // TODO: more carefully copy only PixelMeasures and related
     // TODO: add derivation references
     //
-    if (this.referencedDataset.SharedFunctionalGroups) {
-      this.dataset.SharedFunctionalGroups =
+    if (this.referencedDataset.SharedFunctionalGroupsSequence) {
+      this.dataset.SharedFunctionalGroupsSequence =
                     DerivedDataset.copyDataset(
-                      this.referencedDataset.SharedFunctionalGroups);
+                      this.referencedDataset.SharedFunctionalGroupsSequence);
     }
-    if (this.referencedDataset.PerFrameFunctionalGroups) {
-      this.dataset.PerFrameFunctionalGroups =
+    if (this.referencedDataset.PerFrameFunctionalGroupsSequence) {
+      this.dataset.PerFrameFunctionalGroupsSequence =
                     DerivedDataset.copyDataset(
-                      this.referencedDataset.PerFrameFunctionalGroups);
+                      this.referencedDataset.PerFrameFunctionalGroupsSequence);
     }
 
     // make an array of zeros for the pixels
@@ -183,7 +183,7 @@ class Segmentation extends DerivedPixels {
     super.derive();
 
     this.assignToDataset({
-      "SOPClass": "Segmentation",
+      "SOPClassUID": DicomMetaDictionary.sopClassUIDsByName.Segmentation,
       "Modality": "SEG",
       "SamplesPerPixel": "1",
       "PhotometricInterpretation": "MONOCHROME2",
@@ -197,10 +197,10 @@ class Segmentation extends DerivedPixels {
     });
 
     let dimensionUID = DicomMetaDictionary.uid();
-    this.dataset.DimensionOrganization = {
+    this.dataset.DimensionOrganizationSequence = {
       DimensionOrganizationUID : dimensionUID
     };
-    this.dataset.DimensionIndex = [
+    this.dataset.DimensionIndexSequence = [
       {
         DimensionOrganizationUID : dimensionUID,
         DimensionIndexPointer : 6422539,
@@ -216,9 +216,9 @@ class Segmentation extends DerivedPixels {
     ];
 
     // Example: Slicer tissue green
-    this.dataset.Segment = [
+    this.dataset.SegmentSequence = [
       {
-        SegmentedPropertyCategoryCode: {
+        SegmentedPropertyCategoryCodeSequence: {
           CodeValue: "T-D0050",
           CodingSchemeDesignator: "SRT",
           CodeMeaning: "Tissue"
@@ -228,7 +228,7 @@ class Segmentation extends DerivedPixels {
         SegmentAlgorithmType: "SEMIAUTOMATIC",
         SegmentAlgorithmName: "Slicer Prototype",
         RecommendedDisplayCIELabValue: [ 43802, 26566, 37721 ],
-        SegmentedPropertyTypeCode: {
+        SegmentedPropertyTypeCodeSequence: {
           CodeValue: "T-D0050",
           CodingSchemeDesignator: "SRT",
           CodeMeaning: "Tissue"
@@ -242,15 +242,15 @@ class Segmentation extends DerivedPixels {
     // This should allow Slicer and others to get the correct original
     // images when loading Legacy Converted Images, but it's a workaround
     // that really doesn't belong here.
-    if (this.referencedDataset.ReferencedSeries) {
-      this.dataset.ReferencedSeries =
+    if (this.referencedDataset.ReferencedSeriesSequence) {
+      this.dataset.ReferencedSeriesSequence =
                     DerivedDataset.copyDataset(
-                      this.referencedDataset.ReferencedSeries);
+                      this.referencedDataset.ReferencedSeriesSequence);
     } else {
-      this.dataset.ReferencedSeries = {
+      this.dataset.ReferencedSeriesSequence = {
         SeriesInstanceUID : this.referencedDataset.SeriesInstanceUID,
-        ReferencedInstance : [{
-          ReferencedSOPClass: this.referencedDataset.SOPClass,
+        ReferencedInstanceSequence : [{
+          ReferencedSOPClassUID: this.referencedDataset.SOPClassUID,
           ReferencedSOPInstanceUID: this.referencedDataset.SOPInstanceUID,
         }]
       }
@@ -259,30 +259,30 @@ class Segmentation extends DerivedPixels {
     // handle the case of a converted multiframe, so point to original source
     // TODO: only a single segment is created now
     for (let frameIndex = 0; frameIndex < this.dataset.NumberOfFrames; frameIndex++) {
-      this.dataset.PerFrameFunctionalGroups[frameIndex].DerivationImage = {
-        SourceImage: {
-          ReferencedSOPClass: this.referencedDataset.SOPClass,
+      this.dataset.PerFrameFunctionalGroupsSequence[frameIndex].DerivationImageSequence = {
+        SourceImageSequence: {
+          ReferencedSOPClassUID: this.referencedDataset.SOPClassUID,
           ReferencedSOPInstanceUID: this.referencedDataset.SOPInstanceUID,
           ReferencedFrameNumber: frameIndex+1,
-          PurposeOfReferenceCode: {
+          PurposeOfReferenceCodeSequence: {
             CodeValue: "121322",
             CodingSchemeDesignator: "DCM",
             CodeMeaning: "Source image for image processing operation"
           }
         },
-        DerivationCode: {
+        DerivationCodeSequence: {
           CodeValue: "113076",
           CodingSchemeDesignator: "DCM",
           CodeMeaning: "Segmentation"
         }
       };
-      this.dataset.PerFrameFunctionalGroups[frameIndex].FrameContent = {
+      this.dataset.PerFrameFunctionalGroupsSequence[frameIndex].FrameContentSequence = {
         DimensionIndexValues: [
           1,
           frameIndex+1
         ]
       };
-      this.dataset.PerFrameFunctionalGroups[frameIndex].SegmentIdentification = {
+      this.dataset.PerFrameFunctionalGroupsSequence[frameIndex].SegmentIdentificationSequence = {
         ReferencedSegmentNumber: 1
       };
     }
@@ -290,13 +290,13 @@ class Segmentation extends DerivedPixels {
     // these are copied with pixels, but don't belong in segmentation
     for (let frameIndex = 0; frameIndex < this.dataset.NumberOfFrames; frameIndex++) {
       // TODO: instead explicitly copy the position sequence
-      let group = this.dataset.PerFrameFunctionalGroups[frameIndex];
-      delete(group.FrameVOILUT);
+      let group = this.dataset.PerFrameFunctionalGroupsSequence[frameIndex];
+      delete(group.FrameVOILUTSequence);
     }
 
     if (!this.options.includeSliceSpacing) {
       // per dciodvfy this should not be included, but dcmqi/Slicer requires it
-      delete(this.dataset.SharedFunctionalGroups.PixelMeasures.SpacingBetweenSlices);
+      delete(this.dataset.SharedFunctionalGroupsSequence.PixelMeasuresSequence.SpacingBetweenSlices);
     }
 
     // make an array of zeros for the pixels assuming bit packing (one bit per short)
@@ -324,7 +324,7 @@ class StructuredReport extends DerivedDataset {
     super.derive();
 
     this.assignToDataset({
-      "SOPClass": "ComprehensiveSR",
+      "SOPClassUID": DicomMetaDictionary.sopClassUIDsByName.ComprehensiveSR,
       "Modality": "SR",
       "ValueType": "CONTAINER",
     });
