@@ -14,14 +14,14 @@
             Display DICOM Segmentation IOD
         </h1>
         <p>
-            This example demonstrates how to create a DICOM Segmentation object.
+            This example demonstrates how to display a DICOM Segmentation object.
         </p>
         <a href="../index.html">Go back to the Examples page</a>
     </div>
 
     <div class="row">
-        <p id='status'>Drag and drop DICOM files here...</p>
-        <div class="col-xs-9" id="dropZone">
+        <button id="sampleData">Get Sample Data</button><p id="statusLine"></p>
+        <div class="col-xs-9">
             <div style="width:512px;height:512px;position:relative;display:inline-block;"
                  oncontextmenu="return false"
                  class='cornerstone-enabled-image'
@@ -32,6 +32,7 @@
                      style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
                 </div>
             </div>
+            <p>Sample data is from the dicom4qi connectathon event to be held at RSNA 2017.  This is <a href='https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2'>test dataset #2</a>
         </div>
         <div class="col-xs-3">
             <label for="layers">Select active layer</label>
@@ -76,15 +77,14 @@
 <script src="../../src/datasetToBlob.js"></script>
 <script src="../../src/packBitArray.js"></script>
 
-<script src="../js/FileSaver.min.js"></script>
 <script src="../js/initWebWorkers.js"></script>
 <script src="../js/jqueryFileDrop.js"></script>
 
 <script>
+  let element;
   $(document).ready(function() {
     const dc0 = new DICOMZero();
-    const element = document.getElementById('dicomImage');
-    const dropZone = document.getElementById('dropZone');
+    element = document.getElementById('dicomImage');
 
     cornerstone.enable(element);
 
@@ -123,8 +123,8 @@
           for (let i=0; i < numFrames; i++) {
             const imageId = baseImageId + '?frame=' + i;
 
-            var funcGroups = multiframe.PerFrameFunctionalGroupsSequence[i];
-            var imagePositionArray = funcGroups.PlanePosition.ImagePositionPatient;
+            var functionalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
+            var imagePositionArray = functionalGroup.PlanePositionSequence.ImagePositionPatient;
 
             addMetaData('imagePlane', imageId, {
               imagePositionPatient: {
@@ -147,8 +147,8 @@
       const numFrames = Number(multiframe.NumberOfFrames);
       for (let i=0; i < numFrames; i++) {
         let segNum;
-        if (multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentification) {
-          segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentification.ReferencedSegmentNumber;
+        if (multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence) {
+          segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence.ReferencedSegmentNumber;
         }
 
         if ((segmentNumber && segNum && segNum === segmentNumber) ||
@@ -166,11 +166,12 @@
       cornerstone.enable(element);
       cornerstoneTools.clearToolState(element, 'stack');
 
-      const folderPath = 'http://127.0.0.1:8000/examples/data/QIICR_Test3/';
-      const baseImageId = 'dicomweb:' + folderPath + 'QIN_HEADNECK_024_PET_multiframe.dcm';
+      // const folderPath = 'http://127.0.0.1:8000/examples/data/QIICR_Test3/';
+      //const baseImageId = 'dicomweb:' + folderPath + 'QIN_HEADNECK_024_PET_multiframe.dcm';
+      const baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/PT-multiframe.dcm';
       var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
 
-      const segBaseImageId = 'dicomweb:' + folderPath + 'tumor_User1_Manual_Trial1.dcm';
+      const segBaseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/SEG/tumor_User1_Manual_Trial1.dcm';
       var segPromise = loadMultiFrameAndPopulateMetadata(segBaseImageId);
 
       Promise.all([dataPromise, segPromise]).then(values => {
@@ -179,14 +180,10 @@
         var imageIds = getImageIds(multiframe, baseImageId);
 
         const segStacks = [];
-        segMultiframe.Segment.forEach(segment => {
+        segMultiframe.SegmentSequence.forEach(segment => {
           const cielab = segment.RecommendedDisplayCIELabValue;
-          console.log('cielab: ');
-          console.log(cielab);
           let rgba = Colors.dicomlab2RGB(cielab).map(x => x * 255);
           rgba.push(255);
-          console.log('rgba');
-          console.log(rgba);
 
           const colormapId = 'Colormap_' + segment.SegmentNumber;
           var colormap = cornerstone.colors.getColormap(colormapId);
@@ -207,18 +204,8 @@
             }
           };
 
-          console.log(segment);
-          console.log(segStack);
-
           segStacks.push(segStack);
         });
-
-        /*var files = dc0.dataTransfer.files;
-        var imageIds = [];
-        files.forEach(function(file) {
-        var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
-        imageIds.push(imageId);
-        });*/
 
         const baseStack = {
           imageIds: imageIds,
@@ -256,7 +243,6 @@
           cornerstoneTools.addToolState(element, 'stackRenderer', renderer);
           cornerstoneTools.addToolState(element, 'stack', baseStack);
 
-          //cornerstoneTools.addToolState(element, 'stack', segStacks[1]);
           segStacks.forEach(segStack => {
             cornerstoneTools.addToolState(element, 'stack', segStack);
           });
@@ -268,13 +254,15 @@
           cornerstoneTools.keyboardInput.enable(element);
 
           cornerstoneTools.wwwc.activate(element, 1);
-          cornerstoneTools.pan.activate(element, 2);
-          cornerstoneTools.zoom.activate(element, 4);
+          //cornerstoneTools.pan.activate(element, 2);
+          //cornerstoneTools.zoom.activate(element, 4);
           cornerstoneTools.stackScrollWheel.activate(element);
           cornerstoneTools.stackScrollKeyboard.activate(element);
 
           // Update dropdown size to make all layers name visible
           $('#layers').prop('size', layers.length);
+
+          cornerstoneTools.scroll(element, 50);
 
           // Listen to `change` event to set the selected layer as active
           $("#layers").change(function(event) {
@@ -286,10 +274,12 @@
             cornerstone.setActiveLayer(element, layerId);
           });
         });
-      });
-    }
 
-    drawDatasets();
+        $('p#statusLine').text("");
+
+      });
+
+    }
 
     // Select the right layer in the dropdown
     function updateSelectedLayer(layerId) {
@@ -303,7 +293,7 @@
     }
 
     // Listen to `change` event to update the opacity of the active layer
-    $("#imageOpacity").change(function(event) {
+    $("#imageOpacity").on('input',function(event) {
       var layer = cornerstone.getActiveLayer(element);
       layer.options.opacity = parseFloat(event.currentTarget.value);
       cornerstone.updateImage(element);
@@ -320,8 +310,6 @@
     // The layer is added to the dropdown to make it possible to select and interact with it
     $(element).on('CornerstoneLayerAdded', function(e, eventData) {
       var layer = cornerstone.getLayer(eventData.element, eventData.layerId);
-      console.log('layer added');
-      console.log(layer);
       var $layers = $('#layers');
       var $layerOption = $('<option></option>')
         .val(layer.layerId)
@@ -349,37 +337,17 @@
       updateSelectedLayer(eventData.layerId);
     });
 
+    $('#sampleData').click(function(event) {
+      $('p#statusLine').text("Downloading...");
+      drawDatasets();
+    });
 
-    // utility: todo: keep a log for optional download
-    function status(s) {
-      console.log('status: ', s);
-      $('#status').text(s);
-    }
 
     window.addEventListener('resize', function() {
-      dropZone.width = window.innerWidth;
-      dropZone.height = window.innerHeight;
       cornerstone.resize(element, true);
     });
 
     window.dispatchEvent(new Event('resize'));
-
-    function handleFileDrop(e) {
-      let evt = e.originalEvent;
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      resetDICOMzero();
-      dc0.dataTransfer = {files: []};
-      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
-        dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
-      }
-
-      status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
-      dc0.readOneFile(drawDatasets);
-    }
-
-    $('#dropZone').bind('drop', handleFileDrop);
   });
 </script>
 </html>
