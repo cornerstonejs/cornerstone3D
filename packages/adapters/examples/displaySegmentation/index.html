@@ -247,7 +247,6 @@
             cornerstoneTools.addToolState(element, 'stack', segStack);
           });
 
-          cornerstoneTools.scrollToIndex(element, 1);
 
           cornerstoneTools.mouseInput.enable(element);
           cornerstoneTools.mouseWheelInput.enable(element);
@@ -262,7 +261,7 @@
           // Update dropdown size to make all layers name visible
           $('#layers').prop('size', layers.length);
 
-          cornerstoneTools.scroll(element, 50);
+          cornerstoneTools.scrollToIndex(element, 51);
 
           // Listen to `change` event to set the selected layer as active
           $("#layers").change(function(event) {
