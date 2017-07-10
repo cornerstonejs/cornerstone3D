@@ -45,4 +45,4 @@ packBitArray = function(pixelData) {
   }
 
   return bitPixelData;
-}
+};

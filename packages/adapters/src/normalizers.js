@@ -132,9 +132,9 @@ class ImageNormalizer extends Normalizer {
     }
     if (referenceDataset._vrMap && referenceDataset._vrMap.PixelData) {
       console.warn('No vr map given for pixel data, using OW');
-      ds._vrMap = {'PixelData': 'OW'}
+      ds._vrMap = {'PixelData': 'OW'};
     } else {
-      ds._vrMap = {'PixelData': referenceDataset._vrMap.PixelData}
+      ds._vrMap = {'PixelData': referenceDataset._vrMap.PixelData};
     }
     let frameSize = referenceDataset.PixelData.byteLength;
     ds.PixelData = new ArrayBuffer(ds.NumberOfFrames * frameSize);
@@ -194,7 +194,7 @@ class ImageNormalizer extends Normalizer {
     ds.ReferencedSeriesSequence = {
       SeriesInstanceUID : dataset0.SeriesInstanceUID,
       ReferencedInstance : new Array(this.datasets.length),
-    }
+    };
 
     // copy over each datasets window/level into the per-frame groups
     // and set the referenced series uid
@@ -207,7 +207,7 @@ class ImageNormalizer extends Normalizer {
       ds.ReferencedSeriesSequence.ReferencedInstance[datasetIndex] = {
         ReferencedSOPClass: dataset.SOPClassUID,
         ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
-      }
+      };
       datasetIndex++;
     });
 
@@ -269,8 +269,8 @@ class ImageNormalizer extends Normalizer {
       };
     }
 
-    let rescaleIntercept = ds.RescaleIntercept || 0.;
-    let rescaleSlope = ds.RescaleSlope || 1.;
+    let rescaleIntercept = ds.RescaleIntercept || 0;
+    let rescaleSlope = ds.RescaleSlope || 1;
     ds.SharedFunctionalGroupsSequence.PixelValueTransformationSequence = {
       RescaleIntercept: rescaleIntercept,
       RescaleSlope: rescaleSlope,
@@ -335,8 +335,8 @@ class ImageNormalizer extends Normalizer {
       }
     }
     // last gasp, pick an arbitrary default
-    if (ds.WindowCenter.length === 0) { ds.WindowCenter = [300] }
-    if (ds.WindowWidth.length === 0) { ds.WindowWidth = [500] }
+    if (ds.WindowCenter.length === 0) { ds.WindowCenter = [300]; }
+    if (ds.WindowWidth.length === 0) { ds.WindowWidth = [500]; }
   }
 }
 
@@ -353,10 +353,10 @@ class MRImageNormalizer extends ImageNormalizer {
     super.normalizeMultiframe();
     let ds = this.dataset;
 
-    if (!ds.ImageType
-          || !ds.ImageType.constructor
-          || ds.ImageType.constructor.name != "Array"
-          || ds.ImageType.length != 4) {
+    if (!ds.ImageType ||
+        !ds.ImageType.constructor ||
+        ds.ImageType.constructor.name != "Array" ||
+        ds.ImageType.length != 4) {
       ds.ImageType = ["ORIGINAL", "PRIMARY", "OTHER", "NONE",];
     }
 

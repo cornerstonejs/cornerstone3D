@@ -5,7 +5,7 @@ var EXPLICIT_BIG_ENDIAN = "1.2.840.10008.1.2.2";
 class Tag {
     constructor(value) {
       this.value = value;
-    };
+    }
 
     toString() {
       return "(" + paddingLeft("0000", this.group().toString(16).toUpperCase()) + "," + 

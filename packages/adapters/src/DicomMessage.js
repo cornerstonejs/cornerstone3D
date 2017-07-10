@@ -36,7 +36,7 @@ class DicomDict {
 
       var metaStream = new WriteBufferStream(1024);
       if (!this.meta['00020010']) {
-          this.meta['00020010'] = {vr: 'UI', Value: [EXPLICIT_LITTLE_ENDIAN]}
+          this.meta['00020010'] = {vr: 'UI', Value: [EXPLICIT_LITTLE_ENDIAN]};
       } 
       DicomMessage.write(this.meta, metaStream, metaSyntax);
       DicomMessage.writeTagObject(fileStream, "00020000", "UL", metaStream.size, metaSyntax);   

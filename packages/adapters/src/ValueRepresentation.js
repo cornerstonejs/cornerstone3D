@@ -133,7 +133,7 @@ class ValueRepresentation {
           var errmsg = "Value exceeds max length, vr: " + this.type + ", value: " + checkValue + ", length: " + displaylen;
           if (!valid) {
             if(isString)
-                console.log(errmsg)
+                console.log(errmsg);
             else
                 throw new Error(errmsg);
           }
@@ -212,12 +212,14 @@ class BinaryRepresentation extends ValueRepresentation {
     }
 
     writeBytes(stream, value, syntax, isEncapsulated) {
+        var i;
+        var binaryStream;
         if (isEncapsulated) {
             var fragmentSize = 1024 * 20, 
                 frames = value.length, startOffset = [];
 
-            var binaryStream = new WriteBufferStream(1024 * 1024 * 20, stream.isLittleEndian);
-            for (var i = 0;i < frames;i++) {
+            binaryStream = new WriteBufferStream(1024 * 1024 * 20, stream.isLittleEndian);
+            for (i = 0;i < frames;i++) {
                 startOffset.push(binaryStream.size);
                 var frameBuffer = value[i], frameStream = new ReadBufferStream(frameBuffer),
                     fragmentsLength = Math.ceil(frameStream.size / fragmentSize);
@@ -239,7 +241,7 @@ class BinaryRepresentation extends ValueRepresentation {
             stream.writeUint16(0xfffe);
             stream.writeUint16(0xe000);
             stream.writeUint32(startOffset.length * 4);
-            for (var i = 0;i < startOffset.length;i++) {
+            for (i = 0;i < startOffset.length;i++) {
                 stream.writeUint32(startOffset[i]);
             }
             stream.concat(binaryStream);
@@ -254,7 +256,8 @@ class BinaryRepresentation extends ValueRepresentation {
 
             return 0xffffffff;
         } else {
-            var binaryData = value[0], binaryStream = new ReadBufferStream(binaryData);
+            var binaryData = value[0];
+            binaryStream = new ReadBufferStream(binaryData);
             stream.concat(binaryStream);
             return super.writeBytes(stream, binaryData, [binaryStream.size]);
         }
@@ -339,7 +342,7 @@ class CodeString extends StringRepresentation {
         super("CS");
         this.maxLength = 16;
         this.padByte = "20";
-    };
+    }
 
     readBytes(stream, length) {
         //return this.readNullPaddedString(stream, length).trim(); 
@@ -364,7 +367,7 @@ class AttributeTag extends ValueRepresentation {
         this.valueLength = 4;
         this.padByte = "00";
         this.fixed = true;
-    };
+    }
 
     readBytes(stream, length) {
         var group = stream.readUint16(), element = stream.readUint16();
@@ -446,7 +449,7 @@ class FloatingPointDouble extends ValueRepresentation {
 class IntegerString extends StringRepresentation {
     constructor() {
         super("IS");
-        this.maxLength = 12
+        this.maxLength = 12;
         this.padByte = "20";
     }
 

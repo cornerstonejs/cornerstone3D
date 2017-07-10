@@ -25,13 +25,13 @@ class DicomMetaDictionary {
       var data = dataset[tag];
       if (data.vr == "SQ") {
         var cleanedValues = [];
-        for (var index in data.Value) {
-          cleanedValues.push(DicomMetaDictionary.cleanDataset(data.Value[index]))
+        for (let index in data.Value) {
+          cleanedValues.push(DicomMetaDictionary.cleanDataset(data.Value[index]));
         }
         data.Value = cleanedValues;
       } else {
         // remove null characters from strings
-        for (var index in data.Value) {
+        for (let index in data.Value) {
           let dataItem = data.Value[index];
           if (dataItem.constructor.name == "String") {
             data.Value[index] = dataItem.replace(/\0/, "");
@@ -53,7 +53,7 @@ class DicomMetaDictionary {
       if (data.vr == "SQ") {
         var namedValues = [];
         for (var index in data.Value) {
-          namedValues.push(DicomMetaDictionary.namifyDataset(data.Value[index]))
+          namedValues.push(DicomMetaDictionary.namifyDataset(data.Value[index]));
         }
         data.Value = namedValues;
       }
@@ -83,7 +83,7 @@ class DicomMetaDictionary {
         // convert sequence to list of values
         var naturalValues = [];
         for (var index in data.Value) {
-          naturalValues.push(DicomMetaDictionary.naturalizeDataset(data.Value[index]))
+          naturalValues.push(DicomMetaDictionary.naturalizeDataset(data.Value[index]));
         }
         data.Value = naturalValues;
       }
@@ -267,7 +267,7 @@ DicomMetaDictionary.sopClassNamesByUID = {
   "1.2.840.10008.5.1.4.1.1.128" : "PETImage",
   "1.2.840.10008.5.1.4.1.1.130" : "EnhancedPETImage",
   "1.2.840.10008.5.1.4.1.1.128.1" : "LegacyConvertedEnhancedPETImage",
-}
+};
 
 DicomMetaDictionary.dictionary = {
   "(0000,0000)": {
@@ -48327,7 +48327,7 @@ DicomMetaDictionary.dictionary = {
     "vm": "1-n",
     "version": "PrivateTag"
   }
-}
+};
 
 
 DicomMetaDictionary._generateNameMap();

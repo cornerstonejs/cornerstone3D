@@ -253,7 +253,7 @@ class Segmentation extends DerivedPixels {
           ReferencedSOPClassUID: this.referencedDataset.SOPClassUID,
           ReferencedSOPInstanceUID: this.referencedDataset.SOPInstanceUID,
         }]
-      }
+      };
     }
 
     // handle the case of a converted multiframe, so point to original source
