@@ -130,7 +130,7 @@ class ImageNormalizer extends Normalizer {
     if (ds.BitsAllocated !== 16) {
       console.error('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
     }
-    if (referenceDataset._vrMap && referenceDataset._vrMap.PixelData) {
+    if (referenceDataset._vrMap && !referenceDataset._vrMap.PixelData) {
       console.warn('No vr map given for pixel data, using OW');
       ds._vrMap = {'PixelData': 'OW'};
     } else {
