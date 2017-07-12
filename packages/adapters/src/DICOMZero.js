@@ -14,7 +14,8 @@ class DICOMZero {
     this.fileIndex = 0;
   }
 
-  getReadDICOMFunction(doneCallback) {
+  getReadDICOMFunction(doneCallback, statusCallback) {
+    statusCallback = statusCallback || console.log;
     return progressEvent => {
       let reader = progressEvent.target;
       let arrayBuffer = reader.result;
@@ -28,7 +29,7 @@ class DICOMZero {
         dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
         this.datasets.push(dataset);
       } catch (error) {
-        console.log("skipping non-dicom file");
+        statusCallback("skipping non-dicom file");
       }
 
       let readerIndex = this.readers.indexOf(reader);
@@ -39,27 +40,36 @@ class DICOMZero {
       }
 
       if (this.fileIndex === this.dataTransfer.files.length) {
-        console.log(`Normalizing...`);
-        this.multiframe = Normalizer.normalizeToDataset(this.datasets);
-        console.log(`Creating segmentation...`);
-        this.seg = new Segmentation([this.multiframe]);
-        console.log(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and segmentation.`);
-
+        statusCallback(`Normalizing...`);
+        try {
+          this.multiframe = Normalizer.normalizeToDataset(this.datasets);
+        } catch (e) {
+          console.error('Could not convert to multiframe');
+          console.error(e);
+        }
+        statusCallback(`Creating segmentation...`);
+        try {
+          this.seg = new Segmentation([this.multiframe]);
+          statusCallback(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and segmentation.`);
+        } catch (e) {
+          console.error('Could not create segmentation');
+          console.error(e);
+        }
         doneCallback();
       } else {
-        console.log(`Reading... (${this.fileIndex+1}).`);
-        this.readOneFile(doneCallback);
+        statusCallback(`Reading... (${this.fileIndex+1}).`);
+        this.readOneFile(doneCallback, statusCallback);
       }
     };
   }
 
   // Used for file selection button or drop of file list
-  readOneFile(doneCallback) {
+  readOneFile(doneCallback, statusCallback) {
     let file = this.dataTransfer.files[this.fileIndex];
     this.fileIndex++;
 
     let reader = new FileReader();
-    reader.onload = this.getReadDICOMFunction(doneCallback);
+    reader.onload = this.getReadDICOMFunction(doneCallback, statusCallback);
     reader.readAsArrayBuffer(file);
 
     this.files.push(file);
