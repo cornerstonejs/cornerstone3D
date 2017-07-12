@@ -56,7 +56,6 @@ class Normalizer {
   }
 
   static normalizeToDataset(datasets) {
-    console.log(datasets);
     let sopClassUID = Normalizer.consistentSOPClassUIDs(datasets);
     let normalizerClass = Normalizer.normalizerForSOPClassUID(sopClassUID);
     if (!normalizerClass) {

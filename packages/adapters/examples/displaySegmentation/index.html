@@ -72,7 +72,6 @@
 <script src="../../src/normalizers.js"></script>
 <script src="../../src/derivations.js"></script>
 <script src="../../src/colors.js"></script>
-<script src="../js/getConverterSpec.js"></script>
 <script src="../../src/DICOMZero.js"></script>
 <script src="../../src/datasetToBlob.js"></script>
 <script src="../../src/packBitArray.js"></script>
@@ -166,12 +165,11 @@
       cornerstone.enable(element);
       cornerstoneTools.clearToolState(element, 'stack');
 
-      // const folderPath = 'http://127.0.0.1:8000/examples/data/QIICR_Test3/';
-      //const baseImageId = 'dicomweb:' + folderPath + 'QIN_HEADNECK_024_PET_multiframe.dcm';
-      const baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/PT-multiframe.dcm';
+      const urlRoot = 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/'
+      const baseImageId = 'dicomweb:' + urlRoot + 'PT-multiframe.dcm';
       var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
 
-      const segBaseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/SEG/tumor_User1_Manual_Trial1.dcm';
+      const segBaseImageId = 'dicomweb:' + urlRoot + 'SEG/tumor_User1_Manual_Trial1.dcm';
       var segPromise = loadMultiFrameAndPopulateMetadata(segBaseImageId);
 
       Promise.all([dataPromise, segPromise]).then(values => {
