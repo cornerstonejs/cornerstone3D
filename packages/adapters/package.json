@@ -7,7 +7,8 @@
     "example": "examples"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -18,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/pieper/dcmjs/issues"
   },
-  "homepage": "https://github.com/pieper/dcmjs#readme"
+  "homepage": "https://github.com/pieper/dcmjs#readme",
+  "devDependencies": {
+    "rollup": "^0.45.2"
+  }
 }
