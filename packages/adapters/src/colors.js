@@ -143,3 +143,5 @@ class Colors {
     }
   }
 }
+
+export { Colors };

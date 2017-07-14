@@ -1,3 +1,5 @@
+import { DicomMetaDictionary } from './DicomMetaDictionary.js';
+
 class DerivedDataset {
   constructor (datasets, options={}) {
     this.options = JSON.parse(JSON.stringify(options));
@@ -334,3 +336,8 @@ class StructuredReport extends DerivedDataset {
     ]);
   }
 }
+export { DerivedDataset };
+export { DerivedPixels };
+export { DerivedImage };
+export { Segmentation };
+export { StructuredReport };

@@ -1,3 +1,8 @@
+import { DicomMessage } from './DicomMessage.js';
+import { DicomMetaDictionary } from './DicomMetaDictionary.js';
+import { Normalizer } from './normalizers.js';
+import { Segmentation } from './derivations.js';
+
 class DICOMZero {
   constructor() {
     this.reset();
@@ -29,6 +34,7 @@ class DICOMZero {
         dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
         this.datasets.push(dataset);
       } catch (error) {
+        console.error(error);
         statusCallback("skipping non-dicom file");
       }
 
@@ -76,3 +82,5 @@ class DICOMZero {
     this.readers.push(reader);
   }
 }
+
+export { DICOMZero };

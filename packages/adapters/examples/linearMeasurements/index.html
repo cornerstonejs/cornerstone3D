@@ -70,23 +70,12 @@
 <script src="../js/dicomParser.min.js"></script>
 <script src="../js/cornerstoneWADOImageLoader.min.js"></script>
 
-
-<script src="../../src/DicomMetaDictionary.js"></script>
-<script src="../../src/BufferStream.js"></script>
-<script src="../../src/ValueRepresentation.js"></script>
-<script src="../../src/Tag.js"></script>
-<script src="../../src/DicomMessage.js"></script>
-<script src="../../src/normalizers.js"></script>
-<script src="../../src/derivations.js"></script>
-<script src="../../src/colors.js"></script>
-<script src="../../src/DICOMZero.js"></script>
-<script src="../../src/datasetToBlob.js"></script>
-<script src="../../src/packBitArray.js"></script>
-
 <script src="../js/FileSaver.min.js"></script>
 <script src="../js/jszip.min.js"></script>
 <script src="../js/initWebWorkers.js"></script>
 <script src="../js/jqueryFileDrop.js"></script>
+
+<script src="../../build/dcmjs.js"></script>
 
 <script>
   var dc0;
@@ -94,7 +83,7 @@
 
     $('.dicomControls').prop('disabled', true)
 
-    dc0 = new DICOMZero();
+    dc0 = new DCMJS.data.DICOMZero();
     const element = document.getElementById('dicomImage');
     $(element).on('CornerstoneToolsMeasurementModified', updateMeasurementTable)
     const dropZone = document.getElementById('dropZone');
@@ -125,11 +114,11 @@
         var multiframe;
         cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
           var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = DicomMessage.readFile(arrayBuffer);
-          let dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+          dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
+          let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
 
-          multiframe = Normalizer.normalizeToDataset([dataset]);
+          multiframe = DCMJS.normalizers.Normalizer.normalizeToDataset([dataset]);
 
           const numFrames = Number(multiframe.NumberOfFrames);
           for (let i=0; i < numFrames; i++) {
@@ -233,7 +222,7 @@
       console.log(cornerstoneTools.globalImageIdSpecificToolStateManager);
       const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
 
-      dc0.report = new StructuredReport([dataset]);
+      dc0.report = new DCMJS.derivations.StructuredReport([dataset]);
       var measurementGroupContentSequence = [];
 
       dc0.report.dataset.ConceptNameCodeSequence = {
@@ -403,7 +392,7 @@
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Tracking Unique Identifier',
             },
-            UID: DicomMetaDictionary.uid(),
+            UID: DCMJS.data.DicomMetaDictionary.uid(),
           },
           {
             RelationshipType: 'CONTAINS',
@@ -470,9 +459,9 @@
     function downloadReport() {
       populateReport(dc0.multiframe);
       $('#reportDump').text(JSON.stringify(dc0.report.dataset, null,4));
-      let multiframeBlob = datasetToBlob(dc0.multiframe);
+      let multiframeBlob = DCMJS.data.datasetToBlob(dc0.multiframe);
       dc0.report.dataset._meta = dc0.multiframe._meta;
-      let reportBlob = datasetToBlob(dc0.report.dataset);
+      let reportBlob = DCMJS.data.datasetToBlob(dc0.report.dataset);
       let zip = new JSZip();
       zip.file("multiframe.dcm", multiframeBlob);
       zip.file("report.dcm", reportBlob);

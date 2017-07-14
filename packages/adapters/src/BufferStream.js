@@ -6,12 +6,12 @@ function toUTF8Array(str) {
         var charcode = str.charCodeAt(i);
         if (charcode < 0x80) utf8.push(charcode);
         else if (charcode < 0x800) {
-            utf8.push(0xc0 | (charcode >> 6), 
+            utf8.push(0xc0 | (charcode >> 6),
                       0x80 | (charcode & 0x3f));
         }
         else if (charcode < 0xd800 || charcode >= 0xe000) {
-            utf8.push(0xe0 | (charcode >> 12), 
-                      0x80 | ((charcode>>6) & 0x3f), 
+            utf8.push(0xe0 | (charcode >> 12),
+                      0x80 | ((charcode>>6) & 0x3f),
                       0x80 | (charcode & 0x3f));
         }
         // surrogate pair
@@ -22,9 +22,9 @@ function toUTF8Array(str) {
             // 20 bits of 0x0-0xFFFFF into two halves
             charcode = 0x10000 + (((charcode & 0x3ff)<<10)
                       | (str.charCodeAt(i) & 0x3ff));
-            utf8.push(0xf0 | (charcode >>18), 
-                      0x80 | ((charcode>>12) & 0x3f), 
-                      0x80 | ((charcode>>6) & 0x3f), 
+            utf8.push(0xf0 | (charcode >>18),
+                      0x80 | ((charcode>>12) & 0x3f),
+                      0x80 | ((charcode>>6) & 0x3f),
                       0x80 | (charcode & 0x3f));
         }
     }
@@ -142,7 +142,7 @@ class BufferStream {
             startOffset++;
         }
         return this.increment(blen);
-    }    
+    }
 
     readUint32() {
         var val = this.view.getUint32(this.offset, this.isLittleEndian);
@@ -160,7 +160,7 @@ class BufferStream {
         var val = this.view.getUint8(this.offset);
         this.increment(1);
         return val;
-    }    
+    }
 
     readUint8Array(length) {
         var arr = new Uint8Array(this.buffer, this.offset, length);
@@ -199,7 +199,7 @@ class BufferStream {
         var val = this.view.getFloat64(this.offset, this.isLittleEndian);
         this.increment(8);
         return val;
-    }    
+    }
 
     readString(length) {
         var string = '';
@@ -227,8 +227,8 @@ class BufferStream {
             //resize
             var dst = new ArrayBuffer(this.buffer.byteLength * 2);
             new Uint8Array(dst).set(new Uint8Array(this.buffer));
-            this.buffer = dst; 
-            this.view = new DataView(this.buffer);    
+            this.buffer = dst;
+            this.view = new DataView(this.buffer);
         }
     }
 
@@ -237,7 +237,7 @@ class BufferStream {
         int8.set(new Uint8Array(this.getBuffer(0, this.offset)));
         int8.set(new Uint8Array(stream.getBuffer(0, stream.size)), this.offset);
         this.buffer = newbuf;
-        this.view = new DataView(this.buffer);   
+        this.view = new DataView(this.buffer);
         this.offset += stream.size;
         this.size = this.offset;
         return this.buffer.byteLength;
@@ -273,11 +273,11 @@ class BufferStream {
     reset() {
         this.offset = 0;
         return this;
-    }    
+    }
 
     end() {
         return this.offset >= this.buffer.byteLength;
-    }    
+    }
 
     toEnd() {
         this.offset = this.buffer.byteLength;
@@ -297,3 +297,6 @@ class WriteBufferStream extends BufferStream {
         this.size = 0;
     }
 }
+
+export { ReadBufferStream };
+export { WriteBufferStream };

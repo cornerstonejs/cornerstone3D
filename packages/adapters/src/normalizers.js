@@ -1,5 +1,6 @@
+import { DicomMetaDictionary } from './DicomMetaDictionary.js';
+import { DerivedImage } from './derivations.js';
 
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes
 class Normalizer {
   constructor (datasets) {
     this.datasets = datasets; // one or more dicom-like object instances
@@ -25,6 +26,7 @@ class Normalizer {
   }
 
   static normalizerForSOPClassUID(sopClassUID) {
+    sopClassUID = sopClassUID.replace(/[^0-9.]/g,''); // TODO: clean all VRs as part of normalizing
     let toUID = DicomMetaDictionary.sopClassUIDsByName;
     let sopClassUIDMap = {};
     sopClassUIDMap[toUID.CTImage] = CTImageNormalizer;
@@ -33,13 +35,13 @@ class Normalizer {
     sopClassUIDMap[toUID.EnhancedUSVolume] = EnhancedUSVolumeNormalizer;
     sopClassUIDMap[toUID.PETImage] = PETImageNormalizer;
     sopClassUIDMap[toUID.EnhancedPETImage] = PETImageNormalizer;
-    sopClassUIDMap[toUID.PositronEmissionTomographyImage] = PETImageNormalizer;
     sopClassUIDMap[toUID.Segmentation] = SEGImageNormalizer;
     sopClassUIDMap[toUID.DeformableSpatialRegistration] = DSRNormalizer;
     return(sopClassUIDMap[sopClassUID]);
   }
 
   static isMultiframe(ds=this.dataset) {
+    let sopClassUID = ds.SOPClassUID.replace(/[^0-9.]/g,''); // TODO: clean all VRs as part of normalizing
     let toUID = DicomMetaDictionary.sopClassUIDsByName;
     let multiframeSOPClasses = [
       toUID.EnhancedMRImage,
@@ -48,7 +50,7 @@ class Normalizer {
       toUID.EnhancedPETImage,
       toUID.Segmentation,
     ];
-    return (multiframeSOPClasses.indexOf(ds.SOPClassUID) !== -1);
+    return (multiframeSOPClasses.indexOf(sopClassUID) !== -1);
   }
 
   normalize() {
@@ -72,6 +74,28 @@ class ImageNormalizer extends Normalizer {
   normalize() {
     this.convertToMultiframe();
     this.normalizeMultiframe();
+  }
+
+  static vec3CrossProduct(a, b) {
+    let ax = a[0], ay = a[1], az = a[2],
+        bx = b[0], by = b[1], bz = b[2];
+    let out = [];
+    out[0] = ay * bz - az * by;
+    out[1] = az * bx - ax * bz;
+    out[2] = ax * by - ay * bx;
+    return out;
+  }
+
+  static vec3Subtract(a, b) {
+    let out = [];
+    out[0] = a[0] - b[0];
+    out[1] = a[1] - b[1];
+    out[2] = a[2] - b[2];
+    return out;
+  }
+
+  static vec3Dot(a, b) {
+    return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]);
   }
 
   convertToMultiframe() {
@@ -104,21 +128,15 @@ class ImageNormalizer extends Normalizer {
     // TODO: add spacing checks:
     // https://github.com/Slicer/Slicer/blob/master/Modules/Scripted/DICOMPlugins/DICOMScalarVolumePlugin.py#L228-L250
     // TODO: put this information into the Shared and PerFrame functional groups
-    let referencePosition = vec3.create();
-    referencePosition.set(referenceDataset.ImagePositionPatient);
-    let rowVector = vec3.create();
-    rowVector.set(referenceDataset.ImageOrientationPatient.slice(0,3));
-    let columnVector = vec3.create();
-    columnVector.set(referenceDataset.ImageOrientationPatient.slice(3,6));
-    let scanAxis = vec3.create();
-    vec3.cross(scanAxis,rowVector,columnVector);
+    let referencePosition = referenceDataset.ImagePositionPatient;
+    let rowVector = referenceDataset.ImageOrientationPatient.slice(0,3);
+    let columnVector = referenceDataset.ImageOrientationPatient.slice(3,6);
+    let scanAxis = ImageNormalizer.vec3CrossProduct(rowVector,columnVector);
     let distanceDatasetPairs = [];
     this.datasets.forEach(function(dataset) {
-      let position = vec3.create();
-      position.set(dataset.ImagePositionPatient);
-      let positionVector = vec3.create();
-      vec3.subtract(positionVector, position, referencePosition);
-      let distance = vec3.dot(positionVector, scanAxis);
+      let position = dataset.ImagePositionPatient.slice();
+      let positionVector = ImageNormalizer.vec3Subtract(position, referencePosition);
+      let distance = ImageNormalizer.vec3Dot(positionVector, scanAxis);
       distanceDatasetPairs.push([distance, dataset]);
     });
     distanceDatasetPairs.sort(function(a,b) {
@@ -413,3 +431,13 @@ class DSRNormalizer extends Normalizer {
     this.dataset = this.datasets[0]; // only one dataset per series and for now we assume it is normalized
   }
 }
+
+export { Normalizer };
+export { ImageNormalizer };
+export { MRImageNormalizer };
+export { EnhancedMRImageNormalizer };
+export { EnhancedUSVolumeNormalizer };
+export { CTImageNormalizer };
+export { PETImageNormalizer };
+export { SEGImageNormalizer };
+export { DSRNormalizer };

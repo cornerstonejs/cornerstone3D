@@ -1,4 +1,7 @@
-datasetToBlob = function (dataset) {
+import { DicomMetaDictionary } from './DicomMetaDictionary.js';
+import { DicomDict } from './DicomMessage.js';
+
+function datasetToBlob (dataset) {
   const meta = {
     FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
     MediaStorageSOPClassUID: dataset.SOPClassUID,
@@ -16,3 +19,5 @@ datasetToBlob = function (dataset) {
   const buffer = dicomDict.write();
   return new Blob([buffer], {type: "application/dicom"});
 };
+
+export { datasetToBlob };

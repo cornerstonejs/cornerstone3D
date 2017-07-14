@@ -62,36 +62,19 @@
 <script src="../js/cornerstoneTools.min.js"></script>
 <script src="../js/dicomParser.min.js"></script>
 <script src="../js/cornerstoneWADOImageLoader.min.js"></script>
-
-
-<script src="../../src/DicomMetaDictionary.js"></script>
-<script src="../../src/BufferStream.js"></script>
-<script src="../../src/ValueRepresentation.js"></script>
-<script src="../../src/Tag.js"></script>
-<script src="../../src/DicomMessage.js"></script>
-<script src="../../src/normalizers.js"></script>
-<script src="../../src/derivations.js"></script>
-<script src="../../src/colors.js"></script>
-<script src="../../src/DICOMZero.js"></script>
-<script src="../../src/datasetToBlob.js"></script>
-<script src="../../src/packBitArray.js"></script>
-
 <script src="../js/initWebWorkers.js"></script>
 <script src="../js/jqueryFileDrop.js"></script>
 
+<script src="../../build/dcmjs.js"></script>
+
 <script>
   let element;
+  let metaData = {};
   $(document).ready(function() {
-    const dc0 = new DICOMZero();
     element = document.getElementById('dicomImage');
 
     cornerstone.enable(element);
 
-    function resetDICOMzero() {
-      dc0.reset();
-    }
-
-    const metaData = {};
     function metaDataProvider(type, imageId) {
       if (!metaData[imageId]) {
         return;
@@ -112,11 +95,11 @@
         var multiframe;
         cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
           var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = DicomMessage.readFile(arrayBuffer);
-          let dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+          dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
+          let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
 
-          multiframe = Normalizer.normalizeToDataset([dataset]);
+          multiframe = DCMJS.normalizers.Normalizer.normalizeToDataset([dataset]);
 
           const numFrames = Number(multiframe.NumberOfFrames);
           for (let i=0; i < numFrames; i++) {
@@ -124,6 +107,7 @@
 
             var functionalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
             var imagePositionArray = functionalGroup.PlanePositionSequence.ImagePositionPatient;
+            //imagePositionArray = imagePositionArray.split('\\').map(Number);
 
             addMetaData('imagePlane', imageId, {
               imagePositionPatient: {
@@ -180,7 +164,7 @@
         const segStacks = [];
         segMultiframe.SegmentSequence.forEach(segment => {
           const cielab = segment.RecommendedDisplayCIELabValue;
-          let rgba = Colors.dicomlab2RGB(cielab).map(x => x * 255);
+          let rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => x * 255);
           rgba.push(255);
 
           const colormapId = 'Colormap_' + segment.SegmentNumber;

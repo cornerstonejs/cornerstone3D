@@ -14,7 +14,7 @@ function getBytesForBinaryFrame (numPixels) {
   return bytesRequired;
 }
 
-packBitArray = function(pixelData) {
+function packBitArray (pixelData) {
   const numPixels = pixelData.length;
   console.log('numPixels: ' + numPixels);
 
@@ -46,3 +46,5 @@ packBitArray = function(pixelData) {
 
   return bitPixelData;
 };
+
+export { packBitArray };

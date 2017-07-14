@@ -71,34 +71,22 @@
 </body>
 
 <script src="../js/jquery.min.js"></script>
+<script src="../js/FileSaver.min.js"></script>
+<script src="../js/jszip.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
 <script src="../js/cornerstone.min.js"></script>
 <script src="../js/cornerstoneMath.min.js"></script>
 <script src="../js/cornerstoneTools.min.js"></script>
 <script src="../js/dicomParser.min.js"></script>
 <script src="../js/cornerstoneWADOImageLoader.min.js"></script>
 
-
-<script src="../../src/DicomMetaDictionary.js"></script>
-<script src="../../src/BufferStream.js"></script>
-<script src="../../src/ValueRepresentation.js"></script>
-<script src="../../src/Tag.js"></script>
-<script src="../../src/DicomMessage.js"></script>
-<script src="../../src/normalizers.js"></script>
-<script src="../../src/derivations.js"></script>
-<script src="../../src/colors.js"></script>
-<script src="../../src/DICOMZero.js"></script>
-<script src="../../src/datasetToBlob.js"></script>
-<script src="../../src/packBitArray.js"></script>
-
-<script src="../js/FileSaver.min.js"></script>
-<script src="../js/gl-matrix-min.js"></script>
-<script src="../js/jszip.min.js"></script>
-<script src="../js/initWebWorkers.js"></script>
-<script src="../js/jqueryFileDrop.js"></script>
+<script src="../../build/dcmjs.js"></script>
 
 <script>
   $(document).ready(function() {
-    const dc0 = new DICOMZero();
+    const dc0 = new DCMJS.data.DICOMZero();
     const element = document.getElementById('dicomImage');
     const dropZone = document.getElementById('dropZone');
 
@@ -125,7 +113,7 @@
       }
 
       // populate the segmentation object pixel data
-      const bitArray = packBitArray(pixelData);
+      const bitArray = DCMJS.data.packBitArray(pixelData);
       const numBitArrayPixels = bitArray.length;
       for (let i=0; i < numBitArrayPixels; i++) {
         pixels[i] = bitArray[i];
@@ -168,9 +156,9 @@
 
       Promise.all([dataPromise,]).then(values => {
         dc0.multiframe = values[0];
-        dc0.seg = new Segmentation([dc0.multiframe]);
+        dc0.seg = new DCMJS.derivations.Segmentation([dc0.multiframe]);
 
-        var cielab = Colors.rgb2DICOMLAB([1, 0, 0]);
+        var cielab = DCMJS.data.Colors.rgb2DICOMLAB([1, 0, 0]);
         dc0.seg.dataset.SegmentSequence[0].RecommendedDisplayCIELabValue = cielab;
         var imageIds = getImageIds(dc0.multiframe, baseImageId);
 
@@ -217,11 +205,11 @@
       var promise = new Promise(function (resolve, reject) {
         cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
           var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = DicomMessage.readFile(arrayBuffer);
-          let dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+          dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
+          let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
 
-          var multiframe = Normalizer.normalizeToDataset([dataset]);
+          var multiframe = DCMJS.normalizers.Normalizer.normalizeToDataset([dataset]);
           console.log(multiframe);
 
           const numFrames = Number(multiframe.NumberOfFrames);
@@ -291,8 +279,8 @@
     function downloadDatasets() {
       populateSegmentationMask(dc0.seg.dataset);
       $('#segmentationDump').text(JSON.stringify(dc0.seg.dataset, null,4));
-      let multiBlob = datasetToBlob(dc0.multiframe);
-      let segBlob = datasetToBlob(dc0.seg.dataset);
+      let multiBlob = DCMJS.data.datasetToBlob(dc0.multiframe);
+      let segBlob = DCMJS.data.datasetToBlob(dc0.seg.dataset);
       let zip = new JSZip();
       zip.file("multiframe.dcm", multiBlob);
       zip.file("segmentation.dcm", segBlob);

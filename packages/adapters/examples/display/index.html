@@ -60,27 +60,16 @@
   </div>
 </body>
 
+
 <script src="../js/jquery.min.js"></script>
-
-<script src="../../src/DicomMetaDictionary.js"></script>
-<script src="../../src/BufferStream.js"></script>
-<script src="../../src/ValueRepresentation.js"></script>
-<script src="../../src/Tag.js"></script>
-<script src="../../src/DicomMessage.js"></script>
-<script src="../../src/normalizers.js"></script>
-<script src="../../src/derivations.js"></script>
-<script src="../../src/colors.js"></script>
-<script src="../../src/DICOMZero.js"></script>
-<script src="../../src/datasetToBlob.js"></script>
-<script src="../../src/packBitArray.js"></script>
-
 <script src="../js/FileSaver.min.js"></script>
-<script src="../js/gl-matrix-min.js"></script>
 <script src="../js/jszip.min.js"></script>
 <script src="../js/jqueryFileDrop.js"></script>
 
+<script src="../../build/dcmjs.js"></script>
+
 <script>
-  const dc0 = new DICOMZero();
+  const dc0 = new DCMJS.data.DICOMZero();
   $(document).ready(function() {
     const dicomImageElement = document.getElementById('dicomImage');
     const dropZone = document.getElementById('dropZone');
