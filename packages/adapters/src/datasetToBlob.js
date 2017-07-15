@@ -18,6 +18,6 @@ function datasetToBlob (dataset) {
 
   const buffer = dicomDict.write();
   return new Blob([buffer], {type: "application/dicom"});
-};
+}
 
 export { datasetToBlob };

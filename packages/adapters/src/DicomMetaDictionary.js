@@ -48335,4 +48335,4 @@ DicomMetaDictionary.dictionary = {
 DicomMetaDictionary._generateNameMap();
 DicomMetaDictionary._generateUIDMap();
 
-export { DicomMetaDictionary }
+export { DicomMetaDictionary };
