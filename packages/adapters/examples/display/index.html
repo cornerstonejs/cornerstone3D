@@ -31,31 +31,8 @@
         <pre class='pre-scrollable dicomDump' id='dicomData'>
         </pre>
       </div>
-      <!--
-      <div class="col-xs-6">
-        <pre class='pre-scrollable dicomDump' id='cleanDICOMData'>
-        </pre>
-      </div>
-      -->
       <p>Data is displayed in the experimental <a href='https://github.com/pieper/dcmjs/wiki/NDD-Format'>NDD</a> format.</p>
     </div>
-
-    <!--
-    <div class='row'>
-      <div class="col-xs-9" 
-           style="border: 1px solid black;">
-        <div style="width:512px;height:512px;position:relative;display:inline-block;"
-            oncontextmenu="return false"
-            unselectable='on'
-            onselectstart='return false;'
-            onmousedown='return false;'>
-          <div id="dicomImage"
-            style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
-          </div>
-        </div>
-      </div>
-    </div>
-    -->
 
   </div>
 </body>
@@ -71,7 +48,6 @@
 <script>
   const dc0 = new DCMJS.data.DICOMZero();
   $(document).ready(function() {
-    const dicomImageElement = document.getElementById('dicomImage');
     const dropZone = document.getElementById('dropZone');
 
     $('.datasetControl').attr('disabled', true);
