@@ -57,13 +57,14 @@
 </body>
 
 <script src="../js/jquery.min.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
 <script src="../js/cornerstone.min.js"></script>
 <script src="../js/cornerstoneMath.min.js"></script>
 <script src="../js/cornerstoneTools.min.js"></script>
 <script src="../js/dicomParser.min.js"></script>
 <script src="../js/cornerstoneWADOImageLoader.min.js"></script>
 <script src="../js/initWebWorkers.js"></script>
-<script src="../js/jqueryFileDrop.js"></script>
 
 <script src="../../build/dcmjs.js"></script>
 
@@ -75,6 +76,11 @@
 
     cornerstone.enable(element);
 
+    //
+    // associate per-frame position with cornerstone imageID
+    // so that correct overlay is selected when scrolling
+    // through the stack
+    //
     function metaDataProvider(type, imageId) {
       if (!metaData[imageId]) {
         return;
@@ -90,6 +96,12 @@
 
     cornerstone.metaData.addProvider(metaDataProvider);
 
+    //
+    // uses cornerstone caching to access a bytearray of the
+    // part10 dicom, then uses dcmjs to parse this
+    // into javascript object and populates the
+    // metadata for the per-frame imageIDs.
+    //
     function loadMultiFrameAndPopulateMetadata(baseImageId) {
       var promise = new Promise(function (resolve, reject) {
         var multiframe;
@@ -107,7 +119,6 @@
 
             var functionalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
             var imagePositionArray = functionalGroup.PlanePositionSequence.ImagePositionPatient;
-            //imagePositionArray = imagePositionArray.split('\\').map(Number);
 
             addMetaData('imagePlane', imageId, {
               imagePositionPatient: {
@@ -121,10 +132,14 @@
           resolve(multiframe);
         });
       });
-
       return promise;
     }
 
+    //
+    // creates an array of per-frame imageIds in the form needed for cornerstone processing.
+    // If segmentNumber is provided, then only create imageIds for the frames where the 
+    // segment is defined.
+    //
     function getImageIds(multiframe, baseImageId, segmentNumber) {
       const imageIds = [];
       const numFrames = Number(multiframe.NumberOfFrames);
@@ -140,41 +155,55 @@
           imageIds.push(imageId);
         }
       }
-
       return imageIds;
     }
 
-    function drawDatasets() {
+    function downloadAndDisplaySampleData() {
       cornerstone.disable(element);
       cornerstone.enable(element);
       cornerstoneTools.clearToolState(element, 'stack');
 
       const urlRoot = 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/'
+
       const baseImageId = 'dicomweb:' + urlRoot + 'PT-multiframe.dcm';
       var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
 
       const segBaseImageId = 'dicomweb:' + urlRoot + 'SEG/tumor_User1_Manual_Trial1.dcm';
       var segPromise = loadMultiFrameAndPopulateMetadata(segBaseImageId);
 
+      //
+      // once the images have been loaded
+      //
       Promise.all([dataPromise, segPromise]).then(values => {
         const multiframe = values[0];
         const segMultiframe = values[1];
-        var imageIds = getImageIds(multiframe, baseImageId);
 
+        // make the base image layer
+        var baseImageIds = getImageIds(multiframe, baseImageId);
+        const baseStack = {
+          imageIds: baseImageIds,
+          currentImageIdIndex: 0,
+          options: {
+            name: 'Referenced Image'
+          }
+        };
+
+        //
+        // make the set of layers associated with the segmentations
+        //
         const segStacks = [];
         segMultiframe.SegmentSequence.forEach(segment => {
+          // first, map the dicom color into a cornerstone colormap
           const cielab = segment.RecommendedDisplayCIELabValue;
           let rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => x * 255);
           rgba.push(255);
-
           const colormapId = 'Colormap_' + segment.SegmentNumber;
           var colormap = cornerstone.colors.getColormap(colormapId);
           colormap.setNumberOfColors(2);
           colormap.insertColor(0, [0, 0, 255, 0]);
           colormap.insertColor(1, rgba);
-
+          // define a stack based on the image ids, color, and segment name
           const segImageIds = getImageIds(segMultiframe, segBaseImageId, segment.SegmentNumber);
-
           const segStack = {
             imageIds: segImageIds,
             currentImageIdIndex: 0,
@@ -185,25 +214,18 @@
               name: segment.SegmentLabel
             }
           };
-
           segStacks.push(segStack);
         });
 
-        const baseStack = {
-          imageIds: imageIds,
-          currentImageIdIndex: 0,
-          options: {
-            name: 'Referenced Image'
-          }
-        };
-
-        // Select a renderer and apply the specified options
+        //
+        // create a FusionRenderer and provide it with a function
+        // to find the closest overlay image based on z position
+        //
         var renderer = new cornerstoneTools.stackRenderers.FusionRenderer();
         renderer.findImageFn = function(imageIds, targetImageId) {
           var minDistance = 1;
           var targetImagePlane = cornerstone.metaData.get('imagePlane', targetImageId);
           var imagePositionZ = targetImagePlane.imagePositionPatient.z;
-
           var closest;
           imageIds.forEach(function(imageId) {
             var imagePlane = cornerstone.metaData.get('imagePlane', imageId);
@@ -214,10 +236,13 @@
               closest = imageId;
             }
           });
-
           return closest;
         };
 
+        //
+        // now setup the cornerstone element with out base image
+        // and enable the tools we want to have work on it
+        //
         cornerstone.loadAndCacheImage(baseStack.imageIds[0]).then(function(image) {
           cornerstone.displayImage(element, image);
 
@@ -320,7 +345,7 @@
 
     $('#sampleData').click(function(event) {
       $('p#statusLine').text("Downloading...");
-      drawDatasets();
+      downloadAndDisplaySampleData();
     });
 
 
