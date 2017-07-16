@@ -67,6 +67,9 @@
     $('.dicomDump').css('max-height', '900px');
 
     function resetDICOMzero() {
+      if (dc0.viewer) {
+        dc0.viewer.removeElement();
+      }
       dc0.reset();
     }
 
@@ -74,19 +77,27 @@
       $('#dicomData').text(JSON.stringify(dc0.datasets[offset], null, 2));
     }
 
+    function setOffset(offset) {
+      $('#datasetOffset').text(offset);
+      $('#datasetSlider').val(offset);
+      displayDataset(offset);
+      dc0.viewer.index = offset;
+    }
+
     function displayDatasets() {
       status("Done reading...");
+      dc0.datasets.sort(function(a,b) {
+        return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
+      });
       $('#datasetSlider').attr('max', dc0.datasets.length-1);
       $('.datasetControl').attr('disabled', false);
       displayDataset(0);
       dc0.viewer = new Viewer(dc0.datasets);
       dc0.viewer.display('#dicomImages');
-    }
-
-    function setOffset(offset) {
-      $('#datasetOffset').text(offset);
-      $('#datasetSlider').val(offset);
-      displayDataset(offset);
+      let onNewImage = function (event) {
+        setOffset(dc0.viewer.index);
+      }
+      $(dc0.viewer.element).on('CornerstoneNewImage', onNewImage);
     }
 
     $('#datasetSlider').on('input', function(){
