@@ -24,6 +24,8 @@
       <button id='datasetPlayStop' class='datasetControl'>Play</button>
       <label for="datasetSlider" class='datasetControl'>Dataset: <span id="datasetOffset">0</span></label>
       <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
+      <h2>DICOM Images</h2>
+      <div id='dicomImages'></div>
 
       <h2>DICOM Data</h2>
 
@@ -43,10 +45,20 @@
 <script src="../js/jszip.min.js"></script>
 <script src="../js/jqueryFileDrop.js"></script>
 
+<!-- for viewer -->
+<script src="../js/cornerstone.min.js"></script>
+<script src="../js/cornerstoneMath.min.js"></script>
+<script src="../js/cornerstoneTools.min.js"></script>
+<script src="../js/dicomParser.min.js"></script>
+<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+
+<script src="./viewer.js"></script>
+
 <script src="../../build/dcmjs.js"></script>
 
 <script>
-  const dc0 = new DCMJS.data.DICOMZero();
+  var dc0 = new DCMJS.data.DICOMZero();
   $(document).ready(function() {
     const dropZone = document.getElementById('dropZone');
 
@@ -67,6 +79,8 @@
       $('#datasetSlider').attr('max', dc0.datasets.length-1);
       $('.datasetControl').attr('disabled', false);
       displayDataset(0);
+      dc0.viewer = new Viewer(dc0.datasets);
+      dc0.viewer.display('#dicomImages');
     }
 
     function setOffset(offset) {
