@@ -29,6 +29,10 @@ class TCIA {
     return( types[endpoint] ? types[endpoint] : 'json' );
   }
 
+  static randomEntry(array) {
+    return array[Math.floor(Math.random() * (array.length))];
+  }
+
   request(endpoint, parameters={}, payload) {
     let responseType = TCIA.responseType(endpoint);
     let url = this.tciaURL + '/query/' + endpoint + '?api_key=' + this.slicerAPIKey;
@@ -78,20 +82,17 @@ class TCIA {
   }
 
   randomImages(status=function(){}) {
-    let randomEntry = function (array) {
-      return array[Math.floor(Math.random() * (array.length))];
-    }
     return this.collections().then(collections => {
-      let collection = randomEntry(collections);
+      let collection = TCIA.randomEntry(collections);
       status('looking in ' + JSON.stringify(collection) + '...');
       return this.patients(collection.Collection).then(patients => {
-        let patient = randomEntry(patients);
+        let patient = TCIA.randomEntry(patients);
         status('looking in ' + JSON.stringify(patient) + '...');
         return this.studies(patient.PatientID).then(studies => {
-          let study = randomEntry(studies);
+          let study = TCIA.randomEntry(studies);
           status('looking in ' + JSON.stringify(study) + '...');
           return this.series(study.StudyInstanceUID).then(series => {
-            let seriesUID = randomEntry(series);
+            let seriesUID = TCIA.randomEntry(series);
             status('loading ' + JSON.stringify(seriesUID));
             return(this.images(seriesUID.SeriesInstanceUID));
           });
