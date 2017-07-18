@@ -174,7 +174,6 @@ class ValueRepresentation {
         else if (type == "OD") vr = new OtherDoubleString();
         else if (type == "OF") vr = new OtherFloatString();
         else if (type == "OW") vr = new OtherWordString();
-        else if (type == "ox") vr = new UnknownValue();
         else if (type == "PN") vr = new PersonName();
         else if (type == "SH") vr = new ShortString();
         else if (type == "SL") vr = new SignedLong();
@@ -189,7 +188,20 @@ class ValueRepresentation {
         else if (type == "UR") vr = new UniversalResource();
         else if (type == "US") vr = new UnsignedShort();
         else if (type == "UT") vr = new UnlimitedText();
-        else throw "Invalid vr type " + type;
+        else if (type == "ox") {
+          // TODO: determine VR based on context (could be 1 byte pixel data)
+          // https://github.com/dgobbi/vtk-dicom/issues/38
+          console.error("Invalid vr type " + type + ' - using OW');
+          vr = new OtherWordString();
+        }
+        else if (type == "xs") {
+          console.error("Invalid vr type " + type + ' - using US');
+          vr = new UnsignedShort();
+        }
+        else {
+          console.error("Invalid vr type " + type + ' - using UN');
+          vr = new UnknownValue();
+        }
 
         return vr;
     }

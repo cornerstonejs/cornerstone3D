@@ -17,10 +17,14 @@
       </p>
       <a href="../index.html">Go back to the Examples page</a>
     </div>
+    <div class="row">
+      <button id='randomImages'>Download random TCIA series</button>
+      <p> or drag and drop DICOM files below.</p>
+    </div>
 
     <div class="row" id="dropZone" style="border: 1px solid black;">
       <!-- <input type="file" value="Select dicom" id="select"></input> -->
-      <p id='status'>Drag and drop DICOM files here...</p>
+      <p id='status'>Ready...</p>
       <button id='datasetPlayStop' class='datasetControl'>Play</button>
       <label for="datasetSlider" class='datasetControl'>Dataset: <span id="datasetOffset">0</span></label>
       <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
@@ -53,6 +57,7 @@
 <script src="../js/cornerstoneWADOImageLoader.min.js"></script>
 <script src="../js/initWebWorkers.js"></script>
 
+<script src="./tcia.js"></script>
 <script src="./viewer.js"></script>
 
 <script src="../../build/dcmjs.js"></script>
@@ -60,6 +65,9 @@
 <script>
   var dc0 = new DCMJS.data.DICOMZero();
   $(document).ready(function() {
+
+
+
     const dropZone = document.getElementById('dropZone');
 
     $('.datasetControl').attr('disabled', true);
@@ -68,9 +76,13 @@
 
     function resetDICOMzero() {
       if (dc0.viewer) {
+        dc0.viewer.reset();
         dc0.viewer.removeElement();
       }
       dc0.reset();
+      $('#datasetSlider').val(0);
+      $('#datasetSlider').attr('max', 0);
+      $('#dicomData').text('');
     }
 
     function displayDataset(offset) {
@@ -130,6 +142,10 @@
       $('#status').text(s);
     }
 
+    function progressStatus(progressEvent) {
+      $('#status').text(`${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
+    }
+
     resetDICOMzero();
 
     window.addEventListener('resize', function() {
@@ -152,6 +168,38 @@
       dc0.readOneFile(displayDatasets, status);
     }
     $('#dropZone').bind('drop', handleFileDrop);
+
+    function handleZipArrayBuffer(arrayBuffer) {
+      JSZip.loadAsync(arrayBuffer)
+      .then(function(zip) {
+        dc0.zip = zip;
+        let expectedDICOMFileCount = 0;
+        Object.keys(zip.files).forEach(fileKey => {
+          if (fileKey.endsWith('.dcm')) {
+            expectedDICOMFileCount += 1;
+            zip.files[fileKey].async('arraybuffer').then(function(arrayBuffer) {
+              dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
+              dc0.unnaturalDatasets.push(dicomData.dict);
+              let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+              dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+              dc0.datasets.push(dataset);
+              if (dc0.datasets.length == expectedDICOMFileCount) {
+                displayDatasets();
+              }
+            });
+          }
+        });
+      });
+    }
+
+
+    function loadRandomTCIASeries() {
+      resetDICOMzero();
+      let tcia = new TCIA({progressCallback: progressStatus})
+      tcia.randomImages(status).then(handleZipArrayBuffer);
+    }
+
+    $('#randomImages').on('click', loadRandomTCIASeries);
 
   });
 </script>

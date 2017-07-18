@@ -170,6 +170,22 @@ class Viewer {
     cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
   }
 
+  reset() {
+    cornerstone.imageCache.purgeCache();
+    cornerstoneTools.clearToolState(this.element, 'stackRenderer');
+    cornerstoneTools.clearToolState(this.element, 'stack');
+
+    cornerstoneTools.mouseInput.disable(this.element);
+    cornerstoneTools.mouseWheelInput.disable(this.element);
+    cornerstoneTools.keyboardInput.disable(this.element);
+
+    cornerstoneTools.wwwc.deactivate(this.element, 1);
+    cornerstoneTools.pan.deactivate(this.element, 2);
+    cornerstoneTools.zoom.deactivate(this.element, 4);
+    cornerstoneTools.stackScrollWheel.deactivate(this.element);
+    cornerstoneTools.stackScrollKeyboard.deactivate(this.element);
+  }
+
   set index(newIndex) {
     cornerstoneTools.scrollToIndex(this.element, newIndex);
   }
