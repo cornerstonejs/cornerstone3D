@@ -1,0 +1,312 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+  <link href="../css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>
+        Display QIICR DICOM Data
+      </h1>
+      <p>
+        This example demonstrates display of DICOM SEG and SR data.
+      </p>
+      <a href="../index.html">Go back to the Examples page</a>
+    </div>
+
+    <div class="row">
+      <div class='col-xs-4'>
+        <div class="row">
+          <label for='tciaPatients'>Patients</label>
+          <select id='tciaPatients'>
+          </select>
+        </div>
+        <div class="row">
+          <label for='tciaStudies'>Studies</label>
+          <select id='tciaStudies'>
+          </select>
+        </div>
+      </div>
+      <div class='col-xs-4'>
+        <div class="row">
+          <select id='tciaSeries'>
+          <option>Select patient and study for series options</option>
+          </select>
+        </div>
+        <div class="row">
+          <button id='tciaSeriesLoad'>Load selected images</button>
+        </div>
+      </div>
+      <div class='col-xs-4'>
+        <div class="row">
+          <select id='tciaSegmentations'>
+          <option>Select patient and study for segmentation options</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xs-4">
+        <p> or drag and drop DICOM files below.</p>
+      </div>
+    </div>
+
+    <div class="row" id="dropZone" style="border: 1px solid black;">
+      <!-- <input type="file" value="Select dicom" id="select"></input> -->
+      <p id='status'>Ready...</p>
+      <button id='datasetPlayStop' class='datasetControl'>Play</button>
+      <label for="datasetSlider" class='datasetControl'>Dataset: <span id="datasetOffset">0</span></label>
+      <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
+      <h2>DICOM Images</h2>
+      <div id='dicomImages'></div>
+
+      <h2>DICOM Data</h2>
+
+      <div class="col-xs-12">
+        <pre class='pre-scrollable dicomDump' id='dicomData'>
+        </pre>
+      </div>
+      <p>Data is displayed in the experimental <a href='https://github.com/pieper/dcmjs/wiki/NDD-Format'>NDD</a> format.</p>
+    </div>
+
+  </div>
+</body>
+
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/FileSaver.min.js"></script>
+<script src="../js/jszip.min.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
+<!-- for viewer -->
+<script src="../js/cornerstone.min.js"></script>
+<script src="../js/cornerstoneMath.min.js"></script>
+<script src="../js/cornerstoneTools.min.js"></script>
+<script src="../js/dicomParser.min.js"></script>
+<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+
+<script src="../../build/dcmjs.js"></script>
+
+<script src="../helpers/tcia.js"></script>
+<script src="../helpers/DICOMZero.js"></script>
+<script src="../helpers/viewer.js"></script>
+
+
+<script>
+  var dc0 = new DICOMZero();
+  var dc0seg = new DICOMZero();
+  $(document).ready(function() {
+
+
+
+    const dropZone = document.getElementById('dropZone');
+
+    $('.datasetControl').attr('disabled', true);
+    $('.dicomDump').css('height', '900px');
+    $('.dicomDump').css('max-height', '900px');
+
+    function resetDICOMzero() {
+      if (dc0.viewer) {
+        dc0.viewer.reset();
+        dc0.viewer.removeElement();
+      }
+      dc0.reset();
+      $('#datasetSlider').val(0);
+      $('#datasetSlider').attr('max', 0);
+      $('#dicomData').text('');
+    }
+
+    function displayDataset(offset) {
+      $('#dicomData').text(JSON.stringify(dc0.datasets[offset], null, 2));
+    }
+
+    function setOffset(offset) {
+      $('#datasetOffset').text(offset);
+      $('#datasetSlider').val(offset);
+      displayDataset(offset);
+      dc0.viewer.index = offset;
+    }
+
+    function displayDatasets() {
+      status("Done reading...");
+      dc0.datasets.sort(function(a,b) {
+        return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
+      });
+      $('#datasetSlider').attr('max', dc0.datasets.length-1);
+      $('.datasetControl').attr('disabled', false);
+      displayDataset(0);
+      dc0.viewer = new Viewer(dc0.datasets);
+      dc0.viewer.display('#dicomImages');
+      let onNewImage = function (event) {
+        setOffset(dc0.viewer.index);
+      }
+      $(dc0.viewer.element).on('CornerstoneNewImage', onNewImage);
+    }
+
+    function displaySegmentation() {
+      status("Done reading seg...");
+      status("need to add stack to dc0.viewer...");
+      console.log(dc0seg);
+      dc0.viewer.addSegmentation(dc0seg.datasets[0]);
+    }
+
+    $('#datasetSlider').on('input', function(){
+      var offset = $('#datasetSlider').val();
+      setOffset(offset);
+    });
+
+    function playStep () {
+      var offset = 1 + Number($('#datasetSlider').val());
+      if (offset > dc0.datasets.length-1) {
+        offset = 0;
+      }
+      setOffset(offset);
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        window.requestAnimationFrame(playStep);
+      }
+    }
+
+    $('#datasetPlayStop').on('click', function(){
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        $('#datasetPlayStop').text('Play');
+      } else {
+        $('#datasetPlayStop').text('Stop');
+        window.requestAnimationFrame(playStep);
+      }
+    });
+
+    function status(s) {
+      console.log('status: ', s);
+      $('#status').text(s);
+    }
+
+    function progressStatus(progressEvent) {
+      $('#status').text(`${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
+    }
+
+    resetDICOMzero();
+
+    window.addEventListener('resize', function() {
+      dropZone.width = window.innerWidth;
+      dropZone.height = window.innerHeight;
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    function handleFileDrop(e) {
+      let evt = e.originalEvent;
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      resetDICOMzero();
+      dc0.dataTransfer = {files: []};
+      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
+        dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
+      }
+      status(`Got ${dc0.dataTransfer.files.length} files...`);
+      dc0.readOneFile(displayDatasets, status);
+    }
+    $('#dropZone').bind('drop', handleFileDrop);
+
+    let tcia = new TCIA({progressCallback: progressStatus});
+
+    function loadTCIAPatients(collection) {
+      $('#tciaPatients').append("<option id='patientsPlaceholder'>Fetching from TCIA..</option>");
+      tcia.patients('QIN-HEADNECK').then(patients => {
+        $('#patientsPlaceholder').text('Select Patient');
+        patients.sort((a,b)=>((a.PatientName > b.PatientName) ? 1 : (b.PatientName > a.PatientName) ? -1 : 0));
+        patients.forEach(patient=> {
+          let tciaPatients = $('#tciaPatients');
+          let patientOption = $('<option></option>')
+            .val(patient.PatientID)
+            .text(`${patient.PatientName} (${patient.PatientSex})`);
+          tciaPatients.append(patientOption);
+          });
+      });
+    }
+    loadTCIAPatients('QIN-HEADNECK');
+    $('#tciaPatients').on('change', event => {
+      loadTCIAStudies(event.target.value);
+    });
+
+    function loadTCIAStudies(patientID) {
+      $('#tciaStudies option').remove();
+      $('#tciaSeries option').remove();
+      $('#tciaSegmentations option').remove();
+      $('#tciaStudies').append("<option id='studiesPlaceholder'>Fetching from TCIA..</option>");
+      tcia.studies(patientID).then(studies => {
+        $('#studiesPlaceholder').text('Select Study');
+        studies.sort((a,b)=>((a.StudyDescription > b.StudyDescription) ? 1 : (b.StudyDescription > a.StudyDescription) ? -1 : 0));
+        studies.forEach(study=> {
+          let tciaStudies = $('#tciaStudies');
+          let studyOption = $('<option></option>')
+            .val(study.StudyInstanceUID)
+            .text(`${study.StudyDate} (${study.StudyDescription})`);
+          tciaStudies.append(studyOption);
+          });
+      });
+    }
+    $('#tciaStudies').on('change', event => {
+      loadTCIASeries(event.target.value);
+    });
+
+    function loadTCIASeries(studyInstanceUID) {
+      $('#tciaSeries option').remove();
+      $('#tciaSeries').append("<option id='seriesPlaceholder'>Fetching from TCIA..</option>");
+      $('#tciaSegmentations option').remove();
+      $('#tciaSegmentations').append("<option id='segPlaceholder'>Fetching from TCIA..</option>");
+      tcia.series(studyInstanceUID).then(series => {
+        $('#seriesPlaceholder').remove();
+        $('#segPlaceholder').text("Load image then select segmentation");
+        series.sort((a,b)=>((a.SeriesDescription > b.SeriesDescription) ? 1 : (b.SeriesDescription > a.SeriesDescription) ? -1 : 0));
+        series.forEach(serie=> {
+          let seriesOption = $('<option></option>')
+            .val(serie.SeriesInstanceUID)
+            .text(`${serie.Modality}: ${serie.SeriesDescription} (${serie.ImageCount})`);
+          if (serie.Modality == 'CT' || serie.Modality == 'PT') {
+            $('#tciaSeries').append(seriesOption);
+          }
+          if (serie.Modality == 'SEG') {
+            $('#tciaSegmentations').append(seriesOption);
+          }
+        });
+      });
+    }
+    $('#tciaSeriesLoad').on('click', event => {
+      $('#tciaSeries option:selected').each(function() {
+        loadTCIAImages(this.value);
+      });
+    });
+
+    $('#tciaSegmentations').on('change', event => {
+      if (!dc0.viewer) {
+        status('Must have a background image loaded before viewing segmentation');
+        return;
+      }
+      loadTCIASegmentation(event.target.value);
+    });
+
+    function loadTCIAImages(seriesInstanceUID) {
+      resetDICOMzero();
+      console.log('loading ', seriesInstanceUID);
+      tcia.images(seriesInstanceUID).then(arrayBuffer => {
+        dc0.extractFromZipArrayBuffer(arrayBuffer, displayDatasets);
+      });
+    }
+
+    function loadTCIASegmentation(seriesInstanceUID) {
+      console.log('looking for images from ', seriesInstanceUID);
+      tcia.images(seriesInstanceUID).then(arrayBuffer => {
+        console.log('got arrayBuffer');
+        dc0seg.extractFromZipArrayBuffer(arrayBuffer, displaySegmentation);
+      });
+    }
+
+  });
+</script>
+</html>

@@ -77,26 +77,32 @@ class DICOMZero {
     this.readers.push(reader);
   }
 
-  extractFromZipArrayBuffer(arrayBuffer, finishCallback=function(){}) {
-    JSZip.loadAsync(arrayBuffer)
-    .then(function(zip) {
-      dc0.zip = zip;
-      let expectedDICOMFileCount = 0;
-      Object.keys(zip.files).forEach(fileKey => {
-        if (fileKey.endsWith('.dcm')) {
-          expectedDICOMFileCount += 1;
-          zip.files[fileKey].async('arraybuffer').then(function(arrayBuffer) {
-            let dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
-            dc0.unnaturalDatasets.push(dicomData.dict);
-            let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-            dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
-            dc0.datasets.push(dataset);
-            if (dc0.datasets.length == expectedDICOMFileCount) {
-              finishCallback();
-            }
-          });
-        }
-      });
+  extractDatasetFromArrayBuffer(arrayBuffer) {
+    let dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
+    this.unnaturalDatasets.push(dicomData.dict);
+    let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+    dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+    this.datasets.push(dataset);
+    if (this.datasets.length == this.expectedDICOMFileCount) {
+      this.zipFinishCallback();
+    }
+  };
+
+  handleZip(zip) {
+    this.zip = zip;
+    this.expectedDICOMFileCount = 0;
+    Object.keys(zip.files).forEach(fileKey => {
+      if (fileKey.endsWith('.dcm')) {
+        this.expectedDICOMFileCount += 1;
+        zip.files[fileKey].async('arraybuffer').then(this.extractDatasetFromArrayBuffer.bind(this));
+      }
     });
   }
+
+  extractFromZipArrayBuffer(arrayBuffer, finishCallback=function(){}) {
+    this.zipFinishCallback = finishCallback;
+    JSZip.loadAsync(arrayBuffer)
+    .then(this.handleZip.bind(this));
+  }
+
 }
