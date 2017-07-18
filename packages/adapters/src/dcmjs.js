@@ -1,4 +1,3 @@
-import { DICOMZero } from './DICOMZero.js';
 import { packBitArray } from './packBitArray.js';
 import { ReadBufferStream } from './BufferStream.js';
 import { WriteBufferStream } from './BufferStream.js';
@@ -12,7 +11,6 @@ import { Colors } from './colors.js';
 import { datasetToBlob } from './datasetToBlob.js';
 
 let data = {
-  DICOMZero,
   packBitArray,
   ReadBufferStream,
   WriteBufferStream,

@@ -4,6 +4,55 @@
 	(factory((global.DCMJS = {})));
 }(this, (function (exports) { 'use strict';
 
+/* eslint no-bitwise: 0 */
+function getBytesForBinaryFrame (numPixels) {
+  // Check whether the 1-bit pixels exactly fit into bytes
+  const remainder = numPixels % 8;
+
+  // Number of bytes that work on an exact fit
+  let bytesRequired = Math.floor(numPixels / 8);
+
+  // Add one byte if we have a remainder
+  if (remainder > 0) {
+    bytesRequired++;
+  }
+
+  return bytesRequired;
+}
+
+function packBitArray (pixelData) {
+  const numPixels = pixelData.length;
+  console.log('numPixels: ' + numPixels);
+
+  const length = getBytesForBinaryFrame(numPixels);
+  //console.log('getBytesForBinaryFrame: ' + length);
+
+  const bitPixelData = new Uint8Array(length);
+
+  let bytePos = 0;
+
+  for (let i = 0; i < numPixels; i++) {
+    // Compute byte position
+    bytePos = Math.floor(i / 8);
+
+    const pixValue = (pixelData[i] !== 0);
+
+    //console.log('i: ' + i);
+    //console.log('pixValue: ' + pixValue);
+    //console.log('bytePos: ' + bytePos);
+
+    const bitPixelValue = pixValue << (i % 8);
+    //console.log('current bitPixelData: ' + bitPixelData[bytePos]);
+    //console.log('this bitPixelValue: ' + bitPixelValue);
+
+    bitPixelData[bytePos] |= bitPixelValue;
+
+    //console.log('new bitPixelValue: ' + bitPixelData[bytePos]);
+  }
+
+  return bitPixelData;
+}
+
 //http://jonisalonen.com/2012/from-utf-16-to-utf-8-in-javascript/
 function toUTF8Array(str) {
     var utf8 = [];
@@ -49751,6 +49800,171 @@ class DicomMessage {
     }
 }
 
+//
+// Handle DICOM and CIELAB colors
+// based on: 
+// https://github.com/michaelonken/dcmtk/blob/3c68f0e882e22e6d9e2a42f836332c0ca21b3e7f/dcmiod/libsrc/cielabutil.cc
+//
+// RGB here refers to sRGB 0-1 per component.
+// dicomlab is CIELAB values as defined in the dicom standard
+// XYZ is CIEXYZ convention
+//
+// TODO: needs a test suite
+// TODO: only dicomlab2RGB tested on real data
+//
+//
+
+class Colors {
+
+  static d65WhitePointXYZ() {
+    // white points of D65 light point (CIELAB standard white point)
+    return [0.950456, 1.0, 1.088754];
+  }
+
+  static dicomlab2RGB(dicomlab) {
+    return (Colors.lab2RGB(Colors.dicomlab2LAB(dicomlab)));
+  }
+
+  static rgb2DICOMLAB(rgb) {
+    return (Colors.lab2DICOMLAB(Colors.rgb2LAB(rgb)));
+  }
+
+  static dicomlab2LAB(dicomlab) {
+    return ([
+      ((dicomlab[0] * 100.0) / 65535.0)      , // results in 0 <= L <= 100
+      ((dicomlab[1] * 255.0) / 65535.0) - 128, // results in -128 <= a <= 127
+      ((dicomlab[2] * 255.0) / 65535.0) - 128, // results in -128 <= b <= 127
+    ]);
+  }
+
+  static lab2DICOMLAB(lab) {
+    return ([
+      lab[0] * 65535.0 / 100.0        , // results in 0 <= L <= 65535
+      (lab[1] + 128) * 65535.0 / 255.0, // results in 0 <= a <= 65535
+      (lab[2] + 128) * 65535.0 / 255.0, // results in 0 <= b <= 65535
+    ]);
+  }
+
+  static rgb2LAB(rgb) {
+    return (Colors.xyz2LAB(Colors.rgb2XYZ(rgb)));
+  }
+
+  static gammaCorrection(n) {
+    if (n <= 0.0031306684425005883) {
+      return (12.92 * n);
+    } else {
+      return (1.055*Math.pow(n, 0.416666666666666667) - 0.055);
+    }
+  }
+
+  static invGammaCorrection(n) {
+    if (n <= 0.0404482362771076) {
+      return (n / 12.92);
+    } else {
+      return (Math.pow((n + 0.055)/1.055, 2.4));
+    }
+  }
+
+  static rgb2XYZ(rgb) {
+    let R = Colors.invGammaCorrection(rgb[0]);
+    let G = Colors.invGammaCorrection(rgb[1]);
+    let B = Colors.invGammaCorrection(rgb[2]);
+    return ([
+      0.4123955889674142161*R + 0.3575834307637148171*G + 0.1804926473817015735*B,
+      0.2125862307855955516*R + 0.7151703037034108499*G + 0.07220049864333622685*B,
+      0.01929721549174694484*R + 0.1191838645808485318*G + 0.9504971251315797660*B,
+    ]);
+  }
+
+  static xyz2LAB(xyz) {
+    let whitePoint = Colors.d65WhitePointXYZ();
+    let X = xyz[0] / whitePoint[0];
+    let Y = xyz[1] / whitePoint[1];
+    let Z = xyz[2] / whitePoint[2];
+    X = Colors.labf(X);
+    Y = Colors.labf(Y);
+    Z = Colors.labf(Z);
+    return ([
+      116*Y - 16,
+      500*(X - Y),
+      200*(Y - Z),
+    ]);
+  }
+
+  static lab2RGB(lab) {
+    return (Colors.xyz2RGB(Colors.lab2XYZ(lab)));
+  }
+
+  static lab2XYZ(lab) {
+    let L = (lab[0] + 16)/116;
+    let a = L + lab[1]/500;
+    let b = L - lab[2]/200;
+    let whitePoint = Colors.d65WhitePointXYZ();
+    return ([
+      whitePoint[0] * Colors.labfInv(a),
+      whitePoint[1] * Colors.labfInv(L),
+      whitePoint[2] * Colors.labfInv(b),
+    ]);
+  }
+
+  static xyz2RGB(xyz) {
+    let R1 =  3.2406*xyz[0] - 1.5372*xyz[1] - 0.4986*xyz[2];
+    let G1 = -0.9689*xyz[0] + 1.8758*xyz[1] + 0.0415*xyz[2];
+    let B1 =  0.0557*xyz[0] - 0.2040*xyz[1] + 1.0570*xyz[2];
+
+    /* Force nonnegative values so that gamma correction is well-defined. */
+    let minimumComponent = Math.min(R1, G1);
+    minimumComponent = Math.min(minimumComponent, B1);
+    if(minimumComponent < 0) {
+      R1 -= minimumComponent;
+      G1 -= minimumComponent;
+      B1 -= minimumComponent;
+    }
+
+    /* Transform from RGB to R'G'B' */
+    return ([
+      Colors.gammaCorrection(R1),
+      Colors.gammaCorrection(G1),
+      Colors.gammaCorrection(B1),
+    ]);
+  }
+
+  static labf(n) {
+    if (n >= 8.85645167903563082e-3) {
+      return (Math.pow(n, 0.333333333333333));
+    } else {
+      return ((841.0/108.0)*n + (4.0/29.0));
+    }
+  }
+
+  static labfInv(n) {
+    if (n >= 0.206896551724137931) {
+      return (n*n*n);
+    } else {
+      return (108.0/841.0 * (n - 4.0/29.0));
+    }
+  }
+}
+
+function datasetToBlob (dataset) {
+  const meta = {
+    FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
+    MediaStorageSOPClassUID: dataset.SOPClassUID,
+    MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
+    TransferSyntaxUID: "1.2.840.10008.1.2",
+    ImplementationClassUID: DicomMetaDictionary.uid(),
+    ImplementationVersionName: "dcmjs-0.0",
+  };
+
+  const denaturalized = DicomMetaDictionary.denaturalizeDataset(meta);
+  const dicomDict = new DicomDict$1(denaturalized);
+
+  dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
+
+  const buffer = dicomDict.write();
+  return new Blob([buffer], {type: "application/dicom"});
+}
+
 class DerivedDataset {
   constructor (datasets, options={}) {
     this.options = JSON.parse(JSON.stringify(options));
@@ -50519,303 +50733,8 @@ class DSRNormalizer extends Normalizer {
   }
 }
 
-class DICOMZero {
-  constructor() {
-    this.reset();
-  }
-
-  reset() {
-    this.mappingLog = [];
-    this.dataTransfer = undefined;
-    this.unnaturalDatasets = [];
-    this.datasets = [];
-    this.readers = [];
-    this.arrayBuffers = [];
-    this.files = [];
-    this.fileIndex = 0;
-  }
-
-  getReadDICOMFunction(doneCallback, statusCallback) {
-    statusCallback = statusCallback || console.log;
-    return progressEvent => {
-      let reader = progressEvent.target;
-      let arrayBuffer = reader.result;
-      this.arrayBuffers.push(arrayBuffer);
-
-      let dicomData;
-      try {
-        dicomData = DicomMessage.readFile(arrayBuffer);
-        this.unnaturalDatasets.push(dicomData.dict);
-        let dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-        dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-        this.datasets.push(dataset);
-      } catch (error) {
-        console.error(error);
-        statusCallback("skipping non-dicom file");
-      }
-
-      let readerIndex = this.readers.indexOf(reader);
-      if (readerIndex < 0) {
-        reject("Logic error: Unexpected reader!");
-      } else {
-        this.readers.splice(readerIndex, 1); // remove the reader
-      }
-
-      if (this.fileIndex === this.dataTransfer.files.length) {
-        statusCallback(`Normalizing...`);
-        try {
-          this.multiframe = Normalizer.normalizeToDataset(this.datasets);
-        } catch (e) {
-          console.error('Could not convert to multiframe');
-          console.error(e);
-        }
-        statusCallback(`Creating segmentation...`);
-        try {
-          this.seg = new Segmentation([this.multiframe]);
-          statusCallback(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and segmentation.`);
-        } catch (e) {
-          console.error('Could not create segmentation');
-          console.error(e);
-        }
-        doneCallback();
-      } else {
-        statusCallback(`Reading... (${this.fileIndex+1}).`);
-        this.readOneFile(doneCallback, statusCallback);
-      }
-    };
-  }
-
-  // Used for file selection button or drop of file list
-  readOneFile(doneCallback, statusCallback) {
-    let file = this.dataTransfer.files[this.fileIndex];
-    this.fileIndex++;
-
-    let reader = new FileReader();
-    reader.onload = this.getReadDICOMFunction(doneCallback, statusCallback);
-    reader.readAsArrayBuffer(file);
-
-    this.files.push(file);
-    this.readers.push(reader);
-  }
-}
-
-/* eslint no-bitwise: 0 */
-function getBytesForBinaryFrame (numPixels) {
-  // Check whether the 1-bit pixels exactly fit into bytes
-  const remainder = numPixels % 8;
-
-  // Number of bytes that work on an exact fit
-  let bytesRequired = Math.floor(numPixels / 8);
-
-  // Add one byte if we have a remainder
-  if (remainder > 0) {
-    bytesRequired++;
-  }
-
-  return bytesRequired;
-}
-
-function packBitArray (pixelData) {
-  const numPixels = pixelData.length;
-  console.log('numPixels: ' + numPixels);
-
-  const length = getBytesForBinaryFrame(numPixels);
-  //console.log('getBytesForBinaryFrame: ' + length);
-
-  const bitPixelData = new Uint8Array(length);
-
-  let bytePos = 0;
-
-  for (let i = 0; i < numPixels; i++) {
-    // Compute byte position
-    bytePos = Math.floor(i / 8);
-
-    const pixValue = (pixelData[i] !== 0);
-
-    //console.log('i: ' + i);
-    //console.log('pixValue: ' + pixValue);
-    //console.log('bytePos: ' + bytePos);
-
-    const bitPixelValue = pixValue << (i % 8);
-    //console.log('current bitPixelData: ' + bitPixelData[bytePos]);
-    //console.log('this bitPixelValue: ' + bitPixelValue);
-
-    bitPixelData[bytePos] |= bitPixelValue;
-
-    //console.log('new bitPixelValue: ' + bitPixelData[bytePos]);
-  }
-
-  return bitPixelData;
-}
-
-//
-// Handle DICOM and CIELAB colors
-// based on: 
-// https://github.com/michaelonken/dcmtk/blob/3c68f0e882e22e6d9e2a42f836332c0ca21b3e7f/dcmiod/libsrc/cielabutil.cc
-//
-// RGB here refers to sRGB 0-1 per component.
-// dicomlab is CIELAB values as defined in the dicom standard
-// XYZ is CIEXYZ convention
-//
-// TODO: needs a test suite
-// TODO: only dicomlab2RGB tested on real data
-//
-//
-
-class Colors {
-
-  static d65WhitePointXYZ() {
-    // white points of D65 light point (CIELAB standard white point)
-    return [0.950456, 1.0, 1.088754];
-  }
-
-  static dicomlab2RGB(dicomlab) {
-    return (Colors.lab2RGB(Colors.dicomlab2LAB(dicomlab)));
-  }
-
-  static rgb2DICOMLAB(rgb) {
-    return (Colors.lab2DICOMLAB(Colors.rgb2LAB(rgb)));
-  }
-
-  static dicomlab2LAB(dicomlab) {
-    return ([
-      ((dicomlab[0] * 100.0) / 65535.0)      , // results in 0 <= L <= 100
-      ((dicomlab[1] * 255.0) / 65535.0) - 128, // results in -128 <= a <= 127
-      ((dicomlab[2] * 255.0) / 65535.0) - 128, // results in -128 <= b <= 127
-    ]);
-  }
-
-  static lab2DICOMLAB(lab) {
-    return ([
-      lab[0] * 65535.0 / 100.0        , // results in 0 <= L <= 65535
-      (lab[1] + 128) * 65535.0 / 255.0, // results in 0 <= a <= 65535
-      (lab[2] + 128) * 65535.0 / 255.0, // results in 0 <= b <= 65535
-    ]);
-  }
-
-  static rgb2LAB(rgb) {
-    return (Colors.xyz2LAB(Colors.rgb2XYZ(rgb)));
-  }
-
-  static gammaCorrection(n) {
-    if (n <= 0.0031306684425005883) {
-      return (12.92 * n);
-    } else {
-      return (1.055*Math.pow(n, 0.416666666666666667) - 0.055);
-    }
-  }
-
-  static invGammaCorrection(n) {
-    if (n <= 0.0404482362771076) {
-      return (n / 12.92);
-    } else {
-      return (Math.pow((n + 0.055)/1.055, 2.4));
-    }
-  }
-
-  static rgb2XYZ(rgb) {
-    let R = Colors.invGammaCorrection(rgb[0]);
-    let G = Colors.invGammaCorrection(rgb[1]);
-    let B = Colors.invGammaCorrection(rgb[2]);
-    return ([
-      0.4123955889674142161*R + 0.3575834307637148171*G + 0.1804926473817015735*B,
-      0.2125862307855955516*R + 0.7151703037034108499*G + 0.07220049864333622685*B,
-      0.01929721549174694484*R + 0.1191838645808485318*G + 0.9504971251315797660*B,
-    ]);
-  }
-
-  static xyz2LAB(xyz) {
-    let whitePoint = Colors.d65WhitePointXYZ();
-    let X = xyz[0] / whitePoint[0];
-    let Y = xyz[1] / whitePoint[1];
-    let Z = xyz[2] / whitePoint[2];
-    X = Colors.labf(X);
-    Y = Colors.labf(Y);
-    Z = Colors.labf(Z);
-    return ([
-      116*Y - 16,
-      500*(X - Y),
-      200*(Y - Z),
-    ]);
-  }
-
-  static lab2RGB(lab) {
-    return (Colors.xyz2RGB(Colors.lab2XYZ(lab)));
-  }
-
-  static lab2XYZ(lab) {
-    let L = (lab[0] + 16)/116;
-    let a = L + lab[1]/500;
-    let b = L - lab[2]/200;
-    let whitePoint = Colors.d65WhitePointXYZ();
-    return ([
-      whitePoint[0] * Colors.labfInv(a),
-      whitePoint[1] * Colors.labfInv(L),
-      whitePoint[2] * Colors.labfInv(b),
-    ]);
-  }
-
-  static xyz2RGB(xyz) {
-    let R1 =  3.2406*xyz[0] - 1.5372*xyz[1] - 0.4986*xyz[2];
-    let G1 = -0.9689*xyz[0] + 1.8758*xyz[1] + 0.0415*xyz[2];
-    let B1 =  0.0557*xyz[0] - 0.2040*xyz[1] + 1.0570*xyz[2];
-
-    /* Force nonnegative values so that gamma correction is well-defined. */
-    let minimumComponent = Math.min(R1, G1);
-    minimumComponent = Math.min(minimumComponent, B1);
-    if(minimumComponent < 0) {
-      R1 -= minimumComponent;
-      G1 -= minimumComponent;
-      B1 -= minimumComponent;
-    }
-
-    /* Transform from RGB to R'G'B' */
-    return ([
-      Colors.gammaCorrection(R1),
-      Colors.gammaCorrection(G1),
-      Colors.gammaCorrection(B1),
-    ]);
-  }
-
-  static labf(n) {
-    if (n >= 8.85645167903563082e-3) {
-      return (Math.pow(n, 0.333333333333333));
-    } else {
-      return ((841.0/108.0)*n + (4.0/29.0));
-    }
-  }
-
-  static labfInv(n) {
-    if (n >= 0.206896551724137931) {
-      return (n*n*n);
-    } else {
-      return (108.0/841.0 * (n - 4.0/29.0));
-    }
-  }
-}
-
-function datasetToBlob (dataset) {
-  const meta = {
-    FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
-    MediaStorageSOPClassUID: dataset.SOPClassUID,
-    MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
-    TransferSyntaxUID: "1.2.840.10008.1.2",
-    ImplementationClassUID: DicomMetaDictionary.uid(),
-    ImplementationVersionName: "dcmjs-0.0",
-  };
-
-  const denaturalized = DicomMetaDictionary.denaturalizeDataset(meta);
-  const dicomDict = new DicomDict$1(denaturalized);
-
-  dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
-
-  const buffer = dicomDict.write();
-  return new Blob([buffer], {type: "application/dicom"});
-}
-
 //export { anonymizer } from './anonymizer.js';
 let data = {
-  DICOMZero,
   packBitArray,
   ReadBufferStream,
   WriteBufferStream,

@@ -77,13 +77,15 @@
 
 <script src="../../build/dcmjs.js"></script>
 
+<script src="../helpers/DICOMZero.js"></script>
+
 <script>
   var dc0;
   $(document).ready(function() {
 
     $('.dicomControls').prop('disabled', true)
 
-    dc0 = new DCMJS.data.DICOMZero();
+    dc0 = new DICOMZero();
     const element = document.getElementById('dicomImage');
     $(element).on('CornerstoneToolsMeasurementModified', updateMeasurementTable)
     const dropZone = document.getElementById('dropZone');

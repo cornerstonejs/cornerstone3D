@@ -84,9 +84,11 @@
 
 <script src="../../build/dcmjs.js"></script>
 
+<script src="../helpers/DICOMZero.js"></script>
+
 <script>
   $(document).ready(function() {
-    const dc0 = new DCMJS.data.DICOMZero();
+    const dc0 = new DICOMZero();
     const element = document.getElementById('dicomImage');
     const dropZone = document.getElementById('dropZone');
 

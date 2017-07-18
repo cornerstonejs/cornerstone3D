@@ -1,8 +1,3 @@
-import { DicomMessage } from './DicomMessage.js';
-import { DicomMetaDictionary } from './DicomMetaDictionary.js';
-import { Normalizer } from './normalizers.js';
-import { Segmentation } from './derivations.js';
-
 class DICOMZero {
   constructor() {
     this.reset();
@@ -28,10 +23,10 @@ class DICOMZero {
 
       let dicomData;
       try {
-        dicomData = DicomMessage.readFile(arrayBuffer);
+        dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
         this.unnaturalDatasets.push(dicomData.dict);
-        let dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-        dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+        let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+        dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
         this.datasets.push(dataset);
       } catch (error) {
         console.error(error);
@@ -48,14 +43,14 @@ class DICOMZero {
       if (this.fileIndex === this.dataTransfer.files.length) {
         statusCallback(`Normalizing...`);
         try {
-          this.multiframe = Normalizer.normalizeToDataset(this.datasets);
+          this.multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset(this.datasets);
         } catch (e) {
           console.error('Could not convert to multiframe');
           console.error(e);
         }
         statusCallback(`Creating segmentation...`);
         try {
-          this.seg = new Segmentation([this.multiframe]);
+          this.seg = new dcmjs.derivations.Segmentation([this.multiframe]);
           statusCallback(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and segmentation.`);
         } catch (e) {
           console.error('Could not create segmentation');
@@ -82,5 +77,3 @@ class DICOMZero {
     this.readers.push(reader);
   }
 }
-
-export { DICOMZero };
