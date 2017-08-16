@@ -76,6 +76,8 @@ function load (uri, loadRequest, imageId) {
     loadDeferred.resolve(dataSet);
     // done loading, remove the promise
     delete promises[uri];
+  }, function (error) {
+    loadDeferred.reject(error);
   }).always(function () {
       // error thrown, remove the promise
     delete promises[uri];
