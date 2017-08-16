@@ -26,8 +26,8 @@ function getLutData (lutDataSet, tag, lutDescriptor) {
 }
 
 function populatePaletteColorLut (dataSet, imagePixelModule) {
-  // return immediately if no palette lut elements
-  if (!dataSet.elements.x00281101) {
+  // return immediately if photometric interpretation is not PALETTE COLOR or no palette lut elements
+  if (imagePixelModule.photometricInterpretation !== 'PALETTE COLOR' || !dataSet.elements.x00281101) {
     return;
   }
   imagePixelModule.redPaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281101');
