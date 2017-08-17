@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.14.6 - 2017-06-08 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.14.6 - 2017-08-09 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -764,7 +764,7 @@ function decodeBigEndian(imageFrame, pixelData) {
     }
     // Do the byte swap
     for (var i = 0; i < imageFrame.pixelData.length; i++) {
-      imageFrame[i] = swap16(imageFrame.pixelData[i]);
+      imageFrame.pixelData[i] = swap16(imageFrame.pixelData[i]);
     }
   } else if (imageFrame.bitsAllocated === 8) {
     imageFrame.pixelData = pixelData;
@@ -929,8 +929,6 @@ function decode8(imageFrame, pixelData) {
   var numSegments = header.getInt32(0, true);
 
   for (var s = 0; s < numSegments; ++s) {
-    outIndex = s;
-
     var inIndex = header.getInt32((s + 1) * 4, true);
     var maxIndex = header.getInt32((s + 2) * 4, true);
 
@@ -947,7 +945,7 @@ function decode8(imageFrame, pixelData) {
         // copy n bytes
         for (var i = 0; i < n + 1 && outIndex < endOfSegment; ++i) {
           out[outIndex] = data[inIndex++];
-          outIndex += imageFrame.samplesPerPixel;
+          outIndex++;
         }
       } else if (n <= -1 && n >= -127) {
         var value = data[inIndex++];
@@ -955,10 +953,10 @@ function decode8(imageFrame, pixelData) {
 
         for (var j = 0; j < -n + 1 && outIndex < endOfSegment; ++j) {
           out[outIndex] = value;
-          outIndex += imageFrame.samplesPerPixel;
+          outIndex++;
         }
       } /* else if (n === -128) {
-        } // do nothing */
+         } // do nothing */
     }
   }
   imageFrame.pixelData = new Uint8Array(outFrame);
@@ -1004,7 +1002,7 @@ function decode16(imageFrame, pixelData) {
           outIndex++;
         }
       } /* else if (n === -128) {
-        } // do nothing */
+         } // do nothing */
     }
   }
   if (imageFrame.pixelRepresentation === 0) {

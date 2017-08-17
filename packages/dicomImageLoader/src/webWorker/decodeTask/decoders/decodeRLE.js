@@ -21,8 +21,6 @@ function decode8 (imageFrame, pixelData) {
   const numSegments = header.getInt32(0, true);
 
   for (let s = 0; s < numSegments; ++s) {
-    outIndex = s;
-
     let inIndex = header.getInt32((s + 1) * 4, true);
     let maxIndex = header.getInt32((s + 2) * 4, true);
 
@@ -39,7 +37,7 @@ function decode8 (imageFrame, pixelData) {
         // copy n bytes
         for (let i = 0; i < n + 1 && outIndex < endOfSegment; ++i) {
           out[outIndex] = data[inIndex++];
-          outIndex += imageFrame.samplesPerPixel;
+          outIndex++;
         }
       } else if (n <= -1 && n >= -127) {
         const value = data[inIndex++];
@@ -47,7 +45,7 @@ function decode8 (imageFrame, pixelData) {
 
         for (let j = 0; j < -n + 1 && outIndex < endOfSegment; ++j) {
           out[outIndex] = value;
-          outIndex += imageFrame.samplesPerPixel;
+          outIndex++;
         }
       }/* else if (n === -128) {
 
