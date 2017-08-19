@@ -6,35 +6,45 @@
 //
 class Viewer {
 
-  constructor(datasets) {
+  constructor(datasets, options={}) {
     this.datasets = datasets;
     this.metaData = {};
     this.element = undefined;
+
+    this.id = Viewer.nextId;
+    Viewer.nextId += 1;
+
+    this.width = options.width || 512;
+    this.height = options.height || 512;
+  }
+
+  geometryString() {
+    return `width:${this.width}px;height:${this.height}px`;
   }
 
   addElement(parentID) {
     let elementCode = `
-    <div id="cornerstoneContainer" class="row">
+    <div id="cornerstoneContainer${this.id}" class="row">
         <div class="col-xs-9">
-            <div style="width:512px;height:512px;position:relative;display:inline-block;"
+            <div style="${this.geometryString()};position:relative;display:inline-block;"
                  oncontextmenu="return false"
                  class='cornerstone-enabled-image'
                  unselectable='on'
                  onselectstart='return false;'
                  onmousedown='return false;'>
-                <div id="dicomViewer"
-                     style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
+                <div id="dicomViewer${this.id}"
+                     style="${this.geometryString()};top:0px;left:0px;position:absolute;">
                 </div>
             </div>
     </div>
     `;
 
     $(parentID).append(elementCode);
-    this.element = document.getElementById('dicomViewer');
+    this.element = document.getElementById(`dicomViewer${this.id}`);
   }
 
   removeElement() {
-    $('#cornerstoneContainer').remove();
+    $(`#cornerstoneContainer${this.id}`).remove();
   }
 
   //
@@ -138,21 +148,30 @@ let coords = [];
           let packedIndex = packedRowIndex + columnByteIndex;
           let columnBitIndex = column%8;
           let mask = 1 << columnBitIndex;
-          let unpackedValue = (packedPixelData[packedIndex] ^ mask) >> columnBitIndex;
+          let unpackedValue = (packedPixelData[packedIndex] & mask) >> columnBitIndex;
           pixelData[row*columns+column] = unpackedValue;
-          if (unpackedValue != 0) {
-            coords.push([row,column, unpackedValue]);
-          }
+if (unpackedValue != 0) {
+  coords.push([row,column, unpackedValue]);
+}
         }
       }
 
+/*
+for (let row = 0; row < rows; row++) {
+  for (let column = 0; column < columns; column++) {
+    if ((row + column + index) % 5 == 0) {
+      pixelData[row*columns+column] = 100;
+    }
+  }
+}
+*/
 
       image = {
         imageId: imageId,
         minPixelValue: 0,
         maxPixelValue: 1,
-        windowCenter: 1,
-        windowWidth: 1,
+        windowCenter: 128,
+        windowWidth: 255,
         rows: rows,
         columns: columns,
         height: rows,
@@ -163,7 +182,14 @@ let coords = [];
         sizeInBytes: pixelData.byteLength,
         getPixelData: function () { return(pixelData); },
       };
+/*
 console.log(coords);
+var canvas = document.getElementById('debugImage');
+var ctx = canvas.getContext('2d');
+var imageData = ctx.createImageData(columns, rows);
+imageData.data.set(pixelData); // copy here
+ctx.putImageData(imageData, 0, 0);
+*/
 
     }
 
@@ -350,3 +376,5 @@ console.log(coords);
     return (returnValue);
   }
 }
+
+Viewer.nextId = 0;
