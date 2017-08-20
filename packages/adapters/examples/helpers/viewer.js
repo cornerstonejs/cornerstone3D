@@ -70,7 +70,6 @@ class Viewer {
   // imageId is dcmjs://# where # is index in this.datasets
   //
   dcmjsImageLoader(imageId) {
-    console.log('looking for ', imageId);
     let index = Number(imageId.slice(imageId.lastIndexOf('/')+1));
     let image;
     if (index >= 0 && index < this.datasets.length-1) {
