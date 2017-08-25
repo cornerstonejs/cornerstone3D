@@ -16,6 +16,7 @@ class TCIA {
     this.tciaTestURL = 'https://services-test.cancerimagingarchive.net/services/v3/TCIA/'
     //this.tciaURL = 'https://services.cancerimagingarchive.net/services/v3/TCIA/TCIA'
     this.tciaURL = 'https://services.cancerimagingarchive.net/services/TCIA/TCIA'
+    this.tciaURL = options.url || 'https://services.cancerimagingarchive.net/services/v4/TCIA';
 
     this.slicerAPIKey = 'f88ff53d-882b-4c0d-b60c-0fb560e82cf1';
 
