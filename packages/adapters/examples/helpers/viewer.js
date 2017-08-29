@@ -126,8 +126,6 @@ class Viewer {
   // imageId is dcmjsSEG://# where # is index in this.datasets
   //
   dcmjsSEGImageLoader(imageId) {
-console.log('looking for ', imageId);
-let coords = [];
     let index = Number(imageId.slice(imageId.lastIndexOf('/')+1));
     let image;
     let dataset = this.segmentationDataset;
@@ -139,7 +137,8 @@ let coords = [];
       // only handle BitsAllocated, BitsStored == 1 for now
       let packedPixelData = new Uint8Array(dataset.PixelData);
       let bytesPerRow = Math.ceil(rows/8);
-      let pixelData = new Int8Array(rows*columns);
+      let pixelData = new Uint8Array(rows*columns);
+      let offset = rows*columns*index / 8;
       for (let row = 0; row < rows; row++) {
         let packedRowIndex = row * bytesPerRow;
         for (let column = 0; column < columns; column++) {
@@ -147,29 +146,26 @@ let coords = [];
           let packedIndex = packedRowIndex + columnByteIndex;
           let columnBitIndex = column%8;
           let mask = 1 << columnBitIndex;
-          let unpackedValue = (packedPixelData[packedIndex] & mask) >> columnBitIndex;
+          let unpackedValue = (packedPixelData[packedIndex + offset] & mask) >> columnBitIndex;
           pixelData[row*columns+column] = unpackedValue;
-if (unpackedValue != 0) {
-  coords.push([row,column, unpackedValue]);
-}
         }
       }
 
-/*
-for (let row = 0; row < rows; row++) {
-  for (let column = 0; column < columns; column++) {
-    if ((row + column + index) % 5 == 0) {
-      pixelData[row*columns+column] = 100;
-    }
-  }
-}
-*/
+      let colorPixelData = new Uint8Array(rows*columns*4);
+      for (let i = 0; i<pixelData.length; i++) {
+        colorPixelData[i * 4] = 255;
+        colorPixelData[i * 4 + 1] = 0;
+        colorPixelData[i * 4 + 2] = 0;
+        colorPixelData[i * 4 + 3] = pixelData[i] ? 255 : 0;
+      }
 
       image = {
         imageId: imageId,
+        color: true,
+        rgba: true,
         minPixelValue: 0,
-        maxPixelValue: 1,
-        windowCenter: 128,
+        maxPixelValue: 255,
+        windowCenter: 127,
         windowWidth: 255,
         rows: rows,
         columns: columns,
@@ -179,17 +175,10 @@ for (let row = 0; row < rows; row++) {
         rowPixelSpacing: Number(pixelSpacing[1]),
         invert: false,
         sizeInBytes: pixelData.byteLength,
-        getPixelData: function () { return(pixelData); },
+        getPixelData: function () {
+          return(colorPixelData);
+        },
       };
-/*
-console.log(coords);
-var canvas = document.getElementById('debugImage');
-var ctx = canvas.getContext('2d');
-var imageData = ctx.createImageData(columns, rows);
-imageData.data.set(pixelData); // copy here
-ctx.putImageData(imageData, 0, 0);
-*/
-
     }
 
     //
@@ -263,6 +252,7 @@ ctx.putImageData(imageData, 0, 0);
     // request that the first image be loaded and then
     // set up the element to draw with selected tools
     let setupElement = function(image) {
+      console.log(image);
       cornerstone.displayImage(this.element, image);
 
       cornerstoneTools.addStackStateManager(this.element, ['stack']);
@@ -278,6 +268,10 @@ ctx.putImageData(imageData, 0, 0);
       cornerstoneTools.zoom.activate(this.element, 4);
       cornerstoneTools.stackScrollWheel.activate(this.element);
       cornerstoneTools.stackScrollKeyboard.activate(this.element);
+
+      if (options.callback) {
+        options.callback();
+      }
     };
     cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
   }
@@ -302,8 +296,9 @@ ctx.putImageData(imageData, 0, 0);
       const colormapId = 'Colormap_' + segment.SegmentNumber;
       let colormap = cornerstone.colors.getColormap(colormapId);
       colormap.setNumberOfColors(2);
-      colormap.insertColor(0, [0, 0, 255, 0]);
-      colormap.insertColor(1, rgba);
+      colormap.insertColor(0, [255, 0, 0, 128]);
+      colormap.insertColor(1, [200, 1, 1, 255]);
+
       //
       // then we create stack with an imageId and position metadata
       // for each frame that references this segment number
@@ -334,10 +329,13 @@ ctx.putImageData(imageData, 0, 0);
         imageIds: imageIds,
         currentImageIdIndex: 0,
         options: {
-          opacity: 0.7,
+          opacity: 1,
           visible: true,
-          colormap: colormapId,
-          name: segment.SegmentLabel
+          //colormap: colormapId,
+          name: segment.SegmentLabel,
+          viewport: {
+            pixelReplication: true
+          }
         }
       }
       // then add the stack to cornerstone

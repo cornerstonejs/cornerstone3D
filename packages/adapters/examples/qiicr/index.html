@@ -135,14 +135,20 @@
       $('#datasetSlider').attr('max', dc0.datasets.length-1);
       $('.datasetControl').attr('disabled', false);
       displayDataset(0);
+
+      var options = {
+        callback: function() {
+          // now add the segmentation
+          dc0.viewer.addSegmentation(dc0seg.datasets[0]);
+        }
+      }
+
       dc0.viewer = new Viewer(dc0.datasets);
-      dc0.viewer.display('#dicomImages');
+      dc0.viewer.display('#dicomImages', options);
       let onNewImage = function (event) {
         setOffset(dc0.viewer.index);
       }
       $(dc0.viewer.element).on('CornerstoneNewImage', onNewImage);
-      // now add the segmentation
-      dc0.viewer.addSegmentation(dc0seg.datasets[0]);
     }
 
     function displaySegmentation() {
