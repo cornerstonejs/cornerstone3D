@@ -211,7 +211,10 @@
               opacity: 0.7,
               visible: true,
               colormap: colormapId,
-              name: segment.SegmentLabel
+              name: segment.SegmentLabel,
+              viewport: {
+                pixelReplication: true
+              }
             }
           };
           segStacks.push(segStack);
@@ -244,8 +247,6 @@
         // and enable the tools we want to have work on it
         //
         cornerstone.loadAndCacheImage(baseStack.imageIds[0]).then(function(image) {
-          cornerstone.displayImage(element, image);
-
           cornerstoneTools.addStackStateManager(element, ['stack']);
           cornerstoneTools.addToolState(element, 'stackRenderer', renderer);
           cornerstoneTools.addToolState(element, 'stack', baseStack);
@@ -254,21 +255,22 @@
             cornerstoneTools.addToolState(element, 'stack', segStack);
           });
 
+          cornerstone.displayImage(element, image);
 
           cornerstoneTools.mouseInput.enable(element);
           cornerstoneTools.mouseWheelInput.enable(element);
           cornerstoneTools.keyboardInput.enable(element);
 
           cornerstoneTools.wwwc.activate(element, 1);
-          //cornerstoneTools.pan.activate(element, 2);
-          //cornerstoneTools.zoom.activate(element, 4);
+          cornerstoneTools.pan.activate(element, 2);
+          cornerstoneTools.zoom.activate(element, 4);
           cornerstoneTools.stackScrollWheel.activate(element);
           cornerstoneTools.stackScrollKeyboard.activate(element);
 
           // Update dropdown size to make all layers name visible
           $('#layers').prop('size', layers.length);
 
-          cornerstoneTools.scrollToIndex(element, 51);
+          //cornerstoneTools.scrollToIndex(element, 51);
 
           // Listen to `change` event to set the selected layer as active
           $("#layers").change(function(event) {
