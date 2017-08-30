@@ -2,7 +2,7 @@
 // * cornerstoneContainer used as an id
 // * imageloader grabs dcmjs namespace in cornerstone
 //
-// currently only handles single frame iamges with segmentation overlay
+// currently only handles single frame images with segmentation overlay
 //
 class Viewer {
 
@@ -151,22 +151,10 @@ class Viewer {
         }
       }
 
-      let colorPixelData = new Uint8Array(rows*columns*4);
-      for (let i = 0; i<pixelData.length; i++) {
-        colorPixelData[i * 4] = 255;
-        colorPixelData[i * 4 + 1] = 0;
-        colorPixelData[i * 4 + 2] = 0;
-        colorPixelData[i * 4 + 3] = pixelData[i] ? 255 : 0;
-      }
-
       image = {
         imageId: imageId,
-        color: true,
-        rgba: true,
         minPixelValue: 0,
-        maxPixelValue: 255,
-        windowCenter: 127,
-        windowWidth: 255,
+        maxPixelValue: 1,
         rows: rows,
         columns: columns,
         height: rows,
@@ -175,9 +163,7 @@ class Viewer {
         rowPixelSpacing: Number(pixelSpacing[1]),
         invert: false,
         sizeInBytes: pixelData.byteLength,
-        getPixelData: function () {
-          return(colorPixelData);
-        },
+        getPixelData: function () { return pixelData; },
       };
     }
 
@@ -222,7 +208,10 @@ class Viewer {
       imageIds: imageIds,
       currentImageIdIndex: 0,
       options: {
-        name: 'Referenced Image'
+        name: 'Referenced Image',
+        viewport: {
+          invert: true
+        }
       }
     };
 
@@ -252,26 +241,31 @@ class Viewer {
     // request that the first image be loaded and then
     // set up the element to draw with selected tools
     let setupElement = function(image) {
-      console.log(image);
-      cornerstone.displayImage(this.element, image);
-
+      // Add stack renderer and stacks to tool state
       cornerstoneTools.addStackStateManager(this.element, ['stack']);
       cornerstoneTools.addToolState(this.element, 'stackRenderer', this.renderer);
       cornerstoneTools.addToolState(this.element, 'stack', this.baseStack);
 
+      // (Callback adds the segmentation stacks)
+      if (options.callback) {
+        options.callback();
+      }
+
+      // Force the stack renderer to draw
+      const toolData = cornerstoneTools.getToolState(this.element, 'stack');
+      this.renderer.render(this.element, toolData.data);
+
+      // Enable inputs
       cornerstoneTools.mouseInput.enable(this.element);
       cornerstoneTools.mouseWheelInput.enable(this.element);
       cornerstoneTools.keyboardInput.enable(this.element);
 
+      // Enable tools
       cornerstoneTools.wwwc.activate(this.element, 1);
       cornerstoneTools.pan.activate(this.element, 2);
       cornerstoneTools.zoom.activate(this.element, 4);
       cornerstoneTools.stackScrollWheel.activate(this.element);
       cornerstoneTools.stackScrollKeyboard.activate(this.element);
-
-      if (options.callback) {
-        options.callback();
-      }
     };
     cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
   }
@@ -286,6 +280,7 @@ class Viewer {
     if (!Array.isArray(segmentSequence)) {
       segmentSequence = [segmentSequence];
     }
+
     segmentSequence.forEach(segment => {
       //
       // first, map the dicom color into a cornerstone colormap
@@ -296,8 +291,8 @@ class Viewer {
       const colormapId = 'Colormap_' + segment.SegmentNumber;
       let colormap = cornerstone.colors.getColormap(colormapId);
       colormap.setNumberOfColors(2);
-      colormap.insertColor(0, [255, 0, 0, 128]);
-      colormap.insertColor(1, [200, 1, 1, 255]);
+      colormap.insertColor(0, [0, 0, 0, 0]);
+      colormap.insertColor(1, rgba);
 
       //
       // then we create stack with an imageId and position metadata
@@ -312,9 +307,11 @@ class Viewer {
         if (perFrameGroup.SegmentIdentificationSequence) {
           referencedSegmentNumber = perFrameGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
         }
+
         if (referencedSegmentNumber === segment.SegmentNumber) {
           const imageId = baseImageId + frameIndex;
           imageIds.push(imageId);
+
           let imagePositionPatient = perFrameGroup.PlanePositionSequence.ImagePositionPatient;
           this.addMetaData('imagePlane', imageId, {
             imagePositionPatient: {
@@ -325,21 +322,22 @@ class Viewer {
           });
         }
       }
+
       let segmentationStack = {
         imageIds: imageIds,
         currentImageIdIndex: 0,
         options: {
-          opacity: 1,
+          opacity: 0.7,
           visible: true,
-          //colormap: colormapId,
+          colormap: colormapId,
           name: segment.SegmentLabel,
           viewport: {
             pixelReplication: true
           }
         }
       }
+
       // then add the stack to cornerstone
-      console.log(segmentationStack);
       cornerstoneTools.addToolState(this.element, 'stack', segmentationStack);
     });
   }
