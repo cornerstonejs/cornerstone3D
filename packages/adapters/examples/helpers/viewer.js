@@ -267,6 +267,14 @@ class Viewer {
       cornerstoneTools.zoom.activate(this.element, 4);
       cornerstoneTools.stackScrollWheel.activate(this.element);
       cornerstoneTools.stackScrollKeyboard.activate(this.element);
+
+      // touch tools
+      // TODO: this may not be ready to work yet
+      cornerstoneTools.touchInput.enable(this.element);
+      cornerstoneTools.zoomTouchPinch.activate(this.element);
+      cornerstoneTools.wwwcTouchDrag.activate(this.element);
+      cornerstoneTools.panMultiTouch.activate(this.element);
+
     };
     cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
   }
@@ -356,6 +364,7 @@ class Viewer {
     cornerstoneTools.clearToolState(this.element, 'stackRenderer');
     cornerstoneTools.clearToolState(this.element, 'stack');
 
+    // mouse tools
     cornerstoneTools.mouseInput.disable(this.element);
     cornerstoneTools.mouseWheelInput.disable(this.element);
     cornerstoneTools.keyboardInput.disable(this.element);
@@ -365,6 +374,7 @@ class Viewer {
     cornerstoneTools.zoom.deactivate(this.element, 4);
     cornerstoneTools.stackScrollWheel.deactivate(this.element);
     cornerstoneTools.stackScrollKeyboard.deactivate(this.element);
+
   }
 
   set index(newIndex) {
