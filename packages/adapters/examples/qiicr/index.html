@@ -4,13 +4,35 @@
   <meta charset="utf-8">
   <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
 
+  <!-- styles for all examples -->
   <link href="../css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- styles for this page -->
+  <style>
+    .qiicrStepUIPanel span {
+      border: 1px solid transparent;
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+    .qiicrStepUIPanel span:hover {
+      font-style: oblique;
+    }
+
+    .visibleSegment {
+      color: #fff;
+    }
+    .invisibleSegment {
+      color: #000;
+    }
+
+  </style>
+
 </head>
 <body>
   <div class="container">
     <div class="page-header">
       <h1>
-        Display QIICR DICOM Data
+        QIICR Segmentation Data
       </h1>
       <p>
         This example demonstrates display of DICOM SEG and SR data.
@@ -18,46 +40,20 @@
       <a href="../index.html">Go back to the Examples page</a>
     </div>
 
-    <div class="row">
-      <div class='col-xs-4'>
-        <div class="row">
-          <label for='qiicrPatients'>Patients</label>
-          <select id='qiicrPatients'>
-          </select>
-        </div>
+    <div class="row" id="mainDisplay" style="border: 1px solid black;">
+      <div class='col-xs-7'>
+        <p id='status'>Ready...</p>
+        <h2>DICOM Images</h2>
+        <button id='datasetPlayStop' class='datasetControl'>Play</button>
+        <label for="datasetSlider" class='datasetControl'>Frame: <span id="frameOffset">0</span></label>
+        <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
+        <div id='dicomImages'></div>
       </div>
-      <div class='col-xs-4'>
-        <div class="row">
-          <select id='qiicrSegmentations' disabled='true'>
-          <option>Select segmentation</option>
-          </select>
-        </div>
+      <div class='col-xs-5'>
+        <h2>Controls</h2>
+        <div id='controlPanel' class='qiicrStepUIPanel'></div>
       </div>
-    </div>
 
-    <div class="row">
-      <div class="col-xs-4">
-        <p> or drag and drop DICOM files below.</p>
-      </div>
-    </div>
-
-    <div class="row" id="dropZone" style="border: 1px solid black;">
-      <!-- <input type="file" value="Select dicom" id="select"></input> -->
-      <p id='status'>Ready...</p>
-      <button id='datasetPlayStop' class='datasetControl'>Play</button>
-      <label for="datasetSlider" class='datasetControl'>Dataset: <span id="datasetOffset">0</span></label>
-      <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
-      <h2>DICOM Images</h2>
-      <div id='dicomImages'></div>
-
-<canvas id='debugImage' width='512' height='512'></canvas>
-      <h2>DICOM Data</h2>
-
-      <div class="col-xs-12">
-        <pre class='pre-scrollable dicomDump' id='dicomData'>
-        </pre>
-      </div>
-      <p>Data is displayed in the experimental <a href='https://github.com/pieper/dcmjs/wiki/NDD-Format'>NDD</a> format.</p>
     </div>
 
   </div>
@@ -90,20 +86,16 @@
 
 
 <script>
+  // containers for managing background and segmentation data
   var dc0 = new DICOMZero();
   var dc0seg = new DICOMZero();
-  var qiicr = {
-    segTable: {}, // fetched as zipped json
-    patients: {   // parsed to list of name,uid objects for each patient seg
-    }
-  }
+
   $(document).ready(function() {
 
-    const dropZone = document.getElementById('dropZone');
-
+    //
+    // Dataset controls
+    //
     $('.datasetControl').attr('disabled', true);
-    $('.dicomDump').css('height', '900px');
-    $('.dicomDump').css('max-height', '900px');
 
     function resetDICOMzero() {
       if (dc0.viewer) {
@@ -113,28 +105,21 @@
       dc0.reset();
       $('#datasetSlider').val(0);
       $('#datasetSlider').attr('max', 0);
-      $('#dicomData').text('');
-    }
-
-    function displayDataset(offset) {
-      $('#dicomData').text(JSON.stringify(dc0.datasets[offset], null, 2));
     }
 
     function setOffset(offset) {
-      $('#datasetOffset').text(offset);
+      $('#frameOffset').text(offset);
       $('#datasetSlider').val(offset);
-      displayDataset(offset);
       dc0.viewer.index = offset;
     }
 
     function displayDatasets() {
-      status("Done reading...");
+      status("Done reading.");
       dc0.datasets.sort(function(a,b) {
         return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
       });
       $('#datasetSlider').attr('max', dc0.datasets.length-1);
       $('.datasetControl').attr('disabled', false);
-      displayDataset(0);
 
       var options = {
         callback: function() {
@@ -145,15 +130,12 @@
 
       dc0.viewer = new Viewer(dc0.datasets);
       dc0.viewer.display('#dicomImages', options);
-      /*let onNewImage = function (event) {
-        setOffset(dc0.viewer.index);
-      }
-      $(dc0.viewer.element).on('CornerstoneNewImage', onNewImage);*/
+
+      setupControlPanel();
+      togglePlayMode();
     }
 
     function displaySegmentation() {
-      status("Done reading seg...");
-      status("need to add stack to dc0.viewer...");
       console.log(dc0seg);
 
       let imageUID = dc0seg.datasets[0].ReferencedSeriesSequence.SeriesInstanceUID;
@@ -176,14 +158,15 @@
       }
     }
 
-    $('#datasetPlayStop').on('click', function(){
+    function togglePlayMode() {
       if ($('#datasetPlayStop').text() === 'Stop') {
         $('#datasetPlayStop').text('Play');
       } else {
         $('#datasetPlayStop').text('Stop');
         window.requestAnimationFrame(playStep);
       }
-    });
+    }
+    $('#datasetPlayStop').on('click', togglePlayMode);
 
     function status(s) {
       console.log('status: ', s);
@@ -194,51 +177,20 @@
       $('#status').text(`${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
     }
 
+
+    //
+    // download and process functions
+    //
+
     resetDICOMzero();
 
-    window.addEventListener('resize', function() {
-      dropZone.width = window.innerWidth;
-      dropZone.height = window.innerHeight;
-    });
-    window.dispatchEvent(new Event('resize'));
-
-    function handleFileDrop(e) {
-      let evt = e.originalEvent;
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      resetDICOMzero();
-      dc0.dataTransfer = {files: []};
-      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
-        dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
-      }
-      status(`Got ${dc0.dataTransfer.files.length} files...`);
-      dc0.readOneFile(displayDatasets, status);
-    }
-    $('#dropZone').bind('drop', handleFileDrop);
-
     let tcia = new TCIA({progressCallback: progressStatus});
-
-    function loadQIICRSegmentations(patientID) {
-      $('#qiicrSegmentations').attr('disabled', false);
-      $('#qiicrSegmentations option').remove();
-      $('#qiicrSegmentations').append("<option id='segPlaceholder'>Populating..</option>");
-      qiicr.patients[patientID].forEach( segmentation => {
-        let segOption = $('<option></option>')
-          .val(segmentation.seriesInstanceUID)
-          .text(segmentation.seriesDescription);
-        $('#qiicrSegmentations').append(segOption);
-      });
-      $('#segPlaceholder').text("Select segmentation");
-    }
-    $('#qiicrSegmentations').on('change', event => {
-      loadQIICRSegmentation(event.target.value);
-    });
 
     function loadQIICRImages(seriesInstanceUID) {
       resetDICOMzero();
       console.log('loading ', seriesInstanceUID);
       tcia.images(seriesInstanceUID).then(arrayBuffer => {
+        status('Extracting reference image data...');
         dc0.extractFromZipArrayBuffer(arrayBuffer, displayDatasets);
       });
     }
@@ -246,64 +198,100 @@
     function loadQIICRSegmentation(seriesInstanceUID) {
       console.log('looking for images from ', seriesInstanceUID);
       tcia.images(seriesInstanceUID).then(arrayBuffer => {
-        console.log('got arrayBuffer');
+        status('Extracting segmentation data...');
         dc0seg.extractFromZipArrayBuffer(arrayBuffer, displaySegmentation);
       });
     }
 
-    //
-    // fetch the pre-defined patient list
-    //
-    let request = new XMLHttpRequest();
-    request.open("GET", "seg.json.zip");
-    request.responseType = 'arraybuffer';
-    request.onload = event => {
-      JSZip.loadAsync(request.response)
-      .then(zip => {
-        zip.file('seg.json').async('string')
-        .then(contents => {
-          qiicr.segTable = JSON.parse(contents);
-          loadQIICRPatients();
+    function scrollToSegment (segmentNumber) {
+      console.log(`scrollToSegment ${segmentNumber}`);
+      let field = step.renderer.inputFields[segmentNumber-1];
+      console.log(`TODO: scroll to ${field.center}`);
+      let targetToCenter = Linear.vminus(field.center, step.view.target());
+      let newViewPoint = Linear.vplus(step.view.viewPoint, targetToCenter);
+      step.renderer.view.look({from: newViewPoint, at: field.center});
+      step.renderer.requestRender();
+    }
+
+    function createControlPanel (options={}) {
+      options.id = options.id || "controlPanel";
+      options.subject = options.subject || "Subject not specified";
+      options.seriesDescription = options.seriesDescription || "Series Description not specified";
+      options.segments = options.segments || [];
+      options.onSegmentVisibilityChanged = options.onSegmentVisibilityChanged || function (segment, visibility) {};
+      options.onSegmentClicked = options.onSegmentClicked || function (segment) {};
+
+      this.element = document.getElementById(options.id);
+
+      this.subjectNode = document.createElement('p');
+      this.subjectNode.innerText = options.subject;
+      this.element.appendChild(this.subjectNode);
+
+      this.seriesDescriptionNode = document.createElement('p');
+      this.seriesDescriptionNode.innerText = options.seriesDescription;
+      this.element.appendChild(this.seriesDescriptionNode);
+
+      this.segmentNodes = [];
+      options.segments.forEach(segment => {
+        let segmentNode = document.createElement('div');
+        let segmentDisplayNode = document.createElement('span');
+        segmentDisplayNode.innerText = '\u2713';
+        segmentDisplayNode.classList.add('visibleSegment');
+        segmentDisplayNode.style.background  = segment.color;
+        this.element.appendChild(segmentNode);
+        segmentNode.appendChild(segmentDisplayNode);
+        let segmentTextNode = document.createElement('span');
+        segmentTextNode.innerText = segment.label;
+        segmentNode.appendChild(segmentTextNode);
+
+        segmentDisplayNode.addEventListener('click', event => {
+          if (event.target.classList.contains('visibleSegment')) {
+            event.target.classList.remove('visibleSegment');
+            event.target.classList.add('invisibleSegment');
+            options.onSegmentVisibilityChanged(segment.segmentNumber, false);
+          } else {
+            event.target.classList.remove('invisibleSegment');
+            event.target.classList.add('visibleSegment');
+            options.onSegmentVisibilityChanged(segment.segmentNumber, true);
+          }
+        });
+        segmentTextNode.addEventListener('click', event => {
+          options.onSegmentClicked(segment.segmentNumber);
         });
       });
     }
-    request.onerror = event => {
-      alert(`Could not load segmentation list: ${request.response}`);
-    }
-    request.send();
-    $('#qiicrPatients').append("<option id='patientsPlaceholder'>Fetching patient list...</option>");
 
-    function loadQIICRPatients() {
-      $('#patientsPlaceholder').text('Select Patient');
-      let qiicrPatients = $('#qiicrPatients');
-      let index = 0;
-      let length = Object.keys(qiicr.segTable.PatientID).length;
-      for (let index = 0; index < length; index++) {
-        let indexString = String(index);
-        let patientID = qiicr.segTable.PatientID[indexString];
-        if (!qiicr.patients[patientID]) {
-          qiicr.patients[patientID] = [];
-          let patientOption = $('<option></option>')
-            .val(patientID)
-            .text(patientID);
-          qiicrPatients.append(patientOption);
-        }
-        qiicr.patients[patientID].push({
-          seriesDescription: qiicr.segTable.SeriesDescription[indexString],
-          seriesInstanceUID: qiicr.segTable.SeriesInstanceUID[indexString]
+    function setupControlPanel() {
+      let panelOptions = {
+        subject: dc0seg.datasets[0].PatientID,
+        seriesDescription: dc0seg.datasets[0].SeriesDescription,
+        onSegmentVisibilityChanged: (segmentNumber, visibility) => {
+          console.log(`toggle ${segmentNumber}`);
+        },
+        onSegmentClicked: scrollToSegment,
+        segments: []
+      };
+      dc0seg.datasets[0].SegmentSequence.forEach(segment => {
+        let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
+        rgb = rgb.map(e => Math.round(e*255).toString(16));
+        let hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;
+        panelOptions.segments.push({
+          segmentNumber: segment.SegmentNumber,
+          label: `${segment.SegmentNumber}: ${segment.SegmentLabel} (${segment.AnatomicRegionSequence.CodeMeaning})`,
+          color: hexColor,
         });
-      }
+      });
+      console.log(panelOptions);
+      createControlPanel(panelOptions);
     }
-    $('#qiicrPatients').on('change', event => {
-      loadQIICRSegmentations(event.target.value);
-    });
-
 
     //
     // handle url parameters
+    //  - use a default if none specified
     //
     let urlSearchParams = new URLSearchParams(window.location.search.substring(1));
     let seriesUID = urlSearchParams.get('seriesUID');
+    seriesUID = seriesUID || '1.2.276.0.7230010.3.1.3.8323329.15824.1440004495.328691';
     if (seriesUID) {
       loadQIICRSegmentation(seriesUID);
     }
