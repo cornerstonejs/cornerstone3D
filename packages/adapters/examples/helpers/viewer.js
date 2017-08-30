@@ -7,6 +7,7 @@
 class Viewer {
 
   constructor(datasets, options={}) {
+    this.status = options.status || function() {};
     this.datasets = datasets;
     this.metaData = {};
     this.element = undefined;
@@ -340,6 +341,14 @@ class Viewer {
       // then add the stack to cornerstone
       cornerstoneTools.addToolState(this.element, 'stack', segmentationStack);
     });
+  }
+
+  layerVisibility(layerNumber, visibility) {
+    cornerstone.enable(this.element);
+    let layers = cornerstone.getLayers(this.element);
+    cornerstone.setActiveLayer(layers[layerNumber].layerId);
+    layer.options.visible = visibility;
+    cornerstone.updateImage(element);
   }
 
   reset() {

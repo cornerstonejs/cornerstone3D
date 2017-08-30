@@ -10,7 +10,6 @@
   <!-- styles for this page -->
   <style>
     .qiicrStepUIPanel span {
-      border: 1px solid transparent;
       padding-left: 15px;
       padding-right: 15px;
     }
@@ -35,21 +34,21 @@
         QIICR Segmentation Data
       </h1>
       <p>
-        This example demonstrates display of DICOM SEG and SR data.
+        This example demonstrates display of DICOM SEG overlays.
       </p>
       <a href="../index.html">Go back to the Examples page</a>
     </div>
 
     <div class="row" id="mainDisplay" style="border: 1px solid black;">
-      <div class='col-xs-7'>
-        <p id='status'>Ready...</p>
+      <p id='status'>Ready...</p>
+      <div class='col-md-8'>
         <h2>DICOM Images</h2>
         <button id='datasetPlayStop' class='datasetControl'>Play</button>
         <label for="datasetSlider" class='datasetControl'>Frame: <span id="frameOffset">0</span></label>
         <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
         <div id='dicomImages'></div>
       </div>
-      <div class='col-xs-5'>
+      <div class='col-md-4'>
         <h2>Controls</h2>
         <div id='controlPanel' class='qiicrStepUIPanel'></div>
       </div>
@@ -86,9 +85,14 @@
 
 
 <script>
+  function status(statusMessage) {
+    console.log('status: ', statusMessage);
+    $('#status').text(statusMessage);
+  }
+
   // containers for managing background and segmentation data
-  var dc0 = new DICOMZero();
-  var dc0seg = new DICOMZero();
+  var dc0 = new DICOMZero({status});
+  var dc0seg = new DICOMZero({status});
 
   $(document).ready(function() {
 
@@ -114,7 +118,7 @@
     }
 
     function displayDatasets() {
-      status("Done reading.");
+      status("Displaying...");
       dc0.datasets.sort(function(a,b) {
         return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
       });
@@ -124,10 +128,13 @@
       var options = {
         callback: function() {
           // now add the segmentation
+          status("Adding segmentations...");
           dc0.viewer.addSegmentation(dc0seg.datasets[0]);
+          status("Done reading.");
         }
       }
 
+      status("Setting up viewer...");
       dc0.viewer = new Viewer(dc0.datasets);
       dc0.viewer.display('#dicomImages', options);
 
@@ -158,23 +165,25 @@
       }
     }
 
-    function togglePlayMode() {
-      if ($('#datasetPlayStop').text() === 'Stop') {
-        $('#datasetPlayStop').text('Play');
-      } else {
+    function playStop() {
+      $('#datasetPlayStop').text('Play');
+    }
+    function playStart() {
         $('#datasetPlayStop').text('Stop');
         window.requestAnimationFrame(playStep);
+    }
+    function togglePlayMode() {
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        playStop();
+      } else {
+        playStart();
       }
     }
     $('#datasetPlayStop').on('click', togglePlayMode);
 
-    function status(s) {
-      console.log('status: ', s);
-      $('#status').text(s);
-    }
 
     function progressStatus(progressEvent) {
-      $('#status').text(`${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
+      status(`Downloaded ${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
     }
 
 
@@ -203,14 +212,30 @@
       });
     }
 
+    let segmentNumberToOffsetMap = [];
     function scrollToSegment (segmentNumber) {
-      console.log(`scrollToSegment ${segmentNumber}`);
-      let field = step.renderer.inputFields[segmentNumber-1];
-      console.log(`TODO: scroll to ${field.center}`);
-      let targetToCenter = Linear.vminus(field.center, step.view.target());
-      let newViewPoint = Linear.vplus(step.view.viewPoint, targetToCenter);
-      step.renderer.view.look({from: newViewPoint, at: field.center});
-      step.renderer.requestRender();
+      if (segmentNumberToOffsetMap.length == 0) {
+        status('Calculating segment locations');
+        let perSegmentISList = [];
+        dc0seg.datasets[0].PerFrameFunctionalGroupsSequence.forEach(perFrameGroup => {
+          let segment = perFrameGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
+          if (!perSegmentISList[segment]) {
+            perSegmentISList[segment] = [];
+          }
+          let isCoordinate = Number(perFrameGroup.PlanePositionSequence.ImagePositionPatient[2]);
+          perSegmentISList[segment].push(isCoordinate);
+        });
+        let isFirst = Number(dc0.datasets[0].ImagePositionPatient[2]);
+        let isLast = Number(dc0.datasets[dc0.datasets.length-1].ImagePositionPatient[2]);
+        let sliceSpacing = (isLast - isFirst) / (dc0.datasets.length - 1);
+        perSegmentISList.forEach((segmentList,index) => {
+          let isAverage = segmentList.reduce((a,b) => a+b) / segmentList.length;
+          let offset = Math.round((isAverage - isFirst) / sliceSpacing);
+          segmentNumberToOffsetMap[index] = offset;
+        });
+      }
+      status(`Segment ${segmentNumber} at ${segmentNumberToOffsetMap[segmentNumber]}`);
+      setOffset(segmentNumberToOffsetMap[segmentNumber]);
     }
 
     function createControlPanel (options={}) {
@@ -235,9 +260,10 @@
       options.segments.forEach(segment => {
         let segmentNode = document.createElement('div');
         let segmentDisplayNode = document.createElement('span');
-        segmentDisplayNode.innerText = '\u2713';
+        //segmentDisplayNode.innerText = '\u2713'; // TODO: fix layer visibility
         segmentDisplayNode.classList.add('visibleSegment');
         segmentDisplayNode.style.background  = segment.color;
+        segmentDisplayNode.style.border  = '1px solid black';
         this.element.appendChild(segmentNode);
         segmentNode.appendChild(segmentDisplayNode);
         let segmentTextNode = document.createElement('span');
@@ -267,13 +293,18 @@
         seriesDescription: dc0seg.datasets[0].SeriesDescription,
         onSegmentVisibilityChanged: (segmentNumber, visibility) => {
           console.log(`toggle ${segmentNumber}`);
+          dc0.viewer.layerVisibility(segmentNumber, visibility);
         },
-        onSegmentClicked: scrollToSegment,
+        onSegmentClicked: (segmentNumber) => {
+          playStop();
+          scrollToSegment(segmentNumber);
+        },
         segments: []
       };
       dc0seg.datasets[0].SegmentSequence.forEach(segment => {
         let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
-        rgb = rgb.map(e => Math.round(e*255).toString(16));
+        rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
+        rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
         let hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;
         panelOptions.segments.push({
           segmentNumber: segment.SegmentNumber,

@@ -1,5 +1,6 @@
 class DICOMZero {
-  constructor() {
+  constructor(options={}) {
+    this.status = options.status || function() {};
     this.reset();
   }
 
@@ -12,6 +13,7 @@ class DICOMZero {
     this.arrayBuffers = [];
     this.files = [];
     this.fileIndex = 0;
+    this.context = {patients: []};
   }
 
   getReadDICOMFunction(doneCallback, statusCallback) {
@@ -78,12 +80,14 @@ class DICOMZero {
   }
 
   extractDatasetFromArrayBuffer(arrayBuffer) {
+    this.status(`Extracting ${this.datasets.length} of ${this.expectedDICOMFileCount}...`);
     let dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
     this.unnaturalDatasets.push(dicomData.dict);
     let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
     dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
     this.datasets.push(dataset);
     if (this.datasets.length == this.expectedDICOMFileCount) {
+      this.status(`Finished extracting`);
       this.zipFinishCallback();
     }
   };
@@ -92,6 +96,7 @@ class DICOMZero {
     this.zip = zip;
     this.expectedDICOMFileCount = 0;
     Object.keys(zip.files).forEach(fileKey => {
+      this.status(`Considering ${fileKey}...`);
       if (fileKey.endsWith('.dcm')) {
         this.expectedDICOMFileCount += 1;
         zip.files[fileKey].async('arraybuffer').then(this.extractDatasetFromArrayBuffer.bind(this));
@@ -101,8 +106,26 @@ class DICOMZero {
 
   extractFromZipArrayBuffer(arrayBuffer, finishCallback=function(){}) {
     this.zipFinishCallback = finishCallback;
+    this.status("Extracting from zip...");
     JSZip.loadAsync(arrayBuffer)
     .then(this.handleZip.bind(this));
   }
 
+  organizeDatasets() {
+    this.datasets.forEach(dataset => {
+      let patientName = dataset.PatientName;
+      let studyTag = dataset.StudyDate + ": " + dataset.StudyDescription;
+      let seriesTag = dataset.SeriesNumber + ": " + dataset.SeriesDescription;
+      let patientNames = this.context.patients.map(patient => patient.name);
+      let patientIndex = patientNames.indexOf(dataset.PatientName);
+      if (patientIndex == -1) {
+        this.context.patients.push({
+          name: dataset.PatientName,
+          id: this.context.patients.length,
+          studies: {}
+        });
+      }
+      let studyNames; // TODO - finish organizing
+    });
+  }
 }
