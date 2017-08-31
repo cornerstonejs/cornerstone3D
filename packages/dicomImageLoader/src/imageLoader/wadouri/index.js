@@ -9,7 +9,10 @@ import fileManager from './fileManager';
 import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
 import getUncompressedImageFrame from './getUncompressedImageFrame';
 import loadFileRequest from './loadFileRequest';
-import loadImage from './loadImage';
+import { loadImageFromPromise,
+         getLoaderForScheme,
+         loadImage } from './loadImage';
+
 import parseImageId from './parseImageId';
 import unpackBinaryFrame from './unpackBinaryFrame';
 
@@ -28,6 +31,8 @@ export default {
   getEncapsulatedImageFrame,
   getUncompressedImageFrame,
   loadFileRequest,
+  loadImageFromPromise,
+  getLoaderForScheme,
   loadImage,
   parseImageId,
   unpackBinaryFrame
