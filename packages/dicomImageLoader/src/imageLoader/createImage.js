@@ -119,14 +119,6 @@ function createImage (imageId, pixelData, transferSyntax, options) {
       image.render = cornerstone.renderGrayscaleImage;
     }
 
-    // calculate min/max if not supplied
-    if (image.minPixelValue === undefined || image.maxPixelValue === undefined) {
-      const minMax = getMinMax(imageFrame.pixelData);
-
-      image.minPixelValue = minMax.min;
-      image.maxPixelValue = minMax.max;
-    }
-
     // Modality LUT
     if (modalityLutModule.modalityLUTSequence &&
       modalityLutModule.modalityLUTSequence.length > 0 &&

@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import { getOptions } from './internal/options';
 
 // the taskId to assign to the next task added via addTask()
 let nextTaskId = 0;
@@ -8,6 +9,9 @@ const tasks = [];
 
 // array of web workers to dispatch decode tasks to
 const webWorkers = [];
+
+// The options for CornerstoneWADOImageLoader
+const options = getOptions();
 
 const defaultConfig = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
@@ -19,7 +23,8 @@ const defaultConfig = {
       loadCodecsOnStartup: true,
       initializeCodecsOnStartup: false,
       codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js',
-      usePDFJS: false
+      usePDFJS: false,
+      strict: options.strict
     }
   }
 };

@@ -45,14 +45,20 @@ function decodeTaskInitialize (config) {
 }
 
 function calculateMinMax (imageFrame) {
-  if (imageFrame.smallestPixelValue !== undefined && imageFrame.largestPixelValue !== undefined) {
-    return;
-  }
-
   const minMax = getMinMax(imageFrame.pixelData);
 
-  imageFrame.smallestPixelValue = minMax.min;
-  imageFrame.largestPixelValue = minMax.max;
+  if (decodeConfig.decodeTask.strict === true) {
+    if (imageFrame.smallestPixelValue !== minMax.min) {
+      console.warn('Image smallestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
+    }
+
+    if (imageFrame.largestPixelValue !== minMax.max) {
+      console.warn('Image largestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
+    }
+  } else {
+    imageFrame.smallestPixelValue = minMax.min;
+    imageFrame.largestPixelValue = minMax.max;
+  }
 }
 
 /**

@@ -3,9 +3,9 @@ function decodeRLE (imageFrame, pixelData) {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
       return decode8Planar(imageFrame, pixelData);
-    } else {
-      return decode8(imageFrame, pixelData);
     }
+
+    return decode8(imageFrame, pixelData);
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
   }
@@ -62,7 +62,7 @@ function decode8 (imageFrame, pixelData) {
 
   return imageFrame;
 }
-  
+
 function decode8Planar (imageFrame, pixelData) {
   const frameData = pixelData;
   const frameSize = imageFrame.rows * imageFrame.columns;

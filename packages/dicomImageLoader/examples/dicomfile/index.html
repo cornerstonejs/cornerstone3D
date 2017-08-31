@@ -183,7 +183,8 @@
         beforeSend: function(xhr) {
             // Add custom headers here (e.g. auth tokens)
             //xhr.setRequestHeader('x-auth-token', 'my auth token');
-        }
+        },
+        strict: true
     });
 
     var loaded = false;
@@ -205,6 +206,8 @@
                 cornerstoneTools.pan.activate(element, 2); // pan is the default tool for middle mouse button
                 cornerstoneTools.zoom.activate(element, 4); // zoom is the default tool for right mouse button
                 cornerstoneTools.zoomWheel.activate(element); // zoom is the default tool for middle mouse wheel
+
+                cornerstoneTools.imageStats.enable(element);
                 loaded = true;
             }
 

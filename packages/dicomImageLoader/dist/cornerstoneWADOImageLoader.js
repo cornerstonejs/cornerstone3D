@@ -105,7 +105,7 @@ var _xhrRequest = __webpack_require__(46);
 
 var _xhrRequest2 = _interopRequireDefault(_xhrRequest);
 
-var _options = __webpack_require__(19);
+var _options = __webpack_require__(8);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -227,27 +227,27 @@ var _jquery = __webpack_require__(0);
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
-var _getImageFrame = __webpack_require__(14);
+var _getImageFrame = __webpack_require__(15);
 
 var _getImageFrame2 = _interopRequireDefault(_getImageFrame);
 
-var _decodeImageFrame = __webpack_require__(12);
+var _decodeImageFrame = __webpack_require__(13);
 
 var _decodeImageFrame2 = _interopRequireDefault(_decodeImageFrame);
 
-var _isColorImage = __webpack_require__(16);
+var _isColorImage = __webpack_require__(17);
 
 var _isColorImage2 = _interopRequireDefault(_isColorImage);
 
-var _convertColorSpace = __webpack_require__(11);
+var _convertColorSpace = __webpack_require__(12);
 
 var _convertColorSpace2 = _interopRequireDefault(_convertColorSpace);
 
-var _getMinMax = __webpack_require__(15);
+var _getMinMax = __webpack_require__(16);
 
 var _getMinMax2 = _interopRequireDefault(_getMinMax);
 
-var _isJPEGBaseline8BitColor = __webpack_require__(17);
+var _isJPEGBaseline8BitColor = __webpack_require__(18);
 
 var _isJPEGBaseline8BitColor2 = _interopRequireDefault(_isJPEGBaseline8BitColor);
 
@@ -293,10 +293,10 @@ function createImage(imageId, pixelData, transferSyntax, options) {
 
   decodePromise.then(function (imageFrame) {
     // var imagePixelModule = metaDataProvider('imagePixelModule', imageId);
-    var imagePlaneModule = cornerstone.metaData.get('imagePlaneModule', imageId);
-    var voiLutModule = cornerstone.metaData.get('voiLutModule', imageId);
-    var modalityLutModule = cornerstone.metaData.get('modalityLutModule', imageId);
-    var sopCommonModule = cornerstone.metaData.get('sopCommonModule', imageId);
+    var imagePlaneModule = cornerstone.metaData.get('imagePlaneModule', imageId) || {};
+    var voiLutModule = cornerstone.metaData.get('voiLutModule', imageId) || {};
+    var modalityLutModule = cornerstone.metaData.get('modalityLutModule', imageId) || {};
+    var sopCommonModule = cornerstone.metaData.get('sopCommonModule', imageId) || {};
     var isColorImage = (0, _isColorImage2.default)(imageFrame.photometricInterpretation);
 
     // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
@@ -316,6 +316,12 @@ function createImage(imageId, pixelData, transferSyntax, options) {
         (0, _convertColorSpace2.default)(imageFrame, imageData);
         imageFrame.imageData = imageData;
         imageFrame.pixelData = imageData.data;
+
+        // calculate smallest and largest PixelValue of the converted pixelData
+        var minMax = (0, _getMinMax2.default)(imageFrame.pixelData);
+
+        imageFrame.smallestPixelValue = minMax.min;
+        imageFrame.largestPixelValue = minMax.max;
       }
     }
 
@@ -366,14 +372,6 @@ function createImage(imageId, pixelData, transferSyntax, options) {
       image.render = cornerstone.renderGrayscaleImage;
     }
 
-    // calculate min/max if not supplied
-    if (image.minPixelValue === undefined || image.maxPixelValue === undefined) {
-      var minMax = (0, _getMinMax2.default)(imageFrame.pixelData);
-
-      image.minPixelValue = minMax.min;
-      image.maxPixelValue = minMax.max;
-    }
-
     // Modality LUT
     if (modalityLutModule.modalityLUTSequence && modalityLutModule.modalityLUTSequence.length > 0 && isModalityLUTForDisplay(sopCommonModule.sopClassUID)) {
       image.modalityLUT = modalityLutModule.modalityLUTSequence[0];
@@ -415,6 +413,36 @@ exports.default = createImage;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.setOptions = setOptions;
+exports.getOptions = getOptions;
+var options = {
+  // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
+  beforeSend: function beforeSend() /* xhr */{},
+
+  // callback allowing modification of newly created image objects
+  imageCreated: function imageCreated() /* image */{},
+
+  strict: true
+};
+
+function setOptions(newOptions) {
+  options = newOptions;
+}
+
+function getOptions() {
+  return options;
+}
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 
 var imageIds = [];
@@ -443,7 +471,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -540,6 +568,8 @@ function load(uri, loadRequest, imageId) {
     loadDeferred.resolve(dataSet);
     // done loading, remove the promise
     delete promises[uri];
+  }, function (error) {
+    loadDeferred.reject(error);
   }).always(function () {
     // error thrown, remove the promise
     delete promises[uri];
@@ -577,7 +607,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -635,7 +665,7 @@ Object.defineProperty(exports, 'convertPALETTECOLOR', {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -646,7 +676,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = convertColorSpace;
 
-var _colorSpaceConverters = __webpack_require__(10);
+var _colorSpaceConverters = __webpack_require__(11);
 
 function convertRGB(imageFrame, rgbaBuffer) {
   if (imageFrame.planarConfiguration === 0) {
@@ -686,7 +716,7 @@ function convertColorSpace(imageFrame, imageData) {
 }
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -696,11 +726,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _webWorkerManager = __webpack_require__(18);
+var _webWorkerManager = __webpack_require__(19);
 
 var _webWorkerManager2 = _interopRequireDefault(_webWorkerManager);
 
-var _decodeJPEGBaseline8BitColor = __webpack_require__(13);
+var _decodeJPEGBaseline8BitColor = __webpack_require__(14);
 
 var _decodeJPEGBaseline8BitColor2 = _interopRequireDefault(_decodeJPEGBaseline8BitColor);
 
@@ -789,7 +819,7 @@ function decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options
 exports.default = decodeImageFrame;
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -876,7 +906,7 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
 exports.default = decodeJPEGBaseline8BitColor;
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -918,7 +948,7 @@ function getImageFrame(imageId) {
 exports.default = getImageFrame;
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -950,7 +980,7 @@ function getMinMax(storedPixelData) {
 }
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -965,7 +995,7 @@ exports.default = function (photoMetricInterpretation) {
 };
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -985,7 +1015,7 @@ function isJPEGBaseline8BitColor(imageFrame, transferSyntax) {
 exports.default = isJPEGBaseline8BitColor;
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -999,6 +1029,8 @@ var _jquery = __webpack_require__(0);
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
+var _options = __webpack_require__(8);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // the taskId to assign to the next task added via addTask()
@@ -1010,6 +1042,9 @@ var tasks = [];
 // array of web workers to dispatch decode tasks to
 var webWorkers = [];
 
+// The options for CornerstoneWADOImageLoader
+var options = (0, _options.getOptions)();
+
 var defaultConfig = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
   startWebWorkersOnDemand: true,
@@ -1020,7 +1055,8 @@ var defaultConfig = {
       loadCodecsOnStartup: true,
       initializeCodecsOnStartup: false,
       codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js',
-      usePDFJS: false
+      usePDFJS: false,
+      strict: options.strict
     }
   }
 };
@@ -1311,34 +1347,6 @@ exports.default = {
   setTaskPriority: setTaskPriority,
   cancelTask: cancelTask
 };
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.setOptions = setOptions;
-exports.getOptions = getOptions;
-var options = {
-  // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-  beforeSend: function beforeSend() /* xhr */{},
-
-  // callback allowing modification of newly created image objects
-  imageCreated: function imageCreated() /* image */{}
-};
-
-function setOptions(newOptions) {
-  options = newOptions;
-}
-
-function getOptions() {
-  return options;
-}
 
 /***/ }),
 /* 20 */
@@ -1807,8 +1815,8 @@ function getLutData(lutDataSet, tag, lutDescriptor) {
 }
 
 function populatePaletteColorLut(dataSet, imagePixelModule) {
-  // return immediately if no palette lut elements
-  if (!dataSet.elements.x00281101) {
+  // return immediately if photometric interpretation is not PALETTE COLOR or no palette lut elements
+  if (imagePixelModule.photometricInterpretation !== 'PALETTE COLOR' || !dataSet.elements.x00281101) {
     return;
   }
   imagePixelModule.redPaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281101');
@@ -2096,7 +2104,7 @@ var _getPixelData = __webpack_require__(21);
 
 var _getPixelData2 = _interopRequireDefault(_getPixelData);
 
-var _metaDataManager = __webpack_require__(8);
+var _metaDataManager = __webpack_require__(9);
 
 var _metaDataManager2 = _interopRequireDefault(_metaDataManager);
 
@@ -2135,7 +2143,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _metaData = __webpack_require__(52);
 
-var _dataSetCacheManager = __webpack_require__(9);
+var _dataSetCacheManager = __webpack_require__(10);
 
 var _dataSetCacheManager2 = _interopRequireDefault(_dataSetCacheManager);
 
@@ -2156,8 +2164,6 @@ var _loadFileRequest = __webpack_require__(27);
 var _loadFileRequest2 = _interopRequireDefault(_loadFileRequest);
 
 var _loadImage = __webpack_require__(51);
-
-var _loadImage2 = _interopRequireDefault(_loadImage);
 
 var _parseImageId = __webpack_require__(5);
 
@@ -2184,7 +2190,9 @@ exports.default = {
   getEncapsulatedImageFrame: _getEncapsulatedImageFrame2.default,
   getUncompressedImageFrame: _getUncompressedImageFrame2.default,
   loadFileRequest: _loadFileRequest2.default,
-  loadImage: _loadImage2.default,
+  loadImageFromPromise: _loadImage.loadImageFromPromise,
+  getLoaderForScheme: _loadImage.getLoaderForScheme,
+  loadImage: _loadImage.loadImage,
   parseImageId: _parseImageId2.default,
   unpackBinaryFrame: _unpackBinaryFrame2.default
 };
@@ -2383,7 +2391,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _colorSpaceConverters = __webpack_require__(10);
+var _colorSpaceConverters = __webpack_require__(11);
 
 Object.keys(_colorSpaceConverters).forEach(function (key) {
   if (key === "default" || key === "__esModule") return;
@@ -2422,7 +2430,7 @@ Object.defineProperty(exports, 'configure', {
   }
 });
 
-var _convertColorSpace = __webpack_require__(11);
+var _convertColorSpace = __webpack_require__(12);
 
 Object.defineProperty(exports, 'convertColorSpace', {
   enumerable: true,
@@ -2440,7 +2448,7 @@ Object.defineProperty(exports, 'createImage', {
   }
 });
 
-var _decodeImageFrame = __webpack_require__(12);
+var _decodeImageFrame = __webpack_require__(13);
 
 Object.defineProperty(exports, 'decodeImageFrame', {
   enumerable: true,
@@ -2449,7 +2457,7 @@ Object.defineProperty(exports, 'decodeImageFrame', {
   }
 });
 
-var _decodeJPEGBaseline8BitColor = __webpack_require__(13);
+var _decodeJPEGBaseline8BitColor = __webpack_require__(14);
 
 Object.defineProperty(exports, 'decodeJPEGBaseline8BitColor', {
   enumerable: true,
@@ -2458,7 +2466,7 @@ Object.defineProperty(exports, 'decodeJPEGBaseline8BitColor', {
   }
 });
 
-var _getImageFrame = __webpack_require__(14);
+var _getImageFrame = __webpack_require__(15);
 
 Object.defineProperty(exports, 'getImageFrame', {
   enumerable: true,
@@ -2467,7 +2475,7 @@ Object.defineProperty(exports, 'getImageFrame', {
   }
 });
 
-var _getMinMax = __webpack_require__(15);
+var _getMinMax = __webpack_require__(16);
 
 Object.defineProperty(exports, 'getMinMax', {
   enumerable: true,
@@ -2476,7 +2484,7 @@ Object.defineProperty(exports, 'getMinMax', {
   }
 });
 
-var _isColorImage = __webpack_require__(16);
+var _isColorImage = __webpack_require__(17);
 
 Object.defineProperty(exports, 'isColorImage', {
   enumerable: true,
@@ -2485,7 +2493,7 @@ Object.defineProperty(exports, 'isColorImage', {
   }
 });
 
-var _isJPEGBaseline8BitColor = __webpack_require__(17);
+var _isJPEGBaseline8BitColor = __webpack_require__(18);
 
 Object.defineProperty(exports, 'isJPEGBaseline8BitColor', {
   enumerable: true,
@@ -2494,7 +2502,7 @@ Object.defineProperty(exports, 'isJPEGBaseline8BitColor', {
   }
 });
 
-var _webWorkerManager = __webpack_require__(18);
+var _webWorkerManager = __webpack_require__(19);
 
 Object.defineProperty(exports, 'webWorkerManager', {
   enumerable: true,
@@ -2538,7 +2546,7 @@ var _jquery = __webpack_require__(0);
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
-var _options = __webpack_require__(19);
+var _options = __webpack_require__(8);
 
 var _cornerstoneCore = __webpack_require__(1);
 
@@ -2622,7 +2630,7 @@ var _cornerstoneCore = __webpack_require__(1);
 
 var cornerstone = _interopRequireWildcard(_cornerstoneCore);
 
-var _metaDataManager = __webpack_require__(8);
+var _metaDataManager = __webpack_require__(9);
 
 var _metaDataManager2 = _interopRequireDefault(_metaDataManager);
 
@@ -2806,7 +2814,7 @@ var _getNumberValue = __webpack_require__(22);
 
 var _getNumberValue2 = _interopRequireDefault(_getNumberValue);
 
-var _metaDataManager = __webpack_require__(8);
+var _metaDataManager = __webpack_require__(9);
 
 var _metaDataManager2 = _interopRequireDefault(_metaDataManager);
 
@@ -2936,6 +2944,7 @@ exports.default = metaDataProvider;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.getLoaderForScheme = exports.loadImageFromPromise = undefined;
 
 var _jquery = __webpack_require__(0);
 
@@ -2953,7 +2962,7 @@ var _parseImageId = __webpack_require__(5);
 
 var _parseImageId2 = _interopRequireDefault(_parseImageId);
 
-var _dataSetCacheManager = __webpack_require__(9);
+var _dataSetCacheManager = __webpack_require__(10);
 
 var _dataSetCacheManager2 = _interopRequireDefault(_dataSetCacheManager);
 
@@ -3050,6 +3059,8 @@ cornerstone.registerImageLoader('dicomweb', loadImage);
 cornerstone.registerImageLoader('wadouri', loadImage);
 cornerstone.registerImageLoader('dicomfile', loadImage);
 
+exports.loadImageFromPromise = loadImageFromPromise;
+exports.getLoaderForScheme = getLoaderForScheme;
 exports.default = loadImage;
 
 /***/ }),
@@ -3129,7 +3140,7 @@ var _parseImageId = __webpack_require__(5);
 
 var _parseImageId2 = _interopRequireDefault(_parseImageId);
 
-var _dataSetCacheManager = __webpack_require__(9);
+var _dataSetCacheManager = __webpack_require__(10);
 
 var _dataSetCacheManager2 = _interopRequireDefault(_dataSetCacheManager);
 

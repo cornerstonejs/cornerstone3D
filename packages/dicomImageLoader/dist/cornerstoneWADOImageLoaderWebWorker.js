@@ -444,14 +444,20 @@ function decodeTaskInitialize(config) {
 }
 
 function calculateMinMax(imageFrame) {
-  if (imageFrame.smallestPixelValue !== undefined && imageFrame.largestPixelValue !== undefined) {
-    return;
-  }
-
   var minMax = (0, _getMinMax2.default)(imageFrame.pixelData);
 
-  imageFrame.smallestPixelValue = minMax.min;
-  imageFrame.largestPixelValue = minMax.max;
+  if (decodeConfig.decodeTask.strict === true) {
+    if (imageFrame.smallestPixelValue !== minMax.min) {
+      console.warn('Image smallestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
+    }
+
+    if (imageFrame.largestPixelValue !== minMax.max) {
+      console.warn('Image largestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
+    }
+  } else {
+    imageFrame.smallestPixelValue = minMax.min;
+    imageFrame.largestPixelValue = minMax.max;
+  }
 }
 
 /**
@@ -912,9 +918,9 @@ function decodeRLE(imageFrame, pixelData) {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
       return decode8Planar(imageFrame, pixelData);
-    } else {
-      return decode8(imageFrame, pixelData);
     }
+
+    return decode8(imageFrame, pixelData);
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
   }
@@ -962,7 +968,7 @@ function decode8(imageFrame, pixelData) {
           outIndex += imageFrame.samplesPerPixel;
         }
       } /* else if (n === -128) {
-         } // do nothing */
+        } // do nothing */
     }
   }
   imageFrame.pixelData = new Uint8Array(outFrame);
@@ -1011,7 +1017,7 @@ function decode8Planar(imageFrame, pixelData) {
           outIndex++;
         }
       } /* else if (n === -128) {
-         } // do nothing */
+        } // do nothing */
     }
   }
   imageFrame.pixelData = new Uint8Array(outFrame);
@@ -1057,7 +1063,7 @@ function decode16(imageFrame, pixelData) {
           outIndex++;
         }
       } /* else if (n === -128) {
-         } // do nothing */
+        } // do nothing */
     }
   }
   if (imageFrame.pixelRepresentation === 0) {
