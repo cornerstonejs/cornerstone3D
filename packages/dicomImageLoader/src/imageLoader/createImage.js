@@ -64,6 +64,12 @@ function createImage (imageId, pixelData, transferSyntax, options) {
         convertColorSpace(imageFrame, imageData);
         imageFrame.imageData = imageData;
         imageFrame.pixelData = imageData.data;
+
+        // calculate smallest and largest PixelValue of the converted pixelData
+        const minMax = getMinMax(imageFrame.pixelData);
+
+        imageFrame.smallestPixelValue = minMax.min;
+        imageFrame.largestPixelValue = minMax.max;
       }
     }
 
