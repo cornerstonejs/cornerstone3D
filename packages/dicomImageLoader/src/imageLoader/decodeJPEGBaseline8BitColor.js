@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import getMinMax from './getMinMax';
 
 /**
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance
@@ -54,6 +55,13 @@ function decodeJPEGBaseline8BitColor (imageFrame, pixelData, canvas) {
       imageFrame.pixelData = imageData.data;
       imageFrame.imageData = imageData;
       imageFrame.decodeTimeInMS = end - start;
+
+      // calculate smallest and largest PixelValue
+      const minMax = getMinMax(imageFrame.pixelData);
+
+      imageFrame.smallestPixelValue = minMax.min;
+      imageFrame.largestPixelValue = minMax.max;
+
       deferred.resolve(imageFrame);
     };
     img.onerror = function (error) {
