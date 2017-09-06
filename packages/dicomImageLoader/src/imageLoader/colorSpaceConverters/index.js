@@ -1,5 +1,5 @@
-export { default as convertRGBColorByPixel } from './convertRGBColorByPixel';
-export { default as convertRGBColorByPlane } from './convertRGBColorByPlane';
-export { default as convertYBRFullByPixel } from './convertYBRFullByPixel';
-export { default as convertYBRFullByPlane } from './convertYBRFullByPlane';
-export { default as convertPALETTECOLOR } from './convertPALETTECOLOR';
+export { default as convertRGBColorByPixel } from './convertRGBColorByPixel.js';
+export { default as convertRGBColorByPlane } from './convertRGBColorByPlane.js';
+export { default as convertYBRFullByPixel } from './convertYBRFullByPixel.js';
+export { default as convertYBRFullByPlane } from './convertYBRFullByPlane.js';
+export { default as convertPALETTECOLOR } from './convertPALETTECOLOR.js';

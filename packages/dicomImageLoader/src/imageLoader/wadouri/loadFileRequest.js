@@ -1,6 +1,5 @@
-import $ from 'jquery';
-import parseImageId from './parseImageId';
-import fileManager from './fileManager';
+import parseImageId from './parseImageId.js';
+import fileManager from './fileManager.js';
 
 function loadFileRequest (uri) {
   const parsedImageId = parseImageId(uri);

@@ -1,4 +1,4 @@
-import getValue from './getValue';
+import getValue from './getValue.js';
 
 function getNumberValue (element, index) {
   const value = getValue(element, index);

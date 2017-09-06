@@ -1,7 +1,7 @@
-import getNumberValues from './getNumberValues';
-import getValue from './getValue';
-import getNumberValue from './getNumberValue';
-import metaDataManager from '../metaDataManager';
+import getNumberValues from './getNumberValues.js';
+import getValue from './getValue.js';
+import getNumberValue from './getNumberValue.js';
+import metaDataManager from '../metaDataManager.js';
 import * as dicomParser from 'dicom-parser';
 import * as cornerstone from 'cornerstone-core';
 

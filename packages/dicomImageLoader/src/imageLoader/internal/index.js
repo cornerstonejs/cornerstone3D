@@ -1,5 +1,5 @@
-import { default as xhrRequest } from './xhrRequest';
-import { setOptions, getOptions } from './options';
+import { default as xhrRequest } from './xhrRequest.js';
+import { setOptions, getOptions } from './options.js';
 
 const internal = {
   xhrRequest,

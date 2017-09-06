@@ -1,6 +1,5 @@
-import $ from 'jquery';
-import { xhrRequest } from '../internal';
-import findIndexOfString from './findIndexOfString';
+import { xhrRequest } from '../internal/index.js';
+import findIndexOfString from './findIndexOfString.js';
 
 function findBoundary (header) {
   for (let i = 0; i < header.length; i++) {

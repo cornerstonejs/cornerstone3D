@@ -1,10 +1,10 @@
-import decodeLittleEndian from './decoders/decodeLittleEndian';
-import decodeBigEndian from './decoders/decodeBigEndian';
-import decodeRLE from './decoders/decodeRLE';
-import decodeJPEGBaseline from './decoders/decodeJPEGBaseline';
-import decodeJPEGLossless from './decoders/decodeJPEGLossless';
-import decodeJPEGLS from './decoders/decodeJPEGLS';
-import decodeJPEG2000 from './decoders/decodeJPEG2000';
+import decodeLittleEndian from './decoders/decodeLittleEndian.js';
+import decodeBigEndian from './decoders/decodeBigEndian.js';
+import decodeRLE from './decoders/decodeRLE.js';
+import decodeJPEGBaseline from './decoders/decodeJPEGBaseline.js';
+import decodeJPEGLossless from './decoders/decodeJPEGLossless.js';
+import decodeJPEGLS from './decoders/decodeJPEGLS.js';
+import decodeJPEG2000 from './decoders/decodeJPEG2000.js';
 
 function decodeImageFrame (imageFrame, transferSyntax, pixelData, decodeConfig, options) {
   const start = new Date().getTime();

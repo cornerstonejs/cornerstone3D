@@ -1,8 +1,8 @@
-import { registerTaskHandler } from './webWorker';
-import decodeTask from './decodeTask/decodeTask';
+import { registerTaskHandler } from './webWorker.js';
+import decodeTask from './decodeTask/decodeTask.js';
 
 // register our task
 registerTaskHandler(decodeTask);
 
 export { registerTaskHandler };
-export { default as version } from '../version';
+export { default as version } from '../version.js';

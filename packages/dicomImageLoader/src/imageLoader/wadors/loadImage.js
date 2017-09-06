@@ -1,8 +1,7 @@
-import $ from 'jquery';
 import * as cornerstone from 'cornerstone-core';
-import metaDataManager from './metaDataManager';
-import getPixelData from './getPixelData';
-import createImage from '../createImage';
+import metaDataManager from './metaDataManager.js';
+import getPixelData from './getPixelData.js';
+import createImage from '../createImage.js';
 
 function getTransferSyntaxForContentType (/* contentType */) {
   return '1.2.840.10008.1.2'; // hard code to ILE for now

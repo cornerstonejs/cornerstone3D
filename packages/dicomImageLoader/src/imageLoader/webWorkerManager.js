@@ -1,5 +1,4 @@
-import $ from 'jquery';
-import { getOptions } from './internal/options';
+import { getOptions } from './internal/options.js';
 
 // the taskId to assign to the next task added via addTask()
 let nextTaskId = 0;

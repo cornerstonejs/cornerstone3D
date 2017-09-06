@@ -1,5 +1,5 @@
-import webWorkerManager from './webWorkerManager';
-import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
+import webWorkerManager from './webWorkerManager.js';
+import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
 
 function addDecodeTask (imageFrame, transferSyntax, pixelData, options) {
   const priority = options.priority || undefined;

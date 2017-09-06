@@ -1,4 +1,4 @@
-import getValue from './getValue';
+import getValue from './getValue.js';
 
 /**
  * Returns the first string value as a Javascript number
