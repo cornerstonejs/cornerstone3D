@@ -1,3 +1,4 @@
+import $ from './jquery.js';
 import getImageFrame from './getImageFrame.js';
 import decodeImageFrame from './decodeImageFrame.js';
 import { default as isColorImageFn } from './isColorImage.js';

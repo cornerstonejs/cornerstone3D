@@ -1,3 +1,4 @@
+import $ from '../jquery.js';
 import * as cornerstone from 'cornerstone-core';
 import createImage from '../createImage.js';
 import parseImageId from './parseImageId.js';

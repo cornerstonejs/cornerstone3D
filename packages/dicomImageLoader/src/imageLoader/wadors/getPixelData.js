@@ -1,3 +1,4 @@
+import $ from '../jquery.js';
 import { xhrRequest } from '../internal/index.js';
 import findIndexOfString from './findIndexOfString.js';
 

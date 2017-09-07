@@ -1,3 +1,4 @@
+import $ from '../jquery.js';
 import { getOptions } from './options.js';
 import * as cornerstone from 'cornerstone-core';
 

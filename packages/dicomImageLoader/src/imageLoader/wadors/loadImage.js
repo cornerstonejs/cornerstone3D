@@ -1,3 +1,4 @@
+import $ from '../jquery.js';
 import * as cornerstone from 'cornerstone-core';
 import metaDataManager from './metaDataManager.js';
 import getPixelData from './getPixelData.js';

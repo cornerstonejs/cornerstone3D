@@ -2,7 +2,7 @@ import getNumberValues from './getNumberValues.js';
 import getValue from './getValue.js';
 import getNumberValue from './getNumberValue.js';
 import metaDataManager from '../metaDataManager.js';
-import * as dicomParser from 'dicom-parser';
+import * as dicomParser from '../../dicom-parser.js';
 import * as cornerstone from 'cornerstone-core';
 
 function metaDataProvider (type, imageId) {
