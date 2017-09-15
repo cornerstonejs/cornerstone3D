@@ -1,3 +1,8 @@
+# Version 0.14.7
+
+- Bumped up cornerstone version to 0.12.2
+- Removed library `Loadash` and added `Lodash` as a DevDependency
+
 # Version 0.14.5
 
 - Rename loadDataSetFromPromise to loadImageFromPromise (https://github.com/chafey/cornerstoneWADOImageLoader/pull/94)
