@@ -1,0 +1,6 @@
+*.dcm
+.jshintrc
+examples/
+src/
+rollup.config.js
+*.js.map
