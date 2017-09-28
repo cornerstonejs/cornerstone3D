@@ -1,5 +1,5 @@
 import $ from '../jquery.js';
-import * as cornerstone from 'cornerstone-core';
+import * as cornerstone from '../cornerstone-core.js';
 import metaDataManager from './metaDataManager.js';
 import getPixelData from './getPixelData.js';
 import createImage from '../createImage.js';

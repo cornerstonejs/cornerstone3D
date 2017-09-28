@@ -1,5 +1,5 @@
 import $ from './jquery.js';
-import getMinMax from './getMinMax';
+import getMinMax from './getMinMax.js';
 
 /**
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance

@@ -5,7 +5,8 @@ import getImagePixelModule from './getImagePixelModule.js';
 import getLUTs from './getLUTs.js';
 import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixelRepresentation.js';
 import * as dicomParser from '../../dicom-parser.js';
-import * as cornerstone from 'cornerstone-core';
+import * as cornerstone from '../../cornerstone-core.js';
+
 
 function metaDataProvider (type, imageId) {
   const parsedImageId = parseImageId(imageId);
