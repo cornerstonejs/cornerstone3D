@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.14.7 - 2017-09-15 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.14.7 - 2017-10-11 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -74,12 +74,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 61);
+/******/ 	return __webpack_require__(__webpack_require__.s = 59);
 /******/ })
 /************************************************************************/
 /******/ ({
 
-/***/ 3:
+/***/ 2:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -92,7 +92,7 @@ exports.default = '0.14.7';
 
 /***/ }),
 
-/***/ 33:
+/***/ 31:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -263,7 +263,7 @@ exports.initializeJPEG2000 = initializeJPEG2000;
 
 /***/ }),
 
-/***/ 34:
+/***/ 32:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -378,7 +378,7 @@ exports.initializeJPEGLS = initializeJPEGLS;
 
 /***/ }),
 
-/***/ 38:
+/***/ 36:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -388,15 +388,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _decodeJPEG = __webpack_require__(33);
+var _decodeJPEG = __webpack_require__(31);
 
-var _decodeJPEGLS = __webpack_require__(34);
+var _decodeJPEGLS = __webpack_require__(32);
 
-var _getMinMax = __webpack_require__(60);
+var _getMinMax = __webpack_require__(58);
 
 var _getMinMax2 = _interopRequireDefault(_getMinMax);
 
-var _decodeImageFrame = __webpack_require__(54);
+var _decodeImageFrame = __webpack_require__(52);
 
 var _decodeImageFrame2 = _interopRequireDefault(_decodeImageFrame);
 
@@ -494,7 +494,7 @@ exports.default = {
 
 /***/ }),
 
-/***/ 39:
+/***/ 37:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -622,7 +622,7 @@ self.onmessage = function (msg) {
 
 /***/ }),
 
-/***/ 54:
+/***/ 52:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -632,31 +632,31 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _decodeLittleEndian = __webpack_require__(58);
+var _decodeLittleEndian = __webpack_require__(56);
 
 var _decodeLittleEndian2 = _interopRequireDefault(_decodeLittleEndian);
 
-var _decodeBigEndian = __webpack_require__(55);
+var _decodeBigEndian = __webpack_require__(53);
 
 var _decodeBigEndian2 = _interopRequireDefault(_decodeBigEndian);
 
-var _decodeRLE = __webpack_require__(59);
+var _decodeRLE = __webpack_require__(57);
 
 var _decodeRLE2 = _interopRequireDefault(_decodeRLE);
 
-var _decodeJPEGBaseline = __webpack_require__(56);
+var _decodeJPEGBaseline = __webpack_require__(54);
 
 var _decodeJPEGBaseline2 = _interopRequireDefault(_decodeJPEGBaseline);
 
-var _decodeJPEGLossless = __webpack_require__(57);
+var _decodeJPEGLossless = __webpack_require__(55);
 
 var _decodeJPEGLossless2 = _interopRequireDefault(_decodeJPEGLossless);
 
-var _decodeJPEGLS = __webpack_require__(34);
+var _decodeJPEGLS = __webpack_require__(32);
 
 var _decodeJPEGLS2 = _interopRequireDefault(_decodeJPEGLS);
 
-var _decodeJPEG = __webpack_require__(33);
+var _decodeJPEG = __webpack_require__(31);
 
 var _decodeJPEG2 = _interopRequireDefault(_decodeJPEG);
 
@@ -736,7 +736,7 @@ exports.default = decodeImageFrame;
 
 /***/ }),
 
-/***/ 55:
+/***/ 53:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -783,7 +783,7 @@ exports.default = decodeBigEndian;
 
 /***/ }),
 
-/***/ 56:
+/***/ 54:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -822,7 +822,7 @@ exports.default = decodeJPEGBaseline;
 
 /***/ }),
 
-/***/ 57:
+/***/ 55:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -866,7 +866,7 @@ exports.default = decodeJPEGLossless;
 
 /***/ }),
 
-/***/ 58:
+/***/ 56:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -904,7 +904,7 @@ exports.default = decodeLittleEndian;
 
 /***/ }),
 
-/***/ 59:
+/***/ 57:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1079,7 +1079,7 @@ exports.default = decodeRLE;
 
 /***/ }),
 
-/***/ 60:
+/***/ 58:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1113,7 +1113,7 @@ exports.default = getMinMax;
 
 /***/ }),
 
-/***/ 61:
+/***/ 59:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1124,7 +1124,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.version = exports.registerTaskHandler = undefined;
 
-var _version = __webpack_require__(3);
+var _version = __webpack_require__(2);
 
 Object.defineProperty(exports, 'version', {
   enumerable: true,
@@ -1133,9 +1133,9 @@ Object.defineProperty(exports, 'version', {
   }
 });
 
-var _webWorker = __webpack_require__(39);
+var _webWorker = __webpack_require__(37);
 
-var _decodeTask = __webpack_require__(38);
+var _decodeTask = __webpack_require__(36);
 
 var _decodeTask2 = _interopRequireDefault(_decodeTask);
 
