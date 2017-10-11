@@ -1,4 +1,4 @@
-import * as dicomParser from '../dicom-parser.js';
+import { dicomParser } from '../../externalModules.js';
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.

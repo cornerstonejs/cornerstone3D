@@ -1,4 +1,4 @@
-import $ from '../jquery.js';
+import { $ } from '../../externalModules.js';
 import { xhrRequest } from '../internal/index.js';
 import findIndexOfString from './findIndexOfString.js';
 

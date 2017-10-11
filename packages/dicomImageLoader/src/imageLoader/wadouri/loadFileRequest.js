@@ -1,4 +1,4 @@
-import $ from '../jquery.js';
+import { $ } from '../../externalModules.js';
 import parseImageId from './parseImageId.js';
 import fileManager from './fileManager.js';
 

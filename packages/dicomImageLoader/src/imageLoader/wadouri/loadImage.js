@@ -1,5 +1,4 @@
-import $ from '../jquery.js';
-import * as cornerstone from '../cornerstone-core.js';
+import { $, cornerstone } from '../../externalModules.js';
 import createImage from '../createImage.js';
 import parseImageId from './parseImageId.js';
 import dataSetCacheManager from './dataSetCacheManager.js';
@@ -84,5 +83,4 @@ cornerstone.registerImageLoader('dicomweb', loadImage);
 cornerstone.registerImageLoader('wadouri', loadImage);
 cornerstone.registerImageLoader('dicomfile', loadImage);
 
-export { loadImageFromPromise, getLoaderForScheme };
-export default loadImage;
+export { loadImageFromPromise, getLoaderForScheme, loadImage };

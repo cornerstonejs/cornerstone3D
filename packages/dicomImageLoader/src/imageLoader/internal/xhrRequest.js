@@ -1,6 +1,5 @@
-import $ from '../jquery.js';
+import { $, cornerstone } from '../../externalModules.js';
 import { getOptions } from './options.js';
-import * as cornerstone from '../cornerstone-core.js';
 
 function xhrRequest (url, imageId, headers = {}, params = {}) {
   const deferred = $.Deferred();

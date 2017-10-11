@@ -1,11 +1,10 @@
-import $ from './jquery.js';
+import { $, cornerstone } from '../externalModules.js';
 import getImageFrame from './getImageFrame.js';
 import decodeImageFrame from './decodeImageFrame.js';
 import { default as isColorImageFn } from './isColorImage.js';
 import convertColorSpace from './convertColorSpace.js';
 import getMinMax from './getMinMax.js';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor.js';
-import * as cornerstone from './cornerstone-core.js';
 
 let lastImageIdDrawn = '';
 
