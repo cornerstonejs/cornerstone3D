@@ -71,7 +71,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 56);
+/******/ 	return __webpack_require__(__webpack_require__.s = 55);
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -389,7 +389,7 @@ exports.initializeJPEGLS = initializeJPEGLS;
 
 /***/ }),
 
-/***/ 56:
+/***/ 55:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -409,9 +409,9 @@ Object.defineProperty(exports, 'version', {
   }
 });
 
-var _webWorker = __webpack_require__(57);
+var _webWorker = __webpack_require__(56);
 
-var _decodeTask = __webpack_require__(58);
+var _decodeTask = __webpack_require__(57);
 
 var _decodeTask2 = _interopRequireDefault(_decodeTask);
 
@@ -424,7 +424,7 @@ exports.registerTaskHandler = _webWorker.registerTaskHandler;
 
 /***/ }),
 
-/***/ 57:
+/***/ 56:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -552,7 +552,7 @@ self.onmessage = function (msg) {
 
 /***/ }),
 
-/***/ 58:
+/***/ 57:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -570,7 +570,7 @@ var _getMinMax = __webpack_require__(2);
 
 var _getMinMax2 = _interopRequireDefault(_getMinMax);
 
-var _decodeImageFrame = __webpack_require__(59);
+var _decodeImageFrame = __webpack_require__(58);
 
 var _decodeImageFrame2 = _interopRequireDefault(_decodeImageFrame);
 
@@ -672,7 +672,7 @@ exports.default = {
 
 /***/ }),
 
-/***/ 59:
+/***/ 58:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -682,23 +682,23 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _decodeLittleEndian = __webpack_require__(60);
+var _decodeLittleEndian = __webpack_require__(59);
 
 var _decodeLittleEndian2 = _interopRequireDefault(_decodeLittleEndian);
 
-var _decodeBigEndian = __webpack_require__(61);
+var _decodeBigEndian = __webpack_require__(60);
 
 var _decodeBigEndian2 = _interopRequireDefault(_decodeBigEndian);
 
-var _decodeRLE = __webpack_require__(62);
+var _decodeRLE = __webpack_require__(61);
 
 var _decodeRLE2 = _interopRequireDefault(_decodeRLE);
 
-var _decodeJPEGBaseline = __webpack_require__(63);
+var _decodeJPEGBaseline = __webpack_require__(62);
 
 var _decodeJPEGBaseline2 = _interopRequireDefault(_decodeJPEGBaseline);
 
-var _decodeJPEGLossless = __webpack_require__(64);
+var _decodeJPEGLossless = __webpack_require__(63);
 
 var _decodeJPEGLossless2 = _interopRequireDefault(_decodeJPEGLossless);
 
@@ -782,7 +782,7 @@ exports.default = decodeImageFrame;
 
 /***/ }),
 
-/***/ 60:
+/***/ 59:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -828,7 +828,7 @@ exports.default = decodeLittleEndian;
 
 /***/ }),
 
-/***/ 61:
+/***/ 60:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -875,7 +875,7 @@ exports.default = decodeBigEndian;
 
 /***/ }),
 
-/***/ 62:
+/***/ 61:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1050,7 +1050,7 @@ exports.default = decodeRLE;
 
 /***/ }),
 
-/***/ 63:
+/***/ 62:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1089,7 +1089,7 @@ exports.default = decodeJPEGBaseline;
 
 /***/ }),
 
-/***/ 64:
+/***/ 63:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

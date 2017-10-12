@@ -1,7 +1,6 @@
 import * as dicomParser from '../../dicomParser/src/index.js';
 import registerLoaders from './imageLoader/registerLoaders.js';
 
-const $ = window.$;
 let cornerstone = window.cornerstone;
 
 const external = {
@@ -15,5 +14,5 @@ const external = {
   }
 };
 
-export { $, dicomParser, external };
+export { dicomParser, external };
 

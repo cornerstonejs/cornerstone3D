@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+
+- *Breaking Change!!!* Switches image loader return values to support the breaking change in Cornerstone Master (https://github.com/cornerstonejs/cornerstone/commit/9448755397da10a6de6f694d83123274cbd4b38e) which requires image loaders to return an object of the form { promise, cancelFn }.
+- *Breaking Change!!!* Removed jQuery events from triggerEvent, lower-cased all the event names.
+- *Breaking Change!!!* Switched all Deferred usage to use Promises
+
 ## [1.0.5] - 2017-12-08
 ### Added
 - beforeSend option now passes imageId as its second parameter. This is useful for writing beforeSend functions which have different actions depending on the image type.

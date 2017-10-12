@@ -20,12 +20,6 @@ module.exports = {
   },
   devtool: 'source-map',
   externals: {
-    jquery: {
-      commonjs: "jquery",
-      commonjs2: "jquery",
-      amd: "jquery",
-      root: '$'
-    },
     'dicom-parser': {
       commonjs: "dicom-parser",
       commonjs2: "dicom-parser",

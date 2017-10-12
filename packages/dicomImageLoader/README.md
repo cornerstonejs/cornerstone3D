@@ -43,9 +43,9 @@ Usage
 
 The cornerstoneWADOImageLoader depends on the following external libraries which should be loaded before cornerstoneWADOImageLoader.js:
 
-1. [jQuery](https://github.com/jquery/jquery)
-2. [dicomParser](https://github.com/cornerstonejs/dicomParser) 
-3. [cornerstone](https://github.com/cornerstonejs/cornerstone)
+
+1. [dicomParser](https://github.com/cornerstonejs/dicomParser) 
+2. [cornerstone](https://github.com/cornerstonejs/cornerstone)
 
 *New in 1.0.0*: Specify the cornerstone instance you want to register the loader with.
 

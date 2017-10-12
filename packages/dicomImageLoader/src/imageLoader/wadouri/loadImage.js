@@ -1,4 +1,3 @@
-import { $ } from '../../externalModules.js';
 import createImage from '../createImage.js';
 import parseImageId from './parseImageId.js';
 import dataSetCacheManager from './dataSetCacheManager.js';
@@ -18,15 +17,43 @@ function addDecache (image) {
 
 function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKey, options) {
   const start = new Date().getTime();
-  const deferred = $.Deferred();
 
-  dataSetPromise.then(function (dataSet/* , xhr*/) {
+  const promise = new Promise((resolve, reject) => {
+    dataSetPromise.then((dataSet/* , xhr*/) => {
+      const pixelData = getPixelData(dataSet, frame);
+      const transferSyntax = dataSet.string('x00020010');
+      const loadEnd = new Date().getTime();
+      const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+
+      imagePromise.then((image) => {
+        image.data = dataSet;
+        image.sharedCacheKey = sharedCacheKey;
+        const end = new Date().getTime();
+
+        image.loadTimeInMS = loadEnd - start;
+        image.totalTimeInMS = end - start;
+        addDecache(image);
+        resolve(image);
+      }, reject);
+    }, reject);
+  });
+
+  return {
+    promise,
+    cancelFn: undefined
+  };
+}
+
+function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
+  const start = new Date().getTime();
+
+  const promise = new Promise((resolve, reject) => {
     const pixelData = getPixelData(dataSet, frame);
     const transferSyntax = dataSet.string('x00020010');
     const loadEnd = new Date().getTime();
     const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
 
-    imagePromise.then(function (image) {
+    imagePromise.then((image) => {
       image.data = dataSet;
       image.sharedCacheKey = sharedCacheKey;
       const end = new Date().getTime();
@@ -34,40 +61,14 @@ function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKe
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
       addDecache(image);
-      deferred.resolve(image);
-    }, function (error) {
-      deferred.reject(error);
-    });
-  }, function (error) {
-    deferred.reject(error);
+      resolve(image);
+    }, reject);
   });
 
-  return deferred;
-}
-
-function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
-  const start = new Date().getTime();
-  const deferred = $.Deferred();
-
-  const pixelData = getPixelData(dataSet, frame);
-  const transferSyntax = dataSet.string('x00020010');
-  const loadEnd = new Date().getTime();
-  const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
-
-  imagePromise.then((image) => {
-    image.data = dataSet;
-    image.sharedCacheKey = sharedCacheKey;
-    const end = new Date().getTime();
-
-    image.loadTimeInMS = loadEnd - start;
-    image.totalTimeInMS = end - start;
-    addDecache(image);
-    deferred.resolve(image);
-  }, function (error) {
-    deferred.reject(error);
-  });
-
-  return deferred;
+  return {
+    promise,
+    cancelFn: undefined
+  };
 }
 
 function getLoaderForScheme (scheme) {

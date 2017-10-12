@@ -1,4 +1,4 @@
-/*! cornerstone-math - 0.1.5 - 2017-05-22 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
+/*! cornerstone-math - 0.1.6 - 2017-06-09 | (c) 2017 Chris Hafey | https://github.com/chafey/cornerstoneTools */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -87,12 +87,49 @@ return /******/ (function(modules) { // webpackBootstrap
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+// Based on THREE.JS
+function clamp(x, a, b) {
+  return x < a ? a : x > b ? b : x;
+}
 
-var _quaternion = __webpack_require__(2);
+function degToRad(degrees) {
+  var degreeToRadiansFactor = Math.PI / 180;
+
+  return degrees * degreeToRadiansFactor;
+}
+
+function radToDeg(radians) {
+  var radianToDegreesFactor = 180 / Math.PI;
+
+  return radians * radianToDegreesFactor;
+}
+
+// Returns sign of number
+function sign(x) {
+  return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
+}
+
+exports.clamp = clamp;
+exports.degToRad = degToRad;
+exports.radToDeg = radToDeg;
+exports.sign = sign;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _quaternion = __webpack_require__(3);
 
 var _quaternion2 = _interopRequireDefault(_quaternion);
 
-var _math = __webpack_require__(1);
+var _math = __webpack_require__(0);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -723,7 +760,7 @@ Vector3.prototype = {
 exports.default = Vector3;
 
 /***/ }),
-/* 1 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -732,35 +769,141 @@ exports.default = Vector3;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-// Based on THREE.JS
-function clamp(x, a, b) {
-  return x < a ? a : x > b ? b : x;
+
+var _math = __webpack_require__(0);
+
+// Based on  http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+function sqr(x) {
+  return x * x;
 }
 
-function degToRad(degrees) {
-  var degreeToRadiansFactor = Math.PI / 180;
-
-  return degrees * degreeToRadiansFactor;
+function dist2(v, w) {
+  return sqr(v.x - w.x) + sqr(v.y - w.y);
 }
 
-function radToDeg(radians) {
-  var radianToDegreesFactor = 180 / Math.PI;
+function distanceToPointSquared(lineSegment, point) {
+  var l2 = dist2(lineSegment.start, lineSegment.end);
 
-  return radians * radianToDegreesFactor;
+  if (l2 === 0) {
+    return dist2(point, lineSegment.start);
+  }
+  var t = ((point.x - lineSegment.start.x) * (lineSegment.end.x - lineSegment.start.x) + (point.y - lineSegment.start.y) * (lineSegment.end.y - lineSegment.start.y)) / l2;
+
+  if (t < 0) {
+    return dist2(point, lineSegment.start);
+  }
+  if (t > 1) {
+    return dist2(point, lineSegment.end);
+  }
+
+  var pt = {
+    x: lineSegment.start.x + t * (lineSegment.end.x - lineSegment.start.x),
+    y: lineSegment.start.y + t * (lineSegment.end.y - lineSegment.start.y)
+  };
+
+  return dist2(point, pt);
 }
 
-// Returns sign of number
-function sign(x) {
-  return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
+function distanceToPoint(lineSegment, point) {
+  return Math.sqrt(distanceToPointSquared(lineSegment, point));
 }
 
-exports.clamp = clamp;
-exports.degToRad = degToRad;
-exports.radToDeg = radToDeg;
-exports.sign = sign;
+// Returns intersection points of two lines
+function intersectLine(lineSegment1, lineSegment2) {
+  var intersectionPoint = {};
+
+  var x1 = lineSegment1.start.x,
+      y1 = lineSegment1.start.y,
+      x2 = lineSegment1.end.x,
+      y2 = lineSegment1.end.y,
+      x3 = lineSegment2.start.x,
+      y3 = lineSegment2.start.y,
+      x4 = lineSegment2.end.x,
+      y4 = lineSegment2.end.y;
+
+  var a1 = void 0,
+      a2 = void 0,
+      b1 = void 0,
+      b2 = void 0,
+      c1 = void 0,
+      c2 = void 0; // Coefficients of line equations
+  var r1 = void 0,
+      r2 = void 0,
+      r3 = void 0,
+      r4 = void 0; // Sign values
+
+  var denom = void 0,
+      num = void 0; // Intermediate values
+
+  // Compute a1, b1, c1, where line joining points 1 and 2 is "a1 x  +  b1 y  +  c1  =  0"
+  a1 = y2 - y1;
+  b1 = x1 - x2;
+  c1 = x2 * y1 - x1 * y2;
+
+  // Compute r3 and r4
+  r3 = a1 * x3 + b1 * y3 + c1;
+  r4 = a1 * x4 + b1 * y4 + c1;
+
+  /* Check signs of r3 and r4.  If both point 3 and point 4 lie on
+   * same side of line 1, the line segments do not intersect.
+   */
+
+  if (r3 !== 0 && r4 !== 0 && (0, _math.sign)(r3) === (0, _math.sign)(r4)) {
+    return;
+  }
+
+  /* Compute a2, b2, c2 */
+
+  a2 = y4 - y3;
+  b2 = x3 - x4;
+  c2 = x4 * y3 - x3 * y4;
+
+  /* Compute r1 and r2 */
+
+  r1 = a2 * x1 + b2 * y1 + c2;
+  r2 = a2 * x2 + b2 * y2 + c2;
+
+  /* Check signs of r1 and r2.  If both point 1 and point 2 lie
+   * on same side of second line segment, the line segments do
+   * not intersect.
+   */
+
+  if (r1 !== 0 && r2 !== 0 && (0, _math.sign)(r1) === (0, _math.sign)(r2)) {
+    return;
+  }
+
+  /* Line segments intersect: compute intersection point.
+   */
+
+  denom = a1 * b2 - a2 * b1;
+
+  /* The denom/2 is to get rounding instead of truncating.  It
+   * is added or subtracted to the numerator, depending upon the
+   * sign of the numerator.
+   */
+
+  num = b1 * c2 - b2 * c1;
+  var x = parseFloat(num / denom);
+
+  num = a2 * c1 - a1 * c2;
+  var y = parseFloat(num / denom);
+
+  intersectionPoint.x = x;
+  intersectionPoint.y = y;
+
+  return intersectionPoint;
+}
+
+// Module exports
+var lineSegment = {
+  distanceToPoint: distanceToPoint,
+  intersectLine: intersectLine
+};
+
+exports.default = lineSegment;
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -860,7 +1003,7 @@ Quaternion.prototype.setFromRotationMatrix = function (m) {
 exports.default = Quaternion;
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -871,6 +1014,14 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _vector = __webpack_require__(1);
+
+var _vector2 = _interopRequireDefault(_vector);
+
+var _math = __webpack_require__(0);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -883,12 +1034,12 @@ var Line3 = function () {
   function Line3(start, end) {
     _classCallCheck(this, Line3);
 
-    this.start = start !== undefined ? start : new cornerstoneMath.Vector3();
-    this.end = end !== undefined ? end : new cornerstoneMath.Vector3();
+    this.start = start !== undefined ? start : new _vector2.default();
+    this.end = end !== undefined ? end : new _vector2.default();
   }
 
   _createClass(Line3, [{
-    key: "set",
+    key: 'set',
     value: function set(start, end) {
 
       this.start.copy(start);
@@ -897,7 +1048,7 @@ var Line3 = function () {
       return this;
     }
   }, {
-    key: "copy",
+    key: 'copy',
     value: function copy(line) {
 
       this.start.copy(line.start);
@@ -906,47 +1057,47 @@ var Line3 = function () {
       return this;
     }
   }, {
-    key: "center",
+    key: 'center',
     value: function center(optionalTarget) {
 
-      var result = optionalTarget || new cornerstoneMath.Vector3();
+      var result = optionalTarget || new _vector2.default();
 
       return result.addVectors(this.start, this.end).multiplyScalar(0.5);
     }
   }, {
-    key: "delta",
+    key: 'delta',
     value: function delta(optionalTarget) {
 
-      var result = optionalTarget || new cornerstoneMath.Vector3();
+      var result = optionalTarget || new _vector2.default();
 
       return result.subVectors(this.end, this.start);
     }
   }, {
-    key: "distanceSq",
+    key: 'distanceSq',
     value: function distanceSq() {
 
       return this.start.distanceToSquared(this.end);
     }
   }, {
-    key: "distance",
+    key: 'distance',
     value: function distance() {
 
       return this.start.distanceTo(this.end);
     }
   }, {
-    key: "at",
+    key: 'at',
     value: function at(t, optionalTarget) {
 
-      var result = optionalTarget || new cornerstoneMath.Vector3();
+      var result = optionalTarget || new _vector2.default();
 
       return this.delta(result).multiplyScalar(t).add(this.start);
     }
   }, {
-    key: "closestPointToPointParameter",
+    key: 'closestPointToPointParameter',
     value: function closestPointToPointParameter() {
 
-      var startP = new cornerstoneMath.Vector3();
-      var startEnd = new cornerstoneMath.Vector3();
+      var startP = new _vector2.default();
+      var startEnd = new _vector2.default();
 
       return function (point, clampToLine) {
 
@@ -960,24 +1111,24 @@ var Line3 = function () {
 
         if (clampToLine) {
 
-          t = cornerstoneMath.Math.clamp(t, 0, 1);
+          t = (0, _math.clamp)(t, 0, 1);
         }
 
         return t;
       };
     }
   }, {
-    key: "closestPointToPoint",
+    key: 'closestPointToPoint',
     value: function closestPointToPoint(point, clampToLine, optionalTarget) {
 
       var t = this.closestPointToPointParameter(point, clampToLine);
 
-      var result = optionalTarget || new cornerstoneMath.Vector3();
+      var result = optionalTarget || new _vector2.default();
 
       return this.delta(result).multiplyScalar(t).add(this.start);
     }
   }, {
-    key: "applyMatrix4",
+    key: 'applyMatrix4',
     value: function applyMatrix4(matrix) {
 
       this.start.applyMatrix4(matrix);
@@ -986,19 +1137,19 @@ var Line3 = function () {
       return this;
     }
   }, {
-    key: "equals",
+    key: 'equals',
     value: function equals(line) {
 
       return line.start.equals(this.start) && line.end.equals(this.end);
     }
   }, {
-    key: "clone",
+    key: 'clone',
     value: function clone() {
 
-      return new cornerstoneMath.Line3().copy(this);
+      return new Line3().copy(this);
     }
   }, {
-    key: "intersectLine",
+    key: 'intersectLine',
     value: function intersectLine(line) {
       // http://stackoverflow.com/questions/2316490/the-algorithm-to-find-the-point-of-intersection-of-two-3d-line-segment/10288710#10288710
       var da = this.end.clone().sub(this.start);
@@ -1037,146 +1188,6 @@ var Line3 = function () {
 exports.default = Line3;
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-// Based on  http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-function sqr(x) {
-  return x * x;
-}
-
-function dist2(v, w) {
-  return sqr(v.x - w.x) + sqr(v.y - w.y);
-}
-
-function distanceToPointSquared(lineSegment, point) {
-  var l2 = dist2(lineSegment.start, lineSegment.end);
-
-  if (l2 === 0) {
-    return dist2(point, lineSegment.start);
-  }
-  var t = ((point.x - lineSegment.start.x) * (lineSegment.end.x - lineSegment.start.x) + (point.y - lineSegment.start.y) * (lineSegment.end.y - lineSegment.start.y)) / l2;
-
-  if (t < 0) {
-    return dist2(point, lineSegment.start);
-  }
-  if (t > 1) {
-    return dist2(point, lineSegment.end);
-  }
-
-  var pt = {
-    x: lineSegment.start.x + t * (lineSegment.end.x - lineSegment.start.x),
-    y: lineSegment.start.y + t * (lineSegment.end.y - lineSegment.start.y)
-  };
-
-  return dist2(point, pt);
-}
-
-function distanceToPoint(lineSegment, point) {
-  return Math.sqrt(distanceToPointSquared(lineSegment, point));
-}
-
-// Returns intersection points of two lines
-function intersectLine(lineSegment1, lineSegment2) {
-  var intersectionPoint = {};
-
-  var x1 = lineSegment1.start.x,
-      y1 = lineSegment1.start.y,
-      x2 = lineSegment1.end.x,
-      y2 = lineSegment1.end.y,
-      x3 = lineSegment2.start.x,
-      y3 = lineSegment2.start.y,
-      x4 = lineSegment2.end.x,
-      y4 = lineSegment2.end.y;
-
-  var a1 = void 0,
-      a2 = void 0,
-      b1 = void 0,
-      b2 = void 0,
-      c1 = void 0,
-      c2 = void 0; // Coefficients of line equations
-  var r1 = void 0,
-      r2 = void 0,
-      r3 = void 0,
-      r4 = void 0; // Sign values
-
-  var denom = void 0,
-      num = void 0; // Intermediate values
-
-  // Compute a1, b1, c1, where line joining points 1 and 2 is "a1 x  +  b1 y  +  c1  =  0"
-  a1 = y2 - y1;
-  b1 = x1 - x2;
-  c1 = x2 * y1 - x1 * y2;
-
-  // Compute r3 and r4
-  r3 = a1 * x3 + b1 * y3 + c1;
-  r4 = a1 * x4 + b1 * y4 + c1;
-
-  /* Check signs of r3 and r4.  If both point 3 and point 4 lie on
-   * same side of line 1, the line segments do not intersect.
-   */
-
-  if (r3 !== 0 && r4 !== 0 && cornerstoneMath.sign(r3) === cornerstoneMath.sign(r4)) {
-    return;
-  }
-
-  /* Compute a2, b2, c2 */
-
-  a2 = y4 - y3;
-  b2 = x3 - x4;
-  c2 = x4 * y3 - x3 * y4;
-
-  /* Compute r1 and r2 */
-
-  r1 = a2 * x1 + b2 * y1 + c2;
-  r2 = a2 * x2 + b2 * y2 + c2;
-
-  /* Check signs of r1 and r2.  If both point 1 and point 2 lie
-   * on same side of second line segment, the line segments do
-   * not intersect.
-   */
-
-  if (r1 !== 0 && r2 !== 0 && cornerstoneMath.sign(r1) === cornerstoneMath.sign(r2)) {
-    return;
-  }
-
-  /* Line segments intersect: compute intersection point.
-   */
-
-  denom = a1 * b2 - a2 * b1;
-
-  /* The denom/2 is to get rounding instead of truncating.  It
-   * is added or subtracted to the numerator, depending upon the
-   * sign of the numerator.
-   */
-
-  num = b1 * c2 - b2 * c1;
-  var x = parseFloat(num / denom);
-
-  num = a2 * c1 - a1 * c2;
-  var y = parseFloat(num / denom);
-
-  intersectionPoint.x = x;
-  intersectionPoint.y = y;
-
-  return intersectionPoint;
-}
-
-// Module exports
-var lineSegment = {
-  distanceToPoint: distanceToPoint,
-  intersectLine: intersectLine
-};
-
-exports.default = lineSegment;
-
-/***/ }),
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -1187,7 +1198,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _vector = __webpack_require__(0);
+var _vector = __webpack_require__(1);
 
 var _vector2 = _interopRequireDefault(_vector);
 
@@ -1471,7 +1482,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _vector = __webpack_require__(0);
+var _vector = __webpack_require__(1);
 
 var _vector2 = _interopRequireDefault(_vector);
 
@@ -1737,14 +1748,14 @@ function findClosestPoint(sources, target) {
   var minDistance = void 0;
 
   sources.forEach(function (source, index) {
-    var distance = cornerstoneMath.point.distance(source, target);
+    var d = distance(source, target);
 
-    distances.push(distance);
+    distances.push(d);
 
     if (index === 0) {
-      minDistance = distance;
+      minDistance = d;
     } else {
-      minDistance = Math.min(distance, minDistance);
+      minDistance = Math.min(d, minDistance);
     }
   });
 
@@ -1775,6 +1786,13 @@ exports.default = point;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _lineSegment = __webpack_require__(2);
+
+var _lineSegment2 = _interopRequireDefault(_lineSegment);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function rectToLineSegments(rect) {
   var top = {
     start: {
@@ -1829,8 +1847,8 @@ function distanceToPoint(rect, point) {
   var minDistance = 655535;
   var lineSegments = rectToLineSegments(rect);
 
-  lineSegments.forEach(function (lineSegment) {
-    var distance = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, point);
+  lineSegments.forEach(function (segment) {
+    var distance = _lineSegment2.default.distanceToPoint(segment, point);
 
     if (distance < minDistance) {
       minDistance = distance;
@@ -1959,7 +1977,7 @@ Object.defineProperty(exports, "__esModule", {
          value: true
 });
 
-var _Line = __webpack_require__(3);
+var _Line = __webpack_require__(4);
 
 Object.defineProperty(exports, 'Line3', {
          enumerable: true,
@@ -1968,7 +1986,7 @@ Object.defineProperty(exports, 'Line3', {
          }
 });
 
-var _lineSegment = __webpack_require__(4);
+var _lineSegment = __webpack_require__(2);
 
 Object.defineProperty(exports, 'lineSegment', {
          enumerable: true,
@@ -1977,7 +1995,7 @@ Object.defineProperty(exports, 'lineSegment', {
          }
 });
 
-var _math = __webpack_require__(1);
+var _math = __webpack_require__(0);
 
 Object.defineProperty(exports, 'clamp', {
          enumerable: true,
@@ -2015,7 +2033,7 @@ Object.defineProperty(exports, 'Matrix4', {
 
 var _plane = __webpack_require__(6);
 
-Object.defineProperty(exports, 'plane', {
+Object.defineProperty(exports, 'Plane', {
          enumerable: true,
          get: function get() {
                   return _interopRequireDefault(_plane).default;
@@ -2031,7 +2049,7 @@ Object.defineProperty(exports, 'point', {
          }
 });
 
-var _quaternion = __webpack_require__(2);
+var _quaternion = __webpack_require__(3);
 
 Object.defineProperty(exports, 'quaternion', {
          enumerable: true,
@@ -2049,7 +2067,7 @@ Object.defineProperty(exports, 'rect', {
          }
 });
 
-var _vector = __webpack_require__(0);
+var _vector = __webpack_require__(1);
 
 Object.defineProperty(exports, 'Vector3', {
          enumerable: true,

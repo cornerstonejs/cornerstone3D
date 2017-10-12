@@ -66,15 +66,15 @@ describe('loadImage', function () {
 
       console.time(name);
 
-      let promise;
+      let loadObject;
 
       try {
-        promise = loadImage(imageId);
+        loadObject = loadImage(imageId);
       } catch (error) {
         done(error);
       }
 
-      promise.then((image) => {
+      loadObject.promise.then((image) => {
         console.timeEnd(name);
         // TODO: Compare against known correct pixel data
         expect(image).to.be.an('object');

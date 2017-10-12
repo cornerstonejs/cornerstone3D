@@ -1,7 +1,8 @@
-import { $, external } from '../../externalModules.js';
+import { external } from '../../externalModules.js';
 import { getOptions } from './options.js';
 
 function xhrRequest (url, imageId, headers = {}, params = {}) {
+  const cornerstone = external.cornerstone;
   const options = getOptions();
 
   // Make the request for the DICOM P10 SOP Instance
@@ -35,11 +36,7 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
         imageId
       };
 
-      $(external.cornerstone.events).trigger('CornerstoneImageLoadStart', eventData);
-
-      const customEvent = new CustomEvent('cornerstoneimageloadstart', { detail: eventData });
-
-      external.cornerstone.events.dispatchEvent(customEvent);
+      cornerstone.triggerEvent(cornerstone.events, 'cornerstoneimageloadstart', eventData);
     };
 
     // Event triggered when downloading an image ends
@@ -55,11 +52,7 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
       };
 
       // Event
-      $(external.cornerstone.events).trigger('CornerstoneImageLoadEnd', eventData);
-
-      const customEvent = new CustomEvent('cornerstoneimageloadend', { detail: eventData });
-
-      external.cornerstone.events.dispatchEvent(customEvent);
+      cornerstone.triggerEvent(cornerstone.events, 'cornerstoneimageloadend', eventData);
     };
 
     // handle response data
@@ -109,11 +102,7 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
         percentComplete
       };
 
-      $(external.cornerstone.events).trigger('CornerstoneImageLoadProgress', eventData);
-
-      const customEvent = new CustomEvent('cornerstoneimageloadprogress', { detail: eventData });
-
-      external.cornerstone.events.dispatchEvent(customEvent);
+      cornerstone.triggerEvent(cornerstone.events, 'cornerstoneimageloadprogress', eventData);
     };
 
     xhr.send();
