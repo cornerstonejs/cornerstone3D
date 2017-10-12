@@ -25,14 +25,10 @@ function getPixelData (dataSet, frameIndex) {
   }
 
   return getUncompressedImageFrame(dataSet, frameIndex);
-
 }
 
-function loadImageFromPromise (dataSetPromise, imageId, frame, sharedCacheKey, options) {
-
+function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKey, options) {
   const start = new Date().getTime();
-
-  frame = frame || 0;
   const deferred = $.Deferred();
 
   dataSetPromise.then(function (dataSet/* , xhr*/) {
@@ -43,13 +39,41 @@ function loadImageFromPromise (dataSetPromise, imageId, frame, sharedCacheKey, o
 
     imagePromise.then(function (image) {
       image.data = dataSet;
+      image.sharedCacheKey = sharedCacheKey;
       const end = new Date().getTime();
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
       addDecache(image);
       deferred.resolve(image);
+    }, function (error) {
+      deferred.reject(error);
     });
+  }, function (error) {
+    deferred.reject(error);
+  });
+
+  return deferred;
+}
+
+function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
+  const start = new Date().getTime();
+  const deferred = $.Deferred();
+
+  const pixelData = getPixelData(dataSet, frame);
+  const transferSyntax = dataSet.string('x00020010');
+  const loadEnd = new Date().getTime();
+  const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+
+  imagePromise.then((image) => {
+    image.data = dataSet;
+    image.sharedCacheKey = sharedCacheKey;
+    const end = new Date().getTime();
+
+    image.loadTimeInMS = loadEnd - start;
+    image.totalTimeInMS = end - start;
+    addDecache(image);
+    deferred.resolve(image);
   }, function (error) {
     deferred.reject(error);
   });
@@ -71,11 +95,15 @@ function loadImage (imageId, options) {
 
   // if the dataset for this url is already loaded, use it
   if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
-    return loadImageFromPromise(dataSetCacheManager.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
+    const dataSet = dataSetCacheManager.get(parsedImageId.url, loader, imageId);
+
+    return loadImageFromDataSet(dataSet, imageId, parsedImageId.frame, parsedImageId.url, options);
   }
 
   // load the dataSet via the dataSetCacheManager
-  return loadImageFromPromise(dataSetCacheManager.load(parsedImageId.url, loader, imageId), imageId, parsedImageId.frame, parsedImageId.url, options);
+  const dataSetPromise = dataSetCacheManager.load(parsedImageId.url, loader, imageId);
+
+  return loadImageFromPromise(dataSetPromise, imageId, parsedImageId.frame, parsedImageId.url, options);
 }
 
 // register dicomweb and wadouri image loader prefixes
