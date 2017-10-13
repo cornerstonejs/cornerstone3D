@@ -207,7 +207,7 @@ function addTask (taskType, data, priority = 0, transferList) {
   let i;
 
   for (i = 0; i < tasks.length; i++) {
-    if (tasks[i].priority <= priority) {
+    if (tasks[i].priority < priority) {
       break;
     }
   }
@@ -253,7 +253,7 @@ function setTaskPriority (taskId, priority = 0) {
 
       // find the right spot to insert this decode task (based on priority)
       for (i = 0; i < tasks.length; i++) {
-        if (tasks[i].priority <= priority) {
+        if (tasks[i].priority < priority) {
           break;
         }
       }

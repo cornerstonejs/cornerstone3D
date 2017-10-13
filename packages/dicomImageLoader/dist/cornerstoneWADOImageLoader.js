@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.14.7 - 2017-10-11 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.14.7 - 2017-10-13 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("cornerstone-core"), require("dicom-parser"), require("jquery"));
@@ -1239,7 +1239,7 @@ function addTask(taskType, data) {
   var i = void 0;
 
   for (i = 0; i < tasks.length; i++) {
-    if (tasks[i].priority <= priority) {
+    if (tasks[i].priority < priority) {
       break;
     }
   }
@@ -1287,7 +1287,7 @@ function setTaskPriority(taskId) {
 
       // find the right spot to insert this decode task (based on priority)
       for (i = 0; i < tasks.length; i++) {
-        if (tasks[i].priority <= priority) {
+        if (tasks[i].priority < priority) {
           break;
         }
       }
