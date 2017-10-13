@@ -1022,8 +1022,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _externalModules = __webpack_require__(0);
-
 var _options = __webpack_require__(7);
 
 // the taskId to assign to the next task added via addTask()
@@ -1229,7 +1227,13 @@ function addTask(taskType, data) {
     initialize();
   }
 
-  var deferred = _externalModules.$.Deferred();
+  var deferred = {};
+  var promise = new Promise(function (resolve, reject) {
+    deferred = {
+      resolve: resolve,
+      reject: reject
+    };
+  });
 
   // find the right spot to insert this decode task (based on priority)
   var i = void 0;
@@ -1259,7 +1263,7 @@ function addTask(taskType, data) {
 
   return {
     taskId: taskId,
-    promise: deferred.promise()
+    promise: promise
   };
 }
 
@@ -1311,7 +1315,7 @@ function cancelTask(taskId, reason) {
       // taskId found, remove it
       var task = tasks.splice(i, 1);
 
-      task.promise.reject(reason);
+      task.deferred.reject(reason);
 
       return true;
     }

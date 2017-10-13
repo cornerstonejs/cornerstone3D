@@ -1,4 +1,3 @@
-import { $ } from '../externalModules.js';
 import { getOptions } from './internal/options.js';
 
 // the taskId to assign to the next task added via addTask()
@@ -201,7 +200,13 @@ function addTask (taskType, data, priority = 0, transferList) {
     initialize();
   }
 
-  const deferred = $.Deferred();
+  let deferred = {};
+  const promise = new Promise((resolve, reject) => {
+    deferred = {
+      resolve,
+      reject
+    };
+  });
 
   // find the right spot to insert this decode task (based on priority)
   let i;
@@ -231,7 +236,7 @@ function addTask (taskType, data, priority = 0, transferList) {
 
   return {
     taskId,
-    promise: deferred.promise()
+    promise
   };
 }
 
@@ -281,7 +286,7 @@ function cancelTask (taskId, reason) {
       // taskId found, remove it
       const task = tasks.splice(i, 1);
 
-      task.promise.reject(reason);
+      task.deferred.reject(reason);
 
       return true;
     }
