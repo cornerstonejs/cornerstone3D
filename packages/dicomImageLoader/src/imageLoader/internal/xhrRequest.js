@@ -15,6 +15,10 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
       xhr.setRequestHeader(key, headers[key]);
     });
 
+    params.deferred = {
+      resolve,
+      reject
+    };
     params.url = url;
     params.imageId = imageId;
 
