@@ -2,9 +2,8 @@ import { $ } from '../../externalModules.js';
 import createImage from '../createImage.js';
 import parseImageId from './parseImageId.js';
 import dataSetCacheManager from './dataSetCacheManager.js';
-import getEncapsulatedImageFrame from './getEncapsulatedImageFrame.js';
-import getUncompressedImageFrame from './getUncompressedImageFrame.js';
 import loadFileRequest from './loadFileRequest.js';
+import getPixelData from './getPixelData.js';
 import { xhrRequest } from '../internal/index.js';
 
 // add a decache callback function to clear out our dataSetCacheManager
@@ -17,30 +16,20 @@ function addDecache (image) {
   };
 }
 
-function getPixelData (dataSet, frameIndex) {
-  const pixelDataElement = dataSet.elements.x7fe00010;
-
-  if (pixelDataElement.encapsulatedPixelData) {
-    return getEncapsulatedImageFrame(dataSet, frameIndex);
-  }
-
-  return getUncompressedImageFrame(dataSet, frameIndex);
-}
-
 function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKey, options) {
-  const start = new Date().getTime();
+  const start = performance.now();
   const deferred = $.Deferred();
 
   dataSetPromise.then(function (dataSet/* , xhr*/) {
     const pixelData = getPixelData(dataSet, frame);
     const transferSyntax = dataSet.string('x00020010');
-    const loadEnd = new Date().getTime();
+    const loadEnd = performance.now();
     const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
 
     imagePromise.then(function (image) {
       image.data = dataSet;
       image.sharedCacheKey = sharedCacheKey;
-      const end = new Date().getTime();
+      const end = performance.now();
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
@@ -57,18 +46,18 @@ function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKe
 }
 
 function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
-  const start = new Date().getTime();
+  const start = performance.now();
   const deferred = $.Deferred();
 
   const pixelData = getPixelData(dataSet, frame);
   const transferSyntax = dataSet.string('x00020010');
-  const loadEnd = new Date().getTime();
+  const loadEnd = performance.now();
   const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
 
   imagePromise.then((image) => {
     image.data = dataSet;
     image.sharedCacheKey = sharedCacheKey;
-    const end = new Date().getTime();
+    const end = performance.now();
 
     image.loadTimeInMS = loadEnd - start;
     image.totalTimeInMS = end - start;

@@ -24,7 +24,7 @@ function binaryToString (binary) {
 }
 
 function decodeJPEGBaseline8BitColor (imageFrame, pixelData, canvas) {
-  const start = new Date().getTime();
+  const start = performance.now();
   const imgBlob = new Blob([pixelData], { type: 'image/jpeg' });
 
   return new Promise((resolve, reject) => {
@@ -48,7 +48,7 @@ function decodeJPEGBaseline8BitColor (imageFrame, pixelData, canvas) {
 
         context.drawImage(this, 0, 0);
         const imageData = context.getImageData(0, 0, img.width, img.height);
-        const end = new Date().getTime();
+        const end = performance.now();
 
         imageFrame.pixelData = imageData.data;
         imageFrame.imageData = imageData;

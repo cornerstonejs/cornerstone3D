@@ -1,9 +1,6 @@
-
-
 let charLS;
 
 function jpegLSDecode (data, isSigned) {
-
   // prepare input parameters
   const dataPtr = charLS._malloc(data.length);
 
@@ -91,7 +88,6 @@ function decodeJPEGLS (imageFrame, pixelData) {
   initializeJPEGLS();
 
   const image = jpegLSDecode(pixelData, imageFrame.pixelRepresentation === 1);
-  // console.log(image);
 
   // throw error if not success or too much data
   if (image.result !== 0 && image.result !== 6) {

@@ -1,7 +1,4 @@
-
-
 function decodeJpx (imageFrame, pixelData) {
-
   const jpxImage = new JpxImage();
 
   jpxImage.parse(pixelData);
@@ -33,7 +30,7 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
   const imageSizeYPtr = openJPEG._malloc(4);
   const imageSizeCompPtr = openJPEG._malloc(4);
 
-  const t0 = Date.now();
+  const t0 = performance.now();
   const ret = openJPEG.ccall('jp2_decode', 'number', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
     [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
   // add num vomp..etc
@@ -47,7 +44,7 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
     openJPEG._free(imageSizePtr);
     openJPEG._free(imageSizeCompPtr);
 
-    return undefined;
+    return;
   }
 
   const imagePtr = openJPEG.getValue(imagePtrPtr, '*');
@@ -92,7 +89,7 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
     }
   }
 
-  const t1 = Date.now();
+  const t1 = performance.now();
 
   image.perf_timetodecode = t1 - t0;
 
@@ -140,9 +137,7 @@ function initializeJPEG2000 (decodeConfig) {
   }
 }
 
-function decodeJPEG2000 (imageFrame, pixelData, decodeConfig, options) {
-  options = options || {};
-
+function decodeJPEG2000 (imageFrame, pixelData, decodeConfig, options = {}) {
   initializeJPEG2000(decodeConfig);
 
   if (options.usePDFJS || decodeConfig.usePDFJS) {

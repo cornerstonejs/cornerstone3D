@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.1 - 2017-11-02 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.1 - 2017-11-06 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("dicom-parser"));
@@ -737,7 +737,7 @@ var _unpackBinaryFrame = __webpack_require__(34);
 
 var _unpackBinaryFrame2 = _interopRequireDefault(_unpackBinaryFrame);
 
-var _register = __webpack_require__(53);
+var _register = __webpack_require__(54);
 
 var _register2 = _interopRequireDefault(_register);
 
@@ -1437,7 +1437,7 @@ function getTransferSyntaxForContentType() /* contentType */{
 }
 
 function loadImage(imageId, options) {
-  var start = new Date().getTime();
+  var start = performance.now();
   var uri = imageId.substring(7);
 
   var deferred = _externalModules.$.Deferred();
@@ -1463,7 +1463,7 @@ function loadImage(imageId, options) {
 
     imagePromise.then(function (image) {
       // add the loadTimeInMS property
-      var end = new Date().getTime();
+      var end = performance.now();
 
       image.loadTimeInMS = end - start;
       deferred.resolve(image);
@@ -1691,10 +1691,10 @@ function startTaskOnWebWorker() {
       // get the highest priority task
       var task = tasks.shift();
 
-      task.start = new Date().getTime();
+      task.start = performance.now();
 
       // update stats with how long this task was delayed (waiting in queue)
-      var end = new Date().getTime();
+      var end = performance.now();
 
       statistics.totalTimeDelayedInMS += end - task.added;
 
@@ -1737,7 +1737,7 @@ function handleMessageFromWorker(msg) {
     webWorkers[msg.data.workerIndex].status = 'ready';
     statistics.numTasksCompleted++;
 
-    var end = new Date().getTime();
+    var end = performance.now();
 
     statistics.totalTaskTimeInMS += end - start;
 
@@ -1860,7 +1860,7 @@ function addTask(taskType, data) {
     taskId: taskId,
     taskType: taskType,
     status: 'ready',
-    added: new Date().getTime(),
+    added: performance.now(),
     data: data,
     deferred: deferred,
     priority: priority,
@@ -1994,7 +1994,7 @@ function binaryToString(binary) {
 }
 
 function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
-  var start = new Date().getTime();
+  var start = performance.now();
   var imgBlob = new Blob([pixelData], { type: 'image/jpeg' });
 
   return new Promise(function (resolve, reject) {
@@ -2018,7 +2018,7 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
 
         context.drawImage(this, 0, 0);
         var imageData = context.getImageData(0, 0, img.width, img.height);
-        var end = new Date().getTime();
+        var end = performance.now();
 
         imageFrame.pixelData = imageData.data;
         imageFrame.imageData = imageData;
@@ -2389,17 +2389,13 @@ var _dataSetCacheManager = __webpack_require__(8);
 
 var _dataSetCacheManager2 = _interopRequireDefault(_dataSetCacheManager);
 
-var _getEncapsulatedImageFrame = __webpack_require__(32);
-
-var _getEncapsulatedImageFrame2 = _interopRequireDefault(_getEncapsulatedImageFrame);
-
-var _getUncompressedImageFrame = __webpack_require__(33);
-
-var _getUncompressedImageFrame2 = _interopRequireDefault(_getUncompressedImageFrame);
-
 var _loadFileRequest = __webpack_require__(35);
 
 var _loadFileRequest2 = _interopRequireDefault(_loadFileRequest);
+
+var _getPixelData = __webpack_require__(53);
+
+var _getPixelData2 = _interopRequireDefault(_getPixelData);
 
 var _index = __webpack_require__(1);
 
@@ -2415,34 +2411,24 @@ function addDecache(image) {
   };
 }
 
-function getPixelData(dataSet, frameIndex) {
-  var pixelDataElement = dataSet.elements.x7fe00010;
-
-  if (pixelDataElement.encapsulatedPixelData) {
-    return (0, _getEncapsulatedImageFrame2.default)(dataSet, frameIndex);
-  }
-
-  return (0, _getUncompressedImageFrame2.default)(dataSet, frameIndex);
-}
-
 function loadImageFromPromise(dataSetPromise, imageId) {
   var frame = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
   var sharedCacheKey = arguments[3];
   var options = arguments[4];
 
-  var start = new Date().getTime();
+  var start = performance.now();
   var deferred = _externalModules.$.Deferred();
 
   dataSetPromise.then(function (dataSet /* , xhr*/) {
-    var pixelData = getPixelData(dataSet, frame);
+    var pixelData = (0, _getPixelData2.default)(dataSet, frame);
     var transferSyntax = dataSet.string('x00020010');
-    var loadEnd = new Date().getTime();
+    var loadEnd = performance.now();
     var imagePromise = (0, _createImage2.default)(imageId, pixelData, transferSyntax, options);
 
     imagePromise.then(function (image) {
       image.data = dataSet;
       image.sharedCacheKey = sharedCacheKey;
-      var end = new Date().getTime();
+      var end = performance.now();
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
@@ -2463,18 +2449,18 @@ function loadImageFromDataSet(dataSet, imageId) {
   var sharedCacheKey = arguments[3];
   var options = arguments[4];
 
-  var start = new Date().getTime();
+  var start = performance.now();
   var deferred = _externalModules.$.Deferred();
 
-  var pixelData = getPixelData(dataSet, frame);
+  var pixelData = (0, _getPixelData2.default)(dataSet, frame);
   var transferSyntax = dataSet.string('x00020010');
-  var loadEnd = new Date().getTime();
+  var loadEnd = performance.now();
   var imagePromise = (0, _createImage2.default)(imageId, pixelData, transferSyntax, options);
 
   imagePromise.then(function (image) {
     image.data = dataSet;
     image.sharedCacheKey = sharedCacheKey;
-    var end = new Date().getTime();
+    var end = performance.now();
 
     image.loadTimeInMS = loadEnd - start;
     image.totalTimeInMS = end - start;
@@ -2559,7 +2545,7 @@ Object.defineProperty(exports, 'wadors', {
   }
 });
 
-var _configure = __webpack_require__(54);
+var _configure = __webpack_require__(55);
 
 Object.defineProperty(exports, 'configure', {
   enumerable: true,
@@ -3379,6 +3365,39 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _getEncapsulatedImageFrame = __webpack_require__(32);
+
+var _getEncapsulatedImageFrame2 = _interopRequireDefault(_getEncapsulatedImageFrame);
+
+var _getUncompressedImageFrame = __webpack_require__(33);
+
+var _getUncompressedImageFrame2 = _interopRequireDefault(_getUncompressedImageFrame);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function getPixelData(dataSet, frameIndex) {
+  var pixelDataElement = dataSet.elements.x7fe00010;
+
+  if (pixelDataElement.encapsulatedPixelData) {
+    return (0, _getEncapsulatedImageFrame2.default)(dataSet, frameIndex);
+  }
+
+  return (0, _getUncompressedImageFrame2.default)(dataSet, frameIndex);
+}
+
+exports.default = getPixelData;
+
+/***/ }),
+/* 54 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
 exports.default = function (cornerstone) {
   // register dicomweb and wadouri image loader prefixes
   cornerstone.registerImageLoader('dicomweb', _loadImage.loadImage);
@@ -3394,7 +3413,7 @@ var _loadImage = __webpack_require__(36);
 var _index = __webpack_require__(12);
 
 /***/ }),
-/* 54 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

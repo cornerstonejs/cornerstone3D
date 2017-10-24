@@ -23,10 +23,13 @@ module.exports = {
   frameworks: ['mocha'],
   reporters: ['progress', 'coverage'],
   files: [
+    'node_modules/promise-polyfill/promise.min.js',
     'node_modules/jquery/dist/jquery.js',
     'node_modules/cornerstone-core/dist/cornerstone.js',
     'node_modules/dicom-parser/dist/dicomParser.js',
-    'test/**/*_test.js'
+    'test/**/*_test.js',
+    {pattern: 'testImages/*', included: false},
+    {pattern: 'dist/*', included: false},
   ],
 
   plugins: [
@@ -54,11 +57,6 @@ module.exports = {
     }
   },
 
-  sauceLabs: {
-    startConnect: true,
-    testName: 'Cornerstone WADO Image Loader'
-  },
-
   coverageReporter: {
     dir: './coverage',
     reporters: [
@@ -67,5 +65,15 @@ module.exports = {
       { type: 'text', subdir: '.', file: 'text.txt' },
       { type: 'text-summary', subdir: '.', file: 'text-summary.txt' }
     ]
+  },
+
+  client: {
+    captureConsole: true,
+  },
+
+  browserConsoleLogOptions: {
+    level: 'log',
+    format: '%b %T: %m',
+    terminal: true
   }
 };

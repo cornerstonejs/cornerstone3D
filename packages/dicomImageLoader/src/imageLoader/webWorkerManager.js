@@ -58,10 +58,10 @@ function startTaskOnWebWorker () {
       // get the highest priority task
       const task = tasks.shift();
 
-      task.start = new Date().getTime();
+      task.start = performance.now();
 
       // update stats with how long this task was delayed (waiting in queue)
-      const end = new Date().getTime();
+      const end = performance.now();
 
       statistics.totalTimeDelayedInMS += end - task.added;
 
@@ -104,7 +104,7 @@ function handleMessageFromWorker (msg) {
     webWorkers[msg.data.workerIndex].status = 'ready';
     statistics.numTasksCompleted++;
 
-    const end = new Date().getTime();
+    const end = performance.now();
 
     statistics.totalTaskTimeInMS += end - start;
 
@@ -224,7 +224,7 @@ function addTask (taskType, data, priority = 0, transferList) {
     taskId,
     taskType,
     status: 'ready',
-    added: new Date().getTime(),
+    added: performance.now(),
     data,
     deferred,
     priority,
