@@ -1,5 +1,3 @@
-
-
 function getLutDescriptor (dataSet, tag) {
   if (!dataSet.elements[tag] || dataSet.elements[tag].length !== 6) {
     return;
@@ -52,7 +50,6 @@ function populateSmallestLargestPixelValues (dataSet, imagePixelModule) {
 }
 
 function getImagePixelModule (dataSet) {
-
   const imagePixelModule = {
     samplesPerPixel: dataSet.uint16('x00280002'),
     photometricInterpretation: dataSet.string('x00280004'),
@@ -70,7 +67,6 @@ function getImagePixelModule (dataSet) {
   populatePaletteColorLut(dataSet, imagePixelModule);
 
   return imagePixelModule;
-
 }
 
 export default getImagePixelModule;

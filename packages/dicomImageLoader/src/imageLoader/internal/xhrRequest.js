@@ -1,4 +1,4 @@
-import { $, cornerstone } from '../../externalModules.js';
+import { $, external } from '../../externalModules.js';
 import { getOptions } from './options.js';
 
 function xhrRequest (url, imageId, headers = {}, params = {}) {
@@ -30,7 +30,7 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
       }
 
       // Event
-      $(cornerstone.events).trigger('CornerstoneImageLoadStart', {
+      $(external.cornerstone.events).trigger('CornerstoneImageLoadStart', {
         url,
         imageId
       });
@@ -44,7 +44,7 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
       }
 
       // Event
-      $(cornerstone.events).trigger('CornerstoneImageLoadEnd', {
+      $(external.cornerstone.events).trigger('CornerstoneImageLoadEnd', {
         url,
         imageId
       });
@@ -89,7 +89,7 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
       }
 
       // Event
-      $(cornerstone.events).trigger('CornerstoneImageLoadProgress', {
+      $(external.cornerstone.events).trigger('CornerstoneImageLoadProgress', {
         url,
         imageId,
         loaded,

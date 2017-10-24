@@ -1,6 +1,6 @@
 import { convertRGBColorByPixel, convertRGBColorByPlane,
-         convertYBRFullByPixel, convertYBRFullByPlane,
-         convertPALETTECOLOR } from './colorSpaceConverters/index.js';
+  convertYBRFullByPixel, convertYBRFullByPlane,
+  convertPALETTECOLOR } from './colorSpaceConverters/index.js';
 
 function convertRGB (imageFrame, rgbaBuffer) {
   if (imageFrame.planarConfiguration === 0) {

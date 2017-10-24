@@ -56,7 +56,7 @@ function decodeImageFrame (imageFrame, transferSyntax, pixelData, decodeConfig, 
     throw `no decoder for transfer syntax ${transferSyntax}`;
   }
 
-    /* Don't know if these work...
+  /* Don't know if these work...
    // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
    else if(transferSyntax === "1.2.840.10008.1.2.4.92")
    {

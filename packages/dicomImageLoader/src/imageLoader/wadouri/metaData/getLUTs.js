@@ -1,5 +1,3 @@
-
-
 function getLUT (pixelRepresentation, lutDataSet) {
   let numLUTEntries = lutDataSet.uint16('x00283002', 0);
 

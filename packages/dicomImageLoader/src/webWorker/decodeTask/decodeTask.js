@@ -1,6 +1,6 @@
 import { initializeJPEG2000 } from './decoders/decodeJPEG2000.js';
 import { initializeJPEGLS } from './decoders/decodeJPEGLS.js';
-import getMinMax from './getMinMax.js';
+import getMinMax from '../../shared/getMinMax.js';
 import decodeImageFrame from './decodeImageFrame.js';
 
 // flag to ensure codecs are loaded only once

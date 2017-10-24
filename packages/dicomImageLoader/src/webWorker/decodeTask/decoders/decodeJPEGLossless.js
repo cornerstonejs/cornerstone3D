@@ -21,7 +21,7 @@ function decodeJPEGLossless (imageFrame, pixelData) {
 
       return imageFrame;
     }
-      // untested!
+    // untested!
     imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
 
     return imageFrame;

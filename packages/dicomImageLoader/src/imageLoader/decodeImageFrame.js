@@ -15,9 +15,7 @@ function addDecodeTask (imageFrame, transferSyntax, pixelData, options) {
     }, priority, transferList).promise;
 }
 
-function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, options) {
-  options = options || {};
-
+function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, options = {}) {
   // TODO: Turn this into a switch statement instead
   if (transferSyntax === '1.2.840.10008.1.2') {
     // Implicit VR Little Endian

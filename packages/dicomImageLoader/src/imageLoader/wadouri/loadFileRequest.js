@@ -15,9 +15,7 @@ function loadFileRequest (uri) {
       resolve(dicomPart10AsArrayBuffer);
     };
 
-    fileReader.onerror = (e) => {
-      reject(e);
-    };
+    fileReader.onerror = reject;
 
     fileReader.readAsArrayBuffer(file);
   });

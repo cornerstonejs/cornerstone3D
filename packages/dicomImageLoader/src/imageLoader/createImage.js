@@ -1,9 +1,9 @@
-import { cornerstone } from '../externalModules.js';
+import { external } from '../externalModules.js';
 import getImageFrame from './getImageFrame.js';
 import decodeImageFrame from './decodeImageFrame.js';
-import { default as isColorImageFn } from './isColorImage.js';
+import isColorImageFn from './isColorImage.js';
 import convertColorSpace from './convertColorSpace.js';
-import getMinMax from './getMinMax.js';
+import getMinMax from '../shared/getMinMax.js';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor.js';
 
 let lastImageIdDrawn = '';
@@ -33,6 +33,7 @@ function setPixelDataType (imageFrame) {
 }
 
 function createImage (imageId, pixelData, transferSyntax, options) {
+  const cornerstone = external.cornerstone;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
   const decodePromise = decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options);
@@ -144,9 +145,7 @@ function createImage (imageId, pixelData, transferSyntax, options) {
         }
       }
       resolve(image);
-    }, (error) => {
-      reject(error);
-    });
+    }, reject);
   });
 }
 

@@ -12,4 +12,4 @@ module.exports = function(object, source) {
   });
 
   return merged;
-}
+};

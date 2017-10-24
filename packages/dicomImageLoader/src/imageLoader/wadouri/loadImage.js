@@ -1,4 +1,4 @@
-import { $, cornerstone } from '../../externalModules.js';
+import { $ } from '../../externalModules.js';
 import createImage from '../createImage.js';
 import parseImageId from './parseImageId.js';
 import dataSetCacheManager from './dataSetCacheManager.js';
@@ -105,10 +105,5 @@ function loadImage (imageId, options) {
 
   return loadImageFromPromise(dataSetPromise, imageId, parsedImageId.frame, parsedImageId.url, options);
 }
-
-// register dicomweb and wadouri image loader prefixes
-cornerstone.registerImageLoader('dicomweb', loadImage);
-cornerstone.registerImageLoader('wadouri', loadImage);
-cornerstone.registerImageLoader('dicomfile', loadImage);
 
 export { loadImageFromPromise, getLoaderForScheme, loadImage };

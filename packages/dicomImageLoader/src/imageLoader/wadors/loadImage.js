@@ -1,4 +1,4 @@
-import { $, cornerstone } from '../../externalModules.js';
+import { $ } from '../../externalModules.js';
 import metaDataManager from './metaDataManager.js';
 import getPixelData from './getPixelData.js';
 import createImage from '../createImage.js';
@@ -47,9 +47,6 @@ function loadImage (imageId, options) {
 
   return deferred;
 }
-
-// register wadors scheme
-cornerstone.registerImageLoader('wadors', loadImage);
 
 export default loadImage;
 

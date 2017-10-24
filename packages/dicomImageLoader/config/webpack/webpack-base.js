@@ -26,12 +26,6 @@ module.exports = {
       amd: "jquery",
       root: '$'
     },
-    'cornerstone-core': {
-      commonjs: "cornerstone-core",
-      commonjs2: "cornerstone-core",
-      amd: "cornerstone-core",
-      root: 'cornerstone'
-    },
     'dicom-parser': {
       commonjs: "dicom-parser",
       commonjs2: "dicom-parser",

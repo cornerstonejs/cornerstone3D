@@ -1,5 +1,18 @@
 import $ from 'jquery';
-import * as cornerstone from 'cornerstone-core';
 import * as dicomParser from 'dicom-parser';
+import registerLoaders from './imageLoader/registerLoaders.js';
 
-export { $, cornerstone, dicomParser };
+let cornerstone;
+
+const external = {
+  set cornerstone (cs) {
+    cornerstone = cs;
+
+    registerLoaders(cornerstone);
+  },
+  get cornerstone () {
+    return cornerstone;
+  }
+};
+
+export { $, dicomParser, external };
