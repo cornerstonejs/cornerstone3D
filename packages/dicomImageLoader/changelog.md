@@ -1,3 +1,10 @@
+# Version 0.15.0
+
+- Further fixes for browser native ES6 module loading
+- Fix Web Worker tasks being inserted incorrectly based on priority
+- Migrate createImage, decodeJPEGBaseline8BitColor, loadFileRequest, getPixelData, and dataSetCacheManager from Deferred to Promises
+- Add dependency injection for cornerstone
+
 # Version 0.14.7
 
 - Bumped up cornerstone version to 0.12.2
