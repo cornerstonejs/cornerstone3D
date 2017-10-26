@@ -1,3 +1,10 @@
+# Version 0.15.1
+
+- Added native CustomEvents that are triggered parallel to the jQuery events. This is part of a transition to drop the jQuery dependency entirely.
+- *Note:* This version requires Cornerstone Core 0.13.2 or above, where cornerstone.events has the EventTarget interface!
+
+e.g. CornerstoneImageLoadStart has a native CustomEvent name 'cornerstoneimageloadstart'
+
 # Version 0.15.0
 
 - Further fixes for browser native ES6 module loading
