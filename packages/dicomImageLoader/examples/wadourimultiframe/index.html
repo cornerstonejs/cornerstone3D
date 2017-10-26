@@ -204,7 +204,8 @@
         return false;
     }
 
-    $(cornerstone.events).on('CornerstoneImageLoadProgress', function(event, eventData) {
+    cornerstone.events.addEventListener('cornerstoneimageloadprogress', function(event) {
+        var eventData = event.detail;
         $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");
     });
 

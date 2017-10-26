@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 0.15.0 - 2017-10-25 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 0.15.0 - 2017-10-26 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -44,9 +44,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
 /******/
-/******/ 	// identity function for calling harmony imports with the correct context
-/******/ 	__webpack_require__.i = function(value) { return value; };
-/******/
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
@@ -74,7 +71,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 61);
+/******/ 	return __webpack_require__(__webpack_require__.s = 55);
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -110,19 +107,6 @@ function getMinMax(storedPixelData) {
 }
 
 exports.default = getMinMax;
-
-/***/ }),
-
-/***/ 3:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = '0.15.0';
 
 /***/ }),
 
@@ -412,7 +396,7 @@ exports.initializeJPEGLS = initializeJPEGLS;
 
 /***/ }),
 
-/***/ 40:
+/***/ 55:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -421,114 +405,33 @@ exports.initializeJPEGLS = initializeJPEGLS;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.version = exports.registerTaskHandler = undefined;
 
-var _decodeJPEG = __webpack_require__(37);
+var _version = __webpack_require__(9);
 
-var _decodeJPEGLS = __webpack_require__(38);
+Object.defineProperty(exports, 'version', {
+  enumerable: true,
+  get: function get() {
+    return _interopRequireDefault(_version).default;
+  }
+});
 
-var _getMinMax = __webpack_require__(2);
+var _webWorker = __webpack_require__(56);
 
-var _getMinMax2 = _interopRequireDefault(_getMinMax);
+var _decodeTask = __webpack_require__(57);
 
-var _decodeImageFrame = __webpack_require__(55);
-
-var _decodeImageFrame2 = _interopRequireDefault(_decodeImageFrame);
+var _decodeTask2 = _interopRequireDefault(_decodeTask);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// flag to ensure codecs are loaded only once
-var codecsLoaded = false;
+// register our task
+(0, _webWorker.registerTaskHandler)(_decodeTask2.default);
 
-// the configuration object for the decodeTask
-var decodeConfig = void 0;
-
-/**
- * Function to control loading and initializing the codecs
- * @param config
- */
-function loadCodecs(config) {
-  // prevent loading codecs more than once
-  if (codecsLoaded) {
-    return;
-  }
-
-  // Load the codecs
-  // console.time('loadCodecs');
-  self.importScripts(config.decodeTask.codecsPath);
-  codecsLoaded = true;
-  // console.timeEnd('loadCodecs');
-
-  // Initialize the codecs
-  if (config.decodeTask.initializeCodecsOnStartup) {
-    // console.time('initializeCodecs');
-    (0, _decodeJPEG.initializeJPEG2000)(config.decodeTask);
-    (0, _decodeJPEGLS.initializeJPEGLS)(config.decodeTask);
-    // console.timeEnd('initializeCodecs');
-  }
-}
-
-/**
- * Task initialization function
- */
-function decodeTaskInitialize(config) {
-  decodeConfig = config;
-  if (config.decodeTask.loadCodecsOnStartup) {
-    loadCodecs(config);
-  }
-}
-
-function calculateMinMax(imageFrame) {
-  var minMax = (0, _getMinMax2.default)(imageFrame.pixelData);
-
-  if (decodeConfig.decodeTask.strict === true) {
-    if (imageFrame.smallestPixelValue !== minMax.min) {
-      console.warn('Image smallestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
-    }
-
-    if (imageFrame.largestPixelValue !== minMax.max) {
-      console.warn('Image largestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
-    }
-  } else {
-    imageFrame.smallestPixelValue = minMax.min;
-    imageFrame.largestPixelValue = minMax.max;
-  }
-}
-
-/**
- * Task handler function
- */
-function decodeTaskHandler(data, doneCallback) {
-  // Load the codecs if they aren't already loaded
-  loadCodecs(decodeConfig);
-
-  var imageFrame = data.data.imageFrame;
-
-  // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
-  // not typed arrays
-  var pixelData = new Uint8Array(data.data.pixelData);
-
-  (0, _decodeImageFrame2.default)(imageFrame, data.data.transferSyntax, pixelData, decodeConfig.decodeTask, data.data.options);
-
-  calculateMinMax(imageFrame);
-
-  // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
-  // typed arrays
-  imageFrame.pixelData = imageFrame.pixelData.buffer;
-
-  // invoke the callback with our result and pass the pixelData in the transferList to move it to
-  // UI thread without making a copy
-  doneCallback(imageFrame, [imageFrame.pixelData]);
-}
-
-exports.default = {
-  taskType: 'decodeTask',
-  handler: decodeTaskHandler,
-  initialize: decodeTaskInitialize
-};
+exports.registerTaskHandler = _webWorker.registerTaskHandler;
 
 /***/ }),
 
-/***/ 41:
+/***/ 56:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -656,7 +559,123 @@ self.onmessage = function (msg) {
 
 /***/ }),
 
-/***/ 55:
+/***/ 57:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _decodeJPEG = __webpack_require__(37);
+
+var _decodeJPEGLS = __webpack_require__(38);
+
+var _getMinMax = __webpack_require__(2);
+
+var _getMinMax2 = _interopRequireDefault(_getMinMax);
+
+var _decodeImageFrame = __webpack_require__(58);
+
+var _decodeImageFrame2 = _interopRequireDefault(_decodeImageFrame);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// flag to ensure codecs are loaded only once
+var codecsLoaded = false;
+
+// the configuration object for the decodeTask
+var decodeConfig = void 0;
+
+/**
+ * Function to control loading and initializing the codecs
+ * @param config
+ */
+function loadCodecs(config) {
+  // prevent loading codecs more than once
+  if (codecsLoaded) {
+    return;
+  }
+
+  // Load the codecs
+  // console.time('loadCodecs');
+  self.importScripts(config.decodeTask.codecsPath);
+  codecsLoaded = true;
+  // console.timeEnd('loadCodecs');
+
+  // Initialize the codecs
+  if (config.decodeTask.initializeCodecsOnStartup) {
+    // console.time('initializeCodecs');
+    (0, _decodeJPEG.initializeJPEG2000)(config.decodeTask);
+    (0, _decodeJPEGLS.initializeJPEGLS)(config.decodeTask);
+    // console.timeEnd('initializeCodecs');
+  }
+}
+
+/**
+ * Task initialization function
+ */
+function decodeTaskInitialize(config) {
+  decodeConfig = config;
+  if (config.decodeTask.loadCodecsOnStartup) {
+    loadCodecs(config);
+  }
+}
+
+function calculateMinMax(imageFrame) {
+  var minMax = (0, _getMinMax2.default)(imageFrame.pixelData);
+
+  if (decodeConfig.decodeTask.strict === true) {
+    if (imageFrame.smallestPixelValue !== minMax.min) {
+      console.warn('Image smallestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
+    }
+
+    if (imageFrame.largestPixelValue !== minMax.max) {
+      console.warn('Image largestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
+    }
+  } else {
+    imageFrame.smallestPixelValue = minMax.min;
+    imageFrame.largestPixelValue = minMax.max;
+  }
+}
+
+/**
+ * Task handler function
+ */
+function decodeTaskHandler(data, doneCallback) {
+  // Load the codecs if they aren't already loaded
+  loadCodecs(decodeConfig);
+
+  var imageFrame = data.data.imageFrame;
+
+  // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
+  // not typed arrays
+  var pixelData = new Uint8Array(data.data.pixelData);
+
+  (0, _decodeImageFrame2.default)(imageFrame, data.data.transferSyntax, pixelData, decodeConfig.decodeTask, data.data.options);
+
+  calculateMinMax(imageFrame);
+
+  // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
+  // typed arrays
+  imageFrame.pixelData = imageFrame.pixelData.buffer;
+
+  // invoke the callback with our result and pass the pixelData in the transferList to move it to
+  // UI thread without making a copy
+  doneCallback(imageFrame, [imageFrame.pixelData]);
+}
+
+exports.default = {
+  taskType: 'decodeTask',
+  handler: decodeTaskHandler,
+  initialize: decodeTaskInitialize
+};
+
+/***/ }),
+
+/***/ 58:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -670,19 +689,19 @@ var _decodeLittleEndian = __webpack_require__(59);
 
 var _decodeLittleEndian2 = _interopRequireDefault(_decodeLittleEndian);
 
-var _decodeBigEndian = __webpack_require__(56);
+var _decodeBigEndian = __webpack_require__(60);
 
 var _decodeBigEndian2 = _interopRequireDefault(_decodeBigEndian);
 
-var _decodeRLE = __webpack_require__(60);
+var _decodeRLE = __webpack_require__(61);
 
 var _decodeRLE2 = _interopRequireDefault(_decodeRLE);
 
-var _decodeJPEGBaseline = __webpack_require__(57);
+var _decodeJPEGBaseline = __webpack_require__(62);
 
 var _decodeJPEGBaseline2 = _interopRequireDefault(_decodeJPEGBaseline);
 
-var _decodeJPEGLossless = __webpack_require__(58);
+var _decodeJPEGLossless = __webpack_require__(63);
 
 var _decodeJPEGLossless2 = _interopRequireDefault(_decodeJPEGLossless);
 
@@ -770,7 +789,45 @@ exports.default = decodeImageFrame;
 
 /***/ }),
 
-/***/ 56:
+/***/ 59:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+function decodeLittleEndian(imageFrame, pixelData) {
+  if (imageFrame.bitsAllocated === 16) {
+    var arrayBuffer = pixelData.buffer;
+    var offset = pixelData.byteOffset;
+    var length = pixelData.length;
+    // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
+    // buffers on it
+
+    if (offset % 2) {
+      arrayBuffer = arrayBuffer.slice(offset);
+      offset = 0;
+    }
+
+    if (imageFrame.pixelRepresentation === 0) {
+      imageFrame.pixelData = new Uint16Array(arrayBuffer, offset, length / 2);
+    } else {
+      imageFrame.pixelData = new Int16Array(arrayBuffer, offset, length / 2);
+    }
+  } else if (imageFrame.bitsAllocated === 8) {
+    imageFrame.pixelData = pixelData;
+  }
+
+  return imageFrame;
+}
+
+exports.default = decodeLittleEndian;
+
+/***/ }),
+
+/***/ 60:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -817,128 +874,7 @@ exports.default = decodeBigEndian;
 
 /***/ }),
 
-/***/ 57:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-
-function decodeJPEGBaseline(imageFrame, pixelData) {
-  // check to make sure codec is loaded
-  if (typeof JpegImage === 'undefined') {
-    throw 'No JPEG Baseline decoder loaded';
-  }
-  var jpeg = new JpegImage();
-
-  jpeg.parse(pixelData);
-
-  // Do not use the internal jpeg.js color transformation,
-  // since we will handle this afterwards
-  jpeg.colorTransform = false;
-
-  if (imageFrame.bitsAllocated === 8) {
-    imageFrame.pixelData = jpeg.getData(imageFrame.columns, imageFrame.rows);
-
-    return imageFrame;
-  } else if (imageFrame.bitsAllocated === 16) {
-    imageFrame.pixelData = jpeg.getData16(imageFrame.columns, imageFrame.rows);
-
-    return imageFrame;
-  }
-}
-
-exports.default = decodeJPEGBaseline;
-
-/***/ }),
-
-/***/ 58:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-
-function decodeJPEGLossless(imageFrame, pixelData) {
-  // check to make sure codec is loaded
-  if (typeof jpeg === 'undefined' || typeof jpeg.lossless === 'undefined' || typeof jpeg.lossless.Decoder === 'undefined') {
-    throw 'No JPEG Lossless decoder loaded';
-  }
-
-  var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
-  // console.time('jpeglossless');
-  var buffer = pixelData.buffer;
-  var decoder = new jpeg.lossless.Decoder();
-  var decompressedData = decoder.decode(buffer, pixelData.byteOffset, pixelData.length, byteOutput);
-  // console.timeEnd('jpeglossless');
-
-  if (imageFrame.pixelRepresentation === 0) {
-    if (imageFrame.bitsAllocated === 16) {
-      imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
-
-      return imageFrame;
-    }
-    // untested!
-    imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
-
-    return imageFrame;
-  }
-  imageFrame.pixelData = new Int16Array(decompressedData.buffer);
-
-  return imageFrame;
-}
-
-exports.default = decodeJPEGLossless;
-
-/***/ }),
-
-/***/ 59:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-function decodeLittleEndian(imageFrame, pixelData) {
-  if (imageFrame.bitsAllocated === 16) {
-    var arrayBuffer = pixelData.buffer;
-    var offset = pixelData.byteOffset;
-    var length = pixelData.length;
-    // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
-    // buffers on it
-
-    if (offset % 2) {
-      arrayBuffer = arrayBuffer.slice(offset);
-      offset = 0;
-    }
-
-    if (imageFrame.pixelRepresentation === 0) {
-      imageFrame.pixelData = new Uint16Array(arrayBuffer, offset, length / 2);
-    } else {
-      imageFrame.pixelData = new Int16Array(arrayBuffer, offset, length / 2);
-    }
-  } else if (imageFrame.bitsAllocated === 8) {
-    imageFrame.pixelData = pixelData;
-  }
-
-  return imageFrame;
-}
-
-exports.default = decodeLittleEndian;
-
-/***/ }),
-
-/***/ 60:
+/***/ 61:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1113,7 +1049,7 @@ exports.default = decodeRLE;
 
 /***/ }),
 
-/***/ 61:
+/***/ 62:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1122,29 +1058,90 @@ exports.default = decodeRLE;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.version = exports.registerTaskHandler = undefined;
 
-var _version = __webpack_require__(3);
 
-Object.defineProperty(exports, 'version', {
-  enumerable: true,
-  get: function get() {
-    return _interopRequireDefault(_version).default;
+function decodeJPEGBaseline(imageFrame, pixelData) {
+  // check to make sure codec is loaded
+  if (typeof JpegImage === 'undefined') {
+    throw 'No JPEG Baseline decoder loaded';
   }
+  var jpeg = new JpegImage();
+
+  jpeg.parse(pixelData);
+
+  // Do not use the internal jpeg.js color transformation,
+  // since we will handle this afterwards
+  jpeg.colorTransform = false;
+
+  if (imageFrame.bitsAllocated === 8) {
+    imageFrame.pixelData = jpeg.getData(imageFrame.columns, imageFrame.rows);
+
+    return imageFrame;
+  } else if (imageFrame.bitsAllocated === 16) {
+    imageFrame.pixelData = jpeg.getData16(imageFrame.columns, imageFrame.rows);
+
+    return imageFrame;
+  }
+}
+
+exports.default = decodeJPEGBaseline;
+
+/***/ }),
+
+/***/ 63:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 
-var _webWorker = __webpack_require__(41);
 
-var _decodeTask = __webpack_require__(40);
+function decodeJPEGLossless(imageFrame, pixelData) {
+  // check to make sure codec is loaded
+  if (typeof jpeg === 'undefined' || typeof jpeg.lossless === 'undefined' || typeof jpeg.lossless.Decoder === 'undefined') {
+    throw 'No JPEG Lossless decoder loaded';
+  }
 
-var _decodeTask2 = _interopRequireDefault(_decodeTask);
+  var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
+  // console.time('jpeglossless');
+  var buffer = pixelData.buffer;
+  var decoder = new jpeg.lossless.Decoder();
+  var decompressedData = decoder.decode(buffer, pixelData.byteOffset, pixelData.length, byteOutput);
+  // console.timeEnd('jpeglossless');
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+  if (imageFrame.pixelRepresentation === 0) {
+    if (imageFrame.bitsAllocated === 16) {
+      imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
 
-// register our task
-(0, _webWorker.registerTaskHandler)(_decodeTask2.default);
+      return imageFrame;
+    }
+    // untested!
+    imageFrame.pixelData = new Uint8Array(decompressedData.buffer);
 
-exports.registerTaskHandler = _webWorker.registerTaskHandler;
+    return imageFrame;
+  }
+  imageFrame.pixelData = new Int16Array(decompressedData.buffer);
+
+  return imageFrame;
+}
+
+exports.default = decodeJPEGLossless;
+
+/***/ }),
+
+/***/ 9:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = '0.15.0';
 
 /***/ })
 
