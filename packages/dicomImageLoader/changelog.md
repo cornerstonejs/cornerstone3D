@@ -1,11 +1,26 @@
-# Version 0.15.1
+# Version 1.0.0
+
+- Updated to 1.0.0 because 0.15.0 introduced a breaking change with Cornerstone injection. This doesn't break usage if you are using HTML script tags, but if you are using a module system, Cornerstone WADO Image Loader may not properly find its dependencies.
+
+The solution for this is to inject your Cornerstone instance into Cornerstone Tools as follows:
+
+````javascript
+cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+````
+
+An example commit doing this in the OHIF Viewer Meteor application is here: https://github.com/OHIF/Viewers/commit/012bba44806d0fb9bb60af329c4875e7f6b751e0#diff-d9ccd906dfc48b4589d720766fe14715R25
+
+We apologize for any headaches that the breaking change in 0.15.0 may have caused for those using module systems.
+- Note: the dependencies have been updated to require Cornerstone Core 1.0.0 or above
+
+# Version 0.15.1 (deprecated due to breaking change)
 
 - Added native CustomEvents that are triggered parallel to the jQuery events. This is part of a transition to drop the jQuery dependency entirely.
 - *Note:* This version requires Cornerstone Core 0.13.2 or above, where cornerstone.events has the EventTarget interface!
 
 e.g. CornerstoneImageLoadStart has a native CustomEvent name 'cornerstoneimageloadstart'
 
-# Version 0.15.0
+# Version 0.15.0 (deprecated due to breaking change)
 
 - Further fixes for browser native ES6 module loading
 - Fix Web Worker tasks being inserted incorrectly based on priority
