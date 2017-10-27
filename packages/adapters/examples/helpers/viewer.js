@@ -162,6 +162,7 @@ class Viewer {
         columnPixelSpacing: Number(pixelSpacing[0]),
         rowPixelSpacing: Number(pixelSpacing[1]),
         invert: false,
+        labelmap: true,
         sizeInBytes: pixelData.byteLength,
         getPixelData: function () { return pixelData; },
       };
@@ -257,13 +258,12 @@ class Viewer {
       cornerstoneTools.addToolState(this.element, 'stack', this.baseStack);
 
       // (Callback adds the segmentation stacks)
-      if (this.options.callback) {
-        this.options.callback();
+      if (options && options.callback) {
+        options.callback();
       }
 
       // Force the stack renderer to draw
-      const toolData = cornerstoneTools.getToolState(this.element, 'stack');
-      this.renderer.render(this.element, toolData.data);
+      this.renderer.render(this.element);
 
       // Enable inputs
       cornerstoneTools.mouseInput.enable(this.element);
@@ -279,6 +279,7 @@ class Viewer {
 
       // touch tools
       // TODO: this may not be ready to work yet
+<<<<<<< HEAD
       try {
         cornerstoneTools.touchInput.enable(this.element);
         cornerstoneTools.zoomTouchPinch.activate(this.element);
@@ -288,6 +289,12 @@ class Viewer {
         console.error(error);
       }
 
+=======
+      cornerstoneTools.touchInput.enable(this.element);
+      cornerstoneTools.zoomTouchPinch.activate(this.element);
+      cornerstoneTools.wwwcTouchDrag.activate(this.element);
+      cornerstoneTools.panMultiTouch.activate(this.element);
+>>>>>>> Update Cornerstone Core/Tools. Fix touch support issues. Switch examples to use label maps.
     };
     cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
   }
@@ -351,10 +358,11 @@ class Viewer {
         options: {
           opacity: 0.7,
           visible: true,
-          colormap: colormapId,
           name: segment.SegmentLabel,
           viewport: {
-            pixelReplication: true
+            pixelReplication: true,
+            colormap: colormapId,
+            labelmap: true
           }
         }
       }
@@ -365,11 +373,10 @@ class Viewer {
   }
 
   layerVisibility(layerNumber, visibility) {
-    cornerstone.enable(this.element);
-    let layers = cornerstone.getLayers(this.element);
-    cornerstone.setActiveLayer(layers[layerNumber].layerId);
+    const layers = cornerstone.getLayers(this.element);
+    const layer = layers[layerNumber];
     layer.options.visible = visibility;
-    cornerstone.updateImage(element);
+    cornerstone.updateImage(this.element);
   }
 
   reset() {
@@ -388,6 +395,11 @@ class Viewer {
     cornerstoneTools.stackScrollWheel.deactivate(this.element);
     cornerstoneTools.stackScrollKeyboard.deactivate(this.element);
 
+    // Touch tools
+    cornerstoneTools.touchInput.enable(this.element);
+    cornerstoneTools.zoomTouchPinch.activate(this.element);
+    cornerstoneTools.wwwcTouchDrag.activate(this.element);
+    cornerstoneTools.panMultiTouch.activate(this.element);
   }
 
   set index(newIndex) {

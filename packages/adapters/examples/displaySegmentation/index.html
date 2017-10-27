@@ -198,13 +198,15 @@
         segMultiframe.SegmentSequence.forEach(segment => {
           // first, map the dicom color into a cornerstone colormap
           const cielab = segment.RecommendedDisplayCIELabValue;
-          let rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => x * 255);
+          let rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => Math.round(x * 255));
           rgba.push(255);
           const colormapId = 'Colormap_' + segment.SegmentNumber;
           var colormap = cornerstone.colors.getColormap(colormapId);
+
+          // All colors with no value will be set to transparent rgba = [0,0,0,0]
           colormap.setNumberOfColors(2);
-          colormap.insertColor(0, [0, 0, 255, 0]);
-          colormap.insertColor(1, rgba);
+          colormap.setColor(1, rgba);
+
           // define a stack based on the image ids, color, and segment name
           const segImageIds = getImageIds(segMultiframe, segBaseImageId, segment.SegmentNumber);
           const segStack = {
@@ -213,10 +215,11 @@
             options: {
               opacity: 0.7,
               visible: true,
-              colormap: colormapId,
               name: segment.SegmentLabel,
               viewport: {
-                pixelReplication: true
+                labelmap: true,
+                colormap: colormapId,
+                pixelReplication: true,
               }
             }
           };
@@ -258,8 +261,7 @@
             cornerstoneTools.addToolState(element, 'stack', segStack);
           });
 
-          //cornerstone.displayImage(element, image);
-          cornerstoneTools.scrollToIndex(element, 1);
+          renderer.render(element);
 
           cornerstoneTools.mouseInput.enable(element);
           cornerstoneTools.mouseWheelInput.enable(element);
@@ -274,7 +276,6 @@
           // Update dropdown size to make all layers name visible
           $('#layers').prop('size', layers.length);
 
-
           // Listen to `change` event to set the selected layer as active
           $("#layers").change(function(event) {
             var layerId = event.currentTarget.value;
@@ -282,12 +283,19 @@
               return;
             }
 
-            cornerstone.setActiveLayer(element, layerId);
+            var layer = cornerstone.getLayer(element, layerId);
+            if (layer.image) {
+              cornerstone.setActiveLayer(element, layerId);  
+            } else {
+              console.error('setActiveLayer: layer with undefined image cannot be set as active');
+              var layers = cornerstone.getLayers(element, layerId);
+              cornerstone.setActiveLayer(element, layers[0].layerId);
+              updateSelectedLayer(layers[0].layerId)
+            }
           });
         });
 
         $('p#statusLine').text("");
-
       });
 
     }
