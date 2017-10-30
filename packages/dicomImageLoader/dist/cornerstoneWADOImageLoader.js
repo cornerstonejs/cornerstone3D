@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.0 - 2017-10-27 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.0 - 2017-10-30 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("dicom-parser"));
@@ -845,7 +845,11 @@ function getLutDescriptor(dataSet, tag) {
 function getLutData(lutDataSet, tag, lutDescriptor) {
   var lut = [];
   var lutData = lutDataSet.elements[tag];
-  var numLutEntries = lutDescriptor[0];
+
+  // The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
+  // When the number of table entries is equal to 2ˆ16 then this value shall be 0.
+  // See http://dicom.nema.org/MEDICAL/DICOM/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.5
+  var numLutEntries = lutDescriptor[0] || 65536;
 
   for (var i = 0; i < numLutEntries; i++) {
     // Output range is always unsigned
