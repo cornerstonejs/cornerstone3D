@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.3 - 2017-11-22 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.3 - 2017-11-25 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("dicom-parser"));
@@ -844,12 +844,7 @@ function getLutData(lutDataSet, tag, lutDescriptor) {
   var lut = [];
   var lutData = lutDataSet.elements[tag];
 
-  // The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
-  // When the number of table entries is equal to 2ˆ16 then this value shall be 0.
-  // See http://dicom.nema.org/MEDICAL/DICOM/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.5
-  var numLutEntries = lutDescriptor[0] || 65536;
-
-  for (var i = 0; i < numLutEntries; i++) {
+  for (var i = 0; i < lutDescriptor[0]; i++) {
     // Output range is always unsigned
     if (lutDescriptor[2] === 16) {
       lut[i] = lutDataSet.uint16(tag, i);
@@ -862,13 +857,37 @@ function getLutData(lutDataSet, tag, lutDescriptor) {
 }
 
 function populatePaletteColorLut(dataSet, imagePixelModule) {
-  // return immediately if photometric interpretation is not PALETTE COLOR or no palette lut elements
-  if (imagePixelModule.photometricInterpretation !== 'PALETTE COLOR' || !dataSet.elements.x00281101) {
-    return;
-  }
   imagePixelModule.redPaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281101');
   imagePixelModule.greenPaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281102');
   imagePixelModule.bluePaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281103');
+
+  // The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
+  // When the number of table entries is equal to 2ˆ16 then this value shall be 0.
+  // See http://dicom.nema.org/MEDICAL/DICOM/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.5
+  if (imagePixelModule.redPaletteColorLookupTableDescriptor[0] === 0) {
+    imagePixelModule.redPaletteColorLookupTableDescriptor[0] = 65536;
+    imagePixelModule.greenPaletteColorLookupTableDescriptor[0] = 65536;
+    imagePixelModule.bluePaletteColorLookupTableDescriptor[0] = 65536;
+  }
+
+  // The third Palette Color Lookup Table Descriptor value specifies the number of bits for each entry in the Lookup Table Data.
+  // It shall take the value of 8 or 16.
+  // The LUT Data shall be stored in a format equivalent to 8 bits allocated when the number of bits for each entry is 8, and 16 bits allocated when the number of bits for each entry is 16, where in both cases the high bit is equal to bits allocated-1.
+  // The third value shall be identical for each of the Red, Green and Blue Palette Color Lookup Table Descriptors.
+  //
+  // Note: Some implementations have encoded 8 bit entries with 16 bits allocated, padding the high bits;
+  // this can be detected by comparing the number of entries specified in the LUT Descriptor with the actual value length of the LUT Data entry.
+  // The value length in bytes should equal the number of entries if bits allocated is 8, and be twice as long if bits allocated is 16.
+  var numLutEntries = imagePixelModule.redPaletteColorLookupTableDescriptor[0];
+  var lutData = dataSet.elements.x00281201;
+  var lutBitsAllocated = lutData.length === numLutEntries ? 8 : 16;
+
+  // If the descriptors do not appear to have the correct values, correct them
+  if (imagePixelModule.redPaletteColorLookupTableDescriptor[2] !== lutBitsAllocated) {
+    imagePixelModule.redPaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
+    imagePixelModule.greenPaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
+    imagePixelModule.bluePaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
+  }
 
   imagePixelModule.redPaletteColorLookupTableData = getLutData(dataSet, 'x00281201', imagePixelModule.redPaletteColorLookupTableDescriptor);
   imagePixelModule.greenPaletteColorLookupTableData = getLutData(dataSet, 'x00281202', imagePixelModule.greenPaletteColorLookupTableDescriptor);
@@ -902,7 +921,10 @@ function getImagePixelModule(dataSet) {
   };
 
   populateSmallestLargestPixelValues(dataSet, imagePixelModule);
-  populatePaletteColorLut(dataSet, imagePixelModule);
+
+  if (imagePixelModule.photometricInterpretation === 'PALETTE COLOR' && dataSet.elements.x00281101) {
+    populatePaletteColorLut(dataSet, imagePixelModule);
+  }
 
   return imagePixelModule;
 }
@@ -2811,19 +2833,20 @@ Object.defineProperty(exports, "__esModule", {
 
 exports.default = function (imageFrame, rgbaBuffer) {
   var numPixels = imageFrame.columns * imageFrame.rows;
-  var palIndex = 0;
-  var rgbaIndex = 0;
   var pixelData = imageFrame.pixelData;
-  var start = imageFrame.redPaletteColorLookupTableDescriptor[1];
   var rData = imageFrame.redPaletteColorLookupTableData;
   var gData = imageFrame.greenPaletteColorLookupTableData;
   var bData = imageFrame.bluePaletteColorLookupTableData;
-  var shift = imageFrame.redPaletteColorLookupTableDescriptor[2] === 8 ? 0 : 8;
   var len = imageFrame.redPaletteColorLookupTableData.length;
+  var palIndex = 0;
+  var rgbaIndex = 0;
 
-  if (len === 0) {
-    len = 65535;
-  }
+  var start = imageFrame.redPaletteColorLookupTableDescriptor[1];
+  var shift = imageFrame.redPaletteColorLookupTableDescriptor[2] === 8 ? 0 : 8;
+
+  var rDataCleaned = convertLUTto8Bit(rData, shift);
+  var gDataCleaned = convertLUTto8Bit(gData, shift);
+  var bDataCleaned = convertLUTto8Bit(bData, shift);
 
   for (var i = 0; i < numPixels; ++i) {
     var value = pixelData[palIndex++];
@@ -2836,12 +2859,33 @@ exports.default = function (imageFrame, rgbaBuffer) {
       value -= start;
     }
 
-    rgbaBuffer[rgbaIndex++] = rData[value] >> shift;
-    rgbaBuffer[rgbaIndex++] = gData[value] >> shift;
-    rgbaBuffer[rgbaIndex++] = bData[value] >> shift;
+    rgbaBuffer[rgbaIndex++] = rDataCleaned[value];
+    rgbaBuffer[rgbaIndex++] = gDataCleaned[value];
+    rgbaBuffer[rgbaIndex++] = bDataCleaned[value];
     rgbaBuffer[rgbaIndex++] = 255;
   }
 };
+
+/* eslint no-bitwise: 0 */
+
+function convertLUTto8Bit(lut, shift) {
+  var numEntries = lut.length;
+  var cleanedLUT = new Uint8ClampedArray(numEntries);
+
+  for (var i = 0; i < numEntries; ++i) {
+    cleanedLUT[i] = lut[i] >> shift;
+  }
+
+  return cleanedLUT;
+}
+
+/**
+ * Convert pixel data with PALETTE COLOR Photometric Interpretation to RGBA
+ *
+ * @param {ImageFrame} imageFrame
+ * @param {Uint8ClampedArray} rgbaBuffer
+ * @returns {void}
+ */
 
 /***/ }),
 /* 45 */
