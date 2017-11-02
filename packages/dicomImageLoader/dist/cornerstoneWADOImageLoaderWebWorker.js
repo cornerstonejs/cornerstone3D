@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.0 - 2017-10-30 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.0 - 2017-11-02 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -656,6 +656,10 @@ function decodeTaskHandler(data, doneCallback) {
 
   (0, _decodeImageFrame2.default)(imageFrame, data.data.transferSyntax, pixelData, decodeConfig.decodeTask, data.data.options);
 
+  if (!imageFrame.pixelData) {
+    throw new Error('decodeTask: imageFrame.pixelData is undefined after decoding');
+  }
+
   calculateMinMax(imageFrame);
 
   // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
@@ -816,7 +820,7 @@ function decodeLittleEndian(imageFrame, pixelData) {
     } else {
       imageFrame.pixelData = new Int16Array(arrayBuffer, offset, length / 2);
     }
-  } else if (imageFrame.bitsAllocated === 8) {
+  } else if (imageFrame.bitsAllocated === 8 || imageFrame.bitsAllocated === 1) {
     imageFrame.pixelData = pixelData;
   }
 

@@ -16,7 +16,7 @@ function decodeLittleEndian (imageFrame, pixelData) {
     } else {
       imageFrame.pixelData = new Int16Array(arrayBuffer, offset, length / 2);
     }
-  } else if (imageFrame.bitsAllocated === 8) {
+  } else if (imageFrame.bitsAllocated === 8 || imageFrame.bitsAllocated === 1) {
     imageFrame.pixelData = pixelData;
   }
 

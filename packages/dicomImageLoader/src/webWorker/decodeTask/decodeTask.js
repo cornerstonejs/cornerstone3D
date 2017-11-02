@@ -81,6 +81,10 @@ function decodeTaskHandler (data, doneCallback) {
     decodeConfig.decodeTask,
     data.data.options);
 
+  if (!imageFrame.pixelData) {
+    throw new Error('decodeTask: imageFrame.pixelData is undefined after decoding');
+  }
+
   calculateMinMax(imageFrame);
 
   // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
