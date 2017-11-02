@@ -1,3 +1,8 @@
+# Version 1.0.1
+
+- Fix decodeLittleEndian to properly return pixelData for bitsAllocated = 1. This affected DICOM Segmentation files.
+- Fix #98: incorrect number of LUT entries issue for Palette Color images.
+
 # Version 1.0.0
 
 - Updated to 1.0.0 because 0.15.0 introduced a breaking change with Cornerstone injection. This doesn't break usage if you are using HTML script tags, but if you are using a module system, Cornerstone WADO Image Loader may not properly find its dependencies.
