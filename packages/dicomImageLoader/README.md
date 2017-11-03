@@ -41,16 +41,16 @@ or the distributed minimized files:
 Usage
 -------
 
-The cornerstoneWADOImageLoader depends on the following external libraries which should be loaded before cornerstoneWADOImageLoad.js:
+The cornerstoneWADOImageLoader depends on the following external libraries which should be loaded before cornerstoneWADOImageLoader.js:
 
 1. [jQuery](https://github.com/jquery/jquery)
 2. [dicomParser](https://github.com/chafey/dicomParser) 
 3. [cornerstone](https://github.com/chafey/cornerstone)
 
-*New in 0.15*: Specify the cornerstone instance you want to register the loader with.
+*New in 1.0.0*: Specify the cornerstone instance you want to register the loader with.
 
 ````javascript
-cornerstoneWADOImageLoader.externals.cornerstone = cornerstone;
+cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 ````
 
 Have your code configure the web worker framework with the paths to the web worker and the codecs:
