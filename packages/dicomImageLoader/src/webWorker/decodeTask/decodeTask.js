@@ -37,7 +37,7 @@ function loadCodecs (config) {
 /**
  * Task initialization function
  */
-function decodeTaskInitialize (config) {
+function initialize (config) {
   decodeConfig = config;
   if (config.decodeTask.loadCodecsOnStartup) {
     loadCodecs(config);
@@ -64,7 +64,7 @@ function calculateMinMax (imageFrame) {
 /**
  * Task handler function
  */
-function decodeTaskHandler (data, doneCallback) {
+function handler (data, doneCallback) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
@@ -98,6 +98,6 @@ function decodeTaskHandler (data, doneCallback) {
 
 export default {
   taskType: 'decodeTask',
-  handler: decodeTaskHandler,
-  initialize: decodeTaskInitialize
+  handler,
+  initialize
 };

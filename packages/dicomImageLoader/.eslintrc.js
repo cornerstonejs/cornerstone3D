@@ -175,7 +175,7 @@ module.exports = {
     'no-tabs': 'warn',
     'no-template-curly-in-string': 'warn',
     'no-ternary': 'off',
-    //'no-throw-literal': 'warn',
+    'no-throw-literal': 'warn',
     'no-trailing-spaces': 'warn',
     'no-undef': 'error',
     'no-undef-init': 'warn',

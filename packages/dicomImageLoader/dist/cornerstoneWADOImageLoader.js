@@ -534,7 +534,6 @@ function isLoaded(uri) {
 }
 
 function get(uri) {
-  // if already loaded return it right away
   if (!loadedDataSets[uri]) {
     return;
   }
@@ -585,9 +584,7 @@ function load(uri) {
       };
 
       resolve(dataSet);
-    }, function (error) {
-      reject(error);
-    }).then(function () {
+    }, reject).then(function () {
       // Remove the promise regardless of success or failure
       delete promises[uri];
     });
@@ -1437,7 +1434,7 @@ function getTransferSyntaxForContentType() /* contentType */{
 }
 
 function loadImage(imageId, options) {
-  var start = performance.now();
+  var start = new Date().getTime();
   var uri = imageId.substring(7);
 
   var deferred = _externalModules.$.Deferred();
@@ -1463,7 +1460,7 @@ function loadImage(imageId, options) {
 
     imagePromise.then(function (image) {
       // add the loadTimeInMS property
-      var end = performance.now();
+      var end = new Date().getTime();
 
       image.loadTimeInMS = end - start;
       deferred.resolve(image);
@@ -1691,10 +1688,10 @@ function startTaskOnWebWorker() {
       // get the highest priority task
       var task = tasks.shift();
 
-      task.start = performance.now();
+      task.start = new Date().getTime();
 
       // update stats with how long this task was delayed (waiting in queue)
-      var end = performance.now();
+      var end = new Date().getTime();
 
       statistics.totalTimeDelayedInMS += end - task.added;
 
@@ -1737,7 +1734,7 @@ function handleMessageFromWorker(msg) {
     webWorkers[msg.data.workerIndex].status = 'ready';
     statistics.numTasksCompleted++;
 
-    var end = performance.now();
+    var end = new Date().getTime();
 
     statistics.totalTaskTimeInMS += end - start;
 
@@ -1860,7 +1857,7 @@ function addTask(taskType, data) {
     taskId: taskId,
     taskType: taskType,
     status: 'ready',
-    added: performance.now(),
+    added: new Date().getTime(),
     data: data,
     deferred: deferred,
     priority: priority,
@@ -1994,7 +1991,7 @@ function binaryToString(binary) {
 }
 
 function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
-  var start = performance.now();
+  var start = new Date().getTime();
   var imgBlob = new Blob([pixelData], { type: 'image/jpeg' });
 
   return new Promise(function (resolve, reject) {
@@ -2018,7 +2015,7 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
 
         context.drawImage(this, 0, 0);
         var imageData = context.getImageData(0, 0, img.width, img.height);
-        var end = performance.now();
+        var end = new Date().getTime();
 
         imageFrame.pixelData = imageData.data;
         imageFrame.imageData = imageData;
@@ -2253,27 +2250,27 @@ function getUncompressedImageFrame(dataSet, frameIndex) {
   if (bitsAllocated === 8) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame;
     if (frameOffset >= dataSet.byteArray.length) {
-      throw 'frame exceeds size of pixelData';
+      throw new Error('frame exceeds size of pixelData');
     }
 
     return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame);
   } else if (bitsAllocated === 16) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
     if (frameOffset >= dataSet.byteArray.length) {
-      throw 'frame exceeds size of pixelData';
+      throw new Error('frame exceeds size of pixelData');
     }
 
     return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame * 2);
   } else if (bitsAllocated === 1) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 0.125;
     if (frameOffset >= dataSet.byteArray.length) {
-      throw 'frame exceeds size of pixelData';
+      throw new Error('frame exceeds size of pixelData');
     }
 
     return (0, _unpackBinaryFrame2.default)(dataSet.byteArray, frameOffset, pixelsPerFrame);
   }
 
-  throw 'unsupported pixel format';
+  throw new Error('unsupported pixel format');
 }
 
 exports.default = getUncompressedImageFrame;
@@ -2416,19 +2413,19 @@ function loadImageFromPromise(dataSetPromise, imageId) {
   var sharedCacheKey = arguments[3];
   var options = arguments[4];
 
-  var start = performance.now();
+  var start = new Date().getTime();
   var deferred = _externalModules.$.Deferred();
 
   dataSetPromise.then(function (dataSet /* , xhr*/) {
     var pixelData = (0, _getPixelData2.default)(dataSet, frame);
     var transferSyntax = dataSet.string('x00020010');
-    var loadEnd = performance.now();
+    var loadEnd = new Date().getTime();
     var imagePromise = (0, _createImage2.default)(imageId, pixelData, transferSyntax, options);
 
     imagePromise.then(function (image) {
       image.data = dataSet;
       image.sharedCacheKey = sharedCacheKey;
-      var end = performance.now();
+      var end = new Date().getTime();
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
@@ -2449,18 +2446,18 @@ function loadImageFromDataSet(dataSet, imageId) {
   var sharedCacheKey = arguments[3];
   var options = arguments[4];
 
-  var start = performance.now();
+  var start = new Date().getTime();
   var deferred = _externalModules.$.Deferred();
 
   var pixelData = (0, _getPixelData2.default)(dataSet, frame);
   var transferSyntax = dataSet.string('x00020010');
-  var loadEnd = performance.now();
+  var loadEnd = new Date().getTime();
   var imagePromise = (0, _createImage2.default)(imageId, pixelData, transferSyntax, options);
 
   imagePromise.then(function (image) {
     image.data = dataSet;
     image.sharedCacheKey = sharedCacheKey;
-    var end = performance.now();
+    var end = new Date().getTime();
 
     image.loadTimeInMS = loadEnd - start;
     image.totalTimeInMS = end - start;
@@ -3375,7 +3372,9 @@ var _getUncompressedImageFrame2 = _interopRequireDefault(_getUncompressedImageFr
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function getPixelData(dataSet, frameIndex) {
+function getPixelData(dataSet) {
+  var frameIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
   var pixelDataElement = dataSet.elements.x7fe00010;
 
   if (pixelDataElement.encapsulatedPixelData) {

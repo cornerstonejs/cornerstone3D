@@ -6,7 +6,7 @@ function decodeJpx (imageFrame, pixelData) {
   const tileCount = jpxImage.tiles.length;
 
   if (tileCount !== 1) {
-    throw `JPEG2000 decoder returned a tileCount of ${tileCount}, when 1 is expected`;
+    throw new Error(`JPEG2000 decoder returned a tileCount of ${tileCount}, when 1 is expected`);
   }
 
   imageFrame.columns = jpxImage.width;
@@ -30,7 +30,7 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
   const imageSizeYPtr = openJPEG._malloc(4);
   const imageSizeCompPtr = openJPEG._malloc(4);
 
-  const t0 = performance.now();
+  const t0 = new Date().getTime();
   const ret = openJPEG.ccall('jp2_decode', 'number', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
     [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
   // add num vomp..etc
@@ -89,7 +89,7 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
     }
   }
 
-  const t1 = performance.now();
+  const t1 = new Date().getTime();
 
   image.perf_timetodecode = t1 - t0;
 
@@ -125,14 +125,14 @@ function initializeJPEG2000 (decodeConfig) {
   // check to make sure codec is loaded
   if (!decodeConfig.usePDFJS) {
     if (typeof OpenJPEG === 'undefined') {
-      throw 'OpenJPEG decoder not loaded';
+      throw new Error('OpenJPEG decoder not loaded');
     }
   }
 
   if (!openJPEG) {
     openJPEG = OpenJPEG();
     if (!openJPEG || !openJPEG._jp2_decode) {
-      throw 'OpenJPEG failed to initialize';
+      throw new Error('OpenJPEG failed to initialize');
     }
   }
 }

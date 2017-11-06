@@ -1,5 +1,4 @@
 function decodeRLE (imageFrame, pixelData) {
-
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
       return decode8Planar(imageFrame, pixelData);
@@ -9,8 +8,8 @@ function decodeRLE (imageFrame, pixelData) {
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
   }
-  throw 'unsupported pixel format for RLE';
 
+  throw new Error('unsupported pixel format for RLE');
 }
 
 function decode8 (imageFrame, pixelData) {

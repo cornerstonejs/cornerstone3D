@@ -127,7 +127,7 @@ function decodeJpx(imageFrame, pixelData) {
   var tileCount = jpxImage.tiles.length;
 
   if (tileCount !== 1) {
-    throw 'JPEG2000 decoder returned a tileCount of ' + tileCount + ', when 1 is expected';
+    throw new Error('JPEG2000 decoder returned a tileCount of ' + tileCount + ', when 1 is expected');
   }
 
   imageFrame.columns = jpxImage.width;
@@ -151,7 +151,7 @@ function decodeOpenJPEG(data, bytesPerPixel, signed) {
   var imageSizeYPtr = openJPEG._malloc(4);
   var imageSizeCompPtr = openJPEG._malloc(4);
 
-  var t0 = performance.now();
+  var t0 = new Date().getTime();
   var ret = openJPEG.ccall('jp2_decode', 'number', ['number', 'number', 'number', 'number', 'number', 'number', 'number'], [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
   // add num vomp..etc
 
@@ -209,7 +209,7 @@ function decodeOpenJPEG(data, bytesPerPixel, signed) {
     }
   }
 
-  var t1 = performance.now();
+  var t1 = new Date().getTime();
 
   image.perf_timetodecode = t1 - t0;
 
@@ -245,14 +245,14 @@ function initializeJPEG2000(decodeConfig) {
   // check to make sure codec is loaded
   if (!decodeConfig.usePDFJS) {
     if (typeof OpenJPEG === 'undefined') {
-      throw 'OpenJPEG decoder not loaded';
+      throw new Error('OpenJPEG decoder not loaded');
     }
   }
 
   if (!openJPEG) {
     openJPEG = OpenJPEG();
     if (!openJPEG || !openJPEG._jp2_decode) {
-      throw 'OpenJPEG failed to initialize';
+      throw new Error('OpenJPEG failed to initialize');
     }
   }
 }
@@ -354,7 +354,7 @@ function jpegLSDecode(data, isSigned) {
 function initializeJPEGLS() {
   // check to make sure codec is loaded
   if (typeof CharLS === 'undefined') {
-    throw 'No JPEG-LS decoder loaded';
+    throw new Error('No JPEG-LS decoder loaded');
   }
 
   // Try to initialize CharLS
@@ -362,7 +362,7 @@ function initializeJPEGLS() {
   if (!charLS) {
     charLS = CharLS();
     if (!charLS || !charLS._jpegls_decode) {
-      throw 'JPEG-LS failed to initialize';
+      throw new Error('JPEG-LS failed to initialize');
     }
   }
 }
@@ -374,7 +374,7 @@ function decodeJPEGLS(imageFrame, pixelData) {
 
   // throw error if not success or too much data
   if (image.result !== 0 && image.result !== 6) {
-    throw 'JPEG-LS decoder failed to decode frame (error code ' + image.result + ')';
+    throw new Error('JPEG-LS decoder failed to decode frame (error code ' + image.result + ')');
   }
 
   imageFrame.columns = image.width;
@@ -610,7 +610,7 @@ function loadCodecs(config) {
 /**
  * Task initialization function
  */
-function decodeTaskInitialize(config) {
+function initialize(config) {
   decodeConfig = config;
   if (config.decodeTask.loadCodecsOnStartup) {
     loadCodecs(config);
@@ -637,7 +637,7 @@ function calculateMinMax(imageFrame) {
 /**
  * Task handler function
  */
-function decodeTaskHandler(data, doneCallback) {
+function handler(data, doneCallback) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
@@ -666,8 +666,8 @@ function decodeTaskHandler(data, doneCallback) {
 
 exports.default = {
   taskType: 'decodeTask',
-  handler: decodeTaskHandler,
-  initialize: decodeTaskInitialize
+  handler: handler,
+  initialize: initialize
 };
 
 /***/ }),
@@ -755,11 +755,7 @@ function decodeImageFrame(imageFrame, transferSyntax, pixelData, decodeConfig, o
     // JPEG 2000 Lossy
     imageFrame = (0, _decodeJPEG2.default)(imageFrame, pixelData, decodeConfig, options);
   } else {
-    if (console && console.log) {
-      console.log('Image cannot be decoded due to Unsupported transfer syntax ' + transferSyntax);
-    }
-
-    throw 'no decoder for transfer syntax ' + transferSyntax;
+    throw new Error('no decoder for transfer syntax ' + transferSyntax);
   }
 
   /* Don't know if these work...
@@ -881,7 +877,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 function decodeRLE(imageFrame, pixelData) {
-
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
       return decode8Planar(imageFrame, pixelData);
@@ -891,7 +886,8 @@ function decodeRLE(imageFrame, pixelData) {
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
   }
-  throw 'unsupported pixel format for RLE';
+
+  throw new Error('unsupported pixel format for RLE');
 }
 
 function decode8(imageFrame, pixelData) {
@@ -1060,7 +1056,7 @@ Object.defineProperty(exports, "__esModule", {
 function decodeJPEGBaseline(imageFrame, pixelData) {
   // check to make sure codec is loaded
   if (typeof JpegImage === 'undefined') {
-    throw 'No JPEG Baseline decoder loaded';
+    throw new Error('No JPEG Baseline decoder loaded');
   }
   var jpeg = new JpegImage();
 
@@ -1099,7 +1095,7 @@ Object.defineProperty(exports, "__esModule", {
 function decodeJPEGLossless(imageFrame, pixelData) {
   // check to make sure codec is loaded
   if (typeof jpeg === 'undefined' || typeof jpeg.lossless === 'undefined' || typeof jpeg.lossless.Decoder === 'undefined') {
-    throw 'No JPEG Lossless decoder loaded';
+    throw new Error('No JPEG Lossless decoder loaded');
   }
 
   var byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;

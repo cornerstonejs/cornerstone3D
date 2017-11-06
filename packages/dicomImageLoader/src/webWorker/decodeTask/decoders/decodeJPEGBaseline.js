@@ -3,7 +3,7 @@
 function decodeJPEGBaseline (imageFrame, pixelData) {
   // check to make sure codec is loaded
   if (typeof JpegImage === 'undefined') {
-    throw 'No JPEG Baseline decoder loaded';
+    throw new Error('No JPEG Baseline decoder loaded');
   }
   const jpeg = new JpegImage();
 

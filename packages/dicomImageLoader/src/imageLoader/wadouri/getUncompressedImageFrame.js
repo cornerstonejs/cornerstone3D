@@ -19,27 +19,27 @@ function getUncompressedImageFrame (dataSet, frameIndex) {
   if (bitsAllocated === 8) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame;
     if (frameOffset >= dataSet.byteArray.length) {
-      throw 'frame exceeds size of pixelData';
+      throw new Error('frame exceeds size of pixelData');
     }
 
     return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame);
   } else if (bitsAllocated === 16) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
     if (frameOffset >= dataSet.byteArray.length) {
-      throw 'frame exceeds size of pixelData';
+      throw new Error('frame exceeds size of pixelData');
     }
 
     return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame * 2);
   } else if (bitsAllocated === 1) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 0.125;
     if (frameOffset >= dataSet.byteArray.length) {
-      throw 'frame exceeds size of pixelData';
+      throw new Error('frame exceeds size of pixelData');
     }
 
     return unpackBinaryFrame(dataSet.byteArray, frameOffset, pixelsPerFrame);
   }
 
-  throw 'unsupported pixel format';
+  throw new Error('unsupported pixel format');
 }
 
 export default getUncompressedImageFrame;

@@ -23,6 +23,7 @@ module.exports = {
   frameworks: ['mocha'],
   reporters: ['progress', 'coverage'],
   files: [
+    'dist/cornerstoneWADOImageLoaderCodecs.js',
     'node_modules/promise-polyfill/promise.min.js',
     'node_modules/jquery/dist/jquery.js',
     'node_modules/cornerstone-core/dist/cornerstone.js',

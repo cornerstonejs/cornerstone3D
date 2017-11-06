@@ -17,19 +17,19 @@ function addDecache (image) {
 }
 
 function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKey, options) {
-  const start = performance.now();
+  const start = new Date().getTime();
   const deferred = $.Deferred();
 
   dataSetPromise.then(function (dataSet/* , xhr*/) {
     const pixelData = getPixelData(dataSet, frame);
     const transferSyntax = dataSet.string('x00020010');
-    const loadEnd = performance.now();
+    const loadEnd = new Date().getTime();
     const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
 
     imagePromise.then(function (image) {
       image.data = dataSet;
       image.sharedCacheKey = sharedCacheKey;
-      const end = performance.now();
+      const end = new Date().getTime();
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
@@ -46,18 +46,18 @@ function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKe
 }
 
 function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
-  const start = performance.now();
+  const start = new Date().getTime();
   const deferred = $.Deferred();
 
   const pixelData = getPixelData(dataSet, frame);
   const transferSyntax = dataSet.string('x00020010');
-  const loadEnd = performance.now();
+  const loadEnd = new Date().getTime();
   const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
 
   imagePromise.then((image) => {
     image.data = dataSet;
     image.sharedCacheKey = sharedCacheKey;
-    const end = performance.now();
+    const end = new Date().getTime();
 
     image.loadTimeInMS = loadEnd - start;
     image.totalTimeInMS = end - start;

@@ -16,7 +16,6 @@ function isLoaded (uri) {
 }
 
 function get (uri) {
-  // if already loaded return it right away
   if (!loadedDataSets[uri]) {
     return;
   }
@@ -65,9 +64,7 @@ function load (uri, loadRequest = xhrRequest, imageId) {
       };
 
       resolve(dataSet);
-    }, (error) => {
-      reject(error);
-    }).then(() => {
+    }, reject).then(() => {
       // Remove the promise regardless of success or failure
       delete promises[uri];
     });

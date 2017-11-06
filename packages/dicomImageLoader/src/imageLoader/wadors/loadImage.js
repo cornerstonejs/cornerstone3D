@@ -8,7 +8,7 @@ function getTransferSyntaxForContentType (/* contentType */) {
 }
 
 function loadImage (imageId, options) {
-  const start = performance.now();
+  const start = new Date().getTime();
   const uri = imageId.substring(7);
 
   const deferred = $.Deferred();
@@ -34,7 +34,7 @@ function loadImage (imageId, options) {
 
     imagePromise.then(function (image) {
       // add the loadTimeInMS property
-      const end = performance.now();
+      const end = new Date().getTime();
 
       image.loadTimeInMS = end - start;
       deferred.resolve(image);
