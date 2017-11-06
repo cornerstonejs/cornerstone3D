@@ -1,5 +1,4 @@
 // currently hard-coded singleton for a page
-// * cornerstoneContainer used as an id
 // * imageloader grabs dcmjs namespace in cornerstone
 //
 // currently only handles single frame images with segmentation overlay
@@ -186,6 +185,7 @@ class Viewer {
   }
 
   display(parentID, options) {
+    this.options = options || {};
     this.addElement(parentID);
     cornerstone.disable(this.element);
     cornerstone.enable(this.element);
@@ -205,13 +205,22 @@ class Viewer {
         }
       });
     }
+
+    // use inverse video to display PT
+    let ptClasses = [
+      DCMJS.data.DicomMetaDictionary.sopClassUIDsByName.PETImage,
+      DCMJS.data.DicomMetaDictionary.sopClassUIDsByName.LegacyConvertedEnhancedPETImage,
+      DCMJS.data.DicomMetaDictionary.sopClassUIDsByName.EnhancedPETImage,
+    ];
+    let invert = ptClasses.indexOf(this.datasets[0].SOPClassUID) >= 0;
+
     this.baseStack = {
       imageIds: imageIds,
       currentImageIdIndex: 0,
       options: {
         name: 'Referenced Image',
         viewport: {
-          invert: true
+          invert: invert
         }
       }
     };
@@ -248,8 +257,8 @@ class Viewer {
       cornerstoneTools.addToolState(this.element, 'stack', this.baseStack);
 
       // (Callback adds the segmentation stacks)
-      if (options.callback) {
-        options.callback();
+      if (this.options.callback) {
+        this.options.callback();
       }
 
       // Force the stack renderer to draw
@@ -270,10 +279,14 @@ class Viewer {
 
       // touch tools
       // TODO: this may not be ready to work yet
-      cornerstoneTools.touchInput.enable(this.element);
-      cornerstoneTools.zoomTouchPinch.activate(this.element);
-      cornerstoneTools.wwwcTouchDrag.activate(this.element);
-      cornerstoneTools.panMultiTouch.activate(this.element);
+      try {
+        cornerstoneTools.touchInput.enable(this.element);
+        cornerstoneTools.zoomTouchPinch.activate(this.element);
+        cornerstoneTools.wwwcTouchDrag.activate(this.element);
+        cornerstoneTools.panMultiTouch.activate(this.element);
+      } catch (error) {
+        console.error(error);
+      }
 
     };
     cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
