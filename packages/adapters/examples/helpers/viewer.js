@@ -279,22 +279,10 @@ class Viewer {
 
       // touch tools
       // TODO: this may not be ready to work yet
-<<<<<<< HEAD
-      try {
-        cornerstoneTools.touchInput.enable(this.element);
-        cornerstoneTools.zoomTouchPinch.activate(this.element);
-        cornerstoneTools.wwwcTouchDrag.activate(this.element);
-        cornerstoneTools.panMultiTouch.activate(this.element);
-      } catch (error) {
-        console.error(error);
-      }
-
-=======
       cornerstoneTools.touchInput.enable(this.element);
       cornerstoneTools.zoomTouchPinch.activate(this.element);
       cornerstoneTools.wwwcTouchDrag.activate(this.element);
       cornerstoneTools.panMultiTouch.activate(this.element);
->>>>>>> Update Cornerstone Core/Tools. Fix touch support issues. Switch examples to use label maps.
     };
     cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
   }
