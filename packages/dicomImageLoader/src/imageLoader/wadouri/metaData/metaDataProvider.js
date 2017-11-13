@@ -35,13 +35,40 @@ function metaDataProvider (type, imageId) {
   }
 
   if (type === 'imagePlaneModule') {
+
+    const imageOrientationPatient = getNumberValues(dataSet, 'x00200037', 6);
+    const imagePositionPatient = getNumberValues(dataSet, 'x00200032', 3);
+    const pixelSpacing = getNumberValues(dataSet, 'x00280030', 2);
+
+    let columnPixelSpacing = 1.0;
+    let rowPixelSpacing = 1.0;
+
+    if (pixelSpacing) {
+      rowPixelSpacing = pixelSpacing[0];
+      columnPixelSpacing = pixelSpacing[1];
+    }
+
+    let rowCosines = null;
+    let columnCosines = null;
+
+    if (imageOrientationPatient) {
+      rowCosines = [parseFloat(imageOrientationPatient[0]), parseFloat(imageOrientationPatient[1]), parseFloat(imageOrientationPatient[2])];
+      columnCosines = [parseFloat(imageOrientationPatient[3]), parseFloat(imageOrientationPatient[4]), parseFloat(imageOrientationPatient[5])];
+    }
+
     return {
-      pixelSpacing: getNumberValues(dataSet, 'x00280030', 2),
-      imageOrientationPatient: getNumberValues(dataSet, 'x00200037', 6),
-      imagePositionPatient: getNumberValues(dataSet, 'x00200032', 3),
+      frameOfReferenceUID: dataSet.string('x00200052'),
+      rows: getNumberValues(dataSet, 'x00280010', 1),
+      columns: getNumberValues(dataSet, 'x00280011', 1),
+      imageOrientationPatient,
+      rowCosines,
+      columnCosines,
+      imagePositionPatient,
       sliceThickness: dataSet.floatString('x00180050'),
       sliceLocation: dataSet.floatString('x00201041'),
-      frameOfReferenceUID: dataSet.string('x00200052')
+      pixelSpacing,
+      rowPixelSpacing,
+      columnPixelSpacing
     };
   }
 

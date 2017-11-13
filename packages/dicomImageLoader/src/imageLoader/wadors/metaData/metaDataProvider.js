@@ -31,12 +31,40 @@ function metaDataProvider (type, imageId) {
   }
 
   if (type === 'imagePlaneModule') {
+
+    const imageOrientationPatient = getNumberValues(metaData['00200037'], 6);
+    const imagePositionPatient = getNumberValues(metaData['00200032'], 3);
+    const pixelSpacing = getNumberValues(metaData['00280030'], 2);
+
+    let columnPixelSpacing = 1.0;
+    let rowPixelSpacing = 1.0;
+
+    if (pixelSpacing) {
+      rowPixelSpacing = pixelSpacing[0];
+      columnPixelSpacing = pixelSpacing[1];
+    }
+
+    let rowCosines = null;
+    let columnCosines = null;
+
+    if (imageOrientationPatient) {
+      rowCosines = [parseFloat(imageOrientationPatient[0]), parseFloat(imageOrientationPatient[1]), parseFloat(imageOrientationPatient[2])];
+      columnCosines = [parseFloat(imageOrientationPatient[3]), parseFloat(imageOrientationPatient[4]), parseFloat(imageOrientationPatient[5])];
+    }
+
     return {
-      pixelSpacing: getNumberValues(metaData['00280030'], 2),
-      imageOrientationPatient: getNumberValues(metaData['00200037'], 6),
-      imagePositionPatient: getNumberValues(metaData['00200032'], 3),
+      frameOfReferenceUID: getValue(metaData['00200052']),
+      rows: getNumberValue(metaData['00280010']),
+      columns: getNumberValue(metaData['00280011']),
+      imageOrientationPatient,
+      rowCosines,
+      columnCosines,
+      imagePositionPatient,
       sliceThickness: getNumberValue(metaData['00180050']),
-      sliceLocation: getNumberValue(metaData['00201041'])
+      sliceLocation: getNumberValue(metaData['00201041']),
+      pixelSpacing,
+      rowPixelSpacing,
+      columnPixelSpacing
     };
   }
 

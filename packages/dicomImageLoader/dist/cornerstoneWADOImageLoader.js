@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.1 - 2017-11-06 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.1 - 2017-11-21 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("dicom-parser"));
@@ -2910,13 +2910,40 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === 'imagePlaneModule') {
+
+    var imageOrientationPatient = (0, _getNumberValues2.default)(dataSet, 'x00200037', 6);
+    var imagePositionPatient = (0, _getNumberValues2.default)(dataSet, 'x00200032', 3);
+    var pixelSpacing = (0, _getNumberValues2.default)(dataSet, 'x00280030', 2);
+
+    var columnPixelSpacing = 1.0;
+    var rowPixelSpacing = 1.0;
+
+    if (pixelSpacing) {
+      rowPixelSpacing = pixelSpacing[0];
+      columnPixelSpacing = pixelSpacing[1];
+    }
+
+    var rowCosines = null;
+    var columnCosines = null;
+
+    if (imageOrientationPatient) {
+      rowCosines = [parseFloat(imageOrientationPatient[0]), parseFloat(imageOrientationPatient[1]), parseFloat(imageOrientationPatient[2])];
+      columnCosines = [parseFloat(imageOrientationPatient[3]), parseFloat(imageOrientationPatient[4]), parseFloat(imageOrientationPatient[5])];
+    }
+
     return {
-      pixelSpacing: (0, _getNumberValues2.default)(dataSet, 'x00280030', 2),
-      imageOrientationPatient: (0, _getNumberValues2.default)(dataSet, 'x00200037', 6),
-      imagePositionPatient: (0, _getNumberValues2.default)(dataSet, 'x00200032', 3),
+      frameOfReferenceUID: dataSet.string('x00200052'),
+      rows: (0, _getNumberValues2.default)(dataSet, 'x00280010', 1),
+      columns: (0, _getNumberValues2.default)(dataSet, 'x00280011', 1),
+      imageOrientationPatient: imageOrientationPatient,
+      rowCosines: rowCosines,
+      columnCosines: columnCosines,
+      imagePositionPatient: imagePositionPatient,
       sliceThickness: dataSet.floatString('x00180050'),
       sliceLocation: dataSet.floatString('x00201041'),
-      frameOfReferenceUID: dataSet.string('x00200052')
+      pixelSpacing: pixelSpacing,
+      rowPixelSpacing: rowPixelSpacing,
+      columnPixelSpacing: columnPixelSpacing
     };
   }
 
@@ -3112,12 +3139,40 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === 'imagePlaneModule') {
+
+    var imageOrientationPatient = (0, _getNumberValues2.default)(metaData['00200037'], 6);
+    var imagePositionPatient = (0, _getNumberValues2.default)(metaData['00200032'], 3);
+    var pixelSpacing = (0, _getNumberValues2.default)(metaData['00280030'], 2);
+
+    var columnPixelSpacing = 1.0;
+    var rowPixelSpacing = 1.0;
+
+    if (pixelSpacing) {
+      rowPixelSpacing = pixelSpacing[0];
+      columnPixelSpacing = pixelSpacing[1];
+    }
+
+    var rowCosines = null;
+    var columnCosines = null;
+
+    if (imageOrientationPatient) {
+      rowCosines = [parseFloat(imageOrientationPatient[0]), parseFloat(imageOrientationPatient[1]), parseFloat(imageOrientationPatient[2])];
+      columnCosines = [parseFloat(imageOrientationPatient[3]), parseFloat(imageOrientationPatient[4]), parseFloat(imageOrientationPatient[5])];
+    }
+
     return {
-      pixelSpacing: (0, _getNumberValues2.default)(metaData['00280030'], 2),
-      imageOrientationPatient: (0, _getNumberValues2.default)(metaData['00200037'], 6),
-      imagePositionPatient: (0, _getNumberValues2.default)(metaData['00200032'], 3),
+      frameOfReferenceUID: (0, _getValue2.default)(metaData['00200052']),
+      rows: (0, _getNumberValue2.default)(metaData['00280010']),
+      columns: (0, _getNumberValue2.default)(metaData['00280011']),
+      imageOrientationPatient: imageOrientationPatient,
+      rowCosines: rowCosines,
+      columnCosines: columnCosines,
+      imagePositionPatient: imagePositionPatient,
       sliceThickness: (0, _getNumberValue2.default)(metaData['00180050']),
-      sliceLocation: (0, _getNumberValue2.default)(metaData['00201041'])
+      sliceLocation: (0, _getNumberValue2.default)(metaData['00201041']),
+      pixelSpacing: pixelSpacing,
+      rowPixelSpacing: rowPixelSpacing,
+      columnPixelSpacing: columnPixelSpacing
     };
   }
 
