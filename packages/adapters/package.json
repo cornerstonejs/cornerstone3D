@@ -23,7 +23,7 @@
   "devDependencies": {
     "cornerstone-core": "^1.1.0",
     "cornerstone-math": "^0.1.6",
-    "cornerstone-tools": "^1.0.2",
+    "cornerstone-tools": "^1.0.3",
     "cornerstone-wado-image-loader": "^1.0.1",
     "hammerjs": "^2.0.8",
     "rollup": "^0.45.2"

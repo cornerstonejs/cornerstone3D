@@ -98,27 +98,37 @@
       dc0.reset();
     }
 
+    function populatePixelArrayForFrame (pixels, frame, pixelData) {
+      const bitArray = DCMJS.data.packBitArray(pixelData);
+      const numBitArrayPixels = bitArray.length;
+      let index = frame * numBitArrayPixels;
+      for (let i=0; i < numBitArrayPixels; i++) {
+        pixels[index++] = bitArray[i];
+      }
+    }
+
     function populateSegmentationMask(dataset) {
       // for testing, fill with ones
       const pixels = new Uint8Array(dataset.PixelData);
-      const layers = cornerstone.getLayers(element);
+      const configuration = cornerstoneTools.brush.getConfiguration();
+      const brushLayerId = configuration.brushLayerId;
 
-      // TODO: store the layerId for the brush layer somewhere accessible
-      const paintbrushLayer = layers[1];
-      const brushCanvasImageData = paintbrushLayer.image.getPixelData();
-      const numPixels = paintbrushLayer.image.width * paintbrushLayer.image.height;
-      const pixelData = new Uint8ClampedArray(numPixels);
-      let j = 3;
-      for (let i=0; i < numPixels; i++) {
-        pixelData[i] = brushCanvasImageData[j] > 0;
-        j += 4;
-      }
+      // TODO: clean this up, it's super hacky
+      const toolState = cornerstoneTools.globalImageIdSpecificToolStateManager.saveToolState();
 
-      // populate the segmentation object pixel data
-      const bitArray = DCMJS.data.packBitArray(pixelData);
-      const numBitArrayPixels = bitArray.length;
-      for (let i=0; i < numBitArrayPixels; i++) {
-        pixels[i] = bitArray[i];
+      const numFrames = Number(dataset.NumberOfFrames);
+      const baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-8-slices.dcm';
+
+      const getBrushPixelData = (imageId) => {
+        // TODO: Might be a better way to do this...
+        return toolState[imageId].brush.data[0].pixelData;
+      };
+
+      for (let frame = 0; frame < numFrames; frame++) {
+        const imageId = baseImageId + '?frame=' + frame;
+        const pixelData = getBrushPixelData(imageId);
+
+        populatePixelArrayForFrame(pixels, frame, pixelData);
       }
     }
 
@@ -135,6 +145,7 @@
           segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence.ReferencedSegmentNumber;
         }
 
+        // TODO: What is the point of this if statement?
         if (segmentNumber && segNum && segNum === segmentNumber) {
           const imageId = baseImageId + '?frame=' + i;
           imageIds.push(imageId);
@@ -218,8 +229,8 @@
           for (let i=0; i < numFrames; i++) {
             const imageId = baseImageId + '?frame=' + i;
 
-            var funcationalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
-            var imagePositionArray = funcationalGroup.PlanePositionSequence.ImagePositionPatient;
+            var functionalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
+            var imagePositionArray = functionalGroup.PlanePositionSequence.ImagePositionPatient;
 
             addMetaData('imagePlane', imageId, {
               imagePositionPatient: {
