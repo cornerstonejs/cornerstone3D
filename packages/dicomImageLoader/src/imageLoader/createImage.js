@@ -15,13 +15,43 @@ function isModalityLUTForDisplay (sopClassUid) {
          sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1'; // XRF
 }
 
+function convertToIntPixelData (floatPixelData) {
+  const floatMinMax = getMinMax(floatPixelData);
+  const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
+  const intRange = 65535;
+  const slope = floatRange / intRange;
+  const intercept = floatMinMax.min;
+  const numPixels = floatPixelData.length;
+  const intPixelData = new Uint16Array(numPixels);
+  let min = 65535;
+  let max = 0;
+
+  for (let i = 0; i < numPixels; i++) {
+    const rescaledPixel = Math.floor((floatPixelData[i] - intercept) / slope);
+
+    intPixelData[i] = rescaledPixel;
+    min = Math.min(min, rescaledPixel);
+    max = Math.max(max, rescaledPixel);
+  }
+
+  return {
+    min,
+    max,
+    intPixelData,
+    slope,
+    intercept
+  };
+}
+
 /**
  * Helper function to set pixel data to the right typed array.  This is needed because web workers
  * can transfer array buffers but not typed arrays
  * @param imageFrame
  */
 function setPixelDataType (imageFrame) {
-  if (imageFrame.bitsAllocated === 16) {
+  if (imageFrame.bitsAllocated === 32) {
+    imageFrame.pixelData = new Float32Array(imageFrame.pixelData);
+  } else if (imageFrame.bitsAllocated === 16) {
     if (imageFrame.pixelRepresentation === 0) {
       imageFrame.pixelData = new Uint16Array(imageFrame.pixelData);
     } else {
@@ -90,11 +120,24 @@ function createImage (imageId, pixelData, transferSyntax, options) {
         width: imageFrame.columns,
         windowCenter: voiLutModule.windowCenter ? voiLutModule.windowCenter[0] : undefined,
         windowWidth: voiLutModule.windowWidth ? voiLutModule.windowWidth[0] : undefined,
-        decodeTimeInMS: imageFrame.decodeTimeInMS
+        decodeTimeInMS: imageFrame.decodeTimeInMS,
+        floatPixelData: undefined
       };
 
       // add function to return pixel data
-      image.getPixelData = () => imageFrame.pixelData;
+      if (imageFrame.pixelData instanceof Float32Array) {
+        const floatPixelData = imageFrame.pixelData;
+        const results = convertToIntPixelData(floatPixelData);
+
+        image.minPixelValue = results.min;
+        image.maxPixelValue = results.max;
+        image.slope = results.slope;
+        image.intercept = results.intercept;
+        image.floatPixelData = floatPixelData;
+        image.getPixelData = () => results.intPixelData;
+      } else {
+        image.getPixelData = () => imageFrame.pixelData;
+      }
 
       // Setup the renderer
       if (image.color) {

@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.3 - 2017-11-25 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.3 - 2017-11-26 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("dicom-parser"));
@@ -371,13 +371,43 @@ function isModalityLUTForDisplay(sopClassUid) {
   sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1'; // XRF
 }
 
+function convertToIntPixelData(floatPixelData) {
+  var floatMinMax = (0, _getMinMax2.default)(floatPixelData);
+  var floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
+  var intRange = 65535;
+  var slope = floatRange / intRange;
+  var intercept = floatMinMax.min;
+  var numPixels = floatPixelData.length;
+  var intPixelData = new Uint16Array(numPixels);
+  var min = 65535;
+  var max = 0;
+
+  for (var i = 0; i < numPixels; i++) {
+    var rescaledPixel = Math.floor((floatPixelData[i] - intercept) / slope);
+
+    intPixelData[i] = rescaledPixel;
+    min = Math.min(min, rescaledPixel);
+    max = Math.max(max, rescaledPixel);
+  }
+
+  return {
+    min: min,
+    max: max,
+    intPixelData: intPixelData,
+    slope: slope,
+    intercept: intercept
+  };
+}
+
 /**
  * Helper function to set pixel data to the right typed array.  This is needed because web workers
  * can transfer array buffers but not typed arrays
  * @param imageFrame
  */
 function setPixelDataType(imageFrame) {
-  if (imageFrame.bitsAllocated === 16) {
+  if (imageFrame.bitsAllocated === 32) {
+    imageFrame.pixelData = new Float32Array(imageFrame.pixelData);
+  } else if (imageFrame.bitsAllocated === 16) {
     if (imageFrame.pixelRepresentation === 0) {
       imageFrame.pixelData = new Uint16Array(imageFrame.pixelData);
     } else {
@@ -446,13 +476,28 @@ function createImage(imageId, pixelData, transferSyntax, options) {
         width: imageFrame.columns,
         windowCenter: voiLutModule.windowCenter ? voiLutModule.windowCenter[0] : undefined,
         windowWidth: voiLutModule.windowWidth ? voiLutModule.windowWidth[0] : undefined,
-        decodeTimeInMS: imageFrame.decodeTimeInMS
+        decodeTimeInMS: imageFrame.decodeTimeInMS,
+        floatPixelData: undefined
       };
 
       // add function to return pixel data
-      image.getPixelData = function () {
-        return imageFrame.pixelData;
-      };
+      if (imageFrame.pixelData instanceof Float32Array) {
+        var floatPixelData = imageFrame.pixelData;
+        var results = convertToIntPixelData(floatPixelData);
+
+        image.minPixelValue = results.min;
+        image.maxPixelValue = results.max;
+        image.slope = results.slope;
+        image.intercept = results.intercept;
+        image.floatPixelData = floatPixelData;
+        image.getPixelData = function () {
+          return results.intPixelData;
+        };
+      } else {
+        image.getPixelData = function () {
+          return imageFrame.pixelData;
+        };
+      }
 
       // Setup the renderer
       if (image.color) {
@@ -2221,7 +2266,7 @@ function framesAreFragmented(dataSet) {
 }
 
 function getEncapsulatedImageFrame(dataSet, frameIndex) {
-  if (dataSet.elements.x7fe00010.basicOffsetTable.length) {
+  if (dataSet.elements.x7fe00010 && dataSet.elements.x7fe00010.basicOffsetTable.length) {
     // Basic Offset Table is not empty
     return _externalModules.dicomParser.readEncapsulatedImageFrame(dataSet, dataSet.elements.x7fe00010, frameIndex);
   }
@@ -2259,7 +2304,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 
 function getUncompressedImageFrame(dataSet, frameIndex) {
-  var pixelDataElement = dataSet.elements.x7fe00010;
+  var pixelDataElement = dataSet.elements.x7fe00010 || dataSet.elements.x7fe00008;
   var bitsAllocated = dataSet.uint16('x00280100');
   var rows = dataSet.uint16('x00280010');
   var columns = dataSet.uint16('x00280011');
@@ -2291,6 +2336,13 @@ function getUncompressedImageFrame(dataSet, frameIndex) {
     }
 
     return (0, _unpackBinaryFrame2.default)(dataSet.byteArray, frameOffset, pixelsPerFrame);
+  } else if (bitsAllocated === 32) {
+    frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 4;
+    if (frameOffset >= dataSet.byteArray.length) {
+      throw new Error('frame exceeds size of pixelData');
+    }
+
+    return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame * 4);
   }
 
   throw new Error('unsupported pixel format');
@@ -3473,7 +3525,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function getPixelData(dataSet) {
   var frameIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
-  var pixelDataElement = dataSet.elements.x7fe00010;
+  var pixelDataElement = dataSet.elements.x7fe00010 || dataSet.elements.x7fe00008;
 
   if (pixelDataElement.encapsulatedPixelData) {
     return (0, _getEncapsulatedImageFrame2.default)(dataSet, frameIndex);

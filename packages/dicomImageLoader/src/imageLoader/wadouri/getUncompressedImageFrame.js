@@ -5,7 +5,7 @@ import unpackBinaryFrame from './unpackBinaryFrame.js';
  */
 
 function getUncompressedImageFrame (dataSet, frameIndex) {
-  const pixelDataElement = dataSet.elements.x7fe00010;
+  const pixelDataElement = dataSet.elements.x7fe00010 || dataSet.elements.x7fe00008;
   const bitsAllocated = dataSet.uint16('x00280100');
   const rows = dataSet.uint16('x00280010');
   const columns = dataSet.uint16('x00280011');
@@ -37,6 +37,13 @@ function getUncompressedImageFrame (dataSet, frameIndex) {
     }
 
     return unpackBinaryFrame(dataSet.byteArray, frameOffset, pixelsPerFrame);
+  } else if (bitsAllocated === 32) {
+    frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 4;
+    if (frameOffset >= dataSet.byteArray.length) {
+      throw new Error('frame exceeds size of pixelData');
+    }
+
+    return new Uint8Array(dataSet.byteArray.buffer, frameOffset, pixelsPerFrame * 4);
   }
 
   throw new Error('unsupported pixel format');

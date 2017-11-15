@@ -1,3 +1,4 @@
+/* eslint import/extensions: 0 */
 import { expect } from 'chai';
 import { external } from '../src/externalModules.js';
 import { loadImage } from '../src/imageLoader/wadouri/loadImage.js';
@@ -68,7 +69,7 @@ describe('loadImage', function () {
       let promise;
 
       try {
-        promise = loadImage(imageId);  
+        promise = loadImage(imageId);
       } catch (error) {
         done(error);
       }

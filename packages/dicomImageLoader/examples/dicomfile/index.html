@@ -253,8 +253,8 @@
             $('#windowWidth').text(image.data.string('x00281051'));
             $('#rescaleIntercept').text(image.data.string('x00281052'));
             $('#rescaleSlope').text(image.data.string('x00281053'));
-            $('#basicOffsetTable').text(image.data.elements.x7fe00010.basicOffsetTable ? image.data.elements.x7fe00010.basicOffsetTable.length : '');
-            $('#fragments').text(image.data.elements.x7fe00010.fragments ? image.data.elements.x7fe00010.fragments.length : '');
+            $('#basicOffsetTable').text(image.data.elements.x7fe00010 && image.data.elements.x7fe00010.basicOffsetTable ? image.data.elements.x7fe00010.basicOffsetTable.length : '');
+            $('#fragments').text(image.data.elements.x7fe00010 && image.data.elements.x7fe00010.fragments ? image.data.elements.x7fe00010.fragments.length : '');
             $('#minStoredPixelValue').text(image.minPixelValue);
             $('#maxStoredPixelValue').text(image.maxPixelValue);
             var end = new Date().getTime();

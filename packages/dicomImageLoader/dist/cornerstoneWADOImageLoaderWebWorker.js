@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.3 - 2017-11-25 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.3 - 2017-11-26 | (c) 2016 Chris Hafey | https://github.com/chafey/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -792,13 +792,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 function decodeLittleEndian(imageFrame, pixelData) {
+  var arrayBuffer = pixelData.buffer;
+  var offset = pixelData.byteOffset;
+  var length = pixelData.length;
+
   if (imageFrame.bitsAllocated === 16) {
-    var arrayBuffer = pixelData.buffer;
-    var offset = pixelData.byteOffset;
-    var length = pixelData.length;
     // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
     // buffers on it
-
     if (offset % 2) {
       arrayBuffer = arrayBuffer.slice(offset);
       offset = 0;
@@ -811,6 +811,14 @@ function decodeLittleEndian(imageFrame, pixelData) {
     }
   } else if (imageFrame.bitsAllocated === 8 || imageFrame.bitsAllocated === 1) {
     imageFrame.pixelData = pixelData;
+  } else if (imageFrame.bitsAllocated === 32) {
+    // if pixel data is not aligned on even boundary, shift it
+    if (offset % 2) {
+      arrayBuffer = arrayBuffer.slice(offset);
+      offset = 0;
+    }
+
+    imageFrame.pixelData = new Float32Array(arrayBuffer, offset, length / 4);
   }
 
   return imageFrame;

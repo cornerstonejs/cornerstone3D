@@ -1,3 +1,4 @@
+/* eslint import/extensions: 0 */
 import { expect } from 'chai';
 import { external } from '../src/externalModules.js';
 import { initializeJPEGLS } from '../src/webWorker/decodeTask/decoders/decodeJPEGLS.js';
@@ -67,8 +68,6 @@ describe('decodeImageFrame', function () {
       dataSetPromise.then((dataSet) => {
         try {
           const canvas = document.createElement('canvas');
-        
-
           const imageFrame = getImageFrame(imageId);
           const pixelData = getPixelData(dataSet);
           const transferSyntax = dataSet.string('x00020010');
