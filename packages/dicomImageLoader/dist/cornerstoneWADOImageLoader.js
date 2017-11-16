@@ -530,18 +530,18 @@ function createImage(imageId, pixelData, transferSyntax, options) {
         image.voiLUT = voiLutModule.voiLUTSequence[0];
       }
 
+      if (image.color) {
+        image.windowWidth = 255;
+        image.windowCenter = 127;
+      }
+
       // set the ww/wc to cover the dynamic range of the image if no values are supplied
       if (image.windowCenter === undefined || image.windowWidth === undefined) {
-        if (image.color) {
-          image.windowWidth = 255;
-          image.windowCenter = 128;
-        } else {
-          var maxVoi = image.maxPixelValue * image.slope + image.intercept;
-          var minVoi = image.minPixelValue * image.slope + image.intercept;
+        var maxVoi = image.maxPixelValue * image.slope + image.intercept;
+        var minVoi = image.minPixelValue * image.slope + image.intercept;
 
-          image.windowWidth = maxVoi - minVoi;
-          image.windowCenter = (maxVoi + minVoi) / 2;
-        }
+        image.windowWidth = maxVoi - minVoi;
+        image.windowCenter = (maxVoi + minVoi) / 2;
       }
       resolve(image);
     }, reject);
