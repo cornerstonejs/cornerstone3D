@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2017-11-21
+### Changed
+- Fix bug introduced in 1.0.2 in which WADO-URI rows/columns are undefined in the metaDataProvider (thanks @hardmaster92)
+
 ## [1.0.2] - 2017-11-21
 ### Added
 - WADO URI and WADO RS metaData providers have been updated to provide all necessary information for drawing reference lines with Cornerstone Tools (thanks @dannyrb)
