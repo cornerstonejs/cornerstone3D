@@ -2933,8 +2933,8 @@ function metaDataProvider(type, imageId) {
 
     return {
       frameOfReferenceUID: dataSet.string('x00200052'),
-      rows: (0, _getNumberValues2.default)(dataSet, 'x00280010', 1),
-      columns: (0, _getNumberValues2.default)(dataSet, 'x00280011', 1),
+      rows: dataSet.uint16('x00280010'),
+      columns: dataSet.uint16('x00280011'),
       imageOrientationPatient: imageOrientationPatient,
       rowCosines: rowCosines,
       columnCosines: columnCosines,
@@ -3139,11 +3139,9 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === 'imagePlaneModule') {
-
     var imageOrientationPatient = (0, _getNumberValues2.default)(metaData['00200037'], 6);
     var imagePositionPatient = (0, _getNumberValues2.default)(metaData['00200032'], 3);
     var pixelSpacing = (0, _getNumberValues2.default)(metaData['00280030'], 2);
-
     var columnPixelSpacing = 1.0;
     var rowPixelSpacing = 1.0;
 

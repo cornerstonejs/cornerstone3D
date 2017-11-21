@@ -58,8 +58,8 @@ function metaDataProvider (type, imageId) {
 
     return {
       frameOfReferenceUID: dataSet.string('x00200052'),
-      rows: getNumberValues(dataSet, 'x00280010', 1),
-      columns: getNumberValues(dataSet, 'x00280011', 1),
+      rows: dataSet.uint16('x00280010'),
+      columns: dataSet.uint16('x00280011'),
       imageOrientationPatient,
       rowCosines,
       columnCosines,
