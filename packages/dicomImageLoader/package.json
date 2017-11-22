@@ -60,6 +60,7 @@
     "docdash": "^0.4.0",
     "eslint": "^4.9.0",
     "eslint-loader": "^1.7.1",
+    "eslint-plugin-import": "^2.8.0",
     "istanbul-instrumenter-loader": "^3.0.0",
     "jsdoc": "^3.4.3",
     "karma": "^1.6.0",

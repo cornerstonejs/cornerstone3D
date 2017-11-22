@@ -1,3 +1,4 @@
+/* eslint import/extensions:0 */
 import $ from 'jquery';
 import * as dicomParser from 'dicom-parser';
 import registerLoaders from './imageLoader/registerLoaders.js';
