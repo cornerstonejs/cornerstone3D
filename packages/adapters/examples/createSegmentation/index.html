@@ -108,8 +108,7 @@
       }
     }
 
-    function populateSegmentationMask(dataset) {
-      // for testing, fill with ones
+    function populateSegmentationObjectPixelData(dataset) {
       const pixels = new Uint8Array(dataset.PixelData);
       const configuration = cornerstoneTools.brush.getConfiguration();
       const brushLayerId = configuration.brushLayerId;
@@ -122,7 +121,13 @@
 
       const getBrushPixelData = (imageId) => {
         // TODO: Might be a better way to do this...
-        return toolState[imageId].brush.data[0].pixelData;
+        let pixelData;
+        if (toolState[imageId] && toolState[imageId].brush) {
+          pixelData = toolState[imageId].brush.data[0].pixelData;
+        } else {
+          pixelData = new Uint8ClampedArray(dataset.Rows * dataset.Columns);
+        }
+        return pixelData;
       };
 
       for (let frame = 0; frame < numFrames; frame++) {
@@ -157,7 +162,6 @@
       cornerstone.loadAndCacheImage(dc0.cornerstoneStack.imageIds[0]).then(function(image) {
         cornerstone.addLayer(element, image);
         cornerstone.updateImage(element);
-        //cornerstone.displayImage(element, image);
 
         cornerstoneTools.addStackStateManager(element, ['stack']);
         cornerstoneTools.addToolState(element, 'stack', dc0.cornerstoneStack);
@@ -260,10 +264,11 @@
         currentImageIdIndex: 0
       };
       activateCornerstoneStack();
+      status(`Ready`);
     }
 
     function downloadDatasets() {
-      populateSegmentationMask(dc0.seg.dataset);
+      populateSegmentationObjectPixelData(dc0.seg.dataset);
       $('#segmentationDump').text(JSON.stringify(dc0.seg.dataset, null,4));
       let multiBlob = DCMJS.data.datasetToBlob(dc0.multiframe);
       let segBlob = DCMJS.data.datasetToBlob(dc0.seg.dataset);
@@ -283,6 +288,7 @@
       console.log('status: ', s);
       $('#status').text(s);
     }
+
 
     resetDICOMzero();
 
@@ -332,7 +338,7 @@
         dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
       }
 
-      status(`Got ${dc0.dataTransfer.files.length} files, click to process...`);
+      status(`Got ${dc0.dataTransfer.files.length} files.  Processing...`);
       dc0.readOneFile(drawDatasets);
     }
 
