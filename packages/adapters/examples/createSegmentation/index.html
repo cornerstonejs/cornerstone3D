@@ -87,8 +87,9 @@
 <script src="../helpers/DICOMZero.js"></script>
 
 <script>
+  let dc0;
   $(document).ready(function() {
-    const dc0 = new DICOMZero();
+    dc0 = new DICOMZero();
     const element = document.getElementById('dicomImage');
     const dropZone = document.getElementById('dropZone');
 
@@ -136,7 +137,7 @@
       drawSampleDatasets();
     });
 
-    function getImageIds(multiframe, baseImageId, segmentNumber) {
+    function getImageIds(multiframe, baseImageId) {
       const imageIds = [];
       const numFrames = Number(multiframe.NumberOfFrames);
       for (let i=0; i < numFrames; i++) {
@@ -144,19 +145,33 @@
         if (multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence) {
           segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence.ReferencedSegmentNumber;
         }
-
-        // TODO: What is the point of this if statement?
-        if (segmentNumber && segNum && segNum === segmentNumber) {
-          const imageId = baseImageId + '?frame=' + i;
-          imageIds.push(imageId);
-        } else {
-          const imageId = baseImageId + '?frame=' + i;
-          imageIds.push(imageId);
-        }
-
+        const imageId = baseImageId + '?frame=' + i;
+        imageIds.push(imageId);
       }
-
       return imageIds;
+    }
+
+    function activateCornerstoneStack() {
+      // activates the dc0 singleton stack that has been set up either with
+      // demo data or with user data
+      cornerstone.loadAndCacheImage(dc0.cornerstoneStack.imageIds[0]).then(function(image) {
+        cornerstone.addLayer(element, image);
+        cornerstone.updateImage(element);
+        //cornerstone.displayImage(element, image);
+
+        cornerstoneTools.addStackStateManager(element, ['stack']);
+        cornerstoneTools.addToolState(element, 'stack', dc0.cornerstoneStack);
+
+        cornerstoneTools.mouseInput.enable(element);
+        cornerstoneTools.mouseWheelInput.enable(element);
+        cornerstoneTools.keyboardInput.enable(element);
+        cornerstoneTools.brush.activate(element, 1);
+        setBrushRadius();
+        cornerstoneTools.pan.activate(element, 2);
+        cornerstoneTools.zoom.activate(element, 4);
+        cornerstoneTools.stackScrollWheel.activate(element);
+        cornerstoneTools.stackScrollKeyboard.activate(element);
+      });
     }
 
     function drawSampleDatasets() {
@@ -175,35 +190,15 @@
         dc0.seg.dataset.SegmentSequence[0].RecommendedDisplayCIELabValue = cielab;
         var imageIds = getImageIds(dc0.multiframe, baseImageId);
 
-        const baseStack = {
+        dc0.cornerstoneStack = {
           imageIds: imageIds,
           currentImageIdIndex: 0,
           options: {
             name: 'Referenced Image'
           }
         };
+        activateCornerstoneStack();
 
-        cornerstone.loadAndCacheImage(baseStack.imageIds[0]).then(function(image) {
-          cornerstone.addLayer(element, image);
-          cornerstone.updateImage(element);
-          //cornerstone.displayImage(element, image);
-
-          cornerstoneTools.addStackStateManager(element, ['stack']);
-          cornerstoneTools.addToolState(element, 'stack', baseStack);
-
-          cornerstoneTools.mouseInput.enable(element);
-          cornerstoneTools.mouseWheelInput.enable(element);
-          cornerstoneTools.keyboardInput.enable(element);
-
-          //cornerstoneTools.wwwc.activate(element, 1);
-          cornerstoneTools.brush.activate(element, 1);
-          cornerstoneTools.pan.activate(element, 2);
-
-          cornerstoneTools.zoom.activate(element, 4);
-          cornerstoneTools.stackScrollWheel.activate(element);
-          cornerstoneTools.stackScrollKeyboard.activate(element);
-
-        });
       });
     }
 
@@ -253,7 +248,6 @@
       cornerstone.enable(element);
       cornerstoneTools.clearToolState(element, 'stack');
 
-
       var files = dc0.dataTransfer.files;
       var imageIds = [];
       files.forEach(function(file) {
@@ -261,32 +255,11 @@
         imageIds.push(imageId);
       });
 
-      const stack = {
+      dc0.cornerstoneStack = {
         imageIds: imageIds,
         currentImageIdIndex: 0
       };
-
-      cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
-        //cornerstone.displayImage(element, image);
-        cornerstone.addLayer(element, image);
-        cornerstone.updateImage(element);
-
-        cornerstoneTools.addStackStateManager(element, ['stack']);
-        cornerstoneTools.addToolState(element, 'stack', stack);
-        //cornerstoneTools.addToolState(element, 'stackRenderer', renderer);
-
-        cornerstoneTools.mouseInput.enable(element);
-        cornerstoneTools.mouseWheelInput.enable(element);
-        cornerstoneTools.keyboardInput.enable(element);
-        //cornerstoneTools.wwwc.activate(element, 1);
-        cornerstoneTools.brush.activate(element, 1);
-
-        cornerstoneTools.pan.activate(element, 2);
-        cornerstoneTools.zoom.activate(element, 4);
-        cornerstoneTools.stackScrollWheel.activate(element);
-        cornerstoneTools.stackScrollKeyboard.activate(element);
-      });
-
+      activateCornerstoneStack();
     }
 
     function downloadDatasets() {
@@ -339,13 +312,14 @@
     });
     
     var $radiusSlider = $('#radiusSlider');
-    $radiusSlider.on('input', function(){
+    function setBrushRadius() {
       var configuration = cornerstoneTools.brush.getConfiguration();
       var radius = $radiusSlider.val();
       $('#valBox').text(radius);
       configuration.radius = radius;
       cornerstoneTools.brush.setConfiguration(configuration);
-    });
+    }
+    $radiusSlider.on('input', setBrushRadius);
 
     function handleFileDrop(e) {
       let evt = e.originalEvent;
