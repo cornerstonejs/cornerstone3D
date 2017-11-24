@@ -1,0 +1,377 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>DCMJS Display</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+  <!-- styles for all examples -->
+  <link href="../css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- styles for this page -->
+  <style>
+    .qiicrStepUIPanel span {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+    .qiicrStepUIPanel span:hover {
+      font-style: oblique;
+    }
+
+    .visibleSegment {
+      color: #fff;
+    }
+    .invisibleSegment {
+      color: #000;
+    }
+
+  </style>
+
+</head>
+<body>
+  <div id='dropZone' class="container">
+    <div class="page-header">
+      <h1>
+        DICOM Data Display
+      </h1>
+      <p>
+        This example demonstrates display of DICOM images and SEG overlays.
+      </p>
+      <a href="../index.html">Go back to the Examples page</a>
+    </div>
+
+    <div class="row" id="mainDisplay" style="border: 1px solid black;">
+      <p id='status'>Ready...</p>
+      <div class='col-md-8'>
+        <h2>DICOM Images</h2>
+        <button id='datasetPlayStop' class='datasetControl'>Play</button>
+        <label for="datasetSlider" class='datasetControl'>Frame: <span id="frameOffset">0</span></label>
+        <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
+        <div id='dicomImages'></div>
+      </div>
+      <div class='col-md-4'>
+        <h2>Controls</h2>
+        <div id='controlPanel' class='qiicrStepUIPanel'></div>
+      </div>
+
+    </div>
+
+  </div>
+</body>
+
+
+<!-- polyfills -->
+<script src="../js/url-search-params.js"></script>
+
+<!-- third party -->
+<script src="../js/jquery.min.js"></script>
+<script src="../js/FileSaver.min.js"></script>
+<script src="../js/jszip.min.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
+<!-- for viewer -->
+<script src="../js/cornerstone.min.js"></script>
+<script src="../js/cornerstoneMath.min.js"></script>
+<script src="../js/hammer.min.js"></script>
+<script src="../js/cornerstoneTools.min.js"></script>
+<script src="../js/dicomParser.min.js"></script>
+<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+
+<!-- our stuff -->
+<script src="../../build/dcmjs.js"></script>
+
+<script src="../helpers/DICOMZero.js"></script>
+<script src="../helpers/viewer.js"></script>
+
+
+<script>
+  function status(statusMessage) {
+    console.log('status: ', statusMessage);
+    $('#status').text(statusMessage);
+  }
+
+  // containers for managing background and segmentation data
+  var dc0 = new DICOMZero({status});
+  var dc0seg = new DICOMZero({status});
+
+  $(document).ready(function() {
+
+    //
+    // dropZone
+    //
+    const dropZone = document.getElementById('dropZone');
+    window.addEventListener('resize', function() {
+      dropZone.width = window.innerWidth;
+      dropZone.height = window.innerHeight;
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    function handleFileDrop(e) {
+      let evt = e.originalEvent;
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      //
+      // if one file dropped, and we already have a viewer,
+      // check if it's a segmentation and overlay.
+      // Otherwise reset and load the dropped data.
+      //
+      if (dc0.viewer && evt.dataTransfer.files.length == 1) {
+        dc0.handleDataTransferFileAsDataset(evt.dataTransfer.files[0], {
+          doneCallback: function (dataset) {
+            if (dataset.SOPClassUID == DCMJS.data.DicomMetaDictionary.sopClassUIDsByName['Segmentation']) {
+              dc0.viewer.addSegmentation(dataset);
+              dc0seg.datasets = [dataset]
+              setupControlPanel();
+            }
+          }
+        });
+      } else {
+        resetDICOMzero();
+        dc0.dataTransfer = {files: []};
+        for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
+          dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
+        }
+        status(`Got ${dc0.dataTransfer.files.length} files...`);
+        dc0.readOneFile(displayDatasets, status);
+      }
+    }
+    $('#dropZone').bind('drop', handleFileDrop);
+
+    //
+    // Dataset controls
+    //
+    $('.datasetControl').attr('disabled', true);
+
+    function resetDICOMzero() {
+      if (dc0.viewer) {
+        dc0.viewer.reset();
+        dc0.viewer.removeElement();
+      }
+      dc0.reset();
+      $('#datasetSlider').val(0);
+      $('#datasetSlider').attr('max', 0);
+    }
+
+    function setOffset(offset) {
+      $('#frameOffset').text(offset);
+      $('#datasetSlider').val(offset);
+      dc0.viewer.index = offset;
+    }
+
+    function frameCount() {
+      if (DCMJS.normalizers.Normalizer.isMultiframe(dc0.datasets[0])) {
+        return (dc0.datasets[0].NumberOfFrames);
+      } else {
+        return (dc0.datasets.length);
+      }
+    }
+
+    function displayDatasets() {
+      status("Displaying...");
+      dc0.datasets.sort(function(a,b) {
+        return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
+      });
+      $('#datasetSlider').attr('min', 0);
+      $('#datasetSlider').attr('max', frameCount()-1);
+      $('.datasetControl').attr('disabled', false);
+
+      var options = {
+        callback: function() {
+          // now add the segmentation
+          status("Adding segmentations...");
+          if (dc0seg.datasets.length > 0) {
+            dc0.viewer.addSegmentation(dc0seg.datasets[0]);
+            setupControlPanel();
+          }
+          status("Done reading.");
+          togglePlayMode();
+        }
+      }
+
+      status("Setting up viewer...");
+      dc0.viewer = new Viewer(dc0.datasets);
+      dc0.viewer.display('#dicomImages', options);
+
+    }
+
+    function displaySegmentation() {
+      console.log(dc0seg);
+
+      let imageUID = dc0seg.datasets[0].ReferencedSeriesSequence.SeriesInstanceUID;
+      loadQIICRImages(imageUID);
+    }
+
+    $('#datasetSlider').on('input', function(){
+      var offset = $('#datasetSlider').val();
+      setOffset(offset);
+    });
+
+    function playStep () {
+      var offset = Number($('#datasetSlider').val());
+      offset += 1;
+      if (offset > frameCount()-1) {
+        offset = 0;
+      }
+      setOffset(offset);
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        window.requestAnimationFrame(playStep);
+      }
+    }
+
+    function playStop() {
+      $('#datasetPlayStop').text('Play');
+    }
+    function playStart() {
+        $('#datasetPlayStop').text('Stop');
+        window.requestAnimationFrame(playStep);
+    }
+    function togglePlayMode() {
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        playStop();
+      } else {
+        playStart();
+      }
+    }
+    $('#datasetPlayStop').on('click', togglePlayMode);
+
+
+    function progressStatus(progressEvent) {
+      status(`Downloaded ${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
+    }
+
+    //
+    // download and process functions
+    //
+
+    resetDICOMzero();
+
+    let segmentNumberToOffsetMap = [];
+    function scrollToSegment (segmentNumber) {
+      if (segmentNumberToOffsetMap.length == 0) {
+        status('Calculating segment locations');
+        let perSegmentISList = [];
+        dc0seg.datasets[0].PerFrameFunctionalGroupsSequence.forEach(perFrameGroup => {
+          let segment = perFrameGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
+          if (!perSegmentISList[segment]) {
+            perSegmentISList[segment] = [];
+          }
+          let isCoordinate = Number(perFrameGroup.PlanePositionSequence.ImagePositionPatient[2]);
+          perSegmentISList[segment].push(isCoordinate);
+        });
+        let isFirst = Number(dc0.datasets[0].ImagePositionPatient[2]);
+        let isLast = Number(dc0.datasets[dc0.datasets.length-1].ImagePositionPatient[2]);
+        let sliceSpacing = (isLast - isFirst) / (dc0.datasets.length - 1);
+        perSegmentISList.forEach((segmentList,index) => {
+          let isAverage = segmentList.reduce((a,b) => a+b) / segmentList.length;
+          let offset = Math.round((isAverage - isFirst) / sliceSpacing);
+          segmentNumberToOffsetMap[index] = offset;
+        });
+      }
+      status(`Segment ${segmentNumber} at ${segmentNumberToOffsetMap[segmentNumber]}`);
+      setOffset(segmentNumberToOffsetMap[segmentNumber]);
+    }
+
+    function createControlPanel (options={}) {
+      options.id = options.id || "controlPanel";
+      options.subject = options.subject || "Subject not specified";
+      options.seriesDescription = options.seriesDescription || "Series Description not specified";
+      options.segments = options.segments || [];
+      options.onSegmentVisibilityChanged = options.onSegmentVisibilityChanged || function (segment, visibility) {};
+      options.onSegmentClicked = options.onSegmentClicked || function (segment) {};
+
+      this.element = document.getElementById(options.id);
+
+      this.subjectNode = document.createElement('p');
+      this.subjectNode.innerText = options.subject;
+      this.element.appendChild(this.subjectNode);
+
+      this.seriesDescriptionNode = document.createElement('p');
+      this.seriesDescriptionNode.innerText = options.seriesDescription;
+      this.element.appendChild(this.seriesDescriptionNode);
+
+      this.segmentNodes = [];
+      options.segments.forEach(segment => {
+        let segmentNode = document.createElement('div');
+        let segmentDisplayNode = document.createElement('span');
+        //segmentDisplayNode.innerText = '\u2713'; // TODO: fix layer visibility
+        segmentDisplayNode.classList.add('visibleSegment');
+        segmentDisplayNode.style.background  = segment.color;
+        segmentDisplayNode.style.border  = '1px solid black';
+        this.element.appendChild(segmentNode);
+        segmentNode.appendChild(segmentDisplayNode);
+        let segmentTextNode = document.createElement('span');
+        segmentTextNode.innerText = segment.label;
+        segmentNode.appendChild(segmentTextNode);
+
+        segmentDisplayNode.addEventListener('click', event => {
+          if (event.target.classList.contains('visibleSegment')) {
+            event.target.classList.remove('visibleSegment');
+            event.target.classList.add('invisibleSegment');
+            options.onSegmentVisibilityChanged(segment.segmentNumber, false);
+          } else {
+            event.target.classList.remove('invisibleSegment');
+            event.target.classList.add('visibleSegment');
+            options.onSegmentVisibilityChanged(segment.segmentNumber, true);
+          }
+        });
+        segmentTextNode.addEventListener('click', event => {
+          options.onSegmentClicked(segment.segmentNumber);
+        });
+      });
+    }
+
+    function setupControlPanel() {
+      let panelOptions = {
+        subject: dc0seg.datasets[0].PatientID,
+        seriesDescription: dc0seg.datasets[0].SeriesDescription,
+        onSegmentVisibilityChanged: (segmentNumber, visibility) => {
+          console.log(`toggle ${segmentNumber}`);
+          dc0.viewer.layerVisibility(segmentNumber, visibility);
+        },
+        onSegmentClicked: (segmentNumber) => {
+          playStop();
+          scrollToSegment(segmentNumber);
+        },
+        segments: []
+      };
+      dc0seg.datasets[0].SegmentSequence.forEach(segment => {
+        let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
+        rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
+        rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
+        let hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;
+        panelOptions.segments.push({
+          segmentNumber: segment.SegmentNumber,
+          label: `${segment.SegmentNumber}: ${segment.SegmentLabel} (${segment.AnatomicRegionSequence.CodeMeaning})`,
+          color: hexColor,
+        });
+      });
+      console.log(panelOptions);
+      createControlPanel(panelOptions);
+    }
+
+    //
+    // allow drag and drop of segmentation and background datasets
+    //
+
+    function loadQIICRImages(seriesInstanceUID) {
+      resetDICOMzero();
+      console.log('loading ', seriesInstanceUID);
+      tcia.images(seriesInstanceUID).then(arrayBuffer => {
+        status('Extracting reference image data...');
+        dc0.extractFromZipArrayBuffer(arrayBuffer, displayDatasets);
+      });
+    }
+
+    function loadQIICRSegmentation(seriesInstanceUID) {
+      console.log('looking for images from ', seriesInstanceUID);
+      tcia.images(seriesInstanceUID).then(arrayBuffer => {
+        status('Extracting segmentation data...');
+        dc0seg.extractFromZipArrayBuffer(arrayBuffer, displaySegmentation);
+      });
+    }
+
+  });
+</script>
+</html>

@@ -79,13 +79,28 @@ class DICOMZero {
     this.readers.push(reader);
   }
 
-  extractDatasetFromArrayBuffer(arrayBuffer) {
-    this.status(`Extracting ${this.datasets.length} of ${this.expectedDICOMFileCount}...`);
+  handleDataTransferFileAsDataset(file, options={}) {
+    options.doneCallback = options.doneCallback || function(){};
+
+    let reader = new FileReader();
+    reader.onload = (progressEvent) => {
+      let dataset = this.datasetFromArrayBuffer(reader.result);
+      options.doneCallback(dataset);
+    }
+    reader.readAsArrayBuffer(file);
+  }
+
+  datasetFromArrayBuffer(arrayBuffer) {
     let dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
     this.unnaturalDatasets.push(dicomData.dict);
     let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
     dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
-    this.datasets.push(dataset);
+    return(dataset);
+  }
+
+  extractDatasetFromZipArrayBuffer(arrayBuffer) {
+    this.status(`Extracting ${this.datasets.length} of ${this.expectedDICOMFileCount}...`);
+    this.datasets.push(this.datasetFromArrayBuffer(arrayBuffer));
     if (this.datasets.length == this.expectedDICOMFileCount) {
       this.status(`Finished extracting`);
       this.zipFinishCallback();
@@ -99,7 +114,7 @@ class DICOMZero {
       this.status(`Considering ${fileKey}...`);
       if (fileKey.endsWith('.dcm')) {
         this.expectedDICOMFileCount += 1;
-        zip.files[fileKey].async('arraybuffer').then(this.extractDatasetFromArrayBuffer.bind(this));
+        zip.files[fileKey].async('arraybuffer').then(this.extractDatasetFromZipArrayBuffer.bind(this));
       }
     });
   }
