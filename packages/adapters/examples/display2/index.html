@@ -336,7 +336,11 @@
         },
         segments: []
       };
-      dc0seg.datasets[0].SegmentSequence.forEach(segment => {
+      let segmentSequence = dc0seg.datasets[0].SegmentSequence;
+      if (segmentSequence.constructor.name != "Array") {
+        segmentSequence = [segmentSequence];
+      }
+      segmentSequence.forEach(segment => {
         let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
         rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
         rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
