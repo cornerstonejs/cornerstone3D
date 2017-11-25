@@ -341,9 +341,10 @@
         rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
         rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
         let hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;
+        let anatomicRegion = segment.AnatomicRegionSequence || {CodeMeaning: "Undefined"};
         panelOptions.segments.push({
           segmentNumber: segment.SegmentNumber,
-          label: `${segment.SegmentNumber}: ${segment.SegmentLabel} (${segment.AnatomicRegionSequence.CodeMeaning})`,
+          label: `${segment.SegmentNumber}: ${segment.SegmentLabel} (${anatomicRegion.CodeMeaning})`,
           color: hexColor,
         });
       });
