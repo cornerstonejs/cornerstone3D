@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2017-11-26
+### Added
+- Added support for DICOM Parametric Maps
+
+Float pixel data is rescaled to Uint16 for display and new rescale slope and intercept values are calculated. The original float pixel data is available in the image object as image.floatPixelData.
+
+- Added eslint-plugin-import to force paths to resolve
+
+### Changed
+- Improvements for special cases with Palette Color images (#42):
+
+- Check that the number of entries for the palette color LUT descriptors matches the actual data length in the LUT data. If it doesn't, then the bits allocated for the LUT must be 16, regardless of whether or not the descriptor specifies it as 8.
+- If the descriptor is wrong, update it so we can use the proper shift value.
+- Preprocess the R/G/B LUT arrays, rather than shifting each pixel individually.
+
 ## [1.0.3] - 2017-11-21
 ### Changed
 - Fix bug introduced in 1.0.2 in which WADO-URI rows/columns are undefined in the metaDataProvider (thanks @hardmaster92)

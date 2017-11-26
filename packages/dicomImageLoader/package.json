@@ -1,6 +1,6 @@
 {
   "name": "cornerstone-wado-image-loader",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Cornerstone ImageLoader for DICOM WADO-URI",
   "keywords": [
     "DICOM",
@@ -48,39 +48,39 @@
     "uglify:codecs": "uglifyjs --comments /^/\\*!/ --stats -o ./dist/cornerstoneWADOImageLoaderCodecs.min.js -- ./dist/cornerstoneWADOImageLoaderCodecs.js"
   },
   "devDependencies": {
-    "babel-core": "^6.24.1",
-    "babel-eslint": "^8.0.1",
-    "babel-loader": "^7.1.0",
-    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^8.0.2",
+    "babel-loader": "^7.1.2",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "chai": "^4.1.2",
     "concat": "^1.0.3",
-    "cornerstone-core": "^1.0.0",
+    "cornerstone-core": "^1.1.3",
     "coveralls": "^3.0.0",
     "docdash": "^0.4.0",
-    "eslint": "^4.9.0",
-    "eslint-loader": "^1.7.1",
+    "eslint": "^4.12.0",
+    "eslint-loader": "^1.9.0",
     "eslint-plugin-import": "^2.8.0",
     "istanbul-instrumenter-loader": "^3.0.0",
-    "jsdoc": "^3.4.3",
-    "karma": "^1.6.0",
-    "karma-chrome-launcher": "^2.0.0",
+    "jsdoc": "^3.5.5",
+    "karma": "^1.7.1",
+    "karma-chrome-launcher": "^2.2.0",
     "karma-coverage": "^1.1.1",
     "karma-firefox-launcher": "^1.0.1",
     "karma-mocha": "^1.3.0",
     "karma-phantomjs-launcher": "^1.0.4",
-    "karma-webpack": "^2.0.3",
+    "karma-webpack": "^2.0.6",
     "lodash": "^4.17.4",
     "mocha": "^4.0.1",
     "opn-cli": "^3.1.0",
     "phantomjs": "^2.1.7",
-    "promise-polyfill": "^6.0.2",
+    "promise-polyfill": "^6.1.0",
     "shx": "^0.2.2",
-    "uglify-js": "^3.0.7",
-    "webpack": "^3.1.0"
+    "uglify-js": "^3.2.0",
+    "webpack": "^3.8.1"
   },
   "dependencies": {
-    "dicom-parser": "^1.7.4",
+    "dicom-parser": "^1.7.6",
     "jquery": "^3.2.1"
   }
 }
