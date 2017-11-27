@@ -47,6 +47,11 @@ class Viewer {
     $(`#cornerstoneContainer${this.id}`).remove();
   }
 
+  render() {
+    // Force the stack renderer to draw
+    this.renderer.render(this.element);
+  }
+
   //
   // cornerstone metadata provides a hook to
   // associate per-frame position with cornerstone imageID
@@ -322,7 +327,7 @@ class Viewer {
       cornerstoneTools.wwwcTouchDrag.activate(this.element);
       cornerstoneTools.panMultiTouch.activate(this.element);
     };
-    cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this));
+    return (cornerstone.loadAndCacheImage(this.baseStack.imageIds[0]).then(setupElement.bind(this)));
   }
 
   addSingleframes(singleframeDatasets) {
@@ -421,8 +426,11 @@ class Viewer {
       // first, map the dicom color into a cornerstone colormap
       //
       const cielab = segment.RecommendedDisplayCIELabValue;
-      let rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => x * 255);
-      rgba.push(255);
+      let rgba = [0, 250, 100, 255];
+      if (cielab) {
+        rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => x * 255);
+        rgba.push(255);
+      }
       const colormapId = 'Colormap_' + segment.SegmentNumber;
       let colormap = cornerstone.colors.getColormap(colormapId);
       colormap.setNumberOfColors(2);

@@ -41,7 +41,11 @@
     </div>
 
     <div class="row" id="mainDisplay" style="border: 1px solid black;">
-      <p id='status'>Ready...</p>
+        <ul>
+          <li>Drag and drop a multiframe image file or a set of single frame images.</li>
+          <li>Drag and drop a segmentation object in the space of those images.</li>
+        </ul>
+      <p id='status'>Ready for images...</p>
       <div class='col-md-8'>
         <h2>DICOM Images</h2>
         <button id='datasetPlayStop' class='datasetControl'>Play</button>
@@ -115,6 +119,7 @@
       //
       // if one file dropped, and we already have a viewer,
       // check if it's a segmentation and overlay.
+      // Also special case for two files that might be a multiframe and seg.
       // Otherwise reset and load the dropped data.
       //
       if (dc0.viewer && evt.dataTransfer.files.length == 1) {
@@ -123,6 +128,7 @@
             if (dataset.SOPClassUID == DCMJS.data.DicomMetaDictionary.sopClassUIDsByName['Segmentation']) {
               dc0.viewer.addSegmentation(dataset);
               dc0seg.datasets = [dataset]
+              dc0.viewer.render();
               setupControlPanel();
             }
           }
@@ -340,11 +346,14 @@
       if (segmentSequence.constructor.name != "Array") {
         segmentSequence = [segmentSequence];
       }
+      let hexColor = `#00cc99`;
       segmentSequence.forEach(segment => {
-        let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
-        rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
-        rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
-        let hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;
+        if (segment.RecommendedDisplayCIELabValue) {
+          let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
+          rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
+          rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
+          hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;
+        }
         let anatomicRegion = segment.AnatomicRegionSequence || {CodeMeaning: "Undefined"};
         panelOptions.segments.push({
           segmentNumber: segment.SegmentNumber,
@@ -352,7 +361,6 @@
           color: hexColor,
         });
       });
-      console.log(panelOptions);
       createControlPanel(panelOptions);
     }
 
