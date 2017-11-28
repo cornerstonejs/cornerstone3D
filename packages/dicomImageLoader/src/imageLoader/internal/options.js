@@ -1,6 +1,6 @@
 let options = {
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-  beforeSend (/* xhr */) {
+  beforeSend (/* xhr, imageId */) {
   },
   // callback allowing modification of newly created image objects
   imageCreated (/* image */) {
