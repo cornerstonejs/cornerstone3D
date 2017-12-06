@@ -74,7 +74,7 @@ function initializeJPEGLS () {
   }
 
   // Try to initialize CharLS
-  // CharLS https://github.com/chafey/charls
+  // CharLS https://github.com/cornerstonejs/charls
   if (!charLS) {
     charLS = CharLS();
     if (!charLS || !charLS._jpegls_decode) {

@@ -4,7 +4,7 @@
 cornerstone WADO Image Loader
 =============================
 
-A [cornerstone](https://github.com/chafey/cornerstone) Image Loader for DICOM P10 instances over
+A [cornerstone](https://github.com/cornerstonejs/cornerstone) Image Loader for DICOM P10 instances over
 HTTP (WADO-URI) or DICOMWeb (WADO-RS).  This can be used to integrate cornerstone with WADO-URI
 servers, DICOMWeb servers or any other HTTP based server that returns DICOM P10 instances
  (e.g. [Orthanc](http://www.orthanc-server.com/) or custom servers)
@@ -13,30 +13,30 @@ Troubleshooting
 ---------------
 
 Having problems viewing your images with cornerstonWADOImageLoader?  Check out the
-[troubleshooting guide](https://github.com/chafey/cornerstoneWADOImageLoader/wiki/troubleshooting).
+[troubleshooting guide](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/wiki/troubleshooting).
 
 Live Examples
 ---------------
 
-[Click here for a live example of this library in use!](http://rawgithub.com/chafey/cornerstoneWADOImageLoader/master/examples/index.html)
+[Click here for a live example of this library in use!](http://rawgithub.com/cornerstonejs/cornerstoneWADOImageLoader/master/examples/index.html)
 
 You can also see it in action with the
-[cornerstoneDemo application](https://github.com/chafey/cornerstoneDemo).
+[cornerstoneDemo application](https://github.com/cornerstonejs/cornerstoneDemo).
 
 Install
 -------
 
 Get the distributed unminimized files:
 
-* [cornerstoneWADOImageLoader.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.js)
-* [cornerstoneWADOImageLoaderCodecs.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderCodecs.js)
-* [cornerstoneWADOImageLoaderWebWorker.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderWebWorker.js)
+* [cornerstoneWADOImageLoader.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.js)
+* [cornerstoneWADOImageLoaderCodecs.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderCodecs.js)
+* [cornerstoneWADOImageLoaderWebWorker.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderWebWorker.js)
 
 or the distributed minimized files:
 
-* [cornerstoneWADOImageLoader.min.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.min.js)
-* [cornerstoneWADOImageLoaderCodecs.min.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderCodecs.min.js)
-* [cornerstoneWADOImageLoaderWebWorker.min.js](https://raw.githubusercontent.com/chafey/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderWebWorker.min.js)
+* [cornerstoneWADOImageLoader.min.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.min.js)
+* [cornerstoneWADOImageLoaderCodecs.min.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderCodecs.min.js)
+* [cornerstoneWADOImageLoaderWebWorker.min.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderWebWorker.min.js)
 
 Usage
 -------
@@ -44,8 +44,8 @@ Usage
 The cornerstoneWADOImageLoader depends on the following external libraries which should be loaded before cornerstoneWADOImageLoader.js:
 
 1. [jQuery](https://github.com/jquery/jquery)
-2. [dicomParser](https://github.com/chafey/dicomParser) 
-3. [cornerstone](https://github.com/chafey/cornerstone)
+2. [dicomParser](https://github.com/cornerstonejs/dicomParser) 
+3. [cornerstone](https://github.com/cornerstonejs/cornerstone)
 
 *New in 1.0.0*: Specify the cornerstone instance you want to register the loader with.
 
@@ -72,12 +72,12 @@ See the [web workers](docs/WebWorkers.md) documentation for more details on conf
 Key Features
 ------------
 
-* Implements a [cornerstone ImageLoader](https://github.com/chafey/cornerstone/wiki/ImageLoader) for DICOM P10 Instances via a HTTP get request.
+* Implements a [cornerstone ImageLoader](https://github.com/cornerstonejs/cornerstone/wiki/ImageLoader) for DICOM P10 Instances via a HTTP get request.
   * Can be used with a WADO-URI server
   * Can be used with Orthanc's file endpoint
   * Can be used with any server that returns DICOM P10 instances via HTTP GET
-* Implements a [cornerstone ImageLoader](https://github.com/chafey/cornerstone/wiki/ImageLoader) for WADO-RS (DICOMWeb)
-* Supports many popular transfer syntaxes and photometric interpretations [see full list](https://github.com/chafey/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md) and [codec](docs/Codecs.md) for more information.
+* Implements a [cornerstone ImageLoader](https://github.com/cornerstonejs/cornerstone/wiki/ImageLoader) for WADO-RS (DICOMWeb)
+* Supports many popular transfer syntaxes and photometric interpretations [see full list](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md) and [codec](docs/Codecs.md) for more information.
 * Framework to execute CPU intensive tasks in [web workers](docs/WebWorkers.md)
   * Used for image decoding
   * Can be used for your own CPU intensive tasks (e.g. image processing)
@@ -129,8 +129,8 @@ Copyright 2016 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)
 [npm-version-image]: http://img.shields.io/npm/v/cornerstone-wado-image-loader.svg?style=flat
 [npm-downloads-image]: http://img.shields.io/npm/dm/cornerstone-wado-image-loader.svg?style=flat
 
-[travis-url]: http://travis-ci.org/chafey/cornerstoneWADOImageLoader
-[travis-image]: https://travis-ci.org/chafey/cornerstoneWADOImageLoader.svg?branch=master
+[travis-url]: http://travis-ci.org/cornerstonejs/cornerstoneWADOImageLoader
+[travis-image]: https://travis-ci.org/cornerstonejs/cornerstoneWADOImageLoader.svg?branch=master
 
-[coverage-url]: https://coveralls.io/github/chafey/cornerstoneWADOImageLoader?branch=master
-[coverage-image]: https://coveralls.io/repos/github/chafey/cornerstoneWADOImageLoader/badge.svg?branch=master
+[coverage-url]: https://coveralls.io/github/cornerstonejs/cornerstoneWADOImageLoader?branch=master
+[coverage-image]: https://coveralls.io/repos/github/cornerstonejs/cornerstoneWADOImageLoader/badge.svg?branch=master

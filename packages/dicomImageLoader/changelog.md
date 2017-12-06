@@ -73,8 +73,8 @@ e.g. CornerstoneImageLoadStart has a native CustomEvent name 'cornerstoneimagelo
 
 ## Version 0.14.5
 
-- Rename loadDataSetFromPromise to loadImageFromPromise (https://github.com/chafey/cornerstoneWADOImageLoader/pull/94)
-- Set web worker status ready after task is read (https://github.com/chafey/cornerstoneWADOImageLoader/pull/95)
+- Rename loadDataSetFromPromise to loadImageFromPromise (https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/94)
+- Set web worker status ready after task is read (https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/95)
 - Fixes for dependencies after migration to Webpack (@lscoder)
 
 ## Version 0.14.4
@@ -83,4 +83,4 @@ e.g. CornerstoneImageLoadStart has a native CustomEvent name 'cornerstoneimagelo
 - Fixes for examples after inital migration steps (@kofifus, @lscoder)
 - Typo in package.json (@JMiha)
 - Bug fix for the inital draw of color images with WW/WC 255/128
-- Bug fixes for JPEG Baseline 8 Bit decoding (https://github.com/chafey/cornerstoneWADOImageLoader/issues/46)
+- Bug fixes for JPEG Baseline 8 Bit decoding (https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/46)

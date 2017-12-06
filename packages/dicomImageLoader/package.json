@@ -10,13 +10,13 @@
     "imaging"
   ],
   "author": "Chris Hafey",
-  "homepage": "https://github.com/chafey/cornerstoneWADOImageLoader",
+  "homepage": "https://github.com/cornerstonejs/cornerstoneWADOImageLoader",
   "license": "MIT",
   "main": "./dist/cornerstoneWADOImageLoader.min.js",
   "module": "src/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chafey/cornerstoneWADOImageLoader.git"
+    "url": "https://github.com/cornerstonejs/cornerstoneWADOImageLoader.git"
   },
   "scripts": {
     "eslint": "eslint -c .eslintrc.js src",

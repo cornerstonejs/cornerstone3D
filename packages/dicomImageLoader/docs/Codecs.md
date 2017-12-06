@@ -4,7 +4,7 @@ Codecs
 The cornnerstoneWADOImageLoader uses the following third party libraries to decode the
 various ways DICOM images are compressed:
 
-1) [OpenJPEG.js](https://github.com/chafey/openjpeg) for JPEG2000 images.  Based on the [OpenJPEG](http://www.openjpeg.org/) library
+1) [OpenJPEG.js](https://github.com/cornerstonejs/openjpeg) for JPEG2000 images.  Based on the [OpenJPEG](http://www.openjpeg.org/) library
 
 2) [OHIF/image-JPEG2000](https://github.com/OHIF/image-JPEG2000) For JPEG2000 Images.  Based on the [PDF.js](https://mozilla.github.io/pdf.js/) library
 
