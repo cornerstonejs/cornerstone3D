@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.5 - 2017-12-08 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 2.0.0 - 2017-12-08 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("dicom-parser"));
@@ -672,7 +672,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = '1.0.5';
+exports.default = '2.0.0';
 
 /***/ }),
 /* 10 */
