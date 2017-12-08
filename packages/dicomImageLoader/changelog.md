@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2017-12-08
+### Added
+- beforeSend option now passes imageId as its second parameter. This is useful for writing beforeSend functions which have different actions depending on the image type.
+
+### Changed
+- Moved the repository from Chris Hafey's (@chafey) personal page to a new Organization (@cornerstonejs). Renamed all the relevant links. Join us at @cornerstonejs to start contributing!
+
 ## [1.0.4] - 2017-11-26
 ### Added
 - Added support for DICOM Parametric Maps

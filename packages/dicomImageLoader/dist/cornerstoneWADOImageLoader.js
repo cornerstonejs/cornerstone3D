@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 1.0.4 - 2017-12-06 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 1.0.5 - 2017-12-08 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("jquery"), require("dicom-parser"));
@@ -307,7 +307,7 @@ exports.setOptions = setOptions;
 exports.getOptions = getOptions;
 var options = {
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-  beforeSend: function beforeSend() /* xhr */{},
+  beforeSend: function beforeSend() /* xhr, imageId */{},
 
   // callback allowing modification of newly created image objects
   imageCreated: function imageCreated() /* image */{},
@@ -677,7 +677,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = '1.0.4';
+exports.default = '1.0.5';
 
 /***/ }),
 /* 10 */
@@ -3364,7 +3364,7 @@ function xhrRequest(url, imageId) {
 
     xhr.open('get', url, true);
     xhr.responseType = 'arraybuffer';
-    options.beforeSend(xhr);
+    options.beforeSend(xhr, imageId);
     Object.keys(headers).forEach(function (key) {
       xhr.setRequestHeader(key, headers[key]);
     });
