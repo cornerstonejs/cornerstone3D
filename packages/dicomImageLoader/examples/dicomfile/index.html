@@ -3,9 +3,7 @@
 <head>
     <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
     <link href="../bootstrap.min.css" rel="stylesheet">
-
     <link href="../cornerstone.min.css" rel="stylesheet">
-
 </head>
 <body>
 <div class="container">
@@ -15,15 +13,12 @@
         <p class="lead">
             Click "Choose File" and select a DICOM P10 file on your local file system or drag and drop a DICOM P10
             file.
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseInfo" aria-expanded="false" aria-controls="collapseInfo">
+            <button id="toggleCollapseInfo" class="btn btn-primary" type="button">
                 Click for more info
             </button>
         </p>
-
-
-
     </div>
-    <div class="collapse" id="collapseInfo">
+    <div id="collapseInfo" class="collapse" style="display:none;">
         <p>
             This example illustrates how to use the cornerstoneWADOImageLoader to read a DICOM P10
             SOP instance from the local file system and display it in your web browser using cornerstone.
@@ -39,17 +34,17 @@
         </P>
         <P>
             NOTE: Browser security prevents javascript from reading the file system directly - files must be
-            chosen manually by the user via the <input> element as shown in this example or via drag and drop.
+            chosen manually by the user via the file input element as shown in this example or via drag and drop.
         </P>
         <br>
         <br>
-        <strong>Use of this example require IE10+ or any other modern browser.</strong>
+        <strong>Use of this example requires IE10+ or any other modern browser.</strong>
         <hr>
     </div>
     <div id="loadProgress">Image Load Progress:</div>
 
     <div class="row">
-        <form class="form-horizontal">
+        <form id="form" class="form-horizontal">
             <div class="form-group">
                 <div class="col-sm-3">
                     <input type="file" id="selectFile" >
@@ -105,16 +100,10 @@
 </body>
 
 
-<!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
-<script src="../jquery.min.js"></script>
-
-<!-- bootstrap -->
-<script src="../bootstrap.min.js"></script>
-
 <!-- include the cornerstone library -->
 <script src="../cornerstone.min.js"></script>
-<SCRIPT src="../cornerstoneMath.js"></SCRIPT>
-<SCRIPT src="../cornerstoneTools.js"></SCRIPT>
+<SCRIPT src="../cornerstoneMath.min.js"></SCRIPT>
+<SCRIPT src="../cornerstoneTools.min.js"></SCRIPT>
 
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
@@ -160,12 +149,13 @@
         evt.preventDefault();
 
         // Get the FileList object that contains the list of files that were dropped
-        var files = evt.dataTransfer.files;
+        const files = evt.dataTransfer.files;
 
         // this UI is only built for a single file so just dump the first one
         file = files[0];
-        var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
-        loadAndViewImage(imageId);    }
+        const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+        loadAndViewImage(imageId);
+    }
 
     function handleDragOver(evt) {
         evt.stopPropagation();
@@ -174,7 +164,7 @@
     }
 
     // Setup the dnd listeners.
-    var dropZone = document.getElementById('dicomImage');
+    const dropZone = document.getElementById('dicomImage');
     dropZone.addEventListener('dragover', handleDragOver, false);
     dropZone.addEventListener('drop', handleFileSelect, false);
 
@@ -186,17 +176,16 @@
         },
     });
 
-    var loaded = false;
+    let loaded = false;
 
     function loadAndViewImage(imageId) {
-        var element = $('#dicomImage').get(0);
-        //try {
-        var start = new Date().getTime();
+        const element = document.getElementById('dicomImage');
+        const start = new Date().getTime();
         cornerstone.loadImage(imageId).then(function(image) {
             console.log(image);
-            var viewport = cornerstone.getDefaultViewportForImage(element, image);
-            $('#toggleModalityLUT').attr("checked",viewport.modalityLUT !== undefined);
-            $('#toggleVOILUT').attr("checked",viewport.voiLUT !== undefined);
+            const viewport = cornerstone.getDefaultViewportForImage(element, image);
+            document.getElementById('toggleModalityLUT').checked = (viewport.modalityLUT !== undefined);
+            document.getElementById('toggleVOILUT').checked = (viewport.voiLUT !== undefined);
             cornerstone.displayImage(element, image, viewport);
             if(loaded === false) {
                 cornerstoneTools.mouseInput.enable(element);
@@ -211,17 +200,17 @@
             }
 
             function getTransferSyntax() {
-                var value = image.data.string('x00020010');
+                const value = image.data.string('x00020010');
                 return value + ' [' + uids[value] + ']';
             }
 
             function getSopClass() {
-                var value = image.data.string('x00080016');
+                const value = image.data.string('x00080016');
                 return value + ' [' + uids[value] + ']';
             }
 
             function getPixelRepresentation() {
-                var value = image.data.uint16('x00280103');
+                const value = image.data.uint16('x00280103');
                 if(value === undefined) {
                     return;
                 }
@@ -229,95 +218,94 @@
             }
 
             function getPlanarConfiguration() {
-                var value = image.data.uint16('x00280006');
+                const value = image.data.uint16('x00280006');
                 if(value === undefined) {
                     return;
                 }
                 return value + (value === 0 ? ' (pixel)' : ' (plane)');
             }
 
-            $('#transferSyntax').text(getTransferSyntax());
-            $('#sopClass').text(getSopClass());
-            $('#samplesPerPixel').text(image.data.uint16('x00280002'));
-            $('#photometricInterpretation').text(image.data.string('x00280004'));
-            $('#numberOfFrames').text(image.data.string('x00280008'));
-            $('#planarConfiguration').text(getPlanarConfiguration());
-            $('#rows').text(image.data.uint16('x00280010'));
-            $('#columns').text(image.data.uint16('x00280011'));
-            $('#pixelSpacing').text(image.data.string('x00280030'));
-            $('#bitsAllocated').text(image.data.uint16('x00280100'));
-            $('#bitsStored').text(image.data.uint16('x00280101'));
-            $('#highBit').text(image.data.uint16('x00280102'));
-            $('#pixelRepresentation').text(getPixelRepresentation());
-            $('#windowCenter').text(image.data.string('x00281050'));
-            $('#windowWidth').text(image.data.string('x00281051'));
-            $('#rescaleIntercept').text(image.data.string('x00281052'));
-            $('#rescaleSlope').text(image.data.string('x00281053'));
-            $('#basicOffsetTable').text(image.data.elements.x7fe00010 && image.data.elements.x7fe00010.basicOffsetTable ? image.data.elements.x7fe00010.basicOffsetTable.length : '');
-            $('#fragments').text(image.data.elements.x7fe00010 && image.data.elements.x7fe00010.fragments ? image.data.elements.x7fe00010.fragments.length : '');
-            $('#minStoredPixelValue').text(image.minPixelValue);
-            $('#maxStoredPixelValue').text(image.maxPixelValue);
-            var end = new Date().getTime();
-            var time = end - start;
-            $('#totalTime').text(time + "ms");
-            $('#loadTime').text(image.loadTimeInMS + "ms");
-            $('#decodeTime').text(image.decodeTimeInMS + "ms");
+            document.getElementById('transferSyntax').textContent = getTransferSyntax();
+            document.getElementById('sopClass').textContent = getSopClass();
+            document.getElementById('samplesPerPixel').textContent = image.data.uint16('x00280002');
+            document.getElementById('photometricInterpretation').textContent = image.data.string('x00280004');
+            document.getElementById('numberOfFrames').textContent = image.data.string('x00280008');
+            document.getElementById('planarConfiguration').textContent = getPlanarConfiguration();
+            document.getElementById('rows').textContent = image.data.uint16('x00280010');
+            document.getElementById('columns').textContent = image.data.uint16('x00280011');
+            document.getElementById('pixelSpacing').textContent = image.data.string('x00280030');
+            document.getElementById('bitsAllocated').textContent = image.data.uint16('x00280100');
+            document.getElementById('bitsStored').textContent = image.data.uint16('x00280101');
+            document.getElementById('highBit').textContent = image.data.uint16('x00280102');
+            document.getElementById('pixelRepresentation').textContent = getPixelRepresentation();
+            document.getElementById('windowCenter').textContent = image.data.string('x00281050');
+            document.getElementById('windowWidth').textContent = image.data.string('x00281051');
+            document.getElementById('rescaleIntercept').textContent = image.data.string('x00281052');
+            document.getElementById('rescaleSlope').textContent = image.data.string('x00281053');
+            document.getElementById('basicOffsetTable').textContent = image.data.elements.x7fe00010 && image.data.elements.x7fe00010.basicOffsetTable ? image.data.elements.x7fe00010.basicOffsetTable.length : '';
+            document.getElementById('fragments').textContent = image.data.elements.x7fe00010 && image.data.elements.x7fe00010.fragments ? image.data.elements.x7fe00010.fragments.length : '';
+            document.getElementById('minStoredPixelValue').textContent = image.minPixelValue;
+            document.getElementById('maxStoredPixelValue').textContent = image.maxPixelValue;
+            const end = new Date().getTime();
+            const time = end - start;
+            document.getElementById('totalTime').textContent = time + "ms";
+            document.getElementById('loadTime').textContent = image.loadTimeInMS + "ms";
+            document.getElementById('decodeTime').textContent = image.decodeTimeInMS + "ms";
 
         }, function(err) {
             alert(err);
         });
-        /*}
-         catch(err) {
-         alert(err);
-         }*/
     }
 
     cornerstone.events.addEventListener('cornerstoneimageloadprogress', function(event) {
-        var eventData = event.detail;
-        $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");
+        const eventData = event.detail;
+        const loadProgress = document.getElementById('loadProgress');
+        loadProgress.textContent = `Image Load Progress: ${eventData.percentComplete}%`;
     });
 
-    $(document).ready(function() {
+    const element = document.getElementById('dicomImage');
+    cornerstone.enable(element);
 
-        var element = $('#dicomImage').get(0);
-        cornerstone.enable(element);
-
-        $('#selectFile').on('change', function(e) {
-            // Add the file to the cornerstoneFileImageLoader and get unique
-            // number for that file
-            var file = e.target.files[0];
-            var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
-            loadAndViewImage(imageId);
-        });
-
-        $('#toggleModalityLUT').on('click', function() {
-            var applyModalityLUT = $('#toggleModalityLUT').is(":checked");
-            console.log('applyModalityLUT=', applyModalityLUT);
-            var image = cornerstone.getImage(element);
-            var viewport = cornerstone.getViewport(element);
-            if(applyModalityLUT) {
-                viewport.modalityLUT = image.modalityLUT;
-            } else {
-                viewport.modalityLUT = undefined;
-            }
-            cornerstone.setViewport(element, viewport);
-        });
-
-        $('#toggleVOILUT').on('click', function() {
-            var applyVOILUT = $('#toggleVOILUT').is(":checked");
-            console.log('applyVOILUT=', applyVOILUT);
-            var image = cornerstone.getImage(element);
-            var viewport = cornerstone.getViewport(element);
-            if(applyVOILUT) {
-                viewport.voiLUT = image.voiLUT;
-            } else {
-                viewport.voiLUT = undefined;
-            }
-            cornerstone.setViewport(element, viewport);
-        });
-
-
+    document.getElementById('selectFile').addEventListener('change', function(e) {
+        // Add the file to the cornerstoneFileImageLoader and get unique
+        // number for that file
+        const file = e.target.files[0];
+        const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+        loadAndViewImage(imageId);
     });
 
+    document.getElementById('toggleModalityLUT').addEventListener('click', function() {
+        const applyModalityLUT = document.getElementById('toggleModalityLUT').checked;
+        console.log('applyModalityLUT=', applyModalityLUT);
+        const image = cornerstone.getImage(element);
+        const viewport = cornerstone.getViewport(element);
+        if(applyModalityLUT) {
+            viewport.modalityLUT = image.modalityLUT;
+        } else {
+            viewport.modalityLUT = undefined;
+        }
+        cornerstone.setViewport(element, viewport);
+    });
+
+    document.getElementById('toggleVOILUT').addEventListener('click', function() {
+        const applyVOILUT = document.getElementById('toggleVOILUT').checked;
+        console.log('applyVOILUT=', applyVOILUT);
+        const image = cornerstone.getImage(element);
+        const viewport = cornerstone.getViewport(element);
+        if(applyVOILUT) {
+            viewport.voiLUT = image.voiLUT;
+        } else {
+            viewport.voiLUT = undefined;
+        }
+        cornerstone.setViewport(element, viewport);
+    });
+
+    document.getElementById('toggleCollapseInfo').addEventListener('click', function() {
+        if (document.getElementById('collapseInfo').style.display === 'none') {
+            document.getElementById('collapseInfo').style.display = 'block';
+        } else {
+            document.getElementById('collapseInfo').style.display = 'none';
+        }
+    });
 </script>
 </html>

@@ -14,12 +14,12 @@
         <h1>Example of using a custom web worker</h1>
         <p class="lead">
             Enter a URL for a DICOM P10 object below to view it using cornerstone.
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseInfo" aria-expanded="false" aria-controls="collapseInfo">
+            <button id="toggleCollapseInfo" class="btn btn-primary" type="button">
                 Click for more info
             </button>
         </p>
     </div>
-    <div class="collapse" id="collapseInfo">
+    <div id="collapseInfo" class="collapse" style="display:none;">
         <p>
             This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
             SOP instance using HTTP and display it in your web browser using cornerstone.
@@ -52,7 +52,7 @@
     </div>
 
     <div class="row">
-        <form class="form-horizontal">
+        <form id="form" class="form-horizontal">
             <div class="form-group">
                 <label class="control-label col-sm-1" for="wadoURL">URL</label>
                 <div class="col-sm-8">
@@ -118,17 +118,10 @@
 </div>
 </body>
 
-
-<!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
-<script src="../jquery.min.js"></script>
-
-<!-- bootstrap -->
-<script src="../bootstrap.min.js"></script>
-
 <!-- include the cornerstone library -->
 <script src="../cornerstone.min.js"></script>
-<SCRIPT src="../cornerstoneMath.js"></SCRIPT>
-<SCRIPT src="../cornerstoneTools.js"></SCRIPT>
+<SCRIPT src="../cornerstoneMath.min.js"></SCRIPT>
+<SCRIPT src="../cornerstoneTools.min.js"></SCRIPT>
 
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
@@ -139,7 +132,7 @@
 
 <script>
     // Initialize the web worker manager with our custom web worker task
-    var config = {
+    const config = {
         maxWebWorkers: navigator.hardwareConcurrency || 1,
         startWebWorkersOnDemand: true,
         webWorkerPath : '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
@@ -160,25 +153,20 @@
 
     cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
     cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
-    $('#numWebWorkers').text(config.maxWebWorkers);
-
-
-    var loaded = false;
-
-    var loadedImage;
+    document.getElementById('numWebWorkers').textContent = config.maxWebWorkers;
+    
+    let loaded = false;
+    let loadedImage;
 
     function loadAndViewImage(imageId) {
-        var element = $('#dicomImage').get(0);
+        const element = document.getElementById('dicomImage');
         try {
-            var start = new Date().getTime();
+            const start = new Date().getTime();
             cornerstone.loadAndCacheImage(imageId, {usePDFJS: true}).then(function(image) {
-                console.log(typeof image.getPixelData());
                 console.log(image);
                 loadedImage = image;
                 updateStatistics();
-                var viewport = cornerstone.getDefaultViewportForImage(element, image);
-                $('#toggleModalityLUT').attr("checked",viewport.modalityLUT !== undefined);
-                $('#toggleVOILUT').attr("checked",viewport.voiLUT !== undefined);
+                const viewport = cornerstone.getDefaultViewportForImage(element, image);
                 cornerstone.displayImage(element, image, viewport);
                 if(loaded === false) {
                     cornerstoneTools.mouseInput.enable(element);
@@ -199,21 +187,19 @@
         }
     }
 
-    function downloadAndView()
-    {
-        var url = $('#wadoURL').val();
+    function downloadAndView(){
+        let url = document.getElementById('wadoURL').value;
 
         // prefix the url with wadouri: so cornerstone can find the image loader
         url = "wadouri:" + url;
-
 
         // image enable the dicomImage element and activate a few tools
         loadAndViewImage(url);
     }
 
     function getUrlWithoutFrame() {
-        var url = $('#wadoURL').val();
-        var frameIndex = url.indexOf('frame=');
+        const url = document.getElementById('wadoURL').value;
+        const frameIndex = url.indexOf('frame=');
         if(frameIndex !== -1) {
             url = url.substr(0, frameIndex-1);
         }
@@ -222,13 +208,13 @@
 
     function updateStatistics() {
         var stats = cornerstoneWADOImageLoader.webWorkerManager.getStatistics();
-        $('#maxWebWorkers').text(stats.maxWebWorkers);
-        $('#numWebWorkers').text(stats.numWebWorkers);
-        $('#numQueuedTasks').text(stats.numTasksQueued);
-        $('#numTasksExecuting').text(stats.numTasksExecuting);
-        $('#totalTasksExecuted').text(stats.numTasksCompleted);
-        $('#totalTaskExecutionTime').text(stats.totalTaskTimeInMS);
-        $('#totalTaskDelayTime').text(stats.totalTimeDelayedInMS);
+        document.getElementById('maxWebWorkers').textContent = stats.maxWebWorkers;
+        document.getElementById('numWebWorkers').textContent = stats.numWebWorkers;
+        document.getElementById('numQueuedTasks').textContent = stats.numTasksQueued;
+        document.getElementById('numTasksExecuting').textContent = stats.numTasksExecuting;
+        document.getElementById('totalTasksExecuted').textContent = stats.numTasksCompleted;
+        document.getElementById('totalTaskExecutionTime').textContent = stats.totalTaskTimeInMS;
+        document.getElementById('totalTaskDelayTime').textContent = stats.totalTimeDelayedInMS;
     }
 
     var sleepTaskLoaded = false;
@@ -246,8 +232,8 @@
             );
         }
 
-        var task = cornerstoneWADOImageLoader.webWorkerManager.addTask('sleepTask', {},-10);
-        var promise = task.promise;
+        const task = cornerstoneWADOImageLoader.webWorkerManager.addTask('sleepTask', {},-10);
+        const promise = task.promise;
         promise.then(function(result) {
             console.log('sleep task completed');
             updateStatistics();
@@ -255,125 +241,129 @@
         updateStatistics();
     }
 
-    $(document).ready(function() {
+    const element = document.getElementById('dicomImage');
+    cornerstone.enable(element);
 
-        var element = $('#dicomImage').get(0);
-        cornerstone.enable(element);
-
-        $('#downloadAndView').click(function(e) {
-            downloadAndView();
-        });
-        $('#startWebWorker').click(function(e) {
+    document.getElementById('downloadAndView').addEventListener('click', function(e) {
+        downloadAndView();
+    });
+    document.getElementById('startWebWorker').addEventListener('click', function(e) {
+        startWebWorker();
+    });
+    document.getElementById('start10WebWorkers').addEventListener('click', function(e) {
+        for(let i=0; i < 10; i++) {
             startWebWorker();
-        });
-        $('#start10WebWorkers').click(function(e) {
-            for(var i=0; i < 10; i++) {
-                startWebWorker();
-            }
-        });
-
-
-
-        function convolute(kernel, multiplier, calculateWWWC) {
-            var promise = cornerstoneWADOImageLoader.webWorkerManager.addTask('convolveTask', {
-                pixelData :loadedImage.getPixelData(),
-                kernel : kernel,
-                multiplier: multiplier,
-                imageFrame: {
-                    typedArrayName: loadedImage.getPixelData().constructor.name,
-                    width : loadedImage.width,
-                    height : loadedImage.height
-                }
-            }, -8).promise;
-            promise.then(function(result) {
-                console.log('convolveTask task completed');
-                result.pixelData = new Int16Array(result.pixelData);
-
-                var sharpenedImage = {
-                    color: false,
-                    columns: loadedImage.columns,
-                    rows: loadedImage.rows,
-                    width: loadedImage.width,
-                    height: loadedImage.height,
-                    imageId: new Date().toISOString(),
-                    maxPixelValue: result.minMax.max,
-                    minPixelValue: result.minMax.min,
-                    windowWidth: calculateWWWC ? (result.minMax.max - result.minMax.max) : loadedImage.windowWidth,
-                    windowLevel: calculateWWWC ? ((result.minMax.max + result.minMax.max) / 2) : loadedImage.windowLevel,
-                    sizeInBytes: loadedImage.sizeInBytes,
-                    render: loadedImage.render,
-                    slope: loadedImage.slope,
-                    intercept: loadedImage.intercept,
-                    invert: loadedImage.invert,
-                    getPixelData: function () {
-                        return result.pixelData;
-                    }
-                };
-
-                cornerstone.displayImage(element, sharpenedImage);
-                loadedImage = sharpenedImage;
-                updateStatistics();
-            });
         }
+    });
 
-        $('#sharpen').click(function(e) {
-            convolute([
-                [ 0,-1, 0],
-                [-1, 5,-1],
-                [ 0,-1, 0]
-            ], 1);
-        });
-        $('#edgeDetect').click(function(e) {
-            convolute([
-                [-1,-1,-1],
-                [-1, 9,-1],
-                [-1,-1,-1]
-            ], 1);
-        });
-        $('#boxBlur').click(function(e) {
-            convolute([
-                [1,1,1],
-                [1,1,1],
-                [1,1,1]
-            ], 1/9);
-        });
-        $('#gaussianBlur').click(function(e) {
-            convolute([
-                [1,2,1],
-                [2,4,2],
-                [1,2,1]
-            ], 1/16);
-        });
-        $('#emboss').click(function(e) {
-            convolute([
-                [-2,1,0],
-                [-1,1,1],
-                [ 0,1,2]
-            ], 1/3);
-        });
 
-        $('#unsharp').click(function(e) {
-            convolute([
-                [ 1, 4,   6, 4, 1],
-                [ 4,16,  24,16, 4],
-                [ 6,24,-476,24, 6],
-                [ 4,16,  24,16, 4],
-                [ 1, 4,   6, 4, 1],
-            ], -1/256);
-        });
 
-        $('form').submit(function() {
-            downloadAndView();
-            return false;
-        });
+    function convolute(kernel, multiplier, calculateWWWC) {
+        const promise = cornerstoneWADOImageLoader.webWorkerManager.addTask('convolveTask', {
+            pixelData :loadedImage.getPixelData(),
+            kernel : kernel,
+            multiplier: multiplier,
+            imageFrame: {
+                typedArrayName: loadedImage.getPixelData().constructor.name,
+                width : loadedImage.width,
+                height : loadedImage.height
+            }
+        }, -8).promise;
+        promise.then(function(result) {
+            console.log('convolveTask task completed');
+            result.pixelData = new Int16Array(result.pixelData);
 
+            const sharpenedImage = {
+                color: false,
+                columns: loadedImage.columns,
+                rows: loadedImage.rows,
+                width: loadedImage.width,
+                height: loadedImage.height,
+                imageId: new Date().toISOString(),
+                maxPixelValue: result.minMax.max,
+                minPixelValue: result.minMax.min,
+                windowWidth: calculateWWWC ? (result.minMax.max - result.minMax.max) : loadedImage.windowWidth,
+                windowLevel: calculateWWWC ? ((result.minMax.max + result.minMax.max) / 2) : loadedImage.windowLevel,
+                sizeInBytes: loadedImage.sizeInBytes,
+                render: loadedImage.render,
+                slope: loadedImage.slope,
+                intercept: loadedImage.intercept,
+                invert: loadedImage.invert,
+                getPixelData: function () {
+                    return result.pixelData;
+                }
+            };
+
+            cornerstone.displayImage(element, sharpenedImage);
+            loadedImage = sharpenedImage;
+            updateStatistics();
+        });
+    }
+
+    document.getElementById('sharpen').addEventListener('click', function(e) {
+        convolute([
+            [ 0,-1, 0],
+            [-1, 5,-1],
+            [ 0,-1, 0]
+        ], 1);
+    });
+    document.getElementById('edgeDetect').addEventListener('click', function(e) {
+        convolute([
+            [-1,-1,-1],
+            [-1, 9,-1],
+            [-1,-1,-1]
+        ], 1);
+    });
+    document.getElementById('boxBlur').addEventListener('click', function(e) {
+        convolute([
+            [1,1,1],
+            [1,1,1],
+            [1,1,1]
+        ], 1/9);
+    });
+    document.getElementById('gaussianBlur').addEventListener('click', function(e) {
+        convolute([
+            [1,2,1],
+            [2,4,2],
+            [1,2,1]
+        ], 1/16);
+    });
+    document.getElementById('emboss').addEventListener('click', function(e) {
+        convolute([
+            [-2,1,0],
+            [-1,1,1],
+            [ 0,1,2]
+        ], 1/3);
+    });
+
+    document.getElementById('unsharp').addEventListener('click', function(e) {
+        convolute([
+            [ 1, 4,   6, 4, 1],
+            [ 4,16,  24,16, 4],
+            [ 6,24,-476,24, 6],
+            [ 4,16,  24,16, 4],
+            [ 1, 4,   6, 4, 1],
+        ], -1/256);
+    });
+
+    const form = document.getElementById('form');
+    form.addEventListener('submit', function() {
+        downloadAndView();
+        return false;
+    });
+
+    document.getElementById('toggleCollapseInfo').addEventListener('click', function() {
+        if (document.getElementById('collapseInfo').style.display === 'none') {
+            document.getElementById('collapseInfo').style.display = 'block';
+        } else {
+            document.getElementById('collapseInfo').style.display = 'none';
+        }
     });
 
     // set an interval timer to periodically update the statistics for a real time view of
     // what the web workers are doing
     setInterval(function() {
         updateStatistics();
-    },100);
-
+    }, 100);
 </script>
 </html>

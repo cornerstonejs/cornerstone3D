@@ -9,7 +9,6 @@
 </head>
 <body>
 <div class="container">
-
     <div class="page-header">
         <h1>Example of displaying a WADO-RS RetreiveFrame response using Cornerstone</h1>
         <p class="lead">
@@ -20,9 +19,8 @@
     <div id="loadProgress">Image Load Progress:</div>
 
     <div class="row">
-        <form class="form-horizontal">
+        <form id="form" class="form-horizontal">
             <div class="form-group">
-
                 <label class="control-label col-sm-1" for="apikey">APIKEY</label>
                 <div class="col-sm-8">
                     <input class="form-control" type="text" id="apikey" placeholder="APIKEY" value="">
@@ -56,17 +54,10 @@
 </div>
 </body>
 
-
-<!-- jquery - currently a dependency and thus required for using cornerstoneWADOImageLoader -->
-<script src="../jquery.min.js"></script>
-
-<!-- bootstrap -->
-<script src="../bootstrap.min.js"></script>
-
 <!-- include the cornerstone library -->
 <script src="../cornerstone.min.js"></script>
-<SCRIPT src="../cornerstoneMath.js"></SCRIPT>
-<SCRIPT src="../cornerstoneTools.js"></SCRIPT>
+<SCRIPT src="../cornerstoneMath.min.js"></SCRIPT>
+<SCRIPT src="../cornerstoneTools.min.js"></SCRIPT>
 
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
@@ -103,7 +94,7 @@
     cornerstoneWADOImageLoader.configure({
         beforeSend: function(xhr) {
             // Add custom headers here (e.g. auth tokens)
-            var apiKey = $('#apikey').val();
+            const apiKey = document.getElementById('apikey').value;
             if(apiKey && apiKey.length) {
                 xhr.setRequestHeader('APIKEY', apiKey);
             }
@@ -111,14 +102,14 @@
     });
 
 
-    var loaded = false;
+    let loaded = false;
 
     function loadAndViewImage(imageId) {
-        var element = $('#dicomImage').get(0);
+        const element = document.getElementById('dicomImage');
         //try {
         cornerstone.loadImage(imageId).then(function(image) {
             console.log(image);
-            var viewport = cornerstone.getDefaultViewportForImage(element, image);
+            const viewport = cornerstone.getDefaultViewportForImage(element, image);
             cornerstone.displayImage(element, image, viewport);
             if(loaded === false) {
                 cornerstoneTools.mouseInput.enable(element);
@@ -149,60 +140,52 @@
     }
 
 
-    function downloadAndView()
-    {
-        var url = $('#wadoURL').val();
-        var metadataURI = url + "/metadata";
-        $.ajax({
-            url: metadataURI,
-            headers: {
-                accept: 'application/json'
+    function downloadAndView() {
+        const url = document.getElementById('wadoURL').value;
+        const metadataURI = url + "/metadata";
+
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                // Make sure it's a JSON document
+                data = JSON.parse(this.responseText);
+
+                console.log(data);
+
+                const metadata = data[0];
+                const imageFrameURI = getImageFrameURI(metadataURI, metadata);
+                const imageId = 'wadors:' + imageFrameURI;
+
+                cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, metadata);
+
+                // image enable the dicomImage element and activate a few tools
+                loadAndViewImage(imageId);
             }
-        }).done(function(data) {
-            // Make sure it's a JSON document
-            data = JSON.parse(data);
+        };
 
-            console.log(data);
-
-            var metadata = data[0];
-
-            var imageFrameURI = getImageFrameURI(metadataURI, metadata);
-            var imageId = 'wadors:' + imageFrameURI;
-
-            cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, metadata);
-
-            // image enable the dicomImage element and activate a few tools
-            loadAndViewImage(imageId);
-        });
+        xhr.open("GET", metadataURI, true);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.send();
     }
 
     cornerstone.events.addEventListener('cornerstoneimageloadprogress', function(event) {
-        var eventData = event.detail;
-        $('#loadProgress').text('Image Load Progress: ' + eventData.percentComplete + "%");
+        const eventData = event.detail;
+        const loadProgress = document.getElementById('loadProgress');
+        loadProgress.textContent = `Image Load Progress: ${eventData.percentComplete}%`;
     });
 
-    $(document).ready(function() {
 
-        var element = $('#dicomImage').get(0);
-        cornerstone.enable(element);
+    const element = document.getElementById('dicomImage');
+    cornerstone.enable(element);
 
-        $('#downloadAndView').click(function(e) {
-            downloadAndView();
-        });
-
-        $('form').submit(function() {
-            downloadAndView();
-            return false;
-        });
-
-        $('#selectFile').on('change', function(e) {
-            // Add the file to the cornerstoneFileImageLoader and get unique
-            // number for that file
-            var file = e.target.files[0];
-            var imageId = cornerstoneWADOImageLoader.fileManager.add(file);
-            loadAndViewImage(imageId);
-        });
+    document.getElementById('downloadAndView').addEventListener('click', function() {
+        downloadAndView();
     });
 
+    const form = document.getElementById('form');
+    form.addEventListener('submit', function() {
+        downloadAndView();
+        return false;
+    });
 </script>
 </html>

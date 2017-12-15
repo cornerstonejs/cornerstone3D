@@ -25,7 +25,6 @@ module.exports = {
   files: [
     'dist/cornerstoneWADOImageLoaderCodecs.js',
     'node_modules/promise-polyfill/promise.min.js',
-    'node_modules/jquery/dist/jquery.js',
     'node_modules/cornerstone-core/dist/cornerstone.js',
     'node_modules/dicom-parser/dist/dicomParser.js',
     'test/**/*_test.js',
