@@ -21,7 +21,7 @@ Live Examples
 [Click here for a live example of this library in use!](http://rawgithub.com/cornerstonejs/cornerstoneWADOImageLoader/master/examples/index.html)
 
 You can also see it in action with the
-[cornerstoneDemo application](https://github.com/cornerstonejs/cornerstoneDemo).
+[cornerstoneDemo application](https://github.com/chafey/cornerstoneDemo).
 
 Install
 -------
