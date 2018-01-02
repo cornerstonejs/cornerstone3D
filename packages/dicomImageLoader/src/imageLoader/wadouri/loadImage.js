@@ -6,10 +6,10 @@ import getPixelData from './getPixelData.js';
 import { xhrRequest } from '../internal/index.js';
 
 // add a decache callback function to clear out our dataSetCacheManager
-function addDecache (image) {
-  image.decache = function () {
+function addDecache (imageLoadObject, imageId) {
+  imageLoadObject.decache = function () {
     // console.log('decache');
-    const parsedImageId = parseImageId(image.imageId);
+    const parsedImageId = parseImageId(imageId);
 
     dataSetCacheManager.unload(parsedImageId.url);
   };
@@ -17,13 +17,17 @@ function addDecache (image) {
 
 function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKey, options) {
   const start = new Date().getTime();
+  const imageLoadObject = {
+    cancelFn: undefined
+  };
 
-  const promise = new Promise((resolve, reject) => {
+  imageLoadObject.promise = new Promise((resolve, reject) => {
     dataSetPromise.then((dataSet/* , xhr*/) => {
       const pixelData = getPixelData(dataSet, frame);
       const transferSyntax = dataSet.string('x00020010');
       const loadEnd = new Date().getTime();
       const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+      addDecache(imageLoadObject, imageId);
 
       imagePromise.then((image) => {
         image.data = dataSet;
@@ -32,16 +36,12 @@ function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKe
 
         image.loadTimeInMS = loadEnd - start;
         image.totalTimeInMS = end - start;
-        addDecache(image);
         resolve(image);
       }, reject);
     }, reject);
   });
 
-  return {
-    promise,
-    cancelFn: undefined
-  };
+  return imageLoadObject;
 }
 
 function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, options) {
