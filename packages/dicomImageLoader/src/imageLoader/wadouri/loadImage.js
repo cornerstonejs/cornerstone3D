@@ -60,7 +60,6 @@ function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, opti
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
-      addDecache(image);
       resolve(image);
     }, reject);
   });
