@@ -27,6 +27,7 @@ function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKe
       const transferSyntax = dataSet.string('x00020010');
       const loadEnd = new Date().getTime();
       const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+
       addDecache(imageLoadObject, imageId);
 
       imagePromise.then((image) => {
