@@ -1,0 +1,216 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+  <!-- styles for all examples -->
+  <link href="../css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>
+        DICOMweb Invoked Image Display
+      </h1>
+      <p>
+        This example demonstrates use of invoke image display
+      </p>
+      <a href="../index.html">Go back to the Examples page</a>
+    </div>
+
+    <div class="row" id="mainDisplay" style="border: 1px solid black;">
+      <p id='status'>Ready...</p>
+      <div class='col-md-8'>
+        <h2>DICOM Images</h2>
+        <button id='datasetPlayStop' class='datasetControl'>Play</button>
+        <label for="datasetSlider" class='datasetControl'>Frame: <span id="frameOffset">0</span></label>
+        <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
+        <div id='dicomImages'></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+
+
+<!-- polyfills -->
+<script src="../js/url-search-params.js"></script>
+
+<!-- third party -->
+<script src="../js/jquery.min.js"></script>
+<script src="../js/FileSaver.min.js"></script>
+<script src="../js/jszip.min.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
+<!-- for viewer -->
+<script src="../js/cornerstone.min.js"></script>
+<script src="../js/cornerstoneMath.min.js"></script>
+<script src="../js/hammer.min.js"></script>
+<script src="../js/cornerstoneTools.min.js"></script>
+<script src="../js/dicomParser.min.js"></script>
+<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+
+<!-- our stuff -->
+<script src="../../build/dcmjs.js"></script>
+
+<script src="../helpers/dicomweb.js"></script>
+<script src="../helpers/DICOMZero.js"></script>
+<script src="../helpers/viewer.js"></script>
+
+
+<script>
+  function status(statusMessage) {
+    console.log('status: ', statusMessage);
+    $('#status').text(statusMessage);
+  }
+
+  // container for managing image
+  let dc0 = new DICOMZero({status});
+  let dicomweb;
+
+  $(document).ready(function() {
+
+    //
+    // Dataset controls
+    //
+    $('.datasetControl').attr('disabled', true);
+
+    function resetDICOMzero() {
+      if (dc0.viewer) {
+        dc0.viewer.reset();
+        dc0.viewer.removeElement();
+      }
+      dc0.reset();
+      $('#datasetSlider').val(0);
+      $('#datasetSlider').attr('max', 0);
+    }
+
+    function setOffset(offset) {
+      $('#frameOffset').text(offset);
+      $('#datasetSlider').val(offset);
+      dc0.viewer.index = offset;
+    }
+
+    function displayDatasets() {
+      status("Displaying...");
+      dc0.datasets.sort(function(a,b) {
+        return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
+      });
+      $('#datasetSlider').attr('max', dc0.datasets.length-1);
+      $('.datasetControl').attr('disabled', false);
+
+      let options = {
+        callback: function() {
+          status("Done reading.");
+        }
+      }
+
+      status("Setting up viewer...");
+      dc0.viewer = new Viewer(dc0.datasets);
+      dc0.viewer.display('#dicomImages', options);
+
+      setupControlPanel();
+      togglePlayMode();
+    }
+
+    $('#datasetSlider').on('input', function(){
+      let offset = $('#datasetSlider').val();
+      setOffset(offset);
+    });
+
+    function playStep () {
+      let offset = 1 + Number($('#datasetSlider').val());
+      if (offset > dc0.datasets.length-1) {
+        offset = 0;
+      }
+      setOffset(offset);
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        window.requestAnimationFrame(playStep);
+      }
+    }
+
+    function playStop() {
+      $('#datasetPlayStop').text('Play');
+    }
+    function playStart() {
+        $('#datasetPlayStop').text('Stop');
+        window.requestAnimationFrame(playStep);
+    }
+    function togglePlayMode() {
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        playStop();
+      } else {
+        playStart();
+      }
+    }
+    $('#datasetPlayStop').on('click', togglePlayMode);
+
+
+    function progressStatus(progressEvent) {
+      status(`Downloaded ${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
+    }
+
+
+    //
+    // download and process functions
+    //
+
+    resetDICOMzero();
+
+    dicomweb = new DICOMWEB({
+      progressCallback: progressStatus,
+      rootURL: 'http://quantome.org:4242/dcm4chee-arc/aets/DCM4CHEE',
+    });
+
+    function loadStudies(studyResponses) {
+      console.log('loading ', studyResponses);
+      resetDICOMzero();
+      let studyResponse = DCMJS.data.DicomMetaDictionary.namifyDataset(studyResponses[0]);
+      console.log(studyResponse);
+      let studyInstanceUID = studyResponse.StudyInstanceUID.Value[0]; 
+      dicomweb.series(studyInstanceUID).then(seriesResponses => {
+        let seriesResponse = DCMJS.data.DicomMetaDictionary.namifyDataset(seriesResponses[0]);
+        console.log(seriesResponse);
+        let seriesInstanceUID = seriesResponse.SeriesInstanceUID.Value[0];
+        dicomweb.instances(studyInstanceUID, seriesInstanceUID).then(instancesResponses => {
+          instancesResponses.forEach(instancesResponse => {
+            let response = DCMJS.data.DicomMetaDictionary.namifyDataset(instancesResponse);
+            let sopInstanceUID = response.SOPInstanceUID.Value[0];
+            dicomweb.instance(studyInstanceUID, seriesInstanceUID, sopInstanceUID).then(arrayBuffer => {
+              let dataset = dc0.datasetFromArrayBuffer(arrayBuffer);
+              dc0.datasets.push(dataset);
+              if (dc0.datasets.length == instancesResponses.length) {
+                console.log('got all instances');
+                displayDatasets();
+              }
+            });
+            console.log(response);
+          });
+
+        });
+      });
+    }
+
+    //
+    // handle url parameters
+    //  - use a default if none specified
+    //
+    let searchParams = new URLSearchParams(window.location.search.substring(1));
+
+    let requestType = searchParams.get('requestType');
+    if (requestType == 'PATIENT') {
+      let patientID = searchParams.get('patientID');
+      status(patientID);
+      dicomweb.studies(patientID).then(loadStudies);
+    } else if (requestType == 'STUDY') {
+      let studyID = searchParams.get('studyUID');
+      status(studyUID);
+      loadStudies([studyUID]);
+    }
+
+  });
+</script>
+</html>
