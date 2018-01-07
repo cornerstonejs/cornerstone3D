@@ -255,9 +255,9 @@ class Viewer {
     cornerstone.disable(this.element);
     cornerstone.enable(this.element);
     // TODO: add instance #s to loaders to handle multiple viewers
-    cornerstone.registerImageLoader('dcmjs', this.dcmjsImageLoader.bind(this));
-    cornerstone.registerImageLoader('dcmjsSEG', this.dcmjsSEGImageLoader.bind(this));
-    cornerstone.registerImageLoader('dcmjsMultiframe', this.dcmjsMultiframeImageLoader.bind(this));
+    cornerstone.registerImageLoader(`dcmjs${this.id}`, this.dcmjsImageLoader.bind(this));
+    cornerstone.registerImageLoader(`dcmjsSEG${this.id}`, this.dcmjsSEGImageLoader.bind(this));
+    cornerstone.registerImageLoader(`dcmjsMultiframe${this.id}`, this.dcmjsMultiframeImageLoader.bind(this));
     cornerstone.metaData.addProvider(this.metaDataProvider.bind(this));
 
     if (DCMJS.normalizers.Normalizer.isMultiframe(this.datasets[0])) {
@@ -316,7 +316,7 @@ class Viewer {
       // Enable tools
       cornerstoneTools.wwwc.activate(this.element, 1);
       cornerstoneTools.pan.activate(this.element, 2);
-      cornerstoneTools.zoom.activate(this.element, 4);
+      cornerstoneTools.stackScroll.activate(this.element, 4);
       cornerstoneTools.stackScrollWheel.activate(this.element);
       cornerstoneTools.stackScrollKeyboard.activate(this.element);
 
@@ -334,7 +334,7 @@ class Viewer {
     this.datasets = singleframeDatasets;
     var imageIds = [];
     for (let index = 0; index < this.datasets.length; index++) {
-      let imageId = 'dcmjs://'+index;
+      let imageId = `dcmjs${this.id}://`+index;
       imageIds.push(imageId);
       this.addMetaData('imagePlane', imageId, {
         imagePositionPatient: {
@@ -377,7 +377,7 @@ class Viewer {
     // create stack with an imageId and position metadata
     // for each frame
     //
-    let baseImageId = 'dcmjsMultiframe://';
+    let baseImageId = `dcmjsMultiframe${this.id}://`;
     let imageIds = [];
     let frameCount = Number(multiframeDataset.NumberOfFrames);
     for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
@@ -441,7 +441,7 @@ class Viewer {
       // then we create stack with an imageId and position metadata
       // for each frame that references this segment number
       //
-      let baseImageId = 'dcmjsSEG://';
+      let baseImageId = `dcmjsSEG${this.id}://`;
       let imageIds = [];
       let frameCount = Number(segmentationDataset.NumberOfFrames);
       for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {

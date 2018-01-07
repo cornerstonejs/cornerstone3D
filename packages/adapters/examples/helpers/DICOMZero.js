@@ -16,6 +16,10 @@ class DICOMZero {
     this.context = {patients: []};
   }
 
+  // return a function to use as the 'onload' callback for the file reader.
+  // The function takes a progress event argument and it knows (from this class instance)
+  // when all files have been read so it can invoke the doneCallback when all
+  // have been read.
   getReadDICOMFunction(doneCallback, statusCallback) {
     statusCallback = statusCallback || console.log;
     return progressEvent => {
