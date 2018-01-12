@@ -41,8 +41,19 @@ function loadImageFromPromise (dataSetPromise, imageId, frame = 0, sharedCacheKe
           callbacks.imageDoneCallback(image);
         }
         resolve(image);
-      }, reject);
-    }, reject);
+      }, function (error) {
+        // Reject the error, and the dataSet
+        reject({
+          error,
+          dataSet
+        });
+      });
+    }, function (error) {
+      // Reject the error
+      reject({
+        error
+      });
+    });
   });
 
   return imageLoadObject;
@@ -52,10 +63,23 @@ function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, opti
   const start = new Date().getTime();
 
   const promise = new Promise((resolve, reject) => {
-    const pixelData = getPixelData(dataSet, frame);
-    const transferSyntax = dataSet.string('x00020010');
     const loadEnd = new Date().getTime();
-    const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+    let imagePromise;
+
+    try {
+      const pixelData = getPixelData(dataSet, frame);
+      const transferSyntax = dataSet.string('x00020010');
+
+      imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+    } catch (error) {
+      // Reject the error, and the dataSet
+      reject({
+        error,
+        dataSet
+      });
+
+      return;
+    }
 
     imagePromise.then((image) => {
       image.data = dataSet;
