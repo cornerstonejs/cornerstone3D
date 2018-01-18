@@ -1,4 +1,4 @@
-import { dicomParser } from '../../externalModules.js';
+import { dicomParser, external } from '../../externalModules.js';
 import { xhrRequest } from '../internal/index.js';
 
 /**
@@ -7,6 +7,8 @@ import { xhrRequest } from '../internal/index.js';
  * image loader mechanism.  One reason a caller may need to do this is to determine the number of frames
  * in a multiframe sop instance so it can create the imageId's correctly.
  */
+let cacheSizeInBytes = 0;
+
 let loadedDataSets = {};
 let promises = {};
 
@@ -26,6 +28,8 @@ function get (uri) {
 
 // loads the dicom dataset from the wadouri sp
 function load (uri, loadRequest = xhrRequest, imageId) {
+  const cornerstone = external.cornerstone;
+
   // if already loaded return it right away
   if (loadedDataSets[uri]) {
     // console.log('using loaded dataset ' + uri);
@@ -64,8 +68,14 @@ function load (uri, loadRequest = xhrRequest, imageId) {
         dataSet,
         cacheCount: promise.cacheCount
       };
-
+      cacheSizeInBytes += dataSet.byteArray.length;
       resolve(dataSet);
+
+      cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+        uri,
+        action: 'loaded',
+        cacheInfo: getInfo()
+      });
     }, reject).then(() => {
       // Remove the promise if success
       delete promises[uri];
@@ -84,14 +94,30 @@ function load (uri, loadRequest = xhrRequest, imageId) {
 
 // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
 function unload (uri) {
+  const cornerstone = external.cornerstone;
+
   // console.log('unload for ' + uri);
   if (loadedDataSets[uri]) {
     loadedDataSets[uri].cacheCount--;
     if (loadedDataSets[uri].cacheCount === 0) {
       // console.log('removing loaded dataset for ' + uri);
+      cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
+
+      cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+        uri,
+        action: 'unloaded',
+        cacheInfo: getInfo()
+      });
     }
   }
+}
+
+export function getInfo () {
+  return {
+    cacheSizeInBytes,
+    numberOfDataSetsCached: Object.keys(loadedDataSets).length
+  };
 }
 
 // removes all cached datasets from memory
@@ -104,6 +130,7 @@ export default {
   isLoaded,
   load,
   unload,
+  getInfo,
   purge,
   get
 };
