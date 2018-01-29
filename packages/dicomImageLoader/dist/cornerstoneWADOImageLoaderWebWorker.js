@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 2.0.0 - 2017-12-15 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 2.0.0 - 2018-01-29 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -770,6 +770,16 @@ function decodeImageFrame(imageFrame, transferSyntax, pixelData, decodeConfig, o
    return decodeJPEG2000(dataSet, frame);
    }
    */
+
+  var shouldShift = imageFrame.pixelRepresentation !== undefined && imageFrame.pixelRepresentation === 1;
+  var shift = shouldShift && imageFrame.bitsStored !== undefined ? 32 - imageFrame.bitsStored : undefined;
+
+  if (shouldShift && shift !== undefined) {
+    for (var i = 0; i < imageFrame.pixelData.length; i++) {
+      // eslint-disable-next-line no-bitwise
+      imageFrame.pixelData[i] = imageFrame.pixelData[i] << shift >> shift;
+    }
+  }
 
   var end = new Date().getTime();
 

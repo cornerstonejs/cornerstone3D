@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 2.0.0 - 2017-12-15 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 2.0.0 - 2018-01-29 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("dicom-parser"));
@@ -555,6 +555,7 @@ exports.default = createImage;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.getInfo = getInfo;
 
 var _externalModules = __webpack_require__(0);
 
@@ -566,6 +567,8 @@ var _index = __webpack_require__(1);
  * image loader mechanism.  One reason a caller may need to do this is to determine the number of frames
  * in a multiframe sop instance so it can create the imageId's correctly.
  */
+var cacheSizeInBytes = 0;
+
 var loadedDataSets = {};
 var promises = {};
 
@@ -587,6 +590,8 @@ function load(uri) {
   var loadRequest = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _index.xhrRequest;
   var imageId = arguments[2];
 
+  var cornerstone = _externalModules.external.cornerstone;
+
   // if already loaded return it right away
   if (loadedDataSets[uri]) {
     // console.log('using loaded dataset ' + uri);
@@ -596,9 +601,11 @@ function load(uri) {
     });
   }
 
-  // if we are currently loading this uri, return its promise
+  // if we are currently loading this uri, increment the cacheCount and return its promise
   if (promises[uri]) {
     // console.log('returning existing load promise for ' + uri);
+    promises[uri].cacheCount++;
+
     return promises[uri];
   }
 
@@ -621,15 +628,26 @@ function load(uri) {
 
       loadedDataSets[uri] = {
         dataSet: dataSet,
-        cacheCount: 1
+        cacheCount: promise.cacheCount
       };
-
+      cacheSizeInBytes += dataSet.byteArray.length;
       resolve(dataSet);
+
+      cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+        uri: uri,
+        action: 'loaded',
+        cacheInfo: getInfo()
+      });
     }, reject).then(function () {
-      // Remove the promise regardless of success or failure
+      // Remove the promise if success
+      delete promises[uri];
+    }, function () {
+      // Remove the promise if failure
       delete promises[uri];
     });
   });
+
+  promise.cacheCount = 1;
 
   promises[uri] = promise;
 
@@ -638,14 +656,30 @@ function load(uri) {
 
 // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
 function unload(uri) {
+  var cornerstone = _externalModules.external.cornerstone;
+
   // console.log('unload for ' + uri);
   if (loadedDataSets[uri]) {
     loadedDataSets[uri].cacheCount--;
     if (loadedDataSets[uri].cacheCount === 0) {
       // console.log('removing loaded dataset for ' + uri);
+      cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
+
+      cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+        uri: uri,
+        action: 'unloaded',
+        cacheInfo: getInfo()
+      });
     }
   }
+}
+
+function getInfo() {
+  return {
+    cacheSizeInBytes: cacheSizeInBytes,
+    numberOfDataSetsCached: Object.keys(loadedDataSets).length
+  };
 }
 
 // removes all cached datasets from memory
@@ -658,6 +692,7 @@ exports.default = {
   isLoaded: isLoaded,
   load: load,
   unload: unload,
+  getInfo: getInfo,
   purge: purge,
   get: get
 };
@@ -1558,6 +1593,7 @@ function getImageFrame(imageId) {
     rows: imagePixelModule.rows,
     columns: imagePixelModule.columns,
     bitsAllocated: imagePixelModule.bitsAllocated,
+    bitsStored: imagePixelModule.bitsStored,
     pixelRepresentation: imagePixelModule.pixelRepresentation, // 0 = unsigned,
     smallestPixelValue: imagePixelModule.smallestPixelValue,
     largestPixelValue: imagePixelModule.largestPixelValue,
@@ -2463,10 +2499,10 @@ var _index = __webpack_require__(1);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // add a decache callback function to clear out our dataSetCacheManager
-function addDecache(image) {
-  image.decache = function () {
+function addDecache(imageLoadObject, imageId) {
+  imageLoadObject.decache = function () {
     // console.log('decache');
-    var parsedImageId = (0, _parseImageId2.default)(image.imageId);
+    var parsedImageId = (0, _parseImageId2.default)(imageId);
 
     _dataSetCacheManager2.default.unload(parsedImageId.url);
   };
@@ -2476,15 +2512,21 @@ function loadImageFromPromise(dataSetPromise, imageId) {
   var frame = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
   var sharedCacheKey = arguments[3];
   var options = arguments[4];
+  var callbacks = arguments[5];
 
   var start = new Date().getTime();
+  var imageLoadObject = {
+    cancelFn: undefined
+  };
 
-  var promise = new Promise(function (resolve, reject) {
+  imageLoadObject.promise = new Promise(function (resolve, reject) {
     dataSetPromise.then(function (dataSet /* , xhr*/) {
       var pixelData = (0, _getPixelData2.default)(dataSet, frame);
       var transferSyntax = dataSet.string('x00020010');
       var loadEnd = new Date().getTime();
       var imagePromise = (0, _createImage2.default)(imageId, pixelData, transferSyntax, options);
+
+      addDecache(imageLoadObject, imageId);
 
       imagePromise.then(function (image) {
         image.data = dataSet;
@@ -2493,16 +2535,26 @@ function loadImageFromPromise(dataSetPromise, imageId) {
 
         image.loadTimeInMS = loadEnd - start;
         image.totalTimeInMS = end - start;
-        addDecache(image);
+        if (callbacks !== undefined && callbacks.imageDoneCallback !== undefined) {
+          callbacks.imageDoneCallback(image);
+        }
         resolve(image);
-      }, reject);
-    }, reject);
+      }, function (error) {
+        // Reject the error, and the dataSet
+        reject({
+          error: error,
+          dataSet: dataSet
+        });
+      });
+    }, function (error) {
+      // Reject the error
+      reject({
+        error: error
+      });
+    });
   });
 
-  return {
-    promise: promise,
-    cancelFn: undefined
-  };
+  return imageLoadObject;
 }
 
 function loadImageFromDataSet(dataSet, imageId) {
@@ -2513,10 +2565,23 @@ function loadImageFromDataSet(dataSet, imageId) {
   var start = new Date().getTime();
 
   var promise = new Promise(function (resolve, reject) {
-    var pixelData = (0, _getPixelData2.default)(dataSet, frame);
-    var transferSyntax = dataSet.string('x00020010');
     var loadEnd = new Date().getTime();
-    var imagePromise = (0, _createImage2.default)(imageId, pixelData, transferSyntax, options);
+    var imagePromise = void 0;
+
+    try {
+      var pixelData = (0, _getPixelData2.default)(dataSet, frame);
+      var transferSyntax = dataSet.string('x00020010');
+
+      imagePromise = (0, _createImage2.default)(imageId, pixelData, transferSyntax, options);
+    } catch (error) {
+      // Reject the error, and the dataSet
+      reject({
+        error: error,
+        dataSet: dataSet
+      });
+
+      return;
+    }
 
     imagePromise.then(function (image) {
       image.data = dataSet;
@@ -2525,7 +2590,6 @@ function loadImageFromDataSet(dataSet, imageId) {
 
       image.loadTimeInMS = loadEnd - start;
       image.totalTimeInMS = end - start;
-      addDecache(image);
       resolve(image);
     }, reject);
   });
