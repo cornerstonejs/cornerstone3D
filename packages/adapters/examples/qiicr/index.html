@@ -41,15 +41,15 @@
 
     <div class="row" id="mainDisplay" style="border: 1px solid black;">
       <p id='status'>Ready...</p>
-      <div class='col-md-8'>
-        <h2>DICOM Images</h2>
+      <div class='col-md-6'>
+        <h2>PET Images</h2>
         <button id='datasetPlayStop' class='datasetControl'>Play</button>
         <label for="datasetSlider" class='datasetControl'>Frame: <span id="frameOffset">0</span></label>
         <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
         <div id='dicomImages'></div>
       </div>
-      <div class='col-md-4'>
-        <h2>Controls</h2>
+      <div class='col-md-6'>
+        <h2>Lesions</h2>
         <div id='controlPanel' class='qiicrStepUIPanel'></div>
       </div>
 

@@ -316,7 +316,8 @@ class Viewer {
       // Enable tools
       cornerstoneTools.wwwc.activate(this.element, 1);
       cornerstoneTools.pan.activate(this.element, 2);
-      cornerstoneTools.stackScroll.activate(this.element, 4);
+      //cornerstoneTools.stackScroll.activate(this.element, 4);
+      cornerstoneTools.zoom.activate(this.element, 4);
       cornerstoneTools.stackScrollWheel.activate(this.element);
       cornerstoneTools.stackScrollKeyboard.activate(this.element);
 
