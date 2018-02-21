@@ -29,7 +29,7 @@
     "doc": "npm run doc:generate && opn documentation/index.html",
     "doc:generate": "npm run clean:docs && jsdoc -c .jsdocrc",
     "version": "node -p -e \"'export default \\'' + require('./package.json').version + '\\';'\" > src/version.js",
-    "build": "npm run clean:dist && npm run build:es6 && npm run build:codecs",
+    "build": "npm run clean:dist && npm run webpack && npm run build:codecs && npm run build:es6",
     "build:es6": "npm run test && npm run version && npm run webpack && npm run doc:generate",
     "build:codecs": "npm run concat:codecs && npm run uglify:codecs",
     "webpack": "npm run webpack:prod && npm run webpack:dev",
