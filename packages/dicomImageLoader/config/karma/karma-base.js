@@ -24,7 +24,7 @@ module.exports = {
   reporters: ['progress', 'coverage'],
   files: [
     'dist/cornerstoneWADOImageLoaderCodecs.js',
-    'node_modules/promise-polyfill/promise.min.js',
+    'node_modules/promise-polyfill/dist/promise.min.js',
     'node_modules/cornerstone-core/dist/cornerstone.js',
     'node_modules/dicom-parser/dist/dicomParser.js',
     'test/**/*_test.js',
