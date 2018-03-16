@@ -2,8 +2,24 @@ import metaDataManager from './metaDataManager.js';
 import getPixelData from './getPixelData.js';
 import createImage from '../createImage.js';
 
-function getTransferSyntaxForContentType (/* contentType */) {
-  return '1.2.840.10008.1.2'; // hard code to ILE for now
+function getTransferSyntaxForContentType (contentType)
+{
+  let transferSyntax = '1.2.840.10008.1.2'; // Default is Implicit Little Endian.
+  
+  // Browse through the content type parameters
+  const parameters = contentType.split(';');
+  for(let parameter of parameters) {
+    // Look for a transfer-syntax=XXXX pair
+    const parameterValues = parameter.split('=');
+    if(parameterValues.length !== 2)
+      continue;
+    
+    if(parameterValues[0].trim() === 'transfer-syntax') {
+      transferSyntax = parameterValues[1].trim();
+    }
+  }
+  
+  return transferSyntax;
 }
 
 function loadImage (imageId, options) {
