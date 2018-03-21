@@ -82,4 +82,19 @@ describe('loadImage', function () {
       }, done);
     });
   });
+
+  it('should result in an error when the DICOM file has no pixelData', (done) => {
+    const imageId = `${url}no-pixel-data.dcm`;
+    let promise;
+
+    try {
+      promise = loadImage(imageId).promise;
+    } catch (error) {
+      done(error);
+    }
+
+    promise.
+      then(() => done(new Error('Should not have successed'))).
+      catch(() => done());
+  });
 });

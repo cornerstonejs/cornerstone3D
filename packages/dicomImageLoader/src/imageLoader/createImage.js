@@ -63,6 +63,11 @@ function setPixelDataType (imageFrame) {
 }
 
 function createImage (imageId, pixelData, transferSyntax, options) {
+
+  if (!pixelData || !pixelData.length) {
+    return Promise.reject(new Error('The file does not contain image data.'));
+  }
+
   const cornerstone = external.cornerstone;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);

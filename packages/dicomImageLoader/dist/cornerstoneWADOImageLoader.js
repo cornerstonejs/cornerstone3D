@@ -1,4 +1,4 @@
-/*! cornerstone-wado-image-loader - 2.0.0 - 2018-01-29 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
+/*! cornerstone-wado-image-loader - 2.0.0 - 2018-03-21 | (c) 2016 Chris Hafey | https://github.com/cornerstonejs/cornerstoneWADOImageLoader */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("dicom-parser"));
@@ -8,7 +8,7 @@
 		exports["cornerstoneWADOImageLoader"] = factory(require("dicom-parser"));
 	else
 		root["cornerstoneWADOImageLoader"] = factory(root["dicomParser"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_46__) {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_46__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -414,6 +414,11 @@ function setPixelDataType(imageFrame) {
 }
 
 function createImage(imageId, pixelData, transferSyntax, options) {
+
+  if (!pixelData || !pixelData.length) {
+    return Promise.reject(new Error('The file does not contain image data.'));
+  }
+
   var cornerstone = _externalModules.external.cornerstone;
   var canvas = document.createElement('canvas');
   var imageFrame = (0, _getImageFrame2.default)(imageId);
@@ -3564,6 +3569,10 @@ function getPixelData(dataSet) {
   var frameIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
   var pixelDataElement = dataSet.elements.x7fe00010 || dataSet.elements.x7fe00008;
+
+  if (!pixelDataElement) {
+    return null;
+  }
 
   if (pixelDataElement.encapsulatedPixelData) {
     return (0, _getEncapsulatedImageFrame2.default)(dataSet, frameIndex);
