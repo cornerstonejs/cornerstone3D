@@ -79,7 +79,9 @@ function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, option
    }
    */
 
-  throw new Error(`No decoder for transfer syntax ${transferSyntax}`);
+  return new Promise((resolve, reject) => {
+    reject(new Error(`No decoder for transfer syntax ${transferSyntax}`));
+  });
 }
 
 export default decodeImageFrame;
