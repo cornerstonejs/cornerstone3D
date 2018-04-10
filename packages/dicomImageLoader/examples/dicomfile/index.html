@@ -135,10 +135,12 @@
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
 
-
-
 <!-- uids -->
 <script src="uids.js"></script>
+
+<!-- Lines ONLY required for this example to run without building the project --> 
+<script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
+<script src="../utils/initializeWebWorkers.js"></script>
 
 <script>
     cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
