@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+
+## [2.1.0] - 2018-04-11
+### Changed
+- Updated Webpack to version 4
+- DIST folder is now removed from the repository
+- Set W/L by default for color images
+
+### Added
+- Added useWebWorkers flag to decodeConfig
+- Added JSDoc to the transfer-syntax extraction
+- Handle signed data (thanks @jdnarvaez)
+- Added a decache function in image load object (thanks @adreyfus)
+
+### Fixed
+- Bugfix: remove the promise regardless of success or failure
+
+
 ## [2.0.0] - 2017-12-08
 ### Changed
 
