@@ -1,9 +1,40 @@
+import { getOptions } from './internal/options.js';
 import webWorkerManager from './webWorkerManager.js';
 import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
+import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame.js';
+import calculateMinMax from '../shared/calculateMinMax.js';
+import { initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000.js';
+import { initializeJPEGLS } from '../shared/decoders/decodeJPEGLS.js';
 
-function addDecodeTask (imageFrame, transferSyntax, pixelData, options) {
+let codecsInitialized = false;
+
+function processDecodeTask (imageFrame, transferSyntax, pixelData, options) {
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData ? [pixelData.buffer] : undefined;
+  const loaderOptions = getOptions();
+  const { strict, decodeConfig, useWebWorkers } = loaderOptions;
+
+  if (useWebWorkers === false) {
+    if (codecsInitialized === false) {
+      initializeJPEG2000(decodeConfig);
+      initializeJPEGLS(decodeConfig);
+
+      codecsInitialized = true;
+    }
+
+    return new Promise((resolve, reject) => {
+      try {
+        const decodeArguments = [imageFrame, transferSyntax, pixelData, decodeConfig, options];
+        const decodedImageFrame = decodeImageFrameHandler(...decodeArguments);
+
+        calculateMinMax(decodedImageFrame, strict);
+
+        resolve(decodedImageFrame);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
 
   return webWorkerManager.addTask(
     'decodeTask',
@@ -19,19 +50,19 @@ function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, option
   // TODO: Turn this into a switch statement instead
   if (transferSyntax === '1.2.840.10008.1.2') {
     // Implicit VR Little Endian
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.1') {
     // Explicit VR Little Endian
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.2') {
     // Explicit VR Big Endian (retired)
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.1.99') {
     // Deflate transfer syntax (deflated by dicomParser)
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.5') {
     // RLE Lossless
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.50') {
     // JPEG Baseline lossy process 1 (8 bit)
 
@@ -42,28 +73,28 @@ function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, option
       return decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas);
     }
 
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.51') {
     // JPEG Baseline lossy process 2 & 4 (12 bit)
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.57') {
     // JPEG Lossless, Nonhierarchical (Processes 14)
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.70') {
     // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.80') {
     // JPEG-LS Lossless Image Compression
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.81') {
     // JPEG-LS Lossy (Near-Lossless) Image Compression
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.90') {
     // JPEG 2000 Lossless
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   } else if (transferSyntax === '1.2.840.10008.1.2.4.91') {
     // JPEG 2000 Lossy
-    return addDecodeTask(imageFrame, transferSyntax, pixelData, options);
+    return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
   }
 
   /* Don't know if these work...

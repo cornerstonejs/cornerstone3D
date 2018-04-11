@@ -73,4 +73,3 @@ function loadImage (imageId, options) {
 }
 
 export default loadImage;
-

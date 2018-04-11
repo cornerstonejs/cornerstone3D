@@ -20,4 +20,7 @@ dcmcjpls $1 $1_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm # --encode-n
 #dcmcjp2k $1 $1_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm --encode-lossless
 #dcmcjp2k $1 $1_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm --encode-lossless2
 
+gdcmconv --j2k -i $1 -o $1_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm
+gdcmconv --lossy --j2k -i $1 -o $1_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm
+
 dcmcrle $1 $1_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm

@@ -2,6 +2,7 @@
 import { expect } from 'chai';
 import { external } from '../src/externalModules.js';
 import { loadImage } from '../src/imageLoader/wadouri/loadImage.js';
+import configure from '../src/imageLoader/configure.js';
 import webWorkerManager from '../src/imageLoader/webWorkerManager.js';
 
 external.cornerstone = window.cornerstone;
@@ -25,10 +26,8 @@ const transferSyntaxes = {
   '1.2.840.10008.1.2.4.70': 'JPEGProcess14SV1TransferSyntax',
   '1.2.840.10008.1.2.4.80': 'JPEGLSLosslessTransferSyntax',
   '1.2.840.10008.1.2.4.81': 'JPEGLSLossyTransferSyntax',
-
-  // TODO: Need dcmcjp2k to create these
-  // '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
-  // '1.2.840.10008.1.2.4.91': 'JPEG2000TransferSyntax',
+  '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
+  '1.2.840.10008.1.2.4.91': 'JPEG2000TransferSyntax',
   '1.2.840.10008.1.2.5': 'RLELosslessTransferSyntax'
 };
 
@@ -36,8 +35,6 @@ const base = 'CTImage.dcm';
 const url = 'dicomweb://localhost:9876/base/testImages/';
 
 describe('loadImage', function () {
-  this.timeout(0);
-
   before(function () {
     // Initialize the web worker manager
     const config = {
@@ -47,7 +44,7 @@ describe('loadImage', function () {
       taskConfiguration: {
         decodeTask: {
           loadCodecsOnStartup: true,
-          initializeCodecsOnStartup: false,
+          initializeCodecsOnStartup: true,
           codecsPath: '/base/dist/cornerstoneWADOImageLoaderCodecs.js',
           usePDFJS: false
         }
@@ -55,6 +52,14 @@ describe('loadImage', function () {
     };
 
     webWorkerManager.initialize(config);
+
+    configure({
+      strict: false,
+      useWebWorkers: false,
+      decodeConfig: {
+        usePDFJS: false
+      }
+    });
   });
 
   Object.keys(transferSyntaxes).forEach((transferSyntaxUid) => {
@@ -79,22 +84,27 @@ describe('loadImage', function () {
         // TODO: Compare against known correct pixel data
         expect(image).to.be.an('object');
         done();
-      }, done);
+      }, (error) => {
+        done(error.error);
+      });
     });
   });
 
   it('should result in an error when the DICOM file has no pixelData', (done) => {
     const imageId = `${url}no-pixel-data.dcm`;
-    let promise;
+    let loadObject;
 
     try {
-      promise = loadImage(imageId).promise;
+      loadObject = loadImage(imageId);
     } catch (error) {
       done(error);
     }
 
-    promise.
-      then(() => done(new Error('Should not have successed'))).
-      catch(() => done());
+    loadObject.promise.then(() => {
+      done(new Error('Should not have succeeded'));
+    }, (error) => {
+      expect(error.error.message === 'The file does not contain image data.');
+      done();
+    });
   });
 });

@@ -5,6 +5,7 @@ const outputPath = path.join(rootPath, 'dist');
 const bannerPlugin = require('./plugins/banner');
 
 module.exports = {
+  mode: "development",
   context,
   entry: {
     cornerstoneWADOImageLoader: './imageLoader/index.js',

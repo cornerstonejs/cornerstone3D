@@ -2,6 +2,9 @@ language: node_js
 node_js:
   - "node"
 
+addons:
+  chrome: stable
+
 cache:
   yarn: true
   directories:

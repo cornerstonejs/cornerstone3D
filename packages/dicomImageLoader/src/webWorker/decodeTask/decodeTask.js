@@ -1,7 +1,7 @@
-import { initializeJPEG2000 } from './decoders/decodeJPEG2000.js';
-import { initializeJPEGLS } from './decoders/decodeJPEGLS.js';
-import getMinMax from '../../shared/getMinMax.js';
-import decodeImageFrame from './decodeImageFrame.js';
+import { initializeJPEG2000 } from '../../shared/decoders/decodeJPEG2000.js';
+import { initializeJPEGLS } from '../../shared/decoders/decodeJPEGLS.js';
+import calculateMinMax from '../../shared/calculateMinMax.js';
+import decodeImageFrame from '../../shared/decodeImageFrame.js';
 
 // flag to ensure codecs are loaded only once
 let codecsLoaded = false;
@@ -44,23 +44,6 @@ function initialize (config) {
   }
 }
 
-function calculateMinMax (imageFrame) {
-  const minMax = getMinMax(imageFrame.pixelData);
-
-  if (decodeConfig.decodeTask.strict === true) {
-    if (imageFrame.smallestPixelValue !== minMax.min) {
-      console.warn('Image smallestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
-    }
-
-    if (imageFrame.largestPixelValue !== minMax.max) {
-      console.warn('Image largestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
-    }
-  } else {
-    imageFrame.smallestPixelValue = minMax.min;
-    imageFrame.largestPixelValue = minMax.max;
-  }
-}
-
 /**
  * Task handler function
  */
@@ -68,6 +51,7 @@ function handler (data, doneCallback) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
+  const strict = decodeConfig && decodeConfig.decodeTask && decodeConfig.decodeTask.strict;
   const imageFrame = data.data.imageFrame;
 
   // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
@@ -85,7 +69,7 @@ function handler (data, doneCallback) {
     throw new Error('decodeTask: imageFrame.pixelData is undefined after decoding');
   }
 
-  calculateMinMax(imageFrame);
+  calculateMinMax(imageFrame, strict);
 
   // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
   // typed arrays

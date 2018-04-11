@@ -5,11 +5,15 @@ let options = {
   // callback allowing modification of newly created image objects
   imageCreated (/* image */) {
   },
-  strict: false
+  strict: false,
+  useWebWorkers: true,
+  decodeConfig: {
+    usePDFJS: false
+  }
 };
 
 export function setOptions (newOptions) {
-  options = newOptions;
+  options = Object.assign(options, newOptions);
 }
 
 export function getOptions () {

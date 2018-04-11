@@ -1,14 +1,15 @@
 /* eslint import/extensions: 0 */
 import { expect } from 'chai';
 import { external } from '../src/externalModules.js';
-import { initializeJPEGLS } from '../src/webWorker/decodeTask/decoders/decodeJPEGLS.js';
-import { initializeJPEG2000 } from '../src/webWorker/decodeTask/decoders/decodeJPEG2000.js';
-import decodeImageFrame from '../src/webWorker/decodeTask/decodeImageFrame.js';
+import { initializeJPEGLS } from '../src/shared/decoders/decodeJPEGLS.js';
+import { initializeJPEG2000 } from '../src/shared/decoders/decodeJPEG2000.js';
+import decodeImageFrame from '../src/imageLoader/decodeImageFrame.js';
 import getImageFrame from '../src/imageLoader/getImageFrame.js';
 import getPixelData from '../src/imageLoader/wadouri/getPixelData.js';
 import xhrRequest from '../src/imageLoader/internal/xhrRequest.js';
 import dataSetCacheManager from '../src/imageLoader/wadouri/dataSetCacheManager.js';
 import parseImageId from '../src/imageLoader/wadouri/parseImageId.js';
+import webWorkerManager from '../src/imageLoader/webWorkerManager.js';
 
 external.cornerstone = window.cornerstone;
 
@@ -30,10 +31,8 @@ const transferSyntaxes = {
   '1.2.840.10008.1.2.4.70': 'JPEGProcess14SV1TransferSyntax',
   '1.2.840.10008.1.2.4.80': 'JPEGLSLosslessTransferSyntax',
   '1.2.840.10008.1.2.4.81': 'JPEGLSLossyTransferSyntax',
-
-  // TODO: Need dcmcjp2k to create these
-  // '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
-  // '1.2.840.10008.1.2.4.91': 'JPEG2000TransferSyntax',
+  '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
+  '1.2.840.10008.1.2.4.91': 'JPEG2000TransferSyntax',
   '1.2.840.10008.1.2.5': 'RLELosslessTransferSyntax'
 };
 
@@ -41,9 +40,24 @@ const base = 'CTImage.dcm';
 const url = 'dicomweb://localhost:9876/base/testImages/';
 
 describe('decodeImageFrame', function () {
-  this.timeout(0);
-
   before(function () {
+    // Initialize the web worker manager
+    const config = {
+      maxWebWorkers: 1,
+      startWebWorkersOnDemand: true,
+      webWorkerPath: '/base/dist/cornerstoneWADOImageLoaderWebWorker.js',
+      taskConfiguration: {
+        decodeTask: {
+          loadCodecsOnStartup: true,
+          initializeCodecsOnStartup: false,
+          codecsPath: '/base/dist/cornerstoneWADOImageLoaderCodecs.js',
+          usePDFJS: false
+        }
+      }
+    };
+
+    webWorkerManager.initialize(config);
+
     const decodeTask = {
       usePDFJS: false
     };
