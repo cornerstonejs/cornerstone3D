@@ -28,15 +28,15 @@ Install
 
 Get the distributed unminimized files:
 
-* [cornerstoneWADOImageLoader.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.js)
-* [cornerstoneWADOImageLoaderCodecs.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderCodecs.js)
-* [cornerstoneWADOImageLoaderWebWorker.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderWebWorker.js)
+* [cornerstoneWADOImageLoader.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.js)
+* [cornerstoneWADOImageLoaderCodecs.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderCodecs.js)
+* [cornerstoneWADOImageLoaderWebWorker.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderWebWorker.js)
 
 or the distributed minimized files:
 
-* [cornerstoneWADOImageLoader.min.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoader.min.js)
-* [cornerstoneWADOImageLoaderCodecs.min.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderCodecs.min.js)
-* [cornerstoneWADOImageLoaderWebWorker.min.js](https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/dist/cornerstoneWADOImageLoaderWebWorker.min.js)
+* [cornerstoneWADOImageLoader.min.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js)
+* [cornerstoneWADOImageLoaderCodecs.min.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderCodecs.min.js)
+* [cornerstoneWADOImageLoaderWebWorker.min.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderWebWorker.min.js)
 
 Usage
 -------
