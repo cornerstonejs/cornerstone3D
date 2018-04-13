@@ -1427,9 +1427,10 @@ class DicomMetaDictionary {
 
         if (entry.vr == "SQ") {
           var unnaturalValues = [];
-          Object.keys(dataItem.Value).forEach(nestedDataset => {
+          for (let datasetIndex = 0; datasetIndex < dataItem.Value.length; datasetIndex++) {
+            const nestedDataset = dataItem.Value[datasetIndex];
             unnaturalValues.push(DicomMetaDictionary.denaturalizeDataset(nestedDataset));
-          });
+          }
           dataItem.Value = unnaturalValues;
         }
         let vr = ValueRepresentation.createByTypeString(dataItem.vr);
