@@ -1,6 +1,6 @@
 {
   "name": "dcmjs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Javascript implementation of DICOM manipulation",
   "main": "build/dcmjs.js",
   "directories": {
