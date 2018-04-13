@@ -49973,7 +49973,7 @@ class DerivedDataset {
 
     o.Manufacturer = options.Manufacturer || "Unspecified";
     o.ManufacturerModelName = options.ManufacturerModelName || "Unspecified";
-    o.SeriesDescription = options.SeriesDescription || "Drived series";
+    o.SeriesDescription = options.SeriesDescription || "Research Derived series";
     o.SeriesNumber = options.SeriesNumber || "99";
     o.SoftwareVersions = options.SoftwareVersions || "0";
     o.DeviceSerialNumber = options.DeviceSerialNumber || "1";
@@ -49992,10 +49992,6 @@ class DerivedDataset {
     o.ClinicalTrialTimePointID = options.ClinicalTrialTimePointID || "";
     o.ClinicalTrialCoordinatingCenterName = options.ClinicalTrialCoordinatingCenterName || "";
     o.ClinicalTrialSeriesID = options.ClinicalTrialSeriesID || "";
-
-    o.ContentLabel = options.ContentLabel || "";
-    o.ContentDescription = options.ContentDescription || "";
-    o.ContentCreatorName = options.ContentCreatorName || "";
 
     o.ImageComments = options.ImageComments || "NOT FOR CLINICAL USE";
     o.ContentQualification = "RESEARCH";
@@ -50045,9 +50041,6 @@ class DerivedDataset {
       "ManufacturerModelName",
       "SeriesDescription",
       "SeriesNumber",
-      "ContentLabel",
-      "ContentDescription",
-      "ContentCreatorName",
       "ImageComments",
       "SeriesDate",
       "SeriesTime",
@@ -50067,6 +50060,12 @@ class DerivedDataset {
 class DerivedPixels extends DerivedDataset {
   constructor (datasets, options={}) {
     super(datasets, options);
+    let o = this.options;
+
+    o.ContentLabel = options.ContentLabel || "";
+    o.ContentDescription = options.ContentDescription || "";
+    o.ContentCreatorName = options.ContentCreatorName || "";
+
   }
 
   // this assumes a normalized multiframe input and will create
@@ -50095,6 +50094,12 @@ class DerivedPixels extends DerivedDataset {
       "PhotometricInterpretation",
       "BitsStored",
       "HighBit",
+    ]);
+
+    this.assignFromOptions([
+      "ContentLabel",
+      "ContentDescription",
+      "ContentCreatorName",
     ]);
 
     //
@@ -50298,7 +50303,6 @@ class StructuredReport extends DerivedDataset {
     });
 
     this.assignFromReference([
-      "FrameOfReferenceUID",
     ]);
   }
 }
@@ -50437,6 +50441,10 @@ class ImageNormalizer extends Normalizer {
     // TODO: add spacing checks:
     // https://github.com/Slicer/Slicer/blob/master/Modules/Scripted/DICOMPlugins/DICOMScalarVolumePlugin.py#L228-L250
     // TODO: put this information into the Shared and PerFrame functional groups
+    // TODO: sorting of frames could happen in normalizeMultiframe instead, since other
+    // multiframe converters may not sort the images
+    // TODO: sorting can be seen as part of generation of the Dimension Multiframe Dimension Module
+    // and should really be done in an acquisition-specific way (e.g. for DCE)
     let referencePosition = referenceDataset.ImagePositionPatient;
     let rowVector = referenceDataset.ImageOrientationPatient.slice(0,3);
     let columnVector = referenceDataset.ImageOrientationPatient.slice(3,6);
@@ -50605,15 +50613,18 @@ class ImageNormalizer extends Normalizer {
 
     let frameNumber = 1;
     this.datasets.forEach(dataset=>{
-      let frameTime = dataset.AcquisitionDate + dataset.AcquisitionTime;
       ds.PerFrameFunctionalGroupsSequence[frameNumber-1].FrameContentSequence = {
-        FrameAcquisitionDateTime: frameTime,
-        FrameReferenceDateTime: frameTime,
         FrameAcquisitionDuration: 0,
         StackID: 1,
         InStackPositionNumber: frameNumber,
         DimensionIndexValues: frameNumber,
       };
+      let frameTime = dataset.AcquisitionDate + dataset.AcquisitionTime;
+      if (!isNaN(frameTime)) {
+        let frameContentSequence = ds.PerFrameFunctionalGroupsSequence[frameNumber-1].FrameContentSequence;
+        frameContentSequence.FrameAcquisitionDateTime = frameTime;
+        frameContentSequence.FrameReferenceDateTime = frameTime;
+      }
       frameNumber++;
     });
 
@@ -50669,10 +50680,10 @@ class ImageNormalizer extends Normalizer {
 class MRImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
-    // TODO: provide option at export to swap in LegacyConverted UID
+    // TODO: make specialization for LegacyConverted vs normal EnhanceMRImage
     let toUID = DicomMetaDictionary.sopClassUIDsByName;
-    //this.dataset.SOPClassUID = "LegacyConvertedEnhancedMRImage";
-    this.dataset.SOPClassUID = toUID.EnhancedMRImage;
+    this.dataset.SOPClassUID = "LegacyConvertedEnhancedMRImage";
+    //this.dataset.SOPClassUID = toUID.EnhancedMRImage;
   }
 
   normalizeMultiframe() {

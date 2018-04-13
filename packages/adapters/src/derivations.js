@@ -7,7 +7,7 @@ class DerivedDataset {
 
     o.Manufacturer = options.Manufacturer || "Unspecified";
     o.ManufacturerModelName = options.ManufacturerModelName || "Unspecified";
-    o.SeriesDescription = options.SeriesDescription || "Drived series";
+    o.SeriesDescription = options.SeriesDescription || "Research Derived series";
     o.SeriesNumber = options.SeriesNumber || "99";
     o.SoftwareVersions = options.SoftwareVersions || "0";
     o.DeviceSerialNumber = options.DeviceSerialNumber || "1";
@@ -26,10 +26,6 @@ class DerivedDataset {
     o.ClinicalTrialTimePointID = options.ClinicalTrialTimePointID || "";
     o.ClinicalTrialCoordinatingCenterName = options.ClinicalTrialCoordinatingCenterName || "";
     o.ClinicalTrialSeriesID = options.ClinicalTrialSeriesID || "";
-
-    o.ContentLabel = options.ContentLabel || "";
-    o.ContentDescription = options.ContentDescription || "";
-    o.ContentCreatorName = options.ContentCreatorName || "";
 
     o.ImageComments = options.ImageComments || "NOT FOR CLINICAL USE";
     o.ContentQualification = "RESEARCH";
@@ -79,9 +75,6 @@ class DerivedDataset {
       "ManufacturerModelName",
       "SeriesDescription",
       "SeriesNumber",
-      "ContentLabel",
-      "ContentDescription",
-      "ContentCreatorName",
       "ImageComments",
       "SeriesDate",
       "SeriesTime",
@@ -101,6 +94,12 @@ class DerivedDataset {
 class DerivedPixels extends DerivedDataset {
   constructor (datasets, options={}) {
     super(datasets, options);
+    let o = this.options;
+
+    o.ContentLabel = options.ContentLabel || "";
+    o.ContentDescription = options.ContentDescription || "";
+    o.ContentCreatorName = options.ContentCreatorName || "";
+
   }
 
   // this assumes a normalized multiframe input and will create
@@ -129,6 +128,12 @@ class DerivedPixels extends DerivedDataset {
       "PhotometricInterpretation",
       "BitsStored",
       "HighBit",
+    ]);
+
+    this.assignFromOptions([
+      "ContentLabel",
+      "ContentDescription",
+      "ContentCreatorName",
     ]);
 
     //
@@ -332,10 +337,10 @@ class StructuredReport extends DerivedDataset {
     });
 
     this.assignFromReference([
-      "FrameOfReferenceUID",
     ]);
   }
 }
+
 export { DerivedDataset };
 export { DerivedPixels };
 export { DerivedImage };
