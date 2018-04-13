@@ -23,25 +23,25 @@ class DicomMetaDictionary {
   // or in a dedicated class
   static cleanDataset(dataset) {
     var cleanedDataset = {};
-    for (var tag in dataset) {
+    Object.keys(dataset).forEach(tag => {
       var data = dataset[tag];
       if (data.vr == "SQ") {
         var cleanedValues = [];
-        for (let index in data.Value) {
+        Object.keys(data.Value).forEach(index => {
           cleanedValues.push(DicomMetaDictionary.cleanDataset(data.Value[index]));
-        }
+        });
         data.Value = cleanedValues;
       } else {
         // remove null characters from strings
-        for (let index in data.Value) {
+        Object.keys(data.Value).forEach(index => {
           let dataItem = data.Value[index];
           if (dataItem.constructor.name == "String") {
             data.Value[index] = dataItem.replace(/\0/, "");
           }
-        }
+        });
       }
       cleanedDataset[tag] = data;
-    }
+    });
     return(cleanedDataset);
   }
 
@@ -50,13 +50,13 @@ class DicomMetaDictionary {
   // but leaves the values intact
   static namifyDataset(dataset) {
     var namedDataset = {};
-    for (var tag in dataset) {
+    Object.keys(dataset).forEach(tag => {
       var data = dataset[tag];
       if (data.vr == "SQ") {
         var namedValues = [];
-        for (var index in data.Value) {
+        Object.keys(data.Value).forEach(index => {
           namedValues.push(DicomMetaDictionary.namifyDataset(data.Value[index]));
-        }
+        });
         data.Value = namedValues;
       }
       var punctuatedTag = DicomMetaDictionary.punctuateTag(tag);
@@ -66,7 +66,7 @@ class DicomMetaDictionary {
         name = entry.name;
       }
       namedDataset[name] = data;
-    }
+    });
     return(namedDataset);
   }
 
@@ -79,14 +79,14 @@ class DicomMetaDictionary {
     var naturalDataset = {
       _vrMap : {},
     };
-    for (var tag in dataset) {
+    Object.keys(dataset).forEach(tag => {
       var data = dataset[tag];
       if (data.vr == "SQ") {
         // convert sequence to list of values
         var naturalValues = [];
-        for (var index in data.Value) {
+        Object.keys(data.Value).forEach(index => {
           naturalValues.push(DicomMetaDictionary.naturalizeDataset(data.Value[index]));
-        }
+        });
         data.Value = naturalValues;
       }
       var punctuatedTag = DicomMetaDictionary.punctuateTag(tag);
@@ -104,7 +104,7 @@ class DicomMetaDictionary {
         // only one value is not a list
         naturalDataset[naturalName] = naturalDataset[naturalName][0];
       }
-    }
+    });
     return(naturalDataset);
   }
 
@@ -148,7 +148,7 @@ class DicomMetaDictionary {
 
         if (entry.vr == "SQ") {
           var unnaturalValues = [];
-          dataItem.Value.forEach(nestedDataset => {
+          Object.keys(dataItem.Value).forEach(nestedDataset => {
             unnaturalValues.push(DicomMetaDictionary.denaturalizeDataset(nestedDataset));
           });
           dataItem.Value = unnaturalValues;
@@ -225,20 +225,20 @@ class DicomMetaDictionary {
 
   static _generateNameMap() {
     DicomMetaDictionary.nameMap = {};
-    for (var tag in DicomMetaDictionary.dictionary) {
+    Object.keys(DicomMetaDictionary.dictionary).forEach(tag => {
       var dict = DicomMetaDictionary.dictionary[tag];
       if (dict.version != 'PrivateTag') {
         DicomMetaDictionary.nameMap[dict.name] = dict;
       }
-    }
+    });
   }
 
   static _generateUIDMap() {
     DicomMetaDictionary.sopClassUIDsByName = {};
-    for (var uid in DicomMetaDictionary.sopClassNamesByUID) {
+    Object.keys(DicomMetaDictionary.sopClassNamesByUID).forEach(uid => {
       var name = DicomMetaDictionary.sopClassNamesByUID[uid];
       DicomMetaDictionary.sopClassUIDsByName[name] = uid;
-    }
+    });
   }
 }
 

@@ -158,7 +158,10 @@
 
     function drawSampleDatasets() {
       cornerstone.disable(element);
-      cornerstone.enable(element);
+      const options = {
+          renderer: 'canvas'
+      };
+      cornerstone.enable(element, options);
       cornerstoneTools.clearToolState(element, 'stack');
 
       var baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-8-slices.dcm';
