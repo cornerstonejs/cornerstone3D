@@ -50297,7 +50297,7 @@ class StructuredReport extends DerivedDataset {
     super.derive();
 
     this.assignToDataset({
-      "SOPClassUID": DicomMetaDictionary.sopClassUIDsByName.ComprehensiveSR,
+      "SOPClassUID": DicomMetaDictionary.sopClassUIDsByName.EnhancedSR,
       "Modality": "SR",
       "ValueType": "CONTAINER",
     });
