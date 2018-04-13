@@ -31,10 +31,14 @@ class Normalizer {
     let sopClassUIDMap = {};
     sopClassUIDMap[toUID.CTImage] = CTImageNormalizer;
     sopClassUIDMap[toUID.MRImage] = MRImageNormalizer;
+    sopClassUIDMap[toUID.EnhancedCTImage] = EnhancedCTImageNormalizer;
+    sopClassUIDMap[toUID.LegacyConvertedEnhancedCTImage] = EnhancedCTImageNormalizer;
     sopClassUIDMap[toUID.EnhancedMRImage] = EnhancedMRImageNormalizer;
+    sopClassUIDMap[toUID.LegacyConvertedEnhancedMRImage] = EnhancedMRImageNormalizer;
     sopClassUIDMap[toUID.EnhancedUSVolume] = EnhancedUSVolumeNormalizer;
     sopClassUIDMap[toUID.PETImage] = PETImageNormalizer;
     sopClassUIDMap[toUID.EnhancedPETImage] = PETImageNormalizer;
+    sopClassUIDMap[toUID.LegacyConvertedEnhancedPETImage] = PETImageNormalizer;
     sopClassUIDMap[toUID.Segmentation] = SEGImageNormalizer;
     sopClassUIDMap[toUID.DeformableSpatialRegistration] = DSRNormalizer;
     return(sopClassUIDMap[sopClassUID]);
@@ -45,9 +49,12 @@ class Normalizer {
     let toUID = DicomMetaDictionary.sopClassUIDsByName;
     let multiframeSOPClasses = [
       toUID.EnhancedMRImage,
+      toUID.LegacyConvertedEnhancedMRImage,
       toUID.EnhancedCTImage,
-      toUID.EnhancedUSImage,
+      toUID.LegacyConvertedEnhancedCTImage,
+      toUID.EnhancedUSVolume,
       toUID.EnhancedPETImage,
+      toUID.LegacyConvertedEnhancedPETImage,
       toUID.Segmentation,
     ];
     return (multiframeSOPClasses.indexOf(sopClassUID) !== -1);
@@ -388,6 +395,12 @@ class MRImageNormalizer extends ImageNormalizer {
   }
 }
 
+class EnhancedCTImageNormalizer extends ImageNormalizer {
+  normalize() {
+    super.normalize();
+  }
+}
+
 class EnhancedMRImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
@@ -435,6 +448,7 @@ class DSRNormalizer extends Normalizer {
 export { Normalizer };
 export { ImageNormalizer };
 export { MRImageNormalizer };
+export { EnhancedCTImageNormalizer };
 export { EnhancedMRImageNormalizer };
 export { EnhancedUSVolumeNormalizer };
 export { CTImageNormalizer };
