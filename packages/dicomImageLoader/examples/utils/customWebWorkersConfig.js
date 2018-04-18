@@ -5,9 +5,26 @@ function getBlobUrl (url) {
   return baseUrl.createObjectURL(blob);
 }
 
-const webWorkerUrl = getBlobUrl('https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderWebWorker.min.js');
-const codecsUrl = getBlobUrl('https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderCodecs.js');
+function UrlExists (url) {
+  const http = new XMLHttpRequest();
+
+  http.open('HEAD', url, false);
+  http.send();
+
+  return http.status !== 404;
+}
+
+let webWorkerUrl = getBlobUrl('https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderWebWorker.min.js');
+let codecsUrl = getBlobUrl('https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderCodecs.js');
 const domain = window.location.origin;
+
+if (UrlExists('../../dist/cornerstoneWADOImageLoaderWebWorker.min.js')) {
+  webWorkerUrl = '../../dist/cornerstoneWADOImageLoaderWebWorker.min.js';
+}
+
+if (UrlExists('../../dist/cornerstoneWADOImageLoaderCodecs.js')) {
+  codecsUrl = '../dist/cornerstoneWADOImageLoaderCodecs.js';
+}
 
 window.customWebWorkerConfig = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
