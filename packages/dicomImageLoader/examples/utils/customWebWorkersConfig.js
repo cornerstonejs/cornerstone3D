@@ -16,12 +16,13 @@ function UrlExists (url) {
 
 let webWorkerUrl = getBlobUrl('https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderWebWorker.min.js');
 let codecsUrl = getBlobUrl('https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderCodecs.js');
-const domain = window.location.origin;
+let webWorkerTaskPath = 'https://rawgit.com/cornerstonejs/cornerstoneWADOImageLoader/master/examples/customWebWorkerTask/convolveTask.js';
 
+// If running with build completed and DIST folder present
 if (UrlExists('../../dist/cornerstoneWADOImageLoaderWebWorker.min.js')) {
   webWorkerUrl = '../../dist/cornerstoneWADOImageLoaderWebWorker.min.js';
+  webWorkerTaskPath = '../examples/customWebWorkerTask/convolveTask.js';
 }
-
 if (UrlExists('../../dist/cornerstoneWADOImageLoaderCodecs.js')) {
   codecsUrl = '../dist/cornerstoneWADOImageLoaderCodecs.js';
 }
@@ -30,7 +31,7 @@ window.customWebWorkerConfig = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
   startWebWorkersOnDemand: true,
   webWorkerPath: webWorkerUrl,
-  webWorkerTaskPaths: [`${domain}/examples/customWebWorkerTask/convolveTask.js`],
+  webWorkerTaskPaths: [webWorkerTaskPath],
   taskConfiguration: {
     decodeTask: {
       loadCodecsOnStartup: true,
