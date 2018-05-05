@@ -57,7 +57,8 @@ the community at RSNA
 * 2017
   * At [NA-MIC Project Week 25](https://na-mic.org/wiki/Project_Week_25) Erik Ziegler and Steve Pieper [worked](https://na-mic.org/wiki/Project_Week_25/DICOM_Segmentation_Support_for_Cornerstone_and_OHIF_Viewer)
  with the community to define some example use cases to mix the pure JavaScript DICOM code with Cornerstone and [CornerstoneTools](https://github.com/chafey/cornerstoneTools).
- * 201
+ * 2018
+	 * Work continues to develop SR and SEG support to allow interoperability with 
  
  # Support
  The developers gratefully acknowledge their reseach support:
@@ -67,5 +68,5 @@ the community at RSNA
  * The [Neuroimage Analysis Center](http://nac.spl.harvard.edu)
  * The [National Center for Image Guided Therapy](http://ncigt.org)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ0NjYyNDIyNV19
+eyJoaXN0b3J5IjpbLTEyMDk5NTIzNzRdfQ==
 -->
