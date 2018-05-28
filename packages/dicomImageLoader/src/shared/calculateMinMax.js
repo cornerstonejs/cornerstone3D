@@ -8,12 +8,15 @@ import getMinMax from './getMinMax.js';
  * Otherwise, correct them automatically.
  *
  * @param {Object} imageFrame
- * @param {Boolean} strict
+ * @param {Boolean} strict If 'strict' is true, log to the console a warning if these values do not match.
+ * Otherwise, correct them automatically.Default is true.
  */
 export default function calculateMinMax (imageFrame, strict = true) {
   const minMax = getMinMax(imageFrame.pixelData);
+  const mustAssign = !(isNumber(imageFrame.smallestPixelValue) && isNumber(imageFrame.largestPixelValue));
 
-  if (strict === true) {
+
+  if (strict === true && !mustAssign) {
     if (imageFrame.smallestPixelValue !== minMax.min) {
       console.warn('Image smallestPixelValue tag is incorrect. Rendering performance will suffer considerably.');
     }
@@ -25,4 +28,8 @@ export default function calculateMinMax (imageFrame, strict = true) {
     imageFrame.smallestPixelValue = minMax.min;
     imageFrame.largestPixelValue = minMax.max;
   }
+}
+
+function isNumber(numValue) {
+  return typeof numValue === "number";
 }

@@ -39,7 +39,7 @@ try {
         initializeCodecsOnStartup: false,
         codecsPath: codecsUrl,
         usePDFJS: false,
-        strict: false
+        strict: true
       }
     }
   });

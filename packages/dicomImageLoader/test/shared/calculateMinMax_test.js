@@ -28,4 +28,30 @@ describe('#calculateMinMax', function () {
     expect(this.imageFrame.smallestPixelValue).to.be.equal(-1);
     expect(this.imageFrame.largestPixelValue).to.be.equal(10);
   });
+
+  it('should update the smallest and largest pixel values regardless of strict value', function () {
+    let strict = false;
+    this.imageFrame.smallestPixelValue = undefined;
+    this.imageFrame.largestPixelValue = undefined;
+
+    // ACT
+    calculateMinMax(this.imageFrame, strict);
+
+    // ASSERT
+    expect(this.imageFrame.smallestPixelValue).to.be.equal(1);
+    expect(this.imageFrame.largestPixelValue).to.be.equal(9);
+
+    strict = true;
+
+    this.imageFrame.smallestPixelValue = undefined;
+    this.imageFrame.largestPixelValue = undefined;
+
+    // ACT
+    calculateMinMax(this.imageFrame, strict);
+
+    // ASSERT
+    expect(this.imageFrame.smallestPixelValue).to.be.equal(1);
+    expect(this.imageFrame.largestPixelValue).to.be.equal(9);
+  });
+
 });
