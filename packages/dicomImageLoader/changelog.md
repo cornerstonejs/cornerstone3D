@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2018-06-5
+### Fixed
+- Bugfix: Update calculateMinMax strict mode behavior, [PR200](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/200) Fix [#198](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/198) and [#199](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/199).
+- Bugfix: Fix decoder jpeg lossy bug [#203](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/203) 
+- Fix an issue in rawgit examples by adding a fallback to convolveTask.js that points directly to rawgit with absolute url. [PR192](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/192)
+
 ## [2.1.1] - 2018-04-18
 ### Fixed
 - Bugfix: Webworkers getting 'window undefined' but related to Webpack update
