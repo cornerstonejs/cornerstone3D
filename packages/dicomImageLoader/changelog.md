@@ -4,7 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [2.1.2] - 2018-06-5
+## [2.1.3] - 2018-07-11
+### Added
+- Allow specification of alternative loading schemes via options.loader (#166, thanks @adreyfus)
+
+### Changed
+- Removed 'render' property from the returned Image. This was done so that Cornerstone could decide which rendering function to use. *Note* You may have issues with this if you are using a new version of Cornerstone WADO Image Loader with an old version of Cornerstone.
+- Added dicomParser to 'external'. If you are using WADO Image Loader with a packaging system that uses modules, you may need to add: 
+
+  ````javascript
+  cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
+  ````
+
+  If you are using WADO Image Loader and dicomParser with script tags, you shouldn't have any issues.
+
+### Fixed
+- Fixed an unguarded for-in loop which was causing issues with WADO-RS requests.
+
+## [2.1.2] - 2018-06-05
 ### Fixed
 - Bugfix: Update calculateMinMax strict mode behavior, [PR200](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/200) Fix [#198](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/198) and [#199](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/199).
 - Bugfix: Fix decoder jpeg lossy bug [#203](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/203) 
