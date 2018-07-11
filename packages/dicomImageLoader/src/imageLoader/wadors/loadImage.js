@@ -14,20 +14,18 @@ export function getTransferSyntaxForContentType (contentType) {
     // Browse through the content type parameters
     const parameters = contentType.split(';');
 
-    for (const parameterIndex in parameters) {
-      const parameter = parameters[parameterIndex];
-
+    parameters.forEach(parameter => {
       // Look for a transfer-syntax=XXXX pair
       const parameterValues = parameter.split('=');
 
       if (parameterValues.length !== 2) {
-        continue;
+        return;
       }
 
       if (parameterValues[0].trim() === 'transfer-syntax') {
         transferSyntax = parameterValues[1].trim() || transferSyntax;
       }
-    }
+    });
   }
 
   return transferSyntax;
