@@ -1,4 +1,4 @@
-import { dicomParser, external } from '../../externalModules.js';
+import external from '../../externalModules.js';
 import { xhrRequest } from '../internal/index.js';
 
 /**
@@ -28,7 +28,7 @@ function get (uri) {
 
 // loads the dicom dataset from the wadouri sp
 function load (uri, loadRequest = xhrRequest, imageId) {
-  const cornerstone = external.cornerstone;
+  const { cornerstone, dicomParser } = external;
 
   // if already loaded return it right away
   if (loadedDataSets[uri]) {
@@ -94,7 +94,7 @@ function load (uri, loadRequest = xhrRequest, imageId) {
 
 // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
 function unload (uri) {
-  const cornerstone = external.cornerstone;
+  const { cornerstone } = external;
 
   // console.log('unload for ' + uri);
   if (loadedDataSets[uri]) {

@@ -1,6 +1,5 @@
 /* eslint import/extensions: 0 */
 import { expect } from 'chai';
-import { external } from '../src/externalModules.js';
 import { initializeJPEGLS } from '../src/shared/decoders/decodeJPEGLS.js';
 import { initializeJPEG2000 } from '../src/shared/decoders/decodeJPEG2000.js';
 import decodeImageFrame from '../src/imageLoader/decodeImageFrame.js';
@@ -10,8 +9,6 @@ import xhrRequest from '../src/imageLoader/internal/xhrRequest.js';
 import dataSetCacheManager from '../src/imageLoader/wadouri/dataSetCacheManager.js';
 import parseImageId from '../src/imageLoader/wadouri/parseImageId.js';
 import webWorkerManager from '../src/imageLoader/webWorkerManager.js';
-
-external.cornerstone = window.cornerstone;
 
 const transferSyntaxes = {
   '1.2.840.10008.1.2': 'LittleEndianImplicitTransferSyntax',

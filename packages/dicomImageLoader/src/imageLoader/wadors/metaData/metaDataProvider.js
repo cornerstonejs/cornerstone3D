@@ -1,10 +1,11 @@
-import { dicomParser } from '../../../externalModules.js';
+import external from '../../../externalModules.js';
 import getNumberValues from './getNumberValues.js';
 import getValue from './getValue.js';
 import getNumberValue from './getNumberValue.js';
 import metaDataManager from '../metaDataManager.js';
 
 function metaDataProvider (type, imageId) {
+  const { dicomParser } = external;
   const metaData = metaDataManager.get(imageId);
 
   if (!metaData) {

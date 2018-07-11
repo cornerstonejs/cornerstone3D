@@ -1,8 +1,8 @@
-import { external } from '../../externalModules.js';
+import external from '../../externalModules.js';
 import { getOptions } from './options.js';
 
 function xhrRequest (url, imageId, headers = {}, params = {}) {
-  const cornerstone = external.cornerstone;
+  const { cornerstone } = external;
   const options = getOptions();
 
   // Make the request for the DICOM P10 SOP Instance

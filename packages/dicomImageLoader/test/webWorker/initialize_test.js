@@ -1,7 +1,4 @@
-import { external } from '../../src/externalModules.js';
 import webWorkerManager from '../../src/imageLoader/webWorkerManager.js';
-
-external.cornerstone = window.cornerstone;
 
 describe('config', function () {
   it('should initialize', function () {

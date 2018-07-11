@@ -1,4 +1,4 @@
-import { dicomParser } from '../../../externalModules.js';
+import external from '../../../externalModules.js';
 import getNumberValues from './getNumberValues.js';
 import parseImageId from '../parseImageId.js';
 import dataSetCacheManager from '../dataSetCacheManager.js';
@@ -7,6 +7,7 @@ import getLUTs from './getLUTs.js';
 import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixelRepresentation.js';
 
 function metaDataProvider (type, imageId) {
+  const { dicomParser } = external;
   const parsedImageId = parseImageId(imageId);
 
   const dataSet = dataSetCacheManager.get(parsedImageId.url);

@@ -1,4 +1,4 @@
-import { external } from '../externalModules.js';
+import external from '../externalModules.js';
 import getImageFrame from './getImageFrame.js';
 import decodeImageFrame from './decodeImageFrame.js';
 import isColorImageFn from './isColorImage.js';
@@ -68,7 +68,7 @@ function createImage (imageId, pixelData, transferSyntax, options) {
     return Promise.reject(new Error('The file does not contain image data.'));
   }
 
-  const cornerstone = external.cornerstone;
+  const { cornerstone } = external;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
   const decodePromise = decodeImageFrame(imageFrame, transferSyntax, pixelData, canvas, options);

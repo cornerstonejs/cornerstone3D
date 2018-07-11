@@ -30,6 +30,6 @@ export default function calculateMinMax (imageFrame, strict = true) {
   }
 }
 
-function isNumber(numValue) {
-  return typeof numValue === "number";
+function isNumber (numValue) {
+  return typeof numValue === 'number';
 }
