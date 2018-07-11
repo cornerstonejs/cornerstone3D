@@ -117,7 +117,6 @@ function createImage (imageId, pixelData, transferSyntax, options) {
         invert: imageFrame.photometricInterpretation === 'MONOCHROME1',
         minPixelValue: imageFrame.smallestPixelValue,
         maxPixelValue: imageFrame.largestPixelValue,
-        render: undefined, // set below
         rowPixelSpacing: imagePlaneModule.pixelSpacing ? imagePlaneModule.pixelSpacing[0] : undefined,
         rows: imageFrame.rows,
         sizeInBytes: imageFrame.pixelData.length,
@@ -144,9 +143,7 @@ function createImage (imageId, pixelData, transferSyntax, options) {
         image.getPixelData = () => imageFrame.pixelData;
       }
 
-      // Setup the renderer
       if (image.color) {
-        image.render = cornerstone.renderColorImage;
         image.getCanvas = function () {
           if (lastImageIdDrawn === imageId) {
             return canvas;
@@ -161,9 +158,6 @@ function createImage (imageId, pixelData, transferSyntax, options) {
 
           return canvas;
         };
-
-      } else {
-        image.render = cornerstone.renderGrayscaleImage;
       }
 
       // Modality LUT
