@@ -6,6 +6,12 @@
 
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/cornerstone.min.css" rel="stylesheet">
+
+  <script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+
+  <script src="https://unpkg.com/react-jsonschema-form/dist/react-jsonschema-form.js"></script>
+
 </head>
 <body>
 <div class="container">
@@ -50,6 +56,10 @@
                 </tr>
               </tbody>
             </table>
+
+            <div id="reportForm"></div>
+            <pre id='reportJSON'>
+
             <pre id='reportDump'>
             </pre>
         </div>
@@ -517,6 +527,93 @@
     }
 
     $('#dropZone').bind('drop', handleFileDrop);
+
+
+    function activateReportForm(parentID) {
+
+      const commonSchemaDefinitions = {};
+      commonSchemaDefinitions.lengthMeasurement = {
+        type: "object",
+        properties: {
+          label: {
+            title: "Label",
+            type: "string",
+          },
+          frameNumber: {
+            title: "Frame",
+            type: "number",
+          },
+          length: {
+            title: "Length",
+            type: "number",
+          },
+        }
+      };
+      commonSchemaDefinitions.measurementArray = {
+        type: "array",
+        items: {
+          "$ref": "#/definitions/lengthMeasurement"
+        },
+      };
+
+      const schema = {
+        definitions: commonSchemaDefinitions,
+        title: "Length Form",
+        type: "object",
+        properties: {
+          title: {type: "string", title: "Title", default: "Untitled Form"},
+          measurements: { "$ref": "#/definitions/measurementArray", title: "Lengths" },
+        },
+      };
+
+      const uiSchema = {
+        "ui:rootFieldId": "measurementReport",
+        measurements: {
+          classNames: "measurements",
+          "ui:options": {
+            orderable: true
+          },
+        },
+      }
+
+      const onChange = (data) => {
+        console.log(data);
+      }
+
+      const formData = {
+        title: "Untitled",
+        measurements: [
+          { label: "length 1", frameNumber: 1, length: 2.5 },
+          { label: "length 2", frameNumber: 1, length: 9.3 },
+        ]
+      }
+
+      const reportFormProperties = {
+        schema,
+        uiSchema,
+        formData,
+        onChange: onChange,
+        onError: console.log(),
+      };
+
+      const Form = JSONSchemaForm.default;
+      const formElement = React.createElement(Form, reportFormProperties);
+      const parent = document.getElementById(parentID);
+
+      renderedForm = ReactDOM.render(formElement, parent);
+
+      $('.measurements .field-object').addClass('row');
+      $('.measurements .field-object .field').addClass('col-sm-4');
+
+      return(renderedForm);
+    }
+
+    const renderedForm = activateReportForm('reportForm');
+
+    // TODO: call reportForm.setState({formData}) with changes from toolState
+    // TODO: update toolState in the onChange method of the form
+    // TODO: add a vtkjs lineWidget with two-way mapping https://kitware.github.io/vtk-js/examples/LineWidget.html
+
   });
 </script>
 </html>
