@@ -14,7 +14,7 @@ export function getTransferSyntaxForContentType (contentType) {
     // Browse through the content type parameters
     const parameters = contentType.split(';');
 
-    parameters.forEach(parameter => {
+    parameters.forEach((parameter) => {
       // Look for a transfer-syntax=XXXX pair
       const parameterValues = parameter.split('=');
 
