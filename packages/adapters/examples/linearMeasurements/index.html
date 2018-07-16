@@ -42,6 +42,9 @@
                      style="width:512px;height:512px;top:0px;left:0px; position:absolute; border: 1px solid black;">
                 </div>
             </div>
+
+            <div id="reportForm"></div>
+
             <table id="reportTable" class="table">
               <thead>
                 <tr>
@@ -56,9 +59,6 @@
                 </tr>
               </tbody>
             </table>
-
-            <div id="reportForm"></div>
-            <pre id='reportJSON'>
 
             <pre id='reportDump'>
             </pre>
@@ -90,7 +90,10 @@
 <script src="../helpers/DICOMZero.js"></script>
 
 <script>
-  var dc0;
+
+  let dc0;
+  let renderedForm;
+
   $(document).ready(function() {
 
     $('.dicomControls').prop('disabled', true)
@@ -98,6 +101,7 @@
     dc0 = new DICOMZero();
     const element = document.getElementById('dicomImage');
     $(element).on('CornerstoneToolsMeasurementModified', updateMeasurementTable)
+    $(element).on('CornerstoneToolsMeasurementModified', updateMeasurementForm)
     const dropZone = document.getElementById('dropZone');
     cornerstone.enable(element);
 
@@ -535,10 +539,6 @@
       commonSchemaDefinitions.lengthMeasurement = {
         type: "object",
         properties: {
-          label: {
-            title: "Label",
-            type: "string",
-          },
           frameNumber: {
             title: "Frame",
             type: "number",
@@ -568,24 +568,35 @@
 
       const uiSchema = {
         "ui:rootFieldId": "measurementReport",
-        measurements: {
+        "measurements": {
           classNames: "measurements",
           "ui:options": {
-            orderable: true
+            orderable: false,
+            removable: false,
+            addable: false,
+          },
+          "ui:readonly": true,
+          items: {
+            "length": {
+              "ui:readonly": true,
+            },
           },
         },
       }
 
+      styleForm = function() {
+        $('.measurements .field-object').addClass('row');
+        $('.measurements .field-object .field').addClass('col-sm-4');
+      }
+
       const onChange = (data) => {
+        styleForm();
         console.log(data);
       }
 
       const formData = {
         title: "Untitled",
-        measurements: [
-          { label: "length 1", frameNumber: 1, length: 2.5 },
-          { label: "length 2", frameNumber: 1, length: 9.3 },
-        ]
+        measurements: [],
       }
 
       const reportFormProperties = {
@@ -593,26 +604,43 @@
         uiSchema,
         formData,
         onChange: onChange,
-        onError: console.log(),
+        onError: console.log,
+        onSubmit: () => {alert('submitted report form');},
       };
 
       const Form = JSONSchemaForm.default;
       const formElement = React.createElement(Form, reportFormProperties);
       const parent = document.getElementById(parentID);
 
-      renderedForm = ReactDOM.render(formElement, parent);
+      const renderedForm = ReactDOM.render(formElement, parent);
+      styleForm();
 
-      $('.measurements .field-object').addClass('row');
-      $('.measurements .field-object .field').addClass('col-sm-4');
 
       return(renderedForm);
     }
 
-    const renderedForm = activateReportForm('reportForm');
+    renderedForm = activateReportForm('reportForm');
 
-    // TODO: call reportForm.setState({formData}) with changes from toolState
     // TODO: update toolState in the onChange method of the form
     // TODO: add a vtkjs lineWidget with two-way mapping https://kitware.github.io/vtk-js/examples/LineWidget.html
+
+    function updateMeasurementForm(event) {
+      const oldFormData = renderedForm.state.formData;
+      const formData = {title: oldFormData.title, measurements: []}
+      const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
+      dc0.baseStack.imageIds.forEach(function(imageId) {
+        if (imageToolState[imageId]) {
+          imageToolState[imageId].length.data.forEach(function(lengthTool) {
+            var handles = lengthTool.handles;
+            var frameNumber = Number(imageId.slice(imageId.lastIndexOf('frame')).split('=')[1]); // TODO: frame is explicit somewhere?
+            var length = lengthTool.length;
+            formData.measurements.push({frameNumber, length});
+          });
+        }
+      });
+      renderedForm.setState({formData});
+      styleForm();
+    }
 
   });
 </script>
