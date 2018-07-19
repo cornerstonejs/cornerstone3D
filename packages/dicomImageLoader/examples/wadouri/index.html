@@ -124,6 +124,8 @@
             <span>Rows: </span><span id="rows"></span><br>
             <span>Columns: </span><span id="columns"></span><br>
             <span>Pixel Spacing: </span><span id="pixelSpacing"></span><br>
+            <span>Row Pixel Spacing: </span><span id="rowPixelSpacing"></span><br>
+            <span>Column Pixel Spacing: </span><span id="columnPixelSpacing"></span><br>
             <span>Bits Allocated: </span><span id="bitsAllocated"></span><br>
             <span>Bits Stored: </span><span id="bitsStored"></span><br>
             <span>High Bit: </span><span id="highBit"></span><br>
@@ -253,6 +255,8 @@
                 document.getElementById('rows').textContent = image.data.uint16('x00280010');
                 document.getElementById('columns').textContent = image.data.uint16('x00280011');
                 document.getElementById('pixelSpacing').textContent = image.data.string('x00280030');
+                document.getElementById('rowPixelSpacing').textContent = image.rowPixelSpacing;
+                document.getElementById('columnPixelSpacing').textContent = image.columnPixelSpacing;
                 document.getElementById('bitsAllocated').textContent = image.data.uint16('x00280100');
                 document.getElementById('bitsStored').textContent = image.data.uint16('x00280101');
                 document.getElementById('highBit').textContent = image.data.uint16('x00280102');
