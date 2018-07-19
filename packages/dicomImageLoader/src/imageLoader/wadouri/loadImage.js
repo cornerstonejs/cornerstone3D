@@ -111,10 +111,12 @@ function loadImage (imageId, options = {}) {
 
   options = Object.assign({}, options);
   let loader = options.loader;
+
   if (loader === undefined) {
     loader = getLoaderForScheme(parsedImageId.scheme);
+  } else {
+    delete options.loader;
   }
-  else delete options.loader;
 
   // if the dataset for this url is already loaded, use it
   if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
