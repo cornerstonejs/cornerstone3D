@@ -31,6 +31,7 @@ describe('#calculateMinMax', function () {
 
   it('should update the smallest and largest pixel values regardless of strict value', function () {
     let strict = false;
+
     this.imageFrame.smallestPixelValue = undefined;
     this.imageFrame.largestPixelValue = undefined;
 

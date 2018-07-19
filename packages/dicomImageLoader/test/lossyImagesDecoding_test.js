@@ -10,37 +10,27 @@ import configure from '../src/imageLoader/configure.js';
 should();
 
 const transferSyntaxes = {
-  '1.2.840.10008.1.2': 'LittleEndianImplicitTransferSyntax',
-  '1.2.840.10008.1.2.1': 'LittleEndianExplicitTransferSyntax',
-  //  TODO: dicomParser is failing with this.module in parseDicom
-  // '1.2.840.10008.1.2.1.99': 'DeflatedExplicitVRLittleEndianTransferSyntax',
-
-  '1.2.840.10008.1.2.2': 'BigEndianExplicitTransferSyntax',
-
-  // TODO: These are failing
-  // '1.2.840.10008.1.2.4.50': 'JPEGProcess1TransferSyntax',
-  // '1.2.840.10008.1.2.4.51': 'JPEGProcess2_4TransferSyntax',
-  // '1.2.840.10008.1.2.4.53': 'JPEGProcess6_8TransferSyntax',
-  // '1.2.840.10008.1.2.4.55': 'JPEGProcess10_12TransferSyntax',
-
-  '1.2.840.10008.1.2.4.57': 'JPEGProcess14TransferSyntax',
-  '1.2.840.10008.1.2.4.70': 'JPEGProcess14SV1TransferSyntax',
-  '1.2.840.10008.1.2.4.80': 'JPEGLSLosslessTransferSyntax',
-
-  '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
-  '1.2.840.10008.1.2.5': 'RLELosslessTransferSyntax'
+  '1.2.840.10008.1.2.4.81': {
+    name: 'JPEGLSLossyTransferSyntax',
+    threshold: 1
+  },
+  '1.2.840.10008.1.2.4.91': {
+    name: 'JPEG2000TransferSyntax',
+    threshold: 6
+  }
 };
 
 const base = 'CTImage.dcm';
 const url = 'dicomweb://localhost:9876/base/testImages/';
 
-describe('Test lossless TransferSyntaxes decoding', function () {
+describe('Test lossy TransferSyntaxes decoding', function () {
 
   let uncompressedPixelData = null;
   let uncompressedImage = null;
+  let rescaleInterceptUncompressed = null;
+  let rescaleSlopeUncompressed = null;
 
   before(function (done) {
-
     // loads uncompressed study (the original one)
     const imageId = `${url}${base}`;
     const parsedImageId = parseImageId(imageId);
@@ -60,11 +50,13 @@ describe('Test lossless TransferSyntaxes decoding', function () {
     dataSetCacheManager.load(parsedImageId.url, xhrRequest, imageId).then((dataSet) => {
       const transferSyntax = dataSet.string('x00020010');
 
+      rescaleInterceptUncompressed = dataSet.floatString('x00281052');
+      rescaleSlopeUncompressed = dataSet.floatString('x00281053');
       uncompressedPixelData = getPixelData(dataSet);
 
       createImage(imageId, uncompressedPixelData, transferSyntax, {}).then((image) => {
         uncompressedImage = image;
-      });
+      }).catch(done);
 
       done();
     }).catch(done);
@@ -75,7 +67,8 @@ describe('Test lossless TransferSyntaxes decoding', function () {
   });
 
   Object.keys(transferSyntaxes).forEach((transferSyntaxUid) => {
-    const name = transferSyntaxes[transferSyntaxUid];
+    const testsData = transferSyntaxes[transferSyntaxUid];
+    const name = testsData.name;
     const filename = `${base}_${name}_${transferSyntaxUid}.dcm`;
 
     it(`should properly decode ${name}`, function (done) {
@@ -88,6 +81,8 @@ describe('Test lossless TransferSyntaxes decoding', function () {
         try {
           const pixelData = getPixelData(dataSet);
           const curTransferSyntax = dataSet.string('x00020010');
+          const rescaleIntercept = dataSet.floatString('x00281052');
+          const rescaleSlope = dataSet.floatString('x00281053');
 
           curTransferSyntax.should.to.be.equals(transferSyntaxUid);
 
@@ -95,12 +90,34 @@ describe('Test lossless TransferSyntaxes decoding', function () {
             const uncompressedImagePixelData = uncompressedImage.getPixelData();
             const curPixelData = image.getPixelData();
 
-            uncompressedImagePixelData.length.should.to.be.equals(curPixelData.length);
-
             for (let i = 0; i < curPixelData.length - 1; i++) {
-              if (curPixelData[i] !== uncompressedImagePixelData[i]) {
-                curPixelData[i].should(`Pixel data is not equals in the position: ${i}`).
-                  to.equal(uncompressedImagePixelData[i]);
+              const threshold = testsData.threshold;
+              const difference = Math.abs(curPixelData[i] - uncompressedImagePixelData[i]);
+
+              if (difference > threshold) {
+                const modalityPixelValue = curPixelData[i] * rescaleSlope + rescaleIntercept;
+                const uncompressedModalityPixelValue = uncompressedImagePixelData[i] * rescaleSlopeUncompressed + rescaleInterceptUncompressed;
+
+                const differenceModality = Math.abs(modalityPixelValue - uncompressedModalityPixelValue);
+
+                if (differenceModality > threshold) {
+                  const message = `difference: ${difference} 
+                        differenceModality: ${differenceModality}, 
+                        curPixelData: ${curPixelData[i]}
+                        uncompressedImagePixelData: ${uncompressedImagePixelData[i]}
+                        i: ${i}, 
+                        transferSyntaxName: ${name}, 
+                        transferSyntax: ${transferSyntaxUid}
+                        transferSyntaxFromDicom: ${curTransferSyntax}, 
+                        rescaleIntercept: ${rescaleIntercept}
+                        rescaleUncompressed: ${rescaleInterceptUncompressed}
+                        curModalityPixelValue: ${modalityPixelValue} 
+                        uncompressedModalityPixelValue: ${uncompressedModalityPixelValue}`;
+
+                  differenceModality.should(message).lessThan(threshold);
+
+                  done();
+                }
               }
             }
 
