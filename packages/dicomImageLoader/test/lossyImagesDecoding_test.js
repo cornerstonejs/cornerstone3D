@@ -32,6 +32,7 @@ describe('Test lossy TransferSyntaxes decoding', function () {
 
   before(function (done) {
     // loads uncompressed study (the original one)
+    this.timeout(5000);
     const imageId = `${url}${base}`;
     const parsedImageId = parseImageId(imageId);
 
@@ -72,6 +73,7 @@ describe('Test lossy TransferSyntaxes decoding', function () {
     const filename = `${base}_${name}_${transferSyntaxUid}.dcm`;
 
     it(`should properly decode ${name}`, function (done) {
+      this.timeout(5000);
       const imageId = `${url}${filename}`;
       const parsedImageId = parseImageId(imageId);
       const dataSetPromise = dataSetCacheManager.load(parsedImageId.url, xhrRequest, imageId);

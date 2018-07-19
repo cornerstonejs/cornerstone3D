@@ -40,7 +40,7 @@ describe('Test lossless TransferSyntaxes decoding', function () {
   let uncompressedImage = null;
 
   before(function (done) {
-
+    this.timeout(5000);
     // loads uncompressed study (the original one)
     const imageId = `${url}${base}`;
     const parsedImageId = parseImageId(imageId);

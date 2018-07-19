@@ -36,6 +36,7 @@ describe('#wadouri > metadaProvider', function () {
   const imageId = 'dicomweb://localhost:9876/base/testImages/no-pixel-spacing.dcm';
 
   it('should return columnPixelSpacing undefined if pixelSpacing is undefined', function (done) {
+    this.timeout(5000);
     loadImage(imageId).promise.then(() => {
       const imagePlaneModule = external.cornerstone.metaData.get('imagePlaneModule', imageId);
       const { columnPixelSpacing } = imagePlaneModule;
@@ -50,6 +51,7 @@ describe('#wadouri > metadaProvider', function () {
   });
 
   it('should return columnPixelSpacing undefined if pixelSpacing is undefined', function (done) {
+    this.timeout(5000);
     loadImage(imageId).promise.then(() => {
       const imagePlaneModule = external.cornerstone.metaData.get('imagePlaneModule', imageId);
       const { rowPixelSpacing } = imagePlaneModule;

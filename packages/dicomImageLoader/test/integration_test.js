@@ -64,6 +64,7 @@ describe('loadImage', function () {
     const filename = `${base}_${name}_${transferSyntaxUid}.dcm`;
 
     it(`should properly load ${name}`, function (done) {
+      this.timeout(5000);
       const imageId = `${url}${filename}`;
 
       console.time(name);
@@ -88,6 +89,7 @@ describe('loadImage', function () {
   });
 
   it('should result in an error when the DICOM file has no pixelData', (done) => {
+    this.timeout(5000);
     const imageId = `${url}no-pixel-data.dcm`;
     let loadObject;
 
