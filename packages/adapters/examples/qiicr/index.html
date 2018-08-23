@@ -303,7 +303,7 @@
         segments: []
       };
       dc0seg.datasets[0].SegmentSequence.forEach(segment => {
-        let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
+        let rgb = dcmjs.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
         rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
         rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
         let hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;

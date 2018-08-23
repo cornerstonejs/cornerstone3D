@@ -100,7 +100,7 @@
     }
 
     function populatePixelArrayForFrame (pixels, frame, pixelData) {
-      const bitArray = DCMJS.data.packBitArray(pixelData);
+      const bitArray = dcmjs.data.packBitArray(pixelData);
       const numBitArrayPixels = bitArray.length;
       let index = frame * numBitArrayPixels;
       for (let i=0; i < numBitArrayPixels; i++) {
@@ -188,9 +188,9 @@
 
       Promise.all([dataPromise,]).then(values => {
         dc0.multiframe = values[0];
-        dc0.seg = new DCMJS.derivations.Segmentation([dc0.multiframe]);
+        dc0.seg = new dcmjs.derivations.Segmentation([dc0.multiframe]);
 
-        var cielab = DCMJS.data.Colors.rgb2DICOMLAB([1, 0, 0]);
+        var cielab = dcmjs.data.Colors.rgb2DICOMLAB([1, 0, 0]);
         dc0.seg.dataset.SegmentSequence[0].RecommendedDisplayCIELabValue = cielab;
         var imageIds = getImageIds(dc0.multiframe, baseImageId);
 
@@ -217,11 +217,11 @@
       var promise = new Promise(function (resolve, reject) {
         cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
           var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
-          let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+          dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
+          let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
 
-          var multiframe = DCMJS.normalizers.Normalizer.normalizeToDataset([dataset]);
+          var multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([dataset]);
           console.log(multiframe);
 
           const numFrames = Number(multiframe.NumberOfFrames);
@@ -270,8 +270,8 @@
     function downloadDatasets() {
       populateSegmentationObjectPixelData(dc0.seg.dataset);
       $('#segmentationDump').text(JSON.stringify(dc0.seg.dataset, null,4));
-      let multiBlob = DCMJS.data.datasetToBlob(dc0.multiframe);
-      let segBlob = DCMJS.data.datasetToBlob(dc0.seg.dataset);
+      let multiBlob = dcmjs.data.datasetToBlob(dc0.multiframe);
+      let segBlob = dcmjs.data.datasetToBlob(dc0.seg.dataset);
       let zip = new JSZip();
       zip.file("multiframe.dcm", multiBlob);
       zip.file("segmentation.dcm", segBlob);

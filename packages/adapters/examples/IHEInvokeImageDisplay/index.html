@@ -113,17 +113,17 @@
     });
 
     function loadStudies(studyResponses) {
-      let studyResponse = DCMJS.data.DicomMetaDictionary.namifyDataset(studyResponses[0]);
+      let studyResponse = dcmjs.data.DicomMetaDictionary.namifyDataset(studyResponses[0]);
       let studyInstanceUID = studyResponse.StudyInstanceUID.Value[0]; 
       dicomweb.series(studyInstanceUID).then(seriesResponses => {
         seriesResponses.forEach(seriesResponse => {
-          seriesResponse = DCMJS.data.DicomMetaDictionary.namifyDataset(seriesResponse);
+          seriesResponse = dcmjs.data.DicomMetaDictionary.namifyDataset(seriesResponse);
           let seriesInstanceUID = seriesResponse.SeriesInstanceUID.Value[0];
           dicomweb.instances(studyInstanceUID, seriesInstanceUID).then(instancesResponses => {
             let seriesContainer = new DICOMZero();
             seriesContainers.push(seriesContainer);
             instancesResponses.forEach(instancesResponse => {
-              let response = DCMJS.data.DicomMetaDictionary.namifyDataset(instancesResponse);
+              let response = dcmjs.data.DicomMetaDictionary.namifyDataset(instancesResponse);
               let sopInstanceUID = response.SOPInstanceUID.Value[0];
               dicomweb.instance(studyInstanceUID, seriesInstanceUID, sopInstanceUID).then(arrayBuffer => {
                 let dataset = seriesContainer.datasetFromArrayBuffer(arrayBuffer);

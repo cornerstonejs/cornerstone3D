@@ -107,11 +107,11 @@
         var multiframe;
         cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
           var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
-          let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+          dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
+          let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
 
-          multiframe = DCMJS.normalizers.Normalizer.normalizeToDataset([dataset]);
+          multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([dataset]);
 
           const numFrames = Number(multiframe.NumberOfFrames);
           for (let i=0; i < numFrames; i++) {
@@ -198,7 +198,7 @@
         segMultiframe.SegmentSequence.forEach(segment => {
           // first, map the dicom color into a cornerstone colormap
           const cielab = segment.RecommendedDisplayCIELabValue;
-          let rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => Math.round(x * 255));
+          let rgba = dcmjs.data.Colors.dicomlab2RGB(cielab).map(x => Math.round(x * 255));
           rgba.push(255);
           const colormapId = 'Colormap_' + segment.SegmentNumber;
           var colormap = cornerstone.colors.getColormap(colormapId);

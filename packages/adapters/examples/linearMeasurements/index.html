@@ -130,11 +130,11 @@
         var multiframe;
         cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
           var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
-          let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+          dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
+          let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+          dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
 
-          multiframe = DCMJS.normalizers.Normalizer.normalizeToDataset([dataset]);
+          multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([dataset]);
 
           const numFrames = Number(multiframe.NumberOfFrames);
           for (let i=0; i < numFrames; i++) {
@@ -241,7 +241,7 @@
       console.log(cornerstoneTools.globalImageIdSpecificToolStateManager);
       const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
 
-      dc0.report = new DCMJS.derivations.StructuredReport([dataset]);
+      dc0.report = new dcmjs.derivations.StructuredReport([dataset]);
       var measurementGroupContentSequence = [];
 
       dc0.report.dataset.ConceptNameCodeSequence = {
@@ -411,7 +411,7 @@
               CodingSchemeDesignator: 'DCM',
               CodeMeaning: 'Tracking Unique Identifier',
             },
-            UID: DCMJS.data.DicomMetaDictionary.uid(),
+            UID: dcmjs.data.DicomMetaDictionary.uid(),
           },
           {
             RelationshipType: 'CONTAINS',
@@ -478,9 +478,9 @@
     function downloadReport() {
       populateReport(dc0.multiframe);
       $('#reportDump').text(JSON.stringify(dc0.report.dataset, null,4));
-      let multiframeBlob = DCMJS.data.datasetToBlob(dc0.multiframe);
+      let multiframeBlob = dcmjs.data.datasetToBlob(dc0.multiframe);
       dc0.report.dataset._meta = dc0.multiframe._meta;
-      let reportBlob = DCMJS.data.datasetToBlob(dc0.report.dataset);
+      let reportBlob = dcmjs.data.datasetToBlob(dc0.report.dataset);
       let zip = new JSZip();
       zip.file("multiframe.dcm", multiframeBlob);
       zip.file("report.dcm", reportBlob);

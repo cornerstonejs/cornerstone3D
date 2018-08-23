@@ -181,10 +181,10 @@
           if (fileKey.endsWith('.dcm')) {
             expectedDICOMFileCount += 1;
             zip.files[fileKey].async('arraybuffer').then(function(arrayBuffer) {
-              dicomData = DCMJS.data.DicomMessage.readFile(arrayBuffer);
+              dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
               dc0.unnaturalDatasets.push(dicomData.dict);
-              let dataset = DCMJS.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-              dataset._meta = DCMJS.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+              let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+              dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
               dc0.datasets.push(dataset);
               if (dc0.datasets.length == expectedDICOMFileCount) {
                 displayDatasets();

@@ -260,7 +260,7 @@ class Viewer {
     cornerstone.registerImageLoader(`dcmjsMultiframe${this.id}`, this.dcmjsMultiframeImageLoader.bind(this));
     cornerstone.metaData.addProvider(this.metaDataProvider.bind(this));
 
-    if (DCMJS.normalizers.Normalizer.isMultiframe(this.datasets[0])) {
+    if (dcmjs.normalizers.Normalizer.isMultiframe(this.datasets[0])) {
       this.baseStack = this.addMultiframe(this.datasets[0]);
     } else {
       this.baseStack = this.addSingleframes(this.datasets);
@@ -348,9 +348,9 @@ class Viewer {
 
     // use inverse video to display PT
     let ptClasses = [
-      DCMJS.data.DicomMetaDictionary.sopClassUIDsByName.PETImage,
-      DCMJS.data.DicomMetaDictionary.sopClassUIDsByName.LegacyConvertedEnhancedPETImage,
-      DCMJS.data.DicomMetaDictionary.sopClassUIDsByName.EnhancedPETImage,
+      dcmjs.data.DicomMetaDictionary.sopClassUIDsByName.PETImage,
+      dcmjs.data.DicomMetaDictionary.sopClassUIDsByName.LegacyConvertedEnhancedPETImage,
+      dcmjs.data.DicomMetaDictionary.sopClassUIDsByName.EnhancedPETImage,
     ];
     let invert = ptClasses.indexOf(this.datasets[0].SOPClassUID) >= 0;
 
@@ -429,7 +429,7 @@ class Viewer {
       const cielab = segment.RecommendedDisplayCIELabValue;
       let rgba = [0, 250, 100, 255];
       if (cielab) {
-        rgba = DCMJS.data.Colors.dicomlab2RGB(cielab).map(x => x * 255);
+        rgba = dcmjs.data.Colors.dicomlab2RGB(cielab).map(x => x * 255);
         rgba.push(255);
       }
       const colormapId = 'Colormap_' + segment.SegmentNumber;
