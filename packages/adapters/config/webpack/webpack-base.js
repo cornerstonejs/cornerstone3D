@@ -20,16 +20,12 @@ module.exports = {
   module: {
     rules: [
       {
-        loader: "babel-loader",
-        include: [
-          path.resolve(__dirname, "src"),
-        ],
         test: /\.js$/,
-        query: {
-          plugins: ['transform-runtime'],
-          presets: ['es2015'],
-        }
-      },
+        exclude: /(node_modules)/,
+        use: [{
+          loader: 'babel-loader'
+        }]
+      }
     ]
   }
 };
