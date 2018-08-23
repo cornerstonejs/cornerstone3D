@@ -5,7 +5,7 @@ This code is an outgrowth of several efforts to implement web applications for m
 
 **Note: this code is a work-in-progress and should not be used for production or clinical purposes**
 
-See [live examples here](https://pieper.github.io/dcmjs/examples/)
+See [live examples here](https://dcmjs-org.github.io/dcmjs/examples/)
 
 # Goals
 
