@@ -1,4 +1,4 @@
-import { packBitArray } from './packBitArray.js';
+import { BitArray } from './bitArray.js';
 import { ReadBufferStream } from './BufferStream.js';
 import { WriteBufferStream } from './BufferStream.js';
 import { DicomDict } from './DicomMessage.js';
@@ -11,7 +11,7 @@ import { Colors } from './colors.js';
 import { datasetToBlob } from './datasetToBlob.js';
 
 let data = {
-  packBitArray,
+  BitArray,
   ReadBufferStream,
   WriteBufferStream,
   DicomDict,

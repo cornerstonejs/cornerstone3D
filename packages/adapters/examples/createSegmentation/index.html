@@ -100,7 +100,7 @@
     }
 
     function populatePixelArrayForFrame (pixels, frame, pixelData) {
-      const bitArray = dcmjs.data.packBitArray(pixelData);
+      const bitArray = dcmjs.data.BitArray.pack(pixelData);
       const numBitArrayPixels = bitArray.length;
       let index = frame * numBitArrayPixels;
       for (let i=0; i < numBitArrayPixels; i++) {

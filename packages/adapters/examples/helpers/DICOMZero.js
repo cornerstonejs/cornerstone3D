@@ -7,13 +7,19 @@ class DICOMZero {
   reset() {
     this.mappingLog = [];
     this.dataTransfer = undefined;
-    this.unnaturalDatasets = [];
     this.datasets = [];
     this.readers = [];
     this.arrayBuffers = [];
     this.files = [];
     this.fileIndex = 0;
     this.context = {patients: []};
+  }
+
+  static datasetFromArrayBuffer(arrayBuffer) {
+    let dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
+    let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+    dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+    return(dataset);
   }
 
   // return a function to use as the 'onload' callback for the file reader.
@@ -30,7 +36,6 @@ class DICOMZero {
       let dicomData;
       try {
         dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-        this.unnaturalDatasets.push(dicomData.dict);
         let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
         dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
         this.datasets.push(dataset);
@@ -88,23 +93,15 @@ class DICOMZero {
 
     let reader = new FileReader();
     reader.onload = (progressEvent) => {
-      let dataset = this.datasetFromArrayBuffer(reader.result);
+      let dataset = DICOMZero.datasetFromArrayBuffer(reader.result);
       options.doneCallback(dataset);
     }
     reader.readAsArrayBuffer(file);
   }
 
-  datasetFromArrayBuffer(arrayBuffer) {
-    let dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-    this.unnaturalDatasets.push(dicomData.dict);
-    let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-    dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
-    return(dataset);
-  }
-
   extractDatasetFromZipArrayBuffer(arrayBuffer) {
     this.status(`Extracting ${this.datasets.length} of ${this.expectedDICOMFileCount}...`);
-    this.datasets.push(this.datasetFromArrayBuffer(arrayBuffer));
+    this.datasets.push(DICOMZero.datasetFromArrayBuffer(arrayBuffer));
     if (this.datasets.length == this.expectedDICOMFileCount) {
       this.status(`Finished extracting`);
       this.zipFinishCallback();

@@ -1,0 +1,334 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="page-header">
+        <h1>
+            Display DICOM Segmentation with VTK-JS
+        </h1>
+        <p>
+            This example demonstrates how to display a DICOM Segmentation object with vtk-js.
+        </p>
+        <a href="../index.html">Go back to the Examples page</a>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-6">
+          <h2>Status: </h2><p id="statusLine"></p>
+          <h2>Volume:</h2>
+            <div id="volumeViewer"> </div>
+            <p>Sample data is from the dicom4qi connectathon event to be held at RSNA 2017.  This is <a href='https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2'>test dataset #2</a>
+        </div>
+        <div class="col-xs-6">
+            <div id="properties">
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
+<script src="../helpers/DICOMZero.js"></script>
+
+
+<script type="text/javascript" src="https://unpkg.com/dicomweb-client"></script>
+
+<!-- include local versions (for dev) or unpkg (for static hosting) -->
+<script src="../../build/dcmjs.js"></script>
+<script>window.dcmjs || document.write('<script src="https://unpkg.com/dcmjs">\x3C/script>')</script>
+
+<script src="http://127.0.0.1:8082/vtk.js"></script>
+<script>window.dcmjs || document.write('<script src="https://unpkg.com/vtk.js">\x3C/script>')</script>
+
+<script>
+  let volumeViewer;
+  let vtkVolumeActors = [];
+  let vtkImageSliceActors = [];
+  let controllerWidgets = [];
+  let segments = {};
+
+  $(document).ready(function() {
+
+    //
+    // set up the volume viewer
+    //
+    let volumeElement = document.getElementById('volumeViewer');
+
+    volumeViewer = vtk.Rendering.Misc.vtkGenericRenderWindow.newInstance({
+        background: [0, 0, 0],
+    });
+    const volumeRenderWindow = volumeViewer.getRenderWindow();
+    const volumeRenderer = volumeViewer.getRenderer();
+
+    volumeElement.innerHTML = '';
+    volumeViewer.setContainer(volumeElement);
+
+    // uses dataset for common elements but perFrame to override
+    // (for multiple segments)
+    function geometryFromFunctionalGroups(dataset, perFrame) {
+      const vtkMath = vtk.Common.Core.vtkMath;
+      let pixelMeasures = dataset.SharedFunctionalGroupsSequence.PixelMeasuresSequence;
+      let planeOrientation = dataset.SharedFunctionalGroupsSequence.PlaneOrientationSequence;
+      let planePosition = perFrame[0].PlanePositionSequence; // TODO: assume sorted frames!
+
+      const geometry = {};
+
+      // NB: DICOM PixelSpacing is defined as Row then Column,
+      // unlike ImageOrientationPatient
+      geometry.spacing = [pixelMeasures.PixelSpacing[1],
+                          pixelMeasures.PixelSpacing[0],
+                          pixelMeasures.SpacingBetweenSlices].map(Number);
+
+      geometry.dimensions = [dataset.Columns,
+                             dataset.Rows,
+                             perFrame.length].map(Number);
+
+      let orientation = planeOrientation.ImageOrientationPatient.map(Number);
+      const columnStepToPatient = orientation.slice(0,3);
+      const rowStepToPatient = orientation.slice(3,6);
+      geometry.planeNormal = [];
+      vtkMath.cross(columnStepToPatient, rowStepToPatient, geometry.planeNormal);
+
+      let firstPosition = perFrame[0].PlanePositionSequence.ImagePositionPatient.map(Number);
+      let lastPosition = perFrame[perFrame.length-1].PlanePositionSequence.ImagePositionPatient.map(Number);
+      geometry.sliceStep = [];
+      vtkMath.subtract(lastPosition, firstPosition, geometry.sliceStep);
+      vtkMath.normalize(geometry.sliceStep);
+      geometry.direction = columnStepToPatient.concat(rowStepToPatient).concat(geometry.sliceStep);
+      geometry.origin = planePosition.ImagePositionPatient.map(Number);
+
+      return(geometry);
+    }
+
+    //
+    // takes the arraybuffer of dicom data and returns
+    // a vtkVolume (actor) ready to render
+    //
+    function part10ToVolumeActor(part10) {
+
+      dataset = DICOMZero.datasetFromArrayBuffer(part10);
+
+      const scalarArray = vtk.Common.Core.vtkDataArray.newInstance({
+          name: "Scalars",
+          numberOfComponents: dataset.SamplesPerPixel,
+          values: new Int16Array(dataset.PixelData),
+      });
+
+      const imageData = vtk.Common.DataModel.vtkImageData.newInstance();
+      imageData.getPointData().setScalars(scalarArray);
+
+      geometry = geometryFromFunctionalGroups(dataset, dataset.PerFrameFunctionalGroupsSequence);
+      imageData.setDimensions(geometry.dimensions);
+      imageData.setSpacing(geometry.spacing);
+      imageData.setOrigin(geometry.origin);
+      imageData.setDirection(geometry.direction);
+
+      const mapper = vtk.Rendering.Core.vtkVolumeMapper.newInstance();
+      mapper.setInputData(imageData);
+      mapper.setSampleDistance(2.);
+
+      const actor = vtk.Rendering.Core.vtkVolume.newInstance();
+      actor.setMapper(mapper);
+
+      return actor;
+    }
+
+    function part10ToSEGVolumeActors(part10) {
+
+      dataset = DICOMZero.datasetFromArrayBuffer(part10);
+      if (dataset.SegmentSequence.constructor.name !== "Array") {
+        dataset.SegmentSequence = [dataset.SegmentSequence];
+      }
+      dataset.SegmentSequence.forEach(segment => {
+
+        // TODO: other interesting fields could be extracted from the segment
+
+        // color for making the lookup table
+        const cielab = segment.RecommendedDisplayCIELabValue;
+        const rgba = dcmjs.data.Colors.dicomlab2RGB(cielab).map(x => Math.round(x * 255));
+        rgba.push(255);
+
+        segments[segment.SegmentNumber] = {
+          color: rgba,
+          functionalGroups: [],
+          offset: null,
+          size: null,
+          pixelData: null,
+        }
+
+      });
+
+      // make a list of functional groups per segment
+      dataset.PerFrameFunctionalGroupsSequence.forEach(functionalGroup => {
+        let segmentNumber = functionalGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
+        segments[segmentNumber].functionalGroups.push(functionalGroup);
+      });
+
+      // determine per-segment index into the pixel data
+      // TODO: only handles one-bit-per pixel
+      const actors = [];
+      let frameSize = Math.ceil(dataset.Rows * dataset.Columns / 8);
+      let nextOffset = 0;
+      Object.keys(segments).forEach(segmentKey => {
+        const segment = segments[segmentKey];
+        segment.numberOfFrames = segment.functionalGroups.length;
+        segment.size = segment.numberOfFrames * frameSize;
+        segment.offset = nextOffset;
+        nextOffset  = segment.offset + segment.size
+        const packedSegment = dataset.PixelData.slice(segment.offset, nextOffset);
+        segment.pixelData = dcmjs.data.BitArray.unpack(packedSegment);
+
+        // now make actors using the segment information
+        const scalarArray = vtk.Common.Core.vtkDataArray.newInstance({
+            name: "Scalars",
+            numberOfComponents: 1,
+            values: segment.pixelData,
+        });
+
+        const imageData = vtk.Common.DataModel.vtkImageData.newInstance();
+        imageData.getPointData().setScalars(scalarArray);
+
+        geometry = geometryFromFunctionalGroups(dataset, segment.functionalGroups);
+        imageData.setDimensions(geometry.dimensions);
+        imageData.setSpacing(geometry.spacing);
+        imageData.setOrigin(geometry.origin);
+        imageData.setDirection(geometry.direction);
+
+        const mapper = vtk.Rendering.Core.vtkVolumeMapper.newInstance();
+        mapper.setInputData(imageData);
+        mapper.setSampleDistance(2.);
+
+        const actor = vtk.Rendering.Core.vtkVolume.newInstance();
+        actor.setMapper(mapper);
+
+        actors.push(actor);
+      });
+
+      return(actors);
+    }
+
+    function downloadAndDisplaySampleData() {
+
+      const urlRoot = 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/'
+      let backgroundURL = urlRoot + 'PT-multiframe.dcm';
+      let segURL = urlRoot + 'SEG/tumor_User1_Manual_Trial1.dcm';
+
+      backgroundURL = 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-multiframe.dcm';
+      //segURL = 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-segmentation.dcm';
+      segURL = 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/aseg-t1space.dcm';
+
+      let status = (text) => {
+        $('p#statusLine').text(text);
+      };
+      let downloadProgress = (event) => {
+        status(`Downloading... ${Number(100 * event.loaded / event.total).toFixed(2)}%`);
+      };
+
+      const client = new DICOMwebClient.api.DICOMwebClient({});
+      var backgroundPromise = client._httpGet(backgroundURL, {}, "arraybuffer", downloadProgress);
+      var segPromise = client._httpGet(segURL, {}, "arraybuffer", downloadProgress);
+
+      //
+      // once the images have been loaded
+      //
+      Promise.all([backgroundPromise, segPromise]).then(values => {
+        status('Processing...');
+        setTimeout(() => {
+          const backgroundPart10 = values[0];
+          const segPart10 = values[1];
+
+          //
+          // volume
+          //
+          vtkVolumeActors.push(part10ToVolumeActor(backgroundPart10));
+          const segActors = part10ToSEGVolumeActors(segPart10);
+          vtkVolumeActors = vtkVolumeActors.concat(segActors);
+          vtkVolumeActors.forEach((volume, volumeIndex) => {
+            volumeRenderer.addVolume(volume);
+          });
+
+          volumeRenderer.resetCamera();
+          volumeRenderer.getActiveCamera().setViewUp(0, 0, 1);
+          let bounds = vtkVolumeActors[0].getBounds();
+          let center = [ (bounds[0] + bounds[1]) / 2.,
+                         (bounds[2] + bounds[3]) / 2.,
+                         (bounds[4] + bounds[5]) / 2.];
+          let position = center.slice();
+          position[1] -= 4.25 * (-bounds[2] - center[1]);
+          volumeRenderer.getActiveCamera().setPosition(...position);
+          volumeRenderer.getActiveCamera().setFocalPoint(...center);
+
+          volumeRenderer.updateLightsGeometryToFollowCamera();
+          status('Rendering...');
+          setTimeout(() => {
+            volumeRenderWindow.render(); // first render setus up default lookup tables
+            createLookupTables();
+            volumeRenderWindow.render(); // second render displays correct colors
+
+            status('Click and drag the left mouse button to rotate rotate the slice plane');
+          }, 0);
+        }, 0);
+      });
+    }
+
+    window.addEventListener('resize', function() {
+      console.log('need to resize the vtk window');
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    downloadAndDisplaySampleData();
+
+  });
+
+  function createLookupTables() {
+
+    vtkVolumeActors.forEach((volume, volumeIndex) => {
+      volume.getMapper().setSampleDistance(.25);
+      volume.getMapper().setMaximumSamplesPerRay(2000);
+      volume.getProperty().setUseGradientOpacity(0, false);
+
+      let backgroundProperty = volume.getProperty().get();
+      let backgroundComponent = backgroundProperty.componentData[0];
+
+      sotf = backgroundComponent.scalarOpacity;
+      sotf.removeAllPoints();
+      let range, lowRangeOpacity;
+      if (volumeIndex === 0) {
+        // background is fully opaque
+        range = volume.getMapper().getInputData().getPointData().getScalars().getRange()
+        lowRangeOpacity = 1;
+      } else {
+        // segments are non-opaque at value 0, and fully opaque at 255
+        range = [0,255];
+        lowRangeOpacity = 0;
+      }
+      sotf.addPoint(range[0], lowRangeOpacity);
+      sotf.addPoint(range[1], 1);
+
+      rgbtf = backgroundComponent.rGBTransferFunction;
+      rgbtf.removeAllPoints();
+      rgbtf.addRGBPoint(range[0], 0,0,0);
+      rgbtf.addRGBPoint(range[1], 1,1,1);
+    });
+
+    // segment colors
+    Object.keys(segments).forEach(segmentIndex => {
+      let vtkColor = segments[segmentIndex].color.slice(0,3).map(e => e / 255.);
+      vtkVolumeActors[segmentIndex].getProperty().getRGBTransferFunction(0).setNodeValue(1, [1, ...vtkColor, .5, 0])
+    });
+
+
+    volumeViewer.getRenderWindow().getInteractor().getInteractorStyle().get().autoAdjustCameraClippingRange = false;
+    console.warn('Hard coding clipping range');
+    volumeViewer.getRenderer().getActiveCamera().setClippingRange([645, 647])
+  }
+</script>
+</html>
