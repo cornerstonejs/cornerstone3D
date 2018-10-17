@@ -150,6 +150,8 @@
                 z: imagePositionArray[2],
               }
             });
+
+            addMetaData('frameNumber', imageId, i);
           }
 
           resolve(multiframe);
@@ -239,249 +241,21 @@
     function populateReport(dataset) {
 
       console.log(cornerstoneTools.globalImageIdSpecificToolStateManager);
-      const imageToolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
+      const toolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
 
-      dc0.report = new dcmjs.derivations.StructuredReport([dataset]);
-      var measurementGroupContentSequence = [];
+      const { MeasurementReport } = dcmjs.adapters.Cornerstone;
 
-      dc0.report.dataset.ConceptNameCodeSequence = {
-        CodeValue: '126000',
-        CodingSchemeDesignator: 'DCM',
-        CodeMeaning: 'Imaging Measurement Report',
-      };
-      dc0.report.dataset.ContinuityOfContent = 'SEPARATE';
-      dc0.report.dataset.PerformedProcedureCodeSequence = [];
-      dc0.report.dataset.CompletionFlag = 'COMPLETE';
-      dc0.report.dataset.VerificationFlag = 'UNVERIFIED';
-      dc0.report.dataset.ReferencedPerformedProcedureStepSequence = [];
-      dc0.report.dataset.InstanceNumber = 1;
-      dc0.report.dataset.CurrentRequestedProcedureEvidenceSequence = {
-        StudyInstanceUID: dataset.StudyInstanceUID,
-        ReferencedSeriesSequence: {
-          SeriesInstanceUID: dataset.SeriesInstanceUID,
-          ReferencedSOPSequence: {
-            ReferencedSOPClassUID: dataset.SOPClassUID,
-            ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
-          },
-        },
-      };
-      dc0.report.dataset.CodingSchemeIdentificationSequence = {
-        CodingSchemeDesignator: "99dcmjs",
-        CodingSchemeName: "Codes used for dcmjs",
-        CodingSchemeVersion: "0",
-        CodingSchemeResponsibleOrganization: "https://github.com/dcmjs-org/dcmjs",
-      };
-
-      dc0.report.dataset.ContentTemplateSequence = {
-        MappingResource: 'DCMR',
-        TemplateIdentifier: '1500',
-      };
-
-      dc0.report.dataset.ContentSequence = [
-        {
-          RelationshipType: 'HAS CONCEPT MOD',
-          ValueType: 'CODE',
-          ConceptNameCodeSequence: {
-            CodeValue: '121049',
-            CodingSchemeDesignator: 'DCM',
-            CodeMeaning: 'Language of Content Item and Descendants',
-          },
-          ConceptCodeSequence: {
-            CodeValue: 'eng',
-            CodingSchemeDesignator: 'RFC3066',
-            CodeMeaning: 'English',
-          },
-          ContentSequence: {
-            RelationshipType: 'HAS CONCEPT MOD',
-            ValueType: 'CODE',
-            ConceptNameCodeSequence: {
-              CodeValue: '121046',
-              CodingSchemeDesignator: 'DCM',
-              CodeMeaning: 'Country of Language',
-            },
-            ConceptCodeSequence: {
-              CodeValue: 'US',
-              CodingSchemeDesignator: 'ISO3166_1',
-              CodeMeaning: 'United States',
-            },
-          },
-        },
-        {
-          RelationshipType: 'HAS OBS CONTEXT',
-          ValueType: 'PNAME',
-          ConceptNameCodeSequence: {
-            CodeValue: '121008',
-            CodingSchemeDesignator: 'DCM',
-            CodeMeaning: 'Person Observer Name',
-          },
-          PersonName: 'user^web',
-        },
-        {
-          RelationshipType: 'HAS OBS CONTEXT',
-          ValueType: 'TEXT',
-          ConceptNameCodeSequence: {
-            CodeValue: 'RP-100006',
-            CodingSchemeDesignator: '99dcmjs',
-            CodeMeaning: "Person Observer's Login Name",
-          },
-          TextValue: 'user',
-        },
-        {
-          RelationshipType: 'HAS CONCEPT MOD',
-          ValueType: 'CODE',
-          ConceptNameCodeSequence: {
-            CodeValue: '121058',
-            CodingSchemeDesignator: 'DCM',
-            CodeMeaning: 'Procedure reported',
-          },
-          ConceptCodeSequence: {
-            CodeValue: '1',
-            CodingSchemeDesignator: '99dcmjs',
-            CodeMeaning: 'Unknown procedure',
-          },
-        },
-        {
-          RelationshipType: 'CONTAINS',
-          ValueType: 'CONTAINER',
-          ConceptNameCodeSequence: {
-            CodeValue: '111028',
-            CodingSchemeDesignator: 'DCM',
-            CodeMeaning: 'Image Library',
-          },
-          ContinuityOfContent: 'SEPARATE',
-          ContentSequence: {
-            RelationshipType: 'CONTAINS',
-            ValueType: 'CONTAINER',
-            ConceptNameCodeSequence: {
-              CodeValue: '126200',
-              CodingSchemeDesignator: 'DCM',
-              CodeMeaning: 'Image Library Group',
-            },
-            ContinuityOfContent: 'SEPARATE',
-            ContentSequence: {
-              RelationshipType: 'CONTAINS',
-              ValueType: 'IMAGE',
-              ReferencedSOPSequence: {
-                ReferencedSOPClassUID: dataset.SOPClassUID,
-                ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
-              },
-            },
-          },
-        },
-        {
-          RelationshipType: 'CONTAINS',
-          ValueType: 'CONTAINER',
-          ConceptNameCodeSequence: {
-            CodeValue: '126010',
-            CodingSchemeDesignator: 'DCM',
-            CodeMeaning: 'Imaging Measurements',
-          },
-          ContinuityOfContent: 'SEPARATE',
-          ContentSequence: {
-            RelationshipType: 'CONTAINS',
-            ValueType: 'CONTAINER',
-            ConceptNameCodeSequence: {
-              CodeValue: '125007',
-              CodingSchemeDesignator: 'DCM',
-              CodeMeaning: 'Measurement Group',
-            },
-            ContinuityOfContent: 'SEPARATE',
-            ContentSequence: measurementGroupContentSequence,
-          },
-        },
-      ];
-
-      var measurementGroupContentItem = function(handles, distance, frame) {
-        return ([
-          {
-            RelationshipType: 'HAS OBS CONTEXT',
-            ValueType: 'TEXT',
-            ConceptNameCodeSequence: {
-              CodeValue: '112039',
-              CodingSchemeDesignator: 'DCM',
-              CodeMeaning: 'Tracking Identifier',
-            },
-            TextValue: 'web annotation',
-          },
-          {
-            RelationshipType: 'HAS OBS CONTEXT',
-            ValueType: 'UIDREF',
-            ConceptNameCodeSequence: {
-              CodeValue: '112040',
-              CodingSchemeDesignator: 'DCM',
-              CodeMeaning: 'Tracking Unique Identifier',
-            },
-            UID: dcmjs.data.DicomMetaDictionary.uid(),
-          },
-          {
-            RelationshipType: 'CONTAINS',
-            ValueType: 'CODE',
-            ConceptNameCodeSequence: {
-              CodeValue: '121071',
-              CodingSchemeDesignator: 'DCM',
-              CodeMeaning: 'Finding',
-            },
-            ConceptCodeSequence: {
-              CodeValue: 'SAMPLEFINDING',
-              CodingSchemeDesignator: '99dcmjs',
-              CodeMeaning: 'Sample Finding',
-            },
-          },
-          {
-            RelationshipType: 'CONTAINS',
-            ValueType: 'NUM',
-            ConceptNameCodeSequence: {
-              CodeValue: 'G-D7FE',
-              CodingSchemeDesignator: 'SRT',
-              CodeMeaning: 'Length',
-            },
-            MeasuredValueSequence: {
-              MeasurementUnitsCodeSequence: {
-                CodeValue: 'mm',
-                CodingSchemeDesignator: 'UCUM',
-                CodingSchemeVersion: '1.4',
-                CodeMeaning: 'millimeter',
-              },
-              NumericValue: distance,
-            },
-            ContentSequence: {
-              RelationshipType: 'INFERRED FROM',
-              ValueType: 'SCOORD',
-              GraphicType: 'POLYLINE',
-              GraphicData: [ handles.start.x, handles.start.y, handles.end.x, handles.end.y ],
-              ContentSequence: {
-                RelationshipType: 'SELECTED FROM',
-                ValueType: 'IMAGE',
-                ReferencedSOPSequence: {
-                  ReferencedSOPClassUID: dataset.SOPClassUID,
-                  ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
-                  ReferencedFrameNumber: frame,
-                }
-              },
-            },
-          },
-        ]);
-      }
-
-      dc0.baseStack.imageIds.forEach(function(imageId) {
-        if (imageToolState[imageId]) {
-          imageToolState[imageId].length.data.forEach(function(length) {
-            var handles = length.handles;
-            var frame = Number(imageId.slice(imageId.lastIndexOf('frame')).split('=')[1]); // TODO: frame is explicit somewhere?
-            // extend list in place
-            measurementGroupContentSequence.push.apply(measurementGroupContentSequence, measurementGroupContentItem(handles, length.length, frame));
-          });
-        }
-      });
+      return MeasurementReport.generateReport(toolState, cornerstone.metaData);
     }
 
     function downloadReport() {
-      populateReport(dc0.multiframe);
-      $('#reportDump').text(JSON.stringify(dc0.report.dataset, null,4));
-      let multiframeBlob = dcmjs.data.datasetToBlob(dc0.multiframe);
-      dc0.report.dataset._meta = dc0.multiframe._meta;
-      let reportBlob = dcmjs.data.datasetToBlob(dc0.report.dataset);
-      let zip = new JSZip();
+      const report = populateReport(dc0.multiframe);
+      $('#reportDump').text(JSON.stringify(report.dataset, null,4));
+
+      const multiframeBlob = dcmjs.data.datasetToBlob(dc0.multiframe);
+
+      const reportBlob = dcmjs.data.datasetToBlob(report.dataset);
+      const zip = new JSZip();
       zip.file("multiframe.dcm", multiframeBlob);
       zip.file("report.dcm", reportBlob);
       zip.generateAsync({type: "blob"})

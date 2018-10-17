@@ -3,13 +3,18 @@ import { DicomDict } from './DicomMessage.js';
 
 function datasetToBlob (dataset) {
   const meta = {
-    FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value[0],
+    FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value,
     MediaStorageSOPClassUID: dataset.SOPClassUID,
     MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
     TransferSyntaxUID: "1.2.840.10008.1.2",
     ImplementationClassUID: DicomMetaDictionary.uid(),
     ImplementationVersionName: "dcmjs-0.0",
   };
+
+  // TODO: Clean this up later
+  if (!meta.FileMetaInformationVersion) {
+    meta.FileMetaInformationVersion = dataset._meta.FileMetaInformationVersion.Value[0];
+  }
 
   const denaturalized = DicomMetaDictionary.denaturalizeDataset(meta);
   const dicomDict = new DicomDict(denaturalized);

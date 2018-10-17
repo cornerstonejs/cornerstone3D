@@ -66,3 +66,9 @@ let normalizers = {
 };
 
 export { normalizers };
+
+import adapters from './adapters/index.js';
+import utilities from './utilities/index.js';
+
+export { adapters };
+export { utilities };
