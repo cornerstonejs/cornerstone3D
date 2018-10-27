@@ -26,7 +26,7 @@ export function getTransferSyntaxForContentType (contentType) {
       return;
     }
 
-    const value = parameterValues[1].trim().replace(/"/g,'');
+    const value = parameterValues[1].trim().replace(/"/g, '');
 
     params[parameterValues[0].trim()] = value;
   });
