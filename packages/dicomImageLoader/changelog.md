@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2018-10-27
+### Added
+- feat(dev-server) Add webpack-dev-server and hot reloading for development (#211)
+- feat(content-type): Support WADO-RS in cases where transfer-syntax is not explicitly returned (#228)
+- feat(options.beforeSend): Add headers object and parameters to the beforeSend callback to simplify transfer-syntax specification (#227)
+
+### Changed
+- chore(devDependencies): Update all dev dependencies to latest versions
+
+### Fixed
+- Fixed failing build due to Webpack issue (thanks @jssuttles!)
+- fix(loadImage) Fix for custom loaders with WebWorkers (#213) (thanks @jgabrito!)
+- fix(pixelSpacing) Fix Pixel spacing is mistakenly being set to 1.0 / 1.0 (#215) (thanks @galelis!)
+- fix(tests): Fix test timeout for Lossy transfer syntax tests (thanks @maltempi)
+
 ## [2.1.4] - 2018-07-11
 ### Fixed
 - Bad NPM Publish was providing 2.1.2 under the 2.1.3 tag. This commit is only to note that problem.
