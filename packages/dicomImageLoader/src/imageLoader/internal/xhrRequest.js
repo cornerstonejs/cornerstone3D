@@ -11,7 +11,7 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
 
     xhr.open('get', url, true);
     xhr.responseType = 'arraybuffer';
-    options.beforeSend(xhr, imageId);
+    options.beforeSend(xhr, imageId, headers, params);
     Object.keys(headers).forEach(function (key) {
       xhr.setRequestHeader(key, headers[key]);
     });
