@@ -1,6 +1,6 @@
 {
   "name": "cornerstone-wado-image-loader",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Cornerstone ImageLoader for DICOM WADO-URI",
   "keywords": [
     "DICOM",
@@ -53,6 +53,7 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-env": "^7.1.0",
     "babel-eslint": "^10.0.1",
+    "babel-loader": "^8.0.4",
     "chai": "^4.2.0",
     "concat": "^1.0.3",
     "cornerstone-core": "^2.2.7",
