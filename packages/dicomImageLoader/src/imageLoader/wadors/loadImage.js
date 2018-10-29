@@ -44,7 +44,7 @@ export function getTransferSyntaxForContentType (contentType) {
 
   if (params['transfer-syntax']) {
     return params['transfer-syntax'];
-  } else if (contentType && !Object.keys(params).length) {
+  } else if (contentType && !Object.keys(params).length && defaultTransferSyntaxByType[contentType]) {
     // dcm4che seems to be reporting the content type as just 'image/jp2'?
     return defaultTransferSyntaxByType[contentType];
   } else if (params.type && defaultTransferSyntaxByType[params.type]) {
