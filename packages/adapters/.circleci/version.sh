@@ -8,7 +8,7 @@ then
 		| sed 's/[",]//g' \
 		| tr -d '[[:space:]]')
 
-	NEW_PACKAGE_VERSION=`${PACKAGE_VERSION}-build-${CIRCLE_BUILD_NUM}`
+	NEW_PACKAGE_VERSION=$(`${PACKAGE_VERSION}-build-${CIRCLE_BUILD_NUM}`)
 	echo "Found package version: $PACKAGE_VERSION"
 	echo "Setting version to: $NEW_PACKAGE_VERSION"
 	# uses npm-version to set version in package.json
