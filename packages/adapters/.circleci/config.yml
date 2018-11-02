@@ -1,0 +1,43 @@
+version: 2
+
+defaults: &defaults
+  working_directory: ~/repo
+  docker:
+    - image: circleci/node:latest
+
+jobs:
+  # Used to publish latest under @dev tag
+  deploy:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          - v1-dependencies-
+      - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      - run: npm run build
+      - run:
+          name: Write NPM Token to ~/.npmrc
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: Bump version number
+          command: sh ~/repo/.circleci/version.sh
+      - run:
+          name: Publish package
+          command: npm publish --tag dev
+
+workflows:
+  version: 2
+
+  # Merges to master branch
+  build-test-deploy:
+    jobs:
+      - deploy:
+          filters:
+            branches:
+              only: master
