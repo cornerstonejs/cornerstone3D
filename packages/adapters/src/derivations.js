@@ -222,26 +222,7 @@ class Segmentation extends DerivedPixels {
       }
     ];
 
-    // Example: Slicer tissue green
-    this.dataset.SegmentSequence = [
-      {
-        SegmentedPropertyCategoryCodeSequence: {
-          CodeValue: "T-D0050",
-          CodingSchemeDesignator: "SRT",
-          CodeMeaning: "Tissue"
-        },
-        SegmentNumber: 1,
-        SegmentLabel: "Tissue",
-        SegmentAlgorithmType: "SEMIAUTOMATIC",
-        SegmentAlgorithmName: "Slicer Prototype",
-        RecommendedDisplayCIELabValue: [ 43802, 26566, 37721 ],
-        SegmentedPropertyTypeCodeSequence: {
-          CodeValue: "T-D0050",
-          CodingSchemeDesignator: "SRT",
-          CodeMeaning: "Tissue"
-        }
-      }
-    ];
+    this.dataset.SegmentSequence = [];
 
     // TODO: check logic here.
     // If the referenced dataset itself references a series, then copy.
@@ -311,12 +292,56 @@ class Segmentation extends DerivedPixels {
     this.dataset.PixelData = new ArrayBuffer(this.referencedDataset.PixelData.byteLength/16);
   }
 
-  // TODO:
-  addSegment(segment) {
-    console.error("Not implemented");
+  addSegment(Segment) {
+    if (
+      !Segment.SegmentLabel ||
+      !Segment.SegmentedPropertyCategoryCodeSequence ||
+      !Segment.SegmentedPropertyTypeCodeSequence ||
+      !Segment.SegmentAlgorithmType
+    ) {
+      throw new Error(`Segment does not contain all the required fields.`);
+    }
+
+    // Capitalise the SegmentAlgorithmType if it happens to be given in
+    // Lower/mixed case.
+    Segment.SegmentAlgorithmType = Segment.SegmentAlgorithmType.toUpperCase();
+
+    // Check SegmentAlgorithmType and SegmentAlgorithmName if necessary.
+    switch (Segment.SegmentAlgorithmType) {
+      case 'AUTOMATIC':
+      case 'SEMIAUTOMATIC':
+        if (!Segment.SegmentAlgorithmName) {
+          throw new Error(
+            `If the SegmentAlgorithmType is SEMIAUTOMATIC or AUTOMATIC,
+            SegmentAlgorithmName must be provided`
+          );
+        }
+
+        break;
+      case 'MANUAL': break;
+      default:
+        throw new Error(
+          `SegmentAlgorithmType ${Segment.SegmentAlgorithmType} invalid.`
+        );
+    }
+
+    const SegmentSequence = this.dataset.SegmentSequence;
+    Segment.SegmentNumber = SegmentSequence.length + 1;
+
+    SegmentSequence.push(Segment);
   }
-  removeSegment(segment) {
-    console.error("Not implemented");
+
+  removeSegment(segmentNumber) {
+    const SegmentSequence = this.dataset.SegmentSequence;
+
+    // Remove the Segment
+    SegmentSequence.splice(segmentNumber - 1, 1);
+
+    // Alter the numbering of the following Segments.
+    for (let i = segmentNumber - 1; i < SegmentSequence.length; i++) {
+      SegmentSequence[i].SegmentNumber = i + 1;
+    }
+
   }
 }
 

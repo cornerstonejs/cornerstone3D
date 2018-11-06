@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
-  
+
   <link href="../css/bootstrap.min.css" rel="stylesheet">
   <link href="../css/cornerstone.min.css" rel="stylesheet">
 </head>
@@ -55,7 +55,7 @@
         <div class="row">
           <button id="drawErase" class="btn btn-primary">Erase</button>
         </div>
-        
+
         <div class="row">
           <label for="radiusSlider">Radius: <span id="valBox">10</span>px</label>
           <input id="radiusSlider" type="range" min="1" max="10" value="10" steps="1" style="width: 200px"/>
@@ -190,8 +190,30 @@
         dc0.multiframe = values[0];
         dc0.seg = new dcmjs.derivations.Segmentation([dc0.multiframe]);
 
-        var cielab = dcmjs.data.Colors.rgb2DICOMLAB([1, 0, 0]);
-        dc0.seg.dataset.SegmentSequence[0].RecommendedDisplayCIELabValue = cielab;
+        const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB([1, 0, 0]);
+
+
+        const Segment = {
+          SegmentedPropertyCategoryCodeSequence: {
+            CodeValue: "T-D0050",
+            CodingSchemeDesignator: "SRT",
+            CodeMeaning: "Tissue"
+          },
+          SegmentNumber: 1,
+          SegmentLabel: "Tissue",
+          SegmentAlgorithmType: "SEMIAUTOMATIC",
+          SegmentAlgorithmName: "Slicer Prototype",
+          RecommendedDisplayCIELabValue,
+          SegmentedPropertyTypeCodeSequence: {
+            CodeValue: "T-D0050",
+            CodingSchemeDesignator: "SRT",
+            CodeMeaning: "Tissue"
+          }
+        };
+
+        dc0.seg.addSegment(Segment);
+
+        //dc0.seg.dataset.SegmentSequence[0].RecommendedDisplayCIELabValue = cielab;
         var imageIds = getImageIds(dc0.multiframe, baseImageId);
 
         dc0.cornerstoneStack = {
@@ -316,7 +338,7 @@
       }
       cornerstoneTools.brush.setConfiguration(configuration);
     });
-    
+
     var $radiusSlider = $('#radiusSlider');
     function setBrushRadius() {
       var configuration = cornerstoneTools.brush.getConfiguration();
