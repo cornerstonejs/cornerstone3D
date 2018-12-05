@@ -1,17 +1,71 @@
-export * from './colorSpaceConverters/index.js';
+import {
+  convertRGBColorByPixel,
+  convertRGBColorByPlane,
+  convertYBRFullByPixel,
+  convertYBRFullByPlane,
+  convertPALETTECOLOR
+} from './colorSpaceConverters/index.js';
 
-export { default as wadouri } from './wadouri/index.js';
-export { default as wadors } from './wadors/index.js';
-export { default as configure } from './configure.js';
-export { default as convertColorSpace } from './convertColorSpace.js';
-export { default as createImage } from './createImage.js';
-export { default as decodeImageFrame } from './decodeImageFrame.js';
-export { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor.js';
-export { default as getImageFrame } from './getImageFrame.js';
-export { default as getMinMax } from '../shared/getMinMax.js';
-export { default as isColorImage } from './isColorImage.js';
-export { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor.js';
-export { default as webWorkerManager } from './webWorkerManager.js';
-export { default as version } from '../version.js';
-export { internal } from './internal/index.js';
-export { default as external } from '../externalModules.js';
+import { default as wadouri } from './wadouri/index.js';
+import { default as wadors } from './wadors/index.js';
+import { default as configure } from './configure.js';
+import { default as convertColorSpace } from './convertColorSpace.js';
+import { default as createImage } from './createImage.js';
+import { default as decodeImageFrame } from './decodeImageFrame.js';
+import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor.js';
+import { default as getImageFrame } from './getImageFrame.js';
+import { default as getMinMax } from '../shared/getMinMax.js';
+import { default as isColorImage } from './isColorImage.js';
+import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor.js';
+import { default as webWorkerManager } from './webWorkerManager.js';
+import { default as version } from '../version.js';
+import { internal } from './internal/index.js';
+import { default as external } from '../externalModules.js';
+
+const cornerstoneWADOImageLoader = {
+  convertRGBColorByPixel,
+  convertRGBColorByPlane,
+  convertYBRFullByPixel,
+  convertYBRFullByPlane,
+  convertPALETTECOLOR,
+  wadouri,
+  wadors,
+  configure,
+  convertColorSpace,
+  createImage,
+  decodeImageFrame,
+  decodeJPEGBaseline8BitColor,
+  getImageFrame,
+  getMinMax,
+  isColorImage,
+  isJPEGBaseline8BitColor,
+  webWorkerManager,
+  version,
+  internal,
+  external
+};
+
+export {
+  convertRGBColorByPixel,
+  convertRGBColorByPlane,
+  convertYBRFullByPixel,
+  convertYBRFullByPlane,
+  convertPALETTECOLOR,
+  wadouri,
+  wadors,
+  configure,
+  convertColorSpace,
+  createImage,
+  decodeImageFrame,
+  decodeJPEGBaseline8BitColor,
+  getImageFrame,
+  getMinMax,
+  isColorImage,
+  isJPEGBaseline8BitColor,
+  webWorkerManager,
+  version,
+  internal,
+  external
+};
+
+export default cornerstoneWADOImageLoader;
