@@ -1,3 +1,4 @@
+import { Normalizer } from '../../normalizers.js';
 import { DicomMetaDictionary } from '../../DicomMetaDictionary.js';
 import { StructuredReport } from '../../derivations.js';
 import TID1500MeasurementReport from '../../utilities/TID1500/TID1500MeasurementReport.js';
@@ -44,6 +45,11 @@ export default class MeasurementReport {
       throw new Error('No measurements provided.');
     }
     
+    /* Patient ID
+    Warning - Missing attribute or value that would be needed to build DICOMDIR - Patient ID
+    Warning - Missing attribute or value that would be needed to build DICOMDIR - Study Date
+    Warning - Missing attribute or value that would be needed to build DICOMDIR - Study Time
+    Warning - Missing attribute or value that would be needed to build DICOMDIR - Study ID */
     const generalSeriesModule = metadataProvider.get('generalSeriesModule', firstImageId);
     const sopCommonModule = metadataProvider.get('sopCommonModule', firstImageId);
     const { studyInstanceUID, seriesInstanceUID } = generalSeriesModule
@@ -58,9 +64,12 @@ export default class MeasurementReport {
 
       const ReferencedSOPSequence = {
         ReferencedSOPClassUID: sopCommonModule.sopClassUID,
-        ReferencedSOPInstanceUID: sopCommonModule.sopInstanceUID,
-        ReferencedFrameNumber: frameNumber || 1
+        ReferencedSOPInstanceUID: sopCommonModule.sopInstanceUID
       };
+
+      if (Normalizer.isMultiframeSOPClassUID(sopCommonModule.sopClassUID)) {
+        ReferencedSOPSequence.ReferencedFrameNumber = frameNumber;
+      }
 
       // Loop through each tool type for the image
       const measurementGroups = [];

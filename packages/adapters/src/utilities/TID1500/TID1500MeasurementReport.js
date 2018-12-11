@@ -96,15 +96,6 @@ export default class TID1500MeasurementReport {
                     CodeMeaning: 'Person Observer Name',
                 },
                 PersonName: options.PersonName || 'unknown^unknown'
-            }, {    
-                RelationshipType: 'HAS OBS CONTEXT',    
-                ValueType: 'TEXT',  
-                ConceptNameCodeSequence: {  
-                    CodeValue: 'RP-100006', 
-                    CodingSchemeDesignator: '99dcmjs',  
-                    CodeMeaning: "Person Observer's Login Name" 
-                },  
-                TextValue: options.PersonObserversLoginName || 'user'   
             }, {
                 RelationshipType: 'HAS CONCEPT MOD',
                 ValueType: 'CODE',

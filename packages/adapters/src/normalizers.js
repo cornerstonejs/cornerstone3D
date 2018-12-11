@@ -44,10 +44,9 @@ class Normalizer {
     return(sopClassUIDMap[sopClassUID]);
   }
 
-  static isMultiframe(ds=this.dataset) {
-    let sopClassUID = ds.SOPClassUID.replace(/[^0-9.]/g,''); // TODO: clean all VRs as part of normalizing
-    let toUID = DicomMetaDictionary.sopClassUIDsByName;
-    let multiframeSOPClasses = [
+  static isMultiframeSOPClassUID(sopClassUID) {
+    const toUID = DicomMetaDictionary.sopClassUIDsByName;
+    const multiframeSOPClasses = [
       toUID.EnhancedMRImage,
       toUID.LegacyConvertedEnhancedMRImage,
       toUID.EnhancedCTImage,
@@ -58,6 +57,11 @@ class Normalizer {
       toUID.Segmentation,
     ];
     return (multiframeSOPClasses.indexOf(sopClassUID) !== -1);
+  }
+
+  static isMultiframeDataset(ds=this.dataset) {
+    const sopClassUID = ds.SOPClassUID.replace(/[^0-9.]/g,''); // TODO: clean all VRs as part of normalizing
+    return Normalizer.isMultiframeSOPClassUID(sopClassUID);
   }
 
   normalize() {
@@ -106,7 +110,7 @@ class ImageNormalizer extends Normalizer {
   }
 
   convertToMultiframe() {
-    if (this.datasets.length === 1 && Normalizer.isMultiframe(this.datasets[0])) {
+    if (this.datasets.length === 1 && Normalizer.isMultiframeDataset(this.datasets[0])) {
       // already a multiframe, so just use it
       this.dataset = this.datasets[0];
       return;
