@@ -56,7 +56,7 @@ export default class Bidirectional extends TID300Measurement {
         ConceptNameCodeSequence: {
           CodeValue: 'G-A185',
           CodingSchemeDesignator: 'SRT',
-          CodeMeaning: 'Long Axis', // TODO: Look this up from a Code Meaning dictionary
+          CodeMeaning: 'Long Axis',
         },
         MeasuredValueSequence: {
           MeasurementUnitsCodeSequence: {
@@ -70,7 +70,7 @@ export default class Bidirectional extends TID300Measurement {
         ContentSequence: {
           RelationshipType: 'INFERRED FROM',
           ValueType: 'SCOORD',
-          GraphicType: 'POLYLINE', // TODO: Is this MULTIPOINT or POLYLINE?
+          GraphicType: 'POLYLINE',
           GraphicData: [longAxis.point1.x, longAxis.point1.y, longAxis.point2.x, longAxis.point2.y],
           ContentSequence: {
             RelationshipType: 'SELECTED FROM',
@@ -85,7 +85,7 @@ export default class Bidirectional extends TID300Measurement {
         ConceptNameCodeSequence: {
           CodeValue: 'G-A186',
           CodingSchemeDesignator: 'SRT',
-          CodeMeaning: 'Short Axis', // TODO: Look this up from a Code Meaning dictionary
+          CodeMeaning: 'Short Axis',
         },
         MeasuredValueSequence: {
           MeasurementUnitsCodeSequence: {
@@ -99,7 +99,7 @@ export default class Bidirectional extends TID300Measurement {
         ContentSequence: {
           RelationshipType: 'INFERRED FROM',
           ValueType: 'SCOORD',
-          GraphicType: 'POLYLINE', // TODO: Is this MULTIPOINT or POLYLINE?
+          GraphicType: 'POLYLINE',
           GraphicData: [shortAxis.point1.x, shortAxis.point1.y, shortAxis.point2.x, shortAxis.point2.y],
           ContentSequence: {
             RelationshipType: 'SELECTED FROM',

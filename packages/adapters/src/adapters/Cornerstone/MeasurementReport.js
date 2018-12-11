@@ -40,6 +40,10 @@ export default class MeasurementReport {
 
     let allMeasurementGroups = [];
     const firstImageId = Object.keys(toolState)[0];
+    if (!firstImageId) {
+      throw new Error('No measurements provided.');
+    }
+    
     const generalSeriesModule = metadataProvider.get('generalSeriesModule', firstImageId);
     const sopCommonModule = metadataProvider.get('sopCommonModule', firstImageId);
     const { studyInstanceUID, seriesInstanceUID } = generalSeriesModule

@@ -32,7 +32,7 @@ class Freehand {
   }
 }
 
-Freehand.toolType = 'freehand';
+Freehand.toolType = 'Freehand';
 Freehand.utilityToolType = 'Polygon';
 Freehand.TID300Representation = TID300Polygon;
 

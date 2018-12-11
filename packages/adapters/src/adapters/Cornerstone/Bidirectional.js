@@ -14,6 +14,7 @@ class Bidirectional {
       frameIndex: ReferencedFrameNumber || 0,
       toolType: Bidirectional.toolType,
     };
+    
 
     // TODO: To be implemented!
     // Needs to add longAxis, shortAxis, longAxisLength, shortAxisLength
@@ -27,12 +28,25 @@ class Bidirectional {
   }
 
   static getTID300RepresentationArguments(tool) {
-    // TO BE IMPLEMENTED
-    return {longAxis, shortAxis, longAxisLength, shortAxisLength};
+    const { start, end, perpendicularStart, perpendicularEnd } = tool.handles;
+    const { shortestDiameter, longestDiameter } = tool;
+
+    return {
+      longAxis: {
+        point1: start,
+        point2: end
+      },
+      shortAxis: {
+        point1: perpendicularStart,
+        point2: perpendicularEnd
+      },
+      longAxisLength: longestDiameter,
+      shortAxisLength: shortestDiameter
+    };
   }
 }
 
-Bidirectional.toolType = 'bidirectional';
+Bidirectional.toolType = 'Bidirectional';
 Bidirectional.utilityToolType = 'Bidirectional';
 Bidirectional.TID300Representation = TID300Bidirectional;
 

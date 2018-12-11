@@ -48,7 +48,7 @@ class Length {
   }
 }
 
-Length.toolType = 'length';
+Length.toolType = 'Length';
 Length.utilityToolType = 'Length';
 Length.TID300Representation = TID300Length;
 
