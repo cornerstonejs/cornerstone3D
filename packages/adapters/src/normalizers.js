@@ -212,35 +212,28 @@ class ImageNormalizer extends Normalizer {
       },
     };
 
-    // per-frame
-
-    ds.PerFrameFunctionalGroupsSequence = [];
-    distanceDatasetPairs.forEach(function(pair) {
-      ds.PerFrameFunctionalGroupsSequence.push({
-        PlanePositionSequence : {
-          ImagePositionPatient: pair[1].ImagePositionPatient,
-        },
-      });
-    });
-
     ds.ReferencedSeriesSequence = {
-      SeriesInstanceUID : dataset0.SeriesInstanceUID,
-      ReferencedInstance : new Array(this.datasets.length),
+      SeriesInstanceUID: dataset0.SeriesInstanceUID,
+      ReferencedInstanceSequence : [],
     };
 
     // copy over each datasets window/level into the per-frame groups
     // and set the referenced series uid
-    let datasetIndex = 0;
-    this.datasets.forEach(function(dataset) {
-      ds.PerFrameFunctionalGroupsSequence[datasetIndex].FrameVOILUTSequence = {
-        WindowCenter: dataset.WindowCenter,
-        WindowWidth: dataset.WindowWidth,
-      };
-      ds.ReferencedSeriesSequence.ReferencedInstance[datasetIndex] = {
+    this.datasets.forEach(function(dataset, datasetIndex) {
+      ds.PerFrameFunctionalGroupsSequence.push({
+        PlanePositionSequence: {
+          ImagePositionPatient: distanceDatasetPairs[datsetIndex][1].ImagePositionPatient,
+        },
+        FrameVOILUTSequence: {
+          WindowCenter: dataset.WindowCenter,
+          WindowWidth: dataset.WindowWidth,
+        }
+      });
+
+      ds.ReferencedSeriesSequence.ReferencedInstanceSequence.push({
         ReferencedSOPClass: dataset.SOPClassUID,
         ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
-      };
-      datasetIndex++;
+      });
     });
 
     let dimensionUID = DicomMetaDictionary.uid();

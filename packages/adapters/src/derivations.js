@@ -235,12 +235,19 @@ class Segmentation extends DerivedPixels {
                     DerivedDataset.copyDataset(
                       this.referencedDataset.ReferencedSeriesSequence);
     } else {
+       const ReferencedInstanceSequence = [];
+
+       for (let i = 0; i < this.referencedDatasets.length; i++) {
+         ReferencedInstanceSequence.push({
+           ReferencedSOPClassUID: this.referencedDatasets[i].SOPClassUID,
+           ReferencedSOPInstanceUID: this.referencedDatasets[i].SOPInstanceUID,
+         });
+       }
+
       this.dataset.ReferencedSeriesSequence = {
         SeriesInstanceUID : this.referencedDataset.SeriesInstanceUID,
-        ReferencedInstanceSequence : [{
-          ReferencedSOPClassUID: this.referencedDataset.SOPClassUID,
-          ReferencedSOPInstanceUID: this.referencedDataset.SOPInstanceUID,
-        }]
+        StudyInstanceUID : this.referencedDataset.StudyInstanceUID,
+        ReferencedInstanceSequence
       };
     }
 
