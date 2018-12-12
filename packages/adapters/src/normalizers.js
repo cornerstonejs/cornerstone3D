@@ -199,8 +199,8 @@ class ImageNormalizer extends Normalizer {
     //
     // make the functional groups
     //
-
     // shared
+    const SpacingBetweenSlices = Math.abs(distance1 - distance0);
 
     ds.SharedFunctionalGroupsSequence = {
       PlaneOrientationSequence : {
@@ -208,7 +208,8 @@ class ImageNormalizer extends Normalizer {
       },
       PixelMeasuresSequence : {
         PixelSpacing : dataset0.PixelSpacing,
-        SpacingBetweenSlices : Math.abs(distance1 - distance0),
+        SpacingBetweenSlices: SpacingBetweenSlices,
+        SliceThickness: SpacingBetweenSlices,
       },
     };
 
