@@ -264,7 +264,7 @@ class Viewer {
     cornerstone.registerImageLoader(`dcmjsMultiframe${this.id}`, this.dcmjsMultiframeImageLoader.bind(this));
     cornerstone.metaData.addProvider(this.metaDataProvider.bind(this));
 
-    if (dcmjs.normalizers.Normalizer.isMultiframe(this.datasets[0])) {
+    if (dcmjs.normalizers.Normalizer.isMultiframeDataset(this.datasets[0])) {
       this.baseStack = this.addMultiframe(this.datasets[0]);
     } else {
       this.baseStack = this.addSingleframes(this.datasets);
