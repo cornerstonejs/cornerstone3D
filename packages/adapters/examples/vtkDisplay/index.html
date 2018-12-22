@@ -21,9 +21,9 @@
     <div class="row">
         <div class="col-xs-6">
           <h2>Status: </h2><p id="statusLine"></p>
-          <label for="istyle">Interaction style: </label>
-          <input class="styleOption" name="istyle" type="radio" value="slice">Slice</input>
-          <input class="styleOption" name="istyle" type="radio" value="rotate">Rotate</input>
+          <label for="interactionStyle">Interaction style: </label>
+          <input class="styleOption" id='is_slice' name="interactionStyle" type="radio" value="slice"> Slice</input>
+          <input class="styleOption" id='is_rotate' name="interactionStyle" type="radio" value="rotate"> Rotate</input>
           <h2>Volume:</h2>
             <div id="volumeViewer"> </div>
             <p>Sample data is from the dicom4qi connectathon event to be held at RSNA 2017.  This is <a href='https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2'>test dataset #2</a>
@@ -385,9 +385,10 @@ return Object.freeze({ newInstance, extend, SlicingMode });
     Array.from(document.getElementsByClassName('styleOption')).forEach(element => {
       element.setAttribute("disabled", "disabled");
     });
-    $('input[name=istyle]').change(event => {
+    $('input[name=interactionStyle]').change(event => {
       setVTKInteractorStyle(event.currentTarget.value);
     });
+    document.getElementById('is_slice').setAttribute('checked', 'true');
 
     //
     // set up the volume viewer
