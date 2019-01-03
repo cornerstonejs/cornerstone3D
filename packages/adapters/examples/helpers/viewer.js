@@ -710,7 +710,7 @@ class Viewer {
     for (let i = 1; i <= numberOfColors; i++) {
       var color = (i / numberOfColors) * 255;
       var rgba = [color, color, color, 255];
-      colormap.insertColor(i, rgba);
+      colormap.setColor(i, rgba);
     }
 
     // then we create stack with an imageId and position metadata

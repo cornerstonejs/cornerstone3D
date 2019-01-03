@@ -179,6 +179,7 @@
       status("Setting up viewer...");
       dc0paraMap.viewer = new Viewer(dc0paraMap.datasets);
       dc0paraMap.viewer.display('#dicomImages', options);
+      status("Done displaying");
 
     }
 
@@ -228,11 +229,12 @@
       const client = new DICOMwebClient.api.DICOMwebClient({"url" : "noURL"});
 
       // TODO: change URL to ADC map example
-      let basePMURL = "http://slicer.kitware.com/midas3/download/item/257241/paramap.dcm.zip";
+      let basePMURL = "https://s3.amazonaws.com/IsomicsPublic/SampleData/paramap.dcm";
       client._httpGet(basePMURL, {}, "arraybuffer").then(arrayBuffer => {
         let dataset = DICOMZero.datasetFromArrayBuffer(arrayBuffer);
         dc0paraMap.datasets.push(dataset);
         console.log("parametric map downloaded")
+        displayDatasets();
         dc0paraMap.viewer.addParametricMap(dataset, "colorbar");
         dc0paraMap.viewer.render();
         setupControlPanel();
@@ -242,6 +244,7 @@
 
     $('#sampleData').click(function (event) {
       drawSampleDatasets();
+      $('#sampleData').attr('disabled', true);
     });
 
     resetDICOMzero();
