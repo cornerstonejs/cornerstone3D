@@ -3,8 +3,111 @@
 //
 // currently only handles single frame images with segmentation overlay
 //
-class Viewer {
 
+/**
+ * Calculate the minimum and maximum values in an Array
+ *
+ * @param {Number[]} storedPixelData
+ * @return {{min: Number, max: Number}}
+ */
+function getMinMax (storedPixelData) {
+  // we always calculate the min max values since they are not always
+  // present in DICOM and we don't want to trust them anyway as cornerstone
+  // depends on us providing reliable values for these
+  let min = Number.MAX_VALUE;
+  let max = Number.MIN_VALUE;
+  let storedPixel;
+  const numPixels = storedPixelData.length;
+
+  for (let index = 1; index < numPixels; index++) {
+    storedPixel = storedPixelData[index];
+    min = Math.min(min, storedPixel);
+    max = Math.max(max, storedPixel);
+  }
+
+  return {
+    min,
+    max
+  };
+}
+
+
+
+/**
+ * Converts a float pixel array to a int 8 bit array.
+ * 
+ * @param {Int8Array} floatPixelData
+ * @return {{min, max, intPixelData, slope, intercept}}
+ */
+function convertToInt8PixelData(floatPixelData){
+  const floatMinMax = getMinMax(floatPixelData);
+  const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
+  const intRange = 255;
+  const slope = floatRange / intRange;
+  const intercept = floatMinMax.min;
+  const numPixels = floatPixelData.length;
+  const intPixelData = new Uint8Array(numPixels);
+  let min = 255;
+  let max = 0;
+
+  for (let i = 0; i < numPixels; i++) {
+    let rescaledPixel = 0
+    if (floatPixelData[i] > 0){
+      rescaledPixel = Math.floor((floatPixelData[i] - intercept) / slope);
+    }
+
+    intPixelData[i] = rescaledPixel;
+    min = Math.min(min, rescaledPixel);
+    max = Math.max(max, rescaledPixel);
+  }
+
+  return {
+    min,
+    max,
+    intPixelData,
+    slope,
+    intercept
+  };
+}
+
+/**
+ * Converts a float pixel array to a int 16 bit array.
+ * 
+ * @param {Int8Array} floatPixelData
+ * @return {{min, max, intPixelData, slope, intercept}}
+ */
+function convertToInt16PixelData(floatPixelData){
+  const floatMinMax = getMinMax(floatPixelData);
+  const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
+  const intRange = 65535;
+  const slope = floatRange / intRange;
+  const intercept = floatMinMax.min;
+  const numPixels = floatPixelData.length;
+  const intPixelData = new Uint16Array(numPixels);
+  let min = 65535;
+  let max = 0;
+
+  for (let i = 0; i < numPixels; i++) {
+    let rescaledPixel = 0
+    if (floatPixelData[i] > 0){
+      rescaledPixel = Math.floor((floatPixelData[i] - intercept) / slope);
+    }
+
+    intPixelData[i] = rescaledPixel;
+    min = Math.min(min, rescaledPixel);
+    max = Math.max(max, rescaledPixel);
+  }
+
+  return {
+    min,
+    max,
+    intPixelData,
+    slope,
+    intercept
+  };
+}
+
+class Viewer {
   constructor(datasets, options={}) {
     this.status = options.status || function() {};
     this.datasets = datasets;
@@ -77,7 +180,7 @@ class Viewer {
   dcmjsImageLoader(imageId) {
     let index = Number(imageId.slice(imageId.lastIndexOf('/')+1));
     let image;
-    if (index >= 0 && index < this.datasets.length-1) {
+    if (index >= 0 && index < this.datasets.length) {
       let dataset = this.datasets[index];
       // only handle BitsAllocated == 16, signed BitsStored for now
       let pixelData = new Int16Array(dataset.PixelData);
@@ -194,6 +297,130 @@ class Viewer {
     return (deferred);
   }
 
+  /**
+   * Loader which treats the given imageId as 8Bit overlay.
+   * 
+   * @param {*} imageId 
+   */
+  dcmjsPMOverlayLoader(imageId){
+    let dataset = this.parametricMapDataset;
+    let index = Number(imageId.slice(imageId.lastIndexOf('/')+1));
+    let image;
+    if (index >= 0 && index < dataset.NumberOfFrames) {
+
+      let framePixels = dataset.Rows * dataset.Columns;
+      let startIndex = dataset.Rows * dataset.Columns * index;
+      let endIndex = startIndex + framePixels;
+      let pixelData = dataset.PMPixelData.slice(startIndex, endIndex)
+      let [min,max] = [255, 0];
+
+      for (let pixelIndex = 0; pixelIndex < pixelData.length; pixelIndex++) {
+        let currentValue = pixelData[pixelIndex];
+        max = Math.max(max, currentValue);
+        min = Math.min(min, currentValue);
+      }
+
+      let pixelMeasures = dataset.SharedFunctionalGroupsSequence.PixelMeasuresSequence
+      image = {
+        imageId: imageId,
+        minPixelValue: min,
+        maxPixelValue: max,
+        rows: Number(dataset.Rows),
+        columns: Number(dataset.Columns),
+        height: Number(dataset.Rows),
+        width: Number(dataset.Columns),
+        columnPixelSpacing: Number(pixelMeasures.PixelSpacing[0]),
+        rowPixelSpacing: Number(pixelMeasures.PixelSpacing[1]),
+        invert: false,
+        sizeInBytes: pixelData.byteLength,
+        labelmap: true,
+        getPixelData: function () { return(pixelData); },
+      };
+    }
+
+    //
+    // create a deferred object and resolve it asynchronously
+    //
+    let deferred = $.Deferred();
+    setTimeout(() => {
+      if (image) {
+        deferred.resolve(image);
+      } else {
+        deferred.reject({error: 'bad index'});
+      }
+    },0);
+
+    // return the pending deferred object to cornerstone so it can setup callbacks to be
+    // invoked asynchronously for the success/resolve and failure/reject scenarios.
+    return (deferred);
+  }
+
+  /**
+   * Loader which treats the given imageId as 16Bit image
+   * 
+   * @param {*} imageId 
+   */
+  dcmjsPMImageLoader(imageId){
+    let dataset = this.parametricMapDataset;
+    let index = Number(imageId.slice(imageId.lastIndexOf('/')+1));
+    let image;
+    if (index >= 0 && index < dataset.NumberOfFrames) {
+
+      let framePixels = dataset.Rows * dataset.Columns;
+      let startIndex = framePixels * index;
+      let endIndex = startIndex + framePixels;
+      let pixelData = dataset.PMPixelData.slice(startIndex, endIndex)
+      let [min,max] = [65535, 0];
+
+      for (let pixelIndex = 0; pixelIndex < pixelData.length; pixelIndex++) {
+        let currentValue = pixelData[pixelIndex];
+        max = Math.max(max, currentValue);
+        min = Math.min(min, currentValue);
+      }
+
+      let [wc,ww] = [dataset.WindowCenter,dataset.WindowWidth];
+      if (Array.isArray(wc)) { wc = wc[0]; }
+      if (Array.isArray(ww)) { ww = ww[0]; }
+      if (wc === undefined || ww === undefined) {
+        wc = (max+min) / 2.;
+        ww = (max-min);
+      }
+
+      let pixelMeasures = dataset.SharedFunctionalGroupsSequence.PixelMeasuresSequence
+      image = {
+        imageId: imageId,
+        minPixelValue: min,
+        maxPixelValue: max,
+        rows: Number(dataset.Rows),
+        columns: Number(dataset.Columns),
+        height: Number(dataset.Rows),
+        width: Number(dataset.Columns),
+        columnPixelSpacing: Number(pixelMeasures.PixelSpacing[0]),
+        rowPixelSpacing: Number(pixelMeasures.PixelSpacing[1]),
+        invert: false,
+        sizeInBytes: pixelData.byteLength,
+        labelmap: true,
+        getPixelData: function () { return(pixelData); },
+      };
+    }
+
+    //
+    // create a deferred object and resolve it asynchronously
+    //
+    let deferred = $.Deferred();
+    setTimeout(() => {
+      if (image) {
+        deferred.resolve(image);
+      } else {
+        deferred.reject({error: 'bad index'});
+      }
+    },0);
+
+    // return the pending deferred object to cornerstone so it can setup callbacks to be
+    // invoked asynchronously for the success/resolve and failure/reject scenarios.
+    return (deferred);
+  }
+
   //
   // make a cornerstone ImageObject from a multiframe dataset
   // imageId is dcmjsMultiframe://# where # is index in this.datasets
@@ -202,7 +429,7 @@ class Viewer {
     let dataset = this.multiframeDataset
     let index = Number(imageId.slice(imageId.lastIndexOf('/')+1));
     let image;
-    if (index >= 0 && index < dataset.NumberOfFrames-1) {
+    if (index >= 0 && index < dataset.NumberOfFrames) {
       // only handle BitsAllocated == 16, signed BitsStored for now
       let frameBytes = dataset.Rows * dataset.Columns * 2;
       let frameOffset = frameBytes * index;
@@ -262,10 +489,17 @@ class Viewer {
     cornerstone.registerImageLoader(`dcmjs${this.id}`, this.dcmjsImageLoader.bind(this));
     cornerstone.registerImageLoader(`dcmjsSEG${this.id}`, this.dcmjsSEGImageLoader.bind(this));
     cornerstone.registerImageLoader(`dcmjsMultiframe${this.id}`, this.dcmjsMultiframeImageLoader.bind(this));
+    cornerstone.registerImageLoader(`dcmjsPM${this.id}`, this.dcmjsPMImageLoader.bind(this));
+    cornerstone.registerImageLoader(`dcmjsPMOverlay${this.id}`, this.dcmjsPMOverlayLoader.bind(this));
     cornerstone.metaData.addProvider(this.metaDataProvider.bind(this));
 
+    
     if (dcmjs.normalizers.Normalizer.isMultiframeDataset(this.datasets[0])) {
-      this.baseStack = this.addMultiframe(this.datasets[0]);
+      if (options.multiframeIsPM){
+        this.baseStack = this.addParametricMap(this.datasets[0]);
+      } else{
+        this.baseStack = this.addMultiframe(this.datasets[0]);
+      }
     } else {
       this.baseStack = this.addSingleframes(this.datasets);
     }
@@ -364,7 +598,7 @@ class Viewer {
       options: {
         name: 'Referenced Image',
         viewport: {
-          invert: invert
+          invert: invert,
         }
       }
     };
@@ -413,6 +647,194 @@ class Viewer {
 
     // then add the stack to cornerstone
     // cornerstoneTools.addToolState(this.element, 'stack', multiframeStack);
+  }
+
+
+  /**
+   * Updates the colorbar with the given colormap and the corresponding element id
+   * @param {*} colormap
+   * @param {*} colorbarId
+   */
+  updateColorbar(colormap, colorbarId) {
+    const lookupTable = colormap.createLookupTable();
+    const canvas = document.getElementById(colorbarId);
+    const ctx = canvas.getContext('2d');
+    const height = canvas.height;
+    const width = canvas.width;
+    const colorbar = ctx.createImageData(512, 20);
+
+    // Set the min and max values then the lookup table
+    // will be able to return the right color for this range
+    lookupTable.setTableRange(0, width);
+
+    // Update the colorbar pixel by pixel
+    for(let col = 0; col < width; col++) {
+        const color = lookupTable.mapValue(col);
+
+        for(let row = 0; row < height; row++) {
+            const pixel = (col + row * width) * 4;
+            colorbar.data[pixel] = color[0];
+            colorbar.data[pixel+1] = color[1];
+            colorbar.data[pixel+2] = color[2];
+            colorbar.data[pixel+3] = color[3];
+        }
+    }
+
+    ctx.putImageData(colorbar, 0, 0);
+  }
+
+  /**
+   * Adds a parametric map object to this viewer instance.
+   *
+   * @param {dataset} parametricMapDataset the data set which contains a multiframe dicom parametric map object
+   */
+  addParametricMap(parametricMapDataset, colorbarId){
+    this.parametricMapDataset = parametricMapDataset;
+
+    let framePixels = this.parametricMapDataset.Rows * this.parametricMapDataset.Columns * (this.parametricMapDataset.NumberOfFrames);
+    let offset = 0;
+    let pixelData = new Float32Array(this.parametricMapDataset.FloatPixelData[0], offset, framePixels);
+
+    // pixel data conversion from float to int
+    let result = convertToInt16PixelData(pixelData);
+
+    // add int pixel data as typed array (!). float is still here with FloatPixelData (array buffer)
+    this.parametricMapDataset.PMPixelData = result.intPixelData;
+
+    //colormap stuff
+    let colormapId = 'myColorMap';
+    let colormap = cornerstone.colors.getColormap(colormapId);
+    let numberOfColors = 65535;
+    colormap.setNumberOfColors(numberOfColors);
+    colormap.insertColor(0, [0, 0, 0, 255]);
+    for (let i = 1; i <= numberOfColors; i++) {
+      var color = (i / numberOfColors) * 255;
+      var rgba = [color, color, color, 255];
+      colormap.insertColor(i, rgba);
+    }
+
+    // then we create stack with an imageId and position metadata
+    // for each frame that references this segment number
+    //
+    let baseImageId = `dcmjsPM${this.id}://`;
+    
+    let imageIds = [];
+    let frameCount = Number(parametricMapDataset.NumberOfFrames);
+    for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+      let perFrameGroup = parametricMapDataset.PerFrameFunctionalGroupsSequence[frameIndex];
+
+      const imageId = baseImageId + frameIndex;
+      imageIds.push(imageId);
+
+      let imagePositionPatient = perFrameGroup.PlanePositionSequence.ImagePositionPatient;
+      this.addMetaData('imagePlane', imageId, {
+        imagePositionPatient: {
+          x: imagePositionPatient[0],
+          y: imagePositionPatient[1],
+          z: imagePositionPatient[2],
+        }
+      });
+
+    }
+
+    let parametricMapStack = {
+      imageIds: imageIds,
+      currentImageIdIndex: 0,
+      options: {
+        opacity: 1.0,
+        visible: true,
+        name: "parametricMap",
+        viewport: {
+          pixelReplication: true,
+          colormap: colormapId,
+          labelmap: true
+        }
+      }
+    }
+    // then add the stack to cornerstone
+    //cornerstoneTools.addToolState(this.element, 'stack', parametricMapStack);
+
+    if (colorbarId){
+      this.updateColorbar(colormap, colorbarId)
+    }
+
+    return parametricMapStack;
+  }
+
+  /**
+   * Adds a parametric map object as overlay to this viewer instance.
+   *
+   * @param {dataset} parametricMapDataset the data set which contains a multiframe dicom parametric map object
+   */
+  addParametricMapOverlay(parametricMapDataset, colorbarId){
+    this.parametricMapDataset = parametricMapDataset;
+
+    let framePixels = this.parametricMapDataset.Rows * this.parametricMapDataset.Columns * (this.parametricMapDataset.NumberOfFrames);
+    let offset = 0;
+    let pixelData = new Float32Array(this.parametricMapDataset.FloatPixelData[0], offset, framePixels);
+
+    // pixel data conversion from float to int
+    let result = convertToInt8PixelData(pixelData);
+
+    // add int pixel data as typed array (!). float is still here with FloatPixelData (array buffer)
+    this.parametricMapDataset.PMPixelData = result.intPixelData;
+
+    //colormap stuff
+    let colormapId = 'myColorMap';
+    let colormap = cornerstone.colors.getColormap(colormapId);
+    let numberOfColors = 255;
+    colormap.setNumberOfColors(numberOfColors);
+    colormap.insertColor(0, [0, 0, 0, 0]);
+    for (let i = 1; i < numberOfColors; i++) {
+      var red = Math.round(i/Number(numberOfColors) * 255);
+      var rgba = [Math.max(red*1.3,255), Math.max(255-red*1.3,0), 0, 255];
+      colormap.insertColor(i, rgba);
+    }
+
+    // then we create stack with an imageId and position metadata
+    // for each frame that references this segment number
+    //
+    let baseImageId = `dcmjsPMOverlay${this.id}://`;
+    
+    let imageIds = [];
+    let frameCount = Number(parametricMapDataset.NumberOfFrames);
+    for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+      let perFrameGroup = parametricMapDataset.PerFrameFunctionalGroupsSequence[frameIndex];
+
+      const imageId = baseImageId + frameIndex;
+      imageIds.push(imageId);
+
+      let imagePositionPatient = perFrameGroup.PlanePositionSequence.ImagePositionPatient;
+      this.addMetaData('imagePlane', imageId, {
+        imagePositionPatient: {
+          x: imagePositionPatient[0],
+          y: imagePositionPatient[1],
+          z: imagePositionPatient[2],
+        }
+      });
+
+    }
+
+    let parametricMapStack = {
+      imageIds: imageIds,
+      currentImageIdIndex: 0,
+      options: {
+        opacity: 0.7,
+        visible: true,
+        name: "parametricMap",
+        viewport: {
+          pixelReplication: true,
+          colormap: colormapId,
+          labelmap: true
+        }
+      }
+    }
+    // then add the stack to cornerstone
+    cornerstoneTools.addToolState(this.element, 'stack', parametricMapStack);
+
+    if (colorbarId){
+      this.updateColorbar(colormap, colorbarId)
+    }
   }
 
   //

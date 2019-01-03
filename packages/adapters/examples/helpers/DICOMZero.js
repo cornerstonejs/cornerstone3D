@@ -59,14 +59,26 @@ class DICOMZero {
           console.error('Could not convert to multiframe');
           console.error(e);
         }
-        statusCallback(`Creating segmentation...`);
-        try {
-          this.seg = new dcmjs.derivations.Segmentation([this.multiframe]);
-          statusCallback(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and segmentation.`);
-        } catch (e) {
-          console.error('Could not create segmentation');
-          console.error(e);
-        }
+		
+		if (this.multiframe.SOPClassUID == dcmjs.data.DicomMetaDictionary.sopClassUIDsByName['Segmentation']){
+			statusCallback(`Creating segmentation...`);
+			try {
+			  this.seg = new dcmjs.derivations.Segmentation([this.multiframe]);
+			  statusCallback(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and segmentation.`);
+			} catch (e) {
+			  console.error('Could not create segmentation');
+			  console.error(e);
+			}
+	    } else if (this.multiframe.SOPClassUID == dcmjs.data.DicomMetaDictionary.sopClassUIDsByName['ParametricMapStorage']){
+			statusCallback(`Creating parametric map...`);
+			try {
+			  this.pm = new dcmjs.derivations.ParametricMap([this.multiframe]);
+			  statusCallback(`Created ${this.multiframe.NumberOfFrames} frame multiframe object and parametric map.`);
+			} catch (e) {
+			  console.error('Could not create parametric map');
+			  console.error(e);
+			}
+		}
         doneCallback();
       } else {
         statusCallback(`Reading... (${this.fileIndex+1}).`);
@@ -98,7 +110,7 @@ class DICOMZero {
     }
     reader.readAsArrayBuffer(file);
   }
-
+  
   extractDatasetFromZipArrayBuffer(arrayBuffer) {
     this.status(`Extracting ${this.datasets.length} of ${this.expectedDICOMFileCount}...`);
     this.datasets.push(DICOMZero.datasetFromArrayBuffer(arrayBuffer));

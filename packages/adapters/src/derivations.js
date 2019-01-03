@@ -373,8 +373,28 @@ class StructuredReport extends DerivedDataset {
   }
 }
 
+class ParametricMap extends DerivedDataset {
+  constructor (datasets, options={}) {
+    super(datasets, options);
+  }
+
+  // this assumes a normalized multiframe input and will create
+  // a multiframe derived image
+  derive() {
+    super.derive();
+
+    this.assignToDataset({
+		// TODO: ???
+    });
+
+    this.assignFromReference([
+    ]);
+  }
+}
+
 export { DerivedDataset };
 export { DerivedPixels };
 export { DerivedImage };
 export { Segmentation };
+export { ParametricMap };
 export { StructuredReport };

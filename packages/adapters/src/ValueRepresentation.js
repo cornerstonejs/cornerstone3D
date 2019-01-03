@@ -821,12 +821,20 @@ class OtherByteString extends BinaryRepresentation {
         this.padByte = "00";
         this.noMultiple = true;
     }
-
     /*writeBytes(stream, value) {
         var written = super.write(stream, 'Hex', value);
         return super.writeBytes(stream, value, written);
     } */
 }
+
+class OtherFloatString extends BinaryRepresentation{
+    constructor(){
+        super("OF");
+        this.maxLength = null;
+        this.padByte = "00";
+        this.noMultiple = true;
+    }
+}  
 
 export { paddingLeft };
 export { tagFromNumbers };

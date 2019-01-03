@@ -31,13 +31,15 @@ import { DerivedPixels } from './derivations.js';
 import { DerivedImage } from './derivations.js';
 import { Segmentation } from './derivations.js';
 import { StructuredReport } from './derivations.js';
+import { ParametricMap } from './derivations.js';
 
 let derivations = {
   DerivedDataset,
   DerivedPixels,
   DerivedImage,
   Segmentation,
-  StructuredReport
+  StructuredReport,
+  ParametricMap
 };
 
 export { derivations };

@@ -237,6 +237,7 @@ DicomMetaDictionary.sopClassNamesByUID = {
   "1.2.840.10008.5.1.4.1.1.6.1" : "USImage",
   "1.2.840.10008.5.1.4.1.1.6.2" : "EnhancedUSVolume",
   "1.2.840.10008.5.1.4.1.1.7" : "SecondaryCaptureImage",
+  "1.2.840.10008.5.1.4.1.1.30" : "ParametricMapStorage",
   "1.2.840.10008.5.1.4.1.1.66" : "RawData",
   "1.2.840.10008.5.1.4.1.1.66.1" : "SpatialRegistration",
   "1.2.840.10008.5.1.4.1.1.66.2" : "SpatialFiducials",

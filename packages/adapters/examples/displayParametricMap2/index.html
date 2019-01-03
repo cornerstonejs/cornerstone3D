@@ -1,0 +1,265 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>DCMJS Display 2</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+  <!-- styles for all examples -->
+  <link href="../css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- styles for this page -->
+  <style>
+    .qiicrStepUIPanel span {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+
+    .qiicrStepUIPanel span:hover {
+      font-style: oblique;
+    }
+
+    .visibleSegment {
+      color: #fff;
+    }
+
+    .invisibleSegment {
+      color: #000;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div id='dropZone' class="container">
+    <div class="page-header">
+      <h1>
+        DICOM Data Display
+      </h1>
+      <p>
+        This example demonstrates display a Parametric Map, for example an ADC map.
+      </p>
+      <a href="../index.html">Go back to the Examples page</a>
+    </div>
+
+    <div class="row" id="mainDisplay" style="border: 1px solid black;">
+      <ul>
+        <li>Drag and drop a parametric map object in the space of those images.</li>
+      </ul>
+      <p id='status'>Ready for images...</p>
+      <div class='col-md-8'>
+        <h2>DICOM Images</h2>
+        <div style="padding-bottom: 15px" class='row-md-8'>
+          <button id="sampleData">Get Sample Data</button>
+        </div>
+        <button id='datasetPlayStop' class='datasetControl'>Play</button>
+        <label for="datasetSlider" class='datasetControl'>Frame: <span id="frameOffset">0</span></label>
+        <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px" />
+        <div id='dicomImages'></div>
+        <div style="width:512px; padding-top: 5px;">
+          <canvas id="colorbar" width="512px" height="20px"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+
+
+<!-- polyfills -->
+<script src="../js/url-search-params.js"></script>
+
+<!-- third party -->
+<script src="../js/jquery.min.js"></script>
+<script src="../js/FileSaver.min.js"></script>
+<script src="../js/jszip.min.js"></script>
+<script src="../js/jqueryFileDrop.js"></script>
+
+<!-- for viewer -->
+<script src="../js/cornerstone.min.js"></script>
+<script src="../js/cornerstoneMath.min.js"></script>
+<script src="../js/hammer.min.js"></script>
+<script src="../js/cornerstoneTools.min.js"></script>
+<script src="../js/dicomParser.min.js"></script>
+<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+<script src="../js/initWebWorkers.js"></script>
+
+<!-- our stuff -->
+<script src="../../build/dcmjs.js"></script>
+
+<script src="../helpers/DICOMZero.js"></script>
+<script src="../helpers/viewer.js"></script>
+
+<!-- dicom web client -->
+<script type="text/javascript" src="https://unpkg.com/dicomweb-client"></script>
+
+<script>
+  function status(statusMessage) {
+    console.log('status: ', statusMessage);
+    $('#status').text(statusMessage);
+  }
+
+  // container for managing parametric map data
+  var dc0paraMap = new DICOMZero({ status });
+
+  $(document).ready(function () {
+
+    //
+    // dropZone
+    //
+    const dropZone = document.getElementById('dropZone');
+    window.addEventListener('resize', function () {
+      dropZone.width = window.innerWidth;
+      dropZone.height = window.innerHeight;
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    function handleFileDrop(e) {
+      let evt = e.originalEvent;
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      resetDICOMzero();
+      dc0paraMap.dataTransfer = { files: [] };
+      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
+        dc0paraMap.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
+      }
+      status(`Got ${dc0paraMap.dataTransfer.files.length} files...`);
+      dc0paraMap.readOneFile(displayDatasets, status);
+    }
+    
+    $('#dropZone').bind('drop', handleFileDrop);
+
+    //
+    // Dataset controls
+    //
+    $('.datasetControl').attr('disabled', true);
+
+    function resetDICOMzero() {
+      if (dc0paraMap.viewer) {
+        dc0paraMap.viewer.reset();
+        dc0paraMap.viewer.removeElement();
+      }
+      dc0paraMap.reset();
+      $('#datasetSlider').val(0);
+      $('#datasetSlider').attr('max', 0);
+    }
+
+    function setOffset(offset) {
+      $('#frameOffset').text(offset);
+      $('#datasetSlider').val(offset);
+      dc0paraMap.viewer.index = offset;
+    }
+
+    function frameCount() {
+      if (dcmjs.normalizers.Normalizer.isMultiframeDataset(dc0paraMap.datasets[0])) {
+        return (dc0paraMap.datasets[0].NumberOfFrames);
+      } else {
+        return (dc0paraMap.datasets.length);
+      }
+    }
+
+    function displayDatasets() {
+      status("Displaying...");
+      dc0paraMap.datasets.sort(function (a, b) {
+        return (Number(a.InstanceNumber) - Number(b.InstanceNumber));
+      });
+      $('#datasetSlider').attr('min', 0);
+      $('#datasetSlider').attr('max', frameCount() - 1);
+      $('.datasetControl').attr('disabled', false);
+
+      options = {
+        callback: function(){
+           togglePlayMode();
+        },
+        multiframeIsPM : true
+      }
+
+      status("Setting up viewer...");
+      dc0paraMap.viewer = new Viewer(dc0paraMap.datasets);
+      dc0paraMap.viewer.display('#dicomImages', options);
+
+    }
+
+    $('#datasetSlider').on('input', function () {
+      var offset = $('#datasetSlider').val();
+      setOffset(offset);
+    });
+
+    function playStep() {
+      var offset = Number($('#datasetSlider').val());
+      offset += 1;
+      if (offset > frameCount() - 1) {
+        offset = 0;
+      }
+      setOffset(offset);
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        window.requestAnimationFrame(playStep);
+      }
+    }
+
+    function playStop() {
+      $('#datasetPlayStop').text('Play');
+    }
+    function playStart() {
+      $('#datasetPlayStop').text('Stop');
+      window.requestAnimationFrame(playStep);
+    }
+    function togglePlayMode() {
+      if ($('#datasetPlayStop').text() === 'Stop') {
+        playStop();
+      } else {
+        playStart();
+      }
+    }
+    $('#datasetPlayStop').on('click', togglePlayMode);
+
+
+    function progressStatus(progressEvent) {
+      status(`Downloaded ${(progressEvent.loaded / 1024 / 1024).toFixed(2)} MB so far...`);
+    }
+
+    /**
+     * Downloads some demo data with the dicom web client
+     * which uses asynchronous xmlhttp-requests to retrieve byte arrays from a server.
+     */
+    function drawSampleDatasets() {
+      const client = new DICOMwebClient.api.DICOMwebClient({"url" : "noURL"});
+
+      // TODO: change URL to ADC map example
+      let basePMURL = "http://slicer.kitware.com/midas3/download/item/257241/paramap.dcm.zip";
+      client._httpGet(basePMURL, {}, "arraybuffer").then(arrayBuffer => {
+        let dataset = DICOMZero.datasetFromArrayBuffer(arrayBuffer);
+        dc0paraMap.datasets.push(dataset);
+        console.log("parametric map downloaded")
+        dc0paraMap.viewer.addParametricMap(dataset, "colorbar");
+        dc0paraMap.viewer.render();
+        setupControlPanel();
+        status("Done loading.")
+      });
+    }
+
+    $('#sampleData').click(function (event) {
+      drawSampleDatasets();
+    });
+
+    resetDICOMzero();
+
+    function createControlPanel(options = {}) {
+      options.id = options.id || "controlPanel";
+      options.subject = options.subject || "Subject not specified";
+      options.seriesDescription = options.seriesDescription || "Series Description not specified";
+    }
+
+    function setupControlPanel() {
+      let panelOptions = {
+        subject: dc0paraMap.datasets[0].PatientID,
+        seriesDescription: dc0paraMap.datasets[0].SeriesDescription,
+      };
+      createControlPanel(panelOptions);
+    }
+  });
+</script>
+
+</html>
