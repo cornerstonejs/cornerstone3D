@@ -1,4 +1,5 @@
 /* eslint no-bitwise: 0 */
+import * as log from 'loglevel';
 
 const BitArray = {
   getBytesForBinaryFrame,
@@ -25,10 +26,10 @@ function getBytesForBinaryFrame (numPixels) {
 
 function pack (pixelData) {
   const numPixels = pixelData.length;
-  console.log('numPixels: ' + numPixels);
+  log.log('numPixels: ' + numPixels);
 
   const length = getBytesForBinaryFrame(numPixels);
-  //console.log('getBytesForBinaryFrame: ' + length);
+  //log.log('getBytesForBinaryFrame: ' + length);
 
   const bitPixelData = new Uint8Array(length);
 
@@ -40,17 +41,17 @@ function pack (pixelData) {
 
     const pixValue = (pixelData[i] !== 0);
 
-    //console.log('i: ' + i);
-    //console.log('pixValue: ' + pixValue);
-    //console.log('bytePos: ' + bytePos);
+    //log.log('i: ' + i);
+    //log.log('pixValue: ' + pixValue);
+    //log.log('bytePos: ' + bytePos);
 
     const bitPixelValue = pixValue << (i % 8);
-    //console.log('current bitPixelData: ' + bitPixelData[bytePos]);
-    //console.log('this bitPixelValue: ' + bitPixelValue);
+    //log.log('current bitPixelData: ' + bitPixelData[bytePos]);
+    //log.log('this bitPixelValue: ' + bitPixelValue);
 
     bitPixelData[bytePos] |= bitPixelValue;
 
-    //console.log('new bitPixelValue: ' + bitPixelData[bytePos]);
+    //log.log('new bitPixelValue: ' + bitPixelData[bytePos]);
   }
 
   return bitPixelData;

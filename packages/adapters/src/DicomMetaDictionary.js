@@ -1,4 +1,5 @@
 import { ValueRepresentation } from './ValueRepresentation.js';
+import * as log from 'loglevel';
 
 class DicomMetaDictionary {
   static punctuateTag(rawTag) {
@@ -140,7 +141,7 @@ class DicomMetaDictionary {
           if (dataset._vrMap && dataset._vrMap[naturalName]) {
             dataItem.vr = dataset._vrMap[naturalName];
           } else {
-            console.error('No value representation given for', naturalName);
+            log.error('No value representation given for', naturalName);
           }
         }
 
@@ -158,7 +159,7 @@ class DicomMetaDictionary {
         if (!vr.isBinary() && vr.maxLength) {
           dataItem.Value = dataItem.Value.map(value=>{
             if (value.length > vr.maxLength) {
-              console.warn(`Truncating value ${value} of ${naturalName} because it is longer than ${vr.maxLength}`);
+              log.warn(`Truncating value ${value} of ${naturalName} because it is longer than ${vr.maxLength}`);
               return (value.slice(0,vr.maxLength));
             } else {
               return (value);
@@ -171,7 +172,7 @@ class DicomMetaDictionary {
       } else {
         const validMetaNames = ["_vrMap", "_meta"];
         if (validMetaNames.indexOf(name) == -1) {
-          console.warn("Unknown name in dataset", name, ":", dataset[name]);
+          log.warn("Unknown name in dataset", name, ":", dataset[name]);
         }
       }
     });

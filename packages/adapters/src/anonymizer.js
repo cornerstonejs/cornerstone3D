@@ -1,3 +1,5 @@
+import * as log from 'loglevel';
+
 var tagNamesToEmpty = [
     // please override these in specificReplaceDefaults to have useful values
     "PatientID",
@@ -237,7 +239,7 @@ function cleanTags(dict) {
         if (tagInfo && tagInfo.version != 'PrivateTag') {
             var tagNumber = tagInfo.tag, tagString = Tag.fromPString(tagNumber).toCleanString();
             if (dict[tagString]) {
-                console.log('empty tag ' + tag);
+                log.log('empty tag ' + tag);
                 var newValue;
                 if (tagString == '00100010') {
                     newValue = ['ANON^PATIENT'];

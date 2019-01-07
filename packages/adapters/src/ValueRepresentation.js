@@ -2,6 +2,7 @@ import { DicomMessage } from './DicomMessage.js';
 import { ReadBufferStream } from './BufferStream.js';
 import { WriteBufferStream } from './BufferStream.js';
 import { Tag } from './Tag.js';
+import * as log from 'loglevel';
 
 function paddingLeft(paddingValue, string) {
    return String(paddingValue + string).slice(-paddingValue.length);
@@ -54,7 +55,7 @@ class ValueRepresentation {
         if (!length)
           return this.defaultValue;
         if (this.maxLength != length)
-          console.error("Invalid length for fixed length tag, vr " + this.type + ", length " + this.maxLength + " != " + length);
+          log.error("Invalid length for fixed length tag, vr " + this.type + ", length " + this.maxLength + " != " + length);
       }
       return this.readBytes(stream, length, syntax);
     }
@@ -137,7 +138,7 @@ class ValueRepresentation {
           var errmsg = "Value exceeds max length, vr: " + this.type + ", value: " + checkValue + ", length: " + displaylen;
           if (!valid) {
             if(isString)
-                console.log(errmsg);
+                log.log(errmsg);
             else
                 throw new Error(errmsg);
           }
@@ -191,15 +192,15 @@ class ValueRepresentation {
         else if (type == "ox") {
           // TODO: determine VR based on context (could be 1 byte pixel data)
           // https://github.com/dgobbi/vtk-dicom/issues/38
-          console.error("Invalid vr type " + type + ' - using OW');
+          log.error("Invalid vr type " + type + ' - using OW');
           vr = new OtherWordString();
         }
         else if (type == "xs") {
-          console.error("Invalid vr type " + type + ' - using US');
+          log.error("Invalid vr type " + type + ' - using US');
           vr = new UnsignedShort();
         }
         else {
-          console.error("Invalid vr type " + type + ' - using UN');
+          log.error("Invalid vr type " + type + ' - using UN');
           vr = new UnknownValue();
         }
 
