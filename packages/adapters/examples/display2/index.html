@@ -125,7 +125,7 @@
       if (dc0.viewer && evt.dataTransfer.files.length == 1) {
         dc0.handleDataTransferFileAsDataset(evt.dataTransfer.files[0], {
           doneCallback: function (dataset) {
-            if (dataset.SOPClassUID == DCMJS.data.DicomMetaDictionary.sopClassUIDsByName['Segmentation']) {
+            if (dataset.SOPClassUID == dcmjs.data.DicomMetaDictionary.sopClassUIDsByName['Segmentation']) {
               dc0.viewer.addSegmentation(dataset);
               dc0seg.datasets = [dataset]
               dc0.viewer.render();
@@ -167,7 +167,7 @@
     }
 
     function frameCount() {
-      if (DCMJS.normalizers.Normalizer.isMultiframe(dc0.datasets[0])) {
+      if (dcmjs.normalizers.Normalizer.isMultiframeDataset(dc0.datasets[0])) {
         return (dc0.datasets[0].NumberOfFrames);
       } else {
         return (dc0.datasets.length);
@@ -349,7 +349,7 @@
       let hexColor = `#00cc99`;
       segmentSequence.forEach(segment => {
         if (segment.RecommendedDisplayCIELabValue) {
-          let rgb = DCMJS.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
+          let rgb = dcmjs.data.Colors.dicomlab2RGB(segment.RecommendedDisplayCIELabValue);
           rgb = rgb.map(e => Math.round(e*255).toString(16)); // convert to hex
           rgb = rgb.map(e => e.length < 2 ? "0"+e : e); // zero pad
           hexColor = `#${rgb[0]}${rgb[1]}${rgb[2]}`;
