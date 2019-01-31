@@ -210,8 +210,8 @@ function _createSegFromImages(images, isMultiframe) {
  *                    segment metadata can be derived.
  */
 function readToolState(imageIds, arrayBuffer) {
-  dicomData = DicomMessage.readFile(arrayBuffer);
-  let dataset = DicomMetaDictionary.naturalizeDataset(
+  const dicomData = DicomMessage.readFile(arrayBuffer);
+  const dataset = DicomMetaDictionary.naturalizeDataset(
     dicomData.dict
   );
   dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
@@ -279,7 +279,6 @@ function readToolState(imageIds, arrayBuffer) {
 
     for (let z = 0; z < imageIds.length; z++) {
       const imageId = imageIds[z];
-
       const imageIdSpecificToolState = {};
 
       imageIdSpecificToolState.brush = {};
