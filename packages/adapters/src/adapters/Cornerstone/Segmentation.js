@@ -1,9 +1,9 @@
 import { BitArray } from "../../bitArray.js";
-import { datasetToBlob } from '../../datasetToBlob.js';
-import { DicomMessage } from '../../DicomMessage.js';
-import { DicomMetaDictionary } from '../../DicomMetaDictionary.js';
-import { Normalizer } from '../../normalizers.js';
-import { Segmentation as SegmentationDerivation } from '../../derivations.js';
+import { datasetToBlob } from "../../datasetToBlob.js";
+import { DicomMessage } from "../../DicomMessage.js";
+import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
+import { Normalizer } from "../../normalizers.js";
+import { Segmentation as SegmentationDerivation } from "../../derivations.js";
 
 const Segmentation = {
   generateToolState,
@@ -50,6 +50,7 @@ function generateToolState(images, brushData) {
   const isMultiframe = image0.imageId.includes("?frame");
 
   const seg = _createSegFromImages(images, isMultiframe);
+
   const numSegments = _addMetaDataToSegAndGetSegCount(seg, segments);
 
   if (!numSegments) {
@@ -170,13 +171,9 @@ function _createSegFromImages(images, isMultiframe) {
     const arrayBuffer = image.data.byteArray.buffer;
 
     const dicomData = DicomMessage.readFile(arrayBuffer);
-    const dataset = DicomMetaDictionary.naturalizeDataset(
-      dicomData.dict
-    );
+    const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
 
-    dataset._meta = DicomMetaDictionary.namifyDataset(
-      dicomData.meta
-    );
+    dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
 
     datasets.push(dataset);
   } else {
@@ -184,13 +181,9 @@ function _createSegFromImages(images, isMultiframe) {
       const image = images[i];
       const arrayBuffer = image.data.byteArray.buffer;
       const dicomData = DicomMessage.readFile(arrayBuffer);
-      const dataset = DicomMetaDictionary.naturalizeDataset(
-        dicomData.dict
-      );
+      const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
 
-      dataset._meta = DicomMetaDictionary.namifyDataset(
-        dicomData.meta
-      );
+      dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
       datasets.push(dataset);
     }
   }
@@ -211,11 +204,13 @@ function _createSegFromImages(images, isMultiframe) {
  */
 function readToolState(imageIds, arrayBuffer) {
   const dicomData = DicomMessage.readFile(arrayBuffer);
-  const dataset = DicomMetaDictionary.naturalizeDataset(
-    dicomData.dict
-  );
+  const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
   dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
   const multiframe = Normalizer.normalizeToDataset([dataset]);
+
+  console.log(multiframe);
+
+  const segType = multiframe.SegmentationType;
 
   const dims = {
     x: multiframe.Columns,
@@ -227,6 +222,30 @@ function readToolState(imageIds, arrayBuffer) {
 
   const segmentSequence = multiframe.SegmentSequence;
   const pixelData = BitArray.unpack(multiframe.PixelData);
+
+  if (segType === "FRACTIONAL") {
+    let isActuallyBinary = false;
+
+    const maximumFractionalValue = multiframe.MaximumFractionalValue;
+
+    for (let i = 0; i < pixelData.length; i++) {
+      if (pixelData[i] !== 0 && pixelData[i] !== maximumFractionalValue) {
+        isActuallyBinary = true;
+        break;
+      }
+    }
+
+    if (!isActuallyBinary) {
+      console.warn(
+        "This is a fractional segmentation, which is not currently supported."
+      );
+      return;
+    }
+
+    console.warn(
+      "This segmentation object is actually binary... processing as such."
+    );
+  }
 
   const segMetadata = {
     seriesInstanceUid: multiframe.SeriesInstanceUid,
@@ -267,7 +286,11 @@ function readToolState(imageIds, arrayBuffer) {
         const cToolsPixelData = toolState[imageId].brush.data[segIdx].pixelData;
 
         for (let p = 0; p < dims.xy; p++) {
-          cToolsPixelData[p] = pixelData[segIdx * dims.xyz + z * dims.xy + p];
+          if (pixelData[segIdx * dims.xyz + z * dims.xy + p]) {
+            cToolsPixelData[p] = 1;
+          } else {
+            cToolsPixelData[p] = 0;
+          }
         }
       }
     }
@@ -292,7 +315,11 @@ function readToolState(imageIds, arrayBuffer) {
         imageIdSpecificToolState.brush.data[segIdx].pixelData;
 
       for (let p = 0; p < dims.xy; p++) {
-        cToolsPixelData[p] = pixelData[z * dims.xy + p];
+        if (pixelData[segIdx * dims.xyz + z * dims.xy + p]) {
+          cToolsPixelData[p] = 1;
+        } else {
+          cToolsPixelData[p] = 0;
+        }
       }
 
       toolState[imageId] = imageIdSpecificToolState;
