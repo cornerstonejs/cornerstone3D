@@ -1,4 +1,9 @@
 import { BitArray } from "../../bitArray.js";
+import { datasetToBlob } from '../../datasetToBlob.js';
+import { DicomMessage } from '../../DicomMessage.js';
+import { DicomMetaDictionary } from '../../DicomMetaDictionary.js';
+import { Normalizer } from '../../normalizers.js';
+import { Segmentation as SegmentationDerivation } from '../../derivations.js';
 
 const Segmentation = {
   generateToolState,
@@ -74,7 +79,7 @@ function generateToolState(images, brushData) {
     pixelDataUint8View[i] = bitPackedcToolsData[i];
   }
 
-  const segBlob = dcmjs.data.datasetToBlob(seg.dataset);
+  const segBlob = datasetToBlob(seg.dataset);
 
   return segBlob;
 }
@@ -164,12 +169,12 @@ function _createSegFromImages(images, isMultiframe) {
     const image = images[0];
     const arrayBuffer = image.data.byteArray.buffer;
 
-    const dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-    const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+    const dicomData = DicomMessage.readFile(arrayBuffer);
+    const dataset = DicomMetaDictionary.naturalizeDataset(
       dicomData.dict
     );
 
-    dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
+    dataset._meta = DicomMetaDictionary.namifyDataset(
       dicomData.meta
     );
 
@@ -178,21 +183,21 @@ function _createSegFromImages(images, isMultiframe) {
     for (let i = 0; i < images.length; i++) {
       const image = images[i];
       const arrayBuffer = image.data.byteArray.buffer;
-      const dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-      const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+      const dicomData = DicomMessage.readFile(arrayBuffer);
+      const dataset = DicomMetaDictionary.naturalizeDataset(
         dicomData.dict
       );
 
-      dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
+      dataset._meta = DicomMetaDictionary.namifyDataset(
         dicomData.meta
       );
       datasets.push(dataset);
     }
   }
 
-  const multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset(datasets);
+  const multiframe = Normalizer.normalizeToDataset(datasets);
 
-  return new dcmjs.derivations.Segmentation([multiframe]);
+  return new SegmentationDerivation([multiframe]);
 }
 
 /**
@@ -205,12 +210,12 @@ function _createSegFromImages(images, isMultiframe) {
  *                    segment metadata can be derived.
  */
 function readToolState(imageIds, arrayBuffer) {
-  dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-  let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+  dicomData = DicomMessage.readFile(arrayBuffer);
+  let dataset = DicomMetaDictionary.naturalizeDataset(
     dicomData.dict
   );
-  dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
-  const multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([dataset]);
+  dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+  const multiframe = Normalizer.normalizeToDataset([dataset]);
 
   const dims = {
     x: multiframe.Columns,
@@ -221,7 +226,7 @@ function readToolState(imageIds, arrayBuffer) {
   };
 
   const segmentSequence = multiframe.SegmentSequence;
-  const pixelData = dcmjs.data.BitArray.unpack(multiframe.PixelData);
+  const pixelData = BitArray.unpack(multiframe.PixelData);
 
   const segMetadata = {
     seriesInstanceUid: multiframe.SeriesInstanceUid,
