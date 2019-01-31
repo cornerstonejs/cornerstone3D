@@ -6,16 +6,9 @@ export default class Segmentation {
   static generateToolState(imageIds, images, brushData) {
     // NOTE: here be dragons. Currently if a brush has been used and then erased,
     // This will flag up as a segmentation, even though its full of zeros.
-    // Fixing this cleanly really requires an update of cornerstoneTools.
-
-    console.log("testButton");
+    // Fixing this cleanly really requires an update of cornerstoneTools?
 
     const { toolState, segments } = brushData;
-
-    console.log("test2");
-
-    console.log(images);
-
     const image0 = images[0];
 
     const dims = {
@@ -69,8 +62,6 @@ export default class Segmentation {
       currentSeg++;
     }
 
-    console.log(cToolsPixelData);
-
     const dataSet = seg.dataset;
 
     // Re-define the PixelData ArrayBuffer to be the correct length
@@ -80,13 +71,9 @@ export default class Segmentation {
     const pixelDataUint8View = new Uint8Array(seg.dataset.PixelData);
     const bitPackedcToolsData = BitArray.pack(cToolsPixelData);
 
-    console.log(pixelDataUint8View.length === bitPackedcToolsData.length);
-
     for (let i = 0; i < pixelDataUint8View.length; i++) {
       pixelDataUint8View[i] = bitPackedcToolsData[i];
     }
-
-    console.log(pixelDataUint8View);
 
     const segBlob = dcmjs.data.datasetToBlob(seg.dataset);
 
@@ -177,10 +164,6 @@ export default class Segmentation {
     const segmentSequence = multiframe.SegmentSequence;
     const pixelData = dcmjs.data.BitArray.unpack(multiframe.PixelData);
 
-    //console.log(segmentSequence);
-
-    //console.log(multiframe);
-
     const segMetadata = {
       seriesInstanceUid: multiframe.SeriesInstanceUid,
       data: []
@@ -253,10 +236,6 @@ export default class Segmentation {
         toolState[imageId] = imageIdSpecificToolState;
       }
     }
-
-    //console.log(toolState);
-
-    // TODO -> return seg metadata and brush tool data.
 
     return { toolState, segMetadata };
   }

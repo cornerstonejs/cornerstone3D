@@ -100,8 +100,6 @@
         const xhr = new XMLHttpRequest();
 
         xhr.addEventListener("load", () => {
-          console.log(xhr.response);
-          //do something with the response
           parseSeg(xhr.response);
         });
 
@@ -112,8 +110,6 @@
 
         xhr.open("GET", segURL);
         xhr.responseType = "arraybuffer"; //Type of file
-
-        console.log("...fetching seg");
 
         xhr.send();
       }
@@ -136,9 +132,6 @@
           toolState
         );
         const brushModule = cornerstoneTools.store.modules.brush;
-
-        console.log(toolState);
-        console.log(segMetadata);
 
         for (let i = 0; i < segMetadata.length; i++) {
           modules.brush.setters.metadata(seriesInstanceUid, i, segMetadata[i]);

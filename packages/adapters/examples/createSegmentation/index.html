@@ -143,16 +143,6 @@
             );
 
             console.log(segBlob);
-            /*
-            let zip = new JSZip();
-            zip.file("segmentation.dcm", segBlob);
-            zip.generateAsync({ type: "blob" }).then(function(contents) {
-              saveAs(contents, "derivedDICOM.zip", true);
-              status(
-                `Finished, waiting for more DICOM files (drop them below).`
-              );
-            });
-            */
           })
           .catch(err => console.log(err));
       }
