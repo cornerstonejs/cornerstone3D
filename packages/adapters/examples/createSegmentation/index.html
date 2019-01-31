@@ -1,370 +1,269 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
+    />
 
-  <link href="../css/bootstrap.min.css" rel="stylesheet">
-  <link href="../css/cornerstone.min.css" rel="stylesheet">
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-      <h1>
-        Create DICOM Segmentation IOD
-      </h1>
-      <p>
-        This example demonstrates how to create a DICOM Segmentation object.
-      </p>
-      <a href="../index.html">Go back to the Examples page</a>
-    </div>
+    <link href="../css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../css/cornerstone.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Create DICOM Segmentation IOD</h1>
+        <p>
+          This example demonstrates how to create a DICOM Segmentation object.
+        </p>
+        <a href="../index.html">Go back to the Examples page</a>
+      </div>
 
-    <div class="row">
-      <button id="sampleData">Get Sample Data</button>
-
-      <p>or</p>
-
-      <input type="file" value="Select dicom" id="select"></input>
-
-      <p id='status'>Drag and drop DICOM files here...</p>
-      <div class="col-xs-9" id="dropZone">
-        <div style="width:512px;height:512px;position:relative;display:inline-block;"
+      <div class="row">
+        <button id="sampleData" onclick="createSeg()">Create Seg</button>
+        <p id="statusLine"></p>
+        <div class="col-xs-9">
+          <div
+            style="width:512px;height:512px;position:relative;display:inline-block;"
             oncontextmenu="return false"
-            class='cornerstone-enabled-image'
-            unselectable='on'
-            onselectstart='return false;'
-            onmousedown='return false;'>
-          <div id="dicomImage"
-            style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
+            class="cornerstone-enabled-image"
+            unselectable="on"
+            onselectstart="return false;"
+            onmousedown="return false;"
+          >
+            <!-- TODO => Replace this with react cornerstone viewport -->
+            <div
+              id="cornerstoneViewport"
+              style="width:512px;height:512px;top:0px;left:0px; position:absolute;"
+            ></div>
           </div>
-        </div>
-        <p>Segmentation header:</p>
-        <pre id='segmentationDump'>
-        </pre>
-      </div>
-
-
-      <div class="col-xs-3">
-        <h5>Controls:</h5>
-        <ul>
-          <li>Left click paint</li>
-          <li>Middle Mouse button drag - pan</li>
-          <li>Right click drag - zoom</li>
-        </ul>
-
-        <div class="row">
-          <button id="drawErase" class="btn btn-primary">Erase</button>
-        </div>
-
-        <div class="row">
-          <label for="radiusSlider">Radius: <span id="valBox">10</span>px</label>
-          <input id="radiusSlider" type="range" min="1" max="10" value="10" steps="1" style="width: 200px"/>
-        </div>
-
-        <div class="row">
-          <input type="range" class="dicomControls" min="0" max="0" value="0" step="1" id="instanceOffset">
-          <input type="button" class="dicomControls" id="deriveDICOM" value="Download Multiframe and Segmentation"/>
+          <p>
+            Sample data is from the dicom4qi connectathon event to be held at
+            RSNA 2017. This is
+            <a
+              href="https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2"
+              >test dataset #2</a
+            >
+          </p>
         </div>
       </div>
     </div>
-  </div>
-</body>
 
-<script src="../js/jquery.min.js"></script>
-<script src="../js/FileSaver.min.js"></script>
-<script src="../js/jszip.min.js"></script>
-<script src="../js/initWebWorkers.js"></script>
-<script src="../js/jqueryFileDrop.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/jqueryFileDrop.js"></script>
+    <script src="../js/jszip.min.js"></script>
 
-<script src="../js/cornerstone.min.js"></script>
-<script src="../js/cornerstoneMath.min.js"></script>
-<script src="../js/cornerstoneTools.min.js"></script>
-<script src="../js/dicomParser.min.js"></script>
-<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
+    <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
+    <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
+    <script src="https://unpkg.com/cornerstone-tools@3.0.0-b.1585/dist/cornerstoneTools.js"></script>
 
-<script src="../../build/dcmjs.js"></script>
+    <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
+    <script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js"></script>
+    <script src="https://unpkg.com/hammerjs/hammer.min.js"></script>
 
-<script src="../helpers/DICOMZero.js"></script>
+    <script src="../js/initCornerstone.js"></script>
 
-<script>
-  let dc0;
-  $(document).ready(function() {
-    dc0 = new DICOMZero();
-    const element = document.getElementById('dicomImage');
-    const dropZone = document.getElementById('dropZone');
+    <script src="../../build/dcmjs.js"></script>
 
-    cornerstone.enable(element);
+    <script
+      src="https://unpkg.com/react@16/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
 
-    function resetDICOMzero() {
-      dc0.reset();
-    }
+    <script>
+      "use strict";
 
-    function populatePixelArrayForFrame (pixels, frame, pixelData) {
-      const bitArray = dcmjs.data.BitArray.pack(pixelData);
-      const numBitArrayPixels = bitArray.length;
-      let index = frame * numBitArrayPixels;
-      for (let i=0; i < numBitArrayPixels; i++) {
-        pixels[index++] = bitArray[i];
-      }
-    }
-
-    function populateSegmentationObjectPixelData(dataset) {
-      const pixels = new Uint8Array(dataset.PixelData);
-      const configuration = cornerstoneTools.brush.getConfiguration();
-      const brushLayerId = configuration.brushLayerId;
-
-      // TODO: clean this up, it's super hacky
-      const toolState = cornerstoneTools.globalImageIdSpecificToolStateManager.saveToolState();
-
-      const numFrames = Number(dataset.NumberOfFrames);
-      const baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-8-slices.dcm';
-
-      const getBrushPixelData = (imageId) => {
-        // TODO: Might be a better way to do this...
-        let pixelData;
-        if (toolState[imageId] && toolState[imageId].brush) {
-          pixelData = toolState[imageId].brush.data[0].pixelData;
-        } else {
-          pixelData = new Uint8ClampedArray(dataset.Rows * dataset.Columns);
+      var process = {
+        env: {
+          NODE_ENV: "production"
         }
-        return pixelData;
       };
 
-      for (let frame = 0; frame < numFrames; frame++) {
-        const imageId = baseImageId + '?frame=' + frame;
-        const pixelData = getBrushPixelData(imageId);
+      window.process = process;
+    </script>
 
-        populatePixelArrayForFrame(pixels, frame, pixelData);
-      }
-    }
+    <!--
+      <script src='node_modules/react-viewerbase/dist/index.js'></script>!
+    -->
+    <script src="https://unpkg.com/react-cornerstone-viewport/dist/index.umd.js"></script>
 
-    $('#sampleData').click(function(event) {
-      drawSampleDatasets();
-    });
+    <script>
+      let metaData = {};
 
-    function getImageIds(multiframe, baseImageId) {
-      const imageIds = [];
-      const numFrames = Number(multiframe.NumberOfFrames);
-      for (let i=0; i < numFrames; i++) {
-        let segNum;
-        if (multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence) {
-          segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence.ReferencedSegmentNumber;
+      function createSeg() {
+        const element = document.getElementsByClassName("viewport-element")[0];
+        const globalToolStateManager =
+          cornerstoneTools.globalImageIdSpecificToolStateManager;
+
+        const stackToolState = cornerstoneTools.getToolState(element, "stack");
+        const imageIds = stackToolState.data[0].imageIds;
+
+        let imagePromises = [];
+        for (let i = 0; i < imageIds.length; i++) {
+          imagePromises.push(cornerstone.loadImage(imageIds[0]));
         }
-        const imageId = baseImageId + '?frame=' + i;
-        imageIds.push(imageId);
-      }
-      return imageIds;
-    }
 
-    function activateCornerstoneStack() {
-      // activates the dc0 singleton stack that has been set up either with
-      // demo data or with user data
-      cornerstone.loadAndCacheImage(dc0.cornerstoneStack.imageIds[0]).then(function(image) {
-        cornerstone.addLayer(element, image);
-        cornerstone.updateImage(element);
+        const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB([
+          1,
+          0,
+          0
+        ]);
 
-        cornerstoneTools.addStackStateManager(element, ['stack']);
-        cornerstoneTools.addToolState(element, 'stack', dc0.cornerstoneStack);
-
-        cornerstoneTools.mouseInput.enable(element);
-        cornerstoneTools.mouseWheelInput.enable(element);
-        cornerstoneTools.keyboardInput.enable(element);
-        cornerstoneTools.brush.activate(element, 1);
-        setBrushRadius();
-        cornerstoneTools.pan.activate(element, 2);
-        cornerstoneTools.zoom.activate(element, 4);
-        cornerstoneTools.stackScrollWheel.activate(element);
-        cornerstoneTools.stackScrollKeyboard.activate(element);
-      });
-    }
-
-    function drawSampleDatasets() {
-      cornerstone.disable(element);
-      cornerstone.enable(element);
-      cornerstoneTools.clearToolState(element, 'stack');
-
-      var baseImageId = 'dicomweb:' + 'https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-8-slices.dcm'
-      var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
-
-      Promise.all([dataPromise,]).then(values => {
-        dc0.multiframe = values[0];
-        dc0.seg = new dcmjs.derivations.Segmentation([dc0.multiframe]);
-
-        const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB([1, 0, 0]);
-
-
-        const Segment = {
-          SegmentedPropertyCategoryCodeSequence: {
-            CodeValue: "T-D0050",
-            CodingSchemeDesignator: "SRT",
-            CodeMeaning: "Tissue"
-          },
-          SegmentNumber: 1,
-          SegmentLabel: "Tissue",
-          SegmentAlgorithmType: "SEMIAUTOMATIC",
-          SegmentAlgorithmName: "Slicer Prototype",
-          RecommendedDisplayCIELabValue,
-          SegmentedPropertyTypeCodeSequence: {
-            CodeValue: "T-D0050",
-            CodingSchemeDesignator: "SRT",
-            CodeMeaning: "Tissue"
-          }
-        };
-
-        dc0.seg.addSegment(Segment);
-
-        //dc0.seg.dataset.SegmentSequence[0].RecommendedDisplayCIELabValue = cielab;
-        var imageIds = getImageIds(dc0.multiframe, baseImageId);
-
-        dc0.cornerstoneStack = {
-          imageIds: imageIds,
-          currentImageIdIndex: 0,
-          options: {
-            name: 'Referenced Image'
-          }
-        };
-        activateCornerstoneStack();
-
-      });
-    }
-
-    var metaData = {};
-
-    function addMetaData(type, imageId, data) {
-      metaData[imageId] = metaData[imageId] || {};
-      metaData[imageId][type] = data;
-    }
-
-    function loadMultiFrameAndPopulateMetadata(baseImageId) {
-      var promise = new Promise(function (resolve, reject) {
-        cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
-          var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-          let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
-
-          var multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([dataset]);
-          console.log(multiframe);
-
-          const numFrames = Number(multiframe.NumberOfFrames);
-          for (let i=0; i < numFrames; i++) {
-            const imageId = baseImageId + '?frame=' + i;
-
-            var functionalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
-            var imagePositionArray = functionalGroup.PlanePositionSequence.ImagePositionPatient;
-
-            addMetaData('imagePlane', imageId, {
-              imagePositionPatient: {
-                x: imagePositionArray[0],
-                y: imagePositionArray[1],
-                z: imagePositionArray[2],
+        const brushData = {
+          toolState: globalToolStateManager.saveToolState(),
+          segments: [
+            {
+              SegmentedPropertyCategoryCodeSequence: {
+                CodeValue: "T-D0050",
+                CodingSchemeDesignator: "SRT",
+                CodeMeaning: "Tissue"
+              },
+              SegmentNumber: 1,
+              SegmentLabel: "Tissue",
+              SegmentAlgorithmType: "SEMIAUTOMATIC",
+              SegmentAlgorithmName: "Slicer Prototype",
+              RecommendedDisplayCIELabValue,
+              SegmentedPropertyTypeCodeSequence: {
+                CodeValue: "T-D0050",
+                CodingSchemeDesignator: "SRT",
+                CodeMeaning: "Tissue"
               }
+            }
+          ]
+        };
+
+        Promise.all(imagePromises)
+          .then(images => {
+            const segBlob = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
+              imageIds,
+              images,
+              brushData
+            );
+
+            console.log(segBlob);
+            /*
+            let zip = new JSZip();
+            zip.file("segmentation.dcm", segBlob);
+            zip.generateAsync({ type: "blob" }).then(function(contents) {
+              saveAs(contents, "derivedDICOM.zip", true);
+              status(
+                `Finished, waiting for more DICOM files (drop them below).`
+              );
             });
+            */
+          })
+          .catch(err => console.log(err));
+      }
+
+      function addMetaData(type, imageId, data) {
+        metaData[imageId] = metaData[imageId] || {};
+        metaData[imageId][type] = data;
+      }
+
+      //
+      // creates an array of per-frame imageIds in the form needed for cornerstone processing.
+      //
+      function getImageIds(multiframe, baseImageId) {
+        const imageIds = [];
+        const numFrames = Number(multiframe.NumberOfFrames);
+        for (let i = 0; i < numFrames; i++) {
+          let segNum;
+          if (
+            multiframe.PerFrameFunctionalGroupsSequence[i]
+              .SegmentIdentificationSequence
+          ) {
+            segNum =
+              multiframe.PerFrameFunctionalGroupsSequence[i]
+                .SegmentIdentificationSequence.ReferencedSegmentNumber;
           }
+          const imageId = baseImageId + "?frame=" + i;
+          imageIds.push(imageId);
+        }
+        return imageIds;
+      }
 
-          resolve(multiframe);
+      //
+      // uses cornerstone caching to access a bytearray of the
+      // part10 dicom, then uses dcmjs to parse this
+      // into javascript object and populates the
+      // metadata for the per-frame imageIDs.
+      //
+      function loadMultiFrameAndPopulateMetadata(baseImageId) {
+        return new Promise(function(resolve, reject) {
+          var multiframe;
+          cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
+            var arrayBuffer = image.data.byteArray.buffer;
+
+            dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
+            let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+              dicomData.dict
+            );
+            dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
+              dicomData.meta
+            );
+
+            multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([
+              dataset
+            ]);
+
+            const numFrames = Number(multiframe.NumberOfFrames);
+            for (let i = 0; i < numFrames; i++) {
+              const imageId = baseImageId + "?frame=" + i;
+
+              var functionalGroup =
+                multiframe.PerFrameFunctionalGroupsSequence[i];
+              var imagePositionArray =
+                functionalGroup.PlanePositionSequence.ImagePositionPatient;
+
+              addMetaData("imagePlane", imageId, {
+                imagePositionPatient: {
+                  x: imagePositionArray[0],
+                  y: imagePositionArray[1],
+                  z: imagePositionArray[2]
+                }
+              });
+            }
+
+            resolve(multiframe);
+          });
         });
-      });
+      }
 
-      return promise;
-    }
+      /*
+      function downloadSegData() {
+        const segBaseImageId =
+          "dicomweb:" + urlRoot + "SEG/tumor_User1_Manual_Trial1.dcm";
+        const segPromise = loadMultiFrameAndPopulateMetadata(segBaseImageId);
+      }
+      */
+    </script>
 
-    function drawDatasets() {
-      cornerstone.disable(element);
-      cornerstone.enable(element);
-      cornerstoneTools.clearToolState(element, 'stack');
+    <script>
+      "use strict";
 
-      var files = dc0.dataTransfer.files;
-      var imageIds = [];
-      files.forEach(function(file) {
-        var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
-        imageIds.push(imageId);
-      });
-
-      dc0.cornerstoneStack = {
-        imageIds: imageIds,
-        currentImageIdIndex: 0
+      var exampleData = {
+        stack: {
+          currentImageIdIndex: 0,
+          imageIds: [
+            "dicomweb://s3.amazonaws.com/lury/PTCTStudy/1.3.6.1.4.1.25403.52237031786.3872.20100510032220.11.dcm",
+            "dicomweb://s3.amazonaws.com/lury/PTCTStudy/1.3.6.1.4.1.25403.52237031786.3872.20100510032220.12.dcm"
+          ]
+        }
       };
-      activateCornerstoneStack();
-      status(`Ready`);
-    }
 
-    function downloadDatasets() {
-      populateSegmentationObjectPixelData(dc0.seg.dataset);
-      $('#segmentationDump').text(JSON.stringify(dc0.seg.dataset, null,4));
-      let multiBlob = dcmjs.data.datasetToBlob(dc0.multiframe);
-      let segBlob = dcmjs.data.datasetToBlob(dc0.seg.dataset);
-      let zip = new JSZip();
-      zip.file("multiframe.dcm", multiBlob);
-      zip.file("segmentation.dcm", segBlob);
-      zip.generateAsync({type: "blob"})
-        .then(function(contents) {
-          saveAs(contents, "derivedDICOM.zip", true);
-          resetDICOMzero();
-          status(`Finished, waiting for more DICOM files (drop them below).`);
-        });
-    }
+      var CornerstoneViewport = window["react-cornerstone-viewport"];
+      var props = {
+        viewportData: exampleData,
+        cornerstone,
+        cornerstoneTools,
+        activeTool: "Brush"
+      };
 
-    // utility: todo: keep a log for optional download
-    function status(s) {
-      console.log('status: ', s);
-      $('#status').text(s);
-    }
+      var app = React.createElement(CornerstoneViewport, props, null);
 
-
-    resetDICOMzero();
-
-    window.addEventListener('resize', function() {
-      dropZone.width = window.innerWidth;
-      dropZone.height = window.innerHeight;
-      cornerstone.resize(element, true);
-    });
-
-    window.dispatchEvent(new Event('resize'));
-
-    $("#deriveDICOM").click(function() {
-      downloadDatasets();
-    });
-
-    var $drawEraseButton = $('#drawErase');
-    $drawEraseButton.click(function () {
-      var configuration = cornerstoneTools.brush.getConfiguration();
-      if (configuration.draw === 0) {
-        configuration.draw = 1;
-        $drawEraseButton.text("Erase");
-      } else {
-        configuration.draw = 0;
-        $drawEraseButton.text("Draw");
-      }
-      cornerstoneTools.brush.setConfiguration(configuration);
-    });
-
-    var $radiusSlider = $('#radiusSlider');
-    function setBrushRadius() {
-      var configuration = cornerstoneTools.brush.getConfiguration();
-      var radius = $radiusSlider.val();
-      $('#valBox').text(radius);
-      configuration.radius = radius;
-      cornerstoneTools.brush.setConfiguration(configuration);
-    }
-    $radiusSlider.on('input', setBrushRadius);
-
-    function handleFileDrop(e) {
-      let evt = e.originalEvent;
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      resetDICOMzero();
-      dc0.dataTransfer = {files: []};
-      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
-        dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
-      }
-
-      status(`Got ${dc0.dataTransfer.files.length} files.  Processing...`);
-      dc0.readOneFile(drawDatasets);
-    }
-
-    $('#dropZone').bind('drop', handleFileDrop);
-  });
-</script>
+      ReactDOM.render(app, document.getElementById("cornerstoneViewport"));
+    </script>
+  </body>
 </html>

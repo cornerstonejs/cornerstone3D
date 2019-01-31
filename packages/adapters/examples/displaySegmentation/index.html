@@ -1,372 +1,262 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
+    />
 
-    <link href="../css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/cornerstone.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container">
-    <div class="page-header">
-        <h1>
-            Display DICOM Segmentation IOD
-        </h1>
+    <link href="../css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../css/cornerstone.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Display DICOM Segmentation IOD</h1>
         <p>
-            This example demonstrates how to display a DICOM Segmentation object.
+          This example demonstrates how to display a DICOM Segmentation object.
         </p>
         <a href="../index.html">Go back to the Examples page</a>
-    </div>
+      </div>
 
-    <div class="row">
-        <button id="sampleData">Get Sample Data</button><p id="statusLine"></p>
+      <div class="row">
+        <button id="sampleData" onclick="getAndLoadSeg()">
+          Get Sample Data
+        </button>
+        <p id="statusLine"></p>
         <div class="col-xs-9">
-            <div style="width:512px;height:512px;position:relative;display:inline-block;"
-                 oncontextmenu="return false"
-                 class='cornerstone-enabled-image'
-                 unselectable='on'
-                 onselectstart='return false;'
-                 onmousedown='return false;'>
-                <div id="dicomImage"
-                     style="width:512px;height:512px;top:0px;left:0px; position:absolute;">
-                </div>
-            </div>
-            <p>Sample data is from the dicom4qi connectathon event to be held at RSNA 2017.  This is <a href='https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2'>test dataset #2</a>
+          <div
+            style="width:512px;height:512px;position:relative;display:inline-block;"
+            oncontextmenu="return false"
+            class="cornerstone-enabled-image"
+            unselectable="on"
+            onselectstart="return false;"
+            onmousedown="return false;"
+          >
+            <!-- TODO => Replace this with react cornerstone viewport -->
+            <div
+              id="cornerstoneViewport"
+              style="width:512px;height:512px;top:0px;left:0px; position:absolute;"
+            ></div>
+          </div>
+          <p>
+            Sample data is from the dicom4qi connectathon event to be held at
+            RSNA 2017. This is
+            <a
+              href="https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2"
+              >test dataset #2</a
+            >
+          </p>
         </div>
-        <div class="col-xs-3">
-            <label for="layers">Select active layer</label>
-            <select name="layers" id="layers" size="2" style="width: 100%; min-width: 150px;"></select>
-            <div id="properties" style="width: 100%; min-width: 150px; margin-top: 15px;">
-                <label>Layer Properties</label>
-                <div style="width: 100%; padding: 5px 5px 5px 10px;">
-                    <div style="margin-bottom: 15px;">
-                        <label for="visible"> Visible</label><br>
-                        <input name="visible" type="radio" value="1"> Yes &nbsp;&nbsp;
-                        <input name="visible" type="radio" value="0"> No
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label for="imageOpacity"> Opacity</label>
-                        <input id="imageOpacity" type="range" class="range" min=0 max=1 step=0.1 value=0>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
-</body>
 
-<script src="../js/jquery.min.js"></script>
-<script src="../js/jqueryFileDrop.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/jqueryFileDrop.js"></script>
 
-<script src="../js/cornerstone.min.js"></script>
-<script src="../js/cornerstoneMath.min.js"></script>
-<script src="../js/cornerstoneTools.min.js"></script>
-<script src="../js/dicomParser.min.js"></script>
-<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
-<script src="../js/initWebWorkers.js"></script>
+    <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
+    <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
+    <script src="https://unpkg.com/cornerstone-tools@3.0.0-b.1585/dist/cornerstoneTools.js"></script>
 
-<script src="../../build/dcmjs.js"></script>
+    <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
+    <script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js"></script>
+    <script src="https://unpkg.com/hammerjs/hammer.min.js"></script>
 
-<script>
-  let element;
-  let metaData = {};
-  $(document).ready(function() {
-    element = document.getElementById('dicomImage');
+    <script src="../js/initCornerstone.js"></script>
 
-    cornerstone.enable(element);
+    <script src="../../build/dcmjs.js"></script>
 
-    //
-    // associate per-frame position with cornerstone imageID
-    // so that correct overlay is selected when scrolling
-    // through the stack
-    //
-    function metaDataProvider(type, imageId) {
-      if (!metaData[imageId]) {
-        return;
+    <script
+      src="https://unpkg.com/react@16/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+
+    <script>
+      "use strict";
+
+      var process = {
+        env: {
+          NODE_ENV: "production"
+        }
+      };
+
+      window.process = process;
+    </script>
+
+    <!--
+      <script src='node_modules/react-viewerbase/dist/index.js'></script>!
+    -->
+    <script src="https://unpkg.com/react-cornerstone-viewport/dist/index.umd.js"></script>
+
+    <script>
+      let metaData = {};
+
+      function getAndLoadSeg() {
+        var segURL =
+          "https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/SEG/tumor_User1_Manual_Trial1.dcm";
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.addEventListener("load", () => {
+          console.log(xhr.response);
+          //do something with the response
+          parseSeg(xhr.response);
+        });
+
+        xhr.addEventListener("error", () => {
+          console.log(`Request returned, status: ${xhr.status}`);
+          console.log(xhr.message);
+        });
+
+        xhr.open("GET", segURL);
+        xhr.responseType = "arraybuffer"; //Type of file
+
+        console.log("...fetching seg");
+
+        xhr.send();
       }
 
-      return metaData[imageId][type];
-    }
+      function parseSeg(arrayBuffer) {
+        const element = document.getElementsByClassName("viewport-element")[0];
 
-    function addMetaData(type, imageId, data) {
-      metaData[imageId] = metaData[imageId] || {};
-      metaData[imageId][type] = data;
-    }
+        const stackToolState = cornerstoneTools.getToolState(element, "stack");
+        const imageIds = stackToolState.data[0].imageIds;
 
-    cornerstone.metaData.addProvider(metaDataProvider);
+        const {
+          toolState,
+          segMetadata
+        } = dcmjs.adapters.Cornerstone.Segmentation.readToolState(
+          imageIds,
+          arrayBuffer
+        );
 
-    //
-    // uses cornerstone caching to access a bytearray of the
-    // part10 dicom, then uses dcmjs to parse this
-    // into javascript object and populates the
-    // metadata for the per-frame imageIDs.
-    //
-    function loadMultiFrameAndPopulateMetadata(baseImageId) {
-      var promise = new Promise(function (resolve, reject) {
-        var multiframe;
-        cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
-          var arrayBuffer = image.data.byteArray.buffer;
-          dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-          let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-          dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
+        cornerstoneTools.globalImageIdSpecificToolStateManager.restoreToolState(
+          toolState
+        );
+        const brushModule = cornerstoneTools.store.modules.brush;
 
-          multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([dataset]);
+        console.log(toolState);
+        console.log(segMetadata);
 
-          const numFrames = Number(multiframe.NumberOfFrames);
-          for (let i=0; i < numFrames; i++) {
-            const imageId = baseImageId + '?frame=' + i;
-
-            var functionalGroup = multiframe.PerFrameFunctionalGroupsSequence[i];
-            var imagePositionArray = functionalGroup.PlanePositionSequence.ImagePositionPatient;
-
-            addMetaData('imagePlane', imageId, {
-              imagePositionPatient: {
-                x: imagePositionArray[0],
-                y: imagePositionArray[1],
-                z: imagePositionArray[2],
-              }
-            });
-          }
-
-          resolve(multiframe);
-        });
-      });
-      return promise;
-    }
-
-    //
-    // creates an array of per-frame imageIds in the form needed for cornerstone processing.
-    // If segmentNumber is provided, then only create imageIds for the frames where the 
-    // segment is defined.
-    //
-    function getImageIds(multiframe, baseImageId, segmentNumber) {
-      const imageIds = [];
-      const numFrames = Number(multiframe.NumberOfFrames);
-      for (let i=0; i < numFrames; i++) {
-        let segNum;
-        if (multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence) {
-          segNum = multiframe.PerFrameFunctionalGroupsSequence[i].SegmentIdentificationSequence.ReferencedSegmentNumber;
+        for (let i = 0; i < segMetadata.length; i++) {
+          modules.brush.setters.metadata(seriesInstanceUid, i, segMetadata[i]);
         }
+      }
 
-        if ((segmentNumber && segNum && segNum === segmentNumber) ||
-            segmentNumber === undefined) {
-          const imageId = baseImageId + '?frame=' + i;
+      function addMetaData(type, imageId, data) {
+        metaData[imageId] = metaData[imageId] || {};
+        metaData[imageId][type] = data;
+      }
+
+      //
+      // creates an array of per-frame imageIds in the form needed for cornerstone processing.
+      //
+      function getImageIds(multiframe, baseImageId) {
+        const imageIds = [];
+        const numFrames = Number(multiframe.NumberOfFrames);
+        for (let i = 0; i < numFrames; i++) {
+          let segNum;
+          if (
+            multiframe.PerFrameFunctionalGroupsSequence[i]
+              .SegmentIdentificationSequence
+          ) {
+            segNum =
+              multiframe.PerFrameFunctionalGroupsSequence[i]
+                .SegmentIdentificationSequence.ReferencedSegmentNumber;
+          }
+          const imageId = baseImageId + "?frame=" + i;
           imageIds.push(imageId);
         }
+        return imageIds;
       }
-      return imageIds;
-    }
-
-    function downloadAndDisplaySampleData() {
-      cornerstone.disable(element);
-      cornerstone.enable(element);
-      cornerstoneTools.clearToolState(element, 'stack');
-
-      const urlRoot = 'https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/'
-
-      const baseImageId = 'dicomweb:' + urlRoot + 'PT-multiframe.dcm';
-      var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
-
-      const segBaseImageId = 'dicomweb:' + urlRoot + 'SEG/tumor_User1_Manual_Trial1.dcm';
-      var segPromise = loadMultiFrameAndPopulateMetadata(segBaseImageId);
 
       //
-      // once the images have been loaded
+      // uses cornerstone caching to access a bytearray of the
+      // part10 dicom, then uses dcmjs to parse this
+      // into javascript object and populates the
+      // metadata for the per-frame imageIDs.
       //
-      Promise.all([dataPromise, segPromise]).then(values => {
-        const multiframe = values[0];
-        const segMultiframe = values[1];
+      function loadMultiFrameAndPopulateMetadata(baseImageId) {
+        return new Promise(function(resolve, reject) {
+          var multiframe;
+          cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
+            var arrayBuffer = image.data.byteArray.buffer;
 
-        // make the base image layer
-        var baseImageIds = getImageIds(multiframe, baseImageId);
-        const baseStack = {
-          imageIds: baseImageIds,
-          currentImageIdIndex: 0,
-          options: {
-            name: 'Referenced Image',
-            viewport: {
-              invert: true
+            dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
+            let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+              dicomData.dict
+            );
+            dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
+              dicomData.meta
+            );
+
+            multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([
+              dataset
+            ]);
+
+            const numFrames = Number(multiframe.NumberOfFrames);
+            for (let i = 0; i < numFrames; i++) {
+              const imageId = baseImageId + "?frame=" + i;
+
+              var functionalGroup =
+                multiframe.PerFrameFunctionalGroupsSequence[i];
+              var imagePositionArray =
+                functionalGroup.PlanePositionSequence.ImagePositionPatient;
+
+              addMetaData("imagePlane", imageId, {
+                imagePositionPatient: {
+                  x: imagePositionArray[0],
+                  y: imagePositionArray[1],
+                  z: imagePositionArray[2]
+                }
+              });
             }
-          },
-        };
 
-        //
-        // make the set of layers associated with the segmentations
-        //
-        const segStacks = [];
-        segMultiframe.SegmentSequence.forEach(segment => {
-          // first, map the dicom color into a cornerstone colormap
-          const cielab = segment.RecommendedDisplayCIELabValue;
-          let rgba = dcmjs.data.Colors.dicomlab2RGB(cielab).map(x => Math.round(x * 255));
-          rgba.push(255);
-          const colormapId = 'Colormap_' + segment.SegmentNumber;
-          var colormap = cornerstone.colors.getColormap(colormapId);
+            resolve(multiframe);
+          });
+        });
+      }
 
-          // All colors with no value will be set to transparent rgba = [0,0,0,0]
-          colormap.setNumberOfColors(2);
-          colormap.setColor(1, rgba);
+      /*
+      function downloadSegData() {
+        const segBaseImageId =
+          "dicomweb:" + urlRoot + "SEG/tumor_User1_Manual_Trial1.dcm";
+        const segPromise = loadMultiFrameAndPopulateMetadata(segBaseImageId);
+      }
+      */
+    </script>
 
-          // define a stack based on the image ids, color, and segment name
-          const segImageIds = getImageIds(segMultiframe, segBaseImageId, segment.SegmentNumber);
-          const segStack = {
-            imageIds: segImageIds,
-            currentImageIdIndex: 0,
-            options: {
-              opacity: 0.7,
-              visible: true,
-              name: segment.SegmentLabel,
-              viewport: {
-                labelmap: true,
-                colormap: colormapId,
-                pixelReplication: true,
-              }
+    <script>
+      "use strict";
+
+      var baseURL =
+        "https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/";
+      var baseImageId = "dicomweb:" + baseURL + "PT-multiframe.dcm";
+
+      loadMultiFrameAndPopulateMetadata(baseImageId)
+        .then(value => {
+          var exampleData = {
+            stack: {
+              currentImageIdIndex: 0,
+              imageIds: getImageIds(value, baseImageId)
             }
           };
-          segStacks.push(segStack);
-        });
 
-        //
-        // create a FusionRenderer and provide it with a function
-        // to find the closest overlay image based on z position
-        //
-        var renderer = new cornerstoneTools.stackRenderers.FusionRenderer();
-        renderer.findImageFn = function(imageIds, targetImageId) {
-          var minDistance = 1;
-          var targetImagePlane = cornerstone.metaData.get('imagePlane', targetImageId);
-          var imagePositionZ = targetImagePlane.imagePositionPatient.z;
-          var closest;
-          imageIds.forEach(function(imageId) {
-            var imagePlane = cornerstone.metaData.get('imagePlane', imageId);
-            var imgPosZ = imagePlane.imagePositionPatient.z;
-            var distance = Math.abs(imgPosZ - imagePositionZ);
-            if (distance < minDistance) {
-              minDistance = distance;
-              closest = imageId;
-            }
-          });
-          return closest;
-        };
+          var CornerstoneViewport = window["react-cornerstone-viewport"];
+          var props = {
+            viewportData: exampleData,
+            cornerstone,
+            cornerstoneTools,
+            activeTool: "Brush"
+          };
 
-        //
-        // now setup the cornerstone element with out base image
-        // and enable the tools we want to have work on it
-        //
-        cornerstone.loadAndCacheImage(baseStack.imageIds[0]).then(function(image) {
-          cornerstoneTools.addStackStateManager(element, ['stack']);
-          cornerstoneTools.addToolState(element, 'stackRenderer', renderer);
-          cornerstoneTools.addToolState(element, 'stack', baseStack);
+          var app = React.createElement(CornerstoneViewport, props, null);
 
-          segStacks.forEach(segStack => {
-            cornerstoneTools.addToolState(element, 'stack', segStack);
-          });
-
-          renderer.render(element);
-
-          cornerstoneTools.mouseInput.enable(element);
-          cornerstoneTools.mouseWheelInput.enable(element);
-          cornerstoneTools.keyboardInput.enable(element);
-
-          cornerstoneTools.wwwc.activate(element, 1);
-          cornerstoneTools.pan.activate(element, 2);
-          cornerstoneTools.zoom.activate(element, 4);
-          cornerstoneTools.stackScrollWheel.activate(element);
-          cornerstoneTools.stackScrollKeyboard.activate(element);
-
-          // Update dropdown size to make all layers name visible
-          $('#layers').prop('size', layers.length);
-
-          // Listen to `change` event to set the selected layer as active
-          $("#layers").change(function(event) {
-            var layerId = event.currentTarget.value;
-            if (layerId === "") {
-              return;
-            }
-
-            var layer = cornerstone.getLayer(element, layerId);
-            if (layer.image) {
-              cornerstone.setActiveLayer(element, layerId);  
-            } else {
-              console.error('setActiveLayer: layer with undefined image cannot be set as active');
-              var layers = cornerstone.getLayers(element, layerId);
-              cornerstone.setActiveLayer(element, layers[0].layerId);
-              updateSelectedLayer(layers[0].layerId)
-            }
-          });
-        });
-
-        $('p#statusLine').text("");
-      });
-
-    }
-
-    // Select the right layer in the dropdown
-    function updateSelectedLayer(layerId) {
-      var $layers = $('#layers');
-      var currentLayerId = $layers.val();
-
-      if(currentLayerId !== layerId) {
-        $layers.val(layerId);
-        $layers.trigger('change');
-      }
-    }
-
-    // Listen to `change` event to update the opacity of the active layer
-    $("#imageOpacity").on('input',function(event) {
-      var layer = cornerstone.getActiveLayer(element);
-      layer.options.opacity = parseFloat(event.currentTarget.value);
-      cornerstone.updateImage(element);
-    });
-
-    // Listen to `change` event to update the visibility of the active layer
-    $('input[name=visible]').change(function(event) {
-      var layer = cornerstone.getActiveLayer(element);
-      layer.options.visible = (event.currentTarget.value === "1");
-      cornerstone.updateImage(element);
-    });
-
-    // This event will be called every time a layer is added through cornerstone.addLayer
-    // The layer is added to the dropdown to make it possible to select and interact with it
-    $(element).on('CornerstoneLayerAdded', function(e, eventData) {
-      var layer = cornerstone.getLayer(eventData.element, eventData.layerId);
-      var $layers = $('#layers');
-      var $layerOption = $('<option></option>')
-        .val(layer.layerId)
-        .text(layer.options.name);
-
-      // Set the layer as selected in case its the the first layer to be added
-      if($layers.children().length === 0) {
-        $layerOption.prop('selected', true);
-      }
-
-      $layers.append($layerOption);
-    });
-
-    // This event will be called every time cornerstone.setActiveLayer is called
-    // We need to load the layer properties and update the selected layer in the dropdown
-    $(element).on('CornerstoneActiveLayerChanged', function(e, eventData) {
-      var layer = cornerstone.getActiveLayer(element);
-      var opacity = layer.options.opacity == null ? 1 : layer.options.opacity;
-      var visible = layer.options.visible !== false ? 1 : 0;
-
-      // Restore all properties for the active layer
-      $('#imageOpacity').val(opacity);
-      $("input[name=visible][value=" + visible + "]").prop('checked', true);
-
-      updateSelectedLayer(eventData.layerId);
-    });
-
-    $('#sampleData').click(function(event) {
-      $('p#statusLine').text("Downloading...");
-      downloadAndDisplaySampleData();
-    });
-
-
-    window.addEventListener('resize', function() {
-      cornerstone.resize(element, true);
-    });
-
-    window.dispatchEvent(new Event('resize'));
-  });
-</script>
+          ReactDOM.render(app, document.getElementById("cornerstoneViewport"));
+        })
+        .catch(err => console.log(err));
+    </script>
+  </body>
 </html>
