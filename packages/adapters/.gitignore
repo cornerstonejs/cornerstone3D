@@ -4,4 +4,4 @@
 
 node_modules
 .idea
-build
+build/*.hot-update.*

@@ -137,7 +137,6 @@
         Promise.all(imagePromises)
           .then(images => {
             const segBlob = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
-              imageIds,
               images,
               brushData
             );
@@ -220,14 +219,6 @@
           });
         });
       }
-
-      /*
-      function downloadSegData() {
-        const segBaseImageId =
-          "dicomweb:" + urlRoot + "SEG/tumor_User1_Manual_Trial1.dcm";
-        const segPromise = loadMultiFrameAndPopulateMetadata(segBaseImageId);
-      }
-      */
     </script>
 
     <script>
