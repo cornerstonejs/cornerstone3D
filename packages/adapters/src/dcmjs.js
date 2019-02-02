@@ -4,6 +4,7 @@ import { WriteBufferStream } from './BufferStream.js';
 import { DicomDict } from './DicomMessage.js';
 import { DicomMessage } from './DicomMessage.js';
 import { DicomMetaDictionary } from './DicomMetaDictionary.js';
+import { DICOMWEB } from './dicomweb.js'
 import { Tag } from './Tag.js';
 import { ValueRepresentation } from './ValueRepresentation.js';
 //export { anonymizer } from './anonymizer.js';
@@ -74,3 +75,4 @@ import utilities from './utilities/index.js';
 
 export { adapters };
 export { utilities };
+export { DICOMWEB };

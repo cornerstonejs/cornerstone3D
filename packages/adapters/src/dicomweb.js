@@ -108,3 +108,5 @@ class DICOMWEB {
   }
 }
 
+export { DICOMWEB };
+

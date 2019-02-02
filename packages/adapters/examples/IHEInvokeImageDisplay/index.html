@@ -53,7 +53,6 @@
 <!-- our stuff -->
 <script src="../../build/dcmjs.js"></script>
 
-<script src="../helpers/dicomweb.js"></script>
 <script src="../helpers/DICOMZero.js"></script>
 <script src="../helpers/viewer.js"></script>
 
@@ -107,7 +106,7 @@
     // download and process functions
     //
 
-    dicomweb = new DICOMWEB({
+    dicomweb = new dcmjs.DICOMWEB({
       progressCallback: downloadProgress,
       rootURL: 'http://quantome.org:4242/dcm4chee-arc/aets/DCM4CHEE',
     });
