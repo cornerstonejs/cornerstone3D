@@ -1,3 +1,9 @@
 {
-  "presets": ["es2015"]
+  "presets": [
+    ["@babel/preset-env", {
+      "targets": {
+        "browsers": ["ie 11"]
+      }
+    }]
+  ]
 }
