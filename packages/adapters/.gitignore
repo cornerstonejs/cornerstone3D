@@ -4,6 +4,7 @@
 
 node_modules
 .idea
-build/*.hot-update.*
 yarn-error.log
 yarn.lock
+build/
+
