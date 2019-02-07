@@ -102,7 +102,7 @@
 
         let imagePromises = [];
         for (let i = 0; i < imageIds.length; i++) {
-          imagePromises.push(cornerstone.loadImage(imageIds[0]));
+          imagePromises.push(cornerstone.loadImage(imageIds[i]));
         }
 
         const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB([
