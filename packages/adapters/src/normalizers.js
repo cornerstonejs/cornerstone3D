@@ -1,9 +1,9 @@
-import { DicomMetaDictionary } from './DicomMetaDictionary.js';
-import { DerivedImage } from './derivations.js';
-import * as log from 'loglevel';
+import { DicomMetaDictionary } from "./DicomMetaDictionary.js";
+import { DerivedImage } from "./derivations.js";
+import * as log from "loglevel";
 
 class Normalizer {
-  constructor (datasets) {
+  constructor(datasets) {
     this.datasets = datasets; // one or more dicom-like object instances
     this.dataset = undefined; // a normalized multiframe dicom object instance
   }
@@ -13,37 +13,45 @@ class Normalizer {
     let sopClassUID;
     datasets.forEach(function(dataset) {
       if (!dataset.SOPClassUID) {
-        return(undefined);
+        return undefined;
       }
       if (!sopClassUID) {
-       sopClassUID = dataset.SOPClassUID;
+        sopClassUID = dataset.SOPClassUID;
       }
       if (dataset.SOPClassUID !== sopClassUID) {
-        log.error('inconsistent sopClassUIDs: ', dataset.SOPClassUID, sopClassUID);
-        return(undefined);
+        log.error(
+          "inconsistent sopClassUIDs: ",
+          dataset.SOPClassUID,
+          sopClassUID
+        );
+        return undefined;
       }
     });
-    return(sopClassUID);
+    return sopClassUID;
   }
 
   static normalizerForSOPClassUID(sopClassUID) {
-    sopClassUID = sopClassUID.replace(/[^0-9.]/g,''); // TODO: clean all VRs as part of normalizing
+    sopClassUID = sopClassUID.replace(/[^0-9.]/g, ""); // TODO: clean all VRs as part of normalizing
     let toUID = DicomMetaDictionary.sopClassUIDsByName;
     let sopClassUIDMap = {};
     sopClassUIDMap[toUID.CTImage] = CTImageNormalizer;
     sopClassUIDMap[toUID.ParametricMapStorage] = PMImageNormalizer;
     sopClassUIDMap[toUID.MRImage] = MRImageNormalizer;
     sopClassUIDMap[toUID.EnhancedCTImage] = EnhancedCTImageNormalizer;
-    sopClassUIDMap[toUID.LegacyConvertedEnhancedCTImage] = EnhancedCTImageNormalizer;
+    sopClassUIDMap[
+      toUID.LegacyConvertedEnhancedCTImage
+    ] = EnhancedCTImageNormalizer;
     sopClassUIDMap[toUID.EnhancedMRImage] = EnhancedMRImageNormalizer;
-    sopClassUIDMap[toUID.LegacyConvertedEnhancedMRImage] = EnhancedMRImageNormalizer;
+    sopClassUIDMap[
+      toUID.LegacyConvertedEnhancedMRImage
+    ] = EnhancedMRImageNormalizer;
     sopClassUIDMap[toUID.EnhancedUSVolume] = EnhancedUSVolumeNormalizer;
     sopClassUIDMap[toUID.PETImage] = PETImageNormalizer;
     sopClassUIDMap[toUID.EnhancedPETImage] = PETImageNormalizer;
     sopClassUIDMap[toUID.LegacyConvertedEnhancedPETImage] = PETImageNormalizer;
     sopClassUIDMap[toUID.Segmentation] = SEGImageNormalizer;
     sopClassUIDMap[toUID.DeformableSpatialRegistration] = DSRNormalizer;
-    return(sopClassUIDMap[sopClassUID]);
+    return sopClassUIDMap[sopClassUID];
   }
 
   static isMultiframeSOPClassUID(sopClassUID) {
@@ -57,30 +65,31 @@ class Normalizer {
       toUID.EnhancedPETImage,
       toUID.LegacyConvertedEnhancedPETImage,
       toUID.Segmentation,
-      toUID.ParametricMapStorage,
+      toUID.ParametricMapStorage
     ];
-    return (multiframeSOPClasses.indexOf(sopClassUID) !== -1);
+    return multiframeSOPClasses.indexOf(sopClassUID) !== -1;
   }
 
-  static isMultiframeDataset(ds=this.dataset) {
-    const sopClassUID = ds.SOPClassUID.replace(/[^0-9.]/g,''); // TODO: clean all VRs as part of normalizing
+  static isMultiframeDataset(ds = this.dataset) {
+    const sopClassUID = ds.SOPClassUID.replace(/[^0-9.]/g, ""); // TODO: clean all VRs as part of normalizing
     return Normalizer.isMultiframeSOPClassUID(sopClassUID);
   }
 
   normalize() {
-    return("No normalization defined");
+    return "No normalization defined";
   }
 
   static normalizeToDataset(datasets) {
     let sopClassUID = Normalizer.consistentSOPClassUIDs(datasets);
     let normalizerClass = Normalizer.normalizerForSOPClassUID(sopClassUID);
+
     if (!normalizerClass) {
-      log.error('no normalizerClass for ', sopClassUID);
-      return(undefined);
+      log.error("no normalizerClass for ", sopClassUID);
+      return undefined;
     }
     let normalizer = new normalizerClass(datasets);
     normalizer.normalize();
-    return(normalizer.dataset);
+    return normalizer.dataset;
   }
 }
 
@@ -91,8 +100,12 @@ class ImageNormalizer extends Normalizer {
   }
 
   static vec3CrossProduct(a, b) {
-    let ax = a[0], ay = a[1], az = a[2],
-        bx = b[0], by = b[1], bz = b[2];
+    let ax = a[0],
+      ay = a[1],
+      az = a[2],
+      bx = b[0],
+      by = b[1],
+      bz = b[2];
     let out = [];
     out[0] = ay * bz - az * by;
     out[1] = az * bx - ax * bz;
@@ -109,11 +122,14 @@ class ImageNormalizer extends Normalizer {
   }
 
   static vec3Dot(a, b) {
-    return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]);
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   }
 
   convertToMultiframe() {
-    if (this.datasets.length === 1 && Normalizer.isMultiframeDataset(this.datasets[0])) {
+    if (
+      this.datasets.length === 1 &&
+      Normalizer.isMultiframeDataset(this.datasets[0])
+    ) {
       // already a multiframe, so just use it
       this.dataset = this.datasets[0];
       return;
@@ -147,29 +163,34 @@ class ImageNormalizer extends Normalizer {
     // TODO: sorting can be seen as part of generation of the Dimension Multiframe Dimension Module
     // and should really be done in an acquisition-specific way (e.g. for DCE)
     let referencePosition = referenceDataset.ImagePositionPatient;
-    let rowVector = referenceDataset.ImageOrientationPatient.slice(0,3);
-    let columnVector = referenceDataset.ImageOrientationPatient.slice(3,6);
-    let scanAxis = ImageNormalizer.vec3CrossProduct(rowVector,columnVector);
+    let rowVector = referenceDataset.ImageOrientationPatient.slice(0, 3);
+    let columnVector = referenceDataset.ImageOrientationPatient.slice(3, 6);
+    let scanAxis = ImageNormalizer.vec3CrossProduct(rowVector, columnVector);
     let distanceDatasetPairs = [];
     this.datasets.forEach(function(dataset) {
       let position = dataset.ImagePositionPatient.slice();
-      let positionVector = ImageNormalizer.vec3Subtract(position, referencePosition);
+      let positionVector = ImageNormalizer.vec3Subtract(
+        position,
+        referencePosition
+      );
       let distance = ImageNormalizer.vec3Dot(positionVector, scanAxis);
       distanceDatasetPairs.push([distance, dataset]);
     });
-    distanceDatasetPairs.sort(function(a,b) {
-      return (b[0]-a[0]);
+    distanceDatasetPairs.sort(function(a, b) {
+      return b[0] - a[0];
     });
 
     // assign array buffers
     if (ds.BitsAllocated !== 16) {
-      log.error('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
+      log.error(
+        "Only works with 16 bit data, not " + String(dataset.BitsAllocated)
+      );
     }
     if (referenceDataset._vrMap && !referenceDataset._vrMap.PixelData) {
-      log.warn('No vr map given for pixel data, using OW');
-      ds._vrMap = {'PixelData': 'OW'};
+      log.warn("No vr map given for pixel data, using OW");
+      ds._vrMap = { PixelData: "OW" };
     } else {
-      ds._vrMap = {'PixelData': referenceDataset._vrMap.PixelData};
+      ds._vrMap = { PixelData: referenceDataset._vrMap.PixelData };
     }
     let frameSize = referenceDataset.PixelData.byteLength;
     ds.PixelData = new ArrayBuffer(ds.NumberOfFrames * frameSize);
@@ -177,7 +198,11 @@ class ImageNormalizer extends Normalizer {
     distanceDatasetPairs.forEach(function(pair) {
       let [distance, dataset] = pair;
       let pixels = new Uint16Array(dataset.PixelData);
-      let frameView = new Uint16Array(ds.PixelData, frame * frameSize, frameSize/2);
+      let frameView = new Uint16Array(
+        ds.PixelData,
+        frame * frameSize,
+        frameSize / 2
+      );
       try {
         frameView.set(pixels);
       } catch (e) {
@@ -194,9 +219,11 @@ class ImageNormalizer extends Normalizer {
 
     if (ds.NumberOfFrames < 2) {
       // TODO
-      log.error('Cannot populate shared groups uniquely without multiple frames');
+      log.error(
+        "Cannot populate shared groups uniquely without multiple frames"
+      );
     }
-    let [distance0, dataset0]  = distanceDatasetPairs[0];
+    let [distance0, dataset0] = distanceDatasetPairs[0];
     let [distance1, dataset1] = distanceDatasetPairs[1];
 
     //
@@ -206,61 +233,55 @@ class ImageNormalizer extends Normalizer {
     const SpacingBetweenSlices = Math.abs(distance1 - distance0);
 
     ds.SharedFunctionalGroupsSequence = {
-      PlaneOrientationSequence : {
-        ImageOrientationPatient : dataset0.ImageOrientationPatient,
+      PlaneOrientationSequence: {
+        ImageOrientationPatient: dataset0.ImageOrientationPatient
       },
-      PixelMeasuresSequence : {
-        PixelSpacing : dataset0.PixelSpacing,
+      PixelMeasuresSequence: {
+        PixelSpacing: dataset0.PixelSpacing,
         SpacingBetweenSlices: SpacingBetweenSlices,
-        SliceThickness: SpacingBetweenSlices,
-      },
+        SliceThickness: SpacingBetweenSlices
+      }
     };
 
     ds.ReferencedSeriesSequence = {
       SeriesInstanceUID: dataset0.SeriesInstanceUID,
-      ReferencedInstanceSequence : [],
+      ReferencedInstanceSequence: []
     };
 
     // per-frame
     ds.PerFrameFunctionalGroupsSequence = [];
-    distanceDatasetPairs.forEach(function(pair) {
-      ds.PerFrameFunctionalGroupsSequence.push({
-        PlanePositionSequence : {
-          ImagePositionPatient: pair[1].ImagePositionPatient,
-        },
-      });
-    });
-    
+
     // copy over each datasets window/level into the per-frame groups
     // and set the referenced series uid
     this.datasets.forEach(function(dataset, datasetIndex) {
       ds.PerFrameFunctionalGroupsSequence.push({
         PlanePositionSequence: {
-          ImagePositionPatient: distanceDatasetPairs[datasetIndex][1].ImagePositionPatient,
+          ImagePositionPatient:
+            distanceDatasetPairs[datasetIndex][1].ImagePositionPatient
         },
         FrameVOILUTSequence: {
           WindowCenter: dataset.WindowCenter,
-          WindowWidth: dataset.WindowWidth,
+          WindowWidth: dataset.WindowWidth
         }
       });
 
       ds.ReferencedSeriesSequence.ReferencedInstanceSequence.push({
         ReferencedSOPClass: dataset.SOPClassUID,
-        ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
+        ReferencedSOPInstanceUID: dataset.SOPInstanceUID
       });
     });
 
     let dimensionUID = DicomMetaDictionary.uid();
     this.dataset.DimensionOrganizationSequence = {
-      DimensionOrganizationUID : dimensionUID
+      DimensionOrganizationUID: dimensionUID
     };
     this.dataset.DimensionIndexSequence = [
       {
-        DimensionOrganizationUID : dimensionUID,
-        DimensionIndexPointer : 2097202,
-        FunctionalGroupPointer : 2134291, // PlanePositionSequence
-        DimensionDescriptionLabel : "ImagePositionPatient"
-      },
+        DimensionOrganizationUID: dimensionUID,
+        DimensionIndexPointer: 2097202,
+        FunctionalGroupPointer: 2134291, // PlanePositionSequence
+        DimensionDescriptionLabel: "ImagePositionPatient"
+      }
     ];
   }
 
@@ -285,7 +306,7 @@ class ImageNormalizer extends Normalizer {
 
     let validLateralities = ["R", "L"];
     if (validLateralities.indexOf(ds.Laterality) === -1) {
-      delete(ds.Laterality);
+      delete ds.Laterality;
     }
 
     if (!ds.PresentationLUTShape) {
@@ -293,7 +314,9 @@ class ImageNormalizer extends Normalizer {
     }
 
     if (!ds.SharedFunctionalGroupsSequence) {
-      log.error('Can only process multiframe data with SharedFunctionalGroupsSequence');
+      log.error(
+        "Can only process multiframe data with SharedFunctionalGroupsSequence"
+      );
     }
 
     // TODO: special case!
@@ -302,9 +325,9 @@ class ImageNormalizer extends Normalizer {
         AnatomicRegionSequence: {
           CodeValue: "T-9200B",
           CodingSchemeDesignator: "SRT",
-          CodeMeaning: "Prostate",
+          CodeMeaning: "Prostate"
         },
-        FrameLaterality: "U",
+        FrameLaterality: "U"
       };
     }
 
@@ -313,26 +336,29 @@ class ImageNormalizer extends Normalizer {
     ds.SharedFunctionalGroupsSequence.PixelValueTransformationSequence = {
       RescaleIntercept: rescaleIntercept,
       RescaleSlope: rescaleSlope,
-      RescaleType: "US",
+      RescaleType: "US"
     };
 
     let frameNumber = 1;
-    this.datasets.forEach(dataset=>{
-      ds.PerFrameFunctionalGroupsSequence[frameNumber-1].FrameContentSequence = {
+    this.datasets.forEach(dataset => {
+      ds.PerFrameFunctionalGroupsSequence[
+        frameNumber - 1
+      ].FrameContentSequence = {
         FrameAcquisitionDuration: 0,
         StackID: 1,
         InStackPositionNumber: frameNumber,
-        DimensionIndexValues: frameNumber,
+        DimensionIndexValues: frameNumber
       };
       let frameTime = dataset.AcquisitionDate + dataset.AcquisitionTime;
       if (!isNaN(frameTime)) {
-        let frameContentSequence = ds.PerFrameFunctionalGroupsSequence[frameNumber-1].FrameContentSequence;
+        let frameContentSequence =
+          ds.PerFrameFunctionalGroupsSequence[frameNumber - 1]
+            .FrameContentSequence;
         frameContentSequence.FrameAcquisitionDateTime = frameTime;
         frameContentSequence.FrameReferenceDateTime = frameTime;
       }
       frameNumber++;
     });
-
 
     //
     // TODO: convert this to shared functional group not top level element
@@ -352,7 +378,7 @@ class ImageNormalizer extends Normalizer {
       ds.WindowWidth = [];
       // provide a volume-level window/level guess (mean of per-frame)
       if (ds.PerFrameFunctionalGroupsSequence) {
-        let wcww = {center: 0, width: 0, count: 0};
+        let wcww = { center: 0, width: 0, count: 0 };
         ds.PerFrameFunctionalGroupsSequence.forEach(function(functionalGroup) {
           if (functionalGroup.FrameVOILUT) {
             let wc = functionalGroup.FrameVOILUTSequence.WindowCenter;
@@ -377,8 +403,12 @@ class ImageNormalizer extends Normalizer {
       }
     }
     // last gasp, pick an arbitrary default
-    if (ds.WindowCenter.length === 0) { ds.WindowCenter = [300]; }
-    if (ds.WindowWidth.length === 0) { ds.WindowWidth = [500]; }
+    if (ds.WindowCenter.length === 0) {
+      ds.WindowCenter = [300];
+    }
+    if (ds.WindowWidth.length === 0) {
+      ds.WindowWidth = [500];
+    }
   }
 }
 
@@ -395,11 +425,13 @@ class MRImageNormalizer extends ImageNormalizer {
     super.normalizeMultiframe();
     let ds = this.dataset;
 
-    if (!ds.ImageType ||
-        !ds.ImageType.constructor ||
-        ds.ImageType.constructor.name != "Array" ||
-        ds.ImageType.length != 4) {
-      ds.ImageType = ["ORIGINAL", "PRIMARY", "OTHER", "NONE",];
+    if (
+      !ds.ImageType ||
+      !ds.ImageType.constructor ||
+      ds.ImageType.constructor.name != "Array" ||
+      ds.ImageType.length != 4
+    ) {
+      ds.ImageType = ["ORIGINAL", "PRIMARY", "OTHER", "NONE"];
     }
 
     ds.SharedFunctionalGroupsSequence.MRImageFrameType = {
@@ -408,7 +440,7 @@ class MRImageNormalizer extends ImageNormalizer {
       VolumetricProperties: "VOLUME",
       VolumeBasedCalculationTechnique: "NONE",
       ComplexImageComponent: "MAGNITUDE",
-      AcquisitionContrast: "UNKNOWN",
+      AcquisitionContrast: "UNKNOWN"
     };
   }
 }
@@ -457,12 +489,12 @@ class SEGImageNormalizer extends ImageNormalizer {
   }
 }
 
-class PMImageNormalizer extends ImageNormalizer{
+class PMImageNormalizer extends ImageNormalizer {
   normalize() {
     super.normalize();
-    let ds = this.datasets[0]
+    let ds = this.datasets[0];
     if (ds.BitsAllocated !== 32) {
-      log.error('Only works with 32 bit data, not ' + String(ds.BitsAllocated));
+      log.error("Only works with 32 bit data, not " + String(ds.BitsAllocated));
     }
   }
 }

@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/
 /******/ 	var hotApplyOnUpdate = true;
 /******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "05d45f405f85239b305b";
+/******/ 	var hotCurrentHash = "f900ed2c12ce01c2f27d";
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule;
@@ -3913,7 +3913,6 @@ function readToolState(imageIds, arrayBuffer) {
   var dataset = _DicomMetaDictionary_js__WEBPACK_IMPORTED_MODULE_3__["DicomMetaDictionary"].naturalizeDataset(dicomData.dict);
   dataset._meta = _DicomMetaDictionary_js__WEBPACK_IMPORTED_MODULE_3__["DicomMetaDictionary"].namifyDataset(dicomData.meta);
   var multiframe = _normalizers_js__WEBPACK_IMPORTED_MODULE_4__["Normalizer"].normalizeToDataset([dataset]);
-  console.log(multiframe);
   var segType = multiframe.SegmentationType;
   var dims = {
     x: multiframe.Columns,
@@ -5213,7 +5212,7 @@ function () {
         }
 
         if (dataset.SOPClassUID !== sopClassUID) {
-          loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]('inconsistent sopClassUIDs: ', dataset.SOPClassUID, sopClassUID);
+          loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]("inconsistent sopClassUIDs: ", dataset.SOPClassUID, sopClassUID);
           return undefined;
         }
       });
@@ -5222,7 +5221,7 @@ function () {
   }, {
     key: "normalizerForSOPClassUID",
     value: function normalizerForSOPClassUID(sopClassUID) {
-      sopClassUID = sopClassUID.replace(/[^0-9.]/g, ''); // TODO: clean all VRs as part of normalizing
+      sopClassUID = sopClassUID.replace(/[^0-9.]/g, ""); // TODO: clean all VRs as part of normalizing
 
       var toUID = _DicomMetaDictionary_js__WEBPACK_IMPORTED_MODULE_0__["DicomMetaDictionary"].sopClassUIDsByName;
       var sopClassUIDMap = {};
@@ -5252,7 +5251,7 @@ function () {
     key: "isMultiframeDataset",
     value: function isMultiframeDataset() {
       var ds = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.dataset;
-      var sopClassUID = ds.SOPClassUID.replace(/[^0-9.]/g, ''); // TODO: clean all VRs as part of normalizing
+      var sopClassUID = ds.SOPClassUID.replace(/[^0-9.]/g, ""); // TODO: clean all VRs as part of normalizing
 
       return Normalizer.isMultiframeSOPClassUID(sopClassUID);
     }
@@ -5263,7 +5262,7 @@ function () {
       var normalizerClass = Normalizer.normalizerForSOPClassUID(sopClassUID);
 
       if (!normalizerClass) {
-        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]('no normalizerClass for ', sopClassUID);
+        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]("no normalizerClass for ", sopClassUID);
         return undefined;
       }
 
@@ -5344,17 +5343,17 @@ function (_Normalizer) {
       }); // assign array buffers
 
       if (ds.BitsAllocated !== 16) {
-        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]('Only works with 16 bit data, not ' + String(dataset.BitsAllocated));
+        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]("Only works with 16 bit data, not " + String(dataset.BitsAllocated));
       }
 
       if (referenceDataset._vrMap && !referenceDataset._vrMap.PixelData) {
-        loglevel__WEBPACK_IMPORTED_MODULE_2__["warn"]('No vr map given for pixel data, using OW');
+        loglevel__WEBPACK_IMPORTED_MODULE_2__["warn"]("No vr map given for pixel data, using OW");
         ds._vrMap = {
-          'PixelData': 'OW'
+          PixelData: "OW"
         };
       } else {
         ds._vrMap = {
-          'PixelData': referenceDataset._vrMap.PixelData
+          PixelData: referenceDataset._vrMap.PixelData
         };
       }
 
@@ -5386,7 +5385,7 @@ function (_Normalizer) {
 
       if (ds.NumberOfFrames < 2) {
         // TODO
-        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]('Cannot populate shared groups uniquely without multiple frames');
+        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]("Cannot populate shared groups uniquely without multiple frames");
       }
 
       var _distanceDatasetPairs = _slicedToArray(distanceDatasetPairs[0], 2),
@@ -5417,14 +5416,7 @@ function (_Normalizer) {
         ReferencedInstanceSequence: []
       }; // per-frame
 
-      ds.PerFrameFunctionalGroupsSequence = [];
-      distanceDatasetPairs.forEach(function (pair) {
-        ds.PerFrameFunctionalGroupsSequence.push({
-          PlanePositionSequence: {
-            ImagePositionPatient: pair[1].ImagePositionPatient
-          }
-        });
-      }); // copy over each datasets window/level into the per-frame groups
+      ds.PerFrameFunctionalGroupsSequence = []; // copy over each datasets window/level into the per-frame groups
       // and set the referenced series uid
 
       this.datasets.forEach(function (dataset, datasetIndex) {
@@ -5490,7 +5482,7 @@ function (_Normalizer) {
       }
 
       if (!ds.SharedFunctionalGroupsSequence) {
-        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]('Can only process multiframe data with SharedFunctionalGroupsSequence');
+        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]("Can only process multiframe data with SharedFunctionalGroupsSequence");
       } // TODO: special case!
 
 
@@ -5827,7 +5819,7 @@ function (_ImageNormalizer8) {
       var ds = this.datasets[0];
 
       if (ds.BitsAllocated !== 32) {
-        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]('Only works with 32 bit data, not ' + String(ds.BitsAllocated));
+        loglevel__WEBPACK_IMPORTED_MODULE_2__["error"]("Only works with 32 bit data, not " + String(ds.BitsAllocated));
       }
     }
   }]);

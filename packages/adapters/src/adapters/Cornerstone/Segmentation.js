@@ -208,8 +208,6 @@ function readToolState(imageIds, arrayBuffer) {
   dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
   const multiframe = Normalizer.normalizeToDataset([dataset]);
 
-  console.log(multiframe);
-
   const segType = multiframe.SegmentationType;
 
   const dims = {
