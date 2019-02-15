@@ -1,18 +1,17 @@
-
 //http://jonisalonen.com/2012/from-utf-16-to-utf-8-in-javascript/
 function toUTF8Array(str) {
     var utf8 = [];
-    for (var i=0; i < str.length; i++) {
+    for (var i = 0; i < str.length; i++) {
         var charcode = str.charCodeAt(i);
         if (charcode < 0x80) utf8.push(charcode);
         else if (charcode < 0x800) {
-            utf8.push(0xc0 | (charcode >> 6),
-                      0x80 | (charcode & 0x3f));
-        }
-        else if (charcode < 0xd800 || charcode >= 0xe000) {
-            utf8.push(0xe0 | (charcode >> 12),
-                      0x80 | ((charcode>>6) & 0x3f),
-                      0x80 | (charcode & 0x3f));
+            utf8.push(0xc0 | (charcode >> 6), 0x80 | (charcode & 0x3f));
+        } else if (charcode < 0xd800 || charcode >= 0xe000) {
+            utf8.push(
+                0xe0 | (charcode >> 12),
+                0x80 | ((charcode >> 6) & 0x3f),
+                0x80 | (charcode & 0x3f)
+            );
         }
         // surrogate pair
         else {
@@ -20,12 +19,15 @@ function toUTF8Array(str) {
             // UTF-16 encodes 0x10000-0x10FFFF by
             // subtracting 0x10000 and splitting the
             // 20 bits of 0x0-0xFFFFF into two halves
-            charcode = 0x10000 + (((charcode & 0x3ff)<<10)
-                      | (str.charCodeAt(i) & 0x3ff));
-            utf8.push(0xf0 | (charcode >>18),
-                      0x80 | ((charcode>>12) & 0x3f),
-                      0x80 | ((charcode>>6) & 0x3f),
-                      0x80 | (charcode & 0x3f));
+            charcode =
+                0x10000 +
+                (((charcode & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
+            utf8.push(
+                0xf0 | (charcode >> 18),
+                0x80 | ((charcode >> 12) & 0x3f),
+                0x80 | ((charcode >> 6) & 0x3f),
+                0x80 | (charcode & 0x3f)
+            );
         }
     }
     return utf8;
@@ -34,7 +36,7 @@ function toUTF8Array(str) {
 function toInt(val) {
     if (isNaN(val)) {
         throw new Error("Not a number: " + val);
-    } else if (typeof val == 'string') {
+    } else if (typeof val == "string") {
         return parseInt(val);
     } else return val;
 }
@@ -42,14 +44,17 @@ function toInt(val) {
 function toFloat(val) {
     if (isNaN(val)) {
         throw new Error("Not a number: " + val);
-    } else if (typeof val == 'string') {
+    } else if (typeof val == "string") {
         return parseFloat(val);
     } else return val;
 }
 
 class BufferStream {
     constructor(sizeOrBuffer, littleEndian) {
-        this.buffer = typeof sizeOrBuffer == 'number' ? new ArrayBuffer(sizeOrBuffer) : sizeOrBuffer;
+        this.buffer =
+            typeof sizeOrBuffer == "number"
+                ? new ArrayBuffer(sizeOrBuffer)
+                : sizeOrBuffer;
         if (!this.buffer) {
             this.buffer = new ArrayBuffer(0);
         }
@@ -118,7 +123,7 @@ class BufferStream {
 
         this.checkSize(bytelen);
         var startOffset = this.offset;
-        for (var i = 0;i < bytelen;i++) {
+        for (var i = 0; i < bytelen; i++) {
             this.view.setUint8(startOffset, utf8[i]);
             startOffset++;
         }
@@ -126,14 +131,17 @@ class BufferStream {
     }
 
     writeHex(value) {
-        var len = value.length, blen = len / 2, startOffset = this.offset;
+        var len = value.length,
+            blen = len / 2,
+            startOffset = this.offset;
         this.checkSize(blen);
-        for (var i = 0;i < len;i+=2) {
-            var code = parseInt(value[i], 16), nextCode;
+        for (var i = 0; i < len; i += 2) {
+            var code = parseInt(value[i], 16),
+                nextCode;
             if (i == len - 1) {
                 nextCode = null;
             } else {
-                nextCode = parseInt(value[i+1], 16);
+                nextCode = parseInt(value[i + 1], 16);
             }
             if (nextCode !== null) {
                 code = (code << 4) | nextCode;
@@ -169,7 +177,9 @@ class BufferStream {
     }
 
     readUint16Array(length) {
-        var sixlen = length / 2, arr = new Uint16Array(sixlen), i = 0;
+        var sixlen = length / 2,
+            arr = new Uint16Array(sixlen),
+            i = 0;
         while (i++ < sixlen) {
             arr[i] = this.view.getUint16(this.offset, this.isLittleEndian);
             this.offset += 2;
@@ -202,9 +212,10 @@ class BufferStream {
     }
 
     readString(length) {
-        var string = '';
+        var string = "";
 
-        var numOfMulti = length, index = 0;
+        var numOfMulti = length,
+            index = 0;
         while (index++ < numOfMulti) {
             var charCode = this.readUint8();
             string += String.fromCharCode(charCode);
@@ -214,8 +225,8 @@ class BufferStream {
     }
 
     readHex(length) {
-        var hexString = '';
-        for (var i = 0;i < length;i++) {
+        var hexString = "";
+        for (var i = 0; i < length; i++) {
             hexString += this.readUint8().toString(16);
         }
         return hexString;
@@ -233,7 +244,8 @@ class BufferStream {
     }
 
     concat(stream) {
-        var newbuf = new ArrayBuffer(this.offset + stream.size), int8 = new Uint8Array(newbuf);
+        var newbuf = new ArrayBuffer(this.offset + stream.size),
+            int8 = new Uint8Array(newbuf);
         int8.set(new Uint8Array(this.getBuffer(0, this.offset)));
         int8.set(new Uint8Array(stream.getBuffer(0, stream.size)), this.offset);
         this.buffer = newbuf;

@@ -1,14 +1,13 @@
-var path = require('path');
+const path = require('path');
 const rootPath = process.cwd();
 const context = path.join(rootPath, "src");
 const outputPath = path.join(rootPath, 'build');
 
 module.exports = {
-	context: context,
+	context,
 	entry: {
     dcmjs: './dcmjs.js'
 	},
-	target: 'web',
 	output: {
     filename: 'dcmjs.js',
     library: 'dcmjs',

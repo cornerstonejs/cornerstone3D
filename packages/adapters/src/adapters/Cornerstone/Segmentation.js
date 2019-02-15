@@ -1,3 +1,4 @@
+import log from "loglevelnext";
 import { BitArray } from "../../bitArray.js";
 import { datasetToBlob } from "../../datasetToBlob.js";
 import { DicomMessage } from "../../DicomMessage.js";
@@ -6,8 +7,8 @@ import { Normalizer } from "../../normalizers.js";
 import { Segmentation as SegmentationDerivation } from "../../derivations.js";
 
 const Segmentation = {
-  generateToolState,
-  readToolState
+    generateToolState,
+    readToolState
 };
 
 export default Segmentation;
@@ -29,131 +30,133 @@ export default Segmentation;
  * @returns {type}           description
  */
 function generateToolState(images, brushData) {
-  // NOTE: here be dragons. Currently if a brush has been used and then erased,
-  // This will flag up as a segmentation, even though its full of zeros.
-  // Fixing this cleanly really requires an update of cornerstoneTools?
+    // NOTE: here be dragons. Currently if a brush has been used and then erased,
+    // This will flag up as a segmentation, even though its full of zeros.
+    // Fixing this cleanly really requires an update of cornerstoneTools?
 
-  const { toolState, segments } = brushData;
+    const { toolState, segments } = brushData;
 
-  // Calculate the dimensions of the data cube.
-  const image0 = images[0];
+    // Calculate the dimensions of the data cube.
+    const image0 = images[0];
 
-  const dims = {
-    x: image0.columns,
-    y: image0.rows,
-    z: images.length
-  };
+    const dims = {
+        x: image0.columns,
+        y: image0.rows,
+        z: images.length
+    };
 
-  dims.xy = dims.x * dims.y;
-  dims.xyz = dims.xy * dims.z;
+    dims.xy = dims.x * dims.y;
+    dims.xyz = dims.xy * dims.z;
 
-  const isMultiframe = image0.imageId.includes("?frame");
+    const isMultiframe = image0.imageId.includes("?frame");
 
-  const seg = _createSegFromImages(images, isMultiframe);
+    const seg = _createSegFromImages(images, isMultiframe);
 
-  const numSegments = _addMetaDataToSegAndGetSegCount(seg, segments);
+    const numSegments = _addMetaDataToSegAndGetSegCount(seg, segments);
 
-  if (!numSegments) {
-    throw new Warning("No segments to export!");
-  }
+    if (!numSegments) {
+        throw new Error("No segments to export!");
+    }
 
-  // Create an array of ints as long as the number of
-  // Voxels * the number of segments.
-  const cToolsPixelData = _parseCornerstoneToolsAndExtractSegs(
+    // Create an array of ints as long as the number of
+    // Voxels * the number of segments.
+    const cToolsPixelData = _parseCornerstoneToolsAndExtractSegs(
+        images,
+        toolState,
+        dims,
+        segments,
+        numSegments
+    );
+
+    const dataSet = seg.dataset;
+
+    // Re-define the PixelData ArrayBuffer to be the correct length
+    // => segments * rows * columns * slices / 8 (As 8 bits/byte)
+    dataSet.PixelData = new ArrayBuffer((numSegments * dims.xyz) / 8);
+
+    const pixelDataUint8View = new Uint8Array(dataSet.PixelData);
+    const bitPackedcToolsData = BitArray.pack(cToolsPixelData);
+
+    for (let i = 0; i < pixelDataUint8View.length; i++) {
+        pixelDataUint8View[i] = bitPackedcToolsData[i];
+    }
+
+    const segBlob = datasetToBlob(dataSet);
+
+    return segBlob;
+}
+
+function _parseCornerstoneToolsAndExtractSegs(
     images,
     toolState,
     dims,
     segments,
     numSegments
-  );
-
-  const dataSet = seg.dataset;
-
-  // Re-define the PixelData ArrayBuffer to be the correct length
-  // => segments * rows * columns * slices / 8 (As 8 bits/byte)
-  seg.dataset.PixelData = new ArrayBuffer((numSegments * dims.xyz) / 8);
-
-  const pixelDataUint8View = new Uint8Array(seg.dataset.PixelData);
-  const bitPackedcToolsData = BitArray.pack(cToolsPixelData);
-
-  for (let i = 0; i < pixelDataUint8View.length; i++) {
-    pixelDataUint8View[i] = bitPackedcToolsData[i];
-  }
-
-  const segBlob = datasetToBlob(seg.dataset);
-
-  return segBlob;
-}
-
-function _parseCornerstoneToolsAndExtractSegs(
-  images,
-  toolState,
-  dims,
-  segments,
-  numSegments
 ) {
-  const cToolsPixelData = new Uint8ClampedArray(dims.xyz * numSegments);
+    const cToolsPixelData = new Uint8ClampedArray(dims.xyz * numSegments);
 
-  let currentSeg = 0;
+    let currentSeg = 0;
 
-  for (let segIdx = 0; segIdx < segments.length; segIdx++) {
-    if (!segments[segIdx]) {
-      continue;
+    for (let segIdx = 0; segIdx < segments.length; segIdx++) {
+        if (!segments[segIdx]) {
+            continue;
+        }
+
+        _extractOneSeg(
+            segIdx,
+            images,
+            toolState,
+            cToolsPixelData,
+            currentSeg,
+            dims
+        );
+
+        currentSeg++;
     }
 
-    _extractOneSeg(
-      segIdx,
-      images,
-      toolState,
-      cToolsPixelData,
-      currentSeg,
-      dims
-    );
-
-    currentSeg++;
-  }
-
-  return cToolsPixelData;
+    return cToolsPixelData;
 }
 
 function _extractOneSeg(
-  segIdx,
-  images,
-  toolState,
-  cToolsPixelData,
-  currentSeg,
-  dims
+    segIdx,
+    images,
+    toolState,
+    cToolsPixelData,
+    currentSeg,
+    dims
 ) {
-  for (let z = 0; z < images.length; z++) {
-    const imageId = images[z].imageId;
-    const imageIdSpecificToolState = toolState[imageId];
+    for (let z = 0; z < images.length; z++) {
+        const imageId = images[z].imageId;
+        const imageIdSpecificToolState = toolState[imageId];
 
-    if (
-      imageIdSpecificToolState &&
-      imageIdSpecificToolState.brush &&
-      imageIdSpecificToolState.brush.data
-    ) {
-      const pixelData = imageIdSpecificToolState.brush.data[segIdx].pixelData;
+        if (
+            imageIdSpecificToolState &&
+            imageIdSpecificToolState.brush &&
+            imageIdSpecificToolState.brush.data
+        ) {
+            const pixelData =
+                imageIdSpecificToolState.brush.data[segIdx].pixelData;
 
-      for (let p = 0; p < dims.xy; p++) {
-        cToolsPixelData[currentSeg * dims.xyz + z * dims.xy + p] = pixelData[p];
-      }
+            for (let p = 0; p < dims.xy; p++) {
+                cToolsPixelData[currentSeg * dims.xyz + z * dims.xy + p] =
+                    pixelData[p];
+            }
+        }
     }
-  }
 }
 
 function _addMetaDataToSegAndGetSegCount(seg, segments) {
-  let numSegments = 0;
+    let numSegments = 0;
 
-  for (let i = 0; i < segments.length; i++) {
-    if (segments[i]) {
-      numSegments++;
+    for (let i = 0; i < segments.length; i++) {
+        if (segments[i]) {
+            numSegments++;
 
-      seg.addSegment(segments[i]);
+            seg.addSegment(segments[i]);
+        }
     }
-  }
 
-  return numSegments;
+    return numSegments;
 }
 
 /**
@@ -164,33 +167,35 @@ function _addMetaDataToSegAndGetSegCount(seg, segments) {
  * @returns {Object}              The Seg derived dataSet.
  */
 function _createSegFromImages(images, isMultiframe) {
-  const datasets = [];
+    const datasets = [];
 
-  if (isMultiframe) {
-    const image = images[0];
-    const arrayBuffer = image.data.byteArray.buffer;
+    if (isMultiframe) {
+        const image = images[0];
+        const arrayBuffer = image.data.byteArray.buffer;
 
-    const dicomData = DicomMessage.readFile(arrayBuffer);
-    const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+        const dicomData = DicomMessage.readFile(arrayBuffer);
+        const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
 
-    dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+        dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
 
-    datasets.push(dataset);
-  } else {
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      const arrayBuffer = image.data.byteArray.buffer;
-      const dicomData = DicomMessage.readFile(arrayBuffer);
-      const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+        datasets.push(dataset);
+    } else {
+        for (let i = 0; i < images.length; i++) {
+            const image = images[i];
+            const arrayBuffer = image.data.byteArray.buffer;
+            const dicomData = DicomMessage.readFile(arrayBuffer);
+            const dataset = DicomMetaDictionary.naturalizeDataset(
+                dicomData.dict
+            );
 
-      dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-      datasets.push(dataset);
+            dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+            datasets.push(dataset);
+        }
     }
-  }
 
-  const multiframe = Normalizer.normalizeToDataset(datasets);
+    const multiframe = Normalizer.normalizeToDataset(datasets);
 
-  return new SegmentationDerivation([multiframe]);
+    return new SegmentationDerivation([multiframe]);
 }
 
 /**
@@ -203,126 +208,127 @@ function _createSegFromImages(images, isMultiframe) {
  *                    segment metadata can be derived.
  */
 function readToolState(imageIds, arrayBuffer) {
-  const dicomData = DicomMessage.readFile(arrayBuffer);
-  const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-  dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-  const multiframe = Normalizer.normalizeToDataset([dataset]);
+    const dicomData = DicomMessage.readFile(arrayBuffer);
+    const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+    dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+    const multiframe = Normalizer.normalizeToDataset([dataset]);
 
-  const segType = multiframe.SegmentationType;
+    const segType = multiframe.SegmentationType;
 
-  const dims = {
-    x: multiframe.Columns,
-    y: multiframe.Rows,
-    z: imageIds.length,
-    xy: multiframe.Columns * multiframe.Rows,
-    xyz: multiframe.Columns * multiframe.Rows * imageIds.length
-  };
+    const dims = {
+        x: multiframe.Columns,
+        y: multiframe.Rows,
+        z: imageIds.length,
+        xy: multiframe.Columns * multiframe.Rows,
+        xyz: multiframe.Columns * multiframe.Rows * imageIds.length
+    };
 
-  const segmentSequence = multiframe.SegmentSequence;
-  const pixelData = BitArray.unpack(multiframe.PixelData);
+    const segmentSequence = multiframe.SegmentSequence;
+    const pixelData = BitArray.unpack(multiframe.PixelData);
 
-  if (segType === "FRACTIONAL") {
-    let isActuallyBinary = false;
+    if (segType === "FRACTIONAL") {
+        let isActuallyBinary = false;
 
-    const maximumFractionalValue = multiframe.MaximumFractionalValue;
+        const maximumFractionalValue = multiframe.MaximumFractionalValue;
 
-    for (let i = 0; i < pixelData.length; i++) {
-      if (pixelData[i] !== 0 && pixelData[i] !== maximumFractionalValue) {
-        isActuallyBinary = true;
-        break;
-      }
-    }
-
-    if (!isActuallyBinary) {
-      console.warn(
-        "This is a fractional segmentation, which is not currently supported."
-      );
-      return;
-    }
-
-    console.warn(
-      "This segmentation object is actually binary... processing as such."
-    );
-  }
-
-  const segMetadata = {
-    seriesInstanceUid: multiframe.SeriesInstanceUid,
-    data: []
-  };
-
-  const toolState = {};
-
-  if (Array.isArray(segmentSequence)) {
-    const segCount = segmentSequence.length;
-
-    for (let z = 0; z < imageIds.length; z++) {
-      const imageId = imageIds[z];
-
-      const imageIdSpecificToolState = {};
-
-      imageIdSpecificToolState.brush = {};
-      imageIdSpecificToolState.brush.data = [];
-
-      const brushData = imageIdSpecificToolState.brush.data;
-
-      for (let i = 0; i < segCount; i++) {
-        brushData[i] = {
-          invalidated: true,
-          pixelData: new Uint8ClampedArray(dims.x * dims.y)
-        };
-      }
-
-      toolState[imageId] = imageIdSpecificToolState;
-    }
-
-    for (let segIdx = 0; segIdx < segmentSequence.length; segIdx++) {
-      segMetadata.data.push(segmentSequence[segIdx]);
-
-      for (let z = 0; z < imageIds.length; z++) {
-        const imageId = imageIds[z];
-
-        const cToolsPixelData = toolState[imageId].brush.data[segIdx].pixelData;
-
-        for (let p = 0; p < dims.xy; p++) {
-          if (pixelData[segIdx * dims.xyz + z * dims.xy + p]) {
-            cToolsPixelData[p] = 1;
-          } else {
-            cToolsPixelData[p] = 0;
-          }
+        for (let i = 0; i < pixelData.length; i++) {
+            if (pixelData[i] !== 0 && pixelData[i] !== maximumFractionalValue) {
+                isActuallyBinary = true;
+                break;
+            }
         }
-      }
-    }
-  } else {
-    // Only one segment, will be stored as an object.
-    segMetadata.data.push(segmentSequence);
 
-    const segIdx = 0;
-
-    for (let z = 0; z < imageIds.length; z++) {
-      const imageId = imageIds[z];
-      const imageIdSpecificToolState = {};
-
-      imageIdSpecificToolState.brush = {};
-      imageIdSpecificToolState.brush.data = [];
-      imageIdSpecificToolState.brush.data[segIdx] = {
-        invalidated: true,
-        pixelData: new Uint8ClampedArray(dims.x * dims.y)
-      };
-
-      const cToolsPixelData =
-        imageIdSpecificToolState.brush.data[segIdx].pixelData;
-
-      for (let p = 0; p < dims.xy; p++) {
-        if (pixelData[segIdx * dims.xyz + z * dims.xy + p]) {
-          cToolsPixelData[p] = 1;
-        } else {
-          cToolsPixelData[p] = 0;
+        if (!isActuallyBinary) {
+            log.warn(
+                "This is a fractional segmentation, which is not currently supported."
+            );
+            return;
         }
-      }
 
-      toolState[imageId] = imageIdSpecificToolState;
+        log.warn(
+            "This segmentation object is actually binary... processing as such."
+        );
     }
-  }
 
-  return { toolState, segMetadata };
+    const segMetadata = {
+        seriesInstanceUid: multiframe.SeriesInstanceUid,
+        data: []
+    };
+
+    const toolState = {};
+
+    if (Array.isArray(segmentSequence)) {
+        const segCount = segmentSequence.length;
+
+        for (let z = 0; z < imageIds.length; z++) {
+            const imageId = imageIds[z];
+
+            const imageIdSpecificToolState = {};
+
+            imageIdSpecificToolState.brush = {};
+            imageIdSpecificToolState.brush.data = [];
+
+            const brushData = imageIdSpecificToolState.brush.data;
+
+            for (let i = 0; i < segCount; i++) {
+                brushData[i] = {
+                    invalidated: true,
+                    pixelData: new Uint8ClampedArray(dims.x * dims.y)
+                };
+            }
+
+            toolState[imageId] = imageIdSpecificToolState;
+        }
+
+        for (let segIdx = 0; segIdx < segmentSequence.length; segIdx++) {
+            segMetadata.data.push(segmentSequence[segIdx]);
+
+            for (let z = 0; z < imageIds.length; z++) {
+                const imageId = imageIds[z];
+
+                const cToolsPixelData =
+                    toolState[imageId].brush.data[segIdx].pixelData;
+
+                for (let p = 0; p < dims.xy; p++) {
+                    if (pixelData[segIdx * dims.xyz + z * dims.xy + p]) {
+                        cToolsPixelData[p] = 1;
+                    } else {
+                        cToolsPixelData[p] = 0;
+                    }
+                }
+            }
+        }
+    } else {
+        // Only one segment, will be stored as an object.
+        segMetadata.data.push(segmentSequence);
+
+        const segIdx = 0;
+
+        for (let z = 0; z < imageIds.length; z++) {
+            const imageId = imageIds[z];
+            const imageIdSpecificToolState = {};
+
+            imageIdSpecificToolState.brush = {};
+            imageIdSpecificToolState.brush.data = [];
+            imageIdSpecificToolState.brush.data[segIdx] = {
+                invalidated: true,
+                pixelData: new Uint8ClampedArray(dims.x * dims.y)
+            };
+
+            const cToolsPixelData =
+                imageIdSpecificToolState.brush.data[segIdx].pixelData;
+
+            for (let p = 0; p < dims.xy; p++) {
+                if (pixelData[segIdx * dims.xyz + z * dims.xy + p]) {
+                    cToolsPixelData[p] = 1;
+                } else {
+                    cToolsPixelData[p] = 0;
+                }
+            }
+
+            toolState[imageId] = imageIdSpecificToolState;
+        }
+    }
+
+    return { toolState, segMetadata };
 }

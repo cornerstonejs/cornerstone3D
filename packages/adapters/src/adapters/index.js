@@ -1,9 +1,9 @@
-import Cornerstone from './Cornerstone/index.js'
-import VTKjs from './VTKjs/index.js'
+import Cornerstone from "./Cornerstone/index.js";
+import VTKjs from "./VTKjs/index.js";
 
 const adapters = {
-  Cornerstone,
-  VTKjs
+    Cornerstone,
+    VTKjs
 };
 
 export default adapters;

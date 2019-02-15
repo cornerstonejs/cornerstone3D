@@ -71,13 +71,10 @@ import Length from "./Length.js";
 // Should specify the Angle measured in Degrees, including the units in UCUM
 //
 const TID300 = {
-  TID300Measurement,
-  Length
+    TID300Measurement,
+    Length
 };
 
-export {
-  TID300Measurement,
-  Length
-};
+export { TID300Measurement, Length };
 
 export default TID300;

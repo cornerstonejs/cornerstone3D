@@ -1,14 +1,14 @@
-import { DicomMetaDictionary } from '../../DicomMetaDictionary.js';
-import TID300Measurement from './TID300Measurement.js';
+import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
+import TID300Measurement from "./TID300Measurement.js";
 
 export default class Length extends TID300Measurement {
-    constructor({point1, point2, distance, ReferencedSOPSequence}) {
-      super();
+    constructor({ point1, point2, distance, ReferencedSOPSequence }) {
+        super();
 
-      this.point1 = point1;
-      this.point2 = point2;
-      this.distance = distance;
-      this.ReferencedSOPSequence = ReferencedSOPSequence;
+        this.point1 = point1;
+        this.point2 = point2;
+        this.distance = distance;
+        this.ReferencedSOPSequence = ReferencedSOPSequence;
     }
 
     contentItem() {
@@ -16,68 +16,68 @@ export default class Length extends TID300Measurement {
 
         return [
             {
-                RelationshipType: 'HAS OBS CONTEXT',
-                ValueType: 'TEXT',
+                RelationshipType: "HAS OBS CONTEXT",
+                ValueType: "TEXT",
                 ConceptNameCodeSequence: {
-                    CodeValue: '112039',
-                    CodingSchemeDesignator: 'DCM',
-                    CodeMeaning: 'Tracking Identifier',
+                    CodeValue: "112039",
+                    CodingSchemeDesignator: "DCM",
+                    CodeMeaning: "Tracking Identifier"
                 },
-                TextValue: 'web annotation',
+                TextValue: "web annotation"
             },
             {
-                RelationshipType: 'HAS OBS CONTEXT',
-                ValueType: 'UIDREF',
+                RelationshipType: "HAS OBS CONTEXT",
+                ValueType: "UIDREF",
                 ConceptNameCodeSequence: {
-                    CodeValue: '112040',
-                    CodingSchemeDesignator: 'DCM',
-                    CodeMeaning: 'Tracking Unique Identifier',
+                    CodeValue: "112040",
+                    CodingSchemeDesignator: "DCM",
+                    CodeMeaning: "Tracking Unique Identifier"
                 },
-                UID: DicomMetaDictionary.uid(),
+                UID: DicomMetaDictionary.uid()
             },
             {
-                RelationshipType: 'CONTAINS',
-                ValueType: 'CODE',
+                RelationshipType: "CONTAINS",
+                ValueType: "CODE",
                 ConceptNameCodeSequence: {
-                    CodeValue: '121071',
-                    CodingSchemeDesignator: 'DCM',
-                    CodeMeaning: 'Finding',
+                    CodeValue: "121071",
+                    CodingSchemeDesignator: "DCM",
+                    CodeMeaning: "Finding"
                 },
                 ConceptCodeSequence: {
-                    CodeValue: 'SAMPLEFINDING',
-                    CodingSchemeDesignator: '99dcmjs',
-                    CodeMeaning: 'Sample Finding',
-                },
+                    CodeValue: "SAMPLEFINDING",
+                    CodingSchemeDesignator: "99dcmjs",
+                    CodeMeaning: "Sample Finding"
+                }
             },
             {
-                RelationshipType: 'CONTAINS',
-                ValueType: 'NUM',
+                RelationshipType: "CONTAINS",
+                ValueType: "NUM",
                 ConceptNameCodeSequence: {
-                    CodeValue: 'G-D7FE',
-                    CodingSchemeDesignator: 'SRT',
-                    CodeMeaning: 'Length',
+                    CodeValue: "G-D7FE",
+                    CodingSchemeDesignator: "SRT",
+                    CodeMeaning: "Length"
                 },
                 MeasuredValueSequence: {
                     MeasurementUnitsCodeSequence: {
-                        CodeValue: 'mm',
-                        CodingSchemeDesignator: 'UCUM',
-                        CodingSchemeVersion: '1.4',
-                        CodeMeaning: 'millimeter',
+                        CodeValue: "mm",
+                        CodingSchemeDesignator: "UCUM",
+                        CodingSchemeVersion: "1.4",
+                        CodeMeaning: "millimeter"
                     },
-                    NumericValue: distance,
+                    NumericValue: distance
                 },
                 ContentSequence: {
-                    RelationshipType: 'INFERRED FROM',
-                    ValueType: 'SCOORD',
-                    GraphicType: 'POLYLINE',
+                    RelationshipType: "INFERRED FROM",
+                    ValueType: "SCOORD",
+                    GraphicType: "POLYLINE",
                     GraphicData: [point1.x, point1.y, point2.x, point2.y],
                     ContentSequence: {
-                        RelationshipType: 'SELECTED FROM',
-                        ValueType: 'IMAGE',
+                        RelationshipType: "SELECTED FROM",
+                        ValueType: "IMAGE",
                         ReferencedSOPSequence
-                    },
-                },
-            },
+                    }
+                }
+            }
         ];
-    };
+    }
 }
