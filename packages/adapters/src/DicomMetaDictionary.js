@@ -121,7 +121,7 @@ class DicomMetaDictionary {
         if (!Array.isArray(value)) {
             value = [value];
         }else{
-          const thereIsUndefinedValues = naturalValue.filter(item => item !== undefined).length > 0;
+          const thereIsUndefinedValues = naturalValue.some(item => item === undefined);
           if(thereIsUndefinedValues){
             throw new Error("There are undefined values at the array naturalValue in DicomMetaDictionary.denaturalizeValue");
           }
