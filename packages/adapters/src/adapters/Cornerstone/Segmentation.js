@@ -4,7 +4,7 @@ import { datasetToBlob } from "../../datasetToBlob.js";
 import { DicomMessage } from "../../DicomMessage.js";
 import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
 import { Normalizer } from "../../normalizers.js";
-import { Segmentation as SegmentationDerivation } from "../../derivations.js";
+import { Segmentation as SegmentationDerivation } from "../../derivations/index.js";
 
 const Segmentation = {
     generateToolState,

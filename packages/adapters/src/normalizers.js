@@ -1,6 +1,6 @@
 import log from "loglevelnext";
 import { DicomMetaDictionary } from "./DicomMetaDictionary.js";
-import { DerivedImage } from "./derivations.js";
+import { DerivedImage } from "./derivations/index.js";
 
 class Normalizer {
     constructor(datasets) {
