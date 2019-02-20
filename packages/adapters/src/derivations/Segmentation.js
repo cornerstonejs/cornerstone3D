@@ -83,13 +83,25 @@ export default class Segmentation extends DerivedPixels {
 
         // make an array of zeros for the pixels assuming bit packing (one bit per short)
         // TODO: handle different packing and non-multiple of 8/16 rows and columns
-        // TODO: This needs to be redefined when you know how many seg frames you will have.
-        this.dataset.PixelData = new ArrayBuffer(
-            this.referencedDataset.PixelData.byteLength / 16
-        );
+        // The pixelData array needs to be defined once you know how many frames you'll have.
+        this.dataset.PixelData = undefined;
+        this.dataset.NumberOfFrames = 0;
 
-        // TODO: Add frames as we add segmentations.
         this.dataset.PerFrameFunctionalGroupsSequence = [];
+    }
+
+    /**
+     * setNumberOfFrames - Sets the number of frames of the segmentation object
+     * and allocates memory for the PixelData.
+     *
+     * @param  {type} NumberOfFrames The number of segmentation frames.
+     */
+    setNumberOfFrames(NumberOfFrames) {
+        const dataset = this.dataset;
+        dataset.NumberOfFrames = NumberOfFrames;
+        dataset.PixelData = new ArrayBuffer(
+            (dataset.rows * dataset.columns * NumberOfFrames) / 8
+        );
     }
 
     /**
@@ -102,6 +114,12 @@ export default class Segmentation extends DerivedPixels {
      *                                            segmentation references.
      */
     addSegment(Segment, bitPackedPixelData, InStackPositionNumbers) {
+        if (this.dataset.NumberOfFrames === 0) {
+            throw new Error(
+                "Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation."
+            );
+        }
+
         this._addSegmentPixelData(bitPackedPixelData);
         const ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
         this._addPerFrameFunctionalGroups(

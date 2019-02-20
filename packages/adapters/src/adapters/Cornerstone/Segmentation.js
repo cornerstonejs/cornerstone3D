@@ -46,17 +46,44 @@ function generateToolState(images, brushData) {
     };
 
     dims.xy = dims.x * dims.y;
-    dims.xyz = dims.xy * dims.z;
 
-    const isMultiframe = image0.imageId.includes("?frame");
-
-    const seg = _createSegFromImages(images, isMultiframe);
-
-    const numSegments = _addMetaDataToSegAndGetSegCount(seg, segments);
+    const numSegments = _getSegCount(seg, segments);
 
     if (!numSegments) {
         throw new Error("No segments to export!");
     }
+
+    const isMultiframe = image0.imageId.includes("?frame");
+    const seg = _createSegFromImages(images, isMultiframe);
+
+    // TODO -> Don't export empty frames.
+
+    const {
+        referencedFramesPerSegment,
+        segmentIndicies
+    } = _getNumberOfFramesPerSegment(toolState, images, segments);
+
+    console.log(referencedFramesPerSegment);
+    console.log(segmentIndicies);
+
+    let NumberOfFrames = 0;
+
+    for (let i = 0; i < referencedFramesPerSegment.length; i++) {
+        NumberOfFrames += referencedFramesPerSegment[i].length;
+    }
+
+    console.log(NumberOfFrames);
+
+    seg.setNumberOfFrames(NumberOfFrames);
+
+    // TODO -> generate pixelData for each segment.
+
+    // TODO -> add the segment via seg.addSegment(Segment, bitPackedPixelData, image frames)
+    //
+
+    // TODO -> For each Segment defined:
+    // Go through the slices, build up an array of pixeldata, and referenced frame numbers.
+    // Add up number of frames and set on seg.
 
     // Create an array of ints as long as the number of
     // Voxels * the number of segments.
@@ -84,6 +111,39 @@ function generateToolState(images, brushData) {
     const segBlob = datasetToBlob(dataSet);
 
     return segBlob;
+}
+
+function _getNumberOfFramesPerSegment(toolState, images, segments) {
+    const segmentIndicies = [];
+    const referencedFramesPerSegment = [];
+
+    for (let i = 0; i < segments.length; i++) {
+        segmentIndicies.push(i);
+        referencedFramesPerSegment.push([]);
+    }
+
+    for (let z = 0; z < images.length; z++) {
+        const imageId = images[z].imageId;
+        const imageIdSpecificToolState = toolState[imageId];
+
+        for (let i = 0; i < segmentIndicies.length; i++) {
+            const segIdx = segmentIndicies[i];
+
+            if (
+                imageIdSpecificToolState &&
+                imageIdSpecificToolState.brush &&
+                imageIdSpecificToolState.brush.data &&
+                imageIdSpecificToolState.brush.data[segIdx]
+            ) {
+                referencedFramesPerSegment[i].push(z);
+            }
+        }
+    }
+
+    return {
+        referencedFramesPerSegment,
+        segmentIndicies
+    };
 }
 
 function _parseCornerstoneToolsAndExtractSegs(
@@ -145,14 +205,12 @@ function _extractOneSeg(
     }
 }
 
-function _addMetaDataToSegAndGetSegCount(seg, segments) {
+function _getSegCount(seg, segments) {
     let numSegments = 0;
 
     for (let i = 0; i < segments.length; i++) {
         if (segments[i]) {
             numSegments++;
-
-            seg.addSegment(segments[i]);
         }
     }
 
