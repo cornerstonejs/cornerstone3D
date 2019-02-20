@@ -1,5 +1,5 @@
 import { DicomMetaDictionary } from "../DicomMetaDictionary.js";
-import DerivedDataset from "./DerivedDataset.js";
+import DerivedDataset from "./DerivedDataset";
 
 export default class DerivedPixels extends DerivedDataset {
     constructor(datasets, options = {}) {

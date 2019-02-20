@@ -1,6 +1,7 @@
 import { DicomMetaDictionary } from "../DicomMetaDictionary.js";
 import DerivedPixels from "./DerivedPixels";
 import DerivedDataset from "./DerivedDataset";
+import { Normalizer } from "../normalizers.js";
 
 export default class Segmentation extends DerivedPixels {
     constructor(datasets, options = { includeSliceSpacing: true }) {
@@ -74,21 +75,110 @@ export default class Segmentation extends DerivedPixels {
             };
         }
 
-        // handle the case of a converted multiframe, so point to original source
-        // TODO: only a single segment is created now
-        for (
-            let frameIndex = 0;
-            frameIndex < this.dataset.NumberOfFrames;
-            frameIndex++
-        ) {
-            this.dataset.PerFrameFunctionalGroupsSequence[
-                frameIndex
-            ].DerivationImageSequence = {
+        if (!this.options.includeSliceSpacing) {
+            // per dciodvfy this should not be included, but dcmqi/Slicer requires it
+            delete this.dataset.SharedFunctionalGroupsSequence
+                .PixelMeasuresSequence.SpacingBetweenSlices;
+        }
+
+        // make an array of zeros for the pixels assuming bit packing (one bit per short)
+        // TODO: handle different packing and non-multiple of 8/16 rows and columns
+        // TODO: This needs to be redefined when you know how many seg frames you will have.
+        this.dataset.PixelData = new ArrayBuffer(
+            this.referencedDataset.PixelData.byteLength / 16
+        );
+
+        // TODO: Add frames as we add segmentations.
+        this.dataset.PerFrameFunctionalGroupsSequence = [];
+    }
+
+    /**
+     * addSegment - Adds a segment to the dataset.
+     *
+     * @param  {type} Segment                The segment metadata.
+     * @param  {type} bitPackedPixelData     The bitPackedPixelData for
+     *                                       each frame of the segmentation.
+     * @param  {Number[]} InStackPositionNumbers  The frames which the
+     *                                            segmentation references.
+     */
+    addSegment(Segment, bitPackedPixelData, InStackPositionNumbers) {
+        this._addSegmentPixelData(bitPackedPixelData);
+        const ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
+        this._addPerFrameFunctionalGroups(
+            ReferencedSegmentNumber,
+            InStackPositionNumbers
+        );
+    }
+
+    _addSegmentPixelData(bitPackedPixelData) {
+        const dataset = this.dataset;
+
+        const pixelData = dataset.PixelData;
+
+        const existingFrames = dataset.PerFrameFunctionalGroupsSequence.length;
+
+        const offset = (existingFrames * dataset.rows * dataset.columns) / 8;
+
+        for (let i = 0; i < bitPackedPixelData.length; i++) {
+            pixelData[offset + i] = bitPackedPixelData[i];
+        }
+    }
+
+    _addPerFrameFunctionalGroups(
+        ReferencedSegmentNumber,
+        InStackPositionNumbers
+    ) {
+        const PerFrameFunctionalGroupsSequence = this.dataset
+            .PerFrameFunctionalGroupsSequence;
+
+        const isMultiframe = Normalizer.isMultiframeDataset(
+            this.referencedDataset
+        );
+
+        for (let i = 0; i < InStackPositionNumbers.length; i++) {
+            const frameNumber = InStackPositionNumbers[i];
+
+            const perFrameFunctionalGroups = {};
+
+            perFrameFunctionalGroups.PlanePositionSequence = DerivedDataset.copyDataset(
+                this.referencedDataset.PerFrameFunctionalGroupsSequence[
+                    frameNumber - 1
+                ].PlanePositionSequence
+            );
+
+            // TODO -> I think this is write, have someone check in review.
+            perFrameFunctionalGroups.FrameContentSequence = {
+                DimensionIndexValues: [ReferencedSegmentNumber, frameNumber]
+            };
+
+            perFrameFunctionalGroups.SegmentIdentificationSequence = {
+                ReferencedSegmentNumber
+            };
+
+            let ReferencedSOPClassUID;
+            let ReferencedSOPInstanceUID;
+            let ReferencedFrameNumber;
+
+            if (isMultiframe) {
+                ReferencedSOPClassUID = this.referencedDataset.SOPClassUID;
+                ReferencedSOPInstanceUID = this.referencedDataset
+                    .SOPInstanceUID;
+                ReferencedFrameNumber = frameNumber;
+            } else {
+                const referencedDatasetForFrame = this.referencedDatasets[
+                    frameNumber - 1
+                ];
+                ReferencedSOPClassUID = referencedDatasetForFrame.SOPClassUID;
+                ReferencedSOPInstanceUID =
+                    referencedDatasetForFrame.SOPInstanceUID;
+                ReferencedFrameNumber = 1;
+            }
+
+            perFrameFunctionalGroups.DerivationImageSequence = {
                 SourceImageSequence: {
-                    ReferencedSOPClassUID: this.referencedDataset.SOPClassUID,
-                    ReferencedSOPInstanceUID: this.referencedDataset
-                        .SOPInstanceUID,
-                    ReferencedFrameNumber: frameIndex + 1,
+                    ReferencedSOPClassUID,
+                    ReferencedSOPInstanceUID,
+                    ReferencedFrameNumber,
                     PurposeOfReferenceCodeSequence: {
                         CodeValue: "121322",
                         CodingSchemeDesignator: "DCM",
@@ -102,45 +192,12 @@ export default class Segmentation extends DerivedPixels {
                     CodeMeaning: "Segmentation"
                 }
             };
-            this.dataset.PerFrameFunctionalGroupsSequence[
-                frameIndex
-            ].FrameContentSequence = {
-                DimensionIndexValues: [1, frameIndex + 1]
-            };
-            this.dataset.PerFrameFunctionalGroupsSequence[
-                frameIndex
-            ].SegmentIdentificationSequence = {
-                ReferencedSegmentNumber: 1
-            };
-        }
 
-        // these are copied with pixels, but don't belong in segmentation
-        for (
-            let frameIndex = 0;
-            frameIndex < this.dataset.NumberOfFrames;
-            frameIndex++
-        ) {
-            // TODO: instead explicitly copy the position sequence
-            let group = this.dataset.PerFrameFunctionalGroupsSequence[
-                frameIndex
-            ];
-            delete group.FrameVOILUTSequence;
+            PerFrameFunctionalGroupsSequence.push(perFrameFunctionalGroups);
         }
-
-        if (!this.options.includeSliceSpacing) {
-            // per dciodvfy this should not be included, but dcmqi/Slicer requires it
-            delete this.dataset.SharedFunctionalGroupsSequence
-                .PixelMeasuresSequence.SpacingBetweenSlices;
-        }
-
-        // make an array of zeros for the pixels assuming bit packing (one bit per short)
-        // TODO: handle different packing and non-multiple of 8/16 rows and columns
-        this.dataset.PixelData = new ArrayBuffer(
-            this.referencedDataset.PixelData.byteLength / 16
-        );
     }
 
-    addSegment(Segment) {
+    _addSegmentMetadata(Segment) {
         if (
             !Segment.SegmentLabel ||
             !Segment.SegmentedPropertyCategoryCodeSequence ||
@@ -163,7 +220,7 @@ export default class Segmentation extends DerivedPixels {
                 if (!Segment.SegmentAlgorithmName) {
                     throw new Error(
                         `If the SegmentAlgorithmType is SEMIAUTOMATIC or AUTOMATIC,
-            SegmentAlgorithmName must be provided`
+          SegmentAlgorithmName must be provided`
                     );
                 }
 
@@ -182,8 +239,13 @@ export default class Segmentation extends DerivedPixels {
         Segment.SegmentNumber = SegmentSequence.length + 1;
 
         SegmentSequence.push(Segment);
+
+        return Segment.SegmentNumber;
     }
 
+    // TODO -> Do we really need this? A segmentation object is more something
+    // you construct for output, rather than dynamic storage. Removed for now.
+    /*
     removeSegment(segmentNumber) {
         const SegmentSequence = this.dataset.SegmentSequence;
 
@@ -195,4 +257,5 @@ export default class Segmentation extends DerivedPixels {
             SegmentSequence[i].SegmentNumber = i + 1;
         }
     }
+    */
 }
