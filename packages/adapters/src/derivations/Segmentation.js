@@ -2,6 +2,7 @@ import { DicomMetaDictionary } from "../DicomMetaDictionary.js";
 import DerivedPixels from "./DerivedPixels";
 import DerivedDataset from "./DerivedDataset";
 import { Normalizer } from "../normalizers.js";
+import { BitArray } from "../bitArray.js";
 
 export default class Segmentation extends DerivedPixels {
     constructor(datasets, options = { includeSliceSpacing: true }) {
@@ -100,27 +101,43 @@ export default class Segmentation extends DerivedPixels {
         const dataset = this.dataset;
         dataset.NumberOfFrames = NumberOfFrames;
         dataset.PixelData = new ArrayBuffer(
-            (dataset.rows * dataset.columns * NumberOfFrames) / 8
+            (dataset.Rows * dataset.Columns * NumberOfFrames) / 8
         );
     }
 
     /**
      * addSegment - Adds a segment to the dataset.
      *
-     * @param  {type} Segment                The segment metadata.
-     * @param  {type} bitPackedPixelData     The bitPackedPixelData for
-     *                                       each frame of the segmentation.
-     * @param  {Number[]} InStackPositionNumbers  The frames which the
+     * @param  {type} Segment   The segment metadata.
+     * @param  {Uint8Array} pixelData The pixelData array containing all
+     *                          frames of segmentation.
+     * @param  {Number[]} InStackPositionNumbers  The frames that the
      *                                            segmentation references.
+     * @param  {Boolean} [isBitPacked = false]    Whether the suplied pixelData
+     *                                            is already bitPacked.
+     *
      */
-    addSegment(Segment, bitPackedPixelData, InStackPositionNumbers) {
+    addSegment(
+        Segment,
+        pixelData,
+        InStackPositionNumbers,
+        isBitPacked = false
+    ) {
         if (this.dataset.NumberOfFrames === 0) {
             throw new Error(
                 "Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation."
             );
         }
 
-        this._addSegmentPixelData(bitPackedPixelData);
+        let bitPackedPixelData;
+
+        if (isBitPacked) {
+            bitPackedPixelData = pixelData;
+        } else {
+            bitPackedPixelData = BitArray.pack(pixelData);
+        }
+
+        this._addSegmentPixelData(bitPackedPixelData, isBitPacked);
         const ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
         this._addPerFrameFunctionalGroups(
             ReferencedSegmentNumber,
@@ -131,14 +148,12 @@ export default class Segmentation extends DerivedPixels {
     _addSegmentPixelData(bitPackedPixelData) {
         const dataset = this.dataset;
 
-        const pixelData = dataset.PixelData;
-
+        const pixelDataUint8View = new Uint8Array(dataset.PixelData);
         const existingFrames = dataset.PerFrameFunctionalGroupsSequence.length;
-
-        const offset = (existingFrames * dataset.rows * dataset.columns) / 8;
+        const offset = (existingFrames * dataset.Rows * dataset.Columns) / 8;
 
         for (let i = 0; i < bitPackedPixelData.length; i++) {
-            pixelData[offset + i] = bitPackedPixelData[i];
+            pixelDataUint8View[offset + i] = bitPackedPixelData[i];
         }
     }
 
@@ -260,20 +275,4 @@ export default class Segmentation extends DerivedPixels {
 
         return Segment.SegmentNumber;
     }
-
-    // TODO -> Do we really need this? A segmentation object is more something
-    // you construct for output, rather than dynamic storage. Removed for now.
-    /*
-    removeSegment(segmentNumber) {
-        const SegmentSequence = this.dataset.SegmentSequence;
-
-        // Remove the Segment
-        SegmentSequence.splice(segmentNumber - 1, 1);
-
-        // Alter the numbering of the following Segments.
-        for (let i = segmentNumber - 1; i < SegmentSequence.length; i++) {
-            SegmentSequence[i].SegmentNumber = i + 1;
-        }
-    }
-    */
 }

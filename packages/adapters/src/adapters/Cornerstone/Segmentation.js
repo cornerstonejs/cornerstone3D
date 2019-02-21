@@ -32,7 +32,7 @@ export default Segmentation;
 function generateToolState(images, brushData) {
     // NOTE: here be dragons. Currently if a brush has been used and then erased,
     // This will flag up as a segmentation, even though its full of zeros.
-    // Fixing this cleanly really requires an update of cornerstoneTools?
+    // Fixing this cleanly requires an update of cornerstoneTools?
 
     const { toolState, segments } = brushData;
 
@@ -56,15 +56,10 @@ function generateToolState(images, brushData) {
     const isMultiframe = image0.imageId.includes("?frame");
     const seg = _createSegFromImages(images, isMultiframe);
 
-    // TODO -> Don't export empty frames.
-
     const {
         referencedFramesPerSegment,
         segmentIndicies
     } = _getNumberOfFramesPerSegment(toolState, images, segments);
-
-    console.log(referencedFramesPerSegment);
-    console.log(segmentIndicies);
 
     let NumberOfFrames = 0;
 
@@ -72,45 +67,68 @@ function generateToolState(images, brushData) {
         NumberOfFrames += referencedFramesPerSegment[i].length;
     }
 
-    console.log(NumberOfFrames);
-
     seg.setNumberOfFrames(NumberOfFrames);
 
-    // TODO -> generate pixelData for each segment.
+    for (let i = 0; i < segmentIndicies.length; i++) {
+        const segmentIndex = segmentIndicies[i];
+        const referenedFrameIndicies = referencedFramesPerSegment[i];
 
-    // TODO -> add the segment via seg.addSegment(Segment, bitPackedPixelData, image frames)
-    //
+        // Frame numbers start from 1.
+        const referencedFrameNumbers = referenedFrameIndicies.map(element => {
+            return element + 1;
+        });
 
-    // TODO -> For each Segment defined:
-    // Go through the slices, build up an array of pixeldata, and referenced frame numbers.
-    // Add up number of frames and set on seg.
+        const segment = segments[segmentIndex];
 
-    // Create an array of ints as long as the number of
-    // Voxels * the number of segments.
-    const cToolsPixelData = _parseCornerstoneToolsAndExtractSegs(
-        images,
-        toolState,
-        dims,
-        segments,
-        numSegments
-    );
+        console.log(segment);
 
-    const dataSet = seg.dataset;
-
-    // Re-define the PixelData ArrayBuffer to be the correct length
-    // => segments * rows * columns * slices / 8 (As 8 bits/byte)
-    dataSet.PixelData = new ArrayBuffer((numSegments * dims.xyz) / 8);
-
-    const pixelDataUint8View = new Uint8Array(dataSet.PixelData);
-    const bitPackedcToolsData = BitArray.pack(cToolsPixelData);
-
-    for (let i = 0; i < pixelDataUint8View.length; i++) {
-        pixelDataUint8View[i] = bitPackedcToolsData[i];
+        seg.addSegment(
+            segment,
+            _extractCornerstoneToolsPixelData(
+                segmentIndex,
+                referenedFrameIndicies,
+                toolState,
+                images,
+                dims
+            ),
+            referencedFrameNumbers
+        );
     }
 
-    const segBlob = datasetToBlob(dataSet);
+    const segBlob = datasetToBlob(seg.dataset);
 
     return segBlob;
+}
+
+function _extractCornerstoneToolsPixelData(
+    segmentIndex,
+    referenedFrames,
+    toolState,
+    images,
+    dims
+) {
+    const pixelData = new Uint8Array(dims.xy * referenedFrames.length);
+
+    let pixelDataIndex = 0;
+
+    for (let i = 0; i < referenedFrames.length; i++) {
+        const frame = referenedFrames[i];
+
+        const imageId = images[frame].imageId;
+        const imageIdSpecificToolState = toolState[imageId];
+
+        const brushPixelData =
+            imageIdSpecificToolState.brush.data[segmentIndex].pixelData;
+
+        for (let p = 0; p < brushPixelData.length; p++) {
+            pixelData[pixelDataIndex] = brushPixelData[p];
+            pixelDataIndex++;
+        }
+    }
+
+    console.log(pixelData);
+
+    return pixelData;
 }
 
 function _getNumberOfFramesPerSegment(toolState, images, segments) {
@@ -144,65 +162,6 @@ function _getNumberOfFramesPerSegment(toolState, images, segments) {
         referencedFramesPerSegment,
         segmentIndicies
     };
-}
-
-function _parseCornerstoneToolsAndExtractSegs(
-    images,
-    toolState,
-    dims,
-    segments,
-    numSegments
-) {
-    const cToolsPixelData = new Uint8ClampedArray(dims.xyz * numSegments);
-
-    let currentSeg = 0;
-
-    for (let segIdx = 0; segIdx < segments.length; segIdx++) {
-        if (!segments[segIdx]) {
-            continue;
-        }
-
-        _extractOneSeg(
-            segIdx,
-            images,
-            toolState,
-            cToolsPixelData,
-            currentSeg,
-            dims
-        );
-
-        currentSeg++;
-    }
-
-    return cToolsPixelData;
-}
-
-function _extractOneSeg(
-    segIdx,
-    images,
-    toolState,
-    cToolsPixelData,
-    currentSeg,
-    dims
-) {
-    for (let z = 0; z < images.length; z++) {
-        const imageId = images[z].imageId;
-        const imageIdSpecificToolState = toolState[imageId];
-
-        if (
-            imageIdSpecificToolState &&
-            imageIdSpecificToolState.brush &&
-            imageIdSpecificToolState.brush.data
-        ) {
-            const pixelData =
-                imageIdSpecificToolState.brush.data[segIdx].pixelData;
-
-            for (let p = 0; p < dims.xy; p++) {
-                cToolsPixelData[currentSeg * dims.xyz + z * dims.xy + p] =
-                    pixelData[p];
-            }
-        }
-    }
 }
 
 function _getSegCount(seg, segments) {
