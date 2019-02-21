@@ -7,4 +7,5 @@ node_modules
 yarn-error.log
 yarn.lock
 build/
+.DS_Store
 
