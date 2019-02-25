@@ -7,7 +7,7 @@ import { tagFromNumbers, ValueRepresentation } from "./ValueRepresentation.js";
 const IMPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2";
 const EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
 const EXPLICIT_BIG_ENDIAN = "1.2.840.10008.1.2.2";
-const singleVRs = ["SQ", "OF", "OW", "OB", "UN"];
+const singleVRs = ["SQ", "OF", "OW", "OB", "UN", "LT"];
 
 const encapsulatedSyntaxes = [
     "1.2.840.10008.1.2.4.50",
