@@ -29,18 +29,18 @@ export default class MeasurementReport {
         // Input is all ROIS returned via viewer.getALLROIs()
         // let report = MeasurementReport.generateReport(viewer.getAllROIs());
 
-        // Sort and split into arrays by scoord.graphicType
+        // Sort and split into arrays by scoord3d.graphicType
         const measurementsByGraphicType = {};
         rois.forEach(roi => {
-            const graphicType = roi.scoord.graphicType;
+            const graphicType = roi.scoord3d.graphicType;
             // adding z coord as 0
-            roi.scoord.coordinates.map(coord => coord.push(0));
+            roi.scoord3d.coordinates.map(coord => coord.push(0));
 
             if (!measurementsByGraphicType[graphicType]) {
                 measurementsByGraphicType[graphicType] = [];
             }
 
-            measurementsByGraphicType[graphicType].push(roi.scoord);
+            measurementsByGraphicType[graphicType].push(roi.scoord3d);
         });
 
         // For each measurement, get the utility arguments using the adapter, and create TID300 Measurement
