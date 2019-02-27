@@ -8,6 +8,7 @@ const BitArray = {
 };
 
 export { BitArray };
+export default BitArray;
 
 function getBytesForBinaryFrame(numPixels) {
     // Check whether the 1-bit pixels exactly fit into bytes

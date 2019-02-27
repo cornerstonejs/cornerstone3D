@@ -146,3 +146,4 @@ class Colors {
 }
 
 export { Colors };
+export default Colors;
