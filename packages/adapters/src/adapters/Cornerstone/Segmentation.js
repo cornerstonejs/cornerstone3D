@@ -80,8 +80,6 @@ function generateToolState(images, brushData) {
 
         const segment = segments[segmentIndex];
 
-        console.log(segment);
-
         seg.addSegment(
             segment,
             _extractCornerstoneToolsPixelData(
@@ -94,6 +92,8 @@ function generateToolState(images, brushData) {
             referencedFrameNumbers
         );
     }
+
+    console.log(seg.dataset);
 
     const segBlob = datasetToBlob(seg.dataset);
 
@@ -221,14 +221,48 @@ function _createSegFromImages(images, isMultiframe) {
  *
  * @param  {string[]} imageIds    An array of the imageIds.
  * @param  {ArrayBuffer} arrayBuffer The SEG arrayBuffer.
+ * @param {*} metadataProvider
  * @returns {Object}  The toolState and an object from which the
  *                    segment metadata can be derived.
  */
-function readToolState(imageIds, arrayBuffer) {
+function readToolState(imageIds, arrayBuffer, metadataProvider) {
     const dicomData = DicomMessage.readFile(arrayBuffer);
     const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
     dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
     const multiframe = Normalizer.normalizeToDataset([dataset]);
+
+    // TEMP
+    const ImageOrientationPatient = [1, 0, 0, 0, 1, 0];
+
+    const orientations = getValidOrientations(imagePositionPatient);
+
+    console.log(orientations);
+
+    return;
+
+    //const imagePlaneModule = metadataProvider.get("imagePlane", imageIds[0]);
+
+    //console.log(imagePlaneModule);
+
+    // TODO:
+    //
+    // Get IOP from ref series, compute supported orientations:
+    // 0, 90, 180, 270, & flip H, flip V.
+
+    //
+    //
+    // Get IOP -> Check SharedFunctionalGroupsSequence
+    //
+    // For each frame get IPP (and IOP if not in SharedFunctionalGroupsSequence)
+    //
+    // If IPP in frame does not match ref image, bail out, and say why.
+    // If IOP matches one of supported orientations, good:
+    // --
+    // else: Not so good! Bail out.
+
+    //
+    // Compute normal of row and column cosines for both frame and ref'd image.
+    // If dot product is not 1 bail out.
 
     const segType = multiframe.SegmentationType;
 
@@ -348,4 +382,118 @@ function readToolState(imageIds, arrayBuffer) {
     }
 
     return { toolState, segMetadata };
+}
+
+/**
+ * getValidOrientations - returns an array of valid orientations.
+ *
+ * @param  {Number[6]} iop The row (0..2) an column (3..5) direction cosines.
+ * @return {Number[16][6]} An array of valid orientations.
+ */
+function getValidOrientations(iop) {
+    const orientations = [];
+
+    const iop90 = rotateDirectionCosinesInPlane(iop, Math.PI / 2);
+    const iop180 = rotateDirectionCosinesInPlane(iop, Math.PI);
+    const iop270 = rotateDirectionCosinesInPlane(iop, 1.5 * Math.PI);
+
+    // [0,  1,  2,  3 ]: 0,   0hf,   0vf,   0h+vf
+    // [4,  5,  6,  7 ]: 90,  90hf,  90vf,  90h+vf
+    // [8,  9,  10, 11]: 180, 180hf, 180vf, 180h+vf
+    // [12, 13, 14, 15]: 270, 270hf, 270vf, 270h+vf
+
+    orientations[0] = iop;
+    orientations[1] = flipH(iop);
+    orientations[2] = flipV(iop);
+    orientations[3] = flipHV(iop);
+
+    orientations[4] = iop90;
+    orientations[5] = flipH(iop90);
+    orientations[6] = flipV(iop90);
+    orientations[7] = flipHV(iop90);
+
+    orientations[8] = iop180;
+    orientations[9] = flipH(iop180);
+    orientations[10] = flipV(iop180);
+    orientations[11] = flipHV(iop180);
+
+    orientations[12] = iop270;
+    orientations[13] = flipH(iop270);
+    orientations[14] = flipV(iop270);
+    orientations[15] = flipHV(iop270);
+
+    return orientations;
+}
+
+function flipH(iop) {
+    return [iop[0], iop[1], iop[2], -iop[3], -iop[4], -iop[5]];
+}
+
+function flipV(iop) {
+    return [-iop[0], -iop[1], -iop[2], iop[3], iop[4], iop[5]];
+}
+
+function flipHV(iop) {
+    return [-iop[0], -iop[1], -iop[2], -iop[3], -iop[4], -iop[5]];
+}
+
+/**
+ * rotateDirectionCosinesInPlane - rotates the row and column cosines around
+ * their normal by angle theta.
+ *
+ * @param  {Number[6]} iop   The row (0..2) an column (3..5) direction cosines.
+ * @param  {Number} theta The rotation magnitude in radians.
+ * @return {Number[6]}       The rotate row (0..2) and column (3..5) direction cosines.
+ */
+function rotateDirectionCosinesInPlane(iop, theta) {
+    const r = [iop[0], iop[1], iop[2]];
+    const c = [iop[3], iop[4], iop[5]];
+    const rxc = crossProduct3D(r, c);
+
+    const rRot = rotateVectorAroundUnitVector(r, rxc, theta);
+    const cRot = -crossProduct3D(rxc, rRot);
+
+    return [...rRot, ...cRot];
+}
+
+/**
+ * rotateVectorAroundUnitVector - Rotates vector v around unit vector k using
+ *                                Rodrigues' rotation formula.
+ *
+ * @param  {Number[3]} v     The vector to rotate.
+ * @param  {Number[3]} k     The unit vector of the axis of rotation.
+ * @param  {Number} theta    The rotation magnitude in radians.
+ * @return {Number[3]}       The rotated v vector.
+ */
+function rotateVectorAroundUnitVector(v, k, theta) {
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
+    const oneMinusCosTheta = 1.0 - cosTheta;
+    const kdotv = k[0] * v[0] + k[1] * v[1] + k[2] * v[2];
+    const vRot = [];
+    const kxv = crossProduct3D(k, v);
+
+    for (let i = 0; i <= 2; i++) {
+        vRot[i] =
+            v[i] * cosTheta +
+            kxv[i] * sinTheta +
+            k[i] * kdotv * oneMinusCosTheta;
+    }
+
+    return vRot;
+}
+
+/**
+ * crossProduct3D - Returns the cross product of a and b.
+ *
+ * @param  {Number[3]} a Vector a.
+ * @param  {Number[3]} b Vector b.
+ * @return {Number[3]}   The cross product.
+ */
+function crossProduct3D(a, b) {
+    return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+    ];
 }
