@@ -88,7 +88,7 @@
     <!--
       <script src='node_modules/react-viewerbase/dist/index.js'></script>!
     -->
-    <script src="https://unpkg.com/react-cornerstone-viewport@0.1.12/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/react-cornerstone-viewport@0.1.18/dist/index.umd.js"></script>
 
     <script>
       let metaData = {};
@@ -125,7 +125,8 @@
           segMetadata
         } = dcmjs.adapters.Cornerstone.Segmentation.readToolState(
           imageIds,
-          arrayBuffer
+          arrayBuffer,
+          cornerstone.metaData
         );
 
         cornerstoneTools.globalImageIdSpecificToolStateManager.restoreToolState(
@@ -137,6 +138,16 @@
           modules.brush.setters.metadata(seriesInstanceUid, i, segMetadata[i]);
         }
       }
+
+      function metaDataProvider(type, imageId) {
+        if (!metaData[imageId]) {
+          return;
+        }
+
+        return metaData[imageId][type];
+      }
+
+      cornerstone.metaData.addProvider(metaDataProvider);
 
       function addMetaData(type, imageId, data) {
         metaData[imageId] = metaData[imageId] || {};
@@ -189,6 +200,13 @@
               dataset
             ]);
 
+            var SharedFunctionalGroupsSequence =
+              multiframe.SharedFunctionalGroupsSequence;
+
+            var imageOrientationArray =
+              SharedFunctionalGroupsSequence.PlaneOrientationSequence
+                .ImageOrientationPatient;
+
             const numFrames = Number(multiframe.NumberOfFrames);
             for (let i = 0; i < numFrames; i++) {
               const imageId = baseImageId + "?frame=" + i;
@@ -199,11 +217,17 @@
                 functionalGroup.PlanePositionSequence.ImagePositionPatient;
 
               addMetaData("imagePlane", imageId, {
-                imagePositionPatient: {
-                  x: imagePositionArray[0],
-                  y: imagePositionArray[1],
-                  z: imagePositionArray[2]
-                }
+                imagePositionPatient: imagePositionArray,
+                rowCosines: [
+                  imageOrientationArray[0],
+                  imageOrientationArray[1],
+                  imageOrientationArray[2]
+                ],
+                columnCosines: [
+                  imageOrientationArray[3],
+                  imageOrientationArray[4],
+                  imageOrientationArray[5]
+                ]
               });
             }
 

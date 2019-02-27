@@ -231,16 +231,24 @@ function readToolState(imageIds, arrayBuffer, metadataProvider) {
     dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
     const multiframe = Normalizer.normalizeToDataset([dataset]);
 
-    // TEMP
-    const ImageOrientationPatient = [1, 0, 0, 0, 1, 0];
+    const imagePlaneModule = metadataProvider.get("imagePlane", imageIds[0]);
+    const ImageOrientationPatient = [
+        ...imagePlaneModule.rowCosines,
+        ...imagePlaneModule.columnCosines
+    ];
 
-    const orientations = getValidOrientations(imagePositionPatient);
+    const orientations = getValidOrientations(ImageOrientationPatient);
 
-    console.log(orientations);
+    for (let i = 0; i < orientations.length; i++) {
+        const iop = orientations[i];
+        console.log(
+            `(${iop[0]},${iop[1]},${iop[2]},${iop[3]},${iop[4]},${iop[5]})`
+        );
+    }
+
+    console.log(imagePlaneModule);
 
     return;
-
-    //const imagePlaneModule = metadataProvider.get("imagePlane", imageIds[0]);
 
     //console.log(imagePlaneModule);
 
@@ -451,7 +459,11 @@ function rotateDirectionCosinesInPlane(iop, theta) {
     const rxc = crossProduct3D(r, c);
 
     const rRot = rotateVectorAroundUnitVector(r, rxc, theta);
-    const cRot = -crossProduct3D(rxc, rRot);
+    const cRot = crossProduct3D(rxc, rRot);
+
+    for (let i = 0; i < 2; i++) {
+        cRot[i] *= -1.0;
+    }
 
     return [...rRot, ...cRot];
 }
