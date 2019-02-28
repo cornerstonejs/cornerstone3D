@@ -22,18 +22,16 @@ export default {
     }
   ],
   plugins: [
+    resolve({
+      browser: true
+    }),
+    commonjs(),
     globals(),
     builtins(),
     babel({
       runtimeHelpers: true,
       exclude: "node_modules/**"
     }),
-    commonjs({
-      include: "node_modules/**"
-    }),
-    json({
-      include: "node_modules/**"
-    }),
-    resolve()
+    json()
   ]
 };
