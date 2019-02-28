@@ -1,6 +1,5 @@
 import ndarray from "ndarray";
 import warp from "ndarray-warp";
-//import cwise from "cwise";
 
 /**
  * anonymous function - Rotates a matrix by theta degrees.
