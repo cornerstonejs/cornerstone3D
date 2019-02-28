@@ -40,7 +40,9 @@
   "dependencies": {
     "@babel/polyfill": "^7.2.5",
     "@babel/runtime": "^7.3.1",
-    "loglevelnext": "^3.0.0"
+    "loglevelnext": "^3.0.0",
+    "ndarray": "^1.0.18",
+    "ndarray-warp": "^1.0.1"
   },
   "husky": {
     "hooks": {
