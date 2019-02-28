@@ -10,7 +10,7 @@ import {
     rotateDirectionCosinesInPlane,
     flipImageOrientationPatient as flipIOP,
     flipMatrix2D,
-    rotateMatrix2D
+    rotateMatrix902D
 } from "../../utilities/orientation/index.js";
 
 const Segmentation = {
@@ -290,11 +290,17 @@ function readToolState(imageIds, arrayBuffer, metadataProvider) {
     }
 
     console.log(imagePlanePerSegmentationFrame);
+    /*
+  const testArray = ndarray(new Uint8Array([1, 0, 0, 0, 0, 1, 0, 0, 0]), [
+    3,
+    3
+  ]);
+  */
 
-    const testArray = ndarray(new Uint8Array([1, 0, 0, 0, 0, 1, 0, 0, 0]), [
-        3,
-        3
-    ]);
+    const testArray = ndarray(
+        new Uint8Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]),
+        [4, 4]
+    );
 
     /*
   console.log("h:");
@@ -305,11 +311,13 @@ function readToolState(imageIds, arrayBuffer, metadataProvider) {
   */
 
     console.log("90");
-    rotateMatrix2D(testArray, Math.PI / 2);
+    rotateMatrix902D(testArray);
+    /*
     console.log("180");
     rotateMatrix2D(testArray, Math.PI);
     console.log("270");
     rotateMatrix2D(testArray, 1.5 * Math.PI);
+    */
 
     return;
 
