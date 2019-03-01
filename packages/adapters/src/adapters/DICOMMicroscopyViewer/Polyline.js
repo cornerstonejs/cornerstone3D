@@ -4,27 +4,9 @@ import TID300Polyline from "../../utilities/TID300/Polyline";
 class Polyline {
     constructor() {}
 
-    static measurementContentToLengthState(groupItemContent) {
-        const lengthContent = groupItemContent.ContentSequence;
-        const { ReferencedSOPSequence } = lengthContent.ContentSequence;
-        const {
-            ReferencedSOPInstanceUID,
-            ReferencedFrameNumber
-        } = ReferencedSOPSequence;
-        const lengthState = {
-            sopInstanceUid: ReferencedSOPInstanceUID,
-            frameIndex: ReferencedFrameNumber || 0,
-            length: groupItemContent.MeasuredValueSequence.NumericValue
-        };
-
-        // FROM DICOM TO dicom-microscopy-viewer format
-
-        return lengthState;
-    }
-
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(measurementContent) {
-        return measurementContent.map(Length.measurementContentToLengthState);
+        return measurementContent.ContentSequence.GraphicData;
     }
 
     // Expects a Polyline scoord from dicom-microscopy-viewer? Check arguments?

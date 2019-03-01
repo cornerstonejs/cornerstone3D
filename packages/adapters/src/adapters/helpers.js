@@ -10,4 +10,13 @@ const codeMeaningEquals = codeMeaningName => {
     };
 };
 
-export { toArray, codeMeaningEquals };
+const graphicTypeEquals = graphicType => {
+    return contentItem => {
+        return (
+            contentItem.ContentSequence !== undefined &&
+            contentItem.ContentSequence.GraphicType === graphicType
+        );
+    };
+};
+
+export { toArray, codeMeaningEquals, graphicTypeEquals };
