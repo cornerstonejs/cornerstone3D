@@ -78,10 +78,10 @@ function generateSegmentation(images, brushData) {
 
     for (let i = 0; i < segmentIndicies.length; i++) {
         const segmentIndex = segmentIndicies[i];
-        const referenedFrameIndicies = referencedFramesPerSegment[i];
+        const referencedFrameIndicies = referencedFramesPerSegment[i];
 
         // Frame numbers start from 1.
-        const referencedFrameNumbers = referenedFrameIndicies.map(element => {
+        const referencedFrameNumbers = referencedFrameIndicies.map(element => {
             return element + 1;
         });
 
@@ -91,7 +91,7 @@ function generateSegmentation(images, brushData) {
             segment,
             _extractCornerstoneToolsPixelData(
                 segmentIndex,
-                referenedFrameIndicies,
+                referencedFrameIndicies,
                 toolState,
                 images,
                 dims
@@ -109,17 +109,17 @@ function generateSegmentation(images, brushData) {
 
 function _extractCornerstoneToolsPixelData(
     segmentIndex,
-    referenedFrames,
+    referencedFrames,
     toolState,
     images,
     dims
 ) {
-    const pixelData = new Uint8Array(dims.xy * referenedFrames.length);
+    const pixelData = new Uint8Array(dims.xy * referencedFrames.length);
 
     let pixelDataIndex = 0;
 
-    for (let i = 0; i < referenedFrames.length; i++) {
-        const frame = referenedFrames[i];
+    for (let i = 0; i < referencedFrames.length; i++) {
+        const frame = referencedFrames[i];
 
         const imageId = images[frame].imageId;
         const imageIdSpecificToolState = toolState[imageId];

@@ -179,7 +179,7 @@ export default class Segmentation extends DerivedPixels {
                 ].PlanePositionSequence
             );
 
-            // TODO -> I think this is write, have someone check in review.
+            // TODO -> I think this is right, have someone check in review.
             perFrameFunctionalGroups.FrameContentSequence = {
                 DimensionIndexValues: [ReferencedSegmentNumber, frameNumber]
             };
