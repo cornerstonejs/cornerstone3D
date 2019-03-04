@@ -57,7 +57,7 @@
 
     <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
     <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
-    <script src="https://unpkg.com/cornerstone-tools@3.0.0-b.1585/dist/cornerstoneTools.js"></script>
+    <script src="https://unpkg.com/cornerstone-tools@3.2.0/dist/cornerstoneTools.js"></script>
 
     <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
     <script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js"></script>
@@ -128,6 +128,10 @@
           arrayBuffer,
           cornerstone.metaData
         );
+
+        console.log(toolState);
+
+        console.log(segMetadata);
 
         cornerstoneTools.globalImageIdSpecificToolStateManager.restoreToolState(
           toolState
@@ -207,6 +211,8 @@
               SharedFunctionalGroupsSequence.PlaneOrientationSequence
                 .ImageOrientationPatient;
 
+            var sopInstanceUid = multiframe.SOPInstanceUID;
+
             const numFrames = Number(multiframe.NumberOfFrames);
             for (let i = 0; i < numFrames; i++) {
               const imageId = baseImageId + "?frame=" + i;
@@ -215,6 +221,11 @@
                 multiframe.PerFrameFunctionalGroupsSequence[i];
               var imagePositionArray =
                 functionalGroup.PlanePositionSequence.ImagePositionPatient;
+
+              var ReferencedSOPInstanceUID =
+                multiframe.ReferencedSeriesSequence.ReferencedInstanceSequence[
+                  i
+                ].ReferencedSOPInstanceUID;
 
               addMetaData("imagePlane", imageId, {
                 imagePositionPatient: imagePositionArray,
@@ -229,6 +240,8 @@
                   imageOrientationArray[5]
                 ]
               });
+
+              addMetaData("sopInstanceUid", imageId, ReferencedSOPInstanceUID);
             }
 
             resolve(multiframe);

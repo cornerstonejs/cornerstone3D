@@ -9,7 +9,7 @@ import ndarray from "ndarray";
 export default function(matrix) {
     const [rows, cols] = matrix.shape;
 
-    debugPrintMatrix(matrix);
+    //debugPrintMatrix(matrix);
 
     let result = ndarray(new Uint8Array(rows * cols), [cols, rows]);
 
@@ -21,7 +21,7 @@ export default function(matrix) {
         }
     }
 
-    debugPrintMatrix(result);
+    //debugPrintMatrix(result);
 
     return result;
 }
