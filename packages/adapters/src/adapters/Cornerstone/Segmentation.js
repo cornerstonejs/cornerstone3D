@@ -14,8 +14,8 @@ import {
 } from "../../utilities/orientation/index.js";
 
 const Segmentation = {
-    generateToolState,
-    readToolState
+    generateSegmentation,
+    generateToolState
 };
 
 export default Segmentation;
@@ -29,14 +29,14 @@ export default Segmentation;
  */
 
 /**
- * generateToolState - Generates cornerstoneTools brush data, given a stack of
+ * generateSegmentation - Generates cornerstoneTools brush data, given a stack of
  * imageIds, images and the cornerstoneTools brushData.
  *
  * @param  {object[]} images    An array of the cornerstone image objects.
  * @param  {BrushData} brushData and object containing the brushData.
  * @returns {type}           description
  */
-function generateToolState(images, brushData) {
+function generateSegmentation(images, brushData) {
     // NOTE: here be dragons. Currently if a brush has been used and then erased,
     // This will flag up as a segmentation, even though its full of zeros.
     // Fixing this cleanly requires an update of cornerstoneTools?
@@ -221,8 +221,8 @@ function _createSegFromImages(images, isMultiframe) {
 }
 
 /**
- * readToolState - Given a set of cornrstoneTools imageIds and a SEG, derive
- * cornerstoneTools toolState and brush metadata.
+ * generateToolState - Given a set of cornrstoneTools imageIds and a Segmentation buffer,
+ * derive cornerstoneTools toolState and brush metadata.
  *
  * @param  {string[]} imageIds    An array of the imageIds.
  * @param  {ArrayBuffer} arrayBuffer The SEG arrayBuffer.
@@ -230,7 +230,7 @@ function _createSegFromImages(images, isMultiframe) {
  * @returns {Object}  The toolState and an object from which the
  *                    segment metadata can be derived.
  */
-function readToolState(imageIds, arrayBuffer, metadataProvider) {
+function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     const dicomData = DicomMessage.readFile(arrayBuffer);
     const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
     dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);

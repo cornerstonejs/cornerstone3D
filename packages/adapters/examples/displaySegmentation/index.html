@@ -123,14 +123,13 @@
         const {
           toolState,
           segMetadata
-        } = dcmjs.adapters.Cornerstone.Segmentation.readToolState(
+        } = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
           imageIds,
           arrayBuffer,
           cornerstone.metaData
         );
 
         console.log(toolState);
-
         console.log(segMetadata);
 
         cornerstoneTools.globalImageIdSpecificToolStateManager.restoreToolState(
