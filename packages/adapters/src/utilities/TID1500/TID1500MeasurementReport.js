@@ -71,7 +71,7 @@ export default class TID1500MeasurementReport {
                     },
                     ConceptCodeSequence: {
                         CodeValue: "eng",
-                        CodingSchemeDesignator: "RFC3066",
+                        CodingSchemeDesignator: "RFC5646",
                         CodeMeaning: "English"
                     },
                     ContentSequence: {
