@@ -7,9 +7,12 @@ import { DicomMetaDictionary } from "./DicomMetaDictionary.js";
 import { DICOMWEB } from "./dicomweb.js";
 import { Tag } from "./Tag.js";
 import { ValueRepresentation } from "./ValueRepresentation.js";
-//export { anonymizer } from './anonymizer.js';
 import { Colors } from "./colors.js";
-import { datasetToBlob } from "./datasetToBlob.js";
+import {
+    datasetToDict,
+    datasetToBuffer,
+    datasetToBlob
+} from "./datasetToBlob.js";
 
 let data = {
     BitArray,
@@ -21,6 +24,8 @@ let data = {
     Tag,
     ValueRepresentation,
     Colors,
+    datasetToDict,
+    datasetToBuffer,
     datasetToBlob
 };
 

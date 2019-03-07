@@ -1,7 +1,7 @@
 import { DicomMetaDictionary } from "./DicomMetaDictionary.js";
 import { DicomDict } from "./DicomDict.js";
 
-function datasetToBlob(dataset) {
+function datasetToDict(dataset) {
     const meta = {
         FileMetaInformationVersion:
             dataset._meta.FileMetaInformationVersion.Value,
@@ -20,11 +20,17 @@ function datasetToBlob(dataset) {
 
     const denaturalized = DicomMetaDictionary.denaturalizeDataset(meta);
     const dicomDict = new DicomDict(denaturalized);
-
     dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
+    return dicomDict;
+}
 
-    const buffer = dicomDict.write();
+function datasetToBuffer(dataset) {
+    return Buffer.from(datasetToDict(dataset).write());
+}
+
+function datasetToBlob(dataset) {
+    const buffer = datasetToBuffer(dataset);
     return new Blob([buffer], { type: "application/dicom" });
 }
 
-export { datasetToBlob };
+export { datasetToBlob, datasetToBuffer, datasetToDict };
