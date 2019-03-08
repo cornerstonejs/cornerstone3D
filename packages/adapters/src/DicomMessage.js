@@ -67,8 +67,8 @@ class DicomMessage {
         return encapsulatedSyntaxes.indexOf(syntax) != -1;
     }
 
-    static readFile(buffer, options) {
-        var { ignoreErrors } = options;
+    static readFile(buffer, options = { ignoreErrors: false }) {
+        const { ignoreErrors } = options;
         var stream = new ReadBufferStream(buffer),
             useSyntax = EXPLICIT_LITTLE_ENDIAN;
         stream.reset();
