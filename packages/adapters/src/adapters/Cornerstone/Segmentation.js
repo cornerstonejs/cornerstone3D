@@ -236,7 +236,10 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
     const multiframe = Normalizer.normalizeToDataset([dataset]);
 
-    const imagePlaneModule = metadataProvider.get("imagePlane", imageIds[0]);
+    const imagePlaneModule = metadataProvider.get(
+        "imagePlaneModule",
+        imageIds[0]
+    );
     const ImageOrientationPatient = [
         ...imagePlaneModule.rowCosines,
         ...imagePlaneModule.columnCosines
@@ -446,10 +449,17 @@ function getImageIdOfReferencedSingleFramedSOPInstance(
     imageIds,
     metadataProvider
 ) {
-    return imageIds.find(
-        imageId =>
-            metadataProvider.get("sopInstanceUid", imageId) === sopInstanceUid
-    );
+    return imageIds.find(imageId => {
+        const sopCommonModule = metadataProvider.get(
+            "sopCommonModule",
+            imageId
+        );
+        if (!sopCommonModule) {
+            return;
+        }
+
+        return sopCommonModule.sopInstanceUID === sopInstanceUid;
+    });
 }
 
 /**
@@ -469,12 +479,24 @@ function getImageIdOfReferencedFrame(
     imageIds,
     metadataProvider
 ) {
-    return imageIds.find(
-        imageId =>
-            metadataProvider.get("sopInstanceUid", imageId) ===
-                sopInstanceUid &&
-            metadataProvider.get("frameNumber", imageId) === frameNumber
-    );
+    return imageIds.find(imageId => {
+        const sopCommonModule = metadataProvider.get(
+            "sopCommonModule",
+            imageId
+        );
+        if (!sopCommonModule) {
+            return;
+        }
+
+        // TODO: Need to add something to return frameNumber into Cornerstone WADO Image Loader
+        // metadataProviders
+        const imageFrameNumber = metadataProvider.get("frameNumber", imageId);
+
+        return (
+            sopCommonModule.sopInstanceUID === sopInstanceUid &&
+            imageFrameNumber === frameNumber
+        );
+    });
 }
 
 /**
@@ -519,11 +541,11 @@ function alignPixelDataWithSourceData(pixelData2D, iop, orientations) {
         //Same orientation.
         return pixelData2D;
     } else if (compareIOP(iop, orientations[1])) {
-        //Flipped horizontally.
-        return flipMatrix2D.h(pixelData2D);
-    } else if (compareIOP(iop, orientations[2])) {
         //Flipped vertically.
         return flipMatrix2D.v(pixelData2D);
+    } else if (compareIOP(iop, orientations[2])) {
+        //Flipped horizontally.
+        return flipMatrix2D.h(pixelData2D);
     } else if (compareIOP(iop, orientations[3])) {
         //Rotated 90 degrees.
         return rotateMatrix902D(pixelData2D);
@@ -544,7 +566,7 @@ function alignPixelDataWithSourceData(pixelData2D, iop, orientations) {
     }
 }
 
-const dx = 1e-8;
+const dx = 1e-5;
 
 /**
  * compareIOP - Returns true if iop1 and iop2 are equal
