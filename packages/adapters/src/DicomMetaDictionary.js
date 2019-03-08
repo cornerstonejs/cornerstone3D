@@ -120,11 +120,15 @@ class DicomMetaDictionary {
         let value = naturalValue;
         if (!Array.isArray(value)) {
             value = [value];
-        }else{
-          const thereIsUndefinedValues = naturalValue.some(item => item === undefined);
-          if(thereIsUndefinedValues){
-            throw new Error("There are undefined values at the array naturalValue in DicomMetaDictionary.denaturalizeValue");
-          }
+        } else {
+            const thereIsUndefinedValues = naturalValue.some(
+                item => item === undefined
+            );
+            if (thereIsUndefinedValues) {
+                throw new Error(
+                    "There are undefined values at the array naturalValue in DicomMetaDictionary.denaturalizeValue"
+                );
+            }
         }
         value = value.map(entry =>
             entry.constructor.name == "Number" ? String(entry) : entry

@@ -1,5 +1,5 @@
 import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
-import { StructuredReport } from "../../derivations.js";
+import { StructuredReport } from "../../derivations/";
 import TID1500MeasurementReport from "../../utilities/TID1500/TID1500MeasurementReport.js";
 import TID1501MeasurementGroup from "../../utilities/TID1500/TID1501MeasurementGroup.js";
 import { toArray, codeMeaningEquals, graphicTypeEquals } from "../helpers.js";
