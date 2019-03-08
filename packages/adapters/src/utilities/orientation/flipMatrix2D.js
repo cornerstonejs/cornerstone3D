@@ -23,6 +23,8 @@ function h(matrix) {
             result.set(i, j, matrix.get(i, cols - 1 - j));
         }
     }
+
+    return result;
 }
 
 /**
@@ -41,4 +43,6 @@ function v(matrix) {
             result.set(i, j, matrix.get(rows - 1 - i, j));
         }
     }
+
+    return result;
 }
