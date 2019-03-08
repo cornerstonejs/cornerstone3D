@@ -297,9 +297,21 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
         const segmentIndex =
             PerFrameFunctionalGroups.SegmentIdentificationSequence
                 .ReferencedSegmentNumber - 1;
-        const SourceImageSequence =
-            PerFrameFunctionalGroups.DerivationImageSequence
-                .SourceImageSequence;
+
+        let SourceImageSequence;
+        if (
+            SharedFunctionalGroupsSequence.DerivationImageSequence &&
+            SharedFunctionalGroupsSequence.DerivationImageSequence
+                .SourceImageSequence
+        ) {
+            SourceImageSequence =
+                SharedFunctionalGroupsSequence.DerivationImageSequence
+                    .SourceImageSequence[i];
+        } else {
+            SourceImageSequence =
+                PerFrameFunctionalGroups.DerivationImageSequence
+                    .SourceImageSequence;
+        }
 
         const imageId = getImageIdOfSourceImage(
             SourceImageSequence,
