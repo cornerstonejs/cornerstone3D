@@ -23,7 +23,7 @@ export default class Segmentation extends DerivedPixels {
             PixelRepresentation: "0",
             LossyImageCompression: "00",
             SegmentationType: "BINARY",
-            ContentLabel: "EXAMPLE"
+            ContentLabel: "SEGMENTATION"
         });
 
         let dimensionUID = DicomMetaDictionary.uid();
@@ -179,7 +179,6 @@ export default class Segmentation extends DerivedPixels {
                 ].PlanePositionSequence
             );
 
-            // TODO -> I think this is right, have someone check in review.
             perFrameFunctionalGroups.FrameContentSequence = {
                 DimensionIndexValues: [ReferencedSegmentNumber, frameNumber]
             };
