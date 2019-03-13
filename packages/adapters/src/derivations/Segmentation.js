@@ -164,9 +164,8 @@ export default class Segmentation extends DerivedPixels {
         const PerFrameFunctionalGroupsSequence = this.dataset
             .PerFrameFunctionalGroupsSequence;
 
-        const isMultiframe = Normalizer.isMultiframeDataset(
-            this.referencedDataset
-        );
+        const ReferencedSeriesSequence = this.referencedDataset
+            .ReferencedSeriesSequence;
 
         for (let i = 0; i < InStackPositionNumbers.length; i++) {
             const frameNumber = InStackPositionNumbers[i];
@@ -191,39 +190,63 @@ export default class Segmentation extends DerivedPixels {
             let ReferencedSOPInstanceUID;
             let ReferencedFrameNumber;
 
-            if (isMultiframe) {
+            if (ReferencedSeriesSequence) {
+                const referencedInstanceSequenceI =
+                    ReferencedSeriesSequence.ReferencedInstanceSequence[i];
+
+                ReferencedSOPClassUID =
+                    referencedInstanceSequenceI.ReferencedSOPClass;
+                ReferencedSOPInstanceUID =
+                    referencedInstanceSequenceI.ReferencedSOPInstanceUID;
+
+                if (Normalizer.isMultiframeSOPClassUID(ReferencedSOPClassUID)) {
+                    ReferencedFrameNumber = frameNumber;
+                }
+            } else {
                 ReferencedSOPClassUID = this.referencedDataset.SOPClassUID;
                 ReferencedSOPInstanceUID = this.referencedDataset
                     .SOPInstanceUID;
                 ReferencedFrameNumber = frameNumber;
-            } else {
-                const referencedDatasetForFrame = this.referencedDatasets[
-                    frameNumber - 1
-                ];
-                ReferencedSOPClassUID = referencedDatasetForFrame.SOPClassUID;
-                ReferencedSOPInstanceUID =
-                    referencedDatasetForFrame.SOPInstanceUID;
-                ReferencedFrameNumber = 1;
             }
 
-            perFrameFunctionalGroups.DerivationImageSequence = {
-                SourceImageSequence: {
-                    ReferencedSOPClassUID,
-                    ReferencedSOPInstanceUID,
-                    ReferencedFrameNumber,
-                    PurposeOfReferenceCodeSequence: {
-                        CodeValue: "121322",
+            if (ReferencedFrameNumber) {
+                perFrameFunctionalGroups.DerivationImageSequence = {
+                    SourceImageSequence: {
+                        ReferencedSOPClassUID,
+                        ReferencedSOPInstanceUID,
+                        ReferencedFrameNumber,
+                        PurposeOfReferenceCodeSequence: {
+                            CodeValue: "121322",
+                            CodingSchemeDesignator: "DCM",
+                            CodeMeaning:
+                                "Source image for image processing operation"
+                        }
+                    },
+                    DerivationCodeSequence: {
+                        CodeValue: "113076",
                         CodingSchemeDesignator: "DCM",
-                        CodeMeaning:
-                            "Source image for image processing operation"
+                        CodeMeaning: "Segmentation"
                     }
-                },
-                DerivationCodeSequence: {
-                    CodeValue: "113076",
-                    CodingSchemeDesignator: "DCM",
-                    CodeMeaning: "Segmentation"
-                }
-            };
+                };
+            } else {
+                perFrameFunctionalGroups.DerivationImageSequence = {
+                    SourceImageSequence: {
+                        ReferencedSOPClassUID,
+                        ReferencedSOPInstanceUID,
+                        PurposeOfReferenceCodeSequence: {
+                            CodeValue: "121322",
+                            CodingSchemeDesignator: "DCM",
+                            CodeMeaning:
+                                "Source image for image processing operation"
+                        }
+                    },
+                    DerivationCodeSequence: {
+                        CodeValue: "113076",
+                        CodingSchemeDesignator: "DCM",
+                        CodeMeaning: "Segmentation"
+                    }
+                };
+            }
 
             PerFrameFunctionalGroupsSequence.push(perFrameFunctionalGroups);
         }

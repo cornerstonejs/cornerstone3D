@@ -93,7 +93,6 @@
       function getAndLoadSeg() {
         var segURL =
           "https://s3.amazonaws.com/IsomicsPublic/SampleData/QIN-H%2BN-0139/1-105-SEG.dcm";
-          // https://s3.amazonaws.com/IsomicsPublic/SampleData/rsna2017/seg/task2/SEG/tumor_User1_Manual_Trial1.dcm
 
         const xhr = new XMLHttpRequest();
 
@@ -153,96 +152,6 @@
         metaData[imageId][type] = data;
       }
 
-      //
-      // creates an array of per-frame imageIds in the form needed for cornerstone processing.
-      //
-      function getImageIds(multiframe, baseImageId) {
-        const imageIds = [];
-        const numFrames = Number(multiframe.NumberOfFrames);
-        for (let i = 0; i < numFrames; i++) {
-          let segNum;
-          if (
-            multiframe.PerFrameFunctionalGroupsSequence[i]
-              .SegmentIdentificationSequence
-          ) {
-            segNum =
-              multiframe.PerFrameFunctionalGroupsSequence[i]
-                .SegmentIdentificationSequence.ReferencedSegmentNumber;
-          }
-          const imageId = baseImageId + "?frame=" + i;
-          imageIds.push(imageId);
-        }
-        return imageIds;
-      }
-
-      //
-      // uses cornerstone caching to access a bytearray of the
-      // part10 dicom, then uses dcmjs to parse this
-      // into javascript object and populates the
-      // metadata for the per-frame imageIDs.
-      //
-      function loadMultiFrameAndPopulateMetadata(baseImageId) {
-        return new Promise(function(resolve, reject) {
-          var multiframe;
-          cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
-            var arrayBuffer = image.data.byteArray.buffer;
-
-            dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-            let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
-              dicomData.dict
-            );
-            dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
-              dicomData.meta
-            );
-
-            multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([
-              dataset
-            ]);
-
-            var SharedFunctionalGroupsSequence =
-              multiframe.SharedFunctionalGroupsSequence;
-
-            var imageOrientationArray =
-              SharedFunctionalGroupsSequence.PlaneOrientationSequence
-                .ImageOrientationPatient;
-
-            var sopInstanceUid = multiframe.SOPInstanceUID;
-
-            const numFrames = Number(multiframe.NumberOfFrames);
-            for (let i = 0; i < numFrames; i++) {
-              const imageId = baseImageId + "?frame=" + i;
-
-              var functionalGroup =
-                multiframe.PerFrameFunctionalGroupsSequence[i];
-              var imagePositionArray =
-                functionalGroup.PlanePositionSequence.ImagePositionPatient;
-
-              var ReferencedSOPInstanceUID =
-                multiframe.ReferencedSeriesSequence.ReferencedInstanceSequence[
-                  i
-                ].ReferencedSOPInstanceUID;
-
-              addMetaData("imagePlane", imageId, {
-                imagePositionPatient: imagePositionArray,
-                rowCosines: [
-                  imageOrientationArray[0],
-                  imageOrientationArray[1],
-                  imageOrientationArray[2]
-                ],
-                columnCosines: [
-                  imageOrientationArray[3],
-                  imageOrientationArray[4],
-                  imageOrientationArray[5]
-                ]
-              });
-
-              addMetaData("sopInstanceUid", imageId, ReferencedSOPInstanceUID);
-            }
-
-            resolve(multiframe);
-          });
-        });
-      }
     </script>
 
     <script>
@@ -252,7 +161,7 @@
         "https://s3.amazonaws.com/IsomicsPublic/SampleData/QIN-H%2BN-0139/PET-sorted/";
 
       var imageNames = [];
-      
+
       for (var i=1; i<546; i++) {
         imageNames.push('PET_HeadNeck_0-' + i + '.dcm');
       }

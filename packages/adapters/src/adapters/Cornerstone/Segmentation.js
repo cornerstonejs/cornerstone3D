@@ -37,9 +37,9 @@ export default Segmentation;
  * @returns {type}           description
  */
 function generateSegmentation(images, brushData) {
-    // NOTE: here be dragons. Currently if a brush has been used and then erased,
+    // NOTE: Currently if a brush has been used and then erased,
     // This will flag up as a segmentation, even though its full of zeros.
-    // Fixing this cleanly requires an update of cornerstoneTools?
+    // Fixing this cleanly requires an update of cornerstoneTools. Soon (TM).
 
     const { toolState, segments } = brushData;
 
@@ -100,8 +100,6 @@ function generateSegmentation(images, brushData) {
         );
     }
 
-    console.log(seg.dataset);
-
     const segBlob = datasetToBlob(seg.dataset);
 
     return segBlob;
@@ -141,8 +139,10 @@ function _getNumberOfFramesPerSegment(toolState, images, segments) {
     const referencedFramesPerSegment = [];
 
     for (let i = 0; i < segments.length; i++) {
-        segmentIndicies.push(i);
-        referencedFramesPerSegment.push([]);
+        if (segments[i]) {
+            segmentIndicies.push(i);
+            referencedFramesPerSegment.push([]);
+        }
     }
 
     for (let z = 0; z < images.length; z++) {
@@ -156,7 +156,8 @@ function _getNumberOfFramesPerSegment(toolState, images, segments) {
                 imageIdSpecificToolState &&
                 imageIdSpecificToolState.brush &&
                 imageIdSpecificToolState.brush.data &&
-                imageIdSpecificToolState.brush.data[segIdx]
+                imageIdSpecificToolState.brush.data[segIdx] &&
+                imageIdSpecificToolState.brush.data[segIdx].pixelData
             ) {
                 referencedFramesPerSegment[i].push(z);
             }
@@ -240,10 +241,21 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
         "imagePlaneModule",
         imageIds[0]
     );
-    const ImageOrientationPatient = [
-        ...imagePlaneModule.rowCosines,
-        ...imagePlaneModule.columnCosines
-    ];
+
+    if (!imagePlaneModule) {
+        console.warn("Insufficient metadata, imagePlaneModule missing.");
+    }
+
+    const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
+        ? [...imagePlaneModule.rowCosines, ...imagePlaneModule.columnCosines]
+        : [
+              imagePlaneModule.rowCosines.x,
+              imagePlaneModule.rowCosines.y,
+              imagePlaneModule.rowCosines.z,
+              imagePlaneModule.columnCosines.x,
+              imagePlaneModule.columnCosines.y,
+              imagePlaneModule.columnCosines.z
+          ];
 
     // Get IOP from ref series, compute supported orientations:
     const validOrientations = getValidOrientations(ImageOrientationPatient);

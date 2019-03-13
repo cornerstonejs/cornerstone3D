@@ -15,13 +15,19 @@
       <div class="page-header">
         <h1>Create DICOM Segmentation IOD</h1>
         <p>
-          This example demonstrates how to create a DICOM Segmentation object.
+          This example demonstrates creation of a DICOM Segmentation object on multiframe source data.
         </p>
         <a href="../index.html">Go back to the Examples page</a>
       </div>
 
       <div class="row">
         <button id="sampleData" onclick="createSeg()">Create Seg</button>
+        <label for="switchBrush">Active Brush: </label><select id="switchBrush" onchange="changeBrush()">
+          <option value="0">1</option>
+          <option value="1">2</option>
+          <option value="2">3</option>
+          <option value="3">4</option>
+        <select>
         <p id="statusLine"></p>
         <div class="col-xs-9">
           <div
@@ -92,10 +98,19 @@
     <script>
       let metaData = {};
 
+      document.getElementById("switchBrush")[0].selected = true;
+
+      function changeBrush() {
+        var value = document.getElementById("switchBrush").value;
+
+        cornerstoneTools.store.modules.brush.state.drawColorId = value;
+      }
+
       function createSeg() {
         const element = document.getElementsByClassName("viewport-element")[0];
         const globalToolStateManager =
           cornerstoneTools.globalImageIdSpecificToolStateManager;
+        const toolState = globalToolStateManager.saveToolState();
 
         const stackToolState = cornerstoneTools.getToolState(element, "stack");
         const imageIds = stackToolState.data[0].imageIds;
@@ -111,27 +126,46 @@
           0
         ]);
 
-        const brushData = {
-          toolState: globalToolStateManager.saveToolState(),
-          segments: [
-            {
-              SegmentedPropertyCategoryCodeSequence: {
-                CodeValue: "T-D0050",
-                CodingSchemeDesignator: "SRT",
-                CodeMeaning: "Tissue"
-              },
-              SegmentNumber: 1,
-              SegmentLabel: "Tissue",
-              SegmentAlgorithmType: "SEMIAUTOMATIC",
-              SegmentAlgorithmName: "Slicer Prototype",
-              RecommendedDisplayCIELabValue,
-              SegmentedPropertyTypeCodeSequence: {
-                CodeValue: "T-D0050",
-                CodingSchemeDesignator: "SRT",
-                CodeMeaning: "Tissue"
+        const segments = [];
+
+        // Check which segments have been drawn.
+        for (let i = 0; i < imageIds.length; i++) {
+          if (!toolState[imageIds[i]]
+            || !toolState[imageIds[i]].brush
+            || !toolState[imageIds[i]].brush.data) {
+            continue;
+          }
+
+          const brushData = toolState[imageIds[i]].brush.data;
+
+          for (let segIdx = 0; segIdx < 4; segIdx++) {
+            // If there is pixelData for this segment, set the segment metadata
+            // if it hasn't been set yet.
+            if (brushData[segIdx] && brushData[segIdx].pixelData && !segments[segIdx]) {
+              segments[segIdx] = {
+                SegmentedPropertyCategoryCodeSequence: {
+                  CodeValue: "T-D0050",
+                  CodingSchemeDesignator: "SRT",
+                  CodeMeaning: "Tissue"
+                },
+                SegmentNumber: (segIdx + 1).toString(),
+                SegmentLabel: "Tissue " + (segIdx + 1).toString(),
+                SegmentAlgorithmType: "SEMIAUTOMATIC",
+                SegmentAlgorithmName: "Slicer Prototype",
+                RecommendedDisplayCIELabValue,
+                SegmentedPropertyTypeCodeSequence: {
+                  CodeValue: "T-D0050",
+                  CodingSchemeDesignator: "SRT",
+                  CodeMeaning: "Tissue"
+                }
               }
             }
-          ]
+          }
+        }
+
+        const brushData = {
+          toolState,
+          segments
         };
 
         Promise.all(imagePromises)
