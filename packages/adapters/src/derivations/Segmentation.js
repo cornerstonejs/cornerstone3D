@@ -192,7 +192,9 @@ export default class Segmentation extends DerivedPixels {
 
             if (ReferencedSeriesSequence) {
                 const referencedInstanceSequenceI =
-                    ReferencedSeriesSequence.ReferencedInstanceSequence[i];
+                    ReferencedSeriesSequence.ReferencedInstanceSequence[
+                        frameNumber - 1
+                    ];
 
                 ReferencedSOPClassUID =
                     referencedInstanceSequenceI.ReferencedSOPClass;
