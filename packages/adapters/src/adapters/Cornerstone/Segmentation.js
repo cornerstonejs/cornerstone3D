@@ -503,7 +503,7 @@ function getImageIdOfReferencedFrame(
     imageIds,
     metadataProvider
 ) {
-    return imageIds.find(imageId => {
+    const imageId = imageIds.find(imageId => {
         const sopCommonModule = metadataProvider.get(
             "sopCommonModule",
             imageId
@@ -512,15 +512,16 @@ function getImageIdOfReferencedFrame(
             return;
         }
 
-        // TODO: Need to add something to return frameNumber into Cornerstone WADO Image Loader
-        // metadataProviders
-        const imageFrameNumber = metadataProvider.get("frameNumber", imageId);
+        const imageIdFrameNumber = Number(imageId.split("frame=")[1]);
 
         return (
+            //frameNumber is zero indexed for cornerstoneWADOImageLoader image Ids.
             sopCommonModule.sopInstanceUID === sopInstanceUid &&
-            imageFrameNumber === frameNumber
+            imageIdFrameNumber === frameNumber - 1
         );
     });
+
+    return imageId;
 }
 
 /**
