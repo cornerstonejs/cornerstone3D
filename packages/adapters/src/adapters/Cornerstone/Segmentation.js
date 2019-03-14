@@ -36,7 +36,11 @@ export default Segmentation;
  * @param  {BrushData} brushData and object containing the brushData.
  * @returns {type}           description
  */
-function generateSegmentation(images, brushData) {
+function generateSegmentation(
+    images,
+    brushData,
+    options = { includeSliceSpacing: true }
+) {
     // NOTE: Currently if a brush has been used and then erased,
     // This will flag up as a segmentation, even though its full of zeros.
     // Fixing this cleanly requires an update of cornerstoneTools. Soon (TM).
@@ -61,7 +65,7 @@ function generateSegmentation(images, brushData) {
     }
 
     const isMultiframe = image0.imageId.includes("?frame");
-    const seg = _createSegFromImages(images, isMultiframe);
+    const seg = _createSegFromImages(images, isMultiframe, options);
 
     const {
         referencedFramesPerSegment,
@@ -189,7 +193,7 @@ function _getSegCount(seg, segments) {
  * @param  {Boolean} isMultiframe Whether the images are multiframe.
  * @returns {Object}              The Seg derived dataSet.
  */
-function _createSegFromImages(images, isMultiframe) {
+function _createSegFromImages(images, isMultiframe, options) {
     const datasets = [];
 
     if (isMultiframe) {
@@ -218,7 +222,7 @@ function _createSegFromImages(images, isMultiframe) {
 
     const multiframe = Normalizer.normalizeToDataset(datasets);
 
-    return new SegmentationDerivation([multiframe]);
+    return new SegmentationDerivation([multiframe], options);
 }
 
 /**
