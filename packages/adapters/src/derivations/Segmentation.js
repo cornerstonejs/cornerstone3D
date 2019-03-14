@@ -178,6 +178,19 @@ export default class Segmentation extends DerivedPixels {
                 ].PlanePositionSequence
             );
 
+            // If the PlaneOrientationSequence is not in the SharedFunctionalGroupsSequence,
+            // extract it from the PerFrameFunctionalGroupsSequence.
+            if (
+                !this.dataset.SharedFunctionalGroupsSequence
+                    .PlaneOrientationSequence
+            ) {
+                perFrameFunctionalGroups.PlaneOrientationSequence = DerivedDataset.copyDataset(
+                    this.referencedDataset.PerFrameFunctionalGroupsSequence[
+                        frameNumber - 1
+                    ].PlaneOrientationSequence
+                );
+            }
+
             perFrameFunctionalGroups.FrameContentSequence = {
                 DimensionIndexValues: [ReferencedSegmentNumber, frameNumber]
             };
