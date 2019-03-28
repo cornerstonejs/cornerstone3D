@@ -1,7 +1,7 @@
 import MeasurementReport from "./MeasurementReport.js";
-import TID300Polyline from "../../utilities/TID300/Polyline";
+import TID300Circle from "../../utilities/TID300/Circle";
 
-class Polyline {
+class Circle {
     constructor() {}
 
     static getMeasurementData(measurementContent) {
@@ -25,8 +25,8 @@ class Polyline {
     }
 
     static getTID300RepresentationArguments(scoord3d) {
-        if (scoord3d.graphicType !== "POLYLINE") {
-            throw new Error("We expected a POLYLINE graphicType");
+        if (scoord3d.graphicType !== "CIRCLE") {
+            throw new Error("We expected a CIRCLE graphicType");
         }
 
         const points = scoord3d.graphicData;
@@ -36,11 +36,11 @@ class Polyline {
     }
 }
 
-Polyline.graphicType = "POLYLINE";
-Polyline.toolType = "Polyline";
-Polyline.utilityToolType = "Polyline";
-Polyline.TID300Representation = TID300Polyline;
+Circle.graphicType = "CIRCLE";
+Circle.toolType = "Circle";
+Circle.utilityToolType = "Circle";
+Circle.TID300Representation = TID300Circle;
 
-MeasurementReport.registerTool(Polyline);
+MeasurementReport.registerTool(Circle);
 
-export default Polyline;
+export default Circle;

@@ -14,15 +14,13 @@ function expandPoints(points) {
     points.forEach(point => {
         allPoints.push(point[0]);
         allPoints.push(point[1]);
-        if (point[2] !== undefined) {
-            allPoints.push(point[2]);
-        }
+        allPoints.push(point[2]);
     });
 
     return allPoints;
 }
 
-export default class Polyline extends TID300Measurement {
+export default class Circle extends TID300Measurement {
     constructor({
         points,
         lengths,
@@ -109,7 +107,7 @@ export default class Polyline extends TID300Measurement {
                 ContentSequence: {
                     RelationshipType: "INFERRED FROM",
                     ValueType: use3DSpatialCoordinates ? "SCOORD3D" : "SCOORD",
-                    GraphicType: "POLYLINE",
+                    GraphicType: "CIRCLE",
                     GraphicData,
                     ContentSequence: use3DSpatialCoordinates
                         ? undefined
@@ -141,7 +139,7 @@ export default class Polyline extends TID300Measurement {
                 ContentSequence: {
                     RelationshipType: "INFERRED FROM",
                     ValueType: use3DSpatialCoordinates ? "SCOORD3D" : "SCOORD",
-                    GraphicType: "POLYLINE",
+                    GraphicType: "CIRCLE",
                     GraphicData,
                     ContentSequence: use3DSpatialCoordinates
                         ? undefined

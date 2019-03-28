@@ -22,7 +22,7 @@ function expandPoints(points) {
     return allPoints;
 }
 
-export default class Polyline extends TID300Measurement {
+export default class Polygon extends TID300Measurement {
     constructor({
         points,
         lengths,
@@ -45,14 +45,8 @@ export default class Polyline extends TID300Measurement {
             use3DSpatialCoordinates = false
         } = this;
 
-        // Combine all lengths to save the perimeter
-        // @ToDO The permiter has to be implemented
-        // const reducer = (accumulator, currentValue) => accumulator + currentValue;
-        // const perimeter = lengths.reduce(reducer);
         const perimeter = {};
         const GraphicData = expandPoints(points);
-
-        // TODO: Add Mean and STDev value of (modality?) pixels
 
         return [
             {
@@ -95,7 +89,7 @@ export default class Polyline extends TID300Measurement {
                 ConceptNameCodeSequence: {
                     CodeValue: "G-A197",
                     CodingSchemeDesignator: "SRT",
-                    CodeMeaning: "Perimeter" // TODO: Look this up from a Code Meaning dictionary
+                    CodeMeaning: "Perimeter"
                 },
                 MeasuredValueSequence: {
                     MeasurementUnitsCodeSequence: {
@@ -109,7 +103,7 @@ export default class Polyline extends TID300Measurement {
                 ContentSequence: {
                     RelationshipType: "INFERRED FROM",
                     ValueType: use3DSpatialCoordinates ? "SCOORD3D" : "SCOORD",
-                    GraphicType: "POLYLINE",
+                    GraphicType: "POLYGON",
                     GraphicData,
                     ContentSequence: use3DSpatialCoordinates
                         ? undefined
@@ -121,13 +115,12 @@ export default class Polyline extends TID300Measurement {
                 }
             },
             {
-                // TODO: This feels weird to repeat the GraphicData
                 RelationshipType: "CONTAINS",
                 ValueType: "NUM",
                 ConceptNameCodeSequence: {
                     CodeValue: "G-A166",
                     CodingSchemeDesignator: "SRT",
-                    CodeMeaning: "Area" // TODO: Look this up from a Code Meaning dictionary
+                    CodeMeaning: "Area"
                 },
                 MeasuredValueSequence: {
                     MeasurementUnitsCodeSequence: {
@@ -141,7 +134,7 @@ export default class Polyline extends TID300Measurement {
                 ContentSequence: {
                     RelationshipType: "INFERRED FROM",
                     ValueType: use3DSpatialCoordinates ? "SCOORD3D" : "SCOORD",
-                    GraphicType: "POLYLINE",
+                    GraphicType: "POLYGON",
                     GraphicData,
                     ContentSequence: use3DSpatialCoordinates
                         ? undefined

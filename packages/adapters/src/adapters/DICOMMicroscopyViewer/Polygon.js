@@ -1,7 +1,7 @@
 import MeasurementReport from "./MeasurementReport.js";
-import TID300Polyline from "../../utilities/TID300/Polyline";
+import TID300Polygon from "../../utilities/TID300/Polygon";
 
-class Polyline {
+class Polygon {
     constructor() {}
 
     static getMeasurementData(measurementContent) {
@@ -25,8 +25,8 @@ class Polyline {
     }
 
     static getTID300RepresentationArguments(scoord3d) {
-        if (scoord3d.graphicType !== "POLYLINE") {
-            throw new Error("We expected a POLYLINE graphicType");
+        if (scoord3d.graphicType !== "POLYGON") {
+            throw new Error("We expected a POLYGON graphicType");
         }
 
         const points = scoord3d.graphicData;
@@ -36,11 +36,11 @@ class Polyline {
     }
 }
 
-Polyline.graphicType = "POLYLINE";
-Polyline.toolType = "Polyline";
-Polyline.utilityToolType = "Polyline";
-Polyline.TID300Representation = TID300Polyline;
+Polygon.graphicType = "POLYGON";
+Polygon.toolType = "Polygon";
+Polygon.utilityToolType = "Polygon";
+Polygon.TID300Representation = TID300Polygon;
 
-MeasurementReport.registerTool(Polyline);
+MeasurementReport.registerTool(Polygon);
 
-export default Polyline;
+export default Polygon;
