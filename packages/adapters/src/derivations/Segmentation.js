@@ -210,7 +210,7 @@ export default class Segmentation extends DerivedPixels {
                     ];
 
                 ReferencedSOPClassUID =
-                    referencedInstanceSequenceI.ReferencedSOPClass;
+                    referencedInstanceSequenceI.ReferencedSOPClassUID;
                 ReferencedSOPInstanceUID =
                     referencedInstanceSequenceI.ReferencedSOPInstanceUID;
 

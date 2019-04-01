@@ -276,7 +276,7 @@ class ImageNormalizer extends Normalizer {
             });
 
             ds.ReferencedSeriesSequence.ReferencedInstanceSequence.push({
-                ReferencedSOPClass: dataset.SOPClassUID,
+                ReferencedSOPClassUID: dataset.SOPClassUID,
                 ReferencedSOPInstanceUID: dataset.SOPInstanceUID
             });
         });
