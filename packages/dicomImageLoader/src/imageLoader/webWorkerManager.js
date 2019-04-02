@@ -161,6 +161,17 @@ function initialize (configObject) {
 }
 
 /**
+ * Terminate all running web workers.
+ */
+function terminate () {
+  for (let i = 0; i < webWorkers.length; i++) {
+    webWorkers[i].terminate();
+  }
+  webWorkers.length = 0;
+  config = undefined;
+}
+
+/**
  * dynamically loads a web worker task
  * @param sourcePath
  * @param taskConfig
@@ -313,5 +324,7 @@ export default {
   addTask,
   getStatistics,
   setTaskPriority,
-  cancelTask
+  cancelTask,
+  webWorkers,
+  terminate
 };
