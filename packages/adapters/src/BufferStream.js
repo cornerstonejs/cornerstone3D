@@ -236,7 +236,8 @@ class BufferStream {
         if (this.offset + step > this.buffer.byteLength) {
             //throw new Error("Writing exceeded the size of buffer");
             //resize
-            var dst = new ArrayBuffer(this.buffer.byteLength * 2);
+            var dstSize = this.offset + step;
+            var dst = new ArrayBuffer(dstSize);
             new Uint8Array(dst).set(new Uint8Array(this.buffer));
             this.buffer = dst;
             this.view = new DataView(this.buffer);
