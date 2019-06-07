@@ -5,7 +5,6 @@ import isColorImageFn from './isColorImage.js';
 import convertColorSpace from './convertColorSpace.js';
 import getMinMax from '../shared/getMinMax.js';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor.js';
-import getImagePixelSpacing from './wadouri/getImagePixelSpacing';
 
 let lastImageIdDrawn = '';
 
@@ -107,25 +106,18 @@ function createImage (imageId, pixelData, transferSyntax, options) {
           imageFrame.largestPixelValue = minMax.max;
         }
       }
-      let rowPixelSpacing = imagePlaneModule.rowPixelSpacing;
-      let columnPixelSpacing = imagePlaneModule.columnPixelSpacing;
-      if (!rowPixelSpacing || !columnPixelSpacing) {
-        const imagePixelSpacing = getImagePixelSpacing(imageId) || {};
-        rowPixelSpacing = imagePixelSpacing.rowPixelSpacing;
-        columnPixelSpacing = imagePixelSpacing.columnPixelSpacing;
-      }
 
       const image = {
         imageId,
         color: isColorImage,
-        columnPixelSpacing,
+        columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
         columns: imageFrame.columns,
         height: imageFrame.rows,
         intercept: modalityLutModule.rescaleIntercept ? modalityLutModule.rescaleIntercept : 0,
         invert: imageFrame.photometricInterpretation === 'MONOCHROME1',
         minPixelValue: imageFrame.smallestPixelValue,
         maxPixelValue: imageFrame.largestPixelValue,
-        rowPixelSpacing,
+        rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
         rows: imageFrame.rows,
         sizeInBytes: imageFrame.pixelData.length,
         slope: modalityLutModule.rescaleSlope ? modalityLutModule.rescaleSlope : 1,
