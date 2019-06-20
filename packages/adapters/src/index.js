@@ -77,7 +77,9 @@ export { normalizers };
 
 import adapters from "./adapters/index.js";
 import utilities from "./utilities/index.js";
+import sr from "./sr/index.js";
 
 export { adapters };
 export { utilities };
 export { DICOMWEB };
+export { sr };

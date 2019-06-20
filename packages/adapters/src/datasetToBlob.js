@@ -1,24 +1,22 @@
 import { DicomMetaDictionary } from "./DicomMetaDictionary.js";
 import { DicomDict } from "./DicomDict.js";
 
-function datasetToDict(dataset) {
-    const meta = {
-        FileMetaInformationVersion:
-            dataset._meta.FileMetaInformationVersion.Value,
+function datasetToDict(dataset, transferSyntaxUID = "1.2.840.10008.1.2.1") {
+    const fileMetaInformationVersionArray = new Uint8Array(2);
+    fileMetaInformationVersionArray[1] = 1;
+    dataset._meta = {
         MediaStorageSOPClassUID: dataset.SOPClassUID,
         MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
-        TransferSyntaxUID: "1.2.840.10008.1.2",
-        ImplementationClassUID: DicomMetaDictionary.uid(),
-        ImplementationVersionName: "dcmjs-0.0"
+        ImplementationVersionName: "dcmjs-0.0",
+        TransferSyntaxUID: transferSyntaxUID,
+        ImplementationClassUID:
+            "2.25.80302813137786398554742050926734630921603366648225212145404",
+        FileMetaInformationVersion: fileMetaInformationVersionArray.buffer
     };
 
-    // TODO: Clean this up later
-    if (!meta.FileMetaInformationVersion) {
-        meta.FileMetaInformationVersion =
-            dataset._meta.FileMetaInformationVersion.Value[0];
-    }
-
-    const denaturalized = DicomMetaDictionary.denaturalizeDataset(meta);
+    const denaturalized = DicomMetaDictionary.denaturalizeDataset(
+        dataset._meta
+    );
     const dicomDict = new DicomDict(denaturalized);
     dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
     return dicomDict;

@@ -144,7 +144,7 @@ class DicomMetaDictionary {
             var entry = DicomMetaDictionary.nameMap[name];
             if (entry) {
                 let dataValue = dataset[naturalName];
-                if (dataValue === undefined || dataValue === null) {
+                if (dataValue === undefined) {
                     // handle the case where it was deleted from the object but is in keys
                     return;
                 }
