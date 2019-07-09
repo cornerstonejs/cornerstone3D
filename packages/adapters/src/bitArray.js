@@ -27,6 +27,7 @@ function getBytesForBinaryFrame(numPixels) {
 
 function pack(pixelData) {
     const numPixels = pixelData.length;
+
     log.log("numPixels: " + numPixels);
 
     const length = getBytesForBinaryFrame(numPixels);

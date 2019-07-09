@@ -93,51 +93,60 @@ export default class Segmentation extends DerivedPixels {
 
     /**
      * setNumberOfFrames - Sets the number of frames of the segmentation object
-     * and allocates memory for the PixelData.
+     * and allocates (non-bitpacked) memory for the PixelData for constuction.
      *
      * @param  {type} NumberOfFrames The number of segmentation frames.
      */
     setNumberOfFrames(NumberOfFrames) {
         const dataset = this.dataset;
         dataset.NumberOfFrames = NumberOfFrames;
+
         dataset.PixelData = new ArrayBuffer(
-            (dataset.Rows * dataset.Columns * NumberOfFrames) / 8
+            dataset.Rows * dataset.Columns * NumberOfFrames
         );
+    }
+
+    /**
+     * bitPackPixelData - Bitpacks the pixeldata, should be called after all
+     * segments are addded.
+     *
+     * @returns {type}  description
+     */
+    bitPackPixelData() {
+        if (this.isBitpacked) {
+            console.warn(
+                `This.bitPackPixelData has already been called, it should only be called once, when all frames have been added. Exiting.`
+            );
+        }
+
+        const dataset = this.dataset;
+        const unpackedPixelData = dataset.PixelData;
+        const uInt8ViewUnpackedPixelData = new Uint8Array(unpackedPixelData);
+        const bitPackedPixelData = BitArray.pack(uInt8ViewUnpackedPixelData);
+
+        dataset.PixelData = bitPackedPixelData.buffer;
+
+        this.isBitpacked = true;
     }
 
     /**
      * addSegment - Adds a segment to the dataset.
      *
      * @param  {type} Segment   The segment metadata.
-     * @param  {Uint8Array} pixelData The pixelData array containing all
-     *                          frames of segmentation.
+     * @param  {Uint8Array} pixelData The pixelData array containing all frames
+     *                                of the segmentation.
      * @param  {Number[]} InStackPositionNumbers  The frames that the
      *                                            segmentation references.
-     * @param  {Boolean} [isBitPacked = false]    Whether the suplied pixelData
-     *                                            is already bitPacked.
      *
      */
-    addSegment(
-        Segment,
-        pixelData,
-        InStackPositionNumbers,
-        isBitPacked = false
-    ) {
+    addSegment(Segment, pixelData, InStackPositionNumbers) {
         if (this.dataset.NumberOfFrames === 0) {
             throw new Error(
                 "Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation."
             );
         }
 
-        let bitPackedPixelData;
-
-        if (isBitPacked) {
-            bitPackedPixelData = pixelData;
-        } else {
-            bitPackedPixelData = BitArray.pack(pixelData);
-        }
-
-        this._addSegmentPixelData(bitPackedPixelData, isBitPacked);
+        this._addSegmentPixelData(pixelData);
         const ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
         this._addPerFrameFunctionalGroups(
             ReferencedSegmentNumber,
@@ -145,15 +154,21 @@ export default class Segmentation extends DerivedPixels {
         );
     }
 
-    _addSegmentPixelData(bitPackedPixelData) {
+    _addSegmentPixelData(pixelData) {
         const dataset = this.dataset;
 
-        const pixelDataUint8View = new Uint8Array(dataset.PixelData);
         const existingFrames = dataset.PerFrameFunctionalGroupsSequence.length;
-        const offset = (existingFrames * dataset.Rows * dataset.Columns) / 8;
+        const sliceLength = dataset.Rows * dataset.Columns;
+        const byteOffset = existingFrames * sliceLength;
 
-        for (let i = 0; i < bitPackedPixelData.length; i++) {
-            pixelDataUint8View[offset + i] = bitPackedPixelData[i];
+        const pixelDataUInt8View = new Uint8Array(
+            dataset.PixelData,
+            byteOffset,
+            pixelData.length
+        );
+
+        for (let i = 0; i < pixelData.length; i++) {
+            pixelDataUInt8View[i] = pixelData[i];
         }
     }
 

@@ -41,10 +41,6 @@ function generateSegmentation(
     brushData,
     options = { includeSliceSpacing: true }
 ) {
-    // NOTE: Currently if a brush has been used and then erased,
-    // This will flag up as a segmentation, even though its full of zeros.
-    // Fixing this cleanly requires an update of cornerstoneTools. Soon (TM).
-
     const { toolState, segments } = brushData;
 
     // Calculate the dimensions of the data cube.
@@ -103,6 +99,8 @@ function generateSegmentation(
             referencedFrameNumbers
         );
     }
+
+    seg.bitPackPixelData();
 
     const segBlob = datasetToBlob(seg.dataset);
 

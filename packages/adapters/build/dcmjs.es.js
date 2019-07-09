@@ -413,6 +413,20 @@ function unpack(bitPixelArray) {
   return byteArray;
 }
 
+function _typeof(obj) {
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    _typeof = function (obj) {
+      return typeof obj;
+    };
+  } else {
+    _typeof = function (obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+  }
+
+  return _typeof(obj);
+}
+
 function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -464,6 +478,74 @@ function _setPrototypeOf(o, p) {
   };
 
   return _setPrototypeOf(o, p);
+}
+
+function isNativeReflectConstruct() {
+  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+  if (Reflect.construct.sham) return false;
+  if (typeof Proxy === "function") return true;
+
+  try {
+    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function _construct(Parent, args, Class) {
+  if (isNativeReflectConstruct()) {
+    _construct = Reflect.construct;
+  } else {
+    _construct = function _construct(Parent, args, Class) {
+      var a = [null];
+      a.push.apply(a, args);
+      var Constructor = Function.bind.apply(Parent, a);
+      var instance = new Constructor();
+      if (Class) _setPrototypeOf(instance, Class.prototype);
+      return instance;
+    };
+  }
+
+  return _construct.apply(null, arguments);
+}
+
+function _isNativeFunction(fn) {
+  return Function.toString.call(fn).indexOf("[native code]") !== -1;
+}
+
+function _wrapNativeSuper(Class) {
+  var _cache = typeof Map === "function" ? new Map() : undefined;
+
+  _wrapNativeSuper = function _wrapNativeSuper(Class) {
+    if (Class === null || !_isNativeFunction(Class)) return Class;
+
+    if (typeof Class !== "function") {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+
+    if (typeof _cache !== "undefined") {
+      if (_cache.has(Class)) return _cache.get(Class);
+
+      _cache.set(Class, Wrapper);
+    }
+
+    function Wrapper() {
+      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
+    }
+
+    Wrapper.prototype = Object.create(Class.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    return _setPrototypeOf(Wrapper, Class);
+  };
+
+  return _wrapNativeSuper(Class);
 }
 
 function _assertThisInitialized(self) {
@@ -2541,7 +2623,7 @@ function () {
         if (entry) {
           var dataValue = dataset[naturalName];
 
-          if (dataValue === undefined || dataValue === null) {
+          if (dataValue === undefined) {
             // handle the case where it was deleted from the object but is in keys
             return;
           } // process this one entry
@@ -5188,20 +5270,18 @@ function isSlowBuffer (obj) {
 }
 
 function datasetToDict(dataset) {
-  var meta = {
-    FileMetaInformationVersion: dataset._meta.FileMetaInformationVersion.Value,
+  var transferSyntaxUID = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "1.2.840.10008.1.2.1";
+  var fileMetaInformationVersionArray = new Uint8Array(2);
+  fileMetaInformationVersionArray[1] = 1;
+  dataset._meta = {
     MediaStorageSOPClassUID: dataset.SOPClassUID,
     MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
-    TransferSyntaxUID: "1.2.840.10008.1.2",
-    ImplementationClassUID: DicomMetaDictionary.uid(),
-    ImplementationVersionName: "dcmjs-0.0"
-  }; // TODO: Clean this up later
-
-  if (!meta.FileMetaInformationVersion) {
-    meta.FileMetaInformationVersion = dataset._meta.FileMetaInformationVersion.Value[0];
-  }
-
-  var denaturalized = DicomMetaDictionary.denaturalizeDataset(meta);
+    ImplementationVersionName: "dcmjs-0.0",
+    TransferSyntaxUID: transferSyntaxUID,
+    ImplementationClassUID: "2.25.80302813137786398554742050926734630921603366648225212145404",
+    FileMetaInformationVersion: fileMetaInformationVersionArray.buffer
+  };
+  var denaturalized = DicomMetaDictionary.denaturalizeDataset(dataset._meta);
   var dicomDict = new DicomDict(denaturalized);
   dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);
   return dicomDict;
@@ -6132,7 +6212,7 @@ function (_DerivedPixels) {
     }
     /**
      * setNumberOfFrames - Sets the number of frames of the segmentation object
-     * and allocates memory for the PixelData.
+     * and allocates (non-bitpacked) memory for the PixelData for constuction.
      *
      * @param  {type} NumberOfFrames The number of segmentation frames.
      */
@@ -6142,39 +6222,48 @@ function (_DerivedPixels) {
     value: function setNumberOfFrames(NumberOfFrames) {
       var dataset = this.dataset;
       dataset.NumberOfFrames = NumberOfFrames;
-      dataset.PixelData = new ArrayBuffer(dataset.Rows * dataset.Columns * NumberOfFrames / 8);
+      dataset.PixelData = new ArrayBuffer(dataset.Rows * dataset.Columns * NumberOfFrames);
+    }
+    /**
+     * bitPackPixelData - Bitpacks the pixeldata, should be called after all
+     * segments are addded.
+     *
+     * @returns {type}  description
+     */
+
+  }, {
+    key: "bitPackPixelData",
+    value: function bitPackPixelData() {
+      if (this.isBitpacked) {
+        console.warn("This.bitPackPixelData has already been called, it should only be called once, when all frames have been added. Exiting.");
+      }
+
+      var dataset = this.dataset;
+      var unpackedPixelData = dataset.PixelData;
+      var uInt8ViewUnpackedPixelData = new Uint8Array(unpackedPixelData);
+      var bitPackedPixelData = BitArray.pack(uInt8ViewUnpackedPixelData);
+      dataset.PixelData = bitPackedPixelData.buffer;
+      this.isBitpacked = true;
     }
     /**
      * addSegment - Adds a segment to the dataset.
      *
      * @param  {type} Segment   The segment metadata.
-     * @param  {Uint8Array} pixelData The pixelData array containing all
-     *                          frames of segmentation.
+     * @param  {Uint8Array} pixelData The pixelData array containing all frames
+     *                                of the segmentation.
      * @param  {Number[]} InStackPositionNumbers  The frames that the
      *                                            segmentation references.
-     * @param  {Boolean} [isBitPacked = false]    Whether the suplied pixelData
-     *                                            is already bitPacked.
      *
      */
 
   }, {
     key: "addSegment",
     value: function addSegment(Segment, pixelData, InStackPositionNumbers) {
-      var isBitPacked = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-
       if (this.dataset.NumberOfFrames === 0) {
         throw new Error("Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation.");
       }
 
-      var bitPackedPixelData;
-
-      if (isBitPacked) {
-        bitPackedPixelData = pixelData;
-      } else {
-        bitPackedPixelData = BitArray.pack(pixelData);
-      }
-
-      this._addSegmentPixelData(bitPackedPixelData, isBitPacked);
+      this._addSegmentPixelData(pixelData);
 
       var ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
 
@@ -6182,14 +6271,15 @@ function (_DerivedPixels) {
     }
   }, {
     key: "_addSegmentPixelData",
-    value: function _addSegmentPixelData(bitPackedPixelData) {
+    value: function _addSegmentPixelData(pixelData) {
       var dataset = this.dataset;
-      var pixelDataUint8View = new Uint8Array(dataset.PixelData);
       var existingFrames = dataset.PerFrameFunctionalGroupsSequence.length;
-      var offset = existingFrames * dataset.Rows * dataset.Columns / 8;
+      var sliceLength = dataset.Rows * dataset.Columns;
+      var byteOffset = existingFrames * sliceLength;
+      var pixelDataUInt8View = new Uint8Array(dataset.PixelData, byteOffset, pixelData.length);
 
-      for (var i = 0; i < bitPackedPixelData.length; i++) {
-        pixelDataUint8View[offset + i] = bitPackedPixelData[i];
+      for (var i = 0; i < pixelData.length; i++) {
+        pixelDataUInt8View[i] = pixelData[i];
       }
     }
   }, {
@@ -7875,9 +7965,6 @@ function generateSegmentation(images, brushData) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
     includeSliceSpacing: true
   };
-  // NOTE: Currently if a brush has been used and then erased,
-  // This will flag up as a segmentation, even though its full of zeros.
-  // Fixing this cleanly requires an update of cornerstoneTools. Soon (TM).
   var toolState = brushData.toolState,
       segments = brushData.segments; // Calculate the dimensions of the data cube.
 
@@ -7922,6 +8009,7 @@ function generateSegmentation(images, brushData) {
     seg.addSegment(segment, _extractCornerstoneToolsPixelData(segmentIndex, referencedFrameIndicies, toolState, images, dims), referencedFrameNumbers);
   }
 
+  seg.bitPackPixelData();
   var segBlob = datasetToBlob(seg.dataset);
   return segBlob;
 }
@@ -9680,6 +9768,3340 @@ var utilities = {
   message: message
 };
 
+var Code =
+/*#__PURE__*/
+function () {
+  function Code(options) {
+    _classCallCheck(this, Code);
+
+    this[_value] = options.value;
+    this[_meaning] = options.meaning;
+    this[_schemeDesignator] = options.schemeDesignator;
+    this[_schemeVersion] = options.schemeVersion || null;
+  }
+
+  _createClass(Code, [{
+    key: "value",
+    get: function get() {
+      return this[_value];
+    }
+  }, {
+    key: "meaning",
+    get: function get() {
+      return this[_meaning];
+    }
+  }, {
+    key: "schemeDesignator",
+    get: function get() {
+      return this[_schemeDesignator];
+    }
+  }, {
+    key: "schemeVersion",
+    get: function get() {
+      return this[_schemeVersion];
+    }
+  }]);
+
+  return Code;
+}();
+
+var CodedConcept =
+/*#__PURE__*/
+function () {
+  function CodedConcept(options) {
+    _classCallCheck(this, CodedConcept);
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for CodedConcept.");
+    }
+
+    if (options.meaning === undefined) {
+      throw new Error("Option 'meaning' is required for CodedConcept.");
+    }
+
+    if (options.schemeDesignator === undefined) {
+      throw new Error("Option 'schemeDesignator' is required for CodedConcept.");
+    }
+
+    this.CodeValue = options.value;
+    this.CodeMeaning = options.meaning;
+    this.CodingSchemeDesignator = options.schemeDesignator;
+
+    if ("schemeVersion" in options) {
+      this.CodingSchemeVersion = options.schemeVersion;
+    }
+  }
+
+  _createClass(CodedConcept, [{
+    key: "equals",
+    value: function equals(other) {
+      if (other.value === this.value && other.schemeDesignator === this.schemeDesignator) {
+        if (other.schemeVersion && this.schemeVersion) {
+          return other.schemeVersion === this.schemeVersion;
+        }
+
+        return true;
+      }
+
+      return false;
+    }
+  }, {
+    key: "value",
+    get: function get() {
+      return this.CodeValue;
+    }
+  }, {
+    key: "meaning",
+    get: function get() {
+      return this.CodeMeaning;
+    }
+  }, {
+    key: "schemeDesignator",
+    get: function get() {
+      return this.CodingSchemeDesignator;
+    }
+  }, {
+    key: "schemeVersion",
+    get: function get() {
+      return this.CodingSchemeVersion;
+    }
+  }]);
+
+  return CodedConcept;
+}();
+
+var coding = /*#__PURE__*/Object.freeze({
+	Code: Code,
+	CodedConcept: CodedConcept
+});
+
+var ValueTypes = {
+  CODE: "CODE",
+  COMPOSITE: "COMPOSITE",
+  CONTAINER: "CONTAINER",
+  DATE: "DATE",
+  DATETIME: "DATETIME",
+  IMAGE: "IMAGE",
+  NUM: "NUM",
+  PNAME: "PNAME",
+  SCOORD: "SCOORD",
+  SCOORD3D: "SCOORD3D",
+  TCOORD: "TCOORD",
+  TEXT: "TEXT",
+  TIME: "TIME",
+  UIDREF: "UIDREF",
+  WAVEFORM: "WAVEFORM"
+};
+Object.freeze(ValueTypes);
+var GraphicTypes = {
+  CIRCLE: "CIRCLE",
+  ELLIPSE: "ELLIPSE",
+  ELLIPSOID: "ELLIPSOID",
+  MULTIPOINT: "MULTIPOINT",
+  POINT: "POINT",
+  POLYLINE: "POLYLINE"
+};
+Object.freeze(GraphicTypes);
+var GraphicTypes3D = {
+  ELLIPSE: "ELLIPSE",
+  ELLIPSOID: "ELLIPSOID",
+  MULTIPOINT: "MULTIPOINT",
+  POINT: "POINT",
+  POLYLINE: "POLYLINE",
+  POLYGON: "POLYGON"
+};
+Object.freeze(GraphicTypes3D);
+var TemporalRangeTypes = {
+  BEGIN: "BEGIN",
+  END: "END",
+  MULTIPOINT: "MULTIPOINT",
+  MULTISEGMENT: "MULTISEGMENT",
+  POINT: "POINT",
+  SEGMENT: "SEGMENT"
+};
+Object.freeze(TemporalRangeTypes);
+var RelationshipTypes = {
+  CONTAINS: "CONTAINS",
+  HAS_ACQ_CONTENT: "HAS ACQ CONTENT",
+  HAS_CONCEPT_MOD: "HAS CONCEPT MOD",
+  HAS_OBS_CONTEXT: "HAS OBS CONTEXT",
+  HAS_PROPERTIES: "HAS PROPERTIES",
+  INFERRED_FROM: "INFERRED FROM",
+  SELECTED_FROM: "SELECTED FROM"
+};
+Object.freeze(RelationshipTypes);
+var PixelOriginInterpretations = {
+  FRAME: "FRAME",
+  VOLUME: "VOLUME"
+};
+Object.freeze(RelationshipTypes);
+
+function isFloat(n) {
+  return n === +n && n !== (n | 0);
+}
+
+function zeroPad(value) {
+  return (value > 9 ? "" : "0") + value;
+}
+
+function TM(date) {
+  // %H%M%S.%f
+  var hours = date.getHours();
+  var minutes = date.getMinutes();
+  var seconds = date.getSeconds();
+  var milliseconds = date.getMilliseconds();
+  return zeroPad(hours) + zeroPad(minutes) + zeroPad(seconds) + milliseconds;
+}
+
+function DA(date) {
+  var year = date.getFullYear();
+  var month = date.getMonth() + 1;
+  var day = date.getDate();
+  return year + zeroPad(month) + zeroPad(day);
+}
+
+function DT(date) {
+  return DA(date) + TM(date);
+}
+
+var ContentSequence$1 =
+/*#__PURE__*/
+function (_Array) {
+  _inherits(ContentSequence, _Array);
+
+  function ContentSequence() {
+    var _getPrototypeOf2;
+
+    _classCallCheck(this, ContentSequence);
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    return _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(ContentSequence)).call.apply(_getPrototypeOf2, [this].concat(args)));
+  } // filterBy(options) {
+  // }
+
+
+  return ContentSequence;
+}(_wrapNativeSuper(Array));
+
+var ContentItem = function ContentItem(options) {
+  _classCallCheck(this, ContentItem);
+
+  if (options.name === undefined) {
+    throw new Error("Option 'name' is required for ContentItem.");
+  }
+
+  if (options.name.constructor !== CodedConcept) {
+    throw new Error("Option 'name' must have type CodedConcept.");
+  }
+
+  this.ConceptNameCodeSequence = [options.name];
+
+  if (options.valueType === undefined) {
+    throw new Error("Option 'valueType' is required for ContentItem.");
+  }
+
+  if (!(Object.values(ValueTypes).indexOf(options.valueType) !== -1)) {
+    throw new Error("Invalid value type ".concat(options.valueType));
+  }
+
+  this.ValueType = options.valueType;
+
+  if (options.relationshipType !== undefined) {
+    if (!(Object.values(RelationshipTypes).indexOf(options.relationshipType) !== -1)) {
+      throw new Error("Invalid relationship type ".concat(options.relationshipTypes));
+    }
+
+    this.RelationshipType = options.relationshipType;
+  } // TODO: relationship type is required
+
+} // getContentItems(options) {
+//   // TODO: filter by name, value type and relationship type
+//   return this.ContentSequence;
+// }
+;
+
+var CodeContentItem =
+/*#__PURE__*/
+function (_ContentItem) {
+  _inherits(CodeContentItem, _ContentItem);
+
+  function CodeContentItem(options) {
+    var _this;
+
+    _classCallCheck(this, CodeContentItem);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(CodeContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.CODE
+    }));
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for CodeContentItem.");
+    }
+
+    if (!(options.value || options.value.constructor === CodedConcept)) {
+      throw new Error("Option 'value' must have type CodedConcept.");
+    }
+
+    _this.ConceptCodeSequence = [options.value];
+    return _this;
+  }
+
+  return CodeContentItem;
+}(ContentItem);
+
+var TextContentItem =
+/*#__PURE__*/
+function (_ContentItem2) {
+  _inherits(TextContentItem, _ContentItem2);
+
+  function TextContentItem(options) {
+    var _this2;
+
+    _classCallCheck(this, TextContentItem);
+
+    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(TextContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.TEXT
+    }));
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for TextContentItem.");
+    }
+
+    if (!(typeof options.value === "string" || options.value instanceof String)) {
+      throw new Error("Option 'value' must have type String.");
+    }
+
+    _this2.TextValue = options.value;
+    return _this2;
+  }
+
+  return TextContentItem;
+}(ContentItem);
+
+var PNameContentItem =
+/*#__PURE__*/
+function (_ContentItem3) {
+  _inherits(PNameContentItem, _ContentItem3);
+
+  function PNameContentItem(options) {
+    var _this3;
+
+    _classCallCheck(this, PNameContentItem);
+
+    _this3 = _possibleConstructorReturn(this, _getPrototypeOf(PNameContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.PNAME
+    }));
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for PNameContentItem.");
+    }
+
+    if (!(typeof options.value === "string" || options.value instanceof String)) {
+      throw new Error("Option 'value' must have type String.");
+    }
+
+    _this3.PersonName = options.value;
+    return _this3;
+  }
+
+  return PNameContentItem;
+}(ContentItem);
+
+var TimeContentItem =
+/*#__PURE__*/
+function (_ContentItem4) {
+  _inherits(TimeContentItem, _ContentItem4);
+
+  function TimeContentItem(options) {
+    var _this4;
+
+    _classCallCheck(this, TimeContentItem);
+
+    _this4 = _possibleConstructorReturn(this, _getPrototypeOf(TimeContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.TIME
+    }));
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for TimeContentItem.");
+    }
+
+    if (!(_typeof(options.value) === "object" || options.value instanceof Date)) {
+      throw new Error("Option 'value' must have type Date.");
+    }
+
+    _this4.Time = TM(options.value);
+    return _this4;
+  }
+
+  return TimeContentItem;
+}(ContentItem);
+
+var DateContentItem =
+/*#__PURE__*/
+function (_ContentItem5) {
+  _inherits(DateContentItem, _ContentItem5);
+
+  function DateContentItem(options) {
+    var _this5;
+
+    _classCallCheck(this, DateContentItem);
+
+    _this5 = _possibleConstructorReturn(this, _getPrototypeOf(DateContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.DATE
+    }));
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for DateContentItem.");
+    }
+
+    if (!(_typeof(options.value) === "object" || options.value instanceof Date)) {
+      throw new Error("Option 'value' must have type Date.");
+    }
+
+    _this5.Date = DA(options.value);
+    return _this5;
+  }
+
+  return DateContentItem;
+}(ContentItem);
+
+var DateTimeContentItem =
+/*#__PURE__*/
+function (_ContentItem6) {
+  _inherits(DateTimeContentItem, _ContentItem6);
+
+  function DateTimeContentItem(options) {
+    var _this6;
+
+    _classCallCheck(this, DateTimeContentItem);
+
+    _this6 = _possibleConstructorReturn(this, _getPrototypeOf(DateTimeContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.DATETIME
+    }));
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for DateTimeContentItem.");
+    }
+
+    if (!(_typeof(options.value) === "object" || options.value instanceof Date)) {
+      throw new Error("Option 'value' must have type Date.");
+    }
+
+    _this6.DateTime = DT(otions.value);
+    return _this6;
+  }
+
+  return DateTimeContentItem;
+}(ContentItem);
+
+var UIDRefContentItem =
+/*#__PURE__*/
+function (_ContentItem7) {
+  _inherits(UIDRefContentItem, _ContentItem7);
+
+  function UIDRefContentItem(options) {
+    var _this7;
+
+    _classCallCheck(this, UIDRefContentItem);
+
+    _this7 = _possibleConstructorReturn(this, _getPrototypeOf(UIDRefContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.UIDREF
+    }));
+
+    if (options.value === undefined) {
+      throw new Error("Option 'value' is required for UIDRefContentItem.");
+    }
+
+    if (!(typeof options.value === "string" || options.value instanceof String)) {
+      throw new Error("Option 'value' must have type String.");
+    }
+
+    _this7.UID = options.value;
+    return _this7;
+  }
+
+  return UIDRefContentItem;
+}(ContentItem);
+
+var NumContentItem =
+/*#__PURE__*/
+function (_ContentItem8) {
+  _inherits(NumContentItem, _ContentItem8);
+
+  function NumContentItem(options) {
+    var _this8;
+
+    _classCallCheck(this, NumContentItem);
+
+    _this8 = _possibleConstructorReturn(this, _getPrototypeOf(NumContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.NUM
+    }));
+
+    if (options.value !== undefined) {
+      if (!(typeof options.value === "number" || options.value instanceof Number)) {
+        throw new Error("Option 'value' must have type Number.");
+      }
+
+      if (options.unit === undefined) {
+        throw new Error("Option 'unit' is required for NumContentItem with 'value'.");
+      }
+
+      var item = {};
+      item.NumericValue = options.value;
+
+      if (isFloat(options.value)) {
+        item.FloatingPointValue = options.value;
+      }
+
+      item.MeasurementUnitsCodeSequence = options.unit;
+      _this8.MeasuredValueSequence = [item];
+    } else if (options.qualifier !== undefined) {
+      if (!(options.qualifier || options.qualifier.constructor === CodedConcept)) {
+        throw new Error("Option 'qualifier' must have type CodedConcept.");
+      }
+
+      _this8.NumericValueQualifierCodeSequence = [options.qualifier];
+    } else {
+      throw new Error("Either option 'value' or 'qualifier' is required for NumContentItem.");
+    }
+
+    return _this8;
+  }
+
+  return NumContentItem;
+}(ContentItem);
+
+var ContainerContentItem =
+/*#__PURE__*/
+function (_ContentItem9) {
+  _inherits(ContainerContentItem, _ContentItem9);
+
+  function ContainerContentItem(options) {
+    var _this9;
+
+    _classCallCheck(this, ContainerContentItem);
+
+    _this9 = _possibleConstructorReturn(this, _getPrototypeOf(ContainerContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.CONTAINER
+    }));
+
+    if (options.isContentContinuous !== undefined) {
+      _this9.ContinuityOfContent = "CONTINUOUS";
+    } else {
+      _this9.ContinuityOfContent = "SEPARATE";
+    }
+
+    if (options.templateID !== undefined) {
+      if (!(typeof options.templateID === "string" || options.templateID instanceof String)) {
+        throw new Error("Option 'templateID' must have type String.");
+      }
+
+      var item = {};
+      item.MappingResource = "DCMR";
+      item.TemplateIdentifier = options.templateID;
+      _this9.ContentTemplateSequence = [item];
+    }
+
+    return _this9;
+  }
+
+  return ContainerContentItem;
+}(ContentItem);
+
+var CompositeContentItem =
+/*#__PURE__*/
+function (_ContentItem10) {
+  _inherits(CompositeContentItem, _ContentItem10);
+
+  function CompositeContentItem(options) {
+    var _this10;
+
+    _classCallCheck(this, CompositeContentItem);
+
+    _this10 = _possibleConstructorReturn(this, _getPrototypeOf(CompositeContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.COMPOSITE
+    }));
+
+    if (options.referencedSOPClassUID === undefined) {
+      throw new Error("Option 'referencedSOPClassUID' is required for CompositeContentItem.");
+    }
+
+    if (options.referencedSOPInstanceUID === undefined) {
+      throw new Error("Option 'referencedSOPInstanceUID' is required for CompositeContentItem.");
+    }
+
+    if (!(typeof options.referencedSOPClassUID === "string" || options.referencedSOPClassUID instanceof String)) {
+      throw new Error("Option 'referencedSOPClassUID' must have type String.");
+    }
+
+    if (!(typeof options.referencedSOPInstanceUID === "string" || options.referencedSOPInstanceUID instanceof String)) {
+      throw new Error("Option 'referencedSOPInstanceUID' must have type String.");
+    }
+
+    var item = {};
+    item.ReferencedSOPClassUID = options.referencedSOPClassUID;
+    item.ReferencedSOPInstanceUID = options.referencedSOPInstanceUID;
+    _this10.ReferenceSOPSequence = [item];
+    return _this10;
+  }
+
+  return CompositeContentItem;
+}(ContentItem);
+
+var ImageContentItem =
+/*#__PURE__*/
+function (_ContentItem11) {
+  _inherits(ImageContentItem, _ContentItem11);
+
+  function ImageContentItem(options) {
+    var _this11;
+
+    _classCallCheck(this, ImageContentItem);
+
+    _this11 = _possibleConstructorReturn(this, _getPrototypeOf(ImageContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.IMAGE
+    }));
+
+    if (options.referencedSOPClassUID === undefined) {
+      throw new Error("Option 'referencedSOPClassUID' is required for ImageContentItem.");
+    }
+
+    if (options.referencedSOPInstanceUID === undefined) {
+      throw new Error("Option 'referencedSOPInstanceUID' is required for ImageContentItem.");
+    }
+
+    if (!(typeof options.referencedSOPClassUID === "string" || options.referencedSOPClassUID instanceof String)) {
+      throw new Error("Option 'referencedSOPClassUID' must have type String.");
+    }
+
+    if (!(typeof options.referencedSOPInstanceUID === "string" || options.referencedSOPInstanceUID instanceof String)) {
+      throw new Error("Option 'referencedSOPInstanceUID' must have type String.");
+    }
+
+    var item = {};
+    item.ReferencedSOPClassUID = options.referencedSOPClassUID;
+    item.ReferencedSOPInstanceUID = options.referencedSOPInstanceUID;
+
+    if (options.referencedFrameNumbers !== undefined) {
+      if (!(_typeof(options.referencedFrameNumbers) === "object" || options.referencedFrameNumbers instanceof Array)) {
+        throw new Error("Option 'referencedFrameNumbers' must have type Array.");
+      } // FIXME: value multiplicity
+
+
+      item.ReferencedFrameNumber = options.referencedFrameNumbers;
+    }
+
+    if (options.referencedFrameSegmentNumber !== undefined) {
+      if (!(_typeof(options.referencedSegmentNumbers) === "object" || options.referencedSegmentNumbers instanceof Array)) {
+        throw new Error("Option 'referencedSegmentNumbers' must have type Array.");
+      } // FIXME: value multiplicity
+
+
+      item.ReferencedSegmentNumber = options.referencedSegmentNumbers;
+    }
+
+    _this11.ReferencedSOPSequence = [item];
+    return _this11;
+  }
+
+  return ImageContentItem;
+}(ContentItem);
+
+var ScoordContentItem =
+/*#__PURE__*/
+function (_ContentItem12) {
+  _inherits(ScoordContentItem, _ContentItem12);
+
+  function ScoordContentItem(options) {
+    var _this12;
+
+    _classCallCheck(this, ScoordContentItem);
+
+    _this12 = _possibleConstructorReturn(this, _getPrototypeOf(ScoordContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.SCOORD
+    }));
+
+    if (options.graphicType === undefined) {
+      throw new Error("Option 'graphicType' is required for ScoordContentItem.");
+    }
+
+    if (!(typeof options.graphicType === "string" || options.graphicType instanceof String)) {
+      throw new Error("Option 'graphicType' of ScoordContentItem must have type String.");
+    }
+
+    if (options.graphicData === undefined) {
+      throw new Error("Option 'graphicData' is required for ScoordContentItem.");
+    }
+
+    if (!(_typeof(options.graphicData) === "object" || options.graphicData instanceof Array)) {
+      throw new Error("Option 'graphicData' of ScoordContentItem must have type Array.");
+    }
+
+    if (Object.values(GraphicTypes).indexOf(options.graphicType) === -1) {
+      throw new Error("Invalid graphic type '".concat(options.graphicType, "'."));
+    }
+
+    if (options.graphicData[0] instanceof Array) {
+      options.graphicData = [].concat.apply([], options.graphicData);
+    }
+
+    _this12.GraphicData = options.graphicData;
+    options.pixelOriginInterpretation = options.pixelOriginInterpretation || PixelOriginInterpretations.VOLUME;
+
+    if (!(typeof options.pixelOriginInterpretation === "string" || options.pixelOriginInterpretation instanceof String)) {
+      throw new Error("Option 'pixelOriginInterpretation' must have type String.");
+    }
+
+    if (Object.values(PixelOriginInterpretations).indexOf(options.pixelOriginInterpretation) === -1) {
+      throw new Error("Invalid pixel origin interpretation '".concat(options.pixelOriginInterpretation, "'."));
+    }
+
+    if (options.fiducialUID !== undefined) {
+      if (!(typeof options.fiducialUID === "string" || options.fiducialUID instanceof String)) {
+        throw new Error("Option 'fiducialUID' must have type String.");
+      }
+
+      _this12.FiducialUID = options.fiducialUID;
+    }
+
+    return _this12;
+  }
+
+  return ScoordContentItem;
+}(ContentItem);
+
+var Scoord3DContentItem =
+/*#__PURE__*/
+function (_ContentItem13) {
+  _inherits(Scoord3DContentItem, _ContentItem13);
+
+  function Scoord3DContentItem(options) {
+    var _this13;
+
+    _classCallCheck(this, Scoord3DContentItem);
+
+    _this13 = _possibleConstructorReturn(this, _getPrototypeOf(Scoord3DContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.SCOORD3D
+    }));
+
+    if (options.graphicType === undefined) {
+      throw new Error("Option 'graphicType' is required for Scoord3DContentItem.");
+    }
+
+    if (!(typeof options.graphicType === "string" || options.graphicType instanceof String)) {
+      throw new Error("Option 'graphicType' must have type String.");
+    }
+
+    if (options.graphicData === undefined) {
+      throw new Error("Option 'graphicData' is required for Scoord3DContentItem.");
+    }
+
+    if (!(_typeof(options.graphicData) === "object" || options.graphicData instanceof Array)) {
+      throw new Error("Option 'graphicData' must have type Array.");
+    }
+
+    if (Object.values(GraphicTypes3D).indexOf(options.graphicType) === -1) {
+      throw new Error("Invalid graphic type '".concat(options.graphicType, "'."));
+    }
+
+    if (options.graphicData[0] instanceof Array) {
+      options.graphicData = [].concat.apply([], options.graphicData);
+    }
+
+    _this13.GraphicType = options.graphicType;
+    _this13.GraphicData = options.graphicData;
+
+    if (options.frameOfReferenceUID === undefined) {
+      throw new Error("Option 'frameOfReferenceUID' is required for Scoord3DContentItem.");
+    }
+
+    if (!(typeof options.frameOfReferenceUID === "string" || options.frameOfReferenceUID instanceof String)) {
+      throw new Error("Option 'frameOfReferenceUID' must have type String.");
+    }
+
+    _this13.ReferencedFrameOfReferenceUID = options.frameOfReferenceUID;
+
+    if ("fiducialUID" in options) {
+      if (!(typeof options.fiducialUID === "string" || options.fiducialUID instanceof String)) {
+        throw new Error("Option 'fiducialUID' must have type String.");
+      }
+
+      _this13.FiducialUID = fiducialUID;
+    }
+
+    return _this13;
+  }
+
+  return Scoord3DContentItem;
+}(ContentItem);
+
+var TcoordContentItem =
+/*#__PURE__*/
+function (_ContentItem14) {
+  _inherits(TcoordContentItem, _ContentItem14);
+
+  function TcoordContentItem(options) {
+    var _this14;
+
+    _classCallCheck(this, TcoordContentItem);
+
+    _this14 = _possibleConstructorReturn(this, _getPrototypeOf(TcoordContentItem).call(this, {
+      name: options.name,
+      relationshipType: options.relationshipType,
+      valueType: ValueTypes.TCOORD
+    }));
+
+    if (options.temporalRangeType === undefined) {
+      throw new Error("Option 'temporalRangeType' is required for TcoordContentItem.");
+    }
+
+    if (Object.values(TemporalRangeTypes).indexOf(options.temporalRangeType) === -1) {
+      throw new Error("Invalid temporal range type '".concat(options.temporalRangeType, "'."));
+    }
+
+    if (options.referencedSamplePositions === undefined) {
+      if (!(_typeof(options.referencedSamplePositions) === "object" || options.referencedSamplePositions instanceof Array)) {
+        throw new Error("Option 'referencedSamplePositions' must have type Array.");
+      } // TODO: ensure values are integers
+
+
+      _this14.ReferencedSamplePositions = options.referencedSamplePositions;
+    } else if (options.referencedTimeOffsets === undefined) {
+      if (!(_typeof(options.referencedTimeOffsets) === "object" || options.referencedTimeOffsets instanceof Array)) {
+        throw new Error("Option 'referencedTimeOffsets' must have type Array.");
+      } // TODO: ensure values are floats
+
+
+      _this14.ReferencedTimeOffsets = options.referencedTimeOffsets;
+    } else if (options.referencedDateTime === undefined) {
+      if (!(_typeof(options.referencedDateTime) === "object" || options.referencedDateTime instanceof Array)) {
+        throw new Error("Option 'referencedDateTime' must have type Array.");
+      }
+
+      _this14.ReferencedDateTime = options.referencedDateTime;
+    } else {
+      throw new Error("One of the following options is required for TcoordContentItem: " + "'referencedSamplePositions', 'referencedTimeOffsets', or " + "'referencedDateTime'.");
+    }
+
+    return _this14;
+  }
+
+  return TcoordContentItem;
+}(ContentItem);
+
+var valueTypes = /*#__PURE__*/Object.freeze({
+	CodeContentItem: CodeContentItem,
+	ContainerContentItem: ContainerContentItem,
+	ContentSequence: ContentSequence$1,
+	CompositeContentItem: CompositeContentItem,
+	DateContentItem: DateContentItem,
+	DateTimeContentItem: DateTimeContentItem,
+	GraphicTypes: GraphicTypes,
+	GraphicTypes3D: GraphicTypes3D,
+	ImageContentItem: ImageContentItem,
+	NumContentItem: NumContentItem,
+	PNameContentItem: PNameContentItem,
+	PixelOriginInterpretations: PixelOriginInterpretations,
+	RelationshipTypes: RelationshipTypes,
+	ScoordContentItem: ScoordContentItem,
+	Scoord3DContentItem: Scoord3DContentItem,
+	TcoordContentItem: TcoordContentItem,
+	TemporalRangeTypes: TemporalRangeTypes,
+	TextContentItem: TextContentItem,
+	TimeContentItem: TimeContentItem,
+	UIDRefContentItem: UIDRefContentItem,
+	ValueTypes: ValueTypes
+});
+
+var LongitudinalTemporalOffsetFromEvent =
+/*#__PURE__*/
+function (_NumContentItem) {
+  _inherits(LongitudinalTemporalOffsetFromEvent, _NumContentItem);
+
+  function LongitudinalTemporalOffsetFromEvent(options) {
+    var _this;
+
+    _classCallCheck(this, LongitudinalTemporalOffsetFromEvent);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(LongitudinalTemporalOffsetFromEvent).call(this, {
+      name: new CodedConcept({
+        value: "128740",
+        meaning: "Longitudinal Temporal Offset from Event",
+        schemeDesignator: "DCM"
+      }),
+      value: options.value,
+      unit: options.unit,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    }));
+    _this.ContentSequence = new ContentSequence$1();
+    var item = new CodeContentItem({
+      name: new CodedConcept({
+        value: "128741",
+        meaning: "Longitudinal Temporal Event Type",
+        schemeDesignator: "DCM"
+      }),
+      value: options.eventType,
+      relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+    });
+
+    _this.ContentSequence.push(item);
+
+    return _this;
+  }
+
+  return LongitudinalTemporalOffsetFromEvent;
+}(NumContentItem);
+
+var SourceImageForRegion =
+/*#__PURE__*/
+function (_ImageContentItem) {
+  _inherits(SourceImageForRegion, _ImageContentItem);
+
+  function SourceImageForRegion(options) {
+    _classCallCheck(this, SourceImageForRegion);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(SourceImageForRegion).call(this, {
+      name: new CodedConcept({
+        value: "121324",
+        meaning: "Source Image",
+        schemeDesignator: "DCM"
+      }),
+      referencedSOPClassUID: options.referencedSOPClassUID,
+      referencedSOPInstanceUID: options.referencedSOPInstanceUID,
+      referencedFrameNumbers: options.referencedFrameNumbers,
+      relationshipType: RelationshipTypes.SELECTED_FROM
+    }));
+  }
+
+  return SourceImageForRegion;
+}(ImageContentItem);
+
+var SourceImageForSegmentation =
+/*#__PURE__*/
+function (_ImageContentItem2) {
+  _inherits(SourceImageForSegmentation, _ImageContentItem2);
+
+  function SourceImageForSegmentation(options) {
+    _classCallCheck(this, SourceImageForSegmentation);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(SourceImageForSegmentation).call(this, {
+      name: new CodedConcept({
+        value: "121233",
+        meaning: "Source Image for Segmentation",
+        schemeDesignator: "DCM"
+      }),
+      referencedSOPClassUID: options.referencedSOPClassUID,
+      referencedSOPInstanceUID: options.referencedSOPInstanceUID,
+      referencedFrameNumbers: options.referencedFrameNumbers,
+      relationshipType: RelationshipTypes.SELECTED_FROM
+    }));
+  }
+
+  return SourceImageForSegmentation;
+}(ImageContentItem);
+
+var SourceSeriesForSegmentation =
+/*#__PURE__*/
+function (_UIDRefContentItem) {
+  _inherits(SourceSeriesForSegmentation, _UIDRefContentItem);
+
+  function SourceSeriesForSegmentation(options) {
+    _classCallCheck(this, SourceSeriesForSegmentation);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(SourceSeriesForSegmentation).call(this, {
+      name: new CodedConcept({
+        value: "121232",
+        meaning: "Source Series for Segmentation",
+        schemeDesignator: "DCM"
+      }),
+      value: options.referencedSeriesInstanceUID,
+      relationshipType: RelationshipTypes.CONTAINS
+    }));
+  }
+
+  return SourceSeriesForSegmentation;
+}(UIDRefContentItem);
+
+var ImageRegion =
+/*#__PURE__*/
+function (_ScoordContentItem) {
+  _inherits(ImageRegion, _ScoordContentItem);
+
+  function ImageRegion(options) {
+    var _this2;
+
+    _classCallCheck(this, ImageRegion);
+
+    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(ImageRegion).call(this, {
+      name: new CodedConcept({
+        value: "111030",
+        meaning: "Image Region",
+        schemeDesignator: "DCM"
+      }),
+      graphicType: options.graphicType,
+      graphicData: options.graphicData,
+      pixelOriginInterpretation: options.pixelOriginInterpretation,
+      relationshipType: RelationshipTypes.CONTAINS
+    }));
+
+    if (options.graphicType === GraphicTypes.MULTIPOINT) {
+      throw new Error("Graphic type 'MULTIPOINT' is not valid for region.");
+    }
+
+    if (options.sourceImage === undefined) {
+      throw Error("Option 'sourceImage' is required for ImageRegion.");
+    }
+
+    if (!(options.sourceImage || options.sourceImage.constructor === SourceImageForRegion)) {
+      throw new Error("Option 'sourceImage' of ImageRegion must have type " + "SourceImageForRegion.");
+    }
+
+    _this2.ContentSequence = new ContentSequence$1();
+
+    _this2.ContentSequence.push(options.sourceImage);
+
+    return _this2;
+  }
+
+  return ImageRegion;
+}(ScoordContentItem);
+
+var ImageRegion3D =
+/*#__PURE__*/
+function (_Scoord3DContentItem) {
+  _inherits(ImageRegion3D, _Scoord3DContentItem);
+
+  function ImageRegion3D(options) {
+    var _this3;
+
+    _classCallCheck(this, ImageRegion3D);
+
+    _this3 = _possibleConstructorReturn(this, _getPrototypeOf(ImageRegion3D).call(this, {
+      name: new CodedConcept({
+        value: "111030",
+        meaning: "Image Region",
+        schemeDesignator: "DCM"
+      }),
+      graphicType: options.graphicType,
+      graphicData: options.graphicData,
+      frameOfReferenceUID: options.frameOfReferenceUID,
+      relationshipType: RelationshipTypes.CONTAINS
+    }));
+
+    if (options.graphicType === GraphicTypes3D.MULTIPOINT) {
+      throw new Error("Graphic type 'MULTIPOINT' is not valid for region.");
+    }
+
+    if (options.graphicType === GraphicTypes3D.ELLIPSOID) {
+      throw new Error("Graphic type 'ELLIPSOID' is not valid for region.");
+    }
+
+    return _this3;
+  }
+
+  return ImageRegion3D;
+}(Scoord3DContentItem);
+
+var VolumeSurface =
+/*#__PURE__*/
+function (_Scoord3DContentItem2) {
+  _inherits(VolumeSurface, _Scoord3DContentItem2);
+
+  function VolumeSurface(options) {
+    var _this4;
+
+    _classCallCheck(this, VolumeSurface);
+
+    _this4 = _possibleConstructorReturn(this, _getPrototypeOf(VolumeSurface).call(this, {
+      name: new CodedConcept({
+        value: "121231",
+        meaning: "Volume Surface",
+        schemeDesignator: "DCM"
+      }),
+      graphicType: options.graphicType,
+      graphicData: options.graphicData,
+      frameOfFeferenceUID: options.frameOfFeferenceUID,
+      relationshipType: RelationshipTypes.CONTAINS
+    }));
+
+    if (options.graphicType !== GraphicTypes3D.ELLIPSOID) {
+      throw new Error("Graphic type for volume surface must be 'ELLIPSOID'.");
+    }
+
+    _this4.ContentSequence = new ContentSequence$1();
+
+    if (options.sourceImages) {
+      options.sourceImages.forEach(function (image) {
+        if (!(image || image.constructor === SourceImageForRegion)) {
+          throw new Error("Items of option 'sourceImages' of VolumeSurface " + "must have type SourceImageForRegion.");
+        }
+
+        _this4.ContentSequence.push(image);
+      });
+    } else if (options.sourceSeries) {
+      if (!(options.sourceSeries || options.sourceSeries.constructor === SourceSeriesForRegion)) {
+        throw new Error("Option 'sourceSeries' of VolumeSurface " + "must have type SourceSeriesForRegion.");
+      }
+
+      _this4.ContentSequence.push(options.sourceSeries);
+    } else {
+      throw new Error("One of the following two options must be provided: " + "'sourceImage' or 'sourceSeries'.");
+    }
+
+    return _this4;
+  }
+
+  return VolumeSurface;
+}(Scoord3DContentItem);
+
+var ReferencedRealWorldValueMap =
+/*#__PURE__*/
+function (_CompositeContentItem) {
+  _inherits(ReferencedRealWorldValueMap, _CompositeContentItem);
+
+  function ReferencedRealWorldValueMap(options) {
+    _classCallCheck(this, ReferencedRealWorldValueMap);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(ReferencedRealWorldValueMap).call(this, {
+      name: new CodedConcept({
+        value: "126100",
+        meaning: "Real World Value Map used for measurement",
+        schemeDesignator: "DCM"
+      }),
+      referencedSOPClassUID: option.referencedSOPClassUID,
+      referencedSOPInstanceUID: options.referencedSOPInstanceUID,
+      relationshipType: RelationshipTypes.CONTAINS
+    }));
+  }
+
+  return ReferencedRealWorldValueMap;
+}(CompositeContentItem);
+
+var FindingSite =
+/*#__PURE__*/
+function (_CodeContentItem) {
+  _inherits(FindingSite, _CodeContentItem);
+
+  function FindingSite(options) {
+    var _this5;
+
+    _classCallCheck(this, FindingSite);
+
+    _this5 = _possibleConstructorReturn(this, _getPrototypeOf(FindingSite).call(this, {
+      name: new CodedConcept({
+        value: "363698007",
+        meaning: "Finding Site",
+        schemeDesignator: "SCT"
+      }),
+      value: options.anatomicLocation,
+      relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+    }));
+    _this5.ContentSequence = new ContentSequence$1();
+
+    if (options.laterality) {
+      var item = new CodeContentItem({
+        name: new CodedConcept({
+          value: "272741003",
+          meaning: "Laterality",
+          schemeDesignator: "SCT"
+        }),
+        value: options.laterality,
+        relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+      });
+
+      _this5.ContentSequence.push(item);
+    }
+
+    if (options.topographicalModifier) {
+      var _item = new CodeContentItem({
+        name: new CodedConcept({
+          value: "106233006",
+          meaning: "Topographical Modifier",
+          schemeDesignator: "SCT"
+        }),
+        value: options.topographicalModifier,
+        relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+      });
+
+      _this5.ContentSequence.push(_item);
+    }
+
+    return _this5;
+  }
+
+  return FindingSite;
+}(CodeContentItem);
+
+var ReferencedSegmentationFrame =
+/*#__PURE__*/
+function (_ContentSequence) {
+  _inherits(ReferencedSegmentationFrame, _ContentSequence);
+
+  function ReferencedSegmentationFrame(options) {
+    var _this6;
+
+    _classCallCheck(this, ReferencedSegmentationFrame);
+
+    if (options.sopClassUID === undefined) {
+      throw new Error("Option 'sopClassUID' is required for ReferencedSegmentationFrame.");
+    }
+
+    if (options.sopInstanceUID === undefined) {
+      throw new Error("Option 'sopInstanceUID' is required for ReferencedSegmentationFrame.");
+    }
+
+    if (options.frameNumber === undefined) {
+      throw new Error("Option 'frameNumber' is required for ReferencedSegmentationFrame.");
+    }
+
+    if (options.segmentNumber === undefined) {
+      throw new Error("Option 'segmentNumber' is required for ReferencedSegmentationFrame.");
+    }
+
+    if (options.sourceImage === undefined) {
+      throw new Error("Option 'sourceImage' is required for ReferencedSegmentationFrame.");
+    }
+
+    _this6 = _possibleConstructorReturn(this, _getPrototypeOf(ReferencedSegmentationFrame).call(this));
+    var segmentationItem = ImageContentItem({
+      name: new CodedConcept({
+        value: "121214",
+        meaning: "Referenced Segmentation Frame",
+        schemeDesignator: "DCM"
+      }),
+      referencedSOPClassUid: options.sopClassUid,
+      referencedSOPInstanceUid: options.sopInstanceUid,
+      referencedFrameNumber: options.frameNumber,
+      referencedSegmentNumber: options.segmentNumber
+    });
+
+    _this6.push(segmentationItem);
+
+    if (options.sourceImage.constructor !== SourceImageForSegmentation) {
+      throw new Error("Option 'sourceImage' must have type SourceImageForSegmentation.");
+    }
+
+    _this6.push(sourceImage);
+
+    return _this6;
+  }
+
+  return ReferencedSegmentationFrame;
+}(ContentSequence$1);
+
+var ReferencedSegmentation =
+/*#__PURE__*/
+function (_ContentSequence2) {
+  _inherits(ReferencedSegmentation, _ContentSequence2);
+
+  function ReferencedSegmentation(options) {
+    var _this7;
+
+    _classCallCheck(this, ReferencedSegmentation);
+
+    if (options.sopClassUID === undefined) {
+      throw new Error("Option 'sopClassUID' is required for ReferencedSegmentation.");
+    }
+
+    if (options.sopInstanceUID === undefined) {
+      throw new Error("Option 'sopInstanceUID' is required for ReferencedSegmentation.");
+    }
+
+    if (options.frameNumbers === undefined) {
+      throw new Error("Option 'frameNumbers' is required for ReferencedSegmentation.");
+    }
+
+    if (options.segmentNumber === undefined) {
+      throw new Error("Option 'segmentNumber' is required for ReferencedSegmentation.");
+    }
+
+    _this7 = _possibleConstructorReturn(this, _getPrototypeOf(ReferencedSegmentation).call(this));
+    var segmentationItem = new ImageContentItem({
+      name: new CodedConcept({
+        value: "121191",
+        meaning: "Referenced Segment",
+        schemeDesignator: "DCM"
+      }),
+      referencedSOPClassUid: options.sopClassUid,
+      referencedSOPInstanceUid: options.sopInstanceUid,
+      referencedFrameNumber: options.frameNumbers,
+      referencedSegmentNumber: options.segmentNumber
+    });
+
+    _this7.push(segmentationItem);
+
+    if (options.sourceImages !== undefined) {
+      options.sourceImages.forEach(function (image) {
+        if (!image || image.constructor !== SourceImageForSegmentation) {
+          throw new Error("Items of option 'sourceImages' must have type " + "SourceImageForSegmentation.");
+        }
+
+        _this7.push(image);
+      });
+    } else if (options.sourceSeries !== undefined) {
+      if (options.sourceSeries.constructor !== SourceSeriesForSegmentation) {
+        throw new Error("Option 'sourceSeries' must have type SourceSeriesForSegmentation.");
+      }
+
+      _this7.push(sourceSeries);
+    } else {
+      throw new Error("One of the following two options must be provided: " + "'sourceImages' or 'sourceSeries'.");
+    }
+
+    return _this7;
+  }
+
+  return ReferencedSegmentation;
+}(ContentSequence$1);
+
+var contentItems = /*#__PURE__*/Object.freeze({
+	FindingSite: FindingSite,
+	LongitudinalTemporalOffsetFromEvent: LongitudinalTemporalOffsetFromEvent,
+	ReferencedRealWorldValueMap: ReferencedRealWorldValueMap,
+	ImageRegion: ImageRegion,
+	ImageRegion3D: ImageRegion3D,
+	ReferencedSegmentation: ReferencedSegmentation,
+	ReferencedSegmentationFrame: ReferencedSegmentationFrame,
+	VolumeSurface: VolumeSurface,
+	SourceImageForRegion: SourceImageForRegion,
+	SourceImageForSegmentation: SourceImageForSegmentation,
+	SourceSeriesForSegmentation: SourceSeriesForSegmentation
+});
+
+var Template =
+/*#__PURE__*/
+function (_ContentSequence) {
+  _inherits(Template, _ContentSequence);
+
+  function Template() {
+    var _getPrototypeOf2;
+
+    _classCallCheck(this, Template);
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    return _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Template)).call.apply(_getPrototypeOf2, [this].concat(args)));
+  }
+
+  return Template;
+}(ContentSequence$1);
+
+var Measurement =
+/*#__PURE__*/
+function (_Template) {
+  _inherits(Measurement, _Template);
+
+  function Measurement(options) {
+    var _valueItem$ContentSeq;
+
+    var _this;
+
+    _classCallCheck(this, Measurement);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Measurement).call(this));
+    var valueItem = new NumContentItem({
+      name: options.name,
+      value: options.value,
+      unit: options.unit,
+      qualifier: options.qualifier,
+      relationshipType: RelationshipTypes.CONTAINS
+    });
+    valueItem.ContentSequence = new ContentSequence$1();
+
+    if (options.trackingIdentifier === undefined) {
+      throw new Error("Option 'trackingIdentifier' is required for Measurement.");
+    }
+
+    if (options.trackingIdentifier.constructor === TrackingIdentifier) {
+      throw new Error("Option 'trackingIdentifier' must have type TrackingIdentifier.");
+    }
+
+    (_valueItem$ContentSeq = valueItem.ContentSequence).push.apply(_valueItem$ContentSeq, _toConsumableArray(options.trackingIdentifier));
+
+    if (options.method !== undefined) {
+      var methodItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "370129005",
+          meaning: "Measurement Method",
+          schemeDesignator: "SCT"
+        }),
+        value: options.method,
+        relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+      });
+      valueItem.ContentSequence.push(methodItem);
+    }
+
+    if (options.derivation !== undefined) {
+      var derivationItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121401",
+          meaning: "Derivation",
+          schemeDesignator: "DCM"
+        }),
+        value: options.derivation,
+        relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+      });
+      valueItem.ContentSequence.push(derivationItem);
+    }
+
+    if (options.findingSites !== undefined) {
+      if (!(_typeof(options.findingSites) === "object" || options.findingSites instanceof Array)) {
+        throw new Error("Option 'findingSites' must have type Array.");
+      }
+
+      options.findingSites.forEach(function (site) {
+        if (!site || site.constructor !== FindingSite) {
+          throw new Error("Items of option 'findingSites' must have type FindingSite.");
+        }
+
+        valueItem.ContentSequence.push(site);
+      });
+    }
+
+    if (options.properties !== undefined) {
+      var _valueItem$ContentSeq2;
+
+      if (options.properties.constructor !== MeasurementProperties) {
+        throw new Error("Option 'properties' must have type MeasurementProperties.");
+      }
+
+      (_valueItem$ContentSeq2 = valueItem.ContentSequence).push.apply(_valueItem$ContentSeq2, _toConsumableArray(options.properties));
+    }
+
+    if (options.referencedRegions !== undefined) {
+      if (!(_typeof(options.referencedRegions) === "object" || options.referencedRegions instanceof Array)) {
+        throw new Error("Option 'referencedRegions' must have type Array.");
+      }
+
+      options.referencedRegions.forEach(function (region) {
+        if (!region || region.constructor !== ImageRegion && region.constructor !== ImageRegion3D) {
+          throw new Error("Items of option 'referencedRegion' must have type " + "ImageRegion or ImageRegion3D.");
+        }
+
+        valueItem.ContentSequence.push(region);
+      });
+    } else if (options.referencedVolume !== undefined) {
+      if (options.referencedVolume.constructor !== VolumeSurface) {
+        throw new Error("Option 'referencedVolume' must have type VolumeSurface.");
+      }
+
+      valueItem.ContentSequence.push(options.referencedVolume);
+    } else if (options.referencedSegmentation !== undefined) {
+      if (options.referencedSegmentation.constructor !== ReferencedSegmentation && options.referencedSegmentation.constructor !== ReferencedSegmentationFrame) {
+        throw new Error("Option 'referencedSegmentation' must have type " + "ReferencedSegmentation or ReferencedSegmentationFrame.");
+      }
+
+      valueItem.ContentSequence.push(options.referencedSegmentation);
+    }
+
+    if (options.referencedRealWorldValueMap !== undefined) {
+      if (options.referencedRealWorldValueMap.constructor !== ReferencedRealWorldValueMap) {
+        throw new Error("Option 'referencedRealWorldValueMap' must have type " + "ReferencedRealWorldValueMap.");
+      }
+
+      valueItem.ContentSequence.push(options.referencedRealWorldValueMap);
+    }
+
+    if (options.algorithmId !== undefined) {
+      var _valueItem$ContentSeq3;
+
+      if (options.algorithmId.constructor !== AlgorithmIdentification) {
+        throw new Error("Option 'algorithmId' must have type AlgorithmIdentification.");
+      }
+
+      (_valueItem$ContentSeq3 = valueItem.ContentSequence).push.apply(_valueItem$ContentSeq3, _toConsumableArray(options.algorithmId));
+    }
+
+    _this.push(valueItem);
+
+    return _this;
+  }
+
+  return Measurement;
+}(Template);
+
+var MeasurementProperties =
+/*#__PURE__*/
+function (_Template2) {
+  _inherits(MeasurementProperties, _Template2);
+
+  function MeasurementProperties(options) {
+    var _this2;
+
+    _classCallCheck(this, MeasurementProperties);
+
+    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(MeasurementProperties).call(this));
+
+    if (options.normality !== undefined) {
+      var normalityItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121402",
+          schemeDesignator: "DCM",
+          meaning: "Normality"
+        }),
+        value: options.normality,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this2.push(normalityItem);
+    }
+
+    if (options.measurementStatisticalProperties !== undefined) {
+      var _this3;
+
+      if (options.measurementStatisticalProperties.constructor !== MeasurementStatisticalProperties) {
+        throw new Error("Option 'measurmentStatisticalProperties' must have type " + "MeasurementStatisticalProperties.");
+      }
+
+      (_this3 = _this2).push.apply(_this3, _toConsumableArray(measurementStatisticalProperties));
+    }
+
+    if (options.normalRangeProperties !== undefined) {
+      var _this4;
+
+      if (options.normalRangeProperties.constructor !== NormalRangeProperties) {
+        throw new Error("Option 'normalRangeProperties' must have type NormalRangeProperties.");
+      }
+
+      (_this4 = _this2).push.apply(_this4, _toConsumableArray(normalRangeProperties));
+    }
+
+    if (options.levelOfSignificance !== undefined) {
+      var levelOfSignificanceItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121403",
+          schemeDesignator: "DCM",
+          meaning: "Level of Significance"
+        }),
+        value: options.levelOfSignificance,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this2.push(levelOfSignificanceItem);
+    }
+
+    if (options.selectionStatus !== undefined) {
+      var selectionStatusItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121404",
+          schemeDesignator: "DCM",
+          meaning: "Selection Status"
+        }),
+        value: options.selectionStatus,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this2.push(selectionStatusItem);
+    }
+
+    if (options.upperMeasurementUncertainty !== undefined) {
+      var upperMeasurementUncertaintyItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "R-00364",
+          schemeDesignator: "SRT",
+          meaning: "Range of Upper Measurement Uncertainty"
+        }),
+        value: options.upperMeasurementUncertainty,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this2.push(upperMeasurementUncertaintyItem);
+    }
+
+    if (options.lowerMeasurementUncertainty !== undefined) {
+      var lowerMeasurementUncertaintyItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "R-00362",
+          schemeDesignator: "SRT",
+          meaning: "Range of Lower Measurement Uncertainty"
+        }),
+        value: options.lowerMeasurementUncertainty,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this2.push(lowerMeasurementUncertaintyItem);
+    }
+
+    return _this2;
+  }
+
+  return MeasurementProperties;
+}(Template);
+
+var MeasurementStatisticalProperties =
+/*#__PURE__*/
+function (_Template3) {
+  _inherits(MeasurementStatisticalProperties, _Template3);
+
+  function MeasurementStatisticalProperties(options) {
+    var _this5;
+
+    _classCallCheck(this, MeasurementStatisticalProperties);
+
+    _this5 = _possibleConstructorReturn(this, _getPrototypeOf(MeasurementStatisticalProperties).call(this));
+
+    if (options.values === undefined) {
+      throw new Error("Option 'values' is required for MeasurementStatisticalProperties.");
+    }
+
+    if (!(_typeof(options.values) === "object" || options.values instanceof Array)) {
+      throw new Error("Option 'values' must have type Array.");
+    }
+
+    options.values.forEach(function (value) {
+      if (!options.concept || options.concept.constructor !== NumContentItem) {
+        throw new Error("Items of option 'values' must have type NumContentItem.");
+      }
+
+      _this5.push(value);
+    });
+
+    if (options.description !== undefined) {
+      var descriptionItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121405",
+          schemeDesignator: "DCM",
+          meaning: "Population Description"
+        }),
+        value: options.authority,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this5.push(authorityItem);
+    }
+
+    if (options.authority !== undefined) {
+      var _authorityItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121406",
+          schemeDesignator: "DCM",
+          meaning: "Population Authority"
+        }),
+        value: options.authority,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this5.push(_authorityItem);
+    }
+
+    return _this5;
+  }
+
+  return MeasurementStatisticalProperties;
+}(Template);
+
+var NormalRangeProperties =
+/*#__PURE__*/
+function (_Template4) {
+  _inherits(NormalRangeProperties, _Template4);
+
+  function NormalRangeProperties(options) {
+    var _this6;
+
+    _classCallCheck(this, NormalRangeProperties);
+
+    _this6 = _possibleConstructorReturn(this, _getPrototypeOf(NormalRangeProperties).call(this));
+
+    if (options.values === undefined) {
+      throw new Error("Option 'values' is required for NormalRangeProperties.");
+    }
+
+    if (!(_typeof(options.values) === "object" || options.values instanceof Array)) {
+      throw new Error("Option 'values' must have type Array.");
+    }
+
+    options.values.forEach(function (value) {
+      if (!options.concept || options.concept.constructor !== NumContentItem) {
+        throw new Error("Items of option 'values' must have type NumContentItem.");
+      }
+
+      _this6.push(value);
+    });
+
+    if (options.description !== undefined) {
+      var descriptionItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121407",
+          schemeDesignator: "DCM",
+          meaning: "Normal Range Description"
+        }),
+        value: options.authority,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this6.push(authorityItem);
+    }
+
+    if (options.authority !== undefined) {
+      var _authorityItem2 = new TextContentItem({
+        name: new CodedConcept({
+          value: "121408",
+          schemeDesignator: "DCM",
+          meaning: "Normal Range Authority"
+        }),
+        value: options.authority,
+        relationshipType: RelationshipTypes.HAS_PROPERTIES
+      });
+
+      _this6.push(_authorityItem2);
+    }
+
+    return _this6;
+  }
+
+  return NormalRangeProperties;
+}(Template);
+
+var ObservationContext =
+/*#__PURE__*/
+function (_Template5) {
+  _inherits(ObservationContext, _Template5);
+
+  function ObservationContext(options) {
+    var _this8;
+
+    var _this7;
+
+    _classCallCheck(this, ObservationContext);
+
+    _this7 = _possibleConstructorReturn(this, _getPrototypeOf(ObservationContext).call(this));
+
+    if (options.observerPersonContext === undefined) {
+      throw new Error("Option 'observerPersonContext' is required for ObservationContext.");
+    }
+
+    if (options.observerPersonContext.constructor !== ObserverContext) {
+      throw new Error("Option 'observerPersonContext' must have type ObserverContext");
+    }
+
+    (_this8 = _this7).push.apply(_this8, _toConsumableArray(options.observerPersonContext));
+
+    if (options.observerDeviceContext !== undefined) {
+      var _this9;
+
+      if (options.observerDeviceContext.constructor !== ObserverContext) {
+        throw new Error("Option 'observerDeviceContext' must have type ObserverContext");
+      }
+
+      (_this9 = _this7).push.apply(_this9, _toConsumableArray(options.observerDeviceContext));
+    }
+
+    if (options.subjectContext !== undefined) {
+      var _this10;
+
+      if (options.subjectContext.constructor !== SubjectContext) {
+        throw new Error("Option 'subjectContext' must have type SubjectContext");
+      }
+
+      (_this10 = _this7).push.apply(_this10, _toConsumableArray(options.subjectContext));
+    }
+
+    return _this7;
+  }
+
+  return ObservationContext;
+}(Template);
+
+var ObserverContext =
+/*#__PURE__*/
+function (_Template6) {
+  _inherits(ObserverContext, _Template6);
+
+  function ObserverContext(options) {
+    var _this12;
+
+    var _this11;
+
+    _classCallCheck(this, ObserverContext);
+
+    _this11 = _possibleConstructorReturn(this, _getPrototypeOf(ObserverContext).call(this));
+
+    if (options.observerType === undefined) {
+      throw new Error("Option 'observerType' is required for ObserverContext.");
+    } else {
+      if (options.observerType.constructor !== Code && options.observerType.constructor !== CodedConcept) {
+        throw new Error("Option 'observerType' must have type Code or CodedConcept.");
+      }
+    }
+
+    var observerTypeItem = new CodeContentItem({
+      name: new CodedConcept({
+        value: "121005",
+        meaning: "Observer Type",
+        schemeDesignator: "DCM"
+      }),
+      value: options.observerType,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this11.push(observerTypeItem);
+
+    if (options.observerIdentifyingAttributes === undefined) {
+      throw new Error("Option 'observerIdentifyingAttributes' is required for ObserverContext.");
+    } // FIXME
+
+
+    var person = new CodedConcept({
+      value: "121006",
+      schemeDesignator: "DCM",
+      meaning: "Person"
+    });
+    var device = new CodedConcept({
+      value: "121007",
+      schemeDesignator: "DCM",
+      meaning: "Device"
+    });
+
+    if (person.equals(options.observerType)) {
+      if (options.observerIdentifyingAttributes.constructor !== PersonObserverIdentifyingAttributes) {
+        throw new Error("Option 'observerIdentifyingAttributes' must have type " + "PersonObserverIdentifyingAttributes for 'Person' observer type.");
+      }
+    } else if (device.equals(options.observerType)) {
+      if (options.observerIdentifyingAttributes.constructor !== DeviceObserverIdentifyingAttributes) {
+        throw new Error("Option 'observerIdentifyingAttributes' must have type " + "DeviceObserverIdentifyingAttributes for 'Device' observer type.");
+      }
+    } else {
+      throw new Error("Option 'oberverType' must be either 'Person' or 'Device'.");
+    }
+
+    (_this12 = _this11).push.apply(_this12, _toConsumableArray(options.observerIdentifyingAttributes));
+
+    return _this11;
+  }
+
+  return ObserverContext;
+}(Template);
+
+var PersonObserverIdentifyingAttributes =
+/*#__PURE__*/
+function (_Template7) {
+  _inherits(PersonObserverIdentifyingAttributes, _Template7);
+
+  function PersonObserverIdentifyingAttributes(options) {
+    var _this13;
+
+    _classCallCheck(this, PersonObserverIdentifyingAttributes);
+
+    _this13 = _possibleConstructorReturn(this, _getPrototypeOf(PersonObserverIdentifyingAttributes).call(this));
+
+    if (options.name === undefined) {
+      throw new Error("Option 'name' is required for PersonObserverIdentifyingAttributes.");
+    }
+
+    var nameItem = new PNameContentItem({
+      name: new CodedConcept({
+        value: "121008",
+        meaning: "Person Observer Name",
+        schemeDesignator: "DCM"
+      }),
+      value: options.name,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this13.push(nameItem);
+
+    if (options.loginName !== undefined) {
+      var loginNameItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "128774",
+          meaning: "Person Observer's Login Name",
+          schemeDesignator: "DCM"
+        }),
+        value: options.loginName,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this13.push(loginNameItem);
+    }
+
+    if (options.organizationName !== undefined) {
+      var organizationNameItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121009",
+          meaning: "Person Observer's Organization Name",
+          schemeDesignator: "DCM"
+        }),
+        value: options.organizationName,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this13.push(organizationNameItem);
+    }
+
+    if (options.roleInOrganization !== undefined) {
+      var roleInOrganizationItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121010",
+          meaning: "Person Observer's Role in the Organization",
+          schemeDesignator: "DCM"
+        }),
+        value: options.roleInOrganization,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this13.push(roleInOrganizationItem);
+    }
+
+    if (options.roleInProcedure !== undefined) {
+      var roleInProcedureItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121011",
+          meaning: "Person Observer's Role in this Procedure",
+          schemeDesignator: "DCM"
+        }),
+        value: options.roleInProcedure,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this13.push(roleInProcedureItem);
+    }
+
+    return _this13;
+  }
+
+  return PersonObserverIdentifyingAttributes;
+}(Template);
+
+var DeviceObserverIdentifyingAttributes =
+/*#__PURE__*/
+function (_Template8) {
+  _inherits(DeviceObserverIdentifyingAttributes, _Template8);
+
+  function DeviceObserverIdentifyingAttributes(options) {
+    var _this14;
+
+    _classCallCheck(this, DeviceObserverIdentifyingAttributes);
+
+    _this14 = _possibleConstructorReturn(this, _getPrototypeOf(DeviceObserverIdentifyingAttributes).call(this));
+
+    if (options.uid === undefined) {
+      throw new Error("Option 'uid' is required for DeviceObserverIdentifyingAttributes.");
+    }
+
+    var deviceObserverItem = new UIDRefContentItem({
+      name: new CodedConcept({
+        value: "121012",
+        meaning: "Device Observer UID",
+        schemeDesignator: "DCM"
+      }),
+      value: options.uid,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this14.push(deviceObserverItem);
+
+    if (options.manufacturerName !== undefined) {
+      var manufacturerNameItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121013",
+          meaning: "Device Observer Manufacturer",
+          schemeDesignator: "DCM"
+        }),
+        value: options.manufacturerName,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this14.push(manufacturerNameItem);
+    }
+
+    if (options.modelName !== undefined) {
+      var modelNameItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121015",
+          meaning: "Device Observer Model Name",
+          schemeDesignator: "DCM"
+        }),
+        value: options.modelName,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this14.push(modelNameItem);
+    }
+
+    if (options.serialNumber !== undefined) {
+      var serialNumberItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121016",
+          meaning: "Device Observer Serial Number",
+          schemeDesignator: "DCM"
+        }),
+        value: options.serialNumber,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this14.push(serialNumberItem);
+    }
+
+    if (options.physicalLocation !== undefined) {
+      var physicalLocationItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121017",
+          meaning: "Device Observer Physical Location During Observation",
+          schemeDesignator: "DCM"
+        }),
+        value: options.physicalLocation,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this14.push(physicalLocationItem);
+    }
+
+    if (options.roleInProcedure !== undefined) {
+      var roleInProcedureItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "113876",
+          meaning: "Device Role in Procedure",
+          schemeDesignator: "DCM"
+        }),
+        value: options.roleInProcedure,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this14.push(roleInProcedureItem);
+    }
+
+    return _this14;
+  }
+
+  return DeviceObserverIdentifyingAttributes;
+}(Template);
+
+var SubjectContext =
+/*#__PURE__*/
+function (_Template9) {
+  _inherits(SubjectContext, _Template9);
+
+  function SubjectContext(options) {
+    var _this16;
+
+    var _this15;
+
+    _classCallCheck(this, SubjectContext);
+
+    _this15 = _possibleConstructorReturn(this, _getPrototypeOf(SubjectContext).call(this));
+
+    if (options.subjectClass === undefined) {
+      throw new Error("Option 'subjectClass' is required for SubjectContext.");
+    }
+
+    if (options.subjectClassSpecificContext === undefined) {
+      throw new Error("Option 'subjectClassSpecificContext' is required for SubjectContext.");
+    }
+
+    var subjectClassItem = new CodeContentItem({
+      name: new CodedConcept({
+        value: "121024",
+        meaning: "Subject Class",
+        schemeDesignator: "DCM"
+      }),
+      value: options.subjectClass,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this15.push(subjectClassItem);
+
+    var fetus = new CodedConcept({
+      value: "121026 ",
+      schemeDesignator: "DCM",
+      meaning: "Fetus"
+    });
+    var specimen = new CodedConcept({
+      value: "121027",
+      schemeDesignator: "DCM",
+      meaning: "Specimen"
+    });
+    var device = new CodedConcept({
+      value: "121192",
+      schemeDesignator: "DCM",
+      meaning: "Device Subject"
+    });
+
+    if (fetus.equals(options.subjectClass)) {
+      if (options.subjectClassSpecificContext.constructor !== SubjectContextFetus) {
+        throw new Error("Option 'subjectClass' must have type " + "SubjectContextFetus for 'Fetus' subject class.");
+      }
+    } else if (specimen.equals(options.subjectClass)) {
+      if (options.subjectClassSpecificContext.constructor !== SubjectContextSpecimen) {
+        throw new Error("Option 'subjectClass' must have type " + "SubjectContextSpecimen for 'Specimen' subject class.");
+      }
+    } else if (device.equals(options.subjectClass)) {
+      if (options.subjectClassSpecificContext.constructor !== SubjectContextDevice) {
+        throw new Error("Option 'subjectClass' must have type " + "SubjectContextDevice for 'Device' subject class.");
+      }
+    } else {
+      throw new Error("Option 'subjectClass' must be either 'Fetus', 'Specimen', or 'Device'.");
+    }
+
+    (_this16 = _this15).push.apply(_this16, _toConsumableArray(options.subjectClassSpecificContext));
+
+    return _this15;
+  }
+
+  return SubjectContext;
+}(Template);
+
+var SubjectContextFetus =
+/*#__PURE__*/
+function (_Template10) {
+  _inherits(SubjectContextFetus, _Template10);
+
+  function SubjectContextFetus(options) {
+    var _this17;
+
+    _classCallCheck(this, SubjectContextFetus);
+
+    _this17 = _possibleConstructorReturn(this, _getPrototypeOf(SubjectContextFetus).call(this));
+
+    if (options.subjectID === undefined) {
+      throw new Error("Option 'subjectID' is required for SubjectContextFetus.");
+    }
+
+    var subjectIdItem = new TextContentItem({
+      name: new CodedConcept({
+        value: "121030",
+        meaning: "Subject ID",
+        schemeDesignator: "DCM"
+      }),
+      value: options.subjectID,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this17.push(subjectIdItem);
+
+    return _this17;
+  }
+
+  return SubjectContextFetus;
+}(Template);
+
+var SubjectContextSpecimen =
+/*#__PURE__*/
+function (_Template11) {
+  _inherits(SubjectContextSpecimen, _Template11);
+
+  function SubjectContextSpecimen(options) {
+    var _this18;
+
+    _classCallCheck(this, SubjectContextSpecimen);
+
+    _this18 = _possibleConstructorReturn(this, _getPrototypeOf(SubjectContextSpecimen).call(this));
+
+    if (options.uid === undefined) {
+      throw new Error("Option 'uid' is required for SubjectContextSpecimen.");
+    }
+
+    var specimenUidItem = new UIDRefContentItem({
+      name: new CodedConcept({
+        value: "121039",
+        meaning: "Specimen UID",
+        schemeDesignator: "DCM"
+      }),
+      value: options.uid,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this18.push(specimenUidItem);
+
+    if (options.identifier !== undefined) {
+      var specimenIdentifierItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121041",
+          meaning: "Specimen Identifier",
+          schemeDesignator: "DCM"
+        }),
+        value: options.identifier,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this18.push(specimenIdentifierItem);
+    }
+
+    if (options.containerIdentifier !== undefined) {
+      var containerIdentifierItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "111700",
+          meaning: "Specimen Container Identifier",
+          schemeDesignator: "DCM"
+        }),
+        value: options.containerIdentifier,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this18.push(containerIdentifierItem);
+    }
+
+    if (options.specimenType !== undefined) {
+      var specimenTypeItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "R-00254",
+          meaning: "Specimen Type",
+          schemeDesignator: "DCM"
+        }),
+        value: options.specimenType,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this18.push(specimenTypeItem);
+    }
+
+    return _this18;
+  }
+
+  return SubjectContextSpecimen;
+}(Template);
+
+var SubjectContextDevice =
+/*#__PURE__*/
+function (_Template12) {
+  _inherits(SubjectContextDevice, _Template12);
+
+  function SubjectContextDevice(options) {
+    var _this19;
+
+    _classCallCheck(this, SubjectContextDevice);
+
+    if (options.name === undefined) {
+      throw new Error("Option 'name' is required for SubjectContextDevice.");
+    }
+
+    var deviceNameItem = new TextContentItem({
+      name: new CodedConcept({
+        value: "121193",
+        meaning: "Device Subject Name",
+        schemeDesignator: "DCM"
+      }),
+      value: options.name,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this19.push(deviceNameItem);
+
+    if (options.uid !== undefined) {
+      var deviceUidItem = new UIDRefContentItem({
+        name: new CodedConcept({
+          value: "121198",
+          meaning: "Device Subject UID",
+          schemeDesignator: "DCM"
+        }),
+        value: options.uid,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this19.push(deviceUidItem);
+    }
+
+    if (options.manufacturerName !== undefined) {
+      var manufacturerNameItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121194",
+          meaning: "Device Subject Manufacturer",
+          schemeDesignator: "DCM"
+        }),
+        value: options.manufacturerName,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this19.push(manufacturerNameItem);
+    }
+
+    if (options.modelName !== undefined) {
+      var modelNameItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121195",
+          meaning: "Device Subject Model Name",
+          schemeDesignator: "DCM"
+        }),
+        value: options.modelName,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this19.push(modelNameItem);
+    }
+
+    if (options.serialNumber !== undefined) {
+      var serialNumberItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121196",
+          meaning: "Device Subject Serial Number",
+          schemeDesignator: "DCM"
+        }),
+        value: options.serialNumber,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this19.push(serialNumberItem);
+    }
+
+    if (options.physicalLocation !== undefined) {
+      var physicalLocationItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "121197",
+          meaning: "Device Subject Physical Location During Observation",
+          schemeDesignator: "DCM"
+        }),
+        value: options.physicalLocation,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this19.push(physicalLocationItem);
+    }
+
+    return _possibleConstructorReturn(_this19);
+  }
+
+  return SubjectContextDevice;
+}(Template);
+
+var LanguageOfContentItemAndDescendants =
+/*#__PURE__*/
+function (_Template13) {
+  _inherits(LanguageOfContentItemAndDescendants, _Template13);
+
+  function LanguageOfContentItemAndDescendants(options) {
+    var _this20;
+
+    _classCallCheck(this, LanguageOfContentItemAndDescendants);
+
+    _this20 = _possibleConstructorReturn(this, _getPrototypeOf(LanguageOfContentItemAndDescendants).call(this));
+
+    if (options.language === undefined) {
+      options.language = new CodedConcept({
+        value: "en-US",
+        schemeDesignator: "RFC5646",
+        meaning: "English (United States)"
+      });
+    }
+
+    var languageItem = new CodeContentItem({
+      name: new CodedConcept({
+        value: "121049",
+        meaning: "Language of Content Item and Descendants",
+        schemeDesignator: "DCM"
+      }),
+      value: options.language,
+      relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+    });
+
+    _this20.push(languageItem);
+
+    return _this20;
+  }
+
+  return LanguageOfContentItemAndDescendants;
+}(Template);
+
+var _MeasurementsAndQualitatitiveEvaluations =
+/*#__PURE__*/
+function (_Template14) {
+  _inherits(_MeasurementsAndQualitatitiveEvaluations, _Template14);
+
+  function _MeasurementsAndQualitatitiveEvaluations(options) {
+    var _groupItem$ContentSeq;
+
+    var _this21;
+
+    _classCallCheck(this, _MeasurementsAndQualitatitiveEvaluations);
+
+    _this21 = _possibleConstructorReturn(this, _getPrototypeOf(_MeasurementsAndQualitatitiveEvaluations).call(this));
+    var groupItem = new ContainerContentItem({
+      name: new CodedConcept({
+        value: "125007",
+        meaning: "Measurement Group",
+        schemeDesignator: "DCM"
+      }),
+      relationshipType: RelationshipTypes.CONTAINS
+    });
+    groupItem.ContentSequence = new ContentSequence$1();
+
+    if (options.trackingIdentifier === undefined) {
+      throw new Error("Option 'trackingIdentifier' is required for measurements group.");
+    }
+
+    if (options.trackingIdentifier.constructor !== TrackingIdentifier) {
+      throw new Error("Option 'trackingIdentifier' must have type TrackingIdentifier.");
+    }
+
+    if (options.trackingIdentifier.length !== 2) {
+      throw new Error("Option 'trackingIdentifier' must include a human readable tracking " + "identifier and a tracking unique identifier.");
+    }
+
+    (_groupItem$ContentSeq = groupItem.ContentSequence).push.apply(_groupItem$ContentSeq, _toConsumableArray(options.trackingIdentifier));
+
+    if (options.session !== undefined) {
+      var sessionItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "C67447",
+          meaning: "Activity Session",
+          schemeDesignator: "NCIt"
+        }),
+        value: options.session,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+      groupItem.ContentSequence.push(sessionItem);
+    }
+
+    if (options.findingType !== undefined) {
+      var findingTypeItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121071",
+          meaning: "Finding",
+          schemeDesignator: "DCM"
+        }),
+        value: options.findingType,
+        relationshipType: RelationshipTypes.CONTAINS
+      });
+      groupItem.ContentSequence.push(findingTypeItem);
+    }
+
+    if (options.timePointContext !== undefined) {
+      var _groupItem$ContentSeq2;
+
+      if (options.timePointContext.constructor !== TimePointContext) {
+        throw new Error("Option 'timePointContext' must have type TimePointContext.");
+      }
+
+      (_groupItem$ContentSeq2 = groupItem.ContentSequence).push.apply(_groupItem$ContentSeq2, _toConsumableArray(timePointContext));
+    }
+
+    if (options.referencedRealWorldValueMap !== undefined) {
+      if (options.referencedRealWorldValueMap.constructor !== ReferencedRealWorldValueMap) {
+        throw new Error("Option 'referencedRealWorldValleMap' must have type " + "ReferencedRealWorldValueMap.");
+      }
+
+      groupItem.ContentSequence.push(options.referencedRealWorldValueMap);
+    }
+
+    if (options.measurements !== undefined) {
+      if (!(_typeof(options.measurements) === "object" || options.measurements instanceof Array)) {
+        throw new Error("Option 'measurements' must have type Array.");
+      }
+
+      options.measurements.forEach(function (measurement) {
+        console.log(measurement);
+
+        if (!measurement || measurement.constructor !== NumContentItem) {
+          throw new Error("Items of option 'measurement' must have type NumContentItem.");
+        }
+
+        groupItem.ContentSequence.push(measurement);
+      });
+    }
+
+    if (options.qualitativeEvaluations !== undefined) {
+      if (!(_typeof(options.qualitativeEvaluations) === "object" || options.qualitativeEvaluations instanceof Array)) {
+        throw new Error("Option 'qualitativeEvaluations' must have type Array.");
+      }
+
+      options.qualitativeEvaluations.forEach(function (evaluation) {
+        if (!evaluation || evaluation.constructor !== CodeContentItem) {
+          throw new Error("Items of option 'qualitativeEvaluations' must have type " + "CodeContentItem.");
+        }
+
+        groupItem.ContentSequence.push(evaluation);
+      });
+    }
+
+    _this21.push(groupItem);
+
+    return _this21;
+  }
+
+  return _MeasurementsAndQualitatitiveEvaluations;
+}(Template);
+
+var _ROIMeasurementsAndQualitativeEvaluations =
+/*#__PURE__*/
+function (_MeasurementsAndQuali) {
+  _inherits(_ROIMeasurementsAndQualitativeEvaluations, _MeasurementsAndQuali);
+
+  function _ROIMeasurementsAndQualitativeEvaluations(options) {
+    var _this22;
+
+    _classCallCheck(this, _ROIMeasurementsAndQualitativeEvaluations);
+
+    _this22 = _possibleConstructorReturn(this, _getPrototypeOf(_ROIMeasurementsAndQualitativeEvaluations).call(this, {
+      trackingIdentifier: options.trackingIdentifier,
+      timePointContext: options.timePointContext,
+      findingType: options.findingType,
+      session: options.session,
+      measurements: options.measurements,
+      qualitativeEvaluations: options.qualitativeEvaluations
+    }));
+    var groupItem = _this22[0];
+    var wereReferencesProvided = [options.referencedRegions !== undefined, options.referencedVolume !== undefined, options.referencedSegmentation !== undefined];
+    var numReferences = wereReferencesProvided.reduce(function (a, b) {
+      return a + b;
+    });
+
+    if (numReferences === 0) {
+      throw new Error("One of the following options must be provided: " + "'referencedRegions', 'referencedVolume', or " + "'referencedSegmentation'.");
+    } else if (numReferences > 1) {
+      throw new Error("Only one of the following options should be provided: " + "'referencedRegions', 'referencedVolume', or " + "'referencedSegmentation'.");
+    }
+
+    if (options.referencedRegions !== undefined) {
+      if (!(_typeof(options.referencedRegions) === "object" || options.referencedRegions instanceof Array)) {
+        throw new Error("Option 'referencedRegions' must have type Array.");
+      }
+
+      if (options.referencedRegions.length === 0) {
+        throw new Error("Option 'referencedRegion' must have non-zero length.");
+      }
+
+      options.referencedRegions.forEach(function (region) {
+        if (region === undefined || region.constructor !== ImageRegion && region.constructor !== ImageRegion3D) {
+          throw new Error("Items of option 'referencedRegion' must have type " + "ImageRegion or ImageRegion3D.");
+        }
+
+        groupItem.ContentSequence.push(region);
+      });
+    } else if (options.referencedVolume !== undefined) {
+      if (options.referencedVolume.constructor !== VolumeSurface) {
+        throw new Error("Items of option 'referencedVolume' must have type VolumeSurface.");
+      }
+
+      groupItem.ContentSequence.push(referencedVolume);
+    } else if (options.referencedSegmentation !== undefined) {
+      if (options.referencedSegmentation.constructor !== ReferencedSegmentation && options.referencedSegmentation.constructor !== ReferencedSegmentationFrame) {
+        throw new Error("Option 'referencedSegmentation' must have type " + "ReferencedSegmentation or ReferencedSegmentationFrame.");
+      }
+
+      groupItem.ContentSequence.push(referencedSegmentation);
+    }
+
+    _this22[0] = groupItem;
+    return _this22;
+  }
+
+  return _ROIMeasurementsAndQualitativeEvaluations;
+}(_MeasurementsAndQualitatitiveEvaluations);
+
+var PlanarROIMeasurementsAndQualitativeEvaluations =
+/*#__PURE__*/
+function (_ROIMeasurementsAndQu) {
+  _inherits(PlanarROIMeasurementsAndQualitativeEvaluations, _ROIMeasurementsAndQu);
+
+  function PlanarROIMeasurementsAndQualitativeEvaluations(options) {
+    _classCallCheck(this, PlanarROIMeasurementsAndQualitativeEvaluations);
+
+    var wereReferencesProvided = [options.referencedRegion !== undefined, options.referencedSegmentation !== undefined];
+    var numReferences = wereReferencesProvided.reduce(function (a, b) {
+      return a + b;
+    });
+
+    if (numReferences === 0) {
+      throw new Error("One of the following options must be provided: " + "'referencedRegion', 'referencedSegmentation'.");
+    } else if (numReferences > 1) {
+      throw new Error("Only one of the following options should be provided: " + "'referencedRegion', 'referencedSegmentation'.");
+    }
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(PlanarROIMeasurementsAndQualitativeEvaluations).call(this, {
+      trackingIdentifier: options.trackingIdentifier,
+      referencedRegions: [options.referencedRegion],
+      referencedSegmentation: options.referencedSegmentation,
+      referencedRealWorldValueMap: options.referencedRealWorldValueMap,
+      timePointContext: options.timePointContext,
+      findingType: options.findingType,
+      session: options.session,
+      measurements: options.measurements,
+      qualitativeEvaluations: options.qualitativeEvaluations
+    }));
+  }
+
+  return PlanarROIMeasurementsAndQualitativeEvaluations;
+}(_ROIMeasurementsAndQualitativeEvaluations);
+
+var VolumetricROIMeasurementsAndQualitativeEvaluations =
+/*#__PURE__*/
+function (_ROIMeasurementsAndQu2) {
+  _inherits(VolumetricROIMeasurementsAndQualitativeEvaluations, _ROIMeasurementsAndQu2);
+
+  function VolumetricROIMeasurementsAndQualitativeEvaluations(options) {
+    _classCallCheck(this, VolumetricROIMeasurementsAndQualitativeEvaluations);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(VolumetricROIMeasurementsAndQualitativeEvaluations).call(this, {
+      trackingIdentifier: options.trackingIdentifier,
+      referencedRegions: options.referencedRegions,
+      referencedSegmentation: options.referencedSegmentation,
+      referencedRealWorldValueMap: options.referencedRealWorldValueMap,
+      timePointContext: options.timePointContext,
+      findingType: options.findingType,
+      session: options.session,
+      measurements: options.measurements,
+      qualitativeEvaluations: options.qualitativeEvaluations
+    }));
+  }
+
+  return VolumetricROIMeasurementsAndQualitativeEvaluations;
+}(_ROIMeasurementsAndQualitativeEvaluations);
+
+var MeasurementsDerivedFromMultipleROIMeasurements =
+/*#__PURE__*/
+function (_Template15) {
+  _inherits(MeasurementsDerivedFromMultipleROIMeasurements, _Template15);
+
+  function MeasurementsDerivedFromMultipleROIMeasurements(options) {
+    var _this23;
+
+    _classCallCheck(this, MeasurementsDerivedFromMultipleROIMeasurements);
+
+    if (options.derivation === undefined) {
+      throw new Error("Option 'derivation' is required for " + "MeasurementsDerivedFromMultipleROIMeasurements.");
+    } // FIXME
+
+
+    var valueItem = new NumContentItem({
+      name: options.derivation
+    });
+    valueItem.ContentSequence = new ContentSequence$1();
+
+    if (options.measurementGroups === undefined) {
+      throw new Error("Option 'measurementGroups' is required for " + "MeasurementsDerivedFromMultipleROIMeasurements.");
+    }
+
+    if (!(_typeof(options.measurementGroups) === "object" || options.measurementGroups instanceof Array)) {
+      throw new Error("Option 'measurementGroups' must have type Array.");
+    }
+
+    options.measurementGroups.forEach(function (group) {
+      var _valueItem$ContentSeq4;
+
+      if (!group || group.constructor !== PlanarROIMeasurementsAndQualitativeEvaluations && group.constructor !== VolumetricROIMeasurementsAndQualitativeEvaluations) {
+        throw new Error("Items of option 'measurementGroups' must have type " + "PlanarROIMeasurementsAndQualitativeEvaluations or " + "VolumetricROIMeasurementsAndQualitativeEvaluations.");
+      }
+
+      group[0].RelationshipType = "R-INFERRED FROM";
+
+      (_valueItem$ContentSeq4 = valueItem.ContentSequence).push.apply(_valueItem$ContentSeq4, _toConsumableArray(group));
+    });
+
+    if (options.measurementProperties !== undefined) {
+      var _valueItem$ContentSeq5;
+
+      if (options.measurementProperties.constructor !== MeasurementProperties) {
+        throw new Error("Option 'measurementProperties' must have type MeasurementProperties.");
+      }
+
+      (_valueItem$ContentSeq5 = valueItem.ContentSequence).push.apply(_valueItem$ContentSeq5, _toConsumableArray(options.measurementProperties));
+    }
+
+    _this23.push(valueItem);
+
+    return _possibleConstructorReturn(_this23);
+  }
+
+  return MeasurementsDerivedFromMultipleROIMeasurements;
+}(Template);
+
+var MeasurementAndQualitativeEvaluationGroup =
+/*#__PURE__*/
+function (_MeasurementsAndQuali2) {
+  _inherits(MeasurementAndQualitativeEvaluationGroup, _MeasurementsAndQuali2);
+
+  function MeasurementAndQualitativeEvaluationGroup(options) {
+    _classCallCheck(this, MeasurementAndQualitativeEvaluationGroup);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(MeasurementAndQualitativeEvaluationGroup).call(this, {
+      trackingIdentifier: options.trackingIdentifier,
+      referencedRealWorldValueMap: options.referencedRealWorldValueMap,
+      timePointContext: options.timePointContext,
+      findingType: options.findingType,
+      session: options.session,
+      measurements: options.measurements,
+      qualitativeEvaluations: options.qualitativeEvaluations
+    }));
+  }
+
+  return MeasurementAndQualitativeEvaluationGroup;
+}(_MeasurementsAndQualitatitiveEvaluations);
+
+var ROIMeasurements =
+/*#__PURE__*/
+function (_Template16) {
+  _inherits(ROIMeasurements, _Template16);
+
+  function ROIMeasurements(options) {
+    var _this24;
+
+    _classCallCheck(this, ROIMeasurements);
+
+    _this24 = _possibleConstructorReturn(this, _getPrototypeOf(ROIMeasurements).call(this));
+
+    if (options.method !== undefined) {
+      var methodItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "370129005",
+          meaning: "Measurement Method",
+          schemeDesignator: "SCT"
+        }),
+        value: options.method,
+        relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+      });
+
+      _this24.push(methodItem);
+    }
+
+    if (options.findingSites !== undefined) {
+      if (!(_typeof(options.findingSites) === "object" || options.findingSites instanceof Array)) {
+        throw new Error("Option 'findingSites' must have type Array.");
+      }
+
+      options.findingSites.forEach(function (site) {
+        if (!site || site.constructor !== FindingSite) {
+          throw new Error("Items of option 'findingSites' must have type FindingSite.");
+        }
+
+        _this24.push(site);
+      });
+    }
+
+    if (options.measurements === undefined) {
+      throw new Error("Options 'measurements' is required ROIMeasurements.");
+    }
+
+    if (!(_typeof(options.measurements) === "object" || options.measurements instanceof Array)) {
+      throw new Error("Option 'measurements' must have type Array.");
+    }
+
+    if (options.measurements.length === 0) {
+      throw new Error("Option 'measurements' must have non-zero length.");
+    }
+
+    options.measurements.forEach(function (measurement) {
+      if (!measurement || measurement.constructor !== Measurement) {
+        throw new Error("Items of option 'measurements' must have type Measurement.");
+      }
+
+      _this24.push(measurement);
+    });
+    return _this24;
+  }
+
+  return ROIMeasurements;
+}(Template);
+
+var MeasurementReport$2 =
+/*#__PURE__*/
+function (_Template17) {
+  _inherits(MeasurementReport, _Template17);
+
+  function MeasurementReport(options) {
+    var _item$ContentSequence, _item$ContentSequence2, _item$ContentSequence3;
+
+    var _this25;
+
+    _classCallCheck(this, MeasurementReport);
+
+    _this25 = _possibleConstructorReturn(this, _getPrototypeOf(MeasurementReport).call(this));
+
+    if (options.observationContext === undefined) {
+      throw new Error("Option 'observationContext' is required for MeasurementReport.");
+    }
+
+    if (options.procedureReported === undefined) {
+      throw new Error("Option 'procedureReported' is required for MeasurementReport.");
+    }
+
+    var item = new ContainerContentItem({
+      name: new CodedConcept({
+        value: "126000",
+        schemeDesignator: "DCM",
+        meaning: "Imaging Measurement Report"
+      }),
+      templateID: "1500"
+    });
+    item.ContentSequence = new ContentSequence$1();
+
+    if (options.languageOfContentItemAndDescendants === undefined) {
+      throw new Error("Option 'languageOfContentItemAndDescendants' is required for " + "MeasurementReport.");
+    }
+
+    if (options.languageOfContentItemAndDescendants.constructor !== LanguageOfContentItemAndDescendants) {
+      throw new Error("Option 'languageOfContentItemAndDescendants' must have type " + "LanguageOfContentItemAndDescendants.");
+    }
+
+    (_item$ContentSequence = item.ContentSequence).push.apply(_item$ContentSequence, _toConsumableArray(options.languageOfContentItemAndDescendants));
+
+    (_item$ContentSequence2 = item.ContentSequence).push.apply(_item$ContentSequence2, _toConsumableArray(options.observationContext));
+
+    if (options.procedureReported.constructor === CodedConcept || options.procedureReported.constructor === Code) {
+      options.procedureReported = [options.procedureReported];
+    }
+
+    if (!(_typeof(options.procedureReported) === "object" || options.procedureReported instanceof Array)) {
+      throw new Error("Option 'procedureReported' must have type Array.");
+    }
+
+    options.procedureReported.forEach(function (procedure) {
+      var procedureItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "121058",
+          meaning: "Procedure reported",
+          schemeDesignator: "DCM"
+        }),
+        value: procedure,
+        relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+      });
+      item.ContentSequence.push(procedureItem);
+    });
+    var imageLibraryItem = new ImageLibrary();
+
+    (_item$ContentSequence3 = item.ContentSequence).push.apply(_item$ContentSequence3, _toConsumableArray(imageLibraryItem));
+
+    var wereOptionsProvided = [options.imagingMeasurements !== undefined, options.derivedImagingMeasurements !== undefined, options.qualitativeEvaluations !== undefined];
+    var numOptionsProvided = wereOptionsProvided.reduce(function (a, b) {
+      return a + b;
+    });
+
+    if (numOptionsProvided > 1) {
+      throw new Error("Only one of the following options should be provided: " + "'imagingMeasurements', 'derivedImagingMeasurement', " + "'qualitativeEvaluations'.");
+    }
+
+    if (options.imagingMeasurements !== undefined) {
+      var containerItem = new ContainerContentItem({
+        name: new CodedConcept({
+          value: "126010",
+          meaning: "Imaging Measurements",
+          schemeDesignator: "DCM"
+        }),
+        relationshipType: RelationshipTypes.CONTAINS
+      });
+      containerItem.ContentSequence = _construct(ContentSequence$1, _toConsumableArray(options.imagingMeasurements));
+      item.ContentSequence.push(containerItem);
+    } else if (options.derivedImagingMeasurements !== undefined) {
+      var _containerItem = new ContainerContentItem({
+        name: new CodedConcept({
+          value: "126011",
+          meaning: "Derived Imaging Measurements",
+          schemeDesignator: "DCM"
+        }),
+        relationshipType: RelationshipTypes.CONTAINS
+      });
+
+      _containerItem.ContentSequence = _construct(ContentSequence$1, _toConsumableArray(options.derivedImagingMeasurements));
+      item.ContentSequence.push(_containerItem);
+    } else if (options.qualitativeEvaluations !== undefined) {
+      var _containerItem2 = new ContainerContentItem({
+        name: new CodedConcept({
+          value: "C0034375",
+          meaning: "Qualitative Evaluations",
+          schemeDesignator: "UMLS"
+        }),
+        relationshipType: RelationshipTypes.CONTAINS
+      });
+
+      _containerItem2.ContentSequence = _construct(ContentSequence$1, _toConsumableArray(options.qualitativeEvaluations));
+      item.ContentSequence.push(_containerItem2);
+    }
+
+    _this25.push(item);
+
+    return _this25;
+  }
+
+  return MeasurementReport;
+}(Template);
+
+var TimePointContext =
+/*#__PURE__*/
+function (_Template18) {
+  _inherits(TimePointContext, _Template18);
+
+  function TimePointContext(options) {
+    var _this26;
+
+    _classCallCheck(this, TimePointContext);
+
+    if (options.timePoint === undefined) {
+      throw new Error("Option 'timePoint' is required for TimePointContext.");
+    }
+
+    var timePointItem = new TextContentItem({
+      name: new CodedConcept({
+        value: "C2348792",
+        meaning: "Time Point",
+        schemeDesignator: "UMLS"
+      }),
+      value: options.timePoint,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this26.push(timePointItem);
+
+    if (options.timePointType !== undefined) {
+      var timePointTypeItem = new CodeContentItem({
+        name: new CodedConcept({
+          value: "126072",
+          meaning: "Time Point Type",
+          schemeDesignator: "DCM"
+        }),
+        value: options.timePointType,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this26.push(timePointTypeItem);
+    }
+
+    if (options.timePointOrder !== undefined) {
+      var timePointOrderItem = new NumContentItem({
+        name: new CodedConcept({
+          value: "126073",
+          meaning: "Time Point Order",
+          schemeDesignator: "DCM"
+        }),
+        value: options.timePointOrder,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this26.push(timePointOrderItem);
+    }
+
+    if (options.subjectTimePointIdentifier !== undefined) {
+      var subjectTimePointIdentifierItem = new NumContentItem({
+        name: new CodedConcept({
+          value: "126070",
+          meaning: "Subject Time Point Identifier",
+          schemeDesignator: "DCM"
+        }),
+        value: options.subjectTimePointIdentifier,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this26.push(subjectTimePointIdentifierItem);
+    }
+
+    if (options.protocolTimePointIdentifier !== undefined) {
+      var protocolTimePointIdentifierItem = new NumContentItem({
+        name: new CodedConcept({
+          value: "126071",
+          meaning: "Protocol Time Point Identifier",
+          schemeDesignator: "DCM"
+        }),
+        value: options.protocolTimePointIdentifier,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this26.push(protocolTimePointIdentifierItem);
+    }
+
+    if (options.temporalOffsetFromEvent !== undefined) {
+      if (options.temporalOffsetFromEvent.constructor !== LongitudinalTemporalOffsetFromEventContentItem) {
+        throw new Error("Option 'temporalOffsetFromEvent' must have type " + "LongitudinalTemporalOffsetFromEventContentItem.");
+      }
+
+      _this26.push(temporalOffsetFromEvent);
+    }
+
+    return _possibleConstructorReturn(_this26);
+  }
+
+  return TimePointContext;
+}(Template);
+
+var ImageLibrary =
+/*#__PURE__*/
+function (_Template19) {
+  _inherits(ImageLibrary, _Template19);
+
+  function ImageLibrary(options) {
+    var _this27;
+
+    _classCallCheck(this, ImageLibrary);
+
+    _this27 = _possibleConstructorReturn(this, _getPrototypeOf(ImageLibrary).call(this));
+    var libraryItem = new ContainerContentItem({
+      name: new CodedConcept({
+        value: "111028",
+        meaning: "Image Library",
+        schemeDesignator: "DCM"
+      }),
+      relationshipType: RelationshipTypes.CONTAINS
+    });
+
+    _this27.push(libraryItem);
+
+    return _this27;
+  }
+
+  return ImageLibrary;
+}(Template);
+
+var AlgorithmIdentification =
+/*#__PURE__*/
+function (_Template20) {
+  _inherits(AlgorithmIdentification, _Template20);
+
+  function AlgorithmIdentification(options) {
+    var _this28;
+
+    _classCallCheck(this, AlgorithmIdentification);
+
+    _this28 = _possibleConstructorReturn(this, _getPrototypeOf(AlgorithmIdentification).call(this));
+
+    if (options.name === undefined) {
+      throw new Error("Option 'name' is required for AlgorithmIdentification.");
+    }
+
+    if (options.version === undefined) {
+      throw new Error("Option 'version' is required for AlgorithmIdentification.");
+    }
+
+    var nameItem = new TextContentItem({
+      name: new CodedConcept({
+        value: "111001",
+        meaning: "Algorithm Name",
+        schemeDesignator: "DCM"
+      }),
+      value: options.name,
+      relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+    });
+
+    _this28.push(nameItem);
+
+    var versionItem = new TextContentItem({
+      name: new CodedConcept({
+        value: "111003",
+        meaning: "Algorithm Version",
+        schemeDesignator: "DCM"
+      }),
+      value: options.version,
+      relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+    });
+
+    _this28.push(versionItem);
+
+    if (options.parameters !== undefined) {
+      if (!(_typeof(options.parameters) === "object" || options.parameters instanceof Array)) {
+        throw new Error("Option 'parameters' must have type Array.");
+      }
+
+      options.parameters.forEach(function (parameter) {
+        var parameterItem = new TextContentItem({
+          name: new CodedConcept({
+            value: "111002",
+            meaning: "Algorithm Parameter",
+            schemeDesignator: "DCM"
+          }),
+          value: param,
+          relationshipType: RelationshipTypes.HAS_CONCEPT_MOD
+        });
+
+        _this28.push(parameterItem);
+      });
+    }
+
+    return _this28;
+  }
+
+  return AlgorithmIdentification;
+}(Template);
+
+var TrackingIdentifier =
+/*#__PURE__*/
+function (_Template21) {
+  _inherits(TrackingIdentifier, _Template21);
+
+  function TrackingIdentifier(options) {
+    var _this29;
+
+    _classCallCheck(this, TrackingIdentifier);
+
+    _this29 = _possibleConstructorReturn(this, _getPrototypeOf(TrackingIdentifier).call(this));
+
+    if (options.uid === undefined) {
+      throw new Error("Option 'uid' is required for TrackingIdentifier.");
+    }
+
+    if (options.identifier !== undefined) {
+      var trackingIdentifierItem = new TextContentItem({
+        name: new CodedConcept({
+          value: "112039",
+          meaning: "Tracking Identifier",
+          schemeDesignator: "DCM"
+        }),
+        value: options.identifier,
+        relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+      });
+
+      _this29.push(trackingIdentifierItem);
+    }
+
+    var trackingUIDItem = new UIDRefContentItem({
+      name: new CodedConcept({
+        value: "112040",
+        meaning: "Tracking Unique Identifier",
+        schemeDesignator: "DCM"
+      }),
+      value: options.uid,
+      relationshipType: RelationshipTypes.HAS_OBS_CONTEXT
+    });
+
+    _this29.push(trackingUIDItem);
+
+    return _this29;
+  }
+
+  return TrackingIdentifier;
+}(Template);
+
+var templates = /*#__PURE__*/Object.freeze({
+	AlgorithmIdentification: AlgorithmIdentification,
+	DeviceObserverIdentifyingAttributes: DeviceObserverIdentifyingAttributes,
+	ImageLibrary: ImageLibrary,
+	LanguageOfContentItemAndDescendants: LanguageOfContentItemAndDescendants,
+	Measurement: Measurement,
+	MeasurementAndQualitativeEvaluationGroup: MeasurementAndQualitativeEvaluationGroup,
+	MeasurementReport: MeasurementReport$2,
+	MeasurementsDerivedFromMultipleROIMeasurements: MeasurementsDerivedFromMultipleROIMeasurements,
+	ObservationContext: ObservationContext,
+	ObserverContext: ObserverContext,
+	PersonObserverIdentifyingAttributes: PersonObserverIdentifyingAttributes,
+	PlanarROIMeasurementsAndQualitativeEvaluations: PlanarROIMeasurementsAndQualitativeEvaluations,
+	ROIMeasurements: ROIMeasurements,
+	SubjectContext: SubjectContext,
+	SubjectContextDevice: SubjectContextDevice,
+	SubjectContextFetus: SubjectContextFetus,
+	SubjectContextSpecimen: SubjectContextSpecimen,
+	TimePointContext: TimePointContext,
+	TrackingIdentifier: TrackingIdentifier,
+	VolumetricROIMeasurementsAndQualitativeEvaluations: VolumetricROIMeasurementsAndQualitativeEvaluations
+});
+
+var _attributesToInclude = [// Patient
+"00080054", "00080100", "00080102", "00080103", "00080104", "00080105", "00080106", "00080107", "0008010B", "0008010D", "0008010F", "00080117", "00080118", "00080119", "00080120", "00080121", "00080122", "00081120", "00081150", "00081155", "00081160", "00081190", "00081199", "00100010", "00100020", "00100021", "00100022", "00100024", "00100026", "00100027", "00100028", "00100030", "00100032", "00100033", "00100034", "00100035", "00100040", "00100200", "00100212", "00100213", "00100214", "00100215", "00100216", "00100217", "00100218", "00100219", "00100221", "00100222", "00100223", "00100229", "00101001", "00101002", "00101100", "00102160", "00102201", "00102202", "00102292", "00102293", "00102294", "00102295", "00102296", "00102297", "00102298", "00102299", "00104000", "00120062", "00120063", "00120064", "0020000D", "00400031", "00400032", "00400033", "00400035", "00400036", "00400039", "0040003A", "0040E001", "0040E010", "0040E020", "0040E021", "0040E022", "0040E023", "0040E024", "0040E025", "0040E030", "0040E031", "0062000B", "00880130", "00880140", // Patient Study
+"00080100", "00080102", "00080103", "00080104", "00080105", "00080106", "00080107", "0008010B", "0008010D", "0008010F", "00080117", "00080118", "00080119", "00080120", "00080121", "00080122", "00081080", "00081084", "00101010", "00101020", "00101021", "00101022", "00101023", "00101024", "00101030", "00102000", "00102110", "00102180", "001021A0", "001021B0", "001021C0", "001021D0", "00102203", "00380010", "00380014", "00380060", "00380062", "00380064", "00380500", "00400031", "00400032", "00400033", // General Study
+"00080020", "00080030", "00080050", "00080051", "00080080", "00080081", "00080082", "00080090", "00080096", "0008009C", "0008009D", "00080100", "00080102", "00080103", "00080104", "00080105", "00080106", "00080107", "0008010B", "0008010D", "0008010F", "00080117", "00080118", "00080119", "00080120", "00080121", "00080122", "00081030", "00081032", "00081048", "00081049", "00081060", "00081062", "00081110", "00081150", "00081155", "0020000D", "00200010", "00321034", "00400031", "00400032", "00400033", "00401012", "00401101", "00401102", "00401103", "00401104", // Clinical Trial Subject
+"00120010", "00120020", "00120021", "00120030", "00120031", "00120040", "00120042", "00120081", "00120082", // Clinical Trial Study
+"00120020", "00120050", "00120051", "00120052", "00120053", "00120083", "00120084", "00120085"];
+
+var Comprehensive3DSR = function Comprehensive3DSR(options) {
+  var _this = this;
+
+  _classCallCheck(this, Comprehensive3DSR);
+
+  if (options.evidence === undefined) {
+    throw new Error("Option 'evidence' is required for Comprehensive3DSR.");
+  }
+
+  if (!(_typeof(options.evidence) === "object" || options.evidence instanceof Array)) {
+    throw new Error("Option 'evidence' must have type Array.");
+  }
+
+  if (options.evidence.length === 0) {
+    throw new Error("Option 'evidence' must have non-zero length.");
+  }
+
+  if (options.content === undefined) {
+    throw new Error("Option 'content' is required for Comprehensive3DSR.");
+  }
+
+  if (options.seriesInstanceUID === undefined) {
+    throw new Error("Option 'seriesInstanceUID' is required for Comprehensive3DSR.");
+  }
+
+  if (options.seriesNumber === undefined) {
+    throw new Error("Option 'seriesNumber' is required for Comprehensive3DSR.");
+  }
+
+  if (options.seriesDescription === undefined) {
+    throw new Error("Option 'seriesDescription' is required for Comprehensive3DSR.");
+  }
+
+  if (options.sopInstanceUID === undefined) {
+    throw new Error("Option 'sopInstanceUID' is required for Comprehensive3DSR.");
+  }
+
+  if (options.instanceNumber === undefined) {
+    throw new Error("Option 'instanceNumber' is required for Comprehensive3DSR.");
+  }
+
+  if (options.manufacturer === undefined) {
+    throw new Error("Option 'manufacturer' is required for Comprehensive3DSR.");
+  }
+
+  this.SOPClassUID = "1.2.840.10008.5.1.4.1.1.88.34";
+  this.SOPInstanceUID = options.sopInstanceUID;
+  this.Modality = "SR";
+  this.SeriesDescription = options.seriesDescription;
+  this.SeriesInstanceUID = options.seriesInstanceUID;
+  this.SeriesNumber = options.seriesNumber;
+  this.InstanceNumber = options.instanceNumber;
+  this.Manufacturer = options.manufacturer;
+
+  if (options.institutionName !== undefined) {
+    this.InstitutionName = options.institutionName;
+
+    if (options.institutionalDepartmentName !== undefined) {
+      this.InstitutionalDepartmentName = options.institutionDepartmentName;
+    }
+  }
+
+  if (options.isComplete) {
+    this.CompletionFlag = "COMPLETE";
+  } else {
+    this.CompletionFlag = "PARTIAL";
+  }
+
+  if (options.isVerified) {
+    if (options.verifyingObserverName === undefined) {
+      throw new Error("Verifying Observer Name must be specified if SR document " + "has been verified.");
+    }
+
+    if (options.verifyingOrganization === undefined) {
+      throw new Error("Verifying Organization must be specified if SR document " + "has been verified.");
+    }
+
+    this.VerificationFlag = "VERIFIED";
+    var ovserver_item = {};
+    ovserver_item.VerifyingObserverName = options.verifyingObserverName;
+    ovserver_item.VerifyingOrganization = options.verifyingOrganization;
+    ovserver_item.VerificationDateTime = DicomMetaDictionary.dateTime();
+    this.VerifyingObserverSequence = [observer_item];
+  } else {
+    this.VerificationFlag = "UNVERIFIED";
+  }
+
+  if (options.isFinal) {
+    this.PreliminaryFlag = "FINAL";
+  } else {
+    this.PreliminaryFlag = "PRELIMINARY";
+  }
+
+  this.ContentDate = DicomMetaDictionary.date();
+  this.ContentTime = DicomMetaDictionary.time();
+  Object.keys(options.content).forEach(function (keyword) {
+    _this[keyword] = options.content[keyword];
+  });
+  var evidenceCollection = {};
+  options.evidence.forEach(function (evidence) {
+    if (evidence.StudyInstanceUID !== options.evidence[0].StudyInstanceUID) {
+      throw new Error("Referenced data sets must all belong to the same study.");
+    }
+
+    if (!(evidence.SeriesInstanceUID in evidenceCollection)) {
+      evidenceCollection[evidence.SeriesInstanceUID] = [];
+    }
+
+    var instanceItem = {};
+    instanceItem.ReferencedSOPClassUID = evidence.SOPClassUID;
+    instanceItem.ReferencedSOPInstanceUID = evidence.SOPInstanceUID;
+    evidenceCollection[evidence.SeriesInstanceUID].push(instanceItem);
+  });
+  var evidenceStudyItem = {};
+  evidenceStudyItem.StudyInstanceUID = options.evidence[0].StudyInstanceUID;
+  evidenceStudyItem.ReferencedSeriesSequence = [];
+  Object.keys(evidenceCollection).forEach(function (seriesInstanceUID) {
+    var seriesItem = {};
+    seriesItem.SeriesInstanceUID = seriesInstanceUID;
+    seriesItem.ReferencedSOPSequence = evidenceCollection[seriesInstanceUID];
+    evidenceStudyItem.ReferencedSeriesSequence.push(seriesItem);
+  });
+
+  if (options.requestedProcedures !== undefined) {
+    if (!(_typeof(options.requestedProcedures) === "object" || options.requestedProcedures instanceof Array)) {
+      throw new Error("Option 'requestedProcedures' must have type Array.");
+    }
+
+    this.ReferencedRequestSequence = _construct(ContentSequence, _toConsumableArray(options.requestedProcedures));
+    this.CurrentRequestedProcedureEvidenceSequence = [evidenceStudyItem];
+  } else {
+    this.PertinentOtherEvidenceSequence = [evidenceStudyItem];
+  }
+
+  if (options.previousVersions !== undefined) {
+    var preCollection = {};
+    options.previousVersions.forEach(function (version) {
+      if (version.StudyInstanceUID != options.evidence[0].StudyInstanceUID) {
+        throw new Error("Previous version data sets must belong to the same study.");
+      }
+
+      var instanceItem = {};
+      instanceItem.ReferencedSOPClassUID = version.SOPClassUID;
+      instanceItem.ReferencedSOPInstanceUID = version.SOPInstanceUID;
+      preCollection[version.SeriesInstanceUID].push(instanceItem);
+    });
+    var preStudyItem = {};
+    preStudyItem.StudyInstanceUID = options.previousVersions[0].StudyInstanceUID;
+    preStudyItem.ReferencedSeriesSequence = [];
+    Object.keys(preCollection).forEach(function (seriesInstanceUID) {
+      var seriesItem = {};
+      seriesItem.SeriesInstanceUID = seriesInstanceUID;
+      seriesItem.ReferencedSOPSequence = preCollection[seriesInstanceUID];
+      preStudyItem.ReferencedSeriesSequence.push(seriesItem);
+    });
+    this.PredecessorDocumentsSequence = [preStudyItem];
+  }
+
+  if (options.performedProcedureCodes !== undefined) {
+    if (!(_typeof(options.performedProcedureCodes) === "object" || options.performedProcedureCodes instanceof Array)) {
+      throw new Error("Option 'performedProcedureCodes' must have type Array.");
+    }
+
+    this.PerformedProcedureCodeSequence = _construct(ContentSequence, _toConsumableArray(options.performedProcedureCodes));
+  } else {
+    this.PerformedProcedureCodeSequence = [];
+  }
+
+  this.ReferencedPerformedProcedureStepSequence = [];
+
+  _attributesToInclude.forEach(function (tag) {
+    var key = DicomMetaDictionary.punctuateTag(tag);
+    var element = DicomMetaDictionary.dictionary[key];
+
+    if (element !== undefined) {
+      var keyword = element.name;
+      var value = options.evidence[0][keyword];
+
+      if (value !== undefined) {
+        _this[keyword] = value;
+      }
+    }
+  });
+};
+
+var documents = /*#__PURE__*/Object.freeze({
+	Comprehensive3DSR: Comprehensive3DSR
+});
+
+var sr = {
+  coding: coding,
+  contentItems: contentItems,
+  documents: documents,
+  templates: templates,
+  valueTypes: valueTypes
+};
+
 var data = {
   BitArray: BitArray,
   ReadBufferStream: ReadBufferStream,
@@ -9714,5 +13136,5 @@ var normalizers = {
   DSRNormalizer: DSRNormalizer
 };
 
-export { data, derivations, normalizers, adapters, utilities, DICOMWEB };
+export { data, derivations, normalizers, adapters, utilities, DICOMWEB, sr };
 //# sourceMappingURL=dcmjs.es.js.map
