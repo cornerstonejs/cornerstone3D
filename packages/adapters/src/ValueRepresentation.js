@@ -552,9 +552,22 @@ class PersonName extends StringRepresentation {
     }
 
     checkLength(value) {
-        var cmps = value.split(/\^/);
-        for (var i in cmps) {
-            var cmp = cmps[i];
+        var components = [];
+        if (typeof value === "object" && value !== null) {
+            // In DICOM JSON, components are encoded as a mapping (object),
+            // where the keys are one or more of the following: "Alphabetic",
+            // "Ideographic", "Phonetic".
+            // http://dicom.nema.org/medical/dicom/current/output/chtml/part18/sect_F.2.2.html
+            components = Object.keys(value).forEach(key => value[key]);
+        } else if (typeof value === "string" || value instanceof String) {
+            // In DICOM Part10, components are encoded as a string,
+            // where components ("Alphabetic", "Ideographic", "Phonetic")
+            // are separated by the "=" delimeter.
+            // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.2.html
+            components = value.split(/\=/);
+        }
+        for (var i in components) {
+            var cmp = components[i];
             if (cmp.length > 64) return false;
         }
         return true;
