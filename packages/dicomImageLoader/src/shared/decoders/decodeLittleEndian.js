@@ -1,5 +1,6 @@
 function decodeLittleEndian (imageFrame, pixelData) {
   let arrayBuffer = pixelData.buffer;
+
   let offset = pixelData.byteOffset;
   const length = pixelData.length;
 

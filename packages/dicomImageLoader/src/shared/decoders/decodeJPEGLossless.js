@@ -1,4 +1,4 @@
-
+import jpeg from '../../../codecs/jpegLossless.js';
 
 function decodeJPEGLossless (imageFrame, pixelData) {
   // check to make sure codec is loaded

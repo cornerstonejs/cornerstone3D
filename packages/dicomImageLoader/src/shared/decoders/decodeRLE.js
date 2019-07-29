@@ -27,6 +27,7 @@ function decode8 (imageFrame, pixelData) {
     outIndex = s;
 
     let inIndex = header.getInt32((s + 1) * 4, true);
+
     let maxIndex = header.getInt32((s + 2) * 4, true);
 
     if (maxIndex === 0) {
@@ -77,6 +78,7 @@ function decode8Planar (imageFrame, pixelData) {
     outIndex = s * frameSize;
 
     let inIndex = header.getInt32((s + 1) * 4, true);
+
     let maxIndex = header.getInt32((s + 2) * 4, true);
 
     if (maxIndex === 0) {
@@ -128,6 +130,7 @@ function decode16 (imageFrame, pixelData) {
     const highByte = (s === 0 ? 1 : 0);
 
     let inIndex = header.getInt32((s + 1) * 4, true);
+
     let maxIndex = header.getInt32((s + 2) * 4, true);
 
     if (maxIndex === 0) {

@@ -93,7 +93,7 @@
   }
 
   // register ourselves to receive messages
-  cornerstoneWADOImageLoaderWebWorker.registerTaskHandler({
+  self.registerTaskHandler({
     taskType :'convolveTask',
     handler: handler,
     initialize: initialize

@@ -1,4 +1,4 @@
-
+import JpegImage from '../../../codecs/jpeg.js';
 
 function decodeJPEGBaseline (imageFrame, pixelData) {
   // check to make sure codec is loaded

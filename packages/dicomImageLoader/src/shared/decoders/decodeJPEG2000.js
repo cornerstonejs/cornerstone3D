@@ -1,3 +1,6 @@
+import OpenJPEG from '../../../codecs/openJPEG-FixedMemory.js';
+import JpxImage from '../../../codecs/jpx.min.js';
+
 function decodeJpx (imageFrame, pixelData) {
   const jpxImage = new JpxImage();
 

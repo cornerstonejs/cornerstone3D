@@ -7,17 +7,14 @@ import webWorkerManager from '../../../src/imageLoader/webWorkerManager.js';
 
 external.cornerstone = window.cornerstone;
 
-describe('#wadouri > metadaProvider', function () {
+describe('#wadouri > metadataProvider', function () {
   // Initialize the web worker manager
   const config = {
     maxWebWorkers: 1,
     startWebWorkersOnDemand: true,
-    webWorkerPath: '/base/dist/cornerstoneWADOImageLoaderWebWorker.js',
     taskConfiguration: {
       decodeTask: {
-        loadCodecsOnStartup: true,
         initializeCodecsOnStartup: true,
-        codecsPath: '/base/dist/cornerstoneWADOImageLoaderCodecs.js',
         usePDFJS: false
       }
     }

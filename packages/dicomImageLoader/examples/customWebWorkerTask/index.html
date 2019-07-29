@@ -129,9 +129,8 @@
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
 
-<!-- Lines ONLY required for this example to run without building the project --> 
+<!-- Lines ONLY required for this example to run without building the project -->
 <script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
-<script>window.cornerstoneWADOImageLoaderWebWorker || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderWebWorker.min.js">\x3C/script>')</script>
 <script src="../utils/customWebWorkersConfig.js"></script>
 
 <script>
@@ -142,7 +141,7 @@
     cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
     cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
     document.getElementById('numWebWorkers').textContent = config.maxWebWorkers;
-    
+
     let loaded = false;
     let loadedImage;
 
@@ -150,7 +149,7 @@
         const element = document.getElementById('dicomImage');
         try {
             const start = new Date().getTime();
-            cornerstone.loadAndCacheImage(imageId, {usePDFJS: true}).then(function(image) {
+            cornerstone.loadAndCacheImage(imageId, {usePDFJS: false}).then(function(image) {
                 console.log(image);
                 loadedImage = image;
                 updateStatistics();
@@ -211,8 +210,9 @@
         // dyanmically load the sleep task
         if(!sleepTaskLoaded) {
             sleepTaskLoaded = true;
+            // TODO: This URL probably won't work on hosted site
             cornerstoneWADOImageLoader.webWorkerManager.loadWebWorkerTask(
-                    '../examples/customWebWorkerTask/sleepTask.js',{
+              `${window.location.protocol}//${window.location.host}/examples/customWebWorkerTask/sleepTask.js`,{
                         'sleepTask' : {
                             sleepTime: 3000
                         }

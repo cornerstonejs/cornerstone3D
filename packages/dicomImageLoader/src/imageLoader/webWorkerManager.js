@@ -1,3 +1,5 @@
+import cornerstoneWADOImageLoaderWebWorker from '../webWorker/index.worker.js';
+
 import { getOptions } from './internal/options.js';
 
 // the taskId to assign to the next task added via addTask()
@@ -15,13 +17,10 @@ const options = getOptions();
 const defaultConfig = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
   startWebWorkersOnDemand: true,
-  webWorkerPath: '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
   webWorkerTaskPaths: [],
   taskConfiguration: {
     decodeTask: {
-      loadCodecsOnStartup: true,
       initializeCodecsOnStartup: false,
-      codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js',
       usePDFJS: false,
       strict: options.strict
     }
@@ -122,7 +121,7 @@ function spawnWebWorker () {
   }
 
   // spawn the webworker
-  const worker = new Worker(config.webWorkerPath);
+  const worker = new cornerstoneWADOImageLoaderWebWorker();
 
   webWorkers.push({
     worker,

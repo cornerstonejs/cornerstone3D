@@ -23,7 +23,9 @@ function convertToIntPixelData (floatPixelData) {
   const intercept = floatMinMax.min;
   const numPixels = floatPixelData.length;
   const intPixelData = new Uint16Array(numPixels);
+
   let min = 65535;
+
   let max = 0;
 
   for (let i = 0; i < numPixels; i++) {

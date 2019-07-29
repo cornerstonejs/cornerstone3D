@@ -8,6 +8,7 @@ function swap16 (val) {
 function decodeBigEndian (imageFrame, pixelData) {
   if (imageFrame.bitsAllocated === 16) {
     let arrayBuffer = pixelData.buffer;
+
     let offset = pixelData.byteOffset;
     const length = pixelData.length;
     // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array

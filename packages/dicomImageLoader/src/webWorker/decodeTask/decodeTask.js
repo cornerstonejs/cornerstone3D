@@ -3,9 +3,6 @@ import { initializeJPEGLS } from '../../shared/decoders/decodeJPEGLS.js';
 import calculateMinMax from '../../shared/calculateMinMax.js';
 import decodeImageFrame from '../../shared/decodeImageFrame.js';
 
-// flag to ensure codecs are loaded only once
-let codecsLoaded = false;
-
 // the configuration object for the decodeTask
 let decodeConfig;
 
@@ -14,17 +11,6 @@ let decodeConfig;
  * @param config
  */
 function loadCodecs (config) {
-  // prevent loading codecs more than once
-  if (codecsLoaded) {
-    return;
-  }
-
-  // Load the codecs
-  // console.time('loadCodecs');
-  self.importScripts(config.decodeTask.codecsPath);
-  codecsLoaded = true;
-  // console.timeEnd('loadCodecs');
-
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
     // console.time('initializeCodecs');
@@ -39,9 +25,8 @@ function loadCodecs (config) {
  */
 function initialize (config) {
   decodeConfig = config;
-  if (config.decodeTask.loadCodecsOnStartup) {
-    loadCodecs(config);
-  }
+
+  loadCodecs(config);
 }
 
 /**

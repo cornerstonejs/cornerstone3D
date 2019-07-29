@@ -64,6 +64,7 @@ function loadImageFromDataSet (dataSet, imageId, frame = 0, sharedCacheKey, opti
 
   const promise = new Promise((resolve, reject) => {
     const loadEnd = new Date().getTime();
+
     let imagePromise;
 
     try {

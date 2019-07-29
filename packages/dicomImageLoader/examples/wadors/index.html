@@ -62,33 +62,10 @@
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
 
-<!-- BEGIN Optional Codecs -->
-
-<!-- OpenJPEG based jpeg 2000 codec -->
-<script src="../../codecs/openJPEG-FixedMemory.js"></script>
-
-<!-- PDF.js based jpeg 2000 codec -->
-<!-- NOTE: do not load the OpenJPEG codec if you use this one -->
-<!--<script src="../../codecs/jpx.min.js"></script>-->
-
-<!-- JPEG-LS codec -->
-<script src="../../codecs/charLS-FixedMemory-browser.js"></script>
-
-<!-- JPEG Lossless codec -->
-<script src="../../codecs/jpegLossless.js"></script>
-
-<!-- JPEG Baseline codec -->
-<script src="../../codecs/jpeg.js"></script>
-
-<!-- Deflate transfer syntax codec -->
-<script src="../../codecs/pako.min.js"></script>
-
-<!-- END Optional Codecs -->
-
 <!-- include the cornerstoneWADOImageLoader library -->
 <script src="../../dist/cornerstoneWADOImageLoader.js"></script>
 
-<!-- Lines ONLY required for this example to run without building the project --> 
+<!-- Lines ONLY required for this example to run without building the project -->
 <script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
 <script src="../utils/initializeWebWorkers.js"></script>
 

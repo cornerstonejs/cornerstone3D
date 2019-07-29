@@ -10,6 +10,7 @@ import { xhrRequest } from '../internal/index.js';
 let cacheSizeInBytes = 0;
 
 let loadedDataSets = {};
+
 let promises = {};
 
 // returns true if the wadouri for the specified index has been loaded

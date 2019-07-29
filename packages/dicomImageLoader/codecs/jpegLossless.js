@@ -892,7 +892,7 @@
   };
 
   jpeg.lossless.Decoder.prototype.setValue8 = function (index, val) {
-      this.outputData[index] = val; 
+      this.outputData[index] = val;
   };
 
   jpeg.lossless.Decoder.prototype.getValue8 = function (index) {
@@ -908,13 +908,13 @@
 
   if (littleEndian) {
       // just reading from an array is fine then. Int16Array will use platform endianness.
-      jpeg.lossless.Decoder.prototype.setValue16 = jpeg.lossless.Decoder.prototype.setValue8; 
+      jpeg.lossless.Decoder.prototype.setValue16 = jpeg.lossless.Decoder.prototype.setValue8;
       jpeg.lossless.Decoder.prototype.getValue16 = jpeg.lossless.Decoder.prototype.getValue8;
-  } 
+  }
   else {
-      // If platform is big-endian, we will need to convert to little-endian 
+      // If platform is big-endian, we will need to convert to little-endian
       jpeg.lossless.Decoder.prototype.setValue16 = function (index, val) {
-          this.outputData[index] = ((val & 0xFF) << 8) | ((val >> 8) & 0xFF); 
+          this.outputData[index] = ((val & 0xFF) << 8) | ((val >> 8) & 0xFF);
       };
 
       jpeg.lossless.Decoder.prototype.getValue16 = function (index) {

@@ -2,6 +2,7 @@
 import registerLoaders from './imageLoader/registerLoaders.js';
 
 let cornerstone;
+
 let dicomParser;
 
 const external = {

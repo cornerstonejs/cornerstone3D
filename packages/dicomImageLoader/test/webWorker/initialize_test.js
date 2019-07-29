@@ -4,12 +4,9 @@ import { expect } from 'chai';
 const config = {
   maxWebWorkers: 2,
   startWebWorkersOnDemand: true,
-  webWorkerPath: '/base/dist/cornerstoneWADOImageLoaderWebWorker.js',
   taskConfiguration: {
     decodeTask: {
-      loadCodecsOnStartup: true,
       initializeCodecsOnStartup: false,
-      codecsPath: '/base/dist/cornerstoneWADOImageLoaderCodecs.js',
       usePDFJS: false
     }
   }

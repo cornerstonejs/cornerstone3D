@@ -7,7 +7,9 @@ export default function (imageFrame, rgbaBuffer) {
   }
 
   const numPixels = imageFrame.length / 3;
+
   let ybrIndex = 0;
+
   let rgbaIndex = 0;
 
   for (let i = 0; i < numPixels; i++) {

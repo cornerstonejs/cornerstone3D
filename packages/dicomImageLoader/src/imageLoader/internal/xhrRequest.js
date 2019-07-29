@@ -80,7 +80,9 @@ function xhrRequest (url, imageId, headers = {}, params = {}) {
     xhr.onprogress = function (oProgress) {
       // console.log('progress:',oProgress)
       const loaded = oProgress.loaded; // evt.loaded the bytes browser receive
+
       let total;
+
       let percentComplete;
 
       if (oProgress.lengthComputable) {

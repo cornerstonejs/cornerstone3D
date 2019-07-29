@@ -1,3 +1,5 @@
+import CharLS from '../../../codecs/charLS-FixedMemory-browser.js';
+
 let charLS;
 
 function jpegLSDecode (data, isSigned) {

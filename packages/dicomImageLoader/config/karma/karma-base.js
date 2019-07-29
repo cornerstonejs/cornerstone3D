@@ -31,7 +31,6 @@ module.exports = {
     'test/**/*_test.js',
     {pattern: 'testImages/*', included: false},
     {pattern: 'dist/*', included: false},
-    {pattern: 'codecs/*', included: true},
   ],
 
   plugins: [

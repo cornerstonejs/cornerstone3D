@@ -25,7 +25,9 @@ export default function (imageFrame, rgbaBuffer) {
   const gData = imageFrame.greenPaletteColorLookupTableData;
   const bData = imageFrame.bluePaletteColorLookupTableData;
   const len = imageFrame.redPaletteColorLookupTableData.length;
+
   let palIndex = 0;
+
   let rgbaIndex = 0;
 
   const start = imageFrame.redPaletteColorLookupTableDescriptor[1];

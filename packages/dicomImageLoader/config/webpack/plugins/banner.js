@@ -16,7 +16,7 @@ const getCurrentDate = () => {
 const getBanner = () => {
   return `/*! ${pkg.name} - ${pkg.version} - ` +
          `${getCurrentDate()} ` +
-         `| (c) 2016 Chris Hafey | ${pkg.homepage} */`
+         `| (c) 2019 Chris Hafey | ${pkg.homepage} */`
 }
 
 module.exports = () => {

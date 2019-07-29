@@ -37,12 +37,9 @@ describe('loadImage', function () {
     const config = {
       maxWebWorkers: 1,
       startWebWorkersOnDemand: true,
-      webWorkerPath: '/base/dist/cornerstoneWADOImageLoaderWebWorker.js',
       taskConfiguration: {
         decodeTask: {
-          loadCodecsOnStartup: true,
           initializeCodecsOnStartup: true,
-          codecsPath: '/base/dist/cornerstoneWADOImageLoaderCodecs.js',
           usePDFJS: false
         }
       }
