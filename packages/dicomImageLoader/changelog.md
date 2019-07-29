@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2018-07-29
+### Added
+- Added .terminate() function to webWorkerManager to clean up unnecessary workers (thanks @talkdirty!)
+- Added overlay plane metadata provider paths for group 6000 overlay tags. (thanks @kofifus!)
+
+### Changed
+- BREAKING: Web worker and codec paths no longer need to be specified, the worker is now pulled in using Webpack's worker-loader. The loadCodecsOnStartup option has been removed because it is no longer necessary.
+
 ## [2.2.3] - 2018-12-05
 ### Added
 - Added default export named 'cornerstoneWADOImageLoader' to the module

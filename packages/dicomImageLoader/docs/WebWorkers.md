@@ -40,20 +40,12 @@ Minimal Configuration
 Here is an example of a minimal configuration object.
 
 ``` javascript
-   var config = {
-        webWorkerPath : '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
-        taskConfiguration: {
-            'decodeTask' : {
-                codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js'
-            }
-        }
+    var config = {
+        maxWebWorkers: navigator.hardwareConcurrency || 1,
+        startWebWorkersOnDemand : true,
     };
     cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
 ```
-
-In the example above, you will see two paths, one to the cornerstoneWADOImageLoaderWebWorker.js and one to the
-cornerstoneWADOImageLoaderCodecs.js file.  Both of these files can be found in the dist folder of this repository.
-You must host both of these files on your web server somewhere and provide a path to them.
 
 Advanced Configuration
 ----------------------
@@ -64,7 +56,6 @@ Building on the prior minimal example, you can configure the web worker framewor
     var config = {
         maxWebWorkers: navigator.hardwareConcurrency || 1,
         startWebWorkersOnDemand : true,
-        webWorkerPath : '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
         webWorkerTaskPaths: [
             '../examples/customWebWorkerTask/sleepTask.js',
             '../examples/customWebWorkerTask/sharpenTask.js'
@@ -73,7 +64,6 @@ Building on the prior minimal example, you can configure the web worker framewor
         taskConfiguration: {
             'decodeTask' : {
                 initializeCodecsOnStartup: false,
-                codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js',
                 usePDFJS: false
             },
             'sleepTask' : {

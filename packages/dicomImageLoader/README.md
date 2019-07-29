@@ -53,16 +53,12 @@ The cornerstoneWADOImageLoader depends on the following external libraries which
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 ````
 
-Have your code configure the web worker framework with the paths to the web worker and the codecs:
+Have your code configure the web worker framework:
 
 ```javascript
-   var config = {
-        webWorkerPath : '../../dist/cornerstoneWADOImageLoaderWebWorker.js',
-        taskConfiguration: {
-            'decodeTask' : {
-                codecsPath: '../dist/cornerstoneWADOImageLoaderCodecs.js'
-            }
-        }
+    var config = {
+        maxWebWorkers: navigator.hardwareConcurrency || 1,
+        startWebWorkersOnDemand : true,
     };
     cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
 ```
