@@ -96,14 +96,24 @@ self.onmessage = function (msg) {
 
   // dispatch the message if there is a handler registered for it
   if (taskHandlers[msg.data.taskType]) {
-    taskHandlers[msg.data.taskType].handler(msg.data, function (result, transferList) {
+    try {
+      taskHandlers[msg.data.taskType].handler(msg.data, function (result, transferList) {
+        self.postMessage({
+          taskType: msg.data.taskType,
+          status: 'success',
+          result,
+          workerIndex: msg.data.workerIndex
+        }, transferList);
+      });
+    } catch (error) {
+      console.log(`task ${msg.data.taskType} failed - ${error.message}`);
       self.postMessage({
         taskType: msg.data.taskType,
-        status: 'success',
-        result,
+        status: 'failed',
+        result: error.message,
         workerIndex: msg.data.workerIndex
-      }, transferList);
-    });
+      });
+    }
 
     return;
   }

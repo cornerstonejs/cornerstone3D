@@ -96,7 +96,9 @@ function handleMessageFromWorker (msg) {
   } else {
     const start = webWorkers[msg.data.workerIndex].task.start;
 
-    webWorkers[msg.data.workerIndex].task.deferred.resolve(msg.data.result);
+    const action = msg.data.status === 'success' ? 'resolve' : 'reject';
+    webWorkers[msg.data.workerIndex].task.deferred[action](msg.data.result);
+
     webWorkers[msg.data.workerIndex].task = undefined;
 
     statistics.numTasksExecuting--;
