@@ -34,7 +34,7 @@ function getLUT (pixelRepresentation, lutDataSet) {
 
 
 function getLUTs (pixelRepresentation, lutSequence) {
-  if (!lutSequence || !lutSequence.items.length) {
+  if (!lutSequence || !lutSequence.items || !lutSequence.items.length) {
     return;
   }
   const luts = [];
