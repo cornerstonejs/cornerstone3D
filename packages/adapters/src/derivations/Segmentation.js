@@ -130,16 +130,74 @@ export default class Segmentation extends DerivedPixels {
     }
 
     /**
+     * addSegmentFromLabelmap - Adds a segment to the dataset,
+     * where the labelmaps are a set of 2D labelmaps, from which to extract the binary maps.
+     *
+     * @param  {type} Segment   The segment metadata.
+     * @param  {Uint8Array[]} labelmaps labelmap arrays for each index of referencedFrameNumbers.
+     * @param  {number}  segmentIndexInLabelmap The segment index to extract from the labelmap
+     *    (might be different to the segment metadata depending on implementation).
+     * @param  {number[]} referencedFrameNumbers  The frames that the
+     *                                            segmentation references.
+     *
+     */
+    addSegmentFromLabelmap(
+        Segment,
+        labelmaps,
+        segmentIndexInLabelmap,
+        referencedFrameNumbers
+    ) {
+        if (this.dataset.NumberOfFrames === 0) {
+            throw new Error(
+                "Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation."
+            );
+        }
+
+        this._addSegmentPixelDataFromLabelmaps(
+            labelmaps,
+            segmentIndexInLabelmap
+        );
+        const ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
+        this._addPerFrameFunctionalGroups(
+            ReferencedSegmentNumber,
+            referencedFrameNumbers
+        );
+    }
+
+    _addSegmentPixelDataFromLabelmaps(labelmaps, segmentIndex) {
+        const dataset = this.dataset;
+        const existingFrames = dataset.PerFrameFunctionalGroupsSequence.length;
+        const sliceLength = dataset.Rows * dataset.Columns;
+        const byteOffset = existingFrames * sliceLength;
+
+        const pixelDataUInt8View = new Uint8Array(
+            dataset.PixelData,
+            byteOffset,
+            labelmaps.length * sliceLength
+        );
+
+        for (let l = 0; l < labelmaps.length; l++) {
+            const labelmap = labelmaps[l];
+
+            for (let i = 0; i < labelmap.length; i++) {
+                if (labelmap[i] === segmentIndex) {
+                    pixelDataUInt8View[l * sliceLength + i] = labelmap[i];
+                }
+            }
+        }
+    }
+
+    /**
      * addSegment - Adds a segment to the dataset.
      *
      * @param  {type} Segment   The segment metadata.
      * @param  {Uint8Array} pixelData The pixelData array containing all frames
      *                                of the segmentation.
-     * @param  {Number[]} InStackPositionNumbers  The frames that the
+     * @param  {Number[]} referencedFrameNumbers  The frames that the
      *                                            segmentation references.
      *
      */
-    addSegment(Segment, pixelData, InStackPositionNumbers) {
+    addSegment(Segment, pixelData, referencedFrameNumbers) {
         if (this.dataset.NumberOfFrames === 0) {
             throw new Error(
                 "Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation."
@@ -150,7 +208,7 @@ export default class Segmentation extends DerivedPixels {
         const ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
         this._addPerFrameFunctionalGroups(
             ReferencedSegmentNumber,
-            InStackPositionNumbers
+            referencedFrameNumbers
         );
     }
 
@@ -174,7 +232,7 @@ export default class Segmentation extends DerivedPixels {
 
     _addPerFrameFunctionalGroups(
         ReferencedSegmentNumber,
-        InStackPositionNumbers
+        referencedFrameNumbers
     ) {
         const PerFrameFunctionalGroupsSequence = this.dataset
             .PerFrameFunctionalGroupsSequence;
@@ -182,8 +240,8 @@ export default class Segmentation extends DerivedPixels {
         const ReferencedSeriesSequence = this.referencedDataset
             .ReferencedSeriesSequence;
 
-        for (let i = 0; i < InStackPositionNumbers.length; i++) {
-            const frameNumber = InStackPositionNumbers[i];
+        for (let i = 0; i < referencedFrameNumbers.length; i++) {
+            const frameNumber = referencedFrameNumbers[i];
 
             const perFrameFunctionalGroups = {};
 
@@ -320,11 +378,34 @@ export default class Segmentation extends DerivedPixels {
                 );
         }
 
+        // Deep copy, so we don't change the segment index stored in cornerstoneTools.
+
         const SegmentSequence = this.dataset.SegmentSequence;
-        Segment.SegmentNumber = SegmentSequence.length + 1;
 
-        SegmentSequence.push(Segment);
+        const SegmentAlgorithmType = Segment.SegmentAlgorithmType;
 
-        return Segment.SegmentNumber;
+        const reNumberedSegmentCopy = {
+            SegmentedPropertyCategoryCodeSequence:
+                Segment.SegmentedPropertyCategoryCodeSequence,
+            SegmentNumber: (SegmentSequence.length + 1).toString(),
+            SegmentLabel: Segment.SegmentLabel,
+            SegmentAlgorithmType,
+            RecommendedDisplayCIELabValue:
+                Segment.RecommendedDisplayCIELabValue,
+            SegmentedPropertyTypeCodeSequence:
+                Segment.SegmentedPropertyTypeCodeSequence
+        };
+
+        if (
+            SegmentAlgorithmType === "AUTOMATIC" ||
+            SegmentAlgorithmType === "SEMIAUTOMATIC"
+        ) {
+            reNumberedSegmentCopy.SegmentAlgorithmName =
+                Segment.SegmentAlgorithmName;
+        }
+
+        SegmentSequence.push(reNumberedSegmentCopy);
+
+        return reNumberedSegmentCopy.SegmentNumber;
     }
 }

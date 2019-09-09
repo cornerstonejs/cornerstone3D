@@ -1745,10 +1745,26 @@ function (_StringRepresentation10) {
   _createClass(PersonName, [{
     key: "checkLength",
     value: function checkLength(value) {
-      var cmps = value.split(/\^/);
+      var components = [];
 
-      for (var i in cmps) {
-        var cmp = cmps[i];
+      if (_typeof(value) === "object" && value !== null) {
+        // In DICOM JSON, components are encoded as a mapping (object),
+        // where the keys are one or more of the following: "Alphabetic",
+        // "Ideographic", "Phonetic".
+        // http://dicom.nema.org/medical/dicom/current/output/chtml/part18/sect_F.2.2.html
+        components = Object.keys(value).forEach(function (key) {
+          return value[key];
+        });
+      } else if (typeof value === "string" || value instanceof String) {
+        // In DICOM Part10, components are encoded as a string,
+        // where components ("Alphabetic", "Ideographic", "Phonetic")
+        // are separated by the "=" delimeter.
+        // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.2.html
+        components = value.split(/\=/);
+      }
+
+      for (var i in components) {
+        var cmp = components[i];
         if (cmp.length > 64) return false;
       }
 
@@ -6246,19 +6262,64 @@ function (_DerivedPixels) {
       this.isBitpacked = true;
     }
     /**
+     * addSegmentFromLabelmap - Adds a segment to the dataset,
+     * where the labelmaps are a set of 2D labelmaps, from which to extract the binary maps.
+     *
+     * @param  {type} Segment   The segment metadata.
+     * @param  {Uint8Array[]} labelmaps labelmap arrays for each index of referencedFrameNumbers.
+     * @param  {number}  segmentIndexInLabelmap The segment index to extract from the labelmap
+     *    (might be different to the segment metadata depending on implementation).
+     * @param  {number[]} referencedFrameNumbers  The frames that the
+     *                                            segmentation references.
+     *
+     */
+
+  }, {
+    key: "addSegmentFromLabelmap",
+    value: function addSegmentFromLabelmap(Segment, labelmaps, segmentIndexInLabelmap, referencedFrameNumbers) {
+      if (this.dataset.NumberOfFrames === 0) {
+        throw new Error("Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation.");
+      }
+
+      this._addSegmentPixelDataFromLabelmaps(labelmaps, segmentIndexInLabelmap);
+
+      var ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
+
+      this._addPerFrameFunctionalGroups(ReferencedSegmentNumber, referencedFrameNumbers);
+    }
+  }, {
+    key: "_addSegmentPixelDataFromLabelmaps",
+    value: function _addSegmentPixelDataFromLabelmaps(labelmaps, segmentIndex) {
+      var dataset = this.dataset;
+      var existingFrames = dataset.PerFrameFunctionalGroupsSequence.length;
+      var sliceLength = dataset.Rows * dataset.Columns;
+      var byteOffset = existingFrames * sliceLength;
+      var pixelDataUInt8View = new Uint8Array(dataset.PixelData, byteOffset, labelmaps.length * sliceLength);
+
+      for (var l = 0; l < labelmaps.length; l++) {
+        var labelmap = labelmaps[l];
+
+        for (var i = 0; i < labelmap.length; i++) {
+          if (labelmap[i] === segmentIndex) {
+            pixelDataUInt8View[l * sliceLength + i] = labelmap[i];
+          }
+        }
+      }
+    }
+    /**
      * addSegment - Adds a segment to the dataset.
      *
      * @param  {type} Segment   The segment metadata.
      * @param  {Uint8Array} pixelData The pixelData array containing all frames
      *                                of the segmentation.
-     * @param  {Number[]} InStackPositionNumbers  The frames that the
+     * @param  {Number[]} referencedFrameNumbers  The frames that the
      *                                            segmentation references.
      *
      */
 
   }, {
     key: "addSegment",
-    value: function addSegment(Segment, pixelData, InStackPositionNumbers) {
+    value: function addSegment(Segment, pixelData, referencedFrameNumbers) {
       if (this.dataset.NumberOfFrames === 0) {
         throw new Error("Must set the total number of frames via setNumberOfFrames() before adding segments to the segmentation.");
       }
@@ -6267,7 +6328,7 @@ function (_DerivedPixels) {
 
       var ReferencedSegmentNumber = this._addSegmentMetadata(Segment);
 
-      this._addPerFrameFunctionalGroups(ReferencedSegmentNumber, InStackPositionNumbers);
+      this._addPerFrameFunctionalGroups(ReferencedSegmentNumber, referencedFrameNumbers);
     }
   }, {
     key: "_addSegmentPixelData",
@@ -6284,12 +6345,12 @@ function (_DerivedPixels) {
     }
   }, {
     key: "_addPerFrameFunctionalGroups",
-    value: function _addPerFrameFunctionalGroups(ReferencedSegmentNumber, InStackPositionNumbers) {
+    value: function _addPerFrameFunctionalGroups(ReferencedSegmentNumber, referencedFrameNumbers) {
       var PerFrameFunctionalGroupsSequence = this.dataset.PerFrameFunctionalGroupsSequence;
       var ReferencedSeriesSequence = this.referencedDataset.ReferencedSeriesSequence;
 
-      for (var i = 0; i < InStackPositionNumbers.length; i++) {
-        var frameNumber = InStackPositionNumbers[i];
+      for (var i = 0; i < referencedFrameNumbers.length; i++) {
+        var frameNumber = referencedFrameNumbers[i];
         var perFrameFunctionalGroups = {};
         perFrameFunctionalGroups.PlanePositionSequence = DerivedDataset.copyDataset(this.referencedDataset.PerFrameFunctionalGroupsSequence[frameNumber - 1].PlanePositionSequence); // If the PlaneOrientationSequence is not in the SharedFunctionalGroupsSequence,
         // extract it from the PerFrameFunctionalGroupsSequence.
@@ -6387,12 +6448,26 @@ function (_DerivedPixels) {
 
         default:
           throw new Error("SegmentAlgorithmType ".concat(Segment.SegmentAlgorithmType, " invalid."));
-      }
+      } // Deep copy, so we don't change the segment index stored in cornerstoneTools.
+
 
       var SegmentSequence = this.dataset.SegmentSequence;
-      Segment.SegmentNumber = SegmentSequence.length + 1;
-      SegmentSequence.push(Segment);
-      return Segment.SegmentNumber;
+      var SegmentAlgorithmType = Segment.SegmentAlgorithmType;
+      var reNumberedSegmentCopy = {
+        SegmentedPropertyCategoryCodeSequence: Segment.SegmentedPropertyCategoryCodeSequence,
+        SegmentNumber: (SegmentSequence.length + 1).toString(),
+        SegmentLabel: Segment.SegmentLabel,
+        SegmentAlgorithmType: SegmentAlgorithmType,
+        RecommendedDisplayCIELabValue: Segment.RecommendedDisplayCIELabValue,
+        SegmentedPropertyTypeCodeSequence: Segment.SegmentedPropertyTypeCodeSequence
+      };
+
+      if (SegmentAlgorithmType === "AUTOMATIC" || SegmentAlgorithmType === "SEMIAUTOMATIC") {
+        reNumberedSegmentCopy.SegmentAlgorithmName = Segment.SegmentAlgorithmName;
+      }
+
+      SegmentSequence.push(reNumberedSegmentCopy);
+      return reNumberedSegmentCopy.SegmentNumber;
     }
   }]);
 
@@ -8410,12 +8485,537 @@ function getSegmentMetadata(multiframe) {
   };
 }
 
+var Segmentation$2 = {
+  generateSegmentation: generateSegmentation$1,
+  generateToolState: generateToolState$1
+};
+/**
+ *
+ * @typedef {Object} BrushData
+ * @property {Object} toolState - The cornerstoneTools global toolState.
+ * @property {Object[]} segments - The cornerstoneTools segment metadata that corresponds to the
+ *                                 seriesInstanceUid.
+ */
+
+/**
+ * generateSegmentation - Generates cornerstoneTools brush data, given a stack of
+ * imageIds, images and the cornerstoneTools brushData.
+ *
+ * @param  {object[]} images    An array of the cornerstone image objects.
+ * @param  {Object|Object[]} labelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
+ * @returns {type}           description
+ */
+
+function generateSegmentation$1(images, labelmaps3D) {
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+    includeSliceSpacing: true
+  };
+
+  // If one Labelmap3D, convert to Labelmap3D array of length 1.
+  if (!Array.isArray(labelmaps3D)) {
+    labelmaps3D = [labelmaps3D];
+  } // Calculate the dimensions of the data cube.
+
+
+  var image0 = images[0];
+  var dims = {
+    x: image0.columns,
+    y: image0.rows,
+    z: images.length
+  };
+  dims.xy = dims.x * dims.y;
+  var numberOfFrames = 0;
+  var referencedFramesPerLabelmap = [];
+
+  var _loop = function _loop(labelmapIndex) {
+    var labelmap3D = labelmaps3D[labelmapIndex];
+    var labelmaps2D = labelmap3D.labelmaps2D,
+        metadata = labelmap3D.metadata;
+    var referencedFramesPerSegment = [];
+
+    for (var i = 1; i < metadata.length; i++) {
+      if (metadata[i]) {
+        referencedFramesPerSegment[i] = [];
+      }
+    }
+
+    var _loop2 = function _loop2(_i) {
+      var labelmap2D = labelmaps2D[_i];
+
+      if (labelmaps2D[_i]) {
+        var segmentsOnLabelmap = labelmap2D.segmentsOnLabelmap;
+        segmentsOnLabelmap.forEach(function (segmentIndex) {
+          if (segmentIndex !== 0) {
+            referencedFramesPerSegment[segmentIndex].push(_i);
+            numberOfFrames++;
+          }
+        });
+      }
+    };
+
+    for (var _i = 0; _i < labelmaps2D.length; _i++) {
+      _loop2(_i);
+    }
+
+    referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
+  };
+
+  for (var labelmapIndex = 0; labelmapIndex < labelmaps3D.length; labelmapIndex++) {
+    _loop(labelmapIndex);
+  } // - For each labelmap:
+  // -- Get number of segments DING
+  // -- Get frames per segment. DING
+  //
+  // - Allocate enough memory. DING
+  // - Set metadata per segment:
+  // -- Segment Index - increment from 1 to N through labelmap 0..N.
+  // - Per frame:
+  // -- Set perFrameFunctionalGroupSequence for each segment (frame any labelmap) on this frame.
+  // - Boom done.
+
+
+  var isMultiframe = image0.imageId.includes("?frame");
+
+  var seg = _createSegFromImages$1(images, isMultiframe, options);
+
+  seg.setNumberOfFrames(numberOfFrames); // TODO -> Rewrite adding each segment at a time.
+
+  for (var labelmapIndex = 0; labelmapIndex < labelmaps3D.length; labelmapIndex++) {
+    var referencedFramesPerSegment = referencedFramesPerLabelmap[labelmapIndex];
+    var labelmap3D = labelmaps3D[labelmapIndex];
+    var metadata = labelmap3D.metadata;
+
+    for (var segmentIndex = 1; segmentIndex < referencedFramesPerSegment.length; segmentIndex++) {
+      var referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
+
+      if (referencedFrameIndicies) {
+        // Frame numbers start from 1.
+        var referencedFrameNumbers = referencedFrameIndicies.map(function (element) {
+          return element + 1;
+        });
+        var segmentMetadata = metadata[segmentIndex];
+
+        var labelmaps = _getLabelmapsFromRefernecedFrameIndicies(labelmap3D, referencedFrameIndicies);
+
+        seg.addSegmentFromLabelmap(segmentMetadata, labelmaps, segmentIndex, referencedFrameNumbers);
+      }
+    }
+  }
+
+  seg.bitPackPixelData();
+  var segBlob = datasetToBlob(seg.dataset);
+  return segBlob;
+}
+
+function _getLabelmapsFromRefernecedFrameIndicies(labelmap3D, referencedFrameIndicies) {
+  var labelmaps2D = labelmap3D.labelmaps2D;
+  var labelmaps = [];
+
+  for (var i = 0; i < referencedFrameIndicies.length; i++) {
+    var frame = referencedFrameIndicies[i];
+    labelmaps.push(labelmaps2D[frame].pixelData);
+  }
+
+  return labelmaps;
+}
+/**
+ * _createSegFromImages - description
+ *
+ * @param  {Object[]} images    An array of the cornerstone image objects.
+ * @param  {Boolean} isMultiframe Whether the images are multiframe.
+ * @returns {Object}              The Seg derived dataSet.
+ */
+
+
+function _createSegFromImages$1(images, isMultiframe, options) {
+  var datasets = [];
+
+  if (isMultiframe) {
+    var image = images[0];
+    var arrayBuffer = image.data.byteArray.buffer;
+    var dicomData = DicomMessage.readFile(arrayBuffer);
+    var dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+    dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+    datasets.push(dataset);
+  } else {
+    for (var i = 0; i < images.length; i++) {
+      var _image = images[i];
+      var _arrayBuffer = _image.data.byteArray.buffer;
+
+      var _dicomData = DicomMessage.readFile(_arrayBuffer);
+
+      var _dataset = DicomMetaDictionary.naturalizeDataset(_dicomData.dict);
+
+      _dataset._meta = DicomMetaDictionary.namifyDataset(_dicomData.meta);
+      datasets.push(_dataset);
+    }
+  }
+
+  var multiframe = Normalizer.normalizeToDataset(datasets);
+  return new Segmentation([multiframe], options);
+}
+/**
+ * generateToolState - Given a set of cornrstoneTools imageIds and a Segmentation buffer,
+ * derive cornerstoneTools toolState and brush metadata.
+ *
+ * @param  {string[]} imageIds    An array of the imageIds.
+ * @param  {ArrayBuffer} arrayBuffer The SEG arrayBuffer.
+ * @param {*} metadataProvider
+ * @returns {Object}  The toolState and an object from which the
+ *                    segment metadata can be derived.
+ */
+
+
+function generateToolState$1(imageIds, arrayBuffer, metadataProvider) {
+  var dicomData = DicomMessage.readFile(arrayBuffer);
+  var dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+  dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+  var multiframe = Normalizer.normalizeToDataset([dataset]);
+  var imagePlaneModule = metadataProvider.get("imagePlaneModule", imageIds[0]);
+  console.warn("Note the cornerstoneTools 4.0 currently assumes the labelmaps are non-overlapping. Overlapping segments will allocate incorrectly. Feel free to submit a PR to improve this behaviour!");
+
+  if (!imagePlaneModule) {
+    console.warn("Insufficient metadata, imagePlaneModule missing.");
+  }
+
+  var ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines) ? [].concat(_toConsumableArray(imagePlaneModule.rowCosines), _toConsumableArray(imagePlaneModule.columnCosines)) : [imagePlaneModule.rowCosines.x, imagePlaneModule.rowCosines.y, imagePlaneModule.rowCosines.z, imagePlaneModule.columnCosines.x, imagePlaneModule.columnCosines.y, imagePlaneModule.columnCosines.z]; // Get IOP from ref series, compute supported orientations:
+
+  var validOrientations = getValidOrientations$1(ImageOrientationPatient);
+  var SharedFunctionalGroupsSequence = multiframe.SharedFunctionalGroupsSequence;
+  var sharedImageOrientationPatient = SharedFunctionalGroupsSequence.PlaneOrientationSequence ? SharedFunctionalGroupsSequence.PlaneOrientationSequence.ImageOrientationPatient : undefined;
+  var sliceLength = multiframe.Columns * multiframe.Rows;
+  var segMetadata = getSegmentMetadata$1(multiframe);
+  var pixelData = unpackPixelData$1(multiframe);
+  var arrayBufferLength = sliceLength * imageIds.length * 2; // 2 bytes per label voxel in cst4.
+
+  var labelmapBuffer = new ArrayBuffer(arrayBufferLength);
+  var PerFrameFunctionalGroupsSequence = multiframe.PerFrameFunctionalGroupsSequence;
+  var segmentsOnFrame = [];
+  var inPlane = true;
+
+  var _loop4 = function _loop4(i) {
+    var PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[i];
+    var ImageOrientationPatientI = sharedImageOrientationPatient || PerFrameFunctionalGroups.PlaneOrientationSequence.ImageOrientationPatient;
+    var pixelDataI2D = ndarray(new Uint8Array(pixelData.buffer, i * sliceLength, sliceLength), [multiframe.Rows, multiframe.Columns]);
+    var alignedPixelDataI = alignPixelDataWithSourceData$1(pixelDataI2D, ImageOrientationPatientI, validOrientations);
+
+    if (!alignedPixelDataI) {
+      console.warn("This segmentation object is not in-plane with the source data. Bailing out of IO. It'd be better to render this with vtkjs. ");
+      inPlane = false;
+      return "break";
+    }
+
+    var segmentIndex = PerFrameFunctionalGroups.SegmentIdentificationSequence.ReferencedSegmentNumber;
+    var SourceImageSequence = void 0;
+
+    if (SharedFunctionalGroupsSequence.DerivationImageSequence && SharedFunctionalGroupsSequence.DerivationImageSequence.SourceImageSequence) {
+      SourceImageSequence = SharedFunctionalGroupsSequence.DerivationImageSequence.SourceImageSequence[i];
+    } else {
+      SourceImageSequence = PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence;
+    }
+
+    var imageId = getImageIdOfSourceImage$1(SourceImageSequence, imageIds, metadataProvider);
+
+    if (!imageId) {
+      // Image not present in stack, can't import this frame.
+      return "continue";
+    }
+
+    var imageIdIndex = imageIds.findIndex(function (element) {
+      return element === imageId;
+    });
+    var byteOffset = sliceLength * 2 * imageIdIndex; // 2 bytes/pixel
+
+    var labelmap2DView = new Uint16Array(labelmapBuffer, byteOffset, sliceLength);
+    var data = alignedPixelDataI.data;
+
+    for (var j = 0; j < alignedPixelDataI.data.length; j++) {
+      if (data[j]) {
+        labelmap2DView[j] = segmentIndex;
+      }
+    }
+
+    if (!segmentsOnFrame[imageIdIndex]) {
+      segmentsOnFrame[imageIdIndex] = [];
+    }
+
+    segmentsOnFrame[imageIdIndex].push(segmentIndex);
+  };
+
+  _loop3: for (var i = 0; i < PerFrameFunctionalGroupsSequence.length; i++) {
+    var _ret = _loop4(i);
+
+    switch (_ret) {
+      case "break":
+        break _loop3;
+
+      case "continue":
+        continue;
+    }
+  }
+
+  if (!inPlane) {
+    return;
+  }
+
+  return {
+    labelmapBuffer: labelmapBuffer,
+    segMetadata: segMetadata,
+    segmentsOnFrame: segmentsOnFrame
+  };
+}
+/**
+ * unpackPixelData - Unpacks bitpacked pixelData if the Segmentation is BINARY.
+ *
+ * @param  {Object} multiframe The multiframe dataset.
+ * @return {Uint8Array}      The unpacked pixelData.
+ */
+
+
+function unpackPixelData$1(multiframe) {
+  var segType = multiframe.SegmentationType;
+
+  if (segType === "BINARY") {
+    return BitArray.unpack(multiframe.PixelData);
+  }
+
+  var pixelData = new Uint8Array(multiframe.PixelData);
+  var max = multiframe.MaximumFractionalValue;
+  var onlyMaxAndZero = pixelData.find(function (element) {
+    return element !== 0 && element !== max;
+  }) === undefined;
+
+  if (!onlyMaxAndZero) {
+    lib.warn("This is a fractional segmentation, which is not currently supported.");
+    return;
+  }
+
+  lib.warn("This segmentation object is actually binary... processing as such.");
+  return pixelData;
+}
+/**
+ * getImageIdOfSourceImage - Returns the Cornerstone imageId of the source image.
+ *
+ * @param  {Object} SourceImageSequence Sequence describing the source image.
+ * @param  {String[]} imageIds          A list of imageIds.
+ * @param  {Object} metadataProvider    A Cornerstone metadataProvider to query
+ *                                      metadata from imageIds.
+ * @return {String}                     The corresponding imageId.
+ */
+
+
+function getImageIdOfSourceImage$1(SourceImageSequence, imageIds, metadataProvider) {
+  var ReferencedSOPInstanceUID = SourceImageSequence.ReferencedSOPInstanceUID,
+      ReferencedFrameNumber = SourceImageSequence.ReferencedFrameNumber;
+  return ReferencedFrameNumber ? getImageIdOfReferencedFrame$1(ReferencedSOPInstanceUID, ReferencedFrameNumber, imageIds, metadataProvider) : getImageIdOfReferencedSingleFramedSOPInstance$1(ReferencedSOPInstanceUID, imageIds, metadataProvider);
+}
+/**
+ * getImageIdOfReferencedSingleFramedSOPInstance - Returns the imageId
+ * corresponding to the specified sopInstanceUid for single-frame images.
+ *
+ * @param  {String} sopInstanceUid   The sopInstanceUid of the desired image.
+ * @param  {String[]} imageIds         The list of imageIds.
+ * @param  {Object} metadataProvider The metadataProvider to obtain sopInstanceUids
+ *                                 from the cornerstone imageIds.
+ * @return {String}                  The imageId that corresponds to the sopInstanceUid.
+ */
+
+
+function getImageIdOfReferencedSingleFramedSOPInstance$1(sopInstanceUid, imageIds, metadataProvider) {
+  return imageIds.find(function (imageId) {
+    var sopCommonModule = metadataProvider.get("sopCommonModule", imageId);
+
+    if (!sopCommonModule) {
+      return;
+    }
+
+    return sopCommonModule.sopInstanceUID === sopInstanceUid;
+  });
+}
+/**
+ * getImageIdOfReferencedFrame - Returns the imageId corresponding to the
+ * specified sopInstanceUid and frameNumber for multi-frame images.
+ *
+ * @param  {String} sopInstanceUid   The sopInstanceUid of the desired image.
+ * @param  {Number} frameNumber      The frame number.
+ * @param  {String} imageIds         The list of imageIds.
+ * @param  {Object} metadataProvider The metadataProvider to obtain sopInstanceUids
+ *                                   from the cornerstone imageIds.
+ * @return {String}                  The imageId that corresponds to the sopInstanceUid.
+ */
+
+
+function getImageIdOfReferencedFrame$1(sopInstanceUid, frameNumber, imageIds, metadataProvider) {
+  var imageId = imageIds.find(function (imageId) {
+    var sopCommonModule = metadataProvider.get("sopCommonModule", imageId);
+
+    if (!sopCommonModule) {
+      return;
+    }
+
+    var imageIdFrameNumber = Number(imageId.split("frame=")[1]);
+    return (//frameNumber is zero indexed for cornerstoneWADOImageLoader image Ids.
+      sopCommonModule.sopInstanceUID === sopInstanceUid && imageIdFrameNumber === frameNumber - 1
+    );
+  });
+  return imageId;
+}
+/**
+ * getValidOrientations - returns an array of valid orientations.
+ *
+ * @param  {Number[6]} iop The row (0..2) an column (3..5) direction cosines.
+ * @return {Number[8][6]} An array of valid orientations.
+ */
+
+
+function getValidOrientations$1(iop) {
+  var orientations = []; // [0,  1,  2]: 0,   0hf,   0vf
+  // [3,  4,  5]: 90,  90hf,  90vf
+  // [6, 7]:      180, 270
+
+  orientations[0] = iop;
+  orientations[1] = flipImageOrientationPatient.h(iop);
+  orientations[2] = flipImageOrientationPatient.v(iop);
+  var iop90 = rotateDirectionCosinesInPlane(iop, Math.PI / 2);
+  orientations[3] = iop90;
+  orientations[4] = flipImageOrientationPatient.h(iop90);
+  orientations[5] = flipImageOrientationPatient.v(iop90);
+  orientations[6] = rotateDirectionCosinesInPlane(iop, Math.PI);
+  orientations[7] = rotateDirectionCosinesInPlane(iop, 1.5 * Math.PI);
+  return orientations;
+}
+/**
+ * alignPixelDataWithSourceData -
+ *
+ * @param {Ndarray} pixelData2D The data to align.
+ * @param  {Number[6]} iop The orientation of the image slice.
+ * @param  {Number[8][6]} orientations   An array of valid imageOrientationPatient values.
+ * @return {Ndarray}                         The aligned pixelData.
+ */
+
+
+function alignPixelDataWithSourceData$1(pixelData2D, iop, orientations) {
+  if (compareIOP$1(iop, orientations[0])) {
+    //Same orientation.
+    return pixelData2D;
+  } else if (compareIOP$1(iop, orientations[1])) {
+    //Flipped vertically.
+    return flipMatrix2D.v(pixelData2D);
+  } else if (compareIOP$1(iop, orientations[2])) {
+    //Flipped horizontally.
+    return flipMatrix2D.h(pixelData2D);
+  } else if (compareIOP$1(iop, orientations[3])) {
+    //Rotated 90 degrees.
+    return rotateMatrix902D(pixelData2D);
+  } else if (compareIOP$1(iop, orientations[4])) {
+    //Rotated 90 degrees and fliped horizontally.
+    return flipMatrix2D.h(rotateMatrix902D(pixelData2D));
+  } else if (compareIOP$1(iop, orientations[5])) {
+    //Rotated 90 degrees and fliped vertically.
+    return flipMatrix2D.v(rotateMatrix902D(pixelData2D));
+  } else if (compareIOP$1(iop, orientations[6])) {
+    //Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
+    return rotateMatrix902D(rotateMatrix902D(pixelData2D));
+  } else if (compareIOP$1(iop, orientations[7])) {
+    //Rotated 270 degrees.  // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
+    return rotateMatrix902D(rotateMatrix902D(rotateMatrix902D(pixelData2D)));
+  }
+}
+
+var dx$1 = 1e-5;
+/**
+ * compareIOP - Returns true if iop1 and iop2 are equal
+ * within a tollerance, dx.
+ *
+ * @param  {Number[6]} iop1 An ImageOrientationPatient array.
+ * @param  {Number[6]} iop2 An ImageOrientationPatient array.
+ * @return {Boolean}      True if iop1 and iop2 are equal.
+ */
+
+function compareIOP$1(iop1, iop2) {
+  return Math.abs(iop1[0] - iop2[0]) < dx$1 && Math.abs(iop1[1] - iop2[1]) < dx$1 && Math.abs(iop1[2] - iop2[2]) < dx$1 && Math.abs(iop1[3] - iop2[3]) < dx$1 && Math.abs(iop1[4] - iop2[4]) < dx$1 && Math.abs(iop1[5] - iop2[5]) < dx$1;
+}
+
+function getSegmentMetadata$1(multiframe) {
+  var segmentSequence = multiframe.SegmentSequence;
+  var data = [];
+
+  if (Array.isArray(segmentSequence)) {
+    data = [undefined].concat(_toConsumableArray(segmentSequence));
+  } else {
+    // Only one segment, will be stored as an object.
+    data = [undefined, segmentSequence];
+  }
+
+  return {
+    seriesInstanceUid: multiframe.ReferencedSeriesSequence.SeriesInstanceUID,
+    data: data
+  };
+}
+
+var Segmentation$3 = {
+  generateSegmentation: generateSegmentation$2,
+  generateToolState: generateToolState$2
+};
+/**
+ * generateSegmentation - Generates cornerstoneTools brush data, given a stack of
+ * imageIds, images and the cornerstoneTools brushData.
+ *
+ * @param  {object[]} images    An array of the cornerstone image objects.
+ * @param  {Object|Object[]} labelmaps3DorBrushData For 4.X: The cornerstone `Labelmap3D` object, or an array of objects.
+ *                                                  For 3.X: the BrushData.
+ * @param  {number} cornerstoneToolsVersion The cornerstoneTools major version to map against.
+ * @returns {Object}
+ */
+
+function generateSegmentation$2(images, labelmaps3DorBrushData) {
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+    includeSliceSpacing: true
+  };
+  var cornerstoneToolsVersion = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 4;
+
+  if (cornerstoneToolsVersion === 4) {
+    return Segmentation$2.generateSegmentation(images, labelmaps3DorBrushData, options);
+  }
+
+  if (cornerstoneToolsVersion === 3) {
+    return Segmentation$1.generateSegmentation(images, labelmaps3DorBrushData, options);
+  }
+
+  console.warn("No generateSegmentation adapater for cornerstone version ".concat(cornerstoneToolsVersion, ", exiting."));
+}
+/**
+ * generateToolState - Given a set of cornrstoneTools imageIds and a Segmentation buffer,
+ * derive cornerstoneTools toolState and brush metadata.
+ *
+ * @param  {string[]} imageIds    An array of the imageIds.
+ * @param  {ArrayBuffer} arrayBuffer The SEG arrayBuffer.
+ * @param {*} metadataProvider
+ * @returns {Object}  The toolState and an object from which the
+ *                    segment metadata can be derived.
+ */
+
+
+function generateToolState$2(imageIds, arrayBuffer, metadataProvider) {
+  var cornerstoneToolsVersion = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 4;
+
+  if (cornerstoneToolsVersion === 4) {
+    return Segmentation$2.generateToolState(imageIds, arrayBuffer, metadataProvider);
+  }
+
+  if (cornerstoneToolsVersion === 3) {
+    return Segmentation$1.generateToolState(imageIds, arrayBuffer, metadataProvider);
+  }
+
+  console.warn("No generateToolState adapater for cornerstone version ".concat(cornerstoneToolsVersion, ", exiting."));
+}
+
 var Cornerstone = {
   Length: Length$1,
   Freehand: Freehand,
   Bidirectional: Bidirectional$1,
   MeasurementReport: MeasurementReport,
-  Segmentation: Segmentation$1
+  Segmentation: Segmentation$3
 };
 
 // Should we move it to Colors.js
@@ -8515,7 +9115,7 @@ function geometryFromFunctionalGroups(dataset, PerFrameFunctionalGroups) {
   return geometry;
 }
 
-var Segmentation$2 =
+var Segmentation$4 =
 /*#__PURE__*/
 function () {
   function Segmentation() {
@@ -8611,7 +9211,7 @@ function () {
 }();
 
 var VTKjs = {
-  Segmentation: Segmentation$2
+  Segmentation: Segmentation$4
 };
 
 function getTID300ContentItem$1(tool, toolClass) {

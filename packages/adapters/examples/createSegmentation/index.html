@@ -22,12 +22,16 @@
 
       <div class="row">
         <button id="sampleData" onclick="createSeg()">Create Seg</button>
-        <label for="switchBrush">Active Brush: </label><select id="switchBrush" onchange="changeBrush()">
-          <option value="0">1</option>
-          <option value="1">2</option>
-          <option value="2">3</option>
-          <option value="3">4</option>
+        <label for="switchSegment">Active Segment: </label><select id="switchSegment" onchange="changeSegment()">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
         <select>
+        <label for="switchActiveLabelmap">Active Labelmap: </label><select id="switchActiveLabelmap" onchange="changeLabelmap()">
+            <option value="0">1</option>
+            <option value="1">2</option>
+          <select>
         <p id="statusLine"></p>
         <div class="col-xs-9">
           <div
@@ -38,7 +42,6 @@
             onselectstart="return false;"
             onmousedown="return false;"
           >
-            <!-- TODO => Replace this with react cornerstone viewport -->
             <div
               id="cornerstoneViewport"
               style="width:512px;height:512px;top:0px;left:0px; position:absolute;"
@@ -62,7 +65,7 @@
 
     <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
     <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
-    <script src="https://unpkg.com/cornerstone-tools@3.2.0/dist/cornerstoneTools.js"></script>
+    <script src="https://unpkg.com/cornerstone-tools@4.0.0-beta5/dist/cornerstoneTools.js"></script>
 
     <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
     <script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js"></script>
@@ -98,12 +101,29 @@
     <script>
       let metaData = {};
 
-      document.getElementById("switchBrush")[0].selected = true;
+      document.getElementById("switchSegment")[0].selected = true;
+      document.getElementById("switchActiveLabelmap")[0].selected = true;
 
-      function changeBrush() {
-        var value = document.getElementById("switchBrush").value;
+      function changeSegment() {
+        const segmentIndex = document.getElementById("switchSegment").value;
+        const element = document.getElementsByClassName("viewport-element")[0];
 
-        cornerstoneTools.store.modules.brush.state.drawColorId = value;
+        const { setters } = cornerstoneTools.getModule('segmentation');
+
+        setters.activeSegmentIndex(element, segmentIndex);
+      }
+
+      function changeLabelmap() {
+        const labelmapIndex = document.getElementById("switchActiveLabelmap").value;
+        const segmentIndex = document.getElementById("switchSegment").value;
+        const element = document.getElementsByClassName("viewport-element")[0];
+
+        const { setters } = cornerstoneTools.getModule('segmentation');
+
+        setters.activeLabelmapIndex(element, labelmapIndex);
+        setters.activeSegmentIndex(element, segmentIndex);
+
+        cornerstone.updateImage(element);
       }
 
       function createSeg() {
@@ -120,59 +140,41 @@
           imagePromises.push(cornerstone.loadImage(imageIds[i]));
         }
 
-        const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB([
-          1,
-          0,
-          0
-        ]);
-
         const segments = [];
 
-        // Check which segments have been drawn.
-        for (let i = 0; i < imageIds.length; i++) {
-          if (!toolState[imageIds[i]]
-            || !toolState[imageIds[i]].brush
-            || !toolState[imageIds[i]].brush.data) {
-            continue;
-          }
+        const { getters } = cornerstoneTools.getModule('segmentation');
+        const { labelmaps3D } = getters.labelmaps3D(element);
 
-          const brushData = toolState[imageIds[i]].brush.data;
-
-          for (let segIdx = 0; segIdx < 4; segIdx++) {
-            // If there is pixelData for this segment, set the segment metadata
-            // if it hasn't been set yet.
-            if (brushData[segIdx] && brushData[segIdx].pixelData && !segments[segIdx]) {
-              segments[segIdx] = {
-                SegmentedPropertyCategoryCodeSequence: {
-                  CodeValue: "T-D0050",
-                  CodingSchemeDesignator: "SRT",
-                  CodeMeaning: "Tissue"
-                },
-                SegmentNumber: (segIdx + 1).toString(),
-                SegmentLabel: "Tissue " + (segIdx + 1).toString(),
-                SegmentAlgorithmType: "SEMIAUTOMATIC",
-                SegmentAlgorithmName: "Slicer Prototype",
-                RecommendedDisplayCIELabValue,
-                SegmentedPropertyTypeCodeSequence: {
-                  CodeValue: "T-D0050",
-                  CodingSchemeDesignator: "SRT",
-                  CodeMeaning: "Tissue"
-                }
-              }
-            }
-          }
+        if (!labelmaps3D) {
+          return;
         }
 
-        const brushData = {
-          toolState,
-          segments
-        };
+        
+        for (let labelmapIndex = 0; labelmapIndex < labelmaps3D.length; labelmapIndex++) {
+          const labelmap3D = labelmaps3D[labelmapIndex];
+          const labelmaps2D = labelmap3D.labelmaps2D;
+
+          
+          for (let i = 0; i < labelmaps2D.length; i++) {
+            if (!labelmaps2D[i]) {
+              continue;
+            }
+
+            const segmentsOnLabelmap = labelmaps2D[i].segmentsOnLabelmap;
+
+            segmentsOnLabelmap.forEach(segmentIndex => {
+              if (segmentIndex !== 0 && !labelmap3D.metadata[segmentIndex]) {
+                labelmap3D.metadata[segmentIndex] = generateMockMetadata(segmentIndex)
+              }
+            });
+          }
+        }
 
         Promise.all(imagePromises)
           .then(images => {
             const segBlob = dcmjs.adapters.Cornerstone.Segmentation.generateSegmentation(
               images,
-              brushData
+              labelmaps3D
             );
 
             console.log(segBlob);
@@ -182,6 +184,33 @@
             window.open(objectUrl);
           })
           .catch(err => console.log(err));
+      }
+
+      function generateMockMetadata(segmentIndex) {
+        // TODO -> Use colors from the cornerstoneTools LUT.
+        const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB([
+          1,
+          0,
+          0
+        ]);
+
+        return {
+          SegmentedPropertyCategoryCodeSequence: {
+            CodeValue: "T-D0050",
+            CodingSchemeDesignator: "SRT",
+            CodeMeaning: "Tissue"
+          },
+          SegmentNumber: (segmentIndex + 1).toString(),
+          SegmentLabel: "Tissue " + (segmentIndex + 1).toString(),
+          SegmentAlgorithmType: "SEMIAUTOMATIC",
+          SegmentAlgorithmName: "Slicer Prototype",
+          RecommendedDisplayCIELabValue,
+          SegmentedPropertyTypeCodeSequence: {
+            CodeValue: "T-D0050",
+            CodingSchemeDesignator: "SRT",
+            CodeMeaning: "Tissue"
+          }
+        };
       }
 
       function addMetaData(type, imageId, data) {

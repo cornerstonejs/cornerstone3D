@@ -57,7 +57,7 @@
 
     <script src="https://unpkg.com/cornerstone-core@2.2.8/dist/cornerstone.js"></script>
     <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
-    <script src="https://unpkg.com/cornerstone-tools@3.2.0/dist/cornerstoneTools.js"></script>
+    <script src="https://unpkg.com/cornerstone-tools@4.0.0-beta6/dist/cornerstoneTools.js"></script>
 
     <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
     <script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js"></script>
@@ -117,24 +117,30 @@
         const stackToolState = cornerstoneTools.getToolState(element, "stack");
         const imageIds = stackToolState.data[0].imageIds;
 
+        const t0 = performance.now();
+
         const {
-          toolState,
-          segMetadata
+          labelmapBuffer,
+          segMetadata,
+          segmentsOnFrame
         } = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
           imageIds,
           arrayBuffer,
           cornerstone.metaData
         );
 
+        const t1 = performance.now();
 
-        cornerstoneTools.globalImageIdSpecificToolStateManager.restoreToolState(
-          toolState
+        const { setters, state } = cornerstoneTools.getModule("segmentation");
+
+        setters.labelmap3DByFirstImageId(
+          imageIds[0],
+          labelmapBuffer,
+          0,
+          segMetadata,
+          imageIds.length,
+          segmentsOnFrame
         );
-        const brushModule = cornerstoneTools.store.modules.brush;
-
-        for (let i = 0; i < segMetadata.length; i++) {
-          modules.brush.setters.metadata(seriesInstanceUid, i, segMetadata[i]);
-        }
       }
 
       function metaDataProvider(type, imageId) {
@@ -151,7 +157,6 @@
         metaData[imageId] = metaData[imageId] || {};
         metaData[imageId][type] = data;
       }
-
     </script>
 
     <script>
@@ -162,23 +167,23 @@
 
       var imageNames = [];
 
-      for (var i=1; i<546; i++) {
-        imageNames.push('PET_HeadNeck_0-' + i + '.dcm');
+      for (var i = 1; i < 546; i++) {
+        imageNames.push("PET_HeadNeck_0-" + i + ".dcm");
       }
 
       var imageIds = imageNames.map(name => {
         return `dicomweb:${baseURL}${name}`;
-      })
+      });
 
       var imagePromises = imageIds.map(imageId => {
         return cornerstone.loadAndCacheImage(imageId);
       });
 
       Promise.all(imagePromises).then(() => {
-        var button = document.getElementById('sampleData');
+        var button = document.getElementById("sampleData");
         button.disabled = false;
-        button.innerText = 'Get Segmentation Data';
-      })
+        button.innerText = "Get Segmentation Data";
+      });
 
       var exampleData = {
         stack: {
