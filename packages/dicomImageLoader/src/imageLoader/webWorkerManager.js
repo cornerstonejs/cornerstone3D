@@ -166,7 +166,7 @@ function initialize (configObject) {
  */
 function terminate () {
   for (let i = 0; i < webWorkers.length; i++) {
-    webWorkers[i].terminate();
+    webWorkers[i].worker.terminate();
   }
   webWorkers.length = 0;
   config = undefined;
