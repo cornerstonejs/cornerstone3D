@@ -8,3 +8,4 @@ dist/
 npm-debug.log
 .idea
 .DS_Store
+yarn.lock
