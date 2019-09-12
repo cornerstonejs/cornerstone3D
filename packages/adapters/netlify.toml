@@ -12,9 +12,9 @@
   publish = "examples/"
   command = "npm run build:examples"
 
-[build.environment]
-  NODE_ENV = "production"
-  NODE_VERSION = "10.16.0"
+# [build.environment]
+#   NODE_ENV = "production"
+#  NODE_VERSION = "10.16.0"
 
 # Deploy Preview context: all deploys generated from a pull/merge request will
 # inherit these settings.
