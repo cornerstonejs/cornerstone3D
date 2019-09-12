@@ -12,6 +12,10 @@ import {
     flipMatrix2D,
     rotateMatrix902D
 } from "../../utilities/orientation/index.js";
+import {
+    encode,
+    decode
+} from "../../utilities/compression/rleSingleSamplePerPixel";
 
 const Segmentation = {
     generateSegmentation,
@@ -28,6 +32,11 @@ export default Segmentation;
  *                                 seriesInstanceUid.
  */
 
+const generateSegmentationDefaultOptions = {
+    includeSliceSpacing: true,
+    rleEncode: true
+};
+
 /**
  * generateSegmentation - Generates cornerstoneTools brush data, given a stack of
  * imageIds, images and the cornerstoneTools brushData.
@@ -36,15 +45,17 @@ export default Segmentation;
  * @param  {Object|Object[]} labelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
  * @returns {type}           description
  */
-function generateSegmentation(
-    images,
-    labelmaps3D,
-    options = { includeSliceSpacing: true }
-) {
-    // If one Labelmap3D, convert to Labelmap3D array of length 1.
-    if (!Array.isArray(labelmaps3D)) {
-        labelmaps3D = [labelmaps3D];
-    }
+function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
+    const options = Object.assign(
+        {},
+        generateSegmentationDefaultOptions,
+        userOptions
+    );
+
+    // Use another variable so we don't redefine labelmaps3D.
+    const labelmaps3D = Array.isArray(inputLabelmaps3D)
+        ? inputLabelmaps3D
+        : [inputLabelmaps3D];
 
     // Calculate the dimensions of the data cube.
     const image0 = images[0];
@@ -94,23 +105,10 @@ function generateSegmentation(
         referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
     }
 
-    // - For each labelmap:
-    // -- Get number of segments DING
-    // -- Get frames per segment. DING
-    //
-    // - Allocate enough memory. DING
-    // - Set metadata per segment:
-    // -- Segment Index - increment from 1 to N through labelmap 0..N.
-    // - Per frame:
-    // -- Set perFrameFunctionalGroupSequence for each segment (frame any labelmap) on this frame.
-    // - Boom done.
-
     const isMultiframe = image0.imageId.includes("?frame");
     const seg = _createSegFromImages(images, isMultiframe, options);
 
     seg.setNumberOfFrames(numberOfFrames);
-
-    // TODO -> Rewrite adding each segment at a time.
 
     for (
         let labelmapIndex = 0;
@@ -154,7 +152,33 @@ function generateSegmentation(
         }
     }
 
-    seg.bitPackPixelData();
+    if (options.rleEncode) {
+        const rleEncodedFrames = encode(
+            seg.dataset.PixelData,
+            numberOfFrames,
+            image0.rows,
+            image0.columns
+        );
+
+        // Must use fractional now to RLE encode, as the DICOM standard only allows BitStored && BitsAllocated
+        // to be 1 for BINARY. This is not ideal and there should be a better format for compression in this manner
+        // added to the standard.
+        seg.assignToDataset({
+            BitsAllocated: "8",
+            BitsStored: "8",
+            HighBit: "7",
+            SegmentationType: "FRACTIONAL",
+            SegmentationFractionalType: "PROBABILITY",
+            MaximumFractionalValue: "255"
+        });
+
+        seg.dataset._meta.TransferSyntaxUID = "1.2.840.10008.1.2.5";
+        seg.dataset._vrMap.PixelData = "OB";
+        seg.dataset.PixelData = rleEncodedFrames;
+    } else {
+        // If no rleEncoding, at least bitpack the data.
+        seg.bitPackPixelData();
+    }
 
     const segBlob = datasetToBlob(seg.dataset);
 
@@ -270,7 +294,30 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
 
     const sliceLength = multiframe.Columns * multiframe.Rows;
     const segMetadata = getSegmentMetadata(multiframe);
-    const pixelData = unpackPixelData(multiframe);
+
+    const TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
+
+    let pixelData;
+
+    if (TransferSyntaxUID === "1.2.840.10008.1.2.5") {
+        const rleEncodedFrames = Array.isArray(multiframe.PixelData)
+            ? multiframe.PixelData
+            : [multiframe.PixelData];
+
+        pixelData = decode(
+            rleEncodedFrames,
+            multiframe.Rows,
+            multiframe.Columns
+        );
+
+        if (multiframe.BitsStored === 1) {
+            console.warn("No implementation for rle + bitbacking.");
+
+            return;
+        }
+    } else {
+        pixelData = unpackPixelData(multiframe);
+    }
 
     const arrayBufferLength = sliceLength * imageIds.length * 2; // 2 bytes per label voxel in cst4.
     const labelmapBuffer = new ArrayBuffer(arrayBufferLength);

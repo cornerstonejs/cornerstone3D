@@ -82,8 +82,15 @@ export default class Segmentation extends DerivedPixels {
                 .PixelMeasuresSequence.SpacingBetweenSlices;
         }
 
-        // make an array of zeros for the pixels assuming bit packing (one bit per short)
-        // TODO: handle different packing and non-multiple of 8/16 rows and columns
+        if (
+            this.dataset.SharedFunctionalGroupsSequence
+                .PixelValueTransformationSequence
+        ) {
+            // If derived from a CT, this shouldn't be left in the SEG.
+            delete this.dataset.SharedFunctionalGroupsSequence
+                .PixelValueTransformationSequence;
+        }
+
         // The pixelData array needs to be defined once you know how many frames you'll have.
         this.dataset.PixelData = undefined;
         this.dataset.NumberOfFrames = 0;
@@ -176,15 +183,25 @@ export default class Segmentation extends DerivedPixels {
             labelmaps.length * sliceLength
         );
 
+        const occupiedValue = this._getOccupiedValue();
+
         for (let l = 0; l < labelmaps.length; l++) {
             const labelmap = labelmaps[l];
 
             for (let i = 0; i < labelmap.length; i++) {
                 if (labelmap[i] === segmentIndex) {
-                    pixelDataUInt8View[l * sliceLength + i] = labelmap[i];
+                    pixelDataUInt8View[l * sliceLength + i] = occupiedValue;
                 }
             }
         }
+    }
+
+    _getOccupiedValue() {
+        if (this.dataset.SegmentationType === "FRACTIONAL") {
+            return 255;
+        }
+
+        return 1;
     }
 
     /**

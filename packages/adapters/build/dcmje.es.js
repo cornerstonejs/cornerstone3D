@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -1347,37 +1345,20 @@ function (_ValueRepresentation2) {
             offsets = [0];
           }
 
-          var nextTag = Tag.readTag(stream),
-              fragmentStream = null,
-              start = 4,
-              frameOffset = offsets.shift();
+          for (var _i = 0; _i < offsets.length; _i++) {
+            var nextTag = Tag.readTag(stream);
 
-          while (nextTag.is(0xfffee000)) {
-            if (frameOffset == start) {
-              frameOffset = offsets.shift();
-
-              if (fragmentStream !== null) {
-                frames.push(fragmentStream.buffer);
-                fragmentStream = null;
-              }
+            if (!nextTag.is(0xfffee000)) {
+              break;
             }
 
-            var frameItemLength = stream.readUint32(),
-                thisStream = stream.more(frameItemLength);
-
-            if (fragmentStream === null) {
-              fragmentStream = thisStream;
-            } else {
-              fragmentStream.concat(thisStream);
-            }
-
-            nextTag = Tag.readTag(stream);
-            start += 4 + frameItemLength;
-          }
-
-          if (fragmentStream !== null) {
+            var frameItemLength = stream.readUint32();
+            var fragmentStream = stream.more(frameItemLength);
             frames.push(fragmentStream.buffer);
-          }
+          } // Read SequenceDelimitationItem Tag
+
+
+          stream.readUint32(); // Read SequenceDelimitationItem value.
 
           stream.readUint32();
         } else {
@@ -2853,7 +2834,7 @@ function () {
       stream.reset();
       stream.increment(128);
 
-      if (stream.readString(4) != "DICM") {
+      if (stream.readString(4) !== "DICM") {
         throw new Error("Invalid a dicom file");
       }
 
@@ -5288,14 +5269,14 @@ function isSlowBuffer (obj) {
 }
 
 function datasetToDict(dataset) {
-  var transferSyntaxUID = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "1.2.840.10008.1.2.1";
   var fileMetaInformationVersionArray = new Uint8Array(2);
   fileMetaInformationVersionArray[1] = 1;
+  var TransferSyntaxUID = dataset._meta.TransferSyntaxUID ? dataset._meta.TransferSyntaxUID : "1.2.840.10008.1.2.1";
   dataset._meta = {
     MediaStorageSOPClassUID: dataset.SOPClassUID,
     MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
     ImplementationVersionName: "dcmjs-0.0",
-    TransferSyntaxUID: transferSyntaxUID,
+    TransferSyntaxUID: TransferSyntaxUID,
     ImplementationClassUID: "2.25.80302813137786398554742050926734630921603366648225212145404",
     FileMetaInformationVersion: fileMetaInformationVersionArray.buffer
   };
@@ -6219,9 +6200,12 @@ function (_DerivedPixels) {
       if (!this.options.includeSliceSpacing) {
         // per dciodvfy this should not be included, but dcmqi/Slicer requires it
         delete this.dataset.SharedFunctionalGroupsSequence.PixelMeasuresSequence.SpacingBetweenSlices;
-      } // make an array of zeros for the pixels assuming bit packing (one bit per short)
-      // TODO: handle different packing and non-multiple of 8/16 rows and columns
-      // The pixelData array needs to be defined once you know how many frames you'll have.
+      }
+
+      if (this.dataset.SharedFunctionalGroupsSequence.PixelValueTransformationSequence) {
+        // If derived from a CT, this shouldn't be left in the SEG.
+        delete this.dataset.SharedFunctionalGroupsSequence.PixelValueTransformationSequence;
+      } // The pixelData array needs to be defined once you know how many frames you'll have.
 
 
       this.dataset.PixelData = undefined;
@@ -6298,15 +6282,26 @@ function (_DerivedPixels) {
       var byteOffset = existingFrames * sliceLength;
       var pixelDataUInt8View = new Uint8Array(dataset.PixelData, byteOffset, labelmaps.length * sliceLength);
 
+      var occupiedValue = this._getOccupiedValue();
+
       for (var l = 0; l < labelmaps.length; l++) {
         var labelmap = labelmaps[l];
 
         for (var i = 0; i < labelmap.length; i++) {
           if (labelmap[i] === segmentIndex) {
-            pixelDataUInt8View[l * sliceLength + i] = labelmap[i];
+            pixelDataUInt8View[l * sliceLength + i] = occupiedValue;
           }
         }
       }
+    }
+  }, {
+    key: "_getOccupiedValue",
+    value: function _getOccupiedValue() {
+      if (this.dataset.SegmentationType === "FRACTIONAL") {
+        return 255;
+      }
+
+      return 1;
     }
     /**
      * addSegment - Adds a segment to the dataset.
@@ -8487,6 +8482,201 @@ function getSegmentMetadata(multiframe) {
   };
 }
 
+/**
+ * Encodes a non-bitpacked frame which has one sample per pixel.
+ *
+ * @param {*} buffer
+ * @param {*} numberOfFrames
+ * @param {*} rows
+ * @param {*} cols
+ */
+
+function encode(buffer, numberOfFrames, rows, cols) {
+  var frameLength = rows * cols;
+  var header = createHeader();
+  var encodedFrames = [];
+
+  for (var frame = 0; frame < numberOfFrames; frame++) {
+    var frameOffset = frameLength * frame;
+    encodedFrames.push(encodeFrame(buffer, frameOffset, rows, cols, header));
+  }
+
+  return encodedFrames;
+}
+
+function encodeFrame(buffer, frameOffset, rows, cols, header) {
+  // Add header to frame:
+  var rleArray = [];
+
+  for (var r = 0; r < rows; r++) {
+    var rowOffset = r * cols;
+    var uint8Row = new Uint8Array(buffer, frameOffset + rowOffset, cols);
+    var i = 0;
+
+    while (i < uint8Row.length) {
+      var literalRunLength = getLiteralRunLength(uint8Row, i);
+
+      if (literalRunLength) {
+        // State how many in litteral run
+        rleArray.push(literalRunLength - 1); // Append litteral run.
+
+        var literalRun = uint8Row.slice(i, i + literalRunLength);
+        rleArray = [].concat(_toConsumableArray(rleArray), _toConsumableArray(literalRun));
+        i += literalRunLength;
+      }
+
+      if (i >= uint8Row.length) {
+        break;
+      } // Next must be a replicate run.
+
+
+      var replicateRunLength = getReplicateRunLength(uint8Row, i);
+
+      if (replicateRunLength) {
+        // State how many in replicate run
+        rleArray.push(257 - replicateRunLength);
+        rleArray.push(uint8Row[i]);
+        i += replicateRunLength;
+      }
+    }
+  }
+
+  var headerLength = 64;
+  var bodyLength = rleArray.length % 2 === 0 ? rleArray.length : rleArray.length + 1;
+  var encodedFrameBuffer = new ArrayBuffer(headerLength + bodyLength); // Copy header into encodedFrameBuffer.
+
+  var headerView = new Uint32Array(encodedFrameBuffer, 0, 16);
+
+  for (var _i = 0; _i < headerView.length; _i++) {
+    headerView[_i] = header[_i];
+  }
+
+  for (var _i2 = 0; _i2 < headerView.length; _i2++) {
+    rleArray.push(headerView[_i2]);
+  } // Copy rle data into encodedFrameBuffer.
+
+
+  var bodyView = new Uint8Array(encodedFrameBuffer, 64);
+
+  for (var _i3 = 0; _i3 < rleArray.length; _i3++) {
+    bodyView[_i3] = rleArray[_i3];
+  }
+
+  return encodedFrameBuffer;
+}
+
+function createHeader() {
+  var headerUint32 = new Uint32Array(16);
+  headerUint32[0] = 1; // 1 Segment.
+
+  headerUint32[1] = 64; // Data offset is 64 bytes.
+  // Return byte-array version of header:
+
+  return headerUint32;
+}
+
+function getLiteralRunLength(uint8Row, i) {
+  for (var l = 0; l < uint8Row.length - i; l++) {
+    if (uint8Row[i + l] === uint8Row[i + l + 1] && uint8Row[i + l + 1] === uint8Row[i + l + 2]) {
+      return l;
+    }
+
+    if (l === 128) {
+      return l;
+    }
+  }
+
+  return uint8Row.length - i;
+}
+
+function getReplicateRunLength(uint8Row, i) {
+  var first = uint8Row[i];
+
+  for (var l = 1; l < uint8Row.length - i; l++) {
+    if (uint8Row[i + l] !== first) {
+      return l;
+    }
+
+    if (l === 128) {
+      return l;
+    }
+  }
+
+  return uint8Row.length - i;
+}
+
+function decode(rleEncodedFrames, rows, cols) {
+  var pixelData = new Uint8Array(rows * cols * rleEncodedFrames.length);
+  var buffer = pixelData.buffer;
+  var frameLength = rows * cols;
+
+  for (var i = 0; i < rleEncodedFrames.length; i++) {
+    var rleEncodedFrame = rleEncodedFrames[i];
+    var uint8FrameView = new Uint8Array(buffer, i * frameLength, frameLength);
+    decodeFrame(rleEncodedFrame, uint8FrameView);
+  }
+
+  return pixelData;
+}
+
+function decodeFrame(rleEncodedFrame, pixelData) {
+  // Check HEADER:
+  var header = new Uint32Array(rleEncodedFrame, 0, 16);
+
+  if (header[0] !== 1) {
+    lib.error("rleSingleSamplePerPixel only supports fragments with single Byte Segments (for rle encoded segmentation data) at the current time. This rleEncodedFrame has ".concat(header[0], " Byte Segments."));
+    return;
+  }
+
+  if (header[1] !== 64) {
+    lib.error("Data offset of Byte Segment 1 should be 64 bytes, this rle fragment is encoded incorrectly.");
+    return;
+  }
+
+  var uInt8Frame = new Uint8Array(rleEncodedFrame, 64);
+  var pixelDataIndex = 0;
+  var i = 0;
+
+  while (pixelDataIndex < pixelData.length) {
+    var byteValue = uInt8Frame[i];
+
+    if (byteValue === undefined) {
+      break;
+    }
+
+    if (byteValue <= 127) {
+      // TODO -> Interpret the next N+1 bytes literally.
+      var N = byteValue + 1;
+      var next = i + 1; // Read the next N bytes literally.
+
+      for (var p = next; p < next + N; p++) {
+        pixelData[pixelDataIndex] = uInt8Frame[p];
+        pixelDataIndex++;
+      }
+
+      i += N + 1;
+    }
+
+    if (byteValue >= 129) {
+      var _N = 257 - byteValue;
+
+      var _next = i + 1; // Repeat the next byte N times.
+
+
+      for (var _p = 0; _p < _N; _p++) {
+        pixelData[pixelDataIndex] = uInt8Frame[_next];
+        pixelDataIndex++;
+      }
+
+      i += 2;
+    }
+
+    if (i === uInt8Frame.length) {
+      break;
+    }
+  }
+}
+
 var Segmentation$2 = {
   generateSegmentation: generateSegmentation$1,
   generateToolState: generateToolState$1
@@ -8499,6 +8689,10 @@ var Segmentation$2 = {
  *                                 seriesInstanceUid.
  */
 
+var generateSegmentationDefaultOptions = {
+  includeSliceSpacing: true,
+  rleEncode: true
+};
 /**
  * generateSegmentation - Generates cornerstoneTools brush data, given a stack of
  * imageIds, images and the cornerstoneTools brushData.
@@ -8508,16 +8702,11 @@ var Segmentation$2 = {
  * @returns {type}           description
  */
 
-function generateSegmentation$1(images, labelmaps3D) {
-  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
-    includeSliceSpacing: true
-  };
+function generateSegmentation$1(images, inputLabelmaps3D) {
+  var userOptions = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var options = Object.assign({}, generateSegmentationDefaultOptions, userOptions); // Use another variable so we don't redefine labelmaps3D.
 
-  // If one Labelmap3D, convert to Labelmap3D array of length 1.
-  if (!Array.isArray(labelmaps3D)) {
-    labelmaps3D = [labelmaps3D];
-  } // Calculate the dimensions of the data cube.
-
+  var labelmaps3D = Array.isArray(inputLabelmaps3D) ? inputLabelmaps3D : [inputLabelmaps3D]; // Calculate the dimensions of the data cube.
 
   var image0 = images[0];
   var dims = {
@@ -8564,23 +8753,13 @@ function generateSegmentation$1(images, labelmaps3D) {
 
   for (var labelmapIndex = 0; labelmapIndex < labelmaps3D.length; labelmapIndex++) {
     _loop(labelmapIndex);
-  } // - For each labelmap:
-  // -- Get number of segments DING
-  // -- Get frames per segment. DING
-  //
-  // - Allocate enough memory. DING
-  // - Set metadata per segment:
-  // -- Segment Index - increment from 1 to N through labelmap 0..N.
-  // - Per frame:
-  // -- Set perFrameFunctionalGroupSequence for each segment (frame any labelmap) on this frame.
-  // - Boom done.
-
+  }
 
   var isMultiframe = image0.imageId.includes("?frame");
 
   var seg = _createSegFromImages$1(images, isMultiframe, options);
 
-  seg.setNumberOfFrames(numberOfFrames); // TODO -> Rewrite adding each segment at a time.
+  seg.setNumberOfFrames(numberOfFrames);
 
   for (var labelmapIndex = 0; labelmapIndex < labelmaps3D.length; labelmapIndex++) {
     var referencedFramesPerSegment = referencedFramesPerLabelmap[labelmapIndex];
@@ -8604,7 +8783,27 @@ function generateSegmentation$1(images, labelmaps3D) {
     }
   }
 
-  seg.bitPackPixelData();
+  if (options.rleEncode) {
+    var rleEncodedFrames = encode(seg.dataset.PixelData, numberOfFrames, image0.rows, image0.columns); // Must use fractional now to RLE encode, as the DICOM standard only allows BitStored && BitsAllocated
+    // to be 1 for BINARY. This is not ideal and there should be a better format for compression in this manner
+    // added to the standard.
+
+    seg.assignToDataset({
+      BitsAllocated: "8",
+      BitsStored: "8",
+      HighBit: "7",
+      SegmentationType: "FRACTIONAL",
+      SegmentationFractionalType: "PROBABILITY",
+      MaximumFractionalValue: "255"
+    });
+    seg.dataset._meta.TransferSyntaxUID = "1.2.840.10008.1.2.5";
+    seg.dataset._vrMap.PixelData = "OB";
+    seg.dataset.PixelData = rleEncodedFrames;
+  } else {
+    // If no rleEncoding, at least bitpack the data.
+    seg.bitPackPixelData();
+  }
+
   var segBlob = datasetToBlob(seg.dataset);
   return segBlob;
 }
@@ -8687,7 +8886,21 @@ function generateToolState$1(imageIds, arrayBuffer, metadataProvider) {
   var sharedImageOrientationPatient = SharedFunctionalGroupsSequence.PlaneOrientationSequence ? SharedFunctionalGroupsSequence.PlaneOrientationSequence.ImageOrientationPatient : undefined;
   var sliceLength = multiframe.Columns * multiframe.Rows;
   var segMetadata = getSegmentMetadata$1(multiframe);
-  var pixelData = unpackPixelData$1(multiframe);
+  var TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
+  var pixelData;
+
+  if (TransferSyntaxUID === "1.2.840.10008.1.2.5") {
+    var rleEncodedFrames = Array.isArray(multiframe.PixelData) ? multiframe.PixelData : [multiframe.PixelData];
+    pixelData = decode(rleEncodedFrames, multiframe.Rows, multiframe.Columns);
+
+    if (multiframe.BitsStored === 1) {
+      console.warn("No implementation for rle + bitbacking.");
+      return;
+    }
+  } else {
+    pixelData = unpackPixelData$1(multiframe);
+  }
+
   var arrayBufferLength = sliceLength * imageIds.length * 2; // 2 bytes per label voxel in cst4.
 
   var labelmapBuffer = new ArrayBuffer(arrayBufferLength);
@@ -13739,5 +13952,4 @@ var normalizers = {
 };
 
 export { data, derivations, normalizers, adapters, utilities, DICOMWEB, sr };
-//# sourceMappingURL=dcmjs.es.js.map
->>>>>>> master
+//# sourceMappingURL=dcmje.es.js.map

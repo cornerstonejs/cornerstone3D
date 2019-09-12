@@ -15,7 +15,8 @@
       <div class="page-header">
         <h1>Create DICOM Segmentation IOD</h1>
         <p>
-          This example demonstrates creation of a DICOM Segmentation object on multiframe source data.
+          This example demonstrates roundtrip RLE encoding/decoding on DICOM Segmentation object.
+          It encodes labelmap 1 into RLE encoded DICOMSEG and decodes/reads it back to labelmap 2. 
         </p>
         <a href="../index.html">Go back to the Examples page</a>
       </div>
@@ -179,18 +180,59 @@
 
         Promise.all(imagePromises)
           .then(images => {
+            const t0 = performance.now();
 
             const segBlob = dcmjs.adapters.Cornerstone.Segmentation.generateSegmentation(
               images,
-              labelmaps3D
+              labelmaps3D[0]
             );
 
-            //Create a URL for the binary.
-            var objectUrl = URL.createObjectURL(segBlob);
-            window.open(objectUrl);
+            const t1 = performance.now();
+
+            console.log(`Read cornerstone + encode rle DICOM SEG: ${t1-t0}`);
+
+            new Response(segBlob).arrayBuffer().then(arrayBuffer => {
+              parseSeg(arrayBuffer);
+            });
           })
           .catch(err => console.log(err));
       }
+
+      // TEMP TEST
+      function parseSeg(arrayBuffer) {
+        const element = document.getElementsByClassName("viewport-element")[0];
+
+        const stackToolState = cornerstoneTools.getToolState(element, "stack");
+        const imageIds = stackToolState.data[0].imageIds;
+
+        const t0 = performance.now();
+
+        const {
+          labelmapBuffer,
+          segMetadata,
+          segmentsOnFrame
+        } = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
+          imageIds,
+          arrayBuffer,
+          cornerstone.metaData
+        );
+
+        const t1 = performance.now();
+
+        const { setters, state } = cornerstoneTools.getModule("segmentation");
+
+        setters.labelmap3DByFirstImageId(
+          imageIds[0],
+          labelmapBuffer,
+          1,
+          segMetadata,
+          imageIds.length,
+          segmentsOnFrame
+        );
+
+        console.log(`Decode rle SEG and load to cornerstone: ${t1-t0}`);
+      }
+      // TEMP TEST
 
       function generateMockMetadata(segmentIndex) {
         // TODO -> Use colors from the cornerstoneTools LUT.

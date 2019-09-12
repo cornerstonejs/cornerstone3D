@@ -73,7 +73,7 @@ class DicomMessage {
             useSyntax = EXPLICIT_LITTLE_ENDIAN;
         stream.reset();
         stream.increment(128);
-        if (stream.readString(4) != "DICM") {
+        if (stream.readString(4) !== "DICM") {
             throw new Error("Invalid a dicom file");
         }
         var el = DicomMessage.readTag(stream, useSyntax),

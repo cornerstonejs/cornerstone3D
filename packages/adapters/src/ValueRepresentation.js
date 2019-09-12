@@ -318,35 +318,23 @@ class BinaryRepresentation extends ValueRepresentation {
                 } else {
                     offsets = [0];
                 }
-                var nextTag = Tag.readTag(stream),
-                    fragmentStream = null,
-                    start = 4,
-                    frameOffset = offsets.shift();
 
-                while (nextTag.is(0xfffee000)) {
-                    if (frameOffset == start) {
-                        frameOffset = offsets.shift();
-                        if (fragmentStream !== null) {
-                            frames.push(fragmentStream.buffer);
-                            fragmentStream = null;
-                        }
-                    }
-                    var frameItemLength = stream.readUint32(),
-                        thisStream = stream.more(frameItemLength);
+                for (let i = 0; i < offsets.length; i++) {
+                    const nextTag = Tag.readTag(stream);
 
-                    if (fragmentStream === null) {
-                        fragmentStream = thisStream;
-                    } else {
-                        fragmentStream.concat(thisStream);
+                    if (!nextTag.is(0xfffee000)) {
+                        break;
                     }
 
-                    nextTag = Tag.readTag(stream);
-                    start += 4 + frameItemLength;
-                }
-                if (fragmentStream !== null) {
+                    const frameItemLength = stream.readUint32();
+                    const fragmentStream = stream.more(frameItemLength);
+
                     frames.push(fragmentStream.buffer);
                 }
 
+                // Read SequenceDelimitationItem Tag
+                stream.readUint32();
+                // Read SequenceDelimitationItem value.
                 stream.readUint32();
             } else {
                 throw new Error(
