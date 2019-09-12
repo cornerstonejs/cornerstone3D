@@ -1,57 +1,52 @@
 # Use the latest 2.1 version of CircleCI pipeline processing engine, see https://circleci.com/docs/2.0/configuration-reference/
 version: 2.1
 
-### ABOUT
-#
-# This configuration powers our Circleci.io integration
-#
-###
-
 defaults: &defaults
   working_directory: ~/repo
+  # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: circleci/node:10.15.1
+    - image: circleci/node:10.15.1-browsers
+      environment:
+        TERM: xterm # Enable colors in term
+        CHROME_BIN: "/usr/bin/google-chrome"
 
 jobs:
-  build_and_test:
+  CHECKOUT:
     <<: *defaults
     steps:
-      # Download and cache dependencies
       - checkout
       - restore_cache:
-          name: Restore Yarn Package Cache
+          name: Restore Package Cache
           keys:
-            # when lock file changes, use increasingly general patterns to restore cache
-            - yarn-packages-v1-{{ .Branch }}-{{ checksum "yarn.lock" }}
-            - yarn-packages-v1-{{ .Branch }}-
-            - yarn-packages-v1-
-      - run:
-          name: Install Dependencies
-          command: yarn install --frozen-lockfile
+            - packages-v1-{{ .Branch }}-{{ checksum "package.json" }}
+            - packages-v1-{{ .Branch }}-
+            - packages-v1-
+      - run: npm ci
       - save_cache:
-          name: Save Yarn Package Cache
+          name: Save Package Cache
           paths:
-            - ~/.cache/yarn
-          key: yarn-packages-v1-{{ .Branch }}-{{ checksum "yarn.lock" }}
-
-      # Build & Test
-      - run: yarn run build:ci
-      - run:
-          name: "JavaScript Test Suite"
-          command: yarn test
-
-      # Store result
-      - store_test_results:
-          path: reports/junit
-      - store_artifacts:
-          path: reports/junit
-
-      # Persist :+1:
+            - ~/repo/node_modules
+          key: packages-v1-{{ .Branch }}-{{ checksum "package.json" }}
       - persist_to_workspace:
           root: ~/repo
           paths: .
 
-  npm_publish:
+  BUILD_AND_TEST:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run: npm run build && npm run test
+      # https://circleci.com/docs/2.0/collect-test-data/#karma
+      # - store_test_results:
+      #     path: reports/junit
+      # - store_artifacts:
+      #     path: reports/junit
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+
+  NPM_PUBLISH:
     <<: *defaults
     steps:
       - attach_workspace:
@@ -68,24 +63,30 @@ jobs:
 workflows:
   version: 2
 
-  # PULL REQUESTS
-  pull_requests:
+  # PULL REQUEST
+  PULL_REQUEST:
     jobs:
-      - build_and_test:
+      - CHECKOUT:
           filters:
             branches:
               ignore:
                 - master
                 - feature/*
                 - hotfix/*
+      - BUILD_AND_TEST:
+          requires:
+            - CHECKOUT
 
   # MERGE TO MASTER
-  cut_release:
+  TEST_AND_RELEASE:
     jobs:
-      - build_and_test:
+      - CHECKOUT:
           filters:
             branches:
               only: master
-      - npm_publish:
+      - BUILD_AND_TEST:
           requires:
-            - build_and_test
+            - CHECKOUT
+      - NPM_PUBLISH:
+          requires:
+            - BUILD_AND_TEST
