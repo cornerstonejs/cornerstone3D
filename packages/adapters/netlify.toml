@@ -10,7 +10,7 @@
   # This is where we will look for package.json/.nvmrc/etc.
   base = ""
   publish = "examples/"
-  command = "npm run help"
+  command = "npm run build:examples"
 
 [build.environment]
   NODE_ENV = "production"
@@ -21,4 +21,4 @@
 [context.deploy-preview]
   base = ""
   publish = "examples/"
-  command = "npm run help"
+  command = "npm run build:examples"
