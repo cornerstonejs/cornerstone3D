@@ -10,7 +10,7 @@
 
 **Note: this code is a work-in-progress and should not be used for production or clinical purposes**
 
-See [live examples here](https://dcmjs-org.github.io/dcmjs/examples/)
+See [live examples here](https://dcmjs.netlify.com/)
 
 ## Goals
 
