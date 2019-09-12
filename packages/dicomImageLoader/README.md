@@ -118,6 +118,8 @@ Copyright 2016 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)
   LINKS
 -->
 
+<!-- prettier-ignore-start -->
+
 [license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: LICENSE
 
@@ -130,3 +132,5 @@ Copyright 2016 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)
 
 [coverage-url]: https://coveralls.io/github/cornerstonejs/cornerstoneWADOImageLoader?branch=master
 [coverage-image]: https://coveralls.io/repos/github/cornerstonejs/cornerstoneWADOImageLoader/badge.svg?branch=master
+
+<!-- prettier-ignore-end -->
