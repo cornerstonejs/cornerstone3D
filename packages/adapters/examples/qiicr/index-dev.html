@@ -1,314 +1,338 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
+    />
 
-  <link href="../css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-      <h1>
-        Display QIICR DICOM Data
-      </h1>
-      <p>
-        This example demonstrates display of DICOM SEG and SR data.
-      </p>
-      <a href="../index.html">Go back to the Examples page</a>
-    </div>
+    <link href="../css/bootstrap.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>
+          Display QIICR DICOM Data
+        </h1>
+        <p>
+          This example demonstrates display of DICOM SEG and SR data.
+        </p>
+        <a href="../index.html">Go back to the Examples page</a>
+      </div>
 
-    <div class="row">
-      <div class='col-xs-4'>
-        <div class="row">
-          <label for='qiicrPatients'>Patients</label>
-          <select id='qiicrPatients'>
-          </select>
+      <div class="row">
+        <div class="col-xs-4">
+          <div class="row">
+            <label for="qiicrPatients">Patients</label>
+            <select id="qiicrPatients"> </select>
+          </div>
+        </div>
+        <div class="col-xs-4">
+          <div class="row">
+            <select id="qiicrSegmentations" disabled="true">
+              <option>Select segmentation</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div class='col-xs-4'>
-        <div class="row">
-          <select id='qiicrSegmentations' disabled='true'>
-          <option>Select segmentation</option>
-          </select>
+
+      <div class="row">
+        <div class="col-xs-4">
+          <p>or drag and drop DICOM files below.</p>
         </div>
       </div>
-    </div>
 
-    <div class="row">
-      <div class="col-xs-4">
-        <p> or drag and drop DICOM files below.</p>
+      <div class="row" id="dropZone" style="border: 1px solid black;">
+        <!-- <input type="file" value="Select dicom" id="select"></input> -->
+        <p id="status">Ready...</p>
+        <button id="datasetPlayStop" class="datasetControl">Play</button>
+        <label for="datasetSlider" class="datasetControl"
+          >Dataset: <span id="datasetOffset">0</span></label
+        >
+        <input
+          id="datasetSlider"
+          class="datasetControl"
+          type="range"
+          min="0"
+          max="0"
+          value="0"
+          steps="1"
+          style="width: 512px"
+        />
+        <h2>DICOM Images</h2>
+        <div id="dicomImages"></div>
+
+        <canvas id="debugImage" width="512" height="512"></canvas>
+        <h2>DICOM Data</h2>
+
+        <div class="col-xs-12">
+          <pre class="pre-scrollable dicomDump" id="dicomData"></pre>
+        </div>
+        <p>
+          Data is displayed in the experimental
+          <a href="https://github.com/dcmjs-org/dcmjs/wiki/NDD-Format">NDD</a>
+          format.
+        </p>
       </div>
     </div>
+  </body>
 
-    <div class="row" id="dropZone" style="border: 1px solid black;">
-      <!-- <input type="file" value="Select dicom" id="select"></input> -->
-      <p id='status'>Ready...</p>
-      <button id='datasetPlayStop' class='datasetControl'>Play</button>
-      <label for="datasetSlider" class='datasetControl'>Dataset: <span id="datasetOffset">0</span></label>
-      <input id="datasetSlider" class='datasetControl' type="range" min="0" max="0" value="0" steps="1" style="width: 512px"/>
-      <h2>DICOM Images</h2>
-      <div id='dicomImages'></div>
+  <!-- polyfills -->
+  <script src="../js/url-search-params.js"></script>
 
-<canvas id='debugImage' width='512' height='512'></canvas>
-      <h2>DICOM Data</h2>
+  <!-- third party -->
+  <script src="https://unpkg.com/jquery@2.2.4/dist/jquery.js"></script>
+  <script src="/js/FileSaver.min.js"></script>
+  <script src="https://unpkg.com/jszip@3.1.3/dist/jszip.min.js"></script>
+  <script src="/js/jqueryFileDrop.js"></script>
 
-      <div class="col-xs-12">
-        <pre class='pre-scrollable dicomDump' id='dicomData'>
-        </pre>
-      </div>
-      <p>Data is displayed in the experimental <a href='https://github.com/dcmjs-org/dcmjs/wiki/NDD-Format'>NDD</a> format.</p>
-    </div>
+  <!-- for viewer -->
+  <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
+  <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
+  <script src="https://unpkg.com/hammerjs@2.0.8/hammer.js"></script>
+  <script src="https://unpkg.com/cornerstone-tools@4.0.5/dist/cornerstoneTools.js"></script>
+  <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
+  <script src="https://unpkg.com/cornerstone-wado-image-loader@3.0.2/dist/cornerstoneWADOImageLoader.min.js"></script>
 
-  </div>
-</body>
+  <!-- our stuff -->
+  <script src="/js/dcmjs.js"></script>
 
+  <script src="/helpers/tcia.js"></script>
+  <script src="/helpers/DICOMZero.js"></script>
+  <script src="/helpers/viewer.js"></script>
 
-<!-- polyfills -->
-<script src="../js/url-search-params.js"></script>
-
-<!-- third party -->
-<script src="../js/jquery.min.js"></script>
-<script src="../js/FileSaver.min.js"></script>
-<script src="../js/jszip.min.js"></script>
-<script src="../js/jqueryFileDrop.js"></script>
-
-<!-- for viewer -->
-<script src="../js/cornerstone.min.js"></script>
-<script src="../js/cornerstoneMath.min.js"></script>
-<script src="../js/hammer.min.js"></script>
-<script src="../js/cornerstoneTools.min.js"></script>
-<script src="../js/dicomParser.min.js"></script>
-<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
-<script src="../js/initWebWorkers.js"></script>
-
-<!-- our stuff -->
-<script src="../../build/dcmjs.js"></script>
-
-<script src="../helpers/tcia.js"></script>
-<script src="../helpers/DICOMZero.js"></script>
-<script src="../helpers/viewer.js"></script>
-
-
-<script>
-  var dc0 = new DICOMZero();
-  var dc0seg = new DICOMZero();
-  var qiicr = {
-    segTable: {}, // fetched as zipped json
-    patients: {   // parsed to list of name,uid objects for each patient seg
-    }
-  }
-  $(document).ready(function() {
-
-    const dropZone = document.getElementById('dropZone');
-
-    $('.datasetControl').attr('disabled', true);
-    $('.dicomDump').css('height', '900px');
-    $('.dicomDump').css('max-height', '900px');
-
-    function resetDICOMzero() {
-      if (dc0.viewer) {
-        dc0.viewer.reset();
-        dc0.viewer.removeElement();
+  <script>
+    var dc0 = new DICOMZero();
+    var dc0seg = new DICOMZero();
+    var qiicr = {
+      segTable: {}, // fetched as zipped json
+      patients: {
+        // parsed to list of name,uid objects for each patient seg
       }
-      dc0.reset();
-      $('#datasetSlider').val(0);
-      $('#datasetSlider').attr('max', 0);
-      $('#dicomData').text('');
-    }
+    };
+    $(document).ready(function() {
+      const dropZone = document.getElementById("dropZone");
 
-    function displayDataset(offset) {
-      $('#dicomData').text(JSON.stringify(dc0.datasets[offset], null, 2));
-    }
+      $(".datasetControl").attr("disabled", true);
+      $(".dicomDump").css("height", "900px");
+      $(".dicomDump").css("max-height", "900px");
 
-    function setOffset(offset) {
-      $('#datasetOffset').text(offset);
-      $('#datasetSlider').val(offset);
-      displayDataset(offset);
-      dc0.viewer.index = offset;
-    }
-
-    function displayDatasets() {
-      status("Done reading...");
-      dc0.datasets.sort(function(a,b) {
-        return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
-      });
-      $('#datasetSlider').attr('max', dc0.datasets.length-1);
-      $('.datasetControl').attr('disabled', false);
-      displayDataset(0);
-
-      var options = {
-        callback: function() {
-          // now add the segmentation
-          dc0.viewer.addSegmentation(dc0seg.datasets[0]);
+      function resetDICOMzero() {
+        if (dc0.viewer) {
+          dc0.viewer.reset();
+          dc0.viewer.removeElement();
         }
+        dc0.reset();
+        $("#datasetSlider").val(0);
+        $("#datasetSlider").attr("max", 0);
+        $("#dicomData").text("");
       }
 
-      dc0.viewer = new Viewer(dc0.datasets);
-      dc0.viewer.display('#dicomImages', options);
-      /*let onNewImage = function (event) {
+      function displayDataset(offset) {
+        $("#dicomData").text(JSON.stringify(dc0.datasets[offset], null, 2));
+      }
+
+      function setOffset(offset) {
+        $("#datasetOffset").text(offset);
+        $("#datasetSlider").val(offset);
+        displayDataset(offset);
+        dc0.viewer.index = offset;
+      }
+
+      function displayDatasets() {
+        status("Done reading...");
+        dc0.datasets.sort(function(a, b) {
+          return Number(a.InstanceNumber) - Number(b.InstanceNumber);
+        });
+        $("#datasetSlider").attr("max", dc0.datasets.length - 1);
+        $(".datasetControl").attr("disabled", false);
+        displayDataset(0);
+
+        var options = {
+          callback: function() {
+            // now add the segmentation
+            dc0.viewer.addSegmentation(dc0seg.datasets[0]);
+          }
+        };
+
+        dc0.viewer = new Viewer(dc0.datasets);
+        dc0.viewer.display("#dicomImages", options);
+        /*let onNewImage = function (event) {
         setOffset(dc0.viewer.index);
       }
       $(dc0.viewer.element).on('CornerstoneNewImage', onNewImage);*/
-    }
-
-    function displaySegmentation() {
-      status("Done reading seg...");
-      status("need to add stack to dc0.viewer...");
-      console.log(dc0seg);
-
-      let imageUID = dc0seg.datasets[0].ReferencedSeriesSequence.SeriesInstanceUID;
-      loadQIICRImages(imageUID);
-    }
-
-    $('#datasetSlider').on('input', function(){
-      var offset = $('#datasetSlider').val();
-      setOffset(offset);
-    });
-
-    function playStep () {
-      var offset = 1 + Number($('#datasetSlider').val());
-      if (offset > dc0.datasets.length-1) {
-        offset = 0;
       }
-      setOffset(offset);
-      if ($('#datasetPlayStop').text() === 'Stop') {
-        window.requestAnimationFrame(playStep);
+
+      function displaySegmentation() {
+        status("Done reading seg...");
+        status("need to add stack to dc0.viewer...");
+        console.log(dc0seg);
+
+        let imageUID =
+          dc0seg.datasets[0].ReferencedSeriesSequence.SeriesInstanceUID;
+        loadQIICRImages(imageUID);
       }
-    }
 
-    $('#datasetPlayStop').on('click', function(){
-      if ($('#datasetPlayStop').text() === 'Stop') {
-        $('#datasetPlayStop').text('Play');
-      } else {
-        $('#datasetPlayStop').text('Stop');
-        window.requestAnimationFrame(playStep);
-      }
-    });
-
-    function status(s) {
-      console.log('status: ', s);
-      $('#status').text(s);
-    }
-
-    function progressStatus(progressEvent) {
-      $('#status').text(`${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
-    }
-
-    resetDICOMzero();
-
-    window.addEventListener('resize', function() {
-      dropZone.width = window.innerWidth;
-      dropZone.height = window.innerHeight;
-    });
-    window.dispatchEvent(new Event('resize'));
-
-    function handleFileDrop(e) {
-      let evt = e.originalEvent;
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      resetDICOMzero();
-      dc0.dataTransfer = {files: []};
-      for (let fileIndex = 0; fileIndex < evt.dataTransfer.files.length; fileIndex++) {
-        dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
-      }
-      status(`Got ${dc0.dataTransfer.files.length} files...`);
-      dc0.readOneFile(displayDatasets, status);
-    }
-    $('#dropZone').bind('drop', handleFileDrop);
-
-    let tcia = new TCIA({progressCallback: progressStatus});
-
-    function loadQIICRSegmentations(patientID) {
-      $('#qiicrSegmentations').attr('disabled', false);
-      $('#qiicrSegmentations option').remove();
-      $('#qiicrSegmentations').append("<option id='segPlaceholder'>Populating..</option>");
-      qiicr.patients[patientID].forEach( segmentation => {
-        let segOption = $('<option></option>')
-          .val(segmentation.seriesInstanceUID)
-          .text(segmentation.seriesDescription);
-        $('#qiicrSegmentations').append(segOption);
+      $("#datasetSlider").on("input", function() {
+        var offset = $("#datasetSlider").val();
+        setOffset(offset);
       });
-      $('#segPlaceholder').text("Select segmentation");
-    }
-    $('#qiicrSegmentations').on('change', event => {
-      loadQIICRSegmentation(event.target.value);
-    });
 
-    function loadQIICRImages(seriesInstanceUID) {
-      resetDICOMzero();
-      console.log('loading ', seriesInstanceUID);
-      tcia.images(seriesInstanceUID).then(arrayBuffer => {
-        dc0.extractFromZipArrayBuffer(arrayBuffer, displayDatasets);
-      });
-    }
-
-    function loadQIICRSegmentation(seriesInstanceUID) {
-      console.log('looking for images from ', seriesInstanceUID);
-      tcia.images(seriesInstanceUID).then(arrayBuffer => {
-        console.log('got arrayBuffer');
-        dc0seg.extractFromZipArrayBuffer(arrayBuffer, displaySegmentation);
-      });
-    }
-
-    //
-    // fetch the pre-defined patient list
-    //
-    let request = new XMLHttpRequest();
-    request.open("GET", "seg.json.zip");
-    request.responseType = 'arraybuffer';
-    request.onload = event => {
-      JSZip.loadAsync(request.response)
-      .then(zip => {
-        zip.file('seg.json').async('string')
-        .then(contents => {
-          qiicr.segTable = JSON.parse(contents);
-          loadQIICRPatients();
-        });
-      });
-    }
-    request.onerror = event => {
-      alert(`Could not load segmentation list: ${request.response}`);
-    }
-    request.send();
-    $('#qiicrPatients').append("<option id='patientsPlaceholder'>Fetching patient list...</option>");
-
-    function loadQIICRPatients() {
-      $('#patientsPlaceholder').text('Select Patient');
-      let qiicrPatients = $('#qiicrPatients');
-      let index = 0;
-      let length = Object.keys(qiicr.segTable.PatientID).length;
-      for (let index = 0; index < length; index++) {
-        let indexString = String(index);
-        let patientID = qiicr.segTable.PatientID[indexString];
-        if (!qiicr.patients[patientID]) {
-          qiicr.patients[patientID] = [];
-          let patientOption = $('<option></option>')
-            .val(patientID)
-            .text(patientID);
-          qiicrPatients.append(patientOption);
+      function playStep() {
+        var offset = 1 + Number($("#datasetSlider").val());
+        if (offset > dc0.datasets.length - 1) {
+          offset = 0;
         }
-        qiicr.patients[patientID].push({
-          seriesDescription: qiicr.segTable.SeriesDescription[indexString],
-          seriesInstanceUID: qiicr.segTable.SeriesInstanceUID[indexString]
+        setOffset(offset);
+        if ($("#datasetPlayStop").text() === "Stop") {
+          window.requestAnimationFrame(playStep);
+        }
+      }
+
+      $("#datasetPlayStop").on("click", function() {
+        if ($("#datasetPlayStop").text() === "Stop") {
+          $("#datasetPlayStop").text("Play");
+        } else {
+          $("#datasetPlayStop").text("Stop");
+          window.requestAnimationFrame(playStep);
+        }
+      });
+
+      function status(s) {
+        console.log("status: ", s);
+        $("#status").text(s);
+      }
+
+      function progressStatus(progressEvent) {
+        $("#status").text(
+          `${(progressEvent.loaded / 1024 / 1024).toFixed(2)} MB so far...`
+        );
+      }
+
+      resetDICOMzero();
+
+      window.addEventListener("resize", function() {
+        dropZone.width = window.innerWidth;
+        dropZone.height = window.innerHeight;
+      });
+      window.dispatchEvent(new Event("resize"));
+
+      function handleFileDrop(e) {
+        let evt = e.originalEvent;
+        evt.stopPropagation();
+        evt.preventDefault();
+
+        resetDICOMzero();
+        dc0.dataTransfer = { files: [] };
+        for (
+          let fileIndex = 0;
+          fileIndex < evt.dataTransfer.files.length;
+          fileIndex++
+        ) {
+          dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
+        }
+        status(`Got ${dc0.dataTransfer.files.length} files...`);
+        dc0.readOneFile(displayDatasets, status);
+      }
+      $("#dropZone").bind("drop", handleFileDrop);
+
+      let tcia = new TCIA({ progressCallback: progressStatus });
+
+      function loadQIICRSegmentations(patientID) {
+        $("#qiicrSegmentations").attr("disabled", false);
+        $("#qiicrSegmentations option").remove();
+        $("#qiicrSegmentations").append(
+          "<option id='segPlaceholder'>Populating..</option>"
+        );
+        qiicr.patients[patientID].forEach(segmentation => {
+          let segOption = $("<option></option>")
+            .val(segmentation.seriesInstanceUID)
+            .text(segmentation.seriesDescription);
+          $("#qiicrSegmentations").append(segOption);
+        });
+        $("#segPlaceholder").text("Select segmentation");
+      }
+      $("#qiicrSegmentations").on("change", event => {
+        loadQIICRSegmentation(event.target.value);
+      });
+
+      function loadQIICRImages(seriesInstanceUID) {
+        resetDICOMzero();
+        console.log("loading ", seriesInstanceUID);
+        tcia.images(seriesInstanceUID).then(arrayBuffer => {
+          dc0.extractFromZipArrayBuffer(arrayBuffer, displayDatasets);
         });
       }
-    }
-    $('#qiicrPatients').on('change', event => {
-      loadQIICRSegmentations(event.target.value);
+
+      function loadQIICRSegmentation(seriesInstanceUID) {
+        console.log("looking for images from ", seriesInstanceUID);
+        tcia.images(seriesInstanceUID).then(arrayBuffer => {
+          console.log("got arrayBuffer");
+          dc0seg.extractFromZipArrayBuffer(arrayBuffer, displaySegmentation);
+        });
+      }
+
+      //
+      // fetch the pre-defined patient list
+      //
+      let request = new XMLHttpRequest();
+      request.open("GET", "seg.json.zip");
+      request.responseType = "arraybuffer";
+      request.onload = event => {
+        JSZip.loadAsync(request.response).then(zip => {
+          zip
+            .file("seg.json")
+            .async("string")
+            .then(contents => {
+              qiicr.segTable = JSON.parse(contents);
+              loadQIICRPatients();
+            });
+        });
+      };
+      request.onerror = event => {
+        alert(`Could not load segmentation list: ${request.response}`);
+      };
+      request.send();
+      $("#qiicrPatients").append(
+        "<option id='patientsPlaceholder'>Fetching patient list...</option>"
+      );
+
+      function loadQIICRPatients() {
+        $("#patientsPlaceholder").text("Select Patient");
+        let qiicrPatients = $("#qiicrPatients");
+        let index = 0;
+        let length = Object.keys(qiicr.segTable.PatientID).length;
+        for (let index = 0; index < length; index++) {
+          let indexString = String(index);
+          let patientID = qiicr.segTable.PatientID[indexString];
+          if (!qiicr.patients[patientID]) {
+            qiicr.patients[patientID] = [];
+            let patientOption = $("<option></option>")
+              .val(patientID)
+              .text(patientID);
+            qiicrPatients.append(patientOption);
+          }
+          qiicr.patients[patientID].push({
+            seriesDescription: qiicr.segTable.SeriesDescription[indexString],
+            seriesInstanceUID: qiicr.segTable.SeriesInstanceUID[indexString]
+          });
+        }
+      }
+      $("#qiicrPatients").on("change", event => {
+        loadQIICRSegmentations(event.target.value);
+      });
+
+      //
+      // handle url parameters
+      //
+      let urlSearchParams = new URLSearchParams(
+        window.location.search.substring(1)
+      );
+      let seriesUID = urlSearchParams.get("seriesUID");
+      if (seriesUID) {
+        loadQIICRSegmentation(seriesUID);
+      }
     });
-
-
-    //
-    // handle url parameters
-    //
-    let urlSearchParams = new URLSearchParams(window.location.search.substring(1));
-    let seriesUID = urlSearchParams.get('seriesUID');
-    if (seriesUID) {
-      loadQIICRSegmentation(seriesUID);
-    }
-
-  });
-</script>
+  </script>
 </html>

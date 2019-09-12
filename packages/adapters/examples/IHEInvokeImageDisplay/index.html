@@ -1,159 +1,179 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
+    />
 
-  <!-- styles for all examples -->
-  <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <!-- styles for all examples -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>
+          DICOMweb Invoked Image Display
+        </h1>
+        <p>
+          This example demonstrates use of invoke image display
+        </p>
+        <a href="../index.html">Go back to the Examples page</a>
+      </div>
 
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-      <h1>
-        DICOMweb Invoked Image Display
-      </h1>
-      <p>
-        This example demonstrates use of invoke image display
-      </p>
-      <a href="../index.html">Go back to the Examples page</a>
-    </div>
-
-    <div class="row" id="mainDisplay" style="border: 1px solid black;">
-      <p id='status'>Ready...</p>
-      <div class='col-md-8'>
-        <h2>DICOM Images</h2>
-        <div id='dicomImages'></div>
+      <div class="row" id="mainDisplay" style="border: 1px solid black;">
+        <p id="status">Ready...</p>
+        <div class="col-md-8">
+          <h2>DICOM Images</h2>
+          <div id="dicomImages"></div>
+        </div>
       </div>
     </div>
+  </body>
 
-  </div>
-</body>
+  <!-- polyfills -->
+  <script src="../js/url-search-params.js"></script>
 
+  <!-- third party -->
+  <script src="https://unpkg.com/jquery@2.2.4/dist/jquery.js"></script>
+  <script src="/js/FileSaver.min.js"></script>
+  <script src="https://unpkg.com/jszip@3.1.3/dist/jszip.min.js"></script>
+  <script src="/js/jqueryFileDrop.js"></script>
 
-<!-- polyfills -->
-<script src="../js/url-search-params.js"></script>
+  <!-- for viewer -->
+  <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
+  <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
+  <script src="https://unpkg.com/hammerjs@2.0.8/hammer.js"></script>
+  <script src="https://unpkg.com/cornerstone-tools@4.0.5/dist/cornerstoneTools.js"></script>
+  <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
+  <script src="https://unpkg.com/cornerstone-wado-image-loader@3.0.2/dist/cornerstoneWADOImageLoader.min.js"></script>
 
-<!-- third party -->
-<script src="../js/jquery.min.js"></script>
-<script src="../js/FileSaver.min.js"></script>
-<script src="../js/jszip.min.js"></script>
-<script src="../js/jqueryFileDrop.js"></script>
+  <!-- our stuff -->
+  <script src="/js/dcmjs.js"></script>
 
-<!-- for viewer -->
-<script src="../js/cornerstone.min.js"></script>
-<script src="../js/cornerstoneMath.min.js"></script>
-<script src="../js/hammer.min.js"></script>
-<script src="../js/cornerstoneTools.min.js"></script>
-<script src="../js/dicomParser.min.js"></script>
-<script src="../js/cornerstoneWADOImageLoader.min.js"></script>
-<script src="../js/initWebWorkers.js"></script>
+  <script src="/helpers/DICOMZero.js"></script>
+  <script src="/helpers/viewer.js"></script>
 
-<!-- our stuff -->
-<script src="../../build/dcmjs.js"></script>
+  <script>
+    function status(statusMessage) {
+      console.log("status: ", statusMessage);
+      $("#status").text(statusMessage);
+    }
 
-<script src="../helpers/DICOMZero.js"></script>
-<script src="../helpers/viewer.js"></script>
+    let dicomweb;
+    let seriesContainers = [];
 
+    $(document).ready(function() {
+      function displayDatasets(seriesContainer) {
+        seriesContainer.datasets.sort(function(a, b) {
+          return Number(a.InstanceNumber) - Number(b.InstanceNumber);
+        });
+        let dataset0 = seriesContainer.datasets[0];
+        let seriesElementID = dataset0.SeriesInstanceUID.replace(/\./g, "_");
+        let seriesDescription = dataset0.SeriesDescription;
+        status(`Displaying ${seriesDescription}...`);
 
-<script>
-  function status(statusMessage) {
-    console.log('status: ', statusMessage);
-    $('#status').text(statusMessage);
-  }
+        let options = {
+          callback: function() {
+            status(`Done reading ${seriesDescription}.`);
+          }
+        };
 
-  let dicomweb;
-  let seriesContainers = [];
+        status(`Setting up viewer for ${seriesDescription}...`);
 
-  $(document).ready(function() {
+        let viewerElement = document.createElement("div");
+        viewerElement.setAttribute("id", seriesElementID);
+        document.querySelector("#dicomImages").appendChild(viewerElement);
 
-    function displayDatasets(seriesContainer) {
-      seriesContainer.datasets.sort(function(a,b) {
-        return (Number(a.InstanceNumber)-Number(b.InstanceNumber));
-      });
-      let dataset0 = seriesContainer.datasets[0];
-      let seriesElementID = dataset0.SeriesInstanceUID.replace(/\./g,'_');
-      let seriesDescription = dataset0.SeriesDescription;
-      status(`Displaying ${seriesDescription}...`);
+        let captionElement = document.createElement("p");
+        captionElement.innerText = seriesDescription;
+        document.querySelector("#dicomImages").appendChild(captionElement);
 
-      let options = {
-        callback: function() {
-          status(`Done reading ${seriesDescription}.`);
-        }
+        seriesContainer.viewer = new Viewer(seriesContainer.datasets);
+        seriesContainer.viewer.display(`#${seriesElementID}`, options);
       }
 
-      status(`Setting up viewer for ${seriesDescription}...`);
+      function downloadProgress(progressEvent) {
+        status(
+          `Downloaded ${(progressEvent.loaded / 1024 / 1024).toFixed(
+            2
+          )} MB so far...`
+        );
+      }
 
-      let viewerElement = document.createElement('div');
-      viewerElement.setAttribute('id', seriesElementID);
-      document.querySelector('#dicomImages').appendChild(viewerElement);
+      //
+      // download and process functions
+      //
 
-      let captionElement = document.createElement('p');
-      captionElement.innerText = seriesDescription;
-      document.querySelector('#dicomImages').appendChild(captionElement);
+      dicomweb = new dcmjs.DICOMWEB({
+        progressCallback: downloadProgress,
+        rootURL: "http://quantome.org:4242/dcm4chee-arc/aets/DCM4CHEE"
+      });
 
-      seriesContainer.viewer = new Viewer(seriesContainer.datasets);
-      seriesContainer.viewer.display(`#${seriesElementID}`, options);
-    }
-
-    function downloadProgress(progressEvent) {
-      status(`Downloaded ${(progressEvent.loaded/1024/1024).toFixed(2)} MB so far...`);
-    }
-
-
-    //
-    // download and process functions
-    //
-
-    dicomweb = new dcmjs.DICOMWEB({
-      progressCallback: downloadProgress,
-      rootURL: 'http://quantome.org:4242/dcm4chee-arc/aets/DCM4CHEE',
-    });
-
-    function loadStudies(studyResponses) {
-      let studyResponse = dcmjs.data.DicomMetaDictionary.namifyDataset(studyResponses[0]);
-      let studyInstanceUID = studyResponse.StudyInstanceUID.Value[0]; 
-      dicomweb.series(studyInstanceUID).then(seriesResponses => {
-        seriesResponses.forEach(seriesResponse => {
-          seriesResponse = dcmjs.data.DicomMetaDictionary.namifyDataset(seriesResponse);
-          let seriesInstanceUID = seriesResponse.SeriesInstanceUID.Value[0];
-          dicomweb.instances(studyInstanceUID, seriesInstanceUID).then(instancesResponses => {
-            let seriesContainer = new DICOMZero();
-            seriesContainers.push(seriesContainer);
-            instancesResponses.forEach(instancesResponse => {
-              let response = dcmjs.data.DicomMetaDictionary.namifyDataset(instancesResponse);
-              let sopInstanceUID = response.SOPInstanceUID.Value[0];
-              dicomweb.instance(studyInstanceUID, seriesInstanceUID, sopInstanceUID).then(arrayBuffer => {
-                let dataset = seriesContainer.datasetFromArrayBuffer(arrayBuffer);
-                seriesContainer.datasets.push(dataset);
-                if (seriesContainer.datasets.length == instancesResponses.length) {
-                  displayDatasets(seriesContainer);
-                }
+      function loadStudies(studyResponses) {
+        let studyResponse = dcmjs.data.DicomMetaDictionary.namifyDataset(
+          studyResponses[0]
+        );
+        let studyInstanceUID = studyResponse.StudyInstanceUID.Value[0];
+        dicomweb.series(studyInstanceUID).then(seriesResponses => {
+          seriesResponses.forEach(seriesResponse => {
+            seriesResponse = dcmjs.data.DicomMetaDictionary.namifyDataset(
+              seriesResponse
+            );
+            let seriesInstanceUID = seriesResponse.SeriesInstanceUID.Value[0];
+            dicomweb
+              .instances(studyInstanceUID, seriesInstanceUID)
+              .then(instancesResponses => {
+                let seriesContainer = new DICOMZero();
+                seriesContainers.push(seriesContainer);
+                instancesResponses.forEach(instancesResponse => {
+                  let response = dcmjs.data.DicomMetaDictionary.namifyDataset(
+                    instancesResponse
+                  );
+                  let sopInstanceUID = response.SOPInstanceUID.Value[0];
+                  dicomweb
+                    .instance(
+                      studyInstanceUID,
+                      seriesInstanceUID,
+                      sopInstanceUID
+                    )
+                    .then(arrayBuffer => {
+                      let dataset = seriesContainer.datasetFromArrayBuffer(
+                        arrayBuffer
+                      );
+                      seriesContainer.datasets.push(dataset);
+                      if (
+                        seriesContainer.datasets.length ==
+                        instancesResponses.length
+                      ) {
+                        displayDatasets(seriesContainer);
+                      }
+                    });
+                });
               });
-            });
           });
         });
-      });
-    }
+      }
 
-    //
-    // handle url parameters
-    //  - use a default if none specified
-    //
-    let searchParams = new URLSearchParams(window.location.search.substring(1));
+      //
+      // handle url parameters
+      //  - use a default if none specified
+      //
+      let searchParams = new URLSearchParams(
+        window.location.search.substring(1)
+      );
 
-    let requestType = searchParams.get('requestType');
-    if (requestType == 'PATIENT') {
-      let patientID = searchParams.get('patientID');
-      status(patientID);
-      dicomweb.studies(patientID).then(loadStudies);
-    } else if (requestType == 'STUDY') {
-      let studyID = searchParams.get('studyUID');
-      status(studyUID);
-      loadStudies([studyUID]);
-    }
-
-  });
-</script>
+      let requestType = searchParams.get("requestType");
+      if (requestType == "PATIENT") {
+        let patientID = searchParams.get("patientID");
+        status(patientID);
+        dicomweb.studies(patientID).then(loadStudies);
+      } else if (requestType == "STUDY") {
+        let studyID = searchParams.get("studyUID");
+        status(studyUID);
+        loadStudies([studyUID]);
+      }
+    });
+  </script>
 </html>
