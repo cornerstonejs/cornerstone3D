@@ -1,0 +1,24 @@
+# Netlify Config
+#
+# TOML Reference:
+# https://www.netlify.com/docs/netlify-toml-reference/
+
+# Settings in the [build] context are global and are applied to all contexts
+# unless otherwise overridden by more specific contexts.
+[build]
+  # Directory to change to before starting a build.
+  # This is where we will look for package.json/.nvmrc/etc.
+  base = ""
+  publish = "examples/"
+  command = "npm run help"
+
+[build.environment]
+  NODE_ENV = "production"
+  NODE_VERSION = "10.16.0"
+
+# Deploy Preview context: all deploys generated from a pull/merge request will
+# inherit these settings.
+[context.deploy-preview]
+  base = ""
+  publish = "examples/"
+  command = "npm run help"
