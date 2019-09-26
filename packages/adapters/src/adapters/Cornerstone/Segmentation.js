@@ -3,14 +3,14 @@ import Segmentation_4X from "./Segmentation_4X";
 
 const Segmentation = {
     generateSegmentation,
-    generateToolState
+    generateToolState,
+    fillSegmentation
 };
 
 export default Segmentation;
 
 /**
- * generateSegmentation - Generates cornerstoneTools brush data, given a stack of
- * imageIds, images and the cornerstoneTools brushData.
+ * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.
  *
  * @param  {object[]} images    An array of the cornerstone image objects.
  * @param  {Object|Object[]} labelmaps3DorBrushData For 4.X: The cornerstone `Labelmap3D` object, or an array of objects.
@@ -79,5 +79,32 @@ function generateToolState(
 
     console.warn(
         `No generateToolState adapater for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+    );
+}
+
+/**
+ * fillSegmentation - Fills a derived segmentation dataset with cornerstoneTools `LabelMap3D` data.
+ *
+ * @param  {object[]} segmentation An empty segmentation derived dataset.
+ * @param  {Object|Object[]} inputLabelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
+ * @param  {Object} userOptions Options object to override default options.
+ * @returns {Blob}           description
+ */
+function fillSegmentation(
+    segmentation,
+    inputLabelmaps3D,
+    options = { includeSliceSpacing: true },
+    cornerstoneToolsVersion = 4
+) {
+    if (cornerstoneToolsVersion === 4) {
+        return Segmentation_4X.fillSegmentation(
+            segmentation,
+            inputLabelmaps3D,
+            options
+        );
+    }
+
+    console.warn(
+        `No generateSegmentation adapater for cornerstone version ${cornerstoneToolsVersion}, exiting.`
     );
 }

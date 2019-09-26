@@ -19,7 +19,8 @@ import {
 
 const Segmentation = {
     generateSegmentation,
-    generateToolState
+    generateToolState,
+    fillSegmentation
 };
 
 export default Segmentation;
@@ -41,11 +42,32 @@ const generateSegmentationDefaultOptions = {
  * generateSegmentation - Generates cornerstoneTools brush data, given a stack of
  * imageIds, images and the cornerstoneTools brushData.
  *
- * @param  {object[]} images    An array of the cornerstone image objects.
- * @param  {Object|Object[]} labelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
- * @returns {type}           description
+ * @param  {object[]} images An array of cornerstone images that contain the source
+ *                           data under `image.data.byteArray.buffer`.
+ * @param  {Object|Object[]} inputLabelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
+ * @param  {Object} userOptions Options to pass to the segmentation derivation and `fillSegmentation`.
+ * @returns {Blob}
  */
 function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
+    const isMultiframe = images[0].imageId.includes("?frame");
+    const segmentation = _createSegFromImages(
+        images,
+        isMultiframe,
+        userOptions
+    );
+
+    return fillSegmentation(segmentation, inputLabelmaps3D, userOptions);
+}
+
+/**
+ * fillSegmentation - Fills a derived segmentation dataset with cornerstoneTools `LabelMap3D` data.
+ *
+ * @param  {object[]} segmentation An empty segmentation derived dataset.
+ * @param  {Object|Object[]} inputLabelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
+ * @param  {Object} userOptions Options object to override default options.
+ * @returns {Blob}           description
+ */
+function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
     const options = Object.assign(
         {},
         generateSegmentationDefaultOptions,
@@ -56,17 +78,6 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
     const labelmaps3D = Array.isArray(inputLabelmaps3D)
         ? inputLabelmaps3D
         : [inputLabelmaps3D];
-
-    // Calculate the dimensions of the data cube.
-    const image0 = images[0];
-
-    const dims = {
-        x: image0.columns,
-        y: image0.rows,
-        z: images.length
-    };
-
-    dims.xy = dims.x * dims.y;
 
     let numberOfFrames = 0;
     const referencedFramesPerLabelmap = [];
@@ -105,10 +116,7 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
         referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
     }
 
-    const isMultiframe = image0.imageId.includes("?frame");
-    const seg = _createSegFromImages(images, isMultiframe, options);
-
-    seg.setNumberOfFrames(numberOfFrames);
+    segmentation.setNumberOfFrames(numberOfFrames);
 
     for (
         let labelmapIndex = 0;
@@ -142,7 +150,7 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
                     referencedFrameIndicies
                 );
 
-                seg.addSegmentFromLabelmap(
+                segmentation.addSegmentFromLabelmap(
                     segmentMetadata,
                     labelmaps,
                     segmentIndex,
@@ -154,16 +162,16 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
 
     if (options.rleEncode) {
         const rleEncodedFrames = encode(
-            seg.dataset.PixelData,
+            segmentation.dataset.PixelData,
             numberOfFrames,
-            image0.rows,
-            image0.columns
+            segmentation.dataset.Rows,
+            segmentation.dataset.Columns
         );
 
         // Must use fractional now to RLE encode, as the DICOM standard only allows BitStored && BitsAllocated
         // to be 1 for BINARY. This is not ideal and there should be a better format for compression in this manner
         // added to the standard.
-        seg.assignToDataset({
+        segmentation.assignToDataset({
             BitsAllocated: "8",
             BitsStored: "8",
             HighBit: "7",
@@ -172,15 +180,18 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
             MaximumFractionalValue: "255"
         });
 
-        seg.dataset._meta.TransferSyntaxUID = "1.2.840.10008.1.2.5";
-        seg.dataset._vrMap.PixelData = "OB";
-        seg.dataset.PixelData = rleEncodedFrames;
+        segmentation.dataset._meta.TransferSyntaxUID = {
+            Value: ["1.2.840.10008.1.2.5"],
+            vr: "UI"
+        };
+        segmentation.dataset._vrMap.PixelData = "OB";
+        segmentation.dataset.PixelData = rleEncodedFrames;
     } else {
         // If no rleEncoding, at least bitpack the data.
-        seg.bitPackPixelData();
+        segmentation.bitPackPixelData();
     }
 
-    const segBlob = datasetToBlob(seg.dataset);
+    const segBlob = datasetToBlob(segmentation.dataset);
 
     return segBlob;
 }
