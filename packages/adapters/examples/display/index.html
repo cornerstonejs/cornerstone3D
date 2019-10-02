@@ -1,230 +1,239 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
-    />
-
-    <link href="../css/bootstrap.min.css" rel="stylesheet" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="page-header">
-        <h1>
-          Display DICOM Data
-        </h1>
-        <p>
-          This example demonstrates using dcmjs to reveal the inner structure of
-          DICOM data.
-        </p>
-        <a href="../index.html">Go back to the Examples page</a>
-      </div>
-      <div class="row">
-        <button id="randomImages">Download random TCIA series</button>
-        <p>or drag and drop DICOM files below.</p>
-      </div>
-
-      <div class="row" id="dropZone" style="border: 1px solid black;">
-        <!-- <input type="file" value="Select dicom" id="select"></input> -->
-        <p id="status">Ready...</p>
-        <button id="datasetPlayStop" class="datasetControl">Play</button>
-        <label for="datasetSlider" class="datasetControl"
-          >Dataset: <span id="datasetOffset">0</span></label
-        >
-        <input
-          id="datasetSlider"
-          class="datasetControl"
-          type="range"
-          min="0"
-          max="0"
-          value="0"
-          steps="1"
-          style="width: 512px"
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
         />
-        <h2>DICOM Images</h2>
-        <div id="dicomImages"></div>
 
-        <h2>DICOM Data</h2>
+        <link href="../css/bootstrap.min.css" rel="stylesheet" />
+    </head>
+    <body>
+        <div class="container">
+            <div class="page-header">
+                <h1>
+                    Display DICOM Data
+                </h1>
+                <p>
+                    This example demonstrates using dcmjs to reveal the inner
+                    structure of DICOM data.
+                </p>
+                <a href="../index.html">Go back to the Examples page</a>
+            </div>
+            <div class="row">
+                <button id="randomImages">Download random TCIA series</button>
+                <p>or drag and drop DICOM files below.</p>
+            </div>
 
-        <div class="col-xs-12">
-          <pre class="pre-scrollable dicomDump" id="dicomData"></pre>
+            <div class="row" id="dropZone" style="border: 1px solid black;">
+                <!-- <input type="file" value="Select dicom" id="select"></input> -->
+                <p id="status">Ready...</p>
+                <button id="datasetPlayStop" class="datasetControl">
+                    Play
+                </button>
+                <label for="datasetSlider" class="datasetControl"
+                    >Dataset: <span id="datasetOffset">0</span></label
+                >
+                <input
+                    id="datasetSlider"
+                    class="datasetControl"
+                    type="range"
+                    min="0"
+                    max="0"
+                    value="0"
+                    steps="1"
+                    style="width: 512px"
+                />
+                <h2>DICOM Images</h2>
+                <div id="dicomImages"></div>
+
+                <h2>DICOM Data</h2>
+
+                <div class="col-xs-12">
+                    <pre class="pre-scrollable dicomDump" id="dicomData"></pre>
+                </div>
+                <p>
+                    Data is displayed in the experimental
+                    <a href="https://github.com/dcmjs-org/dcmjs/wiki/NDD-Format"
+                        >NDD</a
+                    >
+                    format.
+                </p>
+            </div>
         </div>
-        <p>
-          Data is displayed in the experimental
-          <a href="https://github.com/dcmjs-org/dcmjs/wiki/NDD-Format">NDD</a>
-          format.
-        </p>
-      </div>
-    </div>
-  </body>
+    </body>
 
-  <script src="https://unpkg.com/jquery@2.2.4/dist/jquery.js"></script>
-  <script src="/js/FileSaver.min.js"></script>
-  <script src="https://unpkg.com/jszip@3.1.3/dist/jszip.min.js"></script>
-  <script src="/js/jqueryFileDrop.js"></script>
+    <!-- for viewer -->
+    <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
+    <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
+    <script src="https://unpkg.com/hammerjs@2.0.8/hammer.js"></script>
+    <script src="https://unpkg.com/cornerstone-tools@4.0.5/dist/cornerstoneTools.js"></script>
+    <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
+    <script src="https://unpkg.com/cornerstone-wado-image-loader@3.0.2/dist/cornerstoneWADOImageLoader.min.js"></script>
 
-  <!-- for viewer -->
-  <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
-  <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
-  <script src="https://unpkg.com/hammerjs@2.0.8/hammer.js"></script>
-  <script src="https://unpkg.com/cornerstone-tools@4.0.5/dist/cornerstoneTools.js"></script>
-  <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
-  <script src="https://unpkg.com/cornerstone-wado-image-loader@3.0.2/dist/cornerstoneWADOImageLoader.min.js"></script>
+    <script src="/helpers/tcia.js"></script>
+    <script src="/helpers/viewer.js"></script>
 
-  <script src="/helpers/tcia.js"></script>
-  <script src="/helpers/viewer.js"></script>
+    <script src="/js/dcmjs.js"></script>
 
-  <script src="/js/dcmjs.js"></script>
+    <script src="/helpers/DICOMZero.js"></script>
 
-  <script src="/helpers/DICOMZero.js"></script>
+    <script>
+        var dc0 = new DICOMZero();
+        $(document).ready(function() {
+            const dropZone = document.getElementById("dropZone");
 
-  <script>
-    var dc0 = new DICOMZero();
-    $(document).ready(function() {
-      const dropZone = document.getElementById("dropZone");
+            $(".datasetControl").attr("disabled", true);
+            $(".dicomDump").css("height", "900px");
+            $(".dicomDump").css("max-height", "900px");
 
-      $(".datasetControl").attr("disabled", true);
-      $(".dicomDump").css("height", "900px");
-      $(".dicomDump").css("max-height", "900px");
+            function resetDICOMzero() {
+                if (dc0.viewer) {
+                    dc0.viewer.reset();
+                    dc0.viewer.removeElement();
+                }
+                dc0.reset();
+                $("#datasetSlider").val(0);
+                $("#datasetSlider").attr("max", 0);
+                $("#dicomData").text("");
+            }
 
-      function resetDICOMzero() {
-        if (dc0.viewer) {
-          dc0.viewer.reset();
-          dc0.viewer.removeElement();
-        }
-        dc0.reset();
-        $("#datasetSlider").val(0);
-        $("#datasetSlider").attr("max", 0);
-        $("#dicomData").text("");
-      }
+            function displayDataset(offset) {
+                $("#dicomData").text(
+                    JSON.stringify(dc0.datasets[offset], null, 2)
+                );
+            }
 
-      function displayDataset(offset) {
-        $("#dicomData").text(JSON.stringify(dc0.datasets[offset], null, 2));
-      }
+            function setOffset(offset) {
+                $("#datasetOffset").text(offset);
+                $("#datasetSlider").val(offset);
+                displayDataset(offset);
+                dc0.viewer.index = offset;
+            }
 
-      function setOffset(offset) {
-        $("#datasetOffset").text(offset);
-        $("#datasetSlider").val(offset);
-        displayDataset(offset);
-        dc0.viewer.index = offset;
-      }
+            function displayDatasets() {
+                status("Done reading...");
+                dc0.datasets.sort(function(a, b) {
+                    return Number(a.InstanceNumber) - Number(b.InstanceNumber);
+                });
+                $("#datasetSlider").attr("max", dc0.datasets.length - 1);
+                $(".datasetControl").attr("disabled", false);
+                displayDataset(0);
+                dc0.viewer = new Viewer(dc0.datasets);
+                dc0.viewer.display("#dicomImages");
+                let onNewImage = function(event) {
+                    setOffset(dc0.viewer.index);
+                };
+                $(dc0.viewer.element).on("CornerstoneNewImage", onNewImage);
+            }
 
-      function displayDatasets() {
-        status("Done reading...");
-        dc0.datasets.sort(function(a, b) {
-          return Number(a.InstanceNumber) - Number(b.InstanceNumber);
-        });
-        $("#datasetSlider").attr("max", dc0.datasets.length - 1);
-        $(".datasetControl").attr("disabled", false);
-        displayDataset(0);
-        dc0.viewer = new Viewer(dc0.datasets);
-        dc0.viewer.display("#dicomImages");
-        let onNewImage = function(event) {
-          setOffset(dc0.viewer.index);
-        };
-        $(dc0.viewer.element).on("CornerstoneNewImage", onNewImage);
-      }
+            $("#datasetSlider").on("input", function() {
+                var offset = $("#datasetSlider").val();
+                setOffset(offset);
+            });
 
-      $("#datasetSlider").on("input", function() {
-        var offset = $("#datasetSlider").val();
-        setOffset(offset);
-      });
+            function playStep() {
+                var offset = 1 + Number($("#datasetSlider").val());
+                if (offset > dc0.datasets.length - 1) {
+                    offset = 0;
+                }
+                setOffset(offset);
+                if ($("#datasetPlayStop").text() === "Stop") {
+                    window.requestAnimationFrame(playStep);
+                }
+            }
 
-      function playStep() {
-        var offset = 1 + Number($("#datasetSlider").val());
-        if (offset > dc0.datasets.length - 1) {
-          offset = 0;
-        }
-        setOffset(offset);
-        if ($("#datasetPlayStop").text() === "Stop") {
-          window.requestAnimationFrame(playStep);
-        }
-      }
+            $("#datasetPlayStop").on("click", function() {
+                if ($("#datasetPlayStop").text() === "Stop") {
+                    $("#datasetPlayStop").text("Play");
+                } else {
+                    $("#datasetPlayStop").text("Stop");
+                    window.requestAnimationFrame(playStep);
+                }
+            });
 
-      $("#datasetPlayStop").on("click", function() {
-        if ($("#datasetPlayStop").text() === "Stop") {
-          $("#datasetPlayStop").text("Play");
-        } else {
-          $("#datasetPlayStop").text("Stop");
-          window.requestAnimationFrame(playStep);
-        }
-      });
+            function status(s) {
+                console.log("status: ", s);
+                $("#status").text(s);
+            }
 
-      function status(s) {
-        console.log("status: ", s);
-        $("#status").text(s);
-      }
+            function progressStatus(progressEvent) {
+                $("#status").text(
+                    `${(progressEvent.loaded / 1024 / 1024).toFixed(
+                        2
+                    )} MB so far...`
+                );
+            }
 
-      function progressStatus(progressEvent) {
-        $("#status").text(
-          `${(progressEvent.loaded / 1024 / 1024).toFixed(2)} MB so far...`
-        );
-      }
+            resetDICOMzero();
 
-      resetDICOMzero();
+            window.addEventListener("resize", function() {
+                dropZone.width = window.innerWidth;
+                dropZone.height = window.innerHeight;
+            });
+            window.dispatchEvent(new Event("resize"));
 
-      window.addEventListener("resize", function() {
-        dropZone.width = window.innerWidth;
-        dropZone.height = window.innerHeight;
-      });
-      window.dispatchEvent(new Event("resize"));
+            function handleFileDrop(e) {
+                let evt = e.originalEvent;
+                evt.stopPropagation();
+                evt.preventDefault();
 
-      function handleFileDrop(e) {
-        let evt = e.originalEvent;
-        evt.stopPropagation();
-        evt.preventDefault();
+                resetDICOMzero();
+                dc0.dataTransfer = { files: [] };
+                for (
+                    let fileIndex = 0;
+                    fileIndex < evt.dataTransfer.files.length;
+                    fileIndex++
+                ) {
+                    dc0.dataTransfer.files[fileIndex] =
+                        evt.dataTransfer.files[fileIndex];
+                }
+                status(`Got ${dc0.dataTransfer.files.length} files...`);
+                dc0.readOneFile(displayDatasets, status);
+            }
+            $("#dropZone").bind("drop", handleFileDrop);
 
-        resetDICOMzero();
-        dc0.dataTransfer = { files: [] };
-        for (
-          let fileIndex = 0;
-          fileIndex < evt.dataTransfer.files.length;
-          fileIndex++
-        ) {
-          dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
-        }
-        status(`Got ${dc0.dataTransfer.files.length} files...`);
-        dc0.readOneFile(displayDatasets, status);
-      }
-      $("#dropZone").bind("drop", handleFileDrop);
-
-      function handleZipArrayBuffer(arrayBuffer) {
-        JSZip.loadAsync(arrayBuffer).then(function(zip) {
-          dc0.zip = zip;
-          let expectedDICOMFileCount = 0;
-          Object.keys(zip.files).forEach(fileKey => {
-            if (fileKey.endsWith(".dcm")) {
-              expectedDICOMFileCount += 1;
-              zip.files[fileKey]
-                .async("arraybuffer")
-                .then(function(arrayBuffer) {
-                  dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-                  dc0.unnaturalDatasets.push(dicomData.dict);
-                  let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
-                    dicomData.dict
-                  );
-                  dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
-                    dicomData.meta
-                  );
-                  dc0.datasets.push(dataset);
-                  if (dc0.datasets.length == expectedDICOMFileCount) {
-                    displayDatasets();
-                  }
+            function handleZipArrayBuffer(arrayBuffer) {
+                JSZip.loadAsync(arrayBuffer).then(function(zip) {
+                    dc0.zip = zip;
+                    let expectedDICOMFileCount = 0;
+                    Object.keys(zip.files).forEach(fileKey => {
+                        if (fileKey.endsWith(".dcm")) {
+                            expectedDICOMFileCount += 1;
+                            zip.files[fileKey]
+                                .async("arraybuffer")
+                                .then(function(arrayBuffer) {
+                                    dicomData = dcmjs.data.DicomMessage.readFile(
+                                        arrayBuffer
+                                    );
+                                    dc0.unnaturalDatasets.push(dicomData.dict);
+                                    let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+                                        dicomData.dict
+                                    );
+                                    dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
+                                        dicomData.meta
+                                    );
+                                    dc0.datasets.push(dataset);
+                                    if (
+                                        dc0.datasets.length ==
+                                        expectedDICOMFileCount
+                                    ) {
+                                        displayDatasets();
+                                    }
+                                });
+                        }
+                    });
                 });
             }
-          });
+
+            function loadRandomTCIASeries() {
+                resetDICOMzero();
+                let tcia = new TCIA({ progressCallback: progressStatus });
+                tcia.randomImages(status).then(handleZipArrayBuffer);
+            }
+
+            $("#randomImages").on("click", loadRandomTCIASeries);
         });
-      }
-
-      function loadRandomTCIASeries() {
-        resetDICOMzero();
-        let tcia = new TCIA({ progressCallback: progressStatus });
-        tcia.randomImages(status).then(handleZipArrayBuffer);
-      }
-
-      $("#randomImages").on("click", loadRandomTCIASeries);
-    });
-  </script>
+    </script>
 </html>

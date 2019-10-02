@@ -108,7 +108,7 @@ export default class MeasurementReport {
         });
 
         const MeasurementReport = new TID1500MeasurementReport(
-            allMeasurementGroups,
+            { TID1501MeasurementGroups: allMeasurementGroups },
             options
         );
 

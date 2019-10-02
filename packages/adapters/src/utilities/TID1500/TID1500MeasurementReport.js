@@ -1,42 +1,25 @@
 export default class TID1500MeasurementReport {
-    constructor(TID1501MeasurementGroups) {
-        this.TID1501MeasurementGroups = TID1501MeasurementGroups;
-    }
+    constructor(TIDIncludeGroups) {
+        this.TIDIncludeGroups = TIDIncludeGroups;
 
-    validate() {}
+        const ImageLibraryContentSequence = [];
+        const CurrentRequestedProcedureEvidenceSequence = [];
 
-    contentItem(derivationSourceDataset, options = {}) {
-        // Add the Measurement Groups to the Measurement Report
-        let ContentSequence = [];
-        this.TID1501MeasurementGroups.forEach(child => {
-            ContentSequence = ContentSequence.concat(child.contentItem());
-        });
+        this.ImageLibraryContentSequence = ImageLibraryContentSequence;
+        this.CurrentRequestedProcedureEvidenceSequence = CurrentRequestedProcedureEvidenceSequence;
 
-        // For each measurement that is referenced, add a link to the
-        // Image Library Group and the Current Requested Procedure Evidence
-        // with the proper ReferencedSOPSequence
-        let ImageLibraryContentSequence = [];
-        let CurrentRequestedProcedureEvidenceSequence = [];
-        this.TID1501MeasurementGroups.forEach(measurementGroup => {
-            measurementGroup.TID300Measurements.forEach(measurement => {
-                ImageLibraryContentSequence.push({
-                    RelationshipType: "CONTAINS",
-                    ValueType: "IMAGE",
-                    ReferencedSOPSequence: measurement.ReferencedSOPSequence
-                });
+        this.PersonObserverName = {
+            RelationshipType: "HAS OBS CONTEXT",
+            ValueType: "PNAME",
+            ConceptNameCodeSequence: {
+                CodeValue: "121008",
+                CodingSchemeDesignator: "DCM",
+                CodeMeaning: "Person Observer Name"
+            },
+            PersonName: "unknown^unknown"
+        };
 
-                CurrentRequestedProcedureEvidenceSequence.push({
-                    StudyInstanceUID: derivationSourceDataset.StudyInstanceUID,
-                    ReferencedSeriesSequence: {
-                        SeriesInstanceUID:
-                            derivationSourceDataset.SeriesInstanceUID,
-                        ReferencedSOPSequence: measurement.ReferencedSOPSequence
-                    }
-                });
-            });
-        });
-
-        return {
+        this.tid1500 = {
             ConceptNameCodeSequence: {
                 CodeValue: "126000",
                 CodingSchemeDesignator: "DCM",
@@ -89,16 +72,7 @@ export default class TID1500MeasurementReport {
                         }
                     }
                 },
-                {
-                    RelationshipType: "HAS OBS CONTEXT",
-                    ValueType: "PNAME",
-                    ConceptNameCodeSequence: {
-                        CodeValue: "121008",
-                        CodingSchemeDesignator: "DCM",
-                        CodeMeaning: "Person Observer Name"
-                    },
-                    PersonName: options.PersonName || "unknown^unknown"
-                },
+                this.PersonObserverName,
                 {
                     RelationshipType: "HAS CONCEPT MOD",
                     ValueType: "CODE",
@@ -133,29 +107,86 @@ export default class TID1500MeasurementReport {
                         ContinuityOfContent: "SEPARATE",
                         ContentSequence: ImageLibraryContentSequence
                     }
-                },
-                {
-                    RelationshipType: "CONTAINS",
-                    ValueType: "CONTAINER",
-                    ConceptNameCodeSequence: {
-                        CodeValue: "126010",
-                        CodingSchemeDesignator: "DCM",
-                        CodeMeaning: "Imaging Measurements" // TODO: would be nice to abstract the code sequences (in a dictionary? a service?)
-                    },
-                    ContinuityOfContent: "SEPARATE",
-                    ContentSequence: {
-                        RelationshipType: "CONTAINS",
-                        ValueType: "CONTAINER",
-                        ConceptNameCodeSequence: {
-                            CodeValue: "125007",
-                            CodingSchemeDesignator: "DCM",
-                            CodeMeaning: "Measurement Group"
-                        },
-                        ContinuityOfContent: "SEPARATE",
-                        ContentSequence
-                    }
                 }
             ]
         };
+    }
+
+    validate() {}
+
+    contentItem(derivationSourceDataset, options = {}) {
+        if (options.PersonName) {
+            this.PersonObserverName.PersonName = options.PersonName;
+        }
+
+        // Add the Measurement Groups to the Measurement Report
+        this.addTID1501MeasurementGroups(derivationSourceDataset, options);
+
+        this.tid1500;
+    }
+
+    addTID1501MeasurementGroups(derivationSourceDataset, options) {
+        const {
+            CurrentRequestedProcedureEvidenceSequence,
+            ImageLibraryContentSequence
+        } = this;
+
+        const { TID1501MeasurementGroups } = this.TIDIncludeGroups;
+
+        if (!TID1501MeasurementGroups) {
+            return;
+        }
+
+        let ContentSequence = [];
+
+        TID1501MeasurementGroups.forEach(child => {
+            ContentSequence = ContentSequence.concat(child.contentItem());
+        });
+
+        // For each measurement that is referenced, add a link to the
+        // Image Library Group and the Current Requested Procedure Evidence
+        // with the proper ReferencedSOPSequence
+        TID1501MeasurementGroups.forEach(measurementGroup => {
+            measurementGroup.TID300Measurements.forEach(measurement => {
+                ImageLibraryContentSequence.push({
+                    RelationshipType: "CONTAINS",
+                    ValueType: "IMAGE",
+                    ReferencedSOPSequence: measurement.ReferencedSOPSequence
+                });
+
+                CurrentRequestedProcedureEvidenceSequence.push({
+                    StudyInstanceUID: derivationSourceDataset.StudyInstanceUID,
+                    ReferencedSeriesSequence: {
+                        SeriesInstanceUID:
+                            derivationSourceDataset.SeriesInstanceUID,
+                        ReferencedSOPSequence: measurement.ReferencedSOPSequence
+                    }
+                });
+            });
+        });
+
+        const ImagingMeasurments = {
+            RelationshipType: "CONTAINS",
+            ValueType: "CONTAINER",
+            ConceptNameCodeSequence: {
+                CodeValue: "126010",
+                CodingSchemeDesignator: "DCM",
+                CodeMeaning: "Imaging Measurements" // TODO: would be nice to abstract the code sequences (in a dictionary? a service?)
+            },
+            ContinuityOfContent: "SEPARATE",
+            ContentSequence: {
+                RelationshipType: "CONTAINS",
+                ValueType: "CONTAINER",
+                ConceptNameCodeSequence: {
+                    CodeValue: "125007",
+                    CodingSchemeDesignator: "DCM",
+                    CodeMeaning: "Measurement Group"
+                },
+                ContinuityOfContent: "SEPARATE",
+                ContentSequence
+            }
+        };
+
+        this.tid1500.ContentSequence.push(ImagingMeasurments);
     }
 }

@@ -1,208 +1,216 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
-    />
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
+        />
 
-    <link href="../css/bootstrap.min.css" rel="stylesheet" />
-    <link href="../css/cornerstone.min.css" rel="stylesheet" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="page-header">
-        <h1>Display DICOM Segmentation IOD</h1>
-        <p>
-          This example demonstrates how to display a DICOM Segmentation object.
-        </p>
-        <a href="../index.html">Go back to the Examples page</a>
-      </div>
+        <link href="../css/bootstrap.min.css" rel="stylesheet" />
+        <link href="../css/cornerstone.min.css" rel="stylesheet" />
+    </head>
+    <body>
+        <div class="container">
+            <div class="page-header">
+                <h1>Display DICOM Segmentation IOD</h1>
+                <p>
+                    This example demonstrates how to display a DICOM
+                    Segmentation object.
+                </p>
+                <a href="../index.html">Go back to the Examples page</a>
+            </div>
 
-      <div class="row">
-        <button id="sampleData" disabled onclick="getAndLoadSeg()">
-          Loading... Demo must wait until entire stack is available.
-        </button>
-        <p id="statusLine"></p>
-        <div class="col-xs-9">
-          <div
-            style="width:512px;height:512px;position:relative;display:inline-block;"
-            oncontextmenu="return false"
-            class="cornerstone-enabled-image"
-            unselectable="on"
-            onselectstart="return false;"
-            onmousedown="return false;"
-          >
-            <!-- TODO => Replace this with react cornerstone viewport -->
-            <div
-              id="cornerstoneViewport"
-              style="width:512px;height:512px;top:0px;left:0px; position:absolute;"
-            ></div>
-          </div>
-          <p>
-            Sample data is from the dicom4qi connectathon event to be held at
-            RSNA 2017. This is
-            <a
-              href="https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2"
-              >test dataset #2</a
-            >
-          </p>
+            <div class="row">
+                <button id="sampleData" disabled onclick="getAndLoadSeg()">
+                    Loading... Demo must wait until entire stack is available.
+                </button>
+                <p id="statusLine"></p>
+                <div class="col-xs-9">
+                    <div
+                        style="width:512px;height:512px;position:relative;display:inline-block;"
+                        oncontextmenu="return false"
+                        class="cornerstone-enabled-image"
+                        unselectable="on"
+                        onselectstart="return false;"
+                        onmousedown="return false;"
+                    >
+                        <!-- TODO => Replace this with react cornerstone viewport -->
+                        <div
+                            id="cornerstoneViewport"
+                            style="width:512px;height:512px;top:0px;left:0px; position:absolute;"
+                        ></div>
+                    </div>
+                    <p>
+                        Sample data is from the dicom4qi connectathon event to
+                        be held at RSNA 2017. This is
+                        <a
+                            href="https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2"
+                            >test dataset #2</a
+                        >
+                    </p>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <script src="https://unpkg.com/jquery@2.2.4/dist/jquery.js"></script>
-    <script src="/js/jqueryFileDrop.js"></script>
+        <script src="https://unpkg.com/cornerstone-core@2.2.8/dist/cornerstone.js"></script>
+        <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
+        <script src="https://unpkg.com/cornerstone-tools@4.0.0-beta6/dist/cornerstoneTools.js"></script>
 
-    <script src="https://unpkg.com/cornerstone-core@2.2.8/dist/cornerstone.js"></script>
-    <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
-    <script src="https://unpkg.com/cornerstone-tools@4.0.0-beta6/dist/cornerstoneTools.js"></script>
+        <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
+        <script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js"></script>
+        <script src="https://unpkg.com/hammerjs/hammer.min.js"></script>
 
-    <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
-    <script src="https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js"></script>
-    <script src="https://unpkg.com/hammerjs/hammer.min.js"></script>
+        <script src="/js/initCornerstone.js"></script>
 
-    <script src="../js/initCornerstone.js"></script>
+        <script src="/js/dcmjs.js"></script>
 
-    <script src="/js/dcmjs.js"></script>
+        <script
+            src="https://unpkg.com/react@16/umd/react.development.js"
+            crossorigin
+        ></script>
+        <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
 
-    <script
-      src="https://unpkg.com/react@16/umd/react.development.js"
-      crossorigin
-    ></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+        <script>
+            "use strict";
 
-    <script>
-      "use strict";
+            var process = {
+                env: {
+                    NODE_ENV: "production"
+                }
+            };
 
-      var process = {
-        env: {
-          NODE_ENV: "production"
-        }
-      };
+            window.process = process;
+        </script>
 
-      window.process = process;
-    </script>
+        <script src="https://unpkg.com/react-cornerstone-viewport@0.1.23/dist/index.umd.js"></script>
 
-    <script src="https://unpkg.com/react-cornerstone-viewport@0.1.23/dist/index.umd.js"></script>
+        <script>
+            let metaData = {};
 
-    <script>
-      let metaData = {};
+            function getAndLoadSeg() {
+                var segURL =
+                    "https://s3.amazonaws.com/IsomicsPublic/SampleData/QIN-H%2BN-0139/1-105-SEG.dcm";
 
-      function getAndLoadSeg() {
-        var segURL =
-          "https://s3.amazonaws.com/IsomicsPublic/SampleData/QIN-H%2BN-0139/1-105-SEG.dcm";
+                const xhr = new XMLHttpRequest();
 
-        const xhr = new XMLHttpRequest();
+                xhr.addEventListener("load", () => {
+                    parseSeg(xhr.response);
+                });
 
-        xhr.addEventListener("load", () => {
-          parseSeg(xhr.response);
-        });
+                xhr.addEventListener("error", () => {
+                    console.log(`Request returned, status: ${xhr.status}`);
+                    console.log(xhr.message);
+                });
 
-        xhr.addEventListener("error", () => {
-          console.log(`Request returned, status: ${xhr.status}`);
-          console.log(xhr.message);
-        });
+                xhr.open("GET", segURL);
+                xhr.responseType = "arraybuffer"; //Type of file
 
-        xhr.open("GET", segURL);
-        xhr.responseType = "arraybuffer"; //Type of file
+                xhr.send();
+            }
 
-        xhr.send();
-      }
+            function parseSeg(arrayBuffer) {
+                const element = document.getElementsByClassName(
+                    "viewport-element"
+                )[0];
 
-      function parseSeg(arrayBuffer) {
-        const element = document.getElementsByClassName("viewport-element")[0];
+                const stackToolState = cornerstoneTools.getToolState(
+                    element,
+                    "stack"
+                );
+                const imageIds = stackToolState.data[0].imageIds;
 
-        const stackToolState = cornerstoneTools.getToolState(element, "stack");
-        const imageIds = stackToolState.data[0].imageIds;
+                const t0 = performance.now();
 
-        const t0 = performance.now();
+                const {
+                    labelmapBuffer,
+                    segMetadata,
+                    segmentsOnFrame
+                } = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
+                    imageIds,
+                    arrayBuffer,
+                    cornerstone.metaData
+                );
 
-        const {
-          labelmapBuffer,
-          segMetadata,
-          segmentsOnFrame
-        } = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
-          imageIds,
-          arrayBuffer,
-          cornerstone.metaData
-        );
+                const t1 = performance.now();
 
-        const t1 = performance.now();
+                const { setters, state } = cornerstoneTools.getModule(
+                    "segmentation"
+                );
 
-        const { setters, state } = cornerstoneTools.getModule("segmentation");
+                setters.labelmap3DByFirstImageId(
+                    imageIds[0],
+                    labelmapBuffer,
+                    0,
+                    segMetadata,
+                    imageIds.length,
+                    segmentsOnFrame
+                );
+            }
 
-        setters.labelmap3DByFirstImageId(
-          imageIds[0],
-          labelmapBuffer,
-          0,
-          segMetadata,
-          imageIds.length,
-          segmentsOnFrame
-        );
-      }
+            function metaDataProvider(type, imageId) {
+                if (!metaData[imageId]) {
+                    return;
+                }
 
-      function metaDataProvider(type, imageId) {
-        if (!metaData[imageId]) {
-          return;
-        }
+                return metaData[imageId][type];
+            }
 
-        return metaData[imageId][type];
-      }
+            cornerstone.metaData.addProvider(metaDataProvider);
 
-      cornerstone.metaData.addProvider(metaDataProvider);
+            function addMetaData(type, imageId, data) {
+                metaData[imageId] = metaData[imageId] || {};
+                metaData[imageId][type] = data;
+            }
+        </script>
 
-      function addMetaData(type, imageId, data) {
-        metaData[imageId] = metaData[imageId] || {};
-        metaData[imageId][type] = data;
-      }
-    </script>
+        <script>
+            "use strict";
 
-    <script>
-      "use strict";
+            var baseURL =
+                "https://s3.amazonaws.com/IsomicsPublic/SampleData/QIN-H%2BN-0139/PET-sorted/";
 
-      var baseURL =
-        "https://s3.amazonaws.com/IsomicsPublic/SampleData/QIN-H%2BN-0139/PET-sorted/";
+            var imageNames = [];
 
-      var imageNames = [];
+            for (var i = 1; i < 546; i++) {
+                imageNames.push("PET_HeadNeck_0-" + i + ".dcm");
+            }
 
-      for (var i = 1; i < 546; i++) {
-        imageNames.push("PET_HeadNeck_0-" + i + ".dcm");
-      }
+            var imageIds = imageNames.map(name => {
+                return `dicomweb:${baseURL}${name}`;
+            });
 
-      var imageIds = imageNames.map(name => {
-        return `dicomweb:${baseURL}${name}`;
-      });
+            var imagePromises = imageIds.map(imageId => {
+                return cornerstone.loadAndCacheImage(imageId);
+            });
 
-      var imagePromises = imageIds.map(imageId => {
-        return cornerstone.loadAndCacheImage(imageId);
-      });
+            Promise.all(imagePromises).then(() => {
+                var button = document.getElementById("sampleData");
+                button.disabled = false;
+                button.innerText = "Get Segmentation Data";
+            });
 
-      Promise.all(imagePromises).then(() => {
-        var button = document.getElementById("sampleData");
-        button.disabled = false;
-        button.innerText = "Get Segmentation Data";
-      });
+            var exampleData = {
+                stack: {
+                    currentImageIdIndex: 0,
+                    imageIds: imageIds
+                }
+            };
 
-      var exampleData = {
-        stack: {
-          currentImageIdIndex: 0,
-          imageIds: imageIds
-        }
-      };
+            var CornerstoneViewport = window["react-cornerstone-viewport"];
+            var props = {
+                viewportData: exampleData,
+                cornerstone,
+                cornerstoneTools,
+                activeTool: "Brush"
+            };
 
-      var CornerstoneViewport = window["react-cornerstone-viewport"];
-      var props = {
-        viewportData: exampleData,
-        cornerstone,
-        cornerstoneTools,
-        activeTool: "Brush"
-      };
+            var app = React.createElement(CornerstoneViewport, props, null);
 
-      var app = React.createElement(CornerstoneViewport, props, null);
-
-      ReactDOM.render(app, document.getElementById("cornerstoneViewport"));
-    </script>
-  </body>
+            ReactDOM.render(
+                app,
+                document.getElementById("cornerstoneViewport")
+            );
+        </script>
+    </body>
 </html>

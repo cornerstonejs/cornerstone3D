@@ -1,475 +1,223 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
-    />
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
+        />
 
-    <link href="../css/bootstrap.min.css" rel="stylesheet" />
-    <link href="../css/cornerstone.min.css" rel="stylesheet" />
+        <link href="../css/bootstrap.min.css" rel="stylesheet" />
+        <link href="../css/cornerstone.min.css" rel="stylesheet" />
+    </head>
+    <body>
+        <div class="container">
+            <div class="page-header">
+                <h1>
+                    Create DICOM Structured Report with 1501 Meaurement groups
+                </h1>
+                <p>
+                    This example demonstrates creation of a DICOM Structured
+                    Report containing length measurements.
+                </p>
+                <a href="../index.html">Go back to the Examples page</a>
+            </div>
 
-    <script
-      crossorigin
-      src="https://unpkg.com/react@16/umd/react.development.js"
-    ></script>
-    <script
-      crossorigin
-      src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"
-    ></script>
-
-    <script src="https://unpkg.com/react-jsonschema-form/dist/react-jsonschema-form.js"></script>
-  </head>
-  <body>
-    <div class="container">
-      <div class="page-header">
-        <h1>
-          Linear Measurements to Structured Report
-        </h1>
-        <p>
-          This example demonstrates how to create a DICOM Structured Report
-          object from linear measurements.
-        </p>
-        <a href="../index.html">Go back to the Examples page</a>
-      </div>
-
-      <div class="row">
-        <button id="sampleData">Get Sample Data</button>
-        <p id="statusLine"></p>
-        <!--
-        <p> or</p>
-        <p id='status'>Drag and drop DICOM files here...</p>
-        -->
-        <div class="col-xs-9" id="dropZone">
-          <div
-            style="width:512px;height:512px;position:relative;display:inline-block;"
-            oncontextmenu="return false"
-            class="cornerstone-enabled-image"
-            unselectable="on"
-            onselectstart="return false;"
-            onmousedown="return false;"
-          >
-            <div
-              id="dicomImage"
-              style="width:512px;height:512px;top:0px;left:0px; position:absolute; border: 1px solid black;"
-            ></div>
-          </div>
-
-          <div id="reportForm"></div>
-
-          <table id="reportTable" class="table">
-            <thead>
-              <tr>
-                <th>Frame</th>
-                <th>Length</th>
-              </tr>
-            </thead>
-            <tbody id="reportBody">
-              <tr class="reportRow">
-                <td>N/A</td>
-                <td>N/A</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <pre id="reportDump"></pre>
+            <div class="row">
+                <button id="sampleData" onclick="createStructuredReport()">
+                    Create Structured Report
+                </button>
+                <p id="statusLine"></p>
+                <div class="col-xs-9">
+                    <div
+                        style="width:512px;height:512px;position:relative;display:inline-block;"
+                        oncontextmenu="return false"
+                        class="cornerstone-enabled-image"
+                        unselectable="on"
+                        onselectstart="return false;"
+                        onmousedown="return false;"
+                    >
+                        <div
+                            id="cornerstoneViewport"
+                            style="width:512px;height:512px;top:0px;left:0px; position:absolute;"
+                        ></div>
+                    </div>
+                    <p>
+                        Sample data is from the dicom4qi connectathon event to
+                        be held at RSNA 2017. This is
+                        <a
+                            href="https://qiicr.gitbooks.io/dicom4qi/content/instructions/seg.html#test-dataset-2"
+                            >test dataset #2</a
+                        >
+                    </p>
+                </div>
+            </div>
         </div>
 
-        <div class="col-xs-3">
-          <div class="row">
-            <input
-              type="button"
-              class="dicomControls"
-              id="downloadReport"
-              value="Download Structured Report"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </body>
+        <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
+        <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
+        <script src="https://unpkg.com/cornerstone-tools@4.3.0/dist/cornerstoneTools.js"></script>
 
-  <script src="https://unpkg.com/jquery@2.2.4/dist/jquery.js"></script>
-  <script src="https://unpkg.com/cornerstone-core@2.2.6/dist/cornerstone.js"></script>
-  <script src="https://unpkg.com/cornerstone-math@0.1.6/dist/cornerstoneMath.js"></script>
-  <script src="https://unpkg.com/cornerstone-tools@4.0.5/dist/cornerstoneTools.js"></script>
-  <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
-  <script src="https://unpkg.com/cornerstone-wado-image-loader@3.0.2/dist/cornerstoneWADOImageLoader.min.js"></script>
+        <script src="https://unpkg.com/dicom-parser/dist/dicomParser.js"></script>
+        <script src="https://unpkg.com/cornerstone-wado-image-loader@3.0.2/dist/cornerstoneWADOImageLoader.min.js"></script>
+        <script src="https://unpkg.com/hammerjs/hammer.min.js"></script>
 
-  <script src="/js/FileSaver.min.js"></script>
-  <script src="https://unpkg.com/jszip@3.1.3/dist/jszip.min.js"></script>
-  <script src="/js/jqueryFileDrop.js"></script>
+        <script src="/js/initCornerstone.js"></script>
 
-  <script src="/js/dcmjs.js"></script>
+        <script src="/js/dcmjs.js"></script>
 
-  <script src="/helpers/DICOMZero.js"></script>
+        <script
+            src="https://unpkg.com/react@16/umd/react.development.js"
+            crossorigin
+        ></script>
+        <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
 
-  <script>
-    let dc0;
-    let renderedForm;
+        <script>
+            "use strict";
 
-    $(document).ready(function() {
-      $(".dicomControls").prop("disabled", true);
-
-      dc0 = new DICOMZero();
-      const element = document.getElementById("dicomImage");
-      $(element).on(
-        "CornerstoneToolsMeasurementModified",
-        updateMeasurementTable
-      );
-      $(element).on(
-        "CornerstoneToolsMeasurementModified",
-        updateMeasurementForm
-      );
-      const dropZone = document.getElementById("dropZone");
-      cornerstone.enable(element);
-
-      function resetDICOMzero() {
-        dc0.reset();
-      }
-
-      const metaData = {};
-      function metaDataProvider(type, imageId) {
-        if (!metaData[imageId]) {
-          return;
-        }
-
-        return metaData[imageId][type];
-      }
-
-      function addMetaData(type, imageId, data) {
-        metaData[imageId] = metaData[imageId] || {};
-        metaData[imageId][type] = data;
-      }
-
-      cornerstone.metaData.addProvider(metaDataProvider);
-
-      function loadMultiFrameAndPopulateMetadata(baseImageId) {
-        var promise = new Promise(function(resolve, reject) {
-          var multiframe;
-          cornerstone.loadAndCacheImage(baseImageId).then(function(image) {
-            var arrayBuffer = image.data.byteArray.buffer;
-            dicomData = dcmjs.data.DicomMessage.readFile(arrayBuffer);
-            let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
-              dicomData.dict
-            );
-            dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
-              dicomData.meta
-            );
-
-            multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([
-              dataset
-            ]);
-
-            const numFrames = Number(multiframe.NumberOfFrames);
-            for (let i = 0; i < numFrames; i++) {
-              const imageId = baseImageId + "?frame=" + i;
-
-              var functionalGroup =
-                multiframe.PerFrameFunctionalGroupsSequence[i];
-              var imagePositionArray =
-                functionalGroup.PlanePositionSequence.ImagePositionPatient;
-
-              addMetaData("imagePlane", imageId, {
-                imagePositionPatient: {
-                  x: imagePositionArray[0],
-                  y: imagePositionArray[1],
-                  z: imagePositionArray[2]
+            var process = {
+                env: {
+                    NODE_ENV: "production"
                 }
-              });
+            };
 
-              addMetaData("frameNumber", imageId, i);
+            window.process = process;
+        </script>
+
+        <script src="https://unpkg.com/react-cornerstone-viewport@0.1.23/dist/index.umd.js"></script>
+
+        <script>
+            let metaData = {};
+
+            function createStructuredReport() {
+                const toolState =
+                    cornerstoneTools.globalImageIdSpecificToolStateManager
+                        .toolState;
+
+                const { MeasurementReport } = dcmjs.adapters.Cornerstone;
+
+                const report = MeasurementReport.generateReport(
+                    toolState,
+                    cornerstone.metaData
+                );
+
+                const reportBlob = dcmjs.data.datasetToBlob(report.dataset);
+
+                //Create a URL for the binary.
+                var objectUrl = URL.createObjectURL(reportBlob);
+                window.location.assign(objectUrl);
             }
 
-            resolve(multiframe);
-          });
-        });
-
-        return promise;
-      }
-
-      function getImageIds(multiframe, baseImageId) {
-        const imageIds = [];
-        const numFrames = Number(multiframe.NumberOfFrames);
-        for (let i = 0; i < numFrames; i++) {
-          const imageId = baseImageId + "?frame=" + i;
-          imageIds.push(imageId);
-        }
-
-        return imageIds;
-      }
-
-      function drawSampleDatasets() {
-        cornerstone.disable(element);
-        const options = {
-          renderer: "canvas"
-        };
-        cornerstone.enable(element, options);
-        cornerstoneTools.clearToolState(element, "stack");
-
-        var baseImageId =
-          "dicomweb:" +
-          "https://s3.amazonaws.com/IsomicsPublic/SampleData/MRHead/MRHead-8-slices.dcm";
-        var dataPromise = loadMultiFrameAndPopulateMetadata(baseImageId);
-
-        dataPromise.then(multiframe => {
-          dc0.multiframe = multiframe;
-          var imageIds = getImageIds(multiframe, baseImageId);
-
-          /*var files = dc0.dataTransfer.files;
-           var imageIds = [];
-           files.forEach(function(file) {
-           var imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
-           imageIds.push(imageId);
-           });*/
-
-          dc0.baseStack = {
-            imageIds: imageIds,
-            currentImageIdIndex: 0
-          };
-
-          cornerstone
-            .loadAndCacheImage(dc0.baseStack.imageIds[0])
-            .then(function(image) {
-              cornerstone.displayImage(element, image);
-
-              cornerstoneTools.addStackStateManager(element, ["stack"]);
-              cornerstoneTools.addToolState(element, "stack", dc0.baseStack);
-
-              cornerstoneTools.scrollToIndex(element, 1);
-
-              cornerstoneTools.mouseInput.enable(element);
-              cornerstoneTools.mouseWheelInput.enable(element);
-              cornerstoneTools.keyboardInput.enable(element);
-
-              cornerstoneTools.length.activate(element, 1);
-              cornerstoneTools.pan.activate(element, 2);
-              cornerstoneTools.zoom.activate(element, 4);
-              cornerstoneTools.stackScrollWheel.activate(element);
-              cornerstoneTools.stackScrollKeyboard.activate(element);
-
-              $("p#statusLine").text(
-                "Now perform length measurements and download report when finished."
-              );
-              $(".dicomControls").prop("disabled", false);
-            });
-        });
-      }
-
-      function updateMeasurementTable(event) {
-        $(".reportRow").remove();
-        const imageToolState =
-          cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
-        dc0.baseStack.imageIds.forEach(function(imageId) {
-          if (imageToolState[imageId]) {
-            imageToolState[imageId].length.data.forEach(function(length) {
-              var handles = length.handles;
-              var frame = Number(
-                imageId.slice(imageId.lastIndexOf("frame")).split("=")[1]
-              ); // TODO: frame is explicit somewhere?
-              let row =
-                '<tr class="reportRow"><td>' +
-                frame +
-                "</td><td>" +
-                length.length.toFixed(2) +
-                "</td></tr>";
-              $("#reportBody").append(row);
-            });
-          }
-        });
-      }
-
-      function populateReport(dataset) {
-        console.log(cornerstoneTools.globalImageIdSpecificToolStateManager);
-        const toolState =
-          cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
-
-        const { MeasurementReport } = dcmjs.adapters.Cornerstone;
-
-        return MeasurementReport.generateReport(
-          toolState,
-          cornerstone.metaData
-        );
-      }
-
-      function downloadReport() {
-        const report = populateReport(dc0.multiframe);
-        $("#reportDump").text(JSON.stringify(report.dataset, null, 4));
-
-        const multiframeBlob = dcmjs.data.datasetToBlob(dc0.multiframe);
-
-        const reportBlob = dcmjs.data.datasetToBlob(report.dataset);
-        const zip = new JSZip();
-        zip.file("multiframe.dcm", multiframeBlob);
-        zip.file("report.dcm", reportBlob);
-        zip.generateAsync({ type: "blob" }).then(function(contents) {
-          saveAs(contents, "report.zip", true);
-          resetDICOMzero();
-          status(`Finished, waiting for more DICOM files (drop them below).`);
-        });
-      }
-
-      $("#sampleData").click(function(event) {
-        $("p#statusLine").text("Downloading...");
-        drawSampleDatasets();
-      });
-
-      $("#downloadReport").click(function(event) {
-        downloadReport();
-      });
-
-      // utility: todo: keep a log for optional download
-      function status(s) {
-        console.log("status: ", s);
-        $("#status").text(s);
-      }
-
-      window.addEventListener("resize", function() {
-        dropZone.width = window.innerWidth;
-        dropZone.height = window.innerHeight;
-        cornerstone.resize(element, true);
-      });
-
-      window.dispatchEvent(new Event("resize"));
-
-      function handleFileDrop(e) {
-        let evt = e.originalEvent;
-        evt.stopPropagation();
-        evt.preventDefault();
-
-        resetDICOMzero();
-        dc0.dataTransfer = { files: [] };
-        for (
-          let fileIndex = 0;
-          fileIndex < evt.dataTransfer.files.length;
-          fileIndex++
-        ) {
-          dc0.dataTransfer.files[fileIndex] = evt.dataTransfer.files[fileIndex];
-        }
-
-        status(
-          `Got ${dc0.dataTransfer.files.length} files, click to process...`
-        );
-        dc0.readOneFile(drawSampleDatasets);
-      }
-
-      $("#dropZone").bind("drop", handleFileDrop);
-
-      function activateReportForm(parentID) {
-        const commonSchemaDefinitions = {};
-        commonSchemaDefinitions.lengthMeasurement = {
-          type: "object",
-          properties: {
-            frameNumber: {
-              title: "Frame",
-              type: "number"
-            },
-            length: {
-              title: "Length",
-              type: "number"
+            function addMetaData(type, imageId, data) {
+                metaData[imageId] = metaData[imageId] || {};
+                metaData[imageId][type] = data;
             }
-          }
-        };
-        commonSchemaDefinitions.measurementArray = {
-          type: "array",
-          items: {
-            $ref: "#/definitions/lengthMeasurement"
-          }
-        };
 
-        const schema = {
-          definitions: commonSchemaDefinitions,
-          title: "Length Form",
-          type: "object",
-          properties: {
-            title: { type: "string", title: "Title", default: "Untitled Form" },
-            measurements: {
-              $ref: "#/definitions/measurementArray",
-              title: "Lengths"
+            //
+            // creates an array of per-frame imageIds in the form needed for cornerstone processing.
+            //
+            function getImageIds(multiframe, baseImageId) {
+                const imageIds = [];
+                const numFrames = Number(multiframe.NumberOfFrames);
+                for (let i = 0; i < numFrames; i++) {
+                    let segNum;
+                    if (
+                        multiframe.PerFrameFunctionalGroupsSequence[i]
+                            .SegmentIdentificationSequence
+                    ) {
+                        segNum =
+                            multiframe.PerFrameFunctionalGroupsSequence[i]
+                                .SegmentIdentificationSequence
+                                .ReferencedSegmentNumber;
+                    }
+                    const imageId = baseImageId + "?frame=" + i;
+                    imageIds.push(imageId);
+                }
+                return imageIds;
             }
-          }
-        };
 
-        const uiSchema = {
-          "ui:rootFieldId": "measurementReport",
-          measurements: {
-            classNames: "measurements",
-            "ui:options": {
-              orderable: false,
-              removable: false,
-              addable: false
-            },
-            "ui:readonly": true,
-            items: {
-              length: {
-                "ui:readonly": true
-              }
+            //
+            // uses cornerstone caching to access a bytearray of the
+            // part10 dicom, then uses dcmjs to parse this
+            // into javascript object and populates the
+            // metadata for the per-frame imageIDs.
+            //
+            function loadMultiFrameAndPopulateMetadata(baseImageId) {
+                return new Promise(function(resolve, reject) {
+                    var multiframe;
+                    cornerstone
+                        .loadAndCacheImage(baseImageId)
+                        .then(function(image) {
+                            var arrayBuffer = image.data.byteArray.buffer;
+
+                            dicomData = dcmjs.data.DicomMessage.readFile(
+                                arrayBuffer
+                            );
+                            let dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+                                dicomData.dict
+                            );
+                            dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
+                                dicomData.meta
+                            );
+
+                            multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset(
+                                [dataset]
+                            );
+
+                            const numFrames = Number(multiframe.NumberOfFrames);
+                            for (let i = 0; i < numFrames; i++) {
+                                const imageId = baseImageId + "?frame=" + i;
+
+                                var functionalGroup =
+                                    multiframe.PerFrameFunctionalGroupsSequence[
+                                        i
+                                    ];
+                                var imagePositionArray =
+                                    functionalGroup.PlanePositionSequence
+                                        .ImagePositionPatient;
+
+                                addMetaData("imagePlane", imageId, {
+                                    imagePositionPatient: {
+                                        x: imagePositionArray[0],
+                                        y: imagePositionArray[1],
+                                        z: imagePositionArray[2]
+                                    }
+                                });
+                            }
+
+                            resolve(multiframe);
+                        });
+                });
             }
-          }
-        };
+        </script>
 
-        styleForm = function() {
-          $(".measurements .field-object").addClass("row");
-          $(".measurements .field-object .field").addClass("col-sm-4");
-        };
+        <script>
+            "use strict";
 
-        const onChange = data => {
-          styleForm();
-          console.log(data);
-        };
+            var exampleData = {
+                stack: {
+                    currentImageIdIndex: 0,
+                    imageIds: [
+                        "dicomweb://s3.amazonaws.com/lury/PTCTStudy/1.3.6.1.4.1.25403.52237031786.3872.20100510032220.11.dcm",
+                        "dicomweb://s3.amazonaws.com/lury/PTCTStudy/1.3.6.1.4.1.25403.52237031786.3872.20100510032220.12.dcm"
+                    ]
+                }
+            };
 
-        const formData = {
-          title: "Untitled",
-          measurements: []
-        };
+            var CornerstoneViewport = window["react-cornerstone-viewport"];
+            var props = {
+                viewportData: exampleData,
+                cornerstone,
+                cornerstoneTools,
+                activeTool: "Length"
+            };
 
-        const reportFormProperties = {
-          schema,
-          uiSchema,
-          formData,
-          onChange: onChange,
-          onError: console.log,
-          onSubmit: () => {
-            alert("submitted report form");
-          }
-        };
+            var app = React.createElement(CornerstoneViewport, props, null);
 
-        const Form = JSONSchemaForm.default;
-        const formElement = React.createElement(Form, reportFormProperties);
-        const parent = document.getElementById(parentID);
-
-        const renderedForm = ReactDOM.render(formElement, parent);
-        styleForm();
-
-        return renderedForm;
-      }
-
-      renderedForm = activateReportForm("reportForm");
-
-      // TODO: update toolState in the onChange method of the form
-      // TODO: add a vtkjs lineWidget with two-way mapping https://kitware.github.io/vtk-js/examples/LineWidget.html
-
-      function updateMeasurementForm(event) {
-        const oldFormData = renderedForm.state.formData;
-        const formData = { title: oldFormData.title, measurements: [] };
-        const imageToolState =
-          cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
-        dc0.baseStack.imageIds.forEach(function(imageId) {
-          if (imageToolState[imageId]) {
-            imageToolState[imageId].length.data.forEach(function(lengthTool) {
-              var handles = lengthTool.handles;
-              var frameNumber = Number(
-                imageId.slice(imageId.lastIndexOf("frame")).split("=")[1]
-              ); // TODO: frame is explicit somewhere?
-              var length = lengthTool.length;
-              formData.measurements.push({ frameNumber, length });
-            });
-          }
-        });
-        renderedForm.setState({ formData });
-        styleForm();
-      }
-    });
-  </script>
+            ReactDOM.render(
+                app,
+                document.getElementById("cornerstoneViewport")
+            );
+        </script>
+    </body>
 </html>
