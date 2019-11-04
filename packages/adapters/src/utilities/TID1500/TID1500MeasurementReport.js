@@ -122,7 +122,7 @@ export default class TID1500MeasurementReport {
         // Add the Measurement Groups to the Measurement Report
         this.addTID1501MeasurementGroups(derivationSourceDataset, options);
 
-        this.tid1500;
+        return this.tid1500;
     }
 
     addTID1501MeasurementGroups(derivationSourceDataset, options) {
