@@ -46,20 +46,23 @@
     "prepublishOnly": "npm run build && npm run test && npm run doc:generate"
   },
   "devDependencies": {
-    "@babel/core": "^7.5.5",
-    "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
-    "babel-eslint": "^10.0.2",
+    "@babel/core": "^7.7.2",
+    "@babel/plugin-proposal-object-rest-spread": "^7.6.2",
+    "@babel/preset-env": "^7.7.1",
+    "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.6",
     "chai": "^4.2.0",
     "commitizen": "3.1.x",
     "concat": "^1.0.3",
     "cornerstone-core": "^2.3.0",
     "coveralls": "^3.0.5",
+    "cross-env": "^6.0.3",
     "docdash": "^1.1.1",
     "eslint": "^6.1.0",
+    "eslint-config-prettier": "^6.5.0",
     "eslint-loader": "^2.2.1",
     "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-prettier": "^3.1.1",
     "exports-loader": "^0.7.0",
     "fs-extra": "^8.1.0",
     "istanbul-instrumenter-loader": "^3.0.1",
@@ -96,7 +99,8 @@
   },
   "lint-staged": {
     "src/**/*.{js,jsx,json,css}": [
-      "prettier --single-quote --write",
+      "eslint --fix",
+      "prettier --write",
       "git add"
     ]
   },

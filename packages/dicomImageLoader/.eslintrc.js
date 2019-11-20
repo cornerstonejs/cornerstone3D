@@ -1,75 +1,60 @@
 module.exports = {
-  'env': {
-    'browser': true,
-    'es6': true,
-    'node': true,
-    'mocha': true
+  env: {
+    browser: true,
+    es6: true,
+    node: true,
+    mocha: true,
   },
-  'extends': 'eslint:recommended',
-  'plugins': ['import'],
-  "parser": "babel-eslint",
-  'parserOptions': {
-    'sourceType': 'module'
+  extends: ['eslint:recommended', 'plugin:prettier/recommended'],
+  plugins: ['import'],
+  parser: 'babel-eslint',
+  parserOptions: {
+    sourceType: 'module',
   },
-  'globals': {
-    'jpeg': true,
-    'JpegImage': true,
-    'JpxImage': true,
-    'CharLS': true,
-    'OpenJPEG': true
+  globals: {
+    jpeg: true,
+    JpegImage: true,
+    JpxImage: true,
+    CharLS: true,
+    OpenJPEG: true,
   },
-  'rules': {
+  rules: {
     'accessor-pairs': 'warn',
     'array-bracket-spacing': 'warn',
     'array-callback-return': 'warn',
     'arrow-body-style': 'warn',
-    'arrow-parens': 'warn',
     'arrow-spacing': 'warn',
-    //'block-scoped-var': 'warn',
     'block-spacing': 'warn',
     'brace-style': 'warn',
     'callback-return': 'warn',
-    //'camelcase': 'warn',
-    //'capitalized-comments': 'warn',
     'class-methods-use-this': 'warn',
-    'comma-dangle': 'warn',
     'comma-spacing': [
       'warn',
       {
-        'after': true,
-        'before': false
-      }
+        after: true,
+        before: false,
+      },
     ],
     'comma-style': 'warn',
-    'complexity': 'warn',
+    complexity: 'warn',
     'computed-property-spacing': 'warn',
-    //'consistent-return': 'warn',
     'consistent-this': 'warn',
-    'curly': 'warn',
-    //'default-case': 'warn',
-    'dot-location': 'warn',
+    curly: 'warn',
     'dot-notation': 'warn',
     'eol-last': 'warn',
-    'eqeqeq': 'warn',
+    eqeqeq: 'warn',
     'func-call-spacing': 'warn',
     'func-name-matching': 'warn',
-    'func-names': [
-      'warn',
-      'never'
-    ],
-    //'func-style': 'warn',
+    'func-names': ['warn', 'never'],
     'generator-star-spacing': 'warn',
     'global-require': 'warn',
-    //'guard-for-in': 'warn',
     'handle-callback-err': 'warn',
     'id-blacklist': 'warn',
     'id-length': 'off',
     'id-match': 'warn',
-    'indent': ['warn', 2],
-    //'init-declarations': 'warn',
     'import/default': 'warn',
     'import/export': 'warn',
-    'import/extensions': ['warn', { "js": "always" }],
+    'import/extensions': ['warn', { js: 'always' }],
     'import/first': 'warn',
     'import/named': 'warn',
     'import/namespace': 'warn',
@@ -81,39 +66,18 @@ module.exports = {
     'keyword-spacing': [
       'warn',
       {
-        'after': true,
-        'before': true
-      }
+        after: true,
+        before: true,
+      },
     ],
-    //'line-comment-position': 'warn',
-    'linebreak-style': [
-      'warn',
-      'unix'
-    ],
-    'lines-around-comment': 'warn',
     'lines-around-directive': 'warn',
     'max-depth': 'warn',
-    /*'max-len': ['warn', {
-        'code': 100,
-        'tabWidth': 2,
-        'comments': 80,
-        'ignoreComments': false,
-        'ignoreTrailingComments': true,
-        'ignoreUrls': true,
-        'ignoreTemplateLiterals': false,
-        'ignoreRegExpLiterals': true
-    }],*/
-    //'max-lines': 'warn',
     'max-nested-callbacks': 'warn',
-    //'max-params': 'warn',
-    //'max-statements': 'warn',
     'max-statements-per-line': 'warn',
     'multiline-ternary': 'off',
-    //'new-cap': 'warn',
     'new-parens': 'warn',
     'newline-after-var': 'warn',
     'newline-before-return': 'warn',
-    //'newline-per-chained-call': 'warn',
     'no-alert': 'warn',
     'no-array-constructor': 'warn',
     'no-bitwise': 'warn',
@@ -121,7 +85,6 @@ module.exports = {
     'no-catch-shadow': 'warn',
     'no-confusing-arrow': 'warn',
     'no-console': 'off',
-    //'no-continue': 'warn',
     'no-div-regex': 'warn',
     'no-duplicate-imports': 'warn',
     'no-else-return': 'warn',
@@ -136,7 +99,6 @@ module.exports = {
     'no-implicit-coercion': 'warn',
     'no-implicit-globals': 'warn',
     'no-implied-eval': 'warn',
-    //'no-inline-comments': 'warn',
     'no-invalid-this': 'off',
     'no-iterator': 'warn',
     'no-label-var': 'warn',
@@ -145,7 +107,6 @@ module.exports = {
     'no-lonely-if': 'warn',
     'no-loop-func': 'warn',
     'no-magic-numbers': 'off',
-    //'no-mixed-operators': 'warn',
     'no-mixed-requires': 'warn',
     'no-multi-spaces': 'warn',
     'no-multi-str': 'warn',
@@ -207,10 +168,7 @@ module.exports = {
     //'no-warning-comments': 'warn',
     'no-whitespace-before-property': 'warn',
     'no-with': 'warn',
-    'object-curly-spacing': [
-      'warn',
-      'always'
-    ],
+    'object-curly-spacing': ['warn', 'always'],
     'object-property-newline': 'warn',
     'object-shorthand': 'warn',
     'one-var': 'off',
@@ -226,40 +184,30 @@ module.exports = {
     'prefer-spread': 'warn',
     'prefer-template': 'warn',
     'quote-props': ['warn', 'as-needed'],
-    'quotes': [
-      'warn',
-      'single'
-    ],
-    'radix': 'warn',
+    quotes: ['warn', 'single'],
+    radix: 'warn',
     'require-await': 'warn',
     //'require-jsdoc': 'warn',
     'rest-spread-spacing': 'warn',
-    'semi': 'warn',
+    semi: 'warn',
     'semi-spacing': 'warn',
     'sort-imports': 'off',
     'sort-keys': 'off',
     'sort-vars': 'off',
     'space-before-blocks': 'warn',
-    'space-before-function-paren': 'warn',
-    'space-in-parens': [
-      'warn',
-      'never'
-    ],
+    'space-in-parens': ['warn', 'never'],
     'space-infix-ops': 'warn',
     'space-unary-ops': 'warn',
     'spaced-comment': 'warn',
-    'strict': 'warn',
+    strict: 'warn',
     'symbol-description': 'warn',
     'template-curly-spacing': 'warn',
-    'unicode-bom': [
-      'warn',
-      'never'
-    ],
+    'unicode-bom': ['warn', 'never'],
     //'valid-jsdoc': 'warn',
     'vars-on-top': 'warn',
     'wrap-iife': ['warn', 'inside'],
     'wrap-regex': 'warn',
     'yield-star-spacing': 'warn',
-    'yoda': 'warn'
-  }
+    yoda: 'warn',
+  },
 };
