@@ -1,5 +1,3 @@
-
-
 /**
  * Returns the values as an array of javascript numbers
  *
@@ -7,7 +5,7 @@
  * @param [minimumLength] - the minimum number of values
  * @returns {*}
  */
-function getNumberValues (element, minimumLength) {
+function getNumberValues(element, minimumLength) {
   if (!element) {
     return;
   }

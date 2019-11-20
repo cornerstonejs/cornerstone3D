@@ -8,7 +8,7 @@ import getValue from './getValue.js';
  * @param [defaultValue] - The default value to return if the element does not exist
  * @returns {*}
  */
-function getNumberString (element, index, defaultValue) {
+function getNumberString(element, index, defaultValue) {
   const value = getValue(element, index, defaultValue);
 
   if (value === undefined) {

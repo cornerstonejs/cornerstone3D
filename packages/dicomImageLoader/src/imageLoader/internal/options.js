@@ -1,21 +1,19 @@
 let options = {
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-  beforeSend (/* xhr, imageId */) {
-  },
+  beforeSend(/* xhr, imageId */) {},
   // callback allowing modification of newly created image objects
-  imageCreated (/* image */) {
-  },
+  imageCreated(/* image */) {},
   strict: false,
   useWebWorkers: true,
   decodeConfig: {
-    usePDFJS: false
-  }
+    usePDFJS: false,
+  },
 };
 
-export function setOptions (newOptions) {
+export function setOptions(newOptions) {
   options = Object.assign(options, newOptions);
 }
 
-export function getOptions () {
+export function getOptions() {
   return options;
 }

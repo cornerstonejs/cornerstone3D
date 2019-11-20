@@ -1,4 +1,4 @@
-function getNumberValues (dataSet, tag, minimumLength) {
+function getNumberValues(dataSet, tag, minimumLength) {
   const values = [];
   const valueAsString = dataSet.string(tag);
 

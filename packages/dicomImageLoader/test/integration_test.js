@@ -25,14 +25,14 @@ const transferSyntaxes = {
   '1.2.840.10008.1.2.4.81': 'JPEGLSLossyTransferSyntax',
   '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
   '1.2.840.10008.1.2.4.91': 'JPEG2000TransferSyntax',
-  '1.2.840.10008.1.2.5': 'RLELosslessTransferSyntax'
+  '1.2.840.10008.1.2.5': 'RLELosslessTransferSyntax',
 };
 
 const base = 'CTImage.dcm';
 const url = 'dicomweb://localhost:9876/base/testImages/';
 
-describe('loadImage', function () {
-  before(function () {
+describe('loadImage', function() {
+  before(function() {
     // Initialize the web worker manager
     const config = {
       maxWebWorkers: 1,
@@ -40,9 +40,9 @@ describe('loadImage', function () {
       taskConfiguration: {
         decodeTask: {
           initializeCodecsOnStartup: true,
-          usePDFJS: false
-        }
-      }
+          usePDFJS: false,
+        },
+      },
     };
 
     webWorkerManager.initialize(config);
@@ -51,16 +51,16 @@ describe('loadImage', function () {
       strict: false,
       useWebWorkers: false,
       decodeConfig: {
-        usePDFJS: false
-      }
+        usePDFJS: false,
+      },
     });
   });
 
-  Object.keys(transferSyntaxes).forEach((transferSyntaxUid) => {
+  Object.keys(transferSyntaxes).forEach(transferSyntaxUid => {
     const name = transferSyntaxes[transferSyntaxUid];
     const filename = `${base}_${name}_${transferSyntaxUid}.dcm`;
 
-    it(`should properly load ${name}`, function (done) {
+    it(`should properly load ${name}`, function(done) {
       this.timeout(5000);
       const imageId = `${url}${filename}`;
 
@@ -74,20 +74,24 @@ describe('loadImage', function () {
         done(error);
       }
 
-      loadObject.promise.then((image) => {
-        console.timeEnd(name);
-        // TODO: Compare against known correct pixel data
-        expect(image).to.be.an('object');
-        done();
-      }, (error) => {
-        done(error.error);
-      });
+      loadObject.promise.then(
+        image => {
+          console.timeEnd(name);
+          // TODO: Compare against known correct pixel data
+          expect(image).to.be.an('object');
+          done();
+        },
+        error => {
+          done(error.error);
+        }
+      );
     });
   });
 
-  it('should result in an error when the DICOM file has no pixelData', (done) => {
+  it('should result in an error when the DICOM file has no pixelData', done => {
     this.timeout(5000);
     const imageId = `${url}no-pixel-data.dcm`;
+
     let loadObject;
 
     try {
@@ -96,11 +100,14 @@ describe('loadImage', function () {
       done(error);
     }
 
-    loadObject.promise.then(() => {
-      done(new Error('Should not have succeeded'));
-    }, (error) => {
-      expect(error.error.message === 'The file does not contain image data.');
-      done();
-    });
+    loadObject.promise.then(
+      () => {
+        done(new Error('Should not have succeeded'));
+      },
+      error => {
+        expect(error.error.message === 'The file does not contain image data.');
+        done();
+      }
+    );
   });
 });

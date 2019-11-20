@@ -1,10 +1,10 @@
 import getValue from './getValue.js';
 import getNumberValue from './getNumberValue.js';
 
-export default function getOverlayPlaneModule (metaData) {
+export default function getOverlayPlaneModule(metaData) {
   const overlays = [];
 
-  for (let overlayGroup = 0x00; overlayGroup <= 0x1E; overlayGroup += 0x02) {
+  for (let overlayGroup = 0x00; overlayGroup <= 0x1e; overlayGroup += 0x02) {
     let groupStr = `x60${overlayGroup.toString(16)}`;
 
     if (groupStr.length === 4) {
@@ -38,11 +38,11 @@ export default function getOverlayPlaneModule (metaData) {
       label: getValue(metaData[`${groupStr}1500`]),
       roiArea: getValue(metaData[`${groupStr}1301`]),
       roiMean: getValue(metaData[`${groupStr}1302`]),
-      roiStandardDeviation: getValue(metaData[`${groupStr}1303`])
+      roiStandardDeviation: getValue(metaData[`${groupStr}1303`]),
     });
   }
 
   return {
-    overlays
+    overlays,
   };
 }

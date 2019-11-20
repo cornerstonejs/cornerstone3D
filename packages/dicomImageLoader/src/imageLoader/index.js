@@ -3,7 +3,7 @@ import {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR
+  convertPALETTECOLOR,
 } from './colorSpaceConverters/index.js';
 
 import { default as wadouri } from './wadouri/index.js';
@@ -42,7 +42,7 @@ const cornerstoneWADOImageLoader = {
   webWorkerManager,
   version,
   internal,
-  external
+  external,
 };
 
 export {
@@ -65,7 +65,7 @@ export {
   webWorkerManager,
   version,
   internal,
-  external
+  external,
 };
 
 export default cornerstoneWADOImageLoader;

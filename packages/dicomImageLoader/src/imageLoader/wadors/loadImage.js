@@ -7,7 +7,7 @@ import createImage from '../createImage.js';
  * @param {string} contentType The value of the content-type header as returned by the WADO-RS server.
  * @return The transfer-syntax as announced by the server, or Implicit Little Endian by default.
  */
-export function getTransferSyntaxForContentType (contentType) {
+export function getTransferSyntaxForContentType(contentType) {
   const defaultTransferSyntax = '1.2.840.10008.1.2'; // Default is Implicit Little Endian.
 
   if (!contentType) {
@@ -18,7 +18,7 @@ export function getTransferSyntaxForContentType (contentType) {
   const parameters = contentType.split(';');
   const params = {};
 
-  parameters.forEach((parameter) => {
+  parameters.forEach(parameter => {
     // Look for a transfer-syntax=XXXX pair
     const parameterValues = parameter.split('=');
 
@@ -39,12 +39,16 @@ export function getTransferSyntaxForContentType (contentType) {
     'image/x-dicom-rle': '1.2.840.10008.1.2.5',
     'image/x-jls': '1.2.840.10008.1.2.4.80',
     'image/jp2': '1.2.840.10008.1.2.4.90',
-    'image/jpx': '1.2.840.10008.1.2.4.92'
+    'image/jpx': '1.2.840.10008.1.2.4.92',
   };
 
   if (params['transfer-syntax']) {
     return params['transfer-syntax'];
-  } else if (contentType && !Object.keys(params).length && defaultTransferSyntaxByType[contentType]) {
+  } else if (
+    contentType &&
+    !Object.keys(params).length &&
+    defaultTransferSyntaxByType[contentType]
+  ) {
     // dcm4che seems to be reporting the content type as just 'image/jp2'?
     return defaultTransferSyntaxByType[contentType];
   } else if (params.type && defaultTransferSyntaxByType[params.type]) {
@@ -54,7 +58,7 @@ export function getTransferSyntaxForContentType (contentType) {
   return defaultTransferSyntax;
 }
 
-function loadImage (imageId, options) {
+function loadImage(imageId, options) {
   const start = new Date().getTime();
   const uri = imageId.substring(7);
 
@@ -72,12 +76,19 @@ function loadImage (imageId, options) {
     const mediaType = 'multipart/related; type="application/octet-stream"'; // 'image/dicom+jp2';
 
     // get the pixel data from the server
-    getPixelData(uri, imageId, mediaType).then((result) => {
-      const transferSyntax = getTransferSyntaxForContentType(result.contentType);
+    getPixelData(uri, imageId, mediaType).then(result => {
+      const transferSyntax = getTransferSyntaxForContentType(
+        result.contentType
+      );
       const pixelData = result.imageFrame.pixelData;
-      const imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+      const imagePromise = createImage(
+        imageId,
+        pixelData,
+        transferSyntax,
+        options
+      );
 
-      imagePromise.then((image) => {
+      imagePromise.then(image => {
         // add the loadTimeInMS property
         const end = new Date().getTime();
 
@@ -89,7 +100,7 @@ function loadImage (imageId, options) {
 
   return {
     promise,
-    cancelFn: undefined
+    cancelFn: undefined,
   };
 }
 

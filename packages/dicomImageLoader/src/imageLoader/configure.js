@@ -1,6 +1,6 @@
 import { setOptions } from './internal/index.js';
 
-function configure (options) {
+function configure(options) {
   setOptions(options);
 }
 

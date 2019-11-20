@@ -4,11 +4,16 @@ import getMinMax from '../shared/getMinMax.js';
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance
  */
 
-function arrayBufferToString (buffer) {
-  return binaryToString(String.fromCharCode.apply(null, Array.prototype.slice.apply(new Uint8Array(buffer))));
+function arrayBufferToString(buffer) {
+  return binaryToString(
+    String.fromCharCode.apply(
+      null,
+      Array.prototype.slice.apply(new Uint8Array(buffer))
+    )
+  );
 }
 
-function binaryToString (binary) {
+function binaryToString(binary) {
   let error;
 
   try {
@@ -19,11 +24,10 @@ function binaryToString (binary) {
       return binary;
     }
     throw error;
-
   }
 }
 
-function decodeJPEGBaseline8BitColor (imageFrame, pixelData, canvas) {
+function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
   const start = new Date().getTime();
   const imgBlob = new Blob([pixelData], { type: 'image/jpeg' });
 
@@ -36,10 +40,10 @@ function decodeJPEGBaseline8BitColor (imageFrame, pixelData, canvas) {
       fileReader.readAsBinaryString(imgBlob); // doesn't work on IE11
     }
 
-    fileReader.onload = function () {
+    fileReader.onload = function() {
       const img = new Image();
 
-      img.onload = function () {
+      img.onload = function() {
         canvas.height = img.height;
         canvas.width = img.width;
         imageFrame.rows = img.height;
@@ -63,18 +67,20 @@ function decodeJPEGBaseline8BitColor (imageFrame, pixelData, canvas) {
         resolve(imageFrame);
       };
 
-      img.onerror = function (error) {
+      img.onerror = function(error) {
         reject(error);
       };
 
       if (fileReader.readAsBinaryString === undefined) {
-        img.src = `data:image/jpeg;base64,${window.btoa(arrayBufferToString(fileReader.result))}`;
+        img.src = `data:image/jpeg;base64,${window.btoa(
+          arrayBufferToString(fileReader.result)
+        )}`;
       } else {
         img.src = `data:image/jpeg;base64,${window.btoa(fileReader.result)}`; // doesn't work on IE11
       }
     };
 
-    fileReader.onerror = (e) => {
+    fileReader.onerror = e => {
       reject(e);
     };
   });

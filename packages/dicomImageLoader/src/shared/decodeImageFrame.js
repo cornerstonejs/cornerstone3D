@@ -6,7 +6,13 @@ import decodeJPEGLossless from './decoders/decodeJPEGLossless.js';
 import decodeJPEGLS from './decoders/decodeJPEGLS.js';
 import decodeJPEG2000 from './decoders/decodeJPEG2000.js';
 
-function decodeImageFrame (imageFrame, transferSyntax, pixelData, decodeConfig, options) {
+function decodeImageFrame(
+  imageFrame,
+  transferSyntax,
+  pixelData,
+  decodeConfig,
+  options
+) {
   const start = new Date().getTime();
 
   if (transferSyntax === '1.2.840.10008.1.2') {
@@ -65,13 +71,18 @@ function decodeImageFrame (imageFrame, transferSyntax, pixelData, decodeConfig, 
    }
    */
 
-  const shouldShift = imageFrame.pixelRepresentation !== undefined && imageFrame.pixelRepresentation === 1;
-  const shift = (shouldShift && imageFrame.bitsStored !== undefined) ? (32 - imageFrame.bitsStored) : undefined;
+  const shouldShift =
+    imageFrame.pixelRepresentation !== undefined &&
+    imageFrame.pixelRepresentation === 1;
+  const shift =
+    shouldShift && imageFrame.bitsStored !== undefined
+      ? 32 - imageFrame.bitsStored
+      : undefined;
 
   if (shouldShift && shift !== undefined) {
     for (let i = 0; i < imageFrame.pixelData.length; i++) {
       // eslint-disable-next-line no-bitwise
-      imageFrame.pixelData[i] = (imageFrame.pixelData[i] << shift >> shift);
+      imageFrame.pixelData[i] = (imageFrame.pixelData[i] << shift) >> shift;
     }
   }
 

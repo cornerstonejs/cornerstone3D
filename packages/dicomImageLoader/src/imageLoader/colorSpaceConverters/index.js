@@ -9,5 +9,5 @@ export {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR
+  convertPALETTECOLOR,
 };

@@ -1,12 +1,16 @@
-function getLutDescriptor (dataSet, tag) {
+function getLutDescriptor(dataSet, tag) {
   if (!dataSet.elements[tag] || dataSet.elements[tag].length !== 6) {
     return;
   }
 
-  return [dataSet.uint16(tag, 0), dataSet.uint16(tag, 1), dataSet.uint16(tag, 2)];
+  return [
+    dataSet.uint16(tag, 0),
+    dataSet.uint16(tag, 1),
+    dataSet.uint16(tag, 2),
+  ];
 }
 
-function getLutData (lutDataSet, tag, lutDescriptor) {
+function getLutData(lutDataSet, tag, lutDescriptor) {
   const lut = [];
   const lutData = lutDataSet.elements[tag];
 
@@ -22,10 +26,19 @@ function getLutData (lutDataSet, tag, lutDescriptor) {
   return lut;
 }
 
-function populatePaletteColorLut (dataSet, imagePixelModule) {
-  imagePixelModule.redPaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281101');
-  imagePixelModule.greenPaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281102');
-  imagePixelModule.bluePaletteColorLookupTableDescriptor = getLutDescriptor(dataSet, 'x00281103');
+function populatePaletteColorLut(dataSet, imagePixelModule) {
+  imagePixelModule.redPaletteColorLookupTableDescriptor = getLutDescriptor(
+    dataSet,
+    'x00281101'
+  );
+  imagePixelModule.greenPaletteColorLookupTableDescriptor = getLutDescriptor(
+    dataSet,
+    'x00281102'
+  );
+  imagePixelModule.bluePaletteColorLookupTableDescriptor = getLutDescriptor(
+    dataSet,
+    'x00281103'
+  );
 
   // The first Palette Color Lookup Table Descriptor value is the number of entries in the lookup table.
   // When the number of table entries is equal to 2ˆ16 then this value shall be 0.
@@ -44,23 +57,39 @@ function populatePaletteColorLut (dataSet, imagePixelModule) {
   // Note: Some implementations have encoded 8 bit entries with 16 bits allocated, padding the high bits;
   // this can be detected by comparing the number of entries specified in the LUT Descriptor with the actual value length of the LUT Data entry.
   // The value length in bytes should equal the number of entries if bits allocated is 8, and be twice as long if bits allocated is 16.
-  const numLutEntries = imagePixelModule.redPaletteColorLookupTableDescriptor[0];
+  const numLutEntries =
+    imagePixelModule.redPaletteColorLookupTableDescriptor[0];
   const lutData = dataSet.elements.x00281201;
   const lutBitsAllocated = lutData.length === numLutEntries ? 8 : 16;
 
   // If the descriptors do not appear to have the correct values, correct them
-  if (imagePixelModule.redPaletteColorLookupTableDescriptor[2] !== lutBitsAllocated) {
+  if (
+    imagePixelModule.redPaletteColorLookupTableDescriptor[2] !==
+    lutBitsAllocated
+  ) {
     imagePixelModule.redPaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
     imagePixelModule.greenPaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
     imagePixelModule.bluePaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
   }
 
-  imagePixelModule.redPaletteColorLookupTableData = getLutData(dataSet, 'x00281201', imagePixelModule.redPaletteColorLookupTableDescriptor);
-  imagePixelModule.greenPaletteColorLookupTableData = getLutData(dataSet, 'x00281202', imagePixelModule.greenPaletteColorLookupTableDescriptor);
-  imagePixelModule.bluePaletteColorLookupTableData = getLutData(dataSet, 'x00281203', imagePixelModule.bluePaletteColorLookupTableDescriptor);
+  imagePixelModule.redPaletteColorLookupTableData = getLutData(
+    dataSet,
+    'x00281201',
+    imagePixelModule.redPaletteColorLookupTableDescriptor
+  );
+  imagePixelModule.greenPaletteColorLookupTableData = getLutData(
+    dataSet,
+    'x00281202',
+    imagePixelModule.greenPaletteColorLookupTableDescriptor
+  );
+  imagePixelModule.bluePaletteColorLookupTableData = getLutData(
+    dataSet,
+    'x00281203',
+    imagePixelModule.bluePaletteColorLookupTableDescriptor
+  );
 }
 
-function populateSmallestLargestPixelValues (dataSet, imagePixelModule) {
+function populateSmallestLargestPixelValues(dataSet, imagePixelModule) {
   const pixelRepresentation = dataSet.uint16('x00280103');
 
   if (pixelRepresentation === 0) {
@@ -72,7 +101,7 @@ function populateSmallestLargestPixelValues (dataSet, imagePixelModule) {
   }
 }
 
-function getImagePixelModule (dataSet) {
+function getImagePixelModule(dataSet) {
   const imagePixelModule = {
     samplesPerPixel: dataSet.uint16('x00280002'),
     photometricInterpretation: dataSet.string('x00280004'),
@@ -83,12 +112,15 @@ function getImagePixelModule (dataSet) {
     highBit: dataSet.uint16('x00280102'),
     pixelRepresentation: dataSet.uint16('x00280103'),
     planarConfiguration: dataSet.uint16('x00280006'),
-    pixelAspectRatio: dataSet.string('x00280034')
+    pixelAspectRatio: dataSet.string('x00280034'),
   };
 
   populateSmallestLargestPixelValues(dataSet, imagePixelModule);
 
-  if (imagePixelModule.photometricInterpretation === 'PALETTE COLOR' && dataSet.elements.x00281101) {
+  if (
+    imagePixelModule.photometricInterpretation === 'PALETTE COLOR' &&
+    dataSet.elements.x00281101
+  ) {
     populatePaletteColorLut(dataSet, imagePixelModule);
   }
 

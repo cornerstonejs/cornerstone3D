@@ -10,9 +10,11 @@ import { initializeJPEGLS } from '../shared/decoders/decodeJPEGLS.js';
 
 let codecsInitialized = false;
 
-function processDecodeTask (imageFrame, transferSyntax, pixelData, options) {
+function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
   const priority = options.priority || undefined;
-  const transferList = options.transferPixelData ? [pixelData.buffer] : undefined;
+  const transferList = options.transferPixelData
+    ? [pixelData.buffer]
+    : undefined;
   const loaderOptions = getOptions();
   const { strict, decodeConfig, useWebWorkers } = loaderOptions;
 
@@ -26,7 +28,13 @@ function processDecodeTask (imageFrame, transferSyntax, pixelData, options) {
 
     return new Promise((resolve, reject) => {
       try {
-        const decodeArguments = [imageFrame, transferSyntax, pixelData, decodeConfig, options];
+        const decodeArguments = [
+          imageFrame,
+          transferSyntax,
+          pixelData,
+          decodeConfig,
+          options,
+        ];
         const decodedImageFrame = decodeImageFrameHandler(...decodeArguments);
 
         calculateMinMax(decodedImageFrame, strict);
@@ -44,11 +52,20 @@ function processDecodeTask (imageFrame, transferSyntax, pixelData, options) {
       imageFrame,
       transferSyntax,
       pixelData,
-      options
-    }, priority, transferList).promise;
+      options,
+    },
+    priority,
+    transferList
+  ).promise;
 }
 
-function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, options = {}) {
+function decodeImageFrame(
+  imageFrame,
+  transferSyntax,
+  pixelData,
+  canvas,
+  options = {}
+) {
   // TODO: Turn this into a switch statement instead
   if (transferSyntax === '1.2.840.10008.1.2') {
     // Implicit VR Little Endian
@@ -70,8 +87,10 @@ function decodeImageFrame (imageFrame, transferSyntax, pixelData, canvas, option
 
     // Handle 8-bit JPEG Baseline color images using the browser's built-in
     // JPEG decoding
-    if (imageFrame.bitsAllocated === 8 &&
-       (imageFrame.samplesPerPixel === 3 || imageFrame.samplesPerPixel === 4)) {
+    if (
+      imageFrame.bitsAllocated === 8 &&
+      (imageFrame.samplesPerPixel === 3 || imageFrame.samplesPerPixel === 4)
+    ) {
       return decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas);
     }
 

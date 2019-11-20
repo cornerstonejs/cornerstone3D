@@ -1,5 +1,4 @@
-function checkToken (token, data, dataOffset) {
-
+function checkToken(token, data, dataOffset) {
   if (dataOffset + token.length > data.length) {
     return false;
   }
@@ -15,7 +14,7 @@ function checkToken (token, data, dataOffset) {
   return true;
 }
 
-function stringToUint8Array (str) {
+function stringToUint8Array(str) {
   const uint = new Uint8Array(str.length);
 
   for (let i = 0, j = str.length; i < j; i++) {
@@ -25,8 +24,7 @@ function stringToUint8Array (str) {
   return uint;
 }
 
-function findIndexOfString (data, str, offset) {
-
+function findIndexOfString(data, str, offset) {
   offset = offset || 0;
 
   const token = stringToUint8Array(str);

@@ -1,4 +1,4 @@
-function decodeLittleEndian (imageFrame, pixelData) {
+function decodeLittleEndian(imageFrame, pixelData) {
   let arrayBuffer = pixelData.buffer;
 
   let offset = pixelData.byteOffset;

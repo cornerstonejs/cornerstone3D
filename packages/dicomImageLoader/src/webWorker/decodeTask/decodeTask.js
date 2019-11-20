@@ -10,7 +10,7 @@ let decodeConfig;
  * Function to control loading and initializing the codecs
  * @param config
  */
-function loadCodecs (config) {
+function loadCodecs(config) {
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
     // console.time('initializeCodecs');
@@ -23,7 +23,7 @@ function loadCodecs (config) {
 /**
  * Task initialization function
  */
-function initialize (config) {
+function initialize(config) {
   decodeConfig = config;
 
   loadCodecs(config);
@@ -32,11 +32,12 @@ function initialize (config) {
 /**
  * Task handler function
  */
-function handler (data, doneCallback) {
+function handler(data, doneCallback) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
-  const strict = decodeConfig && decodeConfig.decodeTask && decodeConfig.decodeTask.strict;
+  const strict =
+    decodeConfig && decodeConfig.decodeTask && decodeConfig.decodeTask.strict;
   const imageFrame = data.data.imageFrame;
 
   // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
@@ -48,10 +49,13 @@ function handler (data, doneCallback) {
     data.data.transferSyntax,
     pixelData,
     decodeConfig.decodeTask,
-    data.data.options);
+    data.data.options
+  );
 
   if (!imageFrame.pixelData) {
-    throw new Error('decodeTask: imageFrame.pixelData is undefined after decoding');
+    throw new Error(
+      'decodeTask: imageFrame.pixelData is undefined after decoding'
+    );
   }
 
   calculateMinMax(imageFrame, strict);
@@ -68,5 +72,5 @@ function handler (data, doneCallback) {
 export default {
   taskType: 'decodeTask',
   handler,
-  initialize
+  initialize,
 };

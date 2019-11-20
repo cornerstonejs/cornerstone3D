@@ -4,7 +4,7 @@ import { setOptions, getOptions } from './options.js';
 const internal = {
   xhrRequest,
   setOptions,
-  getOptions
+  getOptions,
 };
 
 export { setOptions, getOptions, xhrRequest, internal };

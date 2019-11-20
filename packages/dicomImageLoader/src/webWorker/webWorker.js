@@ -11,7 +11,7 @@ let config;
  * Initialization function that loads additional web workers and initializes them
  * @param data
  */
-function initialize (data) {
+function initialize(data) {
   // console.log('web worker initialize ', data.workerIndex);
   // prevent initialization from happening more than once
   if (initialized) {
@@ -32,7 +32,7 @@ function initialize (data) {
   }
 
   // initialize each task handler
-  Object.keys(taskHandlers).forEach(function (key) {
+  Object.keys(taskHandlers).forEach(function(key) {
     taskHandlers[key].initialize(config.taskConfiguration);
   });
 
@@ -40,9 +40,8 @@ function initialize (data) {
   self.postMessage({
     taskType: 'initialize',
     status: 'success',
-    result: {
-    },
-    workerIndex: data.workerIndex
+    result: {},
+    workerIndex: data.workerIndex,
   });
 
   initialized = true;
@@ -52,9 +51,13 @@ function initialize (data) {
  * Function exposed to web worker tasks to register themselves
  * @param taskHandler
  */
-export function registerTaskHandler (taskHandler) {
+export function registerTaskHandler(taskHandler) {
   if (taskHandlers[taskHandler.taskType]) {
-    console.log('attempt to register duplicate task handler "', taskHandler.taskType, '"');
+    console.log(
+      'attempt to register duplicate task handler "',
+      taskHandler.taskType,
+      '"'
+    );
 
     return false;
   }
@@ -68,7 +71,7 @@ export function registerTaskHandler (taskHandler) {
  * Function to load a new web worker task with updated configuration
  * @param data
  */
-function loadWebWorkerTask (data) {
+function loadWebWorkerTask(data) {
   config = data.config;
   self.importScripts(data.sourcePath);
 }
@@ -77,7 +80,7 @@ function loadWebWorkerTask (data) {
  * Web worker message handler - dispatches messages to the registered task handlers
  * @param msg
  */
-self.onmessage = function (msg) {
+self.onmessage = function(msg) {
   // console.log('web worker onmessage', msg.data);
 
   // handle initialize message
@@ -97,13 +100,19 @@ self.onmessage = function (msg) {
   // dispatch the message if there is a handler registered for it
   if (taskHandlers[msg.data.taskType]) {
     try {
-      taskHandlers[msg.data.taskType].handler(msg.data, function (result, transferList) {
-        self.postMessage({
-          taskType: msg.data.taskType,
-          status: 'success',
-          result,
-          workerIndex: msg.data.workerIndex
-        }, transferList);
+      taskHandlers[msg.data.taskType].handler(msg.data, function(
+        result,
+        transferList
+      ) {
+        self.postMessage(
+          {
+            taskType: msg.data.taskType,
+            status: 'success',
+            result,
+            workerIndex: msg.data.workerIndex,
+          },
+          transferList
+        );
       });
     } catch (error) {
       console.log(`task ${msg.data.taskType} failed - ${error.message}`);
@@ -111,7 +120,7 @@ self.onmessage = function (msg) {
         taskType: msg.data.taskType,
         status: 'failed',
         result: error.message,
-        workerIndex: msg.data.workerIndex
+        workerIndex: msg.data.workerIndex,
       });
     }
 
@@ -124,6 +133,6 @@ self.onmessage = function (msg) {
   self.postMessage({
     taskType: msg.data.taskType,
     status: 'failed - no task handler registered',
-    workerIndex: msg.data.workerIndex
+    workerIndex: msg.data.workerIndex,
   });
 };

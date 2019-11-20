@@ -11,12 +11,9 @@ registerTaskHandler(decodeTask);
 
 const cornerstoneWADOImageLoaderWebWorker = {
   registerTaskHandler,
-  version
+  version,
 };
 
-export {
-  registerTaskHandler,
-  version
-};
+export { registerTaskHandler, version };
 
 export default cornerstoneWADOImageLoaderWebWorker;

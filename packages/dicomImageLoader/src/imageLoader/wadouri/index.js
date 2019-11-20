@@ -1,17 +1,21 @@
-import { getImagePixelModule,
+import {
+  getImagePixelModule,
   getLUTs,
   getModalityLUTOutputPixelRepresentation,
   getNumberValues,
-  metaDataProvider } from './metaData/index.js';
+  metaDataProvider,
+} from './metaData/index.js';
 
 import dataSetCacheManager from './dataSetCacheManager.js';
 import fileManager from './fileManager.js';
 import getEncapsulatedImageFrame from './getEncapsulatedImageFrame.js';
 import getUncompressedImageFrame from './getUncompressedImageFrame.js';
 import loadFileRequest from './loadFileRequest.js';
-import { loadImageFromPromise,
+import {
+  loadImageFromPromise,
   getLoaderForScheme,
-  loadImage } from './loadImage.js';
+  loadImage,
+} from './loadImage.js';
 import parseImageId from './parseImageId.js';
 import unpackBinaryFrame from './unpackBinaryFrame.js';
 import register from './register.js';
@@ -21,7 +25,7 @@ const metaData = {
   getLUTs,
   getModalityLUTOutputPixelRepresentation,
   getNumberValues,
-  metaDataProvider
+  metaDataProvider,
 };
 
 export default {
@@ -36,5 +40,5 @@ export default {
   loadImage,
   parseImageId,
   unpackBinaryFrame,
-  register
+  register,
 };

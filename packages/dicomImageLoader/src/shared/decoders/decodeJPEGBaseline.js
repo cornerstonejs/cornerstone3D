@@ -1,6 +1,6 @@
 import JpegImage from '../../../codecs/jpeg.js';
 
-function decodeJPEGBaseline (imageFrame, pixelData) {
+function decodeJPEGBaseline(imageFrame, pixelData) {
   // check to make sure codec is loaded
   if (typeof JpegImage === 'undefined') {
     throw new Error('No JPEG Baseline decoder loaded');

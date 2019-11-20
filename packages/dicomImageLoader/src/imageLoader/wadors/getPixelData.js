@@ -1,7 +1,7 @@
 import { xhrRequest } from '../internal/index.js';
 import findIndexOfString from './findIndexOfString.js';
 
-function findBoundary (header) {
+function findBoundary(header) {
   for (let i = 0; i < header.length; i++) {
     if (header[i].substr(0, 2) === '--') {
       return header[i];
@@ -9,7 +9,7 @@ function findBoundary (header) {
   }
 }
 
-function findContentType (header) {
+function findContentType(header) {
   for (let i = 0; i < header.length; i++) {
     if (header[i].substr(0, 13) === 'Content-Type:') {
       return header[i].substr(13).trim();
@@ -17,7 +17,7 @@ function findContentType (header) {
   }
 }
 
-function uint8ArrayToString (data, offset, length) {
+function uint8ArrayToString(data, offset, length) {
   offset = offset || 0;
   length = length || data.length - offset;
   let str = '';
@@ -29,16 +29,15 @@ function uint8ArrayToString (data, offset, length) {
   return str;
 }
 
-function getPixelData (uri, imageId, mediaType = 'application/octet-stream') {
+function getPixelData(uri, imageId, mediaType = 'application/octet-stream') {
   const headers = {
-    accept: mediaType
+    accept: mediaType,
   };
 
   return new Promise((resolve, reject) => {
     const loadPromise = xhrRequest(uri, imageId, headers);
 
-    loadPromise.then(function (imageFrameAsArrayBuffer/* , xhr*/) {
-
+    loadPromise.then(function(imageFrameAsArrayBuffer /* , xhr*/) {
       // request succeeded, Parse the multi-part mime response
       const response = new Uint8Array(imageFrameAsArrayBuffer);
 
@@ -72,8 +71,8 @@ function getPixelData (uri, imageId, mediaType = 'application/octet-stream') {
       resolve({
         contentType: findContentType(split),
         imageFrame: {
-          pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length)
-        }
+          pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
+        },
       });
     });
   });

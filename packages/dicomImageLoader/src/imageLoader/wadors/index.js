@@ -1,8 +1,10 @@
-import { getNumberString,
+import {
+  getNumberString,
   getNumberValue,
   getNumberValues,
   getValue,
-  metaDataProvider } from './metaData/index.js';
+  metaDataProvider,
+} from './metaData/index.js';
 
 import findIndexOfString from './findIndexOfString.js';
 import getPixelData from './getPixelData.js';
@@ -15,7 +17,7 @@ const metaData = {
   getNumberValue,
   getNumberValues,
   getValue,
-  metaDataProvider
+  metaDataProvider,
 };
 
 export default {
@@ -24,5 +26,5 @@ export default {
   getPixelData,
   loadImage,
   metaDataManager,
-  register
+  register,
 };

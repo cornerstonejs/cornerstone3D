@@ -1,7 +1,7 @@
 import OpenJPEG from '../../../codecs/openJPEG-FixedMemory.js';
 import JpxImage from '../../../codecs/jpx.min.js';
 
-function decodeJpx (imageFrame, pixelData) {
+function decodeJpx(imageFrame, pixelData) {
   const jpxImage = new JpxImage();
 
   jpxImage.parse(pixelData);
@@ -9,7 +9,9 @@ function decodeJpx (imageFrame, pixelData) {
   const tileCount = jpxImage.tiles.length;
 
   if (tileCount !== 1) {
-    throw new Error(`JPEG2000 decoder returned a tileCount of ${tileCount}, when 1 is expected`);
+    throw new Error(
+      `JPEG2000 decoder returned a tileCount of ${tileCount}, when 1 is expected`
+    );
   }
 
   imageFrame.columns = jpxImage.width;
@@ -21,7 +23,7 @@ function decodeJpx (imageFrame, pixelData) {
 
 let openJPEG;
 
-function decodeOpenJPEG (data, bytesPerPixel, signed) {
+function decodeOpenJPEG(data, bytesPerPixel, signed) {
   const dataPtr = openJPEG._malloc(data.length);
 
   openJPEG.writeArrayToMemory(data, dataPtr);
@@ -34,8 +36,20 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
   const imageSizeCompPtr = openJPEG._malloc(4);
 
   const t0 = new Date().getTime();
-  const ret = openJPEG.ccall('jp2_decode', 'number', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
-    [dataPtr, data.length, imagePtrPtr, imageSizePtr, imageSizeXPtr, imageSizeYPtr, imageSizeCompPtr]);
+  const ret = openJPEG.ccall(
+    'jp2_decode',
+    'number',
+    ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+    [
+      dataPtr,
+      data.length,
+      imagePtrPtr,
+      imageSizePtr,
+      imageSizeXPtr,
+      imageSizeYPtr,
+      imageSizeCompPtr,
+    ]
+  );
   // add num vomp..etc
 
   if (ret !== 0) {
@@ -58,7 +72,7 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
     sy: openJPEG.getValue(imageSizeYPtr, 'i32'),
     nbChannels: openJPEG.getValue(imageSizeCompPtr, 'i32'), // hard coded for now
     perf_timetodecode: undefined,
-    pixelData: undefined
+    pixelData: undefined,
   };
 
   // Copy the data from the EMSCRIPTEN heap into the correct type array
@@ -108,7 +122,7 @@ function decodeOpenJPEG (data, bytesPerPixel, signed) {
   return image;
 }
 
-function decodeOpenJpeg2000 (imageFrame, pixelData) {
+function decodeOpenJpeg2000(imageFrame, pixelData) {
   const bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
   const signed = imageFrame.pixelRepresentation === 1;
 
@@ -124,7 +138,7 @@ function decodeOpenJpeg2000 (imageFrame, pixelData) {
   return imageFrame;
 }
 
-function initializeJPEG2000 (decodeConfig) {
+function initializeJPEG2000(decodeConfig) {
   // check to make sure codec is loaded
   if (!decodeConfig.usePDFJS) {
     if (typeof OpenJPEG === 'undefined') {
@@ -140,7 +154,7 @@ function initializeJPEG2000 (decodeConfig) {
   }
 }
 
-function decodeJPEG2000 (imageFrame, pixelData, decodeConfig, options = {}) {
+function decodeJPEG2000(imageFrame, pixelData, decodeConfig, options = {}) {
   initializeJPEG2000(decodeConfig);
 
   if (options.usePDFJS || decodeConfig.usePDFJS) {

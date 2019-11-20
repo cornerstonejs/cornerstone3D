@@ -1,6 +1,6 @@
 /* eslint no-bitwise: 0 */
 
-function convertLUTto8Bit (lut, shift) {
+function convertLUTto8Bit(lut, shift) {
   const numEntries = lut.length;
   const cleanedLUT = new Uint8ClampedArray(numEntries);
 
@@ -18,7 +18,7 @@ function convertLUTto8Bit (lut, shift) {
  * @param {Uint8ClampedArray} rgbaBuffer
  * @returns {void}
  */
-export default function (imageFrame, rgbaBuffer) {
+export default function(imageFrame, rgbaBuffer) {
   const numPixels = imageFrame.columns * imageFrame.rows;
   const pixelData = imageFrame.pixelData;
   const rData = imageFrame.redPaletteColorLookupTableData;
@@ -31,7 +31,8 @@ export default function (imageFrame, rgbaBuffer) {
   let rgbaIndex = 0;
 
   const start = imageFrame.redPaletteColorLookupTableDescriptor[1];
-  const shift = imageFrame.redPaletteColorLookupTableDescriptor[2] === 8 ? 0 : 8;
+  const shift =
+    imageFrame.redPaletteColorLookupTableDescriptor[2] === 8 ? 0 : 8;
 
   const rDataCleaned = convertLUTto8Bit(rData, shift);
   const gDataCleaned = convertLUTto8Bit(gData, shift);

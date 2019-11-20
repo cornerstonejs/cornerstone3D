@@ -1,4 +1,4 @@
-function parseImageId (imageId) {
+function parseImageId(imageId) {
   // build a url by parsing out the url scheme and frame index from the imageId
   const firstColonIndex = imageId.indexOf(':');
 
@@ -17,7 +17,7 @@ function parseImageId (imageId) {
   return {
     scheme: imageId.substr(0, firstColonIndex),
     url,
-    frame
+    frame,
   };
 }
 

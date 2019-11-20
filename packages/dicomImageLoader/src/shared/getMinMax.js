@@ -4,7 +4,7 @@
  * @param {Number[]} storedPixelData
  * @return {{min: Number, max: Number}}
  */
-function getMinMax (storedPixelData) {
+function getMinMax(storedPixelData) {
   // we always calculate the min max values since they are not always
   // present in DICOM and we don't want to trust them anyway as cornerstone
   // depends on us providing reliable values for these
@@ -23,7 +23,7 @@ function getMinMax (storedPixelData) {
 
   return {
     min,
-    max
+    max,
   };
 }
 

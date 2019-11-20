@@ -1,20 +1,20 @@
 let files = [];
 
-function add (file) {
+function add(file) {
   const fileIndex = files.push(file);
 
   return `dicomfile:${fileIndex - 1}`;
 }
 
-function get (index) {
+function get(index) {
   return files[index];
 }
 
-function remove (index) {
+function remove(index) {
   files[index] = undefined;
 }
 
-function purge () {
+function purge() {
   files = [];
 }
 
@@ -22,5 +22,5 @@ export default {
   add,
   get,
   remove,
-  purge
+  purge,
 };
