@@ -24,7 +24,12 @@ function getMeasurementGroup(toolType, toolData, ReferencedSOPSequence) {
     const toolTypeData = toolData[toolType];
     const toolClass =
         MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE[toolType];
-    if (!toolTypeData || !toolTypeData.data || !toolTypeData.data.length) {
+    if (
+        !toolTypeData ||
+        !toolTypeData.data ||
+        !toolTypeData.data.length ||
+        !toolClass
+    ) {
         return;
     }
 
