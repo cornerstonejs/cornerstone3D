@@ -443,7 +443,7 @@ class DecimalString extends StringRepresentation {
             const dsArray = ds.split(BACKSLASH);
             ds = dsArray.map(ds => Number(ds));
         } else {
-            ds = Number(ds);
+            ds = [Number(ds)];
         }
 
         return ds;
@@ -510,8 +510,20 @@ class IntegerString extends StringRepresentation {
     }
 
     readBytes(stream, length) {
-        //return this.readNullPaddedString(stream, length);
-        return Number(stream.readString(length).trim());
+        const BACKSLASH = String.fromCharCode(0x5c);
+        let is = stream.readString(length).trim();
+
+        is = is.replace(/[^0-9.\\\-+e]/gi, "");
+
+        if (is.indexOf(BACKSLASH) !== -1) {
+            // handle integer string with multiplicity
+            const integerStringArray = is.split(BACKSLASH);
+            is = integerStringArray.map(is => Number(is));
+        } else {
+            is = [Number(is)];
+        }
+
+        return is;
     }
 }
 
