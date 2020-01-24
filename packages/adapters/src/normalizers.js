@@ -301,12 +301,10 @@ class ImageNormalizer extends Normalizer {
             log.error("Missing number or frames not supported");
             return;
         }
-        if (Number(ds.NumberOfFrames) === 1) {
-            log.error(
-                "Single frame instance of multiframe class not supported"
-            );
-            return;
-        }
+        // if (Number(ds.NumberOfFrames) === 1) {
+        //   log.error("Single frame instance of multiframe class not supported");
+        //   return;
+        // }
         if (!ds.PixelRepresentation) {
             // Required tag: guess signed
             ds.PixelRepresentation = 1;
@@ -350,9 +348,21 @@ class ImageNormalizer extends Normalizer {
             RescaleSlope: rescaleSlope,
             RescaleType: "US"
         };
-
+        log.error(`num of frames ${ds.NumberOfFrames}`);
         let frameNumber = 1;
         this.datasets.forEach(dataset => {
+            log.error(`Frame num ${frameNumber}`);
+            log.error(
+                `Per frame seq ${JSON.stringify(
+                    ds.PerFrameFunctionalGroupsSequence
+                )}`
+            );
+            // emelalkim: ds.PerFrameFunctionalGroupsSequence is an object instead of array
+            // when there is only one frame
+            if (ds.NumberOfFrames === 1)
+                ds.PerFrameFunctionalGroupsSequence = [
+                    ds.PerFrameFunctionalGroupsSequence
+                ];
             ds.PerFrameFunctionalGroupsSequence[
                 frameNumber - 1
             ].FrameContentSequence = {
@@ -369,6 +379,7 @@ class ImageNormalizer extends Normalizer {
                 frameContentSequence.FrameAcquisitionDateTime = frameTime;
                 frameContentSequence.FrameReferenceDateTime = frameTime;
             }
+
             frameNumber++;
         });
 

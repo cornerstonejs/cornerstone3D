@@ -108,10 +108,13 @@ class DicomMetaDictionary {
                 }
             }
             naturalDataset[naturalName] = data.Value;
-            if (naturalDataset[naturalName].length == 1) {
-                // only one value is not a list
-                naturalDataset[naturalName] = naturalDataset[naturalName][0];
-            }
+            // emellalkim: commenting this out causes
+            // sopClassUID.replace is not a function
+            // at Function.normalizerForSOPClassUID (dcmje.es.js:53743)
+            //   if (naturalDataset[naturalName].length == 1) {
+            //     // only one value is not a list
+            //     naturalDataset[naturalName] = naturalDataset[naturalName][0];
+            //   }
         });
         return naturalDataset;
     }
@@ -189,9 +192,7 @@ class DicomMetaDictionary {
                     dataItem.Value = dataItem.Value.map(value => {
                         if (value.length > vr.maxLength) {
                             log.warn(
-                                `Truncating value ${value} of ${naturalName} because it is longer than ${
-                                    vr.maxLength
-                                }`
+                                `Truncating value ${value} of ${naturalName} because it is longer than ${vr.maxLength}`
                             );
                             return value.slice(0, vr.maxLength);
                         } else {
