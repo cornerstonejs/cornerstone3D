@@ -301,6 +301,7 @@ class ImageNormalizer extends Normalizer {
             log.error("Missing number or frames not supported");
             return;
         }
+        // disables the NumberOfFrames restriction so that we can process single slice frames
         // if (Number(ds.NumberOfFrames) === 1) {
         //   log.error("Single frame instance of multiframe class not supported");
         //   return;
