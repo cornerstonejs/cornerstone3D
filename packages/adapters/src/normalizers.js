@@ -348,15 +348,8 @@ class ImageNormalizer extends Normalizer {
             RescaleSlope: rescaleSlope,
             RescaleType: "US"
         };
-        log.error(`num of frames ${ds.NumberOfFrames}`);
         let frameNumber = 1;
         this.datasets.forEach(dataset => {
-            log.error(`Frame num ${frameNumber}`);
-            log.error(
-                `Per frame seq ${JSON.stringify(
-                    ds.PerFrameFunctionalGroupsSequence
-                )}`
-            );
             // emelalkim: ds.PerFrameFunctionalGroupsSequence is an object instead of array
             // when there is only one frame
             if (ds.NumberOfFrames === 1)

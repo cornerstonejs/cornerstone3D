@@ -108,13 +108,10 @@ class DicomMetaDictionary {
                 }
             }
             naturalDataset[naturalName] = data.Value;
-            // emellalkim: commenting this out causes
-            // sopClassUID.replace is not a function
-            // at Function.normalizerForSOPClassUID (dcmje.es.js:53743)
-            //   if (naturalDataset[naturalName].length == 1) {
-            //     // only one value is not a list
-            //     naturalDataset[naturalName] = naturalDataset[naturalName][0];
-            //   }
+            if (naturalDataset[naturalName].length == 1) {
+                // only one value is not a list
+                naturalDataset[naturalName] = naturalDataset[naturalName][0];
+            }
         });
         return naturalDataset;
     }
