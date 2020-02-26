@@ -12,15 +12,15 @@
 
 See [live examples here](https://dcmjs.netlify.com/)
 
-## Goals
+# Goals
 
 _Overall the code should:_
 
-* Support reading and writing of correct DICOM objects
+* Support reading and writing of correct DICOM objects in JavaScript for browser or node environments
 * Provide a programmer-friendly JavaScript environment for using and manipulating DICOM objects
 * Include a set of useful demos to encourage correct usage of dcmjs and modern DICOM objects
 * Encourage correct referencing of instances and composite context when creating derived objects
-* Current target is modern web browsers, but a set of node-based utilities also makes sense someday.
+* Current target is modern web browsers, but a set of node-based utilities also makes sense someday
 
 _Architectural goals include:_
 
@@ -40,11 +40,17 @@ _Parts of DICOM that dcmjs *will not* focus on:_
 * DIMSE (legacy networking like C-FIND, C-MOVE, etc)
 * Physical Media (optical disks)
 
-## Status
+# Usage
 
-Currently dcmjs is an early-stage development experiment.
+## In Browser
 
-```js
+```html
+<script type="text/javascript" src="https://unpkg.com/dcmjs"></script>
+```
+
+## In Node
+
+```None
 // To install latest _stable_ release
 npm install --save dcmjs
 
@@ -52,23 +58,55 @@ npm install --save dcmjs
 npm install --save dcmjs@dev
 ```
 
-### Implemented
+## For Developers
+
+```None
+git clone https://github.com/dcmjs-org/dcmjs
+cd dcmjs
+npm install
+npm run build
+npm test
+```
+
+## For Maintainers
+
+Publish new version:
+
+```bash
+npm version minor
+npm publish
+git push --tags
+```
+
+## Community Participation
+
+Use this repository's issues page to report any bugs.  Please follow [SSCCE](http://sscce.org/) guidelines when submitting issues.
+
+Use github pull requests to make contributions.
+
+# Status
+
+Currently dcmjs is an early-stage development experiment, but already has valuable functionality.
+
+## Implemented
   
 * Bidirectional conversion to and from part 10 binary DICOM and DICOM standard JSON encoding (as in [DICOMweb](http://dicomweb.org))
-* Bidirectional convertion to and from DICOM standard JSON and a programmer-friendly high level version.
+* Bidirectional convertion to and from DICOM standard JSON and a programmer-friendly high-level version (high-level form is called the "naturalized" form in the code).
 
-### In development
+## In development
 
 * Creation of (correct) enhanced multiframe DICOM objects from legacy image objects
 * Creation of (correct) derived DICOM objects such as Segmentations and Structured Reports
 
-### TODO
+## TODO
 
 * Create a test suite of input and output DICOM objects
 * Test interoperability with other DICOM implementations
 * Add documentation
 
-## History
+
+
+# History
 
 * 2014
   * [DCMTK](dcmtk.org) cross compiled to javascript at [CTK Hackfest](http://www.commontk.org/index.php/CTK-Hackfest-May-2014). While this was useful and powerful, it was heavyweight for typical web usage.
@@ -78,10 +116,10 @@ npm install --save dcmjs@dev
 * 2017
   * At [NA-MIC Project Week 25](https://na-mic.org/wiki/Project_Week_25) Erik Ziegler and Steve Pieper [worked](https://na-mic.org/wiki/Project_Week_25/DICOM_Segmentation_Support_for_Cornerstone_and_OHIF_Viewer)
  with the community to define some example use cases to mix the pure JavaScript DICOM code with Cornerstone and [CornerstoneTools](https://github.com/chafey/cornerstoneTools).
-* 2018
+* 2018-2020
   * Work continues to develop SR and SEG support to [OHIFViewer](http://ohif.org) allow interoperability with [DICOM4QI](https://legacy.gitbook.com/book/qiicr/dicom4qi/details)
 
-## Support
+# Support
 
 The developers gratefully acknowledge their reseach support:
 
@@ -90,7 +128,4 @@ The developers gratefully acknowledge their reseach support:
 * [Radiomics](http://radiomics.io)
 * The [Neuroimage Analysis Center](http://nac.spl.harvard.edu)
 * The [National Center for Image Guided Therapy](http://ncigt.org)
-
-<!--stackedit_data:
-eyJoaXN0b3J5IjpbMTI4MTEyOTE1NV19
--->
+* The [NCI Imaging Data Commons](https://imagingdatacommons.github.io/) NCI Imaging Data Commons: contract number 19X037Q from Leidos Biomedical Research under Task Order HHSN26100071 from NCI
