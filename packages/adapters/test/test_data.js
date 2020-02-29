@@ -109,12 +109,12 @@ const tests = {
   test_multiframe_1: () => {
 
     const url = "https://github.com/dcmjs-org/data/releases/download/MRHead/MRHead.zip";
-    const zipPath = path.join(os.tmpdir(), "MRHead.zip");
+    const zipFilePath = path.join(os.tmpdir(), "MRHead.zip");
     const unzipPath = path.join(os.tmpdir(), "test_multiframe_1");
 
-    downloadToFile(url, zipPath)
+    downloadToFile(url, zipFilePath)
       .then( () => {
-        fs.createReadStream(zipPath)
+        fs.createReadStream(zipFilePath)
           .pipe(unzipper.Extract( {path: unzipPath} )
             .on('close', () => {
               const mrHeadPath = path.join(unzipPath, "MRHead");
@@ -135,6 +135,50 @@ const tests = {
                 expect(multiframe.NumberOfFrames).to.equal(130);
                 expect(roundedSpacing).to.equal(1.3);
                 console.log("Finished test_multiframe_1");
+              })
+            })
+          );
+      });
+  },
+  test_oneslice_seg: () => {
+
+    const ctPelvisURL = "https://github.com/dcmjs-org/data/releases/download/CTPelvis/CTPelvis.zip";
+    const segURL = "https://github.com/dcmjs-org/data/releases/download/CTPelvis/Lesion1_onesliceSEG.dcm"
+    const zipFilePath = path.join(os.tmpdir(), "CTPelvis.zip");
+    const unzipPath = path.join(os.tmpdir(), "test_oneslice_seg");
+    const segFilePath = path.join(os.tmpdir(), "Lesion1_onesliceSEG.dcm");
+
+    downloadToFile(ctPelvisURL, zipFilePath)
+      .then( () => {
+        fs.createReadStream(zipFilePath)
+          .pipe(unzipper.Extract( {path: unzipPath} )
+            .on('close', () => {
+              const ctPelvisPath = path.join(unzipPath, "Series-1.2.840.113704.1.111.1916.1223562191.15");
+              fs.readdir(ctPelvisPath, (err, fileNames) => {
+                expect(err).to.equal(null);
+                const datasets = [];
+                fileNames.forEach(fileName => {
+                  const arrayBuffer = fs.readFileSync(path.join(ctPelvisPath, fileName)).buffer;
+                  const dicomDict = DicomMessage.readFile(arrayBuffer);
+                  const dataset = DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
+                  datasets.push(dataset);
+                });
+
+                const multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset(datasets);
+                const spacing = multiframe.SharedFunctionalGroupsSequence.PixelMeasuresSequence.SpacingBetweenSlices;
+                const roundedSpacing = Math.round(100 * spacing) / 100;
+
+                expect(multiframe.NumberOfFrames).to.equal(60);
+                expect(roundedSpacing).to.equal(5);
+
+                downloadToFile(segURL, segFilePath)
+                  .then( () => {
+                    const arrayBuffer = fs.readFileSync(segFilePath).buffer;
+                    const dicomDict = DicomMessage.readFile(arrayBuffer);
+                    const dataset = DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
+                    expect(dataset.NumberOfFrames).to.equal(1);
+                    console.log("Finished test_oneslice_seg");
+                  });
               })
             })
           );
