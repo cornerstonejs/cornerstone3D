@@ -297,19 +297,17 @@ class ImageNormalizer extends Normalizer {
 
     normalizeMultiframe() {
         let ds = this.dataset;
+
         if (!ds.NumberOfFrames) {
             log.error("Missing number or frames not supported");
             return;
         }
-        // disables the NumberOfFrames restriction so that we can process single slice frames
-        // if (Number(ds.NumberOfFrames) === 1) {
-        //   log.error("Single frame instance of multiframe class not supported");
-        //   return;
-        // }
+
         if (!ds.PixelRepresentation) {
             // Required tag: guess signed
             ds.PixelRepresentation = 1;
         }
+
         if (!ds.StudyID || ds.StudyID === "") {
             // Required tag: fill in if needed
             ds.StudyID = "No Study ID";
@@ -351,8 +349,6 @@ class ImageNormalizer extends Normalizer {
         };
         let frameNumber = 1;
         this.datasets.forEach(dataset => {
-            // emelalkim: ds.PerFrameFunctionalGroupsSequence is an object instead of array
-            // when there is only one frame
             if (ds.NumberOfFrames === 1)
                 ds.PerFrameFunctionalGroupsSequence = [
                     ds.PerFrameFunctionalGroupsSequence

@@ -176,7 +176,9 @@ const tests = {
                     const arrayBuffer = fs.readFileSync(segFilePath).buffer;
                     const dicomDict = DicomMessage.readFile(arrayBuffer);
                     const dataset = DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
+                    const multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset([dataset]);
                     expect(dataset.NumberOfFrames).to.equal(1);
+                    expect(multiframe.NumberOfFrames).to.equal(1);
                     console.log("Finished test_oneslice_seg");
                   });
               })
