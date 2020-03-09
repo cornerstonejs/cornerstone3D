@@ -24,11 +24,11 @@ class DicomMetaDictionary {
     // TODO: if this gets longer it could go in ValueRepresentation.js
     // or in a dedicated class
     static cleanDataset(dataset) {
-        var cleanedDataset = {};
+        const cleanedDataset = {};
         Object.keys(dataset).forEach(tag => {
-            var data = dataset[tag];
+            const data = Object.assign({}, dataset[tag]);
             if (data.vr == "SQ") {
-                var cleanedValues = [];
+                const cleanedValues = [];
                 Object.keys(data.Value).forEach(index => {
                     cleanedValues.push(
                         DicomMetaDictionary.cleanDataset(data.Value[index])
@@ -37,11 +37,12 @@ class DicomMetaDictionary {
                 data.Value = cleanedValues;
             } else {
                 // remove null characters from strings
-                Object.keys(data.Value).forEach(index => {
-                    let dataItem = data.Value[index];
-                    if (dataItem.constructor.name == "String") {
-                        data.Value[index] = dataItem.replace(/\0/, "");
+                data.Value = Object.keys(data.Value).map(index => {
+                    const item = data.Value[index];
+                    if (item.constructor.name == "String") {
+                        return item.replace(/\0/, "");
                     }
+                    return item;
                 });
             }
             cleanedDataset[tag] = data;
@@ -55,7 +56,7 @@ class DicomMetaDictionary {
     static namifyDataset(dataset) {
         var namedDataset = {};
         Object.keys(dataset).forEach(tag => {
-            var data = dataset[tag];
+            const data = Object.assign({}, dataset[tag]);
             if (data.vr == "SQ") {
                 var namedValues = [];
                 Object.keys(data.Value).forEach(index => {
@@ -82,35 +83,60 @@ class DicomMetaDictionary {
     // - single element lists are replaced by their first element
     // - object member names are dictionary, not group/element tag
     static naturalizeDataset(dataset) {
-        var naturalDataset = {
+        const naturalDataset = {
             _vrMap: {}
         };
+
         Object.keys(dataset).forEach(tag => {
-            var data = dataset[tag];
-            if (data.vr == "SQ") {
-                // convert sequence to list of values
-                var naturalValues = [];
-                Object.keys(data.Value).forEach(index => {
-                    naturalValues.push(
-                        DicomMetaDictionary.naturalizeDataset(data.Value[index])
-                    );
-                });
-                data.Value = naturalValues;
-            }
-            var punctuatedTag = DicomMetaDictionary.punctuateTag(tag);
-            var entry = DicomMetaDictionary.dictionary[punctuatedTag];
-            var naturalName = tag;
+            const data = dataset[tag];
+            const punctuatedTag = DicomMetaDictionary.punctuateTag(tag);
+            const entry = DicomMetaDictionary.dictionary[punctuatedTag];
+            let naturalName = tag;
+
             if (entry) {
                 naturalName = entry.name;
+
                 if (entry.vr == "ox") {
                     // when the vr is data-dependent, keep track of the original type
                     naturalDataset._vrMap[naturalName] = data.vr;
                 }
             }
-            naturalDataset[naturalName] = data.Value;
-            if (naturalDataset[naturalName].length == 1) {
-                // only one value is not a list
-                naturalDataset[naturalName] = naturalDataset[naturalName][0];
+
+            if (data.Value === undefined) {
+                // In the case of type 2, add this tag but explictly set it null to indicate its empty.
+                naturalDataset[naturalName] = null;
+
+                if (data.InlineBinary) {
+                    naturalDataset[naturalName] = {
+                        InlineBinary: data.InlineBinary
+                    };
+                } else if (data.BulkDataURI) {
+                    naturalDataset[naturalName] = {
+                        BulkDataURI: data.BulkDataURI
+                    };
+                }
+            } else {
+                if (data.vr === "SQ") {
+                    // convert sequence to list of values
+                    const naturalValues = [];
+
+                    Object.keys(data.Value).forEach(index => {
+                        naturalValues.push(
+                            DicomMetaDictionary.naturalizeDataset(
+                                data.Value[index]
+                            )
+                        );
+                    });
+
+                    naturalDataset[naturalName] = naturalValues;
+                } else {
+                    naturalDataset[naturalName] = data.Value;
+                }
+
+                if (naturalDataset[naturalName].length === 1) {
+                    naturalDataset[naturalName] =
+                        naturalDataset[naturalName][0];
+                }
             }
         });
         return naturalDataset;
@@ -144,7 +170,7 @@ class DicomMetaDictionary {
             var entry = DicomMetaDictionary.nameMap[name];
             if (entry) {
                 let dataValue = dataset[naturalName];
-                if (dataValue === undefined) {
+                if (!dataValue) {
                     // handle the case where it was deleted from the object but is in keys
                     return;
                 }

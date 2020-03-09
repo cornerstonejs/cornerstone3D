@@ -12,7 +12,6 @@
     "build": "rollup -c",
     "build:examples": "npm run build && npx cpx 'build/**/*.{js,map}' examples/js",
     "start": "rollup -c -w",
-    "prepublishOnly": "npm run build",
     "lint": "eslint -c .eslintrc.json --fix src && prettier --tab-width 4 --write src/**/*.js"
   },
   "repository": {

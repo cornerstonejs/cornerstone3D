@@ -6,15 +6,32 @@ defaults: &defaults
     - image: circleci/node:latest
 
 jobs:
-  # Used to publish latest under @dev tag
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            - v1-dependencies-
+      - run: npm install
+      # These tests require built files to test against
+      - run: npm run build
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      - run: npm run test
+
+  # Used to publish latest
   deploy:
     <<: *defaults
     steps:
       - checkout
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          - v1-dependencies-
+            - v1-dependencies-{{ checksum "package.json" }}
+            - v1-dependencies-
       - run: npm install
       - save_cache:
           paths:
@@ -25,16 +42,22 @@ jobs:
           name: Write NPM Token to ~/.npmrc
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
       - run:
-          name: Bump version number
-          command: sh ~/repo/.circleci/version.sh
-      - run:
           name: Publish package
-          command: npm publish --tag dev
+          command: npx semantic-release@17.0.4
 
 workflows:
   version: 2
 
-  # Merges to master branch
+  # PULL REQUEST
+  test:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore:
+                - master
+
+  # MERGE TO MASTER
   build-test-deploy:
     jobs:
       - deploy:

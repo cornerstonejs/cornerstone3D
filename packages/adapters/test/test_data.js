@@ -45,6 +45,34 @@ const metadata = {
   }
 };
 
+const sequenceMetadata = {
+  "00081032": {
+    "vr": "SQ",
+    "Value": [
+      {
+        "00080100": {
+          "vr": "SH",
+          "Value": [
+            "IMG1332"
+          ]
+        },
+        "00080102": {
+          "vr": "SH",
+          "Value": [
+            "L"
+          ]
+        },
+        "00080104": {
+          "vr": "LO",
+          "Value": [
+            "MRI SHOULDER WITHOUT IV CONTRAST LEFT"
+          ]
+        }
+      }
+    ]
+  }
+}
+
 function downloadToFile(url, filePath) {
   return new Promise( (resolve,reject) => {
     const fileStream = fs.createWriteStream(filePath);
@@ -91,6 +119,17 @@ const tests = {
     const naturalDICOM = DicomMetaDictionary.naturalizeDataset(datasets[0]);
 
     expect(naturalDICOM.StudyInstanceUID).to.equal(firstUID);
+
+    //
+    // make a natural version of a dataset with sequence tags and confirm it has correct values
+    //
+    const naturalSequence = DicomMetaDictionary.naturalizeDataset(sequenceMetadata);
+
+    expect(naturalSequence.ProcedureCodeSequence).to.have.property('CodeValue', 'IMG1332');
+    expect(naturalSequence.ProcedureCodeSequence).to.have.property('CodingSchemeDesignator', 'L');
+    expect(naturalSequence.ProcedureCodeSequence).to.have.property('CodeMeaning', 'MRI SHOULDER WITHOUT IV CONTRAST LEFT');
+    // expect original data to remain unnaturalized
+    expect(sequenceMetadata['00081032'].Value[0]).to.have.keys('00080100', '00080102', '00080104');
 
     //
     // convert to part10 and back
