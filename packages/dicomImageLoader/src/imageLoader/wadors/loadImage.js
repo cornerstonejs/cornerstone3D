@@ -76,26 +76,30 @@ function loadImage(imageId, options) {
     const mediaType = 'multipart/related; type="application/octet-stream"'; // 'image/dicom+jp2';
 
     // get the pixel data from the server
-    getPixelData(uri, imageId, mediaType).then(result => {
-      const transferSyntax = getTransferSyntaxForContentType(
-        result.contentType
-      );
-      const pixelData = result.imageFrame.pixelData;
-      const imagePromise = createImage(
-        imageId,
-        pixelData,
-        transferSyntax,
-        options
-      );
+    getPixelData(uri, imageId, mediaType)
+      .then(result => {
+        const transferSyntax = getTransferSyntaxForContentType(
+          result.contentType
+        );
+        const pixelData = result.imageFrame.pixelData;
+        const imagePromise = createImage(
+          imageId,
+          pixelData,
+          transferSyntax,
+          options
+        );
 
-      imagePromise.then(image => {
-        // add the loadTimeInMS property
-        const end = new Date().getTime();
+        imagePromise.then(image => {
+          // add the loadTimeInMS property
+          const end = new Date().getTime();
 
-        image.loadTimeInMS = end - start;
-        resolve(image);
-      }, reject);
-    }, reject);
+          image.loadTimeInMS = end - start;
+          resolve(image);
+        }, reject);
+      }, reject)
+      .catch(error => {
+        reject(error);
+      });
   });
 
   return {

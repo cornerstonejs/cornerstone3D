@@ -74,7 +74,7 @@ function getPixelData(uri, imageId, mediaType = 'application/octet-stream') {
           pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
         },
       });
-    });
+    }, reject);
   });
 }
 
