@@ -170,7 +170,8 @@ class DicomMetaDictionary {
             var entry = DicomMetaDictionary.nameMap[name];
             if (entry) {
                 let dataValue = dataset[naturalName];
-                if (dataValue === undefined || dataValue === null) {
+
+                if (dataValue === undefined) {
                     // handle the case where it was deleted from the object but is in keys
                     return;
                 }
@@ -179,49 +180,52 @@ class DicomMetaDictionary {
                     vr: entry.vr,
                     Value: dataset[naturalName]
                 };
-                if (entry.vr == "ox") {
-                    if (dataset._vrMap && dataset._vrMap[naturalName]) {
-                        dataItem.vr = dataset._vrMap[naturalName];
-                    } else {
-                        log.error(
-                            "No value representation given for",
-                            naturalName
-                        );
-                    }
-                }
 
-                dataItem.Value = DicomMetaDictionary.denaturalizeValue(
-                    dataItem.Value
-                );
-
-                if (entry.vr == "SQ") {
-                    var unnaturalValues = [];
-                    for (
-                        let datasetIndex = 0;
-                        datasetIndex < dataItem.Value.length;
-                        datasetIndex++
-                    ) {
-                        const nestedDataset = dataItem.Value[datasetIndex];
-                        unnaturalValues.push(
-                            DicomMetaDictionary.denaturalizeDataset(
-                                nestedDataset
-                            )
-                        );
-                    }
-                    dataItem.Value = unnaturalValues;
-                }
-                let vr = ValueRepresentation.createByTypeString(dataItem.vr);
-                if (!vr.isBinary() && vr.maxLength) {
-                    dataItem.Value = dataItem.Value.map(value => {
-                        if (value.length > vr.maxLength) {
-                            log.warn(
-                                `Truncating value ${value} of ${naturalName} because it is longer than ${vr.maxLength}`
-                            );
-                            return value.slice(0, vr.maxLength);
+                if (dataValue !== null) {
+                    if (entry.vr == "ox") {
+                        if (dataset._vrMap && dataset._vrMap[naturalName]) {
+                            dataItem.vr = dataset._vrMap[naturalName];
                         } else {
-                            return value;
+                            log.error(
+                                "No value representation given for",
+                                naturalName
+                            );
                         }
-                    });
+                    }
+
+                    dataItem.Value = DicomMetaDictionary.denaturalizeValue(
+                        dataItem.Value
+                    );
+
+                    if (entry.vr == "SQ") {
+                        var unnaturalValues = [];
+                        for (
+                            let datasetIndex = 0;
+                            datasetIndex < dataItem.Value.length;
+                            datasetIndex++
+                        ) {
+                            const nestedDataset = dataItem.Value[datasetIndex];
+                            unnaturalValues.push(
+                                DicomMetaDictionary.denaturalizeDataset(
+                                    nestedDataset
+                                )
+                            );
+                        }
+                        dataItem.Value = unnaturalValues;
+                    }
+                    let vr = ValueRepresentation.createByTypeString(dataItem.vr);
+                    if (!vr.isBinary() && vr.maxLength) {
+                        dataItem.Value = dataItem.Value.map(value => {
+                            if (value.length > vr.maxLength) {
+                                log.warn(
+                                    `Truncating value ${value} of ${naturalName} because it is longer than ${vr.maxLength}`
+                                );
+                                return value.slice(0, vr.maxLength);
+                            } else {
+                                return value;
+                            }
+                        });
+                    }
                 }
 
                 var tag = DicomMetaDictionary.unpunctuateTag(entry.tag);

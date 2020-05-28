@@ -24,6 +24,7 @@ import {
     ParametricMap
 } from "./derivations/index.js";
 // Normalizers
+
 import { Normalizer } from "./normalizers.js";
 import { ImageNormalizer } from "./normalizers.js";
 import { MRImageNormalizer } from "./normalizers.js";
@@ -33,7 +34,7 @@ import { CTImageNormalizer } from "./normalizers.js";
 import { PETImageNormalizer } from "./normalizers.js";
 import { SEGImageNormalizer } from "./normalizers.js";
 import { DSRNormalizer } from "./normalizers.js";
-//
+
 import adapters from "./adapters/index.js";
 import utilities from "./utilities/index.js";
 import sr from "./sr/index.js";
