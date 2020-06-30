@@ -2,22 +2,6 @@ import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
 import TID300Measurement from "./TID300Measurement.js";
 
 export default class Bidirectional extends TID300Measurement {
-    constructor({
-        longAxis,
-        shortAxis,
-        longAxisLength,
-        shortAxisLength,
-        ReferencedSOPSequence
-    }) {
-        super();
-
-        this.longAxis = longAxis;
-        this.shortAxis = shortAxis;
-        this.longAxisLength = longAxisLength;
-        this.shortAxisLength = shortAxisLength;
-        this.ReferencedSOPSequence = ReferencedSOPSequence;
-    }
-
     contentItem() {
         const {
             longAxis,
@@ -25,43 +9,9 @@ export default class Bidirectional extends TID300Measurement {
             longAxisLength,
             shortAxisLength,
             ReferencedSOPSequence
-        } = this;
+        } = this.props;
 
-        return [
-            {
-                RelationshipType: "HAS OBS CONTEXT",
-                ValueType: "TEXT",
-                ConceptNameCodeSequence: {
-                    CodeValue: "112039",
-                    CodingSchemeDesignator: "DCM",
-                    CodeMeaning: "Tracking Identifier"
-                },
-                TextValue: "web annotation"
-            },
-            {
-                RelationshipType: "HAS OBS CONTEXT",
-                ValueType: "UIDREF",
-                ConceptNameCodeSequence: {
-                    CodeValue: "112040",
-                    CodingSchemeDesignator: "DCM",
-                    CodeMeaning: "Tracking Unique Identifier"
-                },
-                UID: DicomMetaDictionary.uid()
-            },
-            {
-                RelationshipType: "CONTAINS",
-                ValueType: "CODE",
-                ConceptNameCodeSequence: {
-                    CodeValue: "121071",
-                    CodingSchemeDesignator: "DCM",
-                    CodeMeaning: "Finding"
-                },
-                ConceptCodeSequence: {
-                    CodeValue: "SAMPLEFINDING",
-                    CodingSchemeDesignator: "99dcmjs",
-                    CodeMeaning: "Sample Finding"
-                }
-            },
+        return this.getMeasurement([
             {
                 RelationshipType: "CONTAINS",
                 ValueType: "NUM",
@@ -130,6 +80,6 @@ export default class Bidirectional extends TID300Measurement {
                     }
                 }
             }
-        ];
+        ]);
     }
 }

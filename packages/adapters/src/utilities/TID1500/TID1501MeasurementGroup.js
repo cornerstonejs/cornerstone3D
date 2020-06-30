@@ -7,15 +7,28 @@ export default class TID1501MeasurementGroup {
         const { TID300Measurements } = this;
 
         // TODO: Is there nothing else in this group?
-        let contentItem = [];
+        let measurementGroups = [];
 
-        let measurements = [];
         TID300Measurements.forEach(TID300Measurement => {
-            measurements = measurements.concat(TID300Measurement.contentItem());
+            measurementGroups.push(
+                this.getMeasurementGroup(TID300Measurement.contentItem())
+            );
         });
 
-        contentItem = contentItem.concat(measurements);
+        return measurementGroups;
+    }
 
-        return contentItem;
+    getMeasurementGroup(contentSequenceEntries) {
+        return {
+            RelationshipType: "CONTAINS",
+            ValueType: "CONTAINER",
+            ConceptNameCodeSequence: {
+                CodeValue: "125007",
+                CodingSchemeDesignator: "DCM",
+                CodeMeaning: "Measurement Group"
+            },
+            ContinuityOfContent: "SEPARATE",
+            ContentSequence: [...contentSequenceEntries]
+        };
     }
 }

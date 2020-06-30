@@ -1,9 +1,28 @@
-import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
 import TID300Measurement from "./TID300Measurement.js";
 
-export default class Length extends TID300Measurement {
+/**
+ * Expand an array of points stored as objects into
+ * a flattened array of points
+ *
+ * @param points
+ * @return {Array}
+ */
+function expandPoints(points) {
+    const allPoints = [];
+
+    points.forEach(point => {
+        allPoints.push(point.x);
+        allPoints.push(point.y);
+    });
+
+    return allPoints;
+}
+
+export default class Ellipse extends TID300Measurement {
     contentItem() {
-        const { point1, point2, distance, ReferencedSOPSequence } = this.props;
+        const { points, ReferencedSOPSequence, area } = this.props;
+
+        const GraphicData = expandPoints(points);
 
         return this.getMeasurement([
             {
@@ -12,22 +31,22 @@ export default class Length extends TID300Measurement {
                 ConceptNameCodeSequence: {
                     CodeValue: "G-D7FE",
                     CodingSchemeDesignator: "SRT",
-                    CodeMeaning: "Length"
+                    CodeMeaning: "AREA"
                 },
                 MeasuredValueSequence: {
                     MeasurementUnitsCodeSequence: {
-                        CodeValue: "mm",
+                        CodeValue: "mm2",
                         CodingSchemeDesignator: "UCUM",
                         CodingSchemeVersion: "1.4",
-                        CodeMeaning: "millimeter"
+                        CodeMeaning: "squaremillimeter"
                     },
-                    NumericValue: distance
+                    NumericValue: area
                 },
                 ContentSequence: {
                     RelationshipType: "INFERRED FROM",
                     ValueType: "SCOORD",
-                    GraphicType: "POLYLINE",
-                    GraphicData: [point1.x, point1.y, point2.x, point2.y],
+                    GraphicType: "ELLIPSE",
+                    GraphicData,
                     ContentSequence: {
                         RelationshipType: "SELECTED FROM",
                         ValueType: "IMAGE",

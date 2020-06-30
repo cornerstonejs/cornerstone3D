@@ -23,66 +23,17 @@ function expandPoints(points) {
 }
 
 export default class Polygon extends TID300Measurement {
-    constructor({
-        points,
-        lengths,
-        ReferencedSOPSequence,
-        use3DSpatialCoordinates = false
-    }) {
-        super();
-
-        this.points = points;
-        this.lengths = lengths;
-        this.ReferencedSOPSequence = ReferencedSOPSequence;
-        this.use3DSpatialCoordinates = use3DSpatialCoordinates;
-    }
-
     contentItem() {
         const {
             points,
-            lengths,
             ReferencedSOPSequence,
             use3DSpatialCoordinates = false
-        } = this;
+        } = this.props;
 
         const perimeter = {};
         const GraphicData = expandPoints(points);
 
-        return [
-            {
-                RelationshipType: "HAS OBS CONTEXT",
-                ValueType: "TEXT",
-                ConceptNameCodeSequence: {
-                    CodeValue: "112039",
-                    CodingSchemeDesignator: "DCM",
-                    CodeMeaning: "Tracking Identifier"
-                },
-                TextValue: "web annotation"
-            },
-            {
-                RelationshipType: "HAS OBS CONTEXT",
-                ValueType: "UIDREF",
-                ConceptNameCodeSequence: {
-                    CodeValue: "112040",
-                    CodingSchemeDesignator: "DCM",
-                    CodeMeaning: "Tracking Unique Identifier"
-                },
-                UID: DicomMetaDictionary.uid()
-            },
-            {
-                RelationshipType: "CONTAINS",
-                ValueType: "CODE",
-                ConceptNameCodeSequence: {
-                    CodeValue: "121071",
-                    CodingSchemeDesignator: "DCM",
-                    CodeMeaning: "Finding"
-                },
-                ConceptCodeSequence: {
-                    CodeValue: "SAMPLEFINDING",
-                    CodingSchemeDesignator: "99dcmjs",
-                    CodeMeaning: "Sample Finding"
-                }
-            },
+        return this.getMeasurement([
             {
                 RelationshipType: "CONTAINS",
                 ValueType: "NUM",
@@ -145,6 +96,6 @@ export default class Polygon extends TID300Measurement {
                           }
                 }
             }
-        ];
+        ]);
     }
 }

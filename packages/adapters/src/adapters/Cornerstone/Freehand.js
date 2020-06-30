@@ -1,5 +1,6 @@
 import MeasurementReport from "./MeasurementReport";
 import TID300Polyline from "../../utilities/TID300/Polyline";
+import CORNERSTONE_4_TAG from "./cornerstone4Tag";
 
 class Freehand {
     constructor() {}
@@ -36,9 +37,12 @@ class Freehand {
     }
 }
 
-Freehand.toolType = 'Freehand';
-Freehand.utilityToolType = 'Polyline';
+Freehand.toolType = "Freehand";
+Freehand.utilityToolType = "Polyline";
 Freehand.TID300Representation = TID300Polyline;
+Freehand.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
+    return false; // TODO
+};
 
 MeasurementReport.registerTool(Freehand);
 
