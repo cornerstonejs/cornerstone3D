@@ -9,7 +9,8 @@ export default class TID300Measurement {
     getMeasurement(contentSequenceEntries) {
         return [
             ...this.getTrackingGroups(),
-            ...this.getFindingGroups(),
+            ...this.getFindingGroup(),
+            ...this.getFindingSiteGroups(),
             ...contentSequenceEntries
         ];
     }
@@ -41,12 +42,17 @@ export default class TID300Measurement {
         ];
     }
 
-    getFindingGroups() {
-        let findings = this.props.findings || [];
+    getFindingGroup() {
+        let finding = this.props.finding;
 
-        return findings.map(finding => {
-            const { CodeValue, CodingSchemeDesignator, CodeMeaning } = finding;
-            return {
+        if (!finding) {
+            return [];
+        }
+
+        const { CodeValue, CodingSchemeDesignator, CodeMeaning } = finding;
+
+        return [
+            {
                 RelationshipType: "CONTAINS",
                 ValueType: "CODE",
                 ConceptNameCodeSequence: {
@@ -58,6 +64,32 @@ export default class TID300Measurement {
                     CodeValue, //: "SAMPLE FINDING",
                     CodingSchemeDesignator, //: "99dcmjs",
                     CodeMeaning //: "Sample Finding"
+                }
+            }
+        ];
+    }
+
+    getFindingSiteGroups() {
+        let findingSites = this.props.findingSites || [];
+
+        return findingSites.map(findingSite => {
+            const {
+                CodeValue,
+                CodingSchemeDesignator,
+                CodeMeaning
+            } = findingSite;
+            return {
+                RelationshipType: "CONTAINS",
+                ValueType: "CODE",
+                ConceptNameCodeSequence: {
+                    CodeValue: "G-C0E3",
+                    CodingSchemeDesignator: "SRT",
+                    CodeMeaning: "Finding Site"
+                },
+                ConceptCodeSequence: {
+                    CodeValue, //: "SAMPLE FINDING SITE",
+                    CodingSchemeDesignator, //: "99dcmjs",
+                    CodeMeaning //: "Sample Finding Site"
                 }
             };
         });

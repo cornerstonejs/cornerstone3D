@@ -147,51 +147,48 @@ export default class MeasurementReport {
         );
 
         // Retrieve the Measurements themselves
-        const measurementGroupContent = toArray(
+        const measurementGroups = toArray(
             imagingMeasurementContent.ContentSequence
-        ).find(codeMeaningEquals(GROUP));
+        ).filter(codeMeaningEquals(GROUP));
 
         // // For each of the supported measurement types, compute the measurement data
         const measurementData = {};
 
-        Object.keys(
-            MeasurementReport.MICROSCOPY_TOOL_CLASSES_BY_UTILITY_TYPE
-        ).forEach(measurementType => {
-            // Find supported measurement types in the Structured Report
-            const measurementGroups = toArray(
-                measurementGroupContent.ContentSequence
-            );
-            let measurementContent = measurementGroups.filter(
-                graphicTypeEquals(measurementType.toUpperCase())
-            );
-            if (!measurementContent || measurementContent.length === 0) {
-                return;
-            }
-
-            const toolClass =
-                MeasurementReport.MICROSCOPY_TOOL_CLASSES_BY_UTILITY_TYPE[
-                    measurementType
-                ];
-            const toolType = toolClass.toolType;
-
-            if (!toolClass.getMeasurementData) {
-                throw new Error(
-                    "MICROSCOPY Tool Adapters must define a getMeasurementData static method."
+        measurementGroups.forEach(mg => {
+            Object.keys(
+                MeasurementReport.MICROSCOPY_TOOL_CLASSES_BY_UTILITY_TYPE
+            ).forEach(measurementType => {
+                // Find supported measurement types in the Structured Report
+                const measurementGroupContentSequence = toArray(
+                    mg.ContentSequence
                 );
-            }
+                let measurementContent = measurementGroupContentSequence.filter(
+                    graphicTypeEquals(measurementType.toUpperCase())
+                );
+                if (!measurementContent || measurementContent.length === 0) {
+                    return;
+                }
 
-            // measurementContent = measurementContent.map(item => item.ContentSequence.GraphicData)
-            //     .filter((graphicData, index, self) => self.indexOf(graphicData) === index)
+                const toolClass =
+                    MeasurementReport.MICROSCOPY_TOOL_CLASSES_BY_UTILITY_TYPE[
+                        measurementType
+                    ];
+                const toolType = toolClass.toolType;
 
-            // measurementData[toolType] = new Array()
-            measurementData[toolType] = toolClass.getMeasurementData(
-                measurementContent
-            );
+                if (!toolClass.getMeasurementData) {
+                    throw new Error(
+                        "MICROSCOPY Tool Adapters must define a getMeasurementData static method."
+                    );
+                }
 
-            // measurementContent.forEach(measurement =>{
-            // })
-
-            // Retrieve Length Measurement Data
+                if (!measurementData[toolType]) {
+                    measurementData[toolType] = [];
+                }
+                measurementData[toolType] = [
+                    ...measurementData[toolType],
+                    ...toolClass.getMeasurementData(measurementContent)
+                ];
+            });
         });
 
         return measurementData;

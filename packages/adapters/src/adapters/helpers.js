@@ -12,10 +12,7 @@ const codeMeaningEquals = codeMeaningName => {
 
 const graphicTypeEquals = graphicType => {
     return contentItem => {
-        return (
-            contentItem.ContentSequence !== undefined &&
-            contentItem.ContentSequence.GraphicType === graphicType
-        );
+        return contentItem && contentItem.GraphicType === graphicType;
     };
 };
 

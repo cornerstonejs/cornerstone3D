@@ -4,7 +4,9 @@ import CORNERSTONE_4_TAG from "./cornerstone4Tag";
 import { toArray } from "../helpers.js";
 
 const ARROW_ANNOTATE = "ArrowAnnotate";
-const FINDING = "Finding";
+const FINDING = "121071";
+const FINDING_SITE = "G-C0E3";
+const CORNERSTONEFREETEXT = "CORNERSTONEFREETEXT";
 
 class ArrowAnnotate {
     constructor() {}
@@ -21,11 +23,15 @@ class ArrowAnnotate {
             group => group.ValueType === "SCOORD"
         );
 
-        const findingsGroup = toArray(ContentSequence).find(
-            group => group.ConceptNameCodeSequence.CodeMeaning === FINDING
+        const findingGroup = toArray(ContentSequence).find(
+            group => group.ConceptNameCodeSequence.CodeValue === FINDING
         );
 
-        const text = findingsGroup.ConceptCodeSequence.CodeMeaning;
+        const findingSiteGroups = toArray(ContentSequence).filter(
+            group => group.ConceptNameCodeSequence.CodeValue === FINDING_SITE
+        );
+
+        const text = findingGroup.ConceptCodeSequence.CodeMeaning;
 
         const { GraphicData } = SCOORDGroup;
 
@@ -64,7 +70,13 @@ class ArrowAnnotate {
             },
             invalidated: true,
             text,
-            visible: true
+            visible: true,
+            finding: findingGroup
+                ? findingGroup.ConceptCodeSequence
+                : undefined,
+            findingSites: findingSiteGroups.map(fsg => {
+                return { ...fsg.ConceptCodeSequence };
+            })
         };
 
         return state;
@@ -72,17 +84,27 @@ class ArrowAnnotate {
 
     static getTID300RepresentationArguments(tool) {
         const points = [tool.handles.start];
-        const trackingIdentifierTextValue = `cornerstoneTools@^4.0.0:ArrowAnnotate`;
 
-        const findings = [
-            {
-                CodeValue: "CORNERSTONEFREETEXT",
+        let { finding, findingSites } = tool;
+
+        const TID300RepresentationArguments = {
+            points,
+            trackingIdentifierTextValue: `cornerstoneTools@^4.0.0:ArrowAnnotate`,
+            findingSites: findingSites || []
+        };
+
+        // If freetext finding isn't present, add it from the tool text.
+        if (!finding || finding.CodeValue !== CORNERSTONEFREETEXT) {
+            finding = {
+                CodeValue: CORNERSTONEFREETEXT,
                 CodingSchemeDesignator: "CST4",
                 CodeMeaning: tool.text
-            }
-        ];
+            };
+        }
 
-        return { points, trackingIdentifierTextValue, findings };
+        TID300RepresentationArguments.finding = finding;
+
+        return TID300RepresentationArguments;
     }
 }
 

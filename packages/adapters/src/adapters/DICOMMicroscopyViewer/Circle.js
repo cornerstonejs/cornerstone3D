@@ -7,7 +7,7 @@ class Circle {
     static getMeasurementData(measurementContent) {
         // removing duplication and Getting only the graphicData information
         const measurement = measurementContent
-            .map(item => item.ContentSequence.GraphicData)
+            .map(item => item.GraphicData)
             .filter(
                 (s => a => (j => !s.has(j) && s.add(j))(JSON.stringify(a)))(
                     new Set()

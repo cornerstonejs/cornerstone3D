@@ -4,6 +4,8 @@ import CORNERSTONE_4_TAG from "./cornerstone4Tag";
 import { toArray } from "../helpers.js";
 
 const ELLIPTICALROI = "EllipticalRoi";
+const FINDING = "121071";
+const FINDING_SITE = "G-C0E3";
 
 class EllipticalRoi {
     constructor() {}
@@ -11,6 +13,14 @@ class EllipticalRoi {
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
         const { ContentSequence } = MeasurementGroup;
+
+        const findingGroup = toArray(ContentSequence).find(
+            group => group.ConceptNameCodeSequence.CodeValue === FINDING
+        );
+
+        const findingSiteGroups = toArray(ContentSequence).filter(
+            group => group.ConceptNameCodeSequence.CodeValue === FINDING_SITE
+        );
 
         const NUMGroup = toArray(ContentSequence).find(
             group => group.ValueType === "NUM"
@@ -33,9 +43,9 @@ class EllipticalRoi {
 
         // Calculate two opposite corners of box defined by two axes.
 
-        const minorAxisLength = cornerstoneMath.point.distance(
-            minorAxis[0],
-            minorAxis[1]
+        const minorAxisLength = Math.sqrt(
+            Math.pow(minorAxis[0].x - minorAxis[1].x, 2) +
+                Math.pow(minorAxis[0].y - minorAxis[1].y, 2)
         );
 
         const minorAxisDirection = {
@@ -92,14 +102,20 @@ class EllipticalRoi {
                 }
             },
             invalidated: true,
-            visible: true
+            visible: true,
+            finding: findingGroup
+                ? findingGroup.ConceptCodeSequence
+                : undefined,
+            findingSites: findingSiteGroups.map(fsg => {
+                return { ...fsg.ConceptCodeSequence };
+            })
         };
 
         return state;
     }
 
     static getTID300RepresentationArguments(tool) {
-        const { cachedStats, handles } = tool;
+        const { cachedStats, handles, finding, findingSites } = tool;
         const { start, end } = handles;
         const { area } = cachedStats;
 
@@ -134,7 +150,9 @@ class EllipticalRoi {
         return {
             area,
             points,
-            trackingIdentifierTextValue
+            trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || []
         };
     }
 }

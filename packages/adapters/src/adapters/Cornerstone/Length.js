@@ -4,6 +4,8 @@ import CORNERSTONE_4_TAG from "./cornerstone4Tag";
 import { toArray } from "../helpers.js";
 
 const LENGTH = "Length";
+const FINDING = "121071";
+const FINDING_SITE = "G-C0E3";
 
 class Length {
     constructor() {}
@@ -11,6 +13,14 @@ class Length {
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
         const { ContentSequence } = MeasurementGroup;
+
+        const findingGroup = toArray(ContentSequence).find(
+            group => group.ConceptNameCodeSequence.CodeValue === FINDING
+        );
+
+        const findingSiteGroups = toArray(ContentSequence).filter(
+            group => group.ConceptNameCodeSequence.CodeValue === FINDING_SITE
+        );
 
         const NUMGroup = toArray(ContentSequence).find(
             group => group.ValueType === "NUM"
@@ -29,10 +39,26 @@ class Length {
             sopInstanceUid: ReferencedSOPInstanceUID,
             frameIndex: ReferencedFrameNumber || 1,
             length: NUMGroup.MeasuredValueSequence.NumericValue,
-            toolType: Length.toolType
+            toolType: Length.toolType,
+            handles: {
+                start: {},
+                end: {},
+                textBox: {
+                    hasMoved: false,
+                    movesIndependently: false,
+                    drawnIndependently: true,
+                    allowedOutsideImage: true,
+                    hasBoundingBox: true
+                }
+            },
+            finding: findingGroup
+                ? findingGroup.ConceptCodeSequence
+                : undefined,
+            findingSites: findingSiteGroups.map(fsg => {
+                return { ...fsg.ConceptCodeSequence };
+            })
         };
 
-        lengthState.handles = { start: {}, end: {} };
         [
             lengthState.handles.start.x,
             lengthState.handles.start.y,
@@ -40,25 +66,25 @@ class Length {
             lengthState.handles.end.y
         ] = SCOORDGroup.GraphicData;
 
-        lengthState.handles.textBox = {
-            hasMoved: false,
-            movesIndependently: false,
-            drawnIndependently: true,
-            allowedOutsideImage: true,
-            hasBoundingBox: true
-        };
-
         return lengthState;
     }
 
     static getTID300RepresentationArguments(tool) {
-        const point1 = tool.handles.start;
-        const point2 = tool.handles.end;
+        const { handles, finding, findingSites } = tool;
+        const point1 = handles.start;
+        const point2 = handles.end;
         const distance = tool.length;
 
         const trackingIdentifierTextValue = "cornerstoneTools@^4.0.0:Length";
 
-        return { point1, point2, distance, trackingIdentifierTextValue };
+        return {
+            point1,
+            point2,
+            distance,
+            trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || []
+        };
     }
 }
 

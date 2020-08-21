@@ -1,7 +1,7 @@
 import MeasurementReport from "./MeasurementReport.js";
-import TID300Polygon from "../../utilities/TID300/Polygon";
+import TID300Ellipse from "../../utilities/TID300/Ellipse";
 
-class Polygon {
+class Ellipse {
     constructor() {}
 
     static getMeasurementData(measurementContent) {
@@ -25,8 +25,8 @@ class Polygon {
     }
 
     static getTID300RepresentationArguments(scoord3d) {
-        if (scoord3d.graphicType !== "POLYGON") {
-            throw new Error("We expected a POLYGON graphicType");
+        if (scoord3d.graphicType !== "Ellipse") {
+            throw new Error("We expected a Ellipse graphicType");
         }
 
         const points = scoord3d.graphicData;
@@ -36,11 +36,11 @@ class Polygon {
     }
 }
 
-Polygon.graphicType = "POLYGON";
-Polygon.toolType = "Polygon";
-Polygon.utilityToolType = "Polygon";
-Polygon.TID300Representation = TID300Polygon;
+Ellipse.graphicType = "ELLIPSE";
+Ellipse.toolType = "Ellipse";
+Ellipse.utilityToolType = "Ellipse";
+Ellipse.TID300Representation = TID300Ellipse;
 
-MeasurementReport.registerTool(Polygon);
+MeasurementReport.registerTool(Ellipse);
 
-export default Polygon;
+export default Ellipse;

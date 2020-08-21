@@ -38,7 +38,7 @@ class Freehand {
 }
 
 Freehand.toolType = "Freehand";
-Freehand.utilityToolType = "Polyline";
+Freehand.utilityToolType = "Freehand";
 Freehand.TID300Representation = TID300Polyline;
 Freehand.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
     return false; // TODO

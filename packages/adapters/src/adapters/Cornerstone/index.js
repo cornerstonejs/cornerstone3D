@@ -11,6 +11,7 @@ const Cornerstone = {
     Freehand,
     Bidirectional,
     EllipticalRoi,
+    ArrowAnnotate,
     MeasurementReport,
     Segmentation
 };
