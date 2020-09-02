@@ -389,9 +389,7 @@ export default class Segmentation extends DerivedPixels {
                 break;
             default:
                 throw new Error(
-                    `SegmentAlgorithmType ${
-                        Segment.SegmentAlgorithmType
-                    } invalid.`
+                    `SegmentAlgorithmType ${Segment.SegmentAlgorithmType} invalid.`
                 );
         }
 

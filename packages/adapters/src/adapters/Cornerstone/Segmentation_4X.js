@@ -273,6 +273,13 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
         imageIds[0]
     );
 
+    const generalSeriesModule = metadataProvider.get(
+        "generalSeriesModule",
+        imageIds[0]
+    );
+
+    const SeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
+
     console.warn(
         "Note the cornerstoneTools 4.0 currently assumes the labelmaps are non-overlapping. Overlapping segments will allocate incorrectly. Feel free to submit a PR to improve this behaviour!"
     );
@@ -296,7 +303,7 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     const validOrientations = getValidOrientations(ImageOrientationPatient);
 
     const sliceLength = multiframe.Columns * multiframe.Rows;
-    const segMetadata = getSegmentMetadata(multiframe);
+    const segMetadata = getSegmentMetadata(multiframe, SeriesInstanceUID);
 
     const TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
 
@@ -505,8 +512,6 @@ function getCorners(imagePlaneModule) {
         bottomLeft[2] + entireRowVector[2]
     ];
 
-    debugger;
-
     return [topLeft, topRight, bottomLeft, bottomRight];
 }
 
@@ -569,14 +574,9 @@ function insertPixelDataPlanar(
                 .ReferencedSegmentNumber;
 
         let SourceImageSequence;
-        if (
-            SharedFunctionalGroupsSequence.DerivationImageSequence &&
-            SharedFunctionalGroupsSequence.DerivationImageSequence
-                .SourceImageSequence
-        ) {
-            SourceImageSequence =
-                SharedFunctionalGroupsSequence.DerivationImageSequence
-                    .SourceImageSequence[i];
+
+        if (multiframe.SourceImageSequence) {
+            SourceImageSequence = multiframe.SourceImageSequence[i];
         } else {
             SourceImageSequence =
                 PerFrameFunctionalGroups.DerivationImageSequence
@@ -906,7 +906,7 @@ function compareIOP(iop1, iop2) {
     );
 }
 
-function getSegmentMetadata(multiframe) {
+function getSegmentMetadata(multiframe, seriesInstanceUid) {
     const segmentSequence = multiframe.SegmentSequence;
     let data = [];
 
@@ -918,8 +918,7 @@ function getSegmentMetadata(multiframe) {
     }
 
     return {
-        seriesInstanceUid:
-            multiframe.ReferencedSeriesSequence.SeriesInstanceUID,
+        seriesInstanceUid,
         data
     };
 }
