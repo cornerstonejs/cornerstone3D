@@ -241,9 +241,10 @@ class BinaryRepresentation extends ValueRepresentation {
         super(type);
     }
 
-    writeBytes(stream, value, syntax, isEncapsulated) {
+    writeBytes(stream, value, syntax, isEncapsulated, writeOptions) {
         var i;
         var binaryStream;
+        var { fragmentMultiframe = true } = writeOptions;
         if (isEncapsulated) {
             var fragmentSize = 1024 * 20,
                 frames = value.length,
@@ -253,16 +254,24 @@ class BinaryRepresentation extends ValueRepresentation {
                 1024 * 1024 * 20,
                 stream.isLittleEndian
             );
+
             for (i = 0; i < frames; i++) {
                 startOffset.push(binaryStream.size);
                 var frameBuffer = value[i],
-                    frameStream = new ReadBufferStream(frameBuffer),
+                    frameStream = new ReadBufferStream(frameBuffer);
+
+                var fragmentsLength = 1;
+                if (fragmentMultiframe) {
                     fragmentsLength = Math.ceil(
                         frameStream.size / fragmentSize
                     );
+                }
 
                 for (var j = 0, fragmentStart = 0; j < fragmentsLength; j++) {
-                    var fragmentEnd = fragmentStart + fragmentSize;
+                    var fragmentEnd = fragmentStart + frameStream.size;
+                    if (fragmentMultiframe) {
+                        fragmentEnd = fragmentStart + fragmentSize;
+                    }
                     if (j == fragmentsLength - 1) {
                         fragmentEnd = frameStream.size;
                     }
@@ -318,26 +327,49 @@ class BinaryRepresentation extends ValueRepresentation {
                         offsets.push(stream.readUint32());
                     }
                 } else {
-                    offsets = [0];
+                    offsets = [];
                 }
 
-                for (let i = 0; i < offsets.length; i++) {
-                    const nextTag = Tag.readTag(stream);
+                // If there is an offset table, use that to loop through pixel data sequence
+                // FIX: These two loops contain the exact same code, but I couldn't think of a way
+                // to combine the for and while loops non-confusingly so went with the explicit but
+                // redundant approach.
+                if (offsets.length > 0) {
+                    for (let i = 0; i < offsets.length; i++) {
+                        const nextTag = Tag.readTag(stream);
 
-                    if (!nextTag.is(0xfffee000)) {
-                        break;
+                        if (!nextTag.is(0xfffee000)) {
+                            break;
+                        }
+
+                        const frameItemLength = stream.readUint32();
+                        const fragmentStream = stream.more(frameItemLength);
+
+                        frames.push(fragmentStream.buffer);
                     }
+                }
+                // If no offset table, loop through remainder of stream looking for termination tag
+                else {
+                    while (stream.offset < stream.size) {
+                        const nextTag = Tag.readTag(stream);
 
-                    const frameItemLength = stream.readUint32();
-                    const fragmentStream = stream.more(frameItemLength);
+                        if (!nextTag.is(0xfffee000)) {
+                            break;
+                        }
 
-                    frames.push(fragmentStream.buffer);
+                        const frameItemLength = stream.readUint32();
+                        const fragmentStream = stream.more(frameItemLength);
+
+                        frames.push(fragmentStream.buffer);
+                    }
                 }
 
                 // Read SequenceDelimitationItem Tag
                 stream.readUint32();
                 // Read SequenceDelimitationItem value.
-                stream.readUint32();
+                if (stream.size - stream.offset >= 4) {
+                    stream.readUint32();
+                }
             } else {
                 throw new Error(
                     "Item tag not found after undefined binary length"

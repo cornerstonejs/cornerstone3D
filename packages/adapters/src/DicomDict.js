@@ -17,7 +17,7 @@ class DicomDict {
         }
     }
 
-    write() {
+    write(writeOptions = {}) {
         var metaSyntax = EXPLICIT_LITTLE_ENDIAN;
         var fileStream = new WriteBufferStream(4096, true);
         fileStream.writeHex("00".repeat(128));
@@ -30,7 +30,7 @@ class DicomDict {
                 Value: [EXPLICIT_LITTLE_ENDIAN]
             };
         }
-        DicomMessage.write(this.meta, metaStream, metaSyntax);
+        DicomMessage.write(this.meta, metaStream, metaSyntax, writeOptions);
         DicomMessage.writeTagObject(
             fileStream,
             "00020000",
@@ -41,7 +41,7 @@ class DicomDict {
         fileStream.concat(metaStream);
 
         var useSyntax = this.meta["00020010"].Value[0];
-        DicomMessage.write(this.dict, fileStream, useSyntax);
+        DicomMessage.write(this.dict, fileStream, useSyntax, writeOptions);
         return fileStream.getBuffer();
     }
 }

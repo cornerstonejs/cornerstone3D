@@ -86,7 +86,7 @@ class Tag {
         return Tag.fromNumbers(group, element);
     }
 
-    write(stream, vrType, values, syntax) {
+    write(stream, vrType, values, syntax, writeOptions) {
         var vr = ValueRepresentation.createByTypeString(vrType),
             useSyntax = DicomMessage._normalizeSyntax(syntax);
 
@@ -113,10 +113,16 @@ class Tag {
                 tagStream,
                 values,
                 useSyntax,
-                isEncapsulated
+                isEncapsulated,
+                writeOptions
             );
         } else {
-            valueLength = vr.writeBytes(tagStream, values, useSyntax);
+            valueLength = vr.writeBytes(
+                tagStream,
+                values,
+                useSyntax,
+                writeOptions
+            );
         }
 
         if (vrType == "SQ") {
