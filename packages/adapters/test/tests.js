@@ -3,8 +3,10 @@ const dcmjs = require('../build/dcmjs');
 
 expect(dcmjs).to.be.an('Object');
 
+const testToRun = process.argv[2];
+
 const parts = [
-  "DICOMWEB", "adapters", "data", "derivations", 
+  "DICOMWEB", "adapters", "data", "derivations",
   "normalizers", "sr", "utilities",
 ];
 
@@ -17,9 +19,9 @@ parts.forEach(part => {
   expect(dcmjs).to.have.property(part);
 
   console.log("");
-  console.log("***** Testing "+part+" *****");
+  console.log("***** Testing " + part + " *****");
   console.log("");
 
-  const partTest = require("./test_"+part+".js");
-  partTest.test();
+  const partTest = require("./test_" + part + ".js");
+  partTest.test(testToRun);
 });
