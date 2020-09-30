@@ -6,6 +6,7 @@ const { http, https } = require("follow-redirects");
 const os = require("os");
 const path = require("path");
 const unzipper = require("unzipper");
+const datasetWithNullNumberVRs = require('./mocks/null_number_vrs_dataset.json');
 
 const { DicomMetaDictionary, DicomDict, DicomMessage } = dcmjs.data;
 
@@ -236,6 +237,18 @@ const tests = {
     dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
     expect(dataset.NumberOfFrames).to.equal(117);
     console.log("Finished test_multiframe_us")
+  },
+
+  test_null_number_vrs: () => {
+    const dicomDict = new DicomDict({ TransferSynxtaxUID: "1.2.840.10008.1.2.1" });
+    dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(datasetWithNullNumberVRs);
+    const part10Buffer = dicomDict.write();
+    const dicomData = dcmjs.data.DicomMessage.readFile(part10Buffer);
+    const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+
+    expect(dataset.ImageAndFluoroscopyAreaDoseProduct).to.equal(0);
+    expect(dataset.InstanceNumber).to.equal(0);
+    console.log("Finished test_null_number_vrs");
   }
 }
 

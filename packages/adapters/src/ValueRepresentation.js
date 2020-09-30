@@ -52,11 +52,11 @@ class ValueRepresentation {
             if (this.maxLength != length)
                 log.error(
                     "Invalid length for fixed length tag, vr " +
-                        this.type +
-                        ", length " +
-                        this.maxLength +
-                        " != " +
-                        length
+                    this.type +
+                    ", length " +
+                    this.maxLength +
+                    " != " +
+                    length
                 );
         }
         return this.readBytes(stream, length, syntax);
@@ -104,7 +104,7 @@ class ValueRepresentation {
                     written.push(0);
                 } else {
                     var self = this;
-                    valueArgs[0].forEach(function(v, k) {
+                    valueArgs[0].forEach(function (v, k) {
                         if (self.allowMultiple() && k > 0) {
                             stream.writeHex("5C");
                             //byteCount++;
@@ -484,7 +484,8 @@ class DecimalString extends StringRepresentation {
     }
 
     writeBytes(stream, value) {
-        return super.writeBytes(stream, value.map(String));
+        const val = Array.isArray(value) ? value.map(String) : [value];
+        return super.writeBytes(stream, val);
     }
 }
 
@@ -565,7 +566,8 @@ class IntegerString extends StringRepresentation {
     }
 
     writeBytes(stream, value) {
-        return super.writeBytes(stream, value.map(String));
+        const val = Array.isArray(value) ? value.map(String) : [value];
+        return super.writeBytes(stream, val);
     }
 }
 
