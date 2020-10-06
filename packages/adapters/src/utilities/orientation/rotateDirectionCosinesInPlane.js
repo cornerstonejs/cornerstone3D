@@ -15,11 +15,7 @@ export default function(iop, theta) {
     const rxc = crossProduct3D(r, c);
 
     const rRot = rotateVectorAroundUnitVector(r, rxc, theta);
-    const cRot = crossProduct3D(rxc, rRot);
-
-    for (let i = 0; i < 2; i++) {
-        cRot[i] *= -1.0;
-    }
+    const cRot = rotateVectorAroundUnitVector(c, rxc, theta);
 
     return [...rRot, ...cRot];
 }

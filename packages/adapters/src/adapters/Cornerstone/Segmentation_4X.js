@@ -6,6 +6,7 @@ import { DicomMessage } from "../../DicomMessage.js";
 import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
 import { Normalizer } from "../../normalizers.js";
 import { Segmentation as SegmentationDerivation } from "../../derivations/index.js";
+import { mat4 } from "gl-matrix";
 import {
     rotateDirectionCosinesInPlane,
     flipImageOrientationPatient as flipIOP,
@@ -374,8 +375,6 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     return { labelmapBuffer, segMetadata, segmentsOnFrame };
 }
 
-// TODO -> Finish soon!
-/*
 function insertPixelDataPerpendicular(
     segmentsOnFrame,
     labelmapBuffer,
@@ -415,10 +414,57 @@ function insertPixelDataPerpendicular(
 
     debugger;
 
+    const indexToWorld = mat4.create();
+
+    const ippFirstFrame = firstImagePlaneModule.imagePositionPatient;
+    const rowCosines = Array.isArray(firstImagePlaneModule.rowCosines)
+        ? [...firstImagePlaneModule.rowCosines]
+        : [
+              firstImagePlaneModule.rowCosines.x,
+              firstImagePlaneModule.rowCosines.y,
+              firstImagePlaneModule.rowCosines.z
+          ];
+
+    const columnCosines = Array.isArray(firstImagePlaneModule.columnCosines)
+        ? [...firstImagePlaneModule.columnCosines]
+        : [
+              firstImagePlaneModule.columnCosines.x,
+              firstImagePlaneModule.columnCosines.y,
+              firstImagePlaneModule.columnCosines.z
+          ];
+
+    const { pixelSpacing } = firstImagePlaneModule;
+
+    mat4.set(
+        indexToWorld,
+        // Column 1
+        0,
+        0,
+        0,
+        ippFirstFrame[0],
+        // Column 2
+        0,
+        0,
+        0,
+        ippFirstFrame[1],
+        // Column 3
+        0,
+        0,
+        0,
+        ippFirstFrame[2],
+        // Column 4
+        0,
+        0,
+        0,
+        1
+    );
+
     // TODO -> Get origin and (x,y,z) increments to build a translation matrix:
-    // | cx rx Xx 0 |  |x|
-    // | cy ry Xy 0 |  |y|
-    // | cz rz Xz 0 |  |z|
+    // TODO -> Equation C.7.6.2.1-1
+
+    // | cx*di rx* Xx 0 |  |x|
+    // | cy*di ry Xy 0 |  |y|
+    // | cz*di rz Xz 0 |  |z|
     // | tx ty tz 1 |  |1|
 
     // const [
@@ -452,7 +498,6 @@ function insertPixelDataPerpendicular(
     //     : undefined;
     // const sliceLength = Columns * Rows;
 }
-*/
 
 function getCorners(imagePlaneModule) {
     // console.log(imagePlaneModule);
@@ -462,7 +507,7 @@ function getCorners(imagePlaneModule) {
         columns,
         rowCosines,
         columnCosines,
-        ipp: imagePositionPatient,
+        imagePositionPatient: ipp,
         rowPixelSpacing,
         columnPixelSpacing
     } = imagePlaneModule;
@@ -857,28 +902,40 @@ function getValidOrientations(iop) {
  */
 function alignPixelDataWithSourceData(pixelData2D, iop, orientations) {
     if (compareIOP(iop, orientations[0])) {
-        //Same orientation.
         return pixelData2D;
     } else if (compareIOP(iop, orientations[1])) {
-        //Flipped vertically.
+        // Flipped vertically.
+
+        // Undo Flip
         return flipMatrix2D.v(pixelData2D);
     } else if (compareIOP(iop, orientations[2])) {
-        //Flipped horizontally.
+        // Flipped horizontally.
+
+        // Unfo flip
         return flipMatrix2D.h(pixelData2D);
     } else if (compareIOP(iop, orientations[3])) {
-        //Rotated 90 degrees.
+        //Rotated 90 degrees
+
+        // Rotate back
         return rotateMatrix902D(pixelData2D);
     } else if (compareIOP(iop, orientations[4])) {
         //Rotated 90 degrees and fliped horizontally.
-        return flipMatrix2D.h(rotateMatrix902D(pixelData2D));
+
+        // Undo flip and rotate back.
+        return rotateMatrix902D(flipMatrix2D.h(pixelData2D));
     } else if (compareIOP(iop, orientations[5])) {
-        //Rotated 90 degrees and fliped vertically.
-        return flipMatrix2D.v(rotateMatrix902D(pixelData2D));
+        // Rotated 90 degrees and fliped vertically
+
+        // Unfo flip and rotate back.
+        return rotateMatrix902D(flipMatrix2D.v(pixelData2D));
     } else if (compareIOP(iop, orientations[6])) {
-        //Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
+        // Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
+
         return rotateMatrix902D(rotateMatrix902D(pixelData2D));
     } else if (compareIOP(iop, orientations[7])) {
-        //Rotated 270 degrees.  // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
+        // Rotated 270 degrees
+
+        // Rotate back.
         return rotateMatrix902D(
             rotateMatrix902D(rotateMatrix902D(pixelData2D))
         );

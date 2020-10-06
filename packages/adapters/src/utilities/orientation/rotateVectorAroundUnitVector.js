@@ -22,6 +22,8 @@ export default function(v, k, theta) {
             v[i] * cosTheta +
             kxv[i] * sinTheta +
             k[i] * kdotv * oneMinusCosTheta;
+
+        vRot[i] *= -1;
     }
 
     return vRot;

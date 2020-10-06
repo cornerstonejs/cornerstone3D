@@ -85,14 +85,6 @@ const dcmjs = {
     utilities
 };
 
-export {
-    DICOMWEB,
-    adapters,
-    data,
-    derivations,
-    normalizers,
-    sr,
-    utilities
-};
+export { DICOMWEB, adapters, data, derivations, normalizers, sr, utilities };
 
 export default dcmjs;
