@@ -1,0 +1,91 @@
+# Use the latest 2.1 version of CircleCI pipeline processing engine, see https://circleci.com/docs/2.0/configuration-reference/
+version: 2.1
+
+defaults: &defaults
+  working_directory: ~/repo
+  # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
+  docker:
+    - image: circleci/node:10.15.1
+      environment:
+        TERM: xterm # Enable colors in term
+
+jobs:
+  CHECKOUT:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Package Cache
+          keys:
+            - packages-v1-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            - packages-v1-{{ .Branch }}-
+            - packages-v1-
+      - run: yarn install
+      - save_cache:
+          name: Save Package Cache
+          paths:
+            - ~/.cache/yarn
+          key: packages-v1-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+
+  BUILD:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run: npm run build && npm run build:release
+      # https://circleci.com/docs/2.0/collect-test-data/#karma
+      # - store_test_results:
+      #     path: reports/junit
+      # - store_artifacts:
+      #     path: reports/junit
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+
+  NPM_PUBLISH:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Avoid hosts unknown for github
+          command:
+            mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
+            no\n" > ~/.ssh/config
+      - run:
+          name: Publish using Semantic Release
+          command: npx semantic-release@15.13.24 --debug
+
+workflows:
+  version: 2
+
+  # PULL REQUEST
+  PULL_REQUEST:
+    jobs:
+      - CHECKOUT:
+          filters:
+            branches:
+              ignore:
+                - master
+                - feature/*
+                - hotfix/*
+      - BUILD:
+          requires:
+            - CHECKOUT
+
+  # MERGE TO MASTER
+  TEST_AND_RELEASE:
+    jobs:
+      - CHECKOUT:
+          filters:
+            branches:
+              only: master
+      - BUILD:
+          requires:
+            - CHECKOUT
+      - NPM_PUBLISH:
+          requires:
+            - BUILD

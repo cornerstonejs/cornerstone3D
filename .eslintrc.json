@@ -1,0 +1,27 @@
+{
+  "extends": [
+    "react-app",
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": ["@typescript-eslint"],
+  "parser": "babel-eslint",
+  "env": {
+    "jest": true
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "globals": {
+    "context": true,
+    "assert": true
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-undef": "warn",
+    "no-unused-vars": "warn"
+  }
+}

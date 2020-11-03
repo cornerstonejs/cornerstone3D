@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "outDir": "tsDist",
+    "module": "es6",
+    "target": "es6"
+  },
+  "exclude": ["node_modules", "dist", "snippets"]
+}
