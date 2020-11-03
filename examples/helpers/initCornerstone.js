@@ -31,6 +31,7 @@ cornerstoneTools.toolColors.setActiveColor('rgb(0, 255, 0)');
 cornerstoneTools.store.state.touchProximity = 40;
 
 window.cornerstone = cornerstone;
+window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader;
 
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser;

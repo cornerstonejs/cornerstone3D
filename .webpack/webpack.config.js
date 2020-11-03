@@ -5,10 +5,6 @@ const autoprefixer = require('autoprefixer');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
   .BundleAnalyzerPlugin;
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-
-// const ENTRY_VTK_EXT = path.join(__dirname, './../tsDist/src/index.js');
-// const SRC_PATH = path.join(__dirname, './../tsDist/src');
-
 const ENTRY_VTK_EXT = path.join(__dirname, './../src/index.js');
 const SRC_PATH = path.join(__dirname, './../src');
 const OUT_PATH = path.join(__dirname, './../dist');
