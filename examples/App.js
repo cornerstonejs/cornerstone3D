@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
 import VTKMPRExample from './VTKMPRExample.js';
 
@@ -79,7 +79,10 @@ function Example(props) {
 }
 
 function AppRouter() {
-  const mpr = () => Example({ children: <VTKMPRExample /> });
+  const mpr = () =>
+    Example({
+      children: <VTKMPRExample />,
+    });
 
   return (
     <Router>

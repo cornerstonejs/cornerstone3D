@@ -36,6 +36,9 @@ const ENTRY_EXAMPLES = path.join(__dirname, './../examples/index.js');
 const SRC_PATH = path.join(__dirname, './../src');
 const OUT_PATH = path.join(__dirname, './../dist');
 
+const APP_CONFIG = process.env.APP_CONFIG || 'config/default.js';
+const APP_CONFIG_PATH = path.join(__dirname, `./../${APP_CONFIG}`);
+
 // Add this additional call so we can yarn link vtk.js
 // const shaderLoader = {
 //   test: /\.glsl$/i,
@@ -83,6 +86,7 @@ module.exports = {
     modules: [path.resolve(__dirname, './../node_modules'), SRC_PATH],
     alias: {
       '@vtk-viewport': ENTRY_VTK_EXT,
+      '@configuration': APP_CONFIG_PATH,
     },
   },
   plugins: [
@@ -102,6 +106,13 @@ module.exports = {
         to: OUT_PATH,
         toType: 'dir',
         ignore: ['index.html', '.DS_Store'],
+      },
+    ]),
+    new CopyWebpackPlugin([
+      // Copy over and rename our target app config file
+      {
+        from: APP_CONFIG_PATH,
+        to: `${OUT_PATH}/app-config.js`,
       },
     ]),
   ],

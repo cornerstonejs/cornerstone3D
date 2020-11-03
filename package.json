@@ -25,7 +25,7 @@
     "cornerstone-tools": "^4.20.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "vtk.js": "^11.14.0"
+    "vtk.js": "^14.17.3"
   },
   "dependencies": {
     "date-fns": "^2.2.1",
@@ -85,7 +85,7 @@
     "style-loader": "^0.23.1",
     "stylelint": "^10.1.0",
     "stylelint-config-recommended": "^2.2.0",
-    "vtk.js": "^11.14.0",
+    "vtk.js": "^14.17.3",
     "webpack": "4.34.0",
     "webpack-cli": "^3.3.4",
     "webpack-dev-server": "^3.8.0",
