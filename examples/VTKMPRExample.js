@@ -1,9 +1,40 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
+import { imageCache } from '@vtk-viewport';
 
 class VTKMPRExample extends Component {
   async componentDidMount() {
     const imageIds = await getImageIdsAndCacheMetadata();
+
+    const { ptImageIds, ctImageIds } = imageIds;
+
+    const ptVolumeUID = 'PET_VOLUME';
+    const ctVolumeUID = 'CT_VOLUME';
+
+    const ptVolume = imageCache.makeAndCacheImageVolume(
+      ptImageIds,
+      ptVolumeUID
+    );
+    const ctVolume = imageCache.makeAndCacheImageVolume(
+      ctImageIds,
+      ctVolumeUID
+    );
+
+    const segVolumeBlank = imageCache.makeAndCacheDerivedVolume(ctVolumeUID);
+
+    const ctDimensions = ctVolume.dimensions;
+    const existingSegPixelArray = new Uint8Array(
+      ctDimensions[0] * ctDimensions[1] * ctDimensions[2]
+    );
+
+    const segVolumeExistingData = imageCache.makeAndCacheDerivedVolume(
+      ctVolumeUID,
+      {
+        volumeScalarData: existingSegPixelArray,
+      }
+    );
+
+    debugger;
   }
 
   render() {

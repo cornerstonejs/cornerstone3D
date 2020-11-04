@@ -17,6 +17,7 @@
     "build:examples": "webpack --progress --colors --config ./.webpack/webpack.dev.js -d",
     "dev": "webpack-dev-server --config ./.webpack/webpack.dev.js --watch",
     "start": "yarn run dev",
+    "test": "jest --clearCache && jest --runInBand \\.test\\.js$",
     "lint": "lint-staged",
     "predeploy": "yarn install && yarn run build:release",
     "prepublishOnly": "yarn run build && yarn run build:release"

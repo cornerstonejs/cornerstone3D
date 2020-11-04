@@ -1,8 +1,7 @@
-import { User } from './User.ts';
+import RenderingEngine from './RenderingEngine';
+import imageCache from './imageCache';
+import toolManager from './toolManager';
 
-const dog = 'blah';
-const dog2 = 'blah';
+export { RenderingEngine, imageCache, toolManager };
 
-export {};
-
-export default { User };
+export default RenderingEngine;
