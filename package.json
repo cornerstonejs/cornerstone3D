@@ -23,7 +23,7 @@
     "prepublishOnly": "yarn run build && yarn run build:release"
   },
   "peerDependencies": {
-    "cornerstone-tools": "^4.20.1",
+    "cornerstone-tools": "^5.1.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "vtk.js": "^14.17.3"
@@ -51,7 +51,7 @@
     "copy-webpack-plugin": "^5.0.4",
     "cornerstone-core": "^2.3.0",
     "cornerstone-math": "^0.1.8",
-    "cornerstone-tools": "^4.20.1",
+    "cornerstone-tools": "^5.1.0",
     "cornerstone-wado-image-loader": "^3.0.5",
     "cross-env": "^5.2.0",
     "css-loader": "^3.0.0",

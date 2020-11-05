@@ -132,6 +132,7 @@ function prefetchImageIds(interleavedFrames, volume) {
       error => {
         errorCallback(error, imageId);
       },
+      null, // addToBeginning option, need to pass something to pass options in correct spot.
       options
     );
   });
