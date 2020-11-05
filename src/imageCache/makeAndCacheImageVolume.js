@@ -2,6 +2,10 @@ import cache from './cache';
 import { vec3 } from 'gl-matrix';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
+import {
+  createUint8SharedArray,
+  createFloat32SharedArray,
+} from '../sharedArrayBufferHelpers';
 
 import {
   makeVolumeMetadata,
@@ -56,7 +60,7 @@ export default function makeAndCacheImageVolume(imageIds, uid) {
           '8 Bit signed images are not yet supported by this plugin.'
         );
       } else {
-        scalarData = new Uint8Array(
+        scalarData = createUint8SharedArray(
           dimensions[0] * dimensions[1] * dimensions[2]
         );
       }
@@ -64,7 +68,7 @@ export default function makeAndCacheImageVolume(imageIds, uid) {
       break;
 
     case 16:
-      scalarData = new Float32Array(
+      scalarData = createFloat32SharedArray(
         dimensions[0] * dimensions[1] * dimensions[2]
       );
 
@@ -95,7 +99,10 @@ export default function makeAndCacheImageVolume(imageIds, uid) {
     direction,
     vtkImageData: imageData,
     scalarData,
-    loaded: false,
+    loadStatus: {
+      loaded: false,
+      cachedFrames: [],
+    },
   };
 
   cache.set(uid, imageVolume);

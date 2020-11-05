@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
-import { imageCache } from '@vtk-viewport';
+import { imageCache, createUint8SharedArray } from '@vtk-viewport';
 
 class VTKMPRExample extends Component {
   async componentDidMount() {
@@ -20,21 +20,32 @@ class VTKMPRExample extends Component {
       ctVolumeUID
     );
 
-    const segVolumeBlank = imageCache.makeAndCacheDerivedVolume(ctVolumeUID);
+    imageCache.loadVolume(ctVolumeUID, event => {
+      console.log(event);
+    });
 
-    const ctDimensions = ctVolume.dimensions;
-    const existingSegPixelArray = new Uint8Array(
-      ctDimensions[0] * ctDimensions[1] * ctDimensions[2]
-    );
+    imageCache.loadVolume(ctVolumeUID, event => {
+      console.log(event);
+    });
 
-    const segVolumeExistingData = imageCache.makeAndCacheDerivedVolume(
-      ctVolumeUID,
-      {
-        volumeScalarData: existingSegPixelArray,
-      }
-    );
+    // const segVolumeBlank = imageCache.makeAndCacheDerivedVolume(ctVolumeUID);
 
-    debugger;
+    // const ctDimensions = ctVolume.dimensions;
+
+    // const existingSegPixelArray = createUint8SharedArray(
+    //   ctDimensions[0] * ctDimensions[1] * ctDimensions[2]
+    // );
+
+    // debugger;
+
+    // const segVolumeExistingData = imageCache.makeAndCacheDerivedVolume(
+    //   ctVolumeUID,
+    //   {
+    //     volumeScalarData: existingSegPixelArray,
+    //   }
+    // );
+
+    // debugger;
   }
 
   render() {
