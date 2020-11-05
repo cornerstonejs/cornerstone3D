@@ -10,8 +10,8 @@ describe('Some tests', () => {
   });
 
   it('is not truthy', () => {
-  	console.log(User);
-  	console.log(vtkConeSource)
+    console.log(User);
+    console.log(vtkConeSource);
     expect(vtkConeSource).toBeTruthy();
     expect(User).toBeTruthy();
   });
