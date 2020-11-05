@@ -5,6 +5,7 @@ import {
   createUint8SharedArray,
   createFloat32SharedArray,
 } from './sharedArrayBufferHelpers';
+import { User } from './User.ts';
 
 export {
   RenderingEngine,
@@ -14,4 +15,12 @@ export {
   createFloat32SharedArray,
 };
 
-export default RenderingEngine;
+export default {
+  RenderingEngine,
+  imageCache,
+  toolManager,
+  createUint8SharedArray,
+  createFloat32SharedArray,
+  // TEMP
+  User,
+};
