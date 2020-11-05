@@ -1,6 +1,8 @@
-import cache from './cache';
+import cache, { getCacheSize, getMaxCacheSize, setMaxCacheSize } from './cache';
 import makeAndCacheImageVolume from './makeAndCacheImageVolume';
 import makeAndCacheDerivedVolume from './makeAndCacheDerivedVolume';
+import decacheVolume from './decacheVolume';
+import purgeCache from './purgeCache';
 import loadVolume from './loadVolume';
 
 // TODO -> Make classes for imageVolume and derived volumes.
@@ -13,15 +15,14 @@ const imageCache = {
   getImageVolume: uid => {
     return cache.get(uid);
   },
-  decacheVolume: uid => {
-    cache.delete(uid);
-  },
-  purgeCache: () => {
-    cache.clear();
-  },
+  decacheVolume,
+  purgeCache,
   makeAndCacheImageVolume,
   makeAndCacheDerivedVolume,
   loadVolume,
+  getCacheSize,
+  getMaxCacheSize,
+  setMaxCacheSize,
 };
 
 export default imageCache;

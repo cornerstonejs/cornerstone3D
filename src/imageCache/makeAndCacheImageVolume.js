@@ -1,4 +1,8 @@
-import cache from './cache';
+import cache, {
+  getCacheSize,
+  getMaxCacheSize,
+  incrementCacheSize,
+} from './cache';
 import { vec3 } from 'gl-matrix';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
@@ -12,6 +16,7 @@ import {
   uuidv4,
   sortImageIdsAndGetSpacing,
 } from './helpers';
+import errorCodes from '../errorCodes';
 
 export default function makeAndCacheImageVolume(imageIds, uid) {
   if (uid === undefined) {
@@ -52,7 +57,21 @@ export default function makeAndCacheImageVolume(imageIds, uid) {
   const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal];
   const signed = PixelRepresentation === 1;
 
+  // Check if it fits in the cache before we allocate data
+  const currentCacheSize = getCacheSize();
+
+  // TODO Improve this when we have support for more types
+  const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1;
+
+  const byteLength =
+    bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2];
+
+  if (currentCacheSize + byteLength > getMaxCacheSize()) {
+    throw new Error(errorCodes.CACHE_SIZE_EXCEEDED);
+  }
+
   let scalarData;
+
   switch (BitsAllocated) {
     case 8:
       if (signed) {
@@ -107,6 +126,7 @@ export default function makeAndCacheImageVolume(imageIds, uid) {
   };
 
   cache.set(uid, imageVolume);
+  incrementCacheSize(byteLength);
 
   return imageVolume;
 }

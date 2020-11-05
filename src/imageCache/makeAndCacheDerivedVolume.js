@@ -1,4 +1,8 @@
-import cache from './cache';
+import cache, {
+  getCacheSize,
+  getMaxCacheSize,
+  incrementCacheSize,
+} from './cache';
 import { uuidv4 } from './helpers';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
@@ -31,6 +35,21 @@ export default function makeAndCacheDerivedVolume(
   } = referencedVolume;
 
   const scalarLength = scalarData.length;
+
+  // Check if it fits in the cache before we allocate data
+  const currentCacheSize = getCacheSize();
+
+  let byteLength;
+
+  if (volumeScalarData) {
+    byteLength = volumeScalarData.buffer.byteLength;
+  } else {
+    byteLength = scalarLength * 4;
+  }
+
+  if (currentCacheSize + byteLength > getMaxCacheSize()) {
+    throw new Error(errorCodes.CACHE_SIZE_EXCEEDED);
+  }
 
   if (volumeScalarData) {
     if (volumeScalarData.length !== scalarLength) {
@@ -77,6 +96,7 @@ export default function makeAndCacheDerivedVolume(
   };
 
   cache.set(uid, derivedVolume);
+  incrementCacheSize(byteLength);
 
   return derivedVolume;
 }

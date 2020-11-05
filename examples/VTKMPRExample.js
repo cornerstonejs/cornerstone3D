@@ -20,30 +20,29 @@ class VTKMPRExample extends Component {
       ctVolumeUID
     );
 
-    imageCache.loadVolume(ctVolumeUID, event => {
-      console.log(event);
-    });
+    const ctDimensions = ctVolume.dimensions;
+    const existingSegPixelArray = createUint8SharedArray(
+      ctDimensions[0] * ctDimensions[1] * ctDimensions[2]
+    );
 
-    console.group(ctVolume);
+    const segVolumeExistingData = imageCache.makeAndCacheDerivedVolume(
+      ctVolumeUID,
+      {
+        volumeScalarData: existingSegPixelArray,
+      }
+    );
+
+    // imageCache.loadVolume(ctVolumeUID, event => {
+    //   // Do something
+    // });
 
     // const segVolumeBlank = imageCache.makeAndCacheDerivedVolume(ctVolumeUID);
 
-    // const ctDimensions = ctVolume.dimensions;
+    // imageCache.decacheVolume(segVolumeBlank.uid);
 
-    // const existingSegPixelArray = createUint8SharedArray(
-    //   ctDimensions[0] * ctDimensions[1] * ctDimensions[2]
-    // );
+    // imageCache.decacheVolume(segVolumeExistingData.uid);
 
-    // debugger;
-
-    // const segVolumeExistingData = imageCache.makeAndCacheDerivedVolume(
-    //   ctVolumeUID,
-    //   {
-    //     volumeScalarData: existingSegPixelArray,
-    //   }
-    // );
-
-    // debugger;
+    // imageCache.purgeCache();
   }
 
   render() {
