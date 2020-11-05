@@ -16,3 +16,14 @@ describe('Some tests', () => {
     expect(User).toBeTruthy();
   });
 });
+
+// imageCache =>
+// Make mock images
+// -- Create image
+// -- Create derived images
+// -- Create derived image with existing Uint8 data
+// -- Create derived image with exising Float32 data
+//
+
+// Load image
+// --

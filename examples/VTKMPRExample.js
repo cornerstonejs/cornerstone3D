@@ -24,9 +24,7 @@ class VTKMPRExample extends Component {
       console.log(event);
     });
 
-    imageCache.loadVolume(ctVolumeUID, event => {
-      console.log(event);
-    });
+    console.group(ctVolume);
 
     // const segVolumeBlank = imageCache.makeAndCacheDerivedVolume(ctVolumeUID);
 
