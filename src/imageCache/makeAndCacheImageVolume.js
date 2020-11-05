@@ -102,6 +102,7 @@ export default function makeAndCacheImageVolume(imageIds, uid) {
     loadStatus: {
       loaded: false,
       cachedFrames: [],
+      callbacks: [],
     },
   };
 

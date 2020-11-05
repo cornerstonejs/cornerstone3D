@@ -14,6 +14,13 @@ export default function loadVolume(volumeUID, callback) {
 
   const { scalarData, imageIds, loadStatus } = volume;
 
+  volume.loadStatus.callbacks.push(callback);
+
+  if (loadStatus.loading) {
+    console.log('IS LOADING');
+    return; // Already loading, will get callbacks from main load.
+  }
+
   // TODO -> Check class later when seperated streaming and static volumes.
   if (!imageIds) {
     // Callback saying whole volume is loaded.
@@ -24,7 +31,7 @@ export default function loadVolume(volumeUID, callback) {
 
   const interleavedFrames = getInterleavedFrames(imageIds);
 
-  const { loaded, cachedFrames } = volume.loadStatus;
+  const { loaded } = volume.loadStatus;
   const numFrames = imageIds.length;
 
   if (loaded) {
@@ -39,12 +46,14 @@ export default function loadVolume(volumeUID, callback) {
 const requestType = 'prefetch';
 const preventCache = true; // We are not using the cornerstone cache for this.
 
-function prefetchImageIds(interleavedFrames, volume, callback) {
+function prefetchImageIds(interleavedFrames, volume) {
   const { scalarData, loadStatus } = volume;
   const { cachedFrames } = loadStatus;
+
+  loadStatus.loading = true;
+
   // SharedArrayBuffer
   const buffer = scalarData.buffer;
-
   const numFrames = interleavedFrames.length;
 
   // Length of one frame in voxels
@@ -63,16 +72,36 @@ function prefetchImageIds(interleavedFrames, volume, callback) {
   }
 
   let framesLoaded = 0;
+  let framesProcessed = 0;
 
-  function successCallback() {
+  function successCallback(imageIdIndex) {
+    cachedFrames[imageIdIndex] = true;
     framesLoaded++;
+    framesProcessed++;
 
-    if (framesLoaded === numFrames) {
+    loadStatus.callbacks.forEach(callback =>
+      callback({ success: true, framesLoaded, numFrames })
+    );
+
+    if (framesProcessed === numFrames) {
       loadStatus.loaded = true;
-      console.log('Loaded!');
+      loadStatus.loading = false;
+      loadStatus.callbacks = [];
     }
+  }
 
-    callback({ success: true, framesLoaded, numFrames });
+  function errorCallback(error, imageId) {
+    framesProcessed++;
+
+    loadStatus.callbacks.forEach(callback =>
+      callback({ success: false, imageId, error })
+    );
+
+    if (framesProcessed === numFrames) {
+      loadStatus.loaded = true;
+      loadStatus.loading = false;
+      loadStatus.callbacks = [];
+    }
   }
 
   interleavedFrames.forEach(frame => {
@@ -82,10 +111,13 @@ function prefetchImageIds(interleavedFrames, volume, callback) {
       successCallback();
     }
 
-    const offset = imageIdIndex * lengthInBytes;
-
     const options = {
-      targetBuffer: { buffer, offset, length, type },
+      targetBuffer: {
+        buffer,
+        offset: imageIdIndex * lengthInBytes,
+        length,
+        type,
+      },
     };
 
     // TODO -> Add options to cornerstoneTools requests via requestPoolManager
@@ -95,13 +127,10 @@ function prefetchImageIds(interleavedFrames, volume, callback) {
       requestType,
       preventCache,
       () => {
-        // Success
-        cachedFrames[imageIdIndex] = true;
-        successCallback();
+        successCallback(imageIdIndex);
       },
       error => {
-        // Error
-        callback({ success: false, imageId, error });
+        errorCallback(error, imageId);
       },
       options
     );
