@@ -2,6 +2,7 @@ import cache from './cache';
 import cornerstone from 'cornerstone-core';
 import { requestPoolManager } from 'cornerstone-tools';
 import { getInterleavedFrames } from './helpers';
+import getPatientWeightAndCorrectedDose from './helpers/getPatientWeightAndCorrectedDose';
 
 export default function loadVolume(volumeUID, callback) {
   const volume = cache.get(volumeUID);
@@ -111,12 +112,36 @@ function prefetchImageIds(interleavedFrames, volume) {
       successCallback();
     }
 
+    const modalityLutModule =
+      cornerstone.metaData.get('modalityLutModule', imageId) || {};
+
+    const generalSeriesModule =
+      cornerstone.metaData.get('generalSeriesModule', imageId) || {};
+
+    const scalingParameters = {
+      rescaleSlope: modalityLutModule.rescaleSlope,
+      rescaleIntercept: modalityLutModule.rescaleIntercept,
+      modality: generalSeriesModule.modality,
+    };
+
+    if (scalingParameters.modality === 'PT') {
+      const { patientWeight, correctedDose } = getPatientWeightAndCorrectedDose(
+        imageId
+      );
+
+      scalingParameters.patientWeight = patientWeight;
+      scalingParameters.correctedDose = correctedDose;
+    }
+
     const options = {
       targetBuffer: {
         buffer,
         offset: imageIdIndex * lengthInBytes,
         length,
         type,
+      },
+      preScale: {
+        scalingParameters,
       },
     };
 

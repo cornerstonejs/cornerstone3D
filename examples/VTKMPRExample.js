@@ -20,21 +20,72 @@ class VTKMPRExample extends Component {
       ctVolumeUID
     );
 
-    const ctDimensions = ctVolume.dimensions;
-    const existingSegPixelArray = createUint8SharedArray(
-      ctDimensions[0] * ctDimensions[1] * ctDimensions[2]
-    );
+    console.log(ctVolume);
+    console.log(ptVolume);
 
-    const segVolumeExistingData = imageCache.makeAndCacheDerivedVolume(
-      ctVolumeUID,
-      {
-        volumeScalarData: existingSegPixelArray,
+    // Seg example
+    // const ctDimensions = ctVolume.dimensions;
+    // const existingSegPixelArray = createUint8SharedArray(
+    //   ctDimensions[0] * ctDimensions[1] * ctDimensions[2]
+    // );
+
+    // const segVolumeExistingData = imageCache.makeAndCacheDerivedVolume(
+    //   ctVolumeUID,
+    //   {
+    //     volumeScalarData: existingSegPixelArray,
+    //   }
+    // );
+
+    let t0 = performance.now();
+
+    imageCache.loadVolume(ptVolumeUID, event => {
+      if (event.framesLoaded === event.numFrames) {
+        console.log(`loaded ${ptVolumeUID}`);
+        const t = performance.now();
+
+        console.log(t - t0);
+
+        t0 = t;
       }
-    );
+    });
 
-    // imageCache.loadVolume(ctVolumeUID, event => {
-    //   // Do something
-    // });
+    imageCache.loadVolume(ctVolumeUID, event => {
+      if (event.framesLoaded === event.numFrames) {
+        console.log(`loaded ${ctVolumeUID}`);
+        const t = performance.now();
+
+        console.log(t - t0);
+
+        t0 = t;
+      }
+    });
+
+    // console.log('loading...');
+    // let t0 = performance.now();
+
+    // cornerstone
+    //   .loadImage(
+    //     'wadors:http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs/studies/1.3.6.1.4.1.14519.5.2.1.2744.7002.265747109734234332913845746990/series/1.3.6.1.4.1.14519.5.2.1.2744.7002.293058381121514278754483306116/instances/1.3.6.1.4.1.14519.5.2.1.2744.7002.148622969920358252177506791693/frames/1',
+    //     {
+    //       targetBuffer: {
+    //         buffer: ctVolume.scalarData.buffer,
+    //         offset: 0,
+    //         length: 512 * 512,
+    //         type: 'Float32Array',
+    //       },
+    //       preScale: {
+    //         scalingParameters: {
+    //           rescaleSlope: -1024,
+    //           rescaleIntercept: 1,
+    //           modality: 'CT',
+    //         },
+    //       },
+    //     }
+    //   )
+    //   .then(image => {
+    //     console.log(performance.now() - t0);
+    //     console.log(image);
+    //   });
 
     // const segVolumeBlank = imageCache.makeAndCacheDerivedVolume(ctVolumeUID);
 

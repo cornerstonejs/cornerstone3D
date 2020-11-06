@@ -23,7 +23,9 @@ describe('Some tests', () => {
 // -- Create derived images
 // -- Create derived image with existing Uint8 data
 // -- Create derived image with exising Float32 data
+// -- Cache size behaving correctly with decacheVolume and purgeCache.
 //
 
 // Load image
-// --
+// -- Load image called twice and not sending requests twice.
+// -- Object being decached during load image?
