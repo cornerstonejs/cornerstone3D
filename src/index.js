@@ -6,6 +6,7 @@ import {
   createFloat32SharedArray,
 } from './sharedArrayBufferHelpers';
 import { User } from './User.ts';
+import register from './imageLoader/vtkjsWADOImageLoader';
 
 export {
   RenderingEngine,
@@ -13,6 +14,7 @@ export {
   toolManager,
   createUint8SharedArray,
   createFloat32SharedArray,
+  register,
 };
 
 export default {
@@ -21,6 +23,7 @@ export default {
   toolManager,
   createUint8SharedArray,
   createFloat32SharedArray,
+  register,
   // TEMP
   User,
 };

@@ -26,7 +26,8 @@
     "cornerstone-tools": "^5.1.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "vtk.js": "^14.17.3"
+    "vtk.js": "^14.17.3",
+    "cornerstone-wado-image-loader": "file:.yalc/cornerstone-wado-image-loader"
   },
   "dependencies": {
     "date-fns": "^2.2.1",
