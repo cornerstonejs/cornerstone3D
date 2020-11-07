@@ -31,7 +31,7 @@ class VTKMPRExample extends Component {
     // cornerstone
     //   .loadImage(ctImageIds[0], {
     //     targetBuffer: {
-    //       buffer: ctVolume.scalarData.buffer,
+    //       arrayBuffer: ctVolume.scalarData.buffer,
     //       offset: 0,
     //       length: 512 * 512,
     //       type: 'Float32Array',

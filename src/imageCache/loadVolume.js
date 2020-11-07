@@ -54,13 +54,13 @@ function prefetchImageIds(interleavedFrames, volume) {
   loadStatus.loading = true;
 
   // SharedArrayBuffer
-  const buffer = scalarData.buffer;
+  const arrayBuffer = scalarData.buffer;
   const numFrames = interleavedFrames.length;
 
   // Length of one frame in voxels
   const length = scalarData.length / numFrames;
   // Length of one frame in bytes
-  const lengthInBytes = buffer.byteLength / numFrames;
+  const lengthInBytes = arrayBuffer.byteLength / numFrames;
 
   let type;
 
@@ -135,7 +135,7 @@ function prefetchImageIds(interleavedFrames, volume) {
 
     const options = {
       targetBuffer: {
-        buffer,
+        arrayBuffer,
         offset: imageIdIndex * lengthInBytes,
         length,
         type,
