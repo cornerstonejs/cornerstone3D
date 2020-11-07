@@ -5,6 +5,7 @@ import decodeJPEGBaseline from './decoders/decodeJPEGBaseline.js';
 import decodeJPEGLossless from './decoders/decodeJPEGLossless.js';
 import decodeJPEGLS from './decoders/decodeJPEGLS.js';
 import decodeJPEG2000 from './decoders/decodeJPEG2000.js';
+import scaleArray from './scaling/scaleArray.js';
 
 function decodeImageFrame(
   imageFrame,
@@ -84,6 +85,53 @@ function decodeImageFrame(
       // eslint-disable-next-line no-bitwise
       imageFrame.pixelData[i] = (imageFrame.pixelData[i] << shift) >> shift;
     }
+  }
+
+  // Cache the pixelData reference quickly incase we want to set a targetBuffer _and_ scale.
+  let pixelDataArray = imageFrame.pixelData;
+
+  if (options.targetBuffer) {
+    // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+    const { arrayBuffer, offset, length, type } = options.targetBuffer;
+
+    let TypedArrayConstructor;
+
+    switch (type) {
+      case 'Uint8Array':
+        TypedArrayConstructor = Uint8Array;
+        break;
+      case 'Uint16Array':
+        TypedArrayConstructor = Uint16Array;
+        break;
+      case 'Float32Array':
+        TypedArrayConstructor = Float32Array;
+        break;
+      default:
+        throw new Error('target array for image does not have a valid type.');
+    }
+
+    const imageFramePixelData = imageFrame.pixelData;
+
+    if (length !== imageFramePixelData.length) {
+      throw new Error(
+        'target array for image does not have the same length as the decoded image length.'
+      );
+    }
+
+    const typedArray = new TypedArrayConstructor(arrayBuffer, offset, length);
+
+    // TypedArray.Set is api level and ~50x faster than copying elements even for
+    // Arrays of different types, which aren't simply memcpy ops.
+    typedArray.set(imageFramePixelData, 0);
+
+    // If need to scale, need to scale correct array.
+    pixelDataArray = typedArray;
+  }
+
+  if (options.preScale) {
+    const { scalingParameters } = options.preScale;
+
+    scaleArray(pixelDataArray, scalingParameters);
   }
 
   const end = new Date().getTime();
