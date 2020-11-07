@@ -4,6 +4,7 @@ import cornerstoneMath from 'cornerstone-math';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import cornerstoneTools from 'cornerstone-tools';
 import Hammer from 'hammerjs';
+import { register as registerVTKViewportLoaders } from '@vtk-viewport';
 
 cornerstoneTools.external.cornerstone = cornerstone;
 cornerstoneTools.external.Hammer = Hammer;
@@ -36,9 +37,11 @@ window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader;
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
 
+cornerstoneWADOImageLoader.configure({ useWebWorkers: false });
+
 var config = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
-  startWebWorkersOnDemand: true,
+  startWebWorkersOnDemand: false,
   taskConfiguration: {
     decodeTask: {
       initializeCodecsOnStartup: false,
@@ -48,3 +51,5 @@ var config = {
   },
 };
 cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
+
+registerVTKViewportLoaders(cornerstone);

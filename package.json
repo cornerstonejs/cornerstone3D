@@ -17,15 +17,17 @@
     "build:examples": "webpack --progress --colors --config ./.webpack/webpack.dev.js -d",
     "dev": "webpack-dev-server --config ./.webpack/webpack.dev.js --watch",
     "start": "yarn run dev",
+    "test": "./node_modules/karma/bin/karma start",
     "lint": "lint-staged",
     "predeploy": "yarn install && yarn run build:release",
     "prepublishOnly": "yarn run build && yarn run build:release"
   },
   "peerDependencies": {
-    "cornerstone-tools": "^4.20.1",
+    "cornerstone-tools": "^5.1.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "vtk.js": "^14.17.3"
+    "vtk.js": "^14.17.3",
+    "cornerstone-wado-image-loader": "3.2.0"
   },
   "dependencies": {
     "date-fns": "^2.2.1",
@@ -50,8 +52,8 @@
     "copy-webpack-plugin": "^5.0.4",
     "cornerstone-core": "^2.3.0",
     "cornerstone-math": "^0.1.8",
-    "cornerstone-tools": "^4.20.1",
-    "cornerstone-wado-image-loader": "^3.0.5",
+    "cornerstone-tools": "^5.1.0",
+    "cornerstone-wado-image-loader": "3.2.0",
     "cross-env": "^5.2.0",
     "css-loader": "^3.0.0",
     "dicom-parser": "^1.8.3",
@@ -70,6 +72,12 @@
     "hammerjs": "^2.0.8",
     "html-webpack-plugin": "^3.2.0",
     "husky": "^4.0.0",
+    "jasmine": "^3.6.3",
+    "karma": "^5.2.3",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-coverage": "^2.0.3",
+    "karma-jasmine": "^4.0.1",
+    "karma-webpack": "^4.0.2",
     "kw-web-suite": "^8.0.0",
     "lint-staged": "^9.2.5",
     "postcss-loader": "^3.0.0",

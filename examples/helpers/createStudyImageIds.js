@@ -28,7 +28,7 @@ export default async function createStudyImageIds() {
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
     const imageId =
-      `wadors:` +
+      `vtkjs:` +
       wadoRsRoot +
       '/studies/' +
       StudyInstanceUID +

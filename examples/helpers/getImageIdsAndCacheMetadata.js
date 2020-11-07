@@ -23,15 +23,16 @@ export default async function getImageIds() {
     imageId.includes(ctSeriesInstanceUID)
   );
 
-  ctImageIds = sortImageIdsByIPP(ctImageIds);
-
   let ptImageIds = imageIds.filter(imageId =>
     imageId.includes(ptSeriesInstanceUID)
   );
 
-  ptImageIds = sortImageIdsByIPP(ptImageIds);
-
   if (limitFrames !== undefined && typeof limitFrames === 'number') {
+    // Only sort imageIds for this example to get a subsection of the volume for
+    // testing. Do not need to sort otherwise as the the imageCache will do this when creating volumes.
+    ptImageIds = sortImageIdsByIPP(ptImageIds);
+    ctImageIds = sortImageIdsByIPP(ctImageIds);
+
     ctImageIds = limitImageIds(ctImageIds, limitFrames);
     ptImageIds = limitImageIds(ptImageIds, limitFrames);
   }
