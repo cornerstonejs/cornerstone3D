@@ -20,6 +20,9 @@ function loadImageIntoBuffer(imageId, options) {
     // get the pixel data from the server
     getPixelData(uri, imageId, mediaType)
       .then(result => {
+        // DEBUG
+        //const start = new Date().getTime();
+        // DEBUG
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
@@ -44,6 +47,11 @@ function loadImageIntoBuffer(imageId, options) {
         );
 
         decodePromise.then(() => {
+          // DEBUG
+          // const end = new Date().getTime();
+          //
+          // console.log(end - start);
+          // DEBUG
           resolve();
         }, reject);
       }, reject)

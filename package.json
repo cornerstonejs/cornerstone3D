@@ -27,7 +27,7 @@
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "vtk.js": "^14.17.3",
-    "cornerstone-wado-image-loader": "file:.yalc/cornerstone-wado-image-loader"
+    "cornerstone-wado-image-loader": "3.2.0"
   },
   "dependencies": {
     "date-fns": "^2.2.1",
@@ -53,7 +53,7 @@
     "cornerstone-core": "^2.3.0",
     "cornerstone-math": "^0.1.8",
     "cornerstone-tools": "^5.1.0",
-    "cornerstone-wado-image-loader": "file:.yalc/cornerstone-wado-image-loader",
+    "cornerstone-wado-image-loader": "3.2.0",
     "cross-env": "^5.2.0",
     "css-loader": "^3.0.0",
     "dicom-parser": "^1.8.3",

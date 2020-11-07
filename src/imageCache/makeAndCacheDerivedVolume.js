@@ -6,6 +6,7 @@ import cache, {
 import { uuidv4 } from './helpers';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
+import ImageVolume from './classes/ImageVolume.ts';
 
 export default function makeAndCacheDerivedVolume(
   referencedVolumeUID,
@@ -84,7 +85,7 @@ export default function makeAndCacheDerivedVolume(
   derivedImageData.setOrigin(...origin);
   derivedImageData.getPointData().setScalars(scalarArray);
 
-  const derivedVolume = {
+  const derivedVolume = new ImageVolume({
     uid,
     metadata,
     dimensions,
@@ -92,8 +93,8 @@ export default function makeAndCacheDerivedVolume(
     origin,
     direction,
     vtkImageData: derivedImageData,
-    scalarData: volumeScalarData,
-  };
+    scalarData: scalarData,
+  });
 
   cache.set(uid, derivedVolume);
   incrementCacheSize(byteLength);

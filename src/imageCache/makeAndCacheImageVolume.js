@@ -17,6 +17,7 @@ import {
   sortImageIdsAndGetSpacing,
 } from './helpers';
 import errorCodes from '../errorCodes';
+import StreamingImageVolume from './classes/StreamingImageVolume.ts';
 
 export default function makeAndCacheImageVolume(imageIds, uid) {
   if (uid === undefined) {
@@ -108,25 +109,48 @@ export default function makeAndCacheImageVolume(imageIds, uid) {
   imageData.setOrigin(...origin);
   imageData.getPointData().setScalars(scalarArray);
 
-  const imageVolume = {
-    uid,
-    imageIds: sortedImageIds,
-    metadata: volumeMetadata,
-    dimensions,
-    spacing,
-    origin,
-    direction,
-    vtkImageData: imageData,
-    scalarData,
-    loadStatus: {
-      loaded: false,
-      cachedFrames: [],
-      callbacks: [],
+  const streamingImageVolume = new StreamingImageVolume(
+    // ImageVolume properties
+    {
+      uid,
+      metadata: volumeMetadata,
+      dimensions,
+      spacing,
+      origin,
+      direction,
+      vtkImageData: imageData,
+      scalarData,
     },
-  };
+    // Streaming properties
+    {
+      imageIds: sortedImageIds,
+      loadStatus: {
+        loaded: false,
+        cachedFrames: [],
+        callbacks: [],
+      },
+    }
+  );
 
-  cache.set(uid, imageVolume);
+  // const imageVolume = {
+  //   uid,
+  //   imageIds: sortedImageIds,
+  //   metadata: volumeMetadata,
+  //   dimensions,
+  //   spacing,
+  //   origin,
+  //   direction,
+  //   vtkImageData: imageData,
+  //   scalarData,
+  //   loadStatus: {
+  //     loaded: false,
+  //     cachedFrames: [],
+  //     callbacks: [],
+  //   },
+  // };
+
+  cache.set(uid, streamingImageVolume);
   incrementCacheSize(byteLength);
 
-  return imageVolume;
+  return streamingImageVolume;
 }

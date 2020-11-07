@@ -28,6 +28,10 @@ class VTKMPRExample extends Component {
     console.log('loading...');
     let t0 = performance.now();
 
+    const segVolumeBlank = imageCache.makeAndCacheDerivedVolume(ptVolumeUID);
+
+    debugger;
+
     // cornerstone
     //   .loadImage(ctImageIds[0], {
     //     targetBuffer: {
