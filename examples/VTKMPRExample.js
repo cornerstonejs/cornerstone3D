@@ -42,6 +42,8 @@ class VTKMPRExample extends Component {
       ctVolumeUID
     );
 
+    console.log(ctVolume);
+
     function setCTWWWC({ volumeActor, volumeUID }) {
       const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 

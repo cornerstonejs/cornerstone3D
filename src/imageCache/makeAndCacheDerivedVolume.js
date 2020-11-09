@@ -7,6 +7,7 @@ import { uuidv4 } from '../utils/';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
 import ImageVolume from './classes/ImageVolume.ts';
+import _cloneDeep from 'lodash.clonedeep';
 
 export default function makeAndCacheDerivedVolume(
   referencedVolumeUID,
@@ -87,13 +88,13 @@ export default function makeAndCacheDerivedVolume(
 
   const derivedVolume = new ImageVolume({
     uid,
-    metadata,
-    dimensions,
-    spacing,
-    origin,
-    direction,
+    metadata: _cloneDeep(metadata),
+    dimensions: [...dimensions],
+    spacing: [...spacing],
+    origin: [...spacing],
+    direction: [...direction],
     vtkImageData: derivedImageData,
-    scalarData: scalarData,
+    scalarData: volumeScalarData,
   });
 
   cache.set(uid, derivedVolume);
