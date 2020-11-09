@@ -62,10 +62,12 @@ class RenderingEngine {
 
     genericRenderWindow.resize();
 
-    const size = genericRenderWindow.getOpenGLRenderWindow().getContainerSize();
+    const openGLRenderWindow = genericRenderWindow.getOpenGLRenderWindow();
+
+    const size = openGLRenderWindow.getContainerSize();
 
     // Awesome!
-    const context = genericRenderWindow.getOpenGLRenderWindow().get3DContext();
+    const context = openGLRenderWindow.get3DContext();
 
     let xOffset = 0;
 
