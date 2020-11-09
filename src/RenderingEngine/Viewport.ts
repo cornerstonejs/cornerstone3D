@@ -1,27 +1,41 @@
-import { ORIENTATION } from '../constants';
+import { ORIENTATION } from '../constants/index';
 import _cloneDeep from 'lodash.clonedeep';
 
-class Viewport {
-  constructor({
-    uid,
-    type,
-    canvas,
-    sx,
-    sy,
-    sWidth,
-    sHeight,
-    defaultOptions,
-    renderWindow,
-  }) {
-    this.uid = uid;
-    this.type = type;
-    this.canvas = canvas;
-    this.sx = sx;
-    this.sy = sy;
-    this.sWidth = sWidth;
-    this.sHeight = sHeight;
+interface ViewportInterface {
+  uid: string;
+  type: string;
+  canvas: HTMLElement;
+  sx: number;
+  sy: number;
+  sWidth: number;
+  sHeight: number;
+  defaultOptions: any;
+  renderWindow: object;
+}
 
-    const options = Object.assign({}, defaultOptions);
+class Viewport {
+  uid: string;
+  type: string;
+  canvas: HTMLElement;
+  sx: number;
+  sy: number;
+  sWidth: number;
+  sHeight: number;
+  renderWindow: object;
+  defaultOptions: any;
+  options: any;
+
+  constructor(props: ViewportInterface) {
+    this.uid = props.uid;
+    this.type = props.type;
+    this.canvas = props.canvas;
+    this.sx = props.sx;
+    this.sy = props.sy;
+    this.sWidth = props.sWidth;
+    this.sHeight = props.sHeight;
+    this.renderWindow = props.renderWindow;
+
+    const options = Object.assign({}, props.defaultOptions);
 
     if (typeof options.orientation === 'string') {
       const orientation = ORIENTATION[options.orientation];
@@ -31,7 +45,6 @@ class Viewport {
 
     this.defaultOptions = _cloneDeep(options);
     this.options = _cloneDeep(options);
-    this.renderWindow = renderWindow;
 
     // TODO Make new renderer and add it to renderWindow
   }
@@ -45,7 +58,7 @@ class Viewport {
   }
 
   reset(immediate = false) {
-    this.options = deepmerge({}, this.defaultOptions);
+    this.options = _cloneDeep(this.defaultOptions);
 
     if (immediate) {
       // TODO Render

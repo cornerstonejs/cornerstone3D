@@ -1,7 +1,12 @@
-import Viewport from './Viewport';
+// @ts-ignore
+import Viewport from './Viewport.ts';
 import createVolumeActor from './helpers/createVolumeActor';
 
 class Scene {
+  uid: string;
+  private _viewports: Array<Viewport>;
+  private _volumeActors: Array<object>;
+
   constructor(uid) {
     this.uid = uid;
     this._viewports = [];

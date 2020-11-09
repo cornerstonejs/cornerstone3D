@@ -1,8 +1,15 @@
 import vtkGenericRenderWindow from 'vtk.js/Sources/Rendering/Misc/GenericRenderWindow';
-import Scene from './Scene';
+
+// @ts-ignore
+import Scene from './Scene.ts';
 import { uuidv4 } from '../utils/';
 
 class RenderingEngine {
+  uid: string;
+  genericRenderWindow: any;
+  webGLCanvasContainer: any;
+  scenes: Array<Scene>;
+
   constructor(uid) {
     this.uid = uid ? uid : uuidv4();
 
@@ -14,7 +21,9 @@ class RenderingEngine {
 
     // Emulate this component being on screen, as vtk.js checks this everywhere.
     // We could eventually change this upstream.
+    //@ts-ignore // We are making this into not a strict div element with the hack.
     webGLCanvasContainer.getBoundingClientRect = () => {
+      //@ts-ignore // We are making this into not a strict div element with the hack.
       const { width, height } = webGLCanvasContainer;
 
       return {
@@ -28,9 +37,6 @@ class RenderingEngine {
         height: height,
       };
     };
-
-    webGLCanvasContainer.width = 256; // Some placeholder
-    webGLCanvasContainer.height = 256;
 
     this.webGLCanvasContainer = webGLCanvasContainer;
     this.genericRenderWindow.setContainer(this.webGLCanvasContainer);
