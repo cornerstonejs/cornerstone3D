@@ -3,7 +3,7 @@ import cache, {
   getMaxCacheSize,
   incrementCacheSize,
 } from './cache';
-import { uuidv4 } from './helpers';
+import { uuidv4 } from '../utils';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
 import ImageVolume from './classes/ImageVolume.ts';
@@ -75,7 +75,7 @@ export default function makeAndCacheLocalImageVolume(properties = {}, uid) {
     spacing,
     origin,
     direction,
-    vtkImageData: derivedImageData,
+    vtkImageData: imageData,
     scalarData: scalarData,
   });
 
