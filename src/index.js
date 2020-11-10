@@ -5,8 +5,9 @@ import {
   createUint8SharedArray,
   createFloat32SharedArray,
 } from './sharedArrayBufferHelpers';
-import { User } from './User.ts';
 import register from './imageLoader/vtkjsWADOImageLoader';
+import errorCodes from './errorCodes';
+import CONSTANTS from './constants';
 
 export {
   RenderingEngine,
@@ -15,6 +16,8 @@ export {
   createUint8SharedArray,
   createFloat32SharedArray,
   register,
+  errorCodes,
+  CONSTANTS,
 };
 
 export default {
@@ -24,6 +27,6 @@ export default {
   createUint8SharedArray,
   createFloat32SharedArray,
   register,
-  // TEMP
-  User,
+  errorCodes,
+  CONSTANTS,
 };

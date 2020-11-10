@@ -1,5 +1,3 @@
-const RenderingEngine = {
-  // TODO: Rendering Enginge go: render-render
-};
+import RenderingEngine from './RenderingEngine.ts';
 
 export default RenderingEngine;

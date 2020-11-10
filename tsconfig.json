@@ -3,7 +3,8 @@
     "skipLibCheck": true,
     "outDir": "tsDist",
     "module": "es6",
-    "target": "es6"
+    "target": "es6",
+    "moduleResolution": "node"
   },
   "exclude": ["node_modules", "dist", "snippets"]
 }

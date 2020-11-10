@@ -1,4 +1,4 @@
-import { ImageVolumeInterface } from 'interfaces';
+import { ImageVolumeInterface } from './interfaces';
 
 export default class ImageVolume {
   uid: string;

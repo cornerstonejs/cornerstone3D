@@ -11,11 +11,8 @@ import {
   createFloat32SharedArray,
 } from '../sharedArrayBufferHelpers';
 
-import {
-  makeVolumeMetadata,
-  uuidv4,
-  sortImageIdsAndGetSpacing,
-} from './helpers';
+import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers';
+import { uuidv4 } from '../utils';
 import errorCodes from '../errorCodes';
 import StreamingImageVolume from './classes/StreamingImageVolume.ts';
 

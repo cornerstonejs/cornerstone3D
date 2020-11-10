@@ -1,3 +1,5 @@
+const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core;
+
 module.exports = function(config) {
   config.set({
     plugins: [
@@ -12,8 +14,8 @@ module.exports = function(config) {
       { pattern: 'test/**/*_test.js', watched: false },
     ],
     preprocessors: {
-      'test/*_test.js': [ 'webpack' ],
-      'test/**/*_test.js': [ 'webpack' ],
+      'test/*_test.js': ['webpack'],
+      'test/**/*_test.js': ['webpack'],
     },
     webpack: {
       mode: 'development',
@@ -43,10 +45,11 @@ module.exports = function(config) {
               },
             ],
           },
-        ],
+        ].concat(vtkRules),
       },
       // Any custom webpack configuration...
     },
+    node: { fs: 'empty' },
     webpackMiddleware: {
       noInfo: true,
     },
@@ -58,6 +61,6 @@ module.exports = function(config) {
       },
     },
 
-    browsers: ['ChromeHeadlessNoSandbox']
+    browsers: ['ChromeHeadlessNoSandbox'],
   });
 };
