@@ -1,8 +1,11 @@
 import cache from './cache';
 import cornerstone from 'cornerstone-core';
+import cornerstoneTools from 'cornerstone-tools';
 import { requestPoolManager } from 'cornerstone-tools';
 import { getInterleavedFrames } from './helpers';
 import getPatientWeightAndCorrectedDose from './helpers/getPatientWeightAndCorrectedDose';
+
+const throttle = cornerstoneTools.importInternal('util/throttle');
 
 export default function loadVolume(volumeUID, callback) {
   const volume = cache.get(volumeUID);
@@ -41,7 +44,7 @@ export default function loadVolume(volumeUID, callback) {
     return;
   }
 
-  prefetchImageIds(interleavedFrames, volume, callback);
+  prefetchImageIds(interleavedFrames, volume);
 }
 
 const requestType = 'prefetch';
@@ -75,33 +78,67 @@ function prefetchImageIds(interleavedFrames, volume) {
   let framesLoaded = 0;
   let framesProcessed = 0;
 
+  function callLoadStatusCallback(evt) {
+    loadStatus.callbacks.forEach(callback => callback(evt));
+  }
+
+  const throttledCallLoadStatusCallbacks = throttle(
+    callLoadStatusCallback,
+    16 // ~60 fps
+  );
+
   function successCallback(imageIdIndex) {
     cachedFrames[imageIdIndex] = true;
     framesLoaded++;
     framesProcessed++;
 
-    loadStatus.callbacks.forEach(callback =>
-      callback({ success: true, framesLoaded, numFrames })
-    );
-
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true;
       loadStatus.loading = false;
+
+      callLoadStatusCallback({
+        success: true,
+        framesLoaded,
+        framesProcessed,
+        numFrames,
+      });
       loadStatus.callbacks = [];
+    } else {
+      throttledCallLoadStatusCallbacks({
+        success: true,
+        framesLoaded,
+        framesProcessed,
+        numFrames,
+      });
     }
   }
 
   function errorCallback(error, imageId) {
     framesProcessed++;
 
-    loadStatus.callbacks.forEach(callback =>
-      callback({ success: false, imageId, error })
-    );
-
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true;
       loadStatus.loading = false;
+
+      callLoadStatusCallback({
+        success: false,
+        imageId,
+        error,
+        framesLoaded,
+        framesProcessed,
+        numFrames,
+      });
+
       loadStatus.callbacks = [];
+    } else {
+      throttledCallLoadStatusCallbacks({
+        success: false,
+        imageId,
+        error,
+        framesLoaded,
+        framesProcessed,
+        numFrames,
+      });
     }
   }
 
