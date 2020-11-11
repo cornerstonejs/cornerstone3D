@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
 
+const { ORIENTATION } = CONSTANTS;
+
 class VTKMPRExample extends Component {
   constructor(props) {
     super(props);
@@ -54,8 +56,6 @@ class VTKMPRExample extends Component {
       // Something
     }
 
-    const orientationConstants = CONSTANTS.ORIENTATION;
-
     renderingEngine.setViewports([
       {
         sceneUID: ctSceneID,
@@ -63,7 +63,7 @@ class VTKMPRExample extends Component {
         type: 'orthogonal',
         canvas: this.axialCTContainer.current,
         defaultOptions: {
-          orientation: 'AXIAL',
+          orientation: ORIENTATION.AXIAL,
           background: [1, 0, 0],
         },
       },
@@ -73,7 +73,7 @@ class VTKMPRExample extends Component {
         type: 'orthogonal',
         canvas: this.sagittalCTContainer.current,
         defaultOptions: {
-          orientation: 'SAGITTAL',
+          orientation: ORIENTATION.SAGITTAL,
           background: [0, 1, 0],
         },
       },
@@ -83,7 +83,7 @@ class VTKMPRExample extends Component {
         type: 'orthogonal',
         canvas: this.coronalCTContainer.current,
         defaultOptions: {
-          orientation: 'CORONAL',
+          orientation: ORIENTATION.CORONAL,
           background: [0, 0, 1],
         },
       },

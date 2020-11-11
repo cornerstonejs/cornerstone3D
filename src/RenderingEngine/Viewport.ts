@@ -37,12 +37,6 @@ class Viewport {
 
     const options = Object.assign({}, props.defaultOptions);
 
-    if (typeof options.orientation === 'string') {
-      const orientation = ORIENTATION[options.orientation];
-
-      options.orientation = _cloneDeep(orientation);
-    }
-
     this.defaultOptions = _cloneDeep(options);
     this.options = _cloneDeep(options);
 
@@ -52,16 +46,20 @@ class Viewport {
   setOptions(options, immediate = false) {
     this.options = Object.assign({}, options);
 
+    // TODO Set up camera etc.
+
     if (immediate) {
-      // TODO Render
+      this.render();
     }
   }
 
   reset(immediate = false) {
     this.options = _cloneDeep(this.defaultOptions);
 
+    // TODO Set up camera etc.
+
     if (immediate) {
-      // TODO Render
+      this.render();
     }
   }
 

@@ -53,7 +53,7 @@ class Scene {
     });
 
     if (immediate) {
-      // TODO Render
+      this.render();
     }
   }
 
