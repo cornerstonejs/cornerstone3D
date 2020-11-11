@@ -21,9 +21,15 @@ class TwentyFiveCanvasExample extends Component {
     }
   }
 
+  componentWillUnmount() {
+    this.renderingEngine.destroy();
+  }
+
   componentDidMount() {
     const renderingEngineUID = 'ExampleRenderingEngineID';
     const renderingEngine = new RenderingEngine(renderingEngineUID);
+
+    this.renderingEngine = renderingEngine;
 
     const viewportUIDS = [];
     const sceneUID = 'SCENE_UID';
