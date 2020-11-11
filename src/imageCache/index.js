@@ -5,6 +5,7 @@ import makeAndCacheLocalImageVolume from './makeAndCacheLocalImageVolume';
 import decacheVolume from './decacheVolume';
 import purgeCache from './purgeCache';
 import loadVolume from './loadVolume';
+import cancelLoadVolume from './cancelLoadVolume';
 
 const imageCache = {
   getImageVolume: uid => {
@@ -16,6 +17,7 @@ const imageCache = {
   makeAndCacheLocalImageVolume,
   makeAndCacheDerivedVolume,
   loadVolume,
+  cancelLoadVolume,
   getCacheSize,
   getMaxCacheSize,
   setMaxCacheSize,
