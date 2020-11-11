@@ -31,8 +31,16 @@ class CanvasResizeExample extends Component {
   }
 
   componentDidUpdate() {
+    const t0 = new Date().getTime();
     this.renderingEngine.resize();
+
+    const t1 = new Date().getTime();
+
     this.renderingEngine.render();
+
+    const t2 = new Date().getTime();
+
+    console.log(`Resize time: ${t1 - t0}, Re-render time: ${t2 - t1} ms`);
   }
 
   componentDidMount() {
@@ -106,8 +114,6 @@ class CanvasResizeExample extends Component {
       height: `${viewportSizes[2][1]}px`,
     };
 
-    // TODO: react to events and make correct stuff active.
-
     return (
       <div>
         <div className="row">
@@ -118,6 +124,10 @@ class CanvasResizeExample extends Component {
               framework by calling renderingEngine.resize() when onscreen canvas
               elements are resized. It is the applications responsiblity to tell
               the rendering engine when to resize.
+            </p>
+            <p>
+              RenderingEngine resize times and re-render times are logged to the
+              console.
             </p>
             <button onClick={this.resize}>Resize</button>
             <p>

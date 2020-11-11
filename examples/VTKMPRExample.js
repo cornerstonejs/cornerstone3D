@@ -19,8 +19,6 @@ class VTKMPRExample extends Component {
 
     const renderingEngine = new RenderingEngine(renderingEngineUID);
 
-    console.log(renderingEngine);
-
     const axialCTViewportID = 'AXIAL_CT';
     const sagittalCTViewportID = 'SAGITTAL_CT';
     const coronalCTViewportID = 'CORONAL_CT';

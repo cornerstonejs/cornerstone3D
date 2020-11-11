@@ -3,6 +3,7 @@ import React, { Component, useState } from 'react';
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
 import VTKMPRExample from './VTKMPRExample.js';
 import CanvasResizeExample from './CanvasResizeExample.js';
+import TwentyFiveCanvasExample from './TwentyFiveCanvasExample.js';
 
 function LinkOut({ href, text }) {
   return (
@@ -36,9 +37,15 @@ function Index() {
       text: 'Example MPR playground.',
     },
     {
-      title: 'CanvasResize',
+      title: 'Canvas Resize',
       url: '/canvasResize',
       text: 'Onscreen/Offscreen Canvas Resize Example.',
+    },
+    {
+      title: 'Twenty Five Canvas',
+      url: '/twentyFiveCanvas',
+      text:
+        'Example with twenty five on screen canvases linked to a single RenderingEngine.',
     },
   ];
 
@@ -94,12 +101,18 @@ function AppRouter() {
       children: <CanvasResizeExample />,
     });
 
+  const twentyFiveCanvas = () =>
+    Example({
+      children: <TwentyFiveCanvasExample />,
+    });
+
   return (
     <Router>
       <Switch>
         <Route exact path="/" component={Index} />
         <Route exact path="/mpr/" render={mpr} />
         <Route exact path="/canvasResize/" render={canvasResize} />
+        <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact component={Index} />
       </Switch>
     </Router>
