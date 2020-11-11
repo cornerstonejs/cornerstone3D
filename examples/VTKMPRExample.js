@@ -14,7 +14,10 @@ class VTKMPRExample extends Component {
   }
 
   componentWillUnmount() {
-    this.this.renderingEngine.destroy();
+    imageCache.decacheVolume(this.ctVolumeUID);
+    imageCache.decacheVolume(this.ptVolumeUID);
+
+    this.renderingEngine.destroy();
   }
 
   async componentDidMount() {
@@ -22,6 +25,9 @@ class VTKMPRExample extends Component {
     const renderingEngineUID = 'PETCTRenderingEngine';
     const ptVolumeUID = 'PET_VOLUME';
     const ctVolumeUID = 'CT_VOLUME';
+
+    this.ctVolumeUID = ctVolumeUID;
+    this.ptVolumeUID = ptVolumeUID;
 
     const renderingEngine = new RenderingEngine(renderingEngineUID);
 
@@ -43,9 +49,6 @@ class VTKMPRExample extends Component {
       ctImageIds,
       ctVolumeUID
     );
-
-    this.ctVolume = ctVolume;
-    this.ptVolume = ptVolume;
 
     function setCTWWWC({ volumeActor, volumeUID }) {
       const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
@@ -127,8 +130,6 @@ class VTKMPRExample extends Component {
 
       console.log(`CT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
     });
-
-    this.setState({ initialized: true });
   }
 
   render() {

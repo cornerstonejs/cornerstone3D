@@ -1,4 +1,5 @@
 import cache, { incrementCacheSize } from './cache';
+import cancelLoadVolume from './cancelLoadVolume';
 
 export default function decacheVolume(uid) {
   const volume = cache.get(uid);
@@ -8,4 +9,7 @@ export default function decacheVolume(uid) {
 
     incrementCacheSize(-byteLength);
   }
+
+  cancelLoadVolume(uid);
+  cache.delete(uid);
 }
