@@ -40,10 +40,10 @@ const APP_CONFIG = process.env.APP_CONFIG || 'config/default.js';
 const APP_CONFIG_PATH = path.join(__dirname, `./../${APP_CONFIG}`);
 
 // Add this additional call so we can yarn link vtk.js
-// const shaderLoader = {
-//   test: /\.glsl$/i,
-//   loader: 'shader-loader',
-// };
+const shaderLoader = {
+  test: /\.glsl$/i,
+  loader: 'shader-loader',
+};
 
 module.exports = {
   entry: {
@@ -79,8 +79,9 @@ module.exports = {
           },
         ],
       },
-    ].concat(vtkRules),
-    //.concat(shaderLoader),
+    ]
+      .concat(vtkRules)
+      .concat(shaderLoader),
   },
   resolve: {
     modules: [path.resolve(__dirname, './../node_modules'), SRC_PATH],

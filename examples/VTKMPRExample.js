@@ -2,11 +2,9 @@ import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
 
-class VTKMPRExample extends Component {
-  state = {
-    initialized: false,
-  };
+const { ORIENTATION } = CONSTANTS;
 
+class VTKMPRExample extends Component {
   constructor(props) {
     super(props);
 
@@ -22,8 +20,6 @@ class VTKMPRExample extends Component {
     const ctVolumeUID = 'CT_VOLUME';
 
     const renderingEngine = new RenderingEngine(renderingEngineUID);
-
-    console.log(renderingEngine);
 
     const axialCTViewportID = 'AXIAL_CT';
     const sagittalCTViewportID = 'SAGITTAL_CT';
@@ -60,8 +56,6 @@ class VTKMPRExample extends Component {
       // Something
     }
 
-    const orientationConstants = CONSTANTS.ORIENTATION;
-
     renderingEngine.setViewports([
       {
         sceneUID: ctSceneID,
@@ -69,7 +63,8 @@ class VTKMPRExample extends Component {
         type: 'orthogonal',
         canvas: this.axialCTContainer.current,
         defaultOptions: {
-          orientation: 'AXIAL',
+          orientation: ORIENTATION.AXIAL,
+          background: [1, 0, 0],
         },
       },
       {
@@ -78,7 +73,8 @@ class VTKMPRExample extends Component {
         type: 'orthogonal',
         canvas: this.sagittalCTContainer.current,
         defaultOptions: {
-          orientation: 'SAGITTAL',
+          orientation: ORIENTATION.SAGITTAL,
+          background: [0, 1, 0],
         },
       },
       {
@@ -87,7 +83,8 @@ class VTKMPRExample extends Component {
         type: 'orthogonal',
         canvas: this.coronalCTContainer.current,
         defaultOptions: {
-          orientation: 'CORONAL',
+          orientation: ORIENTATION.CORONAL,
+          background: [0, 0, 1],
         },
       },
     ]);
@@ -96,22 +93,28 @@ class VTKMPRExample extends Component {
 
     ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
 
-    // imageCache.loadVolume(ptVolumeUID, event => {
-    //   if (event.framesLoaded === event.numFrames) {
-    //     console.log(`loaded ${ptVolumeUID}`);
-    //     const t = performance.now();
+    imageCache.loadVolume(ptVolumeUID, event => {
+      const t0 = performance.now();
 
-    //     console.log(t - t0);
+      ptVolume.vtkImageData.modified();
 
-    //     t0 = t;
-    //   }
-    // });
+      renderingEngine.render();
+
+      const t1 = performance.now();
+
+      console.log(`PT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
+    });
 
     imageCache.loadVolume(ctVolumeUID, event => {
-      if (event.framesLoaded === event.numFrames) {
-        console.log('loaded ct, render');
-        ctScene.render();
-      }
+      const t0 = performance.now();
+
+      ctVolume.vtkImageData.modified();
+
+      renderingEngine.render();
+
+      const t1 = performance.now();
+
+      console.log(`CT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
     });
 
     this.setState({ initialized: true });
@@ -119,20 +122,14 @@ class VTKMPRExample extends Component {
 
   render() {
     const activeStyle = {
-      width: '256px',
-      height: '256px',
-      borderStyle: 'solid',
-      borderColor: 'grey',
+      width: '512px',
+      height: '512px',
     };
 
     const inactiveStyle = {
-      width: '256px',
-      height: '256px',
-      borderStyle: 'solid',
-      borderColor: 'black',
+      width: '512px',
+      height: '512px',
     };
-
-    // TODO: react to events and make correct stuff active.
 
     return (
       <div>
@@ -144,15 +141,26 @@ class VTKMPRExample extends Component {
         </div>
         <div className="row">
           <div>
-            <div className="col-sm-4">
-              <canvas ref={this.axialCTContainer} style={activeStyle} />
-            </div>
-            <div className="col-sm-4">
-              <canvas ref={this.sagittalCTContainer} style={inactiveStyle} />
-            </div>
-            <div className="col-sm-4">
-              <canvas ref={this.coronalCTContainer} style={inactiveStyle} />
-            </div>
+            <canvas
+              ref={this.axialCTContainer}
+              width={512}
+              height={512}
+              style={activeStyle}
+            />
+
+            <canvas
+              width={512}
+              height={512}
+              ref={this.sagittalCTContainer}
+              style={inactiveStyle}
+            />
+
+            <canvas
+              width={512}
+              height={512}
+              ref={this.coronalCTContainer}
+              style={inactiveStyle}
+            />
           </div>
         </div>
       </div>

@@ -21,7 +21,7 @@ function loadImageIntoBuffer(imageId, options) {
     getPixelData(uri, imageId, mediaType)
       .then(result => {
         // DEBUG
-        //const start = new Date().getTime();
+        // const start = new Date().getTime();
         // DEBUG
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
@@ -30,9 +30,8 @@ function loadImageIntoBuffer(imageId, options) {
         const pixelData = result.imageFrame.pixelData;
 
         if (!pixelData || !pixelData.length) {
-          return Promise.reject(
-            new Error('The file does not contain image data.')
-          );
+          reject(new Error('The file does not contain image data.'));
+          return;
         }
 
         const canvas = document.createElement('canvas');

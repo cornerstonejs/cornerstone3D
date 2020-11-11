@@ -10,7 +10,7 @@ interface ViewportInterface {
   sWidth: number;
   sHeight: number;
   defaultOptions: any;
-  renderWindow: object;
+  render: Function;
 }
 
 class Viewport {
@@ -21,9 +21,9 @@ class Viewport {
   sy: number;
   sWidth: number;
   sHeight: number;
-  renderWindow: object;
   defaultOptions: any;
   options: any;
+  render: Function;
 
   constructor(props: ViewportInterface) {
     this.uid = props.uid;
@@ -33,15 +33,9 @@ class Viewport {
     this.sy = props.sy;
     this.sWidth = props.sWidth;
     this.sHeight = props.sHeight;
-    this.renderWindow = props.renderWindow;
+    this.render = props.render;
 
     const options = Object.assign({}, props.defaultOptions);
-
-    if (typeof options.orientation === 'string') {
-      const orientation = ORIENTATION[options.orientation];
-
-      options.orientation = _cloneDeep(orientation);
-    }
 
     this.defaultOptions = _cloneDeep(options);
     this.options = _cloneDeep(options);
@@ -52,16 +46,20 @@ class Viewport {
   setOptions(options, immediate = false) {
     this.options = Object.assign({}, options);
 
+    // TODO Set up camera etc.
+
     if (immediate) {
-      // TODO Render
+      this.render();
     }
   }
 
   reset(immediate = false) {
     this.options = _cloneDeep(this.defaultOptions);
 
+    // TODO Set up camera etc.
+
     if (immediate) {
-      // TODO Render
+      this.render();
     }
   }
 

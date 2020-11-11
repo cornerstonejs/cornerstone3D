@@ -49,6 +49,7 @@ module.exports = function(config) {
       },
       // Any custom webpack configuration...
     },
+    // Fix for `cornerstone-wado-image-loader` fs dep
     node: { fs: 'empty' },
     webpackMiddleware: {
       noInfo: true,

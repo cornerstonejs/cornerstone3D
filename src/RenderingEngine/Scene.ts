@@ -4,18 +4,15 @@ import createVolumeActor from './helpers/createVolumeActor';
 
 class Scene {
   uid: string;
+  render: Function;
   private _viewports: Array<Viewport>;
   private _volumeActors: Array<object>;
 
-  constructor(uid) {
+  constructor(uid, render) {
     this.uid = uid;
     this._viewports = [];
     this._volumeActors = [];
-  }
-
-  render() {
-    // TODO -> Render only this scene's viewports.
-    // traverseAllPasses but only for the relevant views.
+    this.render = render;
   }
 
   getViewports() {
@@ -56,7 +53,7 @@ class Scene {
     });
 
     if (immediate) {
-      // TODO Render
+      this.render();
     }
   }
 

@@ -135,17 +135,4 @@ describe('RenderingEngine API:', () => {
     expect(scene2Orientation.viewUp.length).toEqual(3);
     expect(scene2Orientation.sliceNormal.length).toEqual(3);
   });
-
-  // it('Should create a webGL canvas with height equal to the largest destination canvas and width equal to the sum canvas widths', () => {
-  //   const openGLRenderWindow = renderingEngine.genericRenderWindow.getOpenGLRenderWindow();
-
-  //   const size = openGLRenderWindow.getContainerSize();
-
-  //   const context = openGLRenderWindow.get3DContext();
-
-  //   console.log('test!');
-  //   console.log(size);
-  //   console.log(context.canvas.height);
-  //   // TODO finish this when we actually get to the rendering step. Out of scope for VV-9
-  // });
 });
