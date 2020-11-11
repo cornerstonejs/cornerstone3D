@@ -27,6 +27,7 @@ interface ViewportInterface {
 
 class RenderingEngine {
   uid: string;
+  hasBeenDestroyed: boolean;
   offscreenMultiRenderWindow: any;
   webGLCanvasContainer: any;
   private _scenes: Array<Scene>;
@@ -41,10 +42,13 @@ class RenderingEngine {
     this.webGLCanvasContainer = webGLCanvasContainer;
     this.offscreenMultiRenderWindow.setContainer(this.webGLCanvasContainer);
     this._scenes = [];
+
+    this.hasBeenDestroyed = false;
   }
 
   setViewports(viewports: Array<ViewportInterface>) {
-    this.reset();
+    this.throwIfDestroyed();
+    this._reset();
 
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this;
 
@@ -161,14 +165,14 @@ class RenderingEngine {
 
     const renderers = offscreenMultiRenderWindow.getRenderers();
 
-    console.log(renderers.map(r => r.renderer.getViewport()));
-
     // Make renderers.
     // Add renderers to render window.
     // Place renderers and store offset and width height in the render window.
   }
 
   resize() {
+    this.throwIfDestroyed();
+
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this;
 
     const viewports = [];
@@ -246,11 +250,15 @@ class RenderingEngine {
   }
 
   getScene(uid) {
+    this.throwIfDestroyed();
+
     return this._scenes.find(scene => scene.uid === uid);
   }
 
   // render all viewports
   render() {
+    this.throwIfDestroyed();
+
     const { offscreenMultiRenderWindow } = this;
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
@@ -280,6 +288,8 @@ class RenderingEngine {
 
   // Render only a scene
   renderScene(sceneUID) {
+    this.throwIfDestroyed();
+
     const { offscreenMultiRenderWindow } = this;
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
@@ -308,6 +318,8 @@ class RenderingEngine {
 
   // Render only a specific viewport
   renderViewport(sceneUID, viewportUID) {
+    this.throwIfDestroyed();
+
     const { offscreenMultiRenderWindow } = this;
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
@@ -331,7 +343,7 @@ class RenderingEngine {
     this._renderViewportToCanvas(viewport, offScreenCanvas);
   }
 
-  _renderViewportToCanvas(viewport, offScreenCanvas) {
+  private _renderViewportToCanvas(viewport, offScreenCanvas) {
     const { sx, sy, sWidth, sHeight } = viewport;
 
     const canvas = <HTMLCanvasElement>viewport.canvas;
@@ -353,7 +365,7 @@ class RenderingEngine {
     );
   }
 
-  reset() {
+  private _reset() {
     // TODO: In the future need actual VTK cleanup.
 
     this._scenes = [];
@@ -367,11 +379,21 @@ class RenderingEngine {
     // Remove resize handlers from canvases.
   }
 
-  delete() {
-    this.reset();
+  destroy() {
+    this._reset();
 
     // Free up WebGL resources
     this.offscreenMultiRenderWindow.delete();
+
+    this.hasBeenDestroyed = true;
+  }
+
+  throwIfDestroyed() {
+    if (this.hasBeenDestroyed) {
+      throw new Error(
+        'this.destroy() has been manually called to free up memory, can not longer use this instance. Instead make a new one.'
+      );
+    }
   }
 
   debugRender() {

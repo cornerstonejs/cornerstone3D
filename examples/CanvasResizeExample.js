@@ -22,6 +22,10 @@ class CanvasResizeExample extends Component {
     this.resize = this.resize.bind(this);
   }
 
+  componentWillUnmount() {
+    this.renderingEngine.destroy();
+  }
+
   resize() {
     const viewportSizes = [
       [Math.floor(Math.random() * 512), Math.floor(Math.random() * 512)],

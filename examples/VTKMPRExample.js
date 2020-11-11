@@ -13,6 +13,10 @@ class VTKMPRExample extends Component {
     this.coronalCTContainer = React.createRef();
   }
 
+  componentWillUnmount() {
+    this.this.renderingEngine.destroy();
+  }
+
   async componentDidMount() {
     const imageIds = await getImageIdsAndCacheMetadata();
     const renderingEngineUID = 'PETCTRenderingEngine';
@@ -20,6 +24,8 @@ class VTKMPRExample extends Component {
     const ctVolumeUID = 'CT_VOLUME';
 
     const renderingEngine = new RenderingEngine(renderingEngineUID);
+
+    this.renderingEngine = renderingEngine;
 
     const axialCTViewportID = 'AXIAL_CT';
     const sagittalCTViewportID = 'SAGITTAL_CT';
@@ -38,7 +44,8 @@ class VTKMPRExample extends Component {
       ctVolumeUID
     );
 
-    console.log(ctVolume);
+    this.ctVolume = ctVolume;
+    this.ptVolume = ptVolume;
 
     function setCTWWWC({ volumeActor, volumeUID }) {
       const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
@@ -98,7 +105,9 @@ class VTKMPRExample extends Component {
 
       ptVolume.vtkImageData.modified();
 
-      renderingEngine.render();
+      if (!renderingEngine.hasBeenDestroyed) {
+        renderingEngine.render();
+      }
 
       const t1 = performance.now();
 
@@ -110,7 +119,9 @@ class VTKMPRExample extends Component {
 
       ctVolume.vtkImageData.modified();
 
-      renderingEngine.render();
+      if (!renderingEngine.hasBeenDestroyed) {
+        renderingEngine.render();
+      }
 
       const t1 = performance.now();
 
