@@ -3,10 +3,6 @@ import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
 
 class VTKMPRExample extends Component {
-  state = {
-    initialized: false,
-  };
-
   constructor(props) {
     super(props);
 
@@ -70,6 +66,7 @@ class VTKMPRExample extends Component {
         canvas: this.axialCTContainer.current,
         defaultOptions: {
           orientation: 'AXIAL',
+          background: [1, 0, 0],
         },
       },
       {
@@ -79,6 +76,7 @@ class VTKMPRExample extends Component {
         canvas: this.sagittalCTContainer.current,
         defaultOptions: {
           orientation: 'SAGITTAL',
+          background: [0, 1, 0],
         },
       },
       {
@@ -88,6 +86,7 @@ class VTKMPRExample extends Component {
         canvas: this.coronalCTContainer.current,
         defaultOptions: {
           orientation: 'CORONAL',
+          background: [0, 0, 1],
         },
       },
     ]);
@@ -127,18 +126,12 @@ class VTKMPRExample extends Component {
     const activeStyle = {
       width: '512px',
       height: '512px',
-      // borderStyle: 'solid',
-      // borderColor: 'grey',
     };
 
     const inactiveStyle = {
       width: '512px',
       height: '512px',
-      // borderStyle: 'solid',
-      // borderColor: 'black',
     };
-
-    // TODO: react to events and make correct stuff active.
 
     return (
       <div>

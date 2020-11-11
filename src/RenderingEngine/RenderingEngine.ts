@@ -38,29 +38,6 @@ class RenderingEngine {
 
     const webGLCanvasContainer = document.createElement('div');
 
-    // TODO -> Keeping this here for now incase we need it. For vtkGenericRenderWindow it was necessary,
-    // But I don't think it is now, but might be hit further down the chain.
-    // In any case if its an issue we should make new versions of those vtk classes instead.
-
-    // Emulate this component being on screen, as vtk.js checks this everywhere.
-    // We could eventually change this upstream.
-    //@ts-ignore // We are making this into not a strict div element with the hack.
-    // webGLCanvasContainer.getBoundingClientRect = () => {
-    //   //@ts-ignore // We are making this into not a strict div element with the hack.
-    //   const { width, height } = webGLCanvasContainer;
-
-    //   return {
-    //     x: 0,
-    //     y: 0,
-    //     top: 0,
-    //     left: 0,
-    //     bottom: width,
-    //     right: height,
-    //     width: width,
-    //     height: height,
-    //   };
-    // };
-
     this.webGLCanvasContainer = webGLCanvasContainer;
     this.offscreenMultiRenderWindow.setContainer(this.webGLCanvasContainer);
     this._scenes = [];
@@ -71,7 +48,7 @@ class RenderingEngine {
 
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this;
 
-    // Set canvas size based on height
+    // Set canvas size based on height and sum of widths
     const webglCanvasHeight = Math.max(
       ...viewports.map(vp => vp.canvas.clientHeight)
     );
@@ -87,38 +64,22 @@ class RenderingEngine {
 
     offscreenMultiRenderWindow.resize();
 
-    // const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
-
-    // const size = openGLRenderWindow.getContainerSize();
-
-    // // Awesome!
-    // const context = openGLRenderWindow.get3DContext();
-
-    console.log('offscreenMultiRenderWindow:');
-    console.log(offscreenMultiRenderWindow);
-
     let xOffset = 0;
-
-    // debug
-
-    const colors = [
-      [1.0, 0.0, 0.0],
-      [0.0, 1.0, 0.0],
-      [0.0, 0.0, 1.0],
-    ];
 
     for (let i = 0; i < viewports.length; i++) {
       const { canvas, sceneUID, viewportUID, type, defaultOptions } = viewports[
         i
       ];
-      //@ts-ignore
-      const { width, height, clientWidth, clientHeight } = canvas;
+
+      const { clientWidth, clientHeight } = canvas;
 
       // Set the canvas to be same resolution as the client.
       if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
         canvas.width = clientWidth;
         canvas.height = clientHeight;
       }
+
+      const { width, height } = canvas;
 
       let scene = this.getScene(sceneUID);
 
@@ -154,9 +115,33 @@ class RenderingEngine {
       });
 
       const sxDisplayCoords = sx / webglCanvasWidth;
-      const syDisplayCoords = sy / webglCanvasHeight;
+
+      // Need to offset y if it not max height
+      const syDisplayCoords =
+        sy + (webglCanvasHeight - height) / webglCanvasHeight;
+
       const sWidthDisplayCoords = sWidth / webglCanvasWidth;
       const sHeightDisplayCoords = sHeight / webglCanvasHeight;
+
+      // vxmin, vymin, vxmax, vymax
+
+      // TODO -> Why does this put the renders at the bottom of the canvas if they aren't max height:
+      //
+      // const sxDisplayCoords = sx / webglCanvasWidth;
+      // const syDisplayCoords = sy / webglCanvasHeight;
+      // const sWidthDisplayCoords = sWidth / webglCanvasWidth;
+      // const sHeightDisplayCoords = sHeight / webglCanvasHeight;
+      //
+      // viewport: [
+      //   sxDisplayCoords,
+      //   // syDisplayCoords,
+      //   syDisplayCoords,
+      //   sxDisplayCoords + sWidthDisplayCoords,
+      //   // syDisplayCoords + sHeightDisplayCoords,
+      //   syDisplayCoords + sHeightDisplayCoords,
+      // ],
+      //
+      // Having to add the y difference to the top feels really weird.
 
       offscreenMultiRenderWindow.addRenderer({
         viewport: [
@@ -166,9 +151,9 @@ class RenderingEngine {
           syDisplayCoords + sHeightDisplayCoords,
         ],
         uid: viewportUID,
-        // TEMP
-        background: colors[i],
-        // TEMP
+        background: defaultOptions.background
+          ? defaultOptions.background
+          : [0, 0, 0],
       });
 
       xOffset += width;
@@ -176,17 +161,88 @@ class RenderingEngine {
 
     const renderers = offscreenMultiRenderWindow.getRenderers();
 
-    console.log(renderers);
+    console.log(renderers.map(r => r.renderer.getViewport()));
 
     // Make renderers.
     // Add renderers to render window.
     // Place renderers and store offset and width height in the render window.
   }
 
-  resize(viewportSizes) {
-    // viewportSizes === [{uid, width, height}]
-    // TODO: resize the vtkOffscreenMultiRenderWindow and the each of its renderers.
-    // TODO: Update sx,sy,sWidth and sHeight for these viewports.
+  resize() {
+    const { webGLCanvasContainer, offscreenMultiRenderWindow } = this;
+
+    const viewports = [];
+    const scenes = this._scenes;
+
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const { viewports: sceneViewports } = scene.getViewports();
+
+      viewports.push(...sceneViewports);
+    }
+
+    // Set canvas size based on height and sum of widths
+    const webglCanvasHeight = Math.max(
+      ...viewports.map(vp => vp.canvas.clientHeight)
+    );
+
+    let webglCanvasWidth = 0;
+
+    viewports.forEach(vp => {
+      webglCanvasWidth += vp.canvas.clientWidth;
+    });
+
+    webGLCanvasContainer.width = webglCanvasWidth;
+    webGLCanvasContainer.height = webglCanvasHeight;
+
+    offscreenMultiRenderWindow.resize();
+
+    // Redefine viewport properties
+    let xOffset = 0;
+
+    for (let i = 0; i < viewports.length; i++) {
+      const viewport = viewports[i];
+      const { canvas, uid: viewportUID } = viewport;
+      const { clientWidth, clientHeight } = canvas;
+
+      // Set the canvas to be same resolution as the client.
+      if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
+        canvas.width = clientWidth;
+        canvas.height = clientHeight;
+      }
+
+      // Update the canvas drawImage offsets.
+      const sx = xOffset;
+      const sy = 0;
+      const sWidth = clientWidth;
+      const sHeight = clientHeight;
+
+      viewport.sx = sx;
+      viewport.sy = sy;
+      viewport.sWidth = sWidth;
+      viewport.sHeight = sHeight;
+
+      // Set the viewport of the vtkRenderer
+      const renderer = offscreenMultiRenderWindow.getRenderer(viewportUID);
+
+      const sxDisplayCoords = sx / webglCanvasWidth;
+
+      // Need to offset y if it not max height
+      const syDisplayCoords =
+        sy + (webglCanvasHeight - clientHeight) / webglCanvasHeight;
+
+      const sWidthDisplayCoords = sWidth / webglCanvasWidth;
+      const sHeightDisplayCoords = sHeight / webglCanvasHeight;
+
+      renderer.setViewport([
+        sxDisplayCoords,
+        syDisplayCoords,
+        sxDisplayCoords + sWidthDisplayCoords,
+        syDisplayCoords + sHeightDisplayCoords,
+      ]);
+
+      xOffset += clientWidth;
+    }
   }
 
   getScene(uid) {
@@ -281,7 +337,6 @@ class RenderingEngine {
     const canvas = <HTMLCanvasElement>viewport.canvas;
     const { width: dWidth, height: dHeight } = canvas;
 
-    // @ts-ignore // deal with in a sec
     const onScreenContext = canvas.getContext('2d');
 
     //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
@@ -312,56 +367,61 @@ class RenderingEngine {
     // Remove resize handlers from canvases.
   }
 
-  // debugRender() {
-  //   // Renders all scenes
-  //   const { offscreenMultiRenderWindow } = this;
-  //   const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+  delete() {
+    this.reset();
 
-  //   const renderers = offscreenMultiRenderWindow.getRenderers();
+    // Free up WebGL resources
+    this.offscreenMultiRenderWindow.delete();
+  }
 
-  //   // TEMP
-  //   renderers[0].renderer.setDraw(false);
+  debugRender() {
+    // Renders all scenes
+    const { offscreenMultiRenderWindow } = this;
+    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
-  //   debugger;
+    const renderers = offscreenMultiRenderWindow.getRenderers();
 
-  //   renderWindow.render();
-  //   const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
-  //   const context = openGLRenderWindow.get3DContext();
+    for (let i = 0; i < renderers.length; i++) {
+      renderers[i].renderer.setDraw(true);
+    }
 
-  //   const offScreenCanvas = context.canvas;
-  //   const dataURL = offScreenCanvas.toDataURL();
-  //   const scenes = this._scenes;
+    renderWindow.render();
+    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const context = openGLRenderWindow.get3DContext();
 
-  //   for (let i = 0; i < scenes.length; i++) {
-  //     const scene = scenes[i];
-  //     const { viewports } = scene.getViewports();
+    const offScreenCanvas = context.canvas;
+    const dataURL = offScreenCanvas.toDataURL();
+    const scenes = this._scenes;
 
-  //     viewports.forEach(viewport => {
-  //       const { sx, sy, sWidth, sHeight } = viewport;
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const { viewports } = scene.getViewports();
 
-  //       const canvas = <HTMLCanvasElement>viewport.canvas;
-  //       const { width: dWidth, height: dHeight } = canvas;
+      viewports.forEach(viewport => {
+        const { sx, sy, sWidth, sHeight } = viewport;
 
-  //       // @ts-ignore // deal with in a sec
-  //       const onScreenContext = canvas.getContext('2d');
+        const canvas = <HTMLCanvasElement>viewport.canvas;
+        const { width: dWidth, height: dHeight } = canvas;
 
-  //       //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
-  //       onScreenContext.drawImage(
-  //         offScreenCanvas,
-  //         sx,
-  //         sy,
-  //         sWidth,
-  //         sHeight,
-  //         0, //dx
-  //         0, // dy
-  //         dWidth,
-  //         dHeight
-  //       );
-  //     });
-  //   }
+        const onScreenContext = canvas.getContext('2d');
 
-  //   //_TEMPDownloadURI(dataURL);
-  // }
+        //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
+        onScreenContext.drawImage(
+          offScreenCanvas,
+          sx,
+          sy,
+          sWidth,
+          sHeight,
+          0, //dx
+          0, // dy
+          dWidth,
+          dHeight
+        );
+      });
+    }
+
+    _TEMPDownloadURI(dataURL);
+  }
 }
 
 export default RenderingEngine;
