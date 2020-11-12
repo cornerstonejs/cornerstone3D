@@ -37,8 +37,6 @@ class Scene {
   }
 
   setVolumes(volumeData, immediate = false) {
-    // TODO: -> make actors and add reference to actor to viewport.
-
     this._volumeActors = [];
 
     for (let i = 0; i < volumeData.length; i++) {

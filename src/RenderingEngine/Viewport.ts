@@ -105,8 +105,6 @@ class Viewport {
   _setVolumeActors(volumeActors) {
     const renderer = this.getRenderer();
 
-    debugger;
-
     volumeActors.forEach(va => renderer.addActor(va.volumeActor));
 
     renderer.resetCamera();
