@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
+import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
+import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
+import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 
@@ -50,6 +53,15 @@ class VTKMPRExample extends Component {
       ctVolumeUID
     );
 
+    // Initialise all CT values to -1024 so we don't get a grey box?
+
+    const { scalarData } = ctVolume;
+    const ctLength = scalarData.length;
+
+    for (let i = 0; i < ctLength; i++) {
+      scalarData[i] = -1024;
+    }
+
     function setCTWWWC({ volumeActor, volumeUID }) {
       const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
@@ -64,6 +76,33 @@ class VTKMPRExample extends Component {
 
     function setPetTransferFunction({ volumeActor, volumeUID }) {
       // Something
+
+      // TODO -> How do we invert?
+
+      volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0)
+        .setRange(0, 5);
+    }
+
+    function setPetColorMapTransferFunction({ volumeActor }) {
+      const mapper = volumeActor.getMapper();
+      mapper.setSampleDistance(1.0);
+
+      const cfun = vtkColorTransferFunction.newInstance();
+      const preset = vtkColorMaps.getPresetByName('hsv');
+      cfun.applyColorMap(preset);
+      cfun.setMappingRange(0, 5);
+
+      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+      // Create scalar opacity function
+      const ofun = vtkPiecewiseFunction.newInstance();
+      ofun.addPoint(0, 0.0);
+      ofun.addPoint(0.1, 0.9);
+      ofun.addPoint(5, 1.0);
+
+      volumeActor.getProperty().setScalarOpacity(0, ofun);
     }
 
     renderingEngine.setViewports([
@@ -74,7 +113,6 @@ class VTKMPRExample extends Component {
         canvas: this.axialCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
-          background: [1, 0, 0],
         },
       },
       {
@@ -84,7 +122,6 @@ class VTKMPRExample extends Component {
         canvas: this.sagittalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
-          background: [0, 1, 0],
         },
       },
       {
@@ -94,33 +131,64 @@ class VTKMPRExample extends Component {
         canvas: this.coronalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
-          background: [0, 0, 1],
         },
       },
     ]);
 
     const ctScene = renderingEngine.getScene(ctSceneID);
 
-    ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+    //ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+    ctScene.setVolumes([
+      { volumeUID: ctVolumeUID, callback: setCTWWWC },
+      { volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction },
+    ]);
 
-    const numberOfFrames = ctImageIds.length;
+    // When we set volumes we should default the camera into the middle of the first volume?
+    // We need to set up orientation based on the options.
+
+    const numberOfFrames = ptImageIds.length;
 
     const reRenderFraction = numberOfFrames / 20;
     let reRenderTarget = reRenderFraction;
 
-    imageCache.loadVolume(ctVolumeUID, event => {
-      // TEST - Render every frame => Only call on modified every 5%.
-
-      debugger;
+    imageCache.loadVolume(ptVolumeUID, event => {
+      const t0 = performance.now();
 
       if (
         event.framesProcessed > reRenderTarget ||
         event.framesProcessed === event.numFrames
       ) {
+        ptVolume.vtkImageData.modified();
+        console.log(`ptVolumeModified`);
+
+        reRenderTarget += reRenderFraction;
+      }
+
+      if (!renderingEngine.hasBeenDestroyed) {
+        renderingEngine.render();
+      }
+
+      const t1 = performance.now();
+
+      console.log(`PT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
+    });
+
+    const numberOfCtFrames = ctImageIds.length;
+
+    const reRenderFractionCt = numberOfCtFrames / 20;
+    let reRenderTargetCt = reRenderFractionCt;
+
+    imageCache.loadVolume(ctVolumeUID, event => {
+      // TEST - Render every frame => Only call on modified every 5%.
+
+      if (
+        event.framesProcessed > reRenderTargetCt ||
+        event.framesProcessed === event.numFrames
+      ) {
         ctVolume.vtkImageData.modified();
         console.log(`ctVolumeModified`);
 
-        reRenderTarget += reRenderFraction;
+        reRenderTargetCt += reRenderFractionCt;
       }
 
       if (!renderingEngine.hasBeenDestroyed) {
@@ -131,63 +199,45 @@ class VTKMPRExample extends Component {
         console.log(t1 - t0);
       }
     });
-
-    // When we set volumes we should default the camera into the middle of the first volume?
-    // We need to set up orientation based on the options.
-
-    // imageCache.loadVolume(ptVolumeUID, event => {
-    //   const t0 = performance.now();
-
-    //   ptVolume.vtkImageData.modified();
-
-    //   if (!renderingEngine.hasBeenDestroyed) {
-    //     renderingEngine.render();
-    //   }
-
-    //   const t1 = performance.now();
-
-    //   console.log(`PT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
-    // });
   }
 
   render() {
     const activeStyle = {
-      width: '512px',
-      height: '512px',
+      width: '256px',
+      height: '256px',
     };
 
     const inactiveStyle = {
-      width: '512px',
-      height: '512px',
+      width: '256px',
+      height: '256px',
     };
 
     return (
       <div>
         <div className="row">
           <div className="col-xs-12">
-            <h1>MPR Template Example </h1>
-            <p>Flesh out description later</p>
+            <h5>MPR Template Example </h5>
           </div>
         </div>
         <div className="row">
           <div>
             <canvas
               ref={this.axialCTContainer}
-              width={512}
-              height={512}
+              width={256}
+              height={256}
               style={activeStyle}
             />
 
             <canvas
-              width={512}
-              height={512}
+              width={256}
+              height={256}
               ref={this.sagittalCTContainer}
               style={inactiveStyle}
             />
 
             <canvas
-              width={512}
-              height={512}
+              width={256}
+              height={256}
               ref={this.coronalCTContainer}
               style={inactiveStyle}
             />

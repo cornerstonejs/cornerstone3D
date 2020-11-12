@@ -83,9 +83,9 @@ function Index() {
 function Example(props) {
   return (
     <div className="container">
-      <h5>
+      <h6>
         <Link to="/">Back to Examples</Link>
-      </h5>
+      </h6>
       {props.children}
     </div>
   );
