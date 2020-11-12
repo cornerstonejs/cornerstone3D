@@ -22,6 +22,10 @@ export default function createVolumeActor(volumeUID, callback = () => {}) {
   // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
   const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
 
+  // Be generous to surpress warnings, as the logging really hurts performance.
+  // TODO: maybe we should auto adjust samples to 1000.
+  volumeMapper.setMaximumSamplesPerRay(4000);
+
   volumeMapper.setSampleDistance(sampleDistance);
 
   callback({ volumeActor, volumeUID });

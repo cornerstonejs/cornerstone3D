@@ -1,5 +1,7 @@
-import { ORIENTATION } from '../constants/index';
+import { ORIENTATION, VIEWPORT_TYPE } from '../constants/index';
 import _cloneDeep from 'lodash.clonedeep';
+
+const DEFAULT_SLAB_THICKNESS = 0.1;
 
 interface ViewportInterface {
   uid: string;
@@ -11,6 +13,7 @@ interface ViewportInterface {
   sHeight: number;
   defaultOptions: any;
   render: Function;
+  getRenderer: Function;
 }
 
 class Viewport {
@@ -24,6 +27,7 @@ class Viewport {
   defaultOptions: any;
   options: any;
   render: Function;
+  getRenderer: Function;
 
   constructor(props: ViewportInterface) {
     this.uid = props.uid;
@@ -34,13 +38,40 @@ class Viewport {
     this.sWidth = props.sWidth;
     this.sHeight = props.sHeight;
     this.render = props.render;
+    this.getRenderer = props.getRenderer;
 
-    const options = Object.assign({}, props.defaultOptions);
+    const options = _cloneDeep(props.defaultOptions);
+    const defaultOptions = _cloneDeep(props.defaultOptions);
 
-    this.defaultOptions = _cloneDeep(options);
-    this.options = _cloneDeep(options);
+    this.defaultOptions = defaultOptions;
+    this.options = options;
 
-    // TODO Make new renderer and add it to renderWindow
+    const renderer = this.getRenderer();
+    const camera = renderer.getActiveCamera();
+
+    switch (this.type) {
+      case VIEWPORT_TYPE.ORTHOGRAPHIC:
+        camera.setParallelProjection(true);
+        break;
+      case VIEWPORT_TYPE.PERSPECTIVE:
+        camera.setParallelProjection(false);
+        break;
+      default:
+        throw new Error(`Unrecognised viewport type: ${this.type}`);
+    }
+
+    const { sliceNormal, viewUp } = this.defaultOptions.orientation;
+
+    camera.setDirectionOfProjection(
+      -sliceNormal[0],
+      -sliceNormal[1],
+      -sliceNormal[2]
+    );
+    camera.setViewUp(...viewUp);
+
+    camera.setThicknessFromFocalPoint(DEFAULT_SLAB_THICKNESS);
+
+    renderer.resetCamera();
   }
 
   setOptions(options, immediate = false) {
@@ -72,7 +103,33 @@ class Viewport {
   }
 
   _setVolumeActors(volumeActors) {
-    // TODO -> get renderer and set volume actors.
+    const renderer = this.getRenderer();
+
+    debugger;
+
+    volumeActors.forEach(va => renderer.addActor(va.volumeActor));
+
+    renderer.resetCamera();
+
+    renderer
+      .getActiveCamera()
+      .setThicknessFromFocalPoint(DEFAULT_SLAB_THICKNESS);
+
+    /*
+      this.setOrientation(orientation.sliceNormal, orientation.viewUp);
+    } else {
+      istyle.setSliceNormal(0, 0, 1);
+    }
+
+    const camera = this.renderer.getActiveCamera();
+
+    camera.setParallelProjection(true);
+    this.renderer.resetCamera();
+
+    istyle.setVolumeActor(this.props.volumes[0]);
+    const range = istyle.getSliceRange();
+    istyle.setSlice((range[0] + range[1]) / 2);
+    */
   }
 }
 

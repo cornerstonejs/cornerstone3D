@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
 
-const { ORIENTATION } = CONSTANTS;
+const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 
 class VTKMPRExample extends Component {
   constructor(props) {
@@ -70,7 +70,7 @@ class VTKMPRExample extends Component {
       {
         sceneUID: ctSceneID,
         viewportUID: axialCTViewportID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this.axialCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -80,7 +80,7 @@ class VTKMPRExample extends Component {
       {
         sceneUID: ctSceneID,
         viewportUID: sagittalCTViewportID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this.sagittalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -90,7 +90,7 @@ class VTKMPRExample extends Component {
       {
         sceneUID: ctSceneID,
         viewportUID: coronalCTViewportID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this.coronalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -103,33 +103,51 @@ class VTKMPRExample extends Component {
 
     ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
 
-    imageCache.loadVolume(ptVolumeUID, event => {
-      const t0 = performance.now();
+    const numberOfFrames = ctImageIds.length;
 
-      ptVolume.vtkImageData.modified();
-
-      if (!renderingEngine.hasBeenDestroyed) {
-        renderingEngine.render();
-      }
-
-      const t1 = performance.now();
-
-      console.log(`PT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
-    });
+    const reRenderFraction = numberOfFrames / 20;
+    let reRenderTarget = reRenderFraction;
 
     imageCache.loadVolume(ctVolumeUID, event => {
-      const t0 = performance.now();
+      // TEST - Render every frame => Only call on modified every 5%.
 
-      ctVolume.vtkImageData.modified();
+      debugger;
 
-      if (!renderingEngine.hasBeenDestroyed) {
-        renderingEngine.render();
+      if (
+        event.framesProcessed > reRenderTarget ||
+        event.framesProcessed === event.numFrames
+      ) {
+        ctVolume.vtkImageData.modified();
+        console.log(`ctVolumeModified`);
+
+        reRenderTarget += reRenderFraction;
       }
 
-      const t1 = performance.now();
+      if (!renderingEngine.hasBeenDestroyed) {
+        const t0 = performance.now();
+        renderingEngine.render();
+        const t1 = performance.now();
 
-      console.log(`CT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
+        console.log(t1 - t0);
+      }
     });
+
+    // When we set volumes we should default the camera into the middle of the first volume?
+    // We need to set up orientation based on the options.
+
+    // imageCache.loadVolume(ptVolumeUID, event => {
+    //   const t0 = performance.now();
+
+    //   ptVolume.vtkImageData.modified();
+
+    //   if (!renderingEngine.hasBeenDestroyed) {
+    //     renderingEngine.render();
+    //   }
+
+    //   const t1 = performance.now();
+
+    //   console.log(`PT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
+    // });
   }
 
   render() {
