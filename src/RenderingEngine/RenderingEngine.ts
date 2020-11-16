@@ -152,6 +152,9 @@ class RenderingEngine {
         this.renderViewport(sceneUID, viewportUID);
       };
 
+      const getOffscreenMultiRenderWindow = () =>
+        this.offscreenMultiRenderWindow;
+
       scene._addViewport({
         uid: viewportUID,
         type,
@@ -163,6 +166,7 @@ class RenderingEngine {
         defaultOptions: defaultOptions || {},
         render: renderViewport,
         getRenderer: () => offscreenMultiRenderWindow.getRenderer(viewportUID),
+        getOffscreenMultiRenderWindow,
       });
     }
 
@@ -366,6 +370,10 @@ class RenderingEngine {
       dWidth,
       dHeight
     );
+
+    // Trigger events IMAGE_RENDERED
+
+    // Viewport Object
   }
 
   private _reset() {

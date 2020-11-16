@@ -14,6 +14,7 @@ interface ViewportInterface {
   defaultOptions: any;
   render: Function;
   getRenderer: Function;
+  getOffscreenMultiRenderWindow: Function;
 }
 
 class Viewport {
@@ -28,6 +29,7 @@ class Viewport {
   options: any;
   render: Function;
   getRenderer: Function;
+  getOffscreenMultiRenderWindow: Function;
 
   constructor(props: ViewportInterface) {
     this.uid = props.uid;
@@ -39,6 +41,9 @@ class Viewport {
     this.sHeight = props.sHeight;
     this.render = props.render;
     this.getRenderer = props.getRenderer;
+    this.getOffscreenMultiRenderWindow = props.getOffscreenMultiRenderWindow;
+    // get Scene
+    // get RenderingEngine
 
     const options = _cloneDeep(props.defaultOptions);
     const defaultOptions = _cloneDeep(props.defaultOptions);
@@ -47,6 +52,15 @@ class Viewport {
     this.options = options;
 
     const renderer = this.getRenderer();
+
+    // worldToCanvas helpers.
+    // debugger;
+    // const offscreenMultiRenderWindow = this.getOffscreenMultiRenderWindow();
+
+    // const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
+
+    // const displayCoord = openGLRenderWindow.worldToDisplay(0, 0, 0, renderer);
+
     const camera = renderer.getActiveCamera();
 
     switch (this.type) {

@@ -302,24 +302,31 @@ class VTKMPRExample extends Component {
 
       const numberOfFrames = ptImageIds.length;
 
-      const reRenderFraction = numberOfFrames / 5;
+      const reRenderFraction = numberOfFrames / 20;
       let reRenderTarget = reRenderFraction;
 
       imageCache.loadVolume(ptVolumeUID, event => {
+        ptVolume.volumeMapper.setUpdatedFrame(event.imageIdIndex);
+
         if (
           event.framesProcessed > reRenderTarget ||
-          event.framesProcessed === event.numFrames
+          event.framesProcessed == numberOfFrames
         ) {
+          const t0 = performance.now();
           ptVolume.vtkImageData.modified();
-          console.log(`ptVolumeModified`);
-
           reRenderTarget += reRenderFraction;
+
+          console.log(`ptVolumeModified`);
 
           if (!renderingEngine.hasBeenDestroyed) {
             ptScene.render();
             ptMipScene.render();
             fusionScene.render();
           }
+
+          const t1 = performance.now();
+
+          console.log(`time: ${t1 - t0}`);
 
           if (event.framesProcessed === event.numFrames) {
             ptLoaded = true;
@@ -333,7 +340,7 @@ class VTKMPRExample extends Component {
 
       const numberOfCtFrames = ctImageIds.length;
 
-      const reRenderFractionCt = numberOfCtFrames / 5;
+      const reRenderFractionCt = numberOfCtFrames / 20;
       let reRenderTargetCt = reRenderFractionCt;
 
       imageCache.loadVolume(ctVolumeUID, event => {
@@ -343,14 +350,24 @@ class VTKMPRExample extends Component {
           event.framesProcessed > reRenderTargetCt ||
           event.framesProcessed === event.numFrames
         ) {
+          console.profile('VOLUME_MODIFIED');
+          const t0 = performance.now();
           ctVolume.vtkImageData.modified();
+
           console.log(`ctVolumeModified`);
 
           reRenderTargetCt += reRenderFractionCt;
           if (!renderingEngine.hasBeenDestroyed) {
-            ctScene.render();
-            fusionScene.render();
+            //ctScene.render();
+            //fusionScene.render();
+            renderingEngine.render();
           }
+
+          const t1 = performance.now();
+
+          console.log(`time: ${t1 - t0}`);
+
+          console.profileEnd('VOLUME_MODIFIED');
 
           if (event.framesProcessed === event.numFrames) {
             ctLoaded = true;
