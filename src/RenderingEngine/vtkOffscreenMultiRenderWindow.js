@@ -2,6 +2,7 @@ import macro from 'vtk.js/Sources/macro';
 import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
+import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
 
 // Load basic classes for vtk() factory
 import 'vtk.js/Sources/Common/Core/Points';
@@ -37,6 +38,11 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
   // OpenGLRenderWindow
   model.openGLRenderWindow = vtkOpenGLRenderWindow.newInstance();
   model.renderWindow.addView(model.openGLRenderWindow);
+
+  // Interactor
+  model.interactor = vtkRenderWindowInteractor.newInstance();
+  model.interactor.setView(model.openGLRenderWindow);
+  model.interactor.initialize();
 
   publicAPI.addRenderer = ({ viewport, uid, background }) => {
     const renderer = vtkRenderer.newInstance({

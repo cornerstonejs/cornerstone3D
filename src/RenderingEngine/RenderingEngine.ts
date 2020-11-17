@@ -97,27 +97,13 @@ class RenderingEngine {
         this._scenes.push(scene);
       }
 
+      // viewport location on source (offscreen) canvas
       const sx = xOffset;
       const sy = 0;
       const sWidth = width;
       const sHeight = height;
 
-      const renderViewport = () => {
-        this.renderViewport(sceneUID, viewportUID);
-      };
-
-      scene._addViewport({
-        uid: viewportUID,
-        type,
-        canvas,
-        sx,
-        sy,
-        sWidth,
-        sHeight,
-        defaultOptions: defaultOptions || {},
-        render: renderViewport,
-      });
-
+      // Calculate the position of the renderer in viewport coordinates
       const sxDisplayCoords = sx / webglCanvasWidth;
 
       // Need to offset y if it not max height
@@ -161,6 +147,27 @@ class RenderingEngine {
       });
 
       xOffset += width;
+
+      const renderViewport = () => {
+        this.renderViewport(sceneUID, viewportUID);
+      };
+
+      const getOffscreenMultiRenderWindow = () =>
+        this.offscreenMultiRenderWindow;
+
+      scene._addViewport({
+        uid: viewportUID,
+        type,
+        canvas,
+        sx,
+        sy,
+        sWidth,
+        sHeight,
+        defaultOptions: defaultOptions || {},
+        render: renderViewport,
+        getRenderer: () => offscreenMultiRenderWindow.getRenderer(viewportUID),
+        getOffscreenMultiRenderWindow,
+      });
     }
 
     const renderers = offscreenMultiRenderWindow.getRenderers();
@@ -363,6 +370,10 @@ class RenderingEngine {
       dWidth,
       dHeight
     );
+
+    // Trigger events IMAGE_RENDERED
+
+    // Viewport Object
   }
 
   private _reset() {

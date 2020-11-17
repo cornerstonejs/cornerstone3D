@@ -1,3 +1,4 @@
+import { createVolumeMapper } from '../helpers';
 import { ImageVolumeInterface } from './interfaces';
 
 export default class ImageVolume {
@@ -9,6 +10,7 @@ export default class ImageVolume {
   direction: Array<number>;
   vtkImageData: object;
   scalarData: Float32Array | Uint8Array;
+  volumeMapper: object;
 
   constructor(props: ImageVolumeInterface) {
     this.uid = props.uid;
@@ -19,5 +21,6 @@ export default class ImageVolume {
     this.direction = props.direction;
     this.vtkImageData = props.vtkImageData;
     this.scalarData = props.scalarData;
+    this.volumeMapper = createVolumeMapper(this.vtkImageData);
   }
 }

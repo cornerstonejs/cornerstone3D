@@ -1,16 +1,72 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
+import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
+import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
+import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 
-const { ORIENTATION } = CONSTANTS;
+import './VTKMPRExample.css';
+
+const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
+
+const SCENE_IDS = {
+  CT: 'ctScene',
+  PT: 'ptScene',
+  FUSION: 'fusionScene',
+  PTMIP: 'ptMipScene',
+};
+
+const VIEWPORT_IDS = {
+  CT: {
+    AXIAL: 'ctAxial',
+    SAGITTAL: 'ctSagittal',
+    CORONAL: 'ctCoronal',
+  },
+  PT: {
+    AXIAL: 'ptAxial',
+    SAGITTAL: 'ptSagittal',
+    CORONAL: 'ptCoronal',
+  },
+  FUSION: {
+    AXIAL: 'fusionAxial',
+    SAGITTAL: 'fusionSagittal',
+    CORONAL: 'fusionCoronal',
+  },
+  PTMIP: {
+    CORONAL: 'ptMipCoronal',
+  },
+};
 
 class VTKMPRExample extends Component {
+  state = {
+    progressText: 'fetching metadata...',
+  };
+
   constructor(props) {
     super(props);
 
-    this.axialCTContainer = React.createRef();
-    this.sagittalCTContainer = React.createRef();
-    this.coronalCTContainer = React.createRef();
+    this.containers = {
+      CT: {
+        AXIAL: React.createRef(),
+        SAGITTAL: React.createRef(),
+        CORONAL: React.createRef(),
+      },
+      PT: {
+        AXIAL: React.createRef(),
+        SAGITTAL: React.createRef(),
+        CORONAL: React.createRef(),
+      },
+      FUSION: {
+        AXIAL: React.createRef(),
+        SAGITTAL: React.createRef(),
+        CORONAL: React.createRef(),
+      },
+      PTMIP: {
+        CORONAL: React.createRef(),
+      },
+    };
+
+    this.testRender = this.testRender.bind(this);
   }
 
   componentWillUnmount() {
@@ -21,7 +77,6 @@ class VTKMPRExample extends Component {
   }
 
   async componentDidMount() {
-    const imageIds = await getImageIdsAndCacheMetadata();
     const renderingEngineUID = 'PETCTRenderingEngine';
     const ptVolumeUID = 'PET_VOLUME';
     const ctVolumeUID = 'CT_VOLUME';
@@ -33,146 +88,355 @@ class VTKMPRExample extends Component {
 
     this.renderingEngine = renderingEngine;
 
-    const axialCTViewportID = 'AXIAL_CT';
-    const sagittalCTViewportID = 'SAGITTAL_CT';
-    const coronalCTViewportID = 'CORONAL_CT';
-
-    const ctSceneID = 'SCENE_CT';
-
-    const { ptImageIds, ctImageIds } = imageIds;
-
-    const ptVolume = imageCache.makeAndCacheImageVolume(
-      ptImageIds,
-      ptVolumeUID
-    );
-    const ctVolume = imageCache.makeAndCacheImageVolume(
-      ctImageIds,
-      ctVolumeUID
-    );
-
-    function setCTWWWC({ volumeActor, volumeUID }) {
-      const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
-
-      const lower = windowCenter - windowWidth / 2.0;
-      const upper = windowCenter + windowWidth / 2.0;
-
-      volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
-        .setRange(lower, upper);
-    }
-
-    function setPetTransferFunction({ volumeActor, volumeUID }) {
-      // Something
-    }
-
     renderingEngine.setViewports([
+      // CT
       {
-        sceneUID: ctSceneID,
-        viewportUID: axialCTViewportID,
-        type: 'orthogonal',
-        canvas: this.axialCTContainer.current,
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.CT.AXIAL.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
-          background: [1, 0, 0],
         },
       },
       {
-        sceneUID: ctSceneID,
-        viewportUID: sagittalCTViewportID,
-        type: 'orthogonal',
-        canvas: this.sagittalCTContainer.current,
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.CT.SAGITTAL.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
-          background: [0, 1, 0],
         },
       },
       {
-        sceneUID: ctSceneID,
-        viewportUID: coronalCTViewportID,
-        type: 'orthogonal',
-        canvas: this.coronalCTContainer.current,
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.CT.CORONAL.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
-          background: [0, 0, 1],
+        },
+      },
+
+      // PT
+
+      {
+        sceneUID: SCENE_IDS.PT,
+        viewportUID: VIEWPORT_IDS.PT.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.PT.AXIAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+          background: [1, 1, 1],
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.PT,
+        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.PT.SAGITTAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+          background: [1, 1, 1],
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.PT,
+        viewportUID: VIEWPORT_IDS.PT.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.PT.CORONAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
+          background: [1, 1, 1],
+        },
+      },
+
+      // Fusion
+
+      {
+        sceneUID: SCENE_IDS.FUSION,
+        viewportUID: VIEWPORT_IDS.FUSION.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.FUSION.AXIAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.FUSION,
+        viewportUID: VIEWPORT_IDS.FUSION.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.FUSION.SAGITTAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.FUSION,
+        viewportUID: VIEWPORT_IDS.FUSION.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.FUSION.CORONAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
+        },
+      },
+
+      // PET MIP
+      {
+        sceneUID: SCENE_IDS.PTMIP,
+        viewportUID: VIEWPORT_IDS.PTMIP.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.PTMIP.CORONAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
+          background: [1, 1, 1],
         },
       },
     ]);
 
-    const ctScene = renderingEngine.getScene(ctSceneID);
+    const imageIdsPromise = getImageIdsAndCacheMetadata();
 
-    ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+    imageIdsPromise.then(imageIds => {
+      this.setState({ progressText: 'Loading data...' });
 
-    imageCache.loadVolume(ptVolumeUID, event => {
-      const t0 = performance.now();
+      const { ptImageIds, ctImageIds } = imageIds;
 
-      ptVolume.vtkImageData.modified();
+      const ptVolume = imageCache.makeAndCacheImageVolume(
+        ptImageIds,
+        ptVolumeUID
+      );
+      const ctVolume = imageCache.makeAndCacheImageVolume(
+        ctImageIds,
+        ctVolumeUID
+      );
 
-      if (!renderingEngine.hasBeenDestroyed) {
-        renderingEngine.render();
+      function setCTWWWC({ volumeActor, volumeUID }) {
+        const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
+
+        const lower = windowCenter - windowWidth / 2.0;
+        const upper = windowCenter + windowWidth / 2.0;
+
+        volumeActor
+          .getProperty()
+          .getRGBTransferFunction(0)
+          .setRange(lower, upper);
       }
 
-      const t1 = performance.now();
+      function setPetTransferFunction({ volumeActor, volumeUID }) {
+        const rgbTransferFunction = volumeActor
+          .getProperty()
+          .getRGBTransferFunction(0);
 
-      console.log(`PT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
-    });
+        rgbTransferFunction.setRange(0, 5);
 
-    imageCache.loadVolume(ctVolumeUID, event => {
-      const t0 = performance.now();
+        const size = rgbTransferFunction.getSize();
 
-      ctVolume.vtkImageData.modified();
+        for (let index = 0; index < size; index++) {
+          const nodeValue1 = [];
 
-      if (!renderingEngine.hasBeenDestroyed) {
-        renderingEngine.render();
+          rgbTransferFunction.getNodeValue(index, nodeValue1);
+
+          nodeValue1[1] = 1 - nodeValue1[1];
+          nodeValue1[2] = 1 - nodeValue1[2];
+          nodeValue1[3] = 1 - nodeValue1[3];
+
+          rgbTransferFunction.setNodeValue(index, nodeValue1);
+        }
       }
 
-      const t1 = performance.now();
+      function setPetColorMapTransferFunction({ volumeActor }) {
+        const mapper = volumeActor.getMapper();
+        mapper.setSampleDistance(1.0);
 
-      console.log(`CT: framesLoaded: ${event.framesLoaded} time: ${t1 - t0}`);
+        const cfun = vtkColorTransferFunction.newInstance();
+        const preset = vtkColorMaps.getPresetByName('hsv');
+        cfun.applyColorMap(preset);
+        cfun.setMappingRange(0, 5);
+
+        volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+        // Create scalar opacity function
+        const ofun = vtkPiecewiseFunction.newInstance();
+        ofun.addPoint(0, 0.0);
+        ofun.addPoint(0.1, 0.9);
+        ofun.addPoint(5, 1.0);
+
+        volumeActor.getProperty().setScalarOpacity(0, ofun);
+      }
+
+      // Initialise all CT values to -1024 so we don't get a grey box?
+
+      const { scalarData } = ctVolume;
+      const ctLength = scalarData.length;
+
+      for (let i = 0; i < ctLength; i++) {
+        scalarData[i] = -1024;
+      }
+
+      const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
+      const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
+      const fusionScene = renderingEngine.getScene(SCENE_IDS.FUSION);
+      const ptMipScene = renderingEngine.getScene(SCENE_IDS.PTMIP);
+
+      ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+      ptScene.setVolumes([
+        { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
+      ]);
+
+      fusionScene.setVolumes([
+        { volumeUID: ctVolumeUID, callback: setCTWWWC },
+        { volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction },
+      ]);
+
+      ptMipScene.setVolumes([
+        { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
+      ]);
+
+      let ptLoaded = false;
+      let ctLoaded = false;
+
+      const numberOfFrames = ptImageIds.length;
+
+      const reRenderFraction = numberOfFrames / 20;
+      let reRenderTarget = reRenderFraction;
+
+      imageCache.loadVolume(ptVolumeUID, event => {
+        ptVolume.volumeMapper.setUpdatedFrame(event.imageIdIndex);
+
+        if (
+          event.framesProcessed > reRenderTarget ||
+          event.framesProcessed == numberOfFrames
+        ) {
+          ptVolume.vtkImageData.modified();
+          reRenderTarget += reRenderFraction;
+
+          if (!renderingEngine.hasBeenDestroyed) {
+            ptScene.render();
+            ptMipScene.render();
+            fusionScene.render();
+          }
+
+          if (event.framesProcessed === event.numFrames) {
+            ptLoaded = true;
+
+            if (ctLoaded && ptLoaded) {
+              this.setState({ progressText: 'Loaded.' });
+            }
+          }
+        }
+      });
+
+      const numberOfCtFrames = ctImageIds.length;
+
+      const reRenderFractionCt = numberOfCtFrames / 20;
+      let reRenderTargetCt = reRenderFractionCt;
+
+      imageCache.loadVolume(ctVolumeUID, event => {
+        // Only call on modified every 5%.
+
+        if (
+          event.framesProcessed > reRenderTargetCt ||
+          event.framesProcessed === event.numFrames
+        ) {
+          ctVolume.vtkImageData.modified();
+
+          console.log(`ctVolumeModified`);
+
+          reRenderTargetCt += reRenderFractionCt;
+          if (!renderingEngine.hasBeenDestroyed) {
+            renderingEngine.render();
+          }
+
+          if (event.framesProcessed === event.numFrames) {
+            ctLoaded = true;
+
+            if (ctLoaded && ptLoaded) {
+              this.setState({ progressText: 'Loaded.' });
+            }
+          }
+        }
+      });
     });
+
+    renderingEngine.render();
+  }
+
+  testRender() {
+    if (this.performingRenderTest) {
+      return;
+    }
+
+    this.performingRenderTest = true;
+    const renderingEngine = this.renderingEngine;
+
+    const count = 100;
+
+    let t0 = performance.now();
+    for (let i = 0; i < count; i++) {
+      renderingEngine.render();
+    }
+
+    let t1 = performance.now();
+
+    this.performingRenderTest = false;
+
+    alert(`${(t1 - t0) / count}`);
   }
 
   render() {
     const activeStyle = {
-      width: '512px',
-      height: '512px',
+      width: '256px',
+      height: '256px',
+      borderStyle: 'solid',
+      borderColor: 'aqua',
     };
 
     const inactiveStyle = {
-      width: '512px',
-      height: '512px',
+      width: '256px',
+      height: '256px',
+      borderStyle: 'solid',
+      borderColor: 'blue',
     };
+
+    const ptMIPStyle = {
+      width: '384px',
+      height: '768px',
+      borderStyle: 'solid',
+      borderColor: 'blue',
+    };
+
+    const threeByThree = (
+      <div>
+        <div className="container-row">
+          <canvas ref={this.containers.CT.AXIAL} style={activeStyle} />
+          <canvas ref={this.containers.CT.SAGITTAL} style={inactiveStyle} />
+          <canvas ref={this.containers.CT.CORONAL} style={inactiveStyle} />
+        </div>
+        <div className="container-row">
+          <canvas ref={this.containers.PT.AXIAL} style={inactiveStyle} />
+          <canvas ref={this.containers.PT.SAGITTAL} style={inactiveStyle} />
+          <canvas ref={this.containers.PT.CORONAL} style={inactiveStyle} />
+        </div>
+        <div className="container-row">
+          <canvas ref={this.containers.FUSION.AXIAL} style={inactiveStyle} />
+          <canvas ref={this.containers.FUSION.SAGITTAL} style={inactiveStyle} />
+          <canvas ref={this.containers.FUSION.CORONAL} style={inactiveStyle} />
+        </div>
+      </div>
+    );
 
     return (
       <div>
         <div className="row">
           <div className="col-xs-12">
-            <h1>MPR Template Example </h1>
-            <p>Flesh out description later</p>
+            <h5>MPR Template Example: {this.state.progressText} </h5>
+            <button onClick={this.testRender}>Render</button>
           </div>
         </div>
-        <div className="row">
+        <div className="viewport-container">
+          {threeByThree}
           <div>
-            <canvas
-              ref={this.axialCTContainer}
-              width={512}
-              height={512}
-              style={activeStyle}
-            />
-
-            <canvas
-              width={512}
-              height={512}
-              ref={this.sagittalCTContainer}
-              style={inactiveStyle}
-            />
-
-            <canvas
-              width={512}
-              height={512}
-              ref={this.coronalCTContainer}
-              style={inactiveStyle}
-            />
+            <canvas ref={this.containers.PTMIP.CORONAL} style={ptMIPStyle} />
           </div>
         </div>
       </div>

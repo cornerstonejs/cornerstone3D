@@ -13,7 +13,7 @@ export default function prefetchImageIds(volume) {
   const { scalarData, loadStatus } = volume;
   const { cachedFrames } = loadStatus;
 
-  const { imageIds } = volume;
+  const { imageIds, volumeMapper } = volume;
 
   const interleavedFrames = getInterleavedFrames(imageIds);
 
@@ -50,10 +50,12 @@ export default function prefetchImageIds(volume) {
     16 // ~60 fps
   );
 
-  function successCallback(imageIdIndex) {
+  function successCallback(imageIdIndex, imageId) {
     cachedFrames[imageIdIndex] = true;
     framesLoaded++;
     framesProcessed++;
+
+    volumeMapper.setUpdatedFrame(imageIdIndex);
 
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true;
@@ -61,6 +63,8 @@ export default function prefetchImageIds(volume) {
 
       callLoadStatusCallback({
         success: true,
+        imageIdIndex,
+        imageId,
         framesLoaded,
         framesProcessed,
         numFrames,
@@ -69,6 +73,8 @@ export default function prefetchImageIds(volume) {
     } else {
       throttledCallLoadStatusCallbacks({
         success: true,
+        imageIdIndex,
+        imageId,
         framesLoaded,
         framesProcessed,
         numFrames,
@@ -76,7 +82,7 @@ export default function prefetchImageIds(volume) {
     }
   }
 
-  function errorCallback(error, imageId) {
+  function errorCallback(error, imageIdIndex, imageId) {
     framesProcessed++;
 
     if (framesProcessed === numFrames) {
@@ -86,6 +92,7 @@ export default function prefetchImageIds(volume) {
       callLoadStatusCallback({
         success: false,
         imageId,
+        imageIdIndex,
         error,
         framesLoaded,
         framesProcessed,
@@ -97,6 +104,7 @@ export default function prefetchImageIds(volume) {
       throttledCallLoadStatusCallbacks({
         success: false,
         imageId,
+        imageIdIndex,
         error,
         framesLoaded,
         framesProcessed,
@@ -109,7 +117,7 @@ export default function prefetchImageIds(volume) {
     const { imageId, imageIdIndex } = frame;
 
     if (cachedFrames[imageIdIndex]) {
-      successCallback();
+      successCallback(imageIdIndex, imageId);
     }
 
     const modalityLutModule =
@@ -152,10 +160,10 @@ export default function prefetchImageIds(volume) {
       requestType,
       preventCache,
       () => {
-        successCallback(imageIdIndex);
+        successCallback(imageIdIndex, imageId);
       },
       error => {
-        errorCallback(error, imageId);
+        errorCallback(error, imageIdIndex, imageId);
       },
       null, // addToBeginning option, need to pass something to pass options in correct spot.
       options

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { RenderingEngine, CONSTANTS } from '@vtk-viewport';
 
-const { ORIENTATION } = CONSTANTS;
+const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 
 class CanvasResizeExample extends Component {
   state = {
@@ -70,7 +70,7 @@ class CanvasResizeExample extends Component {
       {
         sceneUID: ctSceneID,
         viewportUID: axialCTViewportID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this.axialCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -80,7 +80,7 @@ class CanvasResizeExample extends Component {
       {
         sceneUID: ctSceneID,
         viewportUID: sagittalCTViewportID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this.sagittalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -90,7 +90,7 @@ class CanvasResizeExample extends Component {
       {
         sceneUID: ctSceneID,
         viewportUID: coronalCTViewportID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this.coronalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
