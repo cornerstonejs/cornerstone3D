@@ -1,3 +1,5 @@
+// @ts-ignore
+import renderingEngineCache from './renderingEngineCache.ts';
 import vtkOffscreenMultiRenderWindow from './vtkOffscreenMultiRenderWindow';
 
 // @ts-ignore
@@ -12,19 +14,6 @@ interface ViewportInterface {
   defaultOptions: any;
 }
 
-// export interface ImageVolumeInterface {
-//   uid: string;
-//   metadata: object;
-//   dimensions: Array<number>;
-//   spacing: Array<number>;
-//   origin: Array<number>;
-//   direction: Array<number>;
-//   vtkImageData: object;
-//   scalarData: Float32Array | Uint8Array;
-// }
-
-// Need to have multiple canvases to viewport
-
 class RenderingEngine {
   uid: string;
   hasBeenDestroyed: boolean;
@@ -34,6 +23,7 @@ class RenderingEngine {
 
   constructor(uid) {
     this.uid = uid ? uid : uuidv4();
+    renderingEngineCache.set(uid, this);
 
     this.offscreenMultiRenderWindow = vtkOffscreenMultiRenderWindow.newInstance();
 
@@ -92,7 +82,7 @@ class RenderingEngine {
           this.renderScene(sceneUID);
         };
 
-        scene = new Scene(sceneUID, renderScene);
+        scene = new Scene(sceneUID, this.uid, renderScene);
 
         this._scenes.push(scene);
       }
@@ -152,9 +142,6 @@ class RenderingEngine {
         this.renderViewport(sceneUID, viewportUID);
       };
 
-      const getOffscreenMultiRenderWindow = () =>
-        this.offscreenMultiRenderWindow;
-
       scene._addViewport({
         uid: viewportUID,
         type,
@@ -165,16 +152,8 @@ class RenderingEngine {
         sHeight,
         defaultOptions: defaultOptions || {},
         render: renderViewport,
-        getRenderer: () => offscreenMultiRenderWindow.getRenderer(viewportUID),
-        getOffscreenMultiRenderWindow,
       });
     }
-
-    const renderers = offscreenMultiRenderWindow.getRenderers();
-
-    // Make renderers.
-    // Add renderers to render window.
-    // Place renderers and store offset and width height in the render window.
   }
 
   resize() {
@@ -395,6 +374,8 @@ class RenderingEngine {
 
     // Free up WebGL resources
     this.offscreenMultiRenderWindow.delete();
+
+    renderingEngineCache.delete(this.uid);
 
     this.hasBeenDestroyed = true;
   }
