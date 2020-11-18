@@ -9,6 +9,10 @@ import './VTKMPRExample.css';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 
+const renderingEngineUID = 'PETCTRenderingEngine';
+const ptVolumeUID = 'PET_VOLUME';
+const ctVolumeUID = 'CT_VOLUME';
+
 const SCENE_IDS = {
   CT: 'ctScene',
   PT: 'ptScene',
@@ -37,9 +41,12 @@ const VIEWPORT_IDS = {
   },
 };
 
+const colormaps = ['hsv', 'RED-PURPLE'];
+
 class VTKMPRExample extends Component {
   state = {
     progressText: 'fetching metadata...',
+    petColorMapIndex: 0,
   };
 
   constructor(props) {
@@ -67,6 +74,7 @@ class VTKMPRExample extends Component {
     };
 
     this.testRender = this.testRender.bind(this);
+    this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this);
   }
 
   componentWillUnmount() {
@@ -77,16 +85,15 @@ class VTKMPRExample extends Component {
   }
 
   async componentDidMount() {
-    const renderingEngineUID = 'PETCTRenderingEngine';
-    const ptVolumeUID = 'PET_VOLUME';
-    const ctVolumeUID = 'CT_VOLUME';
-
     this.ctVolumeUID = ctVolumeUID;
     this.ptVolumeUID = ptVolumeUID;
 
     const renderingEngine = new RenderingEngine(renderingEngineUID);
 
     this.renderingEngine = renderingEngine;
+
+    window.renderingEngine = renderingEngine;
+    window.imageCache = imageCache;
 
     renderingEngine.setViewports([
       // CT
@@ -210,7 +217,7 @@ class VTKMPRExample extends Component {
         ctVolumeUID
       );
 
-      function setCTWWWC({ volumeActor, volumeUID }) {
+      const setCTWWWC = ({ volumeActor, volumeUID }) => {
         const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
         const lower = windowCenter - windowWidth / 2.0;
@@ -220,9 +227,9 @@ class VTKMPRExample extends Component {
           .getProperty()
           .getRGBTransferFunction(0)
           .setRange(lower, upper);
-      }
+      };
 
-      function setPetTransferFunction({ volumeActor, volumeUID }) {
+      const setPetTransferFunction = ({ volumeActor, volumeUID }) => {
         const rgbTransferFunction = volumeActor
           .getProperty()
           .getRGBTransferFunction(0);
@@ -242,14 +249,16 @@ class VTKMPRExample extends Component {
 
           rgbTransferFunction.setNodeValue(index, nodeValue1);
         }
-      }
+      };
 
-      function setPetColorMapTransferFunction({ volumeActor }) {
+      const setPetColorMapTransferFunction = ({ volumeActor }) => {
         const mapper = volumeActor.getMapper();
         mapper.setSampleDistance(1.0);
 
         const cfun = vtkColorTransferFunction.newInstance();
-        const preset = vtkColorMaps.getPresetByName('hsv');
+        const preset = vtkColorMaps.getPresetByName(
+          colormaps[this.state.petColorMapIndex]
+        );
         cfun.applyColorMap(preset);
         cfun.setMappingRange(0, 5);
 
@@ -262,7 +271,7 @@ class VTKMPRExample extends Component {
         ofun.addPoint(5, 1.0);
 
         volumeActor.getProperty().setScalarOpacity(0, ofun);
-      }
+      };
 
       // Initialise all CT values to -1024 so we don't get a grey box?
 
@@ -380,7 +389,40 @@ class VTKMPRExample extends Component {
 
     this.performingRenderTest = false;
 
-    alert(`${(t1 - t0) / count}`);
+    alert(`${(t1 - t0) / count} ms`);
+  }
+
+  swapPetTransferFunction() {
+    const renderingEngine = this.renderingEngine;
+    const petCTScene = renderingEngine.getScene(SCENE_IDS.FUSION);
+
+    const volumeActor = petCTScene.getVolumeActor(ptVolumeUID);
+
+    let petColorMapIndex = this.state.petColorMapIndex;
+
+    petColorMapIndex = petColorMapIndex === 0 ? 1 : 0;
+
+    const mapper = volumeActor.getMapper();
+    mapper.setSampleDistance(1.0);
+
+    const cfun = vtkColorTransferFunction.newInstance();
+    const preset = vtkColorMaps.getPresetByName(colormaps[petColorMapIndex]);
+    cfun.applyColorMap(preset);
+    cfun.setMappingRange(0, 5);
+
+    volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+    // Create scalar opacity function
+    const ofun = vtkPiecewiseFunction.newInstance();
+    ofun.addPoint(0, 0.0);
+    ofun.addPoint(0.1, 0.9);
+    ofun.addPoint(5, 1.0);
+
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
+
+    petCTScene.render();
+
+    this.setState({ petColorMapIndex });
   }
 
   render() {
@@ -430,7 +472,14 @@ class VTKMPRExample extends Component {
         <div className="row">
           <div className="col-xs-12">
             <h5>MPR Template Example: {this.state.progressText} </h5>
+          </div>
+          <div className="col-xs-12">
             <button onClick={this.testRender}>Render</button>
+          </div>
+          <div className="col-xs-12">
+            <button onClick={this.swapPetTransferFunction}>
+              SwapPetTransferFunction
+            </button>
           </div>
         </div>
         <div className="viewport-container">

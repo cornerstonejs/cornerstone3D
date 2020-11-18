@@ -1,4 +1,4 @@
-import RenderingEngine from './RenderingEngine';
+import RenderingEngine, { getRenderingEngine } from './RenderingEngine';
 import imageCache from './imageCache';
 import toolManager from './toolManager';
 import {
@@ -11,6 +11,7 @@ import CONSTANTS from './constants';
 
 export {
   RenderingEngine,
+  getRenderingEngine,
   imageCache,
   toolManager,
   createUint8SharedArray,
@@ -22,6 +23,7 @@ export {
 
 export default {
   RenderingEngine,
+  getRenderingEngine,
   imageCache,
   toolManager,
   createUint8SharedArray,

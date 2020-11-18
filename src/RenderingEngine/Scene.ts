@@ -1,22 +1,46 @@
 // @ts-ignore
 import Viewport from './Viewport.ts';
+// @ts-ignore
+import renderingEngineCache from './renderingEngineCache.ts';
+// @ts-ignore
+import RenderingEngine from './RenderingEngine.ts';
 import createVolumeActor from './helpers/createVolumeActor';
-import cache from '../imageCache/cache.js';
 
+interface VolumeActorEntry {
+  uid: string;
+  volumeActor: object;
+}
+
+interface SceneViewportsAPI {
+  viewports: Array<Viewport>;
+  setToolGroup: Function;
+  setSyncGroups: Function;
+}
+
+/**
+ * @class Scene - Describes a scene which defined a worldspace containing actors.
+ * A scene may have different viewports which may be different views of this same data.
+ */
 class Scene {
   uid: string;
+  renderingEngineUID: string;
   render: Function;
   private _viewports: Array<Viewport>;
-  private _volumeActors: Array<object>;
+  private _volumeActors: Array<VolumeActorEntry>;
 
-  constructor(uid, render) {
+  constructor(uid, renderingEngineUID, render) {
     this.uid = uid;
+    this.renderingEngineUID = renderingEngineUID;
     this._viewports = [];
     this._volumeActors = [];
     this.render = render;
   }
 
-  getViewports() {
+  getRenderingEngine(): RenderingEngine {
+    return renderingEngineCache.get(this.renderingEngineUID);
+  }
+
+  getViewports(): SceneViewportsAPI {
     return {
       viewports: this._viewports,
       setToolGroup: toolGroupUID => {
@@ -33,7 +57,7 @@ class Scene {
     };
   }
 
-  getViewport(uid) {
+  getViewport(uid): Viewport {
     return this._viewports.find(vp => vp.uid === uid);
   }
 
@@ -51,36 +75,34 @@ class Scene {
       viewport._setVolumeActors(this._volumeActors);
     });
 
-    // debugger;
-    // // Sanity check that all the actors and mappers stored on the renderers are the same.
-
-    // const viewport0ViewProps = this._viewports[0].getRenderer().getViewProps();
-    // const viewport0Actor = viewport0ViewProps[0];
-    // const viewport0Mapper = viewport0Actor.getMapper();
-
-    // const viewport1ViewProps = this._viewports[1].getRenderer().getViewProps();
-    // const viewport1Actor = viewport1ViewProps[0];
-    // const viewport1Mapper = viewport1Actor.getMapper();
-
-    // const volume = cache.get(volumeData[0].volumeUID);
-
-    // const volumeMapper = volume.volumeMapper;
-
-    // console.log(viewport0Actor === viewport1Actor);
-    // console.log(viewport0Mapper === viewport1Mapper);
-    // console.log(viewport0Mapper === volumeMapper);
-
-    // debugger;
-
     if (immediate) {
       this.render();
     }
   }
 
   _addViewport(viewportProps) {
-    const viewport = new Viewport(viewportProps);
+    const extendedViewportProps = Object.assign({}, viewportProps, {
+      sceneUID: this.uid,
+      renderingEngineUID: this.renderingEngineUID,
+    });
+
+    const viewport = new Viewport(extendedViewportProps);
 
     this._viewports.push(viewport);
+  }
+
+  getVolumeActor(uid): object {
+    const volumeActors = this._volumeActors;
+
+    const volumeActorEntry = volumeActors.find(va => va.uid === uid);
+
+    if (volumeActorEntry) {
+      return volumeActorEntry.volumeActor;
+    }
+  }
+
+  getVolumeActors(): Array<VolumeActorEntry> {
+    return [...this._volumeActors];
   }
 }
 

@@ -16,7 +16,6 @@ const { ctSeriesInstanceUID, ptSeriesInstanceUID, limitFrames } = config;
  */
 export default async function getImageIds() {
   const imageIdPromise = createStudyImageIds();
-
   const imageIds = await imageIdPromise;
 
   let ctImageIds = imageIds.filter(imageId =>
