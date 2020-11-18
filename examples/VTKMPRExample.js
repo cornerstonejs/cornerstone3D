@@ -130,35 +130,70 @@ class VTKMPRExample extends Component {
       scalarData[i] = -1024;
     }
 
+    this.loadVolumes();
+    this.setPTCTFusionVolumes();
+
     this.setState({ metadataLoaded: true });
 
     // This will initialise volumes in GPU memory
     renderingEngine.render();
+  }
 
+  componentDidUpdate(prevProps, prevState) {
+    const { layoutIndex } = this.state;
+    const { renderingEngine } = this;
+
+    if (prevState.layoutIndex !== layoutIndex) {
+      debugger;
+
+      if (layoutIndex === 0) {
+        // FusionMIP
+
+        console.log('FusionMIP');
+
+        this.setPTCTFusionLayout();
+        this.setPTCTFusionVolumes();
+        this.loadVolumes(); // Will do nothing if already loading.
+        renderingEngine.render();
+      } else if (layoutIndex === 1) {
+        // SingleCTAxial
+
+        console.log('SingleCTAxial');
+
+        this.setSingleAxialCTLayout();
+        this.setSingleAxialCTVolumes();
+        this.loadVolumes(); // Will do nothing if already loading.
+        renderingEngine.render();
+      } else {
+        throw new Error('Unrecognised layout index');
+      }
+    }
+  }
+
+  loadVolumes() {
     let ptLoaded = false;
     let ctLoaded = false;
 
-    const numberOfFrames = ptImageIds.length;
+    const ptVolume = imageCache.getImageVolume(ptVolumeUID);
+    const ctVolume = imageCache.getImageVolume(ctVolumeUID);
 
-    const reRenderFraction = numberOfFrames / 20;
-    let reRenderTarget = reRenderFraction;
+    const numberOfPetFrames = ptVolume.imageIds.length;
 
-    this.setPTCTFusionVolumes();
+    const reRenderFractionPt = numberOfPetFrames / 20;
+    let reRenderTargetPt = reRenderFractionPt;
 
     imageCache.loadVolume(ptVolumeUID, event => {
       ptVolume.volumeMapper.setUpdatedFrame(event.imageIdIndex);
 
       if (
-        event.framesProcessed > reRenderTarget ||
-        event.framesProcessed == numberOfFrames
+        event.framesProcessed > reRenderTargetPt ||
+        event.framesProcessed == numberOfPetFrames
       ) {
         ptVolume.vtkImageData.modified();
-        reRenderTarget += reRenderFraction;
+        reRenderTargetPt += reRenderFractionPt;
 
         if (!renderingEngine.hasBeenDestroyed) {
-          ptScene.render();
-          ptMipScene.render();
-          fusionScene.render();
+          renderingEngine.render();
         }
 
         if (event.framesProcessed === event.numFrames) {
@@ -171,7 +206,7 @@ class VTKMPRExample extends Component {
       }
     });
 
-    const numberOfCtFrames = ctImageIds.length;
+    const numberOfCtFrames = ctVolume.imageIds.length;
 
     const reRenderFractionCt = numberOfCtFrames / 20;
     let reRenderTargetCt = reRenderFractionCt;
@@ -201,6 +236,37 @@ class VTKMPRExample extends Component {
         }
       }
     });
+  }
+
+  swapLayout = () => {
+    let { layoutIndex } = this.state;
+
+    // Flip layout index
+    layoutIndex = layoutIndex === 0 ? 1 : 0;
+
+    this.setState({ layoutIndex });
+  };
+
+  setSingleAxialCTLayout = () => {
+    this.renderingEngine.setViewports([
+      // CT
+      {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.CT.AXIAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+    ]);
+  };
+
+  setSingleAxialCTVolumes() {
+    const renderingEngine = this.renderingEngine;
+    const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
+
+    ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: this.setCTWWWC }]);
   }
 
   setPTCTFusionLayout = () => {
@@ -468,6 +534,13 @@ class VTKMPRExample extends Component {
       borderColor: 'blue',
     };
 
+    const largeAxialStyle = {
+      width: '1152px',
+      height: '768px',
+      borderStyle: 'solid',
+      borderColor: 'aqua',
+    };
+
     const ptMIPStyle = {
       width: '384px',
       height: '768px',
@@ -519,6 +592,16 @@ class VTKMPRExample extends Component {
           </div>
         </React.Fragment>
       );
+    } else if (layout === 'SingleCTAxial') {
+      viewportLayout = (
+        <React.Fragment>
+          <div>
+            <div className="container-row">
+              <canvas ref={this.containers.CT.AXIAL} style={largeAxialStyle} />
+            </div>
+          </div>
+        </React.Fragment>
+      );
     }
 
     return (
@@ -541,7 +624,7 @@ class VTKMPRExample extends Component {
           </div>
           <div className="col-xs-12">
             <button onClick={() => metadataLoaded && this.swapLayout()}>
-              swapLayoutText
+              {swapLayoutText}
             </button>
           </div>
         </div>
