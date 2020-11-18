@@ -93,6 +93,7 @@ class VTKMPRExample extends Component {
     this.renderingEngine = renderingEngine;
 
     window.renderingEngine = renderingEngine;
+    window.imageCache = imageCache;
 
     renderingEngine.setViewports([
       // CT
