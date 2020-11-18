@@ -42,7 +42,7 @@ const VIEWPORT_IDS = {
 };
 
 const colormaps = ['hsv', 'RED-PURPLE'];
-const layouts = ['FusionMIP', 'SingleCTAxial'];
+const layouts = ['FusionMIP', 'SinglePTSagittal'];
 
 class VTKMPRExample extends Component {
   state = {
@@ -156,12 +156,12 @@ class VTKMPRExample extends Component {
         this.loadVolumes(); // Will do nothing if already loading.
         renderingEngine.render();
       } else if (layoutIndex === 1) {
-        // SingleCTAxial
+        // SinglePTSagittal
 
-        console.log('SingleCTAxial');
+        console.log('SinglePTSagittal');
 
-        this.setSingleAxialCTLayout();
-        this.setSingleAxialCTVolumes();
+        this.setSingleSagittalPTLayout();
+        this.setSingleSagittalPTVolumes();
         this.loadVolumes(); // Will do nothing if already loading.
         renderingEngine.render();
       } else {
@@ -179,7 +179,7 @@ class VTKMPRExample extends Component {
 
     const numberOfPetFrames = ptVolume.imageIds.length;
 
-    const reRenderFractionPt = numberOfPetFrames / 20;
+    const reRenderFractionPt = numberOfPetFrames / 10;
     let reRenderTargetPt = reRenderFractionPt;
 
     imageCache.loadVolume(ptVolumeUID, event => {
@@ -206,36 +206,36 @@ class VTKMPRExample extends Component {
       }
     });
 
-    const numberOfCtFrames = ctVolume.imageIds.length;
+    // const numberOfCtFrames = ctVolume.imageIds.length;
 
-    const reRenderFractionCt = numberOfCtFrames / 20;
-    let reRenderTargetCt = reRenderFractionCt;
+    // const reRenderFractionCt = numberOfCtFrames / 10;
+    // let reRenderTargetCt = reRenderFractionCt;
 
-    imageCache.loadVolume(ctVolumeUID, event => {
-      // Only call on modified every 5%.
+    // imageCache.loadVolume(ctVolumeUID, event => {
+    //   // Only call on modified every 5%.
 
-      if (
-        event.framesProcessed > reRenderTargetCt ||
-        event.framesProcessed === event.numFrames
-      ) {
-        ctVolume.vtkImageData.modified();
+    //   if (
+    //     event.framesProcessed > reRenderTargetCt ||
+    //     event.framesProcessed === event.numFrames
+    //   ) {
+    //     ctVolume.vtkImageData.modified();
 
-        console.log(`ctVolumeModified`);
+    //     console.log(`ctVolumeModified`);
 
-        reRenderTargetCt += reRenderFractionCt;
-        if (!renderingEngine.hasBeenDestroyed) {
-          renderingEngine.render();
-        }
+    //     reRenderTargetCt += reRenderFractionCt;
+    //     if (!renderingEngine.hasBeenDestroyed) {
+    //       renderingEngine.render();
+    //     }
 
-        if (event.framesProcessed === event.numFrames) {
-          ctLoaded = true;
+    //     if (event.framesProcessed === event.numFrames) {
+    //       ctLoaded = true;
 
-          if (ctLoaded && ptLoaded) {
-            this.setState({ progressText: 'Loaded.' });
-          }
-        }
-      }
-    });
+    //       if (ctLoaded && ptLoaded) {
+    //         this.setState({ progressText: 'Loaded.' });
+    //       }
+    //     }
+    //   }
+    // });
   }
 
   swapLayout = () => {
@@ -247,26 +247,29 @@ class VTKMPRExample extends Component {
     this.setState({ layoutIndex });
   };
 
-  setSingleAxialCTLayout = () => {
+  setSingleSagittalPTLayout = () => {
     this.renderingEngine.setViewports([
-      // CT
+      // PT Sagittal
       {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        sceneUID: SCENE_IDS.PT,
+        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.containers.CT.AXIAL.current,
+        canvas: this.containers.PT.SAGITTAL.current,
         defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
+          orientation: ORIENTATION.SAGITTAL,
+          background: [1, 1, 1],
         },
       },
     ]);
   };
 
-  setSingleAxialCTVolumes() {
+  setSingleSagittalPTVolumes() {
     const renderingEngine = this.renderingEngine;
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
+    const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
 
-    ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: this.setCTWWWC }]);
+    ptScene.setVolumes([
+      { volumeUID: ptVolumeUID, callback: this.setPetTransferFunction },
+    ]);
   }
 
   setPTCTFusionLayout = () => {
@@ -553,7 +556,7 @@ class VTKMPRExample extends Component {
 
     const swapLayoutText =
       layout === 'FusionMIP'
-        ? 'Swap Layout To Single CT Axial Layout'
+        ? 'Swap Layout To Single CT Sagittal Layout'
         : 'Swap Layout To Fusion Layout';
 
     let viewportLayout;
@@ -592,12 +595,15 @@ class VTKMPRExample extends Component {
           </div>
         </React.Fragment>
       );
-    } else if (layout === 'SingleCTAxial') {
+    } else if (layout === 'SinglePTSagittal') {
       viewportLayout = (
         <React.Fragment>
           <div>
             <div className="container-row">
-              <canvas ref={this.containers.CT.AXIAL} style={largeAxialStyle} />
+              <canvas
+                ref={this.containers.PT.SAGITTAL}
+                style={largeAxialStyle}
+              />
             </div>
           </div>
         </React.Fragment>
