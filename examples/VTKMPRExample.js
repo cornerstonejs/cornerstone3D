@@ -50,6 +50,7 @@ class VTKMPRExample extends Component {
     metadataLoaded: false,
     petColorMapIndex: 0,
     layoutIndex: 0,
+    destroyed: false,
   };
 
   constructor(props) {
@@ -87,8 +88,7 @@ class VTKMPRExample extends Component {
   }
 
   componentWillUnmount() {
-    imageCache.decacheVolume(this.ctVolumeUID);
-    imageCache.decacheVolume(this.ptVolumeUID);
+    imageCache.purgeCache();
 
     this.renderingEngine.destroy();
   }
@@ -144,12 +144,8 @@ class VTKMPRExample extends Component {
     const { renderingEngine } = this;
 
     if (prevState.layoutIndex !== layoutIndex) {
-      debugger;
-
       if (layoutIndex === 0) {
         // FusionMIP
-
-        console.log('FusionMIP');
 
         this.setPTCTFusionLayout();
         this.setPTCTFusionVolumes();
@@ -157,8 +153,6 @@ class VTKMPRExample extends Component {
         renderingEngine.render();
       } else if (layoutIndex === 1) {
         // SinglePTSagittal
-
-        console.log('SinglePTSagittal');
 
         this.setSingleSagittalPTLayout();
         this.setSingleSagittalPTVolumes();
@@ -179,7 +173,7 @@ class VTKMPRExample extends Component {
 
     const numberOfPetFrames = ptVolume.imageIds.length;
 
-    const reRenderFractionPt = numberOfPetFrames / 10;
+    const reRenderFractionPt = numberOfPetFrames / 50;
     let reRenderTargetPt = reRenderFractionPt;
 
     imageCache.loadVolume(ptVolumeUID, event => {
@@ -206,36 +200,36 @@ class VTKMPRExample extends Component {
       }
     });
 
-    // const numberOfCtFrames = ctVolume.imageIds.length;
+    const numberOfCtFrames = ctVolume.imageIds.length;
 
-    // const reRenderFractionCt = numberOfCtFrames / 10;
-    // let reRenderTargetCt = reRenderFractionCt;
+    const reRenderFractionCt = numberOfCtFrames / 50;
+    let reRenderTargetCt = reRenderFractionCt;
 
-    // imageCache.loadVolume(ctVolumeUID, event => {
-    //   // Only call on modified every 5%.
+    imageCache.loadVolume(ctVolumeUID, event => {
+      // Only call on modified every 5%.
 
-    //   if (
-    //     event.framesProcessed > reRenderTargetCt ||
-    //     event.framesProcessed === event.numFrames
-    //   ) {
-    //     ctVolume.vtkImageData.modified();
+      if (
+        event.framesProcessed > reRenderTargetCt ||
+        event.framesProcessed === event.numFrames
+      ) {
+        ctVolume.vtkImageData.modified();
 
-    //     console.log(`ctVolumeModified`);
+        //console.log(`ctVolumeModified`);
 
-    //     reRenderTargetCt += reRenderFractionCt;
-    //     if (!renderingEngine.hasBeenDestroyed) {
-    //       renderingEngine.render();
-    //     }
+        reRenderTargetCt += reRenderFractionCt;
+        if (!renderingEngine.hasBeenDestroyed) {
+          renderingEngine.render();
+        }
 
-    //     if (event.framesProcessed === event.numFrames) {
-    //       ctLoaded = true;
+        if (event.framesProcessed === event.numFrames) {
+          ctLoaded = true;
 
-    //       if (ctLoaded && ptLoaded) {
-    //         this.setState({ progressText: 'Loaded.' });
-    //       }
-    //     }
-    //   }
-    // });
+          if (ctLoaded && ptLoaded) {
+            this.setState({ progressText: 'Loaded.' });
+          }
+        }
+      }
+    });
   }
 
   swapLayout = () => {
@@ -522,6 +516,12 @@ class VTKMPRExample extends Component {
     this.setState({ petColorMapIndex });
   }
 
+  destroyAndDecacheAllVolumes = () => {
+    this.renderingEngine.destroy();
+
+    imageCache.purgeCache();
+  };
+
   render() {
     const activeStyle = {
       width: '256px',
@@ -551,12 +551,12 @@ class VTKMPRExample extends Component {
       borderColor: 'blue',
     };
 
-    const { layoutIndex, metadataLoaded } = this.state;
+    const { layoutIndex, metadataLoaded, destroyed } = this.state;
     const layout = layouts[layoutIndex];
 
     const swapLayoutText =
       layout === 'FusionMIP'
-        ? 'Swap Layout To Single CT Sagittal Layout'
+        ? 'Swap Layout To Single PT Sagittal Layout'
         : 'Swap Layout To Fusion Layout';
 
     let viewportLayout;
@@ -617,20 +617,37 @@ class VTKMPRExample extends Component {
             <h5>MPR Template Example: {this.state.progressText} </h5>
           </div>
           <div className="col-xs-12">
-            <button onClick={() => metadataLoaded && this.testRender()}>
+            <button
+              onClick={() => metadataLoaded && !destroyed && this.testRender()}
+            >
               Render
             </button>
           </div>
           <div className="col-xs-12">
             <button
-              onClick={() => metadataLoaded && this.swapPetTransferFunction()}
+              onClick={() =>
+                metadataLoaded && !destroyed && this.swapPetTransferFunction()
+              }
             >
               SwapPetTransferFunction
             </button>
           </div>
           <div className="col-xs-12">
-            <button onClick={() => metadataLoaded && this.swapLayout()}>
+            <button
+              onClick={() => metadataLoaded && !destroyed && this.swapLayout()}
+            >
               {swapLayoutText}
+            </button>
+          </div>
+          <div className="col-xs-12">
+            <button
+              onClick={() =>
+                metadataLoaded &&
+                !destroyed &&
+                this.destroyAndDecacheAllVolumes()
+              }
+            >
+              Destroy Rendering Engine and Decache All Volumes
             </button>
           </div>
         </div>
