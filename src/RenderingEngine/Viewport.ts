@@ -184,6 +184,14 @@ class Viewport implements ViewportInterface {
 
     renderer.resetCamera();
 
+    let slabThickness = DEFAULT_SLAB_THICKNESS;
+
+    volumeActors.forEach(va => {
+      if (va.slabThickness && va.slabThickness > slabThickness) {
+        slabThickness = va.slabThickness;
+      }
+    });
+
     renderer
       .getActiveCamera()
       .setThicknessFromFocalPoint(DEFAULT_SLAB_THICKNESS);

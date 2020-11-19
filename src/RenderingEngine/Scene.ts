@@ -9,6 +9,7 @@ import createVolumeActor from './helpers/createVolumeActor';
 interface VolumeActorEntry {
   uid: string;
   volumeActor: object;
+  slabThickness: number;
 }
 
 interface SceneViewportsAPI {
@@ -65,10 +66,10 @@ class Scene {
     this._volumeActors = [];
 
     for (let i = 0; i < volumeData.length; i++) {
-      const { volumeUID, callback } = volumeData[i];
-      const volumeActor = createVolumeActor(volumeUID, callback);
+      const { volumeUID, slabThickness } = volumeData[i];
+      const volumeActor = createVolumeActor(volumeData[i]);
 
-      this._volumeActors.push({ volumeActor, uid: volumeUID });
+      this._volumeActors.push({ volumeActor, uid: volumeUID, slabThickness });
     }
 
     this._viewports.forEach(viewport => {

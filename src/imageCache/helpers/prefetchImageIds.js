@@ -13,7 +13,7 @@ export default function prefetchImageIds(volume) {
   const { scalarData, loadStatus } = volume;
   const { cachedFrames } = loadStatus;
 
-  const { imageIds, volumeMapper } = volume;
+  const { imageIds, vtkOpenGLTexture, vtkImageData } = volume;
 
   const interleavedFrames = getInterleavedFrames(imageIds);
 
@@ -55,7 +55,8 @@ export default function prefetchImageIds(volume) {
     framesLoaded++;
     framesProcessed++;
 
-    volumeMapper.setUpdatedFrame(imageIdIndex);
+    vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
+    vtkImageData.modified();
 
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true;

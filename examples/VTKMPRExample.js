@@ -4,6 +4,8 @@ import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
+import Constants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
+const { BlendMode } = Constants;
 
 import './VTKMPRExample.css';
 
@@ -177,13 +179,10 @@ class VTKMPRExample extends Component {
     let reRenderTargetPt = reRenderFractionPt;
 
     imageCache.loadVolume(ptVolumeUID, event => {
-      ptVolume.volumeMapper.setUpdatedFrame(event.imageIdIndex);
-
       if (
         event.framesProcessed > reRenderTargetPt ||
         event.framesProcessed == numberOfPetFrames
       ) {
-        ptVolume.vtkImageData.modified();
         reRenderTargetPt += reRenderFractionPt;
 
         if (!renderingEngine.hasBeenDestroyed) {
@@ -212,10 +211,6 @@ class VTKMPRExample extends Component {
         event.framesProcessed > reRenderTargetCt ||
         event.framesProcessed === event.numFrames
       ) {
-        ctVolume.vtkImageData.modified();
-
-        //console.log(`ctVolumeModified`);
-
         reRenderTargetCt += reRenderFractionCt;
         if (!renderingEngine.hasBeenDestroyed) {
           renderingEngine.render();
@@ -394,7 +389,12 @@ class VTKMPRExample extends Component {
     ]);
 
     ptMipScene.setVolumes([
-      { volumeUID: ptVolumeUID, callback: this.setPetTransferFunction },
+      {
+        volumeUID: ptVolumeUID,
+        callback: this.setPetTransferFunction,
+        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        slabThickness: 100, // TODO!
+      },
     ]);
   }
 
