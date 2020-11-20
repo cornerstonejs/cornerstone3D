@@ -1,8 +1,9 @@
-import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
-import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture';
+//import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
 
-export default function createVolumeMapper(vtkImageData) {
-  const volumeMapper = vtkVolumeMapper.newInstance();
+import vtkSharedVolumeMapper from '../vtkClasses/vtkSharedVolumeMapper';
+
+export default function createVolumeMapper(vtkImageData, vtkOpenGLTexture) {
+  const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
   volumeMapper.setInputData(vtkImageData);
 
@@ -16,11 +17,7 @@ export default function createVolumeMapper(vtkImageData) {
   volumeMapper.setMaximumSamplesPerRay(4000);
 
   volumeMapper.setSampleDistance(sampleDistance);
-
-  // Test make a texture here and pass it all the way down to the vtkOpenGLVolumeMapper
-  const scalarTexture = vtkOpenGLTexture.newInstance();
-
-  volumeMapper.setScalarTexture(scalarTexture);
+  volumeMapper.setScalarTexture(vtkOpenGLTexture);
 
   return volumeMapper;
 }

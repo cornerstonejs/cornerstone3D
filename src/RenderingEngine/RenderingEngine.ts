@@ -1,6 +1,6 @@
 // @ts-ignore
 import renderingEngineCache from './renderingEngineCache.ts';
-import vtkOffscreenMultiRenderWindow from './vtkOffscreenMultiRenderWindow';
+import vtkOffscreenMultiRenderWindow from './vtkClasses/vtkOffscreenMultiRenderWindow.js';
 
 // @ts-ignore
 import Scene from './Scene.ts';
@@ -356,26 +356,23 @@ class RenderingEngine {
   }
 
   private _reset() {
-    // TODO: In the future need actual VTK cleanup.
-
     this._scenes = [];
-
-    // TODO -> go through and destroy all volumes.
-    // clean up offscreenMultiRenderWindow
-    // Remove all renderers
-    // Remove all data from renderers
-    // removeAllActors
-    // removeAllVolumes
-    // Remove resize handlers from canvases.
   }
 
   destroy() {
+    if (this.hasBeenDestroyed) {
+      return;
+    }
+
     this._reset();
 
     // Free up WebGL resources
     this.offscreenMultiRenderWindow.delete();
 
     renderingEngineCache.delete(this.uid);
+
+    // Make sure all references go stale and are garbage collected.
+    delete this.offscreenMultiRenderWindow;
 
     this.hasBeenDestroyed = true;
   }

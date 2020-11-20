@@ -11,5 +11,9 @@ export default function decacheVolume(uid) {
   }
 
   cancelLoadVolume(uid);
+
+  // Clear texture memory (it will probably only be released at garbage collection of the dom element, but might as well try)
+  volume.volumeMapper.getScalarTexture().releaseGraphicsResources();
+
   cache.delete(uid);
 }

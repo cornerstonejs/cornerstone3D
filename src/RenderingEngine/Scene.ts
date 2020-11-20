@@ -9,6 +9,7 @@ import createVolumeActor from './helpers/createVolumeActor';
 interface VolumeActorEntry {
   uid: string;
   volumeActor: object;
+  slabThickness: number;
 }
 
 interface SceneViewportsAPI {
@@ -64,11 +65,26 @@ class Scene {
   setVolumes(volumeData, immediate = false) {
     this._volumeActors = [];
 
-    for (let i = 0; i < volumeData.length; i++) {
-      const { volumeUID, callback } = volumeData[i];
-      const volumeActor = createVolumeActor(volumeUID, callback);
+    const slabThicknessValues = [];
 
-      this._volumeActors.push({ volumeActor, uid: volumeUID });
+    for (let i = 0; i < volumeData.length; i++) {
+      const { volumeUID, slabThickness } = volumeData[i];
+      const volumeActor = createVolumeActor(volumeData[i]);
+
+      this._volumeActors.push({ volumeActor, uid: volumeUID, slabThickness });
+
+      if (
+        slabThickness !== undefined &&
+        !slabThicknessValues.includes(slabThickness)
+      ) {
+        slabThicknessValues.push(slabThickness);
+      }
+    }
+
+    if (slabThicknessValues.length > 1) {
+      console.warn(
+        'Currently slab thickness for intensity projections is tied to the camera, not per volume, using the largest of the two volumes for this scene.'
+      );
     }
 
     this._viewports.forEach(viewport => {

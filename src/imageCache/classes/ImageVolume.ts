@@ -1,4 +1,6 @@
-import { createVolumeMapper } from '../helpers';
+//import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture';
+import vtkStreamingOpenGLTexture from '../../RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture';
+
 import { ImageVolumeInterface } from './interfaces';
 
 export default class ImageVolume {
@@ -10,7 +12,7 @@ export default class ImageVolume {
   direction: Array<number>;
   vtkImageData: object;
   scalarData: Float32Array | Uint8Array;
-  volumeMapper: object;
+  vtkOpenGLTexture: object;
 
   constructor(props: ImageVolumeInterface) {
     this.uid = props.uid;
@@ -21,6 +23,7 @@ export default class ImageVolume {
     this.direction = props.direction;
     this.vtkImageData = props.vtkImageData;
     this.scalarData = props.scalarData;
-    this.volumeMapper = createVolumeMapper(this.vtkImageData);
+    //this.vtkOpenGLTexture = vtkOpenGLTexture.newInstance();
+    this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
   }
 }
