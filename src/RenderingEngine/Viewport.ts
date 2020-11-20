@@ -182,8 +182,6 @@ class Viewport implements ViewportInterface {
 
     volumeActors.forEach(va => renderer.addActor(va.volumeActor));
 
-    renderer.resetCamera();
-
     let slabThickness = DEFAULT_SLAB_THICKNESS;
 
     volumeActors.forEach(va => {
@@ -192,9 +190,12 @@ class Viewport implements ViewportInterface {
       }
     });
 
-    renderer
-      .getActiveCamera()
-      .setThicknessFromFocalPoint(DEFAULT_SLAB_THICKNESS);
+    renderer.resetCamera();
+
+    const activeCamera = renderer.getActiveCamera();
+
+    activeCamera.setThicknessFromFocalPoint(slabThickness);
+    activeCamera.setFreezeFocalPoint(true);
   }
 
   getCanvas(): HTMLCanvasElement {

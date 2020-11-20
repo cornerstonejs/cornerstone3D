@@ -388,12 +388,26 @@ class VTKMPRExample extends Component {
       { volumeUID: ptVolumeUID, callback: this.setPetColorMapTransferFunction },
     ]);
 
+    const ptVolume = imageCache.getImageVolume(ptVolumeUID);
+    const ptVolumeDimensions = ptVolume.dimensions;
+
+    // Only make the MIP as large as it needs to be. This coronal MIP will be
+    // rotated so need the diagonal across the Axial Plane.
+
+    const slabThickness = Math.sqrt(
+      ptVolumeDimensions[0] * ptVolumeDimensions[0] +
+        ptVolumeDimensions[1] * ptVolumeDimensions[1]
+    );
+
+    debugger;
+
     ptMipScene.setVolumes([
       {
         volumeUID: ptVolumeUID,
         callback: this.setPetTransferFunction,
+        // JamesAPetts MIP TOOD
         blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
-        slabThickness: 100, // TODO!
+        slabThickness,
       },
     ]);
   }
