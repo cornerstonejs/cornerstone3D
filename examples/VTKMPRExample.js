@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
-import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
+import { CONSTANTS, imageCache, RenderingEngine, utils } from '@vtk-viewport';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
@@ -399,8 +399,6 @@ class VTKMPRExample extends Component {
         ptVolumeDimensions[1] * ptVolumeDimensions[1]
     );
 
-    debugger;
-
     ptMipScene.setVolumes([
       {
         volumeUID: ptVolumeUID,
@@ -433,19 +431,7 @@ class VTKMPRExample extends Component {
 
     rgbTransferFunction.setRange(0, 5);
 
-    const size = rgbTransferFunction.getSize();
-
-    for (let index = 0; index < size; index++) {
-      const nodeValue1 = [];
-
-      rgbTransferFunction.getNodeValue(index, nodeValue1);
-
-      nodeValue1[1] = 1 - nodeValue1[1];
-      nodeValue1[2] = 1 - nodeValue1[2];
-      nodeValue1[3] = 1 - nodeValue1[3];
-
-      rgbTransferFunction.setNodeValue(index, nodeValue1);
-    }
+    utils.invertRgbTransferFunction(rgbTransferFunction);
   };
 
   setPetColorMapTransferFunction = ({ volumeActor }) => {

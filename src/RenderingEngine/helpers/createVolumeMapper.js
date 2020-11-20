@@ -1,7 +1,9 @@
-import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
+//import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
+
+import vtkSharedVolumeMapper from '../vtkClasses/vtkSharedVolumeMapper';
 
 export default function createVolumeMapper(vtkImageData, vtkOpenGLTexture) {
-  const volumeMapper = vtkVolumeMapper.newInstance();
+  const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
   volumeMapper.setInputData(vtkImageData);
 
