@@ -5,10 +5,15 @@ import { VtkDataTypes } from 'vtk.js/Sources/Common/Core/DataArray/Constants';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
 import { Representation } from 'vtk.js/Sources/Rendering/Core/Property/Constants';
 
-// ----------------------------------------------------------------------------
-// vtkVolumeMapper methods
-// ----------------------------------------------------------------------------
-
+/**
+ * vtkStreamingOpenGLVolumeMapper - A dervied class of the core vtkOpenGLVolumeMapper class.
+ * This class  replaces the buildBufferObjects function so that we progressively upload our textures
+ * into GPU memory uisng the new methods on vtkStreamingOpenGLTexture.
+ *
+ *
+ * @param {*} publicAPI The public API to extend
+ * @param {*} model The private model to extend.
+ */
 function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLVolumeMapper');
 

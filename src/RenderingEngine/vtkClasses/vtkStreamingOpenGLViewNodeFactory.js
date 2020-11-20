@@ -18,10 +18,13 @@ import vtkOpenGLVolumeMapper from 'vtk.js/Sources/Rendering/OpenGL/VolumeMapper'
 import vtkViewNodeFactory from 'vtk.js/Sources/Rendering/SceneGraph/ViewNodeFactory';
 import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
 
-// ----------------------------------------------------------------------------
-// vtkStreamingOpenGLViewNodeFactory methods
-// ----------------------------------------------------------------------------
-
+/**
+ * vtkStreamingOpenGLViewNodeFactory - A fork of the vtkOpenGLViewNodeFactory,
+ * so that we can inject our custom derived "Streaming" classes.
+ *
+ * @param {*} publicAPI The public API to extend
+ * @param {*} model The private model to extend.
+ */
 function vtkStreamingOpenGLViewNodeFactory(publicAPI, model) {
   // Set our className
   model.classHierarchy.push('vtkStreamingOpenGLViewNodeFactory');

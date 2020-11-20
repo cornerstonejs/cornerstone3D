@@ -1,10 +1,16 @@
 import macro from 'vtk.js/Sources/macro';
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
 
-// ----------------------------------------------------------------------------
-// vtkVolumeMapper methods
-// ----------------------------------------------------------------------------
-
+/**
+ * vtkSharedVolumeMapper - A dervied class of the core vtkVolumeMapper class
+ * the scalar texture in as an argument. This is so we can share the same texture
+ * memory across different mappers/actors, so we don't duplicate memory usage.
+ *
+ *
+ *
+ * @param {*} publicAPI The public API to extend
+ * @param {*} model The private model to extend.
+ */
 function vtkSharedVolumeMapper(publicAPI, model) {
   model.classHierarchy.push('vtkSharedVolumeMapper');
 }
