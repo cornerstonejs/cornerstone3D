@@ -1,5 +1,5 @@
 import macro from 'vtk.js/Sources/macro';
-import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
+import vtkStreamingOpenGLRenderWindow from './vtkStreamingOpenGLRenderWindow';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
 import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
@@ -36,7 +36,7 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
   model.rendererMap = {};
 
   // OpenGLRenderWindow
-  model.openGLRenderWindow = vtkOpenGLRenderWindow.newInstance();
+  model.openGLRenderWindow = vtkStreamingOpenGLRenderWindow.newInstance();
   model.renderWindow.addView(model.openGLRenderWindow);
 
   // Interactor

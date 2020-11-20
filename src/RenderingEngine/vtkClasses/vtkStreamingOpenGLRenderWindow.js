@@ -1,12 +1,13 @@
 import macro from 'vtk.js/Sources/macro';
-import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
+import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
+import vtkStreamingOpenGLViewNodeFactory from './vtkStreamingOpenGLViewNodeFactory';
 
 // ----------------------------------------------------------------------------
 // vtkVolumeMapper methods
 // ----------------------------------------------------------------------------
 
-function vtkSharedVolumeMapper(publicAPI, model) {
-  model.classHierarchy.push('vtkSharedVolumeMapper');
+function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
+  model.classHierarchy.push('vtkStreamingOpenGLRenderWindow');
 }
 
 // ----------------------------------------------------------------------------
@@ -15,24 +16,26 @@ function vtkSharedVolumeMapper(publicAPI, model) {
 
 // ----------------------------------------------------------------------------
 
-const DEFAULT_VALUES = {
-  scalarTexture: null,
-};
-
 export function extend(publicAPI, model, initialValues = {}) {
-  Object.assign(model, DEFAULT_VALUES, initialValues);
+  Object.assign(model, initialValues);
 
-  vtkVolumeMapper.extend(publicAPI, model, initialValues);
+  vtkOpenGLRenderWindow.extend(publicAPI, model, initialValues);
 
-  macro.setGet(publicAPI, model, ['scalarTexture']);
+  model.myFactory = vtkStreamingOpenGLViewNodeFactory.newInstance();
+  /* eslint-disable no-use-before-define */
+  model.myFactory.registerOverride('vtkRenderWindow', newInstance);
+  /* eslint-enable no-use-before-define */
 
   // Object methods
-  vtkSharedVolumeMapper(publicAPI, model);
+  vtkStreamingOpenGLRenderWindow(publicAPI, model);
 }
 
 // ----------------------------------------------------------------------------
 
-export const newInstance = macro.newInstance(extend, 'vtkSharedVolumeMapper');
+export const newInstance = macro.newInstance(
+  extend,
+  'vtkStreamingOpenGLRenderWindow'
+);
 
 // ----------------------------------------------------------------------------
 

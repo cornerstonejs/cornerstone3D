@@ -1,6 +1,6 @@
 // @ts-ignore
 import renderingEngineCache from './renderingEngineCache.ts';
-import vtkOffscreenMultiRenderWindow from './vtkOffscreenMultiRenderWindow';
+import vtkOffscreenMultiRenderWindow from './vtkClasses/vtkOffscreenMultiRenderWindow.js';
 
 // @ts-ignore
 import Scene from './Scene.ts';

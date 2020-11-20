@@ -14383,10 +14383,10 @@ void-elements@^2.0.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
   integrity sha1-wGavtYK7HLQSjWDqkjkulNXp2+w=
 
-vtk.js@^14.17.3:
-  version "14.17.3"
-  resolved "https://registry.yarnpkg.com/vtk.js/-/vtk.js-14.17.3.tgz#9ca2673a7795078f06ec84e8b3f09362bb176e78"
-  integrity sha512-cLkQtWl57++sO9+IE78IklWsukwH8PJXruj3H/SZBxFe5k+97rLxwSiEYaIOWPZ27Habn6hYKyGwdd++3rrflg==
+vtk.js@^14.18.1:
+  version "14.19.0"
+  resolved "https://registry.yarnpkg.com/vtk.js/-/vtk.js-14.19.0.tgz#02e5bce0c7cf3c0dda54ee0ac1b3c14e4bb8e8bf"
+  integrity sha512-lZ9qUOLBIckHEO4Y6cSv9lmUCyWWYTs890LoZ1+2GN5+flq3t/Iby7iKhChpO2YLIbnLtpQgVqMJjM+LsDTj/g==
   dependencies:
     blueimp-md5 "2.13.0"
     commander "5.1.0"
