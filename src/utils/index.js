@@ -1,5 +1,5 @@
 import uuidv4 from './uuidv4';
-import invertRgbTransferFunction from './invertRgbTransferFunction';
+import invertRgbTransferFunction from './invertRgbTransferFunction.ts';
 
 export { uuidv4, invertRgbTransferFunction };
 

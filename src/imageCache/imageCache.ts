@@ -127,7 +127,7 @@ class ImageCache {
     loadStatus.loading = false;
 
     // Set to loaded if any data is missing.
-    loadStatus.loaded = this._hasLoaded(loadStatus, imageIds.length);
+    loadStatus.loaded = this._hasLoaded(streamingVolume);
     // Remove all the callback listeners
     loadStatus.callbacks = [];
 
@@ -156,7 +156,10 @@ class ImageCache {
     }
   };
 
-  public makeAndCacheImageVolume = (imageIds: Array<string>, uid: string) => {
+  public makeAndCacheImageVolume = (
+    imageIds: Array<string>,
+    uid: string
+  ): ImageVolume | StreamingImageVolume => {
     if (uid === undefined) {
       uid = uuidv4();
     }
@@ -282,7 +285,7 @@ class ImageCache {
   public makeAndCacheDerivedVolume = (
     referencedVolumeUID,
     options: any = {}
-  ) => {
+  ): ImageVolume => {
     const referencedVolume = this._get(referencedVolumeUID);
 
     if (!referencedVolume) {
@@ -372,7 +375,10 @@ class ImageCache {
     return derivedVolume;
   };
 
-  public makeAndCacheLocalImageVolume = (properties: any = {}, uid: string) => {
+  public makeAndCacheLocalImageVolume = (
+    properties: any = {},
+    uid: string
+  ): ImageVolume => {
     if (uid === undefined) {
       uid = uuidv4();
     }
@@ -488,7 +494,12 @@ class ImageCache {
     this._cacheSize += increment;
   };
 
-  private _hasLoaded = (loadStatus, numFrames) => {
+  private _hasLoaded = (
+    streamingImageVolume: StreamingImageVolume
+  ): boolean => {
+    const { loadStatus, imageIds } = streamingImageVolume;
+    const numFrames = imageIds.length;
+
     for (let i = 0; i < numFrames; i++) {
       if (!loadStatus.cachedFrames[i]) {
         return false;

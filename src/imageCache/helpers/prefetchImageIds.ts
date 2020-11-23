@@ -1,15 +1,26 @@
 import cornerstone from 'cornerstone-core';
 import cornerstoneTools from 'cornerstone-tools';
 import { requestPoolManager } from 'cornerstone-tools';
-import getPatientWeightAndCorrectedDose from './getPatientWeightAndCorrectedDose';
-import getInterleavedFrames from './getInterleavedFrames';
+// @ts-ignore
+import getPatientWeightAndCorrectedDose from './getPatientWeightAndCorrectedDose.ts';
+// @ts-ignore
+import getInterleavedFrames from './getInterleavedFrames.ts';
+// @ts-ignore
+import StreamingImageVolume from '../classes/StreamingImageVolume.ts';
 
 const throttle = cornerstoneTools.importInternal('util/throttle');
-
 const requestType = 'prefetch';
 const preventCache = true; // We are not using the cornerstone cache for this.
 
-export default function prefetchImageIds(volume) {
+type ScalingParamaters = {
+  rescaleSlope: number;
+  rescaleIntercept: number;
+  modality: string;
+  patientWeight?: number;
+  correctedDose?: number;
+};
+
+export default function prefetchImageIds(volume: StreamingImageVolume) {
   const { scalarData, loadStatus } = volume;
   const { cachedFrames } = loadStatus;
 
@@ -127,7 +138,7 @@ export default function prefetchImageIds(volume) {
     const generalSeriesModule =
       cornerstone.metaData.get('generalSeriesModule', imageId) || {};
 
-    const scalingParameters = {
+    const scalingParameters: ScalingParamaters = {
       rescaleSlope: modalityLutModule.rescaleSlope,
       rescaleIntercept: modalityLutModule.rescaleIntercept,
       modality: generalSeriesModule.modality,

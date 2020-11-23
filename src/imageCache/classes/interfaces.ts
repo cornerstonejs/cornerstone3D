@@ -1,6 +1,27 @@
+type voi = {
+  windowWidth: number;
+  windowCenter: number;
+};
+
+export type metadata = {
+  BitsAllocated: number;
+  BitsStored: number;
+  SamplesPerPixel: number;
+  HighBit: number;
+  PhotometricInterpretation: string;
+  PixelRepresentation: number;
+  Modality: string;
+  ImageOrientationPatient: Array<number>;
+  PixelSpacing: Array<number>;
+  FrameOfReferenceUID: string;
+  Columns: number;
+  Rows: number;
+  voiLut: Array<voi>;
+};
+
 export interface ImageVolumeInterface {
   uid: string;
-  metadata: object;
+  metadata: metadata;
   dimensions: Array<number>;
   spacing: Array<number>;
   origin: Array<number>;

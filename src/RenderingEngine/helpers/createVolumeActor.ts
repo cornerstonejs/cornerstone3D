@@ -1,16 +1,21 @@
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume';
 import imageCache from '../../imageCache';
-import createVolumeMapper from './createVolumeMapper';
+//@ts-ignore
+import createVolumeMapper from './createVolumeMapper.ts';
 
-export default function createVolumeActor({
-  volumeUID,
-  callback = () => {},
-  blendMode,
-}) {
+interface createVolumeActorInterface {
+  volumeUID: string;
+  callback?: Function;
+  blendMode?: string;
+}
+
+export default function createVolumeActor(props: createVolumeActorInterface) {
+  const { volumeUID, callback, blendMode } = props;
+
   const imageVolume = imageCache.getImageVolume(volumeUID);
 
   if (!imageVolume) {
-    throw new error(`imageVolume with uid: ${imageVolume.uid} does not exist`);
+    throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`);
   }
 
   const { vtkImageData, vtkOpenGLTexture } = imageVolume;
@@ -24,7 +29,9 @@ export default function createVolumeActor({
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
-  callback({ volumeActor, volumeUID });
+  if (callback) {
+    callback({ volumeActor, volumeUID });
+  }
 
   return volumeActor;
 }

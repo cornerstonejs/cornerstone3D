@@ -1,18 +1,33 @@
 import { vec3 } from 'gl-matrix';
+import cornerstone from 'cornerstone-core';
+
+type SortedImageIdsItem = {
+  zSpacing: number;
+  origin: Array<number>;
+  sortedImageIds: Array<string>;
+};
 
 /**
  *
  * @param {*} scanAxisNormal - [x, y, z] array or gl-matrix vec3
  * @param {*} imageMetaDataMap - one of the results from BuildMetadata()
  */
-export default function sortDatasetsByImagePosition(imageIds, scanAxisNormal) {
+export default function sortImageIdsAndGetSpacing(
+  imageIds: Array<string>,
+  scanAxisNormal: any // Get gl matrix types?
+) {
   const {
     imagePositionPatient: referenceImagePositionPatient,
   } = cornerstone.metaData.get('imagePlaneModule', imageIds[0]);
 
   const refIppVec = vec3.create();
 
-  vec3.set(refIppVec, ...referenceImagePositionPatient);
+  vec3.set(
+    refIppVec,
+    referenceImagePositionPatient[0],
+    referenceImagePositionPatient[1],
+    referenceImagePositionPatient[2]
+  );
 
   const distanceImagePairs = imageIds.map(imageId => {
     const { imagePositionPatient } = cornerstone.metaData.get(
@@ -20,11 +35,10 @@ export default function sortDatasetsByImagePosition(imageIds, scanAxisNormal) {
       imageId
     );
 
-    // const ippVec = new Vector3(...imagePositionPatient);
-    // const positionVector = refIppVec.clone().sub(ippVec);
+    const positionVector = vec3.create();
 
-    const positionVector = vec3.sub(
-      [],
+    vec3.sub(
+      positionVector,
       referenceImagePositionPatient,
       imagePositionPatient
     );
@@ -57,9 +71,11 @@ export default function sortDatasetsByImagePosition(imageIds, scanAxisNormal) {
     sortedImageIds[0]
   );
 
-  return {
+  const result: SortedImageIdsItem = {
     zSpacing,
     origin,
     sortedImageIds,
   };
+
+  return result;
 }

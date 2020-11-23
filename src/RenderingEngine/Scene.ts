@@ -4,7 +4,7 @@ import Viewport from './Viewport.ts';
 import renderingEngineCache from './renderingEngineCache.ts';
 // @ts-ignore
 import RenderingEngine from './RenderingEngine.ts';
-import createVolumeActor from './helpers/createVolumeActor';
+import { createVolumeActor } from './helpers';
 
 interface VolumeActorEntry {
   uid: string;

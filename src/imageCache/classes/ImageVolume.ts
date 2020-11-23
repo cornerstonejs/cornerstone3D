@@ -1,4 +1,4 @@
-import vtkStreamingOpenGLTexture from '../../RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture';
+import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import { ImageVolumeInterface } from './interfaces';
 
 export default class ImageVolume {
@@ -8,7 +8,7 @@ export default class ImageVolume {
   spacing: Array<number>;
   origin: Array<number>;
   direction: Array<number>;
-  vtkImageData: object;
+  vtkImageData: any;
   scalarData: Float32Array | Uint8Array;
   vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
 
