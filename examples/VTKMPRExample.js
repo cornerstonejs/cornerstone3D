@@ -403,7 +403,6 @@ class VTKMPRExample extends Component {
       {
         volumeUID: ptVolumeUID,
         callback: this.setPetTransferFunction,
-        // JamesAPetts MIP TOOD
         blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },

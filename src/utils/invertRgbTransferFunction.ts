@@ -1,4 +1,4 @@
-export default function invertRgbTransferFunction(rgbTransferFunction) {
+export default function invertRgbTransferFunction(rgbTransferFunction: any) {
   const size = rgbTransferFunction.getSize();
 
   for (let index = 0; index < size; index++) {

@@ -1,8 +1,9 @@
-//import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
+import { vtkSharedVolumeMapper } from '../vtkClasses';
 
-import vtkSharedVolumeMapper from '../vtkClasses/vtkSharedVolumeMapper';
-
-export default function createVolumeMapper(vtkImageData, vtkOpenGLTexture) {
+export default function createVolumeMapper(
+  vtkImageData: any,
+  vtkOpenGLTexture: any
+): any {
   const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
   volumeMapper.setInputData(vtkImageData);
@@ -12,8 +13,7 @@ export default function createVolumeMapper(vtkImageData, vtkOpenGLTexture) {
   // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
   const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
 
-  // Be generous to surpress warnings, as the logging really hurts performance.
-  // TODO: maybe we should auto adjust samples to 1000.
+  // This is to allow for good pixel level image quality.
   volumeMapper.setMaximumSamplesPerRay(4000);
 
   volumeMapper.setSampleDistance(sampleDistance);

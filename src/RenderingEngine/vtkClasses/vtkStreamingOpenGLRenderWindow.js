@@ -2,10 +2,15 @@ import macro from 'vtk.js/Sources/macro';
 import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
 import vtkStreamingOpenGLViewNodeFactory from './vtkStreamingOpenGLViewNodeFactory';
 
-// ----------------------------------------------------------------------------
-// vtkVolumeMapper methods
-// ----------------------------------------------------------------------------
-
+/**
+ * vtkStreamingOpenGLRenderWindow - A dervied class of the core vtkOpenGLRenderWindow class.
+ * The main purpose for this class extension is to add in our own node factory, so we can use
+ * our extended "streaming" classes for progressive texture loading.
+ *
+ *
+ * @param {*} publicAPI The public API to extend
+ * @param {*} model The private model to extend.
+ */
 function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLRenderWindow');
 }

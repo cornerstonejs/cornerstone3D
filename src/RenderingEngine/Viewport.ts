@@ -20,7 +20,6 @@ interface ViewportInterface {
   sWidth: number;
   sHeight: number;
   defaultOptions: any;
-  render: Function;
 }
 
 class Viewport implements ViewportInterface {
