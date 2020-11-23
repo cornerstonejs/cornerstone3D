@@ -1,6 +1,4 @@
-//import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture';
 import vtkStreamingOpenGLTexture from '../../RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture';
-
 import { ImageVolumeInterface } from './interfaces';
 
 export default class ImageVolume {
@@ -12,7 +10,7 @@ export default class ImageVolume {
   direction: Array<number>;
   vtkImageData: object;
   scalarData: Float32Array | Uint8Array;
-  vtkOpenGLTexture: object;
+  vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
 
   constructor(props: ImageVolumeInterface) {
     this.uid = props.uid;
@@ -23,7 +21,6 @@ export default class ImageVolume {
     this.direction = props.direction;
     this.vtkImageData = props.vtkImageData;
     this.scalarData = props.scalarData;
-    //this.vtkOpenGLTexture = vtkOpenGLTexture.newInstance();
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
   }
 }

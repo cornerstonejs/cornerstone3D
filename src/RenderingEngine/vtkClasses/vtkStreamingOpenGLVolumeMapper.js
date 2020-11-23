@@ -269,9 +269,6 @@ export const newInstance = macro.newInstance(
   'vtkStreamingOpenGLVolumeMapper'
 );
 
-// TEMP JamesAPetts
-window.vtkStreamingOpenGLVolumeMapper = { newInstance, extend };
-
 // ----------------------------------------------------------------------------
 
 export default { newInstance, extend };

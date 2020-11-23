@@ -13,6 +13,7 @@ export interface StreamingInterface {
   imageIds: Array<string>;
   loadStatus: {
     loaded: Boolean;
+    loading: Boolean;
     cachedFrames: Array<Boolean>;
     callbacks: Array<Function>;
   };
