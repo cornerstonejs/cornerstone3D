@@ -24,13 +24,10 @@
   },
   "peerDependencies": {
     "cornerstone-tools": "^5.1.0",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "vtk.js": "^14.18.1",
+    "vtk.js": "14.18.1",
     "cornerstone-wado-image-loader": "3.2.0"
   },
   "dependencies": {
-    "date-fns": "^2.2.1",
     "gl-matrix": "^3.1.0",
     "lodash.clonedeep": "4.5.0",
     "ts-loader": "^8.0.7",

@@ -1,13 +1,14 @@
-# react-vtkjs-viewport
+# vtkjs-viewport
 
-> VTK.js image viewport component for React
+> VTK.js powered offscreen rendering engine and tool framework for 3D
+> visualisation of medical images.
 
 [![NPM](https://img.shields.io/npm/v/react-vtkjs-viewport.svg)](https://www.npmjs.com/package/react-vtkjs-viewport)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FOHIF%2Freact-vtkjs-viewport.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FOHIF%2Freact-vtkjs-viewport?ref=badge_shield)
 
 ## Install
 
-This project consumes `vtk.js` as an ES6 dependency.
+This project requires `vtk.js` as an ES6 dependency.
 [If you're unsure of how to consume `vtk.js` as an ES6 dependency, please check out Kitware's guide.](https://kitware.github.io/vtk-js/docs/intro_vtk_as_es6_dependency.html#Webpack-config)
 
 ```bash
@@ -21,7 +22,8 @@ yarn add react-vtkjs-viewport vtk.js
 ## Development
 
 Local development uses `<root>/examples` as a test application. You can import
-the VTK Viewport and the app configuration using a WebPack alias like so:
+the VTK Viewport and the app configuration configuration using a WebPack alias
+like so:
 
 ```js
 import VtkViewport from '@vtk-viewport';

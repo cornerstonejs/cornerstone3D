@@ -17,6 +17,16 @@ import { Representation } from 'vtk.js/Sources/Rendering/Core/Property/Constants
 function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLVolumeMapper');
 
+  /**
+   * buildBufferObjects - A fork of vtkOpenGLVolumeMapper's buildBufferObjects method.
+   * This fork performs most of the same actions, but builds the textures progressively using
+   * vtkStreamingOpenGLTexture's methods, and also prevents recomputation of the texture for each
+   * vtkStreamingOpenGLVolumeMapper using the texture.
+   *
+   *
+   * @param {*} ren The renderer.
+   * @param {*} actor The actor to build the buffer objects for.
+   */
   publicAPI.buildBufferObjects = (ren, actor) => {
     const image = model.currentInput;
 
