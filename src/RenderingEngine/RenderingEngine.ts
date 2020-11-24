@@ -4,26 +4,52 @@ import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 
 // @ts-ignore
 import Scene from './Scene.ts';
+// @ts-ignore
+import Viewport from './Viewport.ts';
 import { uuidv4 } from '../utils/';
 
-interface ViewportInterface {
+/**
+ * @type ViewportInputOptions
+ * This type defines the shape of viewport input options, so we can throw when it is incorrect.
+ */
+export type ViewportInputOptions = {
+  background?: Array<number>;
+  orientation: {
+    sliceNormal: Array<number>;
+    viewUp: Array<number>;
+  };
+};
+
+/**
+ * @type ViewportInput
+ * This type defines the shape of input, so we can throw when it is incorrect.
+ */
+type ViewportInput = {
   canvas: HTMLCanvasElement;
   sceneUID: string;
   viewportUID: string;
   type: string;
-  defaultOptions: any;
-}
+  defaultOptions: ViewportInputOptions;
+};
 
+/**
+ * @class RenderingEngine
+ *
+ * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
+ * them on a large offscreen canvas and transmitting this data back to the screen. This allows us
+ * to leverage the power of vtk.js whilst only using one WebGL context for the processing, and allowing
+ * us to share texture memory across on-screen viewports that show the same data.
+ */
 class RenderingEngine {
-  uid: string;
-  hasBeenDestroyed: boolean;
+  readonly uid: string;
+  public hasBeenDestroyed: boolean;
   offscreenMultiRenderWindow: any;
-  webGLCanvasContainer: any;
+  readonly webGLCanvasContainer: any;
   private _scenes: Array<Scene>;
 
   constructor(uid) {
     this.uid = uid ? uid : uuidv4();
-    renderingEngineCache.set(uid, this);
+    renderingEngineCache.set(this);
 
     this.offscreenMultiRenderWindow = vtkOffscreenMultiRenderWindow.newInstance();
 
@@ -36,8 +62,14 @@ class RenderingEngine {
     this.hasBeenDestroyed = false;
   }
 
-  setViewports(viewports: Array<ViewportInterface>) {
-    this.throwIfDestroyed();
+  /**
+   * @method setViewports Creates `Scene`s containing `Viewport`s and sets up the offscreen
+   * render window to allow offscreen rendering and transmission back to the target canvas in each viewport.
+   * @param {Array<ViewportInput>} viewports An array of viewport definitons to construct the rendering engine
+   *
+   */
+  public setViewports(viewports: Array<ViewportInput>) {
+    this._throwIfDestroyed();
     this._reset();
 
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this;
@@ -78,11 +110,7 @@ class RenderingEngine {
       let scene = this.getScene(sceneUID);
 
       if (!scene) {
-        const renderScene = () => {
-          this.renderScene(sceneUID);
-        };
-
-        scene = new Scene(sceneUID, this.uid, renderScene);
+        scene = new Scene(sceneUID, this.uid);
 
         this._scenes.push(scene);
       }
@@ -103,26 +131,6 @@ class RenderingEngine {
       const sWidthDisplayCoords = sWidth / webglCanvasWidth;
       const sHeightDisplayCoords = sHeight / webglCanvasHeight;
 
-      // vxmin, vymin, vxmax, vymax
-
-      // TODO -> Why does this put the renders at the bottom of the canvas if they aren't max height:
-      //
-      // const sxDisplayCoords = sx / webglCanvasWidth;
-      // const syDisplayCoords = sy / webglCanvasHeight;
-      // const sWidthDisplayCoords = sWidth / webglCanvasWidth;
-      // const sHeightDisplayCoords = sHeight / webglCanvasHeight;
-      //
-      // viewport: [
-      //   sxDisplayCoords,
-      //   // syDisplayCoords,
-      //   syDisplayCoords,
-      //   sxDisplayCoords + sWidthDisplayCoords,
-      //   // syDisplayCoords + sHeightDisplayCoords,
-      //   syDisplayCoords + sHeightDisplayCoords,
-      // ],
-      //
-      // Having to add the y difference to the top feels really weird.
-
       offscreenMultiRenderWindow.addRenderer({
         viewport: [
           sxDisplayCoords,
@@ -138,11 +146,7 @@ class RenderingEngine {
 
       xOffset += width;
 
-      const renderViewport = () => {
-        this.renderViewport(sceneUID, viewportUID);
-      };
-
-      scene._addViewport({
+      scene.addViewport({
         uid: viewportUID,
         type,
         canvas,
@@ -151,13 +155,17 @@ class RenderingEngine {
         sWidth,
         sHeight,
         defaultOptions: defaultOptions || {},
-        render: renderViewport,
       });
     }
   }
 
-  resize() {
-    this.throwIfDestroyed();
+  /**
+   * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
+   * It is up to the parent app to call the size of the on-screen canvas changes.
+   * This is left as an app level concern as one might want to debounce the changes, or the like.
+   */
+  public resize() {
+    this._throwIfDestroyed();
 
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this;
 
@@ -235,15 +243,23 @@ class RenderingEngine {
     }
   }
 
-  getScene(uid) {
-    this.throwIfDestroyed();
+  /**
+   * @method getScene Returns the scene.
+   * @param {string} uid The UID of the scene to fetch.
+   *
+   * @returns {Scene} The scene object.
+   */
+  public getScene(uid: string): Scene {
+    this._throwIfDestroyed();
 
     return this._scenes.find(scene => scene.uid === uid);
   }
 
-  // render all viewports
-  render() {
-    this.throwIfDestroyed();
+  /**
+   * @method render Renders all viewports.
+   */
+  public render() {
+    this._throwIfDestroyed();
 
     const { offscreenMultiRenderWindow } = this;
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
@@ -272,9 +288,13 @@ class RenderingEngine {
     }
   }
 
-  // Render only a scene
-  renderScene(sceneUID) {
-    this.throwIfDestroyed();
+  /**
+   * @method render Renders only a specific `Scene`.
+   *
+   * @param {string} sceneUID The UID of the scene to render.
+   */
+  public renderScene(sceneUID: string) {
+    this._throwIfDestroyed();
 
     const { offscreenMultiRenderWindow } = this;
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
@@ -302,9 +322,14 @@ class RenderingEngine {
     });
   }
 
-  // Render only a specific viewport
-  renderViewport(sceneUID, viewportUID) {
-    this.throwIfDestroyed();
+  /**
+   * @method render Renders only a specific `Viewport`.
+   *
+   * @param {string} sceneUID The UID of the scene the viewport belongs to.
+   * @param {string} viewportUID The UID of the viewport.
+   */
+  public renderViewport(sceneUID: string, viewportUID: string) {
+    this._throwIfDestroyed();
 
     const { offscreenMultiRenderWindow } = this;
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
@@ -329,7 +354,12 @@ class RenderingEngine {
     this._renderViewportToCanvas(viewport, offScreenCanvas);
   }
 
-  private _renderViewportToCanvas(viewport, offScreenCanvas) {
+  /**
+   * @method _renderViewportToCanvas Renders a particular `Viewport`'s on screen canvas.
+   * @param {Viewport} viewport The `Viewport` to rendfer.
+   * @param {object} offScreenCanvas The offscreen canvas to render from.
+   */
+  private _renderViewportToCanvas(viewport: Viewport, offScreenCanvas) {
     const { sx, sy, sWidth, sHeight } = viewport;
 
     const canvas = <HTMLCanvasElement>viewport.canvas;
@@ -337,7 +367,6 @@ class RenderingEngine {
 
     const onScreenContext = canvas.getContext('2d');
 
-    //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
     onScreenContext.drawImage(
       offScreenCanvas,
       sx,
@@ -351,15 +380,19 @@ class RenderingEngine {
     );
 
     // Trigger events IMAGE_RENDERED
-
-    // Viewport Object
   }
 
+  /**
+   * @method _reset Resets the `RenderingEngine`
+   */
   private _reset() {
     this._scenes = [];
   }
 
-  destroy() {
+  /**
+   * @method destory
+   */
+  public destroy() {
     if (this.hasBeenDestroyed) {
       return;
     }
@@ -377,7 +410,11 @@ class RenderingEngine {
     this.hasBeenDestroyed = true;
   }
 
-  throwIfDestroyed() {
+  /**
+   * @method _throwIfDestroyed Throws an error if trying to interact with the `RenderingEngine`
+   * instance after its `destroy` method has been called.
+   */
+  private _throwIfDestroyed() {
     if (this.hasBeenDestroyed) {
       throw new Error(
         'this.destroy() has been manually called to free up memory, can not longer use this instance. Instead make a new one.'
@@ -385,7 +422,7 @@ class RenderingEngine {
     }
   }
 
-  debugRender() {
+  _debugRender() {
     // Renders all scenes
     const { offscreenMultiRenderWindow } = this;
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();

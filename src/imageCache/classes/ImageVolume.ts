@@ -2,7 +2,7 @@ import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import { ImageVolumeInterface } from './interfaces';
 
 export default class ImageVolume {
-  uid: string;
+  readonly uid: string;
   metadata: object;
   dimensions: Array<number>;
   spacing: Array<number>;
