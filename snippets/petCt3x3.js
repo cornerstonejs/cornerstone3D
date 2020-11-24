@@ -134,8 +134,6 @@ fusionScene.setVolumes([
   { volumeUID: ptUID, callback: setPTColorMapTransferFunction },
 ]);
 
-
-
 // TODO: Think more about serialization of the VTKLayout state.
 
 // Start fetching volumes now - refresh when appropriate
