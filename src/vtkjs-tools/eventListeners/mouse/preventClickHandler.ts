@@ -1,0 +1,3 @@
+function preventClickHandler() {
+  isClickEvent = false;
+}
