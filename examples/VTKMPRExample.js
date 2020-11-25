@@ -280,7 +280,10 @@ class VTKMPRExample extends Component {
         type: VIEWPORT_TYPE.PERSPECTIVE,
         canvas: this.containers.CTVR.VR.current,
         defaultOptions: {
-          orientation: ORIENTATION.CORONAL,
+          orientation: {
+            sliceNormal: [-0.50000000827545, 0.8660253990066052, 0],
+            viewUp: [0, 0, 1],
+          },
         },
       },
     ]);
@@ -294,7 +297,7 @@ class VTKMPRExample extends Component {
     ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: this.setCTWWWC }]);
 
     ctVRScene.setVolumes([
-      { volumeUID: ctVolumeUID, callback: this.setCTWWWC },
+      { volumeUID: ctVolumeUID, callback: this.setCTVRTransferFunction },
     ]);
   }
 
@@ -471,8 +474,10 @@ class VTKMPRExample extends Component {
   };
 
   setCTVRTransferFunction({ volumeActor, volumeUID }) {
+    debugger;
     const range = volumeActor
-      .getImageData()
+      .getMapper()
+      .getInputData()
       .getPointData()
       .getScalars()
       .getRange();
@@ -502,8 +507,6 @@ class VTKMPRExample extends Component {
     applyPreset(volumeActor, preset);
 
     volumeActor.getProperty().setScalarOpacityUnitDistance(0, 2.5);
-
-    return actor;
   }
 
   setPetColorMapTransferFunction = ({ volumeActor }) => {

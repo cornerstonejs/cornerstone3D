@@ -1,3 +1,6 @@
+import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
+import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
+
 export default function applyPreset(actor, preset) {
   // Create color transfer function
   const colorTransferArray = preset.colorTransfer
@@ -77,4 +80,50 @@ export default function applyPreset(actor, preset) {
   actor.getProperty().setDiffuse(diffuse);
   actor.getProperty().setSpecular(specular);
   actor.getProperty().setSpecularPower(specularPower);
+}
+
+function getShiftRange(colorTransferArray) {
+  // Credit to paraview-glance
+  // https://github.com/Kitware/paraview-glance/blob/3fec8eeff31e9c19ad5b6bff8e7159bd745e2ba9/src/components/controls/ColorBy/script.js#L133
+
+  // shift range is original rgb/opacity range centered around 0
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < colorTransferArray.length; i += 4) {
+    min = Math.min(min, colorTransferArray[i]);
+    max = Math.max(max, colorTransferArray[i]);
+  }
+
+  const center = (max - min) / 2;
+
+  return {
+    shiftRange: [-center, center],
+    min,
+    max,
+  };
+}
+
+function applyPointsToRGBFunction(points, range, cfun) {
+  const width = range[1] - range[0];
+  const rescaled = points.map(([x, r, g, b]) => [
+    x * width + range[0],
+    r,
+    g,
+    b,
+  ]);
+
+  cfun.removeAllPoints();
+  rescaled.forEach(([x, r, g, b]) => cfun.addRGBPoint(x, r, g, b));
+
+  return rescaled;
+}
+
+function applyPointsToPiecewiseFunction(points, range, pwf) {
+  const width = range[1] - range[0];
+  const rescaled = points.map(([x, y]) => [x * width + range[0], y]);
+
+  pwf.removeAllPoints();
+  rescaled.forEach(([x, y]) => pwf.addPoint(x, y));
+
+  return rescaled;
 }
