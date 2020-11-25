@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
+import applyPreset from './helpers/applyPreset';
 import { CONSTANTS, imageCache, RenderingEngine, utils } from '@vtk-viewport';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
@@ -20,6 +21,7 @@ const SCENE_IDS = {
   PT: 'ptScene',
   FUSION: 'fusionScene',
   PTMIP: 'ptMipScene',
+  CTVR: 'ctVRScene',
 };
 
 const VIEWPORT_IDS = {
@@ -41,10 +43,13 @@ const VIEWPORT_IDS = {
   PTMIP: {
     CORONAL: 'ptMipCoronal',
   },
+  CTVR: {
+    VR: 'ctVR',
+  },
 };
 
 const colormaps = ['hsv', 'RED-PURPLE'];
-const layouts = ['FusionMIP', 'SinglePTSagittal'];
+const layouts = ['FusionMIP', 'CTVR'];
 
 class VTKMPRExample extends Component {
   state = {
@@ -76,6 +81,9 @@ class VTKMPRExample extends Component {
       },
       PTMIP: {
         CORONAL: React.createRef(),
+      },
+      CTVR: {
+        VR: React.createRef(),
       },
     };
 
@@ -154,10 +162,10 @@ class VTKMPRExample extends Component {
         this.loadVolumes(); // Will do nothing if already loading.
         renderingEngine.render();
       } else if (layoutIndex === 1) {
-        // SinglePTSagittal
+        // CTVR
 
-        this.setSingleSagittalPTLayout();
-        this.setSingleSagittalPTVolumes();
+        this.setFourUpCTLayout();
+        this.setFourUpCTVolumes();
         this.loadVolumes(); // Will do nothing if already loading.
         renderingEngine.render();
       } else {
@@ -236,28 +244,57 @@ class VTKMPRExample extends Component {
     this.setState({ layoutIndex });
   };
 
-  setSingleSagittalPTLayout = () => {
+  setFourUpCTLayout = () => {
     this.renderingEngine.setViewports([
-      // PT Sagittal
+      // CT
       {
-        sceneUID: SCENE_IDS.PT,
-        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.containers.PT.SAGITTAL.current,
+        canvas: this.containers.CT.AXIAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.CT.SAGITTAL.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
-          background: [1, 1, 1],
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.CT.CORONAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.CTVR,
+        viewportUID: VIEWPORT_IDS.CTVR.VR,
+        type: VIEWPORT_TYPE.PERSPECTIVE,
+        canvas: this.containers.CTVR.VR.current,
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
         },
       },
     ]);
   };
 
-  setSingleSagittalPTVolumes() {
+  setFourUpCTVolumes() {
     const renderingEngine = this.renderingEngine;
-    const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
+    const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
+    const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR);
 
-    ptScene.setVolumes([
-      { volumeUID: ptVolumeUID, callback: this.setPetTransferFunction },
+    ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: this.setCTWWWC }]);
+
+    ctVRScene.setVolumes([
+      { volumeUID: ctVolumeUID, callback: this.setCTWWWC },
     ]);
   }
 
@@ -433,6 +470,42 @@ class VTKMPRExample extends Component {
     utils.invertRgbTransferFunction(rgbTransferFunction);
   };
 
+  setCTVRTransferFunction({ volumeActor, volumeUID }) {
+    const range = volumeActor
+      .getImageData()
+      .getPointData()
+      .getScalars()
+      .getRange();
+
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setRange(range[0], range[1]);
+
+    const preset = {
+      name: 'CT-Bones',
+      gradientOpacity: '4 0 1 985.12 1',
+      specularPower: '1',
+      scalarOpacity: '8 -1000 0 152.19 0 278.93 0.190476 952 0.2',
+      id: 'vtkMRMLVolumePropertyNode4',
+      specular: '0',
+      shade: '1',
+      ambient: '0.2',
+      colorTransfer:
+        '20 -1000 0.3 0.3 1 -488 0.3 1 0.3 463.28 1 0 0 659.15 1 0.912535 0.0374849 953 1 0.3 0.3',
+      selectable: 'true',
+      diffuse: '1',
+      interpolation: '1',
+      effectiveRange: '152.19 952',
+    };
+
+    applyPreset(volumeActor, preset);
+
+    volumeActor.getProperty().setScalarOpacityUnitDistance(0, 2.5);
+
+    return actor;
+  }
+
   setPetColorMapTransferFunction = ({ volumeActor }) => {
     const mapper = volumeActor.getMapper();
     mapper.setSampleDistance(1.0);
@@ -536,16 +609,16 @@ class VTKMPRExample extends Component {
       borderColor: 'blue',
     };
 
-    const largeAxialStyle = {
-      width: '1152px',
-      height: '768px',
-      borderStyle: 'solid',
-      borderColor: 'aqua',
-    };
-
     const ptMIPStyle = {
       width: '384px',
       height: '768px',
+      borderStyle: 'solid',
+      borderColor: 'blue',
+    };
+
+    const fourUpStyle = {
+      width: '512px',
+      height: '512px',
       borderStyle: 'solid',
       borderColor: 'blue',
     };
@@ -594,15 +667,17 @@ class VTKMPRExample extends Component {
           </div>
         </React.Fragment>
       );
-    } else if (layout === 'SinglePTSagittal') {
+    } else if (layout === 'CTVR') {
       viewportLayout = (
         <React.Fragment>
           <div>
             <div className="container-row">
-              <canvas
-                ref={this.containers.PT.SAGITTAL}
-                style={largeAxialStyle}
-              />
+              <canvas ref={this.containers.CT.AXIAL} style={fourUpStyle} />
+              <canvas ref={this.containers.CT.SAGITTAL} style={fourUpStyle} />
+            </div>
+            <div className="container-row">
+              <canvas ref={this.containers.CT.CORONAL} style={fourUpStyle} />
+              <canvas ref={this.containers.CTVR.VR} style={fourUpStyle} />
             </div>
           </div>
         </React.Fragment>
