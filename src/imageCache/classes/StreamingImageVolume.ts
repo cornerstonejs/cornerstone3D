@@ -4,9 +4,10 @@ import ImageVolume from './ImageVolume.ts';
 import { ImageVolumeInterface, StreamingInterface } from './interfaces';
 
 export default class StreamingImageVolume extends ImageVolume {
-  imageIds: Array<string>;
+  readonly imageIds: Array<string>;
   loadStatus: {
     loaded: Boolean;
+    loading: Boolean;
     cachedFrames: Array<Boolean>;
     callbacks: Array<Function>;
   };

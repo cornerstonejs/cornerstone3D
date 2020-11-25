@@ -1,5 +1,3 @@
-const toolManager = {
-  // TODO
-};
+import toolManager from './toolManager.ts';
 
 export default toolManager;

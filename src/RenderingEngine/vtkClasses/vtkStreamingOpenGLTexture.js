@@ -1,10 +1,15 @@
 import macro from 'vtk.js/Sources/macro';
 import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture';
 
-// ----------------------------------------------------------------------------
-// vtkOpenGLTexture methods
-// ----------------------------------------------------------------------------
-
+/**
+ * vtkStreamingOpenGLTexture - A dervied class of the core vtkOpenGLTexture.
+ * This class has methods to update the texture memory on the GPU slice by slice
+ * in an efficient yet GPU-architecture friendly manner.
+ *
+ *
+ * @param {*} publicAPI The public API to extend
+ * @param {*} model The private model to extend.
+ */
 function vtkStreamingOpenGLTexture(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLTexture');
 
@@ -31,6 +36,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     );
   };
 
+  /**
+   * This function updates the GPU texture memory to match the current
+   * representation of data held in RAM.
+   *
+   * @param {Float32Array|Uint8Array} data The data array which has been updated.
+   */
   publicAPI.update3DFromRaw = data => {
     const { updatedFrames } = model;
 
@@ -75,6 +86,16 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     return true;
   };
 
+  /**
+   * This function updates the GPU texture memory to match the current
+   * representation of data held in RAM.
+   *
+   * @param {Float32Array|Uint8Array} data The data array which has been updated.
+   * @param {number} frameIndex The frame to load in.
+   * @param {number} BytesPerVoxel The number of bytes per voxel in the data, so we don't have to constantly
+   * check the array type.
+   * @param {object} TypedArrayConstructor The constructor for the array type. Again so we don't have to constantly check.
+   */
   model.fillSubImage3D = (
     data,
     frameIndex,
@@ -181,6 +202,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     };
   };
 
+  /**
+   * Called when a frame is loaded so that on next render we know which data to load in.
+   * @param {number} frameIndex The frame to load in.
+   */
   publicAPI.setUpdatedFrame = frameIndex => {
     model.updatedFrames[frameIndex] = true;
   };

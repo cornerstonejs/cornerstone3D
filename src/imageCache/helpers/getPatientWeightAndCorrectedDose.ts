@@ -1,6 +1,13 @@
 import cornerstone from 'cornerstone-core';
 
-export default function getPatientWeightAndCorrectedDose(imageId) {
+type PatientWeightAndCorrectedDose = {
+  patientWeight: number;
+  correctedDose: number;
+};
+
+export default function getPatientWeightAndCorrectedDose(
+  imageId: string
+): PatientWeightAndCorrectedDose {
   const seriesModule = cornerstone.metaData.get('generalSeriesModule', imageId);
 
   const patientStudyModule = cornerstone.metaData.get(
@@ -72,6 +79,6 @@ export default function getPatientWeightAndCorrectedDose(imageId) {
  * @param  {number} fractionalValue The value to convert.
  * @returns {number}                 The value converted to decimal.
  */
-function _fracToDec(fractionalValue) {
+function _fracToDec(fractionalValue: number): number {
   return parseFloat(`.${fractionalValue}`);
 }

@@ -96,7 +96,7 @@ describe('imageCache:', () => {
     );
   });
 
-  it('should allow us to derive with data of equal length to source', done => {
+  it('should allow us to derive with data of equal length to source', () => {
     let expectedCacheSize = 0;
 
     expect(imageCache.getCacheSize()).toEqual(expectedCacheSize);
@@ -120,14 +120,9 @@ describe('imageCache:', () => {
 
     let derivedVolumeBlank;
 
-    try {
-      derivedVolumeBlank = imageCache.makeAndCacheDerivedVolume(volumeOneUID, {
-        volumeScalarData: derivedScalarDataOfSameLength,
-      });
-    } catch (error) {
-      done(error);
-      return;
-    }
+    derivedVolumeBlank = imageCache.makeAndCacheDerivedVolume(volumeOneUID, {
+      volumeScalarData: derivedScalarDataOfSameLength,
+    });
 
     expect(derivedVolumeBlank.scalarData instanceof Uint8Array).toEqual(true);
   });

@@ -10,9 +10,6 @@ import errorCodes from './errorCodes';
 import CONSTANTS from './constants';
 import utils from './utils';
 
-// TEMP PUT THESE ON WINDOW
-import './RenderingEngine/vtkClasses/vtkStreamingOpenGLVolumeMapper';
-
 export {
   RenderingEngine,
   getRenderingEngine,

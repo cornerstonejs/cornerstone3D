@@ -1,7 +1,14 @@
 import vtkjsViewport from '../src/index.js';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const { imageCache, RenderingEngine, createFloat32SharedArray } = vtkjsViewport;
+const {
+  imageCache,
+  RenderingEngine,
+  createFloat32SharedArray,
+  CONSTANTS,
+} = vtkjsViewport;
+
+const { VIEWPORT_TYPE, ORIENTATION } = CONSTANTS;
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID';
 
@@ -35,25 +42,25 @@ describe('RenderingEngine API:', () => {
       {
         sceneUID: scene1UID,
         viewportUID: axialViewportUID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: canvasAxial,
         defaultOptions: {
-          orientation: 'AXIAL',
+          orientation: ORIENTATION.AXIAL,
         },
       },
       {
         sceneUID: scene1UID,
         viewportUID: sagittalViewportUID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: canvasSagittal,
         defaultOptions: {
-          orientation: 'SAGITTAL',
+          orientation: ORIENTATION.SAGITTAL,
         },
       },
       {
         sceneUID: scene2UID,
         viewportUID: customOrientationViewportUID,
-        type: 'orthogonal',
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: canvasCustomOrientation,
         defaultOptions: {
           orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
@@ -64,6 +71,7 @@ describe('RenderingEngine API:', () => {
 
   it('Add multiple scenes to the viewport and have api access to both', () => {
     const scene1 = renderingEngine.getScene(scene1UID);
+
     const scene2 = renderingEngine.getScene(scene2UID);
 
     expect(scene1).toBeTruthy();

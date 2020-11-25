@@ -1,4 +1,11 @@
-export default function getInterleavedFrames(imageIds) {
+type InterleavedFrame = {
+  imageId: string;
+  imageIdIndex: number;
+};
+
+export default function getInterleavedFrames(
+  imageIds: Array<string>
+): Array<InterleavedFrame> {
   const minImageIdIndex = 0;
   const maxImageIdIndex = imageIds.length - 1;
 

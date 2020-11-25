@@ -1,7 +1,7 @@
-import makeVolumeMetadata from './makeVolumeMetadata';
-import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
-import getInterleavedFrames from './getInterleavedFrames';
-import prefetchImageIds from './prefetchImageIds';
+import makeVolumeMetadata from './makeVolumeMetadata.ts';
+import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing.ts';
+import getInterleavedFrames from './getInterleavedFrames.ts';
+import prefetchImageIds from './prefetchImageIds.ts';
 
 export {
   makeVolumeMetadata,
