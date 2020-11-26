@@ -256,9 +256,16 @@ class RenderingEngine {
   }
 
   /**
-   * @method render Renders all viewports.
+   * @method render Renders all viewports on the next animation frame.
    */
   public render() {
+    window.requestAnimationFrame(this._render);
+  }
+
+  /**
+   * @method _render Renders all viewports.
+   */
+  private _render = () => {
     this._throwIfDestroyed();
 
     const { offscreenMultiRenderWindow } = this;
@@ -286,14 +293,25 @@ class RenderingEngine {
         this._renderViewportToCanvas(viewport, offScreenCanvas);
       });
     }
-  }
+  };
 
   /**
-   * @method render Renders only a specific `Scene`.
+   * @method renderScene Renders only a specific `Scene` on the next animation frame.
    *
    * @param {string} sceneUID The UID of the scene to render.
    */
   public renderScene(sceneUID: string) {
+    const renderParticularScene = () => this._renderScene(sceneUID);
+
+    window.requestAnimationFrame(renderParticularScene);
+  }
+
+  /**
+   * @method _renderScene Renders only a specific `Scene`.
+   *
+   * @param {string} sceneUID The UID of the scene to render.
+   */
+  private _renderScene = (sceneUID: string) => {
     this._throwIfDestroyed();
 
     const { offscreenMultiRenderWindow } = this;
@@ -320,15 +338,28 @@ class RenderingEngine {
     viewports.forEach(viewport => {
       this._renderViewportToCanvas(viewport, offScreenCanvas);
     });
-  }
+  };
 
   /**
-   * @method render Renders only a specific `Viewport`.
+   * @method renderViewport Renders only a specific `Viewport` on the next animation frame.
    *
    * @param {string} sceneUID The UID of the scene the viewport belongs to.
    * @param {string} viewportUID The UID of the viewport.
    */
   public renderViewport(sceneUID: string, viewportUID: string) {
+    const renderParticularViewport = () =>
+      this._renderViewport(sceneUID, viewportUID);
+
+    window.requestAnimationFrame(renderParticularViewport);
+  }
+
+  /**
+   * @method _renderViewport Renders only a specific `Viewport`.
+   *
+   * @param {string} sceneUID The UID of the scene the viewport belongs to.
+   * @param {string} viewportUID The UID of the viewport.
+   */
+  private _renderViewport = (sceneUID: string, viewportUID: string) => {
     this._throwIfDestroyed();
 
     const { offscreenMultiRenderWindow } = this;
@@ -352,7 +383,7 @@ class RenderingEngine {
     const offScreenCanvas = context.canvas;
 
     this._renderViewportToCanvas(viewport, offScreenCanvas);
-  }
+  };
 
   /**
    * @method _renderViewportToCanvas Renders a particular `Viewport`'s on screen canvas.

@@ -49,7 +49,7 @@ const VIEWPORT_IDS = {
 };
 
 const colormaps = ['hsv', 'RED-PURPLE'];
-const layouts = ['FusionMIP', 'CTVR'];
+const layouts = ['FusionMIP', 'CTVR', 'SinglePTSagittal'];
 
 class VTKMPRExample extends Component {
   state = {
@@ -140,7 +140,7 @@ class VTKMPRExample extends Component {
       scalarData[i] = -1024;
     }
 
-    this.loadVolumes();
+    this.loadAllVolumes();
     this.setPTCTFusionVolumes();
 
     this.setState({ metadataLoaded: true });
@@ -159,14 +159,21 @@ class VTKMPRExample extends Component {
 
         this.setPTCTFusionLayout();
         this.setPTCTFusionVolumes();
-        this.loadVolumes(); // Will do nothing if already loading.
+        this.loadAllVolumes(); // Will do nothing if already loading.
         renderingEngine.render();
       } else if (layoutIndex === 1) {
         // CTVR
 
         this.setFourUpCTLayout();
         this.setFourUpCTVolumes();
-        this.loadVolumes(); // Will do nothing if already loading.
+        this.loadOnlyCtVolume();
+        renderingEngine.render();
+      } else if (layoutIndex === 2) {
+        // SinglePTSagittal
+
+        this.setSinglePTSagittalLayout();
+        this.setSinglePTSagittalVolumes();
+        this.loadOnlyPtVolume(); // Will do nothing if already loading.
         renderingEngine.render();
       } else {
         throw new Error('Unrecognised layout index');
@@ -174,12 +181,92 @@ class VTKMPRExample extends Component {
     }
   }
 
-  loadVolumes() {
+  loadOnlyCtVolume() {
+    let ctLoaded = false;
+
+    const ctVolume = imageCache.getImageVolume(ctVolumeUID);
+
+    // As we have reset layout, remove all image load handlers and start again.
+    imageCache.cancelLoadAllVolumes();
+
+    const numberOfCtFrames = ctVolume.imageIds.length;
+
+    const reRenderFractionCt = numberOfCtFrames / 50;
+    let reRenderTargetCt = reRenderFractionCt;
+
+    imageCache.loadVolume(ctVolumeUID, event => {
+      // Only call on modified every 2%.
+
+      if (
+        event.framesProcessed > reRenderTargetCt ||
+        event.framesProcessed === event.numFrames
+      ) {
+        reRenderTargetCt += reRenderFractionCt;
+        if (!renderingEngine.hasBeenDestroyed) {
+          renderingEngine.render();
+        }
+
+        if (event.framesProcessed === event.numFrames) {
+          ctLoaded = true;
+
+          if (ctLoaded) {
+            this.setState({ progressText: 'Loaded.' });
+          }
+        }
+      }
+    });
+
+    // Add PT to load in background after CT is done.
+    imageCache.loadVolume(ptVolumeUID);
+  }
+
+  loadOnlyPtVolume() {
+    let ptLoaded = false;
+
+    const ptVolume = imageCache.getImageVolume(ptVolumeUID);
+
+    const numberOfPetFrames = ptVolume.imageIds.length;
+
+    // As we have reset layout, remove all image load handlers and start again.
+    imageCache.cancelLoadAllVolumes();
+
+    const reRenderFractionPt = numberOfPetFrames / 50;
+    let reRenderTargetPt = reRenderFractionPt;
+
+    imageCache.loadVolume(ptVolumeUID, event => {
+      if (
+        event.framesProcessed > reRenderTargetPt ||
+        event.framesProcessed == numberOfPetFrames
+      ) {
+        reRenderTargetPt += reRenderFractionPt;
+
+        if (!renderingEngine.hasBeenDestroyed) {
+          renderingEngine.render();
+        }
+
+        if (event.framesProcessed === event.numFrames) {
+          ptLoaded = true;
+
+          if (ptLoaded) {
+            this.setState({ progressText: 'Loaded.' });
+          }
+        }
+      }
+    });
+
+    // Add CT to load in background after PT is done.
+    imageCache.loadVolume(ctVolumeUID);
+  }
+
+  loadAllVolumes() {
     let ptLoaded = false;
     let ctLoaded = false;
 
     const ptVolume = imageCache.getImageVolume(ptVolumeUID);
     const ctVolume = imageCache.getImageVolume(ctVolumeUID);
+
+    // As we have reset layout, remove all image load handlers and start again.
+    imageCache.cancelLoadAllVolumes();
 
     const numberOfPetFrames = ptVolume.imageIds.length;
 
@@ -213,7 +300,7 @@ class VTKMPRExample extends Component {
     let reRenderTargetCt = reRenderFractionCt;
 
     imageCache.loadVolume(ctVolumeUID, event => {
-      // Only call on modified every 5%.
+      // Only call on modified every 2%.
 
       if (
         event.framesProcessed > reRenderTargetCt ||
@@ -235,14 +322,35 @@ class VTKMPRExample extends Component {
     });
   }
 
-  swapLayout = () => {
-    let { layoutIndex } = this.state;
-
-    // Flip layout index
-    layoutIndex = layoutIndex === 0 ? 1 : 0;
+  swapLayout = layoutId => {
+    const layoutIndex = layouts.findIndex(id => id === layoutId);
 
     this.setState({ layoutIndex });
   };
+
+  setSinglePTSagittalLayout = () => {
+    this.renderingEngine.setViewports([
+      // PT Sagittal
+      {
+        sceneUID: SCENE_IDS.PT,
+        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this.containers.PT.SAGITTAL.current,
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+          background: [1, 1, 1],
+        },
+      },
+    ]);
+  };
+
+  setSinglePTSagittalVolumes() {
+    const renderingEngine = this.renderingEngine;
+    const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
+    ptScene.setVolumes([
+      { volumeUID: ptVolumeUID, callback: this.setPetTransferFunction },
+    ]);
+  }
 
   setFourUpCTLayout = () => {
     this.renderingEngine.setViewports([
@@ -281,6 +389,7 @@ class VTKMPRExample extends Component {
         canvas: this.containers.CTVR.VR.current,
         defaultOptions: {
           orientation: {
+            // Some arbitrary rotation so you can tell its 3D
             sliceNormal: [-0.50000000827545, 0.8660253990066052, 0],
             viewUp: [0, 0, 1],
           },
@@ -474,18 +583,17 @@ class VTKMPRExample extends Component {
   };
 
   setCTVRTransferFunction({ volumeActor, volumeUID }) {
-    debugger;
-    const range = volumeActor
-      .getMapper()
-      .getInputData()
-      .getPointData()
-      .getScalars()
-      .getRange();
+    const volume = imageCache.getImageVolume(volumeUID);
+
+    const { windowWidth, windowCenter } = volume.metadata.voiLut[0];
+
+    const lower = windowCenter - windowWidth / 2.0;
+    const upper = windowCenter + windowWidth / 2.0;
 
     volumeActor
       .getProperty()
       .getRGBTransferFunction(0)
-      .setRange(range[0], range[1]);
+      .setRange(lower, upper);
 
     const preset = {
       name: 'CT-Bones',
@@ -619,20 +727,22 @@ class VTKMPRExample extends Component {
       borderColor: 'blue',
     };
 
+    const largeViewportStyle = {
+      width: '1152px',
+      height: '768px',
+      borderStyle: 'solid',
+      borderColor: 'blue',
+    };
+
     const fourUpStyle = {
-      width: '512px',
-      height: '512px',
+      width: '384px',
+      height: '384px',
       borderStyle: 'solid',
       borderColor: 'blue',
     };
 
     const { layoutIndex, metadataLoaded, destroyed } = this.state;
     const layout = layouts[layoutIndex];
-
-    const swapLayoutText =
-      layout === 'FusionMIP'
-        ? 'Swap Layout To Single PT Sagittal Layout'
-        : 'Swap Layout To Fusion Layout';
 
     let viewportLayout;
 
@@ -685,6 +795,19 @@ class VTKMPRExample extends Component {
           </div>
         </React.Fragment>
       );
+    } else if (layout === 'SinglePTSagittal') {
+      viewportLayout = (
+        <React.Fragment>
+          <div>
+            <div className="container-row">
+              <canvas
+                ref={this.containers.PT.SAGITTAL}
+                style={largeViewportStyle}
+              />
+            </div>
+          </div>
+        </React.Fragment>
+      );
     }
 
     return (
@@ -708,15 +831,36 @@ class VTKMPRExample extends Component {
             >
               SwapPetTransferFunction
             </button>
-          </div>
-          <div className="col-xs-12">
-            <button
-              onClick={() => metadataLoaded && !destroyed && this.swapLayout()}
-            >
-              {swapLayoutText}
-            </button>
-          </div>
-          <div className="col-xs-12">
+            {layout !== 'SinglePTSagittal' ? (
+              <button
+                onClick={() =>
+                  metadataLoaded &&
+                  !destroyed &&
+                  this.swapLayout('SinglePTSagittal')
+                }
+              >
+                Set Layout To Single PT Sagittal Layout
+              </button>
+            ) : null}
+            {layout !== 'FusionMIP' ? (
+              <button
+                onClick={() =>
+                  metadataLoaded && !destroyed && this.swapLayout('FusionMIP')
+                }
+              >
+                Set Layout To Fusion Layout
+              </button>
+            ) : null}
+            {layout !== 'CTVR' ? (
+              <button
+                onClick={() =>
+                  metadataLoaded && !destroyed && this.swapLayout('CTVR')
+                }
+              >
+                Set Layout To Four Up CT
+              </button>
+            ) : null}
+
             <button
               onClick={() =>
                 metadataLoaded &&

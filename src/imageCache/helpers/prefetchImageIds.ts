@@ -8,7 +8,6 @@ import getInterleavedFrames from './getInterleavedFrames.ts';
 // @ts-ignore
 import StreamingImageVolume from '../classes/StreamingImageVolume.ts';
 
-const throttle = cornerstoneTools.importInternal('util/throttle');
 const requestType = 'prefetch';
 const preventCache = true; // We are not using the cornerstone cache for this.
 
@@ -56,11 +55,6 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
     loadStatus.callbacks.forEach(callback => callback(evt));
   }
 
-  const throttledCallLoadStatusCallbacks = throttle(
-    callLoadStatusCallback,
-    16 // ~60 fps
-  );
-
   function successCallback(imageIdIndex, imageId) {
     cachedFrames[imageIdIndex] = true;
     framesLoaded++;
@@ -83,7 +77,7 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
       });
       loadStatus.callbacks = [];
     } else {
-      throttledCallLoadStatusCallbacks({
+      callLoadStatusCallback({
         success: true,
         imageIdIndex,
         imageId,
@@ -113,7 +107,7 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
 
       loadStatus.callbacks = [];
     } else {
-      throttledCallLoadStatusCallbacks({
+      callLoadStatusCallback({
         success: false,
         imageId,
         imageIdIndex,
@@ -129,7 +123,9 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
     const { imageId, imageIdIndex } = frame;
 
     if (cachedFrames[imageIdIndex]) {
-      successCallback(imageIdIndex, imageId);
+      framesLoaded++;
+      framesProcessed++;
+      return;
     }
 
     const modalityLutModule =
