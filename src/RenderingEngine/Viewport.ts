@@ -337,7 +337,7 @@ class Viewport implements ViewportInterface {
     }
 
     if (parallelProjection !== undefined) {
-      vtkCamera.setParallelProjection(parallelProjection);
+      console.warn('parallelProjection is constrained by viewport type');
     }
 
     if (parallelScale !== undefined) {
