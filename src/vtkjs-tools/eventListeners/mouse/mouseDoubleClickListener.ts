@@ -2,7 +2,7 @@ import VtkjsToolsEvents from './../../VtkjsToolsEvents';
 import triggerEvent from './../../util/triggerEvent';
 
 /**
- * Captures and normalized the double click event. Emits as a vtk.js tools double
+ * Captures and normalized the double click event. Emits as a cstools double
  * click event.
  *
  * @note This is public in the sense that the event it emits is an integration point

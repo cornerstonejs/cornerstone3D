@@ -1,6 +1,6 @@
 import mouseDoubleClickListener from './mouseDoubleClickListener';
-import mouseDownListener from './_mouseDownListener';
-import mouseMoveListener from './_mouseMoveListener';
+import mouseDownListener from './mouseDownListener';
+import mouseMoveListener from './mouseMoveListener';
 
 /**
  * Removes mouse event listeners for native mouse event. Enables

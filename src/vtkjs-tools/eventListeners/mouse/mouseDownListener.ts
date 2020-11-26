@@ -1,4 +1,5 @@
 import VtkjsToolsEvents from './../../VtkjsToolsEvents';
+import mouseMoveListener from './mouseMoveListener';
 import triggerEvent from './../../util/triggerEvent';
 
 // STATE
@@ -23,9 +24,10 @@ let state = {
  * Depending on interaction, capable of emitting:
  * - MOUSE_DOWN
  * - MOUSE_DOWN_ACTIVATE
- * - MOUSE_MOVE
+ * - MOUSE_DRAG (move while down)
  * - MOUSE_UP
  * - MOUSE_CLICK
+ *
  *
  * @private
  * @param evt
@@ -39,7 +41,7 @@ function mouseDownListener(evt: MouseEvent): void {
   );
 
   // Prevent CornerstoneToolsMouseMove while mouse is down
-  state.element.removeEventListener('mousemove', mouseMove);
+  state.element.removeEventListener('mousemove', mouseMoveListener);
 
   const startPoints = {
     // page: external.cornerstoneMath.point.pageToPoint(e),
@@ -63,8 +65,8 @@ function mouseDownListener(evt: MouseEvent): void {
     eventName: VtkjsToolsEvents.MOUSE_DOWN,
   };
 
-  state.startPoints = copyPoints(eventData.startPoints);
-  state.lastPoints = copyPoints(eventData.lastPoints);
+  state.startPoints = _copyPoints(eventData.startPoints);
+  state.lastPoints = _copyPoints(eventData.lastPoints);
 
   const eventDidPropagate = triggerEvent(
     eventData.element,
@@ -82,7 +84,7 @@ function mouseDownListener(evt: MouseEvent): void {
     );
   }
 
-  document.addEventListener('mousemove', _onMouseMove);
+  document.addEventListener('mousemove', _onMouseDrag);
   document.addEventListener('mouseup', _onMouseUp);
 }
 
@@ -91,7 +93,7 @@ function mouseDownListener(evt: MouseEvent): void {
  * @private
  * @param evt
  */
-function _onMouseMove(evt: MouseEvent): void {
+function _onMouseDrag(evt: MouseEvent): void {
   const currentPoints = {
     // page: external.cornerstoneMath.point.pageToPoint(e),
     // image: external.cornerstone.pageToPixel(element, e.pageX, e.pageY),
@@ -112,17 +114,17 @@ function _onMouseMove(evt: MouseEvent): void {
     event: evt,
     camera: {},
     element: state.element,
-    startPoints: copyPoints(state.startPoints),
-    lastPoints: copyPoints(state.lastPoints),
+    startPoints: _copyPoints(state.startPoints),
+    lastPoints: _copyPoints(state.lastPoints),
     currentPoints,
     deltaPoints,
-    eventName: VtkjsToolsEvents.MOUSE_DOWN,
+    eventName: VtkjsToolsEvents.MOUSE_DRAG,
   };
 
-  triggerEvent(state.element, VtkjsToolsEvents.MOUSE_DOWN, eventData);
+  triggerEvent(state.element, VtkjsToolsEvents.MOUSE_DRAG, eventData);
 
   // Update the last points
-  state.lastPoints = copyPoints(currentPoints);
+  state.lastPoints = _copyPoints(currentPoints);
 }
 
 /**
@@ -159,8 +161,8 @@ function _onMouseUp(evt: MouseEvent): void {
     event: evt,
     camera: {},
     element: state.element,
-    startPoints: copyPoints(state.startPoints),
-    lastPoints: copyPoints(state.lastPoints),
+    startPoints: _copyPoints(state.startPoints),
+    lastPoints: _copyPoints(state.lastPoints),
     currentPoints,
     deltaPoints,
     eventName,
@@ -169,11 +171,11 @@ function _onMouseUp(evt: MouseEvent): void {
   triggerEvent(eventData.element, eventName, eventData);
 
   // Remove our temporary handlers
-  document.removeEventListener('mousemove', _onMouseMove);
+  document.removeEventListener('mousemove', _onMouseDrag);
   document.removeEventListener('mouseup', _onMouseUp);
 
   // Restore our global mousemove listener
-  state.element.addEventListener('mousemove', mouseMove);
+  state.element.addEventListener('mousemove', mouseMoveListener);
 
   // Restore `state` to `defaultState`
   state = JSON.parse(JSON.stringify(defaultState));
@@ -181,6 +183,15 @@ function _onMouseUp(evt: MouseEvent): void {
 
 function _preventClickHandler() {
   state.isClickEvent = false;
+}
+
+function _copyPoints(points) {
+  return {
+    client: {
+      x: points.x,
+      y: points.y,
+    },
+  };
 }
 
 export default mouseDownListener;
