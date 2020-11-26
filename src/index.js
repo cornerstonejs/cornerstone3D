@@ -1,4 +1,8 @@
-import RenderingEngine, { getRenderingEngine } from './RenderingEngine';
+import RenderingEngine, {
+  getRenderingEngine,
+  EVENTS,
+  renderingEventTarget,
+} from './RenderingEngine';
 import imageCache from './imageCache';
 import toolManager from './toolManager';
 import {
@@ -8,7 +12,7 @@ import {
 import register from './imageLoader/vtkjsWADOImageLoader';
 import errorCodes from './errorCodes';
 import CONSTANTS from './constants';
-import utils from './utils';
+import utils, { getEnabledElement } from './utils';
 
 export {
   RenderingEngine,
@@ -21,6 +25,9 @@ export {
   errorCodes,
   CONSTANTS,
   utils,
+  getEnabledElement,
+  renderingEventTarget,
+  EVENTS,
 };
 
 export default {
@@ -34,4 +41,7 @@ export default {
   errorCodes,
   CONSTANTS,
   utils,
+  getEnabledElement,
+  renderingEventTarget,
+  EVENTS,
 };
