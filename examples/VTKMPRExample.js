@@ -1,7 +1,15 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import applyPreset from './helpers/applyPreset';
-import { CONSTANTS, imageCache, RenderingEngine, utils } from '@vtk-viewport';
+import {
+  CONSTANTS,
+  imageCache,
+  RenderingEngine,
+  utils,
+  renderingEventTarget,
+  getEnabledElement,
+  EVENTS,
+} from '@vtk-viewport';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
@@ -9,8 +17,53 @@ import Constants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
 const { BlendMode } = Constants;
 
 import './VTKMPRExample.css';
+import { enabled } from 'ansi-colors';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
+
+// renderingEventTarget.addEventListener(EVENTS.IMAGE_RENDERED, evt => {
+//   console.log(evt.type);
+//   console.log(evt.detail);
+// });
+
+// renderingEventTarget.addEventListener(EVENTS.ELEMENT_ENABLED, evt => {
+//   console.log(evt.type);
+//   console.log(evt.detail);
+
+//   const canvas = evt.detail.canvas;
+
+//   const myEventListner = evt => {
+//     console.log(evt);
+
+//     const canvas = evt.detail.canvas;
+
+//     const enabledElement = getEnabledElement(canvas);
+//     const { viewport, scene } = enabledElement;
+
+//     // Get camera state
+//     const camera = viewport.getCamera();
+
+//     // Example of setting the focalPoint to 0
+//     //viewport.setCamera({ focalPoint: [0, 0, 0] });
+
+//     const volumeActors = scene.getVolumeActors();
+
+//     // Example of fetching world coordinates from a canvas click.
+//     const worldCoordinates = viewport.canvasToWorld([14, 15]);
+
+//     console.log(volumeActors);
+//     console.log(camera);
+
+//     debugger;
+//   };
+
+//   canvas.addEventListener(EVENTS.IMAGE_RENDERED, myEventListner);
+// });
+
+// renderingEventTarget.addEventListener(EVENTS.ELEMENT_DISABLED, evt => {
+//   console.log(evt.type);
+//   console.log(evt.detail);
+// });
 
 const renderingEngineUID = 'PETCTRenderingEngine';
 const ptVolumeUID = 'PET_VOLUME';

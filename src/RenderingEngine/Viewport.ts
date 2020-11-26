@@ -22,6 +22,17 @@ export interface ViewportInterface {
   defaultOptions: any;
 }
 
+interface CameraInterface {
+  clippingRange?: Array<number>;
+  focalPoint?: Array<number>;
+  parallelProjection?: boolean;
+  parallelScale?: number;
+  position?: Array<number>;
+  viewAngle?: number;
+  viewPlaneNormal?: Array<number>;
+  viewUp?: Array<number>;
+}
+
 /**
  * @class Viewport - An object representing a single viewport, which is a camera
  * looking into a scene, and an associated target output `canvas`.
@@ -51,6 +62,14 @@ class Viewport implements ViewportInterface {
     this.sy = props.sy;
     this.sWidth = props.sWidth;
     this.sHeight = props.sHeight;
+
+    // Set data attributes for render events
+    this.canvas.setAttribute('data-viewport-uid', this.uid);
+    this.canvas.setAttribute('data-scene-uid', this.sceneUID);
+    this.canvas.setAttribute(
+      'data-rendering-engine-uid',
+      this.renderingEngineUID
+    );
 
     const options = _cloneDeep(props.defaultOptions);
     const defaultOptions = _cloneDeep(props.defaultOptions);
@@ -137,7 +156,7 @@ class Viewport implements ViewportInterface {
     console.log(worldPos);
     console.log(this.worldToCanvas(worldPos));
 
-    const camera = this.getActiveCamera();
+    const camera = this.getVtkActiveCamera();
 
     const distance = camera.getDistance();
     const dop = camera.getDirectionOfProjection();
@@ -258,10 +277,80 @@ class Viewport implements ViewportInterface {
    *
    * @returns {object} the vtkCamera.
    */
-  public getActiveCamera() {
+  public getVtkActiveCamera() {
     const renderer = this.getRenderer();
 
     return renderer.getActiveCamera();
+  }
+
+  public getCamera(): CameraInterface {
+    const vtkCamera = this.getVtkActiveCamera();
+
+    return {
+      viewUp: vtkCamera.getViewUp(),
+      viewPlaneNormal: vtkCamera.getViewPlaneNormal(),
+      clippingRange: vtkCamera.getClippingRange(),
+      // TODO: I'm really not sure about this, it requires a calculation, and
+      // how useful is this without the renderer context?
+      // Lets add it back if we find we need it.
+      //compositeProjectionMatrix: vtkCamera.getCompositeProjectionMatrix(),
+      position: vtkCamera.getPosition(),
+      focalPoint: vtkCamera.getFocalPoint(),
+      parallelProjection: vtkCamera.getParallelProjection(),
+      parallelScale: vtkCamera.getParallelScale(),
+      viewAngle: vtkCamera.getViewAngle(),
+    };
+  }
+
+  public setCamera(cameraInterface: CameraInterface) {
+    const vtkCamera = this.getVtkActiveCamera();
+
+    const {
+      viewUp,
+      viewPlaneNormal,
+      clippingRange,
+      position,
+      focalPoint,
+      parallelProjection,
+      parallelScale,
+      viewAngle,
+    } = cameraInterface;
+
+    if (viewUp !== undefined) {
+      vtkCamera.setViewUp(viewUp);
+    }
+
+    if (viewPlaneNormal !== undefined) {
+      vtkCamera.setViewPlaneNormal(viewPlaneNormal);
+    }
+
+    if (clippingRange !== undefined) {
+      vtkCamera.setClippingRange(clippingRange);
+    }
+
+    if (position !== undefined) {
+      vtkCamera.setPosition(position);
+    }
+
+    if (focalPoint !== undefined) {
+      vtkCamera.setFocalPoint(focalPoint);
+    }
+
+    if (parallelProjection !== undefined) {
+      vtkCamera.setParallelProjection(parallelProjection);
+    }
+
+    if (parallelScale !== undefined) {
+      vtkCamera.setParallelScale(parallelScale);
+    }
+
+    if (viewAngle !== undefined) {
+      vtkCamera.setViewAngle(viewAngle);
+    }
+
+    const renderer = this.getRenderer();
+
+    renderer.resetCamera();
   }
 
   /**
@@ -317,13 +406,6 @@ class Viewport implements ViewportInterface {
 
     return canvasCoord;
   }
-
-  // TODO?
-  setCamera = ({
-    focalPoint,
-    orientation, // {viewUp, sliceNormal}
-    slabThickness,
-  }) => {};
 }
 
 export default Viewport;

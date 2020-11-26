@@ -1,5 +1,8 @@
 // @ts-ignore
 import renderingEngineCache from './renderingEngineCache.ts';
+// @ts-ignore
+import renderingEventTarget, { EVENTS } from './renderingEventTarget.ts';
+import triggerEvent from '../utils/triggerEvent.js';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 
 // @ts-ignore
@@ -156,6 +159,15 @@ class RenderingEngine {
         sHeight,
         defaultOptions: defaultOptions || {},
       });
+
+      const eventData = {
+        canvas,
+        viewportUID,
+        sceneUID,
+        renderingEngineUID: this.uid,
+      };
+
+      triggerEvent(renderingEventTarget, EVENTS.ELEMENT_ENABLED, eventData);
     }
   }
 
@@ -253,6 +265,17 @@ class RenderingEngine {
     this._throwIfDestroyed();
 
     return this._scenes.find(scene => scene.uid === uid);
+  }
+
+  /**
+   * @method getScenes Returns an array of all scenes on the `RenderingEngine` instance.
+   *
+   * @returns {Scene} The scene object.
+   */
+  public getScenes(): Array<Scene> {
+    this._throwIfDestroyed();
+
+    return this._scenes;
   }
 
   /**
@@ -391,7 +414,15 @@ class RenderingEngine {
    * @param {object} offScreenCanvas The offscreen canvas to render from.
    */
   private _renderViewportToCanvas(viewport: Viewport, offScreenCanvas) {
-    const { sx, sy, sWidth, sHeight } = viewport;
+    const {
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+      uid,
+      sceneUID,
+      renderingEngineUID,
+    } = viewport;
 
     const canvas = <HTMLCanvasElement>viewport.canvas;
     const { width: dWidth, height: dHeight } = canvas;
@@ -410,13 +441,43 @@ class RenderingEngine {
       dHeight
     );
 
-    // Trigger events IMAGE_RENDERED
+    const eventData = {
+      canvas,
+    };
+
+    triggerEvent(canvas, EVENTS.IMAGE_RENDERED, eventData);
   }
 
   /**
    * @method _reset Resets the `RenderingEngine`
    */
   private _reset() {
+    const scenes = this.getScenes();
+    const renderingEngineUID = this.uid;
+
+    scenes.forEach(scene => {
+      const { viewports } = scene.getViewports();
+
+      const sceneUID = scene.uid;
+
+      viewports.forEach(viewport => {
+        const { canvas, uid: viewportUID } = viewport;
+
+        const eventData = {
+          canvas,
+          viewportUID,
+          sceneUID,
+          renderingEngineUID,
+        };
+
+        canvas.removeAttribute('data-viewport-uid');
+        canvas.removeAttribute('data-scene-uid');
+        canvas.removeAttribute('data-rendering-engine-uid');
+
+        triggerEvent(renderingEventTarget, EVENTS.ELEMENT_DISABLED, eventData);
+      });
+    });
+
     this._scenes = [];
   }
 
