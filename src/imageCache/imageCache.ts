@@ -75,7 +75,9 @@ class ImageCache {
 
     if (!(volume instanceof StreamingImageVolume)) {
       // Callback saying whole volume is loaded.
-      callback({ success: true, framesLoaded: 1, numFrames: 1 });
+      if (callback) {
+        callback({ success: true, framesLoaded: 1, numFrames: 1 });
+      }
 
       return;
     }
@@ -83,8 +85,6 @@ class ImageCache {
     const streamingVolume = <StreamingImageVolume>volume;
 
     const { imageIds, loadStatus } = streamingVolume;
-
-    streamingVolume.loadStatus.callbacks.push(callback);
 
     if (loadStatus.loading) {
       return; // Already loading, will get callbacks from main load.
@@ -94,13 +94,70 @@ class ImageCache {
     const numFrames = imageIds.length;
 
     if (loaded) {
-      callback({ success: true, framesLoaded: numFrames, numFrames });
-
+      if (callback) {
+        callback({
+          success: true,
+          framesLoaded: numFrames,
+          numFrames,
+          framesProcessed: numFrames,
+        });
+      }
       return;
+    }
+
+    if (callback) {
+      streamingVolume.loadStatus.callbacks.push(callback);
     }
 
     prefetchImageIds(streamingVolume);
   };
+
+  public clearLoadCallbacks = (volumeUID: string) => {
+    const volume = this._get(volumeUID);
+
+    if (!volume) {
+      throw new Error(
+        `Cannot load volume: volume with UID ${volumeUID} does not exist.`
+      );
+    }
+
+    if (!(volume instanceof StreamingImageVolume)) {
+      return;
+    }
+
+    const streamingVolume = <StreamingImageVolume>volume;
+
+    streamingVolume.loadStatus.callbacks = [];
+  };
+
+  public cancelLoadAllVolumes() {
+    // Remove requests relating to this volume only.
+    requestPoolManager.clearRequestStack(REQUEST_TYPE);
+
+    // Get other volumes and if they are loading re-add their status
+    const iterator = this._cache.values();
+
+    /* eslint-disable no-constant-condition */
+    while (true) {
+      const { value: volume, done } = iterator.next();
+
+      if (done) {
+        break;
+      }
+
+      if (volume instanceof StreamingImageVolume) {
+        const streamingVolume = <StreamingImageVolume>volume;
+        const { loadStatus } = volume;
+
+        // Set to not loading.
+        loadStatus.loading = false;
+        // Set to loaded if all data is there.
+        loadStatus.loaded = this._hasLoaded(streamingVolume);
+        // Remove all the callback listeners
+        loadStatus.callbacks = [];
+      }
+    }
+  }
 
   public cancelLoadVolume = (volumeUID: string) => {
     const volume = this._get(volumeUID);
@@ -117,7 +174,7 @@ class ImageCache {
 
     const streamingVolume = <StreamingImageVolume>volume;
 
-    const { imageIds, loadStatus } = streamingVolume;
+    const { loadStatus } = streamingVolume;
 
     if (!loadStatus || !loadStatus.loading) {
       return;
@@ -126,7 +183,7 @@ class ImageCache {
     // Set to not loading.
     loadStatus.loading = false;
 
-    // Set to loaded if any data is missing.
+    // Set to loaded if all data is there.
     loadStatus.loaded = this._hasLoaded(streamingVolume);
     // Remove all the callback listeners
     loadStatus.callbacks = [];
