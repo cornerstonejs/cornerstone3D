@@ -5,6 +5,7 @@ import renderingEngineCache from './renderingEngineCache.ts';
 // @ts-ignore
 import RenderingEngine from './RenderingEngine.ts';
 import { createVolumeActor } from './helpers';
+import imageCache from '../imageCache';
 
 /**
  * @type VolumeActorEntry
@@ -52,12 +53,17 @@ class Scene {
   readonly renderingEngineUID: string;
   private _viewports: Array<Viewport>;
   private _volumeActors: Array<VolumeActorEntry>;
+  private _FrameOfReferenceUID: string;
 
   constructor(uid, renderingEngineUID) {
     this.uid = uid;
     this.renderingEngineUID = renderingEngineUID;
     this._viewports = [];
     this._volumeActors = [];
+  }
+
+  public getFrameOfReferenceUID(): string {
+    return this._FrameOfReferenceUID;
   }
 
   /**
@@ -122,6 +128,41 @@ class Scene {
     immediate: boolean = false
   ) {
     this._volumeActors = [];
+
+    const firstImageVolume = imageCache.getImageVolume(
+      volumeInputArray[0].volumeUID
+    );
+
+    if (!firstImageVolume) {
+      throw new Error(
+        `imageVolume with uid: ${firstImageVolume.uid} does not exist`
+      );
+    }
+
+    const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID;
+
+    const numVolumes = volumeInputArray.length;
+
+    // Check all other volumes exist and have the same FrameOfReference
+    for (let i = 1; i < numVolumes; i++) {
+      const volumeInput = volumeInputArray[i];
+
+      const imageVolume = imageCache.getImageVolume(volumeInput.volumeUID);
+
+      if (!imageVolume) {
+        throw new Error(
+          `imageVolume with uid: ${imageVolume.uid} does not exist`
+        );
+      }
+
+      if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
+        throw new Error(
+          `Volumes being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
+        );
+      }
+    }
+
+    this._FrameOfReferenceUID = FrameOfReferenceUID;
 
     const slabThicknessValues = [];
 
