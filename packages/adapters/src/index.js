@@ -9,6 +9,8 @@ import { DICOMWEB } from "./dicomweb.js";
 import { Tag } from "./Tag.js";
 import { ValueRepresentation } from "./ValueRepresentation.js";
 import { Colors } from "./colors.js";
+import log from "./log.js";
+
 import {
     datasetToDict,
     datasetToBuffer,
@@ -82,9 +84,19 @@ const dcmjs = {
     derivations,
     normalizers,
     sr,
-    utilities
+    utilities,
+    log
 };
 
-export { DICOMWEB, adapters, data, derivations, normalizers, sr, utilities };
+export {
+    DICOMWEB,
+    adapters,
+    data,
+    derivations,
+    normalizers,
+    sr,
+    utilities,
+    log
+};
 
 export default dcmjs;

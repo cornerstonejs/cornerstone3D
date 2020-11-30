@@ -1,4 +1,4 @@
-import log from "loglevelnext";
+import log from "../../log.js";
 
 /**
  * Encodes a non-bitpacked frame which has one sample per pixel.
@@ -161,9 +161,7 @@ function decodeFrame(rleEncodedFrame, pixelData) {
 
     if (header[0] !== 1) {
         log.error(
-            `rleSingleSamplePerPixel only supports fragments with single Byte Segments (for rle encoded segmentation data) at the current time. This rleEncodedFrame has ${
-                header[0]
-            } Byte Segments.`
+            `rleSingleSamplePerPixel only supports fragments with single Byte Segments (for rle encoded segmentation data) at the current time. This rleEncodedFrame has ${header[0]} Byte Segments.`
         );
 
         return;

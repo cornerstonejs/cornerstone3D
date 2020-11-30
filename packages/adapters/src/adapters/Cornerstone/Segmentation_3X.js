@@ -1,4 +1,4 @@
-import log from "loglevelnext";
+import log from "../../log.js";
 import ndarray from "ndarray";
 import { BitArray } from "../../bitArray.js";
 import { datasetToBlob } from "../../datasetToBlob.js";

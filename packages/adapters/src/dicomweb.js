@@ -1,4 +1,4 @@
-import log from "loglevelnext";
+import log from "./log.js";
 
 class DICOMWEB {
     /*

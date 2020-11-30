@@ -1,4 +1,4 @@
-import log from "loglevelnext";
+import log from "./log.js";
 import { ValueRepresentation } from "./ValueRepresentation.js";
 import dictionary from "./dictionary.js";
 
@@ -213,7 +213,9 @@ class DicomMetaDictionary {
                         }
                         dataItem.Value = unnaturalValues;
                     }
-                    let vr = ValueRepresentation.createByTypeString(dataItem.vr);
+                    let vr = ValueRepresentation.createByTypeString(
+                        dataItem.vr
+                    );
                     if (!vr.isBinary() && vr.maxLength) {
                         dataItem.Value = dataItem.Value.map(value => {
                             if (value.length > vr.maxLength) {

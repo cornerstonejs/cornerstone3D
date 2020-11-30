@@ -1,5 +1,5 @@
 /* eslint no-bitwise: 0 */
-import log from "loglevelnext";
+import log from "./log.js";
 
 const BitArray = {
     getBytesForBinaryFrame,
