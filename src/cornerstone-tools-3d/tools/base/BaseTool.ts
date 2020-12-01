@@ -1,4 +1,4 @@
-import deepmerge from './../../util/deepmerge.js';
+import deepMerge from './../../util/deepMerge.js';
 
 class BaseTool {
   initialConfiguration: any;
@@ -10,7 +10,7 @@ class BaseTool {
   _configuration: any;
 
   constructor(toolConfiguration, defaultToolConfiguration) {
-    this.initialConfiguration = deepmerge(
+    this.initialConfiguration = deepMerge(
       toolConfiguration,
       defaultToolConfiguration
     );
