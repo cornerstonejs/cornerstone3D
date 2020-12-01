@@ -84,8 +84,6 @@ function mouseDownListener(evt: MouseEvent): void {
 
   const startPoints = _getMouseEventPoints(evt);
 
-  console.log(startPoints.world);
-
   const deltaPoints = _getDeltaPoints(startPoints, startPoints);
   const eventData = {
     renderingEngineUID: state.renderingEngingUID,
