@@ -1,4 +1,5 @@
-import customCallbackHandler from './../shared/customCallbackHandler';
+// @ts-ignore
+import customCallbackHandler from './../shared/customCallbackHandler.ts';
 
 const mouseWheel = customCallbackHandler.bind(
   null,

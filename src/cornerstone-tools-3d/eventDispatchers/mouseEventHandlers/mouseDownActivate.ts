@@ -1,5 +1,6 @@
 // import addNewMeasurement from './addNewMeasurement.js';
-import { state } from './../../store/index';
+// @ts-ignore
+import { state } from './../../store/index.ts';
 // import BaseAnnotationTool from './../../tools/base/BaseAnnotationTool.js';
 // import getActiveTool from '../../util/getActiveTool';
 

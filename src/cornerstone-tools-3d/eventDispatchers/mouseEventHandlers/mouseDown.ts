@@ -1,8 +1,10 @@
 // State
+
 import {
   // getters,
   state,
-} from './../../store/index';
+  // @ts-ignore
+} from './../../store/index.ts';
 // import { getToolState } from './../../stateManagement/toolState.js';
 // // Util
 // import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles.js';

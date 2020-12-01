@@ -1,8 +1,12 @@
-import IToolGroup from './ToolGroupManager/IToolGroup';
+// @ts-ignore
+import IToolGroup from './ToolGroupManager/IToolGroup.ts';
 //
-import addTool from './addTool';
-import addEnabledElement from './addEnabledElement';
-import removeEnabledElement from './removeEnabledElement';
+// @ts-ignore
+import addTool from './addTool.ts';
+// @ts-ignore
+import addEnabledElement from './addEnabledElement.ts';
+// @ts-ignore
+import removeEnabledElement from './removeEnabledElement.ts';
 //
 import ToolGroupManager from './ToolGroupManager/index';
 

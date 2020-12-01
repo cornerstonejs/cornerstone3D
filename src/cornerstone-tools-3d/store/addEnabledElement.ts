@@ -1,4 +1,5 @@
-import { mouseEventListeners } from './../eventListeners/index';
+// @ts-ignore
+import { mouseEventListeners } from './../eventListeners/index.ts';
 // ~~
 import { getEnabledElement } from './../../index';
 import {
@@ -7,7 +8,8 @@ import {
   //   newImageEventDispatcher,
   //   touchToolEventDispatcher,
 } from './../eventDispatchers/index';
-import { state } from './index';
+// @ts-ignore
+import { state } from './index.ts';
 
 // @TODO: Should all of this be keyed off `canvas` instead of enabledElement
 export default function(elementEnabledEvt) {

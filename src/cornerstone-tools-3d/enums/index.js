@@ -1,5 +1,5 @@
-import ToolBindings from './ToolBindings';
-import ToolModes from './ToolModes';
-import VtkjsToolEvents from './VtkjsToolsEvents';
+import ToolBindings from './ToolBindings.ts';
+import ToolModes from './ToolModes.ts';
+import VtkjsToolEvents from './VtkjsToolsEvents.ts';
 
 export { ToolBindings, ToolModes, VtkjsToolEvents };

@@ -9,6 +9,7 @@ export default function getEnabledElement(canvas) {
   const renderingEngine = getRenderingEngine(renderingEngineUID);
   const scene = renderingEngine.getScene(sceneUID);
   const viewport = scene.getViewport(viewportUID);
+  const FrameOfReferenceUID = viewport.FrameOfReferenceUID;
 
   return {
     viewport,

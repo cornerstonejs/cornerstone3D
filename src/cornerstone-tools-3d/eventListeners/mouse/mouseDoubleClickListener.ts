@@ -1,5 +1,7 @@
-import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
-import triggerEvent from './../../util/triggerEvent';
+// @ts-ignore
+import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents.ts';
+// @ts-ignore
+import triggerEvent from './../../util/triggerEvent.ts';
 
 /**
  * Captures and normalized the double click event. Emits as a cstools double

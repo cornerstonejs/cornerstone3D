@@ -1,4 +1,5 @@
-import { mouseEventListeners } from './../eventListeners/index';
+// @ts-ignore
+import { mouseEventListeners } from './../eventListeners/index.ts';
 import {
   //   imageRenderedEventDispatcher,
   mouseToolEventDispatcher,
@@ -7,7 +8,8 @@ import {
 } from './../eventDispatchers/index';
 // ~~
 import { getEnabledElement } from './../../index';
-import { state } from './index';
+// @ts-ignore
+import { state } from './index.ts';
 
 export default function(elementDisabledEvt) {
   // Is DOM element

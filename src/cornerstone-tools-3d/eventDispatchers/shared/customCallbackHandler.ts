@@ -1,4 +1,5 @@
-import { state } from './../../store/index';
+// @ts-ignore
+import { state } from './../../store/index.ts';
 // import getActiveToolsForElement from './../../store/getActiveToolsForElement.js';
 // import filterToolsUseableWithMultiPartTools from './../../store/filterToolsUsableWithMultiPartTools.js';
 

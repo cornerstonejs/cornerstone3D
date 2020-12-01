@@ -1,6 +1,7 @@
 import { VIEWPORT_TYPE } from '../constants/index';
 import _cloneDeep from 'lodash.clonedeep';
-import renderingEngineCache from './renderingEngineCache';
+// @ts-ignore
+import renderingEngineCache from './renderingEngineCache.ts';
 import RenderingEngine, { ViewportInputOptions } from './RenderingEngine';
 import Scene, { VolumeActorEntry } from './Scene';
 

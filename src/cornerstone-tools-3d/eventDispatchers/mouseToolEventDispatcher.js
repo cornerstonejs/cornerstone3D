@@ -1,4 +1,4 @@
-import VtkjsToolsEvents from '../enums/VtkjsToolsEvents';
+import VtkjsToolsEvents from '../enums/VtkjsToolsEvents.ts';
 import {
   mouseClick,
   mouseDown,

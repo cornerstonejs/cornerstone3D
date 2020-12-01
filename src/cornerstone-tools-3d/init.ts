@@ -1,6 +1,7 @@
 // @TODO: WebPack alias for import to enforce clean separation
 import { renderingEventTarget, EVENTS as RENDERING_EVENTS } from './../index';
-import { addEnabledElement, removeEnabledElement } from './store/index';
+// @ts-ignore
+import { addEnabledElement, removeEnabledElement } from './store/index.ts';
 
 export default function(defaultConfiguration = {}) {
   _addCornerstoneEventListeners();

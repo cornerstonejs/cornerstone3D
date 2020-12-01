@@ -1,4 +1,5 @@
-import { BaseTool } from './base/index';
+// @ts-ignore
+import { BaseTool } from './base/index.ts';
 // ~~ VTK Viewport
 import { getEnabledElement } from './../../index';
 // @ts-ignore

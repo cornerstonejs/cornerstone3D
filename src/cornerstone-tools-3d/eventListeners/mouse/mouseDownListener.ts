@@ -1,6 +1,9 @@
-import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
-import mouseMoveListener from './mouseMoveListener';
-import triggerEvent from './../../util/triggerEvent';
+// @ts-ignore
+import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents.ts';
+// @ts-ignore
+import mouseMoveListener from './mouseMoveListener.ts';
+// @ts-ignore
+import triggerEvent from './../../util/triggerEvent.ts';
 // ~~ VIEWPORT LIBRARY
 import { getEnabledElement } from './../../../index';
 
@@ -80,8 +83,6 @@ function mouseDownListener(evt: MouseEvent): void {
   state.element.removeEventListener('mousemove', mouseMoveListener);
 
   const startPoints = _getMouseEventPoints(evt);
-
-  console.log(startPoints.world);
 
   const deltaPoints = _getDeltaPoints(startPoints, startPoints);
   const eventData = {
