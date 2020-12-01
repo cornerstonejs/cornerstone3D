@@ -75,9 +75,6 @@ export default class PetThresholdTool extends BaseTool {
     upper += wcDelta;
     upper = Math.max(Math.min(upper, maxSUV), 0.1);
 
-    console.log(lower, upper, maxSUV);
-    console.log('PET THRESHOLD');
-
     rgbTransferFunction.setMappingRange(lower, upper);
 
     scene.render();
