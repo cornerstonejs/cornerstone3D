@@ -5,6 +5,7 @@ import {
   FrameOfReferenceSpecificToolState,
   ToolState,
 } from './types';
+import cloneDeep from 'lodash.clonedeep';
 
 interface FilterInterface {
   FrameOfReferenceUID?: string;
@@ -121,11 +122,20 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * @param {string} toolUID The unique identifier of the `toolData` to remove.
    * @param {FilterInterface} [filter] A `filter` which reduces the scope of the search.
    */
-  removeToolStateByToolUID = (toolUID: string, filter: FilterInterface) => {
-    const {
-      toolSpecificToolState,
-      index,
-    } = this._getToolSpecificToolStateAndIndex(toolUID, filter);
+  removeToolStateByToolUID = (
+    toolUID: string,
+    filter: FilterInterface = {}
+  ) => {
+    const toolSpecificToolStateAndIndex = this._getToolSpecificToolStateAndIndex(
+      toolUID,
+      filter
+    );
+
+    if (!toolSpecificToolStateAndIndex) {
+      return;
+    }
+
+    const { toolSpecificToolState, index } = toolSpecificToolStateAndIndex;
 
     toolSpecificToolState.splice(index, 1);
   };
@@ -159,14 +169,14 @@ export default class FrameOfReferenceSpecificToolStateManager {
 
       const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName];
 
-      return toolSpecificToolState;
+      return cloneDeep(toolSpecificToolState);
     } else if (FrameOfReferenceUID) {
       const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
 
-      return frameOfReferenceSpecificToolState;
+      return cloneDeep(frameOfReferenceSpecificToolState);
     }
 
-    return toolState;
+    return cloneDeep(toolState);
   };
 
   /**
@@ -261,21 +271,14 @@ export default class FrameOfReferenceSpecificToolStateManager {
       for (let j = 0; j < numToolNameKeys; j++) {
         const toolName = toolNameKeys[j];
 
-        //console.log(toolName);
-
         const toolSpecificToolState =
           frameOfReferenceSpecificToolState[toolName];
-
-        //console.log(toolSpecificToolState);
 
         const index = toolSpecificToolState.findIndex(
           toolData => toolData.metadata.toolUID === toolUID
         );
 
-        //console.log(index);
-
         if (index !== -1) {
-          //console.log('RETURNING');
           return { toolSpecificToolState, index };
         }
       }
