@@ -22,8 +22,8 @@ export type VolumeActorEntry = {
  */
 interface SceneViewportsAPI {
   viewports: Array<Viewport>;
-  setToolGroup: Function;
-  setSyncGroups: Function;
+  // setToolGroup: Function;
+  // setSyncGroups: Function;
 }
 
 type VolumeInput = {
@@ -84,16 +84,16 @@ class Scene {
   public getViewports(): SceneViewportsAPI {
     return {
       viewports: this._viewports,
-      setToolGroup: toolGroupUID => {
-        this._viewports.forEach(viewport => {
-          viewport.setToolGroup(toolGroupUID);
-        });
-      },
-      setSyncGroups: (syncGroupUIDs = []) => {
-        this._viewports.forEach(viewport => {
-          viewport.setSyncGroups(syncGroupUIDs);
-        });
-      },
+      // setToolGroup: toolGroupUID => {
+      //   this._viewports.forEach(viewport => {
+      //     viewport.setToolGroup(toolGroupUID);
+      //   });
+      // },
+      // setSyncGroups: (syncGroupUIDs = []) => {
+      //   this._viewports.forEach(viewport => {
+      //     viewport.setSyncGroups(syncGroupUIDs);
+      //   });
+      // },
     };
   }
 

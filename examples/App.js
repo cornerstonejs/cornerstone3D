@@ -1,9 +1,10 @@
 /* eslint-disable react/prop-types */
 import React, { Component, useState } from 'react';
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-import VTKMPRExample from './VTKMPRExample.js';
-import CanvasResizeExample from './CanvasResizeExample.js';
-import TwentyFiveCanvasExample from './TwentyFiveCanvasExample.js';
+import VTKMPRExample from './ExampleVTKMPR.js';
+import VTKMPRWithToolEventsExample from './ExampleVTKMPRWithToolEvents';
+import CanvasResizeExample from './ExampleCanvasResize.js';
+import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas.js';
 
 function LinkOut({ href, text }) {
   return (
@@ -35,6 +36,11 @@ function Index() {
       title: 'MPR',
       url: '/mpr',
       text: 'Example MPR playground.',
+    },
+    {
+      title: 'MPR w/ Tool Events',
+      url: '/mpr-with-tool-events',
+      text: 'description',
     },
     {
       title: 'Canvas Resize',
@@ -96,11 +102,14 @@ function AppRouter() {
     Example({
       children: <VTKMPRExample />,
     });
+  const mprWithToolEvents = () =>
+    Example({
+      children: <VTKMPRWithToolEventsExample />
+    });
   const canvasResize = () =>
     Example({
       children: <CanvasResizeExample />,
     });
-
   const twentyFiveCanvas = () =>
     Example({
       children: <TwentyFiveCanvasExample />,
@@ -111,6 +120,7 @@ function AppRouter() {
       <Switch>
         <Route exact path="/" component={Index} />
         <Route exact path="/mpr/" render={mpr} />
+        <Route exact path="/mpr-with-tool-events/" render={mprWithToolEvents} />
         <Route exact path="/canvasResize/" render={canvasResize} />
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact component={Index} />

@@ -4,7 +4,12 @@
     "outDir": "tsDist",
     "module": "es6",
     "target": "es6",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "@vtk-viewport": ["src/index.*"],
+      "@tools": ["cornerstone-tools-3d/index.*"]
+    }
   },
   "exclude": ["node_modules", "dist", "snippets"]
 }

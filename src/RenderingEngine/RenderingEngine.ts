@@ -147,8 +147,6 @@ class RenderingEngine {
           : [0, 0, 0],
       });
 
-      xOffset += width;
-
       scene.addViewport({
         uid: viewportUID,
         type,
@@ -159,6 +157,8 @@ class RenderingEngine {
         sHeight,
         defaultOptions: defaultOptions || {},
       });
+
+      xOffset += width;
 
       const eventData = {
         canvas,
