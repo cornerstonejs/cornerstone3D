@@ -130,7 +130,7 @@ class Viewport implements ViewportInterface {
   public render() {
     const renderingEngine = this.getRenderingEngine();
 
-    renderingEngine.render();
+    renderingEngine.renderViewport(this.sceneUID, this.uid);
   }
 
   /**

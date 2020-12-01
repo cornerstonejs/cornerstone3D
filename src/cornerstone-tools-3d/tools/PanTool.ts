@@ -2,8 +2,6 @@
 import { BaseTool } from './base/index.ts';
 // ~~ VTK Viewport
 import { getEnabledElement } from './../../index';
-// @ts-ignore
-import Viewport from 'RenderingEngine/Viewport.ts';
 
 export default class PanTool extends BaseTool {
   touchDragCallback: () => void;

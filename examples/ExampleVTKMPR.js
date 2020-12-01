@@ -10,6 +10,13 @@ import {
   getEnabledElement,
   EVENTS,
 } from './../src/index';
+import csTools3d, {
+  PanTool,
+  WindowLevelTool,
+  PetThresholdTool,
+  ToolGroupManager,
+  ToolBindings,
+} from './../src/cornerstone-tools-3d/index';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
@@ -17,53 +24,8 @@ import Constants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
 const { BlendMode } = Constants;
 
 import './ExampleVTKMPR.css';
-import { enabled } from 'ansi-colors';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
-
-// renderingEventTarget.addEventListener(EVENTS.IMAGE_RENDERED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-// });
-
-// renderingEventTarget.addEventListener(EVENTS.ELEMENT_ENABLED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-
-//   const canvas = evt.detail.canvas;
-
-//   const myEventListner = evt => {
-//     console.log(evt);
-
-//     const canvas = evt.detail.canvas;
-
-//     const enabledElement = getEnabledElement(canvas);
-//     const { viewport, scene } = enabledElement;
-
-//     // Get camera state
-//     const camera = viewport.getCamera();
-
-//     // Example of setting the focalPoint to 0
-//     //viewport.setCamera({ focalPoint: [0, 0, 0] });
-
-//     const volumeActors = scene.getVolumeActors();
-
-//     // Example of fetching world coordinates from a canvas click.
-//     const worldCoordinates = viewport.canvasToWorld([14, 15]);
-
-//     console.log(volumeActors);
-//     console.log(camera);
-
-//     debugger;
-//   };
-
-//   canvas.addEventListener(EVENTS.IMAGE_RENDERED, myEventListner);
-// });
-
-// renderingEventTarget.addEventListener(EVENTS.ELEMENT_DISABLED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-// });
 
 const renderingEngineUID = 'PETCTRenderingEngine';
 const ptVolumeUID = 'PET_VOLUME';
@@ -100,6 +62,52 @@ const VIEWPORT_IDS = {
     VR: 'ctVR',
   },
 };
+
+const TOOL_GROUP_UIDS = {
+  CT: 'ctSceneToolGroup',
+  PT: 'ptSceneToolGroup',
+  FUSION: 'fusionSceneToolGroup',
+  PTMIP: 'ptMipSceneToolGroup',
+};
+
+// TODO: Can we delete tool groups?
+// These need to be in lifecylce so we can undo on page death
+csTools3d.addTool(PanTool, {});
+csTools3d.addTool(WindowLevelTool, {});
+csTools3d.addTool(PetThresholdTool, {});
+
+const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
+const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
+const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
+  TOOL_GROUP_UIDS.FUSION
+);
+const ptMipSceneToolGroup = ToolGroupManager.createToolGroup(
+  TOOL_GROUP_UIDS.PTMIP
+);
+
+// Set up CT Scene tools
+ctSceneToolGroup.addTool('WindowLevel', {
+  configuration: { volumeUID: ctVolumeUID },
+});
+ctSceneToolGroup.addTool('Pan', {});
+ctSceneToolGroup.setToolActive('WindowLevel', {
+  bindings: [ToolBindings.Mouse.Primary],
+});
+ctSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
+
+// Set up PT Scene tools
+ptSceneToolGroup.addTool('PetThreshold', {
+  configuration: { volumeUID: ptVolumeUID },
+});
+ptSceneToolGroup.addTool('Pan', {});
+ptSceneToolGroup.setToolActive('PetThreshold', {
+  bindings: [ToolBindings.Mouse.Primary],
+});
+ptSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
 
 const colormaps = ['hsv', 'RED-PURPLE'];
 const layouts = ['FusionMIP', 'CTVR', 'SinglePTSagittal'];
@@ -464,7 +472,7 @@ class VTKMPRExample extends Component {
   }
 
   setPTCTFusionLayout = () => {
-    this.renderingEngine.setViewports([
+    const viewportInput = [
       // CT
       {
         sceneUID: SCENE_IDS.CT,
@@ -568,7 +576,47 @@ class VTKMPRExample extends Component {
           background: [1, 1, 1],
         },
       },
-    ]);
+    ];
+
+    this.renderingEngine.setViewports(viewportInput);
+
+    // Add tools
+
+    const renderingEngineUID = this.renderingEngine.uid;
+
+    viewportInput.forEach(viewportInputEntry => {
+      const { sceneUID, viewportUID } = viewportInputEntry;
+
+      if (sceneUID === SCENE_IDS.CT) {
+        console.log(`adding ${viewportUID} to CT toolgroup`);
+        ctSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.PT) {
+        console.log(`adding ${viewportUID} to PT toolgroup`);
+        ptSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.FUSION) {
+        console.log(`adding ${viewportUID} to FUSION toolgroup`);
+        fusionSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.PTMIP) {
+        console.log(`adding ${viewportUID} to PTMIP toolgroup`);
+        ptMipSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      }
+    });
 
     renderingEngine.render(); // Render backgrounds
   };
