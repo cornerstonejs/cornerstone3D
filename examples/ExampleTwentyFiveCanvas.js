@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { RenderingEngine, CONSTANTS } from '@vtk-viewport';
+import { RenderingEngine, CONSTANTS } from './../src/index';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 

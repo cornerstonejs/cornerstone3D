@@ -9,14 +9,14 @@ import {
   renderingEventTarget,
   getEnabledElement,
   EVENTS,
-} from '@vtk-viewport';
+} from './../src/index';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import Constants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
 const { BlendMode } = Constants;
 
-import './VTKMPRExample.css';
+import './ExampleVTKMPR.css';
 import { enabled } from 'ansi-colors';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;

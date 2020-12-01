@@ -60,6 +60,11 @@ module.exports = (env, argv) => {
     },
     resolve: {
       modules: [path.resolve(__dirname, './../node_modules'), SRC_PATH],
+      alias: {
+        // https://stackoverflow.com/a/40444084/1867984
+        '@vtk-viewport': path.join(__dirname, './../src'),
+        '@tools': path.resolve(__dirname, './../cornerstone-tools-3d')
+      },
     },
     externals: [
       // :wave:

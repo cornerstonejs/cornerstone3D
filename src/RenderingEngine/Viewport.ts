@@ -1,10 +1,7 @@
 import { VIEWPORT_TYPE } from '../constants/index';
 import _cloneDeep from 'lodash.clonedeep';
-// @ts-ignore
-import renderingEngineCache from './renderingEngineCache.ts';
-// @ts-ignore
-import RenderingEngine, { ViewportInputOptions } from './RenderingEngine.ts';
-// @ts-ignore
+import renderingEngineCache from './renderingEngineCache';
+import RenderingEngine, { ViewportInputOptions } from './RenderingEngine';
 import Scene, { VolumeActorEntry } from './Scene';
 
 const DEFAULT_SLAB_THICKNESS = 0.1;
@@ -146,49 +143,6 @@ class Viewport implements ViewportInterface {
     return renderingEngine.getScene(this.sceneUID);
   }
 
-  testCanvasToWorldRoundTrip() {
-    const canvasPos = [this.sWidth / 4, this.sHeight / 4];
-
-    const worldPos = this.canvasToWorld(canvasPos);
-
-    console.log(`viewport: ${this.uid}`);
-    console.log(canvasPos);
-    console.log(worldPos);
-    console.log(this.worldToCanvas(worldPos));
-
-    const camera = this.getVtkActiveCamera();
-
-    const distance = camera.getDistance();
-    const dop = camera.getDirectionOfProjection();
-
-    const cameraFocalPoint = camera.getFocalPoint();
-
-    const newFocalPoint = [
-      cameraFocalPoint[0] - dop[0] * 0.1 * distance,
-      cameraFocalPoint[1] - dop[1] * 0.1 * distance,
-      cameraFocalPoint[2] - dop[2] * 0.1 * distance,
-    ];
-
-    const newCameraPosition = [
-      cameraFocalPoint[0] - dop[0] * 1.1 * distance,
-      cameraFocalPoint[1] - dop[1] * 1.1 * distance,
-      cameraFocalPoint[2] - dop[2] * 1.1 * distance,
-    ];
-
-    camera.setPosition(...newCameraPosition);
-    camera.setFocalPoint(...newFocalPoint);
-    this.getRenderer().resetCamera();
-
-    this.render();
-
-    const worldPos2 = this.canvasToWorld(canvasPos);
-
-    console.log(`viewport: ${this.uid}`);
-    console.log(canvasPos);
-    console.log(worldPos2);
-    console.log(this.worldToCanvas(worldPos2));
-  }
-
   /**
    * @method setOptions Sets new options and (TODO) applies them.
    *
@@ -220,14 +174,6 @@ class Viewport implements ViewportInterface {
     if (immediate) {
       this.render();
     }
-  }
-
-  public setToolGroup(toolGropUID) {
-    // TODO -> set the toolgroup to use for this api.
-  }
-
-  public setSyncGroups(syncGroupUIDs) {
-    // TODO -> Set the syncgroups for tools on this api.
   }
 
   /**
@@ -286,6 +232,8 @@ class Viewport implements ViewportInterface {
   public getCamera(): CameraInterface {
     const vtkCamera = this.getVtkActiveCamera();
 
+    // TODO: Make sure these are deep copies.
+
     return {
       viewUp: vtkCamera.getViewUp(),
       viewPlaneNormal: vtkCamera.getViewPlaneNormal(),
@@ -321,7 +269,11 @@ class Viewport implements ViewportInterface {
     }
 
     if (viewPlaneNormal !== undefined) {
-      vtkCamera.setViewPlaneNormal(viewPlaneNormal);
+      vtkCamera.setDirectionOfProjection(
+        -viewPlaneNormal[0],
+        -viewPlaneNormal[1],
+        -viewPlaneNormal[2]
+      );
     }
 
     if (clippingRange !== undefined) {
@@ -329,11 +281,11 @@ class Viewport implements ViewportInterface {
     }
 
     if (position !== undefined) {
-      vtkCamera.setPosition(position);
+      vtkCamera.setPosition(...position);
     }
 
     if (focalPoint !== undefined) {
-      vtkCamera.setFocalPoint(focalPoint);
+      vtkCamera.setFocalPoint(...focalPoint);
     }
 
     if (parallelProjection !== undefined) {
@@ -350,7 +302,8 @@ class Viewport implements ViewportInterface {
 
     const renderer = this.getRenderer();
 
-    renderer.resetCamera();
+    // renderer.resetCamera();
+    // renderer.resetCameraClippingRange();
   }
 
   /**
@@ -363,13 +316,17 @@ class Viewport implements ViewportInterface {
    * @returns {Array<number>} The corresponding world coordinates.
    *
    */
-  public canvasToWorld(canvasPos: Array<number>): Array<number> {
+  public canvasToWorld = (canvasPos: Array<number>): Array<number> => {
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow = this.getRenderingEngine()
       .offscreenMultiRenderWindow;
     const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
 
-    const displayCoord = [canvasPos[0] + this.sx, canvasPos[0] + this.sy];
+    const size = openGLRenderWindow.getSize();
+    const displayCoord = [canvasPos[0] + this.sx, canvasPos[1] + this.sy];
+
+    // The y axis display coordinates are inverted with respect to canvas coords
+    displayCoord[1] = size[1] - displayCoord[1];
 
     const worldCoord = openGLRenderWindow.displayToWorld(
       displayCoord[0],
@@ -378,10 +335,8 @@ class Viewport implements ViewportInterface {
       renderer
     );
 
-    // TODO -> This appears to be correct as it inverts the world. I think it uses the camera focal point.
-
     return worldCoord;
-  }
+  };
 
   /**
    * @canvasToWorld Returns the canvas coordinates of the given `worldPos`
@@ -391,21 +346,25 @@ class Viewport implements ViewportInterface {
    *
    * @returns {Array<number>} The corresponding canvas coordinates.
    */
-  public worldToCanvas(worldPos: Array<number>): Array<number> {
+  public worldToCanvas = (worldPos: Array<number>): Array<number> => {
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow = this.getRenderingEngine()
       .offscreenMultiRenderWindow;
     const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const size = openGLRenderWindow.getSize();
 
     const displayCoord = openGLRenderWindow.worldToDisplay(
       ...worldPos,
       renderer
     );
 
+    // The y axis display coordinates are inverted with respect to canvas coords
+    displayCoord[1] = size[1] - displayCoord[1];
+
     const canvasCoord = [displayCoord[0] - this.sx, displayCoord[1] - this.sy];
 
     return canvasCoord;
-  }
+  };
 }
 
 export default Viewport;

@@ -19,5 +19,6 @@ export default function triggerEvent(
     cancelable: true,
   });
 
+  // console.warn(`Dispatching Event: ${eventName}`, eventData);
   return eventTarget.dispatchEvent(event);
 }

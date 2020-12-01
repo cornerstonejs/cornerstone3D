@@ -1,4 +1,4 @@
-import VtkjsToolsEvents from './../../VtkjsToolsEvents';
+import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
 import triggerEvent from './../../util/triggerEvent';
 
 /**

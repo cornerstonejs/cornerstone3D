@@ -86,9 +86,12 @@ module.exports = {
   resolve: {
     modules: [path.resolve(__dirname, './../node_modules'), SRC_PATH],
     alias: {
+      // https://stackoverflow.com/a/40444084/1867984
       '@vtk-viewport': ENTRY_VTK_EXT,
       '@configuration': APP_CONFIG_PATH,
+      '@tools': path.resolve(__dirname, './../cornerstone-tools-3d/')
     },
+    extensions: [".ts", ".tsx", ".js"]
   },
   plugins: [
     // Show build progress
