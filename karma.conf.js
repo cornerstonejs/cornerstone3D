@@ -2,11 +2,18 @@ const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core;
 
 module.exports = function(config) {
   config.set({
+    reporters: ['junit', 'coverage', 'progress'],
+    junitReporter: {
+      outputDir: 'junit',
+      outputFile: 'test-results.xml',
+    },
     plugins: [
       'karma-webpack',
       'karma-jasmine',
       'karma-chrome-launcher',
+      // Reports / Output
       'karma-coverage',
+      'karma-junit-reporter',
     ],
     frameworks: ['jasmine'],
     files: [
@@ -48,20 +55,19 @@ module.exports = function(config) {
         ].concat(vtkRules),
       },
       // Any custom webpack configuration...
+      node: { fs: 'empty' },
     },
     // Fix for `cornerstone-wado-image-loader` fs dep
     node: { fs: 'empty' },
     webpackMiddleware: {
       noInfo: true,
     },
-
     customLaunchers: {
       ChromeHeadlessNoSandbox: {
         base: 'ChromeHeadless',
         flags: ['--no-sandbox', '--ignore-gpu-blacklist'],
       },
     },
-
     browsers: ['ChromeHeadlessNoSandbox'],
   });
 };

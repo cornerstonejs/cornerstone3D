@@ -37,17 +37,23 @@ jobs:
           at: ~/repo
       - run: yarn run build
 
+  # https://circleci.com/docs/2.0/collect-test-data/#karma
   TEST:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
-      - run: yarn run test
-      # https://circleci.com/docs/2.0/collect-test-data/#karma
+      - run: mkdir ~/junit
+      - run:
+          command: yarn run test:ci
+          environment:
+            JUNIT_REPORT_PATH: ./junit/
+            JUNIT_REPORT_NAME: test-results.xml
+          when: always
       - store_test_results:
-          path: reports/junit
+          path: ./junit
       - store_artifacts:
-          path: reports/junit
+          path: ./junit
 
   # NPM_PUBLISH:
   #   <<: *defaults

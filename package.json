@@ -17,15 +17,16 @@
     "build:examples": "webpack --progress --colors --config ./.webpack/webpack.dev.js -d",
     "dev": "webpack-dev-server --config ./.webpack/webpack.dev.js --watch",
     "start": "yarn run dev",
-    "test": "./node_modules/karma/bin/karma start",
+    "test": "karma start",
+    "test:ci": "karma start --single-run",
     "lint": "lint-staged",
     "predeploy": "yarn install && yarn run build:release",
     "prepublishOnly": "yarn run build && yarn run build:release"
   },
   "peerDependencies": {
     "cornerstone-tools": "^5.1.0",
-    "vtk.js": "14.18.1",
-    "cornerstone-wado-image-loader": "3.2.0"
+    "cornerstone-wado-image-loader": "3.2.0",
+    "vtk.js": "14.18.1"
   },
   "dependencies": {
     "gl-matrix": "^3.1.0",
@@ -75,6 +76,7 @@
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "^2.0.3",
     "karma-jasmine": "^4.0.1",
+    "karma-junit-reporter": "^2.0.1",
     "karma-webpack": "^4.0.2",
     "kw-web-suite": "^8.0.0",
     "lint-staged": "^9.2.5",

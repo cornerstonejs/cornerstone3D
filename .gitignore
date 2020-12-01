@@ -21,3 +21,7 @@ yarn-error.log*
 .yalc
 yalc.lock
 package-lock.json
+
+# Report Output
+junit/
+coverage/
