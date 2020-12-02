@@ -59,8 +59,6 @@ export default class StackScrollTool extends BaseTool {
 
     const newFocalPoint = [...focalPoint];
 
-    debugger;
-
     // TODO calculate these bounds.
     // Cache these during a drag?
     // - Cache on mouse down?
@@ -68,38 +66,38 @@ export default class StackScrollTool extends BaseTool {
     // TODO - How do we cache on mouse wheel scroll?
     // TODO Is this tool per element or what? Could just cache here.
 
-    if (orthogonalDirection) {
-      this._snapFocalPointToSlice(
-        newFocalPoint,
-        scrollRange,
-        viewPlaneNormal,
-        spacingInNormalDirection
-      );
-
-      // TODO: Cache this then just increment up or down
-      // const currentSliceIndex = this._getCurrentSliceIndexOrthogonal(
-      //   imageVolume,
-      //   focalPoint,
-      //   direction
-      // );
-
-      // Orthogonal, scroll through slices, capped by bounds.
-      // TODO -> Clamp current focal point to middle of slice coord.
-      // Then move by exact increments of the size.
-    } else {
-      // Non-orthogonal, just scroll by spacing in normal direction, capped by bounds.
-
-      console.warn('TODO! Non-orthogonal scroll');
-    }
+    // Snaps to a slice if orthogonal, will snap to certain increments
+    // As defined by the spacingInNormalDirection if oblique.
+    this._snapFocalPointToSlice(
+      newFocalPoint,
+      scrollRange,
+      viewPlaneNormal,
+      spacingInNormalDirection
+    );
 
     const { y: deltaY } = deltaPoints.canvas;
 
-    const updatedFocalPoint = focalPoint;
-    const updatedPosition = position;
+    // Move delta y slices
+
+    newFocalPoint[0] += deltaY * viewPlaneNormal[0] * spacingInNormalDirection;
+    newFocalPoint[1] += deltaY * viewPlaneNormal[1] * spacingInNormalDirection;
+    newFocalPoint[2] += deltaY * viewPlaneNormal[2] * spacingInNormalDirection;
+
+    const focalPointDiff = [
+      newFocalPoint[0] - focalPoint[0],
+      newFocalPoint[1] - focalPoint[1],
+      newFocalPoint[2] - focalPoint[2],
+    ];
+
+    const newPosition = [
+      (position[0] += focalPointDiff[0]),
+      (position[1] += focalPointDiff[1]),
+      (position[2] += focalPointDiff[2]),
+    ];
 
     enabledElement.viewport.setCamera({
-      focalPoint: updatedFocalPoint,
-      position: updatedPosition,
+      focalPoint: newFocalPoint,
+      position: newPosition,
     });
     enabledElement.viewport.render();
   }
@@ -111,8 +109,6 @@ export default class StackScrollTool extends BaseTool {
     spacingInNormalDirection
   ) => {
     const { min, max, current } = scrollRange;
-
-    debugger;
 
     let steps = (max - min) / spacingInNormalDirection;
     steps = Math.floor(steps);
@@ -132,9 +128,9 @@ export default class StackScrollTool extends BaseTool {
 
     const diff = slicePos - current;
 
-    debugger;
-
-    debugger;
+    focalPoint[0] += viewPlaneNormal[0] * diff;
+    focalPoint[1] += viewPlaneNormal[1] * diff;
+    focalPoint[2] += viewPlaneNormal[2] * diff;
   };
 
   // private _getCurrentSliceIndexOrthogonal = (
