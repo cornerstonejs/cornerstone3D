@@ -92,11 +92,16 @@ ctSceneToolGroup.addTool('WindowLevel', {
   configuration: { volumeUID: ctVolumeUID },
 });
 ctSceneToolGroup.addTool('Pan', {});
+ctSceneToolGroup.addTool('StackScroll', {});
 ctSceneToolGroup.setToolActive('WindowLevel', {
   bindings: [ToolBindings.Mouse.Primary],
 });
 ctSceneToolGroup.setToolActive('Pan', {
   bindings: [ToolBindings.Mouse.Auxiliary],
+});
+// TODO -> Move to mouse wheel.
+ctSceneToolGroup.setToolActive('StackScroll', {
+  bindings: [ToolBindings.Mouse.Secondary],
 });
 
 // Set up PT Scene tools
@@ -104,11 +109,16 @@ ptSceneToolGroup.addTool('PetThreshold', {
   configuration: { volumeUID: ptVolumeUID },
 });
 ptSceneToolGroup.addTool('Pan', {});
+ptSceneToolGroup.addTool('StackScroll', {});
 ptSceneToolGroup.setToolActive('PetThreshold', {
   bindings: [ToolBindings.Mouse.Primary],
 });
 ptSceneToolGroup.setToolActive('Pan', {
   bindings: [ToolBindings.Mouse.Auxiliary],
+});
+// TODO -> Move to mouse wheel.
+ptSceneToolGroup.setToolActive('StackScroll', {
+  bindings: [ToolBindings.Mouse.Secondary],
 });
 
 // Set up Fusion Scene tools
@@ -117,7 +127,7 @@ fusionSceneToolGroup.addTool('StackScroll', {});
 
 // TODO -> Move to mouse wheel.
 fusionSceneToolGroup.setToolActive('StackScroll', {
-  bindings: [ToolBindings.Mouse.Primary],
+  bindings: [ToolBindings.Mouse.Secondary],
 });
 
 fusionSceneToolGroup.setToolActive('Pan', {
@@ -865,7 +875,7 @@ class VTKMPRExample extends Component {
     if (layout === 'FusionMIP') {
       viewportLayout = (
         <React.Fragment>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <div className="container-row">
               <canvas ref={this.containers.CT.AXIAL} style={activeStyle} />
               <canvas ref={this.containers.CT.SAGITTAL} style={inactiveStyle} />
