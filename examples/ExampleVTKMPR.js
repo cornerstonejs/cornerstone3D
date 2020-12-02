@@ -14,6 +14,7 @@ import csTools3d, {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  StackScrollTool,
   ToolGroupManager,
   ToolBindings,
 } from './../src/cornerstone-tools-3d/index';
@@ -75,6 +76,7 @@ const TOOL_GROUP_UIDS = {
 csTools3d.addTool(PanTool, {});
 csTools3d.addTool(WindowLevelTool, {});
 csTools3d.addTool(PetThresholdTool, {});
+csTools3d.addTool(StackScrollTool, {});
 
 const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
 const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
@@ -106,6 +108,19 @@ ptSceneToolGroup.setToolActive('PetThreshold', {
   bindings: [ToolBindings.Mouse.Primary],
 });
 ptSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
+
+// Set up Fusion Scene tools
+fusionSceneToolGroup.addTool('Pan', {});
+fusionSceneToolGroup.addTool('StackScroll', {});
+
+// TODO -> Move to mouse wheel.
+fusionSceneToolGroup.setToolActive('StackScroll', {
+  bindings: [ToolBindings.Mouse.Primary],
+});
+
+fusionSceneToolGroup.setToolActive('Pan', {
   bindings: [ToolBindings.Mouse.Auxiliary],
 });
 

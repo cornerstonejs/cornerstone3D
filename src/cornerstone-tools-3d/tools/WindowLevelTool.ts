@@ -54,10 +54,6 @@ export default class WindowLevelTool extends BaseTool {
 
     if (volumeUID) {
       volumeActor = scene.getVolumeActor(volumeUID);
-
-      if (!volumeActor) {
-        // Intentional use of volumeUID which is not defined
-      }
     } else {
       // Default to first volumeActor
       const volumeActors = scene.getVolumeActors();

@@ -10,6 +10,7 @@ import {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  StackScrollTool,
 } from './tools/index.ts';
 import { ToolBindings, VtkjsToolEvents } from './enums/index';
 
@@ -21,6 +22,7 @@ export default {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  StackScrollTool,
   ToolGroupManager,
   ToolBindings,
   VtkjsToolEvents,
@@ -30,11 +32,12 @@ export default {
 
 //
 export {
-  // Tools
+  // Tools // TODO Lets put these somewhere else.
   BaseTool,
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  StackScrollTool,
   //
   ToolGroupManager,
   ToolBindings,

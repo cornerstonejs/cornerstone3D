@@ -39,8 +39,6 @@ export default class PetThresholdTool extends BaseTool {
 
     const { volumeUID, maxSUV } = this._configuration;
 
-    console.log('PET THRESHOLD');
-
     let volumeActor;
 
     if (volumeUID) {

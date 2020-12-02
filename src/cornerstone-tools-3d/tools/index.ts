@@ -6,6 +6,8 @@ import PanTool from './PanTool.ts';
 import WindowLevelTool from './WindowLevelTool.ts';
 // @ts-ignore
 import PetThresholdTool from './PetThresholdTool.ts';
+// @ts-ignore
+import StackScrollTool from './StackScrollTool';
 
 export {
   // ~~ BASE
@@ -14,4 +16,5 @@ export {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  StackScrollTool,
 };

@@ -4,8 +4,8 @@ import { BaseTool } from './base/index.ts';
 import { getEnabledElement } from './../../index';
 
 export default class PanTool extends BaseTool {
-  touchDragCallback: () => void;
-  mouseDragCallback: () => void;
+  touchDragCallback: Function;
+  mouseDragCallback: Function;
 
   constructor(toolConfiguration = {}) {
     const defaultToolConfiguration = {
