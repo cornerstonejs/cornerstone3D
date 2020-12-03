@@ -10,6 +10,15 @@ import {
   getEnabledElement,
   EVENTS,
 } from './../src/index';
+import csTools3d, {
+  PanTool,
+  WindowLevelTool,
+  PetThresholdTool,
+  StackScrollTool,
+  ZoomTool,
+  ToolGroupManager,
+  ToolBindings,
+} from './../src/cornerstone-tools-3d/index';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
@@ -17,53 +26,8 @@ import Constants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
 const { BlendMode } = Constants;
 
 import './ExampleVTKMPR.css';
-import { enabled } from 'ansi-colors';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
-
-// renderingEventTarget.addEventListener(EVENTS.IMAGE_RENDERED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-// });
-
-// renderingEventTarget.addEventListener(EVENTS.ELEMENT_ENABLED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-
-//   const canvas = evt.detail.canvas;
-
-//   const myEventListner = evt => {
-//     console.log(evt);
-
-//     const canvas = evt.detail.canvas;
-
-//     const enabledElement = getEnabledElement(canvas);
-//     const { viewport, scene } = enabledElement;
-
-//     // Get camera state
-//     const camera = viewport.getCamera();
-
-//     // Example of setting the focalPoint to 0
-//     //viewport.setCamera({ focalPoint: [0, 0, 0] });
-
-//     const volumeActors = scene.getVolumeActors();
-
-//     // Example of fetching world coordinates from a canvas click.
-//     const worldCoordinates = viewport.canvasToWorld([14, 15]);
-
-//     console.log(volumeActors);
-//     console.log(camera);
-
-//     debugger;
-//   };
-
-//   canvas.addEventListener(EVENTS.IMAGE_RENDERED, myEventListner);
-// });
-
-// renderingEventTarget.addEventListener(EVENTS.ELEMENT_DISABLED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-// });
 
 const renderingEngineUID = 'PETCTRenderingEngine';
 const ptVolumeUID = 'PET_VOLUME';
@@ -100,6 +64,91 @@ const VIEWPORT_IDS = {
     VR: 'ctVR',
   },
 };
+
+const TOOL_GROUP_UIDS = {
+  CT: 'ctSceneToolGroup',
+  PT: 'ptSceneToolGroup',
+  FUSION: 'fusionSceneToolGroup',
+  PTMIP: 'ptMipSceneToolGroup',
+  CTVR: 'ctVRSceneToolGroup',
+};
+
+// TODO: Can we delete tool groups?
+// These need to be in lifecylce so we can undo on page death
+csTools3d.addTool(PanTool, {});
+csTools3d.addTool(WindowLevelTool, {});
+csTools3d.addTool(PetThresholdTool, {});
+csTools3d.addTool(StackScrollTool, {});
+csTools3d.addTool(ZoomTool, {});
+
+const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
+const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
+const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
+  TOOL_GROUP_UIDS.FUSION
+);
+const ptMipSceneToolGroup = ToolGroupManager.createToolGroup(
+  TOOL_GROUP_UIDS.PTMIP
+);
+const ctVRSceneToolGroup = ToolGroupManager.createToolGroup(
+  TOOL_GROUP_UIDS.CTVR
+);
+
+// Set up CT Scene tools
+ctSceneToolGroup.addTool('WindowLevel', {
+  configuration: { volumeUID: ctVolumeUID },
+});
+ctSceneToolGroup.addTool('Pan', {});
+ctSceneToolGroup.addTool('Zoom', {});
+ctSceneToolGroup.setToolActive('WindowLevel', {
+  bindings: [ToolBindings.Mouse.Primary],
+});
+ctSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
+ctSceneToolGroup.setToolActive('Zoom', {
+  bindings: [ToolBindings.Mouse.Secondary],
+});
+
+// Set up PT Scene tools
+ptSceneToolGroup.addTool('PetThreshold', {
+  configuration: { volumeUID: ptVolumeUID },
+});
+ptSceneToolGroup.addTool('Pan', {});
+ptSceneToolGroup.addTool('Zoom', {});
+ptSceneToolGroup.setToolActive('PetThreshold', {
+  bindings: [ToolBindings.Mouse.Primary],
+});
+ptSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
+ptSceneToolGroup.setToolActive('Zoom', {
+  bindings: [ToolBindings.Mouse.Secondary],
+});
+
+// Set up Fusion Scene tools
+fusionSceneToolGroup.addTool('Pan', {});
+fusionSceneToolGroup.addTool('StackScroll', {});
+fusionSceneToolGroup.addTool('Zoom', {});
+// TODO -> Move to mouse wheel.
+fusionSceneToolGroup.setToolActive('StackScroll', {
+  bindings: [ToolBindings.Mouse.Primary],
+});
+fusionSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
+fusionSceneToolGroup.setToolActive('Zoom', {
+  bindings: [ToolBindings.Mouse.Secondary],
+});
+
+// Set up CTVR Scene tools
+ctVRSceneToolGroup.addTool('Pan', {});
+ctVRSceneToolGroup.addTool('Zoom', {});
+ctVRSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
+ctVRSceneToolGroup.setToolActive('Zoom', {
+  bindings: [ToolBindings.Mouse.Secondary],
+});
 
 const colormaps = ['hsv', 'RED-PURPLE'];
 const layouts = ['FusionMIP', 'CTVR', 'SinglePTSagittal'];
@@ -406,7 +455,7 @@ class VTKMPRExample extends Component {
   }
 
   setFourUpCTLayout = () => {
-    this.renderingEngine.setViewports([
+    const viewportInput = [
       // CT
       {
         sceneUID: SCENE_IDS.CT,
@@ -448,7 +497,31 @@ class VTKMPRExample extends Component {
           },
         },
       },
-    ]);
+    ];
+
+    this.renderingEngine.setViewports(viewportInput);
+
+    const renderingEngineUID = this.renderingEngine.uid;
+
+    viewportInput.forEach(viewportInputEntry => {
+      const { sceneUID, viewportUID } = viewportInputEntry;
+
+      if (sceneUID === SCENE_IDS.CT) {
+        console.log(`adding ${viewportUID} to CT toolgroup`);
+        ctSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.CTVR) {
+        console.log(`adding ${viewportUID} to CTVR toolgroup`);
+        ctVRSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      }
+    });
   };
 
   setFourUpCTVolumes() {
@@ -464,7 +537,7 @@ class VTKMPRExample extends Component {
   }
 
   setPTCTFusionLayout = () => {
-    this.renderingEngine.setViewports([
+    const viewportInput = [
       // CT
       {
         sceneUID: SCENE_IDS.CT,
@@ -568,7 +641,47 @@ class VTKMPRExample extends Component {
           background: [1, 1, 1],
         },
       },
-    ]);
+    ];
+
+    this.renderingEngine.setViewports(viewportInput);
+
+    // Add tools
+
+    const renderingEngineUID = this.renderingEngine.uid;
+
+    viewportInput.forEach(viewportInputEntry => {
+      const { sceneUID, viewportUID } = viewportInputEntry;
+
+      if (sceneUID === SCENE_IDS.CT) {
+        console.log(`adding ${viewportUID} to CT toolgroup`);
+        ctSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.PT) {
+        console.log(`adding ${viewportUID} to PT toolgroup`);
+        ptSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.FUSION) {
+        console.log(`adding ${viewportUID} to FUSION toolgroup`);
+        fusionSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.PTMIP) {
+        console.log(`adding ${viewportUID} to PTMIP toolgroup`);
+        ptMipSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      }
+    });
 
     renderingEngine.render(); // Render backgrounds
   };
@@ -802,7 +915,7 @@ class VTKMPRExample extends Component {
     if (layout === 'FusionMIP') {
       viewportLayout = (
         <React.Fragment>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <div className="container-row">
               <canvas ref={this.containers.CT.AXIAL} style={activeStyle} />
               <canvas ref={this.containers.CT.SAGITTAL} style={inactiveStyle} />
@@ -828,7 +941,7 @@ class VTKMPRExample extends Component {
               />
             </div>
           </div>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <canvas ref={this.containers.PTMIP.CORONAL} style={ptMIPStyle} />
           </div>
         </React.Fragment>
@@ -836,7 +949,7 @@ class VTKMPRExample extends Component {
     } else if (layout === 'CTVR') {
       viewportLayout = (
         <React.Fragment>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <div className="container-row">
               <canvas ref={this.containers.CT.AXIAL} style={fourUpStyle} />
               <canvas ref={this.containers.CT.SAGITTAL} style={fourUpStyle} />
@@ -851,7 +964,7 @@ class VTKMPRExample extends Component {
     } else if (layout === 'SinglePTSagittal') {
       viewportLayout = (
         <React.Fragment>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <div className="container-row">
               <canvas
                 ref={this.containers.PT.SAGITTAL}

@@ -5,7 +5,14 @@ import {
 
 import init from './init.ts';
 import { addTool, ToolGroupManager } from './store/index.ts';
-import { BaseTool, PanTool } from './tools/index.ts';
+import {
+  BaseTool,
+  PanTool,
+  WindowLevelTool,
+  PetThresholdTool,
+  ZoomTool,
+  StackScrollTool,
+} from './tools/index.ts';
 import { ToolBindings, VtkjsToolEvents } from './enums/index';
 
 // LifeCycle / Stateful?
@@ -14,6 +21,10 @@ export default {
   init,
   BaseTool,
   PanTool,
+  WindowLevelTool,
+  PetThresholdTool,
+  ZoomTool,
+  StackScrollTool,
   ToolGroupManager,
   ToolBindings,
   VtkjsToolEvents,
@@ -23,9 +34,13 @@ export default {
 
 //
 export {
-  // Tools
+  // Tools // TODO Lets put these somewhere else.
   BaseTool,
   PanTool,
+  WindowLevelTool,
+  PetThresholdTool,
+  ZoomTool,
+  StackScrollTool,
   //
   ToolGroupManager,
   ToolBindings,

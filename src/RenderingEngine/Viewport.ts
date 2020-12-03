@@ -130,7 +130,7 @@ class Viewport implements ViewportInterface {
   public render() {
     const renderingEngine = this.getRenderingEngine();
 
-    renderingEngine.render();
+    renderingEngine.renderViewport(this.sceneUID, this.uid);
   }
 
   /**
@@ -303,8 +303,9 @@ class Viewport implements ViewportInterface {
 
     const renderer = this.getRenderer();
 
-    // renderer.resetCamera();
-    // renderer.resetCameraClippingRange();
+    if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {
+      renderer.resetCameraClippingRange();
+    }
   }
 
   /**

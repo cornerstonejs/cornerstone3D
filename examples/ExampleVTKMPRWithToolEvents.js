@@ -12,6 +12,7 @@ import {
 } from './../src/index';
 import csTools3d, {
   PanTool,
+  WindowLevelTool,
   ToolGroupManager,
   ToolBindings,
 } from './../src/cornerstone-tools-3d/index';
@@ -20,31 +21,61 @@ import './ExampleVTKMPR.css';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 
-// These need to be in lifecylce so we can undo on page death
-csTools3d.addTool(PanTool, {}); // Should work w/ undefined
+const renderingEngineUID = 'PETCTRenderingEngine';
+const ctVolumeUID = 'CT_VOLUME';
 
-const mySpecialToolGroup = ToolGroupManager.createToolGroup('a-tool-group-id');
+const SCENE_IDS = {
+  CT: 'ctScene',
+  PT: 'ptScene',
+  FUSION: 'fusionScene',
+  PTMIP: 'ptMipScene',
+  CTVR: 'ctVRScene',
+};
 
-// Options should be... Optional. Verify.
-mySpecialToolGroup.addTool('Pan', {});
-mySpecialToolGroup.setToolActive('Pan', {
-  bindings: [ToolBindings.Mouse.Primary],
-});
+const VIEWPORT_IDS = {
+  CT: {
+    AXIAL: 'ctAxial',
+    SAGITTAL: 'ctSagittal',
+    CORONAL: 'ctCoronal',
+  },
+  CTVR: {
+    VR: 'ctVR',
+  },
+};
 
-// Add viewports
-renderingEventTarget.addEventListener(RENDERING_EVENTS.ELEMENT_ENABLED, evt => {
+// TODO -> Need to add tools on mount.
 
-  // Is DOM element
-  const canvas = evt.detail.canvas;
-  // Is construct
-  const enabledElement = getEnabledElement(canvas);
-  const { viewportUID, sceneUID, renderingEngineUID } = enabledElement;
+// // These need to be in lifecylce so we can undo on page death
+// csTools3d.addTool(PanTool, {}); // Should work w/ undefined
+// csTools3d.addTool(WindowLevelTool, {}); // Should work w/ undefined
 
-  // How... do I identify viewports / hanging-protocol?
-  // Only thing I can think to do here is add by catching enabled_element event
-  // Assume remove should auto-happen when element is destroyed/disabled?
-  mySpecialToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID);
-});
+// const mySpecialToolGroup = ToolGroupManager.createToolGroup('a-tool-group-id');
+
+// // Options should be... Optional. Verify.
+// mySpecialToolGroup.addTool('WindowLevel', {
+//   configuration: { volumeUID: ctVolumeUID },
+// });
+// mySpecialToolGroup.addTool('Pan', {});
+// mySpecialToolGroup.setToolActive('WindowLevel', {
+//   bindings: [ToolBindings.Mouse.Primary],
+// });
+// mySpecialToolGroup.setToolActive('Pan', {
+//   bindings: [ToolBindings.Mouse.Auxiliary],
+// });
+
+// // Add viewports
+// renderingEventTarget.addEventListener(RENDERING_EVENTS.ELEMENT_ENABLED, evt => {
+//   // Is DOM element
+//   const canvas = evt.detail.canvas;
+//   // Is construct
+//   const enabledElement = getEnabledElement(canvas);
+//   const { viewportUID, sceneUID, renderingEngineUID } = enabledElement;
+
+//   // How... do I identify viewports / hanging-protocol?
+//   // Only thing I can think to do here is add by catching enabled_element event
+//   // Assume remove should auto-happen when element is destroyed/disabled?
+//   mySpecialToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID);
+// });
 
 // TODO:
 // X Import our example tool
@@ -54,7 +85,6 @@ renderingEventTarget.addEventListener(RENDERING_EVENTS.ELEMENT_ENABLED, evt => {
 // X Add tool to tool group
 // ~ See if we can get dispatcher to pull correct tool on event
 // ~ See if we can change the camera
-
 
 // renderingEventTarget.addEventListener(EVENTS.IMAGE_RENDERED, evt => {
 //   console.log(evt.type);
@@ -99,28 +129,6 @@ renderingEventTarget.addEventListener(RENDERING_EVENTS.ELEMENT_ENABLED, evt => {
 //   console.log(evt.type);
 //   console.log(evt.detail);
 // });
-
-const renderingEngineUID = 'PETCTRenderingEngine';
-const ctVolumeUID = 'CT_VOLUME';
-
-const SCENE_IDS = {
-  CT: 'ctScene',
-  PT: 'ptScene',
-  FUSION: 'fusionScene',
-  PTMIP: 'ptMipScene',
-  CTVR: 'ctVRScene',
-};
-
-const VIEWPORT_IDS = {
-  CT: {
-    AXIAL: 'ctAxial',
-    SAGITTAL: 'ctSagittal',
-    CORONAL: 'ctCoronal',
-  },
-  CTVR: {
-    VR: 'ctVR',
-  },
-};
 
 class VTKMPRWithToolEventsExample extends Component {
   state = {
