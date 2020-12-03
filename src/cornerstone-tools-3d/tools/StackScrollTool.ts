@@ -5,7 +5,6 @@ import { getEnabledElement, imageCache } from './../../index';
 import { vec3 } from 'gl-matrix';
 // @ts-ignore
 import getVolumeActorCorners from '../util/vtkjs/getVolumeActorCorners.ts';
-
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 
 export default class StackScrollTool extends BaseTool {
