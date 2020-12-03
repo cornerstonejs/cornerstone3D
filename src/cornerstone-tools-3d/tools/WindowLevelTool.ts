@@ -113,9 +113,6 @@ export default class WindowLevelTool extends BaseTool {
     const imageVolume = imageCache.getImageVolume(volumeUID);
     const { dimensions, scalarData } = imageVolume;
 
-    const t0 = performance.now();
-
-    // TODO -> Do this for the active slice.
     // TODO -> cache it when we have mouse down interaction, for all of drag?
     // TODO -> Might be overkill This calculation only takes 0.5ms for CT.
 
