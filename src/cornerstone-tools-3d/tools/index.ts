@@ -8,6 +8,8 @@ import WindowLevelTool from './WindowLevelTool.ts';
 import PetThresholdTool from './PetThresholdTool.ts';
 // @ts-ignore
 import StackScrollTool from './StackScrollTool';
+// @ts-ignore
+import ZoomTool from './ZoomTool';
 
 export {
   // ~~ BASE
@@ -17,4 +19,5 @@ export {
   WindowLevelTool,
   PetThresholdTool,
   StackScrollTool,
+  ZoomTool,
 };

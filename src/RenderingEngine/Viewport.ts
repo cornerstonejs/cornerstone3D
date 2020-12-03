@@ -303,8 +303,9 @@ class Viewport implements ViewportInterface {
 
     const renderer = this.getRenderer();
 
-    // renderer.resetCamera();
-    // renderer.resetCameraClippingRange();
+    if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {
+      renderer.resetCameraClippingRange();
+    }
   }
 
   /**

@@ -15,6 +15,7 @@ import csTools3d, {
   WindowLevelTool,
   PetThresholdTool,
   StackScrollTool,
+  ZoomTool,
   ToolGroupManager,
   ToolBindings,
 } from './../src/cornerstone-tools-3d/index';
@@ -69,6 +70,7 @@ const TOOL_GROUP_UIDS = {
   PT: 'ptSceneToolGroup',
   FUSION: 'fusionSceneToolGroup',
   PTMIP: 'ptMipSceneToolGroup',
+  CTVR: 'ctVRSceneToolGroup',
 };
 
 // TODO: Can we delete tool groups?
@@ -77,6 +79,7 @@ csTools3d.addTool(PanTool, {});
 csTools3d.addTool(WindowLevelTool, {});
 csTools3d.addTool(PetThresholdTool, {});
 csTools3d.addTool(StackScrollTool, {});
+csTools3d.addTool(ZoomTool, {});
 
 const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
 const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
@@ -86,21 +89,23 @@ const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
 const ptMipSceneToolGroup = ToolGroupManager.createToolGroup(
   TOOL_GROUP_UIDS.PTMIP
 );
+const ctVRSceneToolGroup = ToolGroupManager.createToolGroup(
+  TOOL_GROUP_UIDS.CTVR
+);
 
 // Set up CT Scene tools
 ctSceneToolGroup.addTool('WindowLevel', {
   configuration: { volumeUID: ctVolumeUID },
 });
 ctSceneToolGroup.addTool('Pan', {});
-ctSceneToolGroup.addTool('StackScroll', {});
+ctSceneToolGroup.addTool('Zoom', {});
 ctSceneToolGroup.setToolActive('WindowLevel', {
   bindings: [ToolBindings.Mouse.Primary],
 });
 ctSceneToolGroup.setToolActive('Pan', {
   bindings: [ToolBindings.Mouse.Auxiliary],
 });
-// TODO -> Move to mouse wheel.
-ctSceneToolGroup.setToolActive('StackScroll', {
+ctSceneToolGroup.setToolActive('Zoom', {
   bindings: [ToolBindings.Mouse.Secondary],
 });
 
@@ -109,29 +114,40 @@ ptSceneToolGroup.addTool('PetThreshold', {
   configuration: { volumeUID: ptVolumeUID },
 });
 ptSceneToolGroup.addTool('Pan', {});
-ptSceneToolGroup.addTool('StackScroll', {});
+ptSceneToolGroup.addTool('Zoom', {});
 ptSceneToolGroup.setToolActive('PetThreshold', {
   bindings: [ToolBindings.Mouse.Primary],
 });
 ptSceneToolGroup.setToolActive('Pan', {
   bindings: [ToolBindings.Mouse.Auxiliary],
 });
-// TODO -> Move to mouse wheel.
-ptSceneToolGroup.setToolActive('StackScroll', {
+ptSceneToolGroup.setToolActive('Zoom', {
   bindings: [ToolBindings.Mouse.Secondary],
 });
 
 // Set up Fusion Scene tools
 fusionSceneToolGroup.addTool('Pan', {});
 fusionSceneToolGroup.addTool('StackScroll', {});
-
+fusionSceneToolGroup.addTool('Zoom', {});
 // TODO -> Move to mouse wheel.
 fusionSceneToolGroup.setToolActive('StackScroll', {
+  bindings: [ToolBindings.Mouse.Primary],
+});
+fusionSceneToolGroup.setToolActive('Pan', {
+  bindings: [ToolBindings.Mouse.Auxiliary],
+});
+fusionSceneToolGroup.setToolActive('Zoom', {
   bindings: [ToolBindings.Mouse.Secondary],
 });
 
-fusionSceneToolGroup.setToolActive('Pan', {
+// Set up CTVR Scene tools
+ctVRSceneToolGroup.addTool('Pan', {});
+ctVRSceneToolGroup.addTool('Zoom', {});
+ctVRSceneToolGroup.setToolActive('Pan', {
   bindings: [ToolBindings.Mouse.Auxiliary],
+});
+ctVRSceneToolGroup.setToolActive('Zoom', {
+  bindings: [ToolBindings.Mouse.Secondary],
 });
 
 const colormaps = ['hsv', 'RED-PURPLE'];
@@ -439,7 +455,7 @@ class VTKMPRExample extends Component {
   }
 
   setFourUpCTLayout = () => {
-    this.renderingEngine.setViewports([
+    const viewportInput = [
       // CT
       {
         sceneUID: SCENE_IDS.CT,
@@ -481,7 +497,31 @@ class VTKMPRExample extends Component {
           },
         },
       },
-    ]);
+    ];
+
+    this.renderingEngine.setViewports(viewportInput);
+
+    const renderingEngineUID = this.renderingEngine.uid;
+
+    viewportInput.forEach(viewportInputEntry => {
+      const { sceneUID, viewportUID } = viewportInputEntry;
+
+      if (sceneUID === SCENE_IDS.CT) {
+        console.log(`adding ${viewportUID} to CT toolgroup`);
+        ctSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      } else if (sceneUID === SCENE_IDS.CTVR) {
+        console.log(`adding ${viewportUID} to CTVR toolgroup`);
+        ctVRSceneToolGroup.addViewports(
+          renderingEngineUID,
+          sceneUID,
+          viewportUID
+        );
+      }
+    });
   };
 
   setFourUpCTVolumes() {
@@ -901,7 +941,7 @@ class VTKMPRExample extends Component {
               />
             </div>
           </div>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <canvas ref={this.containers.PTMIP.CORONAL} style={ptMIPStyle} />
           </div>
         </React.Fragment>
@@ -909,7 +949,7 @@ class VTKMPRExample extends Component {
     } else if (layout === 'CTVR') {
       viewportLayout = (
         <React.Fragment>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <div className="container-row">
               <canvas ref={this.containers.CT.AXIAL} style={fourUpStyle} />
               <canvas ref={this.containers.CT.SAGITTAL} style={fourUpStyle} />
@@ -924,7 +964,7 @@ class VTKMPRExample extends Component {
     } else if (layout === 'SinglePTSagittal') {
       viewportLayout = (
         <React.Fragment>
-          <div>
+          <div onContextMenu={e => e.preventDefault()}>
             <div className="container-row">
               <canvas
                 ref={this.containers.PT.SAGITTAL}

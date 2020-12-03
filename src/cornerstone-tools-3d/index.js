@@ -10,6 +10,7 @@ import {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  ZoomTool,
   StackScrollTool,
 } from './tools/index.ts';
 import { ToolBindings, VtkjsToolEvents } from './enums/index';
@@ -22,6 +23,7 @@ export default {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  ZoomTool,
   StackScrollTool,
   ToolGroupManager,
   ToolBindings,
@@ -37,6 +39,7 @@ export {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  ZoomTool,
   StackScrollTool,
   //
   ToolGroupManager,
