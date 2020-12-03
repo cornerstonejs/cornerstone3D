@@ -43,11 +43,10 @@ export default class StackScrollTool extends BaseTool {
     const { focalPoint, viewPlaneNormal, position } = camera;
 
     // Stack scroll across highest resolution volume.
-    const {
-      orthogonalDirection,
-      spacingInNormalDirection,
-      imageVolume,
-    } = this._getTargetVolume(scene, camera);
+    const { spacingInNormalDirection, imageVolume } = this._getTargetVolume(
+      scene,
+      camera
+    );
 
     const volumeActor = scene.getVolumeActor(imageVolume.uid);
 
@@ -56,8 +55,6 @@ export default class StackScrollTool extends BaseTool {
       viewPlaneNormal,
       focalPoint
     );
-
-    const newFocalPoint = [...focalPoint];
 
     // TODO calculate these bounds.
     // Cache these during a drag?
@@ -68,20 +65,29 @@ export default class StackScrollTool extends BaseTool {
 
     // Snaps to a slice if orthogonal, will snap to certain increments
     // As defined by the spacingInNormalDirection if oblique.
-    this._snapFocalPointToSlice(
-      newFocalPoint,
+    const { slicePos, newFocalPoint } = this._snapFocalPointToSlice(
+      focalPoint,
       scrollRange,
       viewPlaneNormal,
       spacingInNormalDirection
     );
 
+    const { min, max } = scrollRange;
+
     const { y: deltaY } = deltaPoints.canvas;
+    let scrollDistance = spacingInNormalDirection * deltaY;
+
+    if (slicePos + scrollDistance > max) {
+      scrollDistance = max - slicePos;
+    } else if (slicePos + scrollDistance < min) {
+      scrollDistance = slicePos - min;
+    }
 
     // Move delta y slices
 
-    newFocalPoint[0] += deltaY * viewPlaneNormal[0] * spacingInNormalDirection;
-    newFocalPoint[1] += deltaY * viewPlaneNormal[1] * spacingInNormalDirection;
-    newFocalPoint[2] += deltaY * viewPlaneNormal[2] * spacingInNormalDirection;
+    newFocalPoint[0] += viewPlaneNormal[0] * scrollDistance;
+    newFocalPoint[1] += viewPlaneNormal[1] * scrollDistance;
+    newFocalPoint[2] += viewPlaneNormal[2] * scrollDistance;
 
     const focalPointDiff = [
       newFocalPoint[0] - focalPoint[0],
@@ -128,32 +134,14 @@ export default class StackScrollTool extends BaseTool {
 
     const diff = slicePos - current;
 
-    focalPoint[0] += viewPlaneNormal[0] * diff;
-    focalPoint[1] += viewPlaneNormal[1] * diff;
-    focalPoint[2] += viewPlaneNormal[2] * diff;
+    const newFocalPoint = [
+      focalPoint[0] + viewPlaneNormal[0] * diff,
+      focalPoint[1] + viewPlaneNormal[1] * diff,
+      focalPoint[2] + viewPlaneNormal[2] * diff,
+    ];
+
+    return { slicePos, newFocalPoint };
   };
-
-  // private _getCurrentSliceIndexOrthogonal = (
-  //   imageVolume,
-  //   focalPoint,
-  //   direction
-  // ) => {
-  //   const { origin, spacing, dimensions } = imageVolume;
-
-  //   const { index, positive } = direction;
-
-  //   const originInDirection = origin[index];
-  //   const focalPointInDirection = focalPoint[index];
-  //   const spacingInDirection = spacing[index];
-  //   const dimensionInDirection = dimensions[index];
-  //   let slicePos = originInDirection;
-
-  //   debugger;
-
-  //   //for (let i =0; i < )
-
-  //   debugger;
-  // };
 
   private _getTargetVolume = (scene, camera) => {
     const { viewPlaneNormal } = camera;
@@ -175,15 +163,12 @@ export default class StackScrollTool extends BaseTool {
       // If a volumeUID is defined, set that volume as the target
       const imageVolume = imageVolumes.find(iv => iv.uid === volumeUID);
 
-      const {
-        spacingInNormalDirection,
-        orthogonalDirection,
-      } = this._getSpacingInNormalDirectionAndCheckIfOrthogonal(
+      const spacingInNormalDirection = this._getSpacingInNormalDirection(
         imageVolume,
         viewPlaneNormal
       );
 
-      return { imageVolume, spacingInNormalDirection, orthogonalDirection };
+      return { imageVolume, spacingInNormalDirection };
     }
 
     // Fetch volume actor with finest resolution in direction of projection.
@@ -191,16 +176,12 @@ export default class StackScrollTool extends BaseTool {
     const smallest = {
       spacingInNormalDirection: Infinity,
       imageVolume: null,
-      orthogonalDirection: null,
     };
 
     for (let i = 0; i < numVolumeActors; i++) {
       const imageVolume = imageVolumes[i];
 
-      const {
-        spacingInNormalDirection,
-        orthogonalDirection,
-      } = this._getSpacingInNormalDirectionAndCheckIfOrthogonal(
+      const spacingInNormalDirection = this._getSpacingInNormalDirection(
         imageVolume,
         viewPlaneNormal
       );
@@ -208,7 +189,6 @@ export default class StackScrollTool extends BaseTool {
       if (spacingInNormalDirection < smallest.spacingInNormalDirection) {
         smallest.spacingInNormalDirection = spacingInNormalDirection;
         smallest.imageVolume = imageVolume;
-        smallest.orthogonalDirection = orthogonalDirection;
       }
     }
 
@@ -248,14 +228,10 @@ export default class StackScrollTool extends BaseTool {
     return { min: minX, max: maxX, current: currentSlice };
   };
 
-  _getSpacingInNormalDirectionAndCheckIfOrthogonal = (
-    imageVolume,
-    viewPlaneNormal
-  ) => {
+  _getSpacingInNormalDirection = (imageVolume, viewPlaneNormal) => {
     const { direction, spacing } = imageVolume;
 
     // Calculate size of spacing vector in normal direction
-
     const iVector = direction.slice(0, 3);
     const jVector = direction.slice(3, 6);
     const kVector = direction.slice(6, 9);
@@ -266,8 +242,6 @@ export default class StackScrollTool extends BaseTool {
       vec3.dot(kVector, viewPlaneNormal),
     ];
 
-    const orthogonalDirection = this._getOrthogonalDirection(dotProducts);
-
     const projectedSpacing = [
       dotProducts[0] * spacing[0],
       dotProducts[1] * spacing[1],
@@ -276,51 +250,8 @@ export default class StackScrollTool extends BaseTool {
 
     const spacingInNormalDirection = vec3.length(projectedSpacing);
 
-    return { spacingInNormalDirection, orthogonalDirection };
-  };
-
-  private _getOrthogonalDirection = dotProducts => {
-    let dp = dotProducts[0];
-
-    if (Math.abs(Math.abs(dp) - 1) < ORTHOGONAL_THRESHOLD) {
-      if (dp > 0) {
-        return ORTHOGONAL_DIRECTIONS.POSITIVE_I;
-      }
-
-      return ORTHOGONAL_DIRECTIONS.NEGATIVE_I;
-    }
-
-    dp = dotProducts[1];
-
-    if (Math.abs(Math.abs(dp) - 1) < ORTHOGONAL_THRESHOLD) {
-      if (dp > 0) {
-        return ORTHOGONAL_DIRECTIONS.POSITIVE_J;
-      }
-
-      return ORTHOGONAL_DIRECTIONS.NEGATIVE_J;
-    }
-
-    dp = dotProducts[2];
-
-    if (Math.abs(Math.abs(dp) - 1) < ORTHOGONAL_THRESHOLD) {
-      if (dp > 0) {
-        return ORTHOGONAL_DIRECTIONS.POSITIVE_K;
-      }
-
-      return ORTHOGONAL_DIRECTIONS.NEGATIVE_K;
-    }
-
-    return false;
+    return spacingInNormalDirection;
   };
 }
 
-const ORTHOGONAL_DIRECTIONS = {
-  POSITIVE_I: { index: 0, positive: true },
-  POSITIVE_J: { index: 1, positive: true },
-  POSITIVE_K: { index: 2, positive: true },
-  NEGATIVE_I: { index: 0, positive: false },
-  NEGATIVE_J: { index: 1, positive: false },
-  NEGATIVE_K: { index: 2, positive: false },
-};
-
-const ORTHOGONAL_THRESHOLD = 1e-5;
+const EDGE_TOLERANCE = 1e-5;
