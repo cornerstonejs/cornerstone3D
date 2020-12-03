@@ -10,6 +10,8 @@ import PetThresholdTool from './PetThresholdTool.ts';
 import StackScrollTool from './StackScrollTool.ts';
 // @ts-ignore
 import ZoomTool from './ZoomTool.ts';
+// @ts-ignore
+import VolumeRotateTool from './VolumeRotateTool.ts';
 
 export {
   // ~~ BASE
@@ -20,4 +22,5 @@ export {
   PetThresholdTool,
   StackScrollTool,
   ZoomTool,
+  VolumeRotateTool,
 };

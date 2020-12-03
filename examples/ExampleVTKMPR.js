@@ -18,6 +18,7 @@ import csTools3d, {
   ZoomTool,
   ToolGroupManager,
   ToolBindings,
+  VolumeRotateTool,
 } from './../src/cornerstone-tools-3d/index';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
@@ -80,6 +81,7 @@ csTools3d.addTool(WindowLevelTool, {});
 csTools3d.addTool(PetThresholdTool, {});
 csTools3d.addTool(StackScrollTool, {});
 csTools3d.addTool(ZoomTool, {});
+csTools3d.addTool(VolumeRotateTool, {});
 
 const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
 const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
@@ -138,6 +140,12 @@ fusionSceneToolGroup.setToolActive('Pan', {
 });
 fusionSceneToolGroup.setToolActive('Zoom', {
   bindings: [ToolBindings.Mouse.Secondary],
+});
+
+ptMipSceneToolGroup.addTool('VolumeRotate', {});
+// TODO -> Move to mouse wheel.
+ptMipSceneToolGroup.setToolActive('VolumeRotate', {
+  bindings: [ToolBindings.Mouse.Primary],
 });
 
 // Set up CTVR Scene tools
