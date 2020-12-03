@@ -5,7 +5,7 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: circleci/node:10.15.1
+    - image: circleci/node:14.15.1-browsers
       environment:
         TERM: xterm # Enable colors in term
 
@@ -35,29 +35,39 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - run: npm run build && npm run build:release
-      # https://circleci.com/docs/2.0/collect-test-data/#karma
-      # - store_test_results:
-      #     path: reports/junit
-      # - store_artifacts:
-      #     path: reports/junit
-      - persist_to_workspace:
-          root: ~/repo
-          paths: .
+      - run: yarn run build
 
-  NPM_PUBLISH:
+  # https://circleci.com/docs/2.0/collect-test-data/#karma
+  TEST:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
+      - run: mkdir ~/junit
       - run:
-          name: Avoid hosts unknown for github
-          command:
-            mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
-            no\n" > ~/.ssh/config
-      - run:
-          name: Publish using Semantic Release
-          command: npx semantic-release@15.13.24 --debug
+          command: yarn run test:ci
+          environment:
+            JUNIT_REPORT_PATH: ./junit/
+            JUNIT_REPORT_NAME: test-results.xml
+          when: always
+      - store_test_results:
+          path: ./junit
+      - store_artifacts:
+          path: ./junit
+
+  # NPM_PUBLISH:
+  #   <<: *defaults
+  #   steps:
+  #     - attach_workspace:
+  #         at: ~/repo
+  #     - run:
+  #         name: Avoid hosts unknown for github
+  #         command:
+  #           mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
+  #           no\n" > ~/.ssh/config
+  #     - run:
+  #         name: Publish using Semantic Release
+  #         command: npx semantic-release@15.13.24 --debug
 
 workflows:
   version: 2
@@ -75,17 +85,20 @@ workflows:
       - BUILD:
           requires:
             - CHECKOUT
-
-  # MERGE TO MASTER
-  TEST_AND_RELEASE:
-    jobs:
-      - CHECKOUT:
-          filters:
-            branches:
-              only: master
-      - BUILD:
+      - TEST:
           requires:
             - CHECKOUT
-      - NPM_PUBLISH:
-          requires:
-            - BUILD
+
+  # MERGE TO MASTER
+  # TEST_AND_RELEASE:
+  #   jobs:
+  #     - CHECKOUT:
+  #         filters:
+  #           branches:
+  #             only: master
+  #     - BUILD:
+  #         requires:
+  #           - CHECKOUT
+  #     - NPM_PUBLISH:
+  #         requires:
+  #           - BUILD

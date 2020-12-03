@@ -90,6 +90,10 @@ module.exports = (env, argv) => {
     node: {
       // https://github.com/webpack-contrib/style-loader/issues/200
       Buffer: false,
+      // https://github.com/webpack-contrib/css-loader/issues/447
+      // Related to `fs` usage in codecs; may be able to remove after
+      // We update our codecs to latest
+      fs: 'empty',
     },
     plugins: [
       // Uncomment to generate bundle analyzer
