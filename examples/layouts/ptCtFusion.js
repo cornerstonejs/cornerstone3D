@@ -1,9 +1,16 @@
-import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
+import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
 import { CONSTANTS } from './../../src/index';
+import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
+import {
+  setCTWWWC,
+  setPetTransferFunction,
+  getSetPetColorMapTransferFunction,
+} from '../helpers/transferFunctionHelpers';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
+const { BlendMode } = vtkConstants;
 
-function set(
+function setLayout(
   renderingEngine,
   canvasContainers,
   {
@@ -151,4 +158,44 @@ function set(
   renderingEngine.render();
 }
 
-export default { set };
+function setVolumes(renderingEngine, ctVolumeUID, ptVolumeUID, petColorMap) {
+  const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
+  const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
+  const fusionScene = renderingEngine.getScene(SCENE_IDS.FUSION);
+  const ptMipScene = renderingEngine.getScene(SCENE_IDS.PTMIP);
+
+  ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+  ptScene.setVolumes([
+    { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
+  ]);
+
+  fusionScene.setVolumes([
+    { volumeUID: ctVolumeUID, callback: setCTWWWC },
+    {
+      volumeUID: ptVolumeUID,
+      callback: getSetPetColorMapTransferFunction(petColorMap),
+    },
+  ]);
+
+  const ptVolume = imageCache.getImageVolume(ptVolumeUID);
+  const ptVolumeDimensions = ptVolume.dimensions;
+
+  // Only make the MIP as large as it needs to be. This coronal MIP will be
+  // rotated so need the diagonal across the Axial Plane.
+
+  const slabThickness = Math.sqrt(
+    ptVolumeDimensions[0] * ptVolumeDimensions[0] +
+      ptVolumeDimensions[1] * ptVolumeDimensions[1]
+  );
+
+  ptMipScene.setVolumes([
+    {
+      volumeUID: ptVolumeUID,
+      callback: setPetTransferFunction,
+      blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+      slabThickness,
+    },
+  ]);
+}
+
+export default { setLayout, setVolumes };

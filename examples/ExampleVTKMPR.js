@@ -2,16 +2,11 @@ import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 
 import loadVolumes from './helpers/loadVolumes';
-import {
-  CONSTANTS as RENDERING_ENGINE_CONSTANTS,
-  imageCache,
-  RenderingEngine,
-} from './../src/index';
+import { imageCache, RenderingEngine } from './../src/index';
 import { initToolGroups, destroyToolGroups } from './initToolGroups';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
 import './ExampleVTKMPR.css';
 import {
   renderingEngineUID,
@@ -19,16 +14,8 @@ import {
   ctVolumeUID,
   colormaps,
   SCENE_IDS,
-  VIEWPORT_IDS,
 } from './constants';
-import LAYOUTS, { ptCtFusion } from './layouts';
-import {
-  setCTWWWC,
-  setPetTransferFunction,
-  setCTVRTransferFunction,
-  getSetPetColorMapTransferFunction,
-} from './helpers/transferFunctionHelpers';
-const { BlendMode } = vtkConstants;
+import LAYOUTS, { ptCtFusion, fourUpCT, singlePTSagittal } from './layouts';
 
 const {
   ctSceneToolGroup,
@@ -37,8 +24,6 @@ const {
   ptMipSceneToolGroup,
   ctVRSceneToolGroup,
 } = initToolGroups();
-
-const { ORIENTATION, VIEWPORT_TYPE } = RENDERING_ENGINE_CONSTANTS;
 
 class VTKMPRExample extends Component {
   state = {
@@ -103,7 +88,7 @@ class VTKMPRExample extends Component {
     window.renderingEngine = renderingEngine;
     window.imageCache = imageCache;
 
-    ptCtFusion.set(renderingEngine, this.containers, {
+    ptCtFusion.setLayout(renderingEngine, this.containers, {
       ctSceneToolGroup,
       ptSceneToolGroup,
       fusionSceneToolGroup,
@@ -138,7 +123,12 @@ class VTKMPRExample extends Component {
 
     loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID]);
 
-    this.setPTCTFusionVolumes();
+    ptCtFusion.setVolumes(
+      renderingEngine,
+      ctVolumeUID,
+      ptVolumeUID,
+      colormaps[this.state.petColorMapIndex]
+    );
 
     this.setState({ metadataLoaded: true });
 
@@ -156,27 +146,37 @@ class VTKMPRExample extends Component {
       if (layoutIndex === 0) {
         // FusionMIP
 
-        ptCtFusion.set(renderingEngine, containers, {
+        ptCtFusion.setLayout(renderingEngine, containers, {
           ctSceneToolGroup,
           ptSceneToolGroup,
           fusionSceneToolGroup,
           ptMipSceneToolGroup,
         });
-        this.setPTCTFusionVolumes();
+
+        ptCtFusion.setVolumes(
+          renderingEngine,
+          ctVolumeUID,
+          ptVolumeUID,
+          colormaps[this.state.petColorMapIndex]
+        );
+
         loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID]);
         renderingEngine.render();
       } else if (layoutIndex === 1) {
         // CTVR
 
-        this.setFourUpCTLayout();
-        this.setFourUpCTVolumes();
+        fourUpCT.setLayout(renderingEngine, containers, {
+          ctSceneToolGroup,
+          ctVRSceneToolGroup,
+        });
+        fourUpCT.setVolumes(renderingEngine, ctVolumeUID);
         loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
         renderingEngine.render();
       } else if (layoutIndex === 2) {
         // SinglePTSagittal
 
-        this.setSinglePTSagittalLayout();
-        this.setSinglePTSagittalVolumes();
+        singlePTSagittal.setLayout(renderingEngine, containers);
+        singlePTSagittal.setVolumes(renderingEngine, ptVolumeUID);
         loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID]);
         renderingEngine.render();
       } else {
@@ -190,155 +190,6 @@ class VTKMPRExample extends Component {
 
     this.setState({ layoutIndex });
   };
-
-  setSinglePTSagittalLayout = () => {
-    this.renderingEngine.setViewports([
-      // PT Sagittal
-      {
-        sceneUID: SCENE_IDS.PT,
-        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.containers.PT.SAGITTAL.current,
-        defaultOptions: {
-          orientation: ORIENTATION.SAGITTAL,
-          background: [1, 1, 1],
-        },
-      },
-    ]);
-  };
-
-  setSinglePTSagittalVolumes() {
-    const renderingEngine = this.renderingEngine;
-    const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
-    ptScene.setVolumes([
-      { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
-    ]);
-  }
-
-  setFourUpCTLayout = () => {
-    const viewportInput = [
-      // CT
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.containers.CT.AXIAL.current,
-        defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.containers.CT.SAGITTAL.current,
-        defaultOptions: {
-          orientation: ORIENTATION.SAGITTAL,
-        },
-      },
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.containers.CT.CORONAL.current,
-        defaultOptions: {
-          orientation: ORIENTATION.CORONAL,
-        },
-      },
-      {
-        sceneUID: SCENE_IDS.CTVR,
-        viewportUID: VIEWPORT_IDS.CTVR.VR,
-        type: VIEWPORT_TYPE.PERSPECTIVE,
-        canvas: this.containers.CTVR.VR.current,
-        defaultOptions: {
-          orientation: {
-            // Some arbitrary rotation so you can tell its 3D
-            sliceNormal: [-0.50000000827545, 0.8660253990066052, 0],
-            viewUp: [0, 0, 1],
-          },
-        },
-      },
-    ];
-
-    this.renderingEngine.setViewports(viewportInput);
-
-    const renderingEngineUID = this.renderingEngine.uid;
-
-    viewportInput.forEach(viewportInputEntry => {
-      const { sceneUID, viewportUID } = viewportInputEntry;
-
-      if (sceneUID === SCENE_IDS.CT) {
-        console.log(`adding ${viewportUID} to CT toolgroup`);
-        ctSceneToolGroup.addViewports(
-          renderingEngineUID,
-          sceneUID,
-          viewportUID
-        );
-      } else if (sceneUID === SCENE_IDS.CTVR) {
-        console.log(`adding ${viewportUID} to CTVR toolgroup`);
-        ctVRSceneToolGroup.addViewports(
-          renderingEngineUID,
-          sceneUID,
-          viewportUID
-        );
-      }
-    });
-  };
-
-  setFourUpCTVolumes() {
-    const renderingEngine = this.renderingEngine;
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
-    const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR);
-
-    ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
-
-    ctVRScene.setVolumes([
-      { volumeUID: ctVolumeUID, callback: setCTVRTransferFunction },
-    ]);
-  }
-
-  setPTCTFusionVolumes() {
-    const renderingEngine = this.renderingEngine;
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
-    const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
-    const fusionScene = renderingEngine.getScene(SCENE_IDS.FUSION);
-    const ptMipScene = renderingEngine.getScene(SCENE_IDS.PTMIP);
-
-    ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
-    ptScene.setVolumes([
-      { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
-    ]);
-
-    fusionScene.setVolumes([
-      { volumeUID: ctVolumeUID, callback: setCTWWWC },
-      {
-        volumeUID: ptVolumeUID,
-        callback: getSetPetColorMapTransferFunction(
-          colormaps[this.state.petColorMapIndex]
-        ),
-      },
-    ]);
-
-    const ptVolume = imageCache.getImageVolume(ptVolumeUID);
-    const ptVolumeDimensions = ptVolume.dimensions;
-
-    // Only make the MIP as large as it needs to be. This coronal MIP will be
-    // rotated so need the diagonal across the Axial Plane.
-
-    const slabThickness = Math.sqrt(
-      ptVolumeDimensions[0] * ptVolumeDimensions[0] +
-        ptVolumeDimensions[1] * ptVolumeDimensions[1]
-    );
-
-    ptMipScene.setVolumes([
-      {
-        volumeUID: ptVolumeUID,
-        callback: setPetTransferFunction,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
-        slabThickness,
-      },
-    ]);
-  }
 
   testRender() {
     if (this.performingRenderTest) {
