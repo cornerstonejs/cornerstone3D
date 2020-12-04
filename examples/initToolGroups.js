@@ -2,7 +2,7 @@ import csTools3d, {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
-  StackScrollTool,
+  StackScrollMouseWheelTool,
   ZoomTool,
   ToolGroupManager,
   ToolBindings,
@@ -16,7 +16,7 @@ function initToolGroups() {
   csTools3d.addTool(PanTool, {});
   csTools3d.addTool(WindowLevelTool, {});
   csTools3d.addTool(PetThresholdTool, {});
-  csTools3d.addTool(StackScrollTool, {});
+  csTools3d.addTool(StackScrollMouseWheelTool, {});
   csTools3d.addTool(ZoomTool, {});
   csTools3d.addTool(VolumeRotateTool, {});
 
@@ -66,12 +66,10 @@ function initToolGroups() {
 
   // Set up Fusion Scene tools
   fusionSceneToolGroup.addTool('Pan', {});
-  fusionSceneToolGroup.addTool('StackScroll', {});
+  fusionSceneToolGroup.addTool('StackScrollMouseWheelTool', {});
   fusionSceneToolGroup.addTool('Zoom', {});
   // TODO -> Move to mouse wheel.
-  fusionSceneToolGroup.setToolActive('StackScroll', {
-    bindings: [ToolBindings.Mouse.Primary],
-  });
+  fusionSceneToolGroup.setToolActive('StackScrollMouseWheelTool');
   fusionSceneToolGroup.setToolActive('Pan', {
     bindings: [ToolBindings.Mouse.Auxiliary],
   });

@@ -6,7 +6,7 @@ import { vec3 } from 'gl-matrix';
 import getVolumeActorCorners from '../util/vtkjs/getVolumeActorCorners';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 
-export default class StackScrollTool extends BaseTool {
+export default class StackScrollMouseWheelTool extends BaseTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
   _configuration: any;
@@ -14,7 +14,7 @@ export default class StackScrollTool extends BaseTool {
   // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
-      name: 'StackScroll',
+      name: 'StackScrollMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
     });
 
@@ -28,6 +28,10 @@ export default class StackScrollTool extends BaseTool {
      */
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
+  }
+
+  mouseWheelCallback(evt) {
+    debugger;
   }
 
   // Takes ICornerstoneEvent, Mouse or Touch

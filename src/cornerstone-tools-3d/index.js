@@ -12,6 +12,7 @@ import {
   PetThresholdTool,
   ZoomTool,
   StackScrollTool,
+  StackScrollMouseWheelTool,
   VolumeRotateTool,
 } from './tools/index';
 import { ToolBindings, VtkjsToolEvents } from './enums/index';
@@ -28,6 +29,7 @@ export default {
   PetThresholdTool,
   ZoomTool,
   StackScrollTool,
+  StackScrollMouseWheelTool,
   //
   VolumeRotateTool,
   ToolGroupManager,
