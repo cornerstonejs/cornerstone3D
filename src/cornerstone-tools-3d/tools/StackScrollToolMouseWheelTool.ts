@@ -6,37 +6,26 @@ import { vec3 } from 'gl-matrix';
 import getVolumeActorCorners from '../util/vtkjs/getVolumeActorCorners';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 
-export default class StackScrollTool extends BaseTool {
+export default class StackScrollMouseWheelTool extends BaseTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
   _configuration: any;
 
-  // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
-      name: 'StackScroll',
+      name: 'StackScrollMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
     });
-
-    /**
-     * Will only fire fore cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-    this.touchDragCallback = this._dragCallback.bind(this);
-    this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  // Takes ICornerstoneEvent, Mouse or Touch
-  _dragCallback(evt) {
-    const { element: canvas, deltaPoints } = evt.detail;
+  mouseWheelCallback(evt) {
+    const { element: canvas, wheel } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
     const { scene, viewport } = enabledElement;
     const camera = viewport.getCamera();
     const { focalPoint, viewPlaneNormal, position } = camera;
+
+    const { direction: deltaY } = wheel;
 
     // Stack scroll across highest resolution volume.
     const { spacingInNormalDirection, imageVolume } = this._getTargetVolume(
@@ -52,13 +41,6 @@ export default class StackScrollTool extends BaseTool {
       focalPoint
     );
 
-    // TODO calculate these bounds.
-    // Cache these during a drag?
-    // - Cache on mouse down?
-    // - Decache on mouse up?
-    // TODO - How do we cache on mouse wheel scroll?
-    // TODO Is this tool per element or what? Could just cache here.
-
     // Snaps to a slice if orthogonal, will snap to certain increments
     // As defined by the spacingInNormalDirection if oblique.
     const { slicePos, newFocalPoint } = this._snapFocalPointToSlice(
@@ -70,7 +52,6 @@ export default class StackScrollTool extends BaseTool {
 
     const { min, max } = scrollRange;
 
-    const { y: deltaY } = deltaPoints.canvas;
     let scrollDistance = spacingInNormalDirection * deltaY;
 
     if (slicePos + scrollDistance > max) {

@@ -13,7 +13,10 @@ import { getEnabledElement } from './../../../index';
  * @returns {undefined}
  */
 function wheelListener(evt: WheelEvent) {
-  const element = evt.currentTarget;
+  const element = evt.currentTarget as HTMLElement;
+
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngineUID, sceneUID, viewportUID } = enabledElement;
 
   // Prevent triggering MouseWheel events that are not real scroll events:
   // E.g. when clicking the MiddleMouseWheelButton, a deltaY of 0 is emitted.
@@ -28,6 +31,9 @@ function wheelListener(evt: WheelEvent) {
   const direction = spinY < 0 ? -1 : 1;
 
   const eventData = {
+    renderingEngineUID,
+    sceneUID,
+    viewportUID,
     element,
     camera: {},
     detail: evt,

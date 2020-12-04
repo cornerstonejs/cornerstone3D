@@ -10,14 +10,14 @@ enum DIRECTIONS {
   Z = 2,
 }
 
-export default class PetThresholdTool extends BaseTool {
+export default class VolumeRotateMouseWheelTool extends BaseTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
   _configuration: any;
 
   constructor(toolConfiguration = {}) {
     const defaultToolConfiguration = {
-      name: 'VolumeRotate',
+      name: 'VolumeRotateMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         direction: DIRECTIONS.Z,
@@ -26,22 +26,10 @@ export default class PetThresholdTool extends BaseTool {
     };
 
     super(toolConfiguration, defaultToolConfiguration);
-
-    /**
-     * Will only fire for cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-    this.touchDragCallback = this._dragCallback.bind(this);
-    this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  // Takes ICornerstoneEvent, Mouse or Touch
-  _dragCallback(evt) {
-    const { element: canvas, deltaPoints } = evt.detail;
+  mouseWheelCallback(evt) {
+    const { element: canvas, wheel } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
     const { viewport } = enabledElement;
     const { direction, rotateIncrementDegrees } = this._configuration;
@@ -49,7 +37,7 @@ export default class PetThresholdTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewUp, viewPlaneNormal, position, focalPoint } = camera;
     const focalLength = vec3.distance(position, focalPoint);
-    const { y: deltaY } = deltaPoints.canvas;
+    const { direction: deltaY } = wheel;
 
     // Rotate view up and viewPlaneNormal
 

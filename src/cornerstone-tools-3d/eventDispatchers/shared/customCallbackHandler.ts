@@ -67,5 +67,5 @@ export default function(handlerType: string, customFunction: string, evt) {
     return;
   }
 
-  foundTool[0][customFunction](evt);
+  foundTool[customFunction](evt);
 }
