@@ -6,7 +6,7 @@ import csTools3d, {
   ZoomTool,
   ToolGroupManager,
   ToolBindings,
-  VolumeRotateTool,
+  VolumeRotateMouseWheelTool,
 } from './../src/cornerstone-tools-3d/index';
 import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID } from './constants';
 
@@ -18,7 +18,7 @@ function initToolGroups() {
   csTools3d.addTool(PetThresholdTool, {});
   csTools3d.addTool(StackScrollMouseWheelTool, {});
   csTools3d.addTool(ZoomTool, {});
-  csTools3d.addTool(VolumeRotateTool, {});
+  csTools3d.addTool(VolumeRotateMouseWheelTool, {});
 
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
@@ -38,6 +38,8 @@ function initToolGroups() {
   });
   ctSceneToolGroup.addTool('Pan', {});
   ctSceneToolGroup.addTool('Zoom', {});
+  ctSceneToolGroup.addTool('StackScrollMouseWheel', {});
+  ctSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ctSceneToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
   });
@@ -54,6 +56,8 @@ function initToolGroups() {
   });
   ptSceneToolGroup.addTool('Pan', {});
   ptSceneToolGroup.addTool('Zoom', {});
+  ptSceneToolGroup.addTool('StackScrollMouseWheel', {});
+  ptSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ptSceneToolGroup.setToolActive('PetThreshold', {
     bindings: [ToolBindings.Mouse.Primary],
   });
@@ -66,10 +70,9 @@ function initToolGroups() {
 
   // Set up Fusion Scene tools
   fusionSceneToolGroup.addTool('Pan', {});
-  fusionSceneToolGroup.addTool('StackScrollMouseWheelTool', {});
+  fusionSceneToolGroup.addTool('StackScrollMouseWheel', {});
   fusionSceneToolGroup.addTool('Zoom', {});
-  // TODO -> Move to mouse wheel.
-  fusionSceneToolGroup.setToolActive('StackScrollMouseWheelTool');
+  fusionSceneToolGroup.setToolActive('StackScrollMouseWheel');
   fusionSceneToolGroup.setToolActive('Pan', {
     bindings: [ToolBindings.Mouse.Auxiliary],
   });
@@ -77,11 +80,8 @@ function initToolGroups() {
     bindings: [ToolBindings.Mouse.Secondary],
   });
 
-  ptMipSceneToolGroup.addTool('VolumeRotate', {});
-  // TODO -> Move to mouse wheel.
-  ptMipSceneToolGroup.setToolActive('VolumeRotate', {
-    bindings: [ToolBindings.Mouse.Primary],
-  });
+  ptMipSceneToolGroup.addTool('VolumeRotateMouseWheel', {});
+  ptMipSceneToolGroup.setToolActive('VolumeRotateMouseWheel');
 
   // Set up CTVR Scene tools
   ctVRSceneToolGroup.addTool('Pan', {});

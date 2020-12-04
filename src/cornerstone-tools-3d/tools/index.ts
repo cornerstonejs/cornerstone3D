@@ -5,7 +5,7 @@ import PetThresholdTool from './PetThresholdTool';
 import StackScrollTool from './StackScrollTool';
 import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
 import ZoomTool from './ZoomTool';
-import VolumeRotateTool from './VolumeRotateTool';
+import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 
 export {
   // ~~ BASE
@@ -17,5 +17,5 @@ export {
   StackScrollTool,
   StackScrollMouseWheelTool,
   ZoomTool,
-  VolumeRotateTool,
+  VolumeRotateMouseWheelTool,
 };

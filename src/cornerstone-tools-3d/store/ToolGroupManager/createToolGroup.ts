@@ -65,9 +65,15 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     ): void {
       // Would only need this for sanity check if not instantiating/hydrating
       // const tool = this.tools[toolName];
-      const toolModeOptionsWithMode = Object.assign({}, toolModeOptions, {
-        mode: 'active',
-      });
+      const toolModeOptionsWithMode = Object.assign(
+        {
+          bindings: [],
+        },
+        toolModeOptions,
+        {
+          mode: 'active',
+        }
+      );
 
       this.tools[toolName] = toolModeOptionsWithMode;
     },
