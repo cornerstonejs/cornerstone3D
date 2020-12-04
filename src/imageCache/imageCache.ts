@@ -1,7 +1,6 @@
-// @ts-ignore
-import ImageVolume from './classes/ImageVolume.ts';
-// @ts-ignore
-import StreamingImageVolume from './classes/StreamingImageVolume.ts';
+import ImageVolume from './classes/ImageVolume';
+
+import StreamingImageVolume from './classes/StreamingImageVolume';
 import { requestPoolManager } from 'cornerstone-tools';
 import { prefetchImageIds } from './helpers';
 import { vec3 } from 'gl-matrix';

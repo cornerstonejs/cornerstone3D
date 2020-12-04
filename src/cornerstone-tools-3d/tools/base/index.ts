@@ -1,4 +1,4 @@
 //@ts-ignore
-import BaseTool from './BaseTool.ts';
+import BaseTool from './BaseTool';
 
 export { BaseTool };

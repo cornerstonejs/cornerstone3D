@@ -1,17 +1,10 @@
-// @ts-ignore
-import { BaseTool } from './base/index.ts';
-// @ts-ignore
-import PanTool from './PanTool.ts';
-// @ts-ignore
-import WindowLevelTool from './WindowLevelTool.ts';
-// @ts-ignore
-import PetThresholdTool from './PetThresholdTool.ts';
-// @ts-ignore
-import StackScrollTool from './StackScrollTool.ts';
-// @ts-ignore
-import ZoomTool from './ZoomTool.ts';
-// @ts-ignore
-import VolumeRotateTool from './VolumeRotateTool.ts';
+import { BaseTool } from './base/index';
+import PanTool from './PanTool';
+import WindowLevelTool from './WindowLevelTool';
+import PetThresholdTool from './PetThresholdTool';
+import StackScrollTool from './StackScrollTool';
+import ZoomTool from './ZoomTool';
+import VolumeRotateTool from './VolumeRotateTool';
 
 export {
   // ~~ BASE

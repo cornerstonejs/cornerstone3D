@@ -1,10 +1,9 @@
-// @ts-ignore
-import { BaseTool } from './base/index.ts';
+import { BaseTool } from './base/index';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from './../../index';
 import { vec3 } from 'gl-matrix';
-// @ts-ignore
-import getVolumeActorCorners from '../util/vtkjs/getVolumeActorCorners.ts';
+
+import getVolumeActorCorners from '../util/vtkjs/getVolumeActorCorners';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 
 export default class StackScrollTool extends BaseTool {
@@ -12,14 +11,12 @@ export default class StackScrollTool extends BaseTool {
   mouseDragCallback: Function;
   _configuration: any;
 
-  // @ts-ignore // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
+  // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+    super(toolConfiguration, {
       name: 'StackScroll',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    };
-
-    super(toolConfiguration, defaultToolConfiguration);
+    });
 
     /**
      * Will only fire fore cornerstone events:

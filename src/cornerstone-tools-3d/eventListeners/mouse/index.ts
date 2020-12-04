@@ -1,9 +1,6 @@
-// @ts-ignore
-import mouseDoubleClickListener from './mouseDoubleClickListener.ts';
-// @ts-ignore
-import mouseDownListener from './mouseDownListener.ts';
-// @ts-ignore
-import mouseMoveListener from './mouseMoveListener.ts';
+import mouseDoubleClickListener from './mouseDoubleClickListener';
+import mouseDownListener from './mouseDownListener';
+import mouseMoveListener from './mouseMoveListener';
 
 /**
  * Removes mouse event listeners for native mouse event. Enables

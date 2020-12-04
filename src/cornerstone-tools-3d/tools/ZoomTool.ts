@@ -1,5 +1,4 @@
-// @ts-ignore
-import { BaseTool } from './base/index.ts';
+import { BaseTool } from './base/index';
 // ~~ VTK Viewport
 import { getEnabledElement } from './../../index';
 
@@ -7,14 +6,12 @@ export default class ZoomTool extends BaseTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
 
-  // @ts-ignore // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
+  // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+    super(toolConfiguration, {
       name: 'Zoom',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    };
-
-    super(toolConfiguration, defaultToolConfiguration);
+    });
 
     /**
      * Will only fire fore cornerstone events:

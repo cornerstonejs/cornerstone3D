@@ -1,10 +1,10 @@
-import ICornerstoneMouseEvent from './../../ICornerstoneMouseEvent.ts';
+import ICornerstoneMouseEvent from './../../ICornerstoneMouseEvent';
 import { ToolBindings, ToolModes } from './../../enums/index';
 import {
   // getters,
   state,
   ToolGroupManager,
-} from './../../store/index.ts';
+} from './../../store/index';
 
 export default function(evt) {
   if (state.isToolLocked) {

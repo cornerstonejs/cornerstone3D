@@ -1,6 +1,5 @@
-//@ts-ignore
-import mouseEventListeners from './mouse/index.ts';
-//import wheelEventListener from './wheelEventListener.js';
+import mouseEventListeners from './mouse/index';
+import wheelEventListener from './wheel/index';
 //import touchEventListeners from './touchEventListeners.js';
 
-export { mouseEventListeners };
+export { mouseEventListeners, wheelEventListener };

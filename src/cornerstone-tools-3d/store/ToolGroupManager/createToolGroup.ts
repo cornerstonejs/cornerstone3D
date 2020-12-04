@@ -1,5 +1,4 @@
-// @ts-ignore
-import { state } from './../index.ts';
+import { state } from './../index';
 import IToolGroup from './IToolGroup';
 import ISetToolModeOptions from './ISetToolModeOptions';
 
@@ -64,11 +63,6 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
-      // Use name to lookup tool from all tools?
-      // Do we even need a reference if it's already added / can we use string identifier?
-      // Update our tool groups "tools" w/ new bindings; no resolver for now
-      console.log(this);
-
       // Would only need this for sanity check if not instantiating/hydrating
       // const tool = this.tools[toolName];
       const toolModeOptionsWithMode = Object.assign({}, toolModeOptions, {

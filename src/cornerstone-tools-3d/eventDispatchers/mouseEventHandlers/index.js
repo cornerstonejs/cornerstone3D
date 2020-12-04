@@ -1,11 +1,11 @@
-import mouseClick from './mouseClick.ts';
-import mouseDoubleClick from './mouseDoubleClick.ts';
-import mouseDown from './mouseDown.ts';
-import mouseDownActivate from './mouseDownActivate.ts';
+import mouseClick from './mouseClick';
+import mouseDoubleClick from './mouseDoubleClick';
+import mouseDown from './mouseDown';
+import mouseDownActivate from './mouseDownActivate';
 import mouseDrag from './mouseDrag.js';
-import mouseMove from './mouseMove.ts';
-import mouseUp from './mouseUp.ts';
-import mouseWheel from './mouseWheel.ts';
+import mouseMove from './mouseMove';
+import mouseUp from './mouseUp';
+import mouseWheel from './mouseWheel';
 
 export {
   mouseClick,

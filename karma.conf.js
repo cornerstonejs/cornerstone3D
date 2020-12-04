@@ -54,6 +54,9 @@ module.exports = function(config) {
           },
         ].concat(vtkRules),
       },
+      resolve: {
+        extensions: ['.ts', '.tsx', '.js'],
+      },
       // Any custom webpack configuration...
       node: { fs: 'empty' },
     },

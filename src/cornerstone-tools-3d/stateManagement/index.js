@@ -1,6 +1,6 @@
 import FrameOfReferenceSpecificToolStateManager, {
   defaultFrameOfReferenceSpecificToolStateManager,
-} from './FrameOfReferenceSpecificToolStateManager.ts';
+} from './FrameOfReferenceSpecificToolStateManager';
 
 export {
   FrameOfReferenceSpecificToolStateManager,

@@ -1,4 +1,4 @@
-import IViewportUID from './IViewportUID';
+import IViewportUID from './../IViewportUID';
 import ISetToolModeOptions from './ISetToolModeOptions';
 
 export default interface IToolGroup {

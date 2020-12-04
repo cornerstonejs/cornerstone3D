@@ -1,7 +1,7 @@
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume';
 import imageCache from '../../imageCache';
 //@ts-ignore
-import createVolumeMapper from './createVolumeMapper.ts';
+import createVolumeMapper from './createVolumeMapper';
 
 interface createVolumeActorInterface {
   volumeUID: string;

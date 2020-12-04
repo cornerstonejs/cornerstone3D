@@ -1,15 +1,18 @@
-// @ts-ignore
-import { mouseEventListeners } from './../eventListeners/index.ts';
+import {
+  mouseEventListeners,
+  wheelEventListener,
+} from './../eventListeners/index';
 // ~~
 import { getEnabledElement } from './../../index';
 import {
   //   imageRenderedEventDispatcher,
+  cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
   //   newImageEventDispatcher,
   //   touchToolEventDispatcher,
 } from './../eventDispatchers/index';
-// @ts-ignore
-import { state } from './index.ts';
+
+import { state } from './index';
 
 // @TODO: Should all of this be keyed off `canvas` instead of enabledElement
 export default function(elementEnabledEvt) {
@@ -24,10 +27,12 @@ export default function(elementEnabledEvt) {
 
   // Listeners
   mouseEventListeners.enable(canvas);
+  wheelEventListener.enable(canvas);
   // Dispatchers: renderer
   // imageRenderedEventDispatcher.enable(enabledElement);
   // newImageEventDispatcher.enable(enabledElement);
   // Dispatchers: interaction
+  cameraModifiedEventDispatcher.enable(canvas);
   mouseToolEventDispatcher.enable(canvas);
   // touchToolEventDispatcher.enable(enabledElement);
 

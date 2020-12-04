@@ -1,9 +1,10 @@
+import { Events } from './../enums/index';
 import { VIEWPORT_TYPE } from '../constants/index';
 import _cloneDeep from 'lodash.clonedeep';
-// @ts-ignore
-import renderingEngineCache from './renderingEngineCache.ts';
+import renderingEngineCache from './renderingEngineCache';
 import RenderingEngine, { ViewportInputOptions } from './RenderingEngine';
 import Scene, { VolumeActorEntry } from './Scene';
+import triggerEvent from './../utils/triggerEvent';
 
 const DEFAULT_SLAB_THICKNESS = 0.1;
 
@@ -253,7 +254,8 @@ class Viewport implements ViewportInterface {
 
   public setCamera(cameraInterface: CameraInterface) {
     const vtkCamera = this.getVtkActiveCamera();
-
+    const previousCamera = JSON.parse(JSON.stringify(this.getCamera()));
+    const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
       viewUp,
       viewPlaneNormal,
@@ -301,9 +303,16 @@ class Viewport implements ViewportInterface {
       vtkCamera.setViewAngle(viewAngle);
     }
 
-    const renderer = this.getRenderer();
+    const eventDetail = {
+      previousCamera,
+      camera: updatedCamera,
+    };
+
+    triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail);
 
     if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {
+      const renderer = this.getRenderer();
+
       renderer.resetCameraClippingRange();
     }
   }

@@ -3,8 +3,7 @@
 import {
   // getters,
   state,
-  // @ts-ignore
-} from './../../store/index.ts';
+} from './../../store/index';
 // import { getToolState } from './../../stateManagement/toolState.js';
 // // Util
 // import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles.js';

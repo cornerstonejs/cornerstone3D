@@ -1,11 +1,11 @@
-import RenderingEngine from './RenderingEngine.ts';
-import renderingEngineCache from './renderingEngineCache.ts';
-import renderingEventTarget, { EVENTS } from './renderingEventTarget.ts';
+import RenderingEngine from './RenderingEngine';
+import renderingEngineCache from './renderingEngineCache';
+import renderingEventTarget from './renderingEventTarget';
 
 function getRenderingEngine(uid) {
   return renderingEngineCache.get(uid);
 }
 
-export { getRenderingEngine, renderingEventTarget, EVENTS, RenderingEngine };
+export { getRenderingEngine, renderingEventTarget, RenderingEngine };
 
 export default RenderingEngine;

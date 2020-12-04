@@ -1,3 +1,3 @@
-import createVolumeActor from './createVolumeActor.ts';
+import createVolumeActor from './createVolumeActor';
 
 export { createVolumeActor };

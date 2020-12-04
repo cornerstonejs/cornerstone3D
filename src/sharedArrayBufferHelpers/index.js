@@ -1,6 +1,6 @@
 import {
   createUint8SharedArray,
   createFloat32SharedArray,
-} from './sharedArrayBufferHelpers.ts';
+} from './sharedArrayBufferHelpers';
 
 export { createUint8SharedArray, createFloat32SharedArray };

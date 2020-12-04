@@ -1,5 +1,4 @@
-// @ts-ignore
-import { state } from './index.ts';
+import { state } from './index';
 
 export default function addTool(ToolClass, toolOptions) {
   const tool = new ToolClass(toolOptions);

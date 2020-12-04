@@ -1,12 +1,12 @@
 import cornerstone from 'cornerstone-core';
 import cornerstoneTools from 'cornerstone-tools';
 import { requestPoolManager } from 'cornerstone-tools';
-// @ts-ignore
-import getPatientWeightAndCorrectedDose from './getPatientWeightAndCorrectedDose.ts';
-// @ts-ignore
-import getInterleavedFrames from './getInterleavedFrames.ts';
-// @ts-ignore
-import StreamingImageVolume from '../classes/StreamingImageVolume.ts';
+
+import getPatientWeightAndCorrectedDose from './getPatientWeightAndCorrectedDose';
+
+import getInterleavedFrames from './getInterleavedFrames';
+
+import StreamingImageVolume from '../classes/StreamingImageVolume';
 
 const requestType = 'prefetch';
 const preventCache = true; // We are not using the cornerstone cache for this.

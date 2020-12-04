@@ -1,20 +1,19 @@
-// @ts-ignore
-import IToolGroup from './ToolGroupManager/IToolGroup.ts';
+import IToolGroup from './ToolGroupManager/IToolGroup';
 //
-// @ts-ignore
-import addTool from './addTool.ts';
-// @ts-ignore
-import addEnabledElement from './addEnabledElement.ts';
-// @ts-ignore
-import removeEnabledElement from './removeEnabledElement.ts';
+import addTool from './addTool';
+import addEnabledElement from './addEnabledElement';
+import removeEnabledElement from './removeEnabledElement';
 //
 import ToolGroupManager from './ToolGroupManager/index';
+import SynchronizerManager from './SynchronizerManager/index';
+import Synchronizer from './SynchronizerManager/Synchronizer';
 
 interface cornerstoneTools3dState {
   isToolLocked: boolean;
   isMultiPartToolActive: boolean;
   tools: Record<string, any>;
   toolGroups: Array<IToolGroup>;
+  synchronizers: Array<Synchronizer>;
   //
   enabledElements: Array<any>;
 }
@@ -24,6 +23,7 @@ const state: cornerstoneTools3dState = {
   isMultiPartToolActive: false,
   tools: [],
   toolGroups: [],
+  synchronizers: [],
   // Should this be named... canvases?
   enabledElements: [], // switch to Uids?
 };
@@ -42,4 +42,5 @@ export {
   removeEnabledElement,
   // Managers
   ToolGroupManager,
+  SynchronizerManager,
 };

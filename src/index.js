@@ -1,6 +1,6 @@
+import { Events } from './enums/index';
 import RenderingEngine, {
   getRenderingEngine,
-  EVENTS,
   renderingEventTarget,
 } from './RenderingEngine';
 import imageCache from './imageCache';
@@ -27,7 +27,7 @@ export {
   utils,
   getEnabledElement,
   renderingEventTarget,
-  EVENTS,
+  Events,
 };
 
 export default {
@@ -43,5 +43,5 @@ export default {
   utils,
   getEnabledElement,
   renderingEventTarget,
-  EVENTS,
+  Events,
 };

@@ -1,14 +1,29 @@
-// @ts-ignore
-import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents.ts';
-// @ts-ignore
-import mouseMoveListener from './mouseMoveListener.ts';
-// @ts-ignore
-import triggerEvent from './../../util/triggerEvent.ts';
+import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
+import mouseMoveListener from './mouseMoveListener';
+import triggerEvent from './../../util/triggerEvent';
+import {
+  ICornerstoneToolsEventDetail,
+  IPoints,
+  IPoint,
+  I3dPoint,
+} from '../ICornerstoneToolsEventDetail';
 // ~~ VIEWPORT LIBRARY
 import { getEnabledElement } from './../../../index';
 
+interface IMouseDownListenerState {
+  renderingEngingUID: string;
+  sceneUID: string;
+  viewportUID: string;
+  isClickEvent: boolean;
+  clickDelay: number;
+  preventClickTimeout: ReturnType<typeof setTimeout>;
+  element: HTMLElement;
+  startPoints: IPoints;
+  lastPoints: IPoints;
+}
+
 // STATE
-const defaultState = {
+const defaultState: IMouseDownListenerState = {
   //
   renderingEngingUID: undefined,
   sceneUID: undefined,
@@ -17,11 +32,22 @@ const defaultState = {
   isClickEvent: true,
   clickDelay: 200,
   preventClickTimeout: null,
-  startPoints: {},
-  lastPoints: {},
+  element: null,
+  startPoints: {
+    page: { x: 0, y: 0 },
+    client: { x: 0, y: 0 },
+    canvas: { x: 0, y: 0 },
+    world: { x: 0, y: 0, z: 0 },
+  },
+  lastPoints: {
+    page: { x: 0, y: 0 },
+    client: { x: 0, y: 0 },
+    canvas: { x: 0, y: 0 },
+    world: { x: 0, y: 0, z: 0 },
+  },
 };
 
-let state = {
+let state: IMouseDownListenerState = {
   //
   renderingEngingUID: undefined,
   sceneUID: undefined,
@@ -31,15 +57,17 @@ let state = {
   clickDelay: 200,
   element: null,
   preventClickTimeout: null,
-  // --> startPoints (first event)
-  // --> lastPoints (points from 'previous' event)
-  // --> currentPoints (points from 'this' event)
-  // --> deltaPoints (delta from current - last)
-  startPoints: {},
-  lastPoints: {
-    // TODO write types
-    world: { x: 0, y: 0, z: 0 },
+  startPoints: {
+    page: { x: 0, y: 0 },
+    client: { x: 0, y: 0 },
     canvas: { x: 0, y: 0 },
+    world: { x: 0, y: 0, z: 0 },
+  },
+  lastPoints: {
+    page: { x: 0, y: 0 },
+    client: { x: 0, y: 0 },
+    canvas: { x: 0, y: 0 },
+    world: { x: 0, y: 0, z: 0 },
   },
 };
 
@@ -56,20 +84,11 @@ let state = {
  * @param evt
  */
 function mouseDownListener(evt: MouseEvent): void {
-  state.element = evt.target;
+  state.element = evt.target as HTMLElement;
+
   const enabledElement = getEnabledElement(state.element);
-  const {
-    // The viewport object with helpers.
-    viewport,
-    // The scene object with helpers.
-    scene,
-    // The viewport UID.
-    viewportUID,
-    // The scene UID.
-    sceneUID,
-    // The renderingEngineUID
-    renderingEngineUID,
-  } = enabledElement;
+  const { renderingEngineUID, sceneUID, viewportUID } = enabledElement;
+
   state.renderingEngingUID = renderingEngineUID;
   state.sceneUID = sceneUID;
   state.viewportUID = viewportUID;
@@ -83,9 +102,9 @@ function mouseDownListener(evt: MouseEvent): void {
   state.element.removeEventListener('mousemove', mouseMoveListener);
 
   const startPoints = _getMouseEventPoints(evt);
-
   const deltaPoints = _getDeltaPoints(startPoints, startPoints);
-  const eventData = {
+
+  const eventData: ICornerstoneToolsEventDetail = {
     renderingEngineUID: state.renderingEngingUID,
     sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
@@ -134,7 +153,7 @@ function _onMouseDrag(evt: MouseEvent): void {
   const lastPoints = _updateMouseEventsLastPoints(evt, state.lastPoints);
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints);
 
-  const eventData = {
+  const eventData: ICornerstoneToolsEventDetail = {
     renderingEngineUID: state.renderingEngingUID,
     sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
@@ -200,18 +219,7 @@ function _preventClickHandler() {
   state.isClickEvent = false;
 }
 
-interface IPoint {
-  x: number;
-  y: number;
-}
-
-interface I3dPoint {
-  x: number;
-  y: number;
-  z: number;
-}
-
-function _copyPoints(points) {
+function _copyPoints(points: IPoints): IPoints {
   return JSON.parse(JSON.stringify(points));
 }
 
@@ -255,7 +263,7 @@ function _pagePointsToCanvasPoints(
   };
 }
 
-function _getMouseEventPoints(evt: MouseEvent) {
+function _getMouseEventPoints(evt: MouseEvent): IPoints {
   const canvas = evt.target;
   const enabledElement = getEnabledElement(canvas);
   const pagePoint = _pageToPoint(evt);
@@ -267,10 +275,6 @@ function _getMouseEventPoints(evt: MouseEvent) {
     canvasPoint.x,
     canvasPoint.y,
   ]);
-  // TODO: Need to set focal point and position.
-  // TODO: Viewports other than axial don't work.
-  // TODO: Up and down is inverted.
-
   const worldPoint = { x, y, z };
 
   return {
@@ -281,6 +285,8 @@ function _getMouseEventPoints(evt: MouseEvent) {
   };
 }
 
+// We need to find these again because the "frame" may have changed since
+// the last event (Re: pan)
 function _updateMouseEventsLastPoints(evt: MouseEvent, lastPoints) {
   const canvas = evt.target;
   const enabledElement = getEnabledElement(canvas);
@@ -299,36 +305,13 @@ function _updateMouseEventsLastPoints(evt: MouseEvent, lastPoints) {
   };
 }
 
-function _getDeltaPoints(currentPoints, lastPoints) {
-  const deltaPoints = {
-    // current - last (csTools)
+function _getDeltaPoints(currentPoints: IPoints, lastPoints: IPoints): IPoints {
+  return {
     page: _subtractPoints(currentPoints.page, lastPoints.page),
     client: _subtractPoints(currentPoints.client, lastPoints.client),
     canvas: _subtractPoints(currentPoints.canvas, lastPoints.canvas),
     world: _subtract3dPoints(currentPoints.world, lastPoints.world),
-
-    // last - current (vtk manipulator)
-    // page: _subtractPoints(lastPoints.page, currentPoints.page),
-    // client: _subtractPoints(lastPoints.client, currentPoints.client),
-    // canvas: _subtractPoints(lastPoints.canvas, currentPoints.canvas),
-    // world: _subtract3dPoints(lastPoints.world, currentPoints.world),
   };
-
-  // function Points (points) : void {
-  //   this.page = `${points.page.x}, ${points.page.y}`;
-  //   this.client = `${points.client.x}, ${points.client.y}`
-  //   this.canvas = `${points.canvas.x}, ${points.canvas.y}`;
-  //   this.world = `${points.world.x}, ${points.world.y}, ${points.world.z}`;
-  // }
-
-  // const stuff : any = {};
-  // stuff.last = new Points(lastPoints);
-  // stuff.current = new Points(currentPoints);
-  // stuff.delta = new Points(deltaPoints);
-
-  // console.table(stuff);
-
-  return deltaPoints;
 }
 
 export default mouseDownListener;

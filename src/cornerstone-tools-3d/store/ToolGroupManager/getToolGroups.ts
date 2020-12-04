@@ -1,5 +1,4 @@
-// @ts-ignore
-import { state } from './../index.ts';
+import { state } from './../index';
 import IToolGroup from './IToolGroup';
 
 function getToolGroups(

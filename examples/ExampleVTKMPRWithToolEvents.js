@@ -7,11 +7,13 @@ import {
   imageCache,
   RenderingEngine,
   getEnabledElement,
+  getRenderingEngine,
   renderingEventTarget,
-  EVENTS as RENDERING_EVENTS,
+  Events as RENDERING_EVENTS,
 } from './../src/index';
 import csTools3d, {
   PanTool,
+  SynchronizerManager,
   WindowLevelTool,
   ToolGroupManager,
   ToolBindings,
@@ -20,10 +22,8 @@ import csTools3d, {
 import './ExampleVTKMPR.css';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
-
 const renderingEngineUID = 'PETCTRenderingEngine';
 const ctVolumeUID = 'CT_VOLUME';
-
 const SCENE_IDS = {
   CT: 'ctScene',
   PT: 'ptScene',
@@ -31,7 +31,6 @@ const SCENE_IDS = {
   PTMIP: 'ptMipScene',
   CTVR: 'ctVRScene',
 };
-
 const VIEWPORT_IDS = {
   CT: {
     AXIAL: 'ctAxial',
@@ -43,92 +42,68 @@ const VIEWPORT_IDS = {
   },
 };
 
-// TODO -> Need to add tools on mount.
+/*
+const synchronizer = SynchronizerManager.createSynchronizer(
+  'syncId',
+  RENDERING_EVENTS.CAMERA_UPDATED,
+  function(
+    synchronizerInstance,
+    sourceViewport,
+    targetViewport,
+    cameraUpdatedEvent
+  ) {
+    // We need a helper for this
+    if (
+      sourceViewport.renderingEngineUID === targetViewport.renderingEngineUID &&
+      sourceViewport.sceneUID === targetViewport.sceneUID &&
+      sourceViewport.viewportUID === targetViewport.viewportUID
+    ) {
+      return;
+    }
 
-// // These need to be in lifecylce so we can undo on page death
-// csTools3d.addTool(PanTool, {}); // Should work w/ undefined
-// csTools3d.addTool(WindowLevelTool, {}); // Should work w/ undefined
+    const { camera, previousCamera } = cameraUpdatedEvent.detail;
+    const deltaX = camera.position[0] - previousCamera.position[0];
+    const deltaY = camera.position[1] - previousCamera.position[1];
+    const deltaZ = camera.position[2] - previousCamera.position[2];
+    const tViewport = getRenderingEngine(targetViewport.renderingEngineUID)
+      .getScene(targetViewport.sceneUID)
+      .getViewport(targetViewport.viewportUID);
+    const { focalPoint, position } = tViewport.getCamera();
 
-// const mySpecialToolGroup = ToolGroupManager.createToolGroup('a-tool-group-id');
+    const updatedPosition = [
+      position[0] - deltaX,
+      position[1] - deltaY,
+      position[2] - deltaZ,
+    ];
+    const updatedFocalPoint = [
+      focalPoint[0] - deltaX,
+      focalPoint[1] - deltaY,
+      focalPoint[2] - deltaZ,
+    ];
 
-// // Options should be... Optional. Verify.
-// mySpecialToolGroup.addTool('WindowLevel', {
-//   configuration: { volumeUID: ctVolumeUID },
-// });
-// mySpecialToolGroup.addTool('Pan', {});
-// mySpecialToolGroup.setToolActive('WindowLevel', {
-//   bindings: [ToolBindings.Mouse.Primary],
-// });
-// mySpecialToolGroup.setToolActive('Pan', {
-//   bindings: [ToolBindings.Mouse.Auxiliary],
-// });
+    tViewport.setCamera({
+      focalPoint: updatedFocalPoint,
+      position: updatedPosition,
+    });
+    tViewport.render();
+  }
+);
 
-// // Add viewports
-// renderingEventTarget.addEventListener(RENDERING_EVENTS.ELEMENT_ENABLED, evt => {
-//   // Is DOM element
-//   const canvas = evt.detail.canvas;
-//   // Is construct
-//   const enabledElement = getEnabledElement(canvas);
-//   const { viewportUID, sceneUID, renderingEngineUID } = enabledElement;
+// Add viewports
+renderingEventTarget.addEventListener(RENDERING_EVENTS.ELEMENT_ENABLED, evt => {
+  // Is DOM element
+  const canvas = evt.detail.canvas;
+  // Is construct
+  const enabledElement = getEnabledElement(canvas);
+  const { renderingEngineUID, sceneUID, viewportUID } = enabledElement;
 
-//   // How... do I identify viewports / hanging-protocol?
-//   // Only thing I can think to do here is add by catching enabled_element event
-//   // Assume remove should auto-happen when element is destroyed/disabled?
-//   mySpecialToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID);
-// });
-
-// TODO:
-// X Import our example tool
-// X Add tools...
-// X Create tool group
-// ~ Add viewport to tool group
-// X Add tool to tool group
-// ~ See if we can get dispatcher to pull correct tool on event
-// ~ See if we can change the camera
-
-// renderingEventTarget.addEventListener(EVENTS.IMAGE_RENDERED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-// });
-
-// renderingEventTarget.addEventListener(EVENTS.ELEMENT_ENABLED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-
-//   const canvas = evt.detail.canvas;
-
-//   const myEventListner = evt => {
-//     console.log(evt);
-
-//     const canvas = evt.detail.canvas;
-
-//     const enabledElement = getEnabledElement(canvas);
-//     const { viewport, scene } = enabledElement;
-
-//     // Get camera state
-//     const camera = viewport.getCamera();
-
-//     // Example of setting the focalPoint to 0
-//     //viewport.setCamera({ focalPoint: [0, 0, 0] });
-
-//     const volumeActors = scene.getVolumeActors();
-
-//     // Example of fetching world coordinates from a canvas click.
-//     const worldCoordinates = viewport.canvasToWorld([14, 15]);
-
-//     console.log(volumeActors);
-//     console.log(camera);
-
-//     debugger;
-//   };
-
-//   canvas.addEventListener(EVENTS.IMAGE_RENDERED, myEventListner);
-// });
-
-// renderingEventTarget.addEventListener(EVENTS.ELEMENT_DISABLED, evt => {
-//   console.log(evt.type);
-//   console.log(evt.detail);
-// });
+  // How... do I identify viewports / hanging-protocol?
+  // Only thing I can think to do here is add by catching enabled_element event
+  // Assume remove should auto-happen when element is destroyed/disabled?
+  mySpecialToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID);
+  synchronizer.add(renderingEngineUID, sceneUID, viewportUID);
+});
+*/
 
 class VTKMPRWithToolEventsExample extends Component {
   state = {

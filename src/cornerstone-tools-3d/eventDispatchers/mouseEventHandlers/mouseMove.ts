@@ -1,6 +1,6 @@
 // import external from './../../externalModules.js';
 // // State
-// import { getters, state } from './../../store/index.ts';
+// import { getters, state } from './../../store/index';
 // import getInteractiveToolsForElement from './../../store/getInteractiveToolsForElement.js';
 // import getToolsWithDataForElement from './../../store/getToolsWithDataForElement.js';
 

@@ -1,7 +1,5 @@
-// @ts-ignore
-import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents.ts';
-// @ts-ignore
-import triggerEvent from './../../util/triggerEvent.ts';
+import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
+import triggerEvent from './../../util/triggerEvent';
 
 /**
  *

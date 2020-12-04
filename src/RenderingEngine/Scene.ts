@@ -1,9 +1,6 @@
-// @ts-ignore
-import Viewport, { ViewportInterface } from './Viewport.ts';
-// @ts-ignore
-import renderingEngineCache from './renderingEngineCache.ts';
-// @ts-ignore
-import RenderingEngine from './RenderingEngine.ts';
+import Viewport, { ViewportInterface } from './Viewport';
+import renderingEngineCache from './renderingEngineCache';
+import RenderingEngine from './RenderingEngine';
 import { createVolumeActor } from './helpers';
 import imageCache from '../imageCache';
 
@@ -22,8 +19,6 @@ export type VolumeActorEntry = {
  */
 interface SceneViewportsAPI {
   viewports: Array<Viewport>;
-  // setToolGroup: Function;
-  // setSyncGroups: Function;
 }
 
 type VolumeInput = {
@@ -84,16 +79,6 @@ class Scene {
   public getViewports(): SceneViewportsAPI {
     return {
       viewports: this._viewports,
-      // setToolGroup: toolGroupUID => {
-      //   this._viewports.forEach(viewport => {
-      //     viewport.setToolGroup(toolGroupUID);
-      //   });
-      // },
-      // setSyncGroups: (syncGroupUIDs = []) => {
-      //   this._viewports.forEach(viewport => {
-      //     viewport.setSyncGroups(syncGroupUIDs);
-      //   });
-      // },
     };
   }
 

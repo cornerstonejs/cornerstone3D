@@ -1,5 +1,5 @@
-import createToolGroup from './createToolGroup.ts';
-import getToolGroups from './getToolGroups.ts';
+import createToolGroup from './createToolGroup';
+import getToolGroups from './getToolGroups';
 
 export default {
   createToolGroup,

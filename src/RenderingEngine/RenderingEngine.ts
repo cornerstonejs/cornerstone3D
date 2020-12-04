@@ -1,14 +1,11 @@
-// @ts-ignore
-import renderingEngineCache from './renderingEngineCache.ts';
-// @ts-ignore
-import renderingEventTarget, { EVENTS } from './renderingEventTarget.ts';
+import { Events as EVENTS } from './../enums/index';
+import renderingEngineCache from './renderingEngineCache';
+import renderingEventTarget from './renderingEventTarget';
 import triggerEvent from '../utils/triggerEvent.js';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 
-// @ts-ignore
-import Scene from './Scene.ts';
-// @ts-ignore
-import Viewport from './Viewport.ts';
+import Scene from './Scene';
+import Viewport from './Viewport';
 import { uuidv4 } from '../utils/';
 
 /**

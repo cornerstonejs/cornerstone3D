@@ -1,3 +1,3 @@
-import imageCache from './imageCache.ts';
+import imageCache from './imageCache';
 
 export default imageCache;

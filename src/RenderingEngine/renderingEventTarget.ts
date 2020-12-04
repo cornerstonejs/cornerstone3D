@@ -1,8 +1,4 @@
-const EVENTS = {
-  IMAGE_RENDERED: 'cornerstoneimagerendered',
-  ELEMENT_DISABLED: 'cornerstoneelementdisabled',
-  ELEMENT_ENABLED: 'cornerstoneelementenabled',
-};
+import { Events as EVENTS } from './../enums/index';
 
 /**
  * EventTarget - Provides the [EventTarget](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) interface
@@ -53,4 +49,3 @@ class RenderingEventTarget {
 const renderingEventTarget = new RenderingEventTarget();
 
 export default renderingEventTarget;
-export { EVENTS };

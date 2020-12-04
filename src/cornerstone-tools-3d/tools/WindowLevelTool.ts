@@ -1,5 +1,4 @@
-// @ts-ignore
-import { BaseTool } from './base/index.ts';
+import { BaseTool } from './base/index';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from './../../index';
 
@@ -8,14 +7,11 @@ export default class WindowLevelTool extends BaseTool {
   mouseDragCallback: Function;
   _configuration: any;
 
-  // @ts-ignore
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+    super(toolConfiguration, {
       name: 'WindowLevel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    };
-
-    super(toolConfiguration, defaultToolConfiguration);
+    });
 
     /**
      * Will only fire for cornerstone events:

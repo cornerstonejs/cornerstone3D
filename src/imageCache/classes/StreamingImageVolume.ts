@@ -1,6 +1,6 @@
-// @ts-ignore // TODO -> There is a load of argument in the typescript community about this, but to set up
-// webpack to use both js and ts you need to add ".ts" extensions to imports, which typescript otherwise warns about.
-import ImageVolume from './ImageVolume.ts';
+// TODO -> There is a load of argument in the typescript community about this, but to set up
+// webpack to use both js and ts you need to add "" extensions to imports, which typescript otherwise warns about.
+import ImageVolume from './ImageVolume';
 import { ImageVolumeInterface, StreamingInterface } from './interfaces';
 
 export default class StreamingImageVolume extends ImageVolume {

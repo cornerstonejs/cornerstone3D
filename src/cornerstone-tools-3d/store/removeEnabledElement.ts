@@ -1,15 +1,18 @@
-// @ts-ignore
-import { mouseEventListeners } from './../eventListeners/index.ts';
+import {
+  mouseEventListeners,
+  wheelEventListener,
+} from './../eventListeners/index';
 import {
   //   imageRenderedEventDispatcher,
+  cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
   //   newImageEventDispatcher,
   //   touchToolEventDispatcher,
 } from './../eventDispatchers/index';
 // ~~
 import { getEnabledElement } from './../../index';
-// @ts-ignore
-import { state } from './index.ts';
+
+import { state } from './index';
 
 export default function(elementDisabledEvt) {
   // Is DOM element
@@ -17,14 +20,14 @@ export default function(elementDisabledEvt) {
   // Is construct
   const enabledElement = getEnabledElement(canvas);
 
-  console.log('~~ EnabledDisabledEvent, add: ', canvas, enabledElement);
-
   // Listeners
   mouseEventListeners.disable(canvas);
+  wheelEventListener.disable(canvas);
   // Dispatchers: renderer
   // imageRenderedEventDispatcher.disable(canvas);
   // newImageEventDispatcher.disable(canvas);
   // Dispatchers: interaction
+  cameraModifiedEventDispatcher.disable(canvas);
   mouseToolEventDispatcher.disable(canvas);
   // touchToolEventDispatcher.disable(canvas);
 

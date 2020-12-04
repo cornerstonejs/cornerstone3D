@@ -1,5 +1,4 @@
-// @ts-ignore
-import customCallbackHandler from './../shared/customCallbackHandler.ts';
+import customCallbackHandler from './../shared/customCallbackHandler';
 
 const mouseClick = customCallbackHandler.bind(
   null,
