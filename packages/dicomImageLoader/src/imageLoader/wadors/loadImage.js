@@ -63,7 +63,8 @@ function loadImage(imageId, options) {
 
   const promise = new Promise((resolve, reject) => {
     // TODO: load bulk data items that we might need
-    const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax=*'; // 'image/dicom+jp2';
+    const mediaType =
+      'multipart/related; type="application/octet-stream"; transfer-syntax=*'; // 'image/dicom+jp2';
 
     // get the pixel data from the server
     getPixelData(uri, imageId, mediaType)

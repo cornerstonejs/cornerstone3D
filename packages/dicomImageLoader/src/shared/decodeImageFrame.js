@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import decodeLittleEndian from './decoders/decodeLittleEndian.js';
 import decodeBigEndian from './decoders/decodeBigEndian.js';
 import decodeRLE from './decoders/decodeRLE.js';
@@ -90,11 +91,26 @@ function decodeImageFrame(
   // Cache the pixelData reference quickly incase we want to set a targetBuffer _and_ scale.
   let pixelDataArray = imageFrame.pixelData;
 
+  imageFrame.pixelDataLength = imageFrame.pixelData.length;
+
   if (options.targetBuffer) {
+    let offset, length;
     // If we have a target buffer, write to that instead. This helps reduce memory duplication.
-    const { arrayBuffer, offset, length, type } = options.targetBuffer;
+
+    ({ offset, length } = options.targetBuffer);
+    const { arrayBuffer, type } = options.targetBuffer;
 
     let TypedArrayConstructor;
+
+    if (offset === null || offset === undefined) {
+      offset = 0;
+    }
+
+    if ((length === null || length === undefined) && offset !== 0) {
+      length = imageFrame.pixelDataLength - offset;
+    } else if (length === null || length === undefined) {
+      length = imageFrame.pixelDataLength;
+    }
 
     switch (type) {
       case 'Uint8Array':
@@ -118,20 +134,41 @@ function decodeImageFrame(
       );
     }
 
-    const typedArray = new TypedArrayConstructor(arrayBuffer, offset, length);
-
     // TypedArray.Set is api level and ~50x faster than copying elements even for
     // Arrays of different types, which aren't simply memcpy ops.
+    let typedArray;
+
+    if (arrayBuffer) {
+      typedArray = new TypedArrayConstructor(arrayBuffer, offset, length);
+    } else {
+      typedArray = new TypedArrayConstructor(length);
+    }
+
     typedArray.set(imageFramePixelData, 0);
 
     // If need to scale, need to scale correct array.
     pixelDataArray = typedArray;
   }
 
-  if (options.preScale) {
+  if (options.preScale && options.preScale.scalingParameters) {
     const { scalingParameters } = options.preScale;
+    const { rescaleSlope, rescaleIntercept } = scalingParameters;
 
-    scaleArray(pixelDataArray, scalingParameters);
+    if (
+      typeof rescaleSlope === 'number' &&
+      typeof rescaleIntercept === 'number'
+    ) {
+      scaleArray(pixelDataArray, scalingParameters);
+    }
+  }
+
+  // Handle cases where the targetBuffer is not backed by a SharedArrayBuffer
+  if (
+    options.targetBuffer &&
+    (!options.targetBuffer.arrayBuffer ||
+      options.targetBuffer.arrayBuffer instanceof ArrayBuffer)
+  ) {
+    imageFrame.pixelData = pixelDataArray;
   }
 
   const end = new Date().getTime();

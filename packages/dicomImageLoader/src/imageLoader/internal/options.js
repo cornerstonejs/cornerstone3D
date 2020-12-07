@@ -10,6 +10,7 @@ let options = {
   strict: false,
   useWebWorkers: true,
   decodeConfig: {
+    convertFloatPixelDataToInt: true,
     usePDFJS: false,
   },
 };

@@ -17,6 +17,7 @@ module.exports = {
     JpxImage: true,
     CharLS: true,
     OpenJPEG: true,
+    SharedArrayBuffer: true,
   },
   rules: {
     'accessor-pairs': 'warn',

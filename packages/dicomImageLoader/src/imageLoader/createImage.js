@@ -5,6 +5,7 @@ import isColorImageFn from './isColorImage.js';
 import convertColorSpace from './convertColorSpace.js';
 import getMinMax from '../shared/getMinMax.js';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor.js';
+import { getOptions } from './internal/options.js';
 
 let lastImageIdDrawn = '';
 
@@ -83,16 +84,33 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
     options
   );
 
+  const { decodeConfig } = getOptions();
+  const { convertFloatPixelDataToInt } = decodeConfig;
+
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line complexity
-    decodePromise.then(function handleDecodeResponse(imageFrame) {
+    decodePromise.then(function(imageFrame) {
       // If we have a target buffer that was written to in the
       // Decode task, point the image to it here.
       // We can't have done it within the thread incase it was a SharedArrayBuffer.
+      let alreadyTyped = false;
+
       if (options.targetBuffer) {
-        const { arrayBuffer, offset, length, type } = options.targetBuffer;
+        let offset, length;
+        // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+
+        ({ offset, length } = options.targetBuffer);
+        const { arrayBuffer, type } = options.targetBuffer;
 
         let TypedArrayConstructor;
+
+        if (length === null || length === undefined) {
+          length = imageFrame.pixelDataLength;
+        }
+
+        if (offset === null || offset === undefined) {
+          offset = 0;
+        }
 
         switch (type) {
           case 'Uint8Array':
@@ -110,13 +128,25 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
             );
         }
 
-        const targetArray = new TypedArrayConstructor(
-          arrayBuffer,
-          offset,
-          length
-        );
+        if (length !== imageFrame.pixelDataLength) {
+          throw new Error(
+            'target array for image does not have the same length as the decoded image length.'
+          );
+        }
 
-        imageFrame.pixelData = targetArray;
+        // TypedArray.Set is api level and ~50x faster than copying elements even for
+        // Arrays of different types, which aren't simply memcpy ops.
+        let typedArray;
+
+        if (arrayBuffer) {
+          typedArray = new TypedArrayConstructor(arrayBuffer, offset, length);
+        } else {
+          typedArray = new TypedArrayConstructor(imageFrame.pixelData);
+        }
+
+        // If need to scale, need to scale correct array.
+        imageFrame.pixelData = typedArray;
+        alreadyTyped = true;
       }
 
       const imagePlaneModule =
@@ -132,7 +162,9 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
       // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
       // because it's using a canvas to load and decode images.
       if (!isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
-        setPixelDataType(imageFrame);
+        if (!alreadyTyped) {
+          setPixelDataType(imageFrame);
+        }
 
         // convert color space
         if (isColorImage) {
@@ -185,10 +217,16 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
           : undefined,
         decodeTimeInMS: imageFrame.decodeTimeInMS,
         floatPixelData: undefined,
+        imageFrame,
       };
 
-      // add function to return pixel data
-      if (imageFrame.pixelData instanceof Float32Array) {
+      // If pixel data is intrinsically floating 32 array, we convert it to int for
+      // display in cornerstone. For other cases when pixel data is typed as
+      // Float32Array for scaling; this conversion is not needed.
+      if (
+        imageFrame.pixelData instanceof Float32Array &&
+        convertFloatPixelDataToInt
+      ) {
         const floatPixelData = imageFrame.pixelData;
         const results = convertToIntPixelData(floatPixelData);
 
