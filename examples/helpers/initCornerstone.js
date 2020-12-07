@@ -7,6 +7,7 @@ import cornerstoneMath from 'cornerstone-math';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import cornerstoneTools from 'cornerstone-tools';
 import Hammer from 'hammerjs';
+import WADORSHeaderProvider from './WADORSHeaderProvider';
 // ~~
 import { register as registerVTKViewportLoaders } from './../../src/index.js';
 import csTools3d from './../../src/cornerstone-tools-3d/index.js';
@@ -20,6 +21,11 @@ cornerstoneTools.external.cornerstoneMath = cornerstoneMath;
 
 window.cornerstone = cornerstone;
 window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader;
+
+cornerstone.metaData.addProvider(
+  WADORSHeaderProvider.get.bind(WADORSHeaderProvider),
+  9999
+);
 
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser;

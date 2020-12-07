@@ -56,6 +56,7 @@
     "cross-env": "^5.2.0",
     "css-loader": "^3.0.0",
     "dicom-parser": "^1.8.3",
+    "dcmjs": "^0.16.6",
     "dicomweb-client": "^0.5.2",
     "eslint": "5.16.0",
     "eslint-config-prettier": "^6.3.0",
