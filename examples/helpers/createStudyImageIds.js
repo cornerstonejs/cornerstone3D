@@ -1,5 +1,6 @@
 import config from '@configuration';
 import { api } from 'dicomweb-client';
+import WADORSHeaderProvider from './WADORSHeaderProvider';
 
 const { wadoRsRoot, StudyInstanceUID } = config;
 
@@ -42,6 +43,8 @@ export default async function createStudyImageIds() {
       imageId,
       instanceMetaData
     );
+
+    WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
 
     return imageId;
   });
