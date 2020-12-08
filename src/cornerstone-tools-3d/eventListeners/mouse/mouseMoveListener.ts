@@ -1,37 +1,28 @@
 import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
 import triggerEvent from './../../util/triggerEvent';
+import getMouseEventPoints from './getMouseEventPoints';
+import { getEnabledElement } from './../../../index';
+
+const eventName = VtkjsToolsEvents.MOUSE_MOVE;
 
 /**
  *
  * @param evt
  */
 function mouseMoveListener(evt: MouseEvent) {
-  const element = evt.currentTarget;
-  const eventName = VtkjsToolsEvents.MOUSE_MOVE;
+  const element = evt.currentTarget as HTMLElement;
 
-  const startPoints = {
-    // page: external.cornerstoneMath.point.pageToPoint(e),
-    // image: external.cornerstone.pageToPixel(element, e.pageX, e.pageY),
-    // canvas: external.cornerstone.pixelToCanvas(element,startPoints.image)
-    client: {
-      x: evt.clientX,
-      y: evt.clientY,
-    },
-  };
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngineUID, sceneUID, viewportUID } = enabledElement;
 
-  // Calculate delta values in page and image coordinates
-  const deltaPoints = {
-    // distance between currentPoints and lastPoints (x,y)
-    // page: external.cornerstoneMath.point.subtract(currentPoints.page, lastPoints.page),
-  };
-
+  const currentPoints = getMouseEventPoints(evt);
   const eventData = {
+    renderingEngineUID,
+    sceneUID,
+    viewportUID,
     camera: {},
     element,
-    startPoints,
-    lastPoints: startPoints,
-    currentPoints: startPoints,
-    deltaPoints: { x: 0, y: 0 }, // not actual schema
+    currentPoints,
     eventName,
   };
 

@@ -9,6 +9,9 @@ import {
 } from '../ICornerstoneToolsEventDetail';
 // ~~ VIEWPORT LIBRARY
 import { getEnabledElement } from './../../../index';
+import getMouseEventPoints from './getMouseEventPoints';
+
+const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = VtkjsToolsEvents;
 
 interface IMouseDownListenerState {
   renderingEngingUID: string;
@@ -101,7 +104,7 @@ function mouseDownListener(evt: MouseEvent): void {
   // Prevent CornerstoneToolsMouseMove while mouse is down
   state.element.removeEventListener('mousemove', mouseMoveListener);
 
-  const startPoints = _getMouseEventPoints(evt);
+  const startPoints = getMouseEventPoints(evt);
   const deltaPoints = _getDeltaPoints(startPoints, startPoints);
 
   const eventData: ICornerstoneToolsEventDetail = {
@@ -117,7 +120,7 @@ function mouseDownListener(evt: MouseEvent): void {
     lastPoints: startPoints,
     currentPoints: startPoints,
     deltaPoints,
-    eventName: VtkjsToolsEvents.MOUSE_DOWN,
+    eventName: MOUSE_DOWN,
   };
 
   state.startPoints = _copyPoints(eventData.startPoints);
@@ -125,18 +128,14 @@ function mouseDownListener(evt: MouseEvent): void {
 
   const eventDidPropagate = triggerEvent(
     eventData.element,
-    VtkjsToolsEvents.MOUSE_DOWN,
+    MOUSE_DOWN,
     eventData
   );
 
   if (eventDidPropagate) {
     // No tools responded to this event, create a new tool
-    eventData.eventName = VtkjsToolsEvents.MOUSE_DOWN_ACTIVATE;
-    triggerEvent(
-      eventData.element,
-      VtkjsToolsEvents.MOUSE_DOWN_ACTIVATE,
-      eventData
-    );
+    eventData.eventName = MOUSE_DOWN_ACTIVATE;
+    triggerEvent(eventData.element, MOUSE_DOWN_ACTIVATE, eventData);
   }
 
   document.addEventListener('mousemove', _onMouseDrag);
@@ -149,7 +148,7 @@ function mouseDownListener(evt: MouseEvent): void {
  * @param evt
  */
 function _onMouseDrag(evt: MouseEvent): void {
-  const currentPoints = _getMouseEventPoints(evt);
+  const currentPoints = getMouseEventPoints(evt);
   const lastPoints = _updateMouseEventsLastPoints(evt, state.lastPoints);
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints);
 
@@ -186,7 +185,7 @@ function _onMouseUp(evt: MouseEvent): void {
     ? VtkjsToolsEvents.MOUSE_CLICK
     : VtkjsToolsEvents.MOUSE_UP;
 
-  const currentPoints = _getMouseEventPoints(evt);
+  const currentPoints = getMouseEventPoints(evt);
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints);
   const eventData = {
     renderingEngineUID: state.renderingEngingUID,
@@ -223,20 +222,6 @@ function _copyPoints(points: IPoints): IPoints {
   return JSON.parse(JSON.stringify(points));
 }
 
-function _pageToPoint(evt: MouseEvent): IPoint {
-  return {
-    x: evt.pageX,
-    y: evt.pageY,
-  };
-}
-
-function _clientToPoint(evt: MouseEvent): IPoint {
-  return {
-    x: evt.clientX,
-    y: evt.clientY,
-  };
-}
-
 function _subtractPoints(lhs: IPoint, rhs: IPoint): IPoint {
   return {
     x: lhs.x - rhs.x,
@@ -249,39 +234,6 @@ function _subtract3dPoints(lhs: I3dPoint, rhs: I3dPoint): I3dPoint {
     x: lhs.x - rhs.x,
     y: lhs.y - rhs.y,
     z: lhs.z - rhs.z,
-  };
-}
-
-function _pagePointsToCanvasPoints(
-  DomCanvasElement: HTMLElement,
-  pagePoint: IPoint
-) {
-  const rect = DomCanvasElement.getBoundingClientRect();
-  return {
-    x: pagePoint.x - rect.left - window.pageXOffset,
-    y: pagePoint.y - rect.top - window.pageYOffset,
-  };
-}
-
-function _getMouseEventPoints(evt: MouseEvent): IPoints {
-  const canvas = evt.target;
-  const enabledElement = getEnabledElement(canvas);
-  const pagePoint = _pageToPoint(evt);
-  const canvasPoint = _pagePointsToCanvasPoints(
-    canvas as HTMLElement,
-    pagePoint
-  );
-  const [x, y, z] = enabledElement.viewport.canvasToWorld([
-    canvasPoint.x,
-    canvasPoint.y,
-  ]);
-  const worldPoint = { x, y, z };
-
-  return {
-    page: pagePoint,
-    client: _clientToPoint(evt),
-    canvas: canvasPoint,
-    world: worldPoint,
   };
 }
 

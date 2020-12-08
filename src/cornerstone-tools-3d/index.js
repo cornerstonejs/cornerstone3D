@@ -5,6 +5,7 @@ import {
 
 import init from './init';
 import { addTool, ToolGroupManager, SynchronizerManager } from './store/index';
+import drawing from './drawing';
 import {
   BaseTool,
   PanTool,
@@ -14,6 +15,7 @@ import {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
+  ProbeTool,
 } from './tools/index';
 import { ToolBindings, VtkjsToolEvents } from './enums/index';
 
@@ -31,6 +33,7 @@ export default {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
+  ProbeTool,
   //
 
   ToolGroupManager,
@@ -38,6 +41,7 @@ export default {
   VtkjsToolEvents,
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
+  drawing,
 };
 
 //
@@ -51,6 +55,7 @@ export {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
+  ProbeTool,
   //
   SynchronizerManager,
   ToolGroupManager,
@@ -58,4 +63,5 @@ export {
   VtkjsToolEvents,
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
+  drawing,
 };

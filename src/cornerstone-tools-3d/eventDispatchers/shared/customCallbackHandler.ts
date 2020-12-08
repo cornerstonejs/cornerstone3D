@@ -1,4 +1,7 @@
 import { state, ToolGroupManager } from './../../store/index';
+import ToolModes from '../../enums/ToolModes';
+
+const { Active } = ToolModes;
 
 /**
  * The customCallbackHandler is used as a generic event handler for tool events
@@ -46,7 +49,7 @@ export default function(handlerType: string, customFunction: string, evt) {
 
       if (
         // TODO: Should be enum?
-        tool.mode === 'active' &&
+        tool.mode === Active &&
         // TODO: Should be implements interface?
         // Weird that we need concrete instance. Other options to filter / get callback?
         typeof toolInstance[customFunction] === 'function'

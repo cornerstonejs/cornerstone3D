@@ -5,10 +5,9 @@ import {
 // ~~
 import { getEnabledElement } from './../../index';
 import {
-  //   imageRenderedEventDispatcher,
+  imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
-  //   newImageEventDispatcher,
   //   touchToolEventDispatcher,
 } from './../eventDispatchers/index';
 
@@ -29,8 +28,7 @@ export default function(elementEnabledEvt) {
   mouseEventListeners.enable(canvas);
   wheelEventListener.enable(canvas);
   // Dispatchers: renderer
-  // imageRenderedEventDispatcher.enable(enabledElement);
-  // newImageEventDispatcher.enable(enabledElement);
+  imageRenderedEventDispatcher.enable(canvas);
   // Dispatchers: interaction
   cameraModifiedEventDispatcher.enable(canvas);
   mouseToolEventDispatcher.enable(canvas);

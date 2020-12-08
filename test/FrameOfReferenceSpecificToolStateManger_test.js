@@ -14,7 +14,7 @@ const toolUID1 = 'toolData_001';
 function addAndReturnToolName0ToolData() {
   const toolData = {
     metadata: {
-      sliceNormal: [0, 0, 1],
+      viewPlaneNormal: [0, 0, 1],
       toolUID: toolUID0,
       FrameOfReferenceUID,
       toolName: TOOLNAME_0,
@@ -37,7 +37,7 @@ function addAndReturnToolName0ToolData() {
 function addAndReturnToolName1ToolData() {
   const toolData = {
     metadata: {
-      sliceNormal: [0, 0, 1],
+      viewPlaneNormal: [0, 0, 1],
       toolUID: toolUID1,
       FrameOfReferenceUID,
       toolName: TOOLNAME_1,

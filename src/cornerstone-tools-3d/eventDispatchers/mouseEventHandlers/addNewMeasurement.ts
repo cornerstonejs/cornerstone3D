@@ -8,6 +8,12 @@
 // import triggerEvent from '../../util/triggerEvent.js';
 
 export default function(evt, tool) {
+  // TODO
+
+  console.warn('TODO! addNewMeasurement method!');
+
+  // Should this be _on_ BaseAnnotationTool ?
+
   // evt.preventDefault();
   // evt.stopPropagation();
   // const eventData = evt.detail;

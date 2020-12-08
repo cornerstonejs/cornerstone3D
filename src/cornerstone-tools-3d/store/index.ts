@@ -16,6 +16,7 @@ interface cornerstoneTools3dState {
   synchronizers: Array<Synchronizer>;
   //
   enabledElements: Array<any>;
+  handleRadius: number;
 }
 
 const state: cornerstoneTools3dState = {
@@ -26,6 +27,7 @@ const state: cornerstoneTools3dState = {
   synchronizers: [],
   // Should this be named... canvases?
   enabledElements: [], // switch to Uids?
+  handleRadius: 6,
 };
 
 // TODO:

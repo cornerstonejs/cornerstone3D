@@ -326,6 +326,60 @@ class RenderingEngine {
     window.requestAnimationFrame(renderParticularScene);
   }
 
+  public renderFrameOfReference = FrameOfReferenceUID => {
+    const scenes = this._scenes;
+
+    const scenesWithFrameOfReferenceUID = scenes.filter(
+      s => s.getFrameOfReferenceUID() === FrameOfReferenceUID
+    );
+
+    const renderSetOfScenes = () =>
+      this._renderScenes(scenesWithFrameOfReferenceUID);
+
+    window.requestAnimationFrame(renderSetOfScenes);
+  };
+
+  public renderScenes(sceneUIDs: Array<string>) {
+    const scenes = sceneUIDs.map(sUid => this.getScene(sUid));
+    const renderSetOfScenes = () => this._renderScenes(scenes);
+
+    window.requestAnimationFrame(renderSetOfScenes);
+  }
+
+  private _renderScenes(scenes: Array<Scene>) {
+    this._throwIfDestroyed();
+
+    const { offscreenMultiRenderWindow } = this;
+    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+
+    const viewportsToRender = [];
+
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const { viewports } = scene.getViewports();
+      viewportsToRender.push(...viewports);
+    }
+
+    const viewportUIDs = viewportsToRender.map(vp => vp.uid);
+    const renderers = offscreenMultiRenderWindow.getRenderers();
+
+    for (let i = 0; i < renderers.length; i++) {
+      const { renderer, uid } = renderers[i];
+      renderer.setDraw(viewportUIDs.includes(uid));
+    }
+
+    renderWindow.render();
+
+    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const context = openGLRenderWindow.get3DContext();
+
+    const offScreenCanvas = context.canvas;
+
+    viewportsToRender.forEach(viewport => {
+      this._renderViewportToCanvas(viewport, offScreenCanvas);
+    });
+  }
+
   /**
    * @method _renderScene Renders only a specific `Scene`.
    *
@@ -440,6 +494,9 @@ class RenderingEngine {
 
     const eventData = {
       canvas,
+      viewportUID: uid,
+      sceneUID,
+      renderingEngineUID,
     };
 
     triggerEvent(canvas, EVENTS.IMAGE_RENDERED, eventData);

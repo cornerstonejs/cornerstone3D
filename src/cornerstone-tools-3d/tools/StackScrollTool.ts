@@ -1,7 +1,7 @@
 import { BaseTool } from './base/index';
 // ~~ VTK Viewport
-import { getEnabledElement, imageCache } from './../../index';
-import { vec3 } from 'gl-matrix';
+import { getEnabledElement } from './../../index';
+import { getTargetVolume } from '../util/planar';
 
 import getVolumeActorCorners from '../util/vtkjs/getVolumeActorCorners';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
@@ -37,11 +37,13 @@ export default class StackScrollTool extends BaseTool {
     const { scene, viewport } = enabledElement;
     const camera = viewport.getCamera();
     const { focalPoint, viewPlaneNormal, position } = camera;
+    const { volumeUID } = this._configuration;
 
     // Stack scroll across highest resolution volume.
-    const { spacingInNormalDirection, imageVolume } = this._getTargetVolume(
+    const { spacingInNormalDirection, imageVolume } = getTargetVolume(
       scene,
-      camera
+      camera,
+      volumeUID
     );
 
     const volumeActor = scene.getVolumeActor(imageVolume.uid);
@@ -139,58 +141,6 @@ export default class StackScrollTool extends BaseTool {
     return { slicePos, newFocalPoint };
   };
 
-  private _getTargetVolume = (scene, camera) => {
-    const { viewPlaneNormal } = camera;
-    const { volumeUID } = this._configuration;
-
-    const volumeActors = scene.getVolumeActors();
-    const numVolumeActors = volumeActors.length;
-
-    if (!volumeActors && !volumeActors.length) {
-      // No stack to scroll through
-      return { spacingInNormalDirection: null, imageVolume: null };
-    }
-
-    const imageVolumes = volumeActors.map(va =>
-      imageCache.getImageVolume(va.uid)
-    );
-
-    if (volumeUID) {
-      // If a volumeUID is defined, set that volume as the target
-      const imageVolume = imageVolumes.find(iv => iv.uid === volumeUID);
-
-      const spacingInNormalDirection = this._getSpacingInNormalDirection(
-        imageVolume,
-        viewPlaneNormal
-      );
-
-      return { imageVolume, spacingInNormalDirection };
-    }
-
-    // Fetch volume actor with finest resolution in direction of projection.
-
-    const smallest = {
-      spacingInNormalDirection: Infinity,
-      imageVolume: null,
-    };
-
-    for (let i = 0; i < numVolumeActors; i++) {
-      const imageVolume = imageVolumes[i];
-
-      const spacingInNormalDirection = this._getSpacingInNormalDirection(
-        imageVolume,
-        viewPlaneNormal
-      );
-
-      if (spacingInNormalDirection < smallest.spacingInNormalDirection) {
-        smallest.spacingInNormalDirection = spacingInNormalDirection;
-        smallest.imageVolume = imageVolume;
-      }
-    }
-
-    return smallest;
-  };
-
   _getSliceRange = (volumeActor, viewPlaneNormal, focalPoint) => {
     const corners = getVolumeActorCorners(volumeActor);
 
@@ -222,30 +172,5 @@ export default class StackScrollTool extends BaseTool {
     }
 
     return { min: minX, max: maxX, current: currentSlice };
-  };
-
-  _getSpacingInNormalDirection = (imageVolume, viewPlaneNormal) => {
-    const { direction, spacing } = imageVolume;
-
-    // Calculate size of spacing vector in normal direction
-    const iVector = direction.slice(0, 3);
-    const jVector = direction.slice(3, 6);
-    const kVector = direction.slice(6, 9);
-
-    const dotProducts = [
-      vec3.dot(iVector, viewPlaneNormal),
-      vec3.dot(jVector, viewPlaneNormal),
-      vec3.dot(kVector, viewPlaneNormal),
-    ];
-
-    const projectedSpacing = [
-      dotProducts[0] * spacing[0],
-      dotProducts[1] * spacing[1],
-      dotProducts[2] * spacing[2],
-    ];
-
-    const spacingInNormalDirection = vec3.length(projectedSpacing);
-
-    return spacingInNormalDirection;
   };
 }

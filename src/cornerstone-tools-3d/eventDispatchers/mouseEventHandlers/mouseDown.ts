@@ -3,13 +3,19 @@
 import {
   // getters,
   state,
+  ToolGroupManager,
 } from './../../store/index';
 // import { getToolState } from './../../stateManagement/toolState.js';
+
+import { ToolBindings, ToolModes } from './../../enums/index';
+
 // // Util
-// import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles.js';
+import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles';
 // import { findHandleDataNearImagePoint } from '../../util/findAndMoveHelpers.js';
 // import getInteractiveToolsForElement from './../../store/getInteractiveToolsForElement.js';
-// import getToolsWithDataForElement from './../../store/getToolsWithDataForElement.js';
+import getToolsWithDataForElement from '../../store/getToolsWithDataForElement';
+
+const { Active, Passive } = ToolModes;
 // import filterToolsUseableWithMultiPartTools from './../../store/filterToolsUsableWithMultiPartTools.js';
 
 export default function(evt) {
@@ -17,140 +23,129 @@ export default function(evt) {
     return;
   }
 
-  // const eventData = evt.detail;
-  // const element = evt.detail.element;
-  // const coords = evt.detail.currentPoints.canvas;
+  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail;
+  const mouseEvent = evt.detail.event;
+  const toolGroups = ToolGroupManager.getToolGroups(
+    renderingEngineUID,
+    sceneUID,
+    viewportUID
+  );
 
-  // // High level filtering
-  // const activeAndPassiveTools = getInteractiveToolsForElement(
-  //   element,
-  //   getters.mouseTools()
-  // );
+  let activeAndPassiveTools = [];
+  let activeTool;
+  let foundActiveTool = false;
 
-  // // ACTIVE TOOL W/ PRE CALLBACK?
-  // // Note: In theory, this should only ever be a single tool.
-  // let activeTools = activeAndPassiveTools.filter(
-  //   tool =>
-  //     tool.mode === 'active' &&
-  //     Array.isArray(tool.options.mouseButtonMask) &&
-  //     tool.options.mouseButtonMask.includes(eventData.buttons) &&
-  //     tool.options.isMouseActive
-  // );
+  for (let i = 0; i < toolGroups.length; i++) {
+    const toolGroup = toolGroups[i];
+    const toolGroupToolNames = Object.keys(toolGroup.tools);
 
-  // if (state.isMultiPartToolActive) {
-  //   activeTools = filterToolsUseableWithMultiPartTools(activeTools);
-  // }
+    for (let j = 0; j < toolGroupToolNames.length; j++) {
+      const toolName = toolGroupToolNames[j];
+      const tool = toolGroup.tools[toolName];
 
-  // // If any tools are active, check if they have a special reason for dealing with the event.
-  // if (activeTools.length > 0) {
-  //   // TODO: If length > 1, you could assess fitness and select the ideal tool
-  //   // TODO: But because we're locking this to 'active' tools, that should rarely be an issue
-  //   // Super-Meta-TODO: ^ I think we should just take the approach of one active tool per mouse button?
-  //   const firstActiveToolWithCallback = activeTools.find(
-  //     tool => typeof tool.preMouseDownCallback === 'function'
-  //   );
+      if (
+        !foundActiveTool &&
+        tool.mode === Active &&
+        tool.bindings.includes(mouseEvent.buttons)
+      ) {
+        // This should be behind some API. Too much knowledge of ToolGroup
+        // inner workings leaking out
 
-  //   if (firstActiveToolWithCallback) {
-  //     const consumedEvent = firstActiveToolWithCallback.preMouseDownCallback(
-  //       evt
-  //     );
+        activeTool = toolGroup._tools[toolName];
+        foundActiveTool = true;
+        activeAndPassiveTools.push(activeTool);
+      } else if (tool.mode === Passive || tool.mode === Active) {
+        const toolInstance = toolGroup._tools[toolName];
+        activeAndPassiveTools.push(toolInstance);
+      }
+    }
+  }
 
-  //     if (consumedEvent) {
-  //       return;
-  //     }
-  //   }
-  // }
+  // TODO -> multiPartTools => If activeTool is not usable with the multi-part tool, just bail.
 
-  // if (state.isMultiPartToolActive) {
-  //   // Don't fire events to Annotation Tools during a multi part loop.
-  //   return;
-  // }
+  // Check for preMouseDownCallbacks
+  if (activeTool && typeof activeTool.preMouseDownCallback === 'function') {
+    const consumedEvent = activeTool.preMouseDownCallback(evt);
 
-  // // Annotation tool specific
-  // const annotationTools = getToolsWithDataForElement(
-  //   element,
-  //   activeAndPassiveTools
-  // );
+    if (consumedEvent) {
+      // If the tool claims it consumed the event, prevent further checks.
+      return;
+    }
+  }
 
-  // // NEAR HANDLES?
-  // const annotationToolsWithMoveableHandles = getToolsWithMoveableHandles(
-  //   element,
-  //   annotationTools,
-  //   coords,
-  //   'mouse'
-  // );
+  const eventData = evt.detail;
+  const { element } = eventData;
 
-  // if (annotationToolsWithMoveableHandles.length > 0) {
-  //   const firstToolWithMoveableHandles = annotationToolsWithMoveableHandles[0];
-  //   const toolState = getToolState(element, firstToolWithMoveableHandles.name);
+  // Annotation tool specific
+  const annotationTools = getToolsWithDataForElement(
+    element,
+    activeAndPassiveTools
+  );
 
-  //   const { handle, data } = findHandleDataNearImagePoint(
-  //     element,
-  //     toolState,
-  //     firstToolWithMoveableHandles.name,
-  //     coords
-  //   );
+  const canvasCoords = eventData.currentPoints.canvas;
 
-  //   firstToolWithMoveableHandles.handleSelectedCallback(
-  //     evt,
-  //     data,
-  //     handle,
-  //     'mouse'
-  //   );
+  // NEAR HANDLES? // TODO It feels like we'll need picking at some point, right now doing as cornerstoneTools does:
+  // The first tool found that says it can be moved gets moved.
+  // TODO -> We need to make sure the mouse over highlighting correctly reflects this.
+  const annotationToolsWithMoveableHandles = getToolsWithMoveableHandles(
+    element,
+    annotationTools,
+    canvasCoords,
+    'mouse'
+  );
 
-  //   return;
-  // }
+  if (annotationToolsWithMoveableHandles.length > 0) {
+    // Choose first tool for now.
+    const { tool, toolData, handle } = annotationToolsWithMoveableHandles[0];
 
-  // // NEAR TOOL?
-  // const annotationToolsWithPointNearClick = activeAndPassiveTools.filter(
-  //   tool => {
-  //     const toolState = getToolState(element, tool.name);
-  //     const isNearPoint =
-  //       toolState &&
-  //       toolState.data &&
-  //       tool.pointNearTool &&
-  //       toolState.data.some(data =>
-  //         tool.pointNearTool(element, data, coords, 'mouse')
-  //       );
+    tool.handleSelectedCallback(evt, toolData, handle, 'mouse');
 
-  //     return isNearPoint;
-  //   }
-  // );
+    return;
+  }
+  /*
 
-  // if (annotationToolsWithPointNearClick.length > 0) {
-  //   const firstToolNearPoint = annotationToolsWithPointNearClick[0];
-  //   const toolState = getToolState(element, firstToolNearPoint.name);
-  //   const firstAnnotationNearPoint = toolState.data.find(data =>
-  //     firstToolNearPoint.pointNearTool(element, data, coords)
-  //   );
+  // NEAR TOOL?
+  const annotationToolsWithPointNearClick = activeAndPassiveTools.filter(
+    tool => {
+      const toolState = getToolState(element, tool.name);
+      const isNearPoint =
+        toolState &&
+        toolState.data &&
+        tool.pointNearTool &&
+        toolState.data.some(data =>
+          tool.pointNearTool(element, data, coords, 'mouse')
+        );
 
-  //   firstToolNearPoint.toolSelectedCallback(
-  //     evt,
-  //     firstAnnotationNearPoint,
-  //     'mouse'
-  //   );
+      return isNearPoint;
+    }
+  );
 
-  //   return;
-  // }
+  if (annotationToolsWithPointNearClick.length > 0) {
+    const firstToolNearPoint = annotationToolsWithPointNearClick[0];
+    const toolState = getToolState(element, firstToolNearPoint.name);
+    const firstAnnotationNearPoint = toolState.data.find(data =>
+      firstToolNearPoint.pointNearTool(element, data, coords)
+    );
+
+    firstToolNearPoint.toolSelectedCallback(
+      evt,
+      firstAnnotationNearPoint,
+      'mouse'
+    );
+
+    return;
+  }
+  */
+
+  if (activeTool && typeof activeTool.postMouseDownCallback === 'function') {
+    const consumedEvent = activeTool.postMouseDownCallback(evt);
+
+    if (consumedEvent) {
+      // If the tool claims it consumed the event, prevent further checks.
+      return;
+    }
+  }
 
   // // ACTIVE TOOL W/ POST CALLBACK?
   // // If any tools are active, check if they have a special reason for dealing with the event.
-  // if (activeTools.length > 0) {
-  //   // TODO: If length > 1, you could assess fitness and select the ideal tool
-  //   // TODO: But because we're locking this to 'active' tools, that should rarely be an issue
-  //   // Super-Meta-TODO: ^ I think we should just take the approach of one active tool per mouse button?
-  //   const firstActiveToolWithCallback = activeTools.find(
-  //     tool => typeof tool.postMouseDownCallback === 'function'
-  //   );
-
-  //   if (firstActiveToolWithCallback) {
-  //     const consumedEvent = firstActiveToolWithCallback.postMouseDownCallback(
-  //       evt
-  //     );
-
-  //     if (consumedEvent) {
-  //       return;
-  //     }
-  //   }
-  // }
 }

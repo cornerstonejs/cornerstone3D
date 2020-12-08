@@ -4,7 +4,6 @@ import RenderingEngine, {
   renderingEventTarget,
 } from './RenderingEngine';
 import imageCache from './imageCache';
-import toolManager from './toolManager';
 import {
   createUint8SharedArray,
   createFloat32SharedArray,
@@ -18,7 +17,6 @@ export {
   RenderingEngine,
   getRenderingEngine,
   imageCache,
-  toolManager,
   createUint8SharedArray,
   createFloat32SharedArray,
   register,
@@ -34,7 +32,6 @@ export default {
   RenderingEngine,
   getRenderingEngine,
   imageCache,
-  toolManager,
   createUint8SharedArray,
   createFloat32SharedArray,
   register,

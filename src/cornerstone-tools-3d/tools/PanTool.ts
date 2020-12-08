@@ -26,20 +26,19 @@ export default class PanTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
+  preMouseDownCallback(evt) {
+    evt.preventDefault();
+  }
+
   // Takes ICornerstoneEvent, Mouse or Touch
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
 
-    // TODO update camera/setCamera to map {x,y,z} format to array.
     const { x: deltaX, y: deltaY, z: deltaZ } = deltaPoints.world;
     const camera = enabledElement.viewport.getCamera();
     const { focalPoint, position } = camera;
 
-    // TODO Not sure why this should be negative?
-    // We should be adding on the delta I believe?
-    // This is the same now as the vtkMouseCameraTrackballPanManipulator,
-    // So the rest of the framework is at least consistent now.
     const updatedPosition = [
       position[0] - deltaX,
       position[1] - deltaY,

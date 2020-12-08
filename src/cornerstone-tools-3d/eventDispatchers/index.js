@@ -1,11 +1,11 @@
-// import imageRenderedEventDispatcher from './imageRenderedEventDispatcher.js';
+import imageRenderedEventDispatcher from './imageRenderedEventDispatcher';
 import cameraModifiedEventDispatcher from './cameraModifiedEventDispatcher';
 import mouseToolEventDispatcher from './mouseToolEventDispatcher';
 // import newImageEventDispatcher from './newImageEventDispatcher.js';
 // import touchToolEventDispatcher from './touchToolEventDispatcher.js';
 
 export {
-  // imageRenderedEventDispatcher,
+  imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
   // newImageEventDispatcher,

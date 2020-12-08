@@ -1,6 +1,6 @@
 type ToolSpecificToolData = {
   metadata: {
-    sliceNormal: Array<number>; // The normal on which the tool was drawn
+    viewPlaneNormal: Array<number>; // The normal on which the tool was drawn
     toolUID: string; // A unique identifier for this tool data.
     FrameOfReferenceUID: string; // The FrameOfReferenceUID
     toolName: string; // The registered name of the tool.

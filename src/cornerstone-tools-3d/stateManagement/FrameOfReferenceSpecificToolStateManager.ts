@@ -1,4 +1,4 @@
-import uuidv4 from '../utils/uuidv4.js';
+import uuidv4 from '../util/uuidv4.js';
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
@@ -23,6 +23,18 @@ export default class FrameOfReferenceSpecificToolStateManager {
     this.toolState = {};
     this.uid = uid;
   }
+
+  get = (FrameOfReferenceUID, toolName) => {
+    const frameOfReferenceSpecificToolState = this.toolState[
+      FrameOfReferenceUID
+    ];
+
+    if (!frameOfReferenceSpecificToolState) {
+      return;
+    }
+
+    return frameOfReferenceSpecificToolState[toolName];
+  };
 
   /**
    * @method getToolStateByToolUID Given the unique identified for the some `toolData`,

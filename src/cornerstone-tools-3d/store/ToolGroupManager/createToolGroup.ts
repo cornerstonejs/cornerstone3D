@@ -1,6 +1,9 @@
 import { state } from './../index';
 import IToolGroup from './IToolGroup';
 import ISetToolModeOptions from './ISetToolModeOptions';
+import ToolModes from '../../enums/ToolModes';
+
+const { Active, Passive } = ToolModes;
 
 function createToolGroup(toolGroupId: string): IToolGroup | undefined {
   // Exit early if ID conflict
@@ -71,7 +74,25 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         },
         toolModeOptions,
         {
-          mode: 'active',
+          mode: Active,
+        }
+      );
+
+      this.tools[toolName] = toolModeOptionsWithMode;
+    },
+    setToolPassive: function(
+      toolName: string,
+      toolModeOptions: ISetToolModeOptions
+    ): void {
+      // Would only need this for sanity check if not instantiating/hydrating
+      // const tool = this.tools[toolName];
+      const toolModeOptionsWithMode = Object.assign(
+        {
+          bindings: [],
+        },
+        toolModeOptions,
+        {
+          mode: Passive,
         }
       );
 
