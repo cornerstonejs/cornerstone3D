@@ -65,7 +65,7 @@ module.exports = (env, argv) => {
         '@vtk-viewport': path.join(__dirname, './../src'),
         '@tools': path.resolve(__dirname, './../cornerstone-tools-3d')
       },
-      extensions: [".ts", ".tsx", ".js"],
+      extensions: [".ts", ".tsx", ".js", '.jsx'],
     },
     externals: [
       // :wave:

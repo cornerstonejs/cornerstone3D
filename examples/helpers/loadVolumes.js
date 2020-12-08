@@ -3,7 +3,8 @@ import { imageCache } from './../../src/index';
 export default function loadVolumes(
   loadedCallback = () => {},
   loadAndRenderVolumeUIDs = [],
-  backgroundLoadUIDs = []
+  backgroundLoadUIDs = [],
+  renderingEngine
 ) {
   // As we have reset layout, remove all image load handlers and start again.
   imageCache.cancelLoadAllVolumes();
@@ -21,7 +22,7 @@ export default function loadVolumes(
 
   for (let i = 0; i < numToLoadOnScreen; i++) {
     const volumeUID = loadAndRenderVolumeUIDs[i];
-    loadSingleVolume(volumeUID, volumeLoadedCallback);
+    loadSingleVolume(volumeUID, volumeLoadedCallback, renderingEngine);
   }
 
   // Continue loading these volumes in the background
@@ -30,7 +31,7 @@ export default function loadVolumes(
   });
 }
 
-function loadSingleVolume(volumeUID, volumeLoadedCallback) {
+function loadSingleVolume(volumeUID, volumeLoadedCallback, renderingEngine) {
   const volume = imageCache.getImageVolume(volumeUID);
 
   const numberOfFrames = volume.imageIds.length;

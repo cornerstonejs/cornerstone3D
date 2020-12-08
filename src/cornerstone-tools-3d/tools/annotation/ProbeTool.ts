@@ -15,6 +15,7 @@ export default class ProbeTool extends BaseAnnotationTool {
   mouseDragCallback: Function;
   editData: { toolData: any } | null;
   name: string;
+  _configuration: any;
 
   constructor(toolConfiguration = {}) {
     const defaultToolConfiguration = {

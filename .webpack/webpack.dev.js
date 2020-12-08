@@ -91,7 +91,7 @@ module.exports = {
       '@configuration': APP_CONFIG_PATH,
       '@tools': path.resolve(__dirname, './../cornerstone-tools-3d/')
     },
-    extensions: [".ts", ".tsx", ".js"]
+    extensions: [".ts", ".tsx", ".js", '.jsx']
   },
   plugins: [
     // Show build progress

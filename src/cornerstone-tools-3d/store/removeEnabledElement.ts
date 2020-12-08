@@ -17,8 +17,8 @@ import { state } from './index';
 export default function(elementDisabledEvt) {
   // Is DOM element
   const canvas = elementDisabledEvt.detail.canvas;
-  // Is construct
-  const enabledElement = getEnabledElement(canvas);
+  // Is construct - WON'T BE ABLE TO GET
+  //const enabledElement = getEnabledElement(canvas);
 
   // Listeners
   mouseEventListeners.disable(canvas);

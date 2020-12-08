@@ -18,7 +18,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.CT.AXIAL.current,
+      canvas: canvasContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
       },
@@ -27,7 +27,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.CT.SAGITTAL.current,
+      canvas: canvasContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
       },
@@ -36,7 +36,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.CT.CORONAL.current,
+      canvas: canvasContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
       },
@@ -45,7 +45,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CTVR,
       viewportUID: VIEWPORT_IDS.CTVR.VR,
       type: VIEWPORT_TYPE.PERSPECTIVE,
-      canvas: canvasContainers.CTVR.VR.current,
+      canvas: canvasContainers.get(3),
       defaultOptions: {
         orientation: {
           // Some arbitrary rotation so you can tell its 3D
@@ -82,7 +82,6 @@ function setVolumes(renderingEngine, ctVolumeUID) {
   const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR);
 
   ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
-
   ctVRScene.setVolumes([
     { volumeUID: ctVolumeUID, callback: setCTVRTransferFunction },
   ]);

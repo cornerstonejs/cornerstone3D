@@ -1,5 +1,5 @@
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
-import { CONSTANTS } from './../../src/index';
+import { CONSTANTS, imageCache } from './../../src/index';
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
 import {
   setCTWWWC,
@@ -18,6 +18,11 @@ function setLayout(
     ptSceneToolGroup,
     fusionSceneToolGroup,
     ptMipSceneToolGroup,
+  },
+  {
+    axialSynchronizers = [],
+    sagittalSynchronizers = [],
+    coronalSynchronizers = [],
   }
 ) {
   const viewportInput = [
@@ -26,7 +31,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.CT.AXIAL.current,
+      canvas: canvasContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
       },
@@ -35,7 +40,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.CT.SAGITTAL.current,
+      canvas: canvasContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
       },
@@ -44,7 +49,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.CT.CORONAL.current,
+      canvas: canvasContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
       },
@@ -56,7 +61,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PT,
       viewportUID: VIEWPORT_IDS.PT.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.PT.AXIAL.current,
+      canvas: canvasContainers.get(3),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
         background: [1, 1, 1],
@@ -66,7 +71,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PT,
       viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.PT.SAGITTAL.current,
+      canvas: canvasContainers.get(4),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
         background: [1, 1, 1],
@@ -76,7 +81,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PT,
       viewportUID: VIEWPORT_IDS.PT.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.PT.CORONAL.current,
+      canvas: canvasContainers.get(5),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
         background: [1, 1, 1],
@@ -89,7 +94,7 @@ function setLayout(
       sceneUID: SCENE_IDS.FUSION,
       viewportUID: VIEWPORT_IDS.FUSION.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.FUSION.AXIAL.current,
+      canvas: canvasContainers.get(6),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
       },
@@ -98,7 +103,7 @@ function setLayout(
       sceneUID: SCENE_IDS.FUSION,
       viewportUID: VIEWPORT_IDS.FUSION.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.FUSION.SAGITTAL.current,
+      canvas: canvasContainers.get(7),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
       },
@@ -107,7 +112,7 @@ function setLayout(
       sceneUID: SCENE_IDS.FUSION,
       viewportUID: VIEWPORT_IDS.FUSION.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.FUSION.CORONAL.current,
+      canvas: canvasContainers.get(8),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
       },
@@ -118,7 +123,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PTMIP,
       viewportUID: VIEWPORT_IDS.PTMIP.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.PTMIP.CORONAL.current,
+      canvas: canvasContainers.get(9),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
         background: [1, 1, 1],
@@ -129,7 +134,6 @@ function setLayout(
   renderingEngine.setViewports(viewportInput);
 
   // Add tools
-
   const renderingEngineUID = renderingEngine.uid;
 
   viewportInput.forEach(viewportInputEntry => {
@@ -152,6 +156,30 @@ function setLayout(
         viewportUID
       );
     }
+  });
+
+  const axialViewports = [0, 3, 6];
+  axialSynchronizers.forEach(sync => {
+    axialViewports.forEach(axialIndex => {
+      const { sceneUID, viewportUID } = viewportInput[axialIndex];
+      sync.add(renderingEngineUID, sceneUID, viewportUID);
+    });
+  });
+
+  const sagittalViewports = [1, 4, 7];
+  sagittalSynchronizers.forEach(sync => {
+    sagittalViewports.forEach(sagittalIndex => {
+      const { sceneUID, viewportUID } = viewportInput[sagittalIndex];
+      sync.add(renderingEngineUID, sceneUID, viewportUID);
+    });
+  });
+
+  const coronalViewports = [2, 5, 8];
+  coronalSynchronizers.forEach(sync => {
+    coronalViewports.forEach(coronalIndex => {
+      const { sceneUID, viewportUID } = viewportInput[coronalIndex];
+      sync.add(renderingEngineUID, sceneUID, viewportUID);
+    });
   });
 
   // Render backgrounds

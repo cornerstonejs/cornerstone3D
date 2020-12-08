@@ -1,5 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
-import { CONSTANTS } from './../../src/index';
+import { CONSTANTS, imageCache } from './../../src/index';
 import { setPetTransferFunction } from '../helpers/transferFunctionHelpers';
 
 const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
@@ -11,7 +11,7 @@ function setLayout(renderingEngine, canvasContainers) {
       sceneUID: SCENE_IDS.PT,
       viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.PT.SAGITTAL.current,
+      canvas: canvasContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
         background: [1, 1, 1],

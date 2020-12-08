@@ -35,7 +35,6 @@ export default {
   VolumeRotateMouseWheelTool,
   ProbeTool,
   //
-
   ToolGroupManager,
   ToolBindings,
   VtkjsToolEvents,
