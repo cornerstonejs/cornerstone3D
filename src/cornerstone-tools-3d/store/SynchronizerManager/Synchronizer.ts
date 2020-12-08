@@ -43,15 +43,21 @@ class Synchronizer {
   public add(
     renderingEngineUID: string,
     sceneUID: string,
-    viewportUID: string
+    viewportUID: string,
+    types = { source: true, target: true }
   ): void {
     const viewport: IViewportUID = {
       renderingEngineUID,
       sceneUID,
       viewportUID,
     };
-    this._sourceViewports.push(viewport);
-    this._targetViewports.push(viewport);
+    if (types.source) {
+      this._sourceViewports.push(viewport);
+    }
+
+    if (types.target) {
+      this._targetViewports.push(viewport);
+    }
   }
 
   public hasSourceViewport(renderingEngineUID, sceneUID, viewportUID) {

@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
+import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
 import { cameraFocalPointAndPositionSync } from './helpers/cameraFocalPointAndPositionSync';
+import voiSync from './helpers/voiSync';
 import loadVolumes from './helpers/loadVolumes';
 import {
   imageCache,
@@ -63,6 +65,7 @@ class VTKMPRExample extends Component {
         },
       ],
     },
+    isAnnotationToolOn: false,
   };
 
   constructor(props) {
@@ -91,6 +94,17 @@ class VTKMPRExample extends Component {
       RENDERING_EVENTS.CAMERA_MODIFIED,
       cameraFocalPointAndPositionSync
     );
+
+    this.ctWLSync = SynchronizerManager.createSynchronizer(
+      'ctWLSync',
+      RENDERING_EVENTS.VOI_MODIFIED,
+      voiSync
+    );
+    this.ptThresholdSync = SynchronizerManager.createSynchronizer(
+      'ptThresholdSync',
+      RENDERING_EVENTS.VOI_MODIFIED,
+      voiSync
+    );
   }
 
   /**
@@ -118,6 +132,8 @@ class VTKMPRExample extends Component {
         axialSynchronizers: [this.axialSync],
         sagittalSynchronizers: [this.sagittalSync],
         coronalSynchronizers: [this.coronalSync],
+        ptThresholdSynchronizer: this.ptThresholdSync,
+        ctWLSynchronizer: this.ctWLSync,
       }
     );
 
@@ -349,6 +365,7 @@ class VTKMPRExample extends Component {
 
   render() {
     const { layoutIndex, metadataLoaded, destroyed } = this.state;
+    let { isAnnotationToolOn } = this.state;
     const layout = LAYOUTS[layoutIndex];
     const layoutButtons = [
       { id: 'SinglePTSagittal', text: 'Single PT Sagittal Layout' },
@@ -356,6 +373,10 @@ class VTKMPRExample extends Component {
       { id: 'CTVR', text: 'Four Up CT Layout' },
     ];
     const filteredLayoutButtons = layoutButtons.filter(x => x !== layout.id);
+
+    const switchToolText = isAnnotationToolOn
+      ? 'Switch To WWWC'
+      : 'Switch To Probe';
 
     return (
       <div>
@@ -367,7 +388,7 @@ class VTKMPRExample extends Component {
             <button
               onClick={() => metadataLoaded && !destroyed && this.testRender()}
             >
-              Render
+              Render Test
             </button>
           </div>
           <div className="col-xs-12">
@@ -388,6 +409,21 @@ class VTKMPRExample extends Component {
             ))}
             <button onClick={() => this.destroyAndDecacheAllVolumes()}>
               Destroy Rendering Engine and Decache All Volumes
+            </button>
+            <button
+              onClick={() => {
+                isAnnotationToolOn = !isAnnotationToolOn;
+
+                ptCtToggleAnnotationTool(
+                  isAnnotationToolOn,
+                  ctSceneToolGroup,
+                  ptSceneToolGroup,
+                  fusionSceneToolGroup
+                );
+                this.setState({ isAnnotationToolOn });
+              }}
+            >
+              {switchToolText}
             </button>
           </div>
         </div>

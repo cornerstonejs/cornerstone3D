@@ -1,6 +1,7 @@
 import { BaseTool } from './base/index';
 // ~~ VTK Viewport
-import { getEnabledElement, imageCache } from './../../index';
+import { getEnabledElement, imageCache, Events } from './../../index';
+import triggerEvent from '../util/triggerEvent';
 
 export default class WindowLevelTool extends BaseTool {
   touchDragCallback: Function;
@@ -43,7 +44,7 @@ export default class WindowLevelTool extends BaseTool {
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
-    const { scene } = enabledElement;
+    const { scene, sceneUID } = enabledElement;
 
     const { volumeUID } = this._configuration;
 
@@ -71,19 +72,6 @@ export default class WindowLevelTool extends BaseTool {
 
     const { x: deltaX, y: deltaY } = deltaPoints.canvas;
 
-    // get range of a typical slice. Middle slice loads first.
-    // We used to get the whole range by:
-    //
-    // const range = volumeActor
-    //   .getMapper()
-    //   .getInputData()
-    //   .getPointData()
-    //   .getScalars()
-    //   .getRange();
-    // const imageDynamicRange = range[1] - range[0];
-    //
-    // But that is super slow.
-
     const imageDynamicRange = this._getImageDynamicRange(volumeUID);
     const multiplier = Math.round(imageDynamicRange / 1024);
 
@@ -101,6 +89,17 @@ export default class WindowLevelTool extends BaseTool {
     const newRange = this._toLowHighRange(windowWidth, windowCenter);
 
     rgbTransferFunction.setMappingRange(newRange.lower, newRange.upper);
+
+    const eventDetail = {
+      volumeUID,
+      sceneUID,
+      range: newRange,
+    };
+
+    console.log('triggering VOI_MODIFIED');
+    console.log(eventDetail);
+
+    triggerEvent(canvas, Events.VOI_MODIFIED, eventDetail);
 
     scene.render();
   }

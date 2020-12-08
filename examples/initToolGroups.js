@@ -11,9 +11,6 @@ import csTools3d, {
 } from './../src/cornerstone-tools-3d/index';
 import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID } from './constants';
 
-// TODO -> Make this a toggle.
-const ANNOTATION_ON = true;
-
 function initToolGroups() {
   // TODO: Can we delete tool groups?
   // These need to be in lifecylce so we can undo on page death
@@ -48,17 +45,10 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ctVolumeUID },
   });
-  if (ANNOTATION_ON) {
-    ctSceneToolGroup.setToolActive('Probe', {
-      bindings: [ToolBindings.Mouse.Primary],
-    });
-  } else {
-    ctSceneToolGroup.setToolActive('WindowLevel', {
-      bindings: [ToolBindings.Mouse.Primary],
-    });
-    ctSceneToolGroup.setToolPassive('Probe');
-  }
-
+  ctSceneToolGroup.setToolActive('WindowLevel', {
+    bindings: [ToolBindings.Mouse.Primary],
+  });
+  ctSceneToolGroup.setToolPassive('Probe');
   ctSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ctSceneToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
@@ -82,20 +72,11 @@ function initToolGroups() {
   ptSceneToolGroup.addTool('Pan', {});
   ptSceneToolGroup.addTool('Zoom', {});
   ptSceneToolGroup.addTool('StackScrollMouseWheel', {});
-
-  if (ANNOTATION_ON) {
-    ptSceneToolGroup.setToolActive('Probe', {
-      bindings: [ToolBindings.Mouse.Primary],
-    });
-  } else {
-    ptSceneToolGroup.setToolActive('PetThreshold', {
-      bindings: [ToolBindings.Mouse.Primary],
-    });
-    ptSceneToolGroup.setToolPassive('Probe');
-  }
-
+  ptSceneToolGroup.setToolActive('PetThreshold', {
+    bindings: [ToolBindings.Mouse.Primary],
+  });
+  ptSceneToolGroup.setToolPassive('Probe');
   ptSceneToolGroup.setToolActive('StackScrollMouseWheel');
-
   ptSceneToolGroup.setToolActive('Pan', {
     bindings: [ToolBindings.Mouse.Auxiliary],
   });
@@ -110,15 +91,7 @@ function initToolGroups() {
   fusionSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ptVolumeUID },
   });
-
-  if (ANNOTATION_ON) {
-    fusionSceneToolGroup.setToolActive('Probe', {
-      bindings: [ToolBindings.Mouse.Primary],
-    });
-  } else {
-    fusionSceneToolGroup.setToolPassive('Probe');
-  }
-
+  fusionSceneToolGroup.setToolPassive('Probe');
   fusionSceneToolGroup.setToolActive('StackScrollMouseWheel');
   fusionSceneToolGroup.setToolActive('Pan', {
     bindings: [ToolBindings.Mouse.Auxiliary],

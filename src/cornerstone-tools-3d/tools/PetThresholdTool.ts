@@ -1,6 +1,7 @@
 import { BaseTool } from './base/index';
 // ~~ VTK Viewport
-import { getEnabledElement } from './../../index';
+import { getEnabledElement, Events } from './../../index';
+import triggerEvent from '../util/triggerEvent';
 
 export default class PetThresholdTool extends BaseTool {
   touchDragCallback: Function;
@@ -34,7 +35,7 @@ export default class PetThresholdTool extends BaseTool {
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
-    const { scene } = enabledElement;
+    const { scene, sceneUID } = enabledElement;
 
     const { volumeUID, maxSUV } = this._configuration;
 
@@ -75,5 +76,13 @@ export default class PetThresholdTool extends BaseTool {
     rgbTransferFunction.setMappingRange(lower, upper);
 
     scene.render();
+
+    const eventDetail = {
+      volumeUID,
+      sceneUID,
+      range: { lower, upper },
+    };
+
+    triggerEvent(canvas, Events.VOI_MODIFIED, eventDetail);
   }
 }

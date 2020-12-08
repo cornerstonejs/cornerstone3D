@@ -23,6 +23,8 @@ function setLayout(
     axialSynchronizers = [],
     sagittalSynchronizers = [],
     coronalSynchronizers = [],
+    ptThresholdSynchronizer,
+    ctWLSynchronizer,
   }
 ) {
   const viewportInput = [
@@ -181,6 +183,56 @@ function setLayout(
       sync.add(renderingEngineUID, sceneUID, viewportUID);
     });
   });
+
+  const ctViewports = [0, 1, 2];
+  const petViewports = [3, 4, 5];
+  const fusionViewports = [6, 7, 8];
+  const petMipViewports = [9];
+
+  // CT WL Synchronization
+  ctViewports.forEach(ctIndex => {
+    const { sceneUID, viewportUID } = viewportInput[ctIndex];
+    ctWLSynchronizer.add(renderingEngineUID, sceneUID, viewportUID, {
+      source: true,
+      target: false,
+    });
+  });
+
+  fusionViewports.forEach(fusionIndex => {
+    const { sceneUID, viewportUID } = viewportInput[fusionIndex];
+    ctWLSynchronizer.add(renderingEngineUID, sceneUID, viewportUID, {
+      source: false,
+      target: true,
+    });
+  });
+
+  // PT Threshold Synchronization
+  petViewports.forEach(ptIndex => {
+    const { sceneUID, viewportUID } = viewportInput[ptIndex];
+    ptThresholdSynchronizer.add(renderingEngineUID, sceneUID, viewportUID, {
+      source: true,
+      target: false,
+    });
+  });
+
+  fusionViewports.forEach(fusionIndex => {
+    const { sceneUID, viewportUID } = viewportInput[fusionIndex];
+    ptThresholdSynchronizer.add(renderingEngineUID, sceneUID, viewportUID, {
+      source: false,
+      target: true,
+    });
+  });
+
+  petMipViewports.forEach(ptMipIndex => {
+    const { sceneUID, viewportUID } = viewportInput[ptMipIndex];
+    ptThresholdSynchronizer.add(renderingEngineUID, sceneUID, viewportUID, {
+      source: false,
+      target: true,
+    });
+  });
+
+  console.group(ctWLSynchronizer);
+  console.group(ptThresholdSynchronizer);
 
   // Render backgrounds
   renderingEngine.render();
