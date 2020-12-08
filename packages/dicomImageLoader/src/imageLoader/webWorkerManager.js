@@ -156,7 +156,7 @@ function initialize(configObject) {
   config = configObject;
 
   config.maxWebWorkers =
-    config.maxWebWorkers || (navigator.hardwareConcurrency || 1);
+    config.maxWebWorkers || navigator.hardwareConcurrency || 1;
 
   // Spawn new web workers
   if (!config.startWebWorkersOnDemand) {

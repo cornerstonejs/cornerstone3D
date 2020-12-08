@@ -87,7 +87,14 @@ function xhrRequest(url, imageId, headers = {}, params = {}) {
       // TODO: consider sending out progress messages here as we receive the pixel data
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
-          resolve(xhr.response, xhr);
+          options
+            .beforeProcessing(xhr)
+            .then(resolve)
+            .catch(() => {
+              errorInterceptor(xhr);
+              // request failed, reject the Promise
+              reject(xhr);
+            });
         } else {
           errorInterceptor(xhr);
           // request failed, reject the Promise
