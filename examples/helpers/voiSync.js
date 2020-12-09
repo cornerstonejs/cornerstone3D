@@ -6,7 +6,6 @@ export default function cameraFocalPointAndPositionSync(
   targetViewport,
   voiUpdatedEvent
 ) {
-  debugger;
   // // We need a helper for this
   // if (
   //   sourceViewport.renderingEngineUID === targetViewport.renderingEngineUID &&

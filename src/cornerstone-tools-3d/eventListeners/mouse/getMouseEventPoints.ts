@@ -1,8 +1,11 @@
 import { getEnabledElement } from '../../../index';
 import { IPoints, IPoint } from '../ICornerstoneToolsEventDetail';
 
-export default function getMouseEventPoints(evt: MouseEvent): IPoints {
-  const canvas = evt.target;
+export default function getMouseEventPoints(
+  evt: MouseEvent,
+  element?: HTMLElement
+): IPoints {
+  const canvas = element || evt.target;
   const enabledElement = getEnabledElement(canvas);
   const pagePoint = _pageToPoint(evt);
   const canvasPoint = _pagePointsToCanvasPoints(

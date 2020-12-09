@@ -104,7 +104,7 @@ function mouseDownListener(evt: MouseEvent): void {
   // Prevent CornerstoneToolsMouseMove while mouse is down
   state.element.removeEventListener('mousemove', mouseMoveListener);
 
-  const startPoints = getMouseEventPoints(evt);
+  const startPoints = getMouseEventPoints(evt, state.element);
   const deltaPoints = _getDeltaPoints(startPoints, startPoints);
 
   const eventData: ICornerstoneToolsEventDetail = {
@@ -148,8 +148,11 @@ function mouseDownListener(evt: MouseEvent): void {
  * @param evt
  */
 function _onMouseDrag(evt: MouseEvent): void {
-  const currentPoints = getMouseEventPoints(evt);
-  const lastPoints = _updateMouseEventsLastPoints(evt, state.lastPoints);
+  const currentPoints = getMouseEventPoints(evt, state.element);
+  const lastPoints = _updateMouseEventsLastPoints(
+    state.element,
+    state.lastPoints
+  );
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints);
 
   const eventData: ICornerstoneToolsEventDetail = {
@@ -185,7 +188,7 @@ function _onMouseUp(evt: MouseEvent): void {
     ? VtkjsToolsEvents.MOUSE_CLICK
     : VtkjsToolsEvents.MOUSE_UP;
 
-  const currentPoints = getMouseEventPoints(evt);
+  const currentPoints = getMouseEventPoints(evt, state.element);
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints);
   const eventData = {
     renderingEngineUID: state.renderingEngingUID,
@@ -239,8 +242,8 @@ function _subtract3dPoints(lhs: I3dPoint, rhs: I3dPoint): I3dPoint {
 
 // We need to find these again because the "frame" may have changed since
 // the last event (Re: pan)
-function _updateMouseEventsLastPoints(evt: MouseEvent, lastPoints) {
-  const canvas = evt.target;
+function _updateMouseEventsLastPoints(element: HTMLElement, lastPoints) {
+  const canvas = element;
   const enabledElement = getEnabledElement(canvas);
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.

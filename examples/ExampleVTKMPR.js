@@ -94,7 +94,6 @@ class VTKMPRExample extends Component {
       RENDERING_EVENTS.CAMERA_MODIFIED,
       cameraFocalPointAndPositionSync
     );
-
     this.ctWLSync = SynchronizerManager.createSynchronizer(
       'ctWLSync',
       RENDERING_EVENTS.VOI_MODIFIED,
@@ -198,6 +197,8 @@ class VTKMPRExample extends Component {
             axialSynchronizers: [this.axialSync],
             sagittalSynchronizers: [this.sagittalSync],
             coronalSynchronizers: [this.coronalSync],
+            ptThresholdSynchronizer: this.ptThresholdSync,
+            ctWLSynchronizer: this.ctWLSync,
           }
         );
 
@@ -373,44 +374,52 @@ class VTKMPRExample extends Component {
       { id: 'CTVR', text: 'Four Up CT Layout' },
     ];
     const filteredLayoutButtons = layoutButtons.filter(x => x !== layout.id);
-
     const switchToolText = isAnnotationToolOn
       ? 'Switch To WWWC'
       : 'Switch To Probe';
 
     return (
-      <div>
+      <div style={{ paddingBottom: '55px' }}>
         <div className="row">
-          <div className="col-xs-12">
-            <h5>MPR Template Example: {this.state.progressText} </h5>
+          <div className="col-xs-12" style={{ margin: '8px 0' }}>
+            <h2>MPR Template Example ({this.state.progressText})</h2>
           </div>
           <div className="col-xs-12">
             <button
               onClick={() => metadataLoaded && !destroyed && this.testRender()}
+              className="btn btn-secondary"
             >
               Render Test
             </button>
           </div>
-          <div className="col-xs-12">
-            <button
-              onClick={() =>
-                metadataLoaded && !destroyed && this.swapPetTransferFunction()
-              }
-            >
-              SwapPetTransferFunction
-            </button>
+          <div
+            className="col-xs-12"
+            style={{ margin: '8px 0', marginLeft: '-4px' }}
+          >
+            {/* LAYOUT BUTTONS */}
             {filteredLayoutButtons.map(layout => (
               <button
                 key={layout.id}
                 onClick={() => this.swapLayout(layout.id)}
+                className="btn btn-primary"
+                style={{ margin: '2px 4px' }}
               >
                 {layout.text}
               </button>
             ))}
-            <button onClick={() => this.destroyAndDecacheAllVolumes()}>
-              Destroy Rendering Engine and Decache All Volumes
+            {/* TOGGLES */}
+            <button
+              onClick={() =>
+                metadataLoaded && !destroyed && this.swapPetTransferFunction()
+              }
+              className="btn btn-primary"
+              style={{ margin: '2px 4px' }}
+            >
+              SwapPetTransferFunction
             </button>
             <button
+              className="btn btn-primary"
+              style={{ margin: '2px 4px' }}
               onClick={() => {
                 isAnnotationToolOn = !isAnnotationToolOn;
 
@@ -425,17 +434,29 @@ class VTKMPRExample extends Component {
             >
               {switchToolText}
             </button>
+            {/* DANGER */}
+            <button
+              onClick={() => this.destroyAndDecacheAllVolumes()}
+              className="btn btn-danger"
+              style={{ margin: '2px 4px' }}
+            >
+              Destroy Rendering Engine and Decache All Volumes
+            </button>
           </div>
         </div>
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}
-          style={{ minHeight: '650px' }}
+          style={{ minHeight: '650px', marginTop: '35px' }}
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
             <div
               className="viewport-pane"
-              style={{ ...(vp.cellStyle || {}) }}
+              style={{
+                ...(vp.cellStyle || {}),
+                border: '2px solid dodgerblue',
+                background: 'black',
+              }}
               key={i}
             >
               <canvas ref={c => this._canvasNodes.set(i, c)} />

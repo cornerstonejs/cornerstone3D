@@ -4,7 +4,6 @@ import {
 } from './../eventListeners/index';
 import {
   //   imageRenderedEventDispatcher,
-  cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
   //   newImageEventDispatcher,
   //   touchToolEventDispatcher,
@@ -27,7 +26,6 @@ export default function(elementDisabledEvt) {
   // imageRenderedEventDispatcher.disable(canvas);
   // newImageEventDispatcher.disable(canvas);
   // Dispatchers: interaction
-  cameraModifiedEventDispatcher.disable(canvas);
   mouseToolEventDispatcher.disable(canvas);
   // touchToolEventDispatcher.disable(canvas);
 

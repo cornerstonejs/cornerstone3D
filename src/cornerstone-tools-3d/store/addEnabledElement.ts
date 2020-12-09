@@ -6,7 +6,6 @@ import {
 import { getEnabledElement } from './../../index';
 import {
   imageRenderedEventDispatcher,
-  cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
   //   touchToolEventDispatcher,
 } from './../eventDispatchers/index';
@@ -30,7 +29,6 @@ export default function(elementEnabledEvt) {
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(canvas);
   // Dispatchers: interaction
-  cameraModifiedEventDispatcher.enable(canvas);
   mouseToolEventDispatcher.enable(canvas);
   // touchToolEventDispatcher.enable(enabledElement);
 
