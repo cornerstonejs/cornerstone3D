@@ -54,6 +54,8 @@ export default class ZoomTool extends BaseTool {
 
     const k = deltaY * zoomScale;
 
+    console.log((1.0 - k) * camera.parallelScale);
+
     viewport.setCamera({ parallelScale: (1.0 - k) * camera.parallelScale });
   };
 

@@ -203,21 +203,30 @@ function setLayout(
   // PT Threshold Synchronization
   petViewports.forEach(ptIndex => {
     const { sceneUID, viewportUID } = viewportInput[ptIndex];
-    ptThresholdSynchronizer.addSource({ renderingEngineUID, sceneUID, viewportUID });
+    ptThresholdSynchronizer.addSource({
+      renderingEngineUID,
+      sceneUID,
+      viewportUID,
+    });
   });
 
   fusionViewports.forEach(fusionIndex => {
     const { sceneUID, viewportUID } = viewportInput[fusionIndex];
-    ptThresholdSynchronizer.addTarget({ renderingEngineUID, sceneUID, viewportUID });
+    ptThresholdSynchronizer.addTarget({
+      renderingEngineUID,
+      sceneUID,
+      viewportUID,
+    });
   });
 
   petMipViewports.forEach(ptMipIndex => {
     const { sceneUID, viewportUID } = viewportInput[ptMipIndex];
-    ptThresholdSynchronizer.addTarget({ renderingEngineUID, sceneUID, viewportUID });
+    ptThresholdSynchronizer.addTarget({
+      renderingEngineUID,
+      sceneUID,
+      viewportUID,
+    });
   });
-
-  console.group(ctWLSynchronizer);
-  console.group(ptThresholdSynchronizer);
 
   // Render backgrounds
   renderingEngine.render();
@@ -245,12 +254,11 @@ function setVolumes(renderingEngine, ctVolumeUID, ptVolumeUID, petColorMap) {
   const ptVolume = imageCache.getImageVolume(ptVolumeUID);
   const ptVolumeDimensions = ptVolume.dimensions;
 
-  // Only make the MIP as large as it needs to be. This coronal MIP will be
-  // rotated so need the diagonal across the Axial Plane.
-
+  // Only make the MIP as large as it needs to be.
   const slabThickness = Math.sqrt(
     ptVolumeDimensions[0] * ptVolumeDimensions[0] +
-      ptVolumeDimensions[1] * ptVolumeDimensions[1]
+      ptVolumeDimensions[1] * ptVolumeDimensions[1] +
+      ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
   ptMipScene.setVolumes([
@@ -261,6 +269,52 @@ function setVolumes(renderingEngine, ctVolumeUID, ptVolumeUID, petColorMap) {
       slabThickness,
     },
   ]);
+
+  initializeCameraSync(ctScene, ptScene, fusionScene);
+}
+
+function initializeCameraSync(ctScene, ptScene, fusionScene) {
+  // The fusion scene is the target as it is scaled to both volumes.
+  // TODO -> We should have a more generic way to do this,
+  // So that when all data is added we can synchronize zoom/position before interaction.
+
+  const axialCtViewport = ctScene.getViewport(VIEWPORT_IDS.CT.AXIAL);
+  const sagittalCtViewport = ctScene.getViewport(VIEWPORT_IDS.CT.SAGITTAL);
+  const coronalCtViewport = ctScene.getViewport(VIEWPORT_IDS.CT.CORONAL);
+
+  const axialPtViewport = ptScene.getViewport(VIEWPORT_IDS.PT.AXIAL);
+  const sagittalPtViewport = ptScene.getViewport(VIEWPORT_IDS.PT.SAGITTAL);
+  const coronalPtViewport = ptScene.getViewport(VIEWPORT_IDS.PT.CORONAL);
+
+  const axialFusionViewport = fusionScene.getViewport(
+    VIEWPORT_IDS.FUSION.AXIAL
+  );
+  const sagittalFusionViewport = fusionScene.getViewport(
+    VIEWPORT_IDS.FUSION.SAGITTAL
+  );
+  const coronalFusionViewport = fusionScene.getViewport(
+    VIEWPORT_IDS.FUSION.CORONAL
+  );
+
+  initCameraSynchronization(axialFusionViewport, axialCtViewport);
+  initCameraSynchronization(axialFusionViewport, axialPtViewport);
+
+  initCameraSynchronization(sagittalFusionViewport, sagittalCtViewport);
+  initCameraSynchronization(sagittalFusionViewport, sagittalPtViewport);
+
+  initCameraSynchronization(coronalFusionViewport, coronalCtViewport);
+  initCameraSynchronization(coronalFusionViewport, coronalPtViewport);
+
+  ctScene.getRenderingEngine().render();
+}
+
+function initCameraSynchronization(sViewport, tViewport) {
+  // Initialise the sync as they viewports will have
+  // Different inital zoom levels for viewports of different sizes.
+
+  const camera = sViewport.getCamera();
+
+  tViewport.setCamera(camera);
 }
 
 export default { setLayout, setVolumes };

@@ -6,7 +6,6 @@ export default function voiSync(
   targetViewport,
   voiModifiedEvent
 ) {
-  debugger;
   const eventData = voiModifiedEvent.detail;
   let { volumeUID, sceneUID, range } = eventData;
 

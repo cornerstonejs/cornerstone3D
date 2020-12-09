@@ -5,6 +5,9 @@ import renderingEngineCache from './renderingEngineCache';
 import RenderingEngine, { ViewportInputOptions } from './RenderingEngine';
 import Scene, { VolumeActorEntry } from './Scene';
 import triggerEvent from './../utils/triggerEvent';
+import * as vtkMath from 'vtk.js/Sources/Common/Core/Math';
+import { vec3 } from 'gl-matrix';
+import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 
 const DEFAULT_SLAB_THICKNESS = 0.1;
 
@@ -102,7 +105,7 @@ class Viewport implements ViewportInterface {
     camera.setThicknessFromFocalPoint(DEFAULT_SLAB_THICKNESS);
     camera.setFreezeFocalPoint(true);
 
-    renderer.resetCamera();
+    this.resetCamera();
   }
 
   /**
@@ -197,13 +200,14 @@ class Viewport implements ViewportInterface {
         }
       });
 
-      renderer.resetCamera();
+      this.resetCamera();
 
       const activeCamera = renderer.getActiveCamera();
 
       activeCamera.setThicknessFromFocalPoint(slabThickness);
       activeCamera.setFreezeFocalPoint(true);
     } else {
+      // Use default renderer resetCamera, fits bounding sphere of data.
       renderer.resetCamera();
 
       const activeCamera = renderer.getActiveCamera();
@@ -211,6 +215,125 @@ class Viewport implements ViewportInterface {
       activeCamera.setFreezeFocalPoint(true);
     }
   }
+
+  resetCamera = () => {
+    const renderer = this.getRenderer();
+
+    const bounds = renderer.computeVisiblePropBounds();
+    const focalPoint = [0, 0, 0];
+
+    const activeCamera = this.getVtkActiveCamera();
+    const viewPlaneNormal = activeCamera.getViewPlaneNormal();
+    const viewUp = activeCamera.getViewUp();
+
+    // Reset the perspective zoom factors, otherwise subsequent zooms will cause
+    // the view angle to become very small and cause bad depth sorting.
+    activeCamera.setViewAngle(30.0);
+
+    focalPoint[0] = (bounds[0] + bounds[1]) / 2.0;
+    focalPoint[1] = (bounds[2] + bounds[3]) / 2.0;
+    focalPoint[2] = (bounds[4] + bounds[5]) / 2.0;
+
+    const corners = [
+      [bounds[0], bounds[2], bounds[4]],
+      [bounds[0], bounds[2], bounds[5]],
+      [bounds[0], bounds[3], bounds[4]],
+      [bounds[0], bounds[3], bounds[5]],
+      [bounds[1], bounds[2], bounds[4]],
+      [bounds[1], bounds[2], bounds[5]],
+      [bounds[1], bounds[3], bounds[4]],
+      [bounds[1], bounds[3], bounds[5]],
+    ];
+
+    const transform = vtkMatrixBuilder
+      .buildFromDegree()
+      .identity()
+      .rotateFromDirections(viewUp, [1, 0, 0]);
+
+    corners.forEach(pt => transform.apply(pt));
+
+    // range is now maximum X distance
+    let minX = Infinity;
+    let maxX = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      const x = corners[i][0];
+      if (x > maxX) {
+        maxX = x;
+      }
+      if (x < minX) {
+        minX = x;
+      }
+    }
+
+    const radius = (maxX - minX) / 2;
+
+    const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle());
+    const parallelScale = radius;
+
+    let distance;
+
+    if (activeCamera.getParallelProjection()) {
+      // Stick the camera just outside of the bounding sphere of all the volumeData so that MIP behaves correctly.
+
+      let w1 = bounds[1] - bounds[0];
+      let w2 = bounds[3] - bounds[2];
+      let w3 = bounds[5] - bounds[4];
+
+      w1 *= w1;
+      w2 *= w2;
+      w3 *= w3;
+
+      distance = w1 + w2 + w3;
+
+      // If we have just a single point, pick a radius of 1.0
+      distance = distance === 0 ? 1.0 : distance;
+
+      // compute the radius of the enclosing sphere
+      distance = 1.1 * (Math.sqrt(distance) / 2);
+
+      console.log(radius, distance);
+    } else {
+      distance = radius / Math.sin(angle * 0.5);
+    }
+
+    // check view-up vector against view plane normal
+
+    if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
+      activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1]);
+    }
+
+    // update the camera
+    activeCamera.setFocalPoint(...focalPoint);
+    activeCamera.setPosition(
+      focalPoint[0] + distance * viewPlaneNormal[0],
+      focalPoint[1] + distance * viewPlaneNormal[1],
+      focalPoint[2] + distance * viewPlaneNormal[2]
+    );
+
+    renderer.resetCameraClippingRange(bounds);
+
+    // setup default parallel scale
+    activeCamera.setParallelScale(parallelScale);
+
+    // update reasonable world to physical values
+    activeCamera.setPhysicalScale(radius);
+    activeCamera.setPhysicalTranslation(
+      -focalPoint[0],
+      -focalPoint[1],
+      -focalPoint[2]
+    );
+
+    const RESET_CAMERA_EVENT = {
+      type: 'ResetCameraEvent',
+      renderer,
+    };
+
+    // Here to let parallel/distributed compositing intercept
+    // and do the right thing.
+    renderer.invokeEvent(RESET_CAMERA_EVENT);
+
+    return true;
+  };
 
   /**
    * @method getCanvas Gets the target ouput canvas for the `Viewport`.
@@ -289,10 +412,6 @@ class Viewport implements ViewportInterface {
 
     if (focalPoint !== undefined) {
       vtkCamera.setFocalPoint(...focalPoint);
-    }
-
-    if (parallelProjection !== undefined) {
-      console.warn('parallelProjection is constrained by viewport type');
     }
 
     if (parallelScale !== undefined) {

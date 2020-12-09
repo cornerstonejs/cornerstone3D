@@ -118,6 +118,8 @@ class VTKMPRExample extends Component {
 
     this.renderingEngine = renderingEngine;
 
+    window.renderingEngine = renderingEngine;
+
     ptCtFusion.setLayout(
       renderingEngine,
       this._canvasNodes,

@@ -26,5 +26,4 @@ function cameraFocalPointAndPositionSync(
   tViewport.render();
 }
 
-export default cameraFocalPointAndPositionSync;
 export { cameraFocalPointAndPositionSync };
