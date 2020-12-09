@@ -1,27 +1,32 @@
 import { getRenderingEngine } from './../../src/index';
 
-export default function cameraFocalPointAndPositionSync(
+export default function voiSync(
   synchronizerInstance,
   sourceViewport,
   targetViewport,
-  voiUpdatedEvent
+  voiModifiedEvent
 ) {
-  // // We need a helper for this
-  // if (
-  //   sourceViewport.renderingEngineUID === targetViewport.renderingEngineUID &&
-  //   sourceViewport.sceneUID === targetViewport.sceneUID &&
-  //   sourceViewport.viewportUID === targetViewport.viewportUID
-  // ) {
-  //   return;
-  // }
+  debugger;
+  const eventData = voiModifiedEvent.detail;
+  let { volumeUID, sceneUID, range } = eventData;
 
-  // const { camera, previousCamera } = cameraUpdatedEvent.detail;
+  const tScene = getRenderingEngine(targetViewport.renderingEngineUID).getScene(
+    targetViewport.sceneUID
+  );
 
-  // const tViewport = getRenderingEngine(targetViewport.renderingEngineUID)
-  //   .getScene(targetViewport.sceneUID)
-  //   .getViewport(targetViewport.viewportUID);
+  if (tScene.uid === sceneUID) {
+    // Same scene, no need to update.
+    return;
+  }
 
-  // tViewport.setCamera(camera);
+  const tViewport = tScene.getViewport(targetViewport.viewportUID);
 
-  // tViewport.render();
+  const volumeActor = tScene.getVolumeActor(volumeUID);
+
+  volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
+    .setRange(range.lower, range.upper);
+
+  tViewport.render();
 }

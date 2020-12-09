@@ -335,10 +335,15 @@ class VTKMPRExample extends Component {
     const mapper = volumeActor.getMapper();
     mapper.setSampleDistance(1.0);
 
+    const range = volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .getMappingRange();
+
     const cfun = vtkColorTransferFunction.newInstance();
     const preset = vtkColorMaps.getPresetByName(colormaps[petColorMapIndex]);
     cfun.applyColorMap(preset);
-    cfun.setMappingRange(0, 5);
+    cfun.setMappingRange(range[0], range[1]);
 
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
@@ -454,7 +459,7 @@ class VTKMPRExample extends Component {
               className="viewport-pane"
               style={{
                 ...(vp.cellStyle || {}),
-                border: '2px solid dodgerblue',
+                border: '2px solid grey',
                 background: 'black',
               }}
               key={i}
