@@ -306,6 +306,10 @@ export default class ProbeTool extends BaseAnnotationTool {
       const valueLine = `${value.toFixed(3)} SUV`;
 
       textLines.push(valueLine);
+    } else if (Modality === 'CT') {
+      const valueLine = `${value.toFixed(3)} HU`;
+
+      textLines.push(valueLine);
     } else {
       const valueLine = `${value.toFixed(3)} MO`;
 
