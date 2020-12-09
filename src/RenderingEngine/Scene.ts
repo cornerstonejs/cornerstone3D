@@ -14,13 +14,6 @@ export type VolumeActorEntry = {
   slabThickness: number;
 };
 
-/**
- * @interface SceneViewportsAPI Defines the public API returned when calling `getViewports()`.
- */
-interface SceneViewportsAPI {
-  viewports: Array<Viewport>;
-}
-
 type VolumeInput = {
   volumeUID: string;
   callback?: Function;
@@ -71,15 +64,12 @@ class Scene {
   }
 
   /**
-   * @method getViewports Returns a public api to perfom bulk operation on
-   * the `Scene`'s `Viewport`s.
+   * @method getViewports Returns the viewports on the scene.
    *
-   * @returns {SceneViewportsAPI} The api.
+   * @returns {Array<Viewport>} The viewports.
    */
-  public getViewports(): SceneViewportsAPI {
-    return {
-      viewports: this._viewports,
-    };
+  public getViewports(): Array<Viewport> {
+    return this._viewports;
   }
 
   /**

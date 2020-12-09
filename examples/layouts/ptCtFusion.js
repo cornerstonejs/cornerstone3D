@@ -203,7 +203,7 @@ function setLayout(
   // PT Threshold Synchronization
   petViewports.forEach(ptIndex => {
     const { sceneUID, viewportUID } = viewportInput[ptIndex];
-    ptThresholdSynchronizer.addSource({
+    ptThresholdSynchronizer.add({
       renderingEngineUID,
       sceneUID,
       viewportUID,
@@ -212,7 +212,7 @@ function setLayout(
 
   fusionViewports.forEach(fusionIndex => {
     const { sceneUID, viewportUID } = viewportInput[fusionIndex];
-    ptThresholdSynchronizer.addTarget({
+    ptThresholdSynchronizer.add({
       renderingEngineUID,
       sceneUID,
       viewportUID,
@@ -221,7 +221,7 @@ function setLayout(
 
   petMipViewports.forEach(ptMipIndex => {
     const { sceneUID, viewportUID } = viewportInput[ptMipIndex];
-    ptThresholdSynchronizer.addTarget({
+    ptThresholdSynchronizer.add({
       renderingEngineUID,
       sceneUID,
       viewportUID,

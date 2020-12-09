@@ -86,7 +86,7 @@ describe('RenderingEngine API:', () => {
 
     expect(scene1AxialViewport).toBeTruthy();
     expect(scene1Viewports).toBeTruthy();
-    expect(scene1Viewports.viewports.length).toEqual(2);
+    expect(scene1Viewports.length).toEqual(2);
   });
 
   it('Add a volume to the scene and call its callback correctly', () => {

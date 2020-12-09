@@ -234,38 +234,30 @@ class Viewport implements ViewportInterface {
     focalPoint[1] = (bounds[2] + bounds[3]) / 2.0;
     focalPoint[2] = (bounds[4] + bounds[5]) / 2.0;
 
-    const corners = [
-      [bounds[0], bounds[2], bounds[4]],
-      [bounds[0], bounds[2], bounds[5]],
-      [bounds[0], bounds[3], bounds[4]],
-      [bounds[0], bounds[3], bounds[5]],
-      [bounds[1], bounds[2], bounds[4]],
-      [bounds[1], bounds[2], bounds[5]],
-      [bounds[1], bounds[3], bounds[4]],
-      [bounds[1], bounds[3], bounds[5]],
-    ];
+    const {
+      widthWorld,
+      heightWorld,
+    } = this._getWorldDistanceViewupAndViewRight(
+      bounds,
+      viewUp,
+      viewPlaneNormal
+    );
 
-    const transform = vtkMatrixBuilder
-      .buildFromDegree()
-      .identity()
-      .rotateFromDirections(viewUp, [1, 0, 0]);
+    const canvasSize = [this.sWidth, this.sHeight];
 
-    corners.forEach(pt => transform.apply(pt));
+    const boundsAspectRatio = widthWorld / heightWorld;
+    const canvasAspectRatio = canvasSize[0] / canvasSize[1];
 
-    // range is now maximum X distance
-    let minX = Infinity;
-    let maxX = -Infinity;
-    for (let i = 0; i < 8; i++) {
-      const x = corners[i][0];
-      if (x > maxX) {
-        maxX = x;
-      }
-      if (x < minX) {
-        minX = x;
-      }
+    let radius;
+
+    if (boundsAspectRatio < canvasAspectRatio) {
+      // can fit full height, so use it.
+      radius = heightWorld / 2;
+    } else {
+      const scaleFactor = boundsAspectRatio / canvasAspectRatio;
+
+      radius = (heightWorld * scaleFactor) / 2;
     }
-
-    const radius = (maxX - minX) / 2;
 
     const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle());
     const parallelScale = radius;
@@ -290,8 +282,6 @@ class Viewport implements ViewportInterface {
 
       // compute the radius of the enclosing sphere
       distance = 1.1 * (Math.sqrt(distance) / 2);
-
-      console.log(radius, distance);
     } else {
       distance = radius / Math.sin(angle * 0.5);
     }
@@ -495,6 +485,72 @@ class Viewport implements ViewportInterface {
 
     return canvasCoord;
   };
+
+  private _getWorldDistanceViewupAndViewRight(bounds, viewUp, viewPlaneNormal) {
+    const viewUpCorners = this._getCorners(bounds);
+    const viewRightCorners = this._getCorners(bounds);
+
+    let viewRight = vec3.create();
+
+    vec3.cross(viewRight, viewUp, viewPlaneNormal);
+
+    viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
+
+    let transform = vtkMatrixBuilder
+      .buildFromDegree()
+      .identity()
+      .rotateFromDirections(viewUp, [1, 0, 0]);
+
+    viewUpCorners.forEach(pt => transform.apply(pt));
+
+    // range is now maximum X distance
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      const y = viewUpCorners[i][0];
+      if (y > maxY) {
+        maxY = y;
+      }
+      if (y < minY) {
+        minY = y;
+      }
+    }
+
+    transform = vtkMatrixBuilder
+      .buildFromDegree()
+      .identity()
+      .rotateFromDirections(viewRight, [1, 0, 0]);
+
+    viewRightCorners.forEach(pt => transform.apply(pt));
+
+    // range is now maximum Y distance
+    let minX = Infinity;
+    let maxX = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      const x = viewRightCorners[i][0];
+      if (x > maxX) {
+        maxX = x;
+      }
+      if (x < minX) {
+        minX = x;
+      }
+    }
+
+    return { widthWorld: maxX - minX, heightWorld: maxY - minY };
+  }
+
+  _getCorners(bounds) {
+    return [
+      [bounds[0], bounds[2], bounds[4]],
+      [bounds[0], bounds[2], bounds[5]],
+      [bounds[0], bounds[3], bounds[4]],
+      [bounds[0], bounds[3], bounds[5]],
+      [bounds[1], bounds[2], bounds[4]],
+      [bounds[1], bounds[2], bounds[5]],
+      [bounds[1], bounds[3], bounds[4]],
+      [bounds[1], bounds[3], bounds[5]],
+    ];
+  }
 }
 
 export default Viewport;

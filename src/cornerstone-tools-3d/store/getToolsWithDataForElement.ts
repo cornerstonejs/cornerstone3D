@@ -16,16 +16,21 @@ export default function(element, tools) {
 
   for (let i = 0; i < tools.length; i++) {
     const tool = tools[i];
-    let toolState;
+    let toolState = getToolState(element, tool.name);
 
-    if (tool.getToolState) {
-      // If the tool has its own method of finding toolState for this element (e.g. with perspective/view filtering), use it.
-      toolState = tool.getToolState(element);
-    } else {
-      toolState = getToolState(element, tool.name);
+    if (!toolState) {
+      continue;
     }
 
-    if (toolState && toolState.length > 0) {
+    if (tool.filterInteractableToolStateForElement === 'function') {
+      // If the tool has a toolState filter (e.g. with in-plane-annotations-only filtering), use it.
+      toolState = tool.filterInteractableToolStateForElement(
+        element,
+        toolState
+      );
+    }
+
+    if (toolState.length > 0) {
       result.push({ tool, toolState });
     }
   }

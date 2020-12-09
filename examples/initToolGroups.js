@@ -62,7 +62,6 @@ function initToolGroups() {
 
   // Set up PT Scene tools
 
-  // TEMP TODO: Add toggle for WL/threshold to probe tool.
   ptSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
@@ -91,8 +90,14 @@ function initToolGroups() {
   fusionSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ptVolumeUID },
   });
+  fusionSceneToolGroup.addTool('PetThreshold', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
   fusionSceneToolGroup.setToolPassive('Probe');
   fusionSceneToolGroup.setToolActive('StackScrollMouseWheel');
+  fusionSceneToolGroup.setToolActive('PetThreshold', {
+    bindings: [ToolBindings.Mouse.Primary],
+  });
   fusionSceneToolGroup.setToolActive('Pan', {
     bindings: [ToolBindings.Mouse.Auxiliary],
   });
@@ -101,7 +106,13 @@ function initToolGroups() {
   });
 
   ptMipSceneToolGroup.addTool('VolumeRotateMouseWheel', {});
+  ptMipSceneToolGroup.addTool('PetThreshold', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
   ptMipSceneToolGroup.setToolActive('VolumeRotateMouseWheel');
+  ptMipSceneToolGroup.setToolActive('PetThreshold', {
+    bindings: [ToolBindings.Mouse.Primary],
+  });
 
   // Set up CTVR Scene tools
   ctVRSceneToolGroup.addTool('Pan', {});

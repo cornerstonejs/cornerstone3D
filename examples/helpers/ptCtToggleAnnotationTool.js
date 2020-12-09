@@ -17,9 +17,11 @@ export default function ptCtToggleAnnotationTool(
 
     ctSceneToolGroup.setToolDisabled('WindowLevel');
     ptSceneToolGroup.setToolDisabled('PetThreshold');
+    fusionSceneToolGroup.setToolDisabled('PetThreshold');
   } else {
     ctSceneToolGroup.setToolActive('WindowLevel', options);
     ptSceneToolGroup.setToolActive('PetThreshold', options);
+    fusionSceneToolGroup.setToolActive('PetThreshold', options);
 
     ctSceneToolGroup.setToolPassive('Probe');
     ptSceneToolGroup.setToolPassive('Probe');

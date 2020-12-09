@@ -9,11 +9,15 @@ import { draw, drawHandles, drawTextBox, getNewContext } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
 import { VtkjsToolEvents as EVENTS } from '../../enums';
+import {
+  filterViewportsWithToolEnabled,
+  filterViewportsWithFrameOfReferenceUID,
+} from '../../util/viewportFilters';
 
 export default class ProbeTool extends BaseAnnotationTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
-  editData: { toolData: any } | null;
+  editData: { toolData: any; viewportUIDsToRender: [] } | null;
   name: string;
   _configuration: any;
 
@@ -45,7 +49,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, FrameOfReferenceUID } = enabledElement;
+    const { viewport, FrameOfReferenceUID, renderingEngine } = enabledElement;
 
     if (!FrameOfReferenceUID) {
       console.warn('No FrameOfReferenceUID, empty scene, exiting early.');
@@ -73,14 +77,17 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     addToolState(element, toolData);
 
+    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
+
     this.editData = {
       toolData,
+      viewportUIDsToRender,
     };
     this._activateModify(element);
 
     evt.preventDefault();
 
-    this._renderFrameOfReference(element);
+    renderingEngine.renderViewports(viewportUIDsToRender);
   }
 
   getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
@@ -109,27 +116,59 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     data.active = true;
 
+    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
+
+    // Find viewports to render on drag.
+
     this.editData = {
       //handle, // This would be useful for other tools with more than one handle
       toolData,
+      viewportUIDsToRender,
     };
     this._activateModify(element);
-    this._renderFrameOfReference(element);
+
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    renderingEngine.renderViewports(viewportUIDsToRender);
 
     evt.preventDefault();
+  }
+
+  _getViewportUIDsToRender(element) {
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine, FrameOfReferenceUID } = enabledElement;
+
+    let viewports = renderingEngine.getViewports();
+
+    viewports = filterViewportsWithFrameOfReferenceUID(
+      viewports,
+      FrameOfReferenceUID
+    );
+    viewports = filterViewportsWithToolEnabled(viewports, this.name);
+
+    const viewportUIDs = viewports.map(vp => vp.uid);
+
+    return viewportUIDs;
   }
 
   _mouseUpCallback(evt) {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { toolData } = this.editData;
+    const { toolData, viewportUIDsToRender } = this.editData;
     const { data } = toolData;
 
     data.active = false;
 
     this._deactivateModify(element);
-    this._renderFrameOfReference(element);
+
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    renderingEngine.renderViewports(viewportUIDsToRender);
+
+    this.editData = null;
   }
 
   _mouseDragCallback(evt) {
@@ -137,20 +176,16 @@ export default class ProbeTool extends BaseAnnotationTool {
     const { currentPoints, element } = eventData;
     const worldPos = currentPoints.world;
 
-    const { toolData } = this.editData;
+    const { toolData, viewportUIDsToRender } = this.editData;
     const { data } = toolData;
 
     data.handles.points[0] = [worldPos.x, worldPos.y, worldPos.z];
     data.invalidated = true;
 
-    this._renderFrameOfReference(element);
-  }
-
-  _renderFrameOfReference(element) {
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, FrameOfReferenceUID } = enabledElement;
+    const { renderingEngine } = enabledElement;
 
-    renderingEngine.renderFrameOfReference(FrameOfReferenceUID);
+    renderingEngine.renderViewports(viewportUIDsToRender);
   }
 
   _activateModify(element) {
@@ -208,10 +243,8 @@ export default class ProbeTool extends BaseAnnotationTool {
    * getToolState = Custom getToolStateMethod with filtering.
    * @param element
    */
-  getToolState(element) {
-    const toolData = getToolState(element, this.name);
-
-    if (!toolData || !toolData.length) {
+  filterInteractableToolStateForElement(element, toolState) {
+    if (!toolState || !toolState.length) {
       return;
     }
 
@@ -224,23 +257,27 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     // Get data with same normal
     const toolDataWithinSlice = getToolDataWithinSlice(
-      toolData,
+      toolState,
       camera,
       spacingInNormalDirection
     );
 
-    if (toolDataWithinSlice.length) {
-      return toolDataWithinSlice;
-    }
+    return toolDataWithinSlice;
   }
 
   renderToolData(evt) {
     const eventData = evt.detail;
     const { canvas: element } = eventData;
 
-    const toolState = this.getToolState(element);
+    let toolState = getToolState(element, this.name);
 
     if (!toolState) {
+      return;
+    }
+
+    toolState = this.filterInteractableToolStateForElement(element, toolState);
+
+    if (!toolState.length) {
       return;
     }
 
@@ -321,7 +358,6 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   _calculateCachedStats(data) {
     const worldPos = data.handles.points[0];
-
     const { cachedStats } = data;
 
     const volumeUIDs = Object.keys(cachedStats);
@@ -349,7 +385,7 @@ export default class ProbeTool extends BaseAnnotationTool {
         const zMultiple = dimensions[0] * dimensions[1];
 
         const value =
-          scalarData[index[2] * zMultiple + index[1] * yMultiple + index[2]];
+          scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]];
 
         cachedStats[volumeUID] = {
           index,

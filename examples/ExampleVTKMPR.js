@@ -8,6 +8,7 @@ import {
   imageCache,
   RenderingEngine,
   getRenderingEngine,
+  renderingEventTarget,
   Events as RENDERING_EVENTS,
 } from './../src/index';
 import { initToolGroups, destroyToolGroups } from './initToolGroups';
@@ -25,8 +26,6 @@ import {
   SCENE_IDS,
 } from './constants';
 import LAYOUTS, { ptCtFusion, fourUpCT, singlePTSagittal } from './layouts';
-
-console.log(RENDERING_EVENTS);
 
 const {
   ctSceneToolGroup,
@@ -65,6 +64,8 @@ class VTKMPRExample extends Component {
         },
       ],
     },
+    ctWindowLevelDisplay: { ww: 0, wc: 0 },
+    ptThresholdDisplay: 5,
     isAnnotationToolOn: false,
   };
 
@@ -104,7 +105,50 @@ class VTKMPRExample extends Component {
       RENDERING_EVENTS.VOI_MODIFIED,
       voiSync
     );
+
+    renderingEventTarget.addEventListener(
+      RENDERING_EVENTS.ELEMENT_ENABLED,
+      evt => {
+        const eventData = evt.detail;
+        const { canvas } = eventData;
+
+        canvas.addEventListener(
+          RENDERING_EVENTS.VOI_MODIFIED,
+
+          this.updateVOI
+        );
+      }
+    );
+
+    renderingEventTarget.addEventListener(
+      RENDERING_EVENTS.ELEMENT_DISABLED,
+      evt => {
+        const eventData = evt.detail;
+        const { canvas } = eventData;
+
+        canvas.removeEventListener(
+          RENDERING_EVENTS.VOI_MODIFIED,
+          this.updateVOI
+        );
+      }
+    );
   }
+
+  updateVOI = evt => {
+    const eventData = evt.detail;
+    const { range, volumeUID } = eventData;
+
+    if (volumeUID === ctVolumeUID) {
+      // Process WL
+      const wc = (range.lower + range.upper) / 2;
+      const ww = (range.upper - range.lower) / 2;
+
+      this.setState({ ctWindowLevelDisplay: { ww, wc } });
+    } else if (volumeUID === ptVolumeUID) {
+      // Process Threshold
+      this.setState({ ptThresholdDisplay: range.upper });
+    }
+  };
 
   /**
    * LIFECYCLE
@@ -169,7 +213,13 @@ class VTKMPRExample extends Component {
       colormaps[this.state.petColorMapIndex]
     );
 
-    this.setState({ metadataLoaded: true });
+    // Set initial CT levels in UI
+    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
+
+    this.setState({
+      metadataLoaded: true,
+      ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
+    });
 
     // This will initialise volumes in GPU memory
     renderingEngine.render();
@@ -372,7 +422,13 @@ class VTKMPRExample extends Component {
   };
 
   render() {
-    const { layoutIndex, metadataLoaded, destroyed } = this.state;
+    const {
+      layoutIndex,
+      metadataLoaded,
+      destroyed,
+      ctWindowLevelDisplay,
+      ptThresholdDisplay,
+    } = this.state;
     let { isAnnotationToolOn } = this.state;
     const layout = LAYOUTS[layoutIndex];
     const layoutButtons = [
@@ -390,14 +446,6 @@ class VTKMPRExample extends Component {
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
             <h2>MPR Template Example ({this.state.progressText})</h2>
-          </div>
-          <div className="col-xs-12">
-            <button
-              onClick={() => metadataLoaded && !destroyed && this.testRender()}
-              className="btn btn-secondary"
-            >
-              Render Test
-            </button>
           </div>
           <div
             className="col-xs-12"
@@ -449,6 +497,12 @@ class VTKMPRExample extends Component {
             >
               Destroy Rendering Engine and Decache All Volumes
             </button>
+            <div className="col-xs-12">
+              <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
+            </div>
+            <div className="col-xs-12">
+              <p>{`PT: Upper Threshold: ${ptThresholdDisplay.toFixed(2)}`}</p>
+            </div>
           </div>
         </div>
         <ViewportGrid

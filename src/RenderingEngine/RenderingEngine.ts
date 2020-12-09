@@ -183,7 +183,7 @@ class RenderingEngine {
 
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
-      const { viewports: sceneViewports } = scene.getViewports();
+      const sceneViewports = scene.getViewports();
 
       viewports.push(...sceneViewports);
     }
@@ -265,7 +265,7 @@ class RenderingEngine {
   }
 
   /**
-   * @method getScenes Returns an array of all scenes on the `RenderingEngine` instance.
+   * @method getScenes Returns an array of all `Scene`s on the `RenderingEngine` instance.
    *
    * @returns {Scene} The scene object.
    */
@@ -273,6 +273,29 @@ class RenderingEngine {
     this._throwIfDestroyed();
 
     return this._scenes;
+  }
+
+  /**
+   * @method getViewports Returns an array of all `Viewport`s on the `RenderingEngine` instance.
+   *
+   * @returns {Viewport} The scene object.
+   */
+  public getViewports() {
+    this._throwIfDestroyed();
+
+    const scenes = this._scenes;
+    const numScenes = scenes.length;
+    const viewports = [];
+
+    for (let s = 0; s < numScenes; s++) {
+      const scene = scenes[s];
+      const sceneViewports = scene.getViewports();
+      const numViewports = viewports.length;
+
+      viewports.push(...sceneViewports);
+    }
+
+    return viewports;
   }
 
   /**
@@ -307,7 +330,7 @@ class RenderingEngine {
 
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
-      const { viewports } = scene.getViewports();
+      const viewports = scene.getViewports();
 
       viewports.forEach(viewport => {
         this._renderViewportToCanvas(viewport, offScreenCanvas);
@@ -346,21 +369,32 @@ class RenderingEngine {
     window.requestAnimationFrame(renderSetOfScenes);
   }
 
-  private _renderScenes(scenes: Array<Scene>) {
-    this._throwIfDestroyed();
+  public renderViewports(viewportUIDs: Array<string>) {
+    const scenes = this._scenes;
 
-    const { offscreenMultiRenderWindow } = this;
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
-
-    const viewportsToRender = [];
+    const viewportToRender = [];
 
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
-      const { viewports } = scene.getViewports();
-      viewportsToRender.push(...viewports);
+      const viewports = scene.getViewports();
+
+      viewports.forEach(vp => {
+        if (viewportUIDs.includes(vp.uid)) {
+          viewportToRender.push(vp);
+        }
+      });
     }
 
-    const viewportUIDs = viewportsToRender.map(vp => vp.uid);
+    const renderSetOfViewports = () => this._renderViewports(viewportToRender);
+
+    window.requestAnimationFrame(renderSetOfViewports);
+  }
+
+  private _renderViewports(viewports: Array<Viewport>) {
+    const { offscreenMultiRenderWindow } = this;
+    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+
+    const viewportUIDs = viewports.map(vp => vp.uid);
     const renderers = offscreenMultiRenderWindow.getRenderers();
 
     for (let i = 0; i < renderers.length; i++) {
@@ -375,9 +409,23 @@ class RenderingEngine {
 
     const offScreenCanvas = context.canvas;
 
-    viewportsToRender.forEach(viewport => {
+    viewports.forEach(viewport => {
       this._renderViewportToCanvas(viewport, offScreenCanvas);
     });
+  }
+
+  private _renderScenes(scenes: Array<Scene>) {
+    this._throwIfDestroyed();
+
+    const viewportsToRender = [];
+
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const viewports = scene.getViewports();
+      viewportsToRender.push(...viewports);
+    }
+
+    this._renderViewports(viewportsToRender);
   }
 
   /**
@@ -392,7 +440,7 @@ class RenderingEngine {
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
     const scene = this.getScene(sceneUID);
-    const { viewports } = scene.getViewports();
+    const viewports = scene.getViewports();
     const viewportUIDs = viewports.map(vp => vp.uid);
 
     const renderers = offscreenMultiRenderWindow.getRenderers();
@@ -510,7 +558,7 @@ class RenderingEngine {
     const renderingEngineUID = this.uid;
 
     scenes.forEach(scene => {
-      const { viewports } = scene.getViewports();
+      const viewports = scene.getViewports();
 
       const sceneUID = scene.uid;
 
@@ -589,7 +637,7 @@ class RenderingEngine {
 
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
-      const { viewports } = scene.getViewports();
+      const viewports = scene.getViewports();
 
       viewports.forEach(viewport => {
         const { sx, sy, sWidth, sHeight } = viewport;
