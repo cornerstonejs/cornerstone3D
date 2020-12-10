@@ -235,7 +235,7 @@ const tests = {
     const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomData.dict);
     // eslint-disable-next-line no-underscore-dangle
     dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(dicomData.meta);
-    expect(dataset.NumberOfFrames).to.equal(117);
+    expect(dataset.NumberOfFrames).to.equal(8);
     console.log("Finished test_multiframe_us")
   },
 
