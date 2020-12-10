@@ -250,6 +250,8 @@ class RenderingEngine {
 
       xOffset += clientWidth;
     }
+
+    this.render();
   }
 
   /**
@@ -290,7 +292,6 @@ class RenderingEngine {
     for (let s = 0; s < numScenes; s++) {
       const scene = scenes[s];
       const sceneViewports = scene.getViewports();
-      const numViewports = viewports.length;
 
       viewports.push(...sceneViewports);
     }

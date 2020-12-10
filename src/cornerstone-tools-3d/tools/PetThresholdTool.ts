@@ -70,7 +70,7 @@ export default class PetThresholdTool extends BaseTool {
     const wcDelta = deltaY * multiplier;
     let [lower, upper] = rgbTransferFunction.getRange();
 
-    upper += wcDelta;
+    upper -= wcDelta;
     upper = Math.max(Math.min(upper, maxSUV), 0.1);
 
     rgbTransferFunction.setMappingRange(lower, upper);

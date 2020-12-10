@@ -2,6 +2,7 @@ import csTools3d, {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
+  StackScrollTool,
   StackScrollMouseWheelTool,
   ZoomTool,
   ToolGroupManager,
@@ -18,6 +19,7 @@ function initToolGroups() {
   csTools3d.addTool(WindowLevelTool, {});
   csTools3d.addTool(PetThresholdTool, {});
   csTools3d.addTool(StackScrollMouseWheelTool, {});
+  csTools3d.addTool(StackScrollTool, {});
   csTools3d.addTool(ZoomTool, {});
   csTools3d.addTool(VolumeRotateMouseWheelTool, {});
   csTools3d.addTool(ProbeTool, {});
@@ -32,6 +34,9 @@ function initToolGroups() {
   );
   const ctVRSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.CTVR
+  );
+  const ctObliqueToolGroup = ToolGroupManager.createToolGroup(
+    TOOL_GROUP_UIDS.OBLIQUE
   );
 
   // Set up CT Scene tools
@@ -124,12 +129,21 @@ function initToolGroups() {
     bindings: [ToolBindings.Mouse.Secondary],
   });
 
+  // Set up CTOBLIQUE Scene tools
+  ctObliqueToolGroup.addTool('VolumeRotateMouseWheel', {});
+  ctObliqueToolGroup.addTool('StackScroll', {});
+  ctObliqueToolGroup.setToolActive('VolumeRotateMouseWheel');
+  ctObliqueToolGroup.setToolActive('StackScroll', {
+    bindings: [ToolBindings.Mouse.Primary],
+  });
+
   return {
     ctSceneToolGroup,
     ptSceneToolGroup,
     fusionSceneToolGroup,
     ptMipSceneToolGroup,
     ctVRSceneToolGroup,
+    ctObliqueToolGroup,
   };
 }
 

@@ -25,7 +25,12 @@ import {
   colormaps,
   SCENE_IDS,
 } from './constants';
-import LAYOUTS, { ptCtFusion, fourUpCT, singlePTSagittal } from './layouts';
+import LAYOUTS, {
+  ptCtFusion,
+  fourUpCT,
+  singlePTSagittal,
+  obliqueCT,
+} from './layouts';
 
 const {
   ctSceneToolGroup,
@@ -33,6 +38,7 @@ const {
   fusionSceneToolGroup,
   ptMipSceneToolGroup,
   ctVRSceneToolGroup,
+  ctObliqueToolGroup,
 } = initToolGroups();
 
 class VTKMPRExample extends Component {
@@ -40,7 +46,7 @@ class VTKMPRExample extends Component {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
     petColorMapIndex: 0,
-    layoutIndex: 1,
+    layoutIndex: 0,
     destroyed: false,
     //
     viewportGrid: {
@@ -73,7 +79,6 @@ class VTKMPRExample extends Component {
     super(props);
 
     this._canvasNodes = new Map();
-    this.testRender = this.testRender.bind(this);
     this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this);
     this.imageIdsPromise = getImageIdsAndCacheMetadata();
     this.imageIdsPromise.then(() =>
@@ -141,7 +146,7 @@ class VTKMPRExample extends Component {
     if (volumeUID === ctVolumeUID) {
       // Process WL
       const wc = (range.lower + range.upper) / 2;
-      const ww = (range.upper - range.lower) / 2;
+      const ww = range.upper - range.lower;
 
       this.setState({ ctWindowLevelDisplay: { ww, wc } });
     } else if (volumeUID === ptVolumeUID) {
@@ -154,7 +159,6 @@ class VTKMPRExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    //this.checkCanvasNodes();
     this.ctVolumeUID = ctVolumeUID;
     this.ptVolumeUID = ptVolumeUID;
 
@@ -230,10 +234,10 @@ class VTKMPRExample extends Component {
     const { renderingEngine } = this;
     const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    //this.checkCanvasNodes();
+    const layout = LAYOUTS[layoutIndex];
 
     if (prevState.layoutIndex !== layoutIndex) {
-      if (layoutIndex === 0) {
+      if (layout === 'FusionMIP') {
         // FusionMIP
 
         ptCtFusion.setLayout(
@@ -267,9 +271,14 @@ class VTKMPRExample extends Component {
           [],
           this.renderingEngine
         );
-        renderingEngine.render();
-        renderingEngine.resize();
-      } else if (layoutIndex === 1) {
+      } else if (layout === 'ObliqueCT') {
+        obliqueCT.setLayout(renderingEngine, this._canvasNodes, {
+          ctObliqueToolGroup,
+        });
+        obliqueCT.setVolumes(renderingEngine, ctVolumeUID);
+
+        loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID], this.renderingEngine);
+      } else if (layout === 'CTVR') {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._canvasNodes, {
           ctSceneToolGroup,
@@ -277,15 +286,11 @@ class VTKMPRExample extends Component {
         });
         fourUpCT.setVolumes(renderingEngine, ctVolumeUID);
         loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID], this.renderingEngine);
-        renderingEngine.resize();
-        renderingEngine.render();
-      } else if (layoutIndex === 2) {
+      } else if (layout === 'SinglePTSagittal') {
         // SinglePTSagittal
         singlePTSagittal.setLayout(renderingEngine, this._canvasNodes);
         singlePTSagittal.setVolumes(renderingEngine, ptVolumeUID);
         loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID], this.renderingEngine);
-        renderingEngine.render();
-        renderingEngine.resize();
       } else {
         throw new Error('Unrecognised layout index');
       }
@@ -298,14 +303,6 @@ class VTKMPRExample extends Component {
     this.renderingEngine.destroy();
   }
 
-  // checkCanvasNodes() {
-  //   Array.from(this._canvasNodes.values())
-  //     .filter(node => node !== null)
-  //     .forEach(node => {
-  //       // do something
-  //     });
-  // }
-
   swapLayout = layoutId => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
       return;
@@ -316,8 +313,9 @@ class VTKMPRExample extends Component {
 
     viewportGrid.viewports = [];
 
-    // 0 - petCt
-    if (layoutIndex === 0) {
+    const layout = LAYOUTS[layoutIndex];
+
+    if (layout === 'FusionMIP') {
       viewportGrid.numCols = 4;
       viewportGrid.numRows = 3;
       [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach(x => viewportGrid.viewports.push({}));
@@ -327,15 +325,15 @@ class VTKMPRExample extends Component {
           gridColumn: '4',
         },
       });
-    }
-    // 1 - fourUp
-    else if (layoutIndex === 1) {
+    } else if (layout === 'ObliqueCT') {
+      viewportGrid.numCols = 1;
+      viewportGrid.numRows = 1;
+      viewportGrid.viewports.push({});
+    } else if (layout === 'CTVR') {
       viewportGrid.numCols = 2;
       viewportGrid.numRows = 2;
       [0, 1, 2, 3].forEach(x => viewportGrid.viewports.push({}));
-    }
-    // 2 - singlePTSpacial
-    else {
+    } else if (layout === 'SinglePTSagittal') {
       viewportGrid.numRows = 1;
       viewportGrid.numCols = 1;
       viewportGrid.viewports.push({});
@@ -346,28 +344,6 @@ class VTKMPRExample extends Component {
       viewportGrid,
     });
   };
-
-  testRender() {
-    if (this.performingRenderTest) {
-      return;
-    }
-
-    this.performingRenderTest = true;
-    const renderingEngine = this.renderingEngine;
-
-    const count = 100;
-
-    let t0 = performance.now();
-    for (let i = 0; i < count; i++) {
-      renderingEngine.render();
-    }
-
-    let t1 = performance.now();
-
-    this.performingRenderTest = false;
-
-    alert(`${(t1 - t0) / count} ms`);
-  }
 
   swapPetTransferFunction() {
     const renderingEngine = this.renderingEngine;
@@ -430,16 +406,53 @@ class VTKMPRExample extends Component {
       ptThresholdDisplay,
     } = this.state;
     let { isAnnotationToolOn } = this.state;
-    const layout = LAYOUTS[layoutIndex];
+    const layoutID = LAYOUTS[layoutIndex];
     const layoutButtons = [
-      { id: 'SinglePTSagittal', text: 'Single PT Sagittal Layout' },
+      { id: 'ObliqueCT', text: 'Oblique Layout' },
       { id: 'FusionMIP', text: 'Fusion Layout' },
-      { id: 'CTVR', text: 'Four Up CT Layout' },
     ];
-    const filteredLayoutButtons = layoutButtons.filter(x => x !== layout.id);
+
+    // TODO -> Move layout switching to a different example to reduce bloat.
+    // TODO -> Move destroy to a seperate example
+
+    const filteredLayoutButtons = layoutButtons.filter(l => l.id !== layoutID);
+
     const switchToolText = isAnnotationToolOn
       ? 'Switch To WWWC'
       : 'Switch To Probe';
+
+    const fusionButtons =
+      layoutID === 'FusionMIP' ? (
+        <React.Fragment>
+          {' '}
+          <button
+            onClick={() =>
+              metadataLoaded && !destroyed && this.swapPetTransferFunction()
+            }
+            className="btn btn-primary"
+            style={{ margin: '2px 4px' }}
+          >
+            SwapPetTransferFunction
+          </button>
+          <button
+            className="btn btn-primary"
+            style={{ margin: '2px 4px' }}
+            onClick={() => {
+              isAnnotationToolOn = !isAnnotationToolOn;
+
+              ptCtToggleAnnotationTool(
+                isAnnotationToolOn,
+                ctSceneToolGroup,
+                ptSceneToolGroup,
+                fusionSceneToolGroup
+              );
+              this.setState({ isAnnotationToolOn });
+            }}
+          >
+            {switchToolText}
+          </button>
+        </React.Fragment>
+      ) : null;
 
     return (
       <div style={{ paddingBottom: '55px' }}>
@@ -463,40 +476,8 @@ class VTKMPRExample extends Component {
               </button>
             ))}
             {/* TOGGLES */}
-            <button
-              onClick={() =>
-                metadataLoaded && !destroyed && this.swapPetTransferFunction()
-              }
-              className="btn btn-primary"
-              style={{ margin: '2px 4px' }}
-            >
-              SwapPetTransferFunction
-            </button>
-            <button
-              className="btn btn-primary"
-              style={{ margin: '2px 4px' }}
-              onClick={() => {
-                isAnnotationToolOn = !isAnnotationToolOn;
+            {fusionButtons}
 
-                ptCtToggleAnnotationTool(
-                  isAnnotationToolOn,
-                  ctSceneToolGroup,
-                  ptSceneToolGroup,
-                  fusionSceneToolGroup
-                );
-                this.setState({ isAnnotationToolOn });
-              }}
-            >
-              {switchToolText}
-            </button>
-            {/* DANGER */}
-            <button
-              onClick={() => this.destroyAndDecacheAllVolumes()}
-              className="btn btn-danger"
-              style={{ margin: '2px 4px' }}
-            >
-              Destroy Rendering Engine and Decache All Volumes
-            </button>
             <div className="col-xs-12">
               <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
             </div>
@@ -508,6 +489,7 @@ class VTKMPRExample extends Component {
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}
+          renderingEngine={this.renderingEngine}
           style={{ minHeight: '650px', marginTop: '35px' }}
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (

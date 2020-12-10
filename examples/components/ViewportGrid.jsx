@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-function ViewportGrid({ numRows, numCols, style, children }) {
+function ViewportGrid({ numRows, numCols, style, renderingEngine, children }) {
   const rowSize = 100 / numRows;
   const colSize = 100 / numCols;
+
+  useEffect(() => {
+    // Update the document title using the browser API
+
+    if (renderingEngine) {
+      const t0 = performance.now();
+      renderingEngine.resize();
+      const t1 = performance.now();
+    }
+  });
 
   return (
     <div

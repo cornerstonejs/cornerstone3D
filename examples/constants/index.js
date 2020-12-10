@@ -8,6 +8,7 @@ const SCENE_IDS = {
   FUSION: 'fusionScene',
   PTMIP: 'ptMipScene',
   CTVR: 'ctVRScene',
+  CTOBLIQUE: 'ctObliqueScene',
 };
 
 const VIEWPORT_IDS = {
@@ -32,6 +33,9 @@ const VIEWPORT_IDS = {
   CTVR: {
     VR: 'ctVR',
   },
+  CTOBLIQUE: {
+    OBLIQUE: 'ctOBlique',
+  },
 };
 
 const TOOL_GROUP_UIDS = {
@@ -40,9 +44,10 @@ const TOOL_GROUP_UIDS = {
   FUSION: 'fusionSceneToolGroup',
   PTMIP: 'ptMipSceneToolGroup',
   CTVR: 'ctVRSceneToolGroup',
+  CTOBLIQUE: 'ctObliqueToolGroup',
 };
 
-const colormaps = ['hsv', 'RED-PURPLE'];
+const colormaps = ['hsv', 'Inferno (matplotlib)']; //'RED-PURPLE'];
 
 export {
   renderingEngineUID,

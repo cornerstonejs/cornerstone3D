@@ -1,6 +1,6 @@
 const ORIENTATION = {
   AXIAL: {
-    sliceNormal: [0, 0, 1],
+    sliceNormal: [0, 0, -1],
     viewUp: [0, -1, 0],
   },
   SAGITTAL: {

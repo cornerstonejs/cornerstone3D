@@ -85,6 +85,8 @@ export default class WindowLevelTool extends BaseTool {
     windowWidth += wwDelta;
     windowCenter += wcDelta;
 
+    windowWidth = Math.max(windowWidth, 1);
+
     // Convert back to range
     const newRange = this._toLowHighRange(windowWidth, windowCenter);
 
@@ -95,9 +97,6 @@ export default class WindowLevelTool extends BaseTool {
       sceneUID,
       range: newRange,
     };
-
-    console.log('triggering VOI_MODIFIED');
-    console.log(eventDetail);
 
     triggerEvent(canvas, Events.VOI_MODIFIED, eventDetail);
 
