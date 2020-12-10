@@ -29,7 +29,7 @@ cornerstone.metaData.addProvider(
 
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
-cornerstoneWADOImageLoader.configure({ useWebWorkers: false });
+cornerstoneWADOImageLoader.configure({ useWebWorkers: true });
 
 var config = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,

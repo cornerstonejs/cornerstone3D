@@ -9,7 +9,6 @@ import { BaseAnnotationTool } from './../../tools/base';
 // import getActiveTool from '../../util/getActiveTool';
 
 export default function(evt) {
-  console.log('mouseDownActivate');
   if (state.isToolLocked) {
     return;
   }

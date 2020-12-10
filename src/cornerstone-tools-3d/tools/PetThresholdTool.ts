@@ -12,9 +12,6 @@ export default class PetThresholdTool extends BaseTool {
     const defaultToolConfiguration = {
       name: 'PetThreshold',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {
-        maxSUV: 5,
-      },
     };
 
     super(toolConfiguration, defaultToolConfiguration);
@@ -37,7 +34,7 @@ export default class PetThresholdTool extends BaseTool {
     const enabledElement = getEnabledElement(canvas);
     const { scene, sceneUID } = enabledElement;
 
-    const { volumeUID, maxSUV } = this._configuration;
+    const { volumeUID } = this._configuration;
 
     let volumeActor;
 
@@ -71,7 +68,7 @@ export default class PetThresholdTool extends BaseTool {
     let [lower, upper] = rgbTransferFunction.getRange();
 
     upper -= wcDelta;
-    upper = Math.max(Math.min(upper, maxSUV), 0.1);
+    upper = Math.max(upper, 0.1);
 
     rgbTransferFunction.setMappingRange(lower, upper);
 
