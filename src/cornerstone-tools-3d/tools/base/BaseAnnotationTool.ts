@@ -33,8 +33,12 @@ class BaseAnnotationTool extends BaseTool {
     );
   }
 
-  pointNearHandle(element, data, coords, interactionType = 'mouse') {
-    throw new Error(`Method pointNearHandle not implemented for ${this.name}.`);
+  getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
+    console.warn(
+      `Method getHandleNearImagePoint not implemented for ${this.name}.`
+    );
+
+    return undefined;
   }
 
   /**
@@ -81,30 +85,31 @@ class BaseAnnotationTool extends BaseTool {
    * @param {Object} evt - The event.
    * @returns {boolean} - True if the image needs to be updated
    */
-  mouseMoveCallback(evt, toolState) {
-    // TODO
-    // const { element, currentPoints } = evt.detail;
-    // const coords = currentPoints.canvas;
-    // const toolState = getToolState(element, this.name);
-    // let imageNeedsUpdate = false;
-    // for (let d = 0; d < toolState.data.length; d++) {
-    //   const data = toolState.data[d];
-    //   // Hovering a handle?
-    //   if (handleActivator(element, data.handles, coords) === true) {
-    //     imageNeedsUpdate = true;
-    //   }
-    //   // Tool data's 'active' does not match coordinates
-    //   // TODO: can't we just do an if/else and save on a pointNearTool check?
-    //   const nearToolAndNotMarkedActive =
-    //     this.pointNearTool(element, data, coords, 'mouse') && !data.active;
-    //   const notNearToolAndMarkedActive =
-    //     !this.pointNearTool(element, data, coords, 'mouse') && data.active;
-    //   if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
-    //     data.active = !data.active;
-    //     imageNeedsUpdate = true;
-    //   }
-    // }
-    //return imageNeedsUpdate;
+  mouseMoveCallback(evt, filteredToolState) {
+    const { element, currentPoints } = evt.detail;
+    const canvasCoords = currentPoints.canvas;
+    let imageNeedsUpdate = false;
+
+    for (let i = 0; i < filteredToolState.length; i++) {
+      const toolData = filteredToolState[i];
+      const { data } = toolData;
+
+      const handleNearImagePoint = this.getHandleNearImagePoint(
+        element,
+        toolData,
+        [canvasCoords.x, canvasCoords.y],
+        6
+      );
+
+      const nearToolAndNotMarkedActive = handleNearImagePoint && !data.active;
+      const notNearToolAndMarkedActive = !handleNearImagePoint && data.active;
+      if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
+        data.active = !data.active;
+        imageNeedsUpdate = true;
+      }
+    }
+
+    return imageNeedsUpdate;
   }
 
   /**

@@ -25,6 +25,7 @@
   },
   "peerDependencies": {
     "cornerstone-tools": "^5.1.0",
+    "cornerstone-math": "0.1.9",
     "cornerstone-wado-image-loader": "3.2.0",
     "vtk.js": "14.18.1"
   },
@@ -50,7 +51,7 @@
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^5.0.4",
     "cornerstone-core": "^2.3.0",
-    "cornerstone-math": "^0.1.8",
+    "cornerstone-math": "^0.1.9",
     "cornerstone-tools": "^5.1.0",
     "cornerstone-wado-image-loader": "3.2.0",
     "cross-env": "^5.2.0",

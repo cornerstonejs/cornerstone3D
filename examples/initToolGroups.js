@@ -9,6 +9,7 @@ import csTools3d, {
   ToolBindings,
   VolumeRotateMouseWheelTool,
   ProbeTool,
+  RectangleRoiTool,
 } from './../src/cornerstone-tools-3d/index';
 import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID } from './constants';
 
@@ -23,6 +24,7 @@ function initToolGroups() {
   csTools3d.addTool(ZoomTool, {});
   csTools3d.addTool(VolumeRotateMouseWheelTool, {});
   csTools3d.addTool(ProbeTool, {});
+  csTools3d.addTool(RectangleRoiTool, {});
 
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
@@ -50,10 +52,14 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ctVolumeUID },
   });
+  ctSceneToolGroup.addTool('RectangleRoi', {
+    configuration: { volumeUID: ctVolumeUID },
+  });
   ctSceneToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
   });
   ctSceneToolGroup.setToolPassive('Probe');
+  ctSceneToolGroup.setToolPassive('RectangleRoi');
   ctSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ctSceneToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
@@ -71,6 +77,10 @@ function initToolGroups() {
     configuration: { volumeUID: ptVolumeUID },
   });
   ptSceneToolGroup.addTool('Probe', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
+
+  ptSceneToolGroup.addTool('RectangleRoi', {
     configuration: { volumeUID: ptVolumeUID },
   });
   ptSceneToolGroup.addTool('Pan', {});
@@ -95,10 +105,14 @@ function initToolGroups() {
   fusionSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ptVolumeUID },
   });
+  fusionSceneToolGroup.addTool('RectangleRoi', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
   fusionSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
   fusionSceneToolGroup.setToolPassive('Probe');
+  fusionSceneToolGroup.setToolPassive('RectangleRoi');
   fusionSceneToolGroup.setToolActive('StackScrollMouseWheel');
   fusionSceneToolGroup.setToolActive('PetThreshold', {
     bindings: [ToolBindings.Mouse.Primary],

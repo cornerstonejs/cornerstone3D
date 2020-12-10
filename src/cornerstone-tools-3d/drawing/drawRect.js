@@ -17,29 +17,17 @@ import path from './path.js';
  * @param {Number} initialRotation - Rectangle initial rotation
  * @returns {undefined}
  */
-export default function(context, corner1, corner2, options) {
-  const w = Math.abs(corner1[0] - corner2[0]);
-  const h = Math.abs(corner1[0] - corner2[1]);
+export default function(context, inputCorner1, inputCorner2, options) {
+  const w = Math.abs(inputCorner1[0] - inputCorner2[0]);
+  const h = Math.abs(inputCorner1[1] - inputCorner2[1]);
 
-  corner1 = {
-    x: Math.min(corner1[0], corner2[0]),
-    y: Math.min(corner1[1], corner2[1]),
-  };
-
-  corner2 = {
-    x: corner1[0] + w,
-    y: corner1[1] + h,
-  };
-
-  let corner3 = {
-    x: corner1[0] + w,
-    y: corner1[1],
-  };
-
-  let corner4 = {
-    x: corner1[0],
-    y: corner1[1] + h,
-  };
+  const corner1 = [
+    Math.min(inputCorner1[0], inputCorner2[0]),
+    Math.min(inputCorner1[1], inputCorner2[1]),
+  ];
+  const corner2 = [corner1[0] + w, corner1[1] + h];
+  const corner3 = [corner1[0] + w, corner1[1]];
+  const corner4 = [corner1[0], corner1[1] + h];
 
   path(context, options, context => {
     context.moveTo(corner1[0], corner1[1]);

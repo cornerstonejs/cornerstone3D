@@ -16,6 +16,7 @@ import {
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   ProbeTool,
+  RectangleRoiTool,
 } from './tools/index';
 import { ToolBindings, VtkjsToolEvents } from './enums/index';
 
@@ -34,6 +35,7 @@ export default {
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   ProbeTool,
+  RectangleRoiTool,
   //
   ToolGroupManager,
   ToolBindings,
@@ -55,6 +57,7 @@ export {
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   ProbeTool,
+  RectangleRoiTool,
   //
   SynchronizerManager,
   ToolGroupManager,

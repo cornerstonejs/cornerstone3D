@@ -7,6 +7,7 @@ import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
 import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import ProbeTool from './annotation/ProbeTool';
+import RectangleRoiTool from './annotation/RectangleRoiTool';
 
 export {
   // ~~ BASE
@@ -22,4 +23,5 @@ export {
   VolumeRotateMouseWheelTool,
   // Annotation Tools
   ProbeTool,
+  RectangleRoiTool,
 };

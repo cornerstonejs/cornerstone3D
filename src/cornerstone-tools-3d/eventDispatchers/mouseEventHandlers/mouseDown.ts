@@ -13,6 +13,7 @@ import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles
 // import { findHandleDataNearImagePoint } from '../../util/findAndMoveHelpers.js';
 // import getInteractiveToolsForElement from './../../store/getInteractiveToolsForElement.js';
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement';
+import getMoveableAnnotationTools from '../../store/getMoveableAnnotationTools';
 
 const { Active, Passive } = ToolModes;
 // import filterToolsUseableWithMultiPartTools from './../../store/filterToolsUsableWithMultiPartTools.js';
@@ -101,40 +102,38 @@ export default function(evt) {
 
     return;
   }
-  /*
 
-  // NEAR TOOL?
-  const annotationToolsWithPointNearClick = activeAndPassiveTools.filter(
-    tool => {
-      const toolState = getToolState(element, tool.name);
-      const isNearPoint =
-        toolState &&
-        toolState.data &&
-        tool.pointNearTool &&
-        toolState.data.some(data =>
-          tool.pointNearTool(element, data, coords, 'mouse')
-        );
-
-      return isNearPoint;
-    }
+  const moveableAnnotationTools = getMoveableAnnotationTools(
+    element,
+    annotationTools,
+    canvasCoords,
+    'mouse'
   );
 
-  if (annotationToolsWithPointNearClick.length > 0) {
-    const firstToolNearPoint = annotationToolsWithPointNearClick[0];
-    const toolState = getToolState(element, firstToolNearPoint.name);
-    const firstAnnotationNearPoint = toolState.data.find(data =>
-      firstToolNearPoint.pointNearTool(element, data, coords)
-    );
+  if (moveableAnnotationTools.length > 0) {
+    // Choose first tool for now.
+    const { tool, toolData } = moveableAnnotationTools[0];
 
-    firstToolNearPoint.toolSelectedCallback(
-      evt,
-      firstAnnotationNearPoint,
-      'mouse'
-    );
+    tool.toolSelectedCallback(evt, toolData, 'mouse');
 
     return;
   }
-  */
+
+  // if (annotationToolsWithPointNearClick.length > 0) {
+  //   const firstToolNearPoint = annotationToolsWithPointNearClick[0];
+  //   const toolState = getToolState(element, firstToolNearPoint.name);
+  //   const firstAnnotationNearPoint = toolState.data.find(data =>
+  //     firstToolNearPoint.pointNearTool(element, data, coords)
+  //   );
+
+  //   firstToolNearPoint.toolSelectedCallback(
+  //     evt,
+  //     firstAnnotationNearPoint,
+  //     'mouse'
+  //   );
+
+  //   return;
+  // }
 
   if (activeTool && typeof activeTool.postMouseDownCallback === 'function') {
     const consumedEvent = activeTool.postMouseDownCallback(evt);

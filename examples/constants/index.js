@@ -47,6 +47,8 @@ const TOOL_GROUP_UIDS = {
   CTOBLIQUE: 'ctObliqueToolGroup',
 };
 
+const PET_CT_ANNOTATION_TOOLS = ['Probe', 'RectangleRoi'];
+
 const colormaps = ['hsv', 'Inferno (matplotlib)']; //'RED-PURPLE'];
 
 export {
@@ -57,4 +59,5 @@ export {
   VIEWPORT_IDS,
   TOOL_GROUP_UIDS,
   colormaps,
+  PET_CT_ANNOTATION_TOOLS,
 };

@@ -24,6 +24,7 @@ import {
   ctVolumeUID,
   colormaps,
   SCENE_IDS,
+  PET_CT_ANNOTATION_TOOLS,
 } from './constants';
 import LAYOUTS, {
   ptCtFusion,
@@ -40,6 +41,8 @@ const {
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
 } = initToolGroups();
+
+const ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS);
 
 class VTKMPRExample extends Component {
   state = {
@@ -70,9 +73,9 @@ class VTKMPRExample extends Component {
         },
       ],
     },
+    ptCtLeftClickTool: 'Levels',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
-    isAnnotationToolOn: false,
   };
 
   constructor(props) {
@@ -397,6 +400,22 @@ class VTKMPRExample extends Component {
     imageCache.purgeCache();
   };
 
+  swapPtCtTool = evt => {
+    const toolName = evt.target.value;
+
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false;
+
+    ptCtToggleAnnotationTool(
+      isAnnotationToolOn,
+      ctSceneToolGroup,
+      ptSceneToolGroup,
+      fusionSceneToolGroup,
+      toolName
+    );
+
+    this.setState({ ptCtLeftClickTool: toolName });
+  };
+
   render() {
     const {
       layoutIndex,
@@ -405,7 +424,7 @@ class VTKMPRExample extends Component {
       ctWindowLevelDisplay,
       ptThresholdDisplay,
     } = this.state;
-    let { isAnnotationToolOn } = this.state;
+
     const layoutID = LAYOUTS[layoutIndex];
     const layoutButtons = [
       { id: 'ObliqueCT', text: 'Oblique Layout' },
@@ -416,10 +435,6 @@ class VTKMPRExample extends Component {
     // TODO -> Move destroy to a seperate example
 
     const filteredLayoutButtons = layoutButtons.filter(l => l.id !== layoutID);
-
-    const switchToolText = isAnnotationToolOn
-      ? 'Switch To WWWC'
-      : 'Switch To Probe';
 
     const fusionButtons =
       layoutID === 'FusionMIP' ? (
@@ -434,23 +449,16 @@ class VTKMPRExample extends Component {
           >
             SwapPetTransferFunction
           </button>
-          <button
-            className="btn btn-primary"
-            style={{ margin: '2px 4px' }}
-            onClick={() => {
-              isAnnotationToolOn = !isAnnotationToolOn;
-
-              ptCtToggleAnnotationTool(
-                isAnnotationToolOn,
-                ctSceneToolGroup,
-                ptSceneToolGroup,
-                fusionSceneToolGroup
-              );
-              this.setState({ isAnnotationToolOn });
-            }}
+          <select
+            value={this.state.ptCtLeftClickTool}
+            onChange={this.swapPtCtTool}
           >
-            {switchToolText}
-          </button>
+            {ptCtLayoutTools.map(toolName => (
+              <option key={toolName} value={toolName}>
+                {toolName}
+              </option>
+            ))}
+          </select>
         </React.Fragment>
       ) : null;
 
