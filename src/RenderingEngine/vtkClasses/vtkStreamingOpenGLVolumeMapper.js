@@ -1,3 +1,5 @@
+import { vec3 } from 'gl-matrix';
+import isEqual from 'lodash.isequal';
 import macro from 'vtk.js/Sources/macro';
 import vtkOpenGLVolumeMapper from 'vtk.js/Sources/Rendering/OpenGL/VolumeMapper';
 import { Filter } from 'vtk.js/Sources/Rendering/OpenGL/Texture/Constants';
@@ -241,6 +243,128 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     model.VBOBuildTime.modified();
   };
+
+  publicAPI.getNeedToRebuildShaders = (cellBO, ren, actor) => {
+    // do we need lighting?
+    let lightComplexity = 0;
+    if (
+      actor.getProperty().getShade() &&
+      model.renderable.getBlendMode() === BlendMode.COMPOSITE_BLEND
+    ) {
+      // consider the lighting complexity to determine which case applies
+      // simple headlight, Light Kit, the whole feature set of VTK
+      lightComplexity = 0;
+      model.numberOfLights = 0;
+
+      ren.getLights().forEach(light => {
+        const status = light.getSwitch();
+        if (status > 0) {
+          model.numberOfLights++;
+          if (lightComplexity === 0) {
+            lightComplexity = 1;
+          }
+        }
+
+        if (
+          lightComplexity === 1 &&
+          (model.numberOfLights > 1 ||
+            light.getIntensity() !== 1.0 ||
+            !light.lightTypeIsHeadLight())
+        ) {
+          lightComplexity = 2;
+        }
+        if (lightComplexity < 3 && light.getPositional()) {
+          lightComplexity = 3;
+        }
+      });
+    }
+
+    if (model.lastLightComplexity !== lightComplexity) {
+      model.lastLightComplexity = lightComplexity;
+      return true;
+    }
+
+    const numComp = model.scalarTexture.getComponents();
+    const iComps = actor.getProperty().getIndependentComponents();
+    let usesProportionalComponents = false;
+    let proportionalComponents = [];
+    if (iComps) {
+      // Define any proportional components
+      for (let nc = 0; nc < numComp; nc++) {
+        proportionalComponents.push(actor.getProperty().getOpacityMode(nc));
+      }
+
+      if (proportionalComponents.length > 0) {
+        usesProportionalComponents = true;
+      }
+    }
+
+    const ext = model.currentInput.getExtent();
+    const spc = model.currentInput.getSpacing();
+    const vsize = vec3.create();
+    vec3.set(
+      vsize,
+      (ext[1] - ext[0]) * spc[0],
+      (ext[3] - ext[2]) * spc[1],
+      (ext[5] - ext[4]) * spc[2]
+    );
+
+    const maxSamples =
+      vec3.length(vsize) / model.renderable.getSampleDistance();
+
+    const state = {
+      interpolationType: actor.getProperty().getInterpolationType(),
+      useLabelOutline: actor.getProperty().getUseLabelOutline(),
+      numComp,
+      usesProportionalComponents,
+      iComps,
+      maxSamples,
+      useGradientOpacity: actor.getProperty().getUseGradientOpacity(0),
+      blendMode: model.renderable.getBlendMode(),
+      averageIPScalarMode: model.renderable.getAverageIPScalarRange(),
+      proportionalComponents,
+    };
+
+    if (
+      model.previousState.interpolationType !== state.interpolationType ||
+      model.previousState.useLabelOutline !== state.useLabelOutline ||
+      model.previousState.numComp !== state.numComp ||
+      model.previousState.usesProportionalComponents !==
+        state.usesProportionalComponents ||
+      model.previousState.iComps !== state.iComps ||
+      model.previousState.maxSamples !== state.maxSamples ||
+      model.previousState.useGradientOpacity !== state.useGradientOpacity ||
+      model.previousState.blendMode !== state.blendMode ||
+      !isEqual(
+        model.previousState.averageIPScalarMode,
+        state.averageIPScalarMode
+      ) ||
+      !isEqual(
+        model.previousState.proportionalComponents,
+        state.proportionalComponents
+      )
+    ) {
+      model.previousState = Object.assign({}, state);
+
+      return true;
+    }
+
+    // has something changed that would require us to recreate the shader?
+    if (
+      cellBO.getProgram() === 0 ||
+      model.lastHaveSeenDepthRequest !== model.haveSeenDepthRequest ||
+      !!model.lastZBufferTexture !== !!model.zBufferTexture ||
+      cellBO.getShaderSourceTime().getMTime() < publicAPI.getMTime() ||
+      // cellBO.getShaderSourceTime().getMTime() < actor.getMTime() || // Disabled versus upstream VTK, since we only need to rebuild shaders if the above checks fail
+      cellBO.getShaderSourceTime().getMTime() < model.renderable.getMTime() ||
+      cellBO.getShaderSourceTime().getMTime() < model.currentInput.getMTime()
+    ) {
+      model.lastZBufferTexture = model.zBufferTexture;
+      return true;
+    }
+
+    return false;
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -257,6 +381,7 @@ export function extend(publicAPI, model, initialValues = {}) {
   vtkOpenGLVolumeMapper.extend(publicAPI, model, initialValues);
 
   model.scalarTexture = initialValues.scalarTexture;
+  model.previousState = {};
 
   // Object methods
   vtkStreamingOpenGLVolumeMapper(publicAPI, model);

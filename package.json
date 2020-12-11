@@ -27,11 +27,12 @@
     "cornerstone-tools": "^5.1.0",
     "cornerstone-math": "0.1.9",
     "cornerstone-wado-image-loader": "3.2.0",
-    "vtk.js": "14.18.1"
+    "vtk.js": "https://github.com/swederik/vtk-js.git#perf/md5-built"
   },
   "dependencies": {
     "gl-matrix": "^3.1.0",
     "lodash.clonedeep": "4.5.0",
+    "lodash.isequal": "^4.5.0",
     "ts-loader": "^8.0.7",
     "typescript": "4"
   },
@@ -56,8 +57,8 @@
     "cornerstone-wado-image-loader": "3.2.0",
     "cross-env": "^5.2.0",
     "css-loader": "^3.0.0",
-    "dicom-parser": "^1.8.3",
     "dcmjs": "^0.16.6",
+    "dicom-parser": "^1.8.3",
     "dicomweb-client": "^0.5.2",
     "eslint": "5.16.0",
     "eslint-config-prettier": "^6.3.0",
@@ -80,7 +81,7 @@
     "karma-jasmine": "^4.0.1",
     "karma-junit-reporter": "^2.0.1",
     "karma-webpack": "^4.0.2",
-    "kw-web-suite": "^8.0.0",
+    "kw-web-suite": "^11.0.0",
     "lint-staged": "^9.2.5",
     "postcss-loader": "^3.0.0",
     "prettier": "^1.18.2",
@@ -94,7 +95,7 @@
     "style-loader": "^0.23.1",
     "stylelint": "^10.1.0",
     "stylelint-config-recommended": "^2.2.0",
-    "vtk.js": "^14.18.1",
+    "vtk.js": "https://github.com/swederik/vtk-js.git#perf/md5-built",
     "webpack": "4.34.0",
     "webpack-cli": "^3.3.4",
     "webpack-dev-server": "^3.8.0",

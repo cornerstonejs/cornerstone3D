@@ -143,7 +143,7 @@ class VTKMPRExample extends Component {
   }
 
   updateVOI = evt => {
-    const eventData = evt.detail;
+    /*const eventData = evt.detail;
     const { range, volumeUID } = eventData;
 
     if (volumeUID === ctVolumeUID) {
@@ -155,7 +155,7 @@ class VTKMPRExample extends Component {
     } else if (volumeUID === ptVolumeUID) {
       // Process Threshold
       this.setState({ ptThresholdDisplay: range.upper });
-    }
+    }*/
   };
 
   /**
@@ -417,6 +417,7 @@ class VTKMPRExample extends Component {
   };
 
   render() {
+    console.log("RERENDERING");
     const {
       layoutIndex,
       metadataLoaded,

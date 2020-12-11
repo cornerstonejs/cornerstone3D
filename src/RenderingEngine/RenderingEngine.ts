@@ -45,7 +45,10 @@ class RenderingEngine {
   public hasBeenDestroyed: boolean;
   offscreenMultiRenderWindow: any;
   readonly webGLCanvasContainer: any;
-  private _scenes: Array<Scene>;
+  private _scenes: Array<Scene> = [];
+  private _needsRender: Set<string> = new Set();
+  private _animationFrameSet: boolean = false;
+  private _animationFrameHandle: number | null = null;
 
   constructor(uid) {
     this.uid = uid ? uid : uuidv4();
@@ -251,6 +254,7 @@ class RenderingEngine {
       xOffset += clientWidth;
     }
 
+    // Render all viewports
     this.render();
   }
 
@@ -299,17 +303,46 @@ class RenderingEngine {
     return viewports;
   }
 
+  private _setViewportsToBeRenderedNextFrame(viewportUIDs: string[]) {
+    // Add the viewports to the set of flagged viewports
+    viewportUIDs.forEach(viewportUID => {
+      this._needsRender.add(viewportUID);
+    });
+
+    // Render any flagged viewports
+    this._render();
+  }
+
   /**
    * @method render Renders all viewports on the next animation frame.
    */
   public render() {
-    window.requestAnimationFrame(this._render);
+    const viewports = this.getViewports();
+    const viewportUIDs = viewports.map(vp => vp.uid);
+
+    this._setViewportsToBeRenderedNextFrame(viewportUIDs);
   }
 
   /**
-   * @method _render Renders all viewports.
+   * @method _render Sets up animation frame if necessary
    */
-  private _render = () => {
+  private _render() {
+    // If we have viewports that need rendering and we have not already
+    // set the RAF callback to run on the next frame.
+    if (this._needsRender.size > 0 && this._animationFrameSet === false) {
+      this._animationFrameHandle = window.requestAnimationFrame(
+        this._renderFlaggedViewports
+      );
+
+      // Set the flag that we have already set up the next RAF call.
+      this._animationFrameSet = true;
+    }
+  }
+
+  /**
+   * @method _renderFlaggedViewports Renders all viewports.
+   */
+  private _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
 
     const { offscreenMultiRenderWindow } = this;
@@ -334,7 +367,21 @@ class RenderingEngine {
       const viewports = scene.getViewports();
 
       viewports.forEach(viewport => {
-        this._renderViewportToCanvas(viewport, offScreenCanvas);
+        // Only render viewports which are marked for rerendering
+        if (this._needsRender.has(viewport.uid)) {
+          this._renderViewportToCanvas(viewport, offScreenCanvas);
+
+          // This viewport has been rendered, we can remove it from the set
+          this._needsRender.delete(viewport.uid);
+
+          // If there is nothing left that is flagged for rendering, stop here
+          // and allow RAF to be called again
+          if (this._needsRender.size === 0) {
+            this._animationFrameSet = false;
+            this._animationFrameHandle = null;
+            return;
+          }
+        }
       });
     }
   };
@@ -345,9 +392,11 @@ class RenderingEngine {
    * @param {string} sceneUID The UID of the scene to render.
    */
   public renderScene(sceneUID: string) {
-    const renderParticularScene = () => this._renderScene(sceneUID);
+    const scene = this.getScene(sceneUID);
+    const viewports = scene.getViewports();
+    const viewportUIDs = viewports.map(vp => vp.uid);
 
-    window.requestAnimationFrame(renderParticularScene);
+    this._setViewportsToBeRenderedNextFrame(viewportUIDs);
   }
 
   public renderFrameOfReference = FrameOfReferenceUID => {
@@ -357,111 +406,33 @@ class RenderingEngine {
       s => s.getFrameOfReferenceUID() === FrameOfReferenceUID
     );
 
-    const renderSetOfScenes = () =>
-      this._renderScenes(scenesWithFrameOfReferenceUID);
-
-    window.requestAnimationFrame(renderSetOfScenes);
+    return this._renderScenes(scenesWithFrameOfReferenceUID);
   };
 
   public renderScenes(sceneUIDs: Array<string>) {
     const scenes = sceneUIDs.map(sUid => this.getScene(sUid));
-    const renderSetOfScenes = () => this._renderScenes(scenes);
-
-    window.requestAnimationFrame(renderSetOfScenes);
+    return this._renderScenes(scenes);
   }
 
   public renderViewports(viewportUIDs: Array<string>) {
-    const scenes = this._scenes;
-
-    const viewportToRender = [];
-
-    for (let i = 0; i < scenes.length; i++) {
-      const scene = scenes[i];
-      const viewports = scene.getViewports();
-
-      viewports.forEach(vp => {
-        if (viewportUIDs.includes(vp.uid)) {
-          viewportToRender.push(vp);
-        }
-      });
-    }
-
-    const renderSetOfViewports = () => this._renderViewports(viewportToRender);
-
-    window.requestAnimationFrame(renderSetOfViewports);
-  }
-
-  private _renderViewports(viewports: Array<Viewport>) {
-    const { offscreenMultiRenderWindow } = this;
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
-
-    const viewportUIDs = viewports.map(vp => vp.uid);
-    const renderers = offscreenMultiRenderWindow.getRenderers();
-
-    for (let i = 0; i < renderers.length; i++) {
-      const { renderer, uid } = renderers[i];
-      renderer.setDraw(viewportUIDs.includes(uid));
-    }
-
-    renderWindow.render();
-
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const context = openGLRenderWindow.get3DContext();
-
-    const offScreenCanvas = context.canvas;
-
-    viewports.forEach(viewport => {
-      this._renderViewportToCanvas(viewport, offScreenCanvas);
-    });
+    this._setViewportsToBeRenderedNextFrame(viewportUIDs);
   }
 
   private _renderScenes(scenes: Array<Scene>) {
     this._throwIfDestroyed();
 
-    const viewportsToRender = [];
+    const viewportUIDs = [];
 
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
       const viewports = scene.getViewports();
-      viewportsToRender.push(...viewports);
+      viewports.forEach(vp => {
+        viewportUIDs.push(vp.uid);
+      });
     }
 
-    this._renderViewports(viewportsToRender);
+    this._setViewportsToBeRenderedNextFrame(viewportUIDs);
   }
-
-  /**
-   * @method _renderScene Renders only a specific `Scene`.
-   *
-   * @param {string} sceneUID The UID of the scene to render.
-   */
-  private _renderScene = (sceneUID: string) => {
-    this._throwIfDestroyed();
-
-    const { offscreenMultiRenderWindow } = this;
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
-
-    const scene = this.getScene(sceneUID);
-    const viewports = scene.getViewports();
-    const viewportUIDs = viewports.map(vp => vp.uid);
-
-    const renderers = offscreenMultiRenderWindow.getRenderers();
-
-    for (let i = 0; i < renderers.length; i++) {
-      const { renderer, uid } = renderers[i];
-      renderer.setDraw(viewportUIDs.includes(uid));
-    }
-
-    renderWindow.render();
-
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const context = openGLRenderWindow.get3DContext();
-
-    const offScreenCanvas = context.canvas;
-
-    viewports.forEach(viewport => {
-      this._renderViewportToCanvas(viewport, offScreenCanvas);
-    });
-  };
 
   /**
    * @method renderViewport Renders only a specific `Viewport` on the next animation frame.
@@ -470,43 +441,8 @@ class RenderingEngine {
    * @param {string} viewportUID The UID of the viewport.
    */
   public renderViewport(sceneUID: string, viewportUID: string) {
-    const renderParticularViewport = () =>
-      this._renderViewport(sceneUID, viewportUID);
-
-    window.requestAnimationFrame(renderParticularViewport);
+    this._setViewportsToBeRenderedNextFrame([viewportUID]);
   }
-
-  /**
-   * @method _renderViewport Renders only a specific `Viewport`.
-   *
-   * @param {string} sceneUID The UID of the scene the viewport belongs to.
-   * @param {string} viewportUID The UID of the viewport.
-   */
-  private _renderViewport = (sceneUID: string, viewportUID: string) => {
-    this._throwIfDestroyed();
-
-    const { offscreenMultiRenderWindow } = this;
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
-
-    const scene = this.getScene(sceneUID);
-    const viewport = scene.getViewport(viewportUID);
-
-    const renderers = offscreenMultiRenderWindow.getRenderers();
-
-    for (let i = 0; i < renderers.length; i++) {
-      const { renderer, uid } = renderers[i];
-      renderer.setDraw(viewportUID === uid);
-    }
-
-    renderWindow.render();
-
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const context = openGLRenderWindow.get3DContext();
-
-    const offScreenCanvas = context.canvas;
-
-    this._renderViewportToCanvas(viewport, offScreenCanvas);
-  };
 
   /**
    * @method _renderViewportToCanvas Renders a particular `Viewport`'s on screen canvas.
@@ -580,6 +516,12 @@ class RenderingEngine {
         triggerEvent(renderingEventTarget, EVENTS.ELEMENT_DISABLED, eventData);
       });
     });
+
+    window.cancelAnimationFrame(this._animationFrameHandle);
+
+    this._needsRender.clear();
+    this._animationFrameSet = false;
+    this._animationFrameHandle = null;
 
     this._scenes = [];
   }
