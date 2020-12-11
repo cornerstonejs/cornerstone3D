@@ -94,6 +94,8 @@ export default function(evt) {
     'mouse'
   );
 
+  console.log(annotationTools);
+
   if (annotationToolsWithMoveableHandles.length > 0) {
     // Choose first tool for now.
     const { tool, toolData, handle } = annotationToolsWithMoveableHandles[0];

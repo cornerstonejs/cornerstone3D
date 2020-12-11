@@ -1,38 +1,20 @@
 import drawTextBox from './drawTextBox.js';
 import drawLink from './drawLink.js';
 
-/**
- * Draw a link between an annotation to a textBox.
- * @public
- * @method drawLinkedTextBox
- * @memberof Drawing
- *
- * @param {Object} context - The canvas context.
- * @param {Object} textBox - The textBox to link.
- * @param {Object} text - The text to display in the textbox.
- * @param {Object[]} handles - The handles of the annotation.
- * @param {Object[]} textBoxAnchorPoints - An array of possible anchor points on the textBox.
- * @param {string} color - The link color.
- * @param {number} lineWidth - The line width of the link.
- * @param {number} xOffset - The x offset of the textbox.
- * @param {boolean} yCenter - Vertically centers the text if true.
- * @returns {undefined}
- */
 export default function(
   context,
   textCoords,
   text,
-  handles,
+  textBox,
   textBoxAnchorPoints,
+  canvasToWorld,
   color,
   lineWidth,
   xOffset,
   yCenter
 ) {
-  const cornerstone = external.cornerstone;
-
   if (xOffset) {
-    textCoords.x += xOffset;
+    textCoords[0] += xOffset;
   }
 
   const options = {
@@ -43,7 +25,7 @@ export default function(
   };
 
   // Draw the text box
-  textBox.boundingBox = drawTextBox(
+  const canvasBoundingBox = drawTextBox(
     context,
     text,
     textCoords[0],
@@ -56,10 +38,19 @@ export default function(
     drawLink(
       textBoxAnchorPoints,
       textCoords,
-      textBox.boundingBox,
+      canvasBoundingBox,
       context,
       color,
       lineWidth
     );
   }
+
+  const { top, left, width, height } = canvasBoundingBox;
+
+  textBox.worldBoundingBox = {
+    topLeft: canvasToWorld([left, top]),
+    topRight: canvasToWorld([left + width, top]),
+    bottomLeft: canvasToWorld([left, top + height]),
+    bottomRight: canvasToWorld([left + width, top + height]),
+  };
 }

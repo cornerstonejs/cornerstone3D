@@ -3,12 +3,14 @@ import { BaseAnnotationTool } from './../base/index';
 import { getEnabledElement, imageCache } from '../../../index';
 import uuidv4 from '../../util/uuidv4.js';
 import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
+import throttle from '../../util/throttle';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
 import toolColors from '../../stateManagement/toolColors';
+import toolStyle from '../../stateManagement/toolStyle';
 import {
   draw,
   drawHandles,
-  drawTextBox,
+  drawLinkedTextBox,
   drawRect,
   getNewContext,
 } from '../../drawing';
@@ -20,14 +22,17 @@ import {
   filterViewportsWithFrameOfReferenceUID,
 } from '../../util/viewportFilters';
 import cornerstoneMath from 'cornerstone-math';
+import getROITextBoxCoordsCanvas from '../../util/getROITextBoxCoordsCanvas';
 
 export default class RectangleRoiTool extends BaseAnnotationTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
+  _throttledCalculateCachedStats: Function;
   editData: {
     toolData: any;
     viewportUIDsToRender: [];
-    handleIndex: number;
+    handleIndex?: number;
+    movingTextBox: boolean;
   } | null;
   name: string;
   _configuration: any;
@@ -52,6 +57,12 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     this._deactivateModify = this._deactivateModify.bind(this);
     this._mouseUpCallback = this._mouseUpCallback.bind(this);
     this._mouseDragCallback = this._mouseDragCallback.bind(this);
+
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    );
   }
 
   addNewMeasurement(evt, interactionType) {
@@ -85,6 +96,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
             [worldPos.x, worldPos.y, worldPos.z],
             [worldPos.x, worldPos.y, worldPos.z],
           ],
+          textBox: {
+            hasMoved: false,
+            worldPosition: [0, 0, 0],
+          },
         },
         cachedStats: {},
         active: true,
@@ -99,6 +114,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       toolData,
       viewportUIDsToRender,
       handleIndex: 1,
+      movingTextBox: false,
     };
     this._activateModify(element);
 
@@ -112,7 +128,26 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const { viewport } = enabledElement;
 
     const { data } = toolData;
-    const points = data.handles.points;
+    const { points, textBox } = data.handles;
+    const { worldBoundingBox } = textBox;
+
+    if (worldBoundingBox) {
+      const canvasBoundingBox = {
+        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
+        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
+        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
+        bottmRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+      };
+
+      if (
+        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
+        canvasCoords[0] <= canvasBoundingBox.bottmRight[0] &&
+        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
+        canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
+      ) {
+        return textBox;
+      }
+    }
 
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
@@ -137,12 +172,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const canavasPoint1 = viewport.worldToCanvas(point1);
     const canavasPoint2 = viewport.worldToCanvas(point2);
 
-    const rect = {
-      left: Math.min(canavasPoint1[0], canavasPoint2[0]),
-      top: Math.min(canavasPoint1[1], canavasPoint2[1]),
-      width: Math.abs(canavasPoint1[0] - canavasPoint2[0]),
-      height: Math.abs(canavasPoint1[1] - canavasPoint2[1]),
-    };
+    const rect = this._getRectangleImageCoordinates([
+      canavasPoint1,
+      canavasPoint2,
+    ]);
 
     // TODO -> Not sure what to do about cornerstoneMath. Should we recreate it as we go for array coords?
     const distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, {
@@ -156,30 +189,55 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   }
 
   toolSelectedCallback(evt, toolData, interactionType = 'mouse') {
-    // TODO!
-  }
-
-  handleSelectedCallback(evt, toolData, handle, interactionType = 'mouse') {
     const eventData = evt.detail;
     const { element } = eventData;
-
-    //TODO
 
     const { data } = toolData;
 
     data.active = true;
 
-    const handleIndex = data.handles.points.findIndex(p => p === handle);
-
     const viewportUIDsToRender = this._getViewportUIDsToRender(element);
 
+    this.editData = {
+      toolData,
+      viewportUIDsToRender,
+      movingTextBox: false,
+    };
+
+    this._activateModify(element);
+
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    renderingEngine.renderViewports(viewportUIDsToRender);
+
+    evt.preventDefault();
+  }
+
+  handleSelectedCallback(evt, toolData, handle, interactionType = 'mouse') {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const { data } = toolData;
+
+    data.active = true;
+
+    let movingTextBox = false;
+    let handleIndex;
+
+    if (handle.worldPosition) {
+      movingTextBox = true;
+    } else {
+      handleIndex = data.handles.points.findIndex(p => p === handle);
+    }
+
     // Find viewports to render on drag.
+    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
 
     this.editData = {
-      //handle, // This would be useful for other tools with more than one handle
       toolData,
       viewportUIDsToRender,
       handleIndex,
+      movingTextBox,
     };
     this._activateModify(element);
 
@@ -229,13 +287,48 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
   _mouseDragCallback(evt) {
     const eventData = evt.detail;
-    const { currentPoints, element } = eventData;
-    const worldPos = currentPoints.world;
+    const { element } = eventData;
 
-    const { toolData, viewportUIDsToRender, handleIndex } = this.editData;
+    const {
+      toolData,
+      viewportUIDsToRender,
+      handleIndex,
+      movingTextBox,
+    } = this.editData;
     const { data } = toolData;
 
-    data.handles.points[handleIndex] = [worldPos.x, worldPos.y, worldPos.z];
+    if (movingTextBox) {
+      const { deltaPoints } = eventData;
+      const worldPosDelta = deltaPoints.world;
+
+      const { textBox } = data.handles;
+      const { worldPosition } = textBox;
+
+      worldPosition[0] += worldPosDelta.x;
+      worldPosition[1] += worldPosDelta.y;
+      worldPosition[2] += worldPosDelta.z;
+
+      textBox.hasMoved = true;
+    } else if (handleIndex === undefined) {
+      // Moving tool
+      const { deltaPoints } = eventData;
+      const worldPosDelta = deltaPoints.world;
+
+      const points = data.handles.points;
+
+      points.forEach(point => {
+        point[0] += worldPosDelta.x;
+        point[1] += worldPosDelta.y;
+        point[2] += worldPosDelta.z;
+      });
+    } else {
+      // Moving handle
+      const { currentPoints } = eventData;
+      const worldPos = currentPoints.world;
+
+      data.handles.points[handleIndex] = [worldPos.x, worldPos.y, worldPos.z];
+    }
+
     data.invalidated = true;
 
     const enabledElement = getEnabledElement(element);
@@ -275,13 +368,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       return;
     }
 
-    // TODO refactor this to a helper so we can build by composition
-
     const enabledElement = getEnabledElement(element);
     const { viewport, scene } = enabledElement;
     const camera = viewport.getCamera();
 
-    // TODO -> Cache this on camera change and on volume added?
     const { spacingInNormalDirection } = getTargetVolume(scene, camera);
 
     // Get data with same normal
@@ -315,6 +405,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const targetVolumeUID = this._getTargetVolumeUID(scene);
 
     const context = getNewContext(element);
+    const lineWidth = toolStyle.getToolWidth();
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i];
@@ -322,14 +413,17 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
       const color = toolColors.getColorIfActive(data);
 
-      // if (!data.cachedStats[targetVolumeUID]) {
-      //   data.cachedStats[targetVolumeUID] = {};
-      //   this._calculateCachedStats(data);
-      // } else if (data.invalidated) {
-      //   this._calculateCachedStats(data);
-      // }
+      if (!data.cachedStats[targetVolumeUID]) {
+        data.cachedStats[targetVolumeUID] = {};
 
-      //const textLines = this._getTextLines(data, targetVolumeUID);
+        const { viewPlaneNormal } = viewport.getCamera();
+        this._calculateCachedStats(data, viewPlaneNormal);
+      } else if (data.invalidated) {
+        const { viewPlaneNormal } = viewport.getCamera();
+        this._throttledCalculateCachedStats(data, viewPlaneNormal);
+      }
+
+      const textLines = this._getTextLines(data, targetVolumeUID);
 
       const points = data.handles.points;
 
@@ -342,54 +436,115 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           color,
         });
 
-        // if (textLines) {
-        //   const textCanvasCoorinates = [
-        //     canvasCoordinates[0] + 6,
-        //     canvasCoordinates[1] - 6,
-        //   ];
+        if (textLines) {
+          let canvasTextBoxCoords;
 
-        //   drawTextBox(
-        //     context,
-        //     textLines,
-        //     textCanvasCoorinates[0],
-        //     textCanvasCoorinates[1],
-        //     color
-        //   );
-        // }
+          if (!data.handles.textBox.hasMoved) {
+            canvasTextBoxCoords = getROITextBoxCoordsCanvas(canvasCoordinates);
+
+            data.handles.textBox.worldPosition = viewport.canvasToWorld(
+              canvasTextBoxCoords
+            );
+          } else {
+            canvasTextBoxCoords = viewport.worldToCanvas(
+              data.handles.textBox.worldPosition
+            );
+          }
+
+          const textBoxAnchorPoints = this._findTextBoxAnchorPoints(
+            canvasCoordinates
+          );
+
+          drawLinkedTextBox(
+            context,
+            canvasTextBoxCoords,
+            textLines,
+            data.handles.textBox,
+            textBoxAnchorPoints,
+            viewport.canvasToWorld,
+            color,
+            lineWidth,
+            10,
+            true
+          );
+        }
       });
     }
   }
 
+  _findTextBoxAnchorPoints(points) {
+    const { left, top, width, height } = this._getRectangleImageCoordinates(
+      points
+    );
+
+    return [
+      [
+        // Top middle point of rectangle
+        left + width / 2,
+        top,
+      ],
+      [
+        // Left middle point of rectangle
+        left,
+        top + height / 2,
+      ],
+      [
+        // Bottom middle point of rectangle
+        left + width / 2,
+        top + height,
+      ],
+      [
+        // Right middle point of rectangle
+        left + width,
+        top + height / 2,
+      ],
+    ];
+  }
+
+  _getRectangleImageCoordinates(points) {
+    const [point0, point1] = points;
+
+    return {
+      left: Math.min(point0[0], point1[0]),
+      top: Math.min(point0[1], point1[1]),
+      width: Math.abs(point0[0] - point1[0]),
+      height: Math.abs(point0[1] - point1[1]),
+    };
+  }
+
   _getTextLines(data, targetVolumeUID) {
     const cachedVolumeStats = data.cachedStats[targetVolumeUID];
-    const { index, value, Modality } = cachedVolumeStats;
+    const { area, mean, stdDev, Modality } = cachedVolumeStats;
 
-    if (value === undefined) {
+    if (mean === undefined) {
       return;
     }
 
     const textLines = [];
 
-    textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+    let areaLine = `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
+    let meanLine = `Mean: ${mean.toFixed(2)}`;
+    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
 
     if (Modality === 'PT') {
-      const valueLine = `${value.toFixed(3)} SUV`;
-
-      textLines.push(valueLine);
+      meanLine += ' SUV';
+      stdDevLine += ' SUV';
     } else if (Modality === 'CT') {
-      const valueLine = `${value.toFixed(3)} HU`;
-
-      textLines.push(valueLine);
+      meanLine += ' HU';
+      stdDevLine += ' HU';
     } else {
-      const valueLine = `${value.toFixed(3)} MO`;
-
-      textLines.push(valueLine);
+      meanLine += ' MO';
+      stdDevLine += ' MO';
     }
+
+    textLines.push(areaLine);
+    textLines.push(meanLine);
+    textLines.push(stdDevLine);
 
     return textLines;
   }
 
-  _calculateCachedStats(data) {
+  _calculateCachedStats(data, viewPlaneNormal) {
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
     const { cachedStats } = data;
@@ -421,46 +576,115 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       worldPos2Index[1] = Math.floor(worldPos2Index[1]);
       worldPos2Index[2] = Math.floor(worldPos2Index[2]);
 
-      // if (
-      //   this._indexWithinDimensions(worldPos1Index, dimensions) ||
-      //   this._indexWithinDimensions(worldPos2Index, dimensions)
-      // ) {
-      // } else {
-      //   cachedStats[volumeUID] = {
-      //     //     index,
-      //     //     Modality: metadata.Modality,
-      //     //   };
-      //   };
+      // Check if one of the indexes are inside the volume, this then gives us
+      // Some area to do stats over.
 
-      //   // if (this._indexWithinDimensions(index, dimensions)) {
-      //   //   const yMultiple = dimensions[0];
-      //   //   const zMultiple = dimensions[0] * dimensions[1];
+      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
+      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
+      // corner is off the canvas.
 
-      //   //   const value =
-      //   //     scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]];
+      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
+        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
+        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
 
-      //   //   cachedStats[volumeUID] = {
-      //   //     index,
-      //   //     value,
-      //   //     Modality: metadata.Modality,
-      //   //   };
-      // }
+        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
+        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
+
+        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
+        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
+
+        const worldWidth = Math.abs(worldPos1[0] - worldPos2[0]);
+        const worldHeight = Math.abs(worldPos1[1] - worldPos2[1]);
+
+        const area = worldWidth * worldHeight;
+
+        let count = 0;
+        let mean = 0;
+        let stdDev = 0;
+
+        const yMultiple = dimensions[0];
+        const zMultiple = dimensions[0] * dimensions[1];
+
+        // This is a tripple loop, but one of these 3 values will be constant
+        // In the planar view.
+        for (let k = kMin; k <= kMax; k++) {
+          for (let j = jMin; j <= jMax; j++) {
+            for (let i = iMin; i <= iMax; i++) {
+              const value = scalarData[k * zMultiple + j * yMultiple + i];
+
+              count++;
+              mean += value;
+            }
+          }
+        }
+
+        mean /= count;
+
+        for (let k = kMin; k <= kMax; k++) {
+          for (let j = jMin; j <= jMax; j++) {
+            for (let i = iMin; i <= iMax; i++) {
+              const value = scalarData[k * zMultiple + j * yMultiple + i];
+
+              const valueMinusMean = value - mean;
+
+              stdDev += valueMinusMean * valueMinusMean;
+            }
+          }
+        }
+
+        stdDev /= count;
+        stdDev = Math.sqrt(stdDev);
+
+        cachedStats[volumeUID] = {
+          Modality: metadata.Modality,
+          area,
+          mean,
+          stdDev,
+        };
+      } else {
+        // this._clipIndexToVolume(worldPos1Index, dimensions);
+        // this._clipIndexToVolume(worldPos2Index, dimensions);
+        cachedStats[volumeUID] = {
+          Modality: metadata.Modality,
+        };
+      }
     }
+
+    data.invalidated = false;
+
+    return cachedStats;
+  }
+
+  _isInsideVolume(index1, index2, dimensions) {
+    return (
+      this._indexWithinDimensions(index1, dimensions) &&
+      this._indexWithinDimensions(index2, dimensions)
+    );
   }
 
   _indexWithinDimensions(index, dimensions) {
     if (
       index[0] < 0 ||
-      index[0] > dimensions[0] ||
+      index[0] >= dimensions[0] ||
       index[1] < 0 ||
-      index[1] > dimensions[1] ||
+      index[1] >= dimensions[1] ||
       index[2] < 0 ||
-      index[2] > dimensions[2]
+      index[2] >= dimensions[2]
     ) {
       return false;
     }
 
     return true;
+  }
+
+  _clipIndexToVolume(index, dimensions) {
+    for (let i = 0; i <= 2; i++) {
+      if (index[i] < 0) {
+        index[i] = 0;
+      } else if (index[i] >= dimensions[i]) {
+        index[i] = dimensions[i] - 1;
+      }
+    }
   }
 
   _getTargetVolumeUID(scene) {

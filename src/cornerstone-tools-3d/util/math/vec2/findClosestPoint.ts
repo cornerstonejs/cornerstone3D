@@ -1,6 +1,6 @@
 import { vec2 } from 'gl-matrix';
 
-export default function findClosestPointVec2(sources, target) {
+export default function findClosestPoint(sources, target) {
   const distances = [];
   let minDistance;
 

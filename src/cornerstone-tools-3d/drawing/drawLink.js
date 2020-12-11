@@ -58,5 +58,5 @@ export default function(
     lineDash: [2, 3],
   };
 
-  drawLine(context, undefined, start, end, options, 'canvas');
+  drawLine(context, start, end, options, 'canvas');
 }

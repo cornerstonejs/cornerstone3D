@@ -22,7 +22,7 @@ export default function(element, tools) {
       continue;
     }
 
-    if (tool.filterInteractableToolStateForElement === 'function') {
+    if (typeof tool.filterInteractableToolStateForElement === 'function') {
       // If the tool has a toolState filter (e.g. with in-plane-annotations-only filtering), use it.
       toolState = tool.filterInteractableToolStateForElement(
         element,

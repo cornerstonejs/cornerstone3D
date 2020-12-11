@@ -94,15 +94,15 @@ class BaseAnnotationTool extends BaseTool {
       const toolData = filteredToolState[i];
       const { data } = toolData;
 
-      const handleNearImagePoint = this.getHandleNearImagePoint(
+      const near = this._imagePointNearToolOrHandle(
         element,
         toolData,
         [canvasCoords.x, canvasCoords.y],
         6
       );
 
-      const nearToolAndNotMarkedActive = handleNearImagePoint && !data.active;
-      const notNearToolAndMarkedActive = !handleNearImagePoint && data.active;
+      const nearToolAndNotMarkedActive = near && !data.active;
+      const notNearToolAndMarkedActive = !near && data.active;
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
         data.active = !data.active;
         imageNeedsUpdate = true;
@@ -110,6 +110,28 @@ class BaseAnnotationTool extends BaseTool {
     }
 
     return imageNeedsUpdate;
+  }
+
+  _imagePointNearToolOrHandle(element, toolData, coords, proximity) {
+    const handleNearImagePoint = this.getHandleNearImagePoint(
+      element,
+      toolData,
+      coords,
+      proximity
+    );
+
+    if (handleNearImagePoint) {
+      return true;
+    }
+
+    const toolNewImagePoint = this.pointNearTool(
+      element,
+      toolData,
+      coords,
+      proximity
+    );
+
+    return toolNewImagePoint;
   }
 
   /**

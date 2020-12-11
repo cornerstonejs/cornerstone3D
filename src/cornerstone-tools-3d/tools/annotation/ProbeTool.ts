@@ -340,15 +340,15 @@ export default class ProbeTool extends BaseAnnotationTool {
     textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
     if (Modality === 'PT') {
-      const valueLine = `${value.toFixed(3)} SUV`;
+      const valueLine = `${value.toFixed(2)} SUV`;
 
       textLines.push(valueLine);
     } else if (Modality === 'CT') {
-      const valueLine = `${value.toFixed(3)} HU`;
+      const valueLine = `${value.toFixed(2)} HU`;
 
       textLines.push(valueLine);
     } else {
-      const valueLine = `${value.toFixed(3)} MO`;
+      const valueLine = `${value.toFixed(2)} MO`;
 
       textLines.push(valueLine);
     }
@@ -399,16 +399,18 @@ export default class ProbeTool extends BaseAnnotationTool {
         };
       }
     }
+
+    data.invalidated = false;
   }
 
   _indexWithinDimensions(index, dimensions) {
     if (
       index[0] < 0 ||
-      index[0] > dimensions[0] ||
+      index[0] >= dimensions[0] ||
       index[1] < 0 ||
-      index[1] > dimensions[1] ||
+      index[1] >= dimensions[1] ||
       index[2] < 0 ||
-      index[2] > dimensions[2]
+      index[2] >= dimensions[2]
     ) {
       return false;
     }
