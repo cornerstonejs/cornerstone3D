@@ -8,6 +8,7 @@ import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import ProbeTool from './annotation/ProbeTool';
 import RectangleRoiTool from './annotation/RectangleRoiTool';
+import EllipticalRoiTool from './annotation/EllipticalRoiTool';
 
 export {
   // ~~ BASE
@@ -24,4 +25,5 @@ export {
   // Annotation Tools
   ProbeTool,
   RectangleRoiTool,
+  EllipticalRoiTool,
 };

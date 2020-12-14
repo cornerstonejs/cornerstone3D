@@ -11,7 +11,7 @@ import {
   draw,
   drawHandles,
   drawLinkedTextBox,
-  drawRect,
+  drawEllipse,
   getNewContext,
 } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
@@ -21,11 +21,12 @@ import {
   filterViewportsWithToolEnabled,
   filterViewportsWithFrameOfReferenceUID,
 } from '../../util/viewportFilters';
-import cornerstoneMath from 'cornerstone-math';
+
 import getROITextBoxCoordsCanvas from '../../util/getROITextBoxCoordsCanvas';
+import pointInEllipse from '../../util/pointInEllipse';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
 
-export default class RectangleRoiTool extends BaseAnnotationTool {
+export default class EllipticalRoiTool extends BaseAnnotationTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
   _throttledCalculateCachedStats: Function;
@@ -40,7 +41,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
   constructor(toolConfiguration = {}) {
     const defaultToolConfiguration = {
-      name: 'RectangleRoi',
+      name: 'EllipticalRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
     };
 
@@ -170,21 +171,27 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const { data } = toolData;
     const [point1, point2] = data.handles.points;
 
-    const canavasPoint1 = viewport.worldToCanvas(point1);
-    const canavasPoint2 = viewport.worldToCanvas(point2);
+    const canvasPoint1 = viewport.worldToCanvas(point1);
+    const canvasPoint2 = viewport.worldToCanvas(point2);
 
-    const rect = this._getRectangleImageCoordinates([
-      canavasPoint1,
-      canavasPoint2,
-    ]);
+    const minorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) + proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) + proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) - proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) - proximity,
+    };
 
-    // TODO -> Not sure what to do about cornerstoneMath. Should we recreate it as we go for array coords?
-    const distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, {
-      x: canvasCoords[0],
-      y: canvasCoords[1],
-    });
+    const majorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) - proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) - proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) + proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
+    };
 
-    if (distanceToPoint <= proximity) {
+    const pointInMinorEllipse = pointInEllipse(minorEllipse, canvasCoords);
+    const pointInMajorEllipse = pointInEllipse(majorEllipse, canvasCoords);
+
+    if (pointInMajorEllipse && !pointInMinorEllipse) {
       return true;
     }
   }
@@ -417,11 +424,9 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {};
 
-        const { viewPlaneNormal, viewUp } = viewport.getCamera();
-        this._calculateCachedStats(data, viewPlaneNormal, viewUp);
+        this._calculateCachedStats(data, viewport);
       } else if (data.invalidated) {
-        const { viewPlaneNormal, viewUp } = viewport.getCamera();
-        this._throttledCalculateCachedStats(data, viewPlaneNormal, viewUp);
+        this._throttledCalculateCachedStats(data, viewport);
       }
 
       const textLines = this._getTextLines(data, targetVolumeUID);
@@ -433,7 +438,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       draw(context, context => {
         drawHandles(context, canvasCoordinates, { color });
 
-        drawRect(context, canvasCoordinates[0], canvasCoordinates[1], {
+        drawEllipse(context, canvasCoordinates[0], canvasCoordinates[1], {
           color,
         });
 
@@ -545,10 +550,23 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     return textLines;
   }
 
-  _calculateCachedStats(data, viewPlaneNormal, viewUp) {
+  _calculateCachedStats(data, viewport) {
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
+
+    const canvasPoint1 = viewport.worldToCanvas(worldPos1);
+    const canvasPoint2 = viewport.worldToCanvas(worldPos2);
+
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+
     const { cachedStats } = data;
+
+    const ellipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]),
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]),
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]),
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]),
+    };
 
     const volumeUIDs = Object.keys(cachedStats);
 
@@ -580,10 +598,6 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
-      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
-      // corner is off the canvas.
-
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
@@ -602,7 +616,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           worldPos2
         );
 
-        const area = worldWidth * worldHeight;
+        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2);
 
         let count = 0;
         let mean = 0;
@@ -611,15 +625,64 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         const yMultiple = dimensions[0];
         const zMultiple = dimensions[0] * dimensions[1];
 
+        // Calling worldToCanvas on voxels all the time is super slow,
+        // So we instead work out the change in canvas position incrementing each index causes.
+        const start = [iMin, jMin, kMin];
+
+        const worldPosStart = vec3.create();
+        imageData.indexToWorldVec3(start, worldPosStart);
+        const canvasPosStart = viewport.worldToCanvas(worldPosStart);
+
+        const startPlusI = [iMin + 1, jMin, kMin];
+        const startPlusJ = [iMin, jMin + 1, kMin];
+        const startPlusK = [iMin, jMin, kMin + 1];
+
+        const worldPosStartPlusI = vec3.create();
+        const plusICanvasDelta = [];
+        imageData.indexToWorldVec3(startPlusI, worldPosStartPlusI);
+        const canvasPosStartPlusI = viewport.worldToCanvas(worldPosStartPlusI);
+        vec2.sub(plusICanvasDelta, canvasPosStartPlusI, canvasPosStart);
+
+        const worldPosStartPlusJ = vec3.create();
+        const plusJCanvasDelta = [];
+        imageData.indexToWorldVec3(startPlusJ, worldPosStartPlusJ);
+        const canvasPosStartPlusJ = viewport.worldToCanvas(worldPosStartPlusJ);
+        vec2.sub(plusJCanvasDelta, canvasPosStartPlusJ, canvasPosStart);
+
+        const worldPosStartPlusK = vec3.create();
+        const plusKCanvasDelta = [];
+        imageData.indexToWorldVec3(startPlusK, worldPosStartPlusK);
+        const canvasPosStartPlusK = viewport.worldToCanvas(worldPosStartPlusK);
+        vec2.sub(plusKCanvasDelta, canvasPosStartPlusK, canvasPosStart);
+
         // This is a tripple loop, but one of these 3 values will be constant
         // In the planar view.
         for (let k = kMin; k <= kMax; k++) {
           for (let j = jMin; j <= jMax; j++) {
             for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
+              const dI = i - iMin;
+              const dJ = j - jMin;
+              const dK = k - kMin;
 
-              count++;
-              mean += value;
+              let canvasCoords = [...canvasPosStart];
+
+              canvasCoords = [
+                canvasCoords[0] +
+                  plusICanvasDelta[0] * dI +
+                  plusJCanvasDelta[0] * dJ +
+                  plusKCanvasDelta[0] * dK,
+                canvasCoords[1] +
+                  plusICanvasDelta[1] * dI +
+                  plusJCanvasDelta[1] * dJ +
+                  plusKCanvasDelta[1] * dK,
+              ];
+
+              if (pointInEllipse(ellipse, canvasCoords)) {
+                const value = scalarData[k * zMultiple + j * yMultiple + i];
+
+                count++;
+                mean += value;
+              }
             }
           }
         }
@@ -648,8 +711,6 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           stdDev,
         };
       } else {
-        // this._clipIndexToVolume(worldPos1Index, dimensions);
-        // this._clipIndexToVolume(worldPos2Index, dimensions);
         cachedStats[volumeUID] = {
           Modality: metadata.Modality,
         };

@@ -47,7 +47,7 @@ const TOOL_GROUP_UIDS = {
   CTOBLIQUE: 'ctObliqueToolGroup',
 };
 
-const PET_CT_ANNOTATION_TOOLS = ['Probe', 'RectangleRoi'];
+const PET_CT_ANNOTATION_TOOLS = ['Probe', 'RectangleRoi', 'EllipticalRoi'];
 
 const colormaps = ['hsv', 'Inferno (matplotlib)']; //'RED-PURPLE'];
 

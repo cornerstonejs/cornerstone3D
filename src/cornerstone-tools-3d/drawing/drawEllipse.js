@@ -22,7 +22,7 @@ export default function(context, corner1, corner2, options) {
   const center = [xMin + w / 2, yMin + h / 2];
 
   path(context, options, context => {
-    context.ellipse(center[0], center[1], w / 2, h / 2, angle, 0, 2 * Math.PI);
+    context.ellipse(center[0], center[1], w / 2, h / 2, 0, 0, 2 * Math.PI);
     context.closePath();
   });
 }
