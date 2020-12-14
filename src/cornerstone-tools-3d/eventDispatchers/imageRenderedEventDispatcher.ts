@@ -1,35 +1,28 @@
-import { state, ToolGroupManager } from '../store/index';
+import { ToolGroupManager } from '../store/index';
 import { Events as RenderingEngineEvents } from '../../index';
-import { ToolBindings, ToolModes } from './../enums';
+import { ToolModes } from './../enums';
+import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent';
 
-const { Active, Passive } = ToolModes;
+const { Active, Passive, Enabled } = ToolModes;
 
+/**
+ * onImageRendered - When the image is rendered, check what tools can be rendered for this element.
+ *
+ * - First we get all tools which are active, passive or enabled on the element.
+ * - If any of these tools have a `renderToolData` method, then we render them.
+ * - Note that these tools don't necessarily have to be instances of  `BaseAnnotationTool`,
+ *   Any tool may register a `renderToolData` method (e.g. a tool that displays an overlay).
+ *
+ * @param evt The normalized onImageRendered event.
+ */
 const onImageRendered = function(evt) {
-  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail;
-  const toolGroups = ToolGroupManager.getToolGroups(
-    renderingEngineUID,
-    sceneUID,
-    viewportUID
-  );
+  const enabledTools = getToolsWithModesForMouseEvent(evt, [
+    Active,
+    Passive,
+    Enabled,
+  ]);
 
-  let activeAndPassiveTools = [];
-
-  for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i];
-    const toolGroupToolNames = Object.keys(toolGroup.tools);
-
-    for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j];
-      const tool = toolGroup.tools[toolName];
-
-      if (tool.mode === Passive || tool.mode === Active) {
-        const toolInstance = toolGroup._tools[toolName];
-        activeAndPassiveTools.push(toolInstance);
-      }
-    }
-  }
-
-  activeAndPassiveTools.forEach(tool => {
+  enabledTools.forEach(tool => {
     if (tool.renderToolData) {
       tool.renderToolData(evt);
     }

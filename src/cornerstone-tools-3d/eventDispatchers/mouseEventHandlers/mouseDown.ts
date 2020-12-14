@@ -4,64 +4,48 @@ import {
   state,
   ToolGroupManager,
 } from './../../store/index';
-// import { getToolState } from './../../stateManagement/toolState.js';
 
-import { ToolBindings, ToolModes } from './../../enums/index';
+import { ToolModes } from './../../enums/index';
 
 // // Util
 import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles';
-// import { findHandleDataNearImagePoint } from '../../util/findAndMoveHelpers.js';
-// import getInteractiveToolsForElement from './../../store/getInteractiveToolsForElement.js';
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement';
 import getMoveableAnnotationTools from '../../store/getMoveableAnnotationTools';
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
+import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
 
 const { Active, Passive } = ToolModes;
-// import filterToolsUseableWithMultiPartTools from './../../store/filterToolsUsableWithMultiPartTools.js';
 
-export default function(evt) {
+/**
+ * mouseDown - When the mouse is depressed we check which entities can process these events in the following manner:
+ *
+ * - First we get the `activeTool` for the mouse button pressed.
+ * - If the `activeTool` has a `preMouseDownCallback`, this is called. If the callback returns `true`,
+ *   the event does not propagate further.
+ * - Next we get all tools which are active or passive (`activeAndPassiveTools`), as toolData for these tools could
+ *   possibly catch and handle these events. We then filter the `activeAndPassiveTools` using `getToolsWithDataForElement`, which filters tools with `toolState`
+ *   for this frame of reference. Optionally a tool can employ a further filtering (via a
+ *   `filterInteractableToolStateForElement` callback) for tools interactable within the current camera view
+ *   (e.g. tools that only render when viewed from a certain direction).
+ * - Next we check if any handles are interactable for each tool (`getToolsWithMoveableHandles`). If interactable
+ *   handles are found, the first tool/handle found consumes the event and the event does not propagate further.
+ * - Next we check any tools are interactable (e.g. moving an entire length annotation rather than one of its handles:
+ *   `getMoveableAnnotationTools`). If interactable tools are found, the first tool found consumes the event and the
+ *   event does not propagate further.
+ * - Finally, if the `activeTool` has `postMouseDownCallback`, this is called.  If the callback returns `true`,
+ *   the event does not propagate further.
+ *
+ * If the event is not consumed the event will bubble to the `mouseDownActivate` handler.
+ *
+ * @param evt The normalized mouseDown event.
+ */
+export default function mouseDown(evt) {
+  // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
   if (state.isToolLocked) {
     return;
   }
 
-  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail;
-  const mouseEvent = evt.detail.event;
-  const toolGroups = ToolGroupManager.getToolGroups(
-    renderingEngineUID,
-    sceneUID,
-    viewportUID
-  );
-
-  let activeAndPassiveTools = [];
-  let activeTool;
-  let foundActiveTool = false;
-
-  for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i];
-    const toolGroupToolNames = Object.keys(toolGroup.tools);
-
-    for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j];
-      const tool = toolGroup.tools[toolName];
-
-      if (
-        !foundActiveTool &&
-        tool.mode === Active &&
-        tool.bindings.includes(mouseEvent.buttons)
-      ) {
-        // This should be behind some API. Too much knowledge of ToolGroup
-        // inner workings leaking out
-
-        activeTool = toolGroup._tools[toolName];
-        foundActiveTool = true;
-        activeAndPassiveTools.push(activeTool);
-      } else if (tool.mode === Passive || tool.mode === Active) {
-        const toolInstance = toolGroup._tools[toolName];
-        activeAndPassiveTools.push(toolInstance);
-      }
-    }
-  }
-
-  // TODO -> multiPartTools => If activeTool is not usable with the multi-part tool, just bail.
+  const activeTool = getActiveToolForMouseEvent(evt);
 
   // Check for preMouseDownCallbacks
   if (activeTool && typeof activeTool.preMouseDownCallback === 'function') {
@@ -72,6 +56,11 @@ export default function(evt) {
       return;
     }
   }
+
+  const activeAndPassiveTools = getToolsWithModesForMouseEvent(evt, [
+    Active,
+    Passive,
+  ]);
 
   const eventData = evt.detail;
   const { element } = eventData;
@@ -84,9 +73,6 @@ export default function(evt) {
 
   const canvasCoords = eventData.currentPoints.canvas;
 
-  // NEAR HANDLES? // TODO It feels like we'll need picking at some point, right now doing as cornerstoneTools does:
-  // The first tool found that says it can be moved gets moved.
-  // TODO -> We need to make sure the mouse over highlighting correctly reflects this.
   const annotationToolsWithMoveableHandles = getToolsWithMoveableHandles(
     element,
     annotationTools,
@@ -119,22 +105,6 @@ export default function(evt) {
     return;
   }
 
-  // if (annotationToolsWithPointNearClick.length > 0) {
-  //   const firstToolNearPoint = annotationToolsWithPointNearClick[0];
-  //   const toolState = getToolState(element, firstToolNearPoint.name);
-  //   const firstAnnotationNearPoint = toolState.data.find(data =>
-  //     firstToolNearPoint.pointNearTool(element, data, coords)
-  //   );
-
-  //   firstToolNearPoint.toolSelectedCallback(
-  //     evt,
-  //     firstAnnotationNearPoint,
-  //     'mouse'
-  //   );
-
-  //   return;
-  // }
-
   if (activeTool && typeof activeTool.postMouseDownCallback === 'function') {
     const consumedEvent = activeTool.postMouseDownCallback(evt);
 
@@ -143,7 +113,4 @@ export default function(evt) {
       return;
     }
   }
-
-  // // ACTIVE TOOL W/ POST CALLBACK?
-  // // If any tools are active, check if they have a special reason for dealing with the event.
 }

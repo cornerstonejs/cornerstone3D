@@ -12,6 +12,8 @@ export default function(evt, tool) {
 
   console.warn('TODO! addNewMeasurement method!');
 
+  // TODO -> Do we still want this, unclear.
+
   // Should this be _on_ BaseAnnotationTool ?
 
   // evt.preventDefault();

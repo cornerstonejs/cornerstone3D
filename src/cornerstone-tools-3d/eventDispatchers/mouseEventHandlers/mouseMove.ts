@@ -5,6 +5,7 @@ import { getEnabledElement } from '../../../index';
 
 // // Util
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement';
+import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
 
 const { Active, Passive } = ToolModes;
 
@@ -17,31 +18,13 @@ export default function(evt) {
     return;
   }
 
+  const activeAndPassiveTools = getToolsWithModesForMouseEvent(evt, [
+    Active,
+    Passive,
+  ]);
+
   const eventData = evt.detail;
-  const { renderingEngineUID, sceneUID, viewportUID, element } = eventData;
-
-  const toolGroups = ToolGroupManager.getToolGroups(
-    renderingEngineUID,
-    sceneUID,
-    viewportUID
-  );
-
-  let activeAndPassiveTools = [];
-
-  for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i];
-    const toolGroupToolNames = Object.keys(toolGroup.tools);
-
-    for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j];
-      const tool = toolGroup.tools[toolName];
-
-      if (tool.mode === Passive || tool.mode === Active) {
-        const toolInstance = toolGroup._tools[toolName];
-        activeAndPassiveTools.push(toolInstance);
-      }
-    }
-  }
+  const { element } = eventData;
 
   // Annotation tool specific
   const annotationTools = getToolsWithDataForElement(
