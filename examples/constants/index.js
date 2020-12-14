@@ -9,6 +9,9 @@ const SCENE_IDS = {
   PTMIP: 'ptMipScene',
   CTVR: 'ctVRScene',
   CTOBLIQUE: 'ctObliqueScene',
+  PT_TYPES_SUV_BW: 'petTypesSuvBW',
+  PT_TYPES_SUV_LBM: 'petTypesSuvLBM',
+  PT_TYPES_SUV_BSA: 'petTypesSuvBSA',
 };
 
 const VIEWPORT_IDS = {
@@ -36,6 +39,15 @@ const VIEWPORT_IDS = {
   CTOBLIQUE: {
     OBLIQUE: 'ctOBlique',
   },
+  PT_TYPES_SUV_BW: {
+    CORONAL: 'ptTypesSuvBWCoronal',
+  },
+  PT_TYPES_SUV_LBM: {
+    CORONAL: 'ptTypesSuvLBMCoronal',
+  },
+  PT_TYPES_SUV_BSA: {
+    CORONAL: 'ptTypesSuvBSACoronal',
+  },
 };
 
 const TOOL_GROUP_UIDS = {
@@ -45,6 +57,7 @@ const TOOL_GROUP_UIDS = {
   PTMIP: 'ptMipSceneToolGroup',
   CTVR: 'ctVRSceneToolGroup',
   CTOBLIQUE: 'ctObliqueToolGroup',
+  PT_TYPES: 'ptTypesToolGroup',
 };
 
 const PET_CT_ANNOTATION_TOOLS = ['Probe', 'RectangleRoi', 'EllipticalRoi'];

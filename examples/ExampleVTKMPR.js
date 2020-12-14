@@ -26,12 +26,7 @@ import {
   SCENE_IDS,
   PET_CT_ANNOTATION_TOOLS,
 } from './constants';
-import LAYOUTS, {
-  ptCtFusion,
-  fourUpCT,
-  singlePTSagittal,
-  obliqueCT,
-} from './layouts';
+import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts';
 
 const {
   ctSceneToolGroup,
@@ -40,6 +35,7 @@ const {
   ptMipSceneToolGroup,
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
+  ptTypesSceneToolGroup,
 } = initToolGroups();
 
 const ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS);
@@ -289,10 +285,12 @@ class VTKMPRExample extends Component {
         });
         fourUpCT.setVolumes(renderingEngine, ctVolumeUID);
         loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID], this.renderingEngine);
-      } else if (layout === 'SinglePTSagittal') {
-        // SinglePTSagittal
-        singlePTSagittal.setLayout(renderingEngine, this._canvasNodes);
-        singlePTSagittal.setVolumes(renderingEngine, ptVolumeUID);
+      } else if (layout === 'PetTypes') {
+        // petTypes
+        petTypes.setLayout(renderingEngine, this._canvasNodes, {
+          ptTypesSceneToolGroup,
+        });
+        petTypes.setVolumes(renderingEngine, ptVolumeUID);
         loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID], this.renderingEngine);
       } else {
         throw new Error('Unrecognised layout index');
@@ -336,10 +334,10 @@ class VTKMPRExample extends Component {
       viewportGrid.numCols = 2;
       viewportGrid.numRows = 2;
       [0, 1, 2, 3].forEach(x => viewportGrid.viewports.push({}));
-    } else if (layout === 'SinglePTSagittal') {
+    } else if (layout === 'PetTypes') {
       viewportGrid.numRows = 1;
-      viewportGrid.numCols = 1;
-      viewportGrid.viewports.push({});
+      viewportGrid.numCols = 3;
+      [0, 1, 2].forEach(x => viewportGrid.viewports.push({}));
     }
 
     this.setState({
@@ -417,7 +415,7 @@ class VTKMPRExample extends Component {
   };
 
   render() {
-    console.log("RERENDERING");
+    console.log('RERENDERING');
     const {
       layoutIndex,
       metadataLoaded,
@@ -430,6 +428,7 @@ class VTKMPRExample extends Component {
     const layoutButtons = [
       { id: 'ObliqueCT', text: 'Oblique Layout' },
       { id: 'FusionMIP', text: 'Fusion Layout' },
+      { id: 'PetTypes', text: 'Pet Types Layout' },
     ];
 
     // TODO -> Move layout switching to a different example to reduce bloat.
@@ -463,6 +462,19 @@ class VTKMPRExample extends Component {
         </React.Fragment>
       ) : null;
 
+    const fusionWLDisplay =
+      layoutID === 'FusionMIP' ? (
+        <React.Fragment>
+          {' '}
+          <div className="col-xs-12">
+            <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
+          </div>
+          <div className="col-xs-12">
+            <p>{`PT: Upper Threshold: ${ptThresholdDisplay.toFixed(2)}`}</p>
+          </div>
+        </React.Fragment>
+      ) : null;
+
     return (
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
@@ -486,13 +498,7 @@ class VTKMPRExample extends Component {
             ))}
             {/* TOGGLES */}
             {fusionButtons}
-
-            <div className="col-xs-12">
-              <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
-            </div>
-            <div className="col-xs-12">
-              <p>{`PT: Upper Threshold: ${ptThresholdDisplay.toFixed(2)}`}</p>
-            </div>
+            {/* Hide until we update react in a better way  {fusionWLDisplay} */}
           </div>
         </div>
         <ViewportGrid

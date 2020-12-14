@@ -1,7 +1,7 @@
 import cornerstone from 'cornerstone-core';
-import { metadata } from '../classes/interfaces';
+import { Metadata } from '../classes/interfaces';
 
-export default function makeVolumeMetadata(imageIds: Array<string>): metadata {
+export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
   const imageId0 = imageIds[0];
 
   const {

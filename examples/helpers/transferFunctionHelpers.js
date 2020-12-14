@@ -15,7 +15,7 @@ function setCTWWWC({ volumeActor, volumeUID }) {
   volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
-    .setRange(lower, upper);
+    .setMappingRange(lower, upper);
 }
 
 function setPetTransferFunction({ volumeActor, volumeUID }) {

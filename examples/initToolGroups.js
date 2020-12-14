@@ -43,6 +43,10 @@ function initToolGroups() {
     TOOL_GROUP_UIDS.OBLIQUE
   );
 
+  const ptTypesSceneToolGroup = ToolGroupManager.createToolGroup(
+    TOOL_GROUP_UIDS.PT_TYPES
+  );
+
   // Set up CT Scene tools
 
   ctSceneToolGroup.addTool('WindowLevel', {
@@ -167,6 +171,24 @@ function initToolGroups() {
     bindings: [ToolBindings.Mouse.Primary],
   });
 
+  ptTypesSceneToolGroup.addTool('StackScrollMouseWheel', {});
+  ptTypesSceneToolGroup.addTool('PetThreshold', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
+  ptTypesSceneToolGroup.addTool('Pan', {});
+  ptTypesSceneToolGroup.addTool('Zoom', {});
+  ptTypesSceneToolGroup.setToolActive('StackScrollMouseWheel');
+  ptTypesSceneToolGroup.setToolActive('PetThreshold', {
+    bindings: [ToolBindings.Mouse.Primary],
+  });
+
+  ptTypesSceneToolGroup.setToolActive('Pan', {
+    bindings: [ToolBindings.Mouse.Auxiliary],
+  });
+  ptTypesSceneToolGroup.setToolActive('Zoom', {
+    bindings: [ToolBindings.Mouse.Secondary],
+  });
+
   return {
     ctSceneToolGroup,
     ptSceneToolGroup,
@@ -174,6 +196,7 @@ function initToolGroups() {
     ptMipSceneToolGroup,
     ctVRSceneToolGroup,
     ctObliqueToolGroup,
+    ptTypesSceneToolGroup,
   };
 }
 

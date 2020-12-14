@@ -3,7 +3,7 @@ type voi = {
   windowCenter: number;
 };
 
-export type metadata = {
+export type Metadata = {
   BitsAllocated: number;
   BitsStored: number;
   SamplesPerPixel: number;
@@ -21,12 +21,13 @@ export type metadata = {
 
 export interface ImageVolumeInterface {
   uid: string;
-  metadata: metadata;
+  metadata: Metadata;
   dimensions: Array<number>;
   spacing: Array<number>;
   origin: Array<number>;
   direction: Array<number>;
   vtkImageData: object;
+  scaling?: any;
   scalarData: Float32Array | Uint8Array;
 }
 

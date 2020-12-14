@@ -1,10 +1,10 @@
 import ptCtFusion from './ptCtFusion';
 import fourUpCT from './fourUpCT';
-import singlePTSagittal from './singlePTSagittal';
+import petTypes from './petTypes';
 import obliqueCT from './obliqueCT';
 
-const LAYOUTS = ['FusionMIP', 'ObliqueCT']; //'CTVR', 'SinglePTSagittal'];
+const LAYOUTS = ['FusionMIP', 'ObliqueCT', 'PetTypes']; //'CTVR', 'SinglePTSagittal'];
 
 export default LAYOUTS;
 
-export { ptCtFusion, fourUpCT, singlePTSagittal, obliqueCT };
+export { ptCtFusion, fourUpCT, petTypes, obliqueCT };

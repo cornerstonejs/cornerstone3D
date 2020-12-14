@@ -201,6 +201,10 @@ class ImageCache {
         break;
       }
 
+      if (!(volume instanceof StreamingImageVolume)) {
+        continue;
+      }
+
       if (
         volume.uid !== volumeUID &&
         volume.loadStatus &&
