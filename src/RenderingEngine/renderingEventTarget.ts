@@ -9,12 +9,14 @@ class RenderingEventTarget {
   listeners: {
     cornerstoneelementdisabled: Array<Function>;
     cornerstoneelementenabled: Array<Function>;
+    cornerstoneimagevolumemodified: Array<Function>;
   };
 
   constructor() {
     this.listeners = {
       cornerstoneelementdisabled: [],
       cornerstoneelementenabled: [],
+      cornerstoneimagevolumemodified: [],
     };
   }
 

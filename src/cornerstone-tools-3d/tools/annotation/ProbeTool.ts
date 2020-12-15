@@ -342,10 +342,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     if (Modality === 'PT') {
       // Check if we have scaling for the other 2 SUV types for the PET.
 
-      debugger;
-
       const imageVolume = imageCache.getImageVolume(targetVolumeUID);
-      const scaling = imageVolume;
 
       if (
         imageVolume.scaling.PET &&

@@ -1,14 +1,12 @@
 import cornerstone from 'cornerstone-core';
-
 import { requestPoolManager } from 'cornerstone-tools';
-
 import getImageIdInstanceMetadata from './getImageIdInstanceMetadata';
-
 import getInterleavedFrames from './getInterleavedFrames';
-
 import StreamingImageVolume from '../classes/StreamingImageVolume';
-
 import { calculateSUVScalingFactors } from 'calculate-suv';
+import renderingEventTarget from '../../RenderingEngine/renderingEventTarget';
+import triggerEvent from '../../utils/triggerEvent.js';
+import EVENTS from '../../enums/Events';
 
 const requestType = 'prefetch';
 const preventCache = true; // We are not using the cornerstone cache for this.
@@ -26,7 +24,9 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
   const { scalarData, loadStatus } = volume;
   const { cachedFrames } = loadStatus;
 
-  const { imageIds, vtkOpenGLTexture, vtkImageData } = volume;
+  const { imageIds, vtkOpenGLTexture, vtkImageData, metadata } = volume;
+
+  const { FrameOfReferenceUID } = metadata;
 
   const interleavedFrames = getInterleavedFrames(imageIds);
 
@@ -65,6 +65,13 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
 
     vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
     vtkImageData.modified();
+
+    const eventData = {
+      FrameOfReferenceUID,
+      imageVolume: volume,
+    };
+
+    triggerEvent(renderingEventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventData);
 
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true;

@@ -7,6 +7,8 @@ import {
 } from './types';
 import cloneDeep from 'lodash.clonedeep';
 
+import { Events as RENDERING_EVENTS, renderingEventTarget } from '../../index';
+
 interface FilterInterface {
   FrameOfReferenceUID?: string;
   toolName?: string;
@@ -22,7 +24,36 @@ export default class FrameOfReferenceSpecificToolStateManager {
     }
     this.toolState = {};
     this.uid = uid;
+
+    renderingEventTarget.addEventListener(
+      RENDERING_EVENTS.IMAGE_VOLUME_MODIFIED,
+      this._imageVolumeModifiedHandler
+    );
   }
+
+  _imageVolumeModifiedHandler = evt => {
+    const eventData = evt.detail;
+    const { FrameOfReferenceUID } = eventData;
+
+    const toolState = this.toolState;
+    const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+
+    if (!frameOfReferenceSpecificToolState) {
+      return;
+    }
+
+    Object.keys(frameOfReferenceSpecificToolState).forEach(toolName => {
+      const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName];
+
+      toolSpecificToolState.forEach(toolData => {
+        const { data } = toolData;
+
+        if (data && data.invalidated !== undefined) {
+          data.invalidated = true;
+        }
+      });
+    });
+  };
 
   get = (FrameOfReferenceUID, toolName) => {
     const frameOfReferenceSpecificToolState = this.toolState[

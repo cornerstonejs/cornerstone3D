@@ -4,6 +4,7 @@ enum Events {
   ELEMENT_DISABLED = 'cornerstoneelementdisabled',
   ELEMENT_ENABLED = 'cornerstoneelementenabled',
   IMAGE_RENDERED = 'cornerstoneimagerendered',
+  IMAGE_VOLUME_MODIFIED = 'cornerstoneimagevolumemodified',
 }
 
 export default Events;
