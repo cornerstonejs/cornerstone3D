@@ -1,12 +1,14 @@
 import cornerstone from 'cornerstone-core';
-import cornerstoneTools from 'cornerstone-tools';
+
 import { requestPoolManager } from 'cornerstone-tools';
 
-import getPatientWeightAndCorrectedDose from './getPatientWeightAndCorrectedDose';
+import getImageIdInstanceMetadata from './getImageIdInstanceMetadata';
 
 import getInterleavedFrames from './getInterleavedFrames';
 
 import StreamingImageVolume from '../classes/StreamingImageVolume';
+
+import { calculateSUVScalingFactors } from 'calculate-suv';
 
 const requestType = 'prefetch';
 const preventCache = true; // We are not using the cornerstone cache for this.
@@ -15,8 +17,9 @@ type ScalingParamaters = {
   rescaleSlope: number;
   rescaleIntercept: number;
   modality: string;
-  patientWeight?: number;
-  correctedDose?: number;
+  suvbw?: number;
+  suvlbm?: number;
+  suvbsa?: number;
 };
 
 export default function prefetchImageIds(volume: StreamingImageVolume) {
@@ -119,6 +122,26 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
     }
   }
 
+  const InstanceMetadataArray = [];
+  interleavedFrames.forEach(frame => {
+    const { imageId } = frame;
+
+    const generalSeriesModule =
+      cornerstone.metaData.get('generalSeriesModule', imageId) || {};
+
+    if (generalSeriesModule.modality === 'PT') {
+      const instanceMetadata = getImageIdInstanceMetadata(imageId);
+      InstanceMetadataArray.push(instanceMetadata);
+    }
+  });
+
+  let suvScalingFactors;
+  if (InstanceMetadataArray.length > 0) {
+    suvScalingFactors = calculateSUVScalingFactors(InstanceMetadataArray);
+
+    _addScalingToVolume(volume, suvScalingFactors);
+  }
+
   interleavedFrames.forEach(frame => {
     const { imageId, imageIdIndex } = frame;
 
@@ -141,12 +164,8 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
     };
 
     if (scalingParameters.modality === 'PT') {
-      const { patientWeight, correctedDose } = getPatientWeightAndCorrectedDose(
-        imageId
-      );
-
-      scalingParameters.patientWeight = patientWeight;
-      scalingParameters.correctedDose = correctedDose;
+      const suvFactor = suvScalingFactors[imageIdIndex];
+      scalingParameters.suvbw = suvFactor.suvbw;
     }
 
     const options = {
@@ -179,4 +198,29 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
   });
 
   requestPoolManager.startGrabbing();
+}
+
+function _addScalingToVolume(volume, suvScalingFactors) {
+  if (!volume.scaling) {
+    volume.scaling = {};
+  }
+
+  const firstSUVFactor = suvScalingFactors[0];
+
+  if (!volume.scaling.PET) {
+    // These ratios are constant across all frames, so only need one.
+    const { suvbw, suvlbm, suvbsa } = firstSUVFactor;
+
+    const petScaling = <any>{};
+
+    if (suvlbm) {
+      petScaling.suvbwToSuvlbm = suvlbm / suvbw;
+    }
+
+    if (suvbsa) {
+      petScaling.suvbwToSuvbsa = suvbsa / suvbw;
+    }
+
+    volume.scaling.PET = petScaling;
+  }
 }

@@ -72,11 +72,18 @@ function setPetBWTransferFunction({ volumeActor, volumeUID }) {
 function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
   const imageVolume = imageCache.getImageVolume(volumeUID);
 
-  // const { SUVbwFactor, SUVlbmFactor } = imageVolume.scaling;
+  let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET;
 
-  // const factor = SUVlbmFactor / SUVbwFactor;
+  debugger;
 
-  const scalingFactor = 0.9; // TODO
+  if (scalingFactor === undefined) {
+    console.warn(
+      'No suvbwToSuvlbm scaling factor, likely missing PatientWeight, PatientSex or PatientSize from dataset'
+    );
+
+    scalingFactor = 1;
+  }
+
   const max = 5 * scalingFactor;
 
   const rgbTransferFunction = volumeActor
@@ -92,11 +99,17 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 function setPetBSATransferFunction({ volumeActor, volumeUID }) {
   const imageVolume = imageCache.getImageVolume(volumeUID);
 
-  // const { SUVbwFactor, SUVbsaFactor } = imageVolume.scaling;
+  let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET;
 
-  // const factor = SUVbsaFactor / SUVbwFactor;
+  debugger;
 
-  const scalingFactor = 1.1; // TODO
+  if (scalingFactor === undefined) {
+    console.warn(
+      'No suvbwToSuvbsa scaling factor, likely missing PatientWeight or PatientSize from dataset'
+    );
+
+    scalingFactor = 1;
+  }
 
   const rgbTransferFunction = volumeActor
     .getProperty()

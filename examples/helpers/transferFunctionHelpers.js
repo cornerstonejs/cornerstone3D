@@ -9,8 +9,17 @@ function setCTWWWC({ volumeActor, volumeUID }) {
 
   const { windowWidth, windowCenter } = volume.metadata.voiLut[0];
 
-  const lower = windowCenter - windowWidth / 2.0;
-  const upper = windowCenter + windowWidth / 2.0;
+  let lower;
+  let upper;
+
+  if (windowWidth == undefined || windowCenter === undefined) {
+    // Set to something so we can window level it manually.
+    lower = 200;
+    upper = 400;
+  } else {
+    lower = windowCenter - windowWidth / 2.0;
+    upper = windowCenter + windowWidth / 2.0;
+  }
 
   volumeActor
     .getProperty()

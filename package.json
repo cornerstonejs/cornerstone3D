@@ -16,6 +16,7 @@
     "build:release": "webpack --progress --colors --config ./.webpack/webpack.config.js -p",
     "build:examples": "webpack --progress --colors --config ./.webpack/webpack.dev.js -d",
     "dev": "webpack-dev-server --config ./.webpack/webpack.dev.js --watch",
+    "preinstall": "node preinstall.js",
     "start": "yarn run dev",
     "test": "karma start",
     "test:ci": "karma start --single-run",
@@ -26,7 +27,8 @@
   "peerDependencies": {
     "cornerstone-tools": "^5.1.0",
     "cornerstone-math": "0.1.9",
-    "cornerstone-wado-image-loader": "3.2.0",
+    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#merge-suv-calculation",
+    "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main",
     "vtk.js": "https://github.com/swederik/vtk-js.git#perf/md5-built"
   },
   "dependencies": {
@@ -49,12 +51,13 @@
     "@typescript-eslint/parser": "^4.6.1",
     "babel-eslint": "10.0.1",
     "babel-loader": "8.0.6",
+    "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^5.0.4",
     "cornerstone-core": "^2.3.0",
     "cornerstone-math": "^0.1.9",
     "cornerstone-tools": "^5.1.0",
-    "cornerstone-wado-image-loader": "3.2.0",
+    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#merge-suv-calculation",
     "cross-env": "^5.2.0",
     "css-loader": "^3.0.0",
     "dcmjs": "^0.16.6",

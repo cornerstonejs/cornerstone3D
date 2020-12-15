@@ -40,6 +40,8 @@ const {
 
 const ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS);
 
+window.imageCache = imageCache;
+
 class VTKMPRExample extends Component {
   state = {
     progressText: 'fetching metadata...',
