@@ -23,7 +23,7 @@ import {
   filterViewportsWithFrameOfReferenceUID,
 } from '../../util/viewportFilters';
 import cornerstoneMath from 'cornerstone-math';
-import getTextBoxCoordsCanvas from '../../util/getTextBoxCoordsCanvas';
+import { getTextBoxCoordsCanvas } from '../../util/drawing';
 
 export default class LengthTool extends BaseAnnotationTool {
   touchDragCallback: Function;

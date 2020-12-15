@@ -22,7 +22,7 @@ import {
   filterViewportsWithFrameOfReferenceUID,
 } from '../../util/viewportFilters';
 import cornerstoneMath from 'cornerstone-math';
-import getTextBoxCoordsCanvas from '../../util/getTextBoxCoordsCanvas';
+import { getTextBoxCoordsCanvas } from '../../util/drawing';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
 
 export default class RectangleRoiTool extends BaseAnnotationTool {

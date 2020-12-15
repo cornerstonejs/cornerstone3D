@@ -22,8 +22,8 @@ import {
   filterViewportsWithFrameOfReferenceUID,
 } from '../../util/viewportFilters';
 
-import getTextBoxCoordsCanvas from '../../util/getTextBoxCoordsCanvas';
-import pointInEllipse from '../../util/pointInEllipse';
+import { getTextBoxCoordsCanvas } from '../../util/drawing';
+import { pointInEllipse } from '../../util/math/ellipse';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
 
 export default class EllipticalRoiTool extends BaseAnnotationTool {

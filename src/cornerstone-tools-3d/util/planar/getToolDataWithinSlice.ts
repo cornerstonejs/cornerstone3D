@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import isSameVec3 from '../isSameVec3';
+import math from '../math';
 
 export default function getToolDataWithinSlice(
   toolData,
@@ -8,7 +8,7 @@ export default function getToolDataWithinSlice(
 ) {
   const { viewPlaneNormal } = camera;
   const toolDataWithSameNormal = toolData.filter(td =>
-    isSameVec3(td.metadata.viewPlaneNormal, viewPlaneNormal)
+    math.vec3.isEqual(td.metadata.viewPlaneNormal, viewPlaneNormal)
   );
 
   // Get data in plane with focal point.

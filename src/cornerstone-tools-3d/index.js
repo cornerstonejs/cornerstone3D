@@ -8,6 +8,7 @@ import { addTool, ToolGroupManager, SynchronizerManager } from './store/index';
 import drawing from './drawing';
 import {
   BaseTool,
+  BaseAnnotationTool,
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
@@ -27,6 +28,7 @@ export default {
   addTool,
   init,
   BaseTool,
+  BaseAnnotationTool,
   SynchronizerManager,
   // Tools
   PanTool,
@@ -54,6 +56,7 @@ export default {
 export {
   // Tools // TODO Lets put these somewhere else.
   BaseTool,
+  BaseAnnotationTool,
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
