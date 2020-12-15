@@ -1,4 +1,5 @@
 import { BaseAnnotationTool } from './../base/index';
+import * as vtkMath from 'vtk.js/Sources/Common/Core/Math';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from '../../../index';
 import uuidv4 from '../../util/uuidv4.js';
@@ -11,7 +12,7 @@ import {
   draw,
   drawHandles,
   drawLinkedTextBox,
-  drawRect,
+  drawLine,
   getNewContext,
 } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
@@ -23,9 +24,8 @@ import {
 } from '../../util/viewportFilters';
 import cornerstoneMath from 'cornerstone-math';
 import getTextBoxCoordsCanvas from '../../util/getTextBoxCoordsCanvas';
-import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
 
-export default class RectangleRoiTool extends BaseAnnotationTool {
+export default class LengthTool extends BaseAnnotationTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
   _throttledCalculateCachedStats: Function;
@@ -39,12 +39,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   _configuration: any;
 
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
-      name: 'RectangleRoi',
+    super(toolConfiguration, {
+      name: 'Length',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    };
-
-    super(toolConfiguration, defaultToolConfiguration);
+    });
 
     /**
      * Will only fire fore cornerstone events:
@@ -166,23 +164,29 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   pointNearTool(element, toolData, canvasCoords, proximity) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-
     const { data } = toolData;
     const [point1, point2] = data.handles.points;
-
     const canavasPoint1 = viewport.worldToCanvas(point1);
     const canavasPoint2 = viewport.worldToCanvas(point2);
 
-    const rect = this._getRectangleImageCoordinates([
-      canavasPoint1,
-      canavasPoint2,
-    ]);
+    const lineSegment = {
+      start: {
+        x: canavasPoint1[0],
+        y: canavasPoint1[1],
+      },
+      end: {
+        x: canavasPoint2[0],
+        y: canavasPoint2[1],
+      },
+    };
 
-    // TODO -> Not sure what to do about cornerstoneMath. Should we recreate it as we go for array coords?
-    const distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, {
-      x: canvasCoords[0],
-      y: canvasCoords[1],
-    });
+    const distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
+      lineSegment,
+      {
+        x: canvasCoords[0],
+        y: canvasCoords[1],
+      }
+    );
 
     if (distanceToPoint <= proximity) {
       return true;
@@ -411,29 +415,25 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i];
       const data = toolData.data;
-
       const color = toolColors.getColorIfActive(data);
 
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {};
 
-        const { viewPlaneNormal, viewUp } = viewport.getCamera();
-        this._calculateCachedStats(data, viewPlaneNormal, viewUp);
+        const { viewPlaneNormal } = viewport.getCamera();
+        this._calculateCachedStats(data, viewPlaneNormal);
       } else if (data.invalidated) {
-        const { viewPlaneNormal, viewUp } = viewport.getCamera();
-        this._throttledCalculateCachedStats(data, viewPlaneNormal, viewUp);
+        const { viewPlaneNormal } = viewport.getCamera();
+        this._throttledCalculateCachedStats(data, viewPlaneNormal);
       }
 
       const textLines = this._getTextLines(data, targetVolumeUID);
-
       const points = data.handles.points;
-
       const canvasCoordinates = points.map(p => viewport.worldToCanvas(p));
 
       draw(context, context => {
         drawHandles(context, canvasCoordinates, { color });
-
-        drawRect(context, canvasCoordinates[0], canvasCoordinates[1], {
+        drawLine(context, canvasCoordinates[0], canvasCoordinates[1], {
           color,
         });
 
@@ -474,78 +474,29 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   }
 
   _findTextBoxAnchorPoints(points) {
-    const { left, top, width, height } = this._getRectangleImageCoordinates(
-      points
-    );
-
     return [
-      [
-        // Top middle point of rectangle
-        left + width / 2,
-        top,
-      ],
-      [
-        // Left middle point of rectangle
-        left,
-        top + height / 2,
-      ],
-      [
-        // Bottom middle point of rectangle
-        left + width / 2,
-        top + height,
-      ],
-      [
-        // Right middle point of rectangle
-        left + width,
-        top + height / 2,
-      ],
+      points[0],
+      points[1],
+      [(points[0][0] + points[0][1]) / 2, (points[1][0] + points[1][1]) / 2],
     ];
-  }
-
-  _getRectangleImageCoordinates(points) {
-    const [point0, point1] = points;
-
-    return {
-      left: Math.min(point0[0], point1[0]),
-      top: Math.min(point0[1], point1[1]),
-      width: Math.abs(point0[0] - point1[0]),
-      height: Math.abs(point0[1] - point1[1]),
-    };
   }
 
   _getTextLines(data, targetVolumeUID) {
     const cachedVolumeStats = data.cachedStats[targetVolumeUID];
-    const { area, mean, stdDev, Modality } = cachedVolumeStats;
+    const { length, Modality } = cachedVolumeStats;
 
-    if (mean === undefined) {
+    if (length === undefined) {
       return;
     }
 
-    const textLines = [];
-
-    let areaLine = `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
-    let meanLine = `Mean: ${mean.toFixed(2)}`;
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
-
-    if (Modality === 'PT') {
-      meanLine += ' SUV';
-      stdDevLine += ' SUV';
-    } else if (Modality === 'CT') {
-      meanLine += ' HU';
-      stdDevLine += ' HU';
-    } else {
-      meanLine += ' MO';
-      stdDevLine += ' MO';
-    }
-
-    textLines.push(areaLine);
-    textLines.push(meanLine);
-    textLines.push(stdDevLine);
+    // spaceBetweenSlices & pixelSpacing &
+    // magnitude in each direction? Otherwise, this is "px"?
+    const textLines = [`${length.toFixed(2)} mm`];
 
     return textLines;
   }
 
-  _calculateCachedStats(data, viewPlaneNormal, viewUp) {
+  _calculateCachedStats(data, viewPlaneNormal) {
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
     const { cachedStats } = data;
@@ -554,14 +505,12 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     for (let i = 0; i < volumeUIDs.length; i++) {
       const volumeUID = volumeUIDs[i];
-      const imageVolume = imageCache.getImageVolume(volumeUID);
-
       const {
         dimensions,
         scalarData,
         vtkImageData: imageData,
         metadata,
-      } = imageVolume;
+      } = imageCache.getImageVolume(volumeUID);
       const worldPos1Index = [0, 0, 0];
       const worldPos2Index = [0, 0, 0];
 
@@ -577,79 +526,22 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       worldPos2Index[1] = Math.floor(worldPos2Index[1]);
       worldPos2Index[2] = Math.floor(worldPos2Index[2]);
 
-      // Check if one of the indexes are inside the volume, this then gives us
-      // Some area to do stats over.
+      const length = Math.sqrt(
+        vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
+      );
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
       // corner is off the canvas.
-
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
-        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
-
-        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
-        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
-
-        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
-        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
-
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightInPlane(
-          viewPlaneNormal,
-          viewUp,
-          imageVolume,
-          worldPos1,
-          worldPos2
-        );
-
-        const area = worldWidth * worldHeight;
-
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
-
         const yMultiple = dimensions[0];
         const zMultiple = dimensions[0] * dimensions[1];
 
-        // This is a tripple loop, but one of these 3 values will be constant
-        // In the planar view.
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
-
-              count++;
-              mean += value;
-            }
-          }
-        }
-
-        mean /= count;
-
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
-
-              const valueMinusMean = value - mean;
-
-              stdDev += valueMinusMean * valueMinusMean;
-            }
-          }
-        }
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
-
         cachedStats[volumeUID] = {
           Modality: metadata.Modality,
-          area,
-          mean,
-          stdDev,
+          length,
         };
       } else {
-        // this._clipIndexToVolume(worldPos1Index, dimensions);
-        // this._clipIndexToVolume(worldPos2Index, dimensions);
         cachedStats[volumeUID] = {
           Modality: metadata.Modality,
         };

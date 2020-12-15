@@ -1,4 +1,3 @@
-import { ToolGroupManager } from '../store/index';
 import { Events as RenderingEngineEvents } from '../../index';
 import { ToolModes } from './../enums';
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent';

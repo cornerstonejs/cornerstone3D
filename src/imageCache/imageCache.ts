@@ -242,12 +242,19 @@ class ImageCache {
     } = volumeMetadata;
 
     const rowCosineVec = vec3.fromValues(
-      ...ImageOrientationPatient.slice(0, 3)
+      ImageOrientationPatient[0],
+      ImageOrientationPatient[1],
+      ImageOrientationPatient[2]
     );
     const colCosineVec = vec3.fromValues(
-      ...ImageOrientationPatient.slice(3, 6)
+      ImageOrientationPatient[3],
+      ImageOrientationPatient[4],
+      ImageOrientationPatient[5]
     );
-    const scanAxisNormal = vec3.cross([], rowCosineVec, colCosineVec);
+
+    const scanAxisNormal = vec3.create();
+
+    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
     const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
       imageIds,

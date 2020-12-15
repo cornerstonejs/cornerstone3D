@@ -22,7 +22,7 @@ import {
   filterViewportsWithFrameOfReferenceUID,
 } from '../../util/viewportFilters';
 
-import getROITextBoxCoordsCanvas from '../../util/getROITextBoxCoordsCanvas';
+import getTextBoxCoordsCanvas from '../../util/getTextBoxCoordsCanvas';
 import pointInEllipse from '../../util/pointInEllipse';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
 
@@ -446,7 +446,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           let canvasTextBoxCoords;
 
           if (!data.handles.textBox.hasMoved) {
-            canvasTextBoxCoords = getROITextBoxCoordsCanvas(canvasCoordinates);
+            canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
 
             data.handles.textBox.worldPosition = viewport.canvasToWorld(
               canvasTextBoxCoords
@@ -638,19 +638,19 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         const startPlusK = [iMin, jMin, kMin + 1];
 
         const worldPosStartPlusI = vec3.create();
-        const plusICanvasDelta = [];
+        const plusICanvasDelta = vec2.create();
         imageData.indexToWorldVec3(startPlusI, worldPosStartPlusI);
         const canvasPosStartPlusI = viewport.worldToCanvas(worldPosStartPlusI);
         vec2.sub(plusICanvasDelta, canvasPosStartPlusI, canvasPosStart);
 
         const worldPosStartPlusJ = vec3.create();
-        const plusJCanvasDelta = [];
+        const plusJCanvasDelta = vec2.create();
         imageData.indexToWorldVec3(startPlusJ, worldPosStartPlusJ);
         const canvasPosStartPlusJ = viewport.worldToCanvas(worldPosStartPlusJ);
         vec2.sub(plusJCanvasDelta, canvasPosStartPlusJ, canvasPosStart);
 
         const worldPosStartPlusK = vec3.create();
-        const plusKCanvasDelta = [];
+        const plusKCanvasDelta = vec2.create();
         imageData.indexToWorldVec3(startPlusK, worldPosStartPlusK);
         const canvasPosStartPlusK = viewport.worldToCanvas(worldPosStartPlusK);
         vec2.sub(plusKCanvasDelta, canvasPosStartPlusK, canvasPosStart);

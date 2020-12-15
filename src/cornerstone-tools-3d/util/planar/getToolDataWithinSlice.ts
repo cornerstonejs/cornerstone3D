@@ -38,7 +38,7 @@ export default function getToolDataWithinSlice(
     // B-A dot P  => Distance in the view direction.
     // this should be less than half the slice distance.
 
-    let dir = [];
+    let dir = vec3.create();
 
     vec3.sub(dir, focalPoint, point);
 

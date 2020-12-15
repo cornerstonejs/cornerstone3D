@@ -5,7 +5,7 @@
  * @param {Object} handles - The handles of the annotation.
  * @returns {Object} - The coordinates for default placement of the textbox
  */
-export default function getROITextBoxCoordsCanvas(canvasPoints) {
+export default function getTextBoxCoordsCanvas(canvasPoints) {
   const corners = _determineCorners(canvasPoints);
   const centerY = (corners.top[1] + corners.bottom[1]) / 2;
   const textBoxCanvas = [corners.right[0], centerY];

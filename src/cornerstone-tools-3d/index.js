@@ -15,6 +15,7 @@ import {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
+  LengthTool,
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
@@ -35,6 +36,8 @@ export default {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
+  // Annotation
+  LengthTool,
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
@@ -58,6 +61,8 @@ export {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
+  // Annotation
+  LengthTool,
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,

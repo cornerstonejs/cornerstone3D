@@ -219,11 +219,14 @@ export default class StackScrollMouseWheelTool extends BaseTool {
       vec3.dot(kVector, viewPlaneNormal),
     ];
 
-    const projectedSpacing = [
+    const projectedSpacing = vec3.create();
+
+    vec3.set(
+      projectedSpacing,
       dotProducts[0] * spacing[0],
       dotProducts[1] * spacing[1],
-      dotProducts[2] * spacing[2],
-    ];
+      dotProducts[2] * spacing[2]
+    );
 
     const spacingInNormalDirection = vec3.length(projectedSpacing);
 

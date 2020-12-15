@@ -60,9 +60,14 @@ const TOOL_GROUP_UIDS = {
   PT_TYPES: 'ptTypesToolGroup',
 };
 
-const PET_CT_ANNOTATION_TOOLS = ['Probe', 'RectangleRoi', 'EllipticalRoi'];
+const PET_CT_ANNOTATION_TOOLS = [
+  'Probe',
+  'Length',
+  'RectangleRoi',
+  'EllipticalRoi',
+];
 
-const colormaps = ['hsv', 'Inferno (matplotlib)']; //'RED-PURPLE'];
+const colormaps = ['hsv', 'Inferno (matplotlib)'];
 
 export {
   renderingEngineUID,

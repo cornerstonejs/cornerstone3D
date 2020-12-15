@@ -16,6 +16,12 @@ export default function(element, tools) {
 
   for (let i = 0; i < tools.length; i++) {
     const tool = tools[i];
+
+    if (!tool) {
+      console.warn('undefined tool in getToolsWithDataForElement');
+      continue;
+    }
+
     let toolState = getToolState(element, tool.name);
 
     if (!toolState) {

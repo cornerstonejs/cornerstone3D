@@ -5269,10 +5269,10 @@ cornerstone-math@0.1.7:
   resolved "https://registry.yarnpkg.com/cornerstone-math/-/cornerstone-math-0.1.7.tgz#7c55536f02e7221b05fc49a4c780bb82c234ce39"
   integrity sha512-svsDSoqLNFM9niCV2AtV2DNmRkYztT1v80lVdbA5hkgdGdpWg5/h2On794zbqBK+aI3hNOHufERDsI4wdXGknA==
 
-cornerstone-math@^0.1.8:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/cornerstone-math/-/cornerstone-math-0.1.8.tgz#68ab1f9e4fdcd7c5cb23a0d2eb4263f9f894f1c5"
-  integrity sha512-x7NEQHBtVG7j1yeyj/aRoKTpXv1Vh2/H9zNLMyqYJDtJkNng8C4Q8M3CgZ1qer0Yr7eVq2x+Ynmj6kfOm5jXKw==
+cornerstone-math@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/cornerstone-math/-/cornerstone-math-0.1.9.tgz#7ce5509e8b9f465b01f7c548470725e7569859fc"
+  integrity sha512-NxdooV73asEQgav1S+0e+a4K+W3CXJdLXyFkVN24qqCtmIpzZzwtw3F9KWPCekzSAJmbhtQ3HicOQj3d4vRtuw==
 
 cornerstone-tools@^5.1.0:
   version "5.1.0"

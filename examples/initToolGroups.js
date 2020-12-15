@@ -8,6 +8,7 @@ import csTools3d, {
   ToolGroupManager,
   ToolBindings,
   VolumeRotateMouseWheelTool,
+  LengthTool,
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
@@ -24,6 +25,7 @@ function initToolGroups() {
   csTools3d.addTool(StackScrollTool, {});
   csTools3d.addTool(ZoomTool, {});
   csTools3d.addTool(VolumeRotateMouseWheelTool, {});
+  csTools3d.addTool(LengthTool, {});
   csTools3d.addTool(ProbeTool, {});
   csTools3d.addTool(RectangleRoiTool, {});
   csTools3d.addTool(EllipticalRoiTool, {});
@@ -55,6 +57,10 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('Pan', {});
   ctSceneToolGroup.addTool('Zoom', {});
   ctSceneToolGroup.addTool('StackScrollMouseWheel', {});
+  // @TODO: We need an alternative to config that ties volume to an ID
+  ctSceneToolGroup.addTool('Length', {
+    configuration: { volumeUID: ctVolumeUID },
+  });
   ctSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ctVolumeUID },
   });
@@ -67,6 +73,7 @@ function initToolGroups() {
   ctSceneToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
   });
+  ctSceneToolGroup.setToolPassive('Length');
   ctSceneToolGroup.setToolPassive('Probe');
   ctSceneToolGroup.setToolPassive('RectangleRoi');
   ctSceneToolGroup.setToolPassive('EllipticalRoi');
@@ -82,14 +89,15 @@ function initToolGroups() {
   });
 
   // Set up PT Scene tools
-
+  ptSceneToolGroup.addTool('Length', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
   ptSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
   ptSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ptVolumeUID },
   });
-
   ptSceneToolGroup.addTool('RectangleRoi', {
     configuration: { volumeUID: ptVolumeUID },
   });
@@ -116,7 +124,9 @@ function initToolGroups() {
   // Set up Fusion Scene tools
   fusionSceneToolGroup.addTool('Pan', {});
   fusionSceneToolGroup.addTool('StackScrollMouseWheel', {});
-  fusionSceneToolGroup.addTool('Zoom', {});
+  fusionSceneToolGroup.addTool('Length', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
   fusionSceneToolGroup.addTool('Probe', {
     configuration: { volumeUID: ptVolumeUID },
   });
@@ -130,6 +140,7 @@ function initToolGroups() {
   fusionSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
+  fusionSceneToolGroup.setToolPassive('Length');
   fusionSceneToolGroup.setToolPassive('Probe');
   fusionSceneToolGroup.setToolPassive('RectangleRoi');
   fusionSceneToolGroup.setToolPassive('EllipticalRoi');
