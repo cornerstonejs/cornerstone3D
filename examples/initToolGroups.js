@@ -124,6 +124,7 @@ function initToolGroups() {
   // Set up Fusion Scene tools
   fusionSceneToolGroup.addTool('Pan', {});
   fusionSceneToolGroup.addTool('StackScrollMouseWheel', {});
+  fusionSceneToolGroup.addTool('Zoom', {});
   fusionSceneToolGroup.addTool('Length', {
     configuration: { volumeUID: ptVolumeUID },
   });

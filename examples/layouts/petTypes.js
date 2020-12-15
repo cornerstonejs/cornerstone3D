@@ -74,8 +74,6 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 
   let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET;
 
-  debugger;
-
   if (scalingFactor === undefined) {
     console.warn(
       'No suvbwToSuvlbm scaling factor, likely missing PatientWeight, PatientSex or PatientSize from dataset'
@@ -100,8 +98,6 @@ function setPetBSATransferFunction({ volumeActor, volumeUID }) {
   const imageVolume = imageCache.getImageVolume(volumeUID);
 
   let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET;
-
-  debugger;
 
   if (scalingFactor === undefined) {
     console.warn(

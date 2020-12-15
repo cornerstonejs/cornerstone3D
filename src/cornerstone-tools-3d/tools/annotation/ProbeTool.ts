@@ -340,17 +340,40 @@ export default class ProbeTool extends BaseAnnotationTool {
     textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
     if (Modality === 'PT') {
-      const valueLine = `${value.toFixed(2)} SUV`;
+      // Check if we have scaling for the other 2 SUV types for the PET.
 
-      textLines.push(valueLine);
+      debugger;
+
+      const imageVolume = imageCache.getImageVolume(targetVolumeUID);
+      const scaling = imageVolume;
+
+      if (
+        imageVolume.scaling.PET &&
+        (imageVolume.scaling.PET.suvbwToSuvbsa ||
+          imageVolume.scaling.PET.suvbwToSuvlbm)
+      ) {
+        const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET;
+
+        textLines.push(`${value.toFixed(2)} SUV bw`);
+
+        if (suvbwToSuvlbm) {
+          const SUVLbm = value * suvbwToSuvlbm;
+
+          textLines.push(`${SUVLbm.toFixed(2)} SUV lbm`);
+        }
+
+        if (suvbwToSuvlbm) {
+          const SUVBsa = value * suvbwToSuvbsa;
+
+          textLines.push(`${SUVBsa.toFixed(2)} SUV bsa`);
+        }
+      } else {
+        textLines.push(`${value.toFixed(2)} SUV`);
+      }
     } else if (Modality === 'CT') {
-      const valueLine = `${value.toFixed(2)} HU`;
-
-      textLines.push(valueLine);
+      textLines.push(`${value.toFixed(2)} HU`);
     } else {
-      const valueLine = `${value.toFixed(2)} MO`;
-
-      textLines.push(valueLine);
+      textLines.push(`${value.toFixed(2)} MO`);
     }
 
     return textLines;
