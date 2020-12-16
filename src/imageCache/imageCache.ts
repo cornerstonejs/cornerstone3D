@@ -1,7 +1,7 @@
 import ImageVolume from './classes/ImageVolume';
 
 import StreamingImageVolume from './classes/StreamingImageVolume';
-import { requestPoolManager } from 'cornerstone-tools';
+import requestPoolManager from '../imageLoader/requestPoolManager';
 import { prefetchImageIds } from './helpers';
 import { vec3 } from 'gl-matrix';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';

@@ -154,11 +154,13 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { data } = toolData;
-    const [point1, point2] = data.handles.points;
-    const canavasPoint1 = viewport.worldToCanvas(point1);
-    const canavasPoint2 = viewport.worldToCanvas(point2);
+    const { points } = data.handles;
 
-    const lineSegment = {
+    // Check long axis
+    let canavasPoint1 = viewport.worldToCanvas(points[0]);
+    let canavasPoint2 = viewport.worldToCanvas(points[1]);
+
+    let lineSegment = {
       start: {
         x: canavasPoint1[0],
         y: canavasPoint1[1],
@@ -169,13 +171,37 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       },
     };
 
-    const distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
+    let distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
       lineSegment,
       {
         x: canvasCoords[0],
         y: canvasCoords[1],
       }
     );
+
+    if (distanceToPoint <= proximity) {
+      return true;
+    }
+
+    // Check short axis
+    canavasPoint1 = viewport.worldToCanvas(points[2]);
+    canavasPoint2 = viewport.worldToCanvas(points[3]);
+
+    lineSegment = {
+      start: {
+        x: canavasPoint1[0],
+        y: canavasPoint1[1],
+      },
+      end: {
+        x: canavasPoint2[0],
+        y: canavasPoint2[1],
+      },
+    };
+
+    distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, {
+      x: canvasCoords[0],
+      y: canvasCoords[1],
+    });
 
     if (distanceToPoint <= proximity) {
       return true;

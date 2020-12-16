@@ -1,5 +1,6 @@
 import cornerstone from 'cornerstone-core';
-import { requestPoolManager } from 'cornerstone-tools';
+
+import requestPoolManager from '../../imageLoader/requestPoolManager';
 import getImageIdInstanceMetadata from './getImageIdInstanceMetadata';
 import getInterleavedFrames from './getInterleavedFrames';
 import StreamingImageVolume from '../classes/StreamingImageVolume';

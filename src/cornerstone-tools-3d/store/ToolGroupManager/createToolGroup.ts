@@ -3,7 +3,7 @@ import IToolGroup from './IToolGroup';
 import ISetToolModeOptions from './ISetToolModeOptions';
 import ToolModes from '../../enums/ToolModes';
 
-const { Active, Passive, Disabled } = ToolModes;
+const { Active, Passive, Enabled, Disabled } = ToolModes;
 
 function createToolGroup(toolGroupId: string): IToolGroup | undefined {
   // Exit early if ID conflict
@@ -66,6 +66,14 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
+      if (this._tools[toolName] === undefined) {
+        console.warn(
+          `Tool ${toolName} not added to toolgroup, can't set tool mode.`
+        );
+
+        return;
+      }
+
       // Would only need this for sanity check if not instantiating/hydrating
       // const tool = this.tools[toolName];
       const toolModeOptionsWithMode = Object.assign(
@@ -84,6 +92,14 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
+      if (this._tools[toolName] === undefined) {
+        console.warn(
+          `Tool ${toolName} not added to toolgroup, can't set tool mode.`
+        );
+
+        return;
+      }
+
       // Would only need this for sanity check if not instantiating/hydrating
       // const tool = this.tools[toolName];
       const toolModeOptionsWithMode = Object.assign(
@@ -98,10 +114,44 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       this.tools[toolName] = toolModeOptionsWithMode;
     },
+    setToolEnabled: function(
+      toolName: string,
+      toolModeOptions: ISetToolModeOptions
+    ): void {
+      if (this._tools[toolName] === undefined) {
+        console.warn(
+          `Tool ${toolName} not added to toolgroup, can't set tool mode.`
+        );
+
+        return;
+      }
+
+      // Would only need this for sanity check if not instantiating/hydrating
+      // const tool = this.tools[toolName];
+      const toolModeOptionsWithMode = Object.assign(
+        {
+          bindings: [],
+        },
+        toolModeOptions,
+        {
+          mode: Enabled,
+        }
+      );
+
+      this.tools[toolName] = toolModeOptionsWithMode;
+    },
     setToolDisabled: function(
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
+      if (this._tools[toolName] === undefined) {
+        console.warn(
+          `Tool ${toolName} not added to toolgroup, can't set tool mode.`
+        );
+
+        return;
+      }
+
       // Would only need this for sanity check if not instantiating/hydrating
       // const tool = this.tools[toolName];
       const toolModeOptionsWithMode = Object.assign(

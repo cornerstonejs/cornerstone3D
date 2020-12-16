@@ -210,35 +210,6 @@ export default class ProbeTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback);
   }
 
-  mouseMoveCallback(evt, filteredToolState) {
-    const { element, currentPoints } = evt.detail;
-    const canvasCoords = currentPoints.canvas;
-    let imageNeedsUpdate = false;
-
-    // const coords = currentPoints.canvas;
-
-    for (let i = 0; i < filteredToolState.length; i++) {
-      const toolData = filteredToolState[i];
-      const { data } = toolData;
-
-      const handleNearImagePoint = this.getHandleNearImagePoint(
-        element,
-        toolData,
-        [canvasCoords.x, canvasCoords.y],
-        6
-      );
-
-      const nearToolAndNotMarkedActive = handleNearImagePoint && !data.active;
-      const notNearToolAndMarkedActive = !handleNearImagePoint && data.active;
-      if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
-        data.active = !data.active;
-        imageNeedsUpdate = true;
-      }
-    }
-
-    return imageNeedsUpdate;
-  }
-
   /**
    * getToolState = Custom getToolStateMethod with filtering.
    * @param element

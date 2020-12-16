@@ -75,10 +75,12 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('EllipticalRoi', {
     configuration: { volumeUID: ctVolumeUID },
   });
+
   ctSceneToolGroup.setToolPassive('Bidirectional');
   ctSceneToolGroup.setToolPassive('Length');
   ctSceneToolGroup.setToolPassive('Probe');
   ctSceneToolGroup.setToolPassive('RectangleRoi');
+
   ctSceneToolGroup.setToolPassive('EllipticalRoi');
   ctSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ctSceneToolGroup.setToolActive('WindowLevel', {

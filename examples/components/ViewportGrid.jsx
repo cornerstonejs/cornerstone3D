@@ -9,9 +9,7 @@ function ViewportGrid({ numRows, numCols, style, renderingEngine, children }) {
     // Update the document title using the browser API
 
     if (renderingEngine) {
-      const t0 = performance.now();
       renderingEngine.resize();
-      const t1 = performance.now();
     }
   });
 
