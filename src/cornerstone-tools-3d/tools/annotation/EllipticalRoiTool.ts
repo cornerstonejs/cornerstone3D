@@ -1,7 +1,6 @@
 import { BaseAnnotationTool } from './../base/index';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from '../../../index';
-import uuidv4 from '../../util/uuidv4.js';
 import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
 import throttle from '../../util/throttle';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
@@ -17,11 +16,8 @@ import {
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
 import { VtkjsToolEvents as EVENTS } from '../../enums';
-import {
-  filterViewportsWithToolEnabled,
-  filterViewportsWithFrameOfReferenceUID,
-} from '../../util/viewportFilters';
-
+import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
+import { indexWithinDimensions } from '../../util/vtkjs';
 import { getTextBoxCoordsCanvas } from '../../util/drawing';
 import { pointInEllipse } from '../../util/math/ellipse';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
@@ -87,7 +83,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
-        toolUID: uuidv4(), // TODO: Should probably do this in the tool manager if you don't add your own.
         FrameOfReferenceUID,
         toolName: this.name,
       },
@@ -110,7 +105,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     addToolState(element, toolData);
 
-    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    );
 
     this.editData = {
       toolData,
@@ -204,7 +202,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     data.active = true;
 
-    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    );
 
     this.editData = {
       toolData,
@@ -239,7 +240,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    );
 
     this.editData = {
       toolData,
@@ -255,23 +259,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender);
 
     evt.preventDefault();
-  }
-
-  _getViewportUIDsToRender(element) {
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine, FrameOfReferenceUID } = enabledElement;
-
-    let viewports = renderingEngine.getViewports();
-
-    viewports = filterViewportsWithFrameOfReferenceUID(
-      viewports,
-      FrameOfReferenceUID
-    );
-    viewports = filterViewportsWithToolEnabled(viewports, this.name);
-
-    const viewportUIDs = viewports.map(vp => vp.uid);
-
-    return viewportUIDs;
   }
 
   _mouseUpCallback(evt) {
@@ -724,24 +711,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
   _isInsideVolume(index1, index2, dimensions) {
     return (
-      this._indexWithinDimensions(index1, dimensions) &&
-      this._indexWithinDimensions(index2, dimensions)
+      indexWithinDimensions(index1, dimensions) &&
+      indexWithinDimensions(index2, dimensions)
     );
-  }
-
-  _indexWithinDimensions(index, dimensions) {
-    if (
-      index[0] < 0 ||
-      index[0] >= dimensions[0] ||
-      index[1] < 0 ||
-      index[1] >= dimensions[1] ||
-      index[2] < 0 ||
-      index[2] >= dimensions[2]
-    ) {
-      return false;
-    }
-
-    return true;
   }
 
   _clipIndexToVolume(index, dimensions) {

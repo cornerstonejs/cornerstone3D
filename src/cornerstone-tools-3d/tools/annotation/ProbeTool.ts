@@ -9,10 +9,8 @@ import { draw, drawHandles, drawTextBox, getNewContext } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
 import { VtkjsToolEvents as EVENTS } from '../../enums';
-import {
-  filterViewportsWithToolEnabled,
-  filterViewportsWithFrameOfReferenceUID,
-} from '../../util/viewportFilters';
+import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
+import { indexWithinDimensions } from '../../util/vtkjs';
 
 export default class ProbeTool extends BaseAnnotationTool {
   touchDragCallback: Function;
@@ -63,7 +61,6 @@ export default class ProbeTool extends BaseAnnotationTool {
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
-        toolUID: uuidv4(), // TODO: Should probably do this in the tool manager if you don't add your own.
         FrameOfReferenceUID,
         toolName: this.name,
       },
@@ -77,7 +74,10 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     addToolState(element, toolData);
 
-    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    );
 
     this.editData = {
       toolData,
@@ -116,7 +116,10 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     data.active = true;
 
-    const viewportUIDsToRender = this._getViewportUIDsToRender(element);
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    );
 
     // Find viewports to render on drag.
 
@@ -133,23 +136,6 @@ export default class ProbeTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender);
 
     evt.preventDefault();
-  }
-
-  _getViewportUIDsToRender(element) {
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine, FrameOfReferenceUID } = enabledElement;
-
-    let viewports = renderingEngine.getViewports();
-
-    viewports = filterViewportsWithFrameOfReferenceUID(
-      viewports,
-      FrameOfReferenceUID
-    );
-    viewports = filterViewportsWithToolEnabled(viewports, this.name);
-
-    const viewportUIDs = viewports.map(vp => vp.uid);
-
-    return viewportUIDs;
   }
 
   _mouseUpCallback(evt) {
@@ -371,7 +357,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       index[1] = Math.floor(index[1]);
       index[2] = Math.floor(index[2]);
 
-      if (this._indexWithinDimensions(index, dimensions)) {
+      if (indexWithinDimensions(index, dimensions)) {
         const yMultiple = dimensions[0];
         const zMultiple = dimensions[0] * dimensions[1];
 
@@ -392,21 +378,6 @@ export default class ProbeTool extends BaseAnnotationTool {
     }
 
     data.invalidated = false;
-  }
-
-  _indexWithinDimensions(index, dimensions) {
-    if (
-      index[0] < 0 ||
-      index[0] >= dimensions[0] ||
-      index[1] < 0 ||
-      index[1] >= dimensions[1] ||
-      index[2] < 0 ||
-      index[2] >= dimensions[2]
-    ) {
-      return false;
-    }
-
-    return true;
   }
 
   _getTargetVolumeUID(scene) {

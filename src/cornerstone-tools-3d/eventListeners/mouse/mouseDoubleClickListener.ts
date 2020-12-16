@@ -15,9 +15,6 @@ import triggerEvent from './../../util/triggerEvent';
 function mouseDoubleClickListener(evt: MouseEvent): void {
   const element = evt.currentTarget;
   const startPoints = {
-    // page: external.cornerstoneMath.point.pageToPoint(e),
-    // image: external.cornerstone.pageToPixel(element, e.pageX, e.pageY),
-    // canvas: external.cornerstone.pixelToCanvas(element,startPoints.image)
     client: {
       x: evt.clientX,
       y: evt.clientY,

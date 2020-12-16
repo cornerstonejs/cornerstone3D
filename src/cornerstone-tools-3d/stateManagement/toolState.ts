@@ -1,5 +1,6 @@
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager';
 import { getEnabledElement } from '../../index';
+import { uuidv4 } from '../util/';
 
 function getViewportSpecificStateManager(element) {
   // TODO:
@@ -21,6 +22,10 @@ function getToolState(element, toolName) {
 
 function addToolState(element, toolData) {
   const toolStateManager = getViewportSpecificStateManager(element);
+
+  if (toolData.metadata.toolUID === undefined) {
+    toolData.metadata.toolUID = uuidv4();
+  }
 
   toolStateManager.addToolState(toolData);
 }
