@@ -63,6 +63,7 @@ const TOOL_GROUP_UIDS = {
 const PET_CT_ANNOTATION_TOOLS = [
   'Probe',
   'Length',
+  'Bidirectional',
   'RectangleRoi',
   'EllipticalRoi',
 ];

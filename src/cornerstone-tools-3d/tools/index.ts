@@ -7,6 +7,7 @@ import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
 import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 //
+import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
 import ProbeTool from './annotation/ProbeTool';
 import RectangleRoiTool from './annotation/RectangleRoiTool';
@@ -25,6 +26,7 @@ export {
   ZoomTool,
   VolumeRotateMouseWheelTool,
   // Annotation Tools
+  BidirectionalTool,
   LengthTool,
   ProbeTool,
   RectangleRoiTool,

@@ -20,6 +20,7 @@ import {
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
+  BidirectionalTool,
 } from './tools/index';
 import { ToolBindings, VtkjsToolEvents } from './enums/index';
 
@@ -43,6 +44,7 @@ export default {
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
+  BidirectionalTool,
   //
   ToolGroupManager,
   ToolBindings,
@@ -69,6 +71,7 @@ export {
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
+  BidirectionalTool,
   //
   SynchronizerManager,
   ToolGroupManager,

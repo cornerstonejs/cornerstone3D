@@ -68,7 +68,6 @@ export default class LengthTool extends BaseAnnotationTool {
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const worldPos = currentPoints.world;
-
     const enabledElement = getEnabledElement(element);
     const { viewport, FrameOfReferenceUID, renderingEngine } = enabledElement;
 
@@ -80,7 +79,6 @@ export default class LengthTool extends BaseAnnotationTool {
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal } = camera;
-
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
@@ -500,31 +498,13 @@ export default class LengthTool extends BaseAnnotationTool {
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
     const { cachedStats } = data;
-
     const volumeUIDs = Object.keys(cachedStats);
+
+    // TODO clean up, this doesn't need a length per volume, it has no stats derived from volumes.
 
     for (let i = 0; i < volumeUIDs.length; i++) {
       const volumeUID = volumeUIDs[i];
-      const {
-        dimensions,
-        scalarData,
-        vtkImageData: imageData,
-        metadata,
-      } = imageCache.getImageVolume(volumeUID);
-      const worldPos1Index = [0, 0, 0];
-      const worldPos2Index = [0, 0, 0];
-
-      imageData.worldToIndexVec3(worldPos1, worldPos1Index);
-
-      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
-      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
-      worldPos1Index[2] = Math.floor(worldPos1Index[2]);
-
-      imageData.worldToIndexVec3(worldPos2, worldPos2Index);
-
-      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
-      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
-      worldPos2Index[2] = Math.floor(worldPos2Index[2]);
+      const { metadata } = imageCache.getImageVolume(volumeUID);
 
       const length = Math.sqrt(
         vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
@@ -533,19 +513,11 @@ export default class LengthTool extends BaseAnnotationTool {
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
       // corner is off the canvas.
-      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        const yMultiple = dimensions[0];
-        const zMultiple = dimensions[0] * dimensions[1];
 
-        cachedStats[volumeUID] = {
-          Modality: metadata.Modality,
-          length,
-        };
-      } else {
-        cachedStats[volumeUID] = {
-          Modality: metadata.Modality,
-        };
-      }
+      cachedStats[volumeUID] = {
+        Modality: metadata.Modality,
+        length,
+      };
     }
 
     data.invalidated = false;

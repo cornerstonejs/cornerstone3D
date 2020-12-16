@@ -12,6 +12,7 @@ import csTools3d, {
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
+  BidirectionalTool,
 } from './../src/cornerstone-tools-3d/index';
 import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID } from './constants';
 
@@ -29,6 +30,7 @@ function initToolGroups() {
   csTools3d.addTool(ProbeTool, {});
   csTools3d.addTool(RectangleRoiTool, {});
   csTools3d.addTool(EllipticalRoiTool, {});
+  csTools3d.addTool(BidirectionalTool, {});
 
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
@@ -58,6 +60,9 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('Zoom', {});
   ctSceneToolGroup.addTool('StackScrollMouseWheel', {});
   // @TODO: We need an alternative to config that ties volume to an ID
+  ctSceneToolGroup.addTool('Bidirectional', {
+    configuration: { volumeUID: ctVolumeUID },
+  });
   ctSceneToolGroup.addTool('Length', {
     configuration: { volumeUID: ctVolumeUID },
   });
@@ -70,9 +75,7 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('EllipticalRoi', {
     configuration: { volumeUID: ctVolumeUID },
   });
-  ctSceneToolGroup.setToolActive('WindowLevel', {
-    bindings: [ToolBindings.Mouse.Primary],
-  });
+  ctSceneToolGroup.setToolPassive('Bidirectional');
   ctSceneToolGroup.setToolPassive('Length');
   ctSceneToolGroup.setToolPassive('Probe');
   ctSceneToolGroup.setToolPassive('RectangleRoi');
@@ -89,6 +92,9 @@ function initToolGroups() {
   });
 
   // Set up PT Scene tools
+  ptSceneToolGroup.addTool('Bidirectional', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
   ptSceneToolGroup.addTool('Length', {
     configuration: { volumeUID: ptVolumeUID },
   });
@@ -110,21 +116,25 @@ function initToolGroups() {
   ptSceneToolGroup.setToolActive('PetThreshold', {
     bindings: [ToolBindings.Mouse.Primary],
   });
-  ptSceneToolGroup.setToolPassive('Probe');
-  ptSceneToolGroup.setToolPassive('RectangleRoi');
-  ptSceneToolGroup.setToolPassive('EllipticalRoi');
-  ptSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ptSceneToolGroup.setToolActive('Pan', {
     bindings: [ToolBindings.Mouse.Auxiliary],
   });
   ptSceneToolGroup.setToolActive('Zoom', {
     bindings: [ToolBindings.Mouse.Secondary],
   });
+  ptSceneToolGroup.setToolPassive('Probe');
+  ptSceneToolGroup.setToolPassive('Length');
+  ptSceneToolGroup.setToolPassive('RectangleRoi');
+  ptSceneToolGroup.setToolPassive('EllipticalRoi');
+  ptSceneToolGroup.setToolPassive('Bidirectional');
+  ptSceneToolGroup.setToolActive('StackScrollMouseWheel');
 
   // Set up Fusion Scene tools
   fusionSceneToolGroup.addTool('Pan', {});
   fusionSceneToolGroup.addTool('StackScrollMouseWheel', {});
-  fusionSceneToolGroup.addTool('Zoom', {});
+  fusionSceneToolGroup.addTool('Bidirectional', {
+    configuration: { volumeUID: ptVolumeUID },
+  });
   fusionSceneToolGroup.addTool('Length', {
     configuration: { volumeUID: ptVolumeUID },
   });
@@ -137,10 +147,12 @@ function initToolGroups() {
   fusionSceneToolGroup.addTool('EllipticalRoi', {
     configuration: { volumeUID: ptVolumeUID },
   });
+  fusionSceneToolGroup.addTool('Zoom', {});
 
   fusionSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
+  fusionSceneToolGroup.setToolPassive('Bidirectional');
   fusionSceneToolGroup.setToolPassive('Length');
   fusionSceneToolGroup.setToolPassive('Probe');
   fusionSceneToolGroup.setToolPassive('RectangleRoi');
