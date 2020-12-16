@@ -44,15 +44,6 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
     });
 
-    /**
-     * Will only fire for cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,
       100,
@@ -534,13 +525,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         },
       };
 
-      const proposedIntersectionPoint = cornerstoneMath.lineSegment.intersectLine(
-        secondLineSegment,
-        proposedFirstLineSegment
-      );
-
-      if (!proposedIntersectionPoint) {
-        // Line would clip
+      if (
+        this._movingLongAxisWouldPutItThroughShortAxis(
+          proposedFirstLineSegment,
+          secondLineSegment
+        )
+      ) {
         return;
       }
 
@@ -683,6 +673,44 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       ]);
       data.handles.points[handleIndex] = proposedPoint;
     }
+  };
+
+  _movingLongAxisWouldPutItThroughShortAxis = (
+    proposedFirstLineSegment,
+    secondLineSegment
+  ) => {
+    const vectorInSecondLineDirection = vec2.create();
+
+    vec2.set(
+      vectorInSecondLineDirection,
+      secondLineSegment.end.x - secondLineSegment.start.x,
+      secondLineSegment.end.y - secondLineSegment.start.y
+    );
+
+    vec2.normalize(vectorInSecondLineDirection, vectorInSecondLineDirection);
+
+    const extendedSecondLineSegment = {
+      start: {
+        x: secondLineSegment.start.x - vectorInSecondLineDirection[0] * 10,
+        y: secondLineSegment.start.y - vectorInSecondLineDirection[1] * 10,
+      },
+      end: {
+        x: secondLineSegment.end.x + vectorInSecondLineDirection[0] * 10,
+        y: secondLineSegment.end.y + vectorInSecondLineDirection[1] * 10,
+      },
+    };
+
+    // Add some buffer in the secondLineSegment when finding the proposedIntersectionPoint
+    // Of points to stop us getting stack when rotating quickly.
+
+    const proposedIntersectionPoint = cornerstoneMath.lineSegment.intersectLine(
+      extendedSecondLineSegment,
+      proposedFirstLineSegment
+    );
+
+    const wouldPutThroughShortAxis = !proposedIntersectionPoint;
+
+    return wouldPutThroughShortAxis;
   };
 
   _activateDraw = element => {
