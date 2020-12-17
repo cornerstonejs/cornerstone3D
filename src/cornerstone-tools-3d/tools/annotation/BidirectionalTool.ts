@@ -133,6 +133,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
         canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
       ) {
+        data.handles.activeHandleIndex = null;
         return textBox;
       }
     }
@@ -145,9 +146,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity;
 
       if (near === true) {
+        data.handles.activeHandleIndex = i;
         return point;
       }
     }
+
+    data.handles.activeHandleIndex = null;
   };
 
   pointNearTool = (element, toolData, canvasCoords, proximity) => {
@@ -820,7 +824,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, scene } = enabledElement;
+    const { viewport } = enabledElement;
 
     const context = getNewContext(element);
     const lineWidth = toolStyle.getToolWidth();
@@ -828,6 +832,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i];
       const data = toolData.data;
+      const { points, activeHandleIndex } = data.handles;
       const color = toolColors.getColorIfActive(data);
 
       if (data.invalidated) {
@@ -835,11 +840,22 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
 
       const textLines = this._getTextLines(data);
-      const points = data.handles.points;
       const canvasCoordinates = points.map(p => viewport.worldToCanvas(p));
 
+      let activeHandleCanvasCoords;
+
+      if (!this.editData && activeHandleIndex !== null) {
+        // Not creating and hovering over handle, so render handle.
+
+        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+      }
+
       draw(context, context => {
-        drawHandles(context, canvasCoordinates, { color });
+        if (activeHandleCanvasCoords) {
+          drawHandles(context, activeHandleCanvasCoords, {
+            color,
+          });
+        }
         drawLine(context, canvasCoordinates[0], canvasCoordinates[1], {
           color,
         });

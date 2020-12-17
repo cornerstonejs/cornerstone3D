@@ -94,6 +94,10 @@ class BaseAnnotationTool extends BaseTool {
       const toolData = filteredToolState[i];
       const { data } = toolData;
 
+      let activateHandleIndex = data.handles
+        ? data.handles.activeHandleIndex
+        : undefined;
+
       const near = this._imagePointNearToolOrHandle(
         element,
         toolData,
@@ -105,6 +109,12 @@ class BaseAnnotationTool extends BaseTool {
       const notNearToolAndMarkedActive = !near && data.active;
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
         data.active = !data.active;
+        imageNeedsUpdate = true;
+      } else if (
+        data.handles &&
+        data.handles.activeHandleIndex !== activateHandleIndex
+      ) {
+        // Active handle index has changed, re-render.
         imageNeedsUpdate = true;
       }
     }

@@ -89,6 +89,7 @@ export default class LengthTool extends BaseAnnotationTool {
             [worldPos.x, worldPos.y, worldPos.z],
             [worldPos.x, worldPos.y, worldPos.z],
           ],
+          activeHandleIndex: null,
           textBox: {
             hasMoved: false,
             worldPosition: [0, 0, 0],
@@ -141,6 +142,7 @@ export default class LengthTool extends BaseAnnotationTool {
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
         canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
       ) {
+        data.handles.activeHandleIndex = null;
         return textBox;
       }
     }
@@ -153,9 +155,12 @@ export default class LengthTool extends BaseAnnotationTool {
         vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity;
 
       if (near === true) {
+        data.handles.activeHandleIndex = i;
         return point;
       }
     }
+
+    data.handles.activeHandleIndex = null;
   }
 
   pointNearTool(element, toolData, canvasCoords, proximity) {
@@ -402,6 +407,7 @@ export default class LengthTool extends BaseAnnotationTool {
       const toolData = toolState[i];
       const data = toolData.data;
       const color = toolColors.getColorIfActive(data);
+      const { points, activeHandleIndex } = data.handles;
 
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {};
@@ -414,11 +420,23 @@ export default class LengthTool extends BaseAnnotationTool {
       }
 
       const textLines = this._getTextLines(data, targetVolumeUID);
-      const points = data.handles.points;
       const canvasCoordinates = points.map(p => viewport.worldToCanvas(p));
 
+      let activeHandleCanvasCoords;
+
+      if (!this.editData && activeHandleIndex !== null) {
+        // Not creating and hovering over handle, so render handle.
+
+        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+      }
+
       draw(context, context => {
-        drawHandles(context, canvasCoordinates, { color });
+        if (activeHandleCanvasCoords) {
+          drawHandles(context, activeHandleCanvasCoords, {
+            color,
+          });
+        }
+
         drawLine(context, canvasCoordinates[0], canvasCoordinates[1], {
           color,
         });
