@@ -417,7 +417,6 @@ class VTKMPRExample extends Component {
   };
 
   render() {
-    console.log('RERENDERING');
     const {
       layoutIndex,
       metadataLoaded,
@@ -430,7 +429,7 @@ class VTKMPRExample extends Component {
     const layoutButtons = [
       { id: 'ObliqueCT', text: 'Oblique Layout' },
       { id: 'FusionMIP', text: 'Fusion Layout' },
-      { id: 'PetTypes', text: 'Pet Types Layout' },
+      { id: 'PetTypes', text: 'SUV Types Layout' },
     ];
 
     // TODO -> Move layout switching to a different example to reduce bloat.
@@ -438,10 +437,18 @@ class VTKMPRExample extends Component {
 
     const filteredLayoutButtons = layoutButtons.filter(l => l.id !== layoutID);
 
+    const SUVTypesList =
+      layoutID === 'PetTypes' ? (
+        <div style={{ display: 'flex', textAlign: 'center' }}>
+          <div style={{ flex: '1 1 0px' }}>Body Weight (BW)</div>
+          <div style={{ flex: '1 1 0px' }}>Lean Body Mass (LBM)</div>
+          <div style={{ flex: '1 1 0px' }}>Body Surface Area (BSA)</div>
+        </div>
+      ) : null;
+
     const fusionButtons =
       layoutID === 'FusionMIP' ? (
         <React.Fragment>
-          {' '}
           <button
             onClick={() =>
               metadataLoaded && !destroyed && this.swapPetTransferFunction()
@@ -467,7 +474,6 @@ class VTKMPRExample extends Component {
     const fusionWLDisplay =
       layoutID === 'FusionMIP' ? (
         <React.Fragment>
-          {' '}
           <div className="col-xs-12">
             <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
           </div>
@@ -503,6 +509,7 @@ class VTKMPRExample extends Component {
             {/* Hide until we update react in a better way  {fusionWLDisplay} */}
           </div>
         </div>
+        {SUVTypesList}
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}
