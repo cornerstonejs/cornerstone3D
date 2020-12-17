@@ -51,7 +51,9 @@ module.exports = (env, argv) => {
             {
               loader: 'postcss-loader',
               options: {
-                plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],
+                postcssOptions: {
+                  plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],  
+                }
               },
             },
           ],
@@ -66,6 +68,10 @@ module.exports = (env, argv) => {
         '@tools': path.resolve(__dirname, './../cornerstone-tools-3d')
       },
       extensions: [".ts", ".tsx", ".js", '.jsx'],
+      fallback: {
+        fs: false,
+        path: require.resolve("path-browserify")
+      },
     },
     externals: [
       // :wave:
@@ -88,14 +94,6 @@ module.exports = (env, argv) => {
         react: 'react',
       },
     ],
-    node: {
-      // https://github.com/webpack-contrib/style-loader/issues/200
-      Buffer: false,
-      // https://github.com/webpack-contrib/css-loader/issues/447
-      // Related to `fs` usage in codecs; may be able to remove after
-      // We update our codecs to latest
-      fs: 'empty',
-    },
     plugins: [
       // Uncomment to generate bundle analyzer
       // new BundleAnalyzerPlugin(),

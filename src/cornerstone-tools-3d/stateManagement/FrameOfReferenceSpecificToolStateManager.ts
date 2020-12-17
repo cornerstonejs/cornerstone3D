@@ -1,5 +1,5 @@
 import uuidv4 from '../util/uuidv4.js';
-import {
+import type {
   ToolSpecificToolData,
   ToolSpecificToolState,
   FrameOfReferenceSpecificToolState,

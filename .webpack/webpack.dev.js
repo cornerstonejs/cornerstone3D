@@ -51,9 +51,10 @@ module.exports = {
     examples: ENTRY_EXAMPLES,
   },
   devtool: 'source-map',
+  mode: 'development',
   output: {
     path: OUT_PATH,
-    filename: '[name].bundle.[hash].js',
+    filename: '[name].bundle.[contenthash].js',
     library: 'ReactVTKjsViewport',
     libraryTarget: 'umd',
     globalObject: 'this',
@@ -75,7 +76,9 @@ module.exports = {
           {
             loader: 'postcss-loader',
             options: {
-              plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],
+              postcssOptions: {
+                plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],
+              }
             },
           },
         ],
@@ -91,7 +94,11 @@ module.exports = {
       '@configuration': APP_CONFIG_PATH,
       '@tools': path.resolve(__dirname, './../cornerstone-tools-3d/')
     },
-    extensions: [".ts", ".tsx", ".js", '.jsx']
+    extensions: [".ts", ".tsx", ".js", '.jsx'],
+    fallback: {
+      fs: false,
+      path: require.resolve("path-browserify")
+    },
   },
   plugins: [
     // Show build progress
@@ -104,24 +111,26 @@ module.exports = {
       template: path.resolve(__dirname, '..', 'public', 'index.html'),
     }),
     // Copy "Public" Folder to Dist (test data)
-    new CopyWebpackPlugin([
+    new CopyWebpackPlugin({
+      patterns: [
       {
         from: path.resolve(__dirname, '..', 'public'),
         to: OUT_PATH,
         toType: 'dir',
-        ignore: ['index.html', '.DS_Store'],
+        globOptions: {
+          ignore: ['index.html', '.DS_Store'],  
+        }
       },
-    ]),
-    new CopyWebpackPlugin([
+    ]}),
+    new CopyWebpackPlugin({
+      patterns: [
       // Copy over and rename our target app config file
       {
         from: APP_CONFIG_PATH,
         to: `${OUT_PATH}/app-config.js`,
       },
-    ]),
+    ]}),
   ],
-  // Fix for `cornerstone-wado-image-loader` fs dep
-  node: { fs: 'empty' },
   devServer: {
     hot: true,
     open: true,

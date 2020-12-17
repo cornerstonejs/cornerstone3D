@@ -20,7 +20,7 @@ type ToolState = {
   [key: string]: FrameOfReferenceSpecificToolState;
 };
 
-export {
+export type {
   ToolSpecificToolData,
   ToolSpecificToolState,
   FrameOfReferenceSpecificToolState,

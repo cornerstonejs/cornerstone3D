@@ -1,3 +1,4 @@
+const path = require('path');
 const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core;
 
 module.exports = function(config) {
@@ -15,7 +16,7 @@ module.exports = function(config) {
       'karma-coverage',
       'karma-junit-reporter',
     ],
-    frameworks: ['jasmine'],
+    frameworks: ['jasmine', 'webpack'],
     files: [
       { pattern: 'test/*_test.js', watched: false },
       { pattern: 'test/**/*_test.js', watched: false },
@@ -47,7 +48,9 @@ module.exports = function(config) {
               {
                 loader: 'postcss-loader',
                 options: {
-                  plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],
+                  postcssOptions: {
+                    plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],  
+                  }
                 },
               },
             ],
@@ -56,12 +59,17 @@ module.exports = function(config) {
       },
       resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
+        alias: {
+          // https://stackoverflow.com/a/40444084/1867984
+          '@vtk-viewport': path.join(__dirname, './../src'),
+          '@tools': path.resolve(__dirname, './../cornerstone-tools-3d')
+        },
+        fallback: {
+          fs: false,
+          path: require.resolve("path-browserify")
+        }
       },
-      // Any custom webpack configuration...
-      node: { fs: 'empty' },
     },
-    // Fix for `cornerstone-wado-image-loader` fs dep
-    node: { fs: 'empty' },
     webpackMiddleware: {
       noInfo: true,
     },
