@@ -48,7 +48,23 @@ function loadSingleVolume(volumeUID, volumeLoadedCallback, renderingEngine) {
     ) {
       reRenderTarget += reRenderFraction;
       if (!renderingEngine.hasBeenDestroyed) {
-        renderingEngine.render();
+        const scenesUIDs = [];
+
+        renderingEngine.getScenes().forEach(scene => {
+          debugger;
+
+          const sceneContainsVolume = scene.getVolumeActors().some(va => {
+            return va.uid === volumeUID;
+          });
+
+          if (sceneContainsVolume) {
+            scenesUIDs.push(scene.uid);
+          }
+        });
+
+        if (scenesUIDs.length) {
+          renderingEngine.renderScenes(scenesUIDs);
+        }
       }
 
       if (event.framesProcessed === event.numFrames) {

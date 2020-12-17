@@ -54,10 +54,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       );
     }
 
-    const numComp = image
-      .getPointData()
-      .getScalars()
-      .getNumberOfComponents();
+    const numComp = image.getPointData().getScalars().getNumberOfComponents();
     const iComps = vprop.getIndependentComponents();
     const numIComps = iComps ? numComp : 1;
 
@@ -163,14 +160,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
       const previousTextureParameters = model.scalarTexture.getTextureParameters();
 
-      const dataType = image
-        .getPointData()
-        .getScalars()
-        .getDataType();
-      const data = image
-        .getPointData()
-        .getScalars()
-        .getData();
+      const dataType = image.getPointData().getScalars().getDataType();
+      const data = image.getPointData().getScalars().getData();
 
       let shouldReset = true;
 
@@ -256,7 +247,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       lightComplexity = 0;
       model.numberOfLights = 0;
 
-      ren.getLights().forEach(light => {
+      ren.getLights().forEach((light) => {
         const status = light.getSwitch();
         if (status > 0) {
           model.numberOfLights++;
@@ -356,8 +347,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       !!model.lastZBufferTexture !== !!model.zBufferTexture ||
       cellBO.getShaderSourceTime().getMTime() < publicAPI.getMTime() ||
       // cellBO.getShaderSourceTime().getMTime() < actor.getMTime() || // Disabled versus upstream VTK, since we only need to rebuild shaders if the above checks fail
-      cellBO.getShaderSourceTime().getMTime() < model.renderable.getMTime() ||
-      cellBO.getShaderSourceTime().getMTime() < model.currentInput.getMTime()
+      cellBO.getShaderSourceTime().getMTime() < model.renderable.getMTime()
+      //cellBO.getShaderSourceTime().getMTime() < model.currentInput.getMTime()  // Disabled versus upstream VTK, since we only need to rebuild shaders if the above checks fail
     ) {
       model.lastZBufferTexture = model.zBufferTexture;
       return true;
