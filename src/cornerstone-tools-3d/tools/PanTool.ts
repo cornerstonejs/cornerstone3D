@@ -35,20 +35,22 @@ export default class PanTool extends BaseTool {
     const { element: canvas, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
 
-    const { x: deltaX, y: deltaY, z: deltaZ } = deltaPoints.world;
+    const deltaPointsWorld = deltaPoints.world;
     const camera = enabledElement.viewport.getCamera();
     const { focalPoint, position } = camera;
 
+    debugger;
+
     const updatedPosition = [
-      position[0] - deltaX,
-      position[1] - deltaY,
-      position[2] - deltaZ,
+      position[0] - deltaPointsWorld[0],
+      position[1] - deltaPointsWorld[1],
+      position[2] - deltaPointsWorld[2],
     ];
 
     const updatedFocalPoint = [
-      focalPoint[0] - deltaX,
-      focalPoint[1] - deltaY,
-      focalPoint[2] - deltaZ,
+      focalPoint[0] - deltaPointsWorld[0],
+      focalPoint[1] - deltaPointsWorld[1],
+      focalPoint[2] - deltaPointsWorld[2],
     ];
 
     enabledElement.viewport.setCamera({

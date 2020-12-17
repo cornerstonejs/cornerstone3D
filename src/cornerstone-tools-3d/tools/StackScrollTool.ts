@@ -72,7 +72,7 @@ export default class StackScrollTool extends BaseTool {
 
     const { min, max } = scrollRange;
 
-    const { y: deltaY } = deltaPoints.canvas;
+    const deltaY = deltaPoints.canvas[1];
     let scrollDistance = spacingInNormalDirection * deltaY;
 
     if (slicePos + scrollDistance > max) {

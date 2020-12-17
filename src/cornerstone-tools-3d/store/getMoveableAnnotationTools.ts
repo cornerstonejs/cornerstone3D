@@ -38,8 +38,7 @@ export default function(
       const near = tool.pointNearTool(
         element,
         toolState[i],
-        // TODO -> We need to change event dispatches to send array points.
-        [canvasCoords.x, canvasCoords.y],
+        canvasCoords,
         proximity
       );
 

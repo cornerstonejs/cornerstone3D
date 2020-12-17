@@ -89,10 +89,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       data: {
         invalidated: true,
         handles: {
-          points: [
-            [worldPos.x, worldPos.y, worldPos.z],
-            [worldPos.x, worldPos.y, worldPos.z],
-          ],
+          points: [[...worldPos], [...worldPos]],
           textBox: {
             hasMoved: false,
             worldPosition: [0, 0, 0],
@@ -236,7 +233,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     if (handle.worldPosition) {
       movingTextBox = true;
     } else {
-      handleIndex = data.handles.points.findIndex(p => p === handle);
+      handleIndex = data.handles.points.findIndex((p) => p === handle);
     }
 
     // Find viewports to render on drag.
@@ -299,9 +296,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const { textBox } = data.handles;
       const { worldPosition } = textBox;
 
-      worldPosition[0] += worldPosDelta.x;
-      worldPosition[1] += worldPosDelta.y;
-      worldPosition[2] += worldPosDelta.z;
+      worldPosition[0] += worldPosDelta[0];
+      worldPosition[1] += worldPosDelta[1];
+      worldPosition[2] += worldPosDelta[2];
 
       textBox.hasMoved = true;
     } else if (handleIndex === undefined) {
@@ -311,17 +308,17 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
       const points = data.handles.points;
 
-      points.forEach(point => {
-        point[0] += worldPosDelta.x;
-        point[1] += worldPosDelta.y;
-        point[2] += worldPosDelta.z;
+      points.forEach((point) => {
+        point[0] += worldPosDelta[0];
+        point[1] += worldPosDelta[1];
+        point[2] += worldPosDelta[2];
       });
     } else {
       // Moving handle
       const { currentPoints } = eventData;
       const worldPos = currentPoints.world;
 
-      data.handles.points[handleIndex] = [worldPos.x, worldPos.y, worldPos.z];
+      data.handles.points[handleIndex] = [...worldPos];
     }
 
     data.invalidated = true;
@@ -420,9 +417,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
       const points = data.handles.points;
 
-      const canvasCoordinates = points.map(p => viewport.worldToCanvas(p));
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      draw(context, context => {
+      draw(context, (context) => {
         drawHandles(context, canvasCoordinates, { color });
 
         drawEllipse(context, canvasCoordinates[0], canvasCoordinates[1], {

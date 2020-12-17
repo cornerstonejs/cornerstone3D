@@ -73,6 +73,7 @@ export default function mouseDown(evt) {
 
   const canvasCoords = eventData.currentPoints.canvas;
 
+
   const annotationToolsWithMoveableHandles = getToolsWithMoveableHandles(
     element,
     annotationTools,

@@ -66,7 +66,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       },
       data: {
         invalidated: true,
-        handles: { points: [[worldPos.x, worldPos.y, worldPos.z]] },
+        handles: { points: [[...worldPos]] },
         cachedStats: {},
         active: true,
       },
@@ -87,12 +87,15 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     evt.preventDefault();
 
+
     renderingEngine.renderViewports(viewportUIDsToRender);
   }
 
   getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
+
 
     const { data } = toolData;
     const point = data.handles.points[0];
@@ -165,7 +168,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const { toolData, viewportUIDsToRender } = this.editData;
     const { data } = toolData;
 
-    data.handles.points[0] = [worldPos.x, worldPos.y, worldPos.z];
+    data.handles.points[0] = [...worldPos];
     data.invalidated = true;
 
     const enabledElement = getEnabledElement(element);

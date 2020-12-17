@@ -12,11 +12,7 @@ export default function getMouseEventPoints(
     canvas as HTMLElement,
     pagePoint
   );
-  const [x, y, z] = enabledElement.viewport.canvasToWorld([
-    canvasPoint.x,
-    canvasPoint.y,
-  ]);
-  const worldPoint = { x, y, z };
+  const worldPoint = enabledElement.viewport.canvasToWorld(canvasPoint);
 
   return {
     page: pagePoint,
@@ -31,22 +27,18 @@ function _pagePointsToCanvasPoints(
   pagePoint: IPoint
 ) {
   const rect = DomCanvasElement.getBoundingClientRect();
-  return {
-    x: pagePoint.x - rect.left - window.pageXOffset,
-    y: pagePoint.y - rect.top - window.pageYOffset,
-  };
+ return <IPoint>[
+    pagePoint[0] - rect.left - window.pageXOffset,
+    pagePoint[1] - rect.top - window.pageYOffset
+  ]
+
 }
 
 function _pageToPoint(evt: MouseEvent): IPoint {
-  return {
-    x: evt.pageX,
-    y: evt.pageY,
-  };
+  return <IPoint>[evt.pageX, evt.pageY]
+
 }
 
 function _clientToPoint(evt: MouseEvent): IPoint {
-  return {
-    x: evt.clientX,
-    y: evt.clientY,
-  };
+  return <IPoint>[evt.clientX, evt.clientY];
 }

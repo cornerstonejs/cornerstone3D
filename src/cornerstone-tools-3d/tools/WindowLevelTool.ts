@@ -70,13 +70,13 @@ export default class WindowLevelTool extends BaseTool {
       .getProperty()
       .getRGBTransferFunction(0);
 
-    const { x: deltaX, y: deltaY } = deltaPoints.canvas;
+    const deltaPointsCanvas = deltaPoints.canvas;
 
     const imageDynamicRange = this._getImageDynamicRange(volumeUID);
     const multiplier = Math.round(imageDynamicRange / 1024);
 
-    const wwDelta = deltaX * multiplier;
-    const wcDelta = deltaY * multiplier;
+    const wwDelta = deltaPointsCanvas[0] * multiplier;
+    const wcDelta = deltaPointsCanvas[1] * multiplier;
 
     let [lower, upper] = rgbTransferFunction.getRange();
 

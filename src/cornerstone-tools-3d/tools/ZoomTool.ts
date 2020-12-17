@@ -50,7 +50,7 @@ export default class ZoomTool extends BaseTool {
 
     const zoomScale = 1.5 / size[1];
 
-    const { y: deltaY } = deltaPoints.canvas;
+    const deltaY = deltaPoints.canvas[1];
 
     const k = deltaY * zoomScale;
 
@@ -74,7 +74,7 @@ export default class ZoomTool extends BaseTool {
       -viewPlaneNormal[2],
     ];
 
-    const { y: deltaY } = deltaPoints.canvas;
+    const deltaY = deltaPoints.canvas[1];
 
     const k = deltaY * zoomScale;
 

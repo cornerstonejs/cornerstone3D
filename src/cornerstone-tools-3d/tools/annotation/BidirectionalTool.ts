@@ -75,11 +75,11 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         handles: {
           points: [
             // long
-            [worldPos.x, worldPos.y, worldPos.z],
-            [worldPos.x, worldPos.y, worldPos.z],
+            [...worldPos],
+            [...worldPos],
             // short
-            [worldPos.x, worldPos.y, worldPos.z],
-            [worldPos.x, worldPos.y, worldPos.z],
+            [...worldPos],
+            [...worldPos],
           ],
           textBox: {
             hasMoved: false,
@@ -375,11 +375,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     const worldPos = currentPoints.world;
 
-    // Handle we've selected's proposed point
-    const proposedPoint = [worldPos.x, worldPos.y, worldPos.z];
-
     // Update first move handle
-    data.handles.points[handleIndex] = proposedPoint;
+    data.handles.points[handleIndex] = [...worldPos];
 
     const canvasCoords = {
       longLineSegment: {
@@ -461,9 +458,9 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       const { textBox } = data.handles;
       const { worldPosition } = textBox;
 
-      worldPosition[0] += worldPosDelta.x;
-      worldPosition[1] += worldPosDelta.y;
-      worldPosition[2] += worldPosDelta.z;
+      worldPosition[0] += worldPosDelta[0];
+      worldPosition[1] += worldPosDelta[1];
+      worldPosition[2] += worldPosDelta[2];
 
       textBox.hasMoved = true;
     } else if (handleIndex === undefined) {
@@ -473,9 +470,9 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       const points = data.handles.points;
 
       points.forEach(point => {
-        point[0] += worldPosDelta.x;
-        point[1] += worldPosDelta.y;
-        point[2] += worldPosDelta.z;
+        point[0] += worldPosDelta[0];
+        point[1] += worldPosDelta[1];
+        point[2] += worldPosDelta[2];
       });
     } else {
       this._mouseDragModifyHandle(evt);
@@ -524,7 +521,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     };
 
     // Handle we've selected's proposed point
-    let proposedPoint = [worldPos.x, worldPos.y, worldPos.z];
+    let proposedPoint = [...worldPos];
     let proposedCanvasCoord = viewport.worldToCanvas(proposedPoint);
 
     if (handleIndex === 0 || handleIndex === 1) {

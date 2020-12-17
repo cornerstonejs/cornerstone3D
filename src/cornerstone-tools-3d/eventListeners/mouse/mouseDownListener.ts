@@ -37,16 +37,16 @@ const defaultState: IMouseDownListenerState = {
   preventClickTimeout: null,
   element: null,
   startPoints: {
-    page: { x: 0, y: 0 },
-    client: { x: 0, y: 0 },
-    canvas: { x: 0, y: 0 },
-    world: { x: 0, y: 0, z: 0 },
+    page: [0,0],
+    client: [0,0],
+    canvas: [0,0],
+    world: [0,0,0],
   },
   lastPoints: {
-    page: { x: 0, y: 0 },
-    client: { x: 0, y: 0 },
-    canvas: { x: 0, y: 0 },
-    world: { x: 0, y: 0, z: 0 },
+    page: [0,0],
+    client: [0,0],
+    canvas: [0,0],
+    world: [0,0,0]
   },
 };
 
@@ -61,16 +61,16 @@ let state: IMouseDownListenerState = {
   element: null,
   preventClickTimeout: null,
   startPoints: {
-    page: { x: 0, y: 0 },
-    client: { x: 0, y: 0 },
-    canvas: { x: 0, y: 0 },
-    world: { x: 0, y: 0, z: 0 },
+    page: [0,0],
+    client: [0,0],
+    canvas: [0,0],
+    world: [0,0,0],
   },
   lastPoints: {
-    page: { x: 0, y: 0 },
-    client: { x: 0, y: 0 },
-    canvas: { x: 0, y: 0 },
-    world: { x: 0, y: 0, z: 0 },
+    page: [0,0],
+    client: [0,0],
+    canvas: [0,0],
+    world: [0,0,0]
   },
 };
 
@@ -153,6 +153,7 @@ function _onMouseDrag(evt: MouseEvent): void {
     state.element,
     state.lastPoints
   );
+
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints);
 
   const eventData: ICornerstoneToolsEventDetail = {
@@ -222,22 +223,17 @@ function _preventClickHandler() {
 }
 
 function _copyPoints(points: IPoints): IPoints {
-  return JSON.parse(JSON.stringify(points));
+  return <IPoints>JSON.parse(JSON.stringify(points));
 }
 
 function _subtractPoints(lhs: IPoint, rhs: IPoint): IPoint {
-  return {
-    x: lhs.x - rhs.x,
-    y: lhs.y - rhs.y,
-  };
+  return <IPoint>[lhs[0] - rhs[0], lhs[1] - rhs[1]];
+
+
 }
 
 function _subtract3dPoints(lhs: I3dPoint, rhs: I3dPoint): I3dPoint {
-  return {
-    x: lhs.x - rhs.x,
-    y: lhs.y - rhs.y,
-    z: lhs.z - rhs.z,
-  };
+  return <I3dPoint>[lhs[0] - rhs[0], lhs[1] - rhs[1], lhs[2] - rhs[2]];
 }
 
 // We need to find these again because the "frame" may have changed since
@@ -247,16 +243,13 @@ function _updateMouseEventsLastPoints(element: HTMLElement, lastPoints) {
   const enabledElement = getEnabledElement(canvas);
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
-  const [x, y, z] = enabledElement.viewport.canvasToWorld([
-    lastPoints.canvas.x,
-    lastPoints.canvas.y,
-  ]);
+  const world = enabledElement.viewport.canvasToWorld(lastPoints.canvas);
 
   return {
     page: lastPoints.page,
     client: lastPoints.client,
     canvas: lastPoints.canvas,
-    world: { x, y, z },
+    world,
   };
 }
 

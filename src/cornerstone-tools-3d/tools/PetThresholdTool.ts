@@ -62,7 +62,7 @@ export default class PetThresholdTool extends BaseTool {
       .getProperty()
       .getRGBTransferFunction(0);
 
-    const { y: deltaY } = deltaPoints.canvas;
+    const deltaY = deltaPoints.canvas[1];
     const multiplier = 5 / canvas.clientHeight;
     const wcDelta = deltaY * multiplier;
     let [lower, upper] = rgbTransferFunction.getRange();

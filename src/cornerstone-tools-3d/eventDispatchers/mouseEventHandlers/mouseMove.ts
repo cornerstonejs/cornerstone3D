@@ -26,6 +26,7 @@ export default function(evt) {
   const eventData = evt.detail;
   const { element } = eventData;
 
+
   // Annotation tool specific
   const annotationTools = getToolsWithDataForElement(
     element,

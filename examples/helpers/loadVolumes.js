@@ -51,7 +51,6 @@ function loadSingleVolume(volumeUID, volumeLoadedCallback, renderingEngine) {
         const scenesUIDs = [];
 
         renderingEngine.getScenes().forEach(scene => {
-          debugger;
 
           const sceneContainsVolume = scene.getVolumeActors().some(va => {
             return va.uid === volumeUID;

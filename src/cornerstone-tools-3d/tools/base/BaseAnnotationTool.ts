@@ -101,7 +101,7 @@ class BaseAnnotationTool extends BaseTool {
       const near = this._imagePointNearToolOrHandle(
         element,
         toolData,
-        [canvasCoords.x, canvasCoords.y],
+        canvasCoords,
         6
       );
 
@@ -123,6 +123,7 @@ class BaseAnnotationTool extends BaseTool {
   }
 
   _imagePointNearToolOrHandle(element, toolData, coords, proximity) {
+
     const handleNearImagePoint = this.getHandleNearImagePoint(
       element,
       toolData,
@@ -202,9 +203,7 @@ class BaseAnnotationTool extends BaseTool {
    * @returns {boolean} If the point is near the tool
    */
   // eslint-disable-next-line no-unused-vars
-  pointNearTool(element, data, coords, interactionType = 'mouse') {
-    console.warn(`pointNearTool not implemented for ${this.name}.`);
-  }
+  pointNearTool(element, data, coords, interactionType = 'mouse') {}
 }
 
 export default BaseAnnotationTool;

@@ -32,8 +32,7 @@ export default function(
       const handle = tool.getHandleNearImagePoint(
         element,
         toolState[i],
-        // TODO -> We need to change event dispatches to send array points.
-        [canvasCoords.x, canvasCoords.y],
+        canvasCoords,
         proximity
       );
 

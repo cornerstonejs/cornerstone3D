@@ -4,6 +4,7 @@ import triggerEvent from './../../util/triggerEvent';
 import { IPoints, IPoint } from './../ICornerstoneToolsEventDetail';
 // ~~ VIEWPORT LIBRARY
 import { getEnabledElement } from './../../../index';
+import getMouseEventPoints from '../mouse/getMouseEventPoints'
 
 /**
  *
@@ -44,58 +45,11 @@ function wheelListener(evt: WheelEvent) {
       pixelY,
       direction,
     },
-    points: _getWheelEventPoints(evt),
+    points: getMouseEventPoints(evt),
   };
 
   triggerEvent(element, VtkjsToolsEvents.MOUSE_WHEEL, eventData);
 }
 
-// TODO: ------ DUPLICATED IN `mouseDownListener`
-function _getWheelEventPoints(evt: WheelEvent): IPoints {
-  const canvas = evt.target;
-  const enabledElement = getEnabledElement(canvas);
-  const pagePoint = _pageToPoint(evt);
-  const canvasPoint = _pagePointsToCanvasPoints(
-    canvas as HTMLElement,
-    pagePoint
-  );
-  const [x, y, z] = enabledElement.viewport.canvasToWorld([
-    canvasPoint.x,
-    canvasPoint.y,
-  ]);
-  const worldPoint = { x, y, z };
-
-  return {
-    page: pagePoint,
-    client: _clientToPoint(evt),
-    canvas: canvasPoint,
-    world: worldPoint,
-  };
-}
-
-function _pageToPoint(evt: MouseEvent): IPoint {
-  return {
-    x: evt.pageX,
-    y: evt.pageY,
-  };
-}
-
-function _clientToPoint(evt: MouseEvent): IPoint {
-  return {
-    x: evt.clientX,
-    y: evt.clientY,
-  };
-}
-
-function _pagePointsToCanvasPoints(
-  DomCanvasElement: HTMLElement,
-  pagePoint: IPoint
-) {
-  const rect = DomCanvasElement.getBoundingClientRect();
-  return {
-    x: pagePoint.x - rect.left - window.pageXOffset,
-    y: pagePoint.y - rect.top - window.pageYOffset,
-  };
-}
 
 export default wheelListener;
