@@ -481,7 +481,7 @@ export default class LengthTool extends BaseAnnotationTool {
     return [
       points[0],
       points[1],
-      [(points[0][0] + points[0][1]) / 2, (points[1][0] + points[1][1]) / 2],
+      [(points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2],
     ];
   }
 
