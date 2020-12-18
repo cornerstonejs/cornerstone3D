@@ -1,13 +1,10 @@
 import React, { Component } from 'react';
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
-import { cameraFocalPointAndPositionSync } from './helpers/cameraFocalPointAndPositionSync';
-import voiSync from './helpers/voiSync';
 import loadVolumes from './helpers/loadVolumes';
 import {
   imageCache,
   RenderingEngine,
-  getRenderingEngine,
   renderingEventTarget,
   Events as RENDERING_EVENTS,
 } from './../src/index';
@@ -16,7 +13,7 @@ import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransfe
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import ViewportGrid from './components/ViewportGrid';
-import { SynchronizerManager } from './../src/cornerstone-tools-3d/index';
+import { synchronizers } from './../src/cornerstone-tools-3d/index';
 import './ExampleVTKMPR.css';
 import {
   renderingEngineUID,
@@ -39,8 +36,6 @@ const {
 } = initToolGroups();
 
 const ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS);
-
-window.imageCache = imageCache;
 
 class VTKMPRExample extends Component {
   state = {
@@ -86,35 +81,21 @@ class VTKMPRExample extends Component {
       this.setState({ progressText: 'Loading data...' })
     );
 
-    this.axialSync = SynchronizerManager.createSynchronizer(
-      'axialSync',
-      RENDERING_EVENTS.CAMERA_MODIFIED,
-      cameraFocalPointAndPositionSync
-    );
-    this.sagittalSync = SynchronizerManager.createSynchronizer(
-      'sagittalSync',
-      RENDERING_EVENTS.CAMERA_MODIFIED,
-      cameraFocalPointAndPositionSync
-    );
-    this.coronalSync = SynchronizerManager.createSynchronizer(
-      'coronalSync',
-      RENDERING_EVENTS.CAMERA_MODIFIED,
-      cameraFocalPointAndPositionSync
-    );
-    this.ctWLSync = SynchronizerManager.createSynchronizer(
-      'ctWLSync',
-      RENDERING_EVENTS.VOI_MODIFIED,
-      voiSync
-    );
-    this.ptThresholdSync = SynchronizerManager.createSynchronizer(
-      'ptThresholdSync',
-      RENDERING_EVENTS.VOI_MODIFIED,
-      voiSync
-    );
+    const {
+      createCameraPositionSynchronizer,
+      createVOISynchronizer,
+    } = synchronizers;
+
+    this.axialSync = createCameraPositionSynchronizer('axialSync');
+    this.sagittalSync = createCameraPositionSynchronizer('sagittalSync');
+    this.coronalSync = createCameraPositionSynchronizer('coronalSync');
+
+    this.ctWLSync = createVOISynchronizer('ctWLSync');
+    this.ptThresholdSync = createVOISynchronizer('ptThresholdSync');
 
     renderingEventTarget.addEventListener(
       RENDERING_EVENTS.ELEMENT_ENABLED,
-      evt => {
+      (evt) => {
         const eventData = evt.detail;
         const { canvas } = eventData;
 
@@ -128,7 +109,7 @@ class VTKMPRExample extends Component {
 
     renderingEventTarget.addEventListener(
       RENDERING_EVENTS.ELEMENT_DISABLED,
-      evt => {
+      (evt) => {
         const eventData = evt.detail;
         const { canvas } = eventData;
 
@@ -140,7 +121,7 @@ class VTKMPRExample extends Component {
     );
   }
 
-  updateVOI = evt => {
+  updateVOI = (evt) => {
     /*const eventData = evt.detail;
     const { range, volumeUID } = eventData;
 
@@ -209,7 +190,7 @@ class VTKMPRExample extends Component {
 
     const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], [], this.renderingEngine);
+    loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], []);
 
     ptCtFusion.setVolumes(
       renderingEngine,
@@ -266,19 +247,14 @@ class VTKMPRExample extends Component {
           colormaps[this.state.petColorMapIndex]
         );
 
-        loadVolumes(
-          onLoad,
-          [ptVolumeUID, ctVolumeUID],
-          [],
-          this.renderingEngine
-        );
+        loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], []);
       } else if (layout === 'ObliqueCT') {
         obliqueCT.setLayout(renderingEngine, this._canvasNodes, {
           ctObliqueToolGroup,
         });
         obliqueCT.setVolumes(renderingEngine, ctVolumeUID);
 
-        loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID], this.renderingEngine);
+        loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
       } else if (layout === 'CTVR') {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._canvasNodes, {
@@ -286,14 +262,14 @@ class VTKMPRExample extends Component {
           ctVRSceneToolGroup,
         });
         fourUpCT.setVolumes(renderingEngine, ctVolumeUID);
-        loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID], this.renderingEngine);
+        loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
       } else if (layout === 'PetTypes') {
         // petTypes
         petTypes.setLayout(renderingEngine, this._canvasNodes, {
           ptTypesSceneToolGroup,
         });
         petTypes.setVolumes(renderingEngine, ptVolumeUID);
-        loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID], this.renderingEngine);
+        loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID]);
       } else {
         throw new Error('Unrecognised layout index');
       }
@@ -306,13 +282,13 @@ class VTKMPRExample extends Component {
     this.renderingEngine.destroy();
   }
 
-  swapLayout = layoutId => {
+  swapLayout = (layoutId) => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
       return;
     }
 
     const viewportGrid = JSON.parse(JSON.stringify(this.state.viewportGrid));
-    const layoutIndex = LAYOUTS.findIndex(id => id === layoutId);
+    const layoutIndex = LAYOUTS.findIndex((id) => id === layoutId);
 
     viewportGrid.viewports = [];
 
@@ -321,7 +297,9 @@ class VTKMPRExample extends Component {
     if (layout === 'FusionMIP') {
       viewportGrid.numCols = 4;
       viewportGrid.numRows = 3;
-      [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach(x => viewportGrid.viewports.push({}));
+      [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((x) =>
+        viewportGrid.viewports.push({})
+      );
       viewportGrid.viewports.push({
         cellStyle: {
           gridRow: '1 / span 3',
@@ -335,11 +313,11 @@ class VTKMPRExample extends Component {
     } else if (layout === 'CTVR') {
       viewportGrid.numCols = 2;
       viewportGrid.numRows = 2;
-      [0, 1, 2, 3].forEach(x => viewportGrid.viewports.push({}));
+      [0, 1, 2, 3].forEach((x) => viewportGrid.viewports.push({}));
     } else if (layout === 'PetTypes') {
       viewportGrid.numRows = 1;
       viewportGrid.numCols = 3;
-      [0, 1, 2].forEach(x => viewportGrid.viewports.push({}));
+      [0, 1, 2].forEach((x) => viewportGrid.viewports.push({}));
     }
 
     this.setState({
@@ -400,7 +378,7 @@ class VTKMPRExample extends Component {
     imageCache.purgeCache();
   };
 
-  swapPtCtTool = evt => {
+  swapPtCtTool = (evt) => {
     const toolName = evt.target.value;
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false;
@@ -435,7 +413,9 @@ class VTKMPRExample extends Component {
     // TODO -> Move layout switching to a different example to reduce bloat.
     // TODO -> Move destroy to a seperate example
 
-    const filteredLayoutButtons = layoutButtons.filter(l => l.id !== layoutID);
+    const filteredLayoutButtons = layoutButtons.filter(
+      (l) => l.id !== layoutID
+    );
 
     const SUVTypesList =
       layoutID === 'PetTypes' ? (
@@ -462,7 +442,7 @@ class VTKMPRExample extends Component {
             value={this.state.ptCtLeftClickTool}
             onChange={this.swapPtCtTool}
           >
-            {ptCtLayoutTools.map(toolName => (
+            {ptCtLayoutTools.map((toolName) => (
               <option key={toolName} value={toolName}>
                 {toolName}
               </option>
@@ -494,7 +474,7 @@ class VTKMPRExample extends Component {
             style={{ margin: '8px 0', marginLeft: '-4px' }}
           >
             {/* LAYOUT BUTTONS */}
-            {filteredLayoutButtons.map(layout => (
+            {filteredLayoutButtons.map((layout) => (
               <button
                 key={layout.id}
                 onClick={() => this.swapLayout(layout.id)}
@@ -526,7 +506,7 @@ class VTKMPRExample extends Component {
               }}
               key={i}
             >
-              <canvas ref={c => this._canvasNodes.set(i, c)} />
+              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
             </div>
           ))}
         </ViewportGrid>

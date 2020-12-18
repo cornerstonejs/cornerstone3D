@@ -259,7 +259,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     if (handle.worldPosition) {
       movingTextBox = true;
     } else {
-      handleIndex = data.handles.points.findIndex(p => p === handle);
+      handleIndex = data.handles.points.findIndex((p) => p === handle);
     }
 
     // Find viewports to render on drag.
@@ -284,7 +284,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     evt.preventDefault();
   };
 
-  _mouseUpCallback = evt => {
+  _mouseUpCallback = (evt) => {
     const eventData = evt.detail;
     const { element } = eventData;
 
@@ -365,48 +365,50 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender);
   };
 
-  _mouseDragDrawCallback = evt => {
+  _mouseDragDrawCallback = (evt) => {
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
     const { toolData, viewportUIDsToRender, handleIndex } = this.editData;
     const { data } = toolData;
+    const { points } = data.handles;
 
     const worldPos = currentPoints.world;
 
     // Update first move handle
-    data.handles.points[handleIndex] = [...worldPos];
+    points[handleIndex] = [...worldPos];
+
+    const pointsCanvas = points.map((p) => viewport.worldToCanvas);
 
     const canvasCoords = {
       longLineSegment: {
         start: {
-          x: viewport.worldToCanvas(data.handles.points[0])[0],
-          y: viewport.worldToCanvas(data.handles.points[0])[1],
+          x: pointsCanvas[0][0],
+          y: pointsCanvas[0][1],
         },
         end: {
-          x: viewport.worldToCanvas(data.handles.points[1])[0],
-          y: viewport.worldToCanvas(data.handles.points[1])[1],
+          x: pointsCanvas[1][0],
+          y: pointsCanvas[1][1],
         },
       },
       shortLineSegment: {
         start: {
-          x: viewport.worldToCanvas(data.handles.points[2])[0],
-          y: viewport.worldToCanvas(data.handles.points[2])[1],
+          x: pointsCanvas[2][0],
+          y: pointsCanvas[2][1],
         },
         end: {
-          x: viewport.worldToCanvas(data.handles.points[3])[0],
-          y: viewport.worldToCanvas(data.handles.points[3])[1],
+          x: pointsCanvas[3][0],
+          y: pointsCanvas[3][1],
         },
       },
     };
 
     // ~~ calculate worldPos of our short axis handles
     // 1/4 distance between long points
-    const dist = cornerstoneMath.point.distance(
-      canvasCoords.longLineSegment.start,
-      canvasCoords.longLineSegment.end
-    );
+
+    const dist = vec2.distance(pointsCanvas[0], pointsCanvas[1]);
+
     const shortAxisDistFromCenter = dist / 3;
     // Calculate long line's incline
     const dx =
@@ -439,7 +441,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender);
   };
 
-  _mouseDragModifyCallback = evt => {
+  _mouseDragModifyCallback = (evt) => {
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -469,7 +471,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       const worldPosDelta = deltaPoints.world;
       const points = data.handles.points;
 
-      points.forEach(point => {
+      points.forEach((point) => {
         point[0] += worldPosDelta[0];
         point[1] += worldPosDelta[1];
         point[2] += worldPosDelta[2];
@@ -482,7 +484,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender);
   };
 
-  _mouseDragModifyHandle = evt => {
+  _mouseDragModifyHandle = (evt) => {
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -660,12 +662,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
 
       // 1. distance from intersection point to start handle?
-      const distFromTranslateHandle = cornerstoneMath.point.distance(
-        {
-          x: canvasCoordHandlesCurrent[translateHandleIndex][0],
-          y: canvasCoordHandlesCurrent[translateHandleIndex][1],
-        },
-        newIntersectionPoint
+      const distFromTranslateHandle = vec2.distance(
+        [
+          canvasCoordHandlesCurrent[translateHandleIndex][0],
+          canvasCoordHandlesCurrent[translateHandleIndex][1],
+        ],
+        [newIntersectionPoint.x, newIntersectionPoint.y]
       );
       // isStart if index is 0 or 2
       const shortLineSegment = {
@@ -729,7 +731,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return wouldPutThroughShortAxis;
   };
 
-  _activateDraw = element => {
+  _activateDraw = (element) => {
     state.isToolLocked = true;
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
@@ -740,7 +742,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback);
   };
 
-  _deactivateDraw = element => {
+  _deactivateDraw = (element) => {
     state.isToolLocked = false;
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
@@ -751,7 +753,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback);
   };
 
-  _activateModify = element => {
+  _activateModify = (element) => {
     state.isToolLocked = true;
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
@@ -762,7 +764,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback);
   };
 
-  _deactivateModify = element => {
+  _deactivateModify = (element) => {
     state.isToolLocked = false;
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
@@ -804,7 +806,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return toolDataWithinSlice;
   };
 
-  renderToolData = evt => {
+  renderToolData = (evt) => {
     const eventData = evt.detail;
     const { canvas: element } = eventData;
 
@@ -837,7 +839,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
 
       const textLines = this._getTextLines(data);
-      const canvasCoordinates = points.map(p => viewport.worldToCanvas(p));
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       let activeHandleCanvasCoords;
 
@@ -847,7 +849,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      draw(context, context => {
+      draw(context, (context) => {
         if (activeHandleCanvasCoords) {
           drawHandles(context, activeHandleCanvasCoords, {
             color,
@@ -892,7 +894,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
   };
 
-  _getTextLines = data => {
+  _getTextLines = (data) => {
     const { cachedStats } = data;
     const { length, width } = cachedStats;
 
@@ -910,7 +912,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return textLines;
   };
 
-  _calculateCachedStats = data => {
+  _calculateCachedStats = (data) => {
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
     const worldPos3 = data.handles.points[2];
@@ -952,7 +954,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
   };
 
-  _getTargetVolumeUID = scene => {
+  _getTargetVolumeUID = (scene) => {
     if (this._configuration.volumeUID) {
       return this._configuration.volumeUID;
     }

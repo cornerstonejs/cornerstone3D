@@ -1,4 +1,4 @@
-import { getRenderingEngine } from './../../src/index';
+import { getRenderingEngine } from '../../../index';
 
 export default function voiSync(
   synchronizerInstance,

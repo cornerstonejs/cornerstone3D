@@ -1,13 +1,14 @@
 import cornerstone from 'cornerstone-core';
-
-import requestPoolManager from '../../imageLoader/requestPoolManager';
+import requestPoolManager from './requestPoolManager';
 import getImageIdInstanceMetadata from './getImageIdInstanceMetadata';
 import getInterleavedFrames from './getInterleavedFrames';
-import StreamingImageVolume from '../classes/StreamingImageVolume';
+import StreamingImageVolume from '../imageCache/classes/StreamingImageVolume';
 import { calculateSUVScalingFactors } from 'calculate-suv';
-import renderingEventTarget from '../../RenderingEngine/renderingEventTarget';
-import triggerEvent from '../../utils/triggerEvent.js';
-import EVENTS from '../../enums/Events';
+import renderingEventTarget from '../RenderingEngine/renderingEventTarget';
+import triggerEvent from '../utils/triggerEvent.js';
+import EVENTS from '../enums/Events';
+import configuration from '../configuration';
+import autoLoad from './autoLoad';
 
 const requestType = 'prefetch';
 const preventCache = true; // We are not using the cornerstone cache for this.
@@ -21,11 +22,17 @@ type ScalingParamaters = {
   suvbsa?: number;
 };
 
-export default function prefetchImageIds(volume: StreamingImageVolume) {
+function prefetchImageIds(volume: StreamingImageVolume) {
   const { scalarData, loadStatus } = volume;
   const { cachedFrames } = loadStatus;
 
-  const { imageIds, vtkOpenGLTexture, vtkImageData, metadata } = volume;
+  const {
+    imageIds,
+    vtkOpenGLTexture,
+    vtkImageData,
+    metadata,
+    uid: volumeUID,
+  } = volume;
 
   const { FrameOfReferenceUID } = metadata;
 
@@ -55,8 +62,29 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
   let framesLoaded = 0;
   let framesProcessed = 0;
 
+  const { autoRenderOnLoad, autoRenderPercentage } = configuration.get();
+
+  let reRenderFraction;
+  let reRenderTarget;
+
+  if (autoRenderOnLoad) {
+    reRenderFraction = numFrames * (autoRenderPercentage / 100);
+    reRenderTarget = reRenderFraction;
+  }
+
   function callLoadStatusCallback(evt) {
-    loadStatus.callbacks.forEach(callback => callback(evt));
+    if (autoRenderOnLoad) {
+      if (
+        evt.framesProcessed > reRenderTarget ||
+        evt.framesProcessed === evt.numFrames
+      ) {
+        reRenderTarget += reRenderFraction;
+
+        autoLoad(volumeUID);
+      }
+    }
+
+    loadStatus.callbacks.forEach((callback) => callback(evt));
   }
 
   function successCallback(imageIdIndex, imageId) {
@@ -131,7 +159,7 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
   }
 
   const InstanceMetadataArray = [];
-  interleavedFrames.forEach(frame => {
+  interleavedFrames.forEach((frame) => {
     const { imageId } = frame;
 
     const generalSeriesModule =
@@ -150,7 +178,7 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
     _addScalingToVolume(volume, suvScalingFactors);
   }
 
-  interleavedFrames.forEach(frame => {
+  interleavedFrames.forEach((frame) => {
     const { imageId, imageIdIndex } = frame;
 
     if (cachedFrames[imageIdIndex]) {
@@ -188,7 +216,6 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
       },
     };
 
-    // TODO -> Add options to cornerstoneTools requests via requestPoolManager
     requestPoolManager.addRequest(
       {},
       imageId,
@@ -197,7 +224,7 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
       () => {
         successCallback(imageIdIndex, imageId);
       },
-      error => {
+      (error) => {
         errorCallback(error, imageIdIndex, imageId);
       },
       null, // addToBeginning option, need to pass something to pass options in correct spot.
@@ -207,6 +234,11 @@ export default function prefetchImageIds(volume: StreamingImageVolume) {
 
   requestPoolManager.startGrabbing();
 }
+
+type PetScaling = {
+  suvbwToSuvlbm?: number;
+  suvbwToSuvbsa?: number;
+};
 
 function _addScalingToVolume(volume, suvScalingFactors) {
   if (!volume.scaling) {
@@ -219,7 +251,7 @@ function _addScalingToVolume(volume, suvScalingFactors) {
     // These ratios are constant across all frames, so only need one.
     const { suvbw, suvlbm, suvbsa } = firstSUVFactor;
 
-    const petScaling = <any>{};
+    const petScaling = <PetScaling>{};
 
     if (suvlbm) {
       petScaling.suvbwToSuvlbm = suvlbm / suvbw;
@@ -232,3 +264,5 @@ function _addScalingToVolume(volume, suvScalingFactors) {
     volume.scaling.PET = petScaling;
   }
 }
+
+export default prefetchImageIds;

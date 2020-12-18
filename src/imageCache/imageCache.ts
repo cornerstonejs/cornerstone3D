@@ -2,10 +2,10 @@ import ImageVolume from './classes/ImageVolume';
 
 import StreamingImageVolume from './classes/StreamingImageVolume';
 import requestPoolManager from '../imageLoader/requestPoolManager';
-import { prefetchImageIds } from './helpers';
 import { vec3 } from 'gl-matrix';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
+import prefetchImageIds from '../imageLoader/prefetchImageIds';
 import {
   createUint8SharedArray,
   createFloat32SharedArray,

@@ -2,6 +2,11 @@ const renderingEngineUID = 'PETCTRenderingEngine';
 const ptVolumeUID = 'PET_VOLUME';
 const ctVolumeUID = 'CT_VOLUME';
 
+// This file just stores all the IDS used within the demo. In a real application
+/// These may associated with different hanging protocols/dynamically generated, etc.
+
+// IDs that unique define each scene used in the demo. A Scene is world space with a set of objects
+// In it that could potentially be rendered by multiple viewports.
 const SCENE_IDS = {
   CT: 'ctScene',
   PT: 'ptScene',
@@ -14,6 +19,7 @@ const SCENE_IDS = {
   PT_TYPES_SUV_BSA: 'petTypesSuvBSA',
 };
 
+// IDs that define each viewport used in the demos. Here they are grouped by scene for convenience, only.
 const VIEWPORT_IDS = {
   CT: {
     AXIAL: 'ctAxial',
@@ -50,6 +56,8 @@ const VIEWPORT_IDS = {
   },
 };
 
+// IDs for each toolgroup used. We currently use one toolGroup per scene in the demos, but you could have
+// Different viewports of the same scene with different toolgroup setups.
 const TOOL_GROUP_UIDS = {
   CT: 'ctSceneToolGroup',
   PT: 'ptSceneToolGroup',
@@ -60,6 +68,7 @@ const TOOL_GROUP_UIDS = {
   PT_TYPES: 'ptTypesToolGroup',
 };
 
+// A string helper for the drop down.
 const PET_CT_ANNOTATION_TOOLS = [
   'Probe',
   'Length',
@@ -68,6 +77,7 @@ const PET_CT_ANNOTATION_TOOLS = [
   'EllipticalRoi',
 ];
 
+// A small simple list of in-built vtk-colormaps, to demonstrate switching transfer function on a volume.
 const colormaps = ['hsv', 'Inferno (matplotlib)'];
 
 export {

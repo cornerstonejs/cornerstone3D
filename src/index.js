@@ -12,6 +12,7 @@ import register from './imageLoader/vtkjsWADOImageLoader';
 import errorCodes from './errorCodes';
 import CONSTANTS from './constants';
 import utils, { getEnabledElement } from './utils';
+import configuration from './configuration';
 
 export {
   RenderingEngine,
@@ -26,6 +27,7 @@ export {
   getEnabledElement,
   renderingEventTarget,
   Events,
+  configuration,
 };
 
 export default {
@@ -41,4 +43,5 @@ export default {
   getEnabledElement,
   renderingEventTarget,
   Events,
+  configuration,
 };

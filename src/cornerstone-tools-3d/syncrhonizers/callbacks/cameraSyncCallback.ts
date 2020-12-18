@@ -1,6 +1,9 @@
-import { getRenderingEngine } from './../../src/index';
+import { getRenderingEngine } from '../../../index';
 
-function cameraFocalPointAndPositionSync(
+/**
+ * cameraSync - Synchronizer callback design to synchronize the camera. Synchronization
+ */
+export default function cameraSync(
   synchronizerInstance,
   sourceViewport,
   targetViewport,
@@ -15,7 +18,7 @@ function cameraFocalPointAndPositionSync(
     return;
   }
 
-  const { camera, previousCamera } = cameraUpdatedEvent.detail;
+  const { camera } = cameraUpdatedEvent.detail;
 
   const tViewport = getRenderingEngine(targetViewport.renderingEngineUID)
     .getScene(targetViewport.sceneUID)
@@ -26,4 +29,4 @@ function cameraFocalPointAndPositionSync(
   tViewport.render();
 }
 
-export { cameraFocalPointAndPositionSync };
+export { cameraSync };

@@ -1,8 +1,8 @@
 import RenderingEngine from './RenderingEngine';
 
-const cache = new Map();
+const cache = {};
 
-export default {
+const renderingEngineCache = {
   /**
    * @method get Returns the `RenderingEngine` instance with the given `uid`.
    *
@@ -10,7 +10,7 @@ export default {
    * @returns {RenderingEngine} The `RenderingEngine` instance.
    */
   get: (uid: string): RenderingEngine => {
-    return cache.get(uid);
+    return cache[uid];
   },
   /**
    * @method set Adds the `RenderingEngine` instance to the cache.
@@ -20,7 +20,7 @@ export default {
   set: (re: RenderingEngine) => {
     const uid = re.uid;
 
-    cache.set(uid, re);
+    cache[uid] = re;
   },
   /**
    * @method delete Deletes the `RenderingEngine` instance from the cache.
@@ -29,6 +29,15 @@ export default {
    * @returns {boolean} True if the delete was successful.
    */
   delete: (uid: string) => {
-    return cache.delete(uid);
+    return delete cache[uid];
+  },
+
+  getAll: (): Array<RenderingEngine> => {
+    const uids = Object.keys(cache);
+    const renderingEngines = uids.map((uid) => cache[uid]);
+
+    return renderingEngines;
   },
 };
+
+export default renderingEngineCache;
