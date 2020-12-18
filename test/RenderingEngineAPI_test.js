@@ -106,7 +106,6 @@ describe('RenderingEngine API:', () => {
     imageCache.makeAndCacheLocalImageVolume(testVolumeProps, testVolumeUID);
 
     let callbackCalledWithCorrectProps = false;
-
     const callback = ({ volumeActor, volumeUID }) => {
       if (volumeUID !== testVolumeUID) {
         return;

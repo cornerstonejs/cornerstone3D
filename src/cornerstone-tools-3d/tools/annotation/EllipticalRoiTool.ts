@@ -28,33 +28,22 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   _throttledCalculateCachedStats: Function;
   editData: {
     toolData: any;
-    viewportUIDsToRender: [];
+    viewportUIDsToRender: Array<string>;
     handleIndex?: number;
-    movingTextBox: boolean;
+    movingTextBox?: boolean;
+    centerCanvas?: Array<number>;
+    canvasWidth?: number;
+    canvasHeight?: number;
+    originalHandleCanvas?: Array<number>;
   } | null;
   name: string;
   _configuration: any;
 
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+    super(toolConfiguration, {
       name: 'EllipticalRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    };
-
-    super(toolConfiguration, defaultToolConfiguration);
-
-    /**
-     * Will only fire fore cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-    this._activateModify = this._activateModify.bind(this);
-    this._deactivateModify = this._deactivateModify.bind(this);
-    this._mouseUpCallback = this._mouseUpCallback.bind(this);
-    this._mouseDragCallback = this._mouseDragCallback.bind(this);
+    });
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,
@@ -63,10 +52,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     );
   }
 
-  addNewMeasurement(evt, interactionType) {
+  addNewMeasurement = (evt, interactionType) => {
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const worldPos = currentPoints.world;
+    const canvasPos = currentPoints.canvas;
 
     const enabledElement = getEnabledElement(element);
     const { viewport, FrameOfReferenceUID, renderingEngine } = enabledElement;
@@ -89,12 +79,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       data: {
         invalidated: true,
         handles: {
-          points: [[...worldPos], [...worldPos]],
           textBox: {
             hasMoved: false,
             worldPosition: [0, 0, 0],
           },
+          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
+          activeHandleIndex: null,
         },
+        isDrawing: true,
         cachedStats: {},
         active: true,
       },
@@ -110,17 +102,16 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     this.editData = {
       toolData,
       viewportUIDsToRender,
-      handleIndex: 1,
-      movingTextBox: false,
+      centerCanvas: canvasPos,
     };
-    this._activateModify(element);
+    this._activateDraw(element);
 
     evt.preventDefault();
 
     renderingEngine.renderViewports(viewportUIDsToRender);
-  }
+  };
 
-  getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
+  getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -142,6 +133,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
         canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
       ) {
+        data.handles.activeHandleIndex = null;
         return textBox;
       }
     }
@@ -154,20 +146,25 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity;
 
       if (near === true) {
+        data.handles.activeHandleIndex = i;
         return point;
       }
     }
-  }
 
-  pointNearTool(element, toolData, canvasCoords, proximity) {
+    data.handles.activeHandleIndex = null;
+  };
+
+  pointNearTool = (element, toolData, canvasCoords, proximity) => {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
     const { data } = toolData;
-    const [point1, point2] = data.handles.points;
+    const { points } = data.handles;
 
-    const canvasPoint1 = viewport.worldToCanvas(point1);
-    const canvasPoint2 = viewport.worldToCanvas(point2);
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    const canvasCorners = this._getCanvasEllipseCorners(canvasCoordinates);
+
+    const [canvasPoint1, canvasPoint2] = canvasCorners;
 
     const minorEllipse = {
       left: Math.min(canvasPoint1[0], canvasPoint2[0]) + proximity / 2,
@@ -189,9 +186,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     if (pointInMajorEllipse && !pointInMinorEllipse) {
       return true;
     }
-  }
+  };
 
-  toolSelectedCallback(evt, toolData, interactionType = 'mouse') {
+  toolSelectedCallback = (evt, toolData, interactionType = 'mouse') => {
     const eventData = evt.detail;
     const { element } = eventData;
 
@@ -218,9 +215,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender);
 
     evt.preventDefault();
-  }
+  };
 
-  handleSelectedCallback(evt, toolData, handle, interactionType = 'mouse') {
+  handleSelectedCallback = (
+    evt,
+    toolData,
+    handle,
+    interactionType = 'mouse'
+  ) => {
     const eventData = evt.detail;
     const { element } = eventData;
     const { data } = toolData;
@@ -230,10 +232,31 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     let movingTextBox = false;
     let handleIndex;
 
+    let centerCanvas;
+    let canvasWidth;
+    let canvasHeight;
+    let originalHandleCanvas;
+
     if (handle.worldPosition) {
       movingTextBox = true;
     } else {
-      handleIndex = data.handles.points.findIndex((p) => p === handle);
+      const { points } = data.handles;
+      const enabledElement = getEnabledElement(element);
+      const { worldToCanvas } = enabledElement.viewport;
+
+      handleIndex = points.findIndex((p) => p === handle);
+
+      const pointsCanvas = points.map(worldToCanvas);
+
+      originalHandleCanvas = pointsCanvas[handleIndex];
+
+      canvasWidth = Math.abs(pointsCanvas[2][0] - pointsCanvas[3][0]);
+      canvasHeight = Math.abs(pointsCanvas[0][1] - pointsCanvas[1][1]);
+
+      centerCanvas = [
+        (pointsCanvas[2][0] + pointsCanvas[3][0]) / 2,
+        (pointsCanvas[0][1] + pointsCanvas[1][1]) / 2,
+      ];
     }
 
     // Find viewports to render on drag.
@@ -246,6 +269,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       toolData,
       viewportUIDsToRender,
       handleIndex,
+      canvasWidth,
+      canvasHeight,
+      centerCanvas,
+      originalHandleCanvas,
       movingTextBox,
     };
     this._activateModify(element);
@@ -256,9 +283,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender);
 
     evt.preventDefault();
-  }
+  };
 
-  _mouseUpCallback(evt) {
+  _mouseUpCallback = (evt) => {
     const eventData = evt.detail;
     const { element } = eventData;
 
@@ -267,17 +294,52 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     data.active = false;
 
+    delete data.isDrawing;
+
     this._deactivateModify(element);
+    this._deactivateDraw(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    renderingEngine.renderViewports(viewportUIDsToRender);
-
     this.editData = null;
-  }
 
-  _mouseDragCallback(evt) {
+    renderingEngine.renderViewports(viewportUIDsToRender);
+  };
+
+  _mouseDragDrawCallback = (evt) => {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const { currentPoints } = eventData;
+    const currentCanvasPoints = currentPoints.canvas;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine, viewport } = enabledElement;
+    const { canvasToWorld } = viewport;
+
+    const { toolData, viewportUIDsToRender, centerCanvas } = this.editData;
+    const { data } = toolData;
+
+    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
+    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
+
+    const bottomCanvas = [centerCanvas[0], centerCanvas[1] - dY];
+    const topCanvas = [centerCanvas[0], centerCanvas[1] + dY];
+    const leftCanvas = [centerCanvas[0] - dX, centerCanvas[1]];
+    const rightCanvas = [centerCanvas[0] + dX, centerCanvas[1]];
+
+    data.handles.points = [
+      canvasToWorld(bottomCanvas),
+      canvasToWorld(topCanvas),
+      canvasToWorld(leftCanvas),
+      canvasToWorld(rightCanvas),
+    ];
+
+    data.invalidated = true;
+
+    renderingEngine.renderViewports(viewportUIDsToRender);
+  };
+
+  _mouseDragModifyCallback = (evt) => {
     const eventData = evt.detail;
     const { element } = eventData;
 
@@ -314,11 +376,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         point[2] += worldPosDelta[2];
       });
     } else {
-      // Moving handle
-      const { currentPoints } = eventData;
-      const worldPos = currentPoints.world;
-
-      data.handles.points[handleIndex] = [...worldPos];
+      this._dragHandle(evt);
     }
 
     data.invalidated = true;
@@ -327,35 +385,137 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { renderingEngine } = enabledElement;
 
     renderingEngine.renderViewports(viewportUIDsToRender);
-  }
+  };
 
-  _activateModify(element) {
+  _dragHandle = (evt) => {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const enabledElement = getEnabledElement(element);
+    const { canvasToWorld } = enabledElement.viewport;
+
+    const {
+      toolData,
+      canvasWidth,
+      canvasHeight,
+      handleIndex,
+      centerCanvas,
+      originalHandleCanvas,
+    } = this.editData;
+    const { data } = toolData;
+    const { points } = data.handles;
+
+    // Move current point in that direction.
+    // Move other points in oposite direction.
+
+    const { currentPoints } = eventData;
+    const currentCanvasPoints = currentPoints.canvas;
+
+    if (handleIndex === 0 || handleIndex == 1) {
+      // Dragging top or bottom point
+      const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
+
+      const canvasBottom = [centerCanvas[0], centerCanvas[1] - dYCanvas];
+      const canvasTop = [centerCanvas[0], centerCanvas[1] + dYCanvas];
+
+      points[0] = canvasToWorld(canvasBottom);
+      points[1] = canvasToWorld(canvasTop);
+
+      const dXCanvas = currentCanvasPoints[0] - originalHandleCanvas[0];
+      const newHalfCanvasWidth = canvasWidth / 2 + dXCanvas;
+
+      const canvasLeft = [
+        centerCanvas[0] - newHalfCanvasWidth,
+        centerCanvas[1],
+      ];
+      const canvasRight = [
+        centerCanvas[0] + newHalfCanvasWidth,
+        centerCanvas[1],
+      ];
+
+      points[2] = canvasToWorld(canvasLeft);
+      points[3] = canvasToWorld(canvasRight);
+    } else {
+      // Dragging left or right point
+      const dXCanvas = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
+
+      const canvasLeft = [centerCanvas[0] - dXCanvas, centerCanvas[1]];
+      const canvasRight = [centerCanvas[0] + dXCanvas, centerCanvas[1]];
+
+      points[2] = canvasToWorld(canvasLeft);
+      points[3] = canvasToWorld(canvasRight);
+
+      const dYCanvas = currentCanvasPoints[1] - originalHandleCanvas[1];
+      const newHalfCanvasHeight = canvasHeight / 2 + dYCanvas;
+
+      const canvasBottom = [
+        centerCanvas[0],
+        centerCanvas[1] - newHalfCanvasHeight,
+      ];
+      const canvasTop = [
+        centerCanvas[0],
+        centerCanvas[1] + newHalfCanvasHeight,
+      ];
+
+      points[0] = canvasToWorld(canvasBottom);
+      points[1] = canvasToWorld(canvasTop);
+    }
+  };
+
+  _activateModify = (element) => {
     state.isToolLocked = true;
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback);
+    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback);
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
 
     element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback);
-  }
+    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback);
+  };
 
-  _deactivateModify(element) {
+  _deactivateModify = (element) => {
     state.isToolLocked = false;
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback);
+    element.removeEventListener(
+      EVENTS.MOUSE_DRAG,
+      this._mouseDragModifyCallback
+    );
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
 
     element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback);
-  }
+    element.removeEventListener(
+      EVENTS.TOUCH_DRAG,
+      this._mouseDragModifyCallback
+    );
+  };
+
+  _activateDraw = (element) => {
+    state.isToolLocked = true;
+
+    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback);
+    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
+
+    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback);
+  };
+
+  _deactivateDraw = (element) => {
+    state.isToolLocked = false;
+
+    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
+    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback);
+    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
+
+    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback);
+  };
 
   /**
    * getToolState = Custom getToolStateMethod with filtering.
    * @param element
    */
-  filterInteractableToolStateForElement(element, toolState) {
+  filterInteractableToolStateForElement = (element, toolState) => {
     if (!toolState || !toolState.length) {
       return;
     }
@@ -374,9 +534,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     );
 
     return toolDataWithinSlice;
-  }
+  };
 
-  renderToolData(evt) {
+  renderToolData = (evt) => {
     const eventData = evt.detail;
     const { canvas: element } = eventData;
 
@@ -404,33 +564,46 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const data = toolData.data;
 
       const color = toolColors.getColorIfActive(data);
+      const { handles, isDrawing } = data;
+      const { points, activeHandleIndex } = handles;
+
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+      const canvasCorners = this._getCanvasEllipseCorners(canvasCoordinates);
 
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {};
 
-        this._calculateCachedStats(data, viewport);
+        this._calculateCachedStats(data, viewport, canvasCorners);
       } else if (data.invalidated) {
-        this._throttledCalculateCachedStats(data, viewport);
+        this._throttledCalculateCachedStats(data, viewport, canvasCorners);
       }
 
       const textLines = this._getTextLines(data, targetVolumeUID);
 
-      const points = data.handles.points;
+      let activeHandleCanvasCoords;
 
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+      if (!this.editData && activeHandleIndex !== null) {
+        // Not creating and hovering over handle, so render handle.
+
+        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+      }
 
       draw(context, (context) => {
-        drawHandles(context, canvasCoordinates, { color });
+        if (activeHandleCanvasCoords) {
+          drawHandles(context, activeHandleCanvasCoords, {
+            color,
+          });
+        }
 
-        drawEllipse(context, canvasCoordinates[0], canvasCoordinates[1], {
+        drawEllipse(context, canvasCorners[0], canvasCorners[1], {
           color,
         });
 
-        if (textLines) {
+        if (!isDrawing && textLines) {
           let canvasTextBoxCoords;
 
           if (!data.handles.textBox.hasMoved) {
-            canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+            canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
 
             data.handles.textBox.worldPosition = viewport.canvasToWorld(
               canvasTextBoxCoords
@@ -441,16 +614,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
             );
           }
 
-          const textBoxAnchorPoints = this._findTextBoxAnchorPoints(
-            canvasCoordinates
-          );
-
           drawLinkedTextBox(
             context,
             canvasTextBoxCoords,
             textLines,
             data.handles.textBox,
-            textBoxAnchorPoints,
+            canvasCoordinates,
             viewport.canvasToWorld,
             color,
             lineWidth,
@@ -460,49 +629,18 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         }
       });
     }
-  }
+  };
 
-  _findTextBoxAnchorPoints(points) {
-    const { left, top, width, height } = this._getRectangleImageCoordinates(
-      points
-    );
+  _getCanvasEllipseCorners = (canvasCoordinates) => {
+    const [bottom, top, left, right] = canvasCoordinates;
 
-    return [
-      [
-        // Top middle point of rectangle
-        left + width / 2,
-        top,
-      ],
-      [
-        // Left middle point of rectangle
-        left,
-        top + height / 2,
-      ],
-      [
-        // Bottom middle point of rectangle
-        left + width / 2,
-        top + height,
-      ],
-      [
-        // Right middle point of rectangle
-        left + width,
-        top + height / 2,
-      ],
-    ];
-  }
+    const topLeft = [left[0], top[1]];
+    const bottomRight = [right[0], bottom[1]];
 
-  _getRectangleImageCoordinates(points) {
-    const [point0, point1] = points;
+    return [topLeft, bottomRight];
+  };
 
-    return {
-      left: Math.min(point0[0], point1[0]),
-      top: Math.min(point0[1], point1[1]),
-      width: Math.abs(point0[0] - point1[0]),
-      height: Math.abs(point0[1] - point1[1]),
-    };
-  }
-
-  _getTextLines(data, targetVolumeUID) {
+  _getTextLines = (data, targetVolumeUID) => {
     const cachedVolumeStats = data.cachedStats[targetVolumeUID];
     const { area, mean, stdDev, Modality } = cachedVolumeStats;
 
@@ -532,14 +670,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     textLines.push(stdDevLine);
 
     return textLines;
-  }
+  };
 
-  _calculateCachedStats(data, viewport) {
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
-
-    const canvasPoint1 = viewport.worldToCanvas(worldPos1);
-    const canvasPoint2 = viewport.worldToCanvas(worldPos2);
+  _calculateCachedStats = (data, viewport, canvasCorners) => {
+    const [canvasPoint1, canvasPoint2] = canvasCorners;
+    const worldPos1 = viewport.canvasToWorld(canvasPoint1);
+    const worldPos2 = viewport.canvasToWorld(canvasPoint2);
 
     const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
@@ -704,26 +840,16 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     data.invalidated = false;
 
     return cachedStats;
-  }
+  };
 
-  _isInsideVolume(index1, index2, dimensions) {
+  _isInsideVolume = (index1, index2, dimensions) => {
     return (
       indexWithinDimensions(index1, dimensions) &&
       indexWithinDimensions(index2, dimensions)
     );
-  }
+  };
 
-  _clipIndexToVolume(index, dimensions) {
-    for (let i = 0; i <= 2; i++) {
-      if (index[i] < 0) {
-        index[i] = 0;
-      } else if (index[i] >= dimensions[i]) {
-        index[i] = dimensions[i] - 1;
-      }
-    }
-  }
-
-  _getTargetVolumeUID(scene) {
+  _getTargetVolumeUID = (scene) => {
     if (this._configuration.volumeUID) {
       return this._configuration.volumeUID;
     }
@@ -736,5 +862,5 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
 
     return volumeActors[0].uid;
-  }
+  };
 }

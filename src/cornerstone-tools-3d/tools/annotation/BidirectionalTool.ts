@@ -85,6 +85,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
             hasMoved: false,
             worldPosition: [0, 0, 0],
           },
+          activeHandleIndex: null,
         },
         cachedStats: {},
         active: true,
@@ -370,44 +371,43 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const { currentPoints, element } = eventData;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
+    const { worldToCanvas } = viewport;
     const { toolData, viewportUIDsToRender, handleIndex } = this.editData;
     const { data } = toolData;
-    const { points } = data.handles;
 
     const worldPos = currentPoints.world;
 
     // Update first move handle
-    points[handleIndex] = [...worldPos];
+    data.handles.points[handleIndex] = [...worldPos];
 
-    const pointsCanvas = points.map((p) => viewport.worldToCanvas);
+    const canvasCoordPoints = data.handles.points.map(worldToCanvas);
 
     const canvasCoords = {
       longLineSegment: {
         start: {
-          x: pointsCanvas[0][0],
-          y: pointsCanvas[0][1],
+          x: canvasCoordPoints[0][0],
+          y: canvasCoordPoints[0][1],
         },
         end: {
-          x: pointsCanvas[1][0],
-          y: pointsCanvas[1][1],
+          x: canvasCoordPoints[1][0],
+          y: canvasCoordPoints[1][1],
         },
       },
       shortLineSegment: {
         start: {
-          x: pointsCanvas[2][0],
-          y: pointsCanvas[2][1],
+          x: canvasCoordPoints[2][0],
+          y: canvasCoordPoints[2][1],
         },
         end: {
-          x: pointsCanvas[3][0],
-          y: pointsCanvas[3][1],
+          x: canvasCoordPoints[3][0],
+          y: canvasCoordPoints[3][1],
         },
       },
     };
 
     // ~~ calculate worldPos of our short axis handles
-    // 1/4 distance between long points
-
-    const dist = vec2.distance(pointsCanvas[0], pointsCanvas[1]);
+    // 1/3 distance between long points
+    const dist = vec2.distance(canvasCoordPoints[0], canvasCoordPoints[1]);
 
     const shortAxisDistFromCenter = dist / 3;
     // Calculate long line's incline
@@ -663,12 +663,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
       // 1. distance from intersection point to start handle?
       const distFromTranslateHandle = vec2.distance(
-        [
-          canvasCoordHandlesCurrent[translateHandleIndex][0],
-          canvasCoordHandlesCurrent[translateHandleIndex][1],
-        ],
+        canvasCoordHandlesCurrent[translateHandleIndex],
         [newIntersectionPoint.x, newIntersectionPoint.y]
       );
+
       // isStart if index is 0 or 2
       const shortLineSegment = {
         start: {
