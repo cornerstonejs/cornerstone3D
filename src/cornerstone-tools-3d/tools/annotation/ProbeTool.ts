@@ -11,6 +11,7 @@ import { state } from '../../store';
 import { VtkjsToolEvents as EVENTS } from '../../enums';
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import { indexWithinDimensions } from '../../util/vtkjs';
+import { showToolCursor, hideToolCursor } from '../../store/toolCursor';
 
 export default class ProbeTool extends BaseAnnotationTool {
   touchDragCallback: Function;
@@ -85,8 +86,9 @@ export default class ProbeTool extends BaseAnnotationTool {
     };
     this._activateModify(element);
 
-    evt.preventDefault();
+    hideToolCursor(element);
 
+    evt.preventDefault();
 
     renderingEngine.renderViewports(viewportUIDsToRender);
   }
@@ -94,8 +96,6 @@ export default class ProbeTool extends BaseAnnotationTool {
   getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-
-
 
     const { data } = toolData;
     const point = data.handles.points[0];
@@ -133,6 +133,8 @@ export default class ProbeTool extends BaseAnnotationTool {
     };
     this._activateModify(element);
 
+    hideToolCursor(element);
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -151,6 +153,8 @@ export default class ProbeTool extends BaseAnnotationTool {
     data.active = false;
 
     this._deactivateModify(element);
+
+    showToolCursor(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
@@ -266,7 +270,7 @@ export default class ProbeTool extends BaseAnnotationTool {
 
       const canvasCoordinates = viewport.worldToCanvas(point);
 
-      draw(context, context => {
+      draw(context, (context) => {
         drawHandles(context, [canvasCoordinates], { color });
 
         if (textLines) {

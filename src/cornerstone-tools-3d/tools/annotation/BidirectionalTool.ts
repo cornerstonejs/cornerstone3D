@@ -22,6 +22,7 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import { indexWithinDimensions } from '../../util/vtkjs';
 import cornerstoneMath from 'cornerstone-math/dist/cornerstoneMath.js';
 import getTextBoxCoordsCanvas from '../../util/getTextBoxCoordsCanvas';
+import { showToolCursor, hideToolCursor } from '../../store/toolCursor';
 
 export default class BidirectionalTool extends BaseAnnotationTool {
   touchDragCallback: Function;
@@ -106,6 +107,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       movingTextBox: false,
     };
     this._activateDraw(element);
+
+    hideToolCursor(element);
 
     evt.preventDefault();
 
@@ -239,6 +242,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     renderingEngine.renderViewports(viewportUIDsToRender);
 
+    hideToolCursor(element);
+
     evt.preventDefault();
   };
 
@@ -269,6 +274,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       this.name
     );
 
+    hideToolCursor(element);
+
     this.editData = {
       toolData,
       viewportUIDsToRender,
@@ -293,9 +300,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const { data } = toolData;
 
     data.active = false;
+    data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
     this._deactivateDraw(element);
+
+    showToolCursor(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;

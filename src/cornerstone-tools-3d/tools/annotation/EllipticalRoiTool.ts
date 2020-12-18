@@ -21,6 +21,7 @@ import { indexWithinDimensions } from '../../util/vtkjs';
 import { getTextBoxCoordsCanvas } from '../../util/drawing';
 import { pointInEllipse } from '../../util/math/ellipse';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
+import { showToolCursor, hideToolCursor } from '../../store/toolCursor';
 
 export default class EllipticalRoiTool extends BaseAnnotationTool {
   touchDragCallback: Function;
@@ -105,6 +106,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       centerCanvas: canvasPos,
     };
     this._activateDraw(element);
+
+    hideToolCursor(element);
 
     evt.preventDefault();
 
@@ -207,6 +210,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       movingTextBox: false,
     };
 
+    hideToolCursor(element);
+
     this._activateModify(element);
 
     const enabledElement = getEnabledElement(element);
@@ -277,6 +282,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     };
     this._activateModify(element);
 
+    hideToolCursor(element);
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -293,11 +300,16 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { data } = toolData;
 
     data.active = false;
+    data.handles.activeHandleIndex = null;
+
+    delete data.isDrawing;
 
     delete data.isDrawing;
 
     this._deactivateModify(element);
     this._deactivateDraw(element);
+
+    showToolCursor(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;

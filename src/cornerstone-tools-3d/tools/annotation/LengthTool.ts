@@ -21,6 +21,7 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import cornerstoneMath from 'cornerstone-math';
 import { indexWithinDimensions } from '../../util/vtkjs';
 import { getTextBoxCoordsCanvas } from '../../util/drawing';
+import { showToolCursor, hideToolCursor } from '../../store/toolCursor';
 
 export default class LengthTool extends BaseAnnotationTool {
   touchDragCallback: Function;
@@ -74,6 +75,8 @@ export default class LengthTool extends BaseAnnotationTool {
       return;
     }
 
+    hideToolCursor(element);
+
     const camera = viewport.getCamera();
     const { viewPlaneNormal } = camera;
     const toolData = {
@@ -85,10 +88,7 @@ export default class LengthTool extends BaseAnnotationTool {
       data: {
         invalidated: true,
         handles: {
-          points: [
-            [...worldPos],
-            [...worldPos],
-          ],
+          points: [[...worldPos], [...worldPos]],
           activeHandleIndex: null,
           textBox: {
             hasMoved: false,
@@ -216,6 +216,8 @@ export default class LengthTool extends BaseAnnotationTool {
 
     this._activateModify(element);
 
+    hideToolCursor(element);
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -237,7 +239,7 @@ export default class LengthTool extends BaseAnnotationTool {
     if (handle.worldPosition) {
       movingTextBox = true;
     } else {
-      handleIndex = data.handles.points.findIndex(p => p === handle);
+      handleIndex = data.handles.points.findIndex((p) => p === handle);
     }
 
     // Find viewports to render on drag.
@@ -253,6 +255,8 @@ export default class LengthTool extends BaseAnnotationTool {
       movingTextBox,
     };
     this._activateModify(element);
+
+    hideToolCursor(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
@@ -270,8 +274,10 @@ export default class LengthTool extends BaseAnnotationTool {
     const { data } = toolData;
 
     data.active = false;
+    data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
+    showToolCursor(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
@@ -312,7 +318,7 @@ export default class LengthTool extends BaseAnnotationTool {
 
       const points = data.handles.points;
 
-      points.forEach(point => {
+      points.forEach((point) => {
         point[0] += worldPosDelta[0];
         point[1] += worldPosDelta[1];
         point[2] += worldPosDelta[2];
@@ -420,7 +426,7 @@ export default class LengthTool extends BaseAnnotationTool {
       }
 
       const textLines = this._getTextLines(data, targetVolumeUID);
-      const canvasCoordinates = points.map(p => viewport.worldToCanvas(p));
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       let activeHandleCanvasCoords;
 
@@ -430,7 +436,7 @@ export default class LengthTool extends BaseAnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      draw(context, context => {
+      draw(context, (context) => {
         if (activeHandleCanvasCoords) {
           drawHandles(context, activeHandleCanvasCoords, {
             color,

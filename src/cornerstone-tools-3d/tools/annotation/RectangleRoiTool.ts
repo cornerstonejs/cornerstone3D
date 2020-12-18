@@ -22,6 +22,7 @@ import cornerstoneMath from 'cornerstone-math';
 import { getTextBoxCoordsCanvas } from '../../util/drawing';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
 import { indexWithinDimensions } from '../../util/vtkjs';
+import { showToolCursor, hideToolCursor } from '../../store/toolCursor';
 
 type Point = Array<number>;
 
@@ -101,6 +102,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       movingTextBox: false,
     };
     this._activateModify(element);
+
+    hideToolCursor(element);
 
     evt.preventDefault();
 
@@ -197,6 +200,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     this._activateModify(element);
 
+    hideToolCursor(element);
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -240,6 +245,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     };
     this._activateModify(element);
 
+    hideToolCursor(element);
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -256,8 +263,11 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const { data } = toolData;
 
     data.active = false;
+    data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
+
+    showToolCursor(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
