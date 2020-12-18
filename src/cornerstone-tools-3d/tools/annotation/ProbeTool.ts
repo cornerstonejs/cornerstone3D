@@ -5,7 +5,13 @@ import uuidv4 from '../../util/uuidv4.js';
 import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
 import toolColors from '../../stateManagement/toolColors';
-import { draw, drawHandles, drawTextBox, getNewContext } from '../../drawing';
+import {
+  draw,
+  drawHandles,
+  drawTextBox,
+  getNewContext,
+  setShadow,
+} from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
 import { VtkjsToolEvents as EVENTS } from '../../enums';
@@ -24,6 +30,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const defaultToolConfiguration = {
       name: 'Probe',
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: { shadow: true },
     };
 
     super(toolConfiguration, defaultToolConfiguration);
@@ -271,6 +278,8 @@ export default class ProbeTool extends BaseAnnotationTool {
       const canvasCoordinates = viewport.worldToCanvas(point);
 
       draw(context, (context) => {
+        setShadow(context, this.configuration);
+
         drawHandles(context, [canvasCoordinates], { color });
 
         if (textLines) {

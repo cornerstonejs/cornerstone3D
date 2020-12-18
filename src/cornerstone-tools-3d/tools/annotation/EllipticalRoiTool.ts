@@ -12,6 +12,7 @@ import {
   drawLinkedTextBox,
   drawEllipse,
   getNewContext,
+  setShadow,
 } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
@@ -44,6 +45,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     super(toolConfiguration, {
       name: 'EllipticalRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: { shadow: true },
     });
 
     this._throttledCalculateCachedStats = throttle(
@@ -601,6 +603,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       }
 
       draw(context, (context) => {
+        setShadow(context, this.configuration);
         if (activeHandleCanvasCoords) {
           drawHandles(context, activeHandleCanvasCoords, {
             color,

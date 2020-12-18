@@ -13,6 +13,7 @@ import {
   drawLinkedTextBox,
   drawLine,
   getNewContext,
+  setShadow,
 } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
@@ -40,6 +41,9 @@ export default class LengthTool extends BaseAnnotationTool {
     super(toolConfiguration, {
       name: 'Length',
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: {
+        shadow: true,
+      },
     });
 
     /**
@@ -437,6 +441,8 @@ export default class LengthTool extends BaseAnnotationTool {
       }
 
       draw(context, (context) => {
+        setShadow(context, this.configuration);
+
         if (activeHandleCanvasCoords) {
           drawHandles(context, activeHandleCanvasCoords, {
             color,

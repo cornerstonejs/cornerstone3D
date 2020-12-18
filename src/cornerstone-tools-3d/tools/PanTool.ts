@@ -39,8 +39,6 @@ export default class PanTool extends BaseTool {
     const camera = enabledElement.viewport.getCamera();
     const { focalPoint, position } = camera;
 
-    debugger;
-
     const updatedPosition = [
       position[0] - deltaPointsWorld[0],
       position[1] - deltaPointsWorld[1],

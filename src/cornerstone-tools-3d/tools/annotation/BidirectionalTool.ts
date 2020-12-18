@@ -14,6 +14,7 @@ import {
   drawLinkedTextBox,
   drawLine,
   getNewContext,
+  setShadow,
 } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
@@ -41,6 +42,9 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     super(toolConfiguration, {
       name: 'Bidirectional',
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: {
+        shadow: true,
+      },
     });
 
     this._throttledCalculateCachedStats = throttle(
@@ -858,6 +862,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
 
       draw(context, (context) => {
+        setShadow(context, this.configuration);
+
         if (activeHandleCanvasCoords) {
           drawHandles(context, activeHandleCanvasCoords, {
             color,
