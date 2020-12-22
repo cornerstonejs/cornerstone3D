@@ -1,5 +1,4 @@
 import { BaseTool } from './base/index';
-// ~~ VTK Viewport
 import { getEnabledElement } from './../../index';
 import { vec3 } from 'gl-matrix';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';

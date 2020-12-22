@@ -66,11 +66,12 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     }
 
     const camera = viewport.getCamera();
-    const { viewPlaneNormal } = camera;
+    const { viewPlaneNormal, viewUp } = camera;
 
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
+        viewUp: [...viewUp],
         FrameOfReferenceUID,
         toolName: this.name,
       },

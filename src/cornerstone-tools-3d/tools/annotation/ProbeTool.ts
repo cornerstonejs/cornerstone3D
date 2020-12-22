@@ -63,11 +63,12 @@ export default class ProbeTool extends BaseAnnotationTool {
     }
 
     const camera = viewport.getCamera();
-    const { viewPlaneNormal } = camera;
+    const { viewPlaneNormal, viewUp } = camera;
 
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
+        viewUp: [...viewUp],
         FrameOfReferenceUID,
         toolName: this.name,
       },
@@ -409,20 +410,4 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     return volumeActors[0].uid;
   }
-
-  // preMouseDownCallback(evt) {
-  //   console.log('probeTool PRE_MOUSE_DOWN');
-  // }
-
-  // postMouseDownCallback(evt) {
-  //   console.log('probeTool POST_MOUSE_DOWN');
-  // }
-
-  // Takes ICornerstoneEvent, Mouse or Touch
-  // _dragCallback(evt) {
-  //   const { element: canvas, deltaPoints } = evt.detail;
-  //   const enabledElement = getEnabledElement(canvas);
-
-  //   const { x: deltaX, y: deltaY, z: deltaZ } = deltaPoints.world;
-  // }
 }

@@ -1,5 +1,4 @@
 import { BaseTool } from './base/index';
-// ~~ VTK Viewport
 import { getEnabledElement, imageCache, Events } from './../../index';
 import triggerEvent from '../util/triggerEvent';
 
@@ -14,14 +13,6 @@ export default class WindowLevelTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
     });
 
-    /**
-     * Will only fire for cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
@@ -40,7 +31,6 @@ export default class WindowLevelTool extends BaseTool {
     return { lower, upper };
   }
 
-  // Takes ICornerstoneEvent, Mouse or Touch
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
@@ -103,12 +93,9 @@ export default class WindowLevelTool extends BaseTool {
     scene.render();
   }
 
-  _getImageDynamicRange = volumeUID => {
+  _getImageDynamicRange = (volumeUID) => {
     const imageVolume = imageCache.getImageVolume(volumeUID);
     const { dimensions, scalarData } = imageVolume;
-
-    // TODO -> cache it when we have mouse down interaction, for all of drag?
-    // TODO -> Might be overkill This calculation only takes 0.5ms for CT.
 
     const middleSliceIndex = Math.floor(dimensions[2] / 2);
 

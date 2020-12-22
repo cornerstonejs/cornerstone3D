@@ -4,6 +4,7 @@ import planar from './planar';
 import viewportFilters from './viewportFilters';
 import vtkjs from './vtkjs';
 import drawing from './drawing';
+import stackScrollTool from './stackScrollTool';
 
 // Lodash/common JS functionality
 import debounce from './debounce';
@@ -23,6 +24,7 @@ export {
   planar,
   viewportFilters,
   vtkjs,
+  stackScrollTool,
   drawing,
   debounce,
   deepMerge,
@@ -38,6 +40,7 @@ export default {
   planar,
   viewportFilters,
   vtkjs,
+  stackScrollTool,
   drawing,
   debounce,
   deepMerge,

@@ -1,36 +1,28 @@
 import { BaseTool } from './base/index';
-// ~~ VTK Viewport
 import { getEnabledElement } from './../../index';
 
+/**
+ * @class PanTool
+ * @classdesc Tool that pans the camera in the plane defined by the sliceNormal and the viewUp.
+ *
+ * @export
+ * @class PanTool
+ * @extends {BaseTool}
+ */
 export default class PanTool extends BaseTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
 
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+    super(toolConfiguration, {
       name: 'Pan',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    };
+    });
 
-    super(toolConfiguration, defaultToolConfiguration);
-
-    /**
-     * Will only fire fore cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  preMouseDownCallback(evt) {
-    evt.preventDefault();
-  }
-
-  // Takes ICornerstoneEvent, Mouse or Touch
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);

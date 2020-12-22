@@ -1,5 +1,5 @@
 import { BaseTool } from './base/index';
-// ~~ VTK Viewport
+
 import { getEnabledElement, Events } from './../../index';
 import triggerEvent from '../util/triggerEvent';
 
@@ -9,26 +9,15 @@ export default class PetThresholdTool extends BaseTool {
   _configuration: any;
 
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+    super(toolConfiguration, {
       name: 'PetThreshold',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    };
+    });
 
-    super(toolConfiguration, defaultToolConfiguration);
-
-    /**
-     * Will only fire for cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  // Takes ICornerstoneEvent, Mouse or Touch
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
@@ -42,7 +31,10 @@ export default class PetThresholdTool extends BaseTool {
       volumeActor = scene.getVolumeActor(volumeUID);
 
       if (!volumeActor) {
-        // Intentional use of volumeUID which is not defined
+        // Intentional use of volumeUID which is not defined, so throw.
+        throw new Error(
+          `Scene does not have a volume actor with specified volumeUID: ${volumeUID}`
+        );
       }
     } else {
       // Default to first volumeActor
