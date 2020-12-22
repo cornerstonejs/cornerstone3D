@@ -1,8 +1,7 @@
 import { BaseAnnotationTool } from './../base/index';
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math';
 // ~~ VTK Viewport
-import { getEnabledElement, imageCache } from '../../../index';
-import uuidv4 from '../../util/uuidv4.js';
+import { getEnabledElement } from '../../../index';
 import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
 import throttle from '../../util/throttle';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
@@ -18,7 +17,7 @@ import {
 } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
-import { VtkjsToolEvents as EVENTS } from '../../enums';
+import { CornerstoneTools3DEvents as EVENTS } from '../../enums';
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import { indexWithinDimensions } from '../../util/vtkjs';
 import cornerstoneMath from 'cornerstone-math/dist/cornerstoneMath.js';
@@ -931,7 +930,6 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const worldPos2 = data.handles.points[1];
     const worldPos3 = data.handles.points[2];
     const worldPos4 = data.handles.points[3];
-    const { cachedStats } = data;
 
     // https://github.com/Kitware/vtk-js/blob/b50fd091cb9b5b65981bc7c64af45e8f2472d7a1/Sources/Common/Core/Math/index.js#L331
     const dist1 = Math.sqrt(

@@ -5,7 +5,7 @@ import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEv
 const { Active, Passive, Enabled } = ToolModes;
 
 /**
- * onImageRendered - When the image is rendered, check what tools can be rendered for this element.
+ * @function onImageRendered - When the image is rendered, check what tools can be rendered for this element.
  *
  * - First we get all tools which are active, passive or enabled on the element.
  * - If any of these tools have a `renderToolData` method, then we render them.
@@ -14,28 +14,28 @@ const { Active, Passive, Enabled } = ToolModes;
  *
  * @param evt The normalized onImageRendered event.
  */
-const onImageRendered = function(evt) {
+const onImageRendered = function (evt) {
   const enabledTools = getToolsWithModesForMouseEvent(evt, [
     Active,
     Passive,
     Enabled,
   ]);
 
-  enabledTools.forEach(tool => {
+  enabledTools.forEach((tool) => {
     if (tool.renderToolData) {
       tool.renderToolData(evt);
     }
   });
 };
 
-const enable = function(element) {
+const enable = function (element) {
   element.addEventListener(
     RenderingEngineEvents.IMAGE_RENDERED,
     onImageRendered
   );
 };
 
-const disable = function(element) {
+const disable = function (element) {
   element.removeEventListener(
     RenderingEngineEvents.IMAGE_RENDERED,
     onImageRendered

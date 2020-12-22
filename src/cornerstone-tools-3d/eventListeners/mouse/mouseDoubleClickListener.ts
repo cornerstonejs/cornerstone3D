@@ -1,41 +1,37 @@
-import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
+import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents';
 import triggerEvent from './../../util/triggerEvent';
+import getMouseEventPoints from './getMouseEventPoints';
+import { IPoints } from '../ICornerstoneToolsEventDetail';
 
 /**
- * Captures and normalized the double click event. Emits as a cstools double
- * click event.
+ * Captures and normalizes the double click event. Emits as a cornerstoneTools3D
+ * double click event.
  *
- * @note This is public in the sense that the event it emits is an integration point
- * for consumers. However, this method should not be exposed/imported outside
- * of this library.
- *
- * @private
- * @param evt
+ * @param {MouseEvent} evt The mouse event.
  */
 function mouseDoubleClickListener(evt: MouseEvent): void {
-  const element = evt.currentTarget;
-  const startPoints = {
-    client: {
-      x: evt.clientX,
-      y: evt.clientY,
-    },
+  const element = <HTMLElement>evt.target;
+
+  const startPoints = getMouseEventPoints(evt, element);
+  const deltaPoints: IPoints = {
+    page: [0, 0],
+    client: [0, 0],
+    canvas: [0, 0],
+    world: [0, 0, 0],
   };
 
   const eventData = {
     event: evt,
-    // @NOTE: This has shifted to "camera"
-    // viewport: external.cornerstone.getViewport(element),
     camera: {},
     element,
     startPoints,
     lastPoints: startPoints,
     currentPoints: startPoints,
-    // Note: different from schema in mouseDownListener
-    deltaPoints: { x: 0, y: 0 },
-    eventName: VtkjsToolsEvents.MOUSE_DOUBLE_CLICK,
+    deltaPoints,
+    eventName: CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK,
   };
 
-  triggerEvent(element, VtkjsToolsEvents.MOUSE_DOUBLE_CLICK, eventData);
+  triggerEvent(element, CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK, eventData);
 }
 
 export default mouseDoubleClickListener;

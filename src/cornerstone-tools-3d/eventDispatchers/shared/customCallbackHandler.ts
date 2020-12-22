@@ -4,7 +4,7 @@ import ToolModes from '../../enums/ToolModes';
 const { Active } = ToolModes;
 
 /**
- * The customCallbackHandler is used as a generic event handler for tool events
+ * @function customCallbackHandler This is used as a generic event handler for tool events
  * on viewports. It:
  *
  * - Finds an "active" tool with:
@@ -18,7 +18,11 @@ const { Active } = ToolModes;
  *   (and event handling) active tool ex. 'doubleClickCallback'
  * @param evt
  */
-export default function(handlerType: string, customFunction: string, evt) {
+export default function customCallbackHandler(
+  handlerType: string,
+  customFunction: string,
+  evt
+) {
   if (state.isToolLocked) {
     return false;
   }
@@ -35,8 +39,9 @@ export default function(handlerType: string, customFunction: string, evt) {
    * Iterate tool group tools until we find a tool that is:
    * - active
    * - has the custom callback function
+   *
    */
-  let foundTool;
+  let activeTool;
   for (let i = 0; i < toolGroups.length; i++) {
     const toolGroup = toolGroups[i];
     const toolGroupToolNames = Object.keys(toolGroup.tools);
@@ -56,19 +61,19 @@ export default function(handlerType: string, customFunction: string, evt) {
       ) {
         // This should be behind some API. Too much knowledge of ToolGroup
         // inner workings leaking out
-        foundTool = toolGroup._tools[toolName];
+        activeTool = toolGroup._tools[toolName];
         break;
       }
     }
 
-    if (foundTool) {
+    if (activeTool) {
       break;
     }
   }
 
-  if (!foundTool) {
+  if (!activeTool) {
     return;
   }
 
-  foundTool[customFunction](evt);
+  activeTool[customFunction](evt);
 }

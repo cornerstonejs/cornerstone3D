@@ -1,20 +1,17 @@
-import normalizeWheel from './_normalizeWheel';
-import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
+import normalizeWheel from './normalizeWheel';
+import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents';
 import triggerEvent from './../../util/triggerEvent';
-import { IPoints, IPoint } from './../ICornerstoneToolsEventDetail';
 // ~~ VIEWPORT LIBRARY
 import { getEnabledElement } from './../../../index';
-import getMouseEventPoints from '../mouse/getMouseEventPoints'
+import getMouseEventPoints from '../mouse/getMouseEventPoints';
 
 /**
- *
- * @private
- * @function wheelEventHandler
- * @param {WheelEvent} evt
- * @returns {undefined}
+ * wheelListener - Captures and normalizes mouse wheel events. Emits as a
+ * cornerstoneTools3D mouse wheel event.
+ * @param {WheelEvent} evt The mouse wheel event.
  */
 function wheelListener(evt: WheelEvent) {
-  const element = evt.currentTarget as HTMLElement;
+  const element = <HTMLElement>evt.currentTarget;
 
   const enabledElement = getEnabledElement(element);
   const { renderingEngineUID, sceneUID, viewportUID } = enabledElement;
@@ -48,8 +45,7 @@ function wheelListener(evt: WheelEvent) {
     points: getMouseEventPoints(evt),
   };
 
-  triggerEvent(element, VtkjsToolsEvents.MOUSE_WHEEL, eventData);
+  triggerEvent(element, CornerstoneTools3DEvents.MOUSE_WHEEL, eventData);
 }
-
 
 export default wheelListener;

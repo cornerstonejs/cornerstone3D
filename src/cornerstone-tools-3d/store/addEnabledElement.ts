@@ -2,26 +2,20 @@ import {
   mouseEventListeners,
   wheelEventListener,
 } from './../eventListeners/index';
-// ~~
-import { getEnabledElement } from './../../index';
 import {
   imageRenderedEventDispatcher,
   mouseToolEventDispatcher,
-  //   touchToolEventDispatcher,
 } from './../eventDispatchers/index';
-
 import { state } from './index';
 
-// @TODO: Should all of this be keyed off `canvas` instead of enabledElement
-export default function(elementEnabledEvt) {
-  // Is DOM element
-  const canvas = elementEnabledEvt.detail.canvas;
-  // Is construct
-  const enabledElement = getEnabledElement(canvas);
-
-  console.log('~~ EnabledElementEvent, add: ', canvas, enabledElement);
-
-  // const enabledElement = elementEnabledEvt.detail.element;
+/**
+ * @function addEnabledElement On enabling an element, enable event listeners
+ * and dispatchers on this element so we can interact with tools.
+ *
+ * @param {CustomEvent} evt The ELEMENT_ENABLED event.
+ */
+export default function addEnabledElement(evt) {
+  const canvas = <HTMLElement>evt.detail.canvas;
 
   // Listeners
   mouseEventListeners.enable(canvas);

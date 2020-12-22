@@ -1,24 +1,29 @@
-import { getToolState } from '../stateManagement/toolState';
-import { getEnabledElement } from '../../index';
+import {
+  ToolSpecificToolData,
+  ToolAndToolStateArray,
+} from '../stateManagement/types';
+
+type ToolAndToolData = {
+  tool: any;
+  toolData: ToolSpecificToolData;
+};
+
 /**
- * Filters an array of tools, returning only tools with moveable handles at the
- * mouse location.
- *
- * @public
- * @function getMoveableAnnotationTools
+ * @function getMoveableAnnotationTools Filters an array of tools, returning only
+ * tools with moveable handles at the mouse location.
  *
  * @param  {HTMLElement} element The element
- * @param  {Object[]}    tools   The input tool array.
- * @param  {Object}      coords  The coordinates of the mouse position.
+ * @param  {ToolAndToolStateArray}   toolAndToolStateArray   The input tool array.
+ * @param  {number[]}      canvasCoords  The coordinates of the mouse position.
  * @param  {string}      [interactionType=mouse]
- * @returns {Object[]}            The filtered array.
+ * @returns {ToolAndToolStateArray}            The filtered array.
  */
-export default function(
-  element,
-  toolAndToolStateArray,
-  canvasCoords,
-  interactionType = 'mouse'
-) {
+export default function getMoveableAnnotationTools(
+  element: HTMLElement,
+  toolAndToolStateArray: ToolAndToolStateArray,
+  canvasCoords: number[],
+  interactionType: string = 'mouse'
+): Array<ToolAndToolData> {
   const proximity = 6;
 
   if (toolAndToolStateArray.length === 0) {

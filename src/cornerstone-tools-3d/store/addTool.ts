@@ -1,5 +1,13 @@
 import { state } from './index';
 
+/**
+ * @function addTool
+ *
+ * @export
+ * @param {BaseTool|BaseAnnotationTool} ToolClass A tool calls to instantiate.
+ * @param {object} toolOptions The tool-specific configuration options for the tool.
+ * @returns
+ */
 export default function addTool(ToolClass, toolOptions) {
   const tool = new ToolClass(toolOptions);
   const toolAlreadyAdded = state.tools[tool.name] !== undefined;

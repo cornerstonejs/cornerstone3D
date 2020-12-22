@@ -20,7 +20,7 @@
     "assert": true
   },
   "rules": {
-    "no-console": "warn",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
     "no-undef": "warn",
     "no-unused-vars": "warn"
   }

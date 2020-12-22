@@ -1,5 +1,5 @@
 import ToolBindings from './ToolBindings';
 import ToolModes from './ToolModes';
-import VtkjsToolEvents from './VtkjsToolsEvents';
+import CornerstoneTools3DEvents from './CornerstoneTools3DEvents';
 
-export { ToolBindings, ToolModes, VtkjsToolEvents };
+export { ToolBindings, ToolModes, CornerstoneTools3DEvents };

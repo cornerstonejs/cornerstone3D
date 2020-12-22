@@ -1,4 +1,9 @@
-// https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
+/**
+ * @enum Mouse This enum enumerates the different buttons returned by `.buttons` on the mouse event.
+ * These values are used when setting a tool active in a tool group.
+ *
+ * See also: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
+ */
 enum Mouse {
   Primary = 1,
   Secondary = 2,
@@ -13,7 +18,9 @@ enum Mouse {
 
 enum Touch {}
 
-export default {
+const enums = {
   Mouse,
   Touch,
 };
+
+export default enums;

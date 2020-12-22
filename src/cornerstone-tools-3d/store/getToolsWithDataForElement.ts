@@ -1,17 +1,19 @@
 import { getToolState } from './../stateManagement/toolState';
+import { ToolAndToolStateArray } from '../stateManagement/types';
 
 /**
- * Filters an array of tools, returning only tools which have annotation data.
- * @export
- * @public
- * @method
- * @name getToolsWithDataForElement
+ * @function getToolsWithDataForElement Filters an array of tools, returning only
+ * tools which have annotation data.
  *
- * @param  {string} element The FrameOfReference
- * @param  {Object[]} tools The input tool array.
- * @returns {Object[]}            The filtered array.
+ * @param  {HTMLElement} element The cornerstone3D enabled element.
+ * @param  {Object[]} tools The array of tools to check.
+ *
+ * @returns {ToolAndToolStateArray} The array of tools with their found toolState.
  */
-export default function(element, tools) {
+export default function getToolsWithDataForElement(
+  element: HTMLElement,
+  tools
+): ToolAndToolStateArray {
   const result = [];
 
   for (let i = 0; i < tools.length; i++) {

@@ -1,4 +1,4 @@
-import textStyle from './../stateManagement/textStyle.js';
+import textStyle from './../stateManagement/textStyle.ts';
 
 /**
  * Draw multiple lines of text within a bounding box.
@@ -13,13 +13,13 @@ import textStyle from './../stateManagement/textStyle.js';
  * @param {Number} padding - The amount of padding above/below each line in canvas units. Note this gives an inter-line spacing of `2*padding`.
  * @returns {undefined}
  */
-export default function(context, boundingBox, textLines, fillStyle, padding) {
+export default function (context, boundingBox, textLines, fillStyle, padding) {
   const fontSize = textStyle.getFontSize();
 
   context.font = textStyle.getFont();
   context.textBaseline = 'top';
   context.fillStyle = fillStyle;
-  textLines.forEach(function(text, index) {
+  textLines.forEach(function (text, index) {
     context.fillText(
       text,
       boundingBox.left + padding,

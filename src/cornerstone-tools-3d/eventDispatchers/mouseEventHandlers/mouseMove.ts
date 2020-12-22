@@ -1,5 +1,5 @@
 // // State
-import { state, ToolGroupManager } from './../../store/index';
+import { state } from './../../store/index';
 import { ToolModes } from './../../enums/index';
 import { getEnabledElement } from '../../../index';
 
@@ -10,10 +10,13 @@ import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseE
 const { Active, Passive } = ToolModes;
 
 /**
+ * @function mouseMove - On mouse move when not dragging, fire tools `mouseMoveCallback`s.
  * This is mostly used to update the [un]hover state
  * of a tool.
+ *
+ * @param {Event} evt The normalized mouseDown event.
  */
-export default function(evt) {
+export default function mouseMove(evt) {
   if (state.isToolLocked || state.isMultiPartToolActive) {
     return;
   }
@@ -25,7 +28,6 @@ export default function(evt) {
 
   const eventData = evt.detail;
   const { element } = eventData;
-
 
   // Annotation tool specific
   const annotationTools = getToolsWithDataForElement(

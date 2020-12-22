@@ -20,9 +20,15 @@ type ToolState = {
   [key: string]: FrameOfReferenceSpecificToolState;
 };
 
-export type {
+type ToolAndToolStateArray = Array<{
+  tool: any;
+  toolState: ToolSpecificToolState;
+}>;
+
+export {
   ToolSpecificToolData,
   ToolSpecificToolState,
   FrameOfReferenceSpecificToolState,
+  ToolAndToolStateArray,
   ToolState,
 };

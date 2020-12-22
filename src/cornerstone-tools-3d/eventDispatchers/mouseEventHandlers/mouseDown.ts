@@ -2,7 +2,6 @@
 import {
   // getters,
   state,
-  ToolGroupManager,
 } from './../../store/index';
 
 import { ToolModes } from './../../enums/index';
@@ -17,7 +16,7 @@ import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseE
 const { Active, Passive } = ToolModes;
 
 /**
- * mouseDown - When the mouse is depressed we check which entities can process these events in the following manner:
+ * @function mouseDown - When the mouse is depressed we check which entities can process these events in the following manner:
  *
  * - First we get the `activeTool` for the mouse button pressed.
  * - If the `activeTool` has a `preMouseDownCallback`, this is called. If the callback returns `true`,
@@ -37,7 +36,7 @@ const { Active, Passive } = ToolModes;
  *
  * If the event is not consumed the event will bubble to the `mouseDownActivate` handler.
  *
- * @param evt The normalized mouseDown event.
+ * @param {Event} evt The normalized mouseDown event.
  */
 export default function mouseDown(evt) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
@@ -72,7 +71,6 @@ export default function mouseDown(evt) {
   );
 
   const canvasCoords = eventData.currentPoints.canvas;
-
 
   const annotationToolsWithMoveableHandles = getToolsWithMoveableHandles(
     element,

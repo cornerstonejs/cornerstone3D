@@ -1,91 +1,79 @@
 import BaseTool from './BaseTool';
-import { getToolState } from '../../stateManagement/toolState';
-//import handleActivator from './../../manipulators/handleActivator.js';
-// import {
-//   moveHandleNearImagePoint,
-//   moveAnnotation,
-// } from './../../util/findAndMoveHelpers.js';
+import {
+  ToolSpecificToolData,
+  ToolSpecificToolState,
+} from '../../stateManagement/types';
 
 /**
- * @memberof Tools.Base
+ * @class BaseAnnotationTool @extends BaseTool
  * @classdesc Abstract class for tools which create and display annotations on the
- * cornerstone canvas.
- * @extends Tools.Base.BaseTool
+ * cornerstone3D canvas.
  */
-class BaseAnnotationTool extends BaseTool {
+abstract class BaseAnnotationTool extends BaseTool {
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
 
   /**
-   * Creates a new annotation.
+   * @abstract @method addNewMeasurement Creates a new annotation.
    *
    * @method createNewMeasurement
-   * @memberof Tools.Base.BaseAnnotationTool
+   * @memberof BaseAnnotationTool
    *
-   * @param  {type} evt description
-   * @returns {type}     description
+   * @param  {CustomEvent} evt The event.
+   * @param  {string} interactionType The interaction type used to add the measurement.
    */
-  // eslint-disable-next-line no-unused-vars
-  createNewMeasurement(evt) {
-    throw new Error(
-      `Method createNewMeasurement not implemented for ${this.name}.`
-    );
-  }
-
-  getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
-    console.warn(
-      `Method getHandleNearImagePoint not implemented for ${this.name}.`
-    );
-
-    return undefined;
-  }
+  abstract addNewMeasurement(evt, interactionType);
 
   /**
-   * Returns the distance in px from the given coords to the closest handle of the annotation.
+   * @abstract @method renderToolData Used to redraw the tool's annotation data per render
    *
-   * @method distanceFromPoint
-   * @memberof Tools.Base.BaseAnnotationTool
-   *
-   * @param {*} element
-   * @param {*} data
-   * @param {*} coords
-   * @returns {number} -  the distance in px from the provided coordinates to the
-   * closest rendered portion of the annotation. -1 if the distance cannot be
-   * calculated.
+   * @param {CustomEvent} evt The IMAGE_RENDERED event.
    */
-  // eslint-disable-next-line no-unused-vars
-  distanceFromPoint(element, data, coords) {
-    throw new Error(
-      `Method distanceFromPoint not implemented for ${this.name}.`
-    );
-  }
-
-  /**
-   * Used to redraw the tool's annotation data per render
-   *
-   * @abstract
-   * @param {*} evt
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-unused-vars
-  renderToolData(evt) {
-    throw new Error(`renderToolData not implemented for ${this.name}.`);
-  }
+  abstract renderToolData(evt);
 
   // ===================================================================
-  // Virtual Methods - Have default behavior but may be overriden.
+  // Virtual Methods - Have default behavior or are optional.
   // ===================================================================
 
   /**
-   * Event handler for MOUSE_MOVE event.
+   * @virtual @method handleSelectedCallback Custom callback for when a handle is selected.
+   * @memberof Tools.Base.BaseAnnotationTool
    *
-   * @abstract
-   * @event
-   * @param {Object} evt - The event.
-   * @returns {boolean} - True if the image needs to be updated
+   * @param  {CustomEvent} evt The event.
+   * @param  {ToolSpecificToolData} toolData - The toolData selected.
+   * @param  {any} handle - The selected handle.
+   * @param  {string} interactionType - The intraction type the handle was selected with.
    */
-  mouseMoveCallback(evt, filteredToolState) {
+  handleSelectedCallback(
+    evt,
+    toolData: ToolSpecificToolData,
+    handle,
+    interactionType
+  ) {}
+
+  /**
+   * @virtual @method toolSelectedCallback Custom callback for when a tool is selected.
+   * @memberof BaseAnnotationTool
+   *
+   * @param  {CustomEvent} evt The event.
+   * @param  {ToolSpecificToolData} toolData - The `ToolSpecificToolData` to check.
+   * @param  {string} [interactionType=mouse]
+   */
+  toolSelectedCallback(evt, toolData: ToolSpecificToolData, interactionType) {}
+
+  /**
+   * @virtual @method Event handler for MOUSE_MOVE event.
+   *
+   *
+   * @param {CustomEvent} evt - The event.
+   * @param {ToolSpecificToolState} filteredToolState The toolState to check for hover interactions
+   * @returns {boolean} - True if the image needs to be updated.
+   */
+  mouseMoveCallback = (
+    evt,
+    filteredToolState: ToolSpecificToolState
+  ): boolean => {
     const { element, currentPoints } = evt.detail;
     const canvasCoords = currentPoints.canvas;
     let imageNeedsUpdate = false;
@@ -120,14 +108,68 @@ class BaseAnnotationTool extends BaseTool {
     }
 
     return imageNeedsUpdate;
-  }
+  };
 
-  _imagePointNearToolOrHandle(element, toolData, coords, proximity) {
+  /**
+   * @virtual @method getHandleNearImagePoint
+   * @memberof BaseAnnotationTool
+   *
+   * @param {HTMLElement} element The cornerstone3D enabled element.
+   * @param {ToolSpecificToolData} toolData The toolData to check.
+   * @param {number[]} canvasCoords The image point in canvas coordinates.
+   * @param {number} proximity The proximity to accept.
+   *
+   * @returns {any|undefined} The handle if found (may be a point, textbox or other).
+   */
+  getHandleNearImagePoint(
+    element: HTMLElement,
+    toolData: ToolSpecificToolData,
+    canvasCoords: number[],
+    proximity: number
+  ): any | undefined {}
 
+  /**
+   * @virtual @method Returns true if the given coords are need the tool.
+   * @memberof BaseAnnotationTool
+   *
+   * @param {HTMLElement} element
+   * @param  {ToolSpecificToolData} toolData - The `ToolSpecificToolData` to check.
+   * @param {number[]} canvasCoords The image point in canvas coordinates.
+   * @param {number} proximity The proximity to accept.
+   * @param {string} interactionType The interaction type used to add the measurement.
+   *
+   * @returns {boolean} If the point is near the tool.
+   */
+  pointNearTool(
+    element: HTMLElement,
+    toolData: ToolSpecificToolData,
+    canvasCoords: number[],
+    proximity,
+    interactionType = 'mouse'
+  ) {}
+
+  /**
+   * @protected @method _imagePointNearToolOrHandle Returns true if the
+   * `canvasCoords` are near a handle or selectable part of the tool
+   * @memberof BaseAnnotationTool
+   *
+   * @param {HTMLElement} element
+   * @param {ToolSpecificToolData} toolData
+   * @param {number[]} canvasCoords
+   * @param {number} proximity
+   *
+   * @returns {boolean} If the point is near.
+   */
+  protected _imagePointNearToolOrHandle(
+    element: HTMLElement,
+    toolData: ToolSpecificToolData,
+    canvasCoords: number[],
+    proximity: number
+  ) {
     const handleNearImagePoint = this.getHandleNearImagePoint(
       element,
       toolData,
-      coords,
+      canvasCoords,
       proximity
     );
 
@@ -138,72 +180,12 @@ class BaseAnnotationTool extends BaseTool {
     const toolNewImagePoint = this.pointNearTool(
       element,
       toolData,
-      coords,
+      canvasCoords,
       proximity
     );
 
     return toolNewImagePoint;
   }
-
-  /**
-   * Custom callback for when a handle is selected.
-   * @method handleSelectedCallback
-   * @memberof Tools.Base.BaseAnnotationTool
-   *
-   * @param  {*} evt    -
-   * @param  {*} toolData   -
-   * @param  {*} handle - The selected handle.
-   * @param  {String} interactionType -
-   * @returns {void}
-   */
-  handleSelectedCallback(evt, toolData, handle, interactionType = 'mouse') {
-    console.warn('todo handleSelectedCallback!');
-    //moveHandleNearImagePoint(evt, this, toolData, handle, interactionType);
-  }
-
-  /**
-   * Custom callback for when a tool is selected.
-   *
-   * @method toolSelectedCallback
-   * @memberof Tools.Base.BaseAnnotationTool
-   *
-   * @param  {*} evt
-   * @param  {*} annotation
-   * @param  {string} [interactionType=mouse]
-   * @returns {void}
-   */
-  toolSelectedCallback(evt, annotation, interactionType = 'mouse') {
-    console.warn('todo toolSelectedCallback!');
-    //moveAnnotation(evt, this, annotation, interactionType);
-  }
-
-  /**
-   * Updates cached statistics for the tool's annotation data on the element
-   *
-   * @param {*} image
-   * @param {*} element
-   * @param {*} data
-   * @returns {void}
-   */
-  updateCachedStats(image, element, data) {
-    console.warn(`updateCachedStats not implemented for ${this.name}.`);
-  }
-
-  /**
-   *
-   * Returns true if the given coords are need the tool.
-   *
-   * @method pointNearTool
-   * @memberof Tools.Base.BaseAnnotationTool
-   *
-   * @param {*} element
-   * @param {*} data
-   * @param {*} coords
-   * @param {string} [interactionType=mouse]
-   * @returns {boolean} If the point is near the tool
-   */
-  // eslint-disable-next-line no-unused-vars
-  pointNearTool(element, data, coords, interactionType = 'mouse') {}
 }
 
 export default BaseAnnotationTool;

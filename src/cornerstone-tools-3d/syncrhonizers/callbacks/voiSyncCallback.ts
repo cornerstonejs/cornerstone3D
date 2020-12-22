@@ -1,10 +1,20 @@
 import { getRenderingEngine } from '../../../index';
+import IViewportUID from '../../store/IViewportUID';
 
-export default function voiSync(
+/**
+ * @function cameraSyncCallback - Synchronizer callback to synchronize the voi of volumeActors of identical volumes
+ * in different scenes.
+ *
+ * @param {object} synchronizerInstance The Instance of the Synchronizer
+ * @param {IViewportUID} sourceViewport The list of UIDs defining the source viewport.
+ * @param {IViewportUID} targetViewport The list of UIDs defining the target viewport.
+ * @param {CustomEvent} voiModifiedEvent The VOI_MODIFIED event.
+ */
+export default function voiSyncCallback(
   synchronizerInstance,
-  sourceViewport,
-  targetViewport,
-  voiModifiedEvent
+  sourceViewport: IViewportUID,
+  targetViewport: IViewportUID,
+  voiModifiedEvent: CustomEvent
 ) {
   const eventData = voiModifiedEvent.detail;
   let { volumeUID, sceneUID, range } = eventData;

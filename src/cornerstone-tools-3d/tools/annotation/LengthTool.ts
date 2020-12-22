@@ -15,9 +15,9 @@ import {
   getNewContext,
   setShadow,
 } from '../../drawing';
-import { vec2, vec3 } from 'gl-matrix';
+import { vec2 } from 'gl-matrix';
 import { state } from '../../store';
-import { VtkjsToolEvents as EVENTS } from '../../enums';
+import { CornerstoneTools3DEvents as EVENTS } from '../../enums';
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import cornerstoneMath from 'cornerstone-math';
 import { indexWithinDimensions } from '../../util/vtkjs';
@@ -499,7 +499,7 @@ export default class LengthTool extends BaseAnnotationTool {
 
   _getTextLines(data, targetVolumeUID) {
     const cachedVolumeStats = data.cachedStats[targetVolumeUID];
-    const { length, Modality } = cachedVolumeStats;
+    const { length } = cachedVolumeStats;
 
     if (length === undefined) {
       return;

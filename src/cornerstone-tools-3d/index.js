@@ -1,6 +1,11 @@
 import {
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
+  textStyle,
+  toolColors,
+  toolStyle,
+  getToolState,
+  addToolState,
 } from './stateManagement';
 
 import init from './init';
@@ -23,15 +28,14 @@ import {
   EllipticalRoiTool,
   BidirectionalTool,
 } from './tools/index';
-import { ToolBindings, VtkjsToolEvents } from './enums/index';
+import { ToolBindings, CornerstoneTools3DEvents } from './enums/index';
 
-// LifeCycle / Stateful?
-export default {
+const cornerstoneTools3D = {
+  // LifeCycle
   addTool,
   init,
   BaseTool,
   BaseAnnotationTool,
-  SynchronizerManager,
   // Tools
   PanTool,
   WindowLevelTool,
@@ -40,27 +44,42 @@ export default {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
-  // Annotation
+  // Annotation Tools
   LengthTool,
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
-  //
+  // Synchronizers
+  synchronizers,
+  // Managers
   ToolGroupManager,
+  SynchronizerManager,
+  // Enums
   ToolBindings,
-  VtkjsToolEvents,
+  CornerstoneTools3DEvents,
+  // ToolState Managers
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
+  // Drawing API
   drawing,
-  synchronizers,
+  // State
+  textStyle,
+  toolColors,
+  toolStyle,
+  getToolState,
+  addToolState,
 };
 
-//
+export default cornerstoneTools3D;
+
 export {
-  // Tools // TODO Lets put these somewhere else.
+  // LifeCycle
+  addTool,
+  init,
   BaseTool,
   BaseAnnotationTool,
+  // Tools
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
@@ -68,19 +87,29 @@ export {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
-  // Annotation
+  // Annotation Tools
   LengthTool,
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
-  //
-  SynchronizerManager,
+  // Synchronizers
+  synchronizers,
+  // Managers
   ToolGroupManager,
+  SynchronizerManager,
+  // Enums
   ToolBindings,
-  VtkjsToolEvents,
+  CornerstoneTools3DEvents,
+  // ToolState Managers
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
+  // Drawing API
   drawing,
-  synchronizers,
+  // State
+  textStyle,
+  toolColors,
+  toolStyle,
+  getToolState,
+  addToolState,
 };

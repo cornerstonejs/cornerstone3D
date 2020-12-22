@@ -1,7 +1,6 @@
 import { BaseAnnotationTool } from './../base/index';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from '../../../index';
-import uuidv4 from '../../util/uuidv4.js';
 import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
 import toolColors from '../../stateManagement/toolColors';
@@ -12,9 +11,9 @@ import {
   getNewContext,
   setShadow,
 } from '../../drawing';
-import { vec2, vec3 } from 'gl-matrix';
+import { vec2 } from 'gl-matrix';
 import { state } from '../../store';
-import { VtkjsToolEvents as EVENTS } from '../../enums';
+import { CornerstoneTools3DEvents as EVENTS } from '../../enums';
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import { indexWithinDimensions } from '../../util/vtkjs';
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor';

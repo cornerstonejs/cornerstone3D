@@ -1,4 +1,4 @@
-import textStyle from '../stateManagement/textStyle.js';
+import textStyle from '../stateManagement/textStyle.ts';
 import draw from './draw.js';
 import fillTextLines from './fillTextLines.js';
 import fillBox from './fillBox.js';
@@ -44,7 +44,7 @@ export function textBoxWidth(context, text, padding) {
  * @param  {Object} options     Options for the textBox.
  * @returns {Object} {top, left, width, height} - Bounding box; can be used for pointNearTool
  */
-export default function(context, textLines, x, y, color, options) {
+export default function (context, textLines, x, y, color, options) {
   if (Object.prototype.toString.call(textLines) !== '[object Array]') {
     textLines = [textLines];
   }
@@ -56,7 +56,7 @@ export default function(context, textLines, x, y, color, options) {
   // Find the longest text width in the array of text data
   let maxWidth = 0;
 
-  textLines.forEach(function(text) {
+  textLines.forEach(function (text) {
     // Get the text width in the current font
     const width = textBoxWidth(context, text, padding);
 
@@ -70,7 +70,7 @@ export default function(context, textLines, x, y, color, options) {
     height: padding + textLines.length * (fontSize + padding),
   };
 
-  draw(context, context => {
+  draw(context, (context) => {
     context.strokeStyle = color;
 
     // Draw the background box with padding

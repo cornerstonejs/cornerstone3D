@@ -16,7 +16,7 @@ import {
 } from '../../drawing';
 import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../../store';
-import { VtkjsToolEvents as EVENTS } from '../../enums';
+import { CornerstoneTools3DEvents as EVENTS } from '../../enums';
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import { indexWithinDimensions } from '../../util/vtkjs';
 import { getTextBoxCoordsCanvas } from '../../util/drawing';
@@ -424,7 +424,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { currentPoints } = eventData;
     const currentCanvasPoints = currentPoints.canvas;
 
-    if (handleIndex === 0 || handleIndex == 1) {
+    if (handleIndex === 0 || handleIndex === 1) {
       // Dragging top or bottom point
       const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
 

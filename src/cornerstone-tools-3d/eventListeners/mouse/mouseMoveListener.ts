@@ -1,16 +1,18 @@
-import VtkjsToolsEvents from '../../enums/VtkjsToolsEvents';
+import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents';
 import triggerEvent from './../../util/triggerEvent';
 import getMouseEventPoints from './getMouseEventPoints';
 import { getEnabledElement } from './../../../index';
 
-const eventName = VtkjsToolsEvents.MOUSE_MOVE;
+const eventName = CornerstoneTools3DEvents.MOUSE_MOVE;
 
 /**
+ * Captures and normalizes the mouse move event. Emits as a cornerstoneTools3D
+ * mouse move event.
  *
- * @param evt
+ * @param {MouseEvent} evt The mouse event.
  */
 function mouseMoveListener(evt: MouseEvent) {
-  const element = evt.currentTarget as HTMLElement;
+  const element = <HTMLElement>evt.currentTarget;
 
   const enabledElement = getEnabledElement(element);
   const { renderingEngineUID, sceneUID, viewportUID } = enabledElement;

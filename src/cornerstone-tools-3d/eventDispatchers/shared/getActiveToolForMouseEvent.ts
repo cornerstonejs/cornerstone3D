@@ -4,7 +4,7 @@ import { ToolModes } from './../../enums/index';
 const { Active } = ToolModes;
 
 /**
- * getActiveToolForMouseEvent - Iterate tool group tools until we find a tool that has a "ToolBinding"
+ * @function getActiveToolForMouseEvent Iterate tool group tools until we find a tool that has a "ToolBinding"
  * that matches our MouseEvent's `buttons`. It's possible there will be no match (no active tool for that mouse button combination).
  *
  * @param evt The event dispatcher mouse event.
@@ -28,6 +28,7 @@ export default function getActiveToolForMouseEvent(evt) {
     for (let j = 0; j < toolGroupToolNames.length; j++) {
       const toolName = toolGroupToolNames[j];
       const tool = toolGroup.tools[toolName];
+
       if (tool.mode === Active && tool.bindings.includes(mouseEvent.buttons)) {
         // This should be behind some API. Too much knowledge of ToolGroup
         // inner workings leaking out

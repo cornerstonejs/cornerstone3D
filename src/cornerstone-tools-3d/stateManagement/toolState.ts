@@ -1,6 +1,7 @@
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager';
 import { getEnabledElement } from '../../index';
 import { uuidv4 } from '../util/';
+import { ToolSpecificToolState } from './types';
 
 function getViewportSpecificStateManager(element) {
   // TODO:
@@ -12,7 +13,18 @@ function getViewportSpecificStateManager(element) {
   return defaultFrameOfReferenceSpecificToolStateManager;
 }
 
-function getToolState(element, toolName) {
+/**
+ * getToolState - Returns the toolState for the `FrameOfReference` of the `Scene`
+ * being viewed by the cornerstone3D enabled `element`.
+ *
+ * @param {HTMLElement} element
+ * @param {string} toolName
+ * @returns {ToolSpecificToolState} The tool state corresponding to the Frame of Reference and the toolName.
+ */
+function getToolState(
+  element: HTMLElement,
+  toolName: string
+): ToolSpecificToolState {
   const toolStateManager = getViewportSpecificStateManager(element);
   const enabledElement = getEnabledElement(element);
   const { FrameOfReferenceUID } = enabledElement;
@@ -20,6 +32,12 @@ function getToolState(element, toolName) {
   return toolStateManager.get(FrameOfReferenceUID, toolName);
 }
 
+/**
+ * @function addToolState
+ *
+ * @param {*} element
+ * @param {*} toolData
+ */
 function addToolState(element, toolData) {
   const toolStateManager = getViewportSpecificStateManager(element);
 

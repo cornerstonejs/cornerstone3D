@@ -3,9 +3,8 @@ import {
   wheelEventListener,
 } from './../eventListeners/index';
 import {
-  //   imageRenderedEventDispatcher,
+  imageRenderedEventDispatcher,
   mouseToolEventDispatcher,
-  //   newImageEventDispatcher,
   //   touchToolEventDispatcher,
 } from './../eventDispatchers/index';
 // ~~
@@ -13,7 +12,7 @@ import { getEnabledElement } from './../../index';
 
 import { state } from './index';
 
-export default function(elementDisabledEvt) {
+export default function (elementDisabledEvt) {
   // Is DOM element
   const canvas = elementDisabledEvt.detail.canvas;
   // Is construct - WON'T BE ABLE TO GET
@@ -23,8 +22,7 @@ export default function(elementDisabledEvt) {
   mouseEventListeners.disable(canvas);
   wheelEventListener.disable(canvas);
   // Dispatchers: renderer
-  // imageRenderedEventDispatcher.disable(canvas);
-  // newImageEventDispatcher.disable(canvas);
+  imageRenderedEventDispatcher.disable(canvas);
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(canvas);
   // touchToolEventDispatcher.disable(canvas);
@@ -36,7 +34,7 @@ export default function(elementDisabledEvt) {
   _removeEnabledElement(canvas);
 }
 
-const _removeAllToolsForElement = function(enabledElement) {
+const _removeAllToolsForElement = function (enabledElement) {
   // store.state.tools.forEach(tool => {
   //   if (tool.element === enabledElement) {
   //     setToolDisabledForElement(tool.element, tool.name);
@@ -51,9 +49,9 @@ const _removeAllToolsForElement = function(enabledElement) {
  * @private
  * @param enabledElement
  */
-const _removeEnabledElement = function(enabledElement: HTMLElement) {
+const _removeEnabledElement = function (enabledElement: HTMLElement) {
   const foundElementIndex = state.enabledElements.findIndex(
-    element => element === enabledElement
+    (element) => element === enabledElement
   );
 
   if (foundElementIndex > -1) {

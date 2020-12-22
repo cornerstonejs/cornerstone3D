@@ -8,7 +8,7 @@ export default interface IToolGroup {
   viewports: Array<IViewportUID>;
   tools: Record<string, any>;
   //
-  addTool: { (toolName: string, toolOptions?: any): void };
+  addTool: { (toolName: string, toolConfiguration?: any): void };
   addViewports: {
     (renderingEngineUID: string, sceneUID?: string, viewportUID?: string): void;
   };

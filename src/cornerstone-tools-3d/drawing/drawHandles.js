@@ -1,5 +1,5 @@
-import toolStyle from './../stateManagement/toolStyle.js';
-import toolColors from './../stateManagement/toolColors.js';
+import toolStyle from './../stateManagement/toolStyle.ts';
+import toolColors from './../stateManagement/toolColors.ts';
 import path from './path.js';
 import { state } from '../store';
 
@@ -19,7 +19,7 @@ import { state } from '../store';
  * @param {Number} [options.handleRadius=6]
  * @returns {undefined}
  */
-export default function(context, handles, options = {}) {
+export default function (context, handles, options = {}) {
   const defaultColor = toolColors.getToolColor();
 
   context.strokeStyle = options.color || defaultColor;
@@ -49,7 +49,7 @@ export default function(context, handles, options = {}) {
         lineWidth,
         fillStyle,
       },
-      context => {
+      (context) => {
         // Handle's radisu, then tool's radius, then default radius
         const handleRadius =
           handle.radius || options.handleRadius || state.handleRadius;

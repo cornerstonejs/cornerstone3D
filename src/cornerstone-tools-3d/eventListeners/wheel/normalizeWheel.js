@@ -7,12 +7,11 @@ const PAGE_HEIGHT = 800;
  * Normalizes wheel events and provides properties that are more
  * consistent and helpful across different browsers
  *
- * @private
  * @function normalizeWheel
  * @param {WheelEvent} event
  * @returns {Object} { spinX, spinY, pixlX, pixelY }
  */
-export default function(event) {
+export default function normalizeWheel(event) {
   let spinX = 0,
     spinY = 0,
     pixelX = 0,
