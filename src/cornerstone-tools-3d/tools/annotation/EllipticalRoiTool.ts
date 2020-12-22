@@ -37,6 +37,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     canvasWidth?: number;
     canvasHeight?: number;
     originalHandleCanvas?: Array<number>;
+    newAnnotation?: boolean;
+    hasMoved?: boolean;
   } | null;
   name: string;
   _configuration: any;
@@ -107,6 +109,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       toolData,
       viewportUIDsToRender,
       centerCanvas: canvasPos,
+      newAnnotation: true,
+      hasMoved: false,
     };
     this._activateDraw(element);
 
@@ -299,8 +303,17 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { toolData, viewportUIDsToRender } = this.editData;
+    const {
+      toolData,
+      viewportUIDsToRender,
+      newAnnotation,
+      hasMoved,
+    } = this.editData;
     const { data } = toolData;
+
+    if (newAnnotation && !hasMoved) {
+      return;
+    }
 
     data.active = false;
     data.handles.activeHandleIndex = null;
@@ -350,6 +363,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     ];
 
     data.invalidated = true;
+
+    this.editData.hasMoved = true;
 
     renderingEngine.renderViewports(viewportUIDsToRender);
   };
@@ -509,6 +524,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback);
+    element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback);
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
 
     element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);

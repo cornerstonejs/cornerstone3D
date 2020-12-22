@@ -33,6 +33,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     viewportUIDsToRender: [];
     handleIndex?: number;
     movingTextBox: boolean;
+    newAnnotation?: boolean;
+    hasMoved?: boolean;
   } | null;
   name: string;
   _configuration: any;
@@ -109,6 +111,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       viewportUIDsToRender,
       handleIndex: 1,
       movingTextBox: false,
+      newAnnotation: true,
+      hasMoved: false,
     };
     this._activateDraw(element);
 
@@ -300,8 +304,17 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { toolData, viewportUIDsToRender } = this.editData;
+    const {
+      toolData,
+      viewportUIDsToRender,
+      newAnnotation,
+      hasMoved,
+    } = this.editData;
     const { data } = toolData;
+
+    if (newAnnotation && !hasMoved) {
+      return;
+    }
 
     data.active = false;
     data.handles.activeHandleIndex = null;
@@ -328,7 +341,6 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         const shortAxisPoint1 = [...points[1]];
 
         // shortAxis[0->1] should be perpendicular (counter-clockwise) to longAxis[0->1]
-
         const longAxisVector = vec2.create();
 
         vec2.set(
@@ -453,6 +465,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     data.invalidated = true;
     renderingEngine.renderViewports(viewportUIDsToRender);
+
+    this.editData.hasMoved = true;
   };
 
   _mouseDragModifyCallback = (evt) => {
@@ -748,6 +762,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback);
+    element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback);
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
 
     element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);
@@ -759,6 +774,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback);
+    element.removeEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback);
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
 
     element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);

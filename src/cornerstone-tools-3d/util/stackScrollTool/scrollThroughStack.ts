@@ -18,7 +18,6 @@ export default function scrollThroughStack(evt, deltaFrames, volumeUID) {
   );
 
   const volumeActor = scene.getVolumeActor(imageVolume.uid);
-
   const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
 
   const { newFocalPoint, newPosition } = snapFocalPointToSlice(

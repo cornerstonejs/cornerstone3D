@@ -33,6 +33,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     viewportUIDsToRender: [];
     handleIndex?: number;
     movingTextBox: boolean;
+    newAnnotation?: boolean;
+    hasMoved?: boolean;
   } | null;
   name: string;
   _configuration: any;
@@ -102,8 +104,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
+      newAnnotation: true,
+      hasMoved: false,
     };
-    this._activateModify(element);
+    this._activateDraw(element);
 
     hideToolCursor(element);
 
@@ -261,13 +265,23 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { toolData, viewportUIDsToRender } = this.editData;
+    const {
+      toolData,
+      viewportUIDsToRender,
+      newAnnotation,
+      hasMoved,
+    } = this.editData;
     const { data } = toolData;
+
+    if (newAnnotation && !hasMoved) {
+      return;
+    }
 
     data.active = false;
     data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
+    this._deactivateDraw(element);
 
     showToolCursor(element);
 
@@ -376,11 +390,42 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     }
 
     data.invalidated = true;
+    this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
     renderingEngine.renderViewports(viewportUIDsToRender);
+  };
+
+  /**
+   * Add event handlers for the modify event loop, and prevent default event prapogation.
+   */
+  _activateDraw = (element) => {
+    state.isToolLocked = true;
+
+    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback);
+    element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragCallback);
+    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
+
+    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback);
+  };
+
+  /**
+   * Add event handlers for the modify event loop, and prevent default event prapogation.
+   */
+  _deactivateDraw = (element) => {
+    state.isToolLocked = false;
+
+    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback);
+    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback);
+    element.removeEventListener(EVENTS.MOUSE_MOVE, this._mouseDragCallback);
+    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback);
+
+    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback);
   };
 
   /**
