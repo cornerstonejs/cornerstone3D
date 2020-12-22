@@ -1,19 +1,36 @@
+import {Point3} from '../../types'
 import { vec3 } from 'gl-matrix';
 
+/**
+ * @function snapFocalPointToSlice Given a number of frames, `deltaFrames`,
+ * move the `focalPoint` and camera `postion` so that it moves forward/backwards
+ * `deltaFrames` in the camera's normal direction, and snaps to the nearest frame.
+ *
+ * @export
+ * @param {Point3} focalPoint The focal point to move.
+ * @param {Point3} position The camera position to move.
+ * @param {object} scrollRange The scroll range used to find the current
+ * position in the stack, as well as prevent scrolling past the extent of the volume.
+ * @param {Point3} viewPlaneNormal The normal direction of the camera.
+ * @param {number} spacingInNormalDirection The spacing of frames the normal direction of the camera.
+ * @param {number} deltaFrames The number of frames to jump.
+ *
+ * @returns {object} The `newFocalPoint` and `newPosition` of the camera.
+ */
 export default function snapFocalPointToSlice(
-  focalPoint,
-  position,
+  focalPoint: Point3,
+  position: Point3,
   scrollRange,
-  viewPlaneNormal,
-  spacingInNormalDirection,
-  deltaFrames
+  viewPlaneNormal: Point3,
+  spacingInNormalDirection: number,
+  deltaFrames: number
 ) {
   let { min, max, current } = scrollRange;
 
   // Get the current offset off the camera position so we can add it on at the end.
   const posDiffFromFocalPoint = vec3.create();
 
-  vec3.sub(posDiffFromFocalPoint, position, focalPoint);
+  vec3.sub(posDiffFromFocalPoint, <vec3>position, <vec3>focalPoint);
 
   // Now we can see how many steps there are in this direction
   const steps = Math.round((max - min) / spacingInNormalDirection);

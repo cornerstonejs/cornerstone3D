@@ -2,7 +2,8 @@ import BaseTool from './BaseTool';
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
-} from '../../stateManagement/types';
+  Point2
+} from '../../types'
 
 /**
  * @class BaseAnnotationTool @extends BaseTool
@@ -116,7 +117,7 @@ abstract class BaseAnnotationTool extends BaseTool {
    *
    * @param {HTMLElement} element The cornerstone3D enabled element.
    * @param {ToolSpecificToolData} toolData The toolData to check.
-   * @param {number[]} canvasCoords The image point in canvas coordinates.
+   * @param {Point2} canvasCoords The image point in canvas coordinates.
    * @param {number} proximity The proximity to accept.
    *
    * @returns {any|undefined} The handle if found (may be a point, textbox or other).
@@ -124,7 +125,7 @@ abstract class BaseAnnotationTool extends BaseTool {
   getHandleNearImagePoint(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
-    canvasCoords: number[],
+    canvasCoords: Point2,
     proximity: number
   ): any | undefined {}
 
@@ -134,7 +135,7 @@ abstract class BaseAnnotationTool extends BaseTool {
    *
    * @param {HTMLElement} element
    * @param  {ToolSpecificToolData} toolData - The `ToolSpecificToolData` to check.
-   * @param {number[]} canvasCoords The image point in canvas coordinates.
+   * @param {Point2} canvasCoords The image point in canvas coordinates.
    * @param {number} proximity The proximity to accept.
    * @param {string} interactionType The interaction type used to add the measurement.
    *
@@ -143,7 +144,7 @@ abstract class BaseAnnotationTool extends BaseTool {
   pointNearTool(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
-    canvasCoords: number[],
+    canvasCoords: Point2,
     proximity,
     interactionType = 'mouse'
   ) {}
@@ -155,7 +156,7 @@ abstract class BaseAnnotationTool extends BaseTool {
    *
    * @param {HTMLElement} element
    * @param {ToolSpecificToolData} toolData
-   * @param {number[]} canvasCoords
+   * @param {Point2} canvasCoords
    * @param {number} proximity
    *
    * @returns {boolean} If the point is near.
@@ -163,7 +164,7 @@ abstract class BaseAnnotationTool extends BaseTool {
   protected _imagePointNearToolOrHandle(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
-    canvasCoords: number[],
+    canvasCoords: Point2,
     proximity: number
   ) {
     const handleNearImagePoint = this.getHandleNearImagePoint(

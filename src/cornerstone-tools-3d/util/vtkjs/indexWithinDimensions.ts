@@ -1,6 +1,17 @@
+import {Point3} from '../../types'
+
+/**
+ * @function indexWithinDimensions Returns true if the specified index is within
+ * the given dimensions.
+ *
+ * @param {Point3} index
+ * @param {Point3} dimensions
+ *
+ * @returns {boolean} True if the index is in-bounds.
+ */
 export default function indexWithinDimensions(
-  index: Array<number>,
-  dimensions: Array<number>
+  index: Point3,
+  dimensions: Point3
 ): boolean {
   if (
     index[0] < 0 ||

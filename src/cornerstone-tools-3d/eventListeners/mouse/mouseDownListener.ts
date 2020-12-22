@@ -4,13 +4,12 @@ import triggerEvent from './../../util/triggerEvent';
 import {
   ICornerstoneToolsEventDetail,
   IPoints,
-  IPoint,
-  I3dPoint,
-} from '../ICornerstoneToolsEventDetail';
+  Point2,
+  Point3
+} from '../../types'
 // ~~ VIEWPORT LIBRARY
 import { getEnabledElement } from './../../../index';
 import getMouseEventPoints from './getMouseEventPoints';
-import { vec2, vec3 } from 'gl-matrix';
 
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = CornerstoneTools3DEvents;
 
@@ -240,12 +239,12 @@ function _copyPoints(points: IPoints): IPoints {
  *
  * @returns {IPoint} The difference.
  */
-function _subtractPoints(point0: IPoint, point1: IPoint): IPoint {
-  return <IPoint>[point0[0] - point1[0], point0[1] - point1[1]];
+function _subtractPoints(point0: Point2, point1: Point2): Point2 {
+  return <Point2>[point0[0] - point1[0], point0[1] - point1[1]];
 }
 
-function _subtract3dPoints(point0: I3dPoint, point1: I3dPoint): I3dPoint {
-  return <I3dPoint>[
+function _subtract3dPoints(point0: Point3, point1: Point3): Point3 {
+  return <Point3>[
     point0[0] - point1[0],
     point0[1] - point1[1],
     point0[2] - point1[2],

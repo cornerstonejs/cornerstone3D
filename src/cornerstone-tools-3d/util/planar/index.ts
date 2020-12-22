@@ -1,18 +1,18 @@
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolume from './getTargetVolume';
-import getToolDataWithinSlice from './getToolDataWithinSlice';
+import getToolStateWithinSlice from './getToolStateWithinSlice';
 import getWorldWidthAndHeightInPlane from './getWorldWidthAndHeightInPlane';
 
 export default {
   getSpacingInNormalDirection,
   getTargetVolume,
-  getToolDataWithinSlice,
+  getToolStateWithinSlice,
   getWorldWidthAndHeightInPlane,
 };
 
 export {
   getSpacingInNormalDirection,
   getTargetVolume,
-  getToolDataWithinSlice,
+  getToolStateWithinSlice,
   getWorldWidthAndHeightInPlane,
 };

@@ -1,14 +1,16 @@
+import {Point2} from '../../types'
+
 /**
  * Determine the coordinates that will place the textbox to the right of the
  * annotation.
  *
- * @param {Object} handles - The handles of the annotation.
- * @returns {Object} - The coordinates for default placement of the textbox
+ * @param {Array<Point2>} canvasPoints - The canvas points of the annotation's handles.
+ * @returns {Point2} - The coordinates for default placement of the textbox.
  */
-export default function getTextBoxCoordsCanvas(canvasPoints) {
+export default function getTextBoxCoordsCanvas(canvasPoints: Array<Point2>) : Point2{
   const corners = _determineCorners(canvasPoints);
   const centerY = (corners.top[1] + corners.bottom[1]) / 2;
-  const textBoxCanvas = [corners.right[0], centerY];
+  const textBoxCanvas = <Point2>[corners.right[0], centerY];
 
   return textBoxCanvas;
 }
@@ -16,10 +18,10 @@ export default function getTextBoxCoordsCanvas(canvasPoints) {
 /**
  * Determine the handles that have the min/max x and y values.
  *
- * @param {Object} handles - The handles of the annotation.
- * @returns {Object} - The top, left, bottom, and right handles
+ * @param {Point2} canvasPoints - The canvas points of the annotation's handles.
+ * @returns {Object} - The top, left, bottom, and right handles.
  */
-function _determineCorners(canvasPoints) {
+function _determineCorners(canvasPoints : Array<Point2>) {
   const handlesLeftToRight = [canvasPoints[0], canvasPoints[1]].sort(_compareX);
   const handlesTopToBottom = [canvasPoints[0], canvasPoints[1]].sort(_compareY);
   const right = handlesLeftToRight[handlesLeftToRight.length - 1];

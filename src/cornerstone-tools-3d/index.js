@@ -12,6 +12,7 @@ import init from './init';
 import { addTool, ToolGroupManager, SynchronizerManager } from './store/index';
 import drawing from './drawing';
 import synchronizers from './syncrhonizers';
+
 import {
   BaseTool,
   BaseAnnotationTool,
@@ -27,6 +28,7 @@ import {
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
+
 } from './tools/index';
 import { ToolBindings, CornerstoneTools3DEvents } from './enums/index';
 

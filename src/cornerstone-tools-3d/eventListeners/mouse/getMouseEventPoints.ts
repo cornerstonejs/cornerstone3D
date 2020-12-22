@@ -1,5 +1,5 @@
 import { getEnabledElement } from '../../../index';
-import { IPoints, IPoint } from '../ICornerstoneToolsEventDetail';
+import { IPoints, Point2 } from '../../types'
 
 /**
  * getMouseEventPoints - Given a native mouse event, get the associated
@@ -35,10 +35,10 @@ export default function getMouseEventPoints(
  */
 function _pagePointsToCanvasPoints(
   DomCanvasElement: HTMLElement,
-  pagePoint: IPoint
+  pagePoint: Point2
 ) {
   const rect = DomCanvasElement.getBoundingClientRect();
-  return <IPoint>[
+  return <Point2>[
     pagePoint[0] - rect.left - window.pageXOffset,
     pagePoint[1] - rect.top - window.pageYOffset,
   ];
@@ -49,8 +49,8 @@ function _pagePointsToCanvasPoints(
  * coordinate.
  * @param {MouseEvent} evt The Mouse `Event`
  */
-function _pageToPoint(evt: MouseEvent): IPoint {
-  return <IPoint>[evt.pageX, evt.pageY];
+function _pageToPoint(evt: MouseEvent): Point2 {
+  return <Point2>[evt.pageX, evt.pageY];
 }
 
 /**
@@ -58,6 +58,6 @@ function _pageToPoint(evt: MouseEvent): IPoint {
  * coordinate.
  * @param {MouseEvent} evt The Mouse `Event`
  */
-function _clientToPoint(evt: MouseEvent): IPoint {
-  return <IPoint>[evt.clientX, evt.clientY];
+function _clientToPoint(evt: MouseEvent): Point2 {
+  return <Point2>[evt.clientX, evt.clientY];
 }

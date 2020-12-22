@@ -4,7 +4,7 @@ import {
   ToolSpecificToolState,
   FrameOfReferenceSpecificToolState,
   ToolState,
-} from './types';
+} from '../types/toolStateTypes'
 import cloneDeep from 'lodash.clonedeep';
 
 import { Events as RENDERING_EVENTS, renderingEventTarget } from '../../index';

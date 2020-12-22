@@ -1,5 +1,5 @@
 import { getToolState } from './../stateManagement/toolState';
-import { ToolAndToolStateArray } from '../stateManagement/types';
+import { ToolAndToolStateArray } from '../types/toolStateTypes'
 
 /**
  * @function getToolsWithDataForElement Filters an array of tools, returning only

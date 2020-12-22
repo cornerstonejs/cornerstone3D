@@ -1,7 +1,7 @@
 import { BaseAnnotationTool } from './../base/index';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from '../../../index';
-import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
+import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar';
 import throttle from '../../util/throttle';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
 import toolColors from '../../stateManagement/toolColors';
@@ -23,6 +23,7 @@ import { getTextBoxCoordsCanvas } from '../../util/drawing';
 import { pointInEllipse } from '../../util/math/ellipse';
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane';
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor';
+import {Point2} from '../../types'
 
 export default class EllipticalRoiTool extends BaseAnnotationTool {
   touchDragCallback: Function;
@@ -558,7 +559,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { spacingInNormalDirection } = getTargetVolume(scene, camera);
 
     // Get data with same normal
-    const toolDataWithinSlice = getToolDataWithinSlice(
+    const toolDataWithinSlice = getToolStateWithinSlice(
       toolState,
       camera,
       spacingInNormalDirection
@@ -599,7 +600,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const { points, activeHandleIndex } = handles;
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const canvasCorners = this._getCanvasEllipseCorners(canvasCoordinates);
+      const canvasCorners = <Array<Point2>>this._getCanvasEllipseCorners(canvasCoordinates);
 
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {};
@@ -663,11 +664,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
   };
 
-  _getCanvasEllipseCorners = (canvasCoordinates) => {
+  _getCanvasEllipseCorners = (canvasCoordinates) : Array<Point2> => {
     const [bottom, top, left, right] = canvasCoordinates;
 
-    const topLeft = [left[0], top[1]];
-    const bottomRight = [right[0], bottom[1]];
+    const topLeft = <Point2>[left[0], top[1]];
+    const bottomRight = <Point2>[right[0], bottom[1]];
 
     return [topLeft, bottomRight];
   };
@@ -816,7 +817,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
               const dJ = j - jMin;
               const dK = k - kMin;
 
-              let canvasCoords = [...canvasPosStart];
+              let canvasCoords = <Point2>[canvasPosStart[0], canvasPosStart[1]];
 
               canvasCoords = [
                 canvasCoords[0] +

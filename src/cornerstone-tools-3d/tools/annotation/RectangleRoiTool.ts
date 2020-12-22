@@ -1,7 +1,7 @@
 import { BaseAnnotationTool } from './../base/index';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from '../../../index';
-import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
+import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar';
 import throttle from '../../util/throttle';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
 import toolColors from '../../stateManagement/toolColors';
@@ -30,7 +30,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   _throttledCalculateCachedStats: Function;
   editData: {
     toolData: any;
-    viewportUIDsToRender: [];
+    viewportUIDsToRender: string[];
     handleIndex?: number;
     movingTextBox: boolean;
     newAnnotation?: boolean;
@@ -473,7 +473,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const { spacingInNormalDirection } = getTargetVolume(scene, camera);
 
     // Get data with same normal
-    const toolDataWithinSlice = getToolDataWithinSlice(
+    const toolDataWithinSlice = getToolStateWithinSlice(
       toolState,
       camera,
       spacingInNormalDirection

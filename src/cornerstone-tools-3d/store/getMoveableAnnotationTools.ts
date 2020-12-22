@@ -1,7 +1,9 @@
 import {
   ToolSpecificToolData,
   ToolAndToolStateArray,
-} from '../stateManagement/types';
+  Point2
+} from '../types'
+
 
 type ToolAndToolData = {
   tool: any;
@@ -14,14 +16,14 @@ type ToolAndToolData = {
  *
  * @param  {HTMLElement} element The element
  * @param  {ToolAndToolStateArray}   toolAndToolStateArray   The input tool array.
- * @param  {number[]}      canvasCoords  The coordinates of the mouse position.
+ * @param  {Point2}      canvasCoords  The coordinates of the mouse position.
  * @param  {string}      [interactionType=mouse]
  * @returns {ToolAndToolStateArray}            The filtered array.
  */
 export default function getMoveableAnnotationTools(
   element: HTMLElement,
   toolAndToolStateArray: ToolAndToolStateArray,
-  canvasCoords: number[],
+  canvasCoords: Point2,
   interactionType: string = 'mouse'
 ): Array<ToolAndToolData> {
   const proximity = 6;

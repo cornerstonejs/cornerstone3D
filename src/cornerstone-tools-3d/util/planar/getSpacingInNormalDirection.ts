@@ -1,8 +1,21 @@
+import {Point3} from '../../types'
 import { vec3 } from 'gl-matrix';
 
+/**
+ * @function getSpacingInNormalDirection Given an `imageVolume` and a
+ * normal direction (`viewPlaneNormal`), calculates the spacing between voxels
+ * in the normal direction. If (`viewPlaneNormal`) is parallell to one of the
+ * directions you will obtain the spacing in that direction. Otherwise each of
+ * the `imageVolume`'s directions are projected onto the volume, so that you obtain
+ * a spacing of the order of "seeing a new set of voxels if the camera where to dolly".
+ *
+ * @param {object} imageVolume
+ * @param {Point3} viewPlaneNormal
+ * @returns
+ */
 export default function getSpacingInNormalDirection(
   imageVolume,
-  viewPlaneNormal
+  viewPlaneNormal: Point3
 ) {
   const { direction, spacing } = imageVolume;
 
@@ -12,9 +25,9 @@ export default function getSpacingInNormalDirection(
   const kVector = direction.slice(6, 9);
 
   const dotProducts = [
-    vec3.dot(iVector, viewPlaneNormal),
-    vec3.dot(jVector, viewPlaneNormal),
-    vec3.dot(kVector, viewPlaneNormal),
+    vec3.dot(iVector, <vec3>viewPlaneNormal),
+    vec3.dot(jVector, <vec3>viewPlaneNormal),
+    vec3.dot(kVector, <vec3>viewPlaneNormal),
   ];
 
   const projectedSpacing = vec3.create();

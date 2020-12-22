@@ -1,7 +1,7 @@
 import { BaseAnnotationTool } from './../base/index';
 // ~~ VTK Viewport
 import { getEnabledElement, imageCache } from '../../../index';
-import { getTargetVolume, getToolDataWithinSlice } from '../../util/planar';
+import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar';
 import { addToolState, getToolState } from '../../stateManagement/toolState';
 import toolColors from '../../stateManagement/toolColors';
 import {
@@ -17,11 +17,12 @@ import { CornerstoneTools3DEvents as EVENTS } from '../../enums';
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters';
 import { indexWithinDimensions } from '../../util/vtkjs';
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor';
+import {Point3} from '../../types'
 
 export default class ProbeTool extends BaseAnnotationTool {
   touchDragCallback: Function;
   mouseDragCallback: Function;
-  editData: { toolData: any; viewportUIDsToRender: [] } | null;
+  editData: { toolData: any; viewportUIDsToRender: string[] } | null;
   name: string;
   _configuration: any;
 
@@ -227,7 +228,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const { spacingInNormalDirection } = getTargetVolume(scene, camera);
 
     // Get data with same normal
-    const toolDataWithinSlice = getToolDataWithinSlice(
+    const toolDataWithinSlice = getToolStateWithinSlice(
       toolState,
       camera,
       spacingInNormalDirection
@@ -365,7 +366,7 @@ export default class ProbeTool extends BaseAnnotationTool {
         vtkImageData: imageData,
         metadata,
       } = imageVolume;
-      const index = [0, 0, 0];
+      const index = <Point3>[0, 0, 0];
 
       imageData.worldToIndexVec3(worldPos, index);
 

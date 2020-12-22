@@ -1,7 +1,8 @@
 import {
   ToolAndToolStateArray,
   ToolSpecificToolData,
-} from '../stateManagement/types';
+  Point2
+} from '../types'
 
 type ToolsWithMoveableHandles = {
   tool: any;
@@ -18,14 +19,14 @@ type ToolsWithMoveableHandles = {
  *
  * @param  {HTMLElement} element The element
  * @param  {ToolAndToolStateArray}   toolAndToolStateArray   The input tool array.
- * @param  {number[]}      canvasCoords  The coordinates of the mouse position.
+ * @param  {Point2}      canvasCoords  The coordinates of the mouse position.
  * @param  {string}      [interactionType=mouse]
  * @returns {ToolAndToolStateArray}            The filtered array.
  */
 export default function getToolsWithMoveableHandles(
   element: HTMLElement,
   toolAndToolStateArray: ToolAndToolStateArray,
-  canvasCoords,
+  canvasCoords: Point2,
   interactionType = 'mouse'
 ): Array<ToolsWithMoveableHandles> {
   const proximity = 6;

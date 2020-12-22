@@ -1,7 +1,7 @@
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager';
 import { getEnabledElement } from '../../index';
 import { uuidv4 } from '../util/';
-import { ToolSpecificToolState } from './types';
+import { ToolSpecificToolState } from '../types/toolStateTypes'
 
 function getViewportSpecificStateManager(element) {
   // TODO:

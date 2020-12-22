@@ -1,10 +1,23 @@
+import {Point3} from '../../types'
 import getVolumeActorCorners from '../vtkjs/getVolumeActorCorners';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 
+/**
+ * @function getSliceRange Given a `vtkVolumeActor`, and a normal direction,
+ * calculate the range of slices in the focal normal direction that encapsulate
+ * the volume. Also project the `focalPoint` onto this range.
+ *
+ * @param {object} volumeActor The `vtkVolumeActor`.
+ * @param {Point3} viewPlaneNormal The normal to the camera view.
+ * @param {Point3} focalPoint The focal point of the camera.
+ *
+ * @returns {object} and object containing the `min`, `max` and `current`
+ * positions in the normal direction.
+ */
 export default function getSliceRange(
   volumeActor,
-  viewPlaneNormal,
-  focalPoint
+  viewPlaneNormal: Point3,
+  focalPoint: Point3
 ) {
   const corners = getVolumeActorCorners(volumeActor);
 

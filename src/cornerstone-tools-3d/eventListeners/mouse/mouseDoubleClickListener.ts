@@ -1,7 +1,7 @@
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents';
 import triggerEvent from './../../util/triggerEvent';
 import getMouseEventPoints from './getMouseEventPoints';
-import { IPoints } from '../ICornerstoneToolsEventDetail';
+import { IPoints } from '../../types/cornerstoneToolsEventDetailTypes'
 
 /**
  * Captures and normalizes the double click event. Emits as a cornerstoneTools3D
