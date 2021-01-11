@@ -1,5 +1,5 @@
-import { getRenderingEngine } from '../../../index';
-import IViewportUID from '../../store/IViewportUID';
+import { getRenderingEngine } from '../../../index'
+import IViewportUID from '../../store/IViewportUID'
 
 /**
  * @function cameraSyncCallback - Synchronizer callback to synchronize the voi of volumeActors of identical volumes
@@ -16,26 +16,20 @@ export default function voiSyncCallback(
   targetViewport: IViewportUID,
   voiModifiedEvent: CustomEvent
 ) {
-  const eventData = voiModifiedEvent.detail;
-  let { volumeUID, sceneUID, range } = eventData;
+  const eventData = voiModifiedEvent.detail
+  const { volumeUID, sceneUID, range } = eventData
 
-  const tScene = getRenderingEngine(targetViewport.renderingEngineUID).getScene(
-    targetViewport.sceneUID
-  );
+  const tScene = getRenderingEngine(targetViewport.renderingEngineUID).getScene(targetViewport.sceneUID)
 
   if (tScene.uid === sceneUID) {
     // Same scene, no need to update.
-    return;
+    return
   }
 
-  const tViewport = tScene.getViewport(targetViewport.viewportUID);
+  const tViewport = tScene.getViewport(targetViewport.viewportUID)
+  const volumeActor = tScene.getVolumeActor(volumeUID)
 
-  const volumeActor = tScene.getVolumeActor(volumeUID);
+  volumeActor.getProperty().getRGBTransferFunction(0).setRange(range.lower, range.upper)
 
-  volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setRange(range.lower, range.upper);
-
-  tViewport.render();
+  tViewport.render()
 }

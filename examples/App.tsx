@@ -1,16 +1,15 @@
-/* eslint-disable react/prop-types */
-import React, { Component, useState } from 'react';
-import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-import VTKMPRExample from './ExampleVTKMPR.js';
-import CanvasResizeExample from './ExampleCanvasResize.js';
-import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas.js';
+import React, { Component, useState } from 'react'
+import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom'
+import VTKMPRExample from './ExampleVTKMPR'
+import CanvasResizeExample from './ExampleCanvasResize'
+import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas'
 
 function LinkOut({ href, text }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer">
       {text}
     </a>
-  );
+  )
 }
 
 function ExampleEntry({ title, url, text, screenshotUrl }) {
@@ -22,13 +21,13 @@ function ExampleEntry({ title, url, text, screenshotUrl }) {
       <p>{text}</p>
       <hr />
     </div>
-  );
+  )
 }
 
 function Index() {
   const style = {
     height: '512px',
-  };
+  }
 
   const examples = [
     {
@@ -44,14 +43,13 @@ function Index() {
     {
       title: 'Twenty Five Canvas',
       url: '/twentyFiveCanvas',
-      text:
-        'Example with twenty five on screen canvases linked to a single RenderingEngine.',
+      text: 'Example with twenty five on screen canvases linked to a single RenderingEngine.',
     },
-  ];
+  ]
 
-  const exampleComponents = examples.map(e => {
-    return <ExampleEntry key={e.title} {...e} />;
-  });
+  const exampleComponents = examples.map((e) => {
+    return <ExampleEntry key={e.title} {...e} />
+  })
 
   return (
     <div className="container">
@@ -62,11 +60,7 @@ function Index() {
         <div className="col-xs-12 col-lg-6">
           <h4>VTK Viewport</h4>
           <p>
-            This is a framework build ontop of{' '}
-            <LinkOut
-              href={'https://github.com/Kitware/vtk-js'}
-              text={'VTK.js'}
-            />{' '}
+            This is a framework build ontop of <LinkOut href={'https://github.com/Kitware/vtk-js'} text={'VTK.js'} />{' '}
             for easily managing data, displaying images and building tools.
           </p>
         </div>
@@ -77,7 +71,7 @@ function Index() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function Example(props) {
@@ -88,22 +82,22 @@ function Example(props) {
       </h6>
       {props.children}
     </div>
-  );
+  )
 }
 
 function AppRouter() {
   const mpr = () =>
     Example({
       children: <VTKMPRExample />,
-    });
+    })
   const canvasResize = () =>
     Example({
       children: <CanvasResizeExample />,
-    });
+    })
   const twentyFiveCanvas = () =>
     Example({
       children: <TwentyFiveCanvasExample />,
-    });
+    })
 
   return (
     <Router>
@@ -115,11 +109,11 @@ function AppRouter() {
         <Route exact component={Index} />
       </Switch>
     </Router>
-  );
+  )
 }
 
 export default class App extends Component {
   render() {
-    return <AppRouter />;
+    return <AppRouter />
   }
 }

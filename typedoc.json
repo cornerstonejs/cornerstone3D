@@ -1,0 +1,16 @@
+{
+  "out": "./docs/dist/api/",
+
+  "readme": "none",
+  "entryPoints": ["./src/index.ts"],
+  "tsconfig": "./tsconfig.json",
+  "exclude": [
+    "**/examples/**",
+    "**/*.tsx"
+  ],
+
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "listInvalidSymbolLinks": true
+}

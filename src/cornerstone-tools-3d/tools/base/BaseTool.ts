@@ -1,4 +1,4 @@
-import deepMerge from './../../util/deepMerge.js';
+import deepMerge from './../../util/deepMerge'
 
 /**
  * @class BaseTool
@@ -6,47 +6,44 @@ import deepMerge from './../../util/deepMerge.js';
  * Deals with cleanly merging custom and default configuration, and strategy application.
  */
 abstract class BaseTool {
-  initialConfiguration: any;
-  name: string;
-  supportedInteractionTypes: Array<string>;
-  strategies: Record<string, any>;
-  defaultStrategy: string;
-  activeStrategy: string;
-  _configuration: any;
+  initialConfiguration: Record<string, any>
+  name: string
+  supportedInteractionTypes: Array<string>
+  strategies: Record<string, any>
+  defaultStrategy: string
+  activeStrategy: string
+  configuration: Record<string, any>
 
-  constructor(toolConfiguration, defaultToolConfiguration) {
+  constructor(
+    toolConfiguration: Record<string, any>,
+    defaultToolConfiguration: Record<string, any>
+  ) {
     this.initialConfiguration = deepMerge(
       toolConfiguration,
       defaultToolConfiguration
-    );
+    )
 
     const {
       name,
       strategies,
       defaultStrategy,
-      configuration,
+      configuration = {},
       supportedInteractionTypes,
-    } = this.initialConfiguration;
+    } = this.initialConfiguration
 
-    this.name = name;
-    this.supportedInteractionTypes = supportedInteractionTypes || [];
-    this.strategies = strategies || {};
+    this.name = name
+    this.supportedInteractionTypes = supportedInteractionTypes || []
+    this.strategies = strategies || {}
     this.defaultStrategy =
-      defaultStrategy || Object.keys(this.strategies)[0] || undefined;
-    this.activeStrategy = this.defaultStrategy;
-    this._configuration = Object.assign({}, configuration);
-  }
+      defaultStrategy || Object.keys(this.strategies)[0] || undefined
+    this.activeStrategy = this.defaultStrategy
+    this.configuration = Object.assign({}, configuration)
 
-  get configuration(): any {
-    return this._configuration;
-  }
-
-  set configuration(configuration: any) {
-    this._configuration = configuration;
+    console.log(this.name, this.configuration)
   }
 
   applyActiveStrategy(evt, operationData) {
-    return this.strategies[this.activeStrategy].call(this, evt, operationData);
+    return this.strategies[this.activeStrategy].call(this, evt, operationData)
   }
 
   /**
@@ -58,8 +55,8 @@ abstract class BaseTool {
    * @memberof BaseTool
    */
   protected setActiveStrategy(strategyName: string) {
-    this.activeStrategy = strategyName;
+    this.activeStrategy = strategyName
   }
 }
 
-export default BaseTool;
+export default BaseTool

@@ -17,14 +17,30 @@
   // Event Triggers
   // ===
 
+  // "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // "[javascript]": {
+  //   "editor.defaultFormatter": "esbenp.prettier-vscode"
+  // },
+
+  // Deprecated
+  // "eslint.autoFixOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.fixAll.eslint": true
+  },
+  // Default (format when you paste)
+  "editor.formatOnPaste": true,
+  // Default (format when you save)
   "editor.formatOnSave": true,
-  "eslint.autoFixOnSave": true,
   "eslint.run": "onSave",
   "eslint.validate": [
-    { "language": "javascript", "autoFix": true },
-    { "language": "javascriptreact", "autoFix": true }
+    "javascript",
+    "javascriptreact",
+    "Babel Javascript",
+    "typescript",
+    "typescriptreact"
   ],
+  "eslint.alwaysShowStatus": true,
   "prettier.disableLanguages": [],
-  "prettier.endOfLine": "lf",
   "workbench.colorCustomizations": {}
 }

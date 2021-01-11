@@ -1,5 +1,5 @@
 import { getEnabledElement } from '../../../index';
-import { IPoints, Point2 } from '../../types'
+import { IPoints, Point2 } from '../../types';
 
 /**
  * getMouseEventPoints - Given a native mouse event, get the associated
@@ -12,7 +12,7 @@ export default function getMouseEventPoints(
   evt: MouseEvent,
   element?: HTMLElement
 ): IPoints {
-  const canvas = element || evt.target;
+  const canvas = element || evt.target as HTMLElement;
   const enabledElement = getEnabledElement(canvas);
   const pagePoint = _pageToPoint(evt);
   const canvasPoint = _pagePointsToCanvasPoints(<HTMLElement>canvas, pagePoint);

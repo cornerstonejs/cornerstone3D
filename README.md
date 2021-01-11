@@ -26,8 +26,7 @@ the VTK Viewport and the app configuration configuration using a WebPack alias
 like so:
 
 ```js
-import VtkViewport from '@vtk-viewport';
-import config from '@configuration';
+import VtkViewport from '@vtk-viewport'
 ```
 
 Any updates to the example files or the VtkViewport's source will cause WebPack
@@ -59,7 +58,7 @@ export default {
   // Optional: limitFrames will limit the number of frames
   // fetched from each series to speed up testing. e.g. limitFrames: 5.
   limitFrames,
-};
+}
 ```
 
 ## License

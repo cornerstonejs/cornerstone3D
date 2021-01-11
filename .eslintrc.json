@@ -1,27 +1,117 @@
+// This config is a little messy because it needs to work
+// for both our library and our example app in /examples.
+// A good "@TODO" item would be to separate the linting/bundling
+// for them.
 {
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+
+  // eslint-plugin-react
+  // - react
+  //
+  // eslint-plugin-prettier
+  // - prettier
+  //
+  // @typescript-eslint/eslint-plugin
+  // - @typescript-eslint
+  //
+  // eslint-plugin-import
+  // - import
+  "plugins": [
+    "react",
+    "@typescript-eslint",
+    "import",
+    "eslint-plugin-tsdoc",
+    "prettier"
+  ],
+
+  // Order matters here. Last will override
+  // eslint-config-prettier (only turns rules off)
+  // - prettier                     # eslint conflicts
+  // - prettier/react               # react conflicts
+  // - prettier/@typescript-eslint  # typescript conflicts
+  //
+  // eslint-config-react-app
+  // - react-app
+  // - react-app/jest
+  //
+  // eslint-plugin-prettier
+  // - plugin:prettier/recommended
+  //
+  // eslint-plugin-react
+  // - plugin:react/recommended
+  //
+  // eslint-plugin-react-hooks
+  // - plugin:react-hooks/recommended
+  //
+  // @typescript-eslint/eslint-plugin
+  // -
   "extends": [
-    "react-app",
     "eslint:recommended",
     "plugin:react/recommended",
-    "plugin:prettier/recommended"
+    "plugin:react-hooks/recommended",
+    "plugin:@typescript-eslint/recommended",
+    // sets up the plugin AND eslint-config-prettier
+    "plugin:prettier/recommended",
+    "prettier/react"
   ],
-  "plugins": ["@typescript-eslint"],
-  "parser": "babel-eslint",
-  "env": {
-    "jest": true
+
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "project": "./tsconfig.json",
+    "tsconfigRootDir": "./"
   },
+
+  "rules": {
+    "no-console": [
+      "warn",
+      {
+        "allow": ["warn", "error"]
+      }
+    ],
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+    ],
+    "import/prefer-default-export": "off",
+    // eslint-plugin-prettier
+    "prettier/prettier": [
+      "error",
+      {
+        "endOfLine": "auto",
+        "printWidth": 80
+      }
+    ],
+    "no-undef": "warn"
+  },
+
+  "env": {
+    "es6": true,
+    "browser": true,
+    "jest": true,
+    "node": true
+  },
+
   "settings": {
     "react": {
       "version": "detect"
+    },
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      }
     }
   },
+
   "globals": {
     "context": true,
     "assert": true
-  },
-  "rules": {
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
-    "no-undef": "warn",
-    "no-unused-vars": "warn"
   }
 }

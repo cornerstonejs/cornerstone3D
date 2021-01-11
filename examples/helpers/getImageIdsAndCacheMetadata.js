@@ -1,4 +1,4 @@
-import config from '@configuration';
+import config from './../config/default';
 import sortImageIdsByIPP from './sortImageIdsByIPP';
 import limitImageIds from './limitImageIds';
 import createStudyImageIds from './createStudyImageIds';

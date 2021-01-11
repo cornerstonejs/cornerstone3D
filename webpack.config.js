@@ -1,13 +1,13 @@
-const path = require('path');
-const webpack = require('webpack');
-const autoprefixer = require('autoprefixer');
+const path = require('path')
+const webpack = require('webpack')
 // Plugins
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-  .BundleAnalyzerPlugin;
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const ENTRY_VTK_EXT = path.join(__dirname, './../src/index.js');
-const SRC_PATH = path.join(__dirname, './../src');
-const OUT_PATH = path.join(__dirname, './../dist');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+//
+const PROJECT_ROOT = path.join(__dirname)
+const ENTRY_VTK_EXT = path.join(PROJECT_ROOT, './src/index.ts')
+const SRC_PATH = path.join(PROJECT_ROOT, './src')
+const OUT_PATH = path.join(PROJECT_ROOT, './dist')
 
 /**
  * `argv` are options from the CLI. They will override our config here if set.
@@ -15,8 +15,8 @@ const OUT_PATH = path.join(__dirname, './../dist');
  * `-p` - Production shorthand, sets `minimize`, `NODE_ENV`, and `mode`
  */
 module.exports = (env, argv) => {
-  const isProdBuild = argv.mode !== 'development';
-  const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js';
+  const isProdBuild = argv.mode !== 'development'
+  const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js'
 
   return {
     entry: {
@@ -33,50 +33,30 @@ module.exports = (env, argv) => {
     module: {
       rules: [
         {
-          test: /\.ts$/,
-          exclude: /node_modules/,
-          use: ['ts-loader'],
-        },
-        {
-          test: /\.(js|jsx)$/,
+          test: /\.(js|ts)$/,
           exclude: /node_modules/,
           use: ['babel-loader'],
-        },
-        {
-          test: /\.css$/,
-          exclude: /\.module\.css$/,
-          use: [
-            'style-loader',
-            'css-loader',
-            {
-              loader: 'postcss-loader',
-              options: {
-                postcssOptions: {
-                  plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],  
-                }
-              },
-            },
-          ],
         },
       ],
     },
     resolve: {
-      modules: [path.resolve(__dirname, './../node_modules'), SRC_PATH],
+      modules: [path.resolve(PROJECT_ROOT, './node_modules'), SRC_PATH],
       alias: {
         // https://stackoverflow.com/a/40444084/1867984
-        '@vtk-viewport': path.join(__dirname, './../src'),
-        '@tools': path.resolve(__dirname, './../cornerstone-tools-3d')
+        '@vtk-viewport': path.join(PROJECT_ROOT, './src'),
+        '@tools': path.resolve(PROJECT_ROOT, './src/cornerstone-tools-3d'),
       },
-      extensions: [".ts", ".tsx", ".js", '.jsx'],
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
       fallback: {
         fs: false,
-        path: require.resolve("path-browserify")
+        path: require.resolve('path-browserify'),
       },
     },
     externals: [
       // :wave:
       /\b(vtk.js)/,
       // Used to build/load metadata
+      // TODO: Remove these as dependencies
       {
         'cornerstone-core': {
           commonjs: 'cornerstone-core',
@@ -90,8 +70,6 @@ module.exports = (env, argv) => {
           amd: 'cornerstone-tools',
           root: 'cornerstoneTools',
         },
-        //
-        react: 'react',
       },
     ],
     plugins: [
@@ -100,7 +78,7 @@ module.exports = (env, argv) => {
       // Show build progress
       new webpack.ProgressPlugin(),
       // Clear dist between builds
-      // new CleanWebpackPlugin(),
+      new CleanWebpackPlugin(),
     ],
-  };
-};
+  }
+}

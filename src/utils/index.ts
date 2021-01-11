@@ -3,11 +3,15 @@ import invertRgbTransferFunction from './invertRgbTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
 import getEnabledElement from './getEnabledElement';
 
+/** NAMED EXPORTS */
 export { uuidv4, invertRgbTransferFunction, getEnabledElement };
 
-export default {
+/** DEFAULT EXPORT */
+const utils = {
   uuidv4,
   invertRgbTransferFunction,
   scaleRgbTransferFunction,
   getEnabledElement,
 };
+
+export default utils;

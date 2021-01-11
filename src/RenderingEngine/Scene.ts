@@ -1,57 +1,61 @@
-import Viewport, { ViewportInterface } from './Viewport';
-import renderingEngineCache from './renderingEngineCache';
-import RenderingEngine from './RenderingEngine';
-import { createVolumeActor } from './helpers';
-import imageCache from '../imageCache';
+import Viewport, { ViewportInterface } from './Viewport'
+import renderingEngineCache from './renderingEngineCache'
+import RenderingEngine from './RenderingEngine'
+import { createVolumeActor } from './helpers'
+import imageCache from '../imageCache'
+
+type VolumeActor = {
+  getProperty: () => any
+}
 
 /**
  * @type VolumeActorEntry
  * Defines the shape of volume actors entries added to the scene.
  */
 export type VolumeActorEntry = {
-  uid: string;
-  volumeActor: object;
-  slabThickness: number;
-};
+  uid: string
+  volumeActor: VolumeActor
+  slabThickness: number
+}
 
 type VolumeInput = {
-  volumeUID: string;
-  callback?: Function;
-  blendMode?: string;
-  slabThickness?: number;
-};
+  volumeUID: string
+  callback?: Function
+  blendMode?: string
+  slabThickness?: number
+}
 
 type ViewportInput = {
-  uid: string;
-  type: string;
-  canvas: HTMLElement;
-  sx: number;
-  sy: number;
-  sWidth: number;
-  sHeight: number;
-  defaultOptions: any;
-};
+  uid: string
+  type: string
+  canvas: HTMLElement
+  sx: number
+  sy: number
+  sWidth: number
+  sHeight: number
+  defaultOptions: any
+}
 
 /**
  * @class Scene - Describes a scene which defined a worldspace containing actors.
  * A scene may have different viewports which may be different views of this same data.
  */
 class Scene {
-  readonly uid: string;
-  readonly renderingEngineUID: string;
-  private _viewports: Array<Viewport>;
-  private _volumeActors: Array<VolumeActorEntry>;
-  private _FrameOfReferenceUID: string;
+  readonly uid: string
+  readonly renderingEngineUID: string
+  private _viewports: Array<Viewport>
+  private _volumeActors: Array<VolumeActorEntry>
+  private _FrameOfReferenceUID: string
 
   constructor(uid, renderingEngineUID) {
-    this.uid = uid;
-    this.renderingEngineUID = renderingEngineUID;
-    this._viewports = [];
-    this._volumeActors = [];
+    this.uid = uid
+    this.renderingEngineUID = renderingEngineUID
+    this._viewports = []
+    this._volumeActors = []
   }
 
   public getFrameOfReferenceUID(): string {
-    return this._FrameOfReferenceUID;
+    return this._FrameOfReferenceUID
   }
 
   /**
@@ -60,7 +64,7 @@ class Scene {
    * @returns {RenderingEngine} The RenderingEngine instance.
    */
   public getRenderingEngine(): RenderingEngine {
-    return renderingEngineCache.get(this.renderingEngineUID);
+    return renderingEngineCache.get(this.renderingEngineUID)
   }
 
   /**
@@ -69,16 +73,16 @@ class Scene {
    * @returns {Array<Viewport>} The viewports.
    */
   public getViewports(): Array<Viewport> {
-    return this._viewports;
+    return this._viewports
   }
 
   /**
    * @method render Renders all `Viewport`s in the `Scene` using the `Scene`'s `RenderingEngine`.
    */
   public render() {
-    const renderingEngine = this.getRenderingEngine();
+    const renderingEngine = this.getRenderingEngine()
 
-    renderingEngine.renderScene(this.uid);
+    renderingEngine.renderScene(this.uid)
   }
 
   /**
@@ -86,7 +90,7 @@ class Scene {
    * @param {string } uid The UID of the viewport to get.
    */
   public getViewport(uid: string): Viewport {
-    return this._viewports.find(vp => vp.uid === uid);
+    return this._viewports.find((vp) => vp.uid === uid)
   }
 
   /**
@@ -98,75 +102,63 @@ class Scene {
    * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the volumes to add.
    * @param {boolean} [immediate=false] Whether the `Scene` should be rendered as soon as volumes are added.
    */
-  public setVolumes(
-    volumeInputArray: Array<VolumeInput>,
-    immediate: boolean = false
-  ) {
-    this._volumeActors = [];
+  public setVolumes(volumeInputArray: Array<VolumeInput>, immediate = false) {
+    this._volumeActors = []
 
-    const firstImageVolume = imageCache.getImageVolume(
-      volumeInputArray[0].volumeUID
-    );
+    const firstImageVolume = imageCache.getImageVolume(volumeInputArray[0].volumeUID)
 
     if (!firstImageVolume) {
-      throw new Error(
-        `imageVolume with uid: ${firstImageVolume.uid} does not exist`
-      );
+      throw new Error(`imageVolume with uid: ${firstImageVolume.uid} does not exist`)
     }
 
-    const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID;
+    const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID
 
-    const numVolumes = volumeInputArray.length;
+    const numVolumes = volumeInputArray.length
 
     // Check all other volumes exist and have the same FrameOfReference
     for (let i = 1; i < numVolumes; i++) {
-      const volumeInput = volumeInputArray[i];
+      const volumeInput = volumeInputArray[i]
 
-      const imageVolume = imageCache.getImageVolume(volumeInput.volumeUID);
+      const imageVolume = imageCache.getImageVolume(volumeInput.volumeUID)
 
       if (!imageVolume) {
-        throw new Error(
-          `imageVolume with uid: ${imageVolume.uid} does not exist`
-        );
+        throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`)
       }
 
       if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
         throw new Error(
           `Volumes being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
-        );
+        )
       }
     }
 
-    this._FrameOfReferenceUID = FrameOfReferenceUID;
+    this._FrameOfReferenceUID = FrameOfReferenceUID
 
-    const slabThicknessValues = [];
+    const slabThicknessValues = []
 
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeUID, slabThickness } = volumeInputArray[i];
-      const volumeActor = createVolumeActor(volumeInputArray[i]);
+      const { volumeUID, slabThickness } = volumeInputArray[i]
+      const volumeActor = createVolumeActor(volumeInputArray[i])
 
-      this._volumeActors.push({ volumeActor, uid: volumeUID, slabThickness });
+      this._volumeActors.push({ volumeActor, uid: volumeUID, slabThickness })
 
-      if (
-        slabThickness !== undefined &&
-        !slabThicknessValues.includes(slabThickness)
-      ) {
-        slabThicknessValues.push(slabThickness);
+      if (slabThickness !== undefined && !slabThicknessValues.includes(slabThickness)) {
+        slabThicknessValues.push(slabThickness)
       }
     }
 
     if (slabThicknessValues.length > 1) {
       console.warn(
         'Currently slab thickness for intensity projections is tied to the camera, not per volume, using the largest of the two volumes for this scene.'
-      );
+      )
     }
 
-    this._viewports.forEach(viewport => {
-      viewport._setVolumeActors(this._volumeActors);
-    });
+    this._viewports.forEach((viewport) => {
+      viewport._setVolumeActors(this._volumeActors)
+    })
 
     if (immediate) {
-      this.render();
+      this.render()
     }
   }
 
@@ -175,18 +167,14 @@ class Scene {
    * @param {ViewportInput} viewportInput
    */
   public addViewport(viewportInput: ViewportInput) {
-    const viewportInterface = <ViewportInterface>Object.assign(
-      {},
-      viewportInput,
-      {
-        sceneUID: this.uid,
-        renderingEngineUID: this.renderingEngineUID,
-      }
-    );
+    const viewportInterface = <ViewportInterface>Object.assign({}, viewportInput, {
+      sceneUID: this.uid,
+      renderingEngineUID: this.renderingEngineUID,
+    })
 
-    const viewport = new Viewport(viewportInterface);
+    const viewport = new Viewport(viewportInterface)
 
-    this._viewports.push(viewport);
+    this._viewports.push(viewport)
   }
 
   /**
@@ -195,13 +183,12 @@ class Scene {
    * @param {string }uid The UID of the volumeActor to fetch.
    * @returns {object} The volume actor.
    */
-  public getVolumeActor(uid: string): object {
-    const volumeActors = this._volumeActors;
-
-    const volumeActorEntry = volumeActors.find(va => va.uid === uid);
+  public getVolumeActor(uid: string): VolumeActor {
+    const volumeActors = this._volumeActors
+    const volumeActorEntry = volumeActors.find((va) => va.uid === uid)
 
     if (volumeActorEntry) {
-      return volumeActorEntry.volumeActor;
+      return volumeActorEntry.volumeActor
     }
   }
 
@@ -211,8 +198,8 @@ class Scene {
    * @returns {Array<VolumeActorEntry>} The array of volume actors.
    */
   public getVolumeActors(): Array<VolumeActorEntry> {
-    return [...this._volumeActors];
+    return [...this._volumeActors]
   }
 }
 
-export default Scene;
+export default Scene

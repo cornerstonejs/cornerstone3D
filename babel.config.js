@@ -1,17 +1,17 @@
-module.exports = {
-  presets: [
-    [
+module.exports = api => {
+
+  api.cache(true);
+
+  return {
+    presets: [
+      '@babel/preset-react',
       '@babel/preset-env',
-      {
-        targets: {
-          ie: '11',
-        },
-      },
+      '@babel/preset-typescript',
     ],
-    '@babel/preset-react',
-  ],
-  plugins: [
-    '@babel/plugin-proposal-class-properties',
-    '@babel/plugin-transform-runtime',
-  ],
+    plugins: [
+      '@babel/plugin-proposal-class-properties',
+      '@babel/plugin-transform-runtime',
+      '@babel/plugin-transform-typescript',
+    ],
+  };
 };

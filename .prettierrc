@@ -1,8 +1,8 @@
 {
   "trailingComma": "es5",
   "printWidth": 80,
-  "proseWrap": "always",
+  "proseWrap": "preserve",
   "tabWidth": 2,
-  "semi": true,
+  "semi": false,
   "singleQuote": true
 }

@@ -1,4 +1,4 @@
-import cornerstoneTools3D from '../src/cornerstone-tools-3d/index.js';
+import cornerstoneTools3D from '../src/cornerstone-tools-3d/index';
 
 const toolStateManager =
   cornerstoneTools3D.defaultFrameOfReferenceSpecificToolStateManager;

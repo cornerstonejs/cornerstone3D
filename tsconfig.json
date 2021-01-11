@@ -1,15 +1,31 @@
 {
   "compilerOptions": {
-    "skipLibCheck": true,
-    "outDir": "tsDist",
-    "module": "es6",
-    "target": "es6",
-    "moduleResolution": "node",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
-    "paths": {
-      "@vtk-viewport": ["src/index.*"],
-      "@tools": ["cornerstone-tools-3d/index.*"]
-    }
+    "checkJs": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "lib": ["ES6", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "outDir": "tsDist",
+    "pretty": true,
+    "removeComments": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": false,
+    "strictNullChecks": false,
+    "target": "esnext"
   },
-  "exclude": ["node_modules", "dist", "snippets"]
+  "paths": {
+  },
+  // typedoc (yarn run docs) picks these up when running
+  // @TODO: so either `examples/**` needs to have valid tsx
+  // or we need separate tsconfig files for these "separate" projects
+  "exclude": ["node_modules", "dist", "snippets", "examples"]
 }

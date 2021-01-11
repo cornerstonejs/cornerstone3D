@@ -20,6 +20,7 @@ function initToolGroups() {
   // TODO: Can we delete tool groups?
   // These need to be in lifecylce so we can undo on page death
   csTools3d.addTool(PanTool, {});
+  // @TODO: This kills the volumeUID and tool configuration
   csTools3d.addTool(WindowLevelTool, {});
   csTools3d.addTool(PetThresholdTool, {});
   csTools3d.addTool(StackScrollMouseWheelTool, {});
@@ -53,6 +54,8 @@ function initToolGroups() {
 
   // Set up CT Scene tools
 
+  // @TODO: This kills the volumeUID and tool configuration
+  debugger
   ctSceneToolGroup.addTool('WindowLevel', {
     configuration: { volumeUID: ctVolumeUID },
   });

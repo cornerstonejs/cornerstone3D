@@ -1,4 +1,4 @@
-import vtkjsViewport from '../src/index.js';
+import vtkjsViewport from '../src/index';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const {

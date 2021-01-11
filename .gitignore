@@ -22,6 +22,9 @@ yarn-error.log*
 yalc.lock
 package-lock.json
 
+# Docs output
+docs/
+
 # Report Output
 junit/
 coverage/

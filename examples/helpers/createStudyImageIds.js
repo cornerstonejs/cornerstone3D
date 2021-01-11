@@ -1,4 +1,4 @@
-import config from '@configuration';
+import config from './../config/default';
 import { api } from 'dicomweb-client';
 import WADORSHeaderProvider from './WADORSHeaderProvider';
 

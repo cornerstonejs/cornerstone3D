@@ -14,6 +14,7 @@ import CONSTANTS from './constants';
 import utils, { getEnabledElement } from './utils';
 import configuration from './configuration';
 
+/** NAMED EXPORTS */
 export {
   RenderingEngine,
   getRenderingEngine,
@@ -30,7 +31,8 @@ export {
   configuration,
 };
 
-export default {
+/** DEFAULT EXPORT */
+const VtkjsViewport = {
   RenderingEngine,
   getRenderingEngine,
   imageCache,
@@ -45,3 +47,5 @@ export default {
   Events,
   configuration,
 };
+
+export default VtkjsViewport;

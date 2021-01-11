@@ -1,6 +1,29 @@
 import { getRenderingEngine } from '../RenderingEngine';
 
-export default function getEnabledElement(canvas) {
+interface IEnabledElement {
+  viewport: any;
+  scene: any;
+  renderingEngine: any;
+  viewportUID: string;
+  sceneUID: string;
+  renderingEngineUID: string;
+  FrameOfReferenceUID: string;
+}
+
+/**
+ * Returns the average of two numbers.
+ *
+ * @remarks
+ * This method is part of the {@link core-library#Statistics | Statistics subsystem}.
+ *
+ * @param canvas - The first input number
+ * @returns The arithmetic mean of `x` and `y`
+ *
+ * @beta
+ */
+export default function getEnabledElement(
+  canvas: HTMLElement | undefined
+): IEnabledElement {
   if (!canvas) {
     return;
   }

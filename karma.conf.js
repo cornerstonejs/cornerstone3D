@@ -1,7 +1,7 @@
-const path = require('path');
-const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core;
+const path = require('path')
+const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 
-module.exports = function(config) {
+module.exports = function (config) {
   config.set({
     reporters: ['junit', 'coverage', 'progress'],
     junitReporter: {
@@ -30,12 +30,7 @@ module.exports = function(config) {
       module: {
         rules: [
           {
-            test: /\.ts$/,
-            exclude: /node_modules/,
-            use: ['ts-loader'],
-          },
-          {
-            test: /\.(js|jsx)$/,
+            test: /\.(js|jsx|ts|tsx)$/,
             exclude: /node_modules/,
             use: ['babel-loader'],
           },
@@ -49,8 +44,8 @@ module.exports = function(config) {
                 loader: 'postcss-loader',
                 options: {
                   postcssOptions: {
-                    plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],  
-                  }
+                    plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],
+                  },
                 },
               },
             ],
@@ -62,12 +57,12 @@ module.exports = function(config) {
         alias: {
           // https://stackoverflow.com/a/40444084/1867984
           '@vtk-viewport': path.join(__dirname, './../src'),
-          '@tools': path.resolve(__dirname, './../cornerstone-tools-3d')
+          '@tools': path.resolve(__dirname, './../cornerstone-tools-3d'),
         },
         fallback: {
           fs: false,
-          path: require.resolve("path-browserify")
-        }
+          path: require.resolve('path-browserify'),
+        },
       },
     },
     webpackMiddleware: {
@@ -80,5 +75,5 @@ module.exports = function(config) {
       },
     },
     browsers: ['ChromeHeadlessNoSandbox'],
-  });
-};
+  })
+}

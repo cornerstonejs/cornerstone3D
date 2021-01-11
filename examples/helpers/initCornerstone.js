@@ -6,8 +6,8 @@ import cornerstone from 'cornerstone-core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import WADORSHeaderProvider from './WADORSHeaderProvider';
 // ~~
-import { register as registerVTKViewportLoaders } from './../../src/index.js';
-import csTools3d from './../../src/cornerstone-tools-3d/index.js';
+import { register as registerVTKViewportLoaders } from './../../src/index';
+import csTools3d from './../../src/cornerstone-tools-3d/index';
 
 // Wire up listeners for renderingEngine's element enabled events
 csTools3d.init();

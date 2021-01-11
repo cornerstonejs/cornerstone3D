@@ -1,145 +1,145 @@
-import { BaseTool } from './base/index';
-import { getEnabledElement, imageCache, Events } from './../../index';
-import triggerEvent from '../util/triggerEvent';
+import { BaseTool } from './base/index'
+import { getEnabledElement, imageCache, Events } from './../../index'
+import triggerEvent from '../util/triggerEvent'
+import StreamingImageVolume from './../../imageCache/classes/StreamingImageVolume'
 
 export default class WindowLevelTool extends BaseTool {
-  touchDragCallback: Function;
-  mouseDragCallback: Function;
-  _configuration: any;
+  touchDragCallback: () => void
+  mouseDragCallback: () => void
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
       name: 'WindowLevel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    });
+    })
 
-    this.touchDragCallback = this._dragCallback.bind(this);
-    this.mouseDragCallback = this._dragCallback.bind(this);
+    this.touchDragCallback = this._dragCallback.bind(this)
+    this.mouseDragCallback = this._dragCallback.bind(this)
   }
 
   private _toWindowLevel(low, high) {
-    const windowWidth = Math.abs(low - high);
-    const windowCenter = low + windowWidth / 2;
+    const windowWidth = Math.abs(low - high)
+    const windowCenter = low + windowWidth / 2
 
-    return { windowWidth, windowCenter };
+    return { windowWidth, windowCenter }
   }
 
   private _toLowHighRange(windowWidth, windowCenter) {
-    const lower = windowCenter - windowWidth / 2.0;
-    const upper = windowCenter + windowWidth / 2.0;
+    const lower = windowCenter - windowWidth / 2.0
+    const upper = windowCenter + windowWidth / 2.0
 
-    return { lower, upper };
+    return { lower, upper }
   }
 
   _dragCallback(evt) {
-    const { element: canvas, deltaPoints } = evt.detail;
-    const enabledElement = getEnabledElement(canvas);
-    const { scene, sceneUID } = enabledElement;
+    const { element: canvas, deltaPoints } = evt.detail
+    const enabledElement = getEnabledElement(canvas)
+    const { scene, sceneUID } = enabledElement
+    const { volumeUID } = this.configuration
 
-    const { volumeUID } = this._configuration;
-
-    let volumeActor;
+    let volumeActor
 
     if (volumeUID) {
-      volumeActor = scene.getVolumeActor(volumeUID);
+      volumeActor = scene.getVolumeActor(volumeUID)
     } else {
       // Default to first volumeActor
-      const volumeActors = scene.getVolumeActors();
+      const volumeActors = scene.getVolumeActors()
 
       if (volumeActors && volumeActors.length) {
-        volumeActor = volumeActors[0].volumeActor;
+        volumeActor = volumeActors[0].volumeActor
       }
     }
 
     if (!volumeActor) {
       // No volume actor available.
-      return;
+      return
     }
 
     const rgbTransferFunction = volumeActor
       .getProperty()
-      .getRGBTransferFunction(0);
+      .getRGBTransferFunction(0)
 
-    const deltaPointsCanvas = deltaPoints.canvas;
+    const deltaPointsCanvas = deltaPoints.canvas
 
-    const imageDynamicRange = this._getImageDynamicRange(volumeUID);
-    const multiplier = Math.round(imageDynamicRange / 1024);
+    const imageDynamicRange = this._getImageDynamicRange(volumeUID)
+    const multiplier = Math.round(imageDynamicRange / 1024)
 
-    const wwDelta = deltaPointsCanvas[0] * multiplier;
-    const wcDelta = deltaPointsCanvas[1] * multiplier;
+    const wwDelta = deltaPointsCanvas[0] * multiplier
+    const wcDelta = deltaPointsCanvas[1] * multiplier
 
-    let [lower, upper] = rgbTransferFunction.getRange();
+    const [lower, upper] = rgbTransferFunction.getRange()
 
-    let { windowWidth, windowCenter } = this._toWindowLevel(lower, upper);
+    let { windowWidth, windowCenter } = this._toWindowLevel(lower, upper)
 
-    windowWidth += wwDelta;
-    windowCenter += wcDelta;
+    windowWidth += wwDelta
+    windowCenter += wcDelta
 
-    windowWidth = Math.max(windowWidth, 1);
+    windowWidth = Math.max(windowWidth, 1)
 
     // Convert back to range
-    const newRange = this._toLowHighRange(windowWidth, windowCenter);
+    const newRange = this._toLowHighRange(windowWidth, windowCenter)
 
-    rgbTransferFunction.setMappingRange(newRange.lower, newRange.upper);
+    rgbTransferFunction.setMappingRange(newRange.lower, newRange.upper)
 
     const eventDetail = {
       volumeUID,
       sceneUID,
       range: newRange,
-    };
+    }
 
-    triggerEvent(canvas, Events.VOI_MODIFIED, eventDetail);
+    triggerEvent(canvas, Events.VOI_MODIFIED, eventDetail)
 
-    scene.render();
+    scene.render()
   }
 
   _getImageDynamicRange = (volumeUID) => {
-    const imageVolume = imageCache.getImageVolume(volumeUID);
-    const { dimensions, scalarData } = imageVolume;
+    const imageVolume = imageCache.getImageVolume(volumeUID)
+    const { dimensions, scalarData } = imageVolume
+    const middleSliceIndex = Math.floor(dimensions[2] / 2)
 
-    const middleSliceIndex = Math.floor(dimensions[2] / 2);
-
-    if (imageVolume.loadStatus) {
-      if (!imageVolume.loadStatus.cachedFrames[middleSliceIndex]) {
-        return DEFAULT_IMAGE_DYNAMIC_RANGE;
-      }
+    if (!(imageVolume instanceof StreamingImageVolume)) {
+      return
     }
 
-    const frameLength = dimensions[0] * dimensions[1];
-    let bytesPerVoxel;
-    let TypedArrayConstructor;
+    const streamingVolume = <StreamingImageVolume>imageVolume
+
+    if (!streamingVolume.loadStatus.cachedFrames[middleSliceIndex]) {
+      return DEFAULT_IMAGE_DYNAMIC_RANGE
+    }
+
+    const frameLength = dimensions[0] * dimensions[1]
+    let bytesPerVoxel
+    let TypedArrayConstructor
 
     if (scalarData instanceof Float32Array) {
-      bytesPerVoxel = 4;
-      TypedArrayConstructor = Float32Array;
+      bytesPerVoxel = 4
+      TypedArrayConstructor = Float32Array
     } else if (scalarData instanceof Uint8Array) {
-      bytesPerVoxel = 1;
-      TypedArrayConstructor = Uint8Array;
+      bytesPerVoxel = 1
+      TypedArrayConstructor = Uint8Array
     }
 
-    const buffer = scalarData.buffer;
+    const buffer = scalarData.buffer
+    const byteOffset = middleSliceIndex * frameLength * bytesPerVoxel
+    const frame = new TypedArrayConstructor(buffer, byteOffset, frameLength)
 
-    const byteOffset = middleSliceIndex * frameLength * bytesPerVoxel;
-
-    const frame = new TypedArrayConstructor(buffer, byteOffset, frameLength);
-
-    let min = Infinity;
-    let max = -Infinity;
+    let min = Infinity
+    let max = -Infinity
 
     for (let i = 0; i < frameLength; i++) {
-      const voxel = frame[i];
+      const voxel = frame[i]
 
       if (voxel < min) {
-        min = voxel;
+        min = voxel
       }
 
       if (voxel > max) {
-        max = voxel;
+        max = voxel
       }
     }
 
-    return max - min;
-  };
+    return max - min
+  }
 }
 
-const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024;
+const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024
