@@ -66,7 +66,7 @@ function setPixelDataType(imageFrame) {
   }
 }
 
-function createImage(imageId, pixelData, transferSyntax, options) {
+function createImage(imageId, pixelData, transferSyntax, options = {}) {
   if (!pixelData || !pixelData.length) {
     return Promise.reject(new Error('The file does not contain image data.'));
   }
