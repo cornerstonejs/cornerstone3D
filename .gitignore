@@ -3,7 +3,7 @@ node_modules
 
 # builds
 build
-dist
+# dist
 .rpt2_cache
 
 # misc
@@ -23,7 +23,8 @@ yalc.lock
 package-lock.json
 
 # Docs output
-docs/
+dist/docs/
+
 
 # Report Output
 junit/

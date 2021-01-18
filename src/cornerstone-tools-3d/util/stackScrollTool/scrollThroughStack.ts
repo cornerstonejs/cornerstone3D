@@ -1,7 +1,7 @@
-import { getEnabledElement } from '../../../index';
-import getTargetVolume from '../planar/getTargetVolume';
-import getSliceRange from './getSliceRange';
-import snapFocalPointToSlice from './snapFocalPointToSlice';
+import { getEnabledElement } from '@vtk-viewport'
+import getTargetVolume from '../planar/getTargetVolume'
+import getSliceRange from './getSliceRange'
+import snapFocalPointToSlice from './snapFocalPointToSlice'
 
 /**
  * @function scrollThroughStack Scroll the stack defined by the event (`evt`)
@@ -15,21 +15,21 @@ import snapFocalPointToSlice from './snapFocalPointToSlice';
  * on the viewport.
  */
 export default function scrollThroughStack(evt, deltaFrames, volumeUID) {
-  const { element: canvas } = evt.detail;
-  const enabledElement = getEnabledElement(canvas);
-  const { scene, viewport } = enabledElement;
-  const camera = viewport.getCamera();
-  const { focalPoint, viewPlaneNormal, position } = camera;
+  const { element: canvas } = evt.detail
+  const enabledElement = getEnabledElement(canvas)
+  const { scene, viewport } = enabledElement
+  const camera = viewport.getCamera()
+  const { focalPoint, viewPlaneNormal, position } = camera
 
   // Stack scroll across highest resolution volume.
   const { spacingInNormalDirection, imageVolume } = getTargetVolume(
     scene,
     camera,
     volumeUID
-  );
+  )
 
-  const volumeActor = scene.getVolumeActor(imageVolume.uid);
-  const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
+  const volumeActor = scene.getVolumeActor(imageVolume.uid)
+  const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
 
   const { newFocalPoint, newPosition } = snapFocalPointToSlice(
     focalPoint,
@@ -38,11 +38,11 @@ export default function scrollThroughStack(evt, deltaFrames, volumeUID) {
     viewPlaneNormal,
     spacingInNormalDirection,
     deltaFrames
-  );
+  )
 
   enabledElement.viewport.setCamera({
     focalPoint: newFocalPoint,
     position: newPosition,
-  });
-  enabledElement.viewport.render();
+  })
+  enabledElement.viewport.render()
 }

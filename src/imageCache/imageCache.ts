@@ -1,5 +1,5 @@
 import ImageVolume from './classes/ImageVolume'
-import { Point3 } from './../cornerstone-tools-3d/types'
+import { Point3, IImageCache } from './../types'
 
 import StreamingImageVolume from './classes/StreamingImageVolume'
 import requestPoolManager from '../imageLoader/requestPoolManager'
@@ -7,17 +7,18 @@ import { vec3 } from 'gl-matrix'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import prefetchImageIds from '../imageLoader/prefetchImageIds'
-import { createUint8SharedArray, createFloat32SharedArray } from '../sharedArrayBufferHelpers'
+import createFloat32SharedArray from './../createFloat32SharedArray'
+import createUint8SharedArray from './../createUint8SharedArray'
 
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
-import { uuidv4 } from '../utils'
-import errorCodes from '../errorCodes'
+import { uuidv4 } from './../utilities'
+import ERROR_CODES from './../enums/ERROR_CODES'
 import _cloneDeep from 'lodash.clonedeep'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
 const REQUEST_TYPE = 'prefetch'
 
-class ImageCache {
+class ImageCache implements IImageCache {
   private _cache: Map<string, ImageVolume>
   private _cacheSize: number
   private _maxCacheSize: number
@@ -65,7 +66,9 @@ class ImageCache {
     const volume = this._get(volumeUID)
 
     if (!volume) {
-      throw new Error(`Cannot load volume: volume with UID ${volumeUID} does not exist.`)
+      throw new Error(
+        `Cannot load volume: volume with UID ${volumeUID} does not exist.`
+      )
     }
 
     if (!(volume instanceof StreamingImageVolume)) {
@@ -111,7 +114,9 @@ class ImageCache {
     const volume = this._get(volumeUID)
 
     if (!volume) {
-      throw new Error(`Cannot load volume: volume with UID ${volumeUID} does not exist.`)
+      throw new Error(
+        `Cannot load volume: volume with UID ${volumeUID} does not exist.`
+      )
     }
 
     if (!(volume instanceof StreamingImageVolume)) {
@@ -156,7 +161,9 @@ class ImageCache {
     const volume = this._get(volumeUID)
 
     if (!volume) {
-      throw new Error(`Cannot load volume: volume with UID ${volumeUID} does not exist.`)
+      throw new Error(
+        `Cannot load volume: volume with UID ${volumeUID} does not exist.`
+      )
     }
 
     if (!(volume instanceof StreamingImageVolume)) {
@@ -197,14 +204,21 @@ class ImageCache {
         continue
       }
 
-      if (volume.uid !== volumeUID && volume.loadStatus && volume.loadStatus.loading === true) {
+      if (
+        volume.uid !== volumeUID &&
+        volume.loadStatus &&
+        volume.loadStatus.loading === true
+      ) {
         // Other volume still loading. Add to prefetcher.
         prefetchImageIds(volume)
       }
     }
   }
 
-  public makeAndCacheImageVolume = (imageIds: Array<string>, uid: string): ImageVolume | StreamingImageVolume => {
+  public makeAndCacheImageVolume = (
+    imageIds: Array<string>,
+    uid: string
+  ): ImageVolume | StreamingImageVolume => {
     if (uid === undefined) {
       uid = uuidv4()
     }
@@ -217,7 +231,14 @@ class ImageCache {
 
     const volumeMetadata = makeVolumeMetadata(imageIds)
 
-    const { BitsAllocated, PixelRepresentation, ImageOrientationPatient, PixelSpacing, Columns, Rows } = volumeMetadata
+    const {
+      BitsAllocated,
+      PixelRepresentation,
+      ImageOrientationPatient,
+      PixelSpacing,
+      Columns,
+      Rows,
+    } = volumeMetadata
 
     const rowCosineVec = vec3.fromValues(
       ImageOrientationPatient[0],
@@ -234,7 +255,10 @@ class ImageCache {
 
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec)
 
-    const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(imageIds, scanAxisNormal)
+    const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
+      imageIds,
+      scanAxisNormal
+    )
 
     const numFrames = imageIds.length
 
@@ -250,10 +274,11 @@ class ImageCache {
     // TODO Improve this when we have support for more types
     const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1
 
-    const byteLength = bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
+    const byteLength =
+      bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
     if (currentCacheSize + byteLength > this.getMaxCacheSize()) {
-      throw new Error(errorCodes.CACHE_SIZE_EXCEEDED)
+      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
     }
 
     let scalarData
@@ -261,15 +286,21 @@ class ImageCache {
     switch (BitsAllocated) {
       case 8:
         if (signed) {
-          throw new Error('8 Bit signed images are not yet supported by this plugin.')
+          throw new Error(
+            '8 Bit signed images are not yet supported by this plugin.'
+          )
         } else {
-          scalarData = createUint8SharedArray(dimensions[0] * dimensions[1] * dimensions[2])
+          scalarData = createUint8SharedArray(
+            dimensions[0] * dimensions[1] * dimensions[2]
+          )
         }
 
         break
 
       case 16:
-        scalarData = createFloat32SharedArray(dimensions[0] * dimensions[1] * dimensions[2])
+        scalarData = createFloat32SharedArray(
+          dimensions[0] * dimensions[1] * dimensions[2]
+        )
 
         break
     }
@@ -317,7 +348,10 @@ class ImageCache {
     return streamingImageVolume
   }
 
-  public makeAndCacheDerivedVolume = (referencedVolumeUID, options: any = {}): ImageVolume => {
+  public makeAndCacheDerivedVolume = (
+    referencedVolumeUID,
+    options: any = {}
+  ): ImageVolume => {
     const referencedVolume = this._get(referencedVolumeUID)
 
     if (!referencedVolume) {
@@ -332,7 +366,14 @@ class ImageCache {
       uid = uuidv4()
     }
 
-    const { metadata, dimensions, spacing, origin, direction, scalarData } = referencedVolume
+    const {
+      metadata,
+      dimensions,
+      spacing,
+      origin,
+      direction,
+      scalarData,
+    } = referencedVolume
 
     const scalarLength = scalarData.length
 
@@ -348,7 +389,7 @@ class ImageCache {
     }
 
     if (currentCacheSize + byteLength > this.getMaxCacheSize()) {
-      throw new Error(errorCodes.CACHE_SIZE_EXCEEDED)
+      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
     }
 
     if (volumeScalarData) {
@@ -358,7 +399,10 @@ class ImageCache {
         )
       }
 
-      if (!(volumeScalarData instanceof Uint8Array) && !(volumeScalarData instanceof Float32Array)) {
+      if (
+        !(volumeScalarData instanceof Uint8Array) &&
+        !(volumeScalarData instanceof Float32Array)
+      ) {
         throw new Error(
           `volumeScalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
         )
@@ -397,7 +441,10 @@ class ImageCache {
     return derivedVolume
   }
 
-  public makeAndCacheLocalImageVolume = (properties: any = {}, uid: string): ImageVolume => {
+  public makeAndCacheLocalImageVolume = (
+    properties: any = {},
+    uid: string
+  ): ImageVolume => {
     if (uid === undefined) {
       uid = uuidv4()
     }
@@ -408,22 +455,36 @@ class ImageCache {
       return cachedVolume
     }
 
-    let { metadata, dimensions, spacing, origin, direction, scalarData } = properties
+    let {
+      metadata,
+      dimensions,
+      spacing,
+      origin,
+      direction,
+      scalarData,
+    } = properties
 
     const scalarLength = dimensions[0] * dimensions[1] * dimensions[2]
 
     // Check if it fits in the cache before we allocate data
     const currentCacheSize = this.getCacheSize()
 
-    const byteLength = scalarData ? scalarData.buffer.byteLength : scalarLength * 4
+    const byteLength = scalarData
+      ? scalarData.buffer.byteLength
+      : scalarLength * 4
 
     if (currentCacheSize + byteLength > this.getMaxCacheSize()) {
-      throw new Error(errorCodes.CACHE_SIZE_EXCEEDED)
+      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
     }
 
     if (scalarData) {
-      if (!(scalarData instanceof Uint8Array) && !(scalarData instanceof Float32Array)) {
-        throw new Error(`scalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`)
+      if (
+        !(scalarData instanceof Uint8Array) &&
+        !(scalarData instanceof Float32Array)
+      ) {
+        throw new Error(
+          `scalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
+        )
       }
     } else {
       scalarData = new Float32Array(scalarLength)
@@ -499,7 +560,9 @@ class ImageCache {
     this._cacheSize += increment
   }
 
-  private _hasLoaded = (streamingImageVolume: StreamingImageVolume): boolean => {
+  private _hasLoaded = (
+    streamingImageVolume: StreamingImageVolume
+  ): boolean => {
     const { loadStatus, imageIds } = streamingImageVolume
     const numFrames = imageIds.length
 

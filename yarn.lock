@@ -9590,7 +9590,7 @@ lru-cache@^6.0.0:
   dependencies:
     yallist "^4.0.0"
 
-lunr@^2.3.9:
+lunr@^2.3.8, lunr@^2.3.9:
   version "2.3.9"
   resolved "https://registry.yarnpkg.com/lunr/-/lunr-2.3.9.tgz#18b123142832337dd6e964df1a5a7707b25d35e1"
   integrity sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==
@@ -15174,6 +15174,21 @@ typedoc-default-themes@0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/typedoc-default-themes/-/typedoc-default-themes-0.12.0.tgz#42451948e55a148c1350eb2aa68829be5c2b06b3"
   integrity sha512-0hHBxwmfxE0rkIslOiO39fJyYwaScQEhUIxcpqx3uS1BL3zhFW5oQfUaPx2cv2XLL/GXhYFxhdFLoVmNptbxEQ==
+
+typedoc-default-themes@^0.10.1:
+  version "0.10.2"
+  resolved "https://registry.yarnpkg.com/typedoc-default-themes/-/typedoc-default-themes-0.10.2.tgz#743380a80afe62c5ef92ca1bd4abe2ac596be4d2"
+  integrity sha512-zo09yRj+xwLFE3hyhJeVHWRSPuKEIAsFK5r2u47KL/HBKqpwdUSanoaz5L34IKiSATFrjG5ywmIu98hPVMfxZg==
+  dependencies:
+    lunr "^2.3.8"
+
+typedoc-plugin-pages-fork@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/typedoc-plugin-pages-fork/-/typedoc-plugin-pages-fork-0.0.1.tgz#a60555bd7e240cd0893c4a58cb49d5c06178b6f4"
+  integrity sha512-WZoTOSarUL1CPO7LJOpsltP6B8Qrx3Tc0/hjZVNRe5mwvZnU1/LAz12ERyKzA/TsR1iIpiaixzkbhIwYkICGiQ==
+  dependencies:
+    compare-versions "^3.6.0"
+    typedoc-default-themes "^0.10.1"
 
 typedoc@^0.20.13:
   version "0.20.13"

@@ -1,16 +1,43 @@
 {
-  "out": "./docs/dist/api/",
+  "out": "./dist/docs/",
+  "theme": "pages-plugin",
 
-  "readme": "none",
-  "entryPoints": ["./src/index.ts"],
+  "entryPoints": [
+    "./src/index.ts",
+    "./src/cornerstone-tools-3d/index.ts"],
   "tsconfig": "./tsconfig.json",
   "exclude": [
     "**/examples/**",
     "**/*.tsx"
   ],
 
-  "excludeExternals": true,
-  "excludePrivate": true,
-  "excludeProtected": true,
-  "listInvalidSymbolLinks": true
+  "excludeExternals": false,
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "listInvalidSymbolLinks": true,
+
+  "pages": {
+    "groups": [{
+      "title": "Documentation",
+      "pages": [
+        {
+          "title": "Introduction",
+          "source": "./docs/pages/introduction.md"
+        },
+        {
+          "title": "Setup",
+          "source": "./docs/pages/setup.md"
+        },
+        {
+          "title": "Usage",
+          "source": "./docs/pages/usage.md"
+        },
+        {
+          "title": "Custom Tools",
+          "source": "./docs/pages/custom-tools.md"
+        }
+      ]
+    }],
+    "output": "pages"
+  }
 }

@@ -1,6 +1,6 @@
-import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager';
-import { getEnabledElement } from '../../index';
-import { uuidv4 } from '../util/';
+import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
+import { getEnabledElement } from '@vtk-viewport'
+import { uuidv4 } from '../util/'
 import { ToolSpecificToolState } from '../types/toolStateTypes'
 
 function getViewportSpecificStateManager(element) {
@@ -10,7 +10,7 @@ function getViewportSpecificStateManager(element) {
 
   // Just return the default for now.
 
-  return defaultFrameOfReferenceSpecificToolStateManager;
+  return defaultFrameOfReferenceSpecificToolStateManager
 }
 
 /**
@@ -25,11 +25,11 @@ function getToolState(
   element: HTMLElement,
   toolName: string
 ): ToolSpecificToolState {
-  const toolStateManager = getViewportSpecificStateManager(element);
-  const enabledElement = getEnabledElement(element);
-  const { FrameOfReferenceUID } = enabledElement;
+  const toolStateManager = getViewportSpecificStateManager(element)
+  const enabledElement = getEnabledElement(element)
+  const { FrameOfReferenceUID } = enabledElement
 
-  return toolStateManager.get(FrameOfReferenceUID, toolName);
+  return toolStateManager.get(FrameOfReferenceUID, toolName)
 }
 
 /**
@@ -39,13 +39,13 @@ function getToolState(
  * @param {*} toolData
  */
 function addToolState(element, toolData) {
-  const toolStateManager = getViewportSpecificStateManager(element);
+  const toolStateManager = getViewportSpecificStateManager(element)
 
   if (toolData.metadata.toolUID === undefined) {
-    toolData.metadata.toolUID = uuidv4();
+    toolData.metadata.toolUID = uuidv4()
   }
 
-  toolStateManager.addToolState(toolData);
+  toolStateManager.addToolState(toolData)
 }
 
-export { getToolState, addToolState };
+export { getToolState, addToolState }

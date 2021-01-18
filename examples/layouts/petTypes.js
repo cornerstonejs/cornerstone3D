@@ -1,7 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import { CONSTANTS, imageCache, utils } from './../../src/index'
-
-const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS
+import { ORIENTATION, VIEWPORT_TYPE, imageCache, Utilities } from '@vtk-viewport';
 
 function setLayout(renderingEngine, canvasContainers, { ptTypesSceneToolGroup }) {
   const viewportInput = [
@@ -56,7 +54,7 @@ function setPetBWTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, 5)
 
-  utils.invertRgbTransferFunction(rgbTransferFunction)
+  Utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
@@ -78,8 +76,8 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, max)
 
-  utils.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  utils.invertRgbTransferFunction(rgbTransferFunction)
+  Utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
+  Utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setPetBSATransferFunction({ volumeActor, volumeUID }) {
@@ -99,8 +97,8 @@ function setPetBSATransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, max)
 
-  utils.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  utils.invertRgbTransferFunction(rgbTransferFunction)
+  Utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
+  Utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setVolumes(renderingEngine, ptVolumeUID) {
@@ -109,9 +107,7 @@ function setVolumes(renderingEngine, ptVolumeUID) {
   const ptBSAScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BSA)
 
   ptBWScene.setVolumes([{ volumeUID: ptVolumeUID, callback: setPetBWTransferFunction }])
-
   ptLBMScene.setVolumes([{ volumeUID: ptVolumeUID, callback: setPetLBMTransferFunction }])
-
   ptBSAScene.setVolumes([{ volumeUID: ptVolumeUID, callback: setPetBSATransferFunction }])
 }
 

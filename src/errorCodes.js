@@ -1,3 +1,0 @@
-export default {
-  CACHE_SIZE_EXCEEDED: 'CACHE_SIZE_EXCEEDED',
-};

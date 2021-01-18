@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import { RenderingEngine, CONSTANTS } from './../src/index';
+import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@vtk-viewport';
 
-const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 
 const NUM_VIEWPORTS = 25;
 

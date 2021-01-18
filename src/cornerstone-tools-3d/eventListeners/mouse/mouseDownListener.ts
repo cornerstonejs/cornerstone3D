@@ -1,9 +1,14 @@
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import mouseMoveListener from './mouseMoveListener'
 import triggerEvent from './../../util/triggerEvent'
-import { ICornerstoneToolsEventDetail, IPoints, Point2, Point3 } from '../../types'
+import {
+  ICornerstoneToolsEventDetail,
+  IPoints,
+  Point2,
+  Point3,
+} from '../../types'
 // ~~ VIEWPORT LIBRARY
-import { getEnabledElement } from './../../../index'
+import { getEnabledElement } from '@vtk-viewport'
 import getMouseEventPoints from './getMouseEventPoints'
 
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = CornerstoneTools3DEvents
@@ -116,7 +121,11 @@ function mouseDownListener(evt: MouseEvent) {
   state.startPoints = _copyPoints(eventData.startPoints)
   state.lastPoints = _copyPoints(eventData.lastPoints)
 
-  const eventDidPropagate = triggerEvent(eventData.element, MOUSE_DOWN, eventData)
+  const eventDidPropagate = triggerEvent(
+    eventData.element,
+    MOUSE_DOWN,
+    eventData
+  )
 
   if (eventDidPropagate) {
     // No tools responded to this event, create a new tool
@@ -136,7 +145,10 @@ function mouseDownListener(evt: MouseEvent) {
  */
 function _onMouseDrag(evt: MouseEvent) {
   const currentPoints = getMouseEventPoints(evt, state.element)
-  const lastPoints = _updateMouseEventsLastPoints(state.element, state.lastPoints)
+  const lastPoints = _updateMouseEventsLastPoints(
+    state.element,
+    state.lastPoints
+  )
 
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints)
 
@@ -170,7 +182,9 @@ function _onMouseUp(evt: MouseEvent): void {
   // Cancel the timeout preventing the click event from triggering
   clearTimeout(state.preventClickTimeout)
 
-  const eventName = state.isClickEvent ? CornerstoneTools3DEvents.MOUSE_CLICK : CornerstoneTools3DEvents.MOUSE_UP
+  const eventName = state.isClickEvent
+    ? CornerstoneTools3DEvents.MOUSE_CLICK
+    : CornerstoneTools3DEvents.MOUSE_UP
 
   const currentPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints)
@@ -227,7 +241,11 @@ function _subtractPoints(point0: Point2, point1: Point2): Point2 {
 }
 
 function _subtract3dPoints(point0: Point3, point1: Point3): Point3 {
-  return <Point3>[point0[0] - point1[0], point0[1] - point1[1], point0[2] - point1[2]]
+  return <Point3>[
+    point0[0] - point1[0],
+    point0[1] - point1[1],
+    point0[2] - point1[2],
+  ]
 }
 
 /**
@@ -236,7 +254,10 @@ function _subtract3dPoints(point0: Point3, point1: Point3): Point3 {
  * @param {HTMLElement} element
  * @param lastPoints
  */
-function _updateMouseEventsLastPoints(element: HTMLElement, lastPoints: IPoints): IPoints {
+function _updateMouseEventsLastPoints(
+  element: HTMLElement,
+  lastPoints: IPoints
+): IPoints {
   const canvas = element
   const enabledElement = getEnabledElement(canvas)
   // Need to update the world point to be calculated from the current reference frame,

@@ -1,7 +1,7 @@
-import drawLine from './drawLine.js';
-import { vec2 as vec2Utils } from '../util/math';
+import drawLine from './drawLine.js'
+import { vec2 as vec2Utils } from '../util/math'
 
-const { findClosestPoint } = vec2Utils;
+const { findClosestPoint } = vec2Utils
 
 /**
  * Draw a link between an annotation to a box.
@@ -17,7 +17,7 @@ const { findClosestPoint } = vec2Utils;
  * @param  {number} lineWidth        The line width of the link.
  * @returns {undefined}
  */
-export default function(
+export default function (
   linkAnchorPoints,
   refPoint,
   boundingBox,
@@ -31,7 +31,7 @@ export default function(
   const start =
     linkAnchorPoints.length > 0
       ? findClosestPoint(linkAnchorPoints, refPoint)
-      : refPoint;
+      : refPoint
 
   // Calculate the midpoints of the bounding box
   const boundingBoxPoints = [
@@ -45,18 +45,18 @@ export default function(
       boundingBox.left + boundingBox.width,
       boundingBox.top + boundingBox.height / 2,
     ],
-  ];
+  ]
 
   // Calculate the link endpoint by identifying which midpoint of the bounding box
   // Is closest to the start point.
-  const end = findClosestPoint(boundingBoxPoints, start);
+  const end = findClosestPoint(boundingBoxPoints, start)
 
   // Finally we draw the dashed linking line
   const options = {
     color,
     lineWidth,
     lineDash: [2, 3],
-  };
+  }
 
-  drawLine(context, start, end, options, 'canvas');
+  drawLine(context, start, end, options, 'canvas')
 }

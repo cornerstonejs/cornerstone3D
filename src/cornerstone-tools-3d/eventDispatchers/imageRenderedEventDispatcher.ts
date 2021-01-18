@@ -1,8 +1,8 @@
-import { Events as RenderingEngineEvents } from '../../index';
-import { ToolModes } from './../enums';
-import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent';
+import { EVENTS as RenderingEngineEvents } from '../../index'
+import { ToolModes } from './../enums'
+import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 
-const { Active, Passive, Enabled } = ToolModes;
+const { Active, Passive, Enabled } = ToolModes
 
 /**
  * @function onImageRendered - When the image is rendered, check what tools can be rendered for this element.
@@ -19,30 +19,30 @@ const onImageRendered = function (evt) {
     Active,
     Passive,
     Enabled,
-  ]);
+  ])
 
   enabledTools.forEach((tool) => {
     if (tool.renderToolData) {
-      tool.renderToolData(evt);
+      tool.renderToolData(evt)
     }
-  });
-};
+  })
+}
 
 const enable = function (element) {
   element.addEventListener(
     RenderingEngineEvents.IMAGE_RENDERED,
     onImageRendered
-  );
-};
+  )
+}
 
 const disable = function (element) {
   element.removeEventListener(
     RenderingEngineEvents.IMAGE_RENDERED,
     onImageRendered
-  );
-};
+  )
+}
 
 export default {
   enable,
   disable,
-};
+}

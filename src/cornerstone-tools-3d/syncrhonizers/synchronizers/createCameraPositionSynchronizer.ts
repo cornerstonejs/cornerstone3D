@@ -1,9 +1,9 @@
-import { SynchronizerManager } from '../../store/';
-import { Events as RENDERING_EVENTS } from '../../../index';
-import cameraSyncCallback from '../callbacks/cameraSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import { SynchronizerManager } from '../../store/'
+import { EVENTS as RENDERING_EVENTS } from '../../../index'
+import cameraSyncCallback from '../callbacks/cameraSyncCallback'
+import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
 
-const { CAMERA_MODIFIED } = RENDERING_EVENTS;
+const { CAMERA_MODIFIED } = RENDERING_EVENTS
 
 /**
  * @function createCameraPositionSynchronizer A helper that creates a new `Synchronizer`
@@ -20,7 +20,7 @@ export default function createCameraPositionSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
     cameraSyncCallback
-  );
+  )
 
-  return cameraPositionSyncrhonizer;
+  return cameraPositionSyncrhonizer
 }

@@ -1,5 +1,5 @@
-import { getEnabledElement } from '../../../index';
-import { IPoints, Point2 } from '../../types';
+import { getEnabledElement } from '@vtk-viewport'
+import { IPoints, Point2 } from '../../types'
 
 /**
  * getMouseEventPoints - Given a native mouse event, get the associated
@@ -12,18 +12,18 @@ export default function getMouseEventPoints(
   evt: MouseEvent,
   element?: HTMLElement
 ): IPoints {
-  const canvas = element || evt.target as HTMLElement;
-  const enabledElement = getEnabledElement(canvas);
-  const pagePoint = _pageToPoint(evt);
-  const canvasPoint = _pagePointsToCanvasPoints(<HTMLElement>canvas, pagePoint);
-  const worldPoint = enabledElement.viewport.canvasToWorld(canvasPoint);
+  const canvas = element || (evt.target as HTMLElement)
+  const enabledElement = getEnabledElement(canvas)
+  const pagePoint = _pageToPoint(evt)
+  const canvasPoint = _pagePointsToCanvasPoints(<HTMLElement>canvas, pagePoint)
+  const worldPoint = enabledElement.viewport.canvasToWorld(canvasPoint)
 
   return {
     page: pagePoint,
     client: _clientToPoint(evt),
     canvas: canvasPoint,
     world: worldPoint,
-  };
+  }
 }
 
 /**
@@ -37,11 +37,11 @@ function _pagePointsToCanvasPoints(
   DomCanvasElement: HTMLElement,
   pagePoint: Point2
 ) {
-  const rect = DomCanvasElement.getBoundingClientRect();
+  const rect = DomCanvasElement.getBoundingClientRect()
   return <Point2>[
     pagePoint[0] - rect.left - window.pageXOffset,
     pagePoint[1] - rect.top - window.pageYOffset,
-  ];
+  ]
 }
 
 /**
@@ -50,7 +50,7 @@ function _pagePointsToCanvasPoints(
  * @param {MouseEvent} evt The Mouse `Event`
  */
 function _pageToPoint(evt: MouseEvent): Point2 {
-  return <Point2>[evt.pageX, evt.pageY];
+  return <Point2>[evt.pageX, evt.pageY]
 }
 
 /**
@@ -59,5 +59,5 @@ function _pageToPoint(evt: MouseEvent): Point2 {
  * @param {MouseEvent} evt The Mouse `Event`
  */
 function _clientToPoint(evt: MouseEvent): Point2 {
-  return <Point2>[evt.clientX, evt.clientY];
+  return <Point2>[evt.clientX, evt.clientY]
 }

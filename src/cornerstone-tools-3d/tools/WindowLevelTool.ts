@@ -1,5 +1,5 @@
 import { BaseTool } from './base/index'
-import { getEnabledElement, imageCache, Events } from './../../index'
+import { getEnabledElement, imageCache, EVENTS } from './../../index'
 import triggerEvent from '../util/triggerEvent'
 import StreamingImageVolume from './../../imageCache/classes/StreamingImageVolume'
 
@@ -87,7 +87,7 @@ export default class WindowLevelTool extends BaseTool {
       range: newRange,
     }
 
-    triggerEvent(canvas, Events.VOI_MODIFIED, eventDetail)
+    triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
 
     scene.render()
   }

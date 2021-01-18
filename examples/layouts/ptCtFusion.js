@@ -1,5 +1,5 @@
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
-import { CONSTANTS, imageCache } from './../../src/index';
+import { ORIENTATION, VIEWPORT_TYPE, imageCache } from '@vtk-viewport';
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
 import {
   setCTWWWC,
@@ -7,7 +7,6 @@ import {
   getSetPetColorMapTransferFunction,
 } from '../helpers/transferFunctionHelpers';
 
-const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
 const { BlendMode } = vtkConstants;
 
 function setLayout(

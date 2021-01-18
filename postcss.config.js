@@ -1,6 +1,6 @@
-module.exports = function(ctx) {
-  ctx = ctx || {};
-  ctx.env = ctx.env || 'development';
+module.exports = function (ctx) {
+  ctx = ctx || {}
+  ctx.env = ctx.env || 'development'
 
   return {
     map: ctx.env === 'development' ? ctx.map : false,
@@ -9,5 +9,5 @@ module.exports = function(ctx) {
       'postcss-preset-env': {},
       cssnano: ctx.env === 'production' ? {} : false,
     },
-  };
-};
+  }
+}

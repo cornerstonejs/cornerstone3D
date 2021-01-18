@@ -15,14 +15,22 @@
     "noImplicitThis": false,
     "outDir": "tsDist",
     "pretty": true,
-    "removeComments": true,
+    "removeComments": false,
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": false,
     "strictNullChecks": false,
-    "target": "esnext"
-  },
-  "paths": {
+    "target": "esnext",
+    // TS version of Webpack aliases
+    // relative to `baseUrl`
+    "paths": {
+      "@vtk-viewport": [
+        "src/index.ts"
+      ],
+      "@tools": [
+        "src/cornerstone-tools-3d/index.ts"
+      ],
+    },
   },
   // typedoc (yarn run docs) picks these up when running
   // @TODO: so either `examples/**` needs to have valid tsx

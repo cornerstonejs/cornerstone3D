@@ -1,4 +1,5 @@
-import Viewport, { ViewportInterface } from './Viewport'
+import { IViewport } from './../types'
+import Viewport from './Viewport'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { createVolumeActor } from './helpers'
@@ -105,10 +106,14 @@ class Scene {
   public setVolumes(volumeInputArray: Array<VolumeInput>, immediate = false) {
     this._volumeActors = []
 
-    const firstImageVolume = imageCache.getImageVolume(volumeInputArray[0].volumeUID)
+    const firstImageVolume = imageCache.getImageVolume(
+      volumeInputArray[0].volumeUID
+    )
 
     if (!firstImageVolume) {
-      throw new Error(`imageVolume with uid: ${firstImageVolume.uid} does not exist`)
+      throw new Error(
+        `imageVolume with uid: ${firstImageVolume.uid} does not exist`
+      )
     }
 
     const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID
@@ -122,7 +127,9 @@ class Scene {
       const imageVolume = imageCache.getImageVolume(volumeInput.volumeUID)
 
       if (!imageVolume) {
-        throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`)
+        throw new Error(
+          `imageVolume with uid: ${imageVolume.uid} does not exist`
+        )
       }
 
       if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
@@ -142,7 +149,10 @@ class Scene {
 
       this._volumeActors.push({ volumeActor, uid: volumeUID, slabThickness })
 
-      if (slabThickness !== undefined && !slabThicknessValues.includes(slabThickness)) {
+      if (
+        slabThickness !== undefined &&
+        !slabThicknessValues.includes(slabThickness)
+      ) {
         slabThicknessValues.push(slabThickness)
       }
     }
@@ -167,7 +177,7 @@ class Scene {
    * @param {ViewportInput} viewportInput
    */
   public addViewport(viewportInput: ViewportInput) {
-    const viewportInterface = <ViewportInterface>Object.assign({}, viewportInput, {
+    const viewportInterface = <IViewport>Object.assign({}, viewportInput, {
       sceneUID: this.uid,
       renderingEngineUID: this.renderingEngineUID,
     })

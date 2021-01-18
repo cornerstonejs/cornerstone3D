@@ -1,0 +1,19 @@
+{
+  "groups": [{
+    "title": "Documentation",
+    "pages": [
+      {
+        "title": "Setup",
+        "source": "./docs/pages/setup.md"
+      },
+      {
+        "title": "Usage",
+        "source": "./docs/pages/usage.md"
+      },
+      {
+        "title": "Custom Tools",
+        "source": "./docs/pages/custom-tools.md"
+      }
+    ]
+  }]
+}

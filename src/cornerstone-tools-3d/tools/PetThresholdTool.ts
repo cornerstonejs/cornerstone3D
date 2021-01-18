@@ -1,6 +1,6 @@
 import { BaseTool } from './base/index'
 
-import { getEnabledElement, Events } from './../../index'
+import { getEnabledElement, EVENTS } from './../../index'
 import triggerEvent from '../util/triggerEvent'
 
 export default class PetThresholdTool extends BaseTool {
@@ -32,7 +32,9 @@ export default class PetThresholdTool extends BaseTool {
 
       if (!volumeActor) {
         // Intentional use of volumeUID which is not defined, so throw.
-        throw new Error(`Scene does not have a volume actor with specified volumeUID: ${volumeUID}`)
+        throw new Error(
+          `Scene does not have a volume actor with specified volumeUID: ${volumeUID}`
+        )
       }
     } else {
       // Default to first volumeActor
@@ -48,7 +50,9 @@ export default class PetThresholdTool extends BaseTool {
       return
     }
 
-    const rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+    const rgbTransferFunction = volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
 
     const deltaY = deltaPoints.canvas[1]
     const multiplier = 5 / canvas.clientHeight
@@ -68,6 +72,6 @@ export default class PetThresholdTool extends BaseTool {
       range: { lower, upper },
     }
 
-    triggerEvent(canvas, Events.VOI_MODIFIED, eventDetail)
+    triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
   }
 }

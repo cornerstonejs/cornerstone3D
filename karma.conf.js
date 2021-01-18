@@ -1,5 +1,9 @@
 const path = require('path')
 const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
+//
+const PROJECT_ROOT = path.join(__dirname)
+const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/index.ts')
+const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools-3d/')
 
 module.exports = function (config) {
   config.set({
@@ -56,8 +60,8 @@ module.exports = function (config) {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
         alias: {
           // https://stackoverflow.com/a/40444084/1867984
-          '@vtk-viewport': path.join(__dirname, './../src'),
-          '@tools': path.resolve(__dirname, './../cornerstone-tools-3d'),
+          '@vtk-viewport': RENDERING_ROOT,
+          '@tools': TOOLS_ROOT,
         },
         fallback: {
           fs: false,

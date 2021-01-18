@@ -1,11 +1,13 @@
 const path = require('path')
 const webpack = require('webpack')
 // Plugins
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
+  .BundleAnalyzerPlugin
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 //
 const PROJECT_ROOT = path.join(__dirname)
-const ENTRY_VTK_EXT = path.join(PROJECT_ROOT, './src/index.ts')
+const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/index.ts')
+const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools-3d/')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const OUT_PATH = path.join(PROJECT_ROOT, './dist')
 
@@ -20,7 +22,8 @@ module.exports = (env, argv) => {
 
   return {
     entry: {
-      index: ENTRY_VTK_EXT,
+      rendering: RENDERING_ROOT,
+      tools: TOOLS_ROOT,
     },
     devtool: 'source-map',
     output: {
@@ -43,8 +46,8 @@ module.exports = (env, argv) => {
       modules: [path.resolve(PROJECT_ROOT, './node_modules'), SRC_PATH],
       alias: {
         // https://stackoverflow.com/a/40444084/1867984
-        '@vtk-viewport': path.join(PROJECT_ROOT, './src'),
-        '@tools': path.resolve(PROJECT_ROOT, './src/cornerstone-tools-3d'),
+        '@vtk-viewport': RENDERING_ROOT,
+        '@tools': TOOLS_ROOT,
       },
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       fallback: {

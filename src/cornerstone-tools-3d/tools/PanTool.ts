@@ -1,5 +1,6 @@
-import { BaseTool } from './base/index';
-import { getEnabledElement } from './../../index';
+import { BaseTool } from './base/index'
+import { Point3 } from './../types'
+import { getEnabledElement } from '@vtk-viewport'
 
 /**
  * @class PanTool
@@ -10,43 +11,43 @@ import { getEnabledElement } from './../../index';
  * @extends {BaseTool}
  */
 export default class PanTool extends BaseTool {
-  touchDragCallback: Function;
-  mouseDragCallback: Function;
+  touchDragCallback: Function
+  mouseDragCallback: Function
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
       name: 'Pan',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    });
+    })
 
-    this.touchDragCallback = this._dragCallback.bind(this);
-    this.mouseDragCallback = this._dragCallback.bind(this);
+    this.touchDragCallback = this._dragCallback.bind(this)
+    this.mouseDragCallback = this._dragCallback.bind(this)
   }
 
   _dragCallback(evt) {
-    const { element: canvas, deltaPoints } = evt.detail;
-    const enabledElement = getEnabledElement(canvas);
+    const { element: canvas, deltaPoints } = evt.detail
+    const enabledElement = getEnabledElement(canvas)
 
-    const deltaPointsWorld = deltaPoints.world;
-    const camera = enabledElement.viewport.getCamera();
-    const { focalPoint, position } = camera;
+    const deltaPointsWorld = deltaPoints.world
+    const camera = enabledElement.viewport.getCamera()
+    const { focalPoint, position } = camera
 
-    const updatedPosition = [
+    const updatedPosition = <Point3>[
       position[0] - deltaPointsWorld[0],
       position[1] - deltaPointsWorld[1],
       position[2] - deltaPointsWorld[2],
-    ];
+    ]
 
-    const updatedFocalPoint = [
+    const updatedFocalPoint = <Point3>[
       focalPoint[0] - deltaPointsWorld[0],
       focalPoint[1] - deltaPointsWorld[1],
       focalPoint[2] - deltaPointsWorld[2],
-    ];
+    ]
 
     enabledElement.viewport.setCamera({
       focalPoint: updatedFocalPoint,
       position: updatedPosition,
-    });
-    enabledElement.viewport.render();
+    })
+    enabledElement.viewport.render()
   }
 }

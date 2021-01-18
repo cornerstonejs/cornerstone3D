@@ -11,7 +11,8 @@
 # COMMENT: Why we specify YARN_FLAGS: https://www.netlify.com/docs/build-gotchas/#yarn
 [build.environment]
   NODE_VERSION = "12.16.3"
-  YARN_VERSION = "1.15.2"
+  YARN_VERSION = "1.19.1"
+  NETLIFY_USE_YARN = "true"
   YARN_FLAGS = "--no-ignore-optional --pure-lockfile"
 
 # COMMENT: This a rule for Single Page Applications

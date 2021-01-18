@@ -1,8 +1,8 @@
-import cornerstone from 'cornerstone-core';
-import { Metadata } from '../classes/interfaces';
+import cornerstone from 'cornerstone-core'
+import { Metadata } from './../../types'
 
 export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
-  const imageId0 = imageIds[0];
+  const imageId0 = imageIds[0]
 
   const {
     pixelRepresentation,
@@ -11,34 +11,31 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     highBit,
     photometricInterpretation,
     samplesPerPixel,
-  } = cornerstone.metaData.get('imagePixelModule', imageId0);
+  } = cornerstone.metaData.get('imagePixelModule', imageId0)
 
-  let { windowWidth, windowCenter } = cornerstone.metaData.get(
+  const { windowWidth, windowCenter } = cornerstone.metaData.get(
     'voiLutModule',
     imageId0
-  );
+  )
 
   // Add list of VOIs stored on the DICOM.
-  const voiLut = [];
+  const voiLut = []
 
   if (Array.isArray(windowWidth)) {
     for (let i = 0; i < windowWidth.length; i++) {
       voiLut.push({
         windowWidth: windowWidth[i],
         windowCenter: windowCenter[i],
-      });
+      })
     }
   } else {
     voiLut.push({
       windowWidth: windowWidth,
       windowCenter: windowCenter,
-    });
+    })
   }
 
-  const { modality } = cornerstone.metaData.get(
-    'generalSeriesModule',
-    imageId0
-  );
+  const { modality } = cornerstone.metaData.get('generalSeriesModule', imageId0)
 
   const {
     imageOrientationPatient,
@@ -46,7 +43,7 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     frameOfReferenceUID,
     columns,
     rows,
-  } = cornerstone.metaData.get('imagePlaneModule', imageId0);
+  } = cornerstone.metaData.get('imagePlaneModule', imageId0)
 
   // Map to dcmjs-style keywords. This is becoming the standard and makes it
   // Easier to swap out cornerstoneWADOImageLoader at a later date.
@@ -65,5 +62,5 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     Rows: rows,
     // This is a reshaped object and not a dicom tag:
     voiLut,
-  };
+  }
 }

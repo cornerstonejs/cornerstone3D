@@ -1,9 +1,9 @@
 // @TODO: WebPack alias for import to enforce clean separation
-import { renderingEventTarget, Events as RENDERING_EVENTS } from './../index';
-import { addEnabledElement, removeEnabledElement } from './store/index';
+import { renderingEventTarget, EVENTS as RENDERING_EVENTS } from './../index'
+import { addEnabledElement, removeEnabledElement } from './store/index'
 
-export default function(defaultConfiguration = {}) {
-  _addCornerstoneEventListeners();
+export default function (defaultConfiguration = {}) {
+  _addCornerstoneEventListeners()
 }
 
 /**
@@ -16,16 +16,16 @@ export default function(defaultConfiguration = {}) {
  */
 function _addCornerstoneEventListeners() {
   // Clear any listeners that may already be set
-  _removeCornerstoneEventListeners();
+  _removeCornerstoneEventListeners()
 
-  const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED;
-  const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED;
+  const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
+  const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
 
-  renderingEventTarget.addEventListener(elementEnabledEvent, addEnabledElement);
+  renderingEventTarget.addEventListener(elementEnabledEvent, addEnabledElement)
   renderingEventTarget.addEventListener(
     elementDisabledEvent,
     removeEnabledElement
-  );
+  )
 }
 
 /**
@@ -37,15 +37,15 @@ function _addCornerstoneEventListeners() {
  * @returns {void}
  */
 function _removeCornerstoneEventListeners() {
-  const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED;
-  const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED;
+  const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
+  const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
 
   renderingEventTarget.removeEventListener(
     elementEnabledEvent,
     addEnabledElement
-  );
+  )
   renderingEventTarget.removeEventListener(
     elementDisabledEvent,
     removeEnabledElement
-  );
+  )
 }

@@ -1,19 +1,27 @@
 import { BaseAnnotationTool } from './../base/index'
+import { Point3 } from './../../types'
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
-import { getEnabledElement } from '../../../index'
+import { getEnabledElement } from '@vtk-viewport'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
-import { draw, drawHandles, drawLinkedTextBox, drawLine, getNewContext, setShadow } from '../../drawing'
+import {
+  draw,
+  drawHandles,
+  drawLinkedTextBox,
+  drawLine,
+  getNewContext,
+  setShadow,
+} from '../../drawing'
 import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
-import cornerstoneMath from 'cornerstone-math/dist/cornerstoneMath.js'
+import cornerstoneMath from 'cornerstone-math/dist/cornerstoneMath'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
@@ -41,7 +49,11 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       },
     })
 
-    this._throttledCalculateCachedStats = throttle(this._calculateCachedStats, 100, { trailing: true })
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    )
   }
 
   addNewMeasurement = (evt, interactionType) => {
@@ -90,7 +102,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     addToolState(element, toolData)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -140,7 +155,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       const point = points[i]
       const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
-      const near = vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+      const near =
+        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
 
       if (near === true) {
         data.handles.activeHandleIndex = i
@@ -172,10 +188,13 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       },
     }
 
-    let distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, {
-      x: canvasCoords[0],
-      y: canvasCoords[1],
-    })
+    let distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
+      lineSegment,
+      {
+        x: canvasCoords[0],
+        y: canvasCoords[1],
+      }
+    )
 
     if (distanceToPoint <= proximity) {
       return true
@@ -214,7 +233,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     data.active = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -234,7 +256,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  handleSelectedCallback = (evt, toolData, handle, interactionType = 'mouse') => {
+  handleSelectedCallback = (
+    evt,
+    toolData,
+    handle,
+    interactionType = 'mouse'
+  ) => {
     const eventData = evt.detail
     const { element } = eventData
     const { data } = toolData
@@ -251,7 +278,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     hideToolCursor(element)
 
@@ -275,7 +305,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } = this.editData
+    const {
+      toolData,
+      viewportUIDsToRender,
+      newAnnotation,
+      hasMoved,
+    } = this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
@@ -309,11 +344,19 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         // shortAxis[0->1] should be perpendicular (counter-clockwise) to longAxis[0->1]
         const longAxisVector = vec2.create()
 
-        vec2.set(longAxisVector, longAxis[1][0] - longAxis[0][0], longAxis[1][1] - longAxis[1][0])
+        vec2.set(
+          longAxisVector,
+          longAxis[1][0] - longAxis[0][0],
+          longAxis[1][1] - longAxis[1][0]
+        )
 
         const counterClockWisePerpendicularToLongAxis = vec2.create()
 
-        vec2.set(counterClockWisePerpendicularToLongAxis, -longAxisVector[1], longAxisVector[0])
+        vec2.set(
+          counterClockWisePerpendicularToLongAxis,
+          -longAxisVector[1],
+          longAxisVector[0]
+        )
 
         const currentShortAxisVector = vec2.create()
 
@@ -325,13 +368,23 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
         let shortAxis
 
-        if (vec2.dot(currentShortAxisVector, counterClockWisePerpendicularToLongAxis) > 0) {
+        if (
+          vec2.dot(
+            currentShortAxisVector,
+            counterClockWisePerpendicularToLongAxis
+          ) > 0
+        ) {
           shortAxis = [shortAxisPoint0, shortAxisPoint1]
         } else {
           shortAxis = [shortAxisPoint1, shortAxisPoint0]
         }
 
-        data.handles.points = [longAxis[0], longAxis[1], shortAxis[0], shortAxis[1]]
+        data.handles.points = [
+          longAxis[0],
+          longAxis[1],
+          shortAxis[0],
+          shortAxis[1],
+        ]
       }
     }
 
@@ -385,14 +438,22 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     const shortAxisDistFromCenter = dist / 3
     // Calculate long line's incline
-    const dx = canvasCoords.longLineSegment.start.x - canvasCoords.longLineSegment.end.x
-    const dy = canvasCoords.longLineSegment.start.y - canvasCoords.longLineSegment.end.y
+    const dx =
+      canvasCoords.longLineSegment.start.x - canvasCoords.longLineSegment.end.x
+    const dy =
+      canvasCoords.longLineSegment.start.y - canvasCoords.longLineSegment.end.y
     const length = Math.sqrt(dx * dx + dy * dy)
     const vectorX = dx / length
     const vectorY = dy / length
     // middle point between long line segment's points
-    const xMid = (canvasCoords.longLineSegment.start.x + canvasCoords.longLineSegment.end.x) / 2
-    const yMid = (canvasCoords.longLineSegment.start.y + canvasCoords.longLineSegment.end.y) / 2
+    const xMid =
+      (canvasCoords.longLineSegment.start.x +
+        canvasCoords.longLineSegment.end.x) /
+      2
+    const yMid =
+      (canvasCoords.longLineSegment.start.y +
+        canvasCoords.longLineSegment.end.y) /
+      2
     // short points 1/3 distance from center of long points
     const startX = xMid + shortAxisDistFromCenter * vectorY
     const startY = yMid - shortAxisDistFromCenter * vectorX
@@ -414,7 +475,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const { element } = eventData
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
-    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } = this.editData
+    const {
+      toolData,
+      viewportUIDsToRender,
+      handleIndex,
+      movingTextBox,
+    } = this.editData
     const { data } = toolData
     if (movingTextBox) {
       const { deltaPoints } = eventData
@@ -486,7 +552,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     // Handle we've selected's proposed point
-    const proposedPoint = [...worldPos]
+    const proposedPoint = <Point3>[...worldPos]
     const proposedCanvasCoord = viewport.worldToCanvas(proposedPoint)
 
     if (handleIndex === 0 || handleIndex === 1) {
@@ -506,26 +572,42 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         },
       }
 
-      if (this._movingLongAxisWouldPutItThroughShortAxis(proposedFirstLineSegment, secondLineSegment)) {
+      if (
+        this._movingLongAxisWouldPutItThroughShortAxis(
+          proposedFirstLineSegment,
+          secondLineSegment
+        )
+      ) {
         return
       }
 
       // --> We need to preserve this distance
-      const intersectionPoint = cornerstoneMath.lineSegment.intersectLine(secondLineSegment, firstLineSegment)
+      const intersectionPoint = cornerstoneMath.lineSegment.intersectLine(
+        secondLineSegment,
+        firstLineSegment
+      )
 
       const intersectionCoord = vec2.create()
 
       vec2.set(intersectionCoord, intersectionPoint.x, intersectionPoint.y)
 
       // 1. distance from intersection point to start handle?
-      const distFromLeftHandle = vec2.distance(canvasCoordHandlesCurrent[2], intersectionCoord)
+      const distFromLeftHandle = vec2.distance(
+        canvasCoordHandlesCurrent[2],
+        intersectionCoord
+      )
 
       // 2. distance from intersection point to end handle?
-      const distFromRightHandle = vec2.distance(canvasCoordHandlesCurrent[3], intersectionCoord)
+      const distFromRightHandle = vec2.distance(
+        canvasCoordHandlesCurrent[3],
+        intersectionCoord
+      )
 
       // 3. distance from long's opposite handle and intersect point
       // Need new intersect x/y
-      const distIntersectAndFixedPoint = Math.abs(vec2.distance(fixedCanvasCoord, intersectionCoord))
+      const distIntersectAndFixedPoint = Math.abs(
+        vec2.distance(fixedCanvasCoord, intersectionCoord)
+      )
 
       // Find inclination of perpindicular
       // Should use proposed point to find new inclination
@@ -539,8 +621,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       // --> fixedPoint, magnitude in perpendicular
       // minus if right
       // add if left
-      const intersectX = fixedCanvasCoord[0] - distIntersectAndFixedPoint * vectorX
-      const intersectY = fixedCanvasCoord[1] - distIntersectAndFixedPoint * vectorY
+      const intersectX =
+        fixedCanvasCoord[0] - distIntersectAndFixedPoint * vectorX
+      const intersectY =
+        fixedCanvasCoord[1] - distIntersectAndFixedPoint * vectorY
 
       // short points 1/4 distance from center of long points
       // Flip signs depending on grabbed handle
@@ -574,8 +658,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
 
       // get incline of other line (should not change w/ this movement)
-      const dx = canvasCoordsCurrent.longLineSegment.start.x - canvasCoordsCurrent.longLineSegment.end.x
-      const dy = canvasCoordsCurrent.longLineSegment.start.y - canvasCoordsCurrent.longLineSegment.end.y
+      const dx =
+        canvasCoordsCurrent.longLineSegment.start.x -
+        canvasCoordsCurrent.longLineSegment.end.x
+      const dy =
+        canvasCoordsCurrent.longLineSegment.start.y -
+        canvasCoordsCurrent.longLineSegment.end.y
       const length = Math.sqrt(dx * dx + dy * dy)
       const vectorX = dx / length
       const vectorY = dy / length
@@ -603,10 +691,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
 
       // 1. distance from intersection point to start handle?
-      const distFromTranslateHandle = vec2.distance(canvasCoordHandlesCurrent[translateHandleIndex], [
-        newIntersectionPoint.x,
-        newIntersectionPoint.y,
-      ])
+      const distFromTranslateHandle = vec2.distance(
+        canvasCoordHandlesCurrent[translateHandleIndex],
+        [newIntersectionPoint.x, newIntersectionPoint.y]
+      )
 
       // isStart if index is 0 or 2
       const shortLineSegment = {
@@ -619,7 +707,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
           y: newIntersectionPoint.y + vectorX * distFromTranslateHandle,
         },
       }
-      const translatedHandleCoords = translateHandleIndex === 2 ? shortLineSegment.start : shortLineSegment.end
+      const translatedHandleCoords =
+        translateHandleIndex === 2
+          ? shortLineSegment.start
+          : shortLineSegment.end
 
       data.handles.points[translateHandleIndex] = viewport.canvasToWorld([
         translatedHandleCoords.x,
@@ -629,7 +720,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
   }
 
-  _movingLongAxisWouldPutItThroughShortAxis = (proposedFirstLineSegment, secondLineSegment) => {
+  _movingLongAxisWouldPutItThroughShortAxis = (
+    proposedFirstLineSegment,
+    secondLineSegment
+  ) => {
     const vectorInSecondLineDirection = vec2.create()
 
     vec2.set(
@@ -703,11 +797,17 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     state.isToolLocked = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback)
+    element.removeEventListener(
+      EVENTS.MOUSE_DRAG,
+      this._mouseDragModifyCallback
+    )
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
     element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback)
+    element.removeEventListener(
+      EVENTS.TOUCH_DRAG,
+      this._mouseDragModifyCallback
+    )
   }
 
   /**
@@ -726,7 +826,11 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const { spacingInNormalDirection } = getTargetVolume(scene, camera)
 
     // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(toolState, camera, spacingInNormalDirection)
+    const toolDataWithinSlice = getToolStateWithinSlice(
+      toolState,
+      camera,
+      spacingInNormalDirection
+    )
 
     return toolDataWithinSlice
   }
@@ -795,9 +899,13 @@ export default class BidirectionalTool extends BaseAnnotationTool {
           if (!data.handles.textBox.hasMoved) {
             canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
 
-            data.handles.textBox.worldPosition = viewport.canvasToWorld(canvasTextBoxCoords)
+            data.handles.textBox.worldPosition = viewport.canvasToWorld(
+              canvasTextBoxCoords
+            )
           } else {
-            canvasTextBoxCoords = viewport.worldToCanvas(data.handles.textBox.worldPosition)
+            canvasTextBoxCoords = viewport.worldToCanvas(
+              data.handles.textBox.worldPosition
+            )
           }
 
           drawLinkedTextBox(
@@ -827,7 +935,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     // spaceBetweenSlices & pixelSpacing &
     // magnitude in each direction? Otherwise, this is "px"?
-    const textLines = [`L: ${length.toFixed(2)} mm`, `W: ${width.toFixed(2)} mm`]
+    const textLines = [
+      `L: ${length.toFixed(2)} mm`,
+      `W: ${width.toFixed(2)} mm`,
+    ]
 
     return textLines
   }
@@ -839,8 +950,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const worldPos4 = data.handles.points[3]
 
     // https://github.com/Kitware/vtk-js/blob/b50fd091cb9b5b65981bc7c64af45e8f2472d7a1/Sources/Common/Core/Math/index.js#L331
-    const dist1 = Math.sqrt(vtkMath.distance2BetweenPoints(worldPos1, worldPos2))
-    const dist2 = Math.sqrt(vtkMath.distance2BetweenPoints(worldPos3, worldPos4))
+    const dist1 = Math.sqrt(
+      vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
+    )
+    const dist2 = Math.sqrt(
+      vtkMath.distance2BetweenPoints(worldPos3, worldPos4)
+    )
     const length = dist1 > dist2 ? dist1 : dist2
     const width = dist1 > dist2 ? dist2 : dist1
 
@@ -853,7 +968,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   _isInsideVolume = (index1, index2, dimensions) => {
-    return indexWithinDimensions(index1, dimensions) && indexWithinDimensions(index2, dimensions)
+    return (
+      indexWithinDimensions(index1, dimensions) &&
+      indexWithinDimensions(index2, dimensions)
+    )
   }
 
   _clipIndexToVolume = (index, dimensions) => {

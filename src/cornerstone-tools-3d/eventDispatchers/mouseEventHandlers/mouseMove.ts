@@ -1,13 +1,13 @@
 // // State
-import { state } from './../../store/index';
-import { ToolModes } from './../../enums/index';
-import { getEnabledElement } from '../../../index';
+import { state } from './../../store/index'
+import { ToolModes } from './../../enums/index'
+import { getEnabledElement } from '@vtk-viewport'
 
 // // Util
-import getToolsWithDataForElement from '../../store/getToolsWithDataForElement';
-import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
+import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
+import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
 
-const { Active, Passive } = ToolModes;
+const { Active, Passive } = ToolModes
 
 /**
  * @function mouseMove - On mouse move when not dragging, fire tools `mouseMoveCallback`s.
@@ -18,39 +18,39 @@ const { Active, Passive } = ToolModes;
  */
 export default function mouseMove(evt) {
   if (state.isToolLocked || state.isMultiPartToolActive) {
-    return;
+    return
   }
 
   const activeAndPassiveTools = getToolsWithModesForMouseEvent(evt, [
     Active,
     Passive,
-  ]);
+  ])
 
-  const eventData = evt.detail;
-  const { element } = eventData;
+  const eventData = evt.detail
+  const { element } = eventData
 
   // Annotation tool specific
   const annotationTools = getToolsWithDataForElement(
     element,
     activeAndPassiveTools
-  );
+  )
 
-  const numAnnotationTools = annotationTools.length;
-  let imageNeedsUpdate = false;
+  const numAnnotationTools = annotationTools.length
+  let imageNeedsUpdate = false
 
   for (let t = 0; t < numAnnotationTools; t++) {
-    const { tool, toolState } = annotationTools[t];
+    const { tool, toolState } = annotationTools[t]
     if (typeof tool.mouseMoveCallback === 'function') {
       imageNeedsUpdate =
-        tool.mouseMoveCallback(evt, toolState) || imageNeedsUpdate;
+        tool.mouseMoveCallback(evt, toolState) || imageNeedsUpdate
     }
   }
   // Tool data activation status changed, redraw the image
   if (imageNeedsUpdate === true) {
-    const enabledElement = getEnabledElement(element);
+    const enabledElement = getEnabledElement(element)
 
-    const { viewport } = enabledElement;
+    const { viewport } = enabledElement
 
-    viewport.render();
+    viewport.render()
   }
 }

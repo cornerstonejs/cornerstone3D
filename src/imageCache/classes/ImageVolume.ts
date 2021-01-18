@@ -1,8 +1,7 @@
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses'
-import { ImageVolumeInterface, Metadata } from './interfaces'
-import { Point3 } from './../../cornerstone-tools-3d/types'
+import { IImageVolume, Metadata, Point3 } from './../../types'
 
-export default class ImageVolume {
+class ImageVolume {
   readonly uid: string
   dimensions: Point3
   direction: Array<number>
@@ -23,7 +22,7 @@ export default class ImageVolume {
   vtkImageData: any
   vtkOpenGLTexture: any // No good way of referencing vtk classes as they aren't classes.
 
-  constructor(props: ImageVolumeInterface) {
+  constructor(props: IImageVolume) {
     this.uid = props.uid
     this.metadata = props.metadata
     this.dimensions = props.dimensions
@@ -39,3 +38,5 @@ export default class ImageVolume {
     }
   }
 }
+
+export default ImageVolume

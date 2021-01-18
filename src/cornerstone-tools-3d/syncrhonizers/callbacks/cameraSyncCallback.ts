@@ -1,5 +1,5 @@
-import { getRenderingEngine } from '../../../index';
-import IViewportUID from '../../store/IViewportUID';
+import { getRenderingEngine } from '../../../index'
+import IViewportUID from '../../store/IViewportUID'
 
 /**
  * @function cameraSyncCallback - Synchronizer callback to synchronize the camera. Synchronization
@@ -21,16 +21,16 @@ export default function cameraSyncCallback(
     sourceViewport.sceneUID === targetViewport.sceneUID &&
     sourceViewport.viewportUID === targetViewport.viewportUID
   ) {
-    return;
+    return
   }
 
-  const { camera } = cameraModifiedEvent.detail;
+  const { camera } = cameraModifiedEvent.detail
 
   const tViewport = getRenderingEngine(targetViewport.renderingEngineUID)
     .getScene(targetViewport.sceneUID)
-    .getViewport(targetViewport.viewportUID);
+    .getViewport(targetViewport.viewportUID)
 
-  tViewport.setCamera(camera);
+  tViewport.setCamera(camera)
 
-  tViewport.render();
+  tViewport.render()
 }

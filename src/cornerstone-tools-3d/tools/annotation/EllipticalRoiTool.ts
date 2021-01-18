@@ -6,7 +6,14 @@ import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
-import { draw, drawHandles, drawLinkedTextBox, drawEllipse, getNewContext, setShadow } from '../../drawing'
+import {
+  draw,
+  drawHandles,
+  drawLinkedTextBox,
+  drawEllipse,
+  getNewContext,
+  setShadow,
+} from '../../drawing'
 import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -44,7 +51,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       configuration: { shadow: true },
     })
 
-    this._throttledCalculateCachedStats = throttle(this._calculateCachedStats, 100, { trailing: true })
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    )
   }
 
   addNewMeasurement = (evt, interactionType) => {
@@ -90,7 +101,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     addToolState(element, toolData)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -139,7 +153,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const point = points[i]
       const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
-      const near = vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+      const near =
+        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
 
       if (near === true) {
         data.handles.activeHandleIndex = i
@@ -192,7 +207,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     data.active = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -212,7 +230,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  handleSelectedCallback = (evt, toolData, handle, interactionType = 'mouse') => {
+  handleSelectedCallback = (
+    evt,
+    toolData,
+    handle,
+    interactionType = 'mouse'
+  ) => {
     const eventData = evt.detail
     const { element } = eventData
     const { data } = toolData
@@ -243,11 +266,17 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       canvasWidth = Math.abs(pointsCanvas[2][0] - pointsCanvas[3][0])
       canvasHeight = Math.abs(pointsCanvas[0][1] - pointsCanvas[1][1])
 
-      centerCanvas = [(pointsCanvas[2][0] + pointsCanvas[3][0]) / 2, (pointsCanvas[0][1] + pointsCanvas[1][1]) / 2]
+      centerCanvas = [
+        (pointsCanvas[2][0] + pointsCanvas[3][0]) / 2,
+        (pointsCanvas[0][1] + pointsCanvas[1][1]) / 2,
+      ]
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -275,7 +304,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } = this.editData
+    const {
+      toolData,
+      viewportUIDsToRender,
+      newAnnotation,
+      hasMoved,
+    } = this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
@@ -317,10 +351,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
 
-    const bottomCanvas = [centerCanvas[0], centerCanvas[1] - dY]
-    const topCanvas = [centerCanvas[0], centerCanvas[1] + dY]
-    const leftCanvas = [centerCanvas[0] - dX, centerCanvas[1]]
-    const rightCanvas = [centerCanvas[0] + dX, centerCanvas[1]]
+    const bottomCanvas = <Point2>[centerCanvas[0], centerCanvas[1] - dY]
+    const topCanvas = <Point2>[centerCanvas[0], centerCanvas[1] + dY]
+    const leftCanvas = <Point2>[centerCanvas[0] - dX, centerCanvas[1]]
+    const rightCanvas = <Point2>[centerCanvas[0] + dX, centerCanvas[1]]
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
@@ -340,7 +374,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } = this.editData
+    const {
+      toolData,
+      viewportUIDsToRender,
+      handleIndex,
+      movingTextBox,
+    } = this.editData
     const { data } = toolData
 
     if (movingTextBox) {
@@ -385,7 +424,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { canvasToWorld } = enabledElement.viewport
 
-    const { toolData, canvasWidth, canvasHeight, handleIndex, centerCanvas, originalHandleCanvas } = this.editData
+    const {
+      toolData,
+      canvasWidth,
+      canvasHeight,
+      handleIndex,
+      centerCanvas,
+      originalHandleCanvas,
+    } = this.editData
     const { data } = toolData
     const { points } = data.handles
 
@@ -398,36 +444,44 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     if (handleIndex === 0 || handleIndex === 1) {
       // Dragging top or bottom point
       const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
-
-      const canvasBottom = [centerCanvas[0], centerCanvas[1] - dYCanvas]
-      const canvasTop = [centerCanvas[0], centerCanvas[1] + dYCanvas]
+      const canvasBottom = <Point2>[centerCanvas[0], centerCanvas[1] - dYCanvas]
+      const canvasTop = <Point2>[centerCanvas[0], centerCanvas[1] + dYCanvas]
 
       points[0] = canvasToWorld(canvasBottom)
       points[1] = canvasToWorld(canvasTop)
 
       const dXCanvas = currentCanvasPoints[0] - originalHandleCanvas[0]
       const newHalfCanvasWidth = canvasWidth / 2 + dXCanvas
-
-      const canvasLeft = [centerCanvas[0] - newHalfCanvasWidth, centerCanvas[1]]
-      const canvasRight = [centerCanvas[0] + newHalfCanvasWidth, centerCanvas[1]]
+      const canvasLeft = <Point2>[
+        centerCanvas[0] - newHalfCanvasWidth,
+        centerCanvas[1],
+      ]
+      const canvasRight = <Point2>[
+        centerCanvas[0] + newHalfCanvasWidth,
+        centerCanvas[1],
+      ]
 
       points[2] = canvasToWorld(canvasLeft)
       points[3] = canvasToWorld(canvasRight)
     } else {
       // Dragging left or right point
       const dXCanvas = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
-
-      const canvasLeft = [centerCanvas[0] - dXCanvas, centerCanvas[1]]
-      const canvasRight = [centerCanvas[0] + dXCanvas, centerCanvas[1]]
+      const canvasLeft = <Point2>[centerCanvas[0] - dXCanvas, centerCanvas[1]]
+      const canvasRight = <Point2>[centerCanvas[0] + dXCanvas, centerCanvas[1]]
 
       points[2] = canvasToWorld(canvasLeft)
       points[3] = canvasToWorld(canvasRight)
 
       const dYCanvas = currentCanvasPoints[1] - originalHandleCanvas[1]
       const newHalfCanvasHeight = canvasHeight / 2 + dYCanvas
-
-      const canvasBottom = [centerCanvas[0], centerCanvas[1] - newHalfCanvasHeight]
-      const canvasTop = [centerCanvas[0], centerCanvas[1] + newHalfCanvasHeight]
+      const canvasBottom = <Point2>[
+        centerCanvas[0],
+        centerCanvas[1] - newHalfCanvasHeight,
+      ]
+      const canvasTop = <Point2>[
+        centerCanvas[0],
+        centerCanvas[1] + newHalfCanvasHeight,
+      ]
 
       points[0] = canvasToWorld(canvasBottom)
       points[1] = canvasToWorld(canvasTop)
@@ -449,11 +503,17 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     state.isToolLocked = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback)
+    element.removeEventListener(
+      EVENTS.MOUSE_DRAG,
+      this._mouseDragModifyCallback
+    )
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
     element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback)
+    element.removeEventListener(
+      EVENTS.TOUCH_DRAG,
+      this._mouseDragModifyCallback
+    )
   }
 
   _activateDraw = (element) => {
@@ -495,7 +555,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { spacingInNormalDirection } = getTargetVolume(scene, camera)
 
     // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(toolState, camera, spacingInNormalDirection)
+    const toolDataWithinSlice = getToolStateWithinSlice(
+      toolState,
+      camera,
+      spacingInNormalDirection
+    )
 
     return toolDataWithinSlice
   }
@@ -532,7 +596,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const { points, activeHandleIndex } = handles
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-      const canvasCorners = <Array<Point2>>this._getCanvasEllipseCorners(canvasCoordinates)
+      const canvasCorners = <Array<Point2>>(
+        this._getCanvasEllipseCorners(canvasCoordinates)
+      )
 
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {}
@@ -570,9 +636,13 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           if (!data.handles.textBox.hasMoved) {
             canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners)
 
-            data.handles.textBox.worldPosition = viewport.canvasToWorld(canvasTextBoxCoords)
+            data.handles.textBox.worldPosition = viewport.canvasToWorld(
+              canvasTextBoxCoords
+            )
           } else {
-            canvasTextBoxCoords = viewport.worldToCanvas(data.handles.textBox.worldPosition)
+            canvasTextBoxCoords = viewport.worldToCanvas(
+              data.handles.textBox.worldPosition
+            )
           }
 
           drawLinkedTextBox(
@@ -655,7 +725,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const volumeUID = volumeUIDs[i]
       const imageVolume = imageCache.getImageVolume(volumeUID)
 
-      const { dimensions, scalarData, vtkImageData: imageData, metadata } = imageVolume
+      const {
+        dimensions,
+        scalarData,
+        vtkImageData: imageData,
+        metadata,
+      } = imageVolume
       const worldPos1Index = [0, 0, 0]
       const worldPos2Index = [0, 0, 0]
 
@@ -743,8 +818,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
               let canvasCoords = <Point2>[canvasPosStart[0], canvasPosStart[1]]
 
               canvasCoords = [
-                canvasCoords[0] + plusICanvasDelta[0] * dI + plusJCanvasDelta[0] * dJ + plusKCanvasDelta[0] * dK,
-                canvasCoords[1] + plusICanvasDelta[1] * dI + plusJCanvasDelta[1] * dJ + plusKCanvasDelta[1] * dK,
+                canvasCoords[0] +
+                  plusICanvasDelta[0] * dI +
+                  plusJCanvasDelta[0] * dJ +
+                  plusKCanvasDelta[0] * dK,
+                canvasCoords[1] +
+                  plusICanvasDelta[1] * dI +
+                  plusJCanvasDelta[1] * dJ +
+                  plusKCanvasDelta[1] * dK,
               ]
 
               if (pointInEllipse(ellipse, canvasCoords)) {
@@ -793,7 +874,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   _isInsideVolume = (index1, index2, dimensions) => {
-    return indexWithinDimensions(index1, dimensions) && indexWithinDimensions(index2, dimensions)
+    return (
+      indexWithinDimensions(index1, dimensions) &&
+      indexWithinDimensions(index2, dimensions)
+    )
   }
 
   _getTargetVolumeUID = (scene) => {

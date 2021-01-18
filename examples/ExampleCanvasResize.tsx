@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 // ~~
-import { RenderingEngine, CONSTANTS } from './../src/index';
-
-const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
+import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@vtk-viewport';
 
 class CanvasResizeExample extends Component {
   state = {

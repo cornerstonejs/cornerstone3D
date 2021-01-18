@@ -1,9 +1,9 @@
-import { SynchronizerManager } from '../../store/';
-import { Events as RENDERING_EVENTS } from '../../../index';
-import voiSyncCallback from '../callbacks/voiSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import { SynchronizerManager } from '../../store/'
+import { EVENTS as RENDERING_EVENTS } from '../../../index'
+import voiSyncCallback from '../callbacks/voiSyncCallback'
+import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
 
-const { VOI_MODIFIED } = RENDERING_EVENTS;
+const { VOI_MODIFIED } = RENDERING_EVENTS
 
 /**
  * @function createVOISynchronizer A helper that creates a new `Synchronizer`
@@ -18,7 +18,7 @@ export default function createVOISynchronizer(synchronizerName): Synchronizer {
     synchronizerName,
     VOI_MODIFIED,
     voiSyncCallback
-  );
+  )
 
-  return cameraPositionSyncrhonizer;
+  return cameraPositionSyncrhonizer
 }

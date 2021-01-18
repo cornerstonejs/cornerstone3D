@@ -1,4 +1,7 @@
-import csTools3d, {
+import * as csTools3d from './../src/cornerstone-tools-3d/index';
+import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID } from './constants';
+
+const {
   PanTool,
   WindowLevelTool,
   PetThresholdTool,
@@ -13,8 +16,7 @@ import csTools3d, {
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
-} from './../src/cornerstone-tools-3d/index';
-import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID } from './constants';
+} = csTools3d;
 
 function initToolGroups() {
   // TODO: Can we delete tool groups?
@@ -55,7 +57,6 @@ function initToolGroups() {
   // Set up CT Scene tools
 
   // @TODO: This kills the volumeUID and tool configuration
-  debugger
   ctSceneToolGroup.addTool('WindowLevel', {
     configuration: { volumeUID: ctVolumeUID },
   });

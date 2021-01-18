@@ -1,24 +1,22 @@
-// TODO -> There is a load of argument in the typescript community about this, but to set up
-// webpack to use both js and ts you need to add "" extensions to imports, which typescript otherwise warns about.
-import ImageVolume from './ImageVolume';
-import { ImageVolumeInterface, StreamingInterface } from './interfaces';
+import ImageVolume from './ImageVolume'
+import { IImageVolume, IStreamingVolume } from './../../types'
 
 export default class StreamingImageVolume extends ImageVolume {
-  readonly imageIds: Array<string>;
+  readonly imageIds: Array<string>
   loadStatus: {
-    loaded: Boolean;
-    loading: Boolean;
-    cachedFrames: Array<Boolean>;
-    callbacks: Array<Function>;
-  };
+    loaded: boolean
+    loading: boolean
+    cachedFrames: Array<boolean>
+    callbacks: Array<Function>
+  }
 
   constructor(
-    imageVolumeProperties: ImageVolumeInterface,
-    streamingProperties: StreamingInterface
+    imageVolumeProperties: IImageVolume,
+    streamingProperties: IStreamingVolume
   ) {
-    super(imageVolumeProperties);
+    super(imageVolumeProperties)
 
-    this.imageIds = streamingProperties.imageIds;
-    this.loadStatus = streamingProperties.loadStatus;
+    this.imageIds = streamingProperties.imageIds
+    this.loadStatus = streamingProperties.loadStatus
   }
 }

@@ -1,4 +1,4 @@
-import { imageCache, utils } from './../../src/index';
+import { imageCache, Utilities } from '@vtk-viewport';
 import applyPreset from './applyPreset';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
@@ -34,7 +34,7 @@ function setPetTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, 5);
 
-  utils.invertRgbTransferFunction(rgbTransferFunction);
+  Utilities.invertRgbTransferFunction(rgbTransferFunction);
 }
 
 function setCTVRTransferFunction({ volumeActor, volumeUID }) {

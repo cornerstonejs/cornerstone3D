@@ -1,7 +1,8 @@
 const path = require('path')
 const webpack = require('webpack')
 const autoprefixer = require('autoprefixer')
-const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core.rules
+const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
+  .rules
 // Plugins
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
@@ -9,7 +10,8 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 // PATHS
 const PROJECT_ROOT = path.join(__dirname)
-const ENTRY_VTK_EXT = path.join(PROJECT_ROOT, './src/index.ts')
+const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/index.ts')
+const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools-3d/')
 const ENTRY_EXAMPLES = path.join(PROJECT_ROOT, './examples/index.tsx')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const OUT_PATH = path.join(PROJECT_ROOT, './dist')
@@ -67,8 +69,8 @@ module.exports = {
     modules: [path.resolve(__dirname, './node_modules'), SRC_PATH],
     // https://www.basefactor.com/configuring-aliases-in-webpack-vs-code-typescript-jest
     alias: {
-      '@vtk-viewport': ENTRY_VTK_EXT,
-      '@tools': path.resolve(__dirname, './src/cornerstone-tools-3d/'),
+      '@vtk-viewport': RENDERING_ROOT,
+      '@tools': TOOLS_ROOT,
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {

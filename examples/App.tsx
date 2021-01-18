@@ -63,6 +63,12 @@ function Index() {
             This is a framework build ontop of <LinkOut href={'https://github.com/Kitware/vtk-js'} text={'VTK.js'} />{' '}
             for easily managing data, displaying images and building tools.
           </p>
+          <p>
+            <LinkOut
+              href={'/docs'}
+              text="Documentation for this library can be found at `/docs`"
+            />
+          </p>
         </div>
 
         <div className="col-xs-12 col-lg-12" style={style}>

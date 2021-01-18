@@ -1,17 +1,17 @@
-import uuidv4 from '../util/uuidv4.js';
+import uuidv4 from '../util/uuidv4.js'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
   FrameOfReferenceSpecificToolState,
   ToolState,
 } from '../types/toolStateTypes'
-import cloneDeep from 'lodash.clonedeep';
+import cloneDeep from 'lodash.clonedeep'
 
-import { Events as RENDERING_EVENTS, renderingEventTarget } from '../../index';
+import { EVENTS as RENDERING_EVENTS, renderingEventTarget } from '../../index'
 
 interface FilterInterface {
-  FrameOfReferenceUID?: string;
-  toolName?: string;
+  FrameOfReferenceUID?: string
+  toolName?: string
 }
 
 /**
@@ -28,8 +28,8 @@ interface FilterInterface {
 
  */
 export default class FrameOfReferenceSpecificToolStateManager {
-  private toolState: ToolState;
-  public readonly uid: string;
+  private toolState: ToolState
+  public readonly uid: string
 
   /**
    * @constructor
@@ -38,16 +38,16 @@ export default class FrameOfReferenceSpecificToolStateManager {
    */
   constructor(uid?: string) {
     if (!uid) {
-      uid = uuidv4();
+      uid = uuidv4()
     }
-    this.toolState = {};
-    this.uid = uid;
+    this.toolState = {}
+    this.uid = uid
 
     // Listen to the IMAGE_VOLUME_MODIFIED event to invalidate data.
     renderingEventTarget.addEventListener(
       RENDERING_EVENTS.IMAGE_VOLUME_MODIFIED,
       this._imageVolumeModifiedHandler
-    );
+    )
   }
 
   /**
@@ -58,28 +58,28 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * @param {CustomEvent} evt - The IMAGE_VOLUME_MODIFIED rendering event.
    */
   _imageVolumeModifiedHandler = (evt: CustomEvent) => {
-    const eventData = evt.detail;
-    const { FrameOfReferenceUID } = eventData;
+    const eventData = evt.detail
+    const { FrameOfReferenceUID } = eventData
 
-    const toolState = this.toolState;
-    const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+    const toolState = this.toolState
+    const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
 
     if (!frameOfReferenceSpecificToolState) {
-      return;
+      return
     }
 
     Object.keys(frameOfReferenceSpecificToolState).forEach((toolName) => {
-      const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName];
+      const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName]
 
       toolSpecificToolState.forEach((toolData) => {
-        const { data } = toolData;
+        const { data } = toolData
 
         if (data && data.invalidated !== undefined) {
-          data.invalidated = true;
+          data.invalidated = true
         }
-      });
-    });
-  };
+      })
+    })
+  }
 
   /**
    * @method get - get `ToolSpecificToolState` from the the manager given the `FrameOfReferenceUID` and `toolName`.
@@ -93,14 +93,14 @@ export default class FrameOfReferenceSpecificToolStateManager {
   ): ToolSpecificToolState | undefined => {
     const frameOfReferenceSpecificToolState = this.toolState[
       FrameOfReferenceUID
-    ];
+    ]
 
     if (!frameOfReferenceSpecificToolState) {
-      return;
+      return
     }
 
-    return frameOfReferenceSpecificToolState[toolName];
-  };
+    return frameOfReferenceSpecificToolState[toolName]
+  }
 
   /**
    * @method getToolStateByToolUID Given the unique identified for the some `toolData`,
@@ -119,16 +119,16 @@ export default class FrameOfReferenceSpecificToolStateManager {
     const toolSpecificToolStateAndIndex = this._getToolSpecificToolStateAndIndex(
       toolUID,
       filter
-    );
+    )
 
     if (!toolSpecificToolStateAndIndex) {
-      return;
+      return
     }
 
-    const { toolSpecificToolState, index } = toolSpecificToolStateAndIndex;
+    const { toolSpecificToolState, index } = toolSpecificToolStateAndIndex
 
-    return toolSpecificToolState[index];
-  };
+    return toolSpecificToolState[index]
+  }
 
   /**
    * @method addToolState Adds an instance of `ToolSpecificToolData` to the `toolState`.
@@ -136,29 +136,29 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * @param {ToolSpecificToolData} toolData The toolData to add.
    */
   addToolState = (toolData: ToolSpecificToolData) => {
-    const { metadata } = toolData;
-    const { FrameOfReferenceUID, toolName } = metadata;
+    const { metadata } = toolData
+    const { FrameOfReferenceUID, toolName } = metadata
 
-    const toolState = this.toolState;
+    const toolState = this.toolState
 
-    let frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+    let frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
 
     if (!frameOfReferenceSpecificToolState) {
-      toolState[FrameOfReferenceUID] = {};
+      toolState[FrameOfReferenceUID] = {}
 
-      frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+      frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
     }
 
-    let toolSpecificToolState = frameOfReferenceSpecificToolState[toolName];
+    let toolSpecificToolState = frameOfReferenceSpecificToolState[toolName]
 
     if (!toolSpecificToolState) {
-      frameOfReferenceSpecificToolState[toolName] = [];
+      frameOfReferenceSpecificToolState[toolName] = []
 
-      toolSpecificToolState = frameOfReferenceSpecificToolState[toolName];
+      toolSpecificToolState = frameOfReferenceSpecificToolState[toolName]
     }
 
-    toolSpecificToolState.push(toolData);
-  };
+    toolSpecificToolState.push(toolData)
+  }
 
   /**
    * @method removeToolState Removes an instance of `ToolSpecificToolData` from the `toolState`.
@@ -166,31 +166,31 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * @param {ToolSpecificToolData} toolData The toolData to remove.
    */
   removeToolState = (toolData: ToolSpecificToolData) => {
-    const { metadata } = toolData;
-    const { FrameOfReferenceUID, toolName, toolUID } = metadata;
-    const toolState = this.toolState;
+    const { metadata } = toolData
+    const { FrameOfReferenceUID, toolName, toolUID } = metadata
+    const toolState = this.toolState
 
-    const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+    const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
 
     if (!frameOfReferenceSpecificToolState) {
       throw new Error(
         `frameOfReferenceSpecificToolState with FrameOfReferenceUID ${FrameOfReferenceUID} does not exist.`
-      );
+      )
     }
 
-    const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName];
+    const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName]
     if (!toolSpecificToolState) {
       throw new Error(
         `toolSpecificToolState for toolName ${toolName} on FrameOfReferenceUID ${FrameOfReferenceUID} does not exist.`
-      );
+      )
     }
 
     const index = toolSpecificToolState.findIndex(
       (toolData) => toolData.metadata.toolUID === toolUID
-    );
+    )
 
-    toolSpecificToolState.splice(index, 1);
-  };
+    toolSpecificToolState.splice(index, 1)
+  }
 
   /**
    * @method removeToolStateByToolUID Given the unique identified for the some `toolData`,
@@ -207,16 +207,16 @@ export default class FrameOfReferenceSpecificToolStateManager {
     const toolSpecificToolStateAndIndex = this._getToolSpecificToolStateAndIndex(
       toolUID,
       filter
-    );
+    )
 
     if (!toolSpecificToolStateAndIndex) {
-      return;
+      return
     }
 
-    const { toolSpecificToolState, index } = toolSpecificToolStateAndIndex;
+    const { toolSpecificToolState, index } = toolSpecificToolStateAndIndex
 
-    toolSpecificToolState.splice(index, 1);
-  };
+    toolSpecificToolState.splice(index, 1)
+  }
 
   /**
    * @method saveToolState Returns a section of the toolState. Useful for serialization.
@@ -236,26 +236,26 @@ export default class FrameOfReferenceSpecificToolStateManager {
     FrameOfReferenceUID?: string,
     toolName?: string
   ): ToolState | FrameOfReferenceSpecificToolState | ToolSpecificToolState => {
-    const toolState = this.toolState;
+    const toolState = this.toolState
 
     if (FrameOfReferenceUID && toolName) {
-      const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+      const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
 
       if (!frameOfReferenceSpecificToolState) {
-        return;
+        return
       }
 
-      const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName];
+      const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName]
 
-      return cloneDeep(toolSpecificToolState);
+      return cloneDeep(toolSpecificToolState)
     } else if (FrameOfReferenceUID) {
-      const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+      const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
 
-      return cloneDeep(frameOfReferenceSpecificToolState);
+      return cloneDeep(frameOfReferenceSpecificToolState)
     }
 
-    return cloneDeep(toolState);
-  };
+    return cloneDeep(toolState)
+  }
 
   /**
    * @method restoreToolState Restores a section of the `toolState`. Useful for loading in serialized data.
@@ -277,32 +277,30 @@ export default class FrameOfReferenceSpecificToolStateManager {
     FrameOfReferenceUID?: string,
     toolName?: string
   ) => {
-    const toolState = this.toolState;
+    const toolState = this.toolState
 
     if (FrameOfReferenceUID && toolName) {
       // Set ToolSpecificToolState for FrameOfReferenceUID and toolName.
 
-      let frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+      let frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
 
       if (!frameOfReferenceSpecificToolState) {
-        toolState[FrameOfReferenceUID] = {};
+        toolState[FrameOfReferenceUID] = {}
 
-        frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID];
+        frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
       }
 
-      frameOfReferenceSpecificToolState[toolName] = <ToolSpecificToolState>(
-        state
-      );
+      frameOfReferenceSpecificToolState[toolName] = <ToolSpecificToolState>state
     } else if (FrameOfReferenceUID) {
       // Set FrameOfReferenceSpecificToolState for FrameOfReferenceUID.
 
-      toolState[FrameOfReferenceUID] = <FrameOfReferenceSpecificToolState>state;
+      toolState[FrameOfReferenceUID] = <FrameOfReferenceSpecificToolState>state
     } else {
       // Set entire toolState
 
-      this.toolState = <ToolState>state;
+      this.toolState = <ToolState>state
     }
-  };
+  }
 
   /**
    * @method _getToolSpecificToolStateAndIndex Given the unique identifier for a tool,
@@ -319,45 +317,45 @@ export default class FrameOfReferenceSpecificToolStateManager {
     toolUID: string,
     filter: FilterInterface
   ): { toolSpecificToolState: ToolSpecificToolState; index: number } {
-    const { toolName, FrameOfReferenceUID } = filter;
-    const toolState = this.toolState;
+    const { toolName, FrameOfReferenceUID } = filter
+    const toolState = this.toolState
 
-    let frameOfReferenceUIDKeys;
+    let frameOfReferenceUIDKeys
 
     if (FrameOfReferenceUID) {
-      frameOfReferenceUIDKeys = [FrameOfReferenceUID];
+      frameOfReferenceUIDKeys = [FrameOfReferenceUID]
     } else {
-      frameOfReferenceUIDKeys = Object.keys(toolState);
+      frameOfReferenceUIDKeys = Object.keys(toolState)
     }
 
-    const numFrameOfReferenceUIDKeys = frameOfReferenceUIDKeys.length;
+    const numFrameOfReferenceUIDKeys = frameOfReferenceUIDKeys.length
 
     for (let i = 0; i < numFrameOfReferenceUIDKeys; i++) {
-      const frameOfReferenceUID = frameOfReferenceUIDKeys[i];
-      const frameOfReferenceSpecificToolState = toolState[frameOfReferenceUID];
+      const frameOfReferenceUID = frameOfReferenceUIDKeys[i]
+      const frameOfReferenceSpecificToolState = toolState[frameOfReferenceUID]
 
-      let toolNameKeys;
+      let toolNameKeys
 
       if (toolName) {
-        toolNameKeys = [toolName];
+        toolNameKeys = [toolName]
       } else {
-        toolNameKeys = Object.keys(frameOfReferenceSpecificToolState);
+        toolNameKeys = Object.keys(frameOfReferenceSpecificToolState)
       }
 
-      const numToolNameKeys = toolNameKeys.length;
+      const numToolNameKeys = toolNameKeys.length
 
       for (let j = 0; j < numToolNameKeys; j++) {
-        const toolName = toolNameKeys[j];
+        const toolName = toolNameKeys[j]
 
         const toolSpecificToolState =
-          frameOfReferenceSpecificToolState[toolName];
+          frameOfReferenceSpecificToolState[toolName]
 
         const index = toolSpecificToolState.findIndex(
           (toolData) => toolData.metadata.toolUID === toolUID
-        );
+        )
 
         if (index !== -1) {
-          return { toolSpecificToolState, index };
+          return { toolSpecificToolState, index }
         }
       }
     }
@@ -366,6 +364,6 @@ export default class FrameOfReferenceSpecificToolStateManager {
 
 const defaultFrameOfReferenceSpecificToolStateManager = new FrameOfReferenceSpecificToolStateManager(
   'DEFAULT'
-);
+)
 
-export { defaultFrameOfReferenceSpecificToolStateManager };
+export { defaultFrameOfReferenceSpecificToolStateManager }

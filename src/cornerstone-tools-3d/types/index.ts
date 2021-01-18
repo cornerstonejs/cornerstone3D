@@ -4,14 +4,15 @@ import {
   FrameOfReferenceSpecificToolState,
   ToolAndToolStateArray,
   ToolState,
-} from './toolStateTypes';
-import {ICornerstoneToolsEventDetail, IPoints} from './cornerstoneToolsEventDetailTypes'
-import FixedLengthArray from './FixedLengthArray';
-import { Point2, Point3 } from './points';
+} from './toolStateTypes'
+import {
+  ICornerstoneToolsEventDetail,
+  IPoints,
+} from './cornerstoneToolsEventDetailTypes'
+import Point2 from './Point2'
+import Point3 from './Point3'
 
 export {
-  // Templates
-  FixedLengthArray,
   // ToolState
   ToolSpecificToolData,
   ToolSpecificToolState,
@@ -23,5 +24,5 @@ export {
   Point3,
   // Event data
   ICornerstoneToolsEventDetail,
-  IPoints
-};
+  IPoints,
+}

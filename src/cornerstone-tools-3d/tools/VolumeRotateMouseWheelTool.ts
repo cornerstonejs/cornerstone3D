@@ -1,6 +1,7 @@
 import { BaseTool } from './base/index'
-import { getEnabledElement } from './../../index'
+import { getEnabledElement } from '@vtk-viewport'
 import { vec3 } from 'gl-matrix'
+import { Point3 } from './../types'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 
 enum DIRECTIONS {
@@ -62,7 +63,7 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
 
     // Set position of camera to be distance behind focal point with new direction.
 
-    const newPosition = [
+    const newPosition = <Point3>[
       focalPoint[0] + focalLength * viewPlaneNormal[0],
       focalPoint[1] + focalLength * viewPlaneNormal[1],
       focalPoint[2] + focalLength * viewPlaneNormal[2],

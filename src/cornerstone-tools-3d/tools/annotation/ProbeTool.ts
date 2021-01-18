@@ -4,14 +4,20 @@ import { getEnabledElement, imageCache } from '../../../index'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
-import { draw, drawHandles, drawTextBox, getNewContext, setShadow } from '../../drawing'
+import {
+  draw,
+  drawHandles,
+  drawTextBox,
+  getNewContext,
+  setShadow,
+} from '../../drawing'
 import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
-import { FixedLengthArray, Point3 } from '../../types'
+import { Point3 } from '../../types'
 
 import { number } from 'prop-types'
 
@@ -79,7 +85,10 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     addToolState(element, toolData)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -102,7 +111,8 @@ export default class ProbeTool extends BaseAnnotationTool {
     const point = data.handles.points[0]
     const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
-    const near = vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+    const near =
+      vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
 
     if (near === true) {
       return point
@@ -119,7 +129,10 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     data.active = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     // Find viewports to render on drag.
 
@@ -217,7 +230,11 @@ export default class ProbeTool extends BaseAnnotationTool {
     const { spacingInNormalDirection } = getTargetVolume(scene, camera)
 
     // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(toolState, camera, spacingInNormalDirection)
+    const toolDataWithinSlice = getToolStateWithinSlice(
+      toolState,
+      camera,
+      spacingInNormalDirection
+    )
 
     return toolDataWithinSlice
   }
@@ -269,9 +286,18 @@ export default class ProbeTool extends BaseAnnotationTool {
         drawHandles(context, [canvasCoordinates], { color })
 
         if (textLines) {
-          const textCanvasCoorinates = [canvasCoordinates[0] + 6, canvasCoordinates[1] - 6]
+          const textCanvasCoorinates = [
+            canvasCoordinates[0] + 6,
+            canvasCoordinates[1] - 6,
+          ]
 
-          drawTextBox(context, textLines, textCanvasCoorinates[0], textCanvasCoorinates[1], color)
+          drawTextBox(
+            context,
+            textLines,
+            textCanvasCoorinates[0],
+            textCanvasCoorinates[1],
+            color
+          )
         }
       })
     }
@@ -294,7 +320,11 @@ export default class ProbeTool extends BaseAnnotationTool {
 
       const imageVolume = imageCache.getImageVolume(targetVolumeUID)
 
-      if (imageVolume.scaling.PET && (imageVolume.scaling.PET.suvbwToSuvbsa || imageVolume.scaling.PET.suvbwToSuvlbm)) {
+      if (
+        imageVolume.scaling.PET &&
+        (imageVolume.scaling.PET.suvbwToSuvbsa ||
+          imageVolume.scaling.PET.suvbwToSuvlbm)
+      ) {
         const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET
 
         textLines.push(`${value.toFixed(2)} SUV bw`)
@@ -332,7 +362,12 @@ export default class ProbeTool extends BaseAnnotationTool {
       const volumeUID = volumeUIDs[i]
       const imageVolume = imageCache.getImageVolume(volumeUID)
 
-      const { dimensions, scalarData, vtkImageData: imageData, metadata } = imageVolume
+      const {
+        dimensions,
+        scalarData,
+        vtkImageData: imageData,
+        metadata,
+      } = imageVolume
       const index = <Point3>[0, 0, 0]
 
       imageData.worldToIndexVec3(worldPos, index)
@@ -345,7 +380,8 @@ export default class ProbeTool extends BaseAnnotationTool {
         const yMultiple = dimensions[0]
         const zMultiple = dimensions[0] * dimensions[1]
 
-        const value = scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]]
+        const value =
+          scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]]
 
         cachedStats[volumeUID] = {
           index,
