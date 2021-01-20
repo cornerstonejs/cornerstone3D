@@ -26,9 +26,9 @@ import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 import { Point2 } from '../../types'
 
 export default class EllipticalRoiTool extends BaseAnnotationTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
-  _throttledCalculateCachedStats: Function
+  touchDragCallback: any
+  mouseDragCallback: any
+  _throttledCalculateCachedStats: any
   editData: {
     toolData: any
     viewportUIDsToRender: Array<string>
@@ -41,7 +41,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  name: string
   _configuration: any
 
   constructor(toolConfiguration = {}) {

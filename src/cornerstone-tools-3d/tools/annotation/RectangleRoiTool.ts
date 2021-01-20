@@ -26,7 +26,7 @@ import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
 export default class RectangleRoiTool extends BaseAnnotationTool {
-  _throttledCalculateCachedStats: Function
+  _throttledCalculateCachedStats: any
   editData: {
     toolData: any
     viewportUIDsToRender: string[]
@@ -35,7 +35,6 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  name: string
   _configuration: any
 
   constructor(toolConfiguration = {}) {

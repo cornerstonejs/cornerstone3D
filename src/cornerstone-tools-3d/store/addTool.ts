@@ -1,4 +1,4 @@
-import { state } from './index';
+import { state } from './index'
 
 /**
  * @function addTool
@@ -9,17 +9,26 @@ import { state } from './index';
  * @returns
  */
 export default function addTool(ToolClass, toolOptions) {
-  const tool = new ToolClass(toolOptions);
-  const toolAlreadyAdded = state.tools[tool.name] !== undefined;
+  const tool = new ToolClass(toolOptions)
+  const hasToolName = typeof tool.name !== 'undefined' && tool.name !== ''
+  const toolAlreadyAdded = state.tools[tool.name] !== undefined
+
+  if (!hasToolName) {
+    console.warn(
+      'Tool with configuration did not produce a toolName: ',
+      toolOptions
+    )
+    return
+  }
 
   if (toolAlreadyAdded) {
-    console.warn(`${tool.name} has already been added globally`);
+    console.warn(`${tool.name} has already been added globally`)
 
-    return;
+    return
   }
 
   state.tools[tool.name] = {
     toolClass: ToolClass,
     toolOptions,
-  };
+  }
 }

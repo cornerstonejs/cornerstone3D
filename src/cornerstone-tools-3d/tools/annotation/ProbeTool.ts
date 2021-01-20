@@ -22,10 +22,9 @@ import { Point3 } from '../../types'
 import { number } from 'prop-types'
 
 export default class ProbeTool extends BaseAnnotationTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
+  touchDragCallback: any
+  mouseDragCallback: any
   editData: { toolData: any; viewportUIDsToRender: string[] } | null
-  name: string
   _configuration: any
 
   constructor(toolConfiguration = {}) {

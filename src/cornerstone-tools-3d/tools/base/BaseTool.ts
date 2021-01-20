@@ -1,18 +1,18 @@
 import deepMerge from './../../util/deepMerge'
 
 /**
- * @class BaseTool
- * @classdesc Abstract base class from which all tools derive.
- * Deals with cleanly merging custom and default configuration, and strategy application.
+ * Abstract base class from which all tools derive.
+ * Deals with cleanly merging custom and default configuration, and strategy
+ * application.
  */
 abstract class BaseTool {
-  initialConfiguration: Record<string, any>
-  name: string
-  supportedInteractionTypes: Array<string>
-  strategies: Record<string, any>
-  defaultStrategy: string
-  activeStrategy: string
-  configuration: Record<string, any>
+  public initialConfiguration: Record<string, any>
+  public name: string
+  public supportedInteractionTypes: Array<string>
+  public strategies: Record<string, any>
+  public defaultStrategy: string
+  public activeStrategy: string
+  public configuration: Record<string, any>
 
   constructor(
     toolConfiguration: Record<string, any>,
@@ -42,19 +42,24 @@ abstract class BaseTool {
     console.log(this.name, this.configuration)
   }
 
-  applyActiveStrategy(evt, operationData) {
+  /**
+   *
+   * @param evt
+   * @param operationData
+   */
+  public applyActiveStrategy(evt: any, operationData: any): any {
     return this.strategies[this.activeStrategy].call(this, evt, operationData)
   }
 
   /**
-   * @protected @method setActiveStrategy Sets the active strategy for a tool if
-   * using strategies. Strategies are multiple implementations of tool behavior
-   * that can be switched by tool configuration.
+   * Sets the active strategy for a tool if using strategies. Strategies are
+   * multiple implementations of tool behavior that can be switched by tool
+   * configuration.
    *
-   * @param {string} strategyName
-   * @memberof BaseTool
+   * @param strategyName
+   * @public
    */
-  protected setActiveStrategy(strategyName: string) {
+  public setActiveStrategyName(strategyName): void {
     this.activeStrategy = strategyName
   }
 }

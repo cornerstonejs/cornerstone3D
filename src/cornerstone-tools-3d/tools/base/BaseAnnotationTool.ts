@@ -1,8 +1,8 @@
-import BaseTool from './BaseTool';
+import BaseTool from './BaseTool'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
-  Point2
+  Point2,
 } from '../../types'
 
 /**
@@ -46,7 +46,7 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param  {any} handle - The selected handle.
    * @param  {string} interactionType - The intraction type the handle was selected with.
    */
-  handleSelectedCallback(
+  public handleSelectedCallback(
     evt,
     toolData: ToolSpecificToolData,
     handle,
@@ -61,7 +61,11 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param  {ToolSpecificToolData} toolData - The `ToolSpecificToolData` to check.
    * @param  {string} [interactionType=mouse]
    */
-  toolSelectedCallback(evt, toolData: ToolSpecificToolData, interactionType) {}
+  public toolSelectedCallback(
+    evt,
+    toolData: ToolSpecificToolData,
+    interactionType
+  ) {}
 
   /**
    * @virtual @method Event handler for MOUSE_MOVE event.
@@ -71,45 +75,45 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param {ToolSpecificToolState} filteredToolState The toolState to check for hover interactions
    * @returns {boolean} - True if the image needs to be updated.
    */
-  mouseMoveCallback = (
+  public mouseMoveCallback = (
     evt,
     filteredToolState: ToolSpecificToolState
   ): boolean => {
-    const { element, currentPoints } = evt.detail;
-    const canvasCoords = currentPoints.canvas;
-    let imageNeedsUpdate = false;
+    const { element, currentPoints } = evt.detail
+    const canvasCoords = currentPoints.canvas
+    let imageNeedsUpdate = false
 
     for (let i = 0; i < filteredToolState.length; i++) {
-      const toolData = filteredToolState[i];
-      const { data } = toolData;
+      const toolData = filteredToolState[i]
+      const { data } = toolData
 
-      let activateHandleIndex = data.handles
+      const activateHandleIndex = data.handles
         ? data.handles.activeHandleIndex
-        : undefined;
+        : undefined
 
       const near = this._imagePointNearToolOrHandle(
         element,
         toolData,
         canvasCoords,
         6
-      );
+      )
 
-      const nearToolAndNotMarkedActive = near && !data.active;
-      const notNearToolAndMarkedActive = !near && data.active;
+      const nearToolAndNotMarkedActive = near && !data.active
+      const notNearToolAndMarkedActive = !near && data.active
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
-        data.active = !data.active;
-        imageNeedsUpdate = true;
+        data.active = !data.active
+        imageNeedsUpdate = true
       } else if (
         data.handles &&
         data.handles.activeHandleIndex !== activateHandleIndex
       ) {
         // Active handle index has changed, re-render.
-        imageNeedsUpdate = true;
+        imageNeedsUpdate = true
       }
     }
 
-    return imageNeedsUpdate;
-  };
+    return imageNeedsUpdate
+  }
 
   /**
    * @virtual @method getHandleNearImagePoint
@@ -122,7 +126,7 @@ abstract class BaseAnnotationTool extends BaseTool {
    *
    * @returns {any|undefined} The handle if found (may be a point, textbox or other).
    */
-  getHandleNearImagePoint(
+  public getHandleNearImagePoint(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
     canvasCoords: Point2,
@@ -141,7 +145,7 @@ abstract class BaseAnnotationTool extends BaseTool {
    *
    * @returns {boolean} If the point is near the tool.
    */
-  pointNearTool(
+  public pointNearTool(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
     canvasCoords: Point2,
@@ -172,10 +176,10 @@ abstract class BaseAnnotationTool extends BaseTool {
       toolData,
       canvasCoords,
       proximity
-    );
+    )
 
     if (handleNearImagePoint) {
-      return true;
+      return true
     }
 
     const toolNewImagePoint = this.pointNearTool(
@@ -183,10 +187,10 @@ abstract class BaseAnnotationTool extends BaseTool {
       toolData,
       canvasCoords,
       proximity
-    );
+    )
 
-    return toolNewImagePoint;
+    return toolNewImagePoint
   }
 }
 
-export default BaseAnnotationTool;
+export default BaseAnnotationTool

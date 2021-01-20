@@ -7,7 +7,14 @@ import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
-import { draw, drawHandles, drawLinkedTextBox, drawLine, getNewContext, setShadow } from '../../drawing'
+import {
+  draw,
+  drawHandles,
+  drawLinkedTextBox,
+  drawLine,
+  getNewContext,
+  setShadow,
+} from '../../drawing'
 import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -17,10 +24,10 @@ import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
-export default class LengthTool extends BaseAnnotationTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
-  _throttledCalculateCachedStats: Function
+class LengthTool extends BaseAnnotationTool {
+  public touchDragCallback: any
+  public mouseDragCallback: any
+  _throttledCalculateCachedStats: any
   editData: {
     toolData: any
     viewportUIDsToRender: string[]
@@ -29,7 +36,6 @@ export default class LengthTool extends BaseAnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  name: string
   _configuration: any
 
   constructor(toolConfiguration = {}) {
@@ -54,7 +60,11 @@ export default class LengthTool extends BaseAnnotationTool {
     this._mouseUpCallback = this._mouseUpCallback.bind(this)
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
 
-    this._throttledCalculateCachedStats = throttle(this._calculateCachedStats, 100, { trailing: true })
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    )
   }
 
   addNewMeasurement(evt, interactionType) {
@@ -98,7 +108,10 @@ export default class LengthTool extends BaseAnnotationTool {
 
     addToolState(element, toolData)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -146,7 +159,8 @@ export default class LengthTool extends BaseAnnotationTool {
       const point = points[i]
       const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
-      const near = vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+      const near =
+        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
 
       if (near === true) {
         data.handles.activeHandleIndex = i
@@ -176,10 +190,13 @@ export default class LengthTool extends BaseAnnotationTool {
       },
     }
 
-    const distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, {
-      x: canvasCoords[0],
-      y: canvasCoords[1],
-    })
+    const distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
+      lineSegment,
+      {
+        x: canvasCoords[0],
+        y: canvasCoords[1],
+      }
+    )
 
     if (distanceToPoint <= proximity) {
       return true
@@ -194,7 +211,10 @@ export default class LengthTool extends BaseAnnotationTool {
 
     data.active = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -231,7 +251,10 @@ export default class LengthTool extends BaseAnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(element, this.name)
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+      element,
+      this.name
+    )
 
     this.editData = {
       toolData,
@@ -255,7 +278,12 @@ export default class LengthTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } = this.editData
+    const {
+      toolData,
+      viewportUIDsToRender,
+      newAnnotation,
+      hasMoved,
+    } = this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
@@ -281,7 +309,12 @@ export default class LengthTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } = this.editData
+    const {
+      toolData,
+      viewportUIDsToRender,
+      handleIndex,
+      movingTextBox,
+    } = this.editData
     const { data } = toolData
 
     if (movingTextBox) {
@@ -387,7 +420,11 @@ export default class LengthTool extends BaseAnnotationTool {
     const { spacingInNormalDirection } = getTargetVolume(scene, camera)
 
     // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(toolState, camera, spacingInNormalDirection)
+    const toolDataWithinSlice = getToolStateWithinSlice(
+      toolState,
+      camera,
+      spacingInNormalDirection
+    )
 
     return toolDataWithinSlice
   }
@@ -442,6 +479,7 @@ export default class LengthTool extends BaseAnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
       }
 
+      // Normal draw
       draw(context, (context) => {
         setShadow(context, this.configuration)
 
@@ -461,12 +499,18 @@ export default class LengthTool extends BaseAnnotationTool {
           if (!data.handles.textBox.hasMoved) {
             canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
 
-            data.handles.textBox.worldPosition = viewport.canvasToWorld(canvasTextBoxCoords)
+            data.handles.textBox.worldPosition = viewport.canvasToWorld(
+              canvasTextBoxCoords
+            )
           } else {
-            canvasTextBoxCoords = viewport.worldToCanvas(data.handles.textBox.worldPosition)
+            canvasTextBoxCoords = viewport.worldToCanvas(
+              data.handles.textBox.worldPosition
+            )
           }
 
-          const textBoxAnchorPoints = this._findTextBoxAnchorPoints(canvasCoordinates)
+          const textBoxAnchorPoints = this._findTextBoxAnchorPoints(
+            canvasCoordinates
+          )
 
           drawLinkedTextBox(
             context,
@@ -486,7 +530,11 @@ export default class LengthTool extends BaseAnnotationTool {
   }
 
   _findTextBoxAnchorPoints(points) {
-    return [points[0], points[1], [(points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2]]
+    return [
+      points[0],
+      points[1],
+      [(points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2],
+    ]
   }
 
   _getTextLines(data, targetVolumeUID) {
@@ -516,7 +564,9 @@ export default class LengthTool extends BaseAnnotationTool {
       const volumeUID = volumeUIDs[i]
       const { metadata } = imageCache.getImageVolume(volumeUID)
 
-      const length = Math.sqrt(vtkMath.distance2BetweenPoints(worldPos1, worldPos2))
+      const length = Math.sqrt(
+        vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
+      )
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
@@ -534,7 +584,10 @@ export default class LengthTool extends BaseAnnotationTool {
   }
 
   _isInsideVolume(index1, index2, dimensions) {
-    return indexWithinDimensions(index1, dimensions) && indexWithinDimensions(index2, dimensions)
+    return (
+      indexWithinDimensions(index1, dimensions) &&
+      indexWithinDimensions(index2, dimensions)
+    )
   }
 
   _clipIndexToVolume(index, dimensions) {
@@ -562,3 +615,5 @@ export default class LengthTool extends BaseAnnotationTool {
     return volumeActors[0].uid
   }
 }
+
+export default LengthTool

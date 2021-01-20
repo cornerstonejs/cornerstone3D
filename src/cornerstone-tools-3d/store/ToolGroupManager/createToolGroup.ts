@@ -1,19 +1,19 @@
-import { state } from './../index';
-import IToolGroup from './IToolGroup';
-import ISetToolModeOptions from './ISetToolModeOptions';
-import ToolModes from '../../enums/ToolModes';
+import { state } from './../index'
+import IToolGroup from './IToolGroup'
+import ISetToolModeOptions from './ISetToolModeOptions'
+import ToolModes from '../../enums/ToolModes'
 
-const { Active, Passive, Enabled, Disabled } = ToolModes;
+const { Active, Passive, Enabled, Disabled } = ToolModes
 
 function createToolGroup(toolGroupId: string): IToolGroup | undefined {
   // Exit early if ID conflict
   const toolGroupWithIdExists = state.toolGroups.some(
-    tg => tg.id === toolGroupId
-  );
+    (tg) => tg.id === toolGroupId
+  )
 
   if (toolGroupWithIdExists) {
-    console.warn(`'${toolGroupId}' already exists.`);
-    return;
+    console.warn(`'${toolGroupId}' already exists.`)
+    return
   }
 
   // Create
@@ -23,18 +23,27 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     viewports: [],
     tools: {},
     //
-    addTool: function(toolName, toolConfiguration = {}) {
-      const toolDefinition = state.tools[toolName];
-      const localToolInstance = this.tools[toolName];
+    addTool: function (toolName, toolConfiguration = {}) {
+      const toolDefinition = state.tools[toolName]
+      const hasToolName = typeof toolName !== 'undefined' && toolName !== ''
+      const localToolInstance = this.tools[toolName]
+
+      if (!hasToolName) {
+        console.warn(
+          'Tool with configuration did not produce a toolName: ',
+          toolConfiguration
+        )
+        return
+      }
 
       if (!toolDefinition) {
-        console.warn(`'${toolName}' is not registered with the library.`);
-        return;
+        console.warn(`'${toolName}' is not registered with the library.`)
+        return
       }
 
       if (localToolInstance) {
-        console.warn(`'${toolName}' is already registered for this ToolGroup.`);
-        return;
+        console.warn(`'${toolName}' is already registered for this ToolGroup.`)
+        return
       }
 
       // Should these be renamed higher up, so we don't have to alias?
@@ -42,36 +51,36 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       const {
         toolClass: ToolClass,
         toolOptions: defaultToolOptions,
-      } = toolDefinition;
+      } = toolDefinition
       const mergedToolConfiguration = Object.assign(
         {},
         defaultToolOptions,
         toolConfiguration
-      );
-      const instantiatedTool = new ToolClass(mergedToolConfiguration);
+      )
+      const instantiatedTool = new ToolClass(mergedToolConfiguration)
 
       // API instead of directly exposing schema?
       // Maybe not here, but feels like a "must" for any method outside of the ToolGroup itself
-      this._tools[toolName] = instantiatedTool;
+      this._tools[toolName] = instantiatedTool
     },
-    addViewports: function(
+    addViewports: function (
       renderingEngineUID: string,
       sceneUID?: string,
       viewportUID?: string
     ): void {
-      this.viewports.push({ renderingEngineUID, sceneUID, viewportUID });
+      this.viewports.push({ renderingEngineUID, sceneUID, viewportUID })
     },
     // ~ setToolMode
-    setToolActive: function(
+    setToolActive: function (
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
       if (this._tools[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
-        );
+        )
 
-        return;
+        return
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
@@ -84,20 +93,20 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         {
           mode: Active,
         }
-      );
+      )
 
-      this.tools[toolName] = toolModeOptionsWithMode;
+      this.tools[toolName] = toolModeOptionsWithMode
     },
-    setToolPassive: function(
+    setToolPassive: function (
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
       if (this._tools[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
-        );
+        )
 
-        return;
+        return
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
@@ -110,20 +119,20 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         {
           mode: Passive,
         }
-      );
+      )
 
-      this.tools[toolName] = toolModeOptionsWithMode;
+      this.tools[toolName] = toolModeOptionsWithMode
     },
-    setToolEnabled: function(
+    setToolEnabled: function (
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
       if (this._tools[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
-        );
+        )
 
-        return;
+        return
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
@@ -136,20 +145,20 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         {
           mode: Enabled,
         }
-      );
+      )
 
-      this.tools[toolName] = toolModeOptionsWithMode;
+      this.tools[toolName] = toolModeOptionsWithMode
     },
-    setToolDisabled: function(
+    setToolDisabled: function (
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
       if (this._tools[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
-        );
+        )
 
-        return;
+        return
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
@@ -162,17 +171,17 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         {
           mode: Disabled,
         }
-      );
+      )
 
-      this.tools[toolName] = toolModeOptionsWithMode;
+      this.tools[toolName] = toolModeOptionsWithMode
     },
-  };
+  }
 
   // Update state
-  state.toolGroups.push(toolGroup);
+  state.toolGroups.push(toolGroup)
 
   // Return reference
-  return toolGroup;
+  return toolGroup
 }
 
-export default createToolGroup;
+export default createToolGroup

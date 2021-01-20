@@ -26,9 +26,9 @@ import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
 export default class BidirectionalTool extends BaseAnnotationTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
-  _throttledCalculateCachedStats: Function
+  touchDragCallback: any
+  mouseDragCallback: any
+  _throttledCalculateCachedStats: any
   editData: {
     toolData: any
     viewportUIDsToRender: string[]
@@ -37,7 +37,6 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  name: string
   _configuration: any
 
   constructor(toolConfiguration = {}) {
