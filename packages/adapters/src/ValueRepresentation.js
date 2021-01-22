@@ -250,8 +250,22 @@ class BinaryRepresentation extends ValueRepresentation {
                 frames = value.length,
                 startOffset = [];
 
+            // Calculate a total length for storing binary stream
+            var bufferLength = 0;
+            for (i = 0; i < frames; i++) {
+                bufferLength += value[i].byteLength;
+                let fragmentsLength = 1;
+                if (fragmentMultiframe) {
+                    fragmentsLength = Math.ceil(
+                        value[i].byteLength / fragmentSize
+                    );
+                }
+                // 8 bytes per fragment are needed to store 0xffff (2 bytes), 0xe000 (2 bytes), and frageStream size (4 bytes)
+                bufferLength += fragmentsLength * 8;
+            }
+
             binaryStream = new WriteBufferStream(
-                1024 * 1024 * 20,
+                bufferLength,
                 stream.isLittleEndian
             );
 
@@ -764,7 +778,7 @@ class SequenceOfItems extends ValueRepresentation {
         }
     }
 
-    writeBytes(stream, value, syntax) {
+    writeBytes(stream, value, syntax, writeOptions) {
         let written = 0;
 
         if (value) {
@@ -774,7 +788,12 @@ class SequenceOfItems extends ValueRepresentation {
                 super.write(stream, "Uint16", 0xe000);
                 super.write(stream, "Uint32", 0xffffffff);
 
-                written += DicomMessage.write(item, stream, syntax);
+                written += DicomMessage.write(
+                    item,
+                    stream,
+                    syntax,
+                    writeOptions
+                );
 
                 super.write(stream, "Uint16", 0xfffe);
                 super.write(stream, "Uint16", 0xe00d);
