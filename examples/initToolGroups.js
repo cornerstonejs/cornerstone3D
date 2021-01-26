@@ -1,6 +1,5 @@
 import * as csTools3d from './../src/cornerstone-tools-3d/index';
-import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID } from './constants';
-
+import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID, VIEWPORT_IDS } from './constants';
 const {
   PanTool,
   WindowLevelTool,
@@ -16,7 +15,81 @@ const {
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
+  CrosshairsTool,
 } = csTools3d;
+
+// TODO: for the slab thickness switch to two independent options and one parent option:
+// - viewportControllableByReferenceLines true/false
+// - viewportReferenceLineDraggable/Rotable true/false
+// - viewportReferenceLineSlabThicknessControlsOn true/false
+// NOTE: rotate/translate are enabled/disabled together as one option
+// in future we may separate them, but only if rotation rotates only the 1 reference line at time
+// (at the moment, rotating a reference line, will also rotate all the other active/intersecting ones of the same angle).
+let viewportControllable = {};
+viewportControllable[VIEWPORT_IDS.CT.AXIAL] = true;
+viewportControllable[VIEWPORT_IDS.CT.SAGITTAL] = true;
+viewportControllable[VIEWPORT_IDS.CT.CORONAL] = true;
+
+viewportControllable[VIEWPORT_IDS.PT.AXIAL] = true;
+viewportControllable[VIEWPORT_IDS.PT.SAGITTAL] = true;
+viewportControllable[VIEWPORT_IDS.PT.CORONAL] = true;
+
+viewportControllable[VIEWPORT_IDS.FUSION.AXIAL] = true;
+viewportControllable[VIEWPORT_IDS.FUSION.SAGITTAL] = true;
+viewportControllable[VIEWPORT_IDS.FUSION.CORONAL] = true;
+
+viewportControllable[VIEWPORT_IDS.PTMIP.CORONAL] = true;
+
+viewportControllable[VIEWPORT_IDS.CTVR.VR] = true;
+
+viewportControllable[VIEWPORT_IDS.CTOBLIQUE.OBLIQUE] = true;
+
+viewportControllable[VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL] = true;
+viewportControllable[VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL] = true;
+viewportControllable[VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL] = true;
+
+function setReferenceLineControllable(viewportUID, controllable) {
+  viewportControllable[viewportUID] = controllable;
+}
+
+window.setReferenceLineControllable = setReferenceLineControllable;
+
+function getReferenceLineControllable(viewportUID) {
+  return viewportControllable[viewportUID];
+}
+
+let viewportColors = {};
+viewportColors[VIEWPORT_IDS.CT.AXIAL] = 'rgb(200, 0, 0)';
+viewportColors[VIEWPORT_IDS.CT.SAGITTAL] = 'rgb(200, 200, 0)';
+viewportColors[VIEWPORT_IDS.CT.CORONAL] = 'rgb(0, 200, 0)';
+
+viewportColors[VIEWPORT_IDS.PT.AXIAL] = 'rgb(200, 0, 0)';
+viewportColors[VIEWPORT_IDS.PT.SAGITTAL] = 'rgb(200, 200, 0)';
+viewportColors[VIEWPORT_IDS.PT.CORONAL] = 'rgb(0, 200, 0)';
+
+viewportColors[VIEWPORT_IDS.FUSION.AXIAL] = 'rgb(200, 0, 0)';
+viewportColors[VIEWPORT_IDS.FUSION.SAGITTAL] = 'rgb(200, 200, 0)';
+viewportColors[VIEWPORT_IDS.FUSION.CORONAL] = 'rgb(0, 200, 0)';
+
+viewportColors[VIEWPORT_IDS.PTMIP.CORONAL] = 'rgb(0, 200, 0)';
+
+viewportColors[VIEWPORT_IDS.CTVR.VR] = 'rgb(200, 200, 200)';
+
+viewportColors[VIEWPORT_IDS.CTOBLIQUE.OBLIQUE] = 'rgb(200, 200, 200)';
+
+viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL] = 'rgb(0, 200, 0)';
+viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL] = 'rgb(0, 200, 0)';
+viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL] = 'rgb(0, 200, 0)';
+
+function setReferenceLineColor(viewportUID, color) {
+  viewportColors[viewportUID] = color;
+}
+
+window.setReferenceLineColor = setReferenceLineColor;
+
+function getReferenceLineColor(viewportUID) {
+  return viewportColors[viewportUID];
+}
 
 function initToolGroups() {
   // TODO: Can we delete tool groups?
@@ -34,6 +107,7 @@ function initToolGroups() {
   csTools3d.addTool(RectangleRoiTool, {});
   csTools3d.addTool(EllipticalRoiTool, {});
   csTools3d.addTool(BidirectionalTool, {});
+  csTools3d.addTool(CrosshairsTool, {});
 
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
@@ -64,6 +138,8 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('Zoom', {});
   ctSceneToolGroup.addTool('StackScrollMouseWheel', {});
   // @TODO: We need an alternative to config that ties volume to an ID
+  // TODO ^ What does this mean? I don't think we do. The target volume could be changed for the same tool,
+  // its also optional for most of these.
   ctSceneToolGroup.addTool('Bidirectional', {
     configuration: { volumeUID: ctVolumeUID },
   });
@@ -79,13 +155,20 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('EllipticalRoi', {
     configuration: { volumeUID: ctVolumeUID },
   });
+  ctSceneToolGroup.addTool('Crosshairs', {
+    configuration: {
+      getReferenceLineColor,
+      getReferenceLineControllable,
+    },
+  });
 
   ctSceneToolGroup.setToolPassive('Bidirectional');
   ctSceneToolGroup.setToolPassive('Length');
   ctSceneToolGroup.setToolPassive('Probe');
   ctSceneToolGroup.setToolPassive('RectangleRoi');
-
   ctSceneToolGroup.setToolPassive('EllipticalRoi');
+  ctSceneToolGroup.setToolPassive('Crosshairs');
+
   ctSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ctSceneToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
@@ -116,9 +199,24 @@ function initToolGroups() {
   ptSceneToolGroup.addTool('EllipticalRoi', {
     configuration: { volumeUID: ptVolumeUID },
   });
+  ptSceneToolGroup.addTool('Crosshairs', {
+    configuration: {
+      getReferenceLineColor,
+      getReferenceLineControllable,
+    },
+  });
+
   ptSceneToolGroup.addTool('Pan', {});
   ptSceneToolGroup.addTool('Zoom', {});
   ptSceneToolGroup.addTool('StackScrollMouseWheel', {});
+  ptSceneToolGroup.setToolPassive('Probe');
+  ptSceneToolGroup.setToolPassive('Length');
+  ptSceneToolGroup.setToolPassive('RectangleRoi');
+  ptSceneToolGroup.setToolPassive('EllipticalRoi');
+  ptSceneToolGroup.setToolPassive('Bidirectional');
+  ptSceneToolGroup.setToolPassive('Crosshairs');
+
+  ptSceneToolGroup.setToolActive('StackScrollMouseWheel');
   ptSceneToolGroup.setToolActive('PetThreshold', {
     bindings: [ToolBindings.Mouse.Primary],
   });
@@ -128,12 +226,6 @@ function initToolGroups() {
   ptSceneToolGroup.setToolActive('Zoom', {
     bindings: [ToolBindings.Mouse.Secondary],
   });
-  ptSceneToolGroup.setToolPassive('Probe');
-  ptSceneToolGroup.setToolPassive('Length');
-  ptSceneToolGroup.setToolPassive('RectangleRoi');
-  ptSceneToolGroup.setToolPassive('EllipticalRoi');
-  ptSceneToolGroup.setToolPassive('Bidirectional');
-  ptSceneToolGroup.setToolActive('StackScrollMouseWheel');
 
   // Set up Fusion Scene tools
   fusionSceneToolGroup.addTool('Pan', {});
@@ -158,11 +250,20 @@ function initToolGroups() {
   fusionSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
+  fusionSceneToolGroup.addTool('Crosshairs', {
+    configuration: {
+      getReferenceLineColor,
+      getReferenceLineControllable,
+    },
+  });
+
   fusionSceneToolGroup.setToolPassive('Bidirectional');
   fusionSceneToolGroup.setToolPassive('Length');
   fusionSceneToolGroup.setToolPassive('Probe');
   fusionSceneToolGroup.setToolPassive('RectangleRoi');
-  fusionSceneToolGroup.setToolPassive('EllipticalRoi');
+  fusionSceneToolGroup.setToolPassive('EllipticalRoi')
+  fusionSceneToolGroup.setToolPassive('Crosshairs');
+
   fusionSceneToolGroup.setToolActive('StackScrollMouseWheel');
   fusionSceneToolGroup.setToolActive('PetThreshold', {
     bindings: [ToolBindings.Mouse.Primary],
@@ -201,13 +302,12 @@ function initToolGroups() {
     bindings: [ToolBindings.Mouse.Primary],
   });
 
-  ptTypesSceneToolGroup.addTool('StackScrollMouseWheel', {});
   ptTypesSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
   ptTypesSceneToolGroup.addTool('Pan', {});
   ptTypesSceneToolGroup.addTool('Zoom', {});
-  ptTypesSceneToolGroup.setToolActive('StackScrollMouseWheel');
+  ptTypesSceneToolGroup.addTool('StackScrollMouseWheel', {});
   ptTypesSceneToolGroup.setToolActive('PetThreshold', {
     bindings: [ToolBindings.Mouse.Primary],
   });
@@ -218,6 +318,7 @@ function initToolGroups() {
   ptTypesSceneToolGroup.setToolActive('Zoom', {
     bindings: [ToolBindings.Mouse.Secondary],
   });
+  ptTypesSceneToolGroup.setToolActive('StackScrollMouseWheel');
 
   return {
     ctSceneToolGroup,

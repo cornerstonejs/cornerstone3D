@@ -28,6 +28,7 @@ import {
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
+  CrosshairsTool,
 } from './tools/index'
 import { ToolBindings, CornerstoneTools3DEvents } from './enums/index'
 
@@ -47,6 +48,7 @@ export {
   VolumeRotateMouseWheelTool,
   // Annotation Tools
   LengthTool,
+  CrosshairsTool,
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,

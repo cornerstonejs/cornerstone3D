@@ -71,6 +71,7 @@ const TOOL_GROUP_UIDS = {
 // A string helper for the drop down.
 const PET_CT_ANNOTATION_TOOLS = [
   'Probe',
+  'Crosshairs',
   'Length',
   'Bidirectional',
   'RectangleRoi',

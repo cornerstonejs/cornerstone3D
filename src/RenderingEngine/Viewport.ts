@@ -165,7 +165,7 @@ class Viewport implements IViewport {
   public _setVolumeActors(volumeActorEntries: Array<VolumeActorEntry>) {
     const renderer = this.getRenderer()
 
-    volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))
+    volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor));
 
     if (this.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
       let slabThickness = DEFAULT_SLAB_THICKNESS
@@ -391,7 +391,11 @@ class Viewport implements IViewport {
     const eventDetail = {
       previousCamera,
       camera: updatedCamera,
-    }
+      canvas: this.canvas,
+      viewportUID: this.uid,
+      sceneUID: this.sceneUID,
+      renderingEngineUID: this.renderingEngineUID,
+    };
 
     triggerEvent(this.canvas, EVENTS.CAMERA_MODIFIED, eventDetail)
 
@@ -477,7 +481,7 @@ class Viewport implements IViewport {
       .identity()
       .rotateFromDirections(viewUp, [1, 0, 0])
 
-    viewUpCorners.forEach((pt) => transform.apply(pt))
+    viewUpCorners.forEach((pt) => transform.apply(pt));
 
     // range is now maximum X distance
     let minY = Infinity
@@ -497,7 +501,7 @@ class Viewport implements IViewport {
       .identity()
       .rotateFromDirections(viewRight, [1, 0, 0])
 
-    viewRightCorners.forEach((pt) => transform.apply(pt))
+    viewRightCorners.forEach((pt) => transform.apply(pt));
 
     // range is now maximum Y distance
     let minX = Infinity

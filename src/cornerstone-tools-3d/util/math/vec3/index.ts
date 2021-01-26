@@ -1,5 +1,6 @@
-import isEqual from './isEqual';
+import isEqual from './isEqual'
+import isOpposite from './isOpposite'
 
-export { isEqual };
+export { isEqual, isOpposite }
 
-export default { isEqual };
+export default { isEqual, isOpposite }

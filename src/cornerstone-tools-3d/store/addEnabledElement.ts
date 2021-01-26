@@ -4,6 +4,7 @@ import {
 } from './../eventListeners/index';
 import {
   imageRenderedEventDispatcher,
+  cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
 } from './../eventDispatchers/index';
 import { state } from './index';
@@ -22,6 +23,7 @@ export default function addEnabledElement(evt) {
   wheelEventListener.enable(canvas);
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(canvas);
+  cameraModifiedEventDispatcher.enable(canvas);
   // Dispatchers: interaction
   mouseToolEventDispatcher.enable(canvas);
   // touchToolEventDispatcher.enable(enabledElement);
