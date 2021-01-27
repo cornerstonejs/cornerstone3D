@@ -85,7 +85,8 @@ export default function (context, textLines, x, y, color, options = undefined) {
     boundingBox.left = x
     boundingBox.top = y
 
-    const fillStyle = options && options.debug === true ? '#FF0000' : backgroundColor
+    const fillStyle =
+      options && options.debug === true ? '#FF0000' : backgroundColor
 
     fillBox(context, boundingBox, fillStyle)
 

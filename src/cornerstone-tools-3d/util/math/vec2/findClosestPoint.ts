@@ -1,41 +1,41 @@
-import {Point2} from '../../../types'
-import { vec2 } from 'gl-matrix';
+import { Point2 } from '../../../types'
 
 /**
- * @function findClosestPoint Given a set of sources, find which one is closest
- * to the target point.
+ * Find the closest point to the target point
  *
- * @param {Array<Point2>} sources The potential source points.
- * @param {Point2} target The target point, used to find the closest source.
- * @returns {Point2} The closest point in [sources].
+ * @public
+ * @param sourcePoints The potential source points.
+ * @param targetPoint The target point, used to find the closest source.
+ * @returns The closest point in the array of point sources
  */
-export default function findClosestPoint(sources: Array<Point2>, target: Point2) : Point2{
-  const distances = [];
-  let minDistance;
+export default function findClosestPoint(
+  sourcePoints: Array<Point2>,
+  targetPoint: Point2
+): Point2 {
+  let minPoint = [0, 0]
+  let minDistance = Number.MAX_SAFE_INTEGER
 
-  const targetVec2 = vec2.create();
+  sourcePoints.forEach(function (sourcePoint) {
+    const distance = _distanceBetween(targetPoint, sourcePoint)
 
-  vec2.set(targetVec2, target[0], target[1])
-
-  sources.forEach(function (source, index) {
-    const sourceVec2 = vec2.create();
-
-
-    vec2.set(sourceVec2, source[0], source[1])
-
-
-    const d = vec2.distance(sourceVec2, targetVec2);
-
-    distances.push(d);
-
-    if (index === 0) {
-      minDistance = d;
-    } else {
-      minDistance = Math.min(d, minDistance);
+    if (distance < minDistance) {
+      minDistance = distance
+      minPoint = [...sourcePoint]
     }
-  });
+  })
 
-  const index = distances.indexOf(minDistance);
+  return minPoint as Point2
+}
 
-  return sources[index];
+/**
+ *
+ * @private
+ * @param p1
+ * @param p2
+ */
+function _distanceBetween(p1: Point2, p2: Point2): number {
+  const [x1, y1] = p1
+  const [x2, y2] = p2
+
+  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2))
 }

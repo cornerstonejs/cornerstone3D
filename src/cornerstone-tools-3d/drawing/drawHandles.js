@@ -1,7 +1,7 @@
-import toolStyle from './../stateManagement/toolStyle.ts';
-import toolColors from './../stateManagement/toolColors.ts';
-import path from './path.js';
-import { state } from '../store';
+import toolStyle from './../stateManagement/toolStyle'
+import toolColors from './../stateManagement/toolColors'
+import path from './path'
+import { state } from '../store'
 
 /**
  * Draws proivded handles to the provided context
@@ -20,28 +20,28 @@ import { state } from '../store';
  * @returns {undefined}
  */
 export default function (context, handles, options = {}) {
-  const defaultColor = toolColors.getToolColor();
+  const defaultColor = toolColors.getToolColor()
 
-  context.strokeStyle = options.color || defaultColor;
+  context.strokeStyle = options.color || defaultColor
 
-  const handleKeys = Object.keys(handles);
+  const handleKeys = Object.keys(handles)
 
   for (let i = 0; i < handleKeys.length; i++) {
-    const handleKey = handleKeys[i];
-    const handle = handles[handleKey];
+    const handleKey = handleKeys[i]
+    const handle = handles[handleKey]
 
     if (handle.drawnIndependently === true) {
-      continue;
+      continue
     }
 
     if (options.drawHandlesIfActive === true && !handle.active) {
-      continue;
+      continue
     }
 
     const lineWidth = handle.active
       ? toolStyle.getActiveWidth()
-      : toolStyle.getToolWidth();
-    const fillStyle = options.fill;
+      : toolStyle.getToolWidth()
+    const fillStyle = options.fill
 
     path(
       context,
@@ -52,10 +52,10 @@ export default function (context, handles, options = {}) {
       (context) => {
         // Handle's radisu, then tool's radius, then default radius
         const handleRadius =
-          handle.radius || options.handleRadius || state.handleRadius;
+          handle.radius || options.handleRadius || state.handleRadius
 
-        context.arc(handle[0], handle[1], handleRadius, 0, 2 * Math.PI);
+        context.arc(handle[0], handle[1], handleRadius, 0, 2 * Math.PI)
       }
-    );
+    )
   }
 }

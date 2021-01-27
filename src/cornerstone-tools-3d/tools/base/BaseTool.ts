@@ -38,8 +38,6 @@ abstract class BaseTool {
       defaultStrategy || Object.keys(this.strategies)[0] || undefined
     this.activeStrategy = this.defaultStrategy
     this.configuration = Object.assign({}, configuration)
-
-    console.log(this.name, this.configuration)
   }
 
   /**

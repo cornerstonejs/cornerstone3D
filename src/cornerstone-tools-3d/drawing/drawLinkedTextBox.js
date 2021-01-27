@@ -1,7 +1,7 @@
-import drawTextBox from './drawTextBox.js';
-import drawLink from './drawLink.js';
+import drawTextBox from './drawTextBox.js'
+import drawLink from './drawLink.js'
 
-export default function(
+export default function (
   context,
   textCoords,
   text,
@@ -14,7 +14,7 @@ export default function(
   yCenter
 ) {
   if (xOffset) {
-    textCoords[0] += xOffset;
+    textCoords[0] += xOffset
   }
 
   const options = {
@@ -22,7 +22,7 @@ export default function(
       x: false,
       y: yCenter,
     },
-  };
+  }
 
   // Draw the text box
   const canvasBoundingBox = drawTextBox(
@@ -32,7 +32,7 @@ export default function(
     textCoords[1],
     color,
     options
-  );
+  )
   if (textBox.hasMoved) {
     // Draw dashed link line between tool and text
     drawLink(
@@ -42,15 +42,15 @@ export default function(
       context,
       color,
       lineWidth
-    );
+    )
   }
 
-  const { top, left, width, height } = canvasBoundingBox;
+  const { top, left, width, height } = canvasBoundingBox
 
   textBox.worldBoundingBox = {
     topLeft: canvasToWorld([left, top]),
     topRight: canvasToWorld([left + width, top]),
     bottomLeft: canvasToWorld([left, top + height]),
     bottomRight: canvasToWorld([left + width, top + height]),
-  };
+  }
 }

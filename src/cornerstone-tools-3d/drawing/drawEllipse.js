@@ -1,4 +1,4 @@
-import path from './path.js';
+import path from './path.js'
 
 /**
  * Draw an ellipse within the bounding box defined by `corner1` and `corner2`.
@@ -13,16 +13,16 @@ import path from './path.js';
  * @param {Object} options - See {@link path}
  * @returns {undefined}
  */
-export default function(context, corner1, corner2, options) {
-  const w = Math.abs(corner1[0] - corner2[0]);
-  const h = Math.abs(corner1[1] - corner2[1]);
-  const xMin = Math.min(corner1[0], corner2[0]);
-  const yMin = Math.min(corner1[1], corner2[1]);
+export default function (context, corner1, corner2, options) {
+  const w = Math.abs(corner1[0] - corner2[0])
+  const h = Math.abs(corner1[1] - corner2[1])
+  const xMin = Math.min(corner1[0], corner2[0])
+  const yMin = Math.min(corner1[1], corner2[1])
 
-  const center = [xMin + w / 2, yMin + h / 2];
+  const center = [xMin + w / 2, yMin + h / 2]
 
-  path(context, options, context => {
-    context.ellipse(center[0], center[1], w / 2, h / 2, 0, 0, 2 * Math.PI);
-    context.closePath();
-  });
+  path(context, options, (context) => {
+    context.ellipse(center[0], center[1], w / 2, h / 2, 0, 0, 2 * Math.PI)
+    context.closePath()
+  })
 }

@@ -4,13 +4,13 @@ import { getEnabledElement, imageCache } from '../../../index'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
+import { getNewContext } from '../../drawing'
 import {
-  draw,
-  drawHandles,
-  drawTextBox,
-  getNewContext,
-  setShadow,
-} from '../../drawing'
+  clearByToolType,
+  draw as drawSvg,
+  drawHandles as drawHandlesSvg,
+  drawTextBox as drawTextBoxSvg,
+} from './../../drawingSvg'
 import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -240,66 +240,75 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   renderToolData(evt) {
     const eventData = evt.detail
-    const { canvas: element } = eventData
+    const { canvas: canvasElement } = eventData
 
-    let toolState = getToolState(element, this.name)
+    let toolState = getToolState(canvasElement, this.name)
 
     if (!toolState) {
+      clearByToolType(canvasElement, this.name)
       return
     }
 
-    toolState = this.filterInteractableToolStateForElement(element, toolState)
+    toolState = this.filterInteractableToolStateForElement(
+      canvasElement,
+      toolState
+    )
 
     if (!toolState.length) {
+      clearByToolType(canvasElement, this.name)
       return
     }
 
-    const enabledElement = getEnabledElement(element)
+    const enabledElement = getEnabledElement(canvasElement)
     const { viewport, scene } = enabledElement
     const targetVolumeUID = this._getTargetVolumeUID(scene)
 
-    const context = getNewContext(element)
+    const context = getNewContext(canvasElement)
 
-    for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i]
-      const data = toolData.data
+    drawSvg(canvasElement, this.name, (svgDrawingHelper) => {
+      for (let i = 0; i < toolState.length; i++) {
+        const toolData = toolState[i]
+        const annotationUID = toolData.metadata.toolUID
+        const data = toolData.data
+        const color = toolColors.getColorIfActive(data)
+        const point = data.handles.points[0]
+        const canvasCoordinates = viewport.worldToCanvas(point)
 
-      const color = toolColors.getColorIfActive(data)
+        if (!data.cachedStats[targetVolumeUID]) {
+          data.cachedStats[targetVolumeUID] = {}
+          this._calculateCachedStats(data)
+        } else if (data.invalidated) {
+          this._calculateCachedStats(data)
+        }
 
-      if (!data.cachedStats[targetVolumeUID]) {
-        data.cachedStats[targetVolumeUID] = {}
-        this._calculateCachedStats(data)
-      } else if (data.invalidated) {
-        this._calculateCachedStats(data)
-      }
+        drawHandlesSvg(
+          svgDrawingHelper,
+          this.name,
+          annotationUID,
+          [canvasCoordinates],
+          { color }
+        )
 
-      const textLines = this._getTextLines(data, targetVolumeUID)
-
-      const point = data.handles.points[0]
-
-      const canvasCoordinates = viewport.worldToCanvas(point)
-
-      draw(context, (context) => {
-        setShadow(context, this.configuration)
-
-        drawHandles(context, [canvasCoordinates], { color })
-
+        const textLines = this._getTextLines(data, targetVolumeUID)
         if (textLines) {
           const textCanvasCoorinates = [
             canvasCoordinates[0] + 6,
             canvasCoordinates[1] - 6,
           ]
 
-          drawTextBox(
-            context,
+          const textUID = '0'
+          drawTextBoxSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            textUID,
             textLines,
-            textCanvasCoorinates[0],
-            textCanvasCoorinates[1],
-            color
+            [textCanvasCoorinates[0], textCanvasCoorinates[1]],
+            { color }
           )
         }
-      })
-    }
+      }
+    })
   }
 
   _getTextLines(data, targetVolumeUID) {
