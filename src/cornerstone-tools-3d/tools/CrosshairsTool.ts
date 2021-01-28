@@ -447,9 +447,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         6
       )
 
-      const nearToolAndNotMarkedActive = near && !data.active
       const notNearToolAndMarkedActive = !near && data.active
-      if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
+      if (near || notNearToolAndMarkedActive) {
         data.active = !data.active
         imageNeedsUpdate = true
       } else if (
