@@ -95,6 +95,26 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
+    // We need a better way of surfacing this...
+    const {
+      viewportUid: viewportUID,
+      sceneUid: sceneUID,
+      renderingEngineUid: renderingEngineUID,
+    } = element.dataset
+    const toolGroups = ToolGroupManager.getToolGroups(
+      renderingEngineUID,
+      sceneUID,
+      viewportUID
+    )
+    const groupTools = toolGroups[0]?.tools
+    const mode = groupTools[this.name]?.mode
+
+    // We don't want this annotation tool to render or be interactive unless its
+    // active
+    if (mode !== 'Active') {
+      return undefined
+    }
+
     // TODO square (?) handles to pull MIP slabs (i.e. like Radiant.)
 
     const enabledElement = getEnabledElement(element)
@@ -153,7 +173,41 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
+  //
   pointNearTool = (element, toolData, canvasCoords, proximity) => {
+    // We need a better way of surfacing this...
+    const {
+      viewportUid: viewportUID,
+      sceneUid: sceneUID,
+      renderingEngineUid: renderingEngineUID,
+    } = element.dataset
+    const toolGroups = ToolGroupManager.getToolGroups(
+      renderingEngineUID,
+      sceneUID,
+      viewportUID
+    )
+    const groupTools = toolGroups[0]?.tools
+    const mode = groupTools[this.name]?.mode
+
+    // We don't want this annotation tool to render or be interactive unless its
+    // active
+    if (mode !== 'Active') {
+      return false
+    }
+
+    // This iterates all instances of Crosshairs across all toolGroups
+    // And updates `isCrosshairsActive` if ANY are active?
+    let isCrosshairsActive = false
+    for (let i = 0; i < toolGroups.length; ++i) {
+      const toolGroup = toolGroups[i]
+      const tool = toolGroup.tools['Crosshairs']
+
+      if (tool.mode === 'Active') {
+        isCrosshairsActive = true
+        break
+      }
+    }
+
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
     const { sWidth, sHeight } = viewport
