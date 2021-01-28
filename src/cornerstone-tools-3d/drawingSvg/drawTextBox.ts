@@ -143,13 +143,15 @@ function _createTextElement(options: any): SVGElement {
   const textElement = document.createElementNS(svgns, 'text')
   const noSelectStyle =
     'user-select: none; pointer-events: none; -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);'
+  const dropShadowStyle = 'filter:url(#shadow);'
+  const combinedStyle = `${noSelectStyle}${dropShadowStyle}`
 
   // font-size="100"
   textElement.setAttribute('x', '0')
   textElement.setAttribute('y', '0')
   textElement.setAttribute('fill', color)
   textElement.setAttribute('font-family', fontFamily)
-  textElement.setAttribute('style', noSelectStyle)
+  textElement.setAttribute('style', combinedStyle)
 
   return textElement
 }

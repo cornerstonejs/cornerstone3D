@@ -22,8 +22,8 @@ export default function addEnabledElement(evt: CustomEvent): void {
   mouseEventListeners.enable(canvas)
   wheelEventListener.enable(canvas)
   // Dispatchers: renderer
-  imageRenderedEventDispatcher.enable(canvas);
-  cameraModifiedEventDispatcher.enable(canvas);
+  imageRenderedEventDispatcher.enable(canvas)
+  cameraModifiedEventDispatcher.enable(canvas)
   // Dispatchers: interaction
   mouseToolEventDispatcher.enable(canvas)
   // touchToolEventDispatcher.enable(enabledElement);
@@ -45,6 +45,58 @@ function _createSvgAnnotationLayer(): SVGElement {
   svgLayer.style.height = '100%'
   svgLayer.style.pointerEvents = 'none'
   svgLayer.style.position = 'absolute'
+
+  // Single dropshadow config for now
+  const defs = document.createElementNS(svgns, 'defs')
+  const filter = document.createElementNS(svgns, 'filter')
+  const feOffset = document.createElementNS(svgns, 'feOffset')
+  const feColorMatrix = document.createElementNS(svgns, 'feColorMatrix')
+  const feGaussianBlur = document.createElementNS(svgns, 'feGaussianBlur')
+  const feBlend = document.createElementNS(svgns, 'feBlend')
+  // const feDropShadow = document.createElementNS(svgns, 'feDropShadow')
+
+  //
+  filter.setAttribute('id', 'shadow')
+  filter.setAttribute('width', '110%')
+  filter.setAttribute('height', '110%')
+
+  //
+  feOffset.setAttribute('result', 'offOut')
+  feOffset.setAttribute('in', 'SourceGraphic')
+  feOffset.setAttribute('dx', '0.5')
+  feOffset.setAttribute('dy', '0.5')
+
+  //
+  feColorMatrix.setAttribute('result', 'matrixOut')
+  feColorMatrix.setAttribute('in', 'offOut')
+  feColorMatrix.setAttribute('type', 'matrix')
+  feColorMatrix.setAttribute(
+    'values',
+    '0.2 0 0 0 0 0 0.2 0 0 0 0 0 0.2 0 0 0 0 0 1 0'
+  )
+
+  //
+  feGaussianBlur.setAttribute('result', 'blurOut')
+  feGaussianBlur.setAttribute('in', 'matrixOut')
+  feGaussianBlur.setAttribute('stdDeviation', '0.25')
+
+  //
+  feBlend.setAttribute('in', 'SourceGraphic')
+  feBlend.setAttribute('in2', 'blurOut')
+  feBlend.setAttribute('mode', 'normal')
+
+  //
+  // feDropShadow.setAttribute('dx', '0.2')
+  // feDropShadow.setAttribute('dy', '0.4')
+  // feDropShadow.setAttribute('stdDeviation', '0')
+
+  //filter.appendChild(feDropShadow)
+  filter.appendChild(feOffset)
+  filter.appendChild(feColorMatrix)
+  filter.appendChild(feGaussianBlur)
+  filter.appendChild(feBlend)
+  defs.appendChild(filter)
+  svgLayer.appendChild(defs)
 
   return svgLayer
 }
