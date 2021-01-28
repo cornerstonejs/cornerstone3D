@@ -2,13 +2,14 @@ import { BaseAnnotationTool } from './base/index'
 // ~~ VTK Viewport
 import { getEnabledElement } from '../../index'
 import { addToolState, getToolState } from '../stateManagement/toolState'
+import { getNewContext } from '../drawing'
 import {
-  draw,
-  drawLine,
-  drawHandles,
-  drawCircle,
-  getNewContext,
-} from '../drawing'
+  clearByToolType,
+  draw as drawSvg,
+  drawCircle as drawCircleSvg,
+  drawHandles as drawHandlesSvg,
+  drawLine as drawLineSvg,
+} from '../drawingSvg'
 import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../enums'
@@ -426,6 +427,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   renderToolData = (evt) => {
     const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
+    const { canvas: canvasElement } = evt.detail
 
     const toolGroups = ToolGroupManager.getToolGroups(
       renderingEngineUID,
@@ -433,6 +435,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       viewportUID
     )
 
+    // This iterates all instances of Crosshairs across all toolGroups
+    // And updates `isCrosshairsActive` if ANY are active?
     let isCrosshairsActive = false
     for (let i = 0; i < toolGroups.length; ++i) {
       const toolGroup = toolGroups[i]
@@ -444,7 +448,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
     }
 
+    // So if none are active, we have nothing to render, and we peace out
     if (!isCrosshairsActive) {
+      clearByToolType(canvasElement, this.name)
       return
     }
 
@@ -464,9 +470,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // viewport ToolData
     const viewportToolData = filteredToolState[0]
     if (!toolState || !viewportToolData || !viewportToolData.data) {
+      clearByToolType(canvasElement, this.name)
       // No toolstate yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
       return
     }
+
+    const annotationUID = viewportToolData.metadata.toolUID
 
     // Get cameras/canvases for each of these.
     // -- Get two world positions for this canvas in this line (e.g. the diagonal)
@@ -583,14 +592,15 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     })
 
     const newPoints = []
-
     const viewportColor = this._getReferenceLineColor(viewport.uid)
     const color =
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
 
     const context = getNewContext(element)
-    draw(context, (context) => {
-      referenceLines.forEach((line) => {
+    // Danny Note: our draw already loops all toolData?
+    // draw(context, (context) => {
+    drawSvg(canvasElement, this.name, (svgDrawingHelper) => {
+      referenceLines.forEach((line, lineIndex) => {
         // get color for the reference line
         const viewportColor = this._getReferenceLineColor(line[4].uid)
         const viewportControllable = this._getReferenceLineControllable(
@@ -608,12 +618,19 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           lineWidth = 2.5
         }
 
-        const options = {
-          color,
-          lineWidth,
-        }
-
-        drawLine(context, line[0], line[1], options)
+        const lineUID = `${lineIndex}`
+        drawLineSvg(
+          svgDrawingHelper,
+          this.name,
+          annotationUID,
+          lineUID,
+          line[0],
+          line[1],
+          {
+            color,
+            lineWidth,
+          }
+        )
 
         if (viewportControllable) {
           color =
@@ -623,25 +640,20 @@ export default class CrosshairsTool extends BaseAnnotationTool {
             data.handles.activeOperation !== null &&
             data.handles.activeOperation > 0
 
-          const handleRadius = canvasDiagonalLength * 0.0075
-          let fill = undefined
-          let rotHandlesOptions = {
-            color,
-            handleRadius,
-            fill,
-          }
-          if (handleActive) {
-            fill = color
-            rotHandlesOptions = {
-              color,
-              handleRadius,
-              fill,
-            }
-          }
+          const rotHandlesOptions = handleActive
+            ? { color, handleRadius: 3, fill: color }
+            : { color, handleRadius: 4 }
+          const rotationHandles = [line[2], line[3]]
 
-          const rotHandle = [line[2], line[3]]
           if (lineActive || handleActive) {
-            drawHandles(context, rotHandle, rotHandlesOptions)
+            drawHandlesSvg(
+              svgDrawingHelper,
+              this.name,
+              annotationUID,
+              lineUID,
+              rotationHandles,
+              rotHandlesOptions
+            )
           }
 
           const handleWorldOne = [viewport.canvasToWorld(line[2]), line[4]]
@@ -651,15 +663,22 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       })
 
       // render a circle to pin point the viewport color
-      const referenceColorCoordinates = [sWidth * 0.95, sHeight * 0.05]
+      const referenceColorCoordinates = [
+        sWidth * 0.95,
+        sHeight * 0.05,
+      ] as Point2
       const circleRadius = canvasDiagonalLength * 0.01
-      const fillStyle = color
-      const options = {
-        color,
-        fillStyle,
-      }
 
-      drawCircle(context, referenceColorCoordinates, circleRadius, options)
+      const circleUID = '0'
+      drawCircleSvg(
+        svgDrawingHelper,
+        this.name,
+        annotationUID,
+        circleUID,
+        referenceColorCoordinates,
+        circleRadius,
+        { color, fill: color }
+      )
     })
 
     data.handles.points = newPoints

@@ -9,15 +9,17 @@ export default function (
   svgDrawingHelper: any,
   toolUID: string,
   annotationUID: string,
+  handleGroupUID: string,
   handlePoints: Array<Point2>,
   options = {}
 ): void {
-  const { color, handleRadius, width } = Object.assign(
+  const { color, handleRadius, width, fill } = Object.assign(
     {},
     {
       color: 'dodgerblue',
       handleRadius: '6',
       width: '2',
+      fill: 'transparent',
     },
     options
   )
@@ -27,9 +29,14 @@ export default function (
 
     // variable for the namespace
     const svgns = 'http://www.w3.org/2000/svg'
-    const svgNodeHash = _getHash(toolUID, annotationUID, 'handle', `${i}`)
+    const svgNodeHash = _getHash(
+      toolUID,
+      annotationUID,
+      'handle',
+      `hg-${handleGroupUID}-index-${i}`
+    )
     const existingHandleElement = svgDrawingHelper._svgLayerElement.querySelector(
-      `[data-tool-uid="${toolUID}"][data-annotation-uid="${annotationUID}"][data-drawing-element-type="handle"][data-node-uid="${i}"]`
+      `[data-tool-uid="${toolUID}"][data-annotation-uid="${annotationUID}"][data-drawing-element-type="handle"][data-node-uid="hg-${handleGroupUID}-index-${i}"]`
     )
     svgDrawingHelper._drawnAnnotations[svgNodeHash] = true
 
@@ -38,7 +45,7 @@ export default function (
       existingHandleElement.setAttribute('cy', `${handle[1]}`)
       existingHandleElement.setAttribute('r', handleRadius)
       existingHandleElement.setAttribute('stroke', color)
-      existingHandleElement.setAttribute('fill', 'transparent')
+      existingHandleElement.setAttribute('fill', fill)
       existingHandleElement.setAttribute('stroke-width', width)
     } else {
       const newHandleElement = document.createElementNS(svgns, 'circle')
@@ -48,13 +55,13 @@ export default function (
         toolUID,
         annotationUID,
         'handle',
-        `${i}`
+        `hg-${handleGroupUID}-index-${i}`
       )
       newHandleElement.setAttribute('cx', `${handle[0]}`)
       newHandleElement.setAttribute('cy', `${handle[1]}`)
       newHandleElement.setAttribute('r', handleRadius)
       newHandleElement.setAttribute('stroke', color)
-      newHandleElement.setAttribute('fill', 'transparent')
+      newHandleElement.setAttribute('fill', fill)
       newHandleElement.setAttribute('stroke-width', width)
 
       svgDrawingHelper._svgLayerElement.appendChild(newHandleElement)

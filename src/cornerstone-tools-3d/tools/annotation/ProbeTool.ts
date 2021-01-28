@@ -281,10 +281,13 @@ export default class ProbeTool extends BaseAnnotationTool {
           this._calculateCachedStats(data)
         }
 
+        const handleGroupUID = '0'
+
         drawHandlesSvg(
           svgDrawingHelper,
           this.name,
           annotationUID,
+          handleGroupUID,
           [canvasCoordinates],
           { color }
         )

@@ -620,10 +620,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         }
 
         if (activeHandleCanvasCoords) {
+          const handleGroupUID = '0'
           drawHandlesSvg(
             svgDrawingHelper,
             this.name,
             annotationUID,
+            handleGroupUID,
             activeHandleCanvasCoords,
             {
               color,

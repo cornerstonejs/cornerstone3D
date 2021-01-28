@@ -468,11 +468,13 @@ class LengthTool extends BaseAnnotationTool {
         const color = toolColors.getColorIfActive(data)
         const { points, activeHandleIndex } = data.handles
         const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+        const handleGroupUID = '0'
 
         drawHandlesSvg(
           svgDrawingHelper,
           this.name,
           annotationUID,
+          handleGroupUID,
           canvasCoordinates,
           {
             color,
