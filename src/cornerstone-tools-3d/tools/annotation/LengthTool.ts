@@ -468,18 +468,29 @@ class LengthTool extends BaseAnnotationTool {
         const color = toolColors.getColorIfActive(data)
         const { points, activeHandleIndex } = data.handles
         const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-        const handleGroupUID = '0'
 
-        drawHandlesSvg(
-          svgDrawingHelper,
-          this.name,
-          annotationUID,
-          handleGroupUID,
-          canvasCoordinates,
-          {
-            color,
-          }
-        )
+        let activeHandleCanvasCoords
+
+        if (!this.editData && activeHandleIndex !== null) {
+          // Not creating and hovering over handle, so render handle.
+
+          activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
+        }
+
+        if (activeHandleCanvasCoords) {
+          const handleGroupUID = '0'
+
+          drawHandlesSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            handleGroupUID,
+            canvasCoordinates,
+            {
+              color,
+            }
+          )
+        }
 
         const lineUID = '1'
         drawLineSvg(
@@ -521,7 +532,7 @@ class LengthTool extends BaseAnnotationTool {
         )
 
         const textBoxUID = '1'
-        drawLinkedTextBoxSvg(
+        const boundingBox = drawLinkedTextBoxSvg(
           svgDrawingHelper,
           this.name,
           annotationUID,
@@ -534,6 +545,15 @@ class LengthTool extends BaseAnnotationTool {
             color,
           }
         )
+
+        const { x: left, y: top, width, height } = boundingBox
+
+        data.handles.textBox.worldBoundingBox = {
+          topLeft: viewport.canvasToWorld([left, top]),
+          topRight: viewport.canvasToWorld([left + width, top]),
+          bottomLeft: viewport.canvasToWorld([left, top + height]),
+          bottomRight: viewport.canvasToWorld([left + width, top + height]),
+        }
       }
     })
   }

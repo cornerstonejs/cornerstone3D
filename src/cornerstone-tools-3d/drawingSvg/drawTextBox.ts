@@ -74,7 +74,7 @@ function _drawTextGroup(
   position: Point2,
   options: any
 ): DOMRect {
-  const { padding } = options
+  const { padding, color } = options
 
   let textGroupBoundingBox
   const [x, y] = [position[0] + padding, position[1] + padding]
@@ -97,6 +97,10 @@ function _drawTextGroup(
       const text = textLines[i] || ''
 
       textSpanElement.textContent = text
+    }
+
+    if (color) {
+      textElement.setAttribute('fill', color)
     }
 
     textGroupBoundingBox = existingTextGroup.getBBox()

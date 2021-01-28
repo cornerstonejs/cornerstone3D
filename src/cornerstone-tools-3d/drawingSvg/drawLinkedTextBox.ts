@@ -63,4 +63,6 @@ export default function (
   //   bottomLeft: canvasToWorld([left, top + height]),
   //   bottomRight: canvasToWorld([left + width, top + height]),
   // }
+
+  return canvasBoundingBox
 }
