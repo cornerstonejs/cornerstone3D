@@ -432,7 +432,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   ): boolean => {
     const { element, currentPoints } = evt.detail
     const canvasCoords = currentPoints.canvas
-    let imageNeedsUpdate = true
+    let imageNeedsUpdate = false
 
     for (let i = 0; i < filteredToolState.length; i++) {
       const toolData = filteredToolState[i]
