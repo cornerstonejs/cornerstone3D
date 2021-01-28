@@ -22,19 +22,26 @@ function getSvgDrawingHelper(canvasElement: HTMLCanvasElement) {
 }
 
 function _getUniqueAnnotationUIDs(svgLayerElement: SVGElement): string[] {
-  const annotationUIDs = []
   const nodes = svgLayerElement.querySelectorAll(
     'svg > *'
   ) as NodeListOf<SVGElement>
 
   // Add unique annotationUIDs to array
-  nodes.forEach((node) => {
+  const annotationUIDs = []
+  const buildAnnotationUIDArray = (node) => {
+    // Skip the <defs> since they are not annotations
+    if (node.tagName === 'defs') {
+      return
+    }
+
     const svgNodeHash = _getHashFromSvgElement(node)
 
     if (!annotationUIDs[svgNodeHash]) {
       annotationUIDs.push(svgNodeHash)
     }
-  })
+  }
+
+  nodes.forEach(buildAnnotationUIDArray)
 
   return annotationUIDs
 }
