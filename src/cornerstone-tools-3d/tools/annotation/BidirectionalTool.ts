@@ -948,7 +948,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
           textLines,
           textBoxPosition,
           canvasCoordinates,
-          {},
+          { hasMoved: undefined, worldPosition: undefined },
           {
             color,
           }

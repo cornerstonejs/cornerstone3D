@@ -11,6 +11,7 @@ import {
   IPoints,
 } from './cornerstoneToolsEventDetailTypes'
 import BoundingBox from './BoundingBox'
+import PlanarBoundingBox from './PlanarBoundingBox'
 import Point2 from './Point2'
 import Point3 from './Point3'
 
@@ -24,6 +25,7 @@ export {
   ToolStateTextBox,
   // Geometry
   BoundingBox,
+  PlanarBoundingBox,
   Point2,
   Point3,
   // Event data

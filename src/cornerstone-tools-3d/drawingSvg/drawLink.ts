@@ -1,6 +1,6 @@
 import drawLine from './drawLine'
 import findClosestPoint from './../util/math/vec2/findClosestPoint'
-import { BoundingBox, Point2 } from './../types'
+import { PlanarBoundingBox, Point2 } from './../types'
 
 /**
  * Draw a link between an annotation to a box.
@@ -21,7 +21,7 @@ export default function (
   refPoint: Point2,
   // Find bounding box point that's closest to our identified
   // start point
-  boundingBox: BoundingBox,
+  boundingBox: PlanarBoundingBox,
   options: any = {}
 ): void {
   // The closest anchor point (for the annotation) to the
@@ -60,7 +60,7 @@ export default function (
  *
  * @param boundingBox
  */
-function _boundingBoxPoints(boundingBox: BoundingBox): Array<Point2> {
+function _boundingBoxPoints(boundingBox: PlanarBoundingBox): Array<Point2> {
   const { x: left, y: top, height, width } = boundingBox
   const halfWidth = width / 2
   const halfHeight = height / 2

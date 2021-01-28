@@ -31,6 +31,5 @@ export default function cameraSyncCallback(
     .getViewport(targetViewport.viewportUID)
 
   tViewport.setCamera(camera)
-
   tViewport.render()
 }

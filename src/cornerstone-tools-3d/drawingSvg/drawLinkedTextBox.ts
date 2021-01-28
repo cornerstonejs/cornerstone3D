@@ -12,7 +12,8 @@ export default function (
   textLines: Array<string>,
   textBoxPosition: Point2,
   annotationAnchorPoints: Array<Point2>,
-  textBox: ToolStateTextBox,
+  // textBox: ToolStateTextBox,
+  textBox: any,
   options = {}
   // TODO: yCenter as an option
 ) {

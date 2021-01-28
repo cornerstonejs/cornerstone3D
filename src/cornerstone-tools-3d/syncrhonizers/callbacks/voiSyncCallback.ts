@@ -19,7 +19,9 @@ export default function voiSyncCallback(
   const eventData = voiModifiedEvent.detail
   const { volumeUID, sceneUID, range } = eventData
 
-  const tScene = getRenderingEngine(targetViewport.renderingEngineUID).getScene(targetViewport.sceneUID)
+  const tScene = getRenderingEngine(targetViewport.renderingEngineUID).getScene(
+    targetViewport.sceneUID
+  )
 
   if (tScene.uid === sceneUID) {
     // Same scene, no need to update.
@@ -29,7 +31,10 @@ export default function voiSyncCallback(
   const tViewport = tScene.getViewport(targetViewport.viewportUID)
   const volumeActor = tScene.getVolumeActor(volumeUID)
 
-  volumeActor.getProperty().getRGBTransferFunction(0).setRange(range.lower, range.upper)
+  volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
+    .setRange(range.lower, range.upper)
 
   tViewport.render()
 }
