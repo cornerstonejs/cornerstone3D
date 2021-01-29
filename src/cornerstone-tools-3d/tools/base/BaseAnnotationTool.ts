@@ -24,14 +24,14 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param  {CustomEvent} evt The event.
    * @param  {string} interactionType The interaction type used to add the measurement.
    */
-  abstract addNewMeasurement(evt, interactionType);
+  abstract addNewMeasurement(evt, interactionType)
 
   /**
    * @abstract @method renderToolData Used to redraw the tool's annotation data per render
    *
    * @param {CustomEvent} evt The IMAGE_RENDERED event.
    */
-  abstract renderToolData(evt);
+  abstract renderToolData(evt: any, svgDrawingHelper: any)
 
   // ===================================================================
   // Virtual Methods - Have default behavior or are optional.

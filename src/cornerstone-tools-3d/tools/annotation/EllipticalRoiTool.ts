@@ -8,8 +8,6 @@ import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
 import { getNewContext } from '../../drawing'
 import {
-  clearByToolType,
-  draw as drawSvg,
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
@@ -564,13 +562,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     return toolDataWithinSlice
   }
 
-  renderToolData = (evt) => {
+  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
     let toolState = getToolState(canvasElement, this.name)
 
     if (!toolState) {
-      clearByToolType(canvasElement, this.name)
       return
     }
 
@@ -580,7 +577,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     )
 
     if (!toolState.length) {
-      clearByToolType(canvasElement, this.name)
       return
     }
 
@@ -590,100 +586,98 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const context = getNewContext(canvasElement)
     const lineWidth = toolStyle.getToolWidth()
 
-    drawSvg(canvasElement, this.name, (svgDrawingHelper) => {
-      for (let i = 0; i < toolState.length; i++) {
-        const toolData = toolState[i]
-        const annotationUID = toolData.metadata.toolUID
-        const data = toolData.data
-        const color = toolColors.getColorIfActive(data)
-        const { handles, isDrawing } = data
-        const { points, activeHandleIndex } = handles
+    for (let i = 0; i < toolState.length; i++) {
+      const toolData = toolState[i]
+      const annotationUID = toolData.metadata.toolUID
+      const data = toolData.data
+      const color = toolColors.getColorIfActive(data)
+      const { handles, isDrawing } = data
+      const { points, activeHandleIndex } = handles
 
-        const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-        const canvasCorners = <Array<Point2>>(
-          this._getCanvasEllipseCorners(canvasCoordinates)
-        )
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+      const canvasCorners = <Array<Point2>>(
+        this._getCanvasEllipseCorners(canvasCoordinates)
+      )
 
-        if (!data.cachedStats[targetVolumeUID]) {
-          data.cachedStats[targetVolumeUID] = {}
+      if (!data.cachedStats[targetVolumeUID]) {
+        data.cachedStats[targetVolumeUID] = {}
 
-          this._calculateCachedStats(data, viewport, canvasCorners)
-        } else if (data.invalidated) {
-          this._throttledCalculateCachedStats(data, viewport, canvasCorners)
-        }
+        this._calculateCachedStats(data, viewport, canvasCorners)
+      } else if (data.invalidated) {
+        this._throttledCalculateCachedStats(data, viewport, canvasCorners)
+      }
 
-        let activeHandleCanvasCoords
+      let activeHandleCanvasCoords
 
-        if (!this.editData && activeHandleIndex !== null) {
-          // Not creating and hovering over handle, so render handle.
-          activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
-        }
+      if (!this.editData && activeHandleIndex !== null) {
+        // Not creating and hovering over handle, so render handle.
+        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
+      }
 
-        if (activeHandleCanvasCoords) {
-          const handleGroupUID = '0'
-          drawHandlesSvg(
-            svgDrawingHelper,
-            this.name,
-            annotationUID,
-            handleGroupUID,
-            activeHandleCanvasCoords,
-            {
-              color,
-            }
-          )
-        }
-
-        const ellipseUID = '0'
-        drawEllipseSvg(
+      if (activeHandleCanvasCoords) {
+        const handleGroupUID = '0'
+        drawHandlesSvg(
           svgDrawingHelper,
           this.name,
           annotationUID,
-          ellipseUID,
-          canvasCorners[0],
-          canvasCorners[1],
+          handleGroupUID,
+          activeHandleCanvasCoords,
           {
             color,
           }
         )
-
-        const textLines = this._getTextLines(data, targetVolumeUID)
-        if (!textLines || textLines.length === 0) {
-          continue
-        }
-
-        // Poor man's cached?
-        if (!isDrawing) {
-          let canvasTextBoxCoords
-
-          if (!data.handles.textBox.hasMoved) {
-            canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners)
-
-            data.handles.textBox.worldPosition = viewport.canvasToWorld(
-              canvasTextBoxCoords
-            )
-          }
-
-          const textBoxPosition = viewport.worldToCanvas(
-            data.handles.textBox.worldPosition
-          )
-
-          const textBoxUID = '1'
-          drawLinkedTextBoxSvg(
-            svgDrawingHelper,
-            this.name,
-            annotationUID,
-            textBoxUID,
-            textLines,
-            textBoxPosition,
-            canvasCoordinates,
-            {},
-            {
-              color,
-            }
-          )
-        }
       }
-    })
+
+      const ellipseUID = '0'
+      drawEllipseSvg(
+        svgDrawingHelper,
+        this.name,
+        annotationUID,
+        ellipseUID,
+        canvasCorners[0],
+        canvasCorners[1],
+        {
+          color,
+        }
+      )
+
+      const textLines = this._getTextLines(data, targetVolumeUID)
+      if (!textLines || textLines.length === 0) {
+        continue
+      }
+
+      // Poor man's cached?
+      if (!isDrawing) {
+        let canvasTextBoxCoords
+
+        if (!data.handles.textBox.hasMoved) {
+          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners)
+
+          data.handles.textBox.worldPosition = viewport.canvasToWorld(
+            canvasTextBoxCoords
+          )
+        }
+
+        const textBoxPosition = viewport.worldToCanvas(
+          data.handles.textBox.worldPosition
+        )
+
+        const textBoxUID = '1'
+        drawLinkedTextBoxSvg(
+          svgDrawingHelper,
+          this.name,
+          annotationUID,
+          textBoxUID,
+          textLines,
+          textBoxPosition,
+          canvasCoordinates,
+          {},
+          {
+            color,
+          }
+        )
+      }
+    }
   }
 
   _getCanvasEllipseCorners = (canvasCoordinates): Array<Point2> => {

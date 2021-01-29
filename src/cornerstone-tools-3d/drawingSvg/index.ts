@@ -1,4 +1,4 @@
-import clearByToolType from './clearByToolType'
+// import clearByToolType from './clearByToolType'
 import draw from './draw'
 import drawCircle from './drawCircle'
 import drawEllipse from './drawEllipse'
@@ -9,7 +9,9 @@ import drawRect from './drawRect'
 import drawTextBox from './drawTextBox'
 
 export {
-  clearByToolType,
+  // @TODO: May no longer have a use for this
+  // clearByToolType,
+  // @TODO: This becomes an internal method only?
   draw,
   drawCircle,
   drawEllipse,

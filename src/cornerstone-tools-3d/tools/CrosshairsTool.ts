@@ -4,8 +4,6 @@ import { getEnabledElement } from '../../index'
 import { addToolState, getToolState } from '../stateManagement/toolState'
 import { getNewContext } from '../drawing'
 import {
-  clearByToolType,
-  draw as drawSvg,
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
@@ -511,10 +509,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return viewportUIDSpecificCrosshairs
   }
 
-  renderToolData = (evt) => {
+  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
-    const { canvas: canvasElement } = evt.detail
-
     const toolGroups = ToolGroupManager.getToolGroups(
       renderingEngineUID,
       sceneUID,
@@ -536,7 +532,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     // So if none are active, we have nothing to render, and we peace out
     if (!isCrosshairsActive) {
-      clearByToolType(canvasElement, this.name)
       return
     }
 
@@ -556,7 +551,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // viewport ToolData
     const viewportToolData = filteredToolState[0]
     if (!toolState || !viewportToolData || !viewportToolData.data) {
-      clearByToolType(canvasElement, this.name)
       // No toolstate yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
       return
     }
@@ -683,89 +677,82 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
 
     const context = getNewContext(element)
-    // Danny Note: our draw already loops all toolData?
-    // draw(context, (context) => {
-    drawSvg(canvasElement, this.name, (svgDrawingHelper) => {
-      referenceLines.forEach((line, lineIndex) => {
-        // get color for the reference line
-        const viewportColor = this._getReferenceLineColor(line[4].uid)
-        const viewportControllable = this._getReferenceLineControllable(
-          line[4].uid
-        )
-        let color =
-          viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
-        let lineWidth = 1
-        const lineActive =
-          data.handles.activeOperation !== null &&
-          data.handles.activeOperation === 0 &&
-          data.activeViewports.find((element) => element === line[4])
+    referenceLines.forEach((line, lineIndex) => {
+      // get color for the reference line
+      const viewportColor = this._getReferenceLineColor(line[4].uid)
+      const viewportControllable = this._getReferenceLineControllable(
+        line[4].uid
+      )
+      let color =
+        viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
+      let lineWidth = 1
+      const lineActive =
+        data.handles.activeOperation !== null &&
+        data.handles.activeOperation === 0 &&
+        data.activeViewports.find((element) => element === line[4])
 
-        if (lineActive) {
-          lineWidth = 2.5
-        }
+      if (lineActive) {
+        lineWidth = 2.5
+      }
 
-        const lineUID = `${lineIndex}`
-        drawLineSvg(
-          svgDrawingHelper,
-          this.name,
-          annotationUID,
-          lineUID,
-          line[0],
-          line[1],
-          {
-            color,
-            lineWidth,
-          }
-        )
-
-        if (viewportControllable) {
-          color =
-            viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
-
-          const handleActive =
-            data.handles.activeOperation !== null &&
-            data.handles.activeOperation > 0
-
-          const rotHandlesOptions = handleActive
-            ? { color, handleRadius: 3, fill: color }
-            : { color, handleRadius: 4 }
-          const rotationHandles = [line[2], line[3]]
-
-          if (lineActive || handleActive) {
-            drawHandlesSvg(
-              svgDrawingHelper,
-              this.name,
-              annotationUID,
-              lineUID,
-              rotationHandles,
-              rotHandlesOptions
-            )
-          }
-
-          const handleWorldOne = [viewport.canvasToWorld(line[2]), line[4]]
-          const handleWorldTwo = [viewport.canvasToWorld(line[3]), line[4]]
-          newPoints.push(handleWorldOne, handleWorldTwo)
-        }
-      })
-
-      // render a circle to pin point the viewport color
-      const referenceColorCoordinates = [
-        sWidth * 0.95,
-        sHeight * 0.05,
-      ] as Point2
-      const circleRadius = canvasDiagonalLength * 0.01
-
-      const circleUID = '0'
-      drawCircleSvg(
+      const lineUID = `${lineIndex}`
+      drawLineSvg(
         svgDrawingHelper,
         this.name,
         annotationUID,
-        circleUID,
-        referenceColorCoordinates,
-        circleRadius,
-        { color, fill: color }
+        lineUID,
+        line[0],
+        line[1],
+        {
+          color,
+          lineWidth,
+        }
       )
+
+      if (viewportControllable) {
+        color =
+          viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
+
+        const handleActive =
+          data.handles.activeOperation !== null &&
+          data.handles.activeOperation > 0
+
+        const rotHandlesOptions = handleActive
+          ? { color, handleRadius: 3, fill: color }
+          : { color, handleRadius: 4 }
+        const rotationHandles = [line[2], line[3]]
+
+        if (lineActive || handleActive) {
+          drawHandlesSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            lineUID,
+            rotationHandles,
+            rotHandlesOptions
+          )
+        }
+
+        const handleWorldOne = [viewport.canvasToWorld(line[2]), line[4]]
+        const handleWorldTwo = [viewport.canvasToWorld(line[3]), line[4]]
+        newPoints.push(handleWorldOne, handleWorldTwo)
+      }
     })
+
+    // render a circle to pin point the viewport color
+    const referenceColorCoordinates = [sWidth * 0.95, sHeight * 0.05] as Point2
+    const circleRadius = canvasDiagonalLength * 0.01
+
+    const circleUID = '0'
+    drawCircleSvg(
+      svgDrawingHelper,
+      this.name,
+      annotationUID,
+      circleUID,
+      referenceColorCoordinates,
+      circleRadius,
+      { color, fill: color }
+    )
 
     data.handles.points = newPoints
   }

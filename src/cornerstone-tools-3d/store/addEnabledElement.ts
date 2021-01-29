@@ -1,3 +1,4 @@
+import _setHashForSvgElement from './../drawingSvg/_setHashForSvgElement'
 import { mouseEventListeners, wheelEventListener } from './../eventListeners'
 import {
   imageRenderedEventDispatcher,
@@ -40,6 +41,7 @@ function _createSvgAnnotationLayer(): SVGElement {
   const svgLayer = document.createElementNS(svgns, 'svg')
 
   svgLayer.classList.add('svg-layer')
+  svgLayer.setAttribute('id', 'svg-layer')
   svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
   svgLayer.style.width = '100%'
   svgLayer.style.height = '100%'
@@ -89,8 +91,10 @@ function _createSvgAnnotationLayer(): SVGElement {
   // feDropShadow.setAttribute('dx', '0.2')
   // feDropShadow.setAttribute('dy', '0.4')
   // feDropShadow.setAttribute('stdDeviation', '0')
+  // filter.appendChild(feDropShadow)
 
-  //filter.appendChild(feDropShadow)
+  _setHashForSvgElement(defs, 'd', 'a', 'n', 'y')
+
   filter.appendChild(feOffset)
   filter.appendChild(feColorMatrix)
   filter.appendChild(feGaussianBlur)

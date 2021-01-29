@@ -9,8 +9,6 @@ import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
 import { getNewContext, setShadow } from '../../drawing'
 import {
-  clearByToolType,
-  draw as drawSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawRect as drawRectSvg,
@@ -480,14 +478,13 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     return toolDataWithinSlice
   }
 
-  renderToolData = (evt) => {
+  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
 
     let toolState = getToolState(canvasElement, this.name)
 
     if (!toolState) {
-      clearByToolType(canvasElement, this.name)
       return
     }
 
@@ -497,124 +494,120 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     )
 
     if (!toolState.length) {
-      clearByToolType(canvasElement, this.name)
       return
     }
 
     const enabledElement = getEnabledElement(canvasElement)
     const { viewport, scene } = enabledElement
     const targetVolumeUID = this._getTargetVolumeUID(scene)
-
     const context = getNewContext(canvasElement)
     const lineWidth = toolStyle.getToolWidth()
 
-    drawSvg(canvasElement, this.name, (svgDrawingHelper) => {
-      for (let i = 0; i < toolState.length; i++) {
-        const toolData = toolState[i]
-        const annotationUID = toolData.metadata.toolUID
-        const data = toolData.data
-        const color = toolColors.getColorIfActive(data)
-        const { points, activeHandleIndex } = data.handles
-        const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+    for (let i = 0; i < toolState.length; i++) {
+      const toolData = toolState[i]
+      const annotationUID = toolData.metadata.toolUID
+      const data = toolData.data
+      const color = toolColors.getColorIfActive(data)
+      const { points, activeHandleIndex } = data.handles
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
 
-        if (!data.cachedStats[targetVolumeUID]) {
-          // This volume has not had its stats calulcated yet, so recalculate the stats.
-          data.cachedStats[targetVolumeUID] = {}
+      if (!data.cachedStats[targetVolumeUID]) {
+        // This volume has not had its stats calulcated yet, so recalculate the stats.
+        data.cachedStats[targetVolumeUID] = {}
 
-          const { viewPlaneNormal, viewUp } = viewport.getCamera()
-          this._calculateCachedStats(data, viewPlaneNormal, viewUp)
-        } else if (data.invalidated) {
-          // The data has been invalidated as it was just edited. Recalculate cached stats.
-          const { viewPlaneNormal, viewUp } = viewport.getCamera()
-          this._throttledCalculateCachedStats(data, viewPlaneNormal, viewUp)
-        }
+        const { viewPlaneNormal, viewUp } = viewport.getCamera()
+        this._calculateCachedStats(data, viewPlaneNormal, viewUp)
+      } else if (data.invalidated) {
+        // The data has been invalidated as it was just edited. Recalculate cached stats.
+        const { viewPlaneNormal, viewUp } = viewport.getCamera()
+        this._throttledCalculateCachedStats(data, viewPlaneNormal, viewUp)
+      }
 
-        let activeHandleCanvasCoords
+      let activeHandleCanvasCoords
 
-        if (!this.editData && activeHandleIndex !== null) {
-          // Not creating and hovering over handle, so render handle.
+      if (!this.editData && activeHandleIndex !== null) {
+        // Not creating and hovering over handle, so render handle.
 
-          activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
-        }
+        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
+      }
 
-        if (activeHandleCanvasCoords) {
-          const handleGroupUID = '0'
+      if (activeHandleCanvasCoords) {
+        const handleGroupUID = '0'
 
-          drawHandlesSvg(
-            svgDrawingHelper,
-            this.name,
-            annotationUID,
-            handleGroupUID,
-            activeHandleCanvasCoords,
-            {
-              color,
-            }
-          )
-        }
-
-        const rectangleUID = '0'
-        drawRectSvg(
+        drawHandlesSvg(
           svgDrawingHelper,
           this.name,
           annotationUID,
-          rectangleUID,
-          canvasCoordinates[0],
-          canvasCoordinates[3],
-          { color }
-        )
-
-        const textLines = this._getTextLines(data, targetVolumeUID)
-        if (!textLines || textLines.length === 0) {
-          continue
-        }
-
-        if (!data.handles.textBox.hasMoved) {
-          const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
-
-          data.handles.textBox.worldPosition = viewport.canvasToWorld(
-            canvasTextBoxCoords
-          )
-        }
-
-        const textBoxPosition = viewport.worldToCanvas(
-          data.handles.textBox.worldPosition
-        )
-
-        const textBoxUID = '1'
-        drawLinkedTextBoxSvg(
-          svgDrawingHelper,
-          this.name,
-          annotationUID,
-          textBoxUID,
-          textLines,
-          textBoxPosition,
-          canvasCoordinates,
-          {},
+          handleGroupUID,
+          activeHandleCanvasCoords,
           {
             color,
           }
         )
-
-        //     const textBoxAnchorPoints = this._findTextBoxAnchorPoints(
-        //       canvasCoordinates
-        //     )
-
-        //     drawLinkedTextBox(
-        //       context,
-        //       canvasTextBoxCoords,
-        //       textLines,
-        //       data.handles.textBox,
-        //       textBoxAnchorPoints,
-        //       viewport.canvasToWorld,
-        //       color,
-        //       lineWidth,
-        //       10,
-        //       true
-        //     )
-        //   }
-        // })
       }
-    })
+
+      const rectangleUID = '0'
+      drawRectSvg(
+        svgDrawingHelper,
+        this.name,
+        annotationUID,
+        rectangleUID,
+        canvasCoordinates[0],
+        canvasCoordinates[3],
+        { color }
+      )
+
+      const textLines = this._getTextLines(data, targetVolumeUID)
+      if (!textLines || textLines.length === 0) {
+        continue
+      }
+
+      if (!data.handles.textBox.hasMoved) {
+        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
+
+        data.handles.textBox.worldPosition = viewport.canvasToWorld(
+          canvasTextBoxCoords
+        )
+      }
+
+      const textBoxPosition = viewport.worldToCanvas(
+        data.handles.textBox.worldPosition
+      )
+
+      const textBoxUID = '1'
+      drawLinkedTextBoxSvg(
+        svgDrawingHelper,
+        this.name,
+        annotationUID,
+        textBoxUID,
+        textLines,
+        textBoxPosition,
+        canvasCoordinates,
+        {},
+        {
+          color,
+        }
+      )
+
+      //     const textBoxAnchorPoints = this._findTextBoxAnchorPoints(
+      //       canvasCoordinates
+      //     )
+
+      //     drawLinkedTextBox(
+      //       context,
+      //       canvasTextBoxCoords,
+      //       textLines,
+      //       data.handles.textBox,
+      //       textBoxAnchorPoints,
+      //       viewport.canvasToWorld,
+      //       color,
+      //       lineWidth,
+      //       10,
+      //       true
+      //     )
+      //   }
+      // })
+    }
   }
 
   /**

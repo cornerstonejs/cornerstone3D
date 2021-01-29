@@ -1,5 +1,6 @@
 import { EVENTS as RenderingEngineEvents } from '../../index'
 import { ToolModes } from './../enums'
+import { draw as drawSvg } from './../drawingSvg'
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 
 const { Active, Passive, Enabled } = ToolModes
@@ -15,16 +16,21 @@ const { Active, Passive, Enabled } = ToolModes
  * @param evt The normalized onImageRendered event.
  */
 const onImageRendered = function (evt) {
+  const { canvas: canvasElement } = evt.detail
   const enabledTools = getToolsWithModesForMouseEvent(evt, [
     Active,
     Passive,
     Enabled,
   ])
 
-  enabledTools.forEach((tool) => {
-    if (tool.renderToolData) {
-      tool.renderToolData(evt)
-    }
+  drawSvg(canvasElement, (svgDrawingHelper) => {
+    enabledTools.forEach((tool) => {
+      // TODO: Could short-circuit if there's no ToolState?
+      // Are there situations where that would be bad (Canvas Overlay Tool?)
+      if (tool.renderToolData) {
+        tool.renderToolData(evt, svgDrawingHelper)
+      }
+    })
   })
 }
 

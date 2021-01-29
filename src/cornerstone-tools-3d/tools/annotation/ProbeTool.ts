@@ -6,8 +6,6 @@ import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import { getNewContext } from '../../drawing'
 import {
-  clearByToolType,
-  draw as drawSvg,
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
 } from './../../drawingSvg'
@@ -238,14 +236,13 @@ export default class ProbeTool extends BaseAnnotationTool {
     return toolDataWithinSlice
   }
 
-  renderToolData(evt) {
+  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
 
     let toolState = getToolState(canvasElement, this.name)
 
     if (!toolState) {
-      clearByToolType(canvasElement, this.name)
       return
     }
 
@@ -255,63 +252,59 @@ export default class ProbeTool extends BaseAnnotationTool {
     )
 
     if (!toolState.length) {
-      clearByToolType(canvasElement, this.name)
       return
     }
 
     const enabledElement = getEnabledElement(canvasElement)
     const { viewport, scene } = enabledElement
     const targetVolumeUID = this._getTargetVolumeUID(scene)
-
     const context = getNewContext(canvasElement)
 
-    drawSvg(canvasElement, this.name, (svgDrawingHelper) => {
-      for (let i = 0; i < toolState.length; i++) {
-        const toolData = toolState[i]
-        const annotationUID = toolData.metadata.toolUID
-        const data = toolData.data
-        const color = toolColors.getColorIfActive(data)
-        const point = data.handles.points[0]
-        const canvasCoordinates = viewport.worldToCanvas(point)
+    for (let i = 0; i < toolState.length; i++) {
+      const toolData = toolState[i]
+      const annotationUID = toolData.metadata.toolUID
+      const data = toolData.data
+      const color = toolColors.getColorIfActive(data)
+      const point = data.handles.points[0]
+      const canvasCoordinates = viewport.worldToCanvas(point)
 
-        if (!data.cachedStats[targetVolumeUID]) {
-          data.cachedStats[targetVolumeUID] = {}
-          this._calculateCachedStats(data)
-        } else if (data.invalidated) {
-          this._calculateCachedStats(data)
-        }
+      if (!data.cachedStats[targetVolumeUID]) {
+        data.cachedStats[targetVolumeUID] = {}
+        this._calculateCachedStats(data)
+      } else if (data.invalidated) {
+        this._calculateCachedStats(data)
+      }
 
-        const handleGroupUID = '0'
+      const handleGroupUID = '0'
 
-        drawHandlesSvg(
+      drawHandlesSvg(
+        svgDrawingHelper,
+        this.name,
+        annotationUID,
+        handleGroupUID,
+        [canvasCoordinates],
+        { color }
+      )
+
+      const textLines = this._getTextLines(data, targetVolumeUID)
+      if (textLines) {
+        const textCanvasCoorinates = [
+          canvasCoordinates[0] + 6,
+          canvasCoordinates[1] - 6,
+        ]
+
+        const textUID = '0'
+        drawTextBoxSvg(
           svgDrawingHelper,
           this.name,
           annotationUID,
-          handleGroupUID,
-          [canvasCoordinates],
+          textUID,
+          textLines,
+          [textCanvasCoorinates[0], textCanvasCoorinates[1]],
           { color }
         )
-
-        const textLines = this._getTextLines(data, targetVolumeUID)
-        if (textLines) {
-          const textCanvasCoorinates = [
-            canvasCoordinates[0] + 6,
-            canvasCoordinates[1] - 6,
-          ]
-
-          const textUID = '0'
-          drawTextBoxSvg(
-            svgDrawingHelper,
-            this.name,
-            annotationUID,
-            textUID,
-            textLines,
-            [textCanvasCoorinates[0], textCanvasCoorinates[1]],
-            { color }
-          )
-        }
       }
-    })
+    }
   }
 
   _getTextLines(data, targetVolumeUID) {

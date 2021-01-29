@@ -14,6 +14,9 @@ function getSvgDrawingHelper(canvasElement: HTMLCanvasElement) {
     return acc
   }, {})
 
+  // Always preserve the filter defs (see `addEnabledElement.ts`)
+  drawnAnnotations['d::a::n::y'] = true
+
   return {
     _canvasElement: canvasElement,
     _svgLayerElement: svgLayerElement,
@@ -23,16 +26,17 @@ function getSvgDrawingHelper(canvasElement: HTMLCanvasElement) {
 
 function _getUniqueAnnotationUIDs(svgLayerElement: SVGElement): string[] {
   const nodes = svgLayerElement.querySelectorAll(
-    'svg > *'
+    'svg#svg-layer > *'
   ) as NodeListOf<SVGElement>
 
   // Add unique annotationUIDs to array
   const annotationUIDs = []
   const buildAnnotationUIDArray = (node) => {
     // Skip the <defs> since they are not annotations
-    if (node.tagName === 'defs') {
-      return
-    }
+    // TODO: Force a check for now to save on a check per loop?
+    // if (node.tagName === 'defs') {
+    //   return
+    // }
 
     const svgNodeHash = _getHashFromSvgElement(node)
 
