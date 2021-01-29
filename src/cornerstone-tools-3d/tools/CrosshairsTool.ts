@@ -26,6 +26,7 @@ import {
   Point3,
 } from '../types'
 import { ToolGroupManager } from './../store/index'
+import { elementType } from 'prop-types'
 
 const { liangBarksyClip } = math.vec2
 const { isEqual, isOpposite } = math.vec3
@@ -174,7 +175,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   //
-  pointNearTool = (element, toolData, canvasCoords, proximity) => {
+  pointNearTool = (
+    element,
+    toolData,
+    canvasCoords,
+    proximity,
+    interactionType
+  ) => {
     // We need a better way of surfacing this...
     const {
       viewportUid: viewportUID,
@@ -273,8 +280,20 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       return true
     }
 
-    data.activeViewports = []
-    data.handles.activeOperation = null
+    if (interactionType !== 'mouseMove') {
+      this.editData = {
+        toolData,
+      }
+
+      this._Jump(element, canvasCoords)
+      return this.pointNearTool(
+        element,
+        toolData,
+        canvasCoords,
+        proximity,
+        interactionType
+      )
+    }
   }
 
   toolSelectedCallback = (evt, toolData, interactionType = 'mouse') => {
@@ -376,7 +395,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
             vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
           ) > 1e-2
         ) {
-          // update linked view in teh same scene that have the same camera
+          // update linked view in the same scene that have the same camera
+          // this goes here, because the parent viewport translation may happen in another tool
           const otherLinkedViewportsToolDataWithSameCameraDirection = this._filterLinkedViewportWithSameOrientationAndScene(
             enabledElement,
             toolState
@@ -438,23 +458,36 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const toolData = filteredToolState[i]
       const { data } = toolData
 
-      const activateOperation = data.handles.activeOperation
+      // This init are necessary, because when we move the mouse they are not cleaned by _mouseUpCallback
+      data.activeViewports = []
+      data.handles.activeOperation = null
 
-      const near = this._imagePointNearToolOrHandle(
+      const handleNearImagePoint = this.getHandleNearImagePoint(
         element,
         toolData,
         canvasCoords,
         6
       )
 
+      let near = false
+      if (handleNearImagePoint) {
+        near = true
+      } else {
+        near = this.pointNearTool(
+          element,
+          toolData,
+          canvasCoords,
+          6,
+          'mouseMove'
+        )
+      }
+
+      const nearToolAndNotMarkedActive = near && !data.active
       const notNearToolAndMarkedActive = !near && data.active
-      if (near || notNearToolAndMarkedActive) {
+      if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
         data.active = !data.active
         imageNeedsUpdate = true
-      } else if (
-        data.handles &&
-        data.handles.activeOperation !== activateOperation
-      ) {
+      } else if (data.handles && data.handles.activeOperation !== null) {
         // Active handle index has changed, re-render.
         imageNeedsUpdate = true
       }
@@ -749,7 +782,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     const camera = viewport.getCamera()
-    const { viewPlaneNormal, viewUp, position } = camera
+    const { viewPlaneNormal, position } = camera
 
     const viewportsWithDifferentCameras = otherViewportToolData.filter(
       (toolData) => {
@@ -1072,6 +1105,46 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     showToolCursor(element)
   }
 
+  _Jump(element, canvasCoords) {
+    state.isToolLocked = true
+    const toolState = getToolState(element, this.name)
+
+    const enabledElement = getEnabledElement(element)
+    const { renderingEngine, viewport, scene } = enabledElement
+
+    const jumpWorld = viewport.canvasToWorld(canvasCoords)
+    const delta: Point3 = [0, 0, 0]
+    vtkMath.subtract(jumpWorld, this.toolCenter, delta)
+
+    // TRANSLATION
+    // get the toolData of the other viewport which are parallel to the delta shift and are of the same scene
+    const otherViewportToolData = this._filterViewportOrientations(
+      enabledElement,
+      toolState
+    )
+
+    const viewportsToolDataToUpdate = otherViewportToolData.filter(
+      (toolData) => {
+        const { data } = toolData
+        const otherScene = renderingEngine.getScene(data.sceneUID)
+        const otherViewport = otherScene.getViewport(data.viewportUID)
+
+        return (
+          this._getReferenceLineControllable(otherViewport.uid) &&
+          otherScene === scene
+        )
+      }
+    )
+
+    this._applyDeltaShiftToSelectedViewportCameras(
+      renderingEngine,
+      viewportsToolDataToUpdate,
+      delta
+    )
+
+    state.isToolLocked = false
+  }
+
   _activateModify(element) {
     state.isToolLocked = true
 
@@ -1171,50 +1244,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         }
       )
 
-      // update camera for the other viewports.
-      // NOTE1: The lines then are rendered by the onCameraModified
-      // NOTE2: crosshair center are automatically updated in the onCameraModified event
-      viewportsToolDataToUpdate.forEach((toolData) => {
-        const { data } = toolData
-
-        const scene = renderingEngine.getScene(data.sceneUID)
-        const otherViewport = scene.getViewport(data.viewportUID)
-        const camera = otherViewport.getCamera()
-        const normal = camera.viewPlaneNormal
-
-        // Project delta over camera normal
-        // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
-        const dotProd = vtkMath.dot(delta, normal)
-        const cameraNorm2 = Math.pow(
-          Math.sqrt(
-            normal[0] * normal[0] +
-              normal[1] * normal[1] +
-              normal[2] * normal[2]
-          ),
-          2
-        )
-        const projectedDelta = [...normal]
-        vtkMath.multiplyScalar(projectedDelta, dotProd / cameraNorm2)
-
-        if (
-          Math.abs(projectedDelta[0]) > 1e-3 ||
-          Math.abs(projectedDelta[1]) > 1e-3 ||
-          Math.abs(projectedDelta[2]) > 1e-3
-        ) {
-          const newFocalPoint = [0, 0, 0],
-            newPosition = [0, 0, 0]
-
-          vtkMath.add(camera.focalPoint, projectedDelta, newFocalPoint)
-          vtkMath.add(camera.position, projectedDelta, newPosition)
-
-          otherViewport.setCamera({
-            focalPoint: newFocalPoint,
-            position: newPosition,
-          })
-
-          otherViewport.render()
-        }
-      })
+      this._applyDeltaShiftToSelectedViewportCameras(
+        renderingEngine,
+        viewportsToolDataToUpdate,
+        delta
+      )
     } else if (handles.activeOperation > 0) {
       // ROTATION
       const otherViewportToolData = this._filterViewportOrientations(
@@ -1306,5 +1340,54 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   _isClockWise(a, b, c) {
     // return true if the rotation is clockwise
     return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) > 0
+  }
+
+  _applyDeltaShiftToSelectedViewportCameras(
+    renderingEngine,
+    viewportsToolDataToUpdate,
+    delta
+  ) {
+    // update camera for the other viewports.
+    // NOTE1: The lines then are rendered by the onCameraModified
+    // NOTE2: crosshair center are automatically updated in the onCameraModified event
+    viewportsToolDataToUpdate.forEach((toolData) => {
+      const { data } = toolData
+
+      const scene = renderingEngine.getScene(data.sceneUID)
+      const otherViewport = scene.getViewport(data.viewportUID)
+      const camera = otherViewport.getCamera()
+      const normal = camera.viewPlaneNormal
+
+      // Project delta over camera normal
+      // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
+      const dotProd = vtkMath.dot(delta, normal)
+      const cameraNorm2 = Math.pow(
+        Math.sqrt(
+          normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]
+        ),
+        2
+      )
+      const projectedDelta = [...normal]
+      vtkMath.multiplyScalar(projectedDelta, dotProd / cameraNorm2)
+
+      if (
+        Math.abs(projectedDelta[0]) > 1e-3 ||
+        Math.abs(projectedDelta[1]) > 1e-3 ||
+        Math.abs(projectedDelta[2]) > 1e-3
+      ) {
+        const newFocalPoint = [0, 0, 0],
+          newPosition = [0, 0, 0]
+
+        vtkMath.add(camera.focalPoint, projectedDelta, newFocalPoint)
+        vtkMath.add(camera.position, projectedDelta, newPosition)
+
+        otherViewport.setCamera({
+          focalPoint: newFocalPoint,
+          position: newPosition,
+        })
+
+        otherViewport.render()
+      }
+    })
   }
 }
