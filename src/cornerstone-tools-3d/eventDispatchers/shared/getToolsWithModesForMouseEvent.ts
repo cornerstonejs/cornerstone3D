@@ -1,7 +1,7 @@
-import { ToolGroupManager } from './../../store/index';
-import { ToolModes } from '../../enums';
+import { ToolGroupManager } from './../../store/index'
+import { ToolModes } from '../../enums'
 
-type ModesFilter = Array<ToolModes>;
+type ModesFilter = Array<ToolModes>
 
 /**
  * @function getToolsWithModesForMouseEvent Given the event and a filter of modes,
@@ -11,31 +11,37 @@ type ModesFilter = Array<ToolModes>;
  */
 export default function getToolsWithModesForMouseEvent(
   evt,
-  modesFilter: ModesFilter
+  modesFilter: ModesFilter,
+  evtButton?: any
 ) {
-  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail;
+  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
   const toolGroups = ToolGroupManager.getToolGroups(
     renderingEngineUID,
     sceneUID,
     viewportUID
-  );
+  )
 
-  const enabledTools = [];
+  const enabledTools = []
 
   for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i];
-    const toolGroupToolNames = Object.keys(toolGroup.tools);
+    const toolGroup = toolGroups[i]
+    const toolGroupToolNames = Object.keys(toolGroup.tools)
 
     for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j];
-      const tool = toolGroup.tools[toolName];
+      const toolName = toolGroupToolNames[j]
+      const tool = toolGroup.tools[toolName]
 
-      if (modesFilter.includes(tool.mode)) {
-        const toolInstance = toolGroup._tools[toolName];
-        enabledTools.push(toolInstance);
+      if (
+        modesFilter.includes(tool.mode) &&
+        // Should not filter by event's button
+        // or should, and the tool binding includes the event's button
+        (!evtButton || tool.bindings.includes(evtButton))
+      ) {
+        const toolInstance = toolGroup._tools[toolName]
+        enabledTools.push(toolInstance)
       }
     }
   }
 
-  return enabledTools;
+  return enabledTools
 }

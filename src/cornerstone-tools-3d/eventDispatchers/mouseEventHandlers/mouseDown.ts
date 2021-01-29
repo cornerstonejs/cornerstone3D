@@ -2,18 +2,18 @@
 import {
   // getters,
   state,
-} from './../../store/index';
+} from './../../store/index'
 
-import { ToolModes } from './../../enums/index';
+import { ToolModes } from './../../enums/index'
 
 // // Util
-import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles';
-import getToolsWithDataForElement from '../../store/getToolsWithDataForElement';
-import getMoveableAnnotationTools from '../../store/getMoveableAnnotationTools';
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
-import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
+import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles'
+import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
+import getMoveableAnnotationTools from '../../store/getMoveableAnnotationTools'
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
+import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
 
-const { Active, Passive } = ToolModes;
+const { Active, Passive } = ToolModes
 
 /**
  * @function mouseDown - When the mouse is depressed we check which entities can process these events in the following manner:
@@ -41,51 +41,56 @@ const { Active, Passive } = ToolModes;
 export default function mouseDown(evt) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
   if (state.isToolLocked) {
-    return;
+    return
   }
 
-  const activeTool = getActiveToolForMouseEvent(evt);
+  const activeTool = getActiveToolForMouseEvent(evt)
 
   // Check for preMouseDownCallbacks
   if (activeTool && typeof activeTool.preMouseDownCallback === 'function') {
-    const consumedEvent = activeTool.preMouseDownCallback(evt);
+    const consumedEvent = activeTool.preMouseDownCallback(evt)
 
     if (consumedEvent) {
       // If the tool claims it consumed the event, prevent further checks.
-      return;
+      return
     }
   }
 
-  const activeAndPassiveTools = getToolsWithModesForMouseEvent(evt, [
-    Active,
-    Passive,
-  ]);
+  // Find all tools that might respond to this mouse down
+  const isPrimaryClick = evt.detail.event.buttons === 1
+  const activeToolsWithEventBinding = getToolsWithModesForMouseEvent(
+    evt,
+    [Active],
+    evt.detail.event.buttons
+  )
+  const passiveToolsIfEventWasPrimaryMouseButton = isPrimaryClick
+    ? getToolsWithModesForMouseEvent(evt, [Passive])
+    : undefined
+  const applicableTools = [
+    ...(activeToolsWithEventBinding || []),
+    ...(passiveToolsIfEventWasPrimaryMouseButton || []),
+  ]
 
-  const eventData = evt.detail;
-  const { element } = eventData;
+  const eventData = evt.detail
+  const { element } = eventData
 
   // Annotation tool specific
-  const annotationTools = getToolsWithDataForElement(
-    element,
-    activeAndPassiveTools
-  );
-
-  const canvasCoords = eventData.currentPoints.canvas;
-
+  const annotationTools = getToolsWithDataForElement(element, applicableTools)
+  const canvasCoords = eventData.currentPoints.canvas
   const annotationToolsWithMoveableHandles = getToolsWithMoveableHandles(
     element,
     annotationTools,
     canvasCoords,
     'mouse'
-  );
+  )
 
   if (annotationToolsWithMoveableHandles.length > 0) {
     // Choose first tool for now.
-    const { tool, toolData, handle } = annotationToolsWithMoveableHandles[0];
+    const { tool, toolData, handle } = annotationToolsWithMoveableHandles[0]
 
-    tool.handleSelectedCallback(evt, toolData, handle, 'mouse');
+    tool.handleSelectedCallback(evt, toolData, handle, 'mouse')
 
-    return;
+    return
   }
 
   const moveableAnnotationTools = getMoveableAnnotationTools(
@@ -93,23 +98,23 @@ export default function mouseDown(evt) {
     annotationTools,
     canvasCoords,
     'mouse'
-  );
+  )
 
   if (moveableAnnotationTools.length > 0) {
     // Choose first tool for now.
-    const { tool, toolData } = moveableAnnotationTools[0];
+    const { tool, toolData } = moveableAnnotationTools[0]
 
-    tool.toolSelectedCallback(evt, toolData, 'mouse');
+    tool.toolSelectedCallback(evt, toolData, 'mouse')
 
-    return;
+    return
   }
 
   if (activeTool && typeof activeTool.postMouseDownCallback === 'function') {
-    const consumedEvent = activeTool.postMouseDownCallback(evt);
+    const consumedEvent = activeTool.postMouseDownCallback(evt)
 
     if (consumedEvent) {
       // If the tool claims it consumed the event, prevent further checks.
-      return;
+      return
     }
   }
 }
