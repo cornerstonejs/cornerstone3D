@@ -705,7 +705,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         line[1],
         {
           color,
-          lineWidth,
+          width: lineWidth,
         }
       )
 
