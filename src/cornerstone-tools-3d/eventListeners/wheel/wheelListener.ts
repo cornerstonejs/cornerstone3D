@@ -12,7 +12,6 @@ import getMouseEventPoints from '../mouse/getMouseEventPoints'
  */
 function wheelListener(evt: WheelEvent) {
   const element = <HTMLElement>evt.currentTarget
-
   const enabledElement = getEnabledElement(element)
   const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
 

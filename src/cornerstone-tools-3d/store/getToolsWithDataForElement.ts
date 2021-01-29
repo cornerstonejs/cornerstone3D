@@ -1,5 +1,6 @@
-import { getToolState } from './../stateManagement/toolState';
+import { getToolState } from './../stateManagement/toolState'
 import { ToolAndToolStateArray } from '../types/toolStateTypes'
+import { getEnabledElement } from '@vtk-viewport'
 
 /**
  * @function getToolsWithDataForElement Filters an array of tools, returning only
@@ -14,34 +15,32 @@ export default function getToolsWithDataForElement(
   element: HTMLElement,
   tools
 ): ToolAndToolStateArray {
-  const result = [];
+  const result = []
 
   for (let i = 0; i < tools.length; i++) {
-    const tool = tools[i];
+    const tool = tools[i]
 
     if (!tool) {
-      console.warn('undefined tool in getToolsWithDataForElement');
-      continue;
+      console.warn('undefined tool in getToolsWithDataForElement')
+      continue
     }
 
-    let toolState = getToolState(element, tool.name);
+    const enabledElement = getEnabledElement(element)
+    let toolState = getToolState(enabledElement, tool.name)
 
     if (!toolState) {
-      continue;
+      continue
     }
 
     if (typeof tool.filterInteractableToolStateForElement === 'function') {
       // If the tool has a toolState filter (e.g. with in-plane-annotations-only filtering), use it.
-      toolState = tool.filterInteractableToolStateForElement(
-        element,
-        toolState
-      );
+      toolState = tool.filterInteractableToolStateForElement(element, toolState)
     }
 
     if (toolState.length > 0) {
-      result.push({ tool, toolState });
+      result.push({ tool, toolState })
     }
   }
 
-  return result;
+  return result
 }

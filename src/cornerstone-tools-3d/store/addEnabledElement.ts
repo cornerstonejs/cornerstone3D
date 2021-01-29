@@ -1,4 +1,3 @@
-import _setHashForSvgElement from './../drawingSvg/_setHashForSvgElement'
 import { mouseEventListeners, wheelEventListener } from './../eventListeners'
 import {
   imageRenderedEventDispatcher,
@@ -17,6 +16,8 @@ export default function addEnabledElement(evt: CustomEvent): void {
   const canvas = <HTMLElement>evt.detail.canvas
   const svgLayer = _createSvgAnnotationLayer()
 
+  // Reset/Create svgNodeCache for element
+  _setSvgNodeCacheForCanvas(canvas)
   _insertAfter(svgLayer, canvas)
 
   // Listeners
@@ -55,7 +56,6 @@ function _createSvgAnnotationLayer(): SVGElement {
   const feColorMatrix = document.createElementNS(svgns, 'feColorMatrix')
   const feGaussianBlur = document.createElementNS(svgns, 'feGaussianBlur')
   const feBlend = document.createElementNS(svgns, 'feBlend')
-  // const feDropShadow = document.createElementNS(svgns, 'feDropShadow')
 
   //
   filter.setAttribute('id', 'shadow')
@@ -87,14 +87,6 @@ function _createSvgAnnotationLayer(): SVGElement {
   feBlend.setAttribute('in2', 'blurOut')
   feBlend.setAttribute('mode', 'normal')
 
-  //
-  // feDropShadow.setAttribute('dx', '0.2')
-  // feDropShadow.setAttribute('dy', '0.4')
-  // feDropShadow.setAttribute('stdDeviation', '0')
-  // filter.appendChild(feDropShadow)
-
-  _setHashForSvgElement(defs, 'd', 'a', 'n', 'y')
-
   filter.appendChild(feOffset)
   filter.appendChild(feColorMatrix)
   filter.appendChild(feGaussianBlur)
@@ -103,6 +95,19 @@ function _createSvgAnnotationLayer(): SVGElement {
   svgLayer.appendChild(defs)
 
   return svgLayer
+}
+
+function _setSvgNodeCacheForCanvas(canvas) {
+  const {
+    viewportUid: viewportUID,
+    sceneUid: sceneUID,
+    renderingEngineUid: renderingEngineUID,
+  } = canvas.dataset
+  const canvasHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
+
+  // Create or reset
+  // TODO: If... Reset, we should blow out any nodes in DOM
+  state.svgNodeCache[canvasHash] = {}
 }
 
 /**

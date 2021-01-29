@@ -2,7 +2,7 @@ import drawTextBox from './drawTextBox'
 import { Point2, ToolStateTextBox } from './../types'
 import drawLink from './drawLink'
 
-export default function (
+function drawLinkedTextBox(
   svgDrawingHelper: any,
   //
   toolUID: string,
@@ -66,3 +66,5 @@ export default function (
 
   return canvasBoundingBox
 }
+
+export default drawLinkedTextBox

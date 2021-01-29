@@ -45,10 +45,10 @@ export default function mouseMove(evt) {
         tool.mouseMoveCallback(evt, toolState) || imageNeedsUpdate
     }
   }
+
   // Tool data activation status changed, redraw the image
   if (imageNeedsUpdate === true) {
     const enabledElement = getEnabledElement(element)
-
     const { viewport } = enabledElement
 
     viewport.render()

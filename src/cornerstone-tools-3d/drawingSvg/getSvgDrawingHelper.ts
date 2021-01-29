@@ -1,4 +1,5 @@
-import _getHashFromSvgElement from './_getHashFromSvgElement'
+import { state } from './../store'
+import { getEnabledElement } from '@vtk-viewport'
 
 /**
  *
@@ -6,48 +7,27 @@ import _getHashFromSvgElement from './_getHashFromSvgElement'
  * @private
  */
 function getSvgDrawingHelper(canvasElement: HTMLCanvasElement) {
+  const enabledElement = getEnabledElement(canvasElement)
+  const { viewportUID, sceneUID, renderingEngineUID } = enabledElement
+  const canvasHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
   const svgLayerElement = _getSvgLayer(canvasElement)
-  const annotationUIDs = _getUniqueAnnotationUIDs(svgLayerElement)
-  const drawnAnnotations = annotationUIDs.reduce((acc, uid, ind, arr) => {
-    acc[uid] = false
 
-    return acc
-  }, {})
-
-  // Always preserve the filter defs (see `addEnabledElement.ts`)
-  drawnAnnotations['d::a::n::y'] = true
+  // Reset touched
+  Object.keys(state.svgNodeCache[canvasHash]).forEach((cacheKey) => {
+    state.svgNodeCache[canvasHash][cacheKey].touched = false
+  })
 
   return {
+    enabledElement: enabledElement,
     _canvasElement: canvasElement,
     _svgLayerElement: svgLayerElement,
-    _drawnAnnotations: drawnAnnotations,
+    _svgNodeCacheForCanvas: state.svgNodeCache,
+    _getSvgNode: getSvgNode.bind(this, canvasHash),
+    _appendNode: appendNode.bind(this, svgLayerElement, canvasHash),
+    _setNodeTouched: setNodeTouched.bind(this, canvasHash),
+    _clearUntouched: clearUntouched.bind(this, svgLayerElement, canvasHash),
+    // _drawnAnnotations: drawnAnnotations,
   }
-}
-
-function _getUniqueAnnotationUIDs(svgLayerElement: SVGElement): string[] {
-  const nodes = svgLayerElement.querySelectorAll(
-    'svg#svg-layer > *'
-  ) as NodeListOf<SVGElement>
-
-  // Add unique annotationUIDs to array
-  const annotationUIDs = []
-  const buildAnnotationUIDArray = (node) => {
-    // Skip the <defs> since they are not annotations
-    // TODO: Force a check for now to save on a check per loop?
-    // if (node.tagName === 'defs') {
-    //   return
-    // }
-
-    const svgNodeHash = _getHashFromSvgElement(node)
-
-    if (!annotationUIDs[svgNodeHash]) {
-      annotationUIDs.push(svgNodeHash)
-    }
-  }
-
-  nodes.forEach(buildAnnotationUIDArray)
-
-  return annotationUIDs
 }
 
 /**
@@ -60,6 +40,39 @@ function _getSvgLayer(canvasElement) {
   const svgLayer = parentElement.querySelector('.svg-layer')
 
   return svgLayer
+}
+
+function getSvgNode(canvasHash, cacheKey) {
+  if (state.svgNodeCache[canvasHash][cacheKey]) {
+    return state.svgNodeCache[canvasHash][cacheKey].domRef
+  }
+}
+
+function appendNode(svgLayerElement, canvasHash, svgNode, cacheKey) {
+  state.svgNodeCache[canvasHash][cacheKey] = {
+    touched: true,
+    domRef: svgNode,
+  }
+
+  svgLayerElement.appendChild(svgNode)
+}
+
+function setNodeTouched(canvasHash, cacheKey) {
+  if (state.svgNodeCache[canvasHash][cacheKey]) {
+    state.svgNodeCache[canvasHash][cacheKey].touched = true
+  }
+}
+
+function clearUntouched(svgLayerElement, canvasHash) {
+  Object.keys(state.svgNodeCache[canvasHash]).forEach((cacheKey) => {
+    const cacheEntry = state.svgNodeCache[canvasHash][cacheKey]
+
+    if (!cacheEntry.touched && cacheEntry.domRef) {
+      // console.log(`Removing: ${svgNodeHash}`)
+      svgLayerElement.removeChild(cacheEntry.domRef)
+      delete state.svgNodeCache[canvasHash][cacheKey]
+    }
+  })
 }
 
 export default getSvgDrawingHelper

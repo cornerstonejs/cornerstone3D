@@ -8,7 +8,6 @@ import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
-import { getNewContext } from '../../drawing'
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -835,7 +834,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
-    let toolState = getToolState(canvasElement, this.name)
+    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState) {
       return
@@ -850,9 +849,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       return
     }
 
-    const enabledElement = getEnabledElement(canvasElement)
-    const { viewport } = enabledElement
-    const context = getNewContext(canvasElement)
+    const { viewport } = svgDrawingHelper.enabledElement
     const lineWidth = toolStyle.getToolWidth()
 
     for (let i = 0; i < toolState.length; i++) {

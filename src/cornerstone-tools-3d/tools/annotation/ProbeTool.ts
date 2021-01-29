@@ -4,7 +4,6 @@ import { getEnabledElement, imageCache } from '../../../index'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
-import { getNewContext } from '../../drawing'
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
@@ -240,7 +239,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
 
-    let toolState = getToolState(canvasElement, this.name)
+    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState) {
       return
@@ -255,10 +254,8 @@ export default class ProbeTool extends BaseAnnotationTool {
       return
     }
 
-    const enabledElement = getEnabledElement(canvasElement)
-    const { viewport, scene } = enabledElement
+    const { viewport, scene } = svgDrawingHelper.enabledElement
     const targetVolumeUID = this._getTargetVolumeUID(scene)
-    const context = getNewContext(canvasElement)
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]

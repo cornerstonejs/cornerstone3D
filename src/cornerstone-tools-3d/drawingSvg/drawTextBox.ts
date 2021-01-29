@@ -1,10 +1,6 @@
 import _getHash from './_getHash'
-import _setHashForSvgElement from './_setHashForSvgElement'
 import { Point2 } from 'src/types'
 import textStyle from '../stateManagement/textStyle'
-// import draw from './draw'
-// import fillTextLines from './fillTextLines'
-// import fillBox from './fillBox'
 
 /**
  * Draws a textBox.
@@ -14,7 +10,7 @@ import textStyle from '../stateManagement/textStyle'
  * @param options     Options for the textBox.
  * @returns Bounding box; can be used for pointNearTool
  */
-export default function (
+function drawTextBox(
   svgDrawingHelper: any,
   toolUID: string,
   annotationUID: string,
@@ -79,11 +75,8 @@ function _drawTextGroup(
   let textGroupBoundingBox
   const [x, y] = [position[0] + padding, position[1] + padding]
   const svgns = 'http://www.w3.org/2000/svg'
-  const nodeHash = _getHash(toolUID, annotationUID, 'text', textUID)
-  const existingTextGroup = svgDrawingHelper._svgLayerElement.querySelector(
-    `[data-tool-uid="${toolUID}"][data-annotation-uid="${annotationUID}"][data-drawing-element-type="text"][data-node-uid="${textUID}"]`
-  )
-  svgDrawingHelper._drawnAnnotations[nodeHash] = true
+  const svgNodeHash = _getHash(toolUID, annotationUID, 'text', textUID)
+  const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash)
 
   if (existingTextGroup) {
     existingTextGroup.setAttribute('transform', `translate(${x} ${y})`)
@@ -104,16 +97,10 @@ function _drawTextGroup(
     }
 
     textGroupBoundingBox = existingTextGroup.getBBox()
+    svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
     const textGroup = document.createElementNS(svgns, 'g')
 
-    _setHashForSvgElement(
-      textGroup,
-      toolUID,
-      annotationUID,
-      'text',
-      `${textUID}`
-    )
     textGroup.setAttribute('transform', `translate(${x} ${y})`)
 
     //
@@ -126,7 +113,7 @@ function _drawTextGroup(
     }
 
     textGroup.appendChild(textElement)
-    svgDrawingHelper._svgLayerElement.appendChild(textGroup)
+    svgDrawingHelper._appendNode(textGroup, svgNodeHash)
     textGroupBoundingBox = textGroup.getBBox()
   }
 
@@ -174,3 +161,5 @@ function _createTextSpan(text): SVGElement {
 
   return textSpanElement
 }
+
+export default drawTextBox

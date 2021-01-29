@@ -1,9 +1,9 @@
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
-import { getEnabledElement } from '@vtk-viewport'
 import { uuidv4 } from '../util/'
 import { ToolSpecificToolState } from '../types/toolStateTypes'
+import { IEnabledElement } from 'src/types'
 
-function getViewportSpecificStateManager(element) {
+function getViewportSpecificStateManager(element: IEnabledElement) {
   // TODO:
   // We may want multiple FrameOfReferenceSpecificStateManagers.
   // E.g. displaying two different radiologists annotations on the same underlying data/FoR.
@@ -22,11 +22,11 @@ function getViewportSpecificStateManager(element) {
  * @returns {ToolSpecificToolState} The tool state corresponding to the Frame of Reference and the toolName.
  */
 function getToolState(
-  element: HTMLElement,
+  // element: HTMLElement,
+  enabledElement: IEnabledElement,
   toolName: string
 ): ToolSpecificToolState {
-  const toolStateManager = getViewportSpecificStateManager(element)
-  const enabledElement = getEnabledElement(element)
+  const toolStateManager = getViewportSpecificStateManager(enabledElement)
   const { FrameOfReferenceUID } = enabledElement
 
   return toolStateManager.get(FrameOfReferenceUID, toolName)

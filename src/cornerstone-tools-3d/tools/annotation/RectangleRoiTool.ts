@@ -7,7 +7,6 @@ import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
-import { getNewContext, setShadow } from '../../drawing'
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
@@ -482,7 +481,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
 
-    let toolState = getToolState(canvasElement, this.name)
+    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState) {
       return
@@ -497,10 +496,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       return
     }
 
-    const enabledElement = getEnabledElement(canvasElement)
-    const { viewport, scene } = enabledElement
+    const { viewport, scene } = svgDrawingHelper.enabledElement
     const targetVolumeUID = this._getTargetVolumeUID(scene)
-    const context = getNewContext(canvasElement)
     const lineWidth = toolStyle.getToolWidth()
 
     for (let i = 0; i < toolState.length; i++) {

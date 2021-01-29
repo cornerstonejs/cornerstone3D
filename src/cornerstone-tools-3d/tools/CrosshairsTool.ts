@@ -2,7 +2,6 @@ import { BaseAnnotationTool } from './base/index'
 // ~~ VTK Viewport
 import { getEnabledElement } from '../../index'
 import { addToolState, getToolState } from '../stateManagement/toolState'
-import { getNewContext } from '../drawing'
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
@@ -283,7 +282,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         toolData,
       }
 
-      this._Jump(element, canvasCoords)
+      this._Jump(enabledElement, canvasCoords)
       return this.pointNearTool(
         element,
         toolData,
@@ -320,7 +319,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       this.name
     )
 
-    let toolState = getToolState(element, this.name)
+    let toolState = getToolState(enabledElement, this.name)
     let filteredToolState = this.filterInteractableToolStateForElement(
       element,
       toolState
@@ -329,7 +328,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     if (!filteredToolState.length && FrameOfReferenceUID) {
       this._initCrosshairs(evt, toolState)
 
-      toolState = getToolState(element, this.name)
+      toolState = getToolState(enabledElement, this.name)
 
       filteredToolState = this.filterInteractableToolStateForElement(
         element,
@@ -537,10 +536,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     const eventData = evt.detail
     const { canvas: element } = eventData
-
-    const toolState = getToolState(element, this.name)
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine, viewport } = enabledElement
+    const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
+    const { renderingEngine, viewport } = svgDrawingHelper.enabledElement
     const camera = viewport.getCamera()
 
     const filteredToolState = this.filterInteractableToolStateForElement(
@@ -566,7 +563,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const linesWorld = []
 
     const otherViewportToolData = this._filterUniqueViewportOrientations(
-      enabledElement,
+      svgDrawingHelper.enabledElement,
       toolState
     )
 
@@ -676,7 +673,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const color =
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
 
-    const context = getNewContext(element)
     referenceLines.forEach((line, lineIndex) => {
       // get color for the reference line
       const viewportColor = this._getReferenceLineColor(line[4].uid)
@@ -1092,11 +1088,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     showToolCursor(element)
   }
 
-  _Jump(element, canvasCoords) {
+  _Jump(enabledElement, canvasCoords) {
     state.isToolLocked = true
-    const toolState = getToolState(element, this.name)
 
-    const enabledElement = getEnabledElement(element)
+    const toolState = getToolState(enabledElement, this.name)
     const { renderingEngine, viewport, scene } = enabledElement
 
     const jumpWorld = viewport.canvasToWorld(canvasCoords)
@@ -1192,12 +1187,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     const { element: canvas } = eventData
-
-    const toolState = getToolState(canvas, this.name)
     const enabledElement = getEnabledElement(canvas)
-
     const { renderingEngine, viewport } = enabledElement
-
+    const toolState = getToolState(enabledElement, this.name)
     const filteredToolState = this.filterInteractableToolStateForElement(
       canvas,
       toolState

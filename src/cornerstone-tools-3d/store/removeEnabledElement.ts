@@ -13,7 +13,7 @@ import { getEnabledElement } from '@vtk-viewport'
 
 import { state } from './index'
 
-export default function (elementDisabledEvt) {
+function removeEnabledElement(elementDisabledEvt) {
   // Is DOM element
   const canvas = elementDisabledEvt.detail.canvas
   // Is construct - WON'T BE ABLE TO GET
@@ -23,8 +23,8 @@ export default function (elementDisabledEvt) {
   mouseEventListeners.disable(canvas)
   wheelEventListener.disable(canvas)
   // Dispatchers: renderer
-  imageRenderedEventDispatcher.disable(canvas);
-  cameraModifiedEventDispatcher.disable(canvas);
+  imageRenderedEventDispatcher.disable(canvas)
+  cameraModifiedEventDispatcher.disable(canvas)
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(canvas)
   // touchToolEventDispatcher.disable(canvas);
@@ -60,3 +60,5 @@ const _removeEnabledElement = function (enabledElement: HTMLElement) {
     state.enabledElements.splice(foundElementIndex, 1)
   }
 }
+
+export default removeEnabledElement

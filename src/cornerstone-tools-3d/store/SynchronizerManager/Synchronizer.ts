@@ -65,7 +65,7 @@ class Synchronizer {
       .getViewport(viewportUID)
       .getCanvas()
 
-    const enabledElement = getEnabledElement(canvas)
+    // const enabledElement = getEnabledElement(canvas)
 
     // @ts-ignore
     canvas.addEventListener(this._eventName, this._onEvent.bind(this))
@@ -75,7 +75,7 @@ class Synchronizer {
   }
 
   public addTarget(viewport: IViewportUID) {
-    const { renderingEngineUID, sceneUID, viewportUID } = viewport
+    // const { renderingEngineUID, sceneUID, viewportUID } = viewport
 
     // TODO: exit early if already in list
     this._targetViewports.push(viewport)

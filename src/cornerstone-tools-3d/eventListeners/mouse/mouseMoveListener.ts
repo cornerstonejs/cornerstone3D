@@ -13,7 +13,6 @@ const eventName = CornerstoneTools3DEvents.MOUSE_MOVE
  */
 function mouseMoveListener(evt: MouseEvent) {
   const element = <HTMLElement>evt.currentTarget
-
   const enabledElement = getEnabledElement(element)
   const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
 

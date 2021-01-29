@@ -6,7 +6,6 @@ import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
-import { getNewContext } from '../../drawing'
 import {
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
@@ -565,7 +564,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
-    let toolState = getToolState(canvasElement, this.name)
+    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState) {
       return
@@ -580,10 +579,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       return
     }
 
-    const enabledElement = getEnabledElement(canvasElement)
-    const { viewport, scene } = enabledElement
+    const { viewport, scene } = svgDrawingHelper.enabledElement
     const targetVolumeUID = this._getTargetVolumeUID(scene)
-    const context = getNewContext(canvasElement)
     const lineWidth = toolStyle.getToolWidth()
 
     for (let i = 0; i < toolState.length; i++) {

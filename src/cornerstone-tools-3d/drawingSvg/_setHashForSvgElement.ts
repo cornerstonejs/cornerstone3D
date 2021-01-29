@@ -4,7 +4,7 @@
  *
  * @param svgElement
  */
-function _getHashFromSvgElement(
+function _setHashFromSvgElement(
   svgElement: SVGElement,
   toolUID: string,
   annotationUID: string,
@@ -17,4 +17,4 @@ function _getHashFromSvgElement(
   svgElement.setAttribute('data-node-uid', nodeUID)
 }
 
-export default _getHashFromSvgElement
+export default _setHashFromSvgElement

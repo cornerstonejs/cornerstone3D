@@ -1,11 +1,10 @@
 import _getHash from './_getHash'
-import _setHashForSvgElement from './_setHashForSvgElement'
 import toolStyle from './../stateManagement/toolStyle'
 import toolColors from './../stateManagement/toolColors'
 import { state } from '../store'
 import { Point2 } from './../types'
 
-export default function (
+function drawHandles(
   svgDrawingHelper: any,
   toolUID: string,
   annotationUID: string,
@@ -35,10 +34,7 @@ export default function (
       'handle',
       `hg-${handleGroupUID}-index-${i}`
     )
-    const existingHandleElement = svgDrawingHelper._svgLayerElement.querySelector(
-      `[data-tool-uid="${toolUID}"][data-annotation-uid="${annotationUID}"][data-drawing-element-type="handle"][data-node-uid="hg-${handleGroupUID}-index-${i}"]`
-    )
-    svgDrawingHelper._drawnAnnotations[svgNodeHash] = true
+    const existingHandleElement = svgDrawingHelper._getSvgNode(svgNodeHash)
 
     if (existingHandleElement) {
       existingHandleElement.setAttribute('cx', `${handle[0]}`)
@@ -47,16 +43,11 @@ export default function (
       existingHandleElement.setAttribute('stroke', color)
       existingHandleElement.setAttribute('fill', fill)
       existingHandleElement.setAttribute('stroke-width', width)
+
+      svgDrawingHelper._setNodeTouched(svgNodeHash)
     } else {
       const newHandleElement = document.createElementNS(svgns, 'circle')
 
-      _setHashForSvgElement(
-        newHandleElement,
-        toolUID,
-        annotationUID,
-        'handle',
-        `hg-${handleGroupUID}-index-${i}`
-      )
       newHandleElement.setAttribute('cx', `${handle[0]}`)
       newHandleElement.setAttribute('cy', `${handle[1]}`)
       newHandleElement.setAttribute('r', handleRadius)
@@ -64,7 +55,9 @@ export default function (
       newHandleElement.setAttribute('fill', fill)
       newHandleElement.setAttribute('stroke-width', width)
 
-      svgDrawingHelper._svgLayerElement.appendChild(newHandleElement)
+      svgDrawingHelper._appendNode(newHandleElement, svgNodeHash)
     }
   }
 }
+
+export default drawHandles

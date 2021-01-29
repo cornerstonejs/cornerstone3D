@@ -4,14 +4,8 @@ import { PlanarBoundingBox, Point2 } from './../types'
 
 /**
  * Draw a link between an annotation to a box.
- *
- * @param linkAnchorPoints Possible anchor points
- * @param refPoint         A reference point to select the anchor point
- * @param boundingBox      The bounding box to link
- * @param options
- * @returns {undefined}
  */
-export default function (
+function drawLink(
   svgDrawingHelper: any,
   toolUID: string,
   annotationUID: string,
@@ -72,3 +66,5 @@ function _boundingBoxPoints(boundingBox: PlanarBoundingBox): Array<Point2> {
 
   return [topMiddle, leftMiddle, bottomMiddle, rightMiddle]
 }
+
+export default drawLink
