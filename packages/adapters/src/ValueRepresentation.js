@@ -110,7 +110,6 @@ class ValueRepresentation {
                             //byteCount++;
                         }
                         var singularArgs = [v].concat(valueArgs.slice(1));
-
                         var byteCount = func.apply(stream, singularArgs);
                         written.push(byteCount);
                     });
@@ -241,10 +240,11 @@ class BinaryRepresentation extends ValueRepresentation {
         super(type);
     }
 
-    writeBytes(stream, value, syntax, isEncapsulated, writeOptions) {
+    writeBytes(stream, value, syntax, isEncapsulated, writeOptions = {}) {
         var i;
         var binaryStream;
         var { fragmentMultiframe = true } = writeOptions;
+        value = value === null || value === undefined ? [] : value;
         if (isEncapsulated) {
             var fragmentSize = 1024 * 20,
                 frames = value.length,
@@ -459,7 +459,7 @@ class AttributeTag extends ValueRepresentation {
         return super.writeBytes(
             stream,
             value,
-            super.write(stream, "Uint32", value)
+            super.write(stream, "TwoUint16s", value)
         );
     }
 }
@@ -955,16 +955,12 @@ class UniversalResource extends StringRepresentation {
     }
 }
 
-class UnknownValue extends StringRepresentation {
+class UnknownValue extends BinaryRepresentation {
     constructor() {
         super("UN");
         this.maxLength = null;
         this.padByte = "00";
         this.noMultiple = true;
-    }
-
-    readBytes(stream, length) {
-        return stream.readString(length);
     }
 }
 

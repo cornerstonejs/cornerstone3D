@@ -108,7 +108,7 @@ class Tag {
             valueLength;
         tagStream.setEndian(isLittleEndian);
 
-        if (vrType == "OW" || vrType == "OB") {
+        if (vrType == "OW" || vrType == "OB" || vrType == "UN") {
             valueLength = vr.writeBytes(
                 tagStream,
                 values,

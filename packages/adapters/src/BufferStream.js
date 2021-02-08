@@ -86,6 +86,19 @@ class BufferStream {
         return this.increment(2);
     }
 
+    writeTwoUint16s(value) {
+        this.checkSize(4);
+        const first = value >> 16;
+        const second = value & 0xffff;
+        this.view.setUint16(this.offset, toInt(first), this.isLittleEndian);
+        this.view.setUint16(
+            this.offset + 2,
+            toInt(second),
+            this.isLittleEndian
+        );
+        return this.increment(4);
+    }
+
     writeInt16(value) {
         this.checkSize(2);
         this.view.setInt16(this.offset, toInt(value), this.isLittleEndian);
@@ -212,16 +225,17 @@ class BufferStream {
     }
 
     readString(length) {
-        var string = "";
-
-        var numOfMulti = length,
-            index = 0;
-        while (index++ < numOfMulti) {
-            var charCode = this.readUint8();
-            string += String.fromCharCode(charCode);
+        var chars = [];
+        var start = this.offset;
+        var end = this.offset + length;
+        if (end >= this.buffer.byteLength) {
+            end = this.buffer.byteLength;
         }
-
-        return string;
+        for (let i = start; i < end; ++i) {
+            chars.push(String.fromCharCode(this.view.getUint8(i)));
+            this.increment(1);
+        }
+        return chars.join("");
     }
 
     readHex(length) {
