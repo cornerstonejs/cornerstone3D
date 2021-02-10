@@ -13,7 +13,7 @@ import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransfe
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import ViewportGrid from './components/ViewportGrid';
-import { synchronizers } from './../src/cornerstone-tools-3d/index';
+import { SynchronizerManager, synchronizers } from './../src/cornerstone-tools-3d/index';
 import './ExampleVTKMPR.css';
 import {
   renderingEngineUID,
@@ -93,7 +93,6 @@ class VTKMPRExample extends Component {
     this.axialSync = createCameraPositionSynchronizer('axialSync');
     this.sagittalSync = createCameraPositionSynchronizer('sagittalSync');
     this.coronalSync = createCameraPositionSynchronizer('coronalSync');
-
     this.ctWLSync = createVOISynchronizer('ctWLSync');
     this.ptThresholdSync = createVOISynchronizer('ptThresholdSync');
 
@@ -296,6 +295,9 @@ class VTKMPRExample extends Component {
     if (this.viewportGridResizeObserver) {
       this.viewportGridResizeObserver.disconnect();
     }
+    
+    // Destroy synchronizers
+    SynchronizerManager.destroy();
     imageCache.purgeCache();
 
     this.renderingEngine.destroy();
