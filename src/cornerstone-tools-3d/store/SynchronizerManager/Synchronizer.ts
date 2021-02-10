@@ -87,6 +87,11 @@ class Synchronizer {
    * ========================
    */
 
+  public destroy(): void {
+    this._sourceViewports.forEach((s) => this.removeSource(s))
+    this._targetViewports.forEach((t) => this.removeTarget(t))
+  }
+
   public remove(viewport: IViewportUID) {
     this.removeTarget(viewport)
     this.removeSource(viewport)

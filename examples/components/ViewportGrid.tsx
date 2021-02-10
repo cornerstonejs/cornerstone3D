@@ -1,35 +1,37 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-function ViewportGrid({ numRows, numCols, style, renderingEngine, children }) {
-  const rowSize = 100 / numRows;
-  const colSize = 100 / numCols;
+const ViewportGrid = React.forwardRef(
+  ({ numRows, numCols, style, renderingEngine, children }, ref) => {
+    const rowSize = 100 / numRows;
+    const colSize = 100 / numCols;
 
-  useEffect(() => {
-    // Update the document title using the browser API
+    useEffect(() => {
+      if (renderingEngine) {
+        renderingEngine.resize();
+      }
+    }, [renderingEngine]);
 
-    if (renderingEngine) {
-      renderingEngine.resize();
-    }
-  });
-
-  return (
-    <div
-      onContextMenu={e => e.preventDefault()}
-      data-cy="viewport-grid"
-      style={{
-        display: 'grid',
-        gridTemplateRows: `repeat(${numRows}, ${rowSize}%)`,
-        gridTemplateColumns: `repeat(${numCols}, ${colSize}%)`,
-        height: '100%',
-        width: '100%',
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
+    return (
+      <div
+        className="cs-viewport-grid"
+        onContextMenu={e => e.preventDefault()}
+        data-cy="viewport-grid"
+        style={{
+          display: 'grid',
+          gridTemplateRows: `repeat(${numRows}, ${rowSize}%)`,
+          gridTemplateColumns: `repeat(${numCols}, ${colSize}%)`,
+          height: '100%',
+          width: '100%',
+          ...style,
+        }}
+        ref={ref}
+      >
+        {children}
+      </div>
+    );
+  }
+);
 
 ViewportGrid.propTypes = {
   /** Number of columns */

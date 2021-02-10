@@ -78,6 +78,7 @@ class VTKMPRExample extends Component {
     super(props);
 
     this._canvasNodes = new Map();
+    this._viewportGridRef = React.createRef();
     this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this);
     this.imageIdsPromise = getImageIdsAndCacheMetadata();
     this.imageIdsPromise.then(() =>
@@ -122,6 +123,15 @@ class VTKMPRExample extends Component {
         );
       }
     );
+
+    this.viewportGridResizeObserver = new ResizeObserver(entries => {
+      // ThrottleFn? May not be needed. This is lightning fast.
+      // Set in mount
+      if(this.renderingEngine) {
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
+      }
+    });
   }
 
   updateVOI = (evt) => {
@@ -212,6 +222,8 @@ class VTKMPRExample extends Component {
 
     // This will initialise volumes in GPU memory
     renderingEngine.render();
+    // Start listening for resiz
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -280,6 +292,10 @@ class VTKMPRExample extends Component {
   }
 
   componentWillUnmount() {
+    // Stop listening for resize
+    if (this.viewportGridResizeObserver) {
+      this.viewportGridResizeObserver.disconnect();
+    }
     imageCache.purgeCache();
 
     this.renderingEngine.destroy();
@@ -498,6 +514,7 @@ class VTKMPRExample extends Component {
           numRows={this.state.viewportGrid.numRows}
           renderingEngine={this.renderingEngine}
           style={{ minHeight: '650px', marginTop: '35px' }}
+          ref={this._viewportGridRef}
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
             <div

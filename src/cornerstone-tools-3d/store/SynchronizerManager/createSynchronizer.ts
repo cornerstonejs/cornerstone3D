@@ -1,33 +1,28 @@
-import { state } from './../index';
-import Synchronizer, { ISynchronizerEventHandler } from './Synchronizer';
+import { state } from './../index'
+import Synchronizer, { ISynchronizerEventHandler } from './Synchronizer'
 
 function createSynchronizer(
   synchronizerId: string,
   eventName: string,
   eventHandler: ISynchronizerEventHandler
 ): Synchronizer | undefined {
-  // Exit early if ID conflict
   const toolGroupWithIdExists = state.synchronizers.some(
-    tg => tg.id === synchronizerId
-  );
+    (tg) => tg.id === synchronizerId
+  )
 
   if (toolGroupWithIdExists) {
-    console.warn(`'${synchronizerId}' already exists.`);
-    return;
+    console.warn(`'${synchronizerId}' already exists.`)
+    return
   }
 
   // Create
-  const synchronizer = new Synchronizer(
-    synchronizerId,
-    eventName,
-    eventHandler
-  );
+  const synchronizer = new Synchronizer(synchronizerId, eventName, eventHandler)
 
   // Update state
-  state.synchronizers.push(synchronizer);
+  state.synchronizers.push(synchronizer)
 
   // Return reference
-  return synchronizer;
+  return synchronizer
 }
 
-export default createSynchronizer;
+export default createSynchronizer
