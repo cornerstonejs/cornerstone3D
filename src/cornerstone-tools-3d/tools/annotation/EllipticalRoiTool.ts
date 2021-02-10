@@ -688,7 +688,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
   _getTextLines = (data, targetVolumeUID) => {
     const cachedVolumeStats = data.cachedStats[targetVolumeUID]
-    const { area, mean, stdDev, Modality } = cachedVolumeStats
+    const { area, mean, stdDev, isEmptyArea, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
       return
@@ -696,7 +696,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     const textLines = []
 
-    const areaLine = `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
     let meanLine = `Mean: ${mean.toFixed(2)}`
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`
 
@@ -781,7 +783,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           worldPos1,
           worldPos2
         )
-
+        const isEmptyArea = worldWidth === 0 && worldHeight === 0
         const area = Math.PI * (worldWidth / 2) * (worldHeight / 2)
 
         let count = 0
@@ -875,6 +877,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           area,
           mean,
           stdDev,
+          isEmptyArea,
         }
       } else {
         cachedStats[volumeUID] = {
