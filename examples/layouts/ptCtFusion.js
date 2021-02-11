@@ -237,18 +237,47 @@ function setVolumes(renderingEngine, ctVolumeUID, ptVolumeUID, petColorMap) {
   const fusionScene = renderingEngine.getScene(SCENE_IDS.FUSION);
   const ptMipScene = renderingEngine.getScene(SCENE_IDS.PTMIP);
 
-  ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+  ctScene.setVolumes([
+    {
+      volumeUID: ctVolumeUID,
+      callback: setCTWWWC,
+      blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+    }
+  ]);
   ptScene.setVolumes([
-    { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
+    {
+      volumeUID: ptVolumeUID,
+      callback: setPetTransferFunction,
+      blendMode: BlendMode.COMPOSITE,
+    },
   ]);
 
   fusionScene.setVolumes([
-    { volumeUID: ctVolumeUID, callback: setCTWWWC },
+    {
+      volumeUID: ctVolumeUID,
+      callback: setCTWWWC,
+      blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+    },
     {
       volumeUID: ptVolumeUID,
       callback: getSetPetColorMapTransferFunction(petColorMap),
+      blendMode: BlendMode.COMPOSITE,
     },
   ]);
+
+  /*
+  * set the blendMode in the mapper of a volume. The blend mode is a property of
+  * a scene connected to the volume. So it has to be set here.
+  *
+  * NOTE1: there is a 1:1 correspondence between Volume/Actor/Mapper/ImageData
+  *        and they are all shared in a scene.
+  * NOTE2: there is a 1:1 correspondence between a viewport/camera/slabthickness
+  * NOTE3: in a viewport you can have different volumes with different blend
+  *        modes. But all the volumes have to use the slabthickness of the
+  *        camera of that viewport. If there is a volume with composite blending
+  *        (i.e. no blending), then, just for that volume, the shader will
+  *        ignore the slab thickness. Check the vtkSlabCamera for more info.
+  */
 
   const ptVolume = imageCache.getImageVolume(ptVolumeUID);
   const ptVolumeDimensions = ptVolume.dimensions;

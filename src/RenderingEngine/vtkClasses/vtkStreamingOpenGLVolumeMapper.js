@@ -1,11 +1,12 @@
-import { vec3 } from 'gl-matrix';
-import isEqual from 'lodash.isequal';
-import macro from 'vtk.js/Sources/macro';
-import vtkOpenGLVolumeMapper from 'vtk.js/Sources/Rendering/OpenGL/VolumeMapper';
-import { Filter } from 'vtk.js/Sources/Rendering/OpenGL/Texture/Constants';
-import { VtkDataTypes } from 'vtk.js/Sources/Common/Core/DataArray/Constants';
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
-import { Representation } from 'vtk.js/Sources/Rendering/Core/Property/Constants';
+import { mat3, mat4, vec3 } from 'gl-matrix'
+import isEqual from 'lodash.isequal'
+import macro from 'vtk.js/Sources/macro'
+import vtkOpenGLVolumeMapper from 'vtk.js/Sources/Rendering/OpenGL/VolumeMapper'
+import { Filter } from 'vtk.js/Sources/Rendering/OpenGL/Texture/Constants'
+import { VtkDataTypes } from 'vtk.js/Sources/Common/Core/DataArray/Constants'
+import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
+import { Representation } from 'vtk.js/Sources/Rendering/Core/Property/Constants'
+import { BlendMode } from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A dervied class of the core vtkOpenGLVolumeMapper class.
@@ -17,7 +18,7 @@ import { Representation } from 'vtk.js/Sources/Rendering/Core/Property/Constants
  * @param {*} model The private model to extend.
  */
 function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
-  model.classHierarchy.push('vtkStreamingOpenGLVolumeMapper');
+  model.classHierarchy.push('vtkStreamingOpenGLVolumeMapper')
 
   /**
    * buildBufferObjects - A fork of vtkOpenGLVolumeMapper's buildBufferObjects method.
@@ -30,61 +31,61 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
    * @param {*} actor The actor to build the buffer objects for.
    */
   publicAPI.buildBufferObjects = (ren, actor) => {
-    const image = model.currentInput;
+    const image = model.currentInput
 
     if (image === null) {
-      return;
+      return
     }
 
-    const vprop = actor.getProperty();
+    const vprop = actor.getProperty()
 
     if (!model.jitterTexture.getHandle()) {
-      const oTable = new Uint8Array(32 * 32);
+      const oTable = new Uint8Array(32 * 32)
       for (let i = 0; i < 32 * 32; ++i) {
-        oTable[i] = 255.0 * Math.random();
+        oTable[i] = 255.0 * Math.random()
       }
-      model.jitterTexture.setMinificationFilter(Filter.LINEAR);
-      model.jitterTexture.setMagnificationFilter(Filter.LINEAR);
+      model.jitterTexture.setMinificationFilter(Filter.LINEAR)
+      model.jitterTexture.setMagnificationFilter(Filter.LINEAR)
       model.jitterTexture.create2DFromRaw(
         32,
         32,
         1,
         VtkDataTypes.UNSIGNED_CHAR,
         oTable
-      );
+      )
     }
 
-    const numComp = image.getPointData().getScalars().getNumberOfComponents();
-    const iComps = vprop.getIndependentComponents();
-    const numIComps = iComps ? numComp : 1;
+    const numComp = image.getPointData().getScalars().getNumberOfComponents()
+    const iComps = vprop.getIndependentComponents()
+    const numIComps = iComps ? numComp : 1
 
     // rebuild opacity tfun?
-    let toString = `${vprop.getMTime()}`;
+    let toString = `${vprop.getMTime()}`
     if (model.opacityTextureString !== toString) {
-      const oWidth = 1024;
-      const oSize = oWidth * 2 * numIComps;
-      const ofTable = new Float32Array(oSize);
-      const tmpTable = new Float32Array(oWidth);
+      const oWidth = 1024
+      const oSize = oWidth * 2 * numIComps
+      const ofTable = new Float32Array(oSize)
+      const tmpTable = new Float32Array(oWidth)
 
       for (let c = 0; c < numIComps; ++c) {
-        const ofun = vprop.getScalarOpacity(c);
+        const ofun = vprop.getScalarOpacity(c)
         const opacityFactor =
           model.renderable.getSampleDistance() /
-          vprop.getScalarOpacityUnitDistance(c);
+          vprop.getScalarOpacityUnitDistance(c)
 
-        const oRange = ofun.getRange();
-        ofun.getTable(oRange[0], oRange[1], oWidth, tmpTable, 1);
+        const oRange = ofun.getRange()
+        ofun.getTable(oRange[0], oRange[1], oWidth, tmpTable, 1)
         // adjust for sample distance etc
         for (let i = 0; i < oWidth; ++i) {
           ofTable[c * oWidth * 2 + i] =
-            1.0 - (1.0 - tmpTable[i]) ** opacityFactor;
-          ofTable[c * oWidth * 2 + i + oWidth] = ofTable[c * oWidth * 2 + i];
+            1.0 - (1.0 - tmpTable[i]) ** opacityFactor
+          ofTable[c * oWidth * 2 + i + oWidth] = ofTable[c * oWidth * 2 + i]
         }
       }
 
-      model.opacityTexture.releaseGraphicsResources(model.openGLRenderWindow);
-      model.opacityTexture.setMinificationFilter(Filter.LINEAR);
-      model.opacityTexture.setMagnificationFilter(Filter.LINEAR);
+      model.opacityTexture.releaseGraphicsResources(model.openGLRenderWindow)
+      model.opacityTexture.setMinificationFilter(Filter.LINEAR)
+      model.opacityTexture.setMagnificationFilter(Filter.LINEAR)
 
       // use float texture where possible because we really need the resolution
       // for this table. Errors in low values of opacity accumulate to
@@ -101,11 +102,11 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           1,
           VtkDataTypes.FLOAT,
           ofTable
-        );
+        )
       } else {
-        const oTable = new Uint8Array(oSize);
+        const oTable = new Uint8Array(oSize)
         for (let i = 0; i < oSize; ++i) {
-          oTable[i] = 255.0 * ofTable[i];
+          oTable[i] = 255.0 * ofTable[i]
         }
         model.opacityTexture.create2DFromRaw(
           oWidth,
@@ -113,33 +114,33 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           1,
           VtkDataTypes.UNSIGNED_CHAR,
           oTable
-        );
+        )
       }
-      model.opacityTextureString = toString;
+      model.opacityTextureString = toString
     }
 
     // rebuild color tfun?
-    toString = `${vprop.getMTime()}`;
+    toString = `${vprop.getMTime()}`
 
     if (model.colorTextureString !== toString) {
-      const cWidth = 1024;
-      const cSize = cWidth * 2 * numIComps * 3;
-      const cTable = new Uint8Array(cSize);
-      const tmpTable = new Float32Array(cWidth * 3);
+      const cWidth = 1024
+      const cSize = cWidth * 2 * numIComps * 3
+      const cTable = new Uint8Array(cSize)
+      const tmpTable = new Float32Array(cWidth * 3)
 
       for (let c = 0; c < numIComps; ++c) {
-        const cfun = vprop.getRGBTransferFunction(c);
-        const cRange = cfun.getRange();
-        cfun.getTable(cRange[0], cRange[1], cWidth, tmpTable, 1);
+        const cfun = vprop.getRGBTransferFunction(c)
+        const cRange = cfun.getRange()
+        cfun.getTable(cRange[0], cRange[1], cWidth, tmpTable, 1)
         for (let i = 0; i < cWidth * 3; ++i) {
-          cTable[c * cWidth * 6 + i] = 255.0 * tmpTable[i];
-          cTable[c * cWidth * 6 + i + cWidth * 3] = 255.0 * tmpTable[i];
+          cTable[c * cWidth * 6 + i] = 255.0 * tmpTable[i]
+          cTable[c * cWidth * 6 + i + cWidth * 3] = 255.0 * tmpTable[i]
         }
       }
 
-      model.colorTexture.releaseGraphicsResources(model.openGLRenderWindow);
-      model.colorTexture.setMinificationFilter(Filter.LINEAR);
-      model.colorTexture.setMagnificationFilter(Filter.LINEAR);
+      model.colorTexture.releaseGraphicsResources(model.openGLRenderWindow)
+      model.colorTexture.setMinificationFilter(Filter.LINEAR)
+      model.colorTexture.setMagnificationFilter(Filter.LINEAR)
 
       model.colorTexture.create2DFromRaw(
         cWidth,
@@ -147,23 +148,23 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         3,
         VtkDataTypes.UNSIGNED_CHAR,
         cTable
-      );
-      model.colorTextureString = toString;
+      )
+      model.colorTextureString = toString
     }
 
     // rebuild the scalarTexture if the data has changed
-    toString = `${image.getMTime()}`;
+    toString = `${image.getMTime()}`
 
     if (model.scalarTextureString !== toString) {
       // Build the textures
-      const dims = image.getDimensions();
+      const dims = image.getDimensions()
 
-      const previousTextureParameters = model.scalarTexture.getTextureParameters();
+      const previousTextureParameters = model.scalarTexture.getTextureParameters()
 
-      const dataType = image.getPointData().getScalars().getDataType();
-      const data = image.getPointData().getScalars().getData();
+      const dataType = image.getPointData().getScalars().getDataType()
+      const data = image.getPointData().getScalars().getData()
 
-      let shouldReset = true;
+      let shouldReset = true
 
       if (
         previousTextureParameters.dataType &&
@@ -172,15 +173,15 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         const previousTextureSize =
           previousTextureParameters.width *
           previousTextureParameters.height *
-          previousTextureParameters.depth;
+          previousTextureParameters.depth
         if (data.length === previousTextureSize) {
-          shouldReset = false;
+          shouldReset = false
         }
       }
 
       if (shouldReset) {
-        model.scalarTexture.releaseGraphicsResources(model.openGLRenderWindow);
-        model.scalarTexture.resetFormatAndType();
+        model.scalarTexture.releaseGraphicsResources(model.openGLRenderWindow)
+        model.scalarTexture.resetFormatAndType()
 
         model.scalarTexture.create3DFilterableFromRaw(
           dims[0],
@@ -189,173 +190,299 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           numComp,
           dataType,
           data
-        );
+        )
       } else {
-        model.scalarTexture.deactivate();
-        model.scalarTexture.update3DFromRaw(data);
+        model.scalarTexture.deactivate()
+        model.scalarTexture.update3DFromRaw(data)
       }
 
-      model.scalarTextureString = toString;
+      model.scalarTextureString = toString
     }
 
     if (!model.tris.getCABO().getElementCount()) {
       // build the CABO
-      const ptsArray = new Float32Array(12);
+      const ptsArray = new Float32Array(12)
       for (let i = 0; i < 4; i++) {
-        ptsArray[i * 3] = (i % 2) * 2 - 1.0;
-        ptsArray[i * 3 + 1] = i > 1 ? 1.0 : -1.0;
-        ptsArray[i * 3 + 2] = -1.0;
+        ptsArray[i * 3] = (i % 2) * 2 - 1.0
+        ptsArray[i * 3 + 1] = i > 1 ? 1.0 : -1.0
+        ptsArray[i * 3 + 2] = -1.0
       }
 
-      const cellArray = new Uint16Array(8);
-      cellArray[0] = 3;
-      cellArray[1] = 0;
-      cellArray[2] = 1;
-      cellArray[3] = 3;
-      cellArray[4] = 3;
-      cellArray[5] = 0;
-      cellArray[6] = 3;
-      cellArray[7] = 2;
+      const cellArray = new Uint16Array(8)
+      cellArray[0] = 3
+      cellArray[1] = 0
+      cellArray[2] = 1
+      cellArray[3] = 3
+      cellArray[4] = 3
+      cellArray[5] = 0
+      cellArray[6] = 3
+      cellArray[7] = 2
 
       const points = vtkDataArray.newInstance({
         numberOfComponents: 3,
         values: ptsArray,
-      });
-      points.setName('points');
+      })
+      points.setName('points')
       const cells = vtkDataArray.newInstance({
         numberOfComponents: 1,
         values: cellArray,
-      });
+      })
       model.tris.getCABO().createVBO(cells, 'polys', Representation.SURFACE, {
         points,
         cellOffset: 0,
-      });
+      })
     }
 
-    model.VBOBuildTime.modified();
-  };
+    model.VBOBuildTime.modified()
+  }
 
-  publicAPI.getNeedToRebuildShaders = (cellBO, ren, actor) => {
-    // do we need lighting?
-    let lightComplexity = 0;
+  publicAPI.setCameraShaderParameters = (cellBO, ren, actor) => {
+    const program = cellBO.getProgram()
+    const cam = model.openGLCamera.getRenderable()
+    const blendMode = actor.getMapper().getBlendMode()
+    const slabThickness = cam.getSlabThickness()
+    const crange = cam.getClippingRange()
+
+    const defaultSlabThickness = null
+    const cameraMidpoint = (crange[1] + crange[0]) * 0.5
+    // if not equal to tiny slab thickness (i.e. it is defined as an actual
+    // intended value), use slab thickness instead of clipping range
     if (
-      actor.getProperty().getShade() &&
-      model.renderable.getBlendMode() === BlendMode.COMPOSITE_BLEND
+      blendMode !== BlendMode.COMPOSITE_BLEND &&
+      slabThickness !== defaultSlabThickness
     ) {
-      // consider the lighting complexity to determine which case applies
-      // simple headlight, Light Kit, the whole feature set of VTK
-      lightComplexity = 0;
-      model.numberOfLights = 0;
-
-      ren.getLights().forEach((light) => {
-        const status = light.getSwitch();
-        if (status > 0) {
-          model.numberOfLights++;
-          if (lightComplexity === 0) {
-            lightComplexity = 1;
-          }
-        }
-
-        if (
-          lightComplexity === 1 &&
-          (model.numberOfLights > 1 ||
-            light.getIntensity() !== 1.0 ||
-            !light.lightTypeIsHeadLight())
-        ) {
-          lightComplexity = 2;
-        }
-        if (lightComplexity < 3 && light.getPositional()) {
-          lightComplexity = 3;
-        }
-      });
+      crange[0] = cameraMidpoint - slabThickness
+      crange[1] = cameraMidpoint + slabThickness
+      cam.setSlabThicknessActive(true)
+    } else {
+      cam.setSlabThicknessActive(false)
     }
 
-    if (model.lastLightComplexity !== lightComplexity) {
-      model.lastLightComplexity = lightComplexity;
-      return true;
-    }
+    program.setUniformf('camThick', crange[1] - crange[0])
+    program.setUniformf('camNear', crange[0])
+    program.setUniformf('camFar', crange[1])
 
-    const numComp = model.scalarTexture.getComponents();
-    const iComps = actor.getProperty().getIndependentComponents();
-    let usesProportionalComponents = false;
-    let proportionalComponents = [];
-    if (iComps) {
-      // Define any proportional components
-      for (let nc = 0; nc < numComp; nc++) {
-        proportionalComponents.push(actor.getProperty().getOpacityMode(nc));
+    // // [WMVP]C == {world, model, view, projection} coordinates
+    // // E.g., WCPC == world to projection coordinate transformation
+    const keyMats = model.openGLCamera.getKeyMatrices(ren)
+    const actMats = model.openGLVolume.getKeyMatrices()
+    mat4.multiply(model.modelToView, keyMats.wcvc, actMats.mcwc)
+
+    const bounds = model.currentInput.getBounds()
+    const dims = model.currentInput.getDimensions()
+
+    // compute the viewport bounds of the volume
+    // we will only render those fragments.
+    const pos = vec3.create()
+    const dir = vec3.create()
+    let dcxmin = 1.0
+    let dcxmax = -1.0
+    let dcymin = 1.0
+    let dcymax = -1.0
+
+    for (let i = 0; i < 8; ++i) {
+      vec3.set(
+        pos,
+        bounds[i % 2],
+        bounds[2 + (Math.floor(i / 2) % 2)],
+        bounds[4 + Math.floor(i / 4)]
+      )
+      vec3.transformMat4(pos, pos, model.modelToView)
+      if (!cam.getParallelProjection()) {
+        vec3.normalize(dir, pos)
+
+        // now find the projection of this point onto a
+        // nearZ distance plane. Since the camera is at 0,0,0
+        // in VC the ray is just t*pos and
+        // t is -nearZ/dir.z
+        // intersection becomes pos.x/pos.z
+        const t = -crange[0] / pos[2]
+        vec3.scale(pos, dir, t)
       }
+      // now convert to DC
+      vec3.transformMat4(pos, pos, keyMats.vcpc)
 
-      if (proportionalComponents.length > 0) {
-        usesProportionalComponents = true;
-      }
+      dcxmin = Math.min(pos[0], dcxmin)
+      dcxmax = Math.max(pos[0], dcxmax)
+      dcymin = Math.min(pos[1], dcymin)
+      dcymax = Math.max(pos[1], dcymax)
     }
 
-    const ext = model.currentInput.getExtent();
-    const spc = model.currentInput.getSpacing();
-    const vsize = vec3.create();
+    program.setUniformf('dcxmin', dcxmin)
+    program.setUniformf('dcxmax', dcxmax)
+    program.setUniformf('dcymin', dcymin)
+    program.setUniformf('dcymax', dcymax)
+
+    if (program.isUniformUsed('cameraParallel')) {
+      program.setUniformi('cameraParallel', cam.getParallelProjection())
+    }
+
+    const ext = model.currentInput.getExtent()
+    const spc = model.currentInput.getSpacing()
+    const vsize = vec3.create()
     vec3.set(
       vsize,
-      (ext[1] - ext[0]) * spc[0],
-      (ext[3] - ext[2]) * spc[1],
-      (ext[5] - ext[4]) * spc[2]
-    );
+      (ext[1] - ext[0] + 1) * spc[0],
+      (ext[3] - ext[2] + 1) * spc[1],
+      (ext[5] - ext[4] + 1) * spc[2]
+    )
+    program.setUniform3f('vSpacing', spc[0], spc[1], spc[2])
 
-    const maxSamples =
-      vec3.length(vsize) / model.renderable.getSampleDistance();
+    vec3.set(pos, ext[0], ext[2], ext[4])
 
-    const state = {
-      interpolationType: actor.getProperty().getInterpolationType(),
-      useLabelOutline: actor.getProperty().getUseLabelOutline(),
-      numComp,
-      usesProportionalComponents,
-      iComps,
-      maxSamples,
-      useGradientOpacity: actor.getProperty().getUseGradientOpacity(0),
-      blendMode: model.renderable.getBlendMode(),
-      averageIPScalarMode: model.renderable.getAverageIPScalarRange(),
-      proportionalComponents,
-    };
+    model.currentInput.indexToWorldVec3(pos, pos)
 
-    if (
-      model.previousState.interpolationType !== state.interpolationType ||
-      model.previousState.useLabelOutline !== state.useLabelOutline ||
-      model.previousState.numComp !== state.numComp ||
-      model.previousState.usesProportionalComponents !==
-        state.usesProportionalComponents ||
-      model.previousState.iComps !== state.iComps ||
-      model.previousState.maxSamples !== state.maxSamples ||
-      model.previousState.useGradientOpacity !== state.useGradientOpacity ||
-      model.previousState.blendMode !== state.blendMode ||
-      !isEqual(
-        model.previousState.averageIPScalarMode,
-        state.averageIPScalarMode
-      ) ||
-      !isEqual(
-        model.previousState.proportionalComponents,
-        state.proportionalComponents
-      )
-    ) {
-      model.previousState = Object.assign({}, state);
+    vec3.transformMat4(pos, pos, model.modelToView)
 
-      return true;
+    program.setUniform3f('vOriginVC', pos[0], pos[1], pos[2])
+
+    // apply the image directions
+    const i2wmat4 = model.currentInput.getIndexToWorld()
+    mat4.multiply(model.idxToView, model.modelToView, i2wmat4)
+
+    mat3.multiply(
+      model.idxNormalMatrix,
+      keyMats.normalMatrix,
+      actMats.normalMatrix
+    )
+    mat3.multiply(
+      model.idxNormalMatrix,
+      model.idxNormalMatrix,
+      model.currentInput.getDirection()
+    )
+
+    const maxSamples = vec3.length(vsize) / model.renderable.getSampleDistance()
+    if (maxSamples > model.renderable.getMaximumSamplesPerRay()) {
+      vtkWarningMacro(`The number of steps required ${Math.ceil(
+        maxSamples
+      )} is larger than the
+        specified maximum number of steps ${model.renderable.getMaximumSamplesPerRay()}.
+        Please either change the
+        volumeMapper sampleDistance or its maximum number of samples.`)
     }
 
-    // has something changed that would require us to recreate the shader?
-    if (
-      cellBO.getProgram() === 0 ||
-      model.lastHaveSeenDepthRequest !== model.haveSeenDepthRequest ||
-      !!model.lastZBufferTexture !== !!model.zBufferTexture ||
-      cellBO.getShaderSourceTime().getMTime() < publicAPI.getMTime() ||
-      // cellBO.getShaderSourceTime().getMTime() < actor.getMTime() || // Disabled versus upstream VTK, since we only need to rebuild shaders if the above checks fail
-      cellBO.getShaderSourceTime().getMTime() < model.renderable.getMTime()
-      //cellBO.getShaderSourceTime().getMTime() < model.currentInput.getMTime()  // Disabled versus upstream VTK, since we only need to rebuild shaders if the above checks fail
-    ) {
-      model.lastZBufferTexture = model.zBufferTexture;
-      return true;
+    const vctoijk = vec3.create()
+
+    vec3.set(vctoijk, 1.0, 1.0, 1.0)
+    vec3.divide(vctoijk, vctoijk, vsize)
+    program.setUniform3f('vVCToIJK', vctoijk[0], vctoijk[1], vctoijk[2])
+    program.setUniform3i('volumeDimensions', dims[0], dims[1], dims[2])
+
+    if (!model.openGLRenderWindow.getWebgl2()) {
+      const volInfo = model.scalarTexture.getVolumeInfo()
+      program.setUniformf('texWidth', model.scalarTexture.getWidth())
+      program.setUniformf('texHeight', model.scalarTexture.getHeight())
+      program.setUniformi('xreps', volInfo.xreps)
+      program.setUniformi('xstride', volInfo.xstride)
+      program.setUniformi('ystride', volInfo.ystride)
     }
 
-    return false;
-  };
+    // map normals through normal matrix
+    // then use a point on the plane to compute the distance
+    const normal = vec3.create()
+    const pos2 = vec3.create()
+    for (let i = 0; i < 6; ++i) {
+      switch (i) {
+        default:
+        case 0:
+          vec3.set(normal, 1.0, 0.0, 0.0)
+          vec3.set(pos2, ext[1], ext[3], ext[5])
+          break
+        case 1:
+          vec3.set(normal, -1.0, 0.0, 0.0)
+          vec3.set(pos2, ext[0], ext[2], ext[4])
+          break
+        case 2:
+          vec3.set(normal, 0.0, 1.0, 0.0)
+          vec3.set(pos2, ext[1], ext[3], ext[5])
+          break
+        case 3:
+          vec3.set(normal, 0.0, -1.0, 0.0)
+          vec3.set(pos2, ext[0], ext[2], ext[4])
+          break
+        case 4:
+          vec3.set(normal, 0.0, 0.0, 1.0)
+          vec3.set(pos2, ext[1], ext[3], ext[5])
+          break
+        case 5:
+          vec3.set(normal, 0.0, 0.0, -1.0)
+          vec3.set(pos2, ext[0], ext[2], ext[4])
+          break
+      }
+      vec3.transformMat3(normal, normal, model.idxNormalMatrix)
+      vec3.transformMat4(pos2, pos2, model.idxToView)
+      const dist = -1.0 * vec3.dot(pos2, normal)
+
+      // we have the plane in view coordinates
+      // specify the planes in view coordinates
+      program.setUniform3f(`vPlaneNormal${i}`, normal[0], normal[1], normal[2])
+      program.setUniformf(`vPlaneDistance${i}`, dist)
+
+      if (actor.getProperty().getUseLabelOutline()) {
+        const image = model.currentInput
+        const worldToIndex = image.getWorldToIndex()
+
+        program.setUniformMatrix('vWCtoIDX', worldToIndex)
+
+        // Get the projection coordinate to world coordinate transformation matrix.
+        mat4.invert(model.projectionToWorld, keyMats.wcpc)
+        program.setUniformMatrix('PCWCMatrix', model.projectionToWorld)
+
+        const size = publicAPI.getRenderTargetSize()
+
+        program.setUniformf('vpWidth', size[0])
+        program.setUniformf('vpHeight', size[1])
+      }
+    }
+
+    mat4.invert(model.projectionToView, keyMats.vcpc)
+    program.setUniformMatrix('PCVCMatrix', model.projectionToView)
+
+    // handle lighting values
+    switch (model.lastLightComplexity) {
+      default:
+      case 0: // no lighting, tcolor is fine as is
+        break
+
+      case 1: // headlight
+      case 2: // light kit
+      case 3: {
+        // positional not implemented fallback to directional
+        // mat3.transpose(keyMats.normalMatrix, keyMats.normalMatrix);
+        let lightNum = 0
+        const lightColor = []
+        ren.getLights().forEach((light) => {
+          const status = light.getSwitch()
+          if (status > 0) {
+            const dColor = light.getColor()
+            const intensity = light.getIntensity()
+            lightColor[0] = dColor[0] * intensity
+            lightColor[1] = dColor[1] * intensity
+            lightColor[2] = dColor[2] * intensity
+            program.setUniform3fArray(`lightColor${lightNum}`, lightColor)
+            const ldir = light.getDirection()
+            vec3.set(normal, ldir[0], ldir[1], ldir[2])
+            vec3.transformMat3(normal, normal, keyMats.normalMatrix)
+            program.setUniform3f(
+              `lightDirectionVC${lightNum}`,
+              normal[0],
+              normal[1],
+              normal[2]
+            )
+            // camera DOP is 0,0,-1.0 in VC
+            const halfAngle = [
+              -0.5 * normal[0],
+              -0.5 * normal[1],
+              -0.5 * (normal[2] - 1.0),
+            ]
+            program.setUniform3fArray(`lightHalfAngleVC${lightNum}`, halfAngle)
+            lightNum++
+          }
+        })
+        // mat3.transpose(keyMats.normalMatrix, keyMats.normalMatrix);
+      }
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -364,18 +491,18 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
 // ----------------------------------------------------------------------------
 
-const DEFAULT_VALUES = {};
+const DEFAULT_VALUES = {}
 
 export function extend(publicAPI, model, initialValues = {}) {
-  Object.assign(model, DEFAULT_VALUES, initialValues);
+  Object.assign(model, DEFAULT_VALUES, initialValues)
 
-  vtkOpenGLVolumeMapper.extend(publicAPI, model, initialValues);
+  vtkOpenGLVolumeMapper.extend(publicAPI, model, initialValues)
 
-  model.scalarTexture = initialValues.scalarTexture;
-  model.previousState = {};
+  model.scalarTexture = initialValues.scalarTexture
+  model.previousState = {}
 
   // Object methods
-  vtkStreamingOpenGLVolumeMapper(publicAPI, model);
+  vtkStreamingOpenGLVolumeMapper(publicAPI, model)
 }
 
 // ----------------------------------------------------------------------------
@@ -383,8 +510,8 @@ export function extend(publicAPI, model, initialValues = {}) {
 export const newInstance = macro.newInstance(
   extend,
   'vtkStreamingOpenGLVolumeMapper'
-);
+)
 
 // ----------------------------------------------------------------------------
 
-export default { newInstance, extend };
+export default { newInstance, extend }

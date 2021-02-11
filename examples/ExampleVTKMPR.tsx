@@ -295,7 +295,7 @@ class VTKMPRExample extends Component {
     if (this.viewportGridResizeObserver) {
       this.viewportGridResizeObserver.disconnect();
     }
-    
+
     // Destroy synchronizers
     SynchronizerManager.destroy();
     imageCache.purgeCache();
@@ -412,6 +412,7 @@ class VTKMPRExample extends Component {
       toolName
     );
 
+    this.renderingEngine.render();
     this.setState({ ptCtLeftClickTool: toolName });
   };
 

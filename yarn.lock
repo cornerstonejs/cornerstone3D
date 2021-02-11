@@ -2968,6 +2968,11 @@ bluebird@^3.0.6, bluebird@^3.5.0, bluebird@^3.5.1, bluebird@^3.5.3, bluebird@^3.
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.7.2.tgz#9f229c15be272454ffa973ace0dbee79a1b0c36f"
   integrity sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==
 
+blueimp-md5@2.18.0:
+  version "2.18.0"
+  resolved "https://registry.yarnpkg.com/blueimp-md5/-/blueimp-md5-2.18.0.tgz#1152be1335f0c6b3911ed9e36db54f3e6ac52935"
+  integrity sha512-vE52okJvzsVWhcgUHOv+69OG3Mdg151xyn41aVQN/5W5S+S43qZhxECtYLAEHMSFWX6Mv5IZrzj3T5+JqXfj5Q==
+
 bn.js@^4.0.0, bn.js@^4.1.0, bn.js@^4.4.0:
   version "4.11.9"
   resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-4.11.9.tgz#26d556829458f9d1e81fc48952493d0ba3507828"
@@ -3891,10 +3896,10 @@ commander@2.17.x:
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.17.1.tgz#bd77ab7de6de94205ceacc72f1716d29f20a77bf"
   integrity sha512-wPMUt6FnH2yzG95SA6mzjQOEKUU3aLaDEmzs1ti+1E9h+CsrZghRlqEM/EJ4KscsQVG8uNN4uVreUeT8+drlgg==
 
-commander@6.2.0:
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-6.2.0.tgz#b990bfb8ac030aedc6d11bc04d1488ffef56db75"
-  integrity sha512-zP4jEKbe8SHzKJYQmq8Y9gYjtO/POJLgIdKgV7B9qNmABVFVc+ctqSX6iXh4mCpJfRBOabiZ2YKPg8ciDw6C+Q==
+commander@6.2.1, commander@^6.0.0, commander@^6.2.0:
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-6.2.1.tgz#0792eb682dfbc325999bb2b84fddddba110ac73c"
+  integrity sha512-U7VdrJFnJgo4xjrHpTzu0yrHPGImdsmD95ZlgYSEajAn2JKzDhDTPG9kBTefmObL2w/ngeZnilk+OV9CG3d7UA==
 
 commander@^2.15.1, commander@^2.18.0, commander@^2.20.0, commander@^2.8.1:
   version "2.20.3"
@@ -3905,11 +3910,6 @@ commander@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-4.1.1.tgz#9fd602bd936294e9e9ef46a3f4d6964044b18068"
   integrity sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==
-
-commander@^6.0.0, commander@^6.2.0:
-  version "6.2.1"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-6.2.1.tgz#0792eb682dfbc325999bb2b84fddddba110ac73c"
-  integrity sha512-U7VdrJFnJgo4xjrHpTzu0yrHPGImdsmD95ZlgYSEajAn2JKzDhDTPG9kBTefmObL2w/ngeZnilk+OV9CG3d7UA==
 
 commander@~2.19.0:
   version "2.19.0"
@@ -8797,10 +8797,10 @@ jsx-ast-utils@^2.4.1:
     array-includes "^3.1.2"
     object.assign "^4.1.2"
 
-jszip@3.5.0:
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/jszip/-/jszip-3.5.0.tgz#b4fd1f368245346658e781fec9675802489e15f6"
-  integrity sha512-WRtu7TPCmYePR1nazfrtuF216cIVon/3GWOvHS9QR5bIwSbnxtdpma6un3jyGGNhHsKCSzn5Ypk+EkDRvTGiFA==
+jszip@3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/jszip/-/jszip-3.2.0.tgz#1c179e8692777490ca4e9b8f3ced08f9b820da2c"
+  integrity sha512-4WjbsaEtBK/DHeDZOPiPw5nzSGLDEDDreFRDEgnoMwmknPjTqa+23XuYFk6NiGbeiAeZCctiQ/X/z0lQBmDVOQ==
   dependencies:
     lie "~3.3.0"
     pako "~1.0.2"
@@ -11178,7 +11178,12 @@ paged-request@^2.0.1:
   dependencies:
     axios "^0.18.0"
 
-pako@1.0.11, pako@^1.0.10, pako@~1.0.2, pako@~1.0.5:
+pako@2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/pako/-/pako-2.0.2.tgz#8a72af7a93431ef22aa97e0d53b0acaa3c689220"
+  integrity sha512-9e8DRI3+dRLomCmMBAH30B2ejh+blwXr7VmMEx/pVFZlSDA7oyI8uKMhKXr8IrZpoxBF2YlxUvhqRXzTT1i0NA==
+
+pako@^1.0.10, pako@~1.0.2, pako@~1.0.5:
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.11.tgz#6c9599d340d54dfd3946380252a35705a6b992bf"
   integrity sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==
@@ -15686,18 +15691,22 @@ vscode-textmate@^5.2.0:
   resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-5.2.0.tgz#01f01760a391e8222fe4f33fbccbd1ad71aed74e"
   integrity sha512-Uw5ooOQxRASHgu6C7GVvUxisKXfSgW4oFlO+aa+PAkgmH89O3CXxEEzNRNtHSqtXFTl0nAC1uYj0GMSH27uwtQ==
 
-"vtk.js@https://github.com/swederik/vtk-js.git#perf/md5-built":
-  version "0.0.0-semantically-release"
-  resolved "https://github.com/swederik/vtk-js.git#78e179ee98da39aaa5098733da095c1d774ce136"
+vtk.js@16.2.0:
+  version "16.2.0"
+  resolved "https://registry.yarnpkg.com/vtk.js/-/vtk.js-16.2.0.tgz#823731f9359f3ad03fe5986743728c7d1fb6a759"
+  integrity sha512-kd4uXsbMy5rE3pYTyNxrDVtibXuuocZrW1R8AzMNPDicZSEwa/E0ZKyjnlmXWHr7tIt2UFaMpyn25sad6Abzvw==
   dependencies:
-    commander "6.2.0"
+    blueimp-md5 "2.18.0"
+    commander "6.2.1"
     gl-matrix "3.3.0"
-    jszip "3.5.0"
-    pako "1.0.11"
+    jszip "3.2.0"
+    pako "2.0.2"
     seedrandom "3.0.5"
+    shader-loader "1.3.1"
     shelljs "0.8.4"
     webvr-polyfill "0.10.12"
     webworker-promise "0.4.2"
+    worker-loader "3.0.7"
     xmlbuilder "15.1.1"
 
 watchpack@^2.0.0:
@@ -16244,6 +16253,14 @@ worker-loader@3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/worker-loader/-/worker-loader-3.0.4.tgz#bbc0af0af7e2d972c1105001ab215497c00b98ca"
   integrity sha512-puFIebctLf/xB5Vex9QTX4Zr+wR6hQZqgVEg7QeUTA0I8XzTmGr620ryvY8E448C/hJ+eE+NKiIX9xyFcQNFbQ==
+  dependencies:
+    loader-utils "^2.0.0"
+    schema-utils "^3.0.0"
+
+worker-loader@3.0.7:
+  version "3.0.7"
+  resolved "https://registry.yarnpkg.com/worker-loader/-/worker-loader-3.0.7.tgz#9cf2122a9a781d6742cb873c58c3769591b31988"
+  integrity sha512-LjYLuYJw6kqQKDoygpoD5vWeR1CbZjuVSW3/8pFsptMlUl8gatNM/pszhasSDAWt+dYxMipWB6695k+1zId+iQ==
   dependencies:
     loader-utils "^2.0.0"
     schema-utils "^3.0.0"

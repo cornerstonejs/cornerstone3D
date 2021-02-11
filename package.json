@@ -29,7 +29,7 @@
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main",
     "cornerstone-math": "0.1.9",
     "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#merge-suv-calculation",
-    "vtk.js": "https://github.com/swederik/vtk-js.git#perf/md5-built"
+    "vtk.js": "16.2.0"
   },
   "dependencies": {
     "gl-matrix": "^3.3.0",
@@ -103,7 +103,7 @@
     "typedoc": "^0.20.13",
     "typedoc-plugin-pages-fork": "^0.0.1",
     "typescript": "^4.1.3",
-    "vtk.js": "https://github.com/swederik/vtk-js.git#perf/md5-built",
+    "vtk.js": "16.2.0",
     "webpack": "5.10.3",
     "webpack-cli": "^4.2.0",
     "webpack-dev-server": "^3.11.0",

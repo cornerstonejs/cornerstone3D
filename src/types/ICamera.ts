@@ -9,6 +9,7 @@ interface ICamera {
   viewAngle?: number
   viewPlaneNormal?: Point3
   viewUp?: Point3
+  slabThickness?: number
 }
 
 export default ICamera

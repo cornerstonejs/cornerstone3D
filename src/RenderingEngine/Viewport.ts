@@ -10,8 +10,7 @@ import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec3 } from 'gl-matrix'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { ViewportInputOptions, Point2, Point3 } from './../types'
-
-const DEFAULT_SLAB_THICKNESS = 0.1
+import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 
 /**
  * An object representing a single viewport, which is a camera
@@ -57,7 +56,8 @@ class Viewport implements IViewport {
 
     const renderer = this.getRenderer()
 
-    const camera = renderer.getActiveCamera()
+    const camera = vtkSlabCamera.newInstance()
+    renderer.setActiveCamera(camera)
 
     switch (this.type) {
       case VIEWPORT_TYPE.ORTHOGRAPHIC:
@@ -78,7 +78,6 @@ class Viewport implements IViewport {
       -sliceNormal[2]
     )
     camera.setViewUp(...viewUp)
-    camera.setThicknessFromFocalPoint(DEFAULT_SLAB_THICKNESS)
     camera.setFreezeFocalPoint(true)
 
     this.resetCamera()
@@ -158,18 +157,40 @@ class Viewport implements IViewport {
   }
 
   /**
+   * @method Sets the slab thickness option in the `Viewport`'s `options`.
+   *
+   * @param {number} [slabThickness]
+   */
+  public setSlabThickness(slabThickness) {
+    this.setCamera({
+      slabThickness,
+    })
+  }
+
+  /**
+   * @method Gets the slab thickness option in the `Viewport`'s `options`.
+   *
+   * @returns {number} [slabThickness]
+   */
+  public getSlabThickness() {
+    const { slabThickness } = this.getCamera()
+    return slabThickness
+  }
+
+  /**
    * @method _setVolumeActors Attaches the volume actors to the viewport.
    *
    * @param {Array<VolumeActorEntry>} volumeActorEntries The volume actors to add the viewport.
+   *
+   * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */
   public _setVolumeActors(volumeActorEntries: Array<VolumeActorEntry>) {
     const renderer = this.getRenderer()
 
-    volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor));
+    volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))
 
+    let slabThickness = null
     if (this.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
-      let slabThickness = DEFAULT_SLAB_THICKNESS
-
       volumeActorEntries.forEach((va) => {
         if (va.slabThickness && va.slabThickness > slabThickness) {
           slabThickness = va.slabThickness
@@ -180,7 +201,13 @@ class Viewport implements IViewport {
 
       const activeCamera = renderer.getActiveCamera()
 
-      activeCamera.setThicknessFromFocalPoint(slabThickness)
+      // This is necessary to initialize the clipping range and it is not related
+      // to our custom slabThickness.
+      activeCamera.setThicknessFromFocalPoint(0.1)
+      // This is necessary to give the slab thickness.
+      // NOTE: our custom camera implementation has an additional slab thickness
+      // values to handle MIP and non MIP volumes in the same viewport.
+      activeCamera.setSlabThickness(slabThickness)
       activeCamera.setFreezeFocalPoint(true)
     } else {
       // Use default renderer resetCamera, fits bounding sphere of data.
@@ -338,6 +365,7 @@ class Viewport implements IViewport {
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
+      slabThickness: vtkCamera.getSlabThickness(),
     }
   }
 
@@ -354,6 +382,7 @@ class Viewport implements IViewport {
       parallelProjection,
       parallelScale,
       viewAngle,
+      slabThickness,
     } = cameraInterface
 
     if (viewUp !== undefined) {
@@ -388,6 +417,10 @@ class Viewport implements IViewport {
       vtkCamera.setViewAngle(viewAngle)
     }
 
+    if (slabThickness !== undefined) {
+      vtkCamera.setSlabThickness(slabThickness)
+    }
+
     const eventDetail = {
       previousCamera,
       camera: updatedCamera,
@@ -395,7 +428,7 @@ class Viewport implements IViewport {
       viewportUID: this.uid,
       sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,
-    };
+    }
 
     triggerEvent(this.canvas, EVENTS.CAMERA_MODIFIED, eventDetail)
 
@@ -416,6 +449,15 @@ class Viewport implements IViewport {
    * @public
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
+    const vtkCamera = this.getVtkActiveCamera()
+    const slabThicknessActive = vtkCamera.getSlabThicknessActive()
+    // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
+    // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used
+    // in the volumeMapper (where we need our custom getProjectionMatrix) and in the coordinates transformations
+    // (where we don't need our custom getProjectionMatrix)
+    // TO DO: we should customize vtk to use our custom getProjectionMatrix only in the volumeMapper
+    vtkCamera.setSlabThicknessActive(false)
+
     const renderer = this.getRenderer()
     const offscreenMultiRenderWindow = this.getRenderingEngine()
       .offscreenMultiRenderWindow
@@ -433,6 +475,8 @@ class Viewport implements IViewport {
       renderer
     )
 
+    vtkCamera.setSlabThicknessActive(slabThicknessActive)
+
     return worldCoord
   }
 
@@ -445,6 +489,15 @@ class Viewport implements IViewport {
    * @public
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
+    const vtkCamera = this.getVtkActiveCamera()
+    const slabThicknessActive = vtkCamera.getSlabThicknessActive()
+    // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
+    // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used
+    // in the volumeMapper (where we need our custom getProjectionMatrix) and in the coordinates transformations
+    // (where we don't need our custom getProjectionMatrix)
+    // TO DO: we should customize vtk to use our custom getProjectionMatrix only in the volumeMapper
+    vtkCamera.setSlabThicknessActive(false)
+
     const renderer = this.getRenderer()
     const offscreenMultiRenderWindow = this.getRenderingEngine()
       .offscreenMultiRenderWindow
@@ -462,6 +515,8 @@ class Viewport implements IViewport {
       displayCoord[0] - this.sx,
       displayCoord[1] - this.sy,
     ]
+
+    vtkCamera.setSlabThicknessActive(slabThicknessActive)
 
     return canvasCoord
   }
@@ -481,7 +536,7 @@ class Viewport implements IViewport {
       .identity()
       .rotateFromDirections(viewUp, [1, 0, 0])
 
-    viewUpCorners.forEach((pt) => transform.apply(pt));
+    viewUpCorners.forEach((pt) => transform.apply(pt))
 
     // range is now maximum X distance
     let minY = Infinity
@@ -501,7 +556,7 @@ class Viewport implements IViewport {
       .identity()
       .rotateFromDirections(viewRight, [1, 0, 0])
 
-    viewRightCorners.forEach((pt) => transform.apply(pt));
+    viewRightCorners.forEach((pt) => transform.apply(pt))
 
     // range is now maximum Y distance
     let minX = Infinity

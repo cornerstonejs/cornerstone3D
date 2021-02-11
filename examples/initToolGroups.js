@@ -18,45 +18,128 @@ const {
   CrosshairsTool,
 } = csTools3d;
 
-// TODO: for the slab thickness switch to two independent options and one parent option:
-// - viewportControllableByReferenceLines true/false
-// - viewportReferenceLineDraggable/Rotable true/false
-// - viewportReferenceLineSlabThicknessControlsOn true/false
-// NOTE: rotate/translate are enabled/disabled together as one option
-// in future we may separate them, but only if rotation rotates only the 1 reference line at time
-// (at the moment, rotating a reference line, will also rotate all the other active/intersecting ones of the same angle).
-let viewportControllable = {};
-viewportControllable[VIEWPORT_IDS.CT.AXIAL] = true;
-viewportControllable[VIEWPORT_IDS.CT.SAGITTAL] = true;
-viewportControllable[VIEWPORT_IDS.CT.CORONAL] = true;
+/* Configuration arrays and get/set functions for setting the crosshair interactions:
+* - viewportReferenceLineControllable
+* - viewportReferenceLineDraggableRotatable
+* - viewportReferenceLineSlabThicknessControlsOn
+* NOTE: rotate/translate are enabled/disabled together as one option
+* in future we may separate them, but only if rotation rotates only 1 reference
+* line at time, i.e. the interacting one. At the moment, rotating a reference
+* line, will also rotate all the other active/intersecting ones of the same
+* angle.
+*
+* TO DO: would be ideal to hoister these configurations to a tool state manager
+* that is a level higher than frame of reference (or a module, when/if we port
+* the concept from csTools2d)
+*/
 
-viewportControllable[VIEWPORT_IDS.PT.AXIAL] = true;
-viewportControllable[VIEWPORT_IDS.PT.SAGITTAL] = true;
-viewportControllable[VIEWPORT_IDS.PT.CORONAL] = true;
-
-viewportControllable[VIEWPORT_IDS.FUSION.AXIAL] = true;
-viewportControllable[VIEWPORT_IDS.FUSION.SAGITTAL] = true;
-viewportControllable[VIEWPORT_IDS.FUSION.CORONAL] = true;
-
-viewportControllable[VIEWPORT_IDS.PTMIP.CORONAL] = true;
-
-viewportControllable[VIEWPORT_IDS.CTVR.VR] = true;
-
-viewportControllable[VIEWPORT_IDS.CTOBLIQUE.OBLIQUE] = true;
-
-viewportControllable[VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL] = true;
-viewportControllable[VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL] = true;
-viewportControllable[VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL] = true;
+let viewportReferenceLineControllable = [
+  VIEWPORT_IDS.CT.AXIAL,
+  VIEWPORT_IDS.CT.SAGITTAL,
+  VIEWPORT_IDS.CT.CORONAL,
+  VIEWPORT_IDS.PT.AXIAL,
+  VIEWPORT_IDS.PT.SAGITTAL,
+  VIEWPORT_IDS.PT.CORONAL,
+  VIEWPORT_IDS.FUSION.AXIAL,
+  VIEWPORT_IDS.FUSION.SAGITTAL,
+  VIEWPORT_IDS.FUSION.CORONAL,
+  VIEWPORT_IDS.PTMIP.CORONAL,
+  VIEWPORT_IDS.CTVR.VR,
+  VIEWPORT_IDS.CTOBLIQUE.OBLIQUE,
+  VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
+  VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
+  VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
+];
 
 function setReferenceLineControllable(viewportUID, controllable) {
-  viewportControllable[viewportUID] = controllable;
+  const index = viewportReferenceLineControllable.indexOf(viewportUID)
+  if (controllable) {
+    index === -1 ? array.push(viewportUID) : console.log("viewport is already controllable");
+  } else {
+    index > -1 ? array.splice(index, 1) : console.log("viewport not found in controllable ones");
+  }
 }
 
-window.setReferenceLineControllable = setReferenceLineControllable;
+window.settReferenceLineControllable = setReferenceLineControllable;
 
 function getReferenceLineControllable(viewportUID) {
-  return viewportControllable[viewportUID];
+  const index = viewportReferenceLineControllable.indexOf(viewportUID)
+  return index !== -1 ? true : false;
 }
+
+window.getReferenceLineControllable = getReferenceLineControllable;
+
+let viewportReferenceLineDraggableRotatable = [
+  VIEWPORT_IDS.CT.AXIAL,
+  VIEWPORT_IDS.CT.SAGITTAL,
+  VIEWPORT_IDS.CT.CORONAL,
+  VIEWPORT_IDS.PT.AXIAL,
+  VIEWPORT_IDS.PT.SAGITTAL,
+  VIEWPORT_IDS.PT.CORONAL,
+  VIEWPORT_IDS.FUSION.AXIAL,
+  VIEWPORT_IDS.FUSION.SAGITTAL,
+  VIEWPORT_IDS.FUSION.CORONAL,
+  VIEWPORT_IDS.PTMIP.CORONAL,
+  VIEWPORT_IDS.CTVR.VR,
+  VIEWPORT_IDS.CTOBLIQUE.OBLIQUE,
+  VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
+  VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
+  VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
+];
+
+function setReferenceLineDraggableRotatable(viewportUID, controllable) {
+  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportUID)
+  if (controllable) {
+    index === -1 ? array.push(viewportUID) : console.log("viewport is already draggable");
+  } else {
+    index > -1 ? array.splice(index, 1) : console.log("viewport not found in draggable ones");
+  }
+}
+
+window.setReferenceLineDraggableRotatable = setReferenceLineDraggableRotatable;
+
+function getReferenceLineDraggableRotatable(viewportUID) {
+  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportUID)
+  return index !== -1 ? true : false;
+}
+
+window.getReferenceLineDraggableRotatable = getReferenceLineDraggableRotatable;
+
+let viewportReferenceLineSlabThicknessControlsOn = [
+  VIEWPORT_IDS.CT.AXIAL,
+  VIEWPORT_IDS.CT.SAGITTAL,
+  VIEWPORT_IDS.CT.CORONAL,
+  /*VIEWPORT_IDS.PT.AXIAL,
+  VIEWPORT_IDS.PT.SAGITTAL,
+  VIEWPORT_IDS.PT.CORONAL,*/
+  VIEWPORT_IDS.FUSION.AXIAL,
+  VIEWPORT_IDS.FUSION.SAGITTAL,
+  VIEWPORT_IDS.FUSION.CORONAL,
+  VIEWPORT_IDS.PTMIP.CORONAL,
+  VIEWPORT_IDS.CTVR.VR,
+  VIEWPORT_IDS.CTOBLIQUE.OBLIQUE,
+  VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
+  VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
+  VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
+];
+
+function setReferenceLineSlabThicknessControlsOn(viewportUID, controllable) {
+  const index = viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportUID)
+  if (controllable) {
+    index === -1 ? array.push(viewportUID) : console.log("viewport has already the slabThickness controls on");
+  } else {
+    index > -1 ? array.splice(index, 1) : console.log("viewport not found in the slabThickness controls on");
+  }
+}
+
+window.setReferenceLineSlabThicknessControlsOn = setReferenceLineSlabThicknessControlsOn;
+
+function getReferenceLineSlabThicknessControlsOn(viewportUID) {
+  const index = viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportUID)
+  return index !== -1 ? true : false;
+}
+
+window.getReferenceLineSlabThicknessControlsOn = getReferenceLineSlabThicknessControlsOn;
 
 let viewportColors = {};
 viewportColors[VIEWPORT_IDS.CT.AXIAL] = 'rgb(200, 0, 0)';
@@ -90,6 +173,8 @@ window.setReferenceLineColor = setReferenceLineColor;
 function getReferenceLineColor(viewportUID) {
   return viewportColors[viewportUID];
 }
+
+window.getReferenceLineColor = getReferenceLineColor;
 
 function initToolGroups() {
   // TODO: Can we delete tool groups?
@@ -159,6 +244,8 @@ function initToolGroups() {
     configuration: {
       getReferenceLineColor,
       getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     },
   });
 
@@ -203,6 +290,8 @@ function initToolGroups() {
     configuration: {
       getReferenceLineColor,
       getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     },
   });
 
@@ -254,6 +343,8 @@ function initToolGroups() {
     configuration: {
       getReferenceLineColor,
       getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     },
   });
 

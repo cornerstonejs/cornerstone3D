@@ -31,8 +31,10 @@ const { isEqual, isOpposite } = math.vec3
 // TODO: nested config is weird
 interface ToolConfiguration {
   configuration?: {
-    getReferenceLineControllable?: (viewportUID: string) => boolean
     getReferenceLineColor?: (viewportUID: string) => string
+    getReferenceLineControllable?: (viewportUID: string) => boolean
+    getReferenceLineDraggableRotatable?: (viewportUID: string) => boolean
+    getReferenceLineSlabThicknessControlsOn?: (viewportUID: string) => boolean
     shadow?: boolean
   }
 }
@@ -45,11 +47,27 @@ function defaultReferenceLineControllable() {
   return true
 }
 
+function defaultReferenceLineDraggableRotatable() {
+  return true
+}
+
+function defaultReferenceLineSlabThicknessControlsOn() {
+  return false
+}
+
+const OPERATION = {
+  DRAG: 1,
+  ROTATE: 2,
+  SLAB: 3,
+}
+
 export default class CrosshairsTool extends BaseAnnotationTool {
   toolCenter: Point3 = [0, 0, 0] // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportUID: string) => string
   _getReferenceLineControllable?: (viewportUID: string) => boolean
+  _getReferenceLineDraggableRotatable?: (viewportUID: string) => boolean
+  _getReferenceLineSlabThicknessControlsOn?: (viewportUID: string) => boolean
   editData: {
     toolData: any
   } | null
@@ -70,6 +88,15 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       (toolConfiguration.configuration &&
         toolConfiguration.configuration.getReferenceLineControllable) ||
       defaultReferenceLineControllable
+    this._getReferenceLineDraggableRotatable =
+      (toolConfiguration.configuration &&
+        toolConfiguration.configuration.getReferenceLineDraggableRotatable) ||
+      defaultReferenceLineDraggableRotatable
+    this._getReferenceLineSlabThicknessControlsOn =
+      (toolConfiguration.configuration &&
+        toolConfiguration.configuration
+          .getReferenceLineSlabThicknessControlsOn) ||
+      defaultReferenceLineSlabThicknessControlsOn
 
     /**
      * Will only fire fore cornerstone events:
@@ -113,34 +140,29 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       return undefined
     }
 
-    // TODO square (?) handles to pull MIP slabs (i.e. like Radiant.)
-
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
-    const { data } = toolData
-    const { points } = data.handles
+    let point = this._getRotationHandleNearImagePoint(
+      viewport,
+      toolData,
+      canvasCoords,
+      proximity
+    )
 
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i][0]
-      const viewportControllable = this._getReferenceLineControllable(
-        points[i][1].uid
-      )
-      if (!viewportControllable) {
-        continue
-      }
+    if (point !== null) {
+      return point
+    }
 
-      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
+    point = this._getSlabThicknessHandleNearImagePoint(
+      viewport,
+      toolData,
+      canvasCoords,
+      proximity
+    )
 
-      if (vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity) {
-        data.handles.activeOperation = 1 // rotation
-
-        this.editData = {
-          toolData,
-        }
-
-        return point
-      }
+    if (point !== null) {
+      return point
     }
   }
 
@@ -157,12 +179,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     data.active = true
 
-    // NOTE: handle index or coordinates at the moment are not used when dragging.
-    // Probably the returned point will be needed when implementing the slabthickness,
-    // but now not (we use the handle points only in the renderTool and they are a derivate
-    // from the camera varibales of the viewports).
+    // NOTE: handle index or coordinates are not used when dragging.
+    // This beacause the handle points are actually generated in the renderTool and they are a derivate
+    // from the camera varibales of the viewports and of the slab thickness variable.
     // Remember that the translation and rotation operations operate on the camera
-    // variables and not really on the handles.
+    // variables and not really on the handles. Similar for the slab thickness.
 
     this._activateModify(element)
 
@@ -212,85 +233,43 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
     }
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
-    const { sWidth, sHeight } = viewport
-    const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight)
     const { data } = toolData
+    if (this._pointNearTool(element, toolData, canvasCoords, 6)) {
+      return true
+    } else if (data.activeViewportUIDs.length === 0) {
+      const enabledElement = getEnabledElement(element)
+      this._Jump(enabledElement, canvasCoords)
 
-    const center = this.toolCenter
-    const { points } = data.handles
-    const viewportArray = []
+      const { rotationPoints } = data.handles
+      const viewportUIDArray = []
+      // put all the draggable reference lines in the viewportUIDArray
+      for (let i = 0; i < rotationPoints.length - 1; ++i) {
+        const otherViewport = rotationPoints[i][1]
+        const viewportControllable = this._getReferenceLineControllable(
+          otherViewport.uid
+        )
+        const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+          otherViewport.uid
+        )
 
-    for (let i = 0; i < points.length; ++i) {
-      const otherViewport = points[i][1]
-      const point = points[i][0]
-      const refLineDirection = [0, 0, 0]
-      const point1: Point3 = [0, 0, 0]
-      const point2: Point3 = [0, 0, 0]
-      vtkMath.subtract(center, point, refLineDirection)
-      vtkMath.normalize(refLineDirection)
-      vtkMath.multiplyScalar(refLineDirection, canvasDiagonalLength * 2)
-      vtkMath.subtract(center, refLineDirection, point1)
-      vtkMath.add(center, refLineDirection, point2)
-
-      const canavasPoint1 = viewport.worldToCanvas(point1)
-      const canavasPoint2 = viewport.worldToCanvas(point2)
-
-      const lineSegment = {
-        start: {
-          x: canavasPoint1[0],
-          y: canavasPoint1[1],
-        },
-        end: {
-          x: canavasPoint2[0],
-          y: canavasPoint2[1],
-        },
-      }
-
-      const distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
-        lineSegment,
-        {
-          x: canvasCoords[0],
-          y: canvasCoords[1],
-        }
-      )
-
-      const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
-      )
-      if (distanceToPoint <= proximity && viewportControllable) {
-        this.editData = {
-          toolData,
+        if (!viewportControllable || !viewportDraggableRotatable) {
+          continue
         }
 
-        viewportArray.push(otherViewport)
-        data.handles.activeOperation = 0 // translation
+        viewportUIDArray.push(otherViewport.uid)
+
+        // rotation handles are two for viewport
+        i++
       }
 
-      // rotation handles are two for viewport
-      i++
-    }
+      data.activeViewportUIDs = [...viewportUIDArray]
+      // set translation operation
+      data.handles.activeOperation = OPERATION.DRAG
 
-    if (data.handles.activeOperation === 0) {
-      data.activeViewports = [...viewportArray]
       return true
     }
 
-    if (interactionType !== 'mouseMove') {
-      this.editData = {
-        toolData,
-      }
-
-      this._Jump(enabledElement, canvasCoords)
-      return this.pointNearTool(
-        element,
-        toolData,
-        canvasCoords,
-        proximity,
-        interactionType
-      )
-    }
+    return false
   }
 
   toolSelectedCallback = (evt, toolData, interactionType = 'mouse') => {
@@ -339,11 +318,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // viewport ToolData
     const viewportToolData = filteredToolState[0]
 
-    // -- Update the camera of the linked viewports in case of translation (e.g. scroll wheel events)
+    // -- Update the camera of other linked viewports in the same scene that
+    //    have the same camera in case of translation
     // -- Update the crosshair center in world coordinates in toolData.
     // This is necessary because other tools can modify the position of the slices,
-    // e.g. stackscroll tool at wheel scroll. So we update the coordinates of the handles always here.
-    // NOTE: rotation handles position are created/updated in renderTool.
+    // e.g. stackscroll tool at wheel scroll. So we update the coordinates of the center always here.
+    // NOTE: rotation and slab thickness handles are created/updated in renderTool.
     if (viewportToolData) {
       const currentCamera = viewport.getCamera()
       const oldCameraPosition = viewportToolData.metadata.cameraPosition
@@ -369,9 +349,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const viewportControllable = this._getReferenceLineControllable(
         viewport.uid
       )
+      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+        viewport.uid
+      )
       if (
         !isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
-        viewportControllable
+        viewportControllable &&
+        viewportDraggableRotatable
       ) {
         // Is camera Modified a TRANSLATION or ROTATION?
         let IsTranslation = true
@@ -426,16 +410,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
               focalPoint: newFocalPoint,
               position: newPosition,
             })
-
-            otherViewport.render()
           }
 
           // update center of the crosshair
-          const center = this.toolCenter
-
-          center[0] += deltaCameraPosition[0]
-          center[1] += deltaCameraPosition[1]
-          center[2] += deltaCameraPosition[2]
+          this.toolCenter[0] += deltaCameraPosition[0]
+          this.toolCenter[1] += deltaCameraPosition[1]
+          this.toolCenter[2] += deltaCameraPosition[2]
         }
       }
     }
@@ -455,8 +435,18 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const toolData = filteredToolState[i]
       const { data } = toolData
 
+      if (!data.handles) {
+        continue
+      }
+
+      const previousActiveOperation = data.handles.activeOperation
+      const previousActiveViewportUIDs =
+        data.activeViewportUIDs && data.activeViewportUIDs.length > 0
+          ? [...data.activeViewportUIDs]
+          : []
+
       // This init are necessary, because when we move the mouse they are not cleaned by _mouseUpCallback
-      data.activeViewports = []
+      data.activeViewportUIDs = []
       data.handles.activeOperation = null
 
       const handleNearImagePoint = this.getHandleNearImagePoint(
@@ -470,13 +460,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       if (handleNearImagePoint) {
         near = true
       } else {
-        near = this.pointNearTool(
-          element,
-          toolData,
-          canvasCoords,
-          6,
-          'mouseMove'
-        )
+        near = this._pointNearTool(element, toolData, canvasCoords, 6)
       }
 
       const nearToolAndNotMarkedActive = near && !data.active
@@ -484,8 +468,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
         data.active = !data.active
         imageNeedsUpdate = true
-      } else if (data.handles && data.handles.activeOperation !== null) {
-        // Active handle index has changed, re-render.
+      } else if (
+        data.handles.activeOperation !== previousActiveOperation ||
+        !this._areViewportUIDArraysEqual(
+          data.activeViewportUIDs,
+          previousActiveViewportUIDs
+        )
+      ) {
         imageNeedsUpdate = true
       }
     }
@@ -560,12 +549,18 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // -- Extend/confine this line to fit in this canvas.
     // -- Render this line.
 
-    const linesWorld = []
+    const { sWidth, sHeight } = viewport
+    const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight)
+
+    const data = viewportToolData.data
+    const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter)
 
     const otherViewportToolData = this._filterUniqueViewportOrientations(
       svgDrawingHelper.enabledElement,
       toolState
     )
+
+    const referenceLines = []
 
     otherViewportToolData.forEach((toolData) => {
       const { data } = toolData
@@ -574,13 +569,25 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const otherViewport = scene.getViewport(data.viewportUID)
       const otherCamera = otherViewport.getCamera()
 
+      const otherViewportControllable = this._getReferenceLineControllable(
+        otherViewport.uid
+      )
+      const otherViewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+        otherViewport.uid
+      )
+      const otherViewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
+        otherViewport.uid
+      )
+
       // get coordinates for the reference line
       const { sWidth, sHeight } = otherViewport
-      const canvasDiagonalLength = Math.sqrt(
+      const otherCanvasDiagonalLength = Math.sqrt(
         sWidth * sWidth + sHeight * sHeight
       )
-      const centerCanvas = [sWidth * 0.5, sHeight * 0.5]
-      const centerWorld = otherViewport.canvasToWorld(centerCanvas)
+      const otherCanvasCenter = [sWidth * 0.5, sHeight * 0.5]
+      const otherViewportCenterWorld = otherViewport.canvasToWorld(
+        otherCanvasCenter
+      )
 
       const direction = [0, 0, 0]
       vtkMath.cross(
@@ -589,151 +596,525 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         direction
       )
       vtkMath.normalize(direction)
-      vtkMath.multiplyScalar(direction, canvasDiagonalLength)
+      vtkMath.multiplyScalar(direction, otherCanvasDiagonalLength)
 
-      const world1 = [0, 0, 0]
-      vtkMath.add(centerWorld, direction, world1)
-      const world2 = [0, 0, 0]
-      vtkMath.multiplyScalar(direction, -1)
-      vtkMath.add(centerWorld, direction, world2)
+      const pointWorld0 = [0, 0, 0]
+      vtkMath.add(otherViewportCenterWorld, direction, pointWorld0)
 
-      linesWorld.push([world1, world2, otherViewport])
-    })
+      const pointWorld1 = [0, 0, 0]
+      vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1)
 
-    const lineSegmentsCanvas = linesWorld.map((line) => {
-      return [
-        viewport.worldToCanvas(line[0]),
-        viewport.worldToCanvas(line[1]),
-        line[2],
-      ]
-    })
+      // get canvas information for points and lines (canvas box, canvas horizontal distances)
+      const pointCanvas0 = viewport.worldToCanvas(pointWorld0)
 
-    const { sWidth, sHeight } = viewport
-    const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight)
-
-    const data = viewportToolData.data
-    const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter)
-
-    const referenceLines = lineSegmentsCanvas.map((lineSegment) => {
-      const [point0, point1, viewport] = lineSegment
-
-      const center = [
-        (point0[0] + point1[0]) * 0.5,
-        (point0[1] + point1[1]) * 0.5,
-        0,
+      const { focalPoint } = camera
+      const focalPointCanvas = viewport.worldToCanvas(focalPoint)
+      const canvasBox = [
+        focalPointCanvas - sWidth * 0.5,
+        focalPointCanvas + sWidth * 0.5,
+        focalPointCanvas - sHeight * 0.5,
+        focalPointCanvas + sHeight * 0.5,
       ]
 
-      const pointNew = [point0[0], point0[1], 0]
-      const unitVectorFromCenter = [0, 0, 0]
-      vtkMath.subtract(pointNew, center, unitVectorFromCenter)
-      vtkMath.normalize(unitVectorFromCenter, unitVectorFromCenter)
+      const otherViewportCenterCanvas = viewport.worldToCanvas(
+        otherViewportCenterWorld
+      )
 
-      const distantPoint = [
-        center[0] + unitVectorFromCenter[0] * canvasDiagonalLength,
-        center[1] + unitVectorFromCenter[1] * canvasDiagonalLength,
-      ]
+      const canvasUnitVectorFromCenter = vec2.create()
+      vec2.subtract(
+        canvasUnitVectorFromCenter,
+        pointCanvas0,
+        otherViewportCenterCanvas
+      )
+      vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter)
 
-      const negativeDistantPoint = [
-        center[0] - unitVectorFromCenter[0] * canvasDiagonalLength,
-        center[1] - unitVectorFromCenter[1] * canvasDiagonalLength,
-      ]
+      const canvasVectorFromCenterLong = vec2.create()
+      vec2.scale(
+        canvasVectorFromCenterLong,
+        canvasUnitVectorFromCenter,
+        canvasDiagonalLength * 100
+      )
+      const canvasVectorFromCenterMid = vec2.create()
+      vec2.scale(
+        canvasVectorFromCenterMid,
+        canvasUnitVectorFromCenter,
+        canvasDiagonalLength * 0.25
+      )
+      const canvasVectorFromCenterShort = vec2.create()
+      vec2.scale(
+        canvasVectorFromCenterShort,
+        canvasUnitVectorFromCenter,
+        canvasDiagonalLength * 0.15
+      )
+      const canvasVectorFromCenterStart = vec2.create()
+      vec2.scale(
+        canvasVectorFromCenterStart,
+        canvasUnitVectorFromCenter,
+        canvasDiagonalLength * 0.05
+      )
 
-      const handleOne = [
-        crosshairCenterCanvas[0] -
-          unitVectorFromCenter[0] * canvasDiagonalLength * 0.15,
-        crosshairCenterCanvas[1] -
-          unitVectorFromCenter[1] * canvasDiagonalLength * 0.15,
-      ]
+      // points for reference lines
+      const refLinePointOne = vec2.create()
+      const refLinePointTwo = vec2.create()
+      const refLinePointThree = vec2.create()
+      const refLinePointFour = vec2.create()
 
-      const handleTwo = [
-        crosshairCenterCanvas[0] +
-          unitVectorFromCenter[0] * canvasDiagonalLength * 0.15,
-        crosshairCenterCanvas[1] +
-          unitVectorFromCenter[1] * canvasDiagonalLength * 0.15,
-      ]
+      let refLinesCenter = vec2.clone(crosshairCenterCanvas)
+      if (!otherViewportDraggableRotatable || !otherViewportControllable) {
+        refLinesCenter = vec2.clone(otherViewportCenterCanvas)
+      }
 
-      liangBarksyClip(negativeDistantPoint, distantPoint, [
-        0, //xmin
-        0, // ymin
-        sWidth, // xmax
-        sHeight, // ymax
+      vec2.add(refLinePointOne, refLinesCenter, canvasVectorFromCenterStart)
+      vec2.add(refLinePointTwo, refLinesCenter, canvasVectorFromCenterLong)
+      vec2.subtract(
+        refLinePointThree,
+        refLinesCenter,
+        canvasVectorFromCenterStart
+      )
+      vec2.subtract(
+        refLinePointFour,
+        refLinesCenter,
+        canvasVectorFromCenterLong
+      )
+
+      liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox)
+      liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox)
+
+      // points for rotation handles
+      const rotHandleOne = vec2.create()
+      vec2.subtract(
+        rotHandleOne,
+        crosshairCenterCanvas,
+        canvasVectorFromCenterMid
+      )
+
+      const rotHandleTwo = vec2.create()
+      vec2.add(rotHandleTwo, crosshairCenterCanvas, canvasVectorFromCenterMid)
+
+      // get world information for lines and points (vertical world distances)
+      let stHanlesCenterCanvas = vec2.clone(crosshairCenterCanvas)
+      if (
+        !otherViewportDraggableRotatable &&
+        otherViewportSlabThicknessControlsOn
+      ) {
+        stHanlesCenterCanvas = vec2.clone(otherViewportCenterCanvas)
+      }
+
+      let stHanlesCenterWorld = [...this.toolCenter]
+      if (
+        !otherViewportDraggableRotatable &&
+        otherViewportSlabThicknessControlsOn
+      ) {
+        stHanlesCenterWorld = [...otherViewportCenterWorld]
+      }
+
+      const worldUnitVectorFromCenter: Point3 = [0, 0, 0]
+      vtkMath.subtract(pointWorld0, pointWorld1, worldUnitVectorFromCenter)
+      vtkMath.normalize(worldUnitVectorFromCenter)
+
+      const { viewPlaneNormal } = camera
+      const { matrix } = vtkMatrixBuilder
+        .buildFromDegree()
+        .rotate(90, viewPlaneNormal)
+
+      const worldUnitOrthoVectorFromCenter: Point3 = [0, 0, 0]
+      vec3.transformMat4(
+        worldUnitOrthoVectorFromCenter,
+        worldUnitVectorFromCenter,
+        matrix
+      )
+
+      const slabThicknessValue = otherViewport.getSlabThickness()
+      const worldOrthoVectorFromCenter = [...worldUnitOrthoVectorFromCenter]
+      vtkMath.multiplyScalar(worldOrthoVectorFromCenter, slabThicknessValue)
+
+      const worldVerticalRefPoint: Point3 = [0, 0, 0]
+      vtkMath.add(
+        stHanlesCenterWorld,
+        worldOrthoVectorFromCenter,
+        worldVerticalRefPoint
+      )
+
+      // convert vertical world distances in canvas coordinates
+      const canvasVerticalRefPoint = viewport.worldToCanvas(
+        worldVerticalRefPoint
+      )
+
+      // points for slab thickness lines
+      const canvasOrthoVectorFromCenter = vec2.create()
+      vec2.subtract(
+        canvasOrthoVectorFromCenter,
+        stHanlesCenterCanvas,
+        canvasVerticalRefPoint
+      )
+
+      const stLinePointOne = vec2.create()
+      vec2.subtract(
+        stLinePointOne,
+        stHanlesCenterCanvas,
+        canvasVectorFromCenterLong
+      )
+      vec2.add(stLinePointOne, stLinePointOne, canvasOrthoVectorFromCenter)
+
+      const stLinePointTwo = vec2.create()
+      vec2.add(stLinePointTwo, stHanlesCenterCanvas, canvasVectorFromCenterLong)
+      vec2.add(stLinePointTwo, stLinePointTwo, canvasOrthoVectorFromCenter)
+
+      liangBarksyClip(stLinePointOne, stLinePointTwo, canvasBox)
+
+      const stLinePointThree = vec2.create()
+      vec2.add(
+        stLinePointThree,
+        stHanlesCenterCanvas,
+        canvasVectorFromCenterLong
+      )
+      vec2.subtract(
+        stLinePointThree,
+        stLinePointThree,
+        canvasOrthoVectorFromCenter
+      )
+
+      const stLinePointFour = vec2.create()
+      vec2.subtract(
+        stLinePointFour,
+        stHanlesCenterCanvas,
+        canvasVectorFromCenterLong
+      )
+      vec2.subtract(
+        stLinePointFour,
+        stLinePointFour,
+        canvasOrthoVectorFromCenter
+      )
+
+      liangBarksyClip(stLinePointThree, stLinePointFour, canvasBox)
+
+      // points for slab thickness handles
+      const stHandleOne = vec2.create()
+      const stHandleTwo = vec2.create()
+      const stHandleThree = vec2.create()
+      const stHandleFour = vec2.create()
+
+      vec2.subtract(
+        stHandleOne,
+        stHanlesCenterCanvas,
+        canvasVectorFromCenterShort
+      )
+      vec2.add(stHandleOne, stHandleOne, canvasOrthoVectorFromCenter)
+      vec2.add(stHandleTwo, stHanlesCenterCanvas, canvasVectorFromCenterShort)
+      vec2.add(stHandleTwo, stHandleTwo, canvasOrthoVectorFromCenter)
+      vec2.subtract(
+        stHandleThree,
+        stHanlesCenterCanvas,
+        canvasVectorFromCenterShort
+      )
+      vec2.subtract(stHandleThree, stHandleThree, canvasOrthoVectorFromCenter)
+      vec2.add(stHandleFour, stHanlesCenterCanvas, canvasVectorFromCenterShort)
+      vec2.subtract(stHandleFour, stHandleFour, canvasOrthoVectorFromCenter)
+
+      referenceLines.push([
+        otherViewport,
+        refLinePointOne,
+        refLinePointTwo,
+        refLinePointThree,
+        refLinePointFour,
+        stLinePointOne,
+        stLinePointTwo,
+        stLinePointThree,
+        stLinePointFour,
+        rotHandleOne,
+        rotHandleTwo,
+        stHandleOne,
+        stHandleTwo,
+        stHandleThree,
+        stHandleFour,
       ])
-
-      return [
-        negativeDistantPoint,
-        distantPoint,
-        handleOne,
-        handleTwo,
-        viewport,
-      ]
     })
 
-    const newPoints = []
+    const newRtpoints = []
+    const newStpoints = []
     const viewportColor = this._getReferenceLineColor(viewport.uid)
     const color =
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
 
     referenceLines.forEach((line, lineIndex) => {
       // get color for the reference line
-      const viewportColor = this._getReferenceLineColor(line[4].uid)
+      const otherViewport = line[0]
+      const viewportColor = this._getReferenceLineColor(otherViewport.uid)
       const viewportControllable = this._getReferenceLineControllable(
-        line[4].uid
+        otherViewport.uid
       )
+      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+        otherViewport.uid
+      )
+      const viewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
+        otherViewport.uid
+      )
+      const selectedViewportUID = data.activeViewportUIDs.find(
+        (uid) => uid === otherViewport.uid
+      )
+
       let color =
         viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
       let lineWidth = 1
       const lineActive =
         data.handles.activeOperation !== null &&
-        data.handles.activeOperation === 0 &&
-        data.activeViewports.find((element) => element === line[4])
+        data.handles.activeOperation === OPERATION.DRAG &&
+        selectedViewportUID
 
       if (lineActive) {
         lineWidth = 2.5
       }
 
-      const lineUID = `${lineIndex}`
-      drawLineSvg(
-        svgDrawingHelper,
-        this.name,
-        annotationUID,
-        lineUID,
-        line[0],
-        line[1],
-        {
-          color,
-          width: lineWidth,
-        }
-      )
+      let lineUID = `${lineIndex}`
+      if (viewportControllable && viewportDraggableRotatable) {
+        lineUID = `${lineIndex}One`
+        drawLineSvg(
+          svgDrawingHelper,
+          this.name,
+          annotationUID,
+          lineUID,
+          line[1],
+          line[2],
+          {
+            color,
+            width: lineWidth,
+          }
+        )
+
+        lineUID = `${lineIndex}Two`
+        drawLineSvg(
+          svgDrawingHelper,
+          this.name,
+          annotationUID,
+          lineUID,
+          line[3],
+          line[4],
+          {
+            color,
+            width: lineWidth,
+          }
+        )
+      } else {
+        drawLineSvg(
+          svgDrawingHelper,
+          this.name,
+          annotationUID,
+          lineUID,
+          line[2],
+          line[4],
+          {
+            color,
+            width: lineWidth,
+          }
+        )
+      }
 
       if (viewportControllable) {
         color =
           viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
 
-        const handleActive =
-          data.handles.activeOperation !== null &&
-          data.handles.activeOperation > 0
+        const rotHandlesActive =
+          data.handles.activeOperation === OPERATION.ROTATE
+        const rotationHandles = [line[9], line[10]]
 
-        const rotHandlesOptions = handleActive
-          ? { color, handleRadius: 3, fill: color }
-          : { color, handleRadius: 4 }
-        const rotationHandles = [line[2], line[3]]
+        const rotHandleWorldOne = [
+          viewport.canvasToWorld(line[9]),
+          otherViewport,
+          line[1],
+          line[2],
+        ]
+        const rotHandleWorldTwo = [
+          viewport.canvasToWorld(line[10]),
+          otherViewport,
+          line[3],
+          line[4],
+        ]
+        newRtpoints.push(rotHandleWorldOne, rotHandleWorldTwo)
 
-        if (lineActive || handleActive) {
+        const slabThicknessHandlesActive =
+          data.handles.activeOperation === OPERATION.SLAB
+        const slabThicknessHandles = [line[11], line[12], line[13], line[14]]
+
+        const slabThicknessHandleWorldOne = [
+          viewport.canvasToWorld(line[11]),
+          otherViewport,
+          line[5],
+          line[6],
+        ]
+        const slabThicknessHandleWorldTwo = [
+          viewport.canvasToWorld(line[12]),
+          otherViewport,
+          line[5],
+          line[6],
+        ]
+        const slabThicknessHandleWorldThree = [
+          viewport.canvasToWorld(line[13]),
+          otherViewport,
+          line[7],
+          line[8],
+        ]
+        const slabThicknessHandleWorldFour = [
+          viewport.canvasToWorld(line[14]),
+          otherViewport,
+          line[7],
+          line[8],
+        ]
+        newStpoints.push(
+          slabThicknessHandleWorldOne,
+          slabThicknessHandleWorldTwo,
+          slabThicknessHandleWorldThree,
+          slabThicknessHandleWorldFour
+        )
+
+        if (
+          lineActive &&
+          !rotHandlesActive &&
+          !slabThicknessHandlesActive &&
+          viewportDraggableRotatable &&
+          viewportSlabThicknessControlsOn
+        ) {
+          // draw all handles inactive (rotation and slab thickness)
+          let handleUID = `${lineIndex}One`
+          drawHandlesSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            handleUID,
+            rotationHandles,
+            {
+              color,
+              handleRadius: 3,
+              type: 'circle',
+            }
+          )
+          handleUID = `${lineIndex}Two`
+          drawHandlesSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            handleUID,
+            slabThicknessHandles,
+            {
+              color,
+              handleRadius: 3,
+              type: 'rect',
+            }
+          )
+        } else if (
+          lineActive &&
+          !rotHandlesActive &&
+          !slabThicknessHandlesActive &&
+          viewportDraggableRotatable
+        ) {
+          const handleUID = `${lineIndex}`
+          // draw rotation handles inactive
+          drawHandlesSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            handleUID,
+            rotationHandles,
+            {
+              color,
+              handleRadius: 3,
+              type: 'circle',
+            }
+          )
+        } else if (
+          selectedViewportUID &&
+          !rotHandlesActive &&
+          !slabThicknessHandlesActive &&
+          viewportSlabThicknessControlsOn
+        ) {
+          const handleUID = `${lineIndex}`
+          // draw slab thickness handles inactive
+          drawHandlesSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            handleUID,
+            slabThicknessHandles,
+            {
+              color,
+              handleRadius: 3,
+              type: 'rect',
+            }
+          )
+        } else if (rotHandlesActive && viewportDraggableRotatable) {
+          const handleUID = `${lineIndex}`
+          // draw all rotation handles as active
+          drawHandlesSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            handleUID,
+            rotationHandles,
+            {
+              color,
+              handleRadius: 2,
+              fill: color,
+              type: 'circle',
+            }
+          )
+        } else if (
+          slabThicknessHandlesActive &&
+          selectedViewportUID &&
+          viewportSlabThicknessControlsOn
+        ) {
+          // draw only the slab thickness handles for the active viewport as active
           drawHandlesSvg(
             svgDrawingHelper,
             this.name,
             annotationUID,
             lineUID,
-            rotationHandles,
-            rotHandlesOptions
+            slabThicknessHandles,
+            {
+              color,
+              handleRadius: 2,
+              fill: color,
+              type: 'rect',
+            }
           )
         }
+        const slabThicknessValue = otherViewport.getSlabThickness()
+        if (slabThicknessValue > 0.5 && viewportSlabThicknessControlsOn) {
+          // draw slab thickness reference lines
+          lineUID = `${lineIndex}STOne`
+          drawLineSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            lineUID,
+            line[5],
+            line[6],
+            {
+              color,
+              width: 1,
+              lineDash: [2, 3],
+            }
+          )
 
-        const handleWorldOne = [viewport.canvasToWorld(line[2]), line[4]]
-        const handleWorldTwo = [viewport.canvasToWorld(line[3]), line[4]]
-        newPoints.push(handleWorldOne, handleWorldTwo)
+          lineUID = `${lineIndex}STTwo`
+          drawLineSvg(
+            svgDrawingHelper,
+            this.name,
+            annotationUID,
+            lineUID,
+            line[7],
+            line[8],
+            {
+              color,
+              width: line,
+              lineDash: [2, 3],
+            }
+          )
+        }
       }
     })
+
+    // Save new handles points in toolData
+    data.handles.rotationPoints = newRtpoints
+    data.handles.slabThicknessPoints = newStpoints
 
     // render a circle to pin point the viewport color
     const referenceColorCoordinates = [sWidth * 0.95, sHeight * 0.05] as Point2
@@ -749,8 +1130,27 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       circleRadius,
       { color, fill: color }
     )
+  }
 
-    data.handles.points = newPoints
+  _areViewportUIDArraysEqual = (viewportUIDArrayOne, viewportUIDArrayTwo) => {
+    if (viewportUIDArrayOne.length !== viewportUIDArrayTwo.length) {
+      return false
+    }
+
+    viewportUIDArrayOne.forEach((uid) => {
+      let itemFound = false
+      for (let i = 0; i < viewportUIDArrayTwo.length; ++i) {
+        if (uid === viewportUIDArrayTwo[i]) {
+          itemFound = true
+          break
+        }
+      }
+      if (itemFound === false) {
+        return false
+      }
+    })
+
+    return true
   }
 
   _filterViewportOrientations = (enabledElement, toolState) => {
@@ -1071,11 +1471,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       },
       data: {
         handles: {
-          points: [], // rotation handles, used for rotation interactions
+          rotationPoints: [], // rotation handles, used for rotation interactions
+          slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
         },
         active: false,
-        activeOperation: null, // 0 translation, 1 rotation handles
-        activeViewports: [], // a list of the viewports connected to the reference lines being translated
+        activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
+        activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
         viewportUID,
         sceneUID,
       },
@@ -1113,10 +1514,16 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
         return (
           this._getReferenceLineControllable(otherViewport.uid) &&
+          this._getReferenceLineDraggableRotatable(otherViewport.uid) &&
           otherScene === scene
         )
       }
     )
+
+    if (viewportsToolDataToUpdate.length === 0) {
+      state.isToolLocked = false
+      return false
+    }
 
     this._applyDeltaShiftToSelectedViewportCameras(
       renderingEngine,
@@ -1125,6 +1532,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     )
 
     state.isToolLocked = false
+
+    return true
   }
 
   _activateModify(element) {
@@ -1155,7 +1564,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     this.editData.toolData.data.active = false
     this.editData.toolData.data.handles.activeOperation = null
-    this.editData.toolData.data.activeViewports = []
+    this.editData.toolData.data.activeViewportUIDs = []
 
     this._deactivateModify(element)
 
@@ -1202,8 +1611,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     const { handles } = viewportToolData.data
+    const { currentPoints } = evt.detail
+    const canvasCoords = currentPoints.canvas
 
-    if (handles.activeOperation === 0) {
+    if (handles.activeOperation === OPERATION.DRAG) {
       // TRANSLATION
       // get the toolData of the other viewport which are parallel to the delta shift and are of the same scene
       const otherViewportToolData = this._filterViewportOrientations(
@@ -1217,8 +1628,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           const scene = renderingEngine.getScene(data.sceneUID)
           const otherViewport = scene.getViewport(data.viewportUID)
 
-          return viewportToolData.data.activeViewports.find(
-            (element) => element === otherViewport
+          return viewportToolData.data.activeViewportUIDs.find(
+            (uid) => uid === otherViewport.uid
           )
         }
       )
@@ -1228,7 +1639,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         viewportsToolDataToUpdate,
         delta
       )
-    } else if (handles.activeOperation > 0) {
+    } else if (handles.activeOperation === OPERATION.ROTATE) {
       // ROTATION
       const otherViewportToolData = this._filterViewportOrientations(
         enabledElement,
@@ -1245,15 +1656,26 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           const otherViewportControllable = this._getReferenceLineControllable(
             otherViewport.uid
           )
+          const otherViewportRotatable = this._getReferenceLineDraggableRotatable(
+            otherViewport.uid
+          )
 
-          return scene === otherScene && otherViewportControllable === true
+          return (
+            scene === otherScene &&
+            otherViewportControllable === true &&
+            otherViewportRotatable === true
+          )
         }
       )
 
       const dir1 = vec2.create()
       const dir2 = vec2.create()
 
-      const center = this.toolCenter
+      const center: Point3 = [
+        this.toolCenter[0],
+        this.toolCenter[1],
+        this.toolCenter[2],
+      ]
       const centerCanvas = viewport.worldToCanvas(center)
 
       const finalPointCanvas = eventData.currentPoints.canvas
@@ -1308,12 +1730,124 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           viewUp,
           focalPoint,
         })
+      })
+    } else if (handles.activeOperation === OPERATION.SLAB) {
+      // SLAB THICKNESS
+      // this should be just the active one under the mouse,
+      const viewportsToolDataToUpdate = toolState.filter((toolData) => {
+        const { data } = toolData
+        const scene = renderingEngine.getScene(data.sceneUID)
+        const otherViewport = scene.getViewport(data.viewportUID)
 
-        otherViewport.render()
+        return viewportToolData.data.activeViewportUIDs.find(
+          (uid) => uid === otherViewport.uid
+        )
+      })
+
+      viewportsToolDataToUpdate.forEach((toolData) => {
+        const { data } = toolData
+
+        const scene = renderingEngine.getScene(data.sceneUID)
+        const otherViewport = scene.getViewport(data.viewportUID)
+        const camera = otherViewport.getCamera()
+        const normal = camera.viewPlaneNormal
+
+        const dotProd = vtkMath.dot(delta, normal)
+        const projectedDelta = [...normal]
+        vtkMath.multiplyScalar(projectedDelta, dotProd)
+
+        if (
+          Math.abs(projectedDelta[0]) > 1e-3 ||
+          Math.abs(projectedDelta[1]) > 1e-3 ||
+          Math.abs(projectedDelta[2]) > 1e-3
+        ) {
+          const mod = Math.sqrt(
+            projectedDelta[0] * projectedDelta[0] +
+              projectedDelta[1] * projectedDelta[1] +
+              projectedDelta[2] * projectedDelta[2]
+          )
+
+          const currentPoint = eventData.lastPoints.world
+          const direction: Point3 = [0, 0, 0]
+
+          const currentCenter: Point3 = [
+            this.toolCenter[0],
+            this.toolCenter[1],
+            this.toolCenter[2],
+          ]
+
+          // use this.toolCenter only if viewportDraggableRotatable
+          const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+            otherViewport.uid
+          )
+          if (!viewportDraggableRotatable) {
+            const { rotationPoints } = this.editData.toolData.data.handles
+            const otherViewportRotationPoints = rotationPoints.filter(
+              (point) => point[1].uid === otherViewport.uid
+            )
+            if (otherViewportRotationPoints.length === 2) {
+              const point1 = viewport.canvasToWorld(
+                otherViewportRotationPoints[0][3]
+              )
+              const point2 = viewport.canvasToWorld(
+                otherViewportRotationPoints[1][3]
+              )
+              vtkMath.add(point1, point2, currentCenter)
+              vtkMath.multiplyScalar(currentCenter, 0.5)
+            }
+          }
+
+          vtkMath.subtract(currentPoint, currentCenter, direction)
+          const dotProdDirection = vtkMath.dot(direction, normal)
+          const projectedDirection = [...normal]
+          vtkMath.multiplyScalar(projectedDirection, dotProdDirection)
+          const normalizedProjectedDirection: Point3 = [
+            projectedDirection[0],
+            projectedDirection[1],
+            projectedDirection[2],
+          ]
+          vec3.normalize(
+            normalizedProjectedDirection,
+            normalizedProjectedDirection
+          )
+          const normalizedProjectedDelta: Point3 = [
+            projectedDelta[0],
+            projectedDelta[1],
+            projectedDelta[2],
+          ]
+          vec3.normalize(normalizedProjectedDelta, normalizedProjectedDelta)
+
+          let slabThicknessValue = otherViewport.getSlabThickness()
+          if (
+            isOpposite(
+              normalizedProjectedDirection,
+              normalizedProjectedDelta,
+              1e-3
+            )
+          ) {
+            slabThicknessValue -= mod
+          } else {
+            slabThicknessValue += mod
+          }
+
+          slabThicknessValue = Math.abs(slabThicknessValue)
+          slabThicknessValue = Math.max(0.1, slabThicknessValue)
+
+          const near = this._pointNearReferenceLine(
+            viewportToolData,
+            canvasCoords,
+            6,
+            otherViewport
+          )
+
+          if (near) {
+            otherViewport.setSlabThickness(null)
+          } else {
+            otherViewport.setSlabThickness(slabThicknessValue)
+          }
+        }
       })
     }
-
-    // TODO -> add modify slab thickness
   }
 
   _isClockWise(a, b, c) {
@@ -1340,14 +1874,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       // Project delta over camera normal
       // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
       const dotProd = vtkMath.dot(delta, normal)
-      const cameraNorm2 = Math.pow(
-        Math.sqrt(
-          normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]
-        ),
-        2
-      )
       const projectedDelta = [...normal]
-      vtkMath.multiplyScalar(projectedDelta, dotProd / cameraNorm2)
+      vtkMath.multiplyScalar(projectedDelta, dotProd)
 
       if (
         Math.abs(projectedDelta[0]) > 1e-3 ||
@@ -1364,9 +1892,341 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           focalPoint: newFocalPoint,
           position: newPosition,
         })
-
-        otherViewport.render()
       }
     })
+  }
+
+  _pointNearReferenceLine = (
+    toolData,
+    canvasCoords,
+    proximity,
+    lineViewport
+  ) => {
+    const { data } = toolData
+    const { rotationPoints } = data.handles
+
+    for (let i = 0; i < rotationPoints.length - 1; ++i) {
+      const otherViewport = rotationPoints[i][1]
+      if (otherViewport.uid !== lineViewport.uid) {
+        continue
+      }
+
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.uid
+      )
+      if (!viewportControllable) {
+        continue
+      }
+
+      const lineSegment1 = {
+        start: {
+          x: rotationPoints[i][2][0],
+          y: rotationPoints[i][2][1],
+        },
+        end: {
+          x: rotationPoints[i][3][0],
+          y: rotationPoints[i][3][1],
+        },
+      }
+
+      const distanceToPoint1 = cornerstoneMath.lineSegment.distanceToPoint(
+        lineSegment1,
+        {
+          x: canvasCoords[0],
+          y: canvasCoords[1],
+        }
+      )
+
+      const lineSegment2 = {
+        start: {
+          x: rotationPoints[i + 1][2][0],
+          y: rotationPoints[i + 1][2][1],
+        },
+        end: {
+          x: rotationPoints[i + 1][3][0],
+          y: rotationPoints[i + 1][3][1],
+        },
+      }
+
+      const distanceToPoint2 = cornerstoneMath.lineSegment.distanceToPoint(
+        lineSegment2,
+        {
+          x: canvasCoords[0],
+          y: canvasCoords[1],
+        }
+      )
+
+      if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
+        return true
+      }
+
+      // rotation handles are two for viewport
+      i++
+    }
+
+    return false
+  }
+
+  _getRotationHandleNearImagePoint(
+    viewport,
+    toolData,
+    canvasCoords,
+    proximity
+  ) {
+    const { data } = toolData
+    const { rotationPoints } = data.handles
+
+    for (let i = 0; i < rotationPoints.length; i++) {
+      const point = rotationPoints[i][0]
+      const otherViewport = rotationPoints[i][1]
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.uid
+      )
+      if (!viewportControllable) {
+        continue
+      }
+
+      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+        otherViewport.uid
+      )
+      if (!viewportDraggableRotatable) {
+        continue
+      }
+
+      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
+      if (vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity) {
+        data.handles.activeOperation = OPERATION.ROTATE
+
+        this.editData = {
+          toolData,
+        }
+
+        return point
+      }
+    }
+
+    return null
+  }
+
+  _getSlabThicknessHandleNearImagePoint(
+    viewport,
+    toolData,
+    canvasCoords,
+    proximity
+  ) {
+    const { data } = toolData
+    const { slabThicknessPoints } = data.handles
+
+    for (let i = 0; i < slabThicknessPoints.length; i++) {
+      const point = slabThicknessPoints[i][0]
+      const otherViewport = slabThicknessPoints[i][1]
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.uid
+      )
+      if (!viewportControllable) {
+        continue
+      }
+
+      const viewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
+        otherViewport.uid
+      )
+      if (!viewportSlabThicknessControlsOn) {
+        continue
+      }
+
+      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
+      if (vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity) {
+        data.handles.activeOperation = OPERATION.SLAB
+
+        data.activeViewportUIDs = [otherViewport.uid]
+
+        this.editData = {
+          toolData,
+        }
+
+        return point
+      }
+    }
+
+    return null
+  }
+
+  _pointNearTool(element, toolData, canvasCoords, proximity) {
+    const enabledElement = getEnabledElement(element)
+    const { viewport } = enabledElement
+    const { sWidth, sHeight } = viewport
+    const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight)
+    const { data } = toolData
+
+    const { rotationPoints } = data.handles
+    const { slabThicknessPoints } = data.handles
+    const viewportUIDArray = []
+
+    for (let i = 0; i < rotationPoints.length - 1; ++i) {
+      const otherViewport = rotationPoints[i][1]
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.uid
+      )
+      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+        otherViewport.uid
+      )
+
+      if (!viewportControllable || !viewportDraggableRotatable) {
+        continue
+      }
+
+      const lineSegment1 = {
+        start: {
+          x: rotationPoints[i][2][0],
+          y: rotationPoints[i][2][1],
+        },
+        end: {
+          x: rotationPoints[i][3][0],
+          y: rotationPoints[i][3][1],
+        },
+      }
+
+      const distanceToPoint1 = cornerstoneMath.lineSegment.distanceToPoint(
+        lineSegment1,
+        {
+          x: canvasCoords[0],
+          y: canvasCoords[1],
+        }
+      )
+
+      const lineSegment2 = {
+        start: {
+          x: rotationPoints[i + 1][2][0],
+          y: rotationPoints[i + 1][2][1],
+        },
+        end: {
+          x: rotationPoints[i + 1][3][0],
+          y: rotationPoints[i + 1][3][1],
+        },
+      }
+
+      const distanceToPoint2 = cornerstoneMath.lineSegment.distanceToPoint(
+        lineSegment2,
+        {
+          x: canvasCoords[0],
+          y: canvasCoords[1],
+        }
+      )
+
+      if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
+        viewportUIDArray.push(otherViewport.uid)
+        data.handles.activeOperation = OPERATION.DRAG
+      }
+
+      // rotation handles are two for viewport
+      i++
+    }
+
+    for (let i = 0; i < slabThicknessPoints.length - 1; ++i) {
+      const otherViewport = slabThicknessPoints[i][1]
+      if (viewportUIDArray.find((uid) => uid === otherViewport.uid)) {
+        continue
+      }
+
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.uid
+      )
+      const viewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
+        otherViewport.uid
+      )
+
+      if (!viewportControllable || !viewportSlabThicknessControlsOn) {
+        continue
+      }
+
+      const stPointLineCanvas1 = slabThicknessPoints[i][2]
+      const stPointLineCanvas2 = slabThicknessPoints[i][3]
+
+      const centerCanvas = vec2.create()
+      vec2.add(centerCanvas, stPointLineCanvas1, stPointLineCanvas2)
+      vec2.scale(centerCanvas, centerCanvas, 0.5)
+
+      const canvasUnitVectorFromCenter = vec2.create()
+      vec2.subtract(
+        canvasUnitVectorFromCenter,
+        stPointLineCanvas1,
+        centerCanvas
+      )
+      vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter)
+
+      const canvasVectorFromCenterStart = vec2.create()
+      vec2.scale(
+        canvasVectorFromCenterStart,
+        canvasUnitVectorFromCenter,
+        canvasDiagonalLength * 0.05
+      )
+
+      const stPointLineCanvas1Start = vec2.create()
+      const stPointLineCanvas2Start = vec2.create()
+      vec2.add(
+        stPointLineCanvas1Start,
+        centerCanvas,
+        canvasVectorFromCenterStart
+      )
+      vec2.subtract(
+        stPointLineCanvas2Start,
+        centerCanvas,
+        canvasVectorFromCenterStart
+      )
+
+      const lineSegment1 = {
+        start: {
+          x: stPointLineCanvas1Start[0],
+          y: stPointLineCanvas1Start[1],
+        },
+        end: {
+          x: stPointLineCanvas1[0],
+          y: stPointLineCanvas1[1],
+        },
+      }
+
+      const distanceToPoint1 = cornerstoneMath.lineSegment.distanceToPoint(
+        lineSegment1,
+        {
+          x: canvasCoords[0],
+          y: canvasCoords[1],
+        }
+      )
+
+      const lineSegment2 = {
+        start: {
+          x: stPointLineCanvas2Start[0],
+          y: stPointLineCanvas2Start[1],
+        },
+        end: {
+          x: stPointLineCanvas2[0],
+          y: stPointLineCanvas2[1],
+        },
+      }
+
+      const distanceToPoint2 = cornerstoneMath.lineSegment.distanceToPoint(
+        lineSegment2,
+        {
+          x: canvasCoords[0],
+          y: canvasCoords[1],
+        }
+      )
+
+      if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
+        viewportUIDArray.push(otherViewport.uid) // we still need this to draw inactive slab thickness handles
+        data.handles.activeOperation = null // no operation
+      }
+
+      // slab thickness handles are in couples
+      i++
+    }
+
+    data.activeViewportUIDs = [...viewportUIDArray]
+
+    this.editData = {
+      toolData,
+    }
+
+    return data.handles.activeOperation === OPERATION.DRAG ? true : false
   }
 }
