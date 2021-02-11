@@ -17,14 +17,13 @@ import {
     encode,
     decode
 } from "../../utilities/compression/rleSingleSamplePerPixel";
+import cloneDeep from "lodash.clonedeep";
 
 const Segmentation = {
     generateSegmentation,
     generateToolState,
     fillSegmentation
 };
-
-const cloneDeep = require("lodash.clonedeep");
 
 export default Segmentation;
 
