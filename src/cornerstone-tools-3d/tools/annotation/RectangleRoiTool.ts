@@ -572,7 +572,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       )
 
       const textBoxUID = '1'
-      drawLinkedTextBoxSvg(
+      const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
         this.name,
         annotationUID,
@@ -586,24 +586,14 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         }
       )
 
-      //     const textBoxAnchorPoints = this._findTextBoxAnchorPoints(
-      //       canvasCoordinates
-      //     )
+      const { x: left, y: top, width, height } = boundingBox
 
-      //     drawLinkedTextBox(
-      //       context,
-      //       canvasTextBoxCoords,
-      //       textLines,
-      //       data.handles.textBox,
-      //       textBoxAnchorPoints,
-      //       viewport.canvasToWorld,
-      //       color,
-      //       lineWidth,
-      //       10,
-      //       true
-      //     )
-      //   }
-      // })
+      data.handles.textBox.worldBoundingBox = {
+        topLeft: viewport.canvasToWorld([left, top]),
+        topRight: viewport.canvasToWorld([left + width, top]),
+        bottomLeft: viewport.canvasToWorld([left, top + height]),
+        bottomRight: viewport.canvasToWorld([left + width, top + height]),
+      }
     }
   }
 

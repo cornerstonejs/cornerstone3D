@@ -660,7 +660,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         )
 
         const textBoxUID = '1'
-        drawLinkedTextBoxSvg(
+        const boundingBox = drawLinkedTextBoxSvg(
           svgDrawingHelper,
           this.name,
           annotationUID,
@@ -673,6 +673,15 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
             color,
           }
         )
+
+        const { x: left, y: top, width, height } = boundingBox
+
+        data.handles.textBox.worldBoundingBox = {
+          topLeft: viewport.canvasToWorld([left, top]),
+          topRight: viewport.canvasToWorld([left + width, top]),
+          bottomLeft: viewport.canvasToWorld([left, top + height]),
+          bottomRight: viewport.canvasToWorld([left + width, top + height]),
+        }
       }
     }
   }
