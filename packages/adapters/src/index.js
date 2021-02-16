@@ -41,6 +41,8 @@ import adapters from "./adapters/index.js";
 import utilities from "./utilities/index.js";
 import sr from "./sr/index.js";
 
+import { cleanTags } from "./anonymizer.js";
+
 let data = {
     BitArray,
     ReadBufferStream,
@@ -77,6 +79,10 @@ let normalizers = {
     DSRNormalizer
 };
 
+let anonymizer = {
+    cleanTags
+};
+
 const dcmjs = {
     DICOMWEB,
     adapters,
@@ -85,7 +91,8 @@ const dcmjs = {
     normalizers,
     sr,
     utilities,
-    log
+    log,
+    anonymizer
 };
 
 export {
@@ -96,7 +103,8 @@ export {
     normalizers,
     sr,
     utilities,
-    log
+    log,
+    anonymizer
 };
 
 export default dcmjs;

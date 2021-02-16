@@ -7,7 +7,7 @@ const testToRun = process.argv[2];
 
 const parts = [
   "DICOMWEB", "adapters", "data", "derivations",
-  "normalizers", "sr", "utilities",
+  "normalizers", "sr", "utilities", "anonymizer",
 ];
 
 //
