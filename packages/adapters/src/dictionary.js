@@ -545,6 +545,13 @@ const dictionary = {
         vm: "1-n",
         version: "DICOM"
     },
+    "(0008,0055)": {
+        tag: "(0008,0055)",
+        vr: "AE",
+        name: "StationAETitle",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0008,0056)": {
         tag: "(0008,0056)",
         vr: "CS",
@@ -578,6 +585,13 @@ const dictionary = {
         vr: "UI",
         name: "SOPClassesInStudy",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(0008,0063)": {
+        tag: "(0008,0063)",
+        vr: "SQ",
+        name: "AnatomicRegionsInStudyCodeSequence",
+        vm: "1",
         version: "DICOM"
     },
     "(0008,0064)": {
@@ -727,6 +741,20 @@ const dictionary = {
         vm: "1",
         version: "DICOM/DICOS"
     },
+    "(0008,0109)": {
+        tag: "(0008,0109)",
+        vr: "SQ",
+        name: "CodingSchemeResourcesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,010A)": {
+        tag: "(0008,010A)",
+        vr: "CS",
+        name: "CodingSchemeURLType",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0008,010B)": {
         tag: "(0008,010B)",
         vr: "CS",
@@ -745,6 +773,13 @@ const dictionary = {
         tag: "(0008,010D)",
         vr: "UI",
         name: "ContextGroupExtensionCreatorUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,010E)": {
+        tag: "(0008,010E)",
+        vr: "UR",
+        name: "CodingSchemeURL",
         vm: "1",
         version: "DICOM"
     },
@@ -825,10 +860,52 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0008,0122)": {
+        tag: "(0008,0122)",
+        vr: "LO",
+        name: "MappingResourceName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,0123)": {
+        tag: "(0008,0123)",
+        vr: "SQ",
+        name: "ContextGroupIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,0124)": {
+        tag: "(0008,0124)",
+        vr: "SQ",
+        name: "MappingResourceIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0008,0201)": {
         tag: "(0008,0201)",
         vr: "SH",
         name: "TimezoneOffsetFromUTC",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,0220)": {
+        tag: "(0008,0220)",
+        vr: "SQ",
+        name: "ResponsibleGroupCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,0221)": {
+        tag: "(0008,0221)",
+        vr: "CS",
+        name: "EquipmentModality",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,0222)": {
+        tag: "(0008,0222)",
+        vr: "LO",
+        name: "ManufacturerRelatedModelGroup",
         vm: "1",
         version: "DICOM"
     },
@@ -888,6 +965,69 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0008,0308)": {
+        tag: "(0008,0308)",
+        vr: "US",
+        name: "PrivateDataElement",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,0309)": {
+        tag: "(0008,0309)",
+        vr: "UL",
+        name: "PrivateDataElementValueMultiplicity",
+        vm: "1-3",
+        version: "DICOM"
+    },
+    "(0008,030A)": {
+        tag: "(0008,030A)",
+        vr: "CS",
+        name: "PrivateDataElementValueRepresentation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,030B)": {
+        tag: "(0008,030B)",
+        vr: "UL",
+        name: "PrivateDataElementNumberOfItems",
+        vm: "1-2",
+        version: "DICOM"
+    },
+    "(0008,030C)": {
+        tag: "(0008,030C)",
+        vr: "UC",
+        name: "PrivateDataElementName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,030D)": {
+        tag: "(0008,030D)",
+        vr: "UC",
+        name: "PrivateDataElementKeyword",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,030E)": {
+        tag: "(0008,030E)",
+        vr: "UT",
+        name: "PrivateDataElementDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,030F)": {
+        tag: "(0008,030F)",
+        vr: "UT",
+        name: "PrivateDataElementEncoding",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,0310)": {
+        tag: "(0008,0310)",
+        vr: "SQ",
+        name: "PrivateDataElementDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0008,1010)": {
         tag: "(0008,1010)",
         vr: "SH",
@@ -927,6 +1067,13 @@ const dictionary = {
         tag: "(0008,1040)",
         vr: "LO",
         name: "InstitutionalDepartmentName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,1041)": {
+        tag: "(0008,1041)",
+        vr: "SQ",
+        name: "InstitutionalDepartmentTypeCodeSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -1091,6 +1238,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0008,1156)": {
+        tag: "(0008,1156)",
+        vr: "SQ",
+        name: "DefinitionSourceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0008,115A)": {
         tag: "(0008,115A)",
         vr: "UI",
@@ -1179,6 +1333,13 @@ const dictionary = {
         tag: "(0008,1199)",
         vr: "SQ",
         name: "ReferencedSOPSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0008,119A)": {
+        tag: "(0008,119A)",
+        vr: "SQ",
+        name: "OtherFailuresSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -1357,6 +1518,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0008,3002)": {
+        tag: "(0008,3002)",
+        vr: "UI",
+        name: "AvailableTransferSyntaxUID",
+        vm: "1-n",
+        version: "DICOM"
+    },
     "(0008,3010)": {
         tag: "(0008,3010)",
         vr: "UI",
@@ -1532,6 +1700,27 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0010,0026)": {
+        tag: "(0010,0026)",
+        vr: "SQ",
+        name: "SourcePatientGroupIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0027)": {
+        tag: "(0010,0027)",
+        vr: "SQ",
+        name: "GroupOfPatientsIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0028)": {
+        tag: "(0010,0028)",
+        vr: "US",
+        name: "SubjectRelativePositionInImage",
+        vm: "3",
+        version: "DICOM"
+    },
     "(0010,0030)": {
         tag: "(0010,0030)",
         vr: "DA",
@@ -1543,6 +1732,27 @@ const dictionary = {
         tag: "(0010,0032)",
         vr: "TM",
         name: "PatientBirthTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0033)": {
+        tag: "(0010,0033)",
+        vr: "LO",
+        name: "PatientBirthDateInAlternativeCalendar",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0034)": {
+        tag: "(0010,0034)",
+        vr: "LO",
+        name: "PatientDeathDateInAlternativeCalendar",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0035)": {
+        tag: "(0010,0035)",
+        vr: "CS",
+        name: "PatientAlternativeCalendar",
         vm: "1",
         version: "DICOM"
     },
@@ -1585,6 +1795,90 @@ const dictionary = {
         tag: "(0010,0201)",
         vr: "SQ",
         name: "QualityControlSubjectTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0212)": {
+        tag: "(0010,0212)",
+        vr: "UC",
+        name: "StrainDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0213)": {
+        tag: "(0010,0213)",
+        vr: "LO",
+        name: "StrainNomenclature",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0214)": {
+        tag: "(0010,0214)",
+        vr: "LO",
+        name: "StrainStockNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0215)": {
+        tag: "(0010,0215)",
+        vr: "SQ",
+        name: "StrainSourceRegistryCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0216)": {
+        tag: "(0010,0216)",
+        vr: "SQ",
+        name: "StrainStockSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0217)": {
+        tag: "(0010,0217)",
+        vr: "LO",
+        name: "StrainSource",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0218)": {
+        tag: "(0010,0218)",
+        vr: "UT",
+        name: "StrainAdditionalInformation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0219)": {
+        tag: "(0010,0219)",
+        vr: "SQ",
+        name: "StrainCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0221)": {
+        tag: "(0010,0221)",
+        vr: "SQ",
+        name: "GeneticModificationsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0222)": {
+        tag: "(0010,0222)",
+        vr: "UC",
+        name: "GeneticModificationsDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0223)": {
+        tag: "(0010,0223)",
+        vr: "LO",
+        name: "GeneticModificationsNomenclature",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,0229)": {
+        tag: "(0010,0229)",
+        vr: "SQ",
+        name: "GeneticModificationsCodeSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -1634,6 +1928,27 @@ const dictionary = {
         tag: "(0010,1021)",
         vr: "SQ",
         name: "PatientSizeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,1022)": {
+        tag: "(0010,1022)",
+        vr: "DS",
+        name: "PatientBodyMassIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,1023)": {
+        tag: "(0010,1023)",
+        vr: "DS",
+        name: "MeasuredAPDimension",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0010,1024)": {
+        tag: "(0010,1024)",
+        vr: "DS",
+        name: "MeasuredLateralDimension",
         vm: "1",
         version: "DICOM"
     },
@@ -1935,6 +2250,20 @@ const dictionary = {
         tag: "(0012,0051)",
         vr: "ST",
         name: "ClinicalTrialTimePointDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0012,0052)": {
+        tag: "(0012,0052)",
+        vr: "FD",
+        name: "LongitudinalTemporalOffsetFromEvent",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0012,0053)": {
+        tag: "(0012,0053)",
+        vr: "CS",
+        name: "LongitudinalTemporalEventType",
         vm: "1",
         version: "DICOM"
     },
@@ -3275,6 +3604,853 @@ const dictionary = {
         vm: "1",
         version: "DICOM/DICONDE"
     },
+    "(0012,0086)": {
+        tag: "(0012,0086)",
+        vr: "DA",
+        name: "EthicsCommitteeApprovalEffectivenessStartDate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0012,0087)": {
+        tag: "(0012,0087)",
+        vr: "DA",
+        name: "EthicsCommitteeApprovalEffectivenessEndDate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0014,0100)": {
+        tag: "(0014,0100)",
+        vr: "LO",
+        name: "ComponentWelderIDs",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0014,0101)": {
+        tag: "(0014,0101)",
+        vr: "CS",
+        name: "SecondaryApprovalStatus",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0014,0102)": {
+        tag: "(0014,0102)",
+        vr: "DA",
+        name: "SecondaryReviewDate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0014,0103)": {
+        tag: "(0014,0103)",
+        vr: "TM",
+        name: "SecondaryReviewTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0014,0104)": {
+        tag: "(0014,0104)",
+        vr: "PN",
+        name: "SecondaryReviewerName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0014,0105)": {
+        tag: "(0014,0105)",
+        vr: "ST",
+        name: "RepairID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0014,0106)": {
+        tag: "(0014,0106)",
+        vr: "SQ",
+        name: "MultipleComponentApprovalSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0014,0107)": {
+        tag: "(0014,0107)",
+        vr: "CS",
+        name: "OtherApprovalStatus",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0014,0108)": {
+        tag: "(0014,0108)",
+        vr: "CS",
+        name: "OtherSecondaryApprovalStatus",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0016,0001)": {
+        tag: "(0016,0001)",
+        vr: "DS",
+        name: "WhitePoint",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0002)": {
+        tag: "(0016,0002)",
+        vr: "DS",
+        name: "PrimaryChromaticities",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0016,0003)": {
+        tag: "(0016,0003)",
+        vr: "UT",
+        name: "BatteryLevel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0004)": {
+        tag: "(0016,0004)",
+        vr: "DS",
+        name: "ExposureTimeInSeconds",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0005)": {
+        tag: "(0016,0005)",
+        vr: "DS",
+        name: "FNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0006)": {
+        tag: "(0016,0006)",
+        vr: "IS",
+        name: "OECFRows",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0007)": {
+        tag: "(0016,0007)",
+        vr: "IS",
+        name: "OECFColumns",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0008)": {
+        tag: "(0016,0008)",
+        vr: "UC",
+        name: "OECFColumnNames",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0016,0009)": {
+        tag: "(0016,0009)",
+        vr: "DS",
+        name: "OECFValues",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0016,000A)": {
+        tag: "(0016,000A)",
+        vr: "IS",
+        name: "SpatialFrequencyResponseRows",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,000B)": {
+        tag: "(0016,000B)",
+        vr: "IS",
+        name: "SpatialFrequencyResponseColumns",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,000C)": {
+        tag: "(0016,000C)",
+        vr: "UC",
+        name: "SpatialFrequencyResponseColumnNames",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0016,000D)": {
+        tag: "(0016,000D)",
+        vr: "DS",
+        name: "SpatialFrequencyResponseValues",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0016,000E)": {
+        tag: "(0016,000E)",
+        vr: "IS",
+        name: "ColorFilterArrayPatternRows",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,000F)": {
+        tag: "(0016,000F)",
+        vr: "IS",
+        name: "ColorFilterArrayPatternColumns",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0010)": {
+        tag: "(0016,0010)",
+        vr: "DS",
+        name: "ColorFilterArrayPatternValues",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0016,0011)": {
+        tag: "(0016,0011)",
+        vr: "US",
+        name: "FlashFiringStatus",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0012)": {
+        tag: "(0016,0012)",
+        vr: "US",
+        name: "FlashReturnStatus",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0013)": {
+        tag: "(0016,0013)",
+        vr: "US",
+        name: "FlashMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0014)": {
+        tag: "(0016,0014)",
+        vr: "US",
+        name: "FlashFunctionPresent",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0015)": {
+        tag: "(0016,0015)",
+        vr: "US",
+        name: "FlashRedEyeMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0016)": {
+        tag: "(0016,0016)",
+        vr: "US",
+        name: "ExposureProgram",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0017)": {
+        tag: "(0016,0017)",
+        vr: "UT",
+        name: "SpectralSensitivity",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0018)": {
+        tag: "(0016,0018)",
+        vr: "IS",
+        name: "PhotographicSensitivity",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0019)": {
+        tag: "(0016,0019)",
+        vr: "IS",
+        name: "SelfTimerMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,001A)": {
+        tag: "(0016,001A)",
+        vr: "US",
+        name: "SensitivityType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,001B)": {
+        tag: "(0016,001B)",
+        vr: "IS",
+        name: "StandardOutputSensitivity",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,001C)": {
+        tag: "(0016,001C)",
+        vr: "IS",
+        name: "RecommendedExposureIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,001D)": {
+        tag: "(0016,001D)",
+        vr: "IS",
+        name: "ISOSpeed",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,001E)": {
+        tag: "(0016,001E)",
+        vr: "IS",
+        name: "ISOSpeedLatitudeyyy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,001F)": {
+        tag: "(0016,001F)",
+        vr: "IS",
+        name: "ISOSpeedLatitudezzz",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0020)": {
+        tag: "(0016,0020)",
+        vr: "UT",
+        name: "EXIFVersion",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0021)": {
+        tag: "(0016,0021)",
+        vr: "DS",
+        name: "ShutterSpeedValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0022)": {
+        tag: "(0016,0022)",
+        vr: "DS",
+        name: "ApertureValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0023)": {
+        tag: "(0016,0023)",
+        vr: "DS",
+        name: "BrightnessValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0024)": {
+        tag: "(0016,0024)",
+        vr: "DS",
+        name: "ExposureBiasValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0025)": {
+        tag: "(0016,0025)",
+        vr: "DS",
+        name: "MaxApertureValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0026)": {
+        tag: "(0016,0026)",
+        vr: "DS",
+        name: "SubjectDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0027)": {
+        tag: "(0016,0027)",
+        vr: "US",
+        name: "MeteringMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0028)": {
+        tag: "(0016,0028)",
+        vr: "US",
+        name: "LightSource",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0029)": {
+        tag: "(0016,0029)",
+        vr: "DS",
+        name: "FocalLength",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,002A)": {
+        tag: "(0016,002A)",
+        vr: "IS",
+        name: "SubjectArea",
+        vm: "2-4",
+        version: "DICOM"
+    },
+    "(0016,002B)": {
+        tag: "(0016,002B)",
+        vr: "OB",
+        name: "MakerNote",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0030)": {
+        tag: "(0016,0030)",
+        vr: "DS",
+        name: "Temperature",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0031)": {
+        tag: "(0016,0031)",
+        vr: "DS",
+        name: "Humidity",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0032)": {
+        tag: "(0016,0032)",
+        vr: "DS",
+        name: "Pressure",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0033)": {
+        tag: "(0016,0033)",
+        vr: "DS",
+        name: "WaterDepth",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0034)": {
+        tag: "(0016,0034)",
+        vr: "DS",
+        name: "Acceleration",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0035)": {
+        tag: "(0016,0035)",
+        vr: "DS",
+        name: "CameraElevationAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0036)": {
+        tag: "(0016,0036)",
+        vr: "DS",
+        name: "FlashEnergy",
+        vm: "1-2",
+        version: "DICOM"
+    },
+    "(0016,0037)": {
+        tag: "(0016,0037)",
+        vr: "IS",
+        name: "SubjectLocation",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(0016,0038)": {
+        tag: "(0016,0038)",
+        vr: "DS",
+        name: "PhotographicExposureIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0039)": {
+        tag: "(0016,0039)",
+        vr: "US",
+        name: "SensingMethod",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,003A)": {
+        tag: "(0016,003A)",
+        vr: "US",
+        name: "FileSource",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,003B)": {
+        tag: "(0016,003B)",
+        vr: "US",
+        name: "SceneType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0041)": {
+        tag: "(0016,0041)",
+        vr: "US",
+        name: "CustomRendered",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0042)": {
+        tag: "(0016,0042)",
+        vr: "US",
+        name: "ExposureMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0043)": {
+        tag: "(0016,0043)",
+        vr: "US",
+        name: "WhiteBalance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0044)": {
+        tag: "(0016,0044)",
+        vr: "DS",
+        name: "DigitalZoomRatio",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0045)": {
+        tag: "(0016,0045)",
+        vr: "IS",
+        name: "FocalLengthIn35mmFilm",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0046)": {
+        tag: "(0016,0046)",
+        vr: "US",
+        name: "SceneCaptureType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0047)": {
+        tag: "(0016,0047)",
+        vr: "US",
+        name: "GainControl",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0048)": {
+        tag: "(0016,0048)",
+        vr: "US",
+        name: "Contrast",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0049)": {
+        tag: "(0016,0049)",
+        vr: "US",
+        name: "Saturation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,004A)": {
+        tag: "(0016,004A)",
+        vr: "US",
+        name: "Sharpness",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,004B)": {
+        tag: "(0016,004B)",
+        vr: "OB",
+        name: "DeviceSettingDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,004C)": {
+        tag: "(0016,004C)",
+        vr: "US",
+        name: "SubjectDistanceRange",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,004D)": {
+        tag: "(0016,004D)",
+        vr: "UT",
+        name: "CameraOwnerName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,004E)": {
+        tag: "(0016,004E)",
+        vr: "DS",
+        name: "LensSpecification",
+        vm: "4",
+        version: "DICOM"
+    },
+    "(0016,004F)": {
+        tag: "(0016,004F)",
+        vr: "UT",
+        name: "LensMake",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0050)": {
+        tag: "(0016,0050)",
+        vr: "UT",
+        name: "LensModel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0051)": {
+        tag: "(0016,0051)",
+        vr: "UT",
+        name: "LensSerialNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0061)": {
+        tag: "(0016,0061)",
+        vr: "CS",
+        name: "InteroperabilityIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0062)": {
+        tag: "(0016,0062)",
+        vr: "OB",
+        name: "InteroperabilityVersion",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0070)": {
+        tag: "(0016,0070)",
+        vr: "OB",
+        name: "GPSVersionID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0071)": {
+        tag: "(0016,0071)",
+        vr: "CS",
+        name: "GPSLatitudeRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0072)": {
+        tag: "(0016,0072)",
+        vr: "DS",
+        name: "GPSLatitude",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0016,0073)": {
+        tag: "(0016,0073)",
+        vr: "CS",
+        name: "GPSLongitudeRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0074)": {
+        tag: "(0016,0074)",
+        vr: "DS",
+        name: "GPSLongitude",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0016,0075)": {
+        tag: "(0016,0075)",
+        vr: "US",
+        name: "GPSAltitudeRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0076)": {
+        tag: "(0016,0076)",
+        vr: "DS",
+        name: "GPSAltitude",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0077)": {
+        tag: "(0016,0077)",
+        vr: "DT",
+        name: "GPSTimeStamp",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0078)": {
+        tag: "(0016,0078)",
+        vr: "UT",
+        name: "GPSSatellites",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0079)": {
+        tag: "(0016,0079)",
+        vr: "CS",
+        name: "GPSStatus",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,007A)": {
+        tag: "(0016,007A)",
+        vr: "CS",
+        name: "GPSMeasureMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,007B)": {
+        tag: "(0016,007B)",
+        vr: "DS",
+        name: "GPSDOP",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,007C)": {
+        tag: "(0016,007C)",
+        vr: "CS",
+        name: "GPSSpeedRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,007D)": {
+        tag: "(0016,007D)",
+        vr: "DS",
+        name: "GPSSpeed",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,007E)": {
+        tag: "(0016,007E)",
+        vr: "CS",
+        name: "GPSTrackRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,007F)": {
+        tag: "(0016,007F)",
+        vr: "DS",
+        name: "GPSTrack",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0080)": {
+        tag: "(0016,0080)",
+        vr: "CS",
+        name: "GPSImgDirectionRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0081)": {
+        tag: "(0016,0081)",
+        vr: "DS",
+        name: "GPSImgDirection",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0082)": {
+        tag: "(0016,0082)",
+        vr: "UT",
+        name: "GPSMapDatum",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0083)": {
+        tag: "(0016,0083)",
+        vr: "CS",
+        name: "GPSDestLatitudeRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0084)": {
+        tag: "(0016,0084)",
+        vr: "DS",
+        name: "GPSDestLatitude",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0016,0085)": {
+        tag: "(0016,0085)",
+        vr: "CS",
+        name: "GPSDestLongitudeRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0086)": {
+        tag: "(0016,0086)",
+        vr: "DS",
+        name: "GPSDestLongitude",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0016,0087)": {
+        tag: "(0016,0087)",
+        vr: "CS",
+        name: "GPSDestBearingRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0088)": {
+        tag: "(0016,0088)",
+        vr: "DS",
+        name: "GPSDestBearing",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,0089)": {
+        tag: "(0016,0089)",
+        vr: "CS",
+        name: "GPSDestDistanceRef",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,008A)": {
+        tag: "(0016,008A)",
+        vr: "DS",
+        name: "GPSDestDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,008B)": {
+        tag: "(0016,008B)",
+        vr: "OB",
+        name: "GPSProcessingMethod",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,008C)": {
+        tag: "(0016,008C)",
+        vr: "OB",
+        name: "GPSAreaInformation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,008D)": {
+        tag: "(0016,008D)",
+        vr: "DT",
+        name: "GPSDateStamp",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,008E)": {
+        tag: "(0016,008E)",
+        vr: "IS",
+        name: "GPSDifferential",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,1001)": {
+        tag: "(0016,1001)",
+        vr: "CS",
+        name: "LightSourcePolarization",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,1002)": {
+        tag: "(0016,1002)",
+        vr: "DS",
+        name: "EmitterColorTemperature",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,1003)": {
+        tag: "(0016,1003)",
+        vr: "CS",
+        name: "ContactMethod",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0016,1004)": {
+        tag: "(0016,1004)",
+        vr: "CS",
+        name: "ImmersionMedia",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0016,1005)": {
+        tag: "(0016,1005)",
+        vr: "DS",
+        name: "OpticalMagnificationFactor",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0018,0010)": {
         tag: "(0018,0010)",
         vr: "LO",
@@ -3658,6 +4834,27 @@ const dictionary = {
         vr: "LO",
         name: "GantryID",
         vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1009)": {
+        tag: "(0018,1009)",
+        vr: "UT",
+        name: "UniqueDeviceIdentifier",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,100A)": {
+        tag: "(0018,100A)",
+        vr: "SQ",
+        name: "UDISequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,100B)": {
+        tag: "(0018,100B)",
+        vr: "UI",
+        name: "ManufacturerDeviceClassUID",
+        vm: "1-n",
         version: "DICOM"
     },
     "(0018,1010)": {
@@ -4353,10 +5550,150 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0018,11A3)": {
+        tag: "(0018,11A3)",
+        vr: "DS",
+        name: "CompressionPressure",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0018,11A4)": {
         tag: "(0018,11A4)",
         vr: "LO",
         name: "PaddleDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11A5)": {
+        tag: "(0018,11A5)",
+        vr: "DS",
+        name: "CompressionContactArea",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B0)": {
+        tag: "(0018,11B0)",
+        vr: "LO",
+        name: "AcquisitionMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B1)": {
+        tag: "(0018,11B1)",
+        vr: "LO",
+        name: "DoseModeName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B2)": {
+        tag: "(0018,11B2)",
+        vr: "CS",
+        name: "AcquiredSubtractionMaskFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B3)": {
+        tag: "(0018,11B3)",
+        vr: "CS",
+        name: "FluoroscopyPersistenceFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B4)": {
+        tag: "(0018,11B4)",
+        vr: "CS",
+        name: "FluoroscopyLastImageHoldPersistenceFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B5)": {
+        tag: "(0018,11B5)",
+        vr: "IS",
+        name: "UpperLimitNumberOfPersistentFluoroscopyFrames",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B6)": {
+        tag: "(0018,11B6)",
+        vr: "CS",
+        name: "ContrastBolusAutoInjectionTriggerFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B7)": {
+        tag: "(0018,11B7)",
+        vr: "FD",
+        name: "ContrastBolusInjectionDelay",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B8)": {
+        tag: "(0018,11B8)",
+        vr: "SQ",
+        name: "XAAcquisitionPhaseDetailsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11B9)": {
+        tag: "(0018,11B9)",
+        vr: "FD",
+        name: "XAAcquisitionFrameRate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11BA)": {
+        tag: "(0018,11BA)",
+        vr: "SQ",
+        name: "XAPlaneDetailsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11BB)": {
+        tag: "(0018,11BB)",
+        vr: "LO",
+        name: "AcquisitionFieldOfViewLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11BC)": {
+        tag: "(0018,11BC)",
+        vr: "SQ",
+        name: "XRayFilterDetailsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11BD)": {
+        tag: "(0018,11BD)",
+        vr: "FD",
+        name: "XAAcquisitionDuration",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11BE)": {
+        tag: "(0018,11BE)",
+        vr: "CS",
+        name: "ReconstructionPipelineType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11BF)": {
+        tag: "(0018,11BF)",
+        vr: "SQ",
+        name: "ImageFilterDetailsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11C0)": {
+        tag: "(0018,11C0)",
+        vr: "CS",
+        name: "AppliedMaskSubtractionFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,11C1)": {
+        tag: "(0018,11C1)",
+        vr: "SQ",
+        name: "RequestedSeriesDescriptionCodeSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -4434,6 +5771,20 @@ const dictionary = {
         tag: "(0018,1261)",
         vr: "LO",
         name: "PhosphorType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1271)": {
+        tag: "(0018,1271)",
+        vr: "FD",
+        name: "WaterEquivalentDiameter",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1272)": {
+        tag: "(0018,1272)",
+        vr: "SQ",
+        name: "WaterEquivalentDiameterCalculationMethodCodeSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -4745,6 +6096,69 @@ const dictionary = {
         vm: "3",
         version: "DICOM"
     },
+    "(0018,1630)": {
+        tag: "(0018,1630)",
+        vr: "CS",
+        name: "OutlineShapeType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1631)": {
+        tag: "(0018,1631)",
+        vr: "FD",
+        name: "OutlineLeftVerticalEdge",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1632)": {
+        tag: "(0018,1632)",
+        vr: "FD",
+        name: "OutlineRightVerticalEdge",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1633)": {
+        tag: "(0018,1633)",
+        vr: "FD",
+        name: "OutlineUpperHorizontalEdge",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1634)": {
+        tag: "(0018,1634)",
+        vr: "FD",
+        name: "OutlineLowerHorizontalEdge",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1635)": {
+        tag: "(0018,1635)",
+        vr: "FD",
+        name: "CenterOfCircularOutline",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(0018,1636)": {
+        tag: "(0018,1636)",
+        vr: "FD",
+        name: "DiameterOfCircularOutline",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1637)": {
+        tag: "(0018,1637)",
+        vr: "UL",
+        name: "NumberOfPolygonalVertices",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,1638)": {
+        tag: "(0018,1638)",
+        vr: "OF",
+        name: "VerticesOfThePolygonalOutline",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0018,1700)": {
         tag: "(0018,1700)",
         vr: "CS",
@@ -4988,6 +6402,13 @@ const dictionary = {
         vr: "LO",
         name: "TransducerData",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,5011)": {
+        tag: "(0018,5011)",
+        vr: "SQ",
+        name: "TransducerIdentificationSequence",
+        vm: "1",
         version: "DICOM"
     },
     "(0018,5012)": {
@@ -5359,6 +6780,13 @@ const dictionary = {
         vr: "FL",
         name: "RWaveTimeVector",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,6070)": {
+        tag: "(0018,6070)",
+        vr: "US",
+        name: "ActiveImageAreaOverlayGroup",
+        vm: "1",
         version: "DICOM"
     },
     "(0018,7000)": {
@@ -7104,6 +8532,258 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0018,9361)": {
+        tag: "(0018,9361)",
+        vr: "CS",
+        name: "MultienergyCTAcquisition",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9362)": {
+        tag: "(0018,9362)",
+        vr: "SQ",
+        name: "MultienergyCTAcquisitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9363)": {
+        tag: "(0018,9363)",
+        vr: "SQ",
+        name: "MultienergyCTProcessingSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9364)": {
+        tag: "(0018,9364)",
+        vr: "SQ",
+        name: "MultienergyCTCharacteristicsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9365)": {
+        tag: "(0018,9365)",
+        vr: "SQ",
+        name: "MultienergyCTXRaySourceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9366)": {
+        tag: "(0018,9366)",
+        vr: "US",
+        name: "XRaySourceIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9367)": {
+        tag: "(0018,9367)",
+        vr: "UC",
+        name: "XRaySourceID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9368)": {
+        tag: "(0018,9368)",
+        vr: "CS",
+        name: "MultienergySourceTechnique",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9369)": {
+        tag: "(0018,9369)",
+        vr: "DT",
+        name: "SourceStartDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,936A)": {
+        tag: "(0018,936A)",
+        vr: "DT",
+        name: "SourceEndDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,936B)": {
+        tag: "(0018,936B)",
+        vr: "US",
+        name: "SwitchingPhaseNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,936C)": {
+        tag: "(0018,936C)",
+        vr: "DS",
+        name: "SwitchingPhaseNominalDuration",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,936D)": {
+        tag: "(0018,936D)",
+        vr: "DS",
+        name: "SwitchingPhaseTransitionDuration",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,936E)": {
+        tag: "(0018,936E)",
+        vr: "DS",
+        name: "EffectiveBinEnergy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,936F)": {
+        tag: "(0018,936F)",
+        vr: "SQ",
+        name: "MultienergyCTXRayDetectorSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9370)": {
+        tag: "(0018,9370)",
+        vr: "US",
+        name: "XRayDetectorIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9371)": {
+        tag: "(0018,9371)",
+        vr: "UC",
+        name: "XRayDetectorID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9372)": {
+        tag: "(0018,9372)",
+        vr: "CS",
+        name: "MultienergyDetectorType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9373)": {
+        tag: "(0018,9373)",
+        vr: "ST",
+        name: "XRayDetectorLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9374)": {
+        tag: "(0018,9374)",
+        vr: "DS",
+        name: "NominalMaxEnergy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9375)": {
+        tag: "(0018,9375)",
+        vr: "DS",
+        name: "NominalMinEnergy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9376)": {
+        tag: "(0018,9376)",
+        vr: "US",
+        name: "ReferencedXRayDetectorIndex",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,9377)": {
+        tag: "(0018,9377)",
+        vr: "US",
+        name: "ReferencedXRaySourceIndex",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,9378)": {
+        tag: "(0018,9378)",
+        vr: "US",
+        name: "ReferencedPathIndex",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,9379)": {
+        tag: "(0018,9379)",
+        vr: "SQ",
+        name: "MultienergyCTPathSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,937A)": {
+        tag: "(0018,937A)",
+        vr: "US",
+        name: "MultienergyCTPathIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,937B)": {
+        tag: "(0018,937B)",
+        vr: "UT",
+        name: "MultienergyAcquisitionDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,937C)": {
+        tag: "(0018,937C)",
+        vr: "FD",
+        name: "MonoenergeticEnergyEquivalent",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,937D)": {
+        tag: "(0018,937D)",
+        vr: "SQ",
+        name: "MaterialCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,937E)": {
+        tag: "(0018,937E)",
+        vr: "CS",
+        name: "DecompositionMethod",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,937F)": {
+        tag: "(0018,937F)",
+        vr: "UT",
+        name: "DecompositionDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9380)": {
+        tag: "(0018,9380)",
+        vr: "SQ",
+        name: "DecompositionAlgorithmIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9381)": {
+        tag: "(0018,9381)",
+        vr: "SQ",
+        name: "DecompositionMaterialSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9382)": {
+        tag: "(0018,9382)",
+        vr: "SQ",
+        name: "MaterialAttenuationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9383)": {
+        tag: "(0018,9383)",
+        vr: "DS",
+        name: "PhotonEnergy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9384)": {
+        tag: "(0018,9384)",
+        vr: "DS",
+        name: "XRayMassAttenuationCoefficient",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0018,9401)": {
         tag: "(0018,9401)",
         vr: "SQ",
@@ -7804,6 +9484,34 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0018,9621)": {
+        tag: "(0018,9621)",
+        vr: "SQ",
+        name: "FunctionalMRSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9622)": {
+        tag: "(0018,9622)",
+        vr: "CS",
+        name: "FunctionalSettlingPhaseFramesPresent",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9623)": {
+        tag: "(0018,9623)",
+        vr: "DT",
+        name: "FunctionalSyncPulse",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9624)": {
+        tag: "(0018,9624)",
+        vr: "CS",
+        name: "SettlingPhaseFrame",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0018,9701)": {
         tag: "(0018,9701)",
         vr: "DT",
@@ -8203,6 +9911,419 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0018,9900)": {
+        tag: "(0018,9900)",
+        vr: "LO",
+        name: "ReferenceLocationLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9901)": {
+        tag: "(0018,9901)",
+        vr: "UT",
+        name: "ReferenceLocationDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9902)": {
+        tag: "(0018,9902)",
+        vr: "SQ",
+        name: "ReferenceBasisCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9903)": {
+        tag: "(0018,9903)",
+        vr: "SQ",
+        name: "ReferenceGeometryCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9904)": {
+        tag: "(0018,9904)",
+        vr: "DS",
+        name: "OffsetDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9905)": {
+        tag: "(0018,9905)",
+        vr: "CS",
+        name: "OffsetDirection",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9906)": {
+        tag: "(0018,9906)",
+        vr: "SQ",
+        name: "PotentialScheduledProtocolCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9907)": {
+        tag: "(0018,9907)",
+        vr: "SQ",
+        name: "PotentialRequestedProcedureCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9908)": {
+        tag: "(0018,9908)",
+        vr: "UC",
+        name: "PotentialReasonsForProcedure",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,9909)": {
+        tag: "(0018,9909)",
+        vr: "SQ",
+        name: "PotentialReasonsForProcedureCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,990A)": {
+        tag: "(0018,990A)",
+        vr: "UC",
+        name: "PotentialDiagnosticTasks",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,990B)": {
+        tag: "(0018,990B)",
+        vr: "SQ",
+        name: "ContraindicationsCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,990C)": {
+        tag: "(0018,990C)",
+        vr: "SQ",
+        name: "ReferencedDefinedProtocolSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,990D)": {
+        tag: "(0018,990D)",
+        vr: "SQ",
+        name: "ReferencedPerformedProtocolSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,990E)": {
+        tag: "(0018,990E)",
+        vr: "SQ",
+        name: "PredecessorProtocolSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,990F)": {
+        tag: "(0018,990F)",
+        vr: "UT",
+        name: "ProtocolPlanningInformation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9910)": {
+        tag: "(0018,9910)",
+        vr: "UT",
+        name: "ProtocolDesignRationale",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9911)": {
+        tag: "(0018,9911)",
+        vr: "SQ",
+        name: "PatientSpecificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9912)": {
+        tag: "(0018,9912)",
+        vr: "SQ",
+        name: "ModelSpecificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9913)": {
+        tag: "(0018,9913)",
+        vr: "SQ",
+        name: "ParametersSpecificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9914)": {
+        tag: "(0018,9914)",
+        vr: "SQ",
+        name: "InstructionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9915)": {
+        tag: "(0018,9915)",
+        vr: "US",
+        name: "InstructionIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9916)": {
+        tag: "(0018,9916)",
+        vr: "LO",
+        name: "InstructionText",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9917)": {
+        tag: "(0018,9917)",
+        vr: "UT",
+        name: "InstructionDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9918)": {
+        tag: "(0018,9918)",
+        vr: "CS",
+        name: "InstructionPerformedFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9919)": {
+        tag: "(0018,9919)",
+        vr: "DT",
+        name: "InstructionPerformedDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,991A)": {
+        tag: "(0018,991A)",
+        vr: "UT",
+        name: "InstructionPerformanceComment",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,991B)": {
+        tag: "(0018,991B)",
+        vr: "SQ",
+        name: "PatientPositioningInstructionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,991C)": {
+        tag: "(0018,991C)",
+        vr: "SQ",
+        name: "PositioningMethodCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,991D)": {
+        tag: "(0018,991D)",
+        vr: "SQ",
+        name: "PositioningLandmarkSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,991E)": {
+        tag: "(0018,991E)",
+        vr: "UI",
+        name: "TargetFrameOfReferenceUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,991F)": {
+        tag: "(0018,991F)",
+        vr: "SQ",
+        name: "AcquisitionProtocolElementSpecificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9920)": {
+        tag: "(0018,9920)",
+        vr: "SQ",
+        name: "AcquisitionProtocolElementSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9921)": {
+        tag: "(0018,9921)",
+        vr: "US",
+        name: "ProtocolElementNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9922)": {
+        tag: "(0018,9922)",
+        vr: "LO",
+        name: "ProtocolElementName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9923)": {
+        tag: "(0018,9923)",
+        vr: "UT",
+        name: "ProtocolElementCharacteristicsSummary",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9924)": {
+        tag: "(0018,9924)",
+        vr: "UT",
+        name: "ProtocolElementPurpose",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9930)": {
+        tag: "(0018,9930)",
+        vr: "CS",
+        name: "AcquisitionMotion",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9931)": {
+        tag: "(0018,9931)",
+        vr: "SQ",
+        name: "AcquisitionStartLocationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9932)": {
+        tag: "(0018,9932)",
+        vr: "SQ",
+        name: "AcquisitionEndLocationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9933)": {
+        tag: "(0018,9933)",
+        vr: "SQ",
+        name: "ReconstructionProtocolElementSpecificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9934)": {
+        tag: "(0018,9934)",
+        vr: "SQ",
+        name: "ReconstructionProtocolElementSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9935)": {
+        tag: "(0018,9935)",
+        vr: "SQ",
+        name: "StorageProtocolElementSpecificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9936)": {
+        tag: "(0018,9936)",
+        vr: "SQ",
+        name: "StorageProtocolElementSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9937)": {
+        tag: "(0018,9937)",
+        vr: "LO",
+        name: "RequestedSeriesDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9938)": {
+        tag: "(0018,9938)",
+        vr: "US",
+        name: "SourceAcquisitionProtocolElementNumber",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,9939)": {
+        tag: "(0018,9939)",
+        vr: "US",
+        name: "SourceAcquisitionBeamNumber",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,993A)": {
+        tag: "(0018,993A)",
+        vr: "US",
+        name: "SourceReconstructionProtocolElementNumber",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0018,993B)": {
+        tag: "(0018,993B)",
+        vr: "SQ",
+        name: "ReconstructionStartLocationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,993C)": {
+        tag: "(0018,993C)",
+        vr: "SQ",
+        name: "ReconstructionEndLocationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,993D)": {
+        tag: "(0018,993D)",
+        vr: "SQ",
+        name: "ReconstructionAlgorithmSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,993E)": {
+        tag: "(0018,993E)",
+        vr: "SQ",
+        name: "ReconstructionTargetCenterLocationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9941)": {
+        tag: "(0018,9941)",
+        vr: "UT",
+        name: "ImageFilterDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9942)": {
+        tag: "(0018,9942)",
+        vr: "FD",
+        name: "CTDIvolNotificationTrigger",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9943)": {
+        tag: "(0018,9943)",
+        vr: "FD",
+        name: "DLPNotificationTrigger",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9944)": {
+        tag: "(0018,9944)",
+        vr: "CS",
+        name: "AutoKVPSelectionType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9945)": {
+        tag: "(0018,9945)",
+        vr: "FD",
+        name: "AutoKVPUpperBound",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9946)": {
+        tag: "(0018,9946)",
+        vr: "FD",
+        name: "AutoKVPLowerBound",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0018,9947)": {
+        tag: "(0018,9947)",
+        vr: "CS",
+        name: "ProtocolDefinedPatientPosition",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0018,A001)": {
         tag: "(0018,A001)",
         vr: "SQ",
@@ -8354,6 +10475,13 @@ const dictionary = {
         tag: "(0020,1002)",
         vr: "IS",
         name: "ImagesInAcquisition",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0020,103F)": {
+        tag: "(0020,103F)",
+        vr: "LO",
+        name: "TargetPositionReferenceIndicator",
         vm: "1",
         version: "DICOM"
     },
@@ -9295,6 +11423,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0022,1036)": {
+        tag: "(0022,1036)",
+        vr: "SQ",
+        name: "SourceOfCornealSizeDataCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0022,1037)": {
         tag: "(0022,1037)",
         vr: "FL",
@@ -9320,6 +11455,55 @@ const dictionary = {
         tag: "(0022,1044)",
         vr: "SQ",
         name: "OphthalmicUltrasoundMethodCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1045)": {
+        tag: "(0022,1045)",
+        vr: "SQ",
+        name: "SurgicallyInducedAstigmatismSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1046)": {
+        tag: "(0022,1046)",
+        vr: "CS",
+        name: "TypeOfOpticalCorrection",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1047)": {
+        tag: "(0022,1047)",
+        vr: "SQ",
+        name: "ToricIOLPowerSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1048)": {
+        tag: "(0022,1048)",
+        vr: "SQ",
+        name: "PredictedToricErrorSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1049)": {
+        tag: "(0022,1049)",
+        vr: "CS",
+        name: "PreSelectedForImplantation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,104A)": {
+        tag: "(0022,104A)",
+        vr: "SQ",
+        name: "ToricIOLPowerForExactEmmetropiaSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,104B)": {
+        tag: "(0022,104B)",
+        vr: "SQ",
+        name: "ToricIOLPowerForExactTargetRefractionSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -9460,6 +11644,27 @@ const dictionary = {
         tag: "(0022,1128)",
         vr: "SQ",
         name: "AnteriorChamberDepthSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,112A)": {
+        tag: "(0022,112A)",
+        vr: "SQ",
+        name: "CalculationCommentSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,112B)": {
+        tag: "(0022,112B)",
+        vr: "CS",
+        name: "CalculationCommentType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,112C)": {
+        tag: "(0022,112C)",
+        vr: "LT",
+        name: "CalculationComment",
         vm: "1",
         version: "DICOM"
     },
@@ -9838,6 +12043,139 @@ const dictionary = {
         tag: "(0022,1531)",
         vr: "OF",
         name: "TwoDimensionalToThreeDimensionalMapData",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1612)": {
+        tag: "(0022,1612)",
+        vr: "SQ",
+        name: "DerivationAlgorithmSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1615)": {
+        tag: "(0022,1615)",
+        vr: "SQ",
+        name: "OphthalmicImageTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1616)": {
+        tag: "(0022,1616)",
+        vr: "LO",
+        name: "OphthalmicImageTypeDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1618)": {
+        tag: "(0022,1618)",
+        vr: "SQ",
+        name: "ScanPatternTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1620)": {
+        tag: "(0022,1620)",
+        vr: "SQ",
+        name: "ReferencedSurfaceMeshIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1622)": {
+        tag: "(0022,1622)",
+        vr: "CS",
+        name: "OphthalmicVolumetricPropertiesFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1624)": {
+        tag: "(0022,1624)",
+        vr: "FL",
+        name: "OphthalmicAnatomicReferencePointXCoordinate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1626)": {
+        tag: "(0022,1626)",
+        vr: "FL",
+        name: "OphthalmicAnatomicReferencePointYCoordinate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1628)": {
+        tag: "(0022,1628)",
+        vr: "SQ",
+        name: "OphthalmicEnFaceImageQualityRatingSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1630)": {
+        tag: "(0022,1630)",
+        vr: "DS",
+        name: "QualityThreshold",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1640)": {
+        tag: "(0022,1640)",
+        vr: "SQ",
+        name: "OCTBscanAnalysisAcquisitionParametersSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1642)": {
+        tag: "(0022,1642)",
+        vr: "UL",
+        name: "NumberofBscansPerFrame",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1643)": {
+        tag: "(0022,1643)",
+        vr: "FL",
+        name: "BscanSlabThickness",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1644)": {
+        tag: "(0022,1644)",
+        vr: "FL",
+        name: "DistanceBetweenBscanSlabs",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1645)": {
+        tag: "(0022,1645)",
+        vr: "FL",
+        name: "BscanCycleTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1646)": {
+        tag: "(0022,1646)",
+        vr: "FL",
+        name: "BscanCycleTimeVector",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0022,1649)": {
+        tag: "(0022,1649)",
+        vr: "FL",
+        name: "AscanRate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1650)": {
+        tag: "(0022,1650)",
+        vr: "FL",
+        name: "BscanRate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0022,1658)": {
+        tag: "(0022,1658)",
+        vr: "UL",
+        name: "SurfaceMeshZPixelOffset",
         vm: "1",
         version: "DICOM"
     },
@@ -10954,6 +13292,27 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0028,1230)": {
+        tag: "(0028,1230)",
+        vr: "SQ",
+        name: "StoredValueColorRangeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0028,1231)": {
+        tag: "(0028,1231)",
+        vr: "FD",
+        name: "MinimumStoredValueMapped",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0028,1232)": {
+        tag: "(0028,1232)",
+        vr: "FD",
+        name: "MaximumStoredValueMapped",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0028,1300)": {
         tag: "(0028,1300)",
         vr: "CS",
@@ -11822,10 +14181,108 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0032,1066)": {
+        tag: "(0032,1066)",
+        vr: "UT",
+        name: "ReasonForVisit",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0032,1067)": {
+        tag: "(0032,1067)",
+        vr: "SQ",
+        name: "ReasonForVisitCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0032,1070)": {
         tag: "(0032,1070)",
         vr: "LO",
         name: "RequestedContrastAgent",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0001)": {
+        tag: "(0034,0001)",
+        vr: "SQ",
+        name: "FlowIdentifierSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0002)": {
+        tag: "(0034,0002)",
+        vr: "OB",
+        name: "FlowIdentifier",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0003)": {
+        tag: "(0034,0003)",
+        vr: "UI",
+        name: "FlowTransferSyntaxUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0004)": {
+        tag: "(0034,0004)",
+        vr: "UL",
+        name: "FlowRTPSamplingRate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0005)": {
+        tag: "(0034,0005)",
+        vr: "OB",
+        name: "SourceIdentifier",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0007)": {
+        tag: "(0034,0007)",
+        vr: "OB",
+        name: "FrameOriginTimestamp",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0008)": {
+        tag: "(0034,0008)",
+        vr: "CS",
+        name: "IncludesImagingSubject",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,0009)": {
+        tag: "(0034,0009)",
+        vr: "SQ",
+        name: "FrameUsefulnessGroupSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,000A)": {
+        tag: "(0034,000A)",
+        vr: "SQ",
+        name: "RealTimeBulkDataFlowSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,000B)": {
+        tag: "(0034,000B)",
+        vr: "SQ",
+        name: "CameraPositionGroupSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,000C)": {
+        tag: "(0034,000C)",
+        vr: "CS",
+        name: "IncludesInformation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0034,000D)": {
+        tag: "(0034,000D)",
+        vr: "SQ",
+        name: "TimeOfFrameGroupSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -12225,6 +14682,55 @@ const dictionary = {
         tag: "(003A,0302)",
         vr: "CS",
         name: "ChannelMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(003A,0310)": {
+        tag: "(003A,0310)",
+        vr: "UI",
+        name: "MultiplexGroupUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(003A,0311)": {
+        tag: "(003A,0311)",
+        vr: "DS",
+        name: "PowerlineFrequency",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(003A,0312)": {
+        tag: "(003A,0312)",
+        vr: "SQ",
+        name: "ChannelImpedanceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(003A,0313)": {
+        tag: "(003A,0313)",
+        vr: "DS",
+        name: "ImpedanceValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(003A,0314)": {
+        tag: "(003A,0314)",
+        vr: "DT",
+        name: "ImpedanceMeasurementDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(003A,0315)": {
+        tag: "(003A,0315)",
+        vr: "DS",
+        name: "ImpedanceMeasurementFrequency",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(003A,0316)": {
+        tag: "(003A,0316)",
+        vr: "CS",
+        name: "ImpedanceMeasurementCurrentType",
         vm: "1",
         version: "DICOM"
     },
@@ -12816,6 +15322,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0040,0710)": {
+        tag: "(0040,0710)",
+        vr: "SQ",
+        name: "WholeSlideMicroscopyImageFrameTypeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0040,071A)": {
         tag: "(0040,071A)",
         vr: "SQ",
@@ -13047,6 +15560,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0040,4008)": {
+        tag: "(0040,4008)",
+        vr: "DT",
+        name: "ScheduledProcedureStepExpirationDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0040,4009)": {
         tag: "(0040,4009)",
         vr: "SQ",
@@ -13215,6 +15735,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0040,8303)": {
+        tag: "(0040,8303)",
+        vr: "CS",
+        name: "EntranceDoseDerivation",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0040,9092)": {
         tag: "(0040,9092)",
         vr: "SQ",
@@ -13317,6 +15844,13 @@ const dictionary = {
         tag: "(0040,A032)",
         vr: "DT",
         name: "ObservationDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A033)": {
+        tag: "(0040,A033)",
+        vr: "DT",
+        name: "ObservationStartDateTime",
         vm: "1",
         version: "DICOM"
     },
@@ -13663,6 +16197,62 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0040,A801)": {
+        tag: "(0040,A801)",
+        vr: "SQ",
+        name: "TabulatedValuesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A802)": {
+        tag: "(0040,A802)",
+        vr: "UL",
+        name: "NumberOfTableRows",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A803)": {
+        tag: "(0040,A803)",
+        vr: "UL",
+        name: "NumbeOfTableColumns",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A804)": {
+        tag: "(0040,A804)",
+        vr: "UL",
+        name: "TableRowNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A805)": {
+        tag: "(0040,A805)",
+        vr: "UL",
+        name: "TableColumnNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A806)": {
+        tag: "(0040,A806)",
+        vr: "SQ",
+        name: "TableRowDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A807)": {
+        tag: "(0040,A807)",
+        vr: "SQ",
+        name: "TableColumnDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0040,A808)": {
+        tag: "(0040,A808)",
+        vr: "SQ",
+        name: "CellValuesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0040,B020)": {
         tag: "(0040,B020)",
         vr: "SQ",
@@ -13817,6 +16407,13 @@ const dictionary = {
         vm: "1-n",
         version: "DICOM"
     },
+    "(0042,0015)": {
+        tag: "(0042,0015)",
+        vr: "UL",
+        name: "EncapsulatedDocumentLength",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0044,0001)": {
         tag: "(0044,0001)",
         vr: "ST",
@@ -13912,6 +16509,83 @@ const dictionary = {
         tag: "(0044,0019)",
         vr: "SQ",
         name: "SubstanceAdministrationParameterSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0100)": {
+        tag: "(0044,0100)",
+        vr: "SQ",
+        name: "ApprovalSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0101)": {
+        tag: "(0044,0101)",
+        vr: "SQ",
+        name: "AssertionCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0102)": {
+        tag: "(0044,0102)",
+        vr: "UI",
+        name: "AssertionUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0103)": {
+        tag: "(0044,0103)",
+        vr: "SQ",
+        name: "AsserterIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0104)": {
+        tag: "(0044,0104)",
+        vr: "DT",
+        name: "AssertionDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0105)": {
+        tag: "(0044,0105)",
+        vr: "DT",
+        name: "AssertionExpirationDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0106)": {
+        tag: "(0044,0106)",
+        vr: "UT",
+        name: "AssertionComments",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0107)": {
+        tag: "(0044,0107)",
+        vr: "SQ",
+        name: "RelatedAssertionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0108)": {
+        tag: "(0044,0108)",
+        vr: "UI",
+        name: "ReferencedAssertionUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,0109)": {
+        tag: "(0044,0109)",
+        vr: "SQ",
+        name: "ApprovalSubjectSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0044,010A)": {
+        tag: "(0044,010A)",
+        vr: "SQ",
+        name: "OrganizationalRoleCodeSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -14017,6 +16691,13 @@ const dictionary = {
         tag: "(0046,0046)",
         vr: "FD",
         name: "CornealSize",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0047)": {
+        tag: "(0046,0047)",
+        vr: "SQ",
+        name: "CornealSizeSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -14178,6 +16859,69 @@ const dictionary = {
         tag: "(0046,0106)",
         vr: "FD",
         name: "ViewingDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0110)": {
+        tag: "(0046,0110)",
+        vr: "SQ",
+        name: "CorneaMeasurementsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0111)": {
+        tag: "(0046,0111)",
+        vr: "SQ",
+        name: "SourceOfCorneaMeasurementDataCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0112)": {
+        tag: "(0046,0112)",
+        vr: "SQ",
+        name: "SteepCornealAxisSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0113)": {
+        tag: "(0046,0113)",
+        vr: "SQ",
+        name: "FlatCornealAxisSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0114)": {
+        tag: "(0046,0114)",
+        vr: "FD",
+        name: "CornealPower",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0115)": {
+        tag: "(0046,0115)",
+        vr: "FD",
+        name: "CornealAxis",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0116)": {
+        tag: "(0046,0116)",
+        vr: "SQ",
+        name: "CorneaMeasurementMethodCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0117)": {
+        tag: "(0046,0117)",
+        vr: "FL",
+        name: "RefractiveIndexOfCornea",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0046,0118)": {
+        tag: "(0046,0118)",
+        vr: "FL",
+        name: "RefractiveIndexOfAqueousHumor",
         vm: "1",
         version: "DICOM"
     },
@@ -14685,6 +17429,20 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0048,0302)": {
+        tag: "(0048,0302)",
+        vr: "UL",
+        name: "NumberOfOpticalPaths",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0048,0303)": {
+        tag: "(0048,0303)",
+        vr: "UL",
+        name: "TotalPixelMatrixFocalPlanes",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0050,0004)": {
         tag: "(0050,0004)",
         vr: "CS",
@@ -14794,6 +17552,13 @@ const dictionary = {
         tag: "(0050,0020)",
         vr: "LO",
         name: "DeviceDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0050,0021)": {
+        tag: "(0050,0021)",
+        vr: "ST",
+        name: "LongDeviceDescription",
         vm: "1",
         version: "DICOM"
     },
@@ -15623,6 +18388,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0062,0007)": {
+        tag: "(0062,0007)",
+        vr: "SQ",
+        name: "SegmentationAlgorithmIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0062,0008)": {
         tag: "(0062,0008)",
         vr: "CS",
@@ -15697,6 +18469,27 @@ const dictionary = {
         tag: "(0062,0012)",
         vr: "SQ",
         name: "UsedSegmentsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0062,0013)": {
+        tag: "(0062,0013)",
+        vr: "CS",
+        name: "SegmentsOverlap",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0062,0020)": {
+        tag: "(0062,0020)",
+        vr: "UT",
+        name: "TrackingID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0062,0021)": {
+        tag: "(0062,0021)",
+        vr: "UI",
+        name: "TrackingUID",
         vm: "1",
         version: "DICOM"
     },
@@ -16111,6 +18904,118 @@ const dictionary = {
         vr: "UL",
         name: "LongVertexPointIndexList",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(0066,0101)": {
+        tag: "(0066,0101)",
+        vr: "SQ",
+        name: "TrackSetSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0102)": {
+        tag: "(0066,0102)",
+        vr: "SQ",
+        name: "TrackSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0103)": {
+        tag: "(0066,0103)",
+        vr: "OW",
+        name: "RecommendedDisplayCIELabValueList",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0104)": {
+        tag: "(0066,0104)",
+        vr: "SQ",
+        name: "TrackingAlgorithmIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0105)": {
+        tag: "(0066,0105)",
+        vr: "UL",
+        name: "TrackSetNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0106)": {
+        tag: "(0066,0106)",
+        vr: "LO",
+        name: "TrackSetLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0107)": {
+        tag: "(0066,0107)",
+        vr: "UT",
+        name: "TrackSetDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0108)": {
+        tag: "(0066,0108)",
+        vr: "SQ",
+        name: "TrackSetAnatomicalTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0121)": {
+        tag: "(0066,0121)",
+        vr: "SQ",
+        name: "MeasurementsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0124)": {
+        tag: "(0066,0124)",
+        vr: "SQ",
+        name: "TrackSetStatisticsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0125)": {
+        tag: "(0066,0125)",
+        vr: "OF",
+        name: "FloatingPointValues",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0129)": {
+        tag: "(0066,0129)",
+        vr: "OL",
+        name: "TrackPointIndexList",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0130)": {
+        tag: "(0066,0130)",
+        vr: "SQ",
+        name: "TrackStatisticsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0132)": {
+        tag: "(0066,0132)",
+        vr: "SQ",
+        name: "MeasurementValuesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0133)": {
+        tag: "(0066,0133)",
+        vr: "SQ",
+        name: "DiffusionAcquisitionCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0066,0134)": {
+        tag: "(0066,0134)",
+        vr: "SQ",
+        name: "DiffusionModelCodeSequence",
+        vm: "1",
         version: "DICOM"
     },
     "(0068,6210)": {
@@ -16601,6 +19506,41 @@ const dictionary = {
         vr: "FD",
         name: "ThreeDPlaneNormal",
         vm: "3",
+        version: "DICOM"
+    },
+    "(0068,7001)": {
+        tag: "(0068,7001)",
+        vr: "CS",
+        name: "ModelModification",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0068,7002)": {
+        tag: "(0068,7002)",
+        vr: "CS",
+        name: "ModelMirroring",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0068,7003)": {
+        tag: "(0068,7003)",
+        vr: "SQ",
+        name: "ModelUsageCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0068,7004)": {
+        tag: "(0068,7004)",
+        vr: "UI",
+        name: "ModelGroupUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0068,7005)": {
+        tag: "(0068,7005)",
+        vr: "UR",
+        name: "RelativeURIReferenceWithinEncapsulatedDocument",
+        vm: "1",
         version: "DICOM"
     },
     "(0070,0001)": {
@@ -17205,6 +20145,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0070,030B)": {
+        tag: "(0070,030B)",
+        vr: "FD",
+        name: "FrameOfReferenceToDisplayedCoordinateSystemTransformationMatrix",
+        vm: "16",
+        version: "DICOM"
+    },
     "(0070,030C)": {
         tag: "(0070,030C)",
         vr: "CS",
@@ -17268,6 +20215,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0070,031B)": {
+        tag: "(0070,031B)",
+        vr: "UI",
+        name: "ReferencedFiducialUID",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0070,031C)": {
         tag: "(0070,031C)",
         vr: "SQ",
@@ -17279,6 +20233,13 @@ const dictionary = {
         tag: "(0070,031E)",
         vr: "SQ",
         name: "FiducialSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,031F)": {
+        tag: "(0070,031F)",
+        vr: "SQ",
+        name: "FiducialsPropertyCategoryCodeSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -17314,6 +20275,230 @@ const dictionary = {
         tag: "(0070,0405)",
         vr: "CS",
         name: "BlendingPosition",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1209)": {
+        tag: "(0070,1209)",
+        vr: "UI",
+        name: "VolumetricPresentationInputSetUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,120A)": {
+        tag: "(0070,120A)",
+        vr: "SQ",
+        name: "VolumetricPresentationInputSetSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,120B)": {
+        tag: "(0070,120B)",
+        vr: "CS",
+        name: "GlobalCrop",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,120C)": {
+        tag: "(0070,120C)",
+        vr: "US",
+        name: "GlobalCroppingSpecificationIndex",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0070,120D)": {
+        tag: "(0070,120D)",
+        vr: "CS",
+        name: "RenderingMethod",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1602)": {
+        tag: "(0070,1602)",
+        vr: "CS",
+        name: "RenderProjection",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1603)": {
+        tag: "(0070,1603)",
+        vr: "FD",
+        name: "ViewpointPosition",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0070,1604)": {
+        tag: "(0070,1604)",
+        vr: "FD",
+        name: "ViewpointLookAtPoint",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0070,1605)": {
+        tag: "(0070,1605)",
+        vr: "FD",
+        name: "ViewpointUpDirection",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0070,1606)": {
+        tag: "(0070,1606)",
+        vr: "FD",
+        name: "RenderFieldOfView",
+        vm: "6",
+        version: "DICOM"
+    },
+    "(0070,1607)": {
+        tag: "(0070,1607)",
+        vr: "FD",
+        name: "SamplingStepSize",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1701)": {
+        tag: "(0070,1701)",
+        vr: "CS",
+        name: "ShadingStyle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1702)": {
+        tag: "(0070,1702)",
+        vr: "FD",
+        name: "AmbientReflectionIntensity",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1703)": {
+        tag: "(0070,1703)",
+        vr: "FD",
+        name: "LightDirection",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(0070,1704)": {
+        tag: "(0070,1704)",
+        vr: "FD",
+        name: "DiffuseReflectionIntensity",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1705)": {
+        tag: "(0070,1705)",
+        vr: "FD",
+        name: "SpecularReflectionIntensity",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1706)": {
+        tag: "(0070,1706)",
+        vr: "FD",
+        name: "Shininess",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1A06)": {
+        tag: "(0070,1A06)",
+        vr: "FD",
+        name: "SwivelRange",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1A07)": {
+        tag: "(0070,1A07)",
+        vr: "OD",
+        name: "VolumetricCurveUpDirections",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1A08)": {
+        tag: "(0070,1A08)",
+        vr: "SQ",
+        name: "VolumeStreamSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1A09)": {
+        tag: "(0070,1A09)",
+        vr: "LO",
+        name: "RGBATransferFunctionDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B01)": {
+        tag: "(0070,1B01)",
+        vr: "SQ",
+        name: "AdvancedBlendingSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B02)": {
+        tag: "(0070,1B02)",
+        vr: "US",
+        name: "BlendingInputNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B03)": {
+        tag: "(0070,1B03)",
+        vr: "SQ",
+        name: "BlendingDisplayInputSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B04)": {
+        tag: "(0070,1B04)",
+        vr: "SQ",
+        name: "BlendingDisplaySequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B06)": {
+        tag: "(0070,1B06)",
+        vr: "CS",
+        name: "BlendingMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B07)": {
+        tag: "(0070,1B07)",
+        vr: "CS",
+        name: "TimeSeriesBlending",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B08)": {
+        tag: "(0070,1B08)",
+        vr: "CS",
+        name: "GeometryForDisplay",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B11)": {
+        tag: "(0070,1B11)",
+        vr: "SQ",
+        name: "ThresholdSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B12)": {
+        tag: "(0070,1B12)",
+        vr: "SQ",
+        name: "ThresholdValueSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B13)": {
+        tag: "(0070,1B13)",
+        vr: "CS",
+        name: "ThresholdType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0070,1B14)": {
+        tag: "(0070,1B14)",
+        vr: "FD",
+        name: "ThresholdValue",
         vm: "1",
         version: "DICOM"
     },
@@ -17506,10 +20691,31 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0072,005E)": {
+        tag: "(0072,005E)",
+        vr: "AE",
+        name: "SelectorAEValue",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0072,005F)": {
+        tag: "(0072,005F)",
+        vr: "AS",
+        name: "SelectorASValue",
+        vm: "1-n",
+        version: "DICOM"
+    },
     "(0072,0060)": {
         tag: "(0072,0060)",
         vr: "AT",
         name: "SelectorATValue",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0072,0061)": {
+        tag: "(0072,0061)",
+        vr: "DA",
+        name: "SelectorDAValue",
         vm: "1-n",
         version: "DICOM"
     },
@@ -17520,11 +20726,25 @@ const dictionary = {
         vm: "1-n",
         version: "DICOM"
     },
+    "(0072,0063)": {
+        tag: "(0072,0063)",
+        vr: "DT",
+        name: "SelectorDTValue",
+        vm: "1-n",
+        version: "DICOM"
+    },
     "(0072,0064)": {
         tag: "(0072,0064)",
         vr: "IS",
         name: "SelectorISValue",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(0072,0065)": {
+        tag: "(0072,0065)",
+        vr: "OB",
+        name: "SelectorOBValue",
+        vm: "1",
         version: "DICOM"
     },
     "(0072,0066)": {
@@ -17534,10 +20754,24 @@ const dictionary = {
         vm: "1-n",
         version: "DICOM"
     },
+    "(0072,0067)": {
+        tag: "(0072,0067)",
+        vr: "OF",
+        name: "SelectorOFValue",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0072,0068)": {
         tag: "(0072,0068)",
         vr: "LT",
         name: "SelectorLTValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0072,0069)": {
+        tag: "(0072,0069)",
+        vr: "OW",
+        name: "SelectorOWValue",
         vm: "1",
         version: "DICOM"
     },
@@ -17548,11 +20782,25 @@ const dictionary = {
         vm: "1-n",
         version: "DICOM"
     },
+    "(0072,006B)": {
+        tag: "(0072,006B)",
+        vr: "TM",
+        name: "SelectorTMValue",
+        vm: "1-n",
+        version: "DICOM"
+    },
     "(0072,006C)": {
         tag: "(0072,006C)",
         vr: "SH",
         name: "SelectorSHValue",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(0072,006D)": {
+        tag: "(0072,006D)",
+        vr: "UN",
+        name: "SelectorUNValue",
+        vm: "1",
         version: "DICOM"
     },
     "(0072,006E)": {
@@ -17562,10 +20810,24 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0072,006F)": {
+        tag: "(0072,006F)",
+        vr: "UC",
+        name: "SelectorUCValue",
+        vm: "1-n",
+        version: "DICOM"
+    },
     "(0072,0070)": {
         tag: "(0072,0070)",
         vr: "UT",
         name: "SelectorUTValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0072,0071)": {
+        tag: "(0072,0071)",
+        vr: "UR",
+        name: "SelectorURValue",
         vm: "1",
         version: "DICOM"
     },
@@ -17576,11 +20838,25 @@ const dictionary = {
         vm: "1-n",
         version: "DICOM"
     },
+    "(0072,0073)": {
+        tag: "(0072,0073)",
+        vr: "OD",
+        name: "SelectorODValue",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0072,0074)": {
         tag: "(0072,0074)",
         vr: "FD",
         name: "SelectorFDValue",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(0072,0075)": {
+        tag: "(0072,0075)",
+        vr: "OL",
+        name: "SelectorOLValue",
+        vm: "1",
         version: "DICOM"
     },
     "(0072,0076)": {
@@ -17630,6 +20906,27 @@ const dictionary = {
         vr: "SQ",
         name: "SelectorCodeSequenceValue",
         vm: "1",
+        version: "DICOM"
+    },
+    "(0072,0081)": {
+        tag: "(0072,0081)",
+        vr: "OV",
+        name: "SelectorOVValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0072,0082)": {
+        tag: "(0072,0082)",
+        vr: "SV",
+        name: "SelectorSVValue",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(0072,0083)": {
+        tag: "(0072,0083)",
+        vr: "UV",
+        name: "SelectorUVValue",
+        vm: "1-n",
         version: "DICOM"
     },
     "(0072,0100)": {
@@ -18115,6 +21412,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0074,1007)": {
+        tag: "(0074,1007)",
+        vr: "SQ",
+        name: "ProcedureStepProgressParametersSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0074,1008)": {
         tag: "(0074,1008)",
         vr: "SQ",
@@ -18449,6 +21753,104 @@ const dictionary = {
         vr: "FD",
         name: "DoubleExposureFieldDelta",
         vm: "4",
+        version: "DICOM"
+    },
+    "(0074,1401)": {
+        tag: "(0074,1401)",
+        vr: "SQ",
+        name: "BrachyTaskSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1402)": {
+        tag: "(0074,1402)",
+        vr: "DS",
+        name: "ContinuationStartTotalReferenceAirKerma",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1403)": {
+        tag: "(0074,1403)",
+        vr: "DS",
+        name: "ContinuationEndTotalReferenceAirKerma",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1404)": {
+        tag: "(0074,1404)",
+        vr: "IS",
+        name: "ContinuationPulseNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1405)": {
+        tag: "(0074,1405)",
+        vr: "SQ",
+        name: "ChannelDeliveryOrderSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1406)": {
+        tag: "(0074,1406)",
+        vr: "IS",
+        name: "ReferencedChannelNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1407)": {
+        tag: "(0074,1407)",
+        vr: "DS",
+        name: "StartCumulativeTimeWeight",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1408)": {
+        tag: "(0074,1408)",
+        vr: "DS",
+        name: "EndCumulativeTimeWeight",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,1409)": {
+        tag: "(0074,1409)",
+        vr: "SQ",
+        name: "OmittedChannelSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,140A)": {
+        tag: "(0074,140A)",
+        vr: "CS",
+        name: "ReasonForChannelOmission",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,140B)": {
+        tag: "(0074,140B)",
+        vr: "LO",
+        name: "ReasonForChannelOmissionDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,140C)": {
+        tag: "(0074,140C)",
+        vr: "IS",
+        name: "ChannelDeliveryOrderIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,140D)": {
+        tag: "(0074,140D)",
+        vr: "SQ",
+        name: "ChannelDeliveryContinuationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0074,140E)": {
+        tag: "(0074,140E)",
+        vr: "SQ",
+        name: "OmittedApplicationSetupSequence",
+        vm: "1",
         version: "DICOM"
     },
     "(0076,0001)": {
@@ -18829,6 +22231,174 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0082,0001)": {
+        tag: "(0082,0001)",
+        vr: "CS",
+        name: "AssessmentSummary",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0003)": {
+        tag: "(0082,0003)",
+        vr: "UT",
+        name: "AssessmentSummaryDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0004)": {
+        tag: "(0082,0004)",
+        vr: "SQ",
+        name: "AssessedSOPInstanceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0005)": {
+        tag: "(0082,0005)",
+        vr: "SQ",
+        name: "ReferencedComparisonSOPInstanceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0006)": {
+        tag: "(0082,0006)",
+        vr: "UL",
+        name: "NumberOfAssessmentObservations",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0007)": {
+        tag: "(0082,0007)",
+        vr: "SQ",
+        name: "AssessmentObservationsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0008)": {
+        tag: "(0082,0008)",
+        vr: "CS",
+        name: "ObservationSignificance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,000A)": {
+        tag: "(0082,000A)",
+        vr: "UT",
+        name: "ObservationDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,000C)": {
+        tag: "(0082,000C)",
+        vr: "SQ",
+        name: "StructuredConstraintObservationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0010)": {
+        tag: "(0082,0010)",
+        vr: "SQ",
+        name: "AssessedAttributeValueSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0016)": {
+        tag: "(0082,0016)",
+        vr: "LO",
+        name: "AssessmentSetID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0017)": {
+        tag: "(0082,0017)",
+        vr: "SQ",
+        name: "AssessmentRequesterSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0018)": {
+        tag: "(0082,0018)",
+        vr: "LO",
+        name: "SelectorAttributeName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0019)": {
+        tag: "(0082,0019)",
+        vr: "LO",
+        name: "SelectorAttributeKeyword",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0021)": {
+        tag: "(0082,0021)",
+        vr: "SQ",
+        name: "AssessmentTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0022)": {
+        tag: "(0082,0022)",
+        vr: "SQ",
+        name: "ObservationBasisCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0023)": {
+        tag: "(0082,0023)",
+        vr: "LO",
+        name: "AssessmentLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0032)": {
+        tag: "(0082,0032)",
+        vr: "CS",
+        name: "ConstraintType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0033)": {
+        tag: "(0082,0033)",
+        vr: "UT",
+        name: "SpecificationSelectionGuidance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0034)": {
+        tag: "(0082,0034)",
+        vr: "SQ",
+        name: "ConstraintValueSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0035)": {
+        tag: "(0082,0035)",
+        vr: "SQ",
+        name: "RecommendedDefaultValueSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0036)": {
+        tag: "(0082,0036)",
+        vr: "CS",
+        name: "ConstraintViolationSignificance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0037)": {
+        tag: "(0082,0037)",
+        vr: "UT",
+        name: "ConstraintViolationCondition",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0082,0038)": {
+        tag: "(0082,0038)",
+        vr: "CS",
+        name: "ModifiableConstraintFlag",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0088,0130)": {
         tag: "(0088,0130)",
         vr: "SH",
@@ -19011,6 +22581,20 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(0400,0551)": {
+        tag: "(0400,0551)",
+        vr: "SQ",
+        name: "NonconformingModifiedAttributesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0400,0552)": {
+        tag: "(0400,0552)",
+        vr: "OB",
+        name: "NonconformingDataElementValue",
+        vm: "1",
+        version: "DICOM"
+    },
     "(0400,0561)": {
         tag: "(0400,0561)",
         vr: "SQ",
@@ -19043,6 +22627,13 @@ const dictionary = {
         tag: "(0400,0565)",
         vr: "CS",
         name: "ReasonForTheAttributeModification",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(0400,0600)": {
+        tag: "(0400,0600)",
+        vr: "CS",
+        name: "InstanceOriginStatus",
         vm: "1",
         version: "DICOM"
     },
@@ -20089,6 +23680,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(3006,0037)": {
+        tag: "(3006,0037)",
+        vr: "SQ",
+        name: "ROIDerivationAlgorithmIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
     "(3006,0038)": {
         tag: "(3006,0038)",
         vr: "LO",
@@ -20150,6 +23748,13 @@ const dictionary = {
         vr: "IS",
         name: "AttachedContours",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(3006,004A)": {
+        tag: "(3006,004A)",
+        vr: "SQ",
+        name: "SourcePixelPlanesCharacteristicsSequence",
+        vm: "1",
         version: "DICOM"
     },
     "(3006,0050)": {
@@ -20282,6 +23887,27 @@ const dictionary = {
         tag: "(3006,00C8)",
         vr: "LO",
         name: "FrameOfReferenceTransformationComment",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3006,00C9)": {
+        tag: "(3006,00C9)",
+        vr: "SQ",
+        name: "PatientLocationCoordinatesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3006,00CA)": {
+        tag: "(3006,00CA)",
+        vr: "SQ",
+        name: "PatientLocationCoordinatesCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3006,00CB)": {
+        tag: "(3006,00CB)",
+        vr: "SQ",
+        name: "PatientSupportPositionSequence",
         vm: "1",
         version: "DICOM"
     },
@@ -20555,6 +24181,13 @@ const dictionary = {
         tag: "(3008,0066)",
         vr: "ST",
         name: "OverrideReason",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3008,0067)": {
+        tag: "(3008,0067)",
+        vr: "US",
+        name: "ParameterValueNumber",
         vm: "1",
         version: "DICOM"
     },
@@ -21328,6 +24961,13 @@ const dictionary = {
         vm: "3",
         version: "DICOM"
     },
+    "(300A,0083)": {
+        tag: "(300A,0083)",
+        vr: "UI",
+        name: "ReferencedDoseReferenceUID",
+        vm: "1",
+        version: "DICOM"
+    },
     "(300A,0084)": {
         tag: "(300A,0084)",
         vr: "DS",
@@ -21374,6 +25014,41 @@ const dictionary = {
         tag: "(300A,008F)",
         vr: "FL",
         name: "AverageBeamDosePointSSD",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0090)": {
+        tag: "(300A,0090)",
+        vr: "CS",
+        name: "BeamDoseType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0091)": {
+        tag: "(300A,0091)",
+        vr: "DS",
+        name: "AlternateBeamDose",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0092)": {
+        tag: "(300A,0092)",
+        vr: "CS",
+        name: "AlternateBeamDoseType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0093)": {
+        tag: "(300A,0093)",
+        vr: "CS",
+        name: "DepthValueAveragingFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0094)": {
+        tag: "(300A,0094)",
+        vr: "DS",
+        name: "BeamDosePointSourceToExternalContourDistance",
         vm: "1",
         version: "DICOM"
     },
@@ -22175,6 +25850,48 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(300A,0150)": {
+        tag: "(300A,0150)",
+        vr: "CS",
+        name: "FixationEye",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0151)": {
+        tag: "(300A,0151)",
+        vr: "DS",
+        name: "ChairHeadFramePosition",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0152)": {
+        tag: "(300A,0152)",
+        vr: "DS",
+        name: "HeadFixationAngleTolerance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0153)": {
+        tag: "(300A,0153)",
+        vr: "DS",
+        name: "ChairHeadFramePositionTolerance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0154)": {
+        tag: "(300A,0154)",
+        vr: "DS",
+        name: "FixationLightAzimuthalAngleTolerance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0155)": {
+        tag: "(300A,0155)",
+        vr: "DS",
+        name: "FixationLightPolarAngleTolerance",
+        vm: "1",
+        version: "DICOM"
+    },
     "(300A,0180)": {
         tag: "(300A,0180)",
         vr: "SQ",
@@ -22616,6 +26333,34 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(300A,0271)": {
+        tag: "(300A,0271)",
+        vr: "DS",
+        name: "ChannelEffectiveLength",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0272)": {
+        tag: "(300A,0272)",
+        vr: "DS",
+        name: "ChannelInnerLength",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0273)": {
+        tag: "(300A,0273)",
+        vr: "SH",
+        name: "AfterloaderChannelID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0274)": {
+        tag: "(300A,0274)",
+        vr: "DS",
+        name: "SourceApplicatorTipLength",
+        vm: "1",
+        version: "DICOM"
+    },
     "(300A,0280)": {
         tag: "(300A,0280)",
         vr: "SQ",
@@ -22924,6 +26669,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(300A,0309)": {
+        tag: "(300A,0309)",
+        vr: "CS",
+        name: "ModulatedScanModeType",
+        vm: "1",
+        version: "DICOM"
+    },
     "(300A,030A)": {
         tag: "(300A,030A)",
         vr: "FL",
@@ -23113,6 +26865,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(300A,0355)": {
+        tag: "(300A,0355)",
+        vr: "LO",
+        name: "TrayAccessoryCode",
+        vm: "1",
+        version: "DICOM"
+    },
     "(300A,0356)": {
         tag: "(300A,0356)",
         vr: "FL",
@@ -23225,11 +26984,25 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(300A,038F)": {
+        tag: "(300A,038F)",
+        vr: "FL",
+        name: "ScanSpotTimeOffset",
+        vm: "1-n",
+        version: "DICOM"
+    },
     "(300A,0390)": {
         tag: "(300A,0390)",
         vr: "SH",
         name: "ScanSpotTuneID",
         vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0391)": {
+        tag: "(300A,0391)",
+        vr: "IS",
+        name: "ScanSpotPrescribedIndices",
+        vm: "1-n",
         version: "DICOM"
     },
     "(300A,0392)": {
@@ -23239,11 +27012,25 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(300A,0393)": {
+        tag: "(300A,0393)",
+        vr: "CS",
+        name: "ScanSpotReordered",
+        vm: "1",
+        version: "DICOM"
+    },
     "(300A,0394)": {
         tag: "(300A,0394)",
         vr: "FL",
         name: "ScanSpotPositionMap",
         vm: "1-n",
+        version: "DICOM"
+    },
+    "(300A,0395)": {
+        tag: "(300A,0395)",
+        vr: "CS",
+        name: "ScanSpotReorderingAllowed",
+        vm: "1",
         version: "DICOM"
     },
     "(300A,0396)": {
@@ -23258,6 +27045,13 @@ const dictionary = {
         vr: "FL",
         name: "ScanningSpotSize",
         vm: "2",
+        version: "DICOM"
+    },
+    "(300A,0399)": {
+        tag: "(300A,0399)",
+        vr: "FL",
+        name: "ScanSpotSizesDelivered",
+        vm: "2-2n",
         version: "DICOM"
     },
     "(300A,039A)": {
@@ -23386,6 +27180,13 @@ const dictionary = {
         vm: "1",
         version: "DICOM"
     },
+    "(300A,0426)": {
+        tag: "(300A,0426)",
+        vr: "DS",
+        name: "IsocenterToGeneralAccessoryDistance",
+        vm: "1",
+        version: "DICOM"
+    },
     "(300A,0431)": {
         tag: "(300A,0431)",
         vr: "SQ",
@@ -23481,6 +27282,1343 @@ const dictionary = {
         tag: "(300A,0453)",
         vr: "SQ",
         name: "DeviceMotionParameterCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0501)": {
+        tag: "(300A,0501)",
+        vr: "FL",
+        name: "DistalDepthFraction",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0502)": {
+        tag: "(300A,0502)",
+        vr: "FL",
+        name: "DistalDepth",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0503)": {
+        tag: "(300A,0503)",
+        vr: "FL",
+        name: "NominalRangeModulationFractions",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(300A,0504)": {
+        tag: "(300A,0504)",
+        vr: "FL",
+        name: "NominalRangeModulatedRegionDepths",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(300A,0505)": {
+        tag: "(300A,0505)",
+        vr: "SQ",
+        name: "DepthDoseParametersSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0506)": {
+        tag: "(300A,0506)",
+        vr: "SQ",
+        name: "DeliveredDepthDoseParametersSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0507)": {
+        tag: "(300A,0507)",
+        vr: "FL",
+        name: "DeliveredDistalDepthFraction",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0508)": {
+        tag: "(300A,0508)",
+        vr: "FL",
+        name: "DeliveredDistalDepth",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0509)": {
+        tag: "(300A,0509)",
+        vr: "FL",
+        name: "DeliveredNominalRangeModulationFractions",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(300A,0510)": {
+        tag: "(300A,0510)",
+        vr: "FL",
+        name: "DeliveredNominalRangeModulatedRegionDepths",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(300A,0511)": {
+        tag: "(300A,0511)",
+        vr: "CS",
+        name: "DeliveredReferenceDoseDefinition",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0512)": {
+        tag: "(300A,0512)",
+        vr: "CS",
+        name: "ReferenceDoseDefinition",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0600)": {
+        tag: "(300A,0600)",
+        vr: "US",
+        name: "RTControlPointIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0601)": {
+        tag: "(300A,0601)",
+        vr: "US",
+        name: "RadiationGenerationModeIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0602)": {
+        tag: "(300A,0602)",
+        vr: "US",
+        name: "ReferencedDefinedDeviceIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0603)": {
+        tag: "(300A,0603)",
+        vr: "US",
+        name: "RadiationDoseIdentificationIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0604)": {
+        tag: "(300A,0604)",
+        vr: "US",
+        name: "NumberOfRTControlPoints",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0605)": {
+        tag: "(300A,0605)",
+        vr: "US",
+        name: "ReferencedRadiationGenerationModeIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0606)": {
+        tag: "(300A,0606)",
+        vr: "US",
+        name: "TreatmentPositionIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0607)": {
+        tag: "(300A,0607)",
+        vr: "US",
+        name: "ReferencedDeviceIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0608)": {
+        tag: "(300A,0608)",
+        vr: "LO",
+        name: "TreatmentPositionGroupLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0609)": {
+        tag: "(300A,0609)",
+        vr: "UI",
+        name: "TreatmentPositionGroupUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,060A)": {
+        tag: "(300A,060A)",
+        vr: "SQ",
+        name: "TreatmentPositionGroupSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,060B)": {
+        tag: "(300A,060B)",
+        vr: "US",
+        name: "ReferencedTreatmentPositionIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,060C)": {
+        tag: "(300A,060C)",
+        vr: "US",
+        name: "ReferencedRadiationDoseIdentificationIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,060D)": {
+        tag: "(300A,060D)",
+        vr: "FD",
+        name: "RTAccessoryHolderWaterEquivalentThickness",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,060E)": {
+        tag: "(300A,060E)",
+        vr: "US",
+        name: "ReferencedRTAccessoryHolderDeviceIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,060F)": {
+        tag: "(300A,060F)",
+        vr: "CS",
+        name: "RTAccessoryHolderSlotExistenceFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0610)": {
+        tag: "(300A,0610)",
+        vr: "SQ",
+        name: "RTAccessoryHolderSlotSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0611)": {
+        tag: "(300A,0611)",
+        vr: "LO",
+        name: "RTAccessoryHolderSlotID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0612)": {
+        tag: "(300A,0612)",
+        vr: "FD",
+        name: "RTAccessoryHolderSlotDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0613)": {
+        tag: "(300A,0613)",
+        vr: "FD",
+        name: "RTAccessorySlotDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0614)": {
+        tag: "(300A,0614)",
+        vr: "SQ",
+        name: "RTAccessoryHolderDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0615)": {
+        tag: "(300A,0615)",
+        vr: "LO",
+        name: "RTAccessoryDeviceSlotID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0616)": {
+        tag: "(300A,0616)",
+        vr: "SQ",
+        name: "RTRadiationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0617)": {
+        tag: "(300A,0617)",
+        vr: "SQ",
+        name: "RadiationDoseSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0618)": {
+        tag: "(300A,0618)",
+        vr: "SQ",
+        name: "RadiationDoseIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0619)": {
+        tag: "(300A,0619)",
+        vr: "LO",
+        name: "RadiationDoseIdentificationLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,061A)": {
+        tag: "(300A,061A)",
+        vr: "CS",
+        name: "ReferenceDoseType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,061B)": {
+        tag: "(300A,061B)",
+        vr: "CS",
+        name: "PrimaryDoseValueIndicator",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,061C)": {
+        tag: "(300A,061C)",
+        vr: "SQ",
+        name: "DoseValuesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,061D)": {
+        tag: "(300A,061D)",
+        vr: "CS",
+        name: "DoseValuePurpose",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(300A,061E)": {
+        tag: "(300A,061E)",
+        vr: "FD",
+        name: "ReferenceDosePointCoordinates",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(300A,061F)": {
+        tag: "(300A,061F)",
+        vr: "SQ",
+        name: "RadiationDoseValuesParametersSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0620)": {
+        tag: "(300A,0620)",
+        vr: "SQ",
+        name: "MetersetToDoseMappingSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0621)": {
+        tag: "(300A,0621)",
+        vr: "SQ",
+        name: "ExpectedInVivoMeasurementValuesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0622)": {
+        tag: "(300A,0622)",
+        vr: "US",
+        name: "ExpectedInVivoMeasurementValueIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0623)": {
+        tag: "(300A,0623)",
+        vr: "LO",
+        name: "RadiationDoseInVivoMeasurementLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0624)": {
+        tag: "(300A,0624)",
+        vr: "FD",
+        name: "RadiationDoseCentralAxisDisplacement",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(300A,0625)": {
+        tag: "(300A,0625)",
+        vr: "FD",
+        name: "RadiationDoseValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0626)": {
+        tag: "(300A,0626)",
+        vr: "FD",
+        name: "RadiationDoseSourceToSkinDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0627)": {
+        tag: "(300A,0627)",
+        vr: "FD",
+        name: "RadiationDoseMeasurementPointCoordinates",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(300A,0628)": {
+        tag: "(300A,0628)",
+        vr: "FD",
+        name: "RadiationDoseSourceToExternalContourDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0629)": {
+        tag: "(300A,0629)",
+        vr: "SQ",
+        name: "RTToleranceSetSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,062A)": {
+        tag: "(300A,062A)",
+        vr: "LO",
+        name: "RTToleranceSetLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,062B)": {
+        tag: "(300A,062B)",
+        vr: "SQ",
+        name: "AttributeToleranceValuesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,062C)": {
+        tag: "(300A,062C)",
+        vr: "FD",
+        name: "ToleranceValue",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,062D)": {
+        tag: "(300A,062D)",
+        vr: "SQ",
+        name: "PatientSupportPositionToleranceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,062E)": {
+        tag: "(300A,062E)",
+        vr: "FD",
+        name: "TreatmentTimeLimit",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,062F)": {
+        tag: "(300A,062F)",
+        vr: "SQ",
+        name: "CArmPhotonElectronControlPointSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0630)": {
+        tag: "(300A,0630)",
+        vr: "SQ",
+        name: "ReferencedRTRadiationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0631)": {
+        tag: "(300A,0631)",
+        vr: "SQ",
+        name: "ReferencedRTInstanceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0632)": {
+        tag: "(300A,0632)",
+        vr: "SQ",
+        name: "ReferencedRTPatientSetupSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0634)": {
+        tag: "(300A,0634)",
+        vr: "FD",
+        name: "SourceToPatientSurfaceDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0635)": {
+        tag: "(300A,0635)",
+        vr: "SQ",
+        name: "TreatmentMachineSpecialModeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0636)": {
+        tag: "(300A,0636)",
+        vr: "US",
+        name: "IntendedNumberOfFractions",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0637)": {
+        tag: "(300A,0637)",
+        vr: "CS",
+        name: "RTRadiationSetIntent",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0638)": {
+        tag: "(300A,0638)",
+        vr: "CS",
+        name: "RTRadiationPhysicalAndGeometricContentDetailFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0639)": {
+        tag: "(300A,0639)",
+        vr: "CS",
+        name: "RTRecordFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,063A)": {
+        tag: "(300A,063A)",
+        vr: "SQ",
+        name: "TreatmentDeviceIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,063B)": {
+        tag: "(300A,063B)",
+        vr: "SQ",
+        name: "ReferencedRTPhysicianIntentSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,063C)": {
+        tag: "(300A,063C)",
+        vr: "FD",
+        name: "CumulativeMeterset",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,063D)": {
+        tag: "(300A,063D)",
+        vr: "FD",
+        name: "DeliveryRate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,063E)": {
+        tag: "(300A,063E)",
+        vr: "SQ",
+        name: "DeliveryRateUnitSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,063F)": {
+        tag: "(300A,063F)",
+        vr: "SQ",
+        name: "TreatmentPositionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0640)": {
+        tag: "(300A,0640)",
+        vr: "FD",
+        name: "RadiationSourceAxisDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0641)": {
+        tag: "(300A,0641)",
+        vr: "US",
+        name: "NumberOfRTBeamLimitingDevices",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0642)": {
+        tag: "(300A,0642)",
+        vr: "FD",
+        name: "RTBeamLimitingDeviceProximalDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0643)": {
+        tag: "(300A,0643)",
+        vr: "FD",
+        name: "RTBeamLimitingDeviceDistalDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0644)": {
+        tag: "(300A,0644)",
+        vr: "SQ",
+        name: "ParallelRTBeamDelimiterDeviceOrientationLabelCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0645)": {
+        tag: "(300A,0645)",
+        vr: "FD",
+        name: "BeamModifierOrientationAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0646)": {
+        tag: "(300A,0646)",
+        vr: "SQ",
+        name: "FixedRTBeamDelimiterDeviceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0647)": {
+        tag: "(300A,0647)",
+        vr: "SQ",
+        name: "ParallelRTBeamDelimiterDeviceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0648)": {
+        tag: "(300A,0648)",
+        vr: "US",
+        name: "NumberOfParallelRTBeamDelimiters",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0649)": {
+        tag: "(300A,0649)",
+        vr: "FD",
+        name: "ParallelRTBeamDelimiterBoundaries",
+        vm: "2-n",
+        version: "DICOM"
+    },
+    "(300A,064A)": {
+        tag: "(300A,064A)",
+        vr: "FD",
+        name: "ParallelRTBeamDelimiterPositions",
+        vm: "2-n",
+        version: "DICOM"
+    },
+    "(300A,064B)": {
+        tag: "(300A,064B)",
+        vr: "FD",
+        name: "RTBeamLimitingDeviceOffset",
+        vm: "2",
+        version: "DICOM"
+    },
+    "(300A,064C)": {
+        tag: "(300A,064C)",
+        vr: "SQ",
+        name: "RTBeamDelimiterGeometrySequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,064D)": {
+        tag: "(300A,064D)",
+        vr: "SQ",
+        name: "RTBeamLimitingDeviceDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,064E)": {
+        tag: "(300A,064E)",
+        vr: "CS",
+        name: "ParallelRTBeamDelimiterOpeningMode",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,064F)": {
+        tag: "(300A,064F)",
+        vr: "CS",
+        name: "ParallelRTBeamDelimiterLeafMountingSide",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(300A,0650)": {
+        tag: "(300A,0650)",
+        vr: "UI",
+        name: "PatientSetupUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0651)": {
+        tag: "(300A,0651)",
+        vr: "SQ",
+        name: "WedgeDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0652)": {
+        tag: "(300A,0652)",
+        vr: "FD",
+        name: "RadiationBeamWedgeAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0653)": {
+        tag: "(300A,0653)",
+        vr: "FD",
+        name: "RadiationBeamWedgeThinEdgeDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0654)": {
+        tag: "(300A,0654)",
+        vr: "FD",
+        name: "RadiationBeamEffectiveWedgeAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0655)": {
+        tag: "(300A,0655)",
+        vr: "US",
+        name: "NumberOfWedgePositions",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0656)": {
+        tag: "(300A,0656)",
+        vr: "SQ",
+        name: "RTBeamLimitingDeviceOpeningSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0657)": {
+        tag: "(300A,0657)",
+        vr: "US",
+        name: "NumberOfRTBeamLimitingDeviceOpenings",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0658)": {
+        tag: "(300A,0658)",
+        vr: "SQ",
+        name: "RadiationDosimeterUnitSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0659)": {
+        tag: "(300A,0659)",
+        vr: "SQ",
+        name: "RTDeviceDistanceReferenceLocationCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,065A)": {
+        tag: "(300A,065A)",
+        vr: "SQ",
+        name: "RadiationDeviceConfigurationAndCommissioningKeySequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,065B)": {
+        tag: "(300A,065B)",
+        vr: "SQ",
+        name: "PatientSupportPositionParameterSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,065C)": {
+        tag: "(300A,065C)",
+        vr: "CS",
+        name: "PatientSupportPositionSpecificationMethod",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,065D)": {
+        tag: "(300A,065D)",
+        vr: "SQ",
+        name: "PatientSupportPositionDeviceParameterSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,065E)": {
+        tag: "(300A,065E)",
+        vr: "US",
+        name: "DeviceOrderIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,065F)": {
+        tag: "(300A,065F)",
+        vr: "US",
+        name: "PatientSupportPositionParameterOrderIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0660)": {
+        tag: "(300A,0660)",
+        vr: "SQ",
+        name: "PatientSupportPositionDeviceToleranceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0661)": {
+        tag: "(300A,0661)",
+        vr: "US",
+        name: "PatientSupportPositionToleranceOrderIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0662)": {
+        tag: "(300A,0662)",
+        vr: "SQ",
+        name: "CompensatorDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0663)": {
+        tag: "(300A,0663)",
+        vr: "CS",
+        name: "CompensatorMapOrientation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0664)": {
+        tag: "(300A,0664)",
+        vr: "OF",
+        name: "CompensatorProximalThicknessMap",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0665)": {
+        tag: "(300A,0665)",
+        vr: "OF",
+        name: "CompensatorDistalThicknessMap",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0666)": {
+        tag: "(300A,0666)",
+        vr: "FD",
+        name: "CompensatorBasePlaneOffset",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0667)": {
+        tag: "(300A,0667)",
+        vr: "SQ",
+        name: "CompensatorShapeFabricationCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0668)": {
+        tag: "(300A,0668)",
+        vr: "SQ",
+        name: "CompensatorShapeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0669)": {
+        tag: "(300A,0669)",
+        vr: "FD",
+        name: "RadiationBeamCompensatorMillingToolDiameter",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,066A)": {
+        tag: "(300A,066A)",
+        vr: "SQ",
+        name: "BlockDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,066B)": {
+        tag: "(300A,066B)",
+        vr: "OF",
+        name: "BlockEdgeData",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,066C)": {
+        tag: "(300A,066C)",
+        vr: "CS",
+        name: "BlockOrientation",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,066D)": {
+        tag: "(300A,066D)",
+        vr: "FD",
+        name: "RadiationBeamBlockThickness",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,066E)": {
+        tag: "(300A,066E)",
+        vr: "FD",
+        name: "RadiationBeamBlockSlabThickness",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,066F)": {
+        tag: "(300A,066F)",
+        vr: "SQ",
+        name: "BlockEdgeDataSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0670)": {
+        tag: "(300A,0670)",
+        vr: "US",
+        name: "NumberOfRTAccessoryHolders",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0671)": {
+        tag: "(300A,0671)",
+        vr: "SQ",
+        name: "GeneralAccessoryDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0672)": {
+        tag: "(300A,0672)",
+        vr: "US",
+        name: "NumberOfGeneralAccessories",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0673)": {
+        tag: "(300A,0673)",
+        vr: "SQ",
+        name: "BolusDefinitionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0674)": {
+        tag: "(300A,0674)",
+        vr: "US",
+        name: "NumberOfBoluses",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0675)": {
+        tag: "(300A,0675)",
+        vr: "UI",
+        name: "EquipmentFrameOfReferenceUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0676)": {
+        tag: "(300A,0676)",
+        vr: "ST",
+        name: "EquipmentFrameOfReferenceDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0677)": {
+        tag: "(300A,0677)",
+        vr: "SQ",
+        name: "EquipmentReferencePointCoordinatesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0678)": {
+        tag: "(300A,0678)",
+        vr: "SQ",
+        name: "EquipmentReferencePointCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0679)": {
+        tag: "(300A,0679)",
+        vr: "FD",
+        name: "RTBeamLimitingDeviceAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,067A)": {
+        tag: "(300A,067A)",
+        vr: "FD",
+        name: "SourceRollAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,067B)": {
+        tag: "(300A,067B)",
+        vr: "SQ",
+        name: "RadiationGenerationModeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,067C)": {
+        tag: "(300A,067C)",
+        vr: "SH",
+        name: "RadiationGenerationModeLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,067D)": {
+        tag: "(300A,067D)",
+        vr: "ST",
+        name: "RadiationGenerationModeDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,067E)": {
+        tag: "(300A,067E)",
+        vr: "SQ",
+        name: "RadiationGenerationModeMachineCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,067F)": {
+        tag: "(300A,067F)",
+        vr: "SQ",
+        name: "RadiationTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0680)": {
+        tag: "(300A,0680)",
+        vr: "DS",
+        name: "NominalEnergy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0681)": {
+        tag: "(300A,0681)",
+        vr: "DS",
+        name: "MinimumNominalEnergy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0682)": {
+        tag: "(300A,0682)",
+        vr: "DS",
+        name: "MaximumNominalEnergy",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0683)": {
+        tag: "(300A,0683)",
+        vr: "SQ",
+        name: "RadiationFluenceModifierCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0684)": {
+        tag: "(300A,0684)",
+        vr: "SQ",
+        name: "EnergyUnitCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0685)": {
+        tag: "(300A,0685)",
+        vr: "US",
+        name: "NumberOfRadiationGenerationModes",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0686)": {
+        tag: "(300A,0686)",
+        vr: "SQ",
+        name: "PatientSupportDevicesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0687)": {
+        tag: "(300A,0687)",
+        vr: "US",
+        name: "NumberOfPatientSupportDevices",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0688)": {
+        tag: "(300A,0688)",
+        vr: "FD",
+        name: "RTBeamModifierDefinitionDistance",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0689)": {
+        tag: "(300A,0689)",
+        vr: "SQ",
+        name: "BeamAreaLimitSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,068A)": {
+        tag: "(300A,068A)",
+        vr: "SQ",
+        name: "ReferencedRTPrescriptionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0700)": {
+        tag: "(300A,0700)",
+        vr: "UI",
+        name: "TreatmentSessionUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0701)": {
+        tag: "(300A,0701)",
+        vr: "CS",
+        name: "RTRadiationUsage",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0702)": {
+        tag: "(300A,0702)",
+        vr: "SQ",
+        name: "ReferencedRTRadiationSetSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0703)": {
+        tag: "(300A,0703)",
+        vr: "SQ",
+        name: "ReferencedRTRadiationRecordSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0704)": {
+        tag: "(300A,0704)",
+        vr: "US",
+        name: "RTRadiationSetDeliveryNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0705)": {
+        tag: "(300A,0705)",
+        vr: "US",
+        name: "ClinicalFractionNumber",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0706)": {
+        tag: "(300A,0706)",
+        vr: "CS",
+        name: "RTTreatmentFractionCompletionStatus",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0707)": {
+        tag: "(300A,0707)",
+        vr: "CS",
+        name: "RTRadiationSetUsage",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0708)": {
+        tag: "(300A,0708)",
+        vr: "CS",
+        name: "TreatmentDeliveryContinuationFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0709)": {
+        tag: "(300A,0709)",
+        vr: "CS",
+        name: "TreatmentRecordContentOrigin",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0714)": {
+        tag: "(300A,0714)",
+        vr: "CS",
+        name: "RTTreatmentTerminationStatus",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0715)": {
+        tag: "(300A,0715)",
+        vr: "SQ",
+        name: "RTTreatmentTerminationReasonCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0716)": {
+        tag: "(300A,0716)",
+        vr: "SQ",
+        name: "MachineSpecificTreatmentTerminationCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0722)": {
+        tag: "(300A,0722)",
+        vr: "SQ",
+        name: "RTRadiationSalvageRecordControlPointSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0723)": {
+        tag: "(300A,0723)",
+        vr: "CS",
+        name: "StartingMetersetValueKnownFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0730)": {
+        tag: "(300A,0730)",
+        vr: "ST",
+        name: "TreatmentTerminationDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0731)": {
+        tag: "(300A,0731)",
+        vr: "SQ",
+        name: "TreatmentToleranceViolationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0732)": {
+        tag: "(300A,0732)",
+        vr: "CS",
+        name: "TreatmentToleranceViolationCategory",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0733)": {
+        tag: "(300A,0733)",
+        vr: "SQ",
+        name: "TreatmentToleranceViolationAttributeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0734)": {
+        tag: "(300A,0734)",
+        vr: "ST",
+        name: "TreatmentToleranceViolationDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0735)": {
+        tag: "(300A,0735)",
+        vr: "ST",
+        name: "TreatmentToleranceViolationIdentification",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0736)": {
+        tag: "(300A,0736)",
+        vr: "DT",
+        name: "TreatmentToleranceViolationDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,073A)": {
+        tag: "(300A,073A)",
+        vr: "DT",
+        name: "RecordedRTControlPointDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,073B)": {
+        tag: "(300A,073B)",
+        vr: "US",
+        name: "ReferencedRadiationRTControlPointIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,073E)": {
+        tag: "(300A,073E)",
+        vr: "SQ",
+        name: "AlternateValueSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,073F)": {
+        tag: "(300A,073F)",
+        vr: "SQ",
+        name: "ConfirmationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0740)": {
+        tag: "(300A,0740)",
+        vr: "SQ",
+        name: "InterlockSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0741)": {
+        tag: "(300A,0741)",
+        vr: "DT",
+        name: "InterlockDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0742)": {
+        tag: "(300A,0742)",
+        vr: "ST",
+        name: "InterlockDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0743)": {
+        tag: "(300A,0743)",
+        vr: "SQ",
+        name: "InterlockOriginatingDeviceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0744)": {
+        tag: "(300A,0744)",
+        vr: "SQ",
+        name: "InterlockCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0745)": {
+        tag: "(300A,0745)",
+        vr: "SQ",
+        name: "InterlockResolutionCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0746)": {
+        tag: "(300A,0746)",
+        vr: "SQ",
+        name: "InterlockResolutionUserSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0760)": {
+        tag: "(300A,0760)",
+        vr: "DT",
+        name: "OverrideDateTime",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0761)": {
+        tag: "(300A,0761)",
+        vr: "SQ",
+        name: "TreatmentToleranceViolationTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0762)": {
+        tag: "(300A,0762)",
+        vr: "SQ",
+        name: "TreatmentToleranceViolationCauseCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0772)": {
+        tag: "(300A,0772)",
+        vr: "SQ",
+        name: "MeasuredMetersetToDoseMappingSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0773)": {
+        tag: "(300A,0773)",
+        vr: "US",
+        name: "ReferencedExpectedInVivoMeasurementValueIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0774)": {
+        tag: "(300A,0774)",
+        vr: "SQ",
+        name: "DoseMeasurementDeviceCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0780)": {
+        tag: "(300A,0780)",
+        vr: "SQ",
+        name: "AdditionalParameterRecordingInstanceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(300A,0783)": {
+        tag: "(300A,0783)",
+        vr: "ST",
+        name: "InterlockOriginDescription",
         vm: "1",
         version: "DICOM"
     },
@@ -24352,6 +29490,1035 @@ const dictionary = {
         vm: "6",
         version: "DICOM/DICOS"
     },
+    "(3010,0001)": {
+        tag: "(3010,0001)",
+        vr: "SQ",
+        name: "RadiobiologicalDoseEffectSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0002)": {
+        tag: "(3010,0002)",
+        vr: "CS",
+        name: "RadiobiologicalDoseEffectFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0003)": {
+        tag: "(3010,0003)",
+        vr: "SQ",
+        name: "EffectiveDoseCalculationMethodCategoryCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0004)": {
+        tag: "(3010,0004)",
+        vr: "SQ",
+        name: "EffectiveDoseCalculationMethodCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0005)": {
+        tag: "(3010,0005)",
+        vr: "LO",
+        name: "EffectiveDoseCalculationMethodDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0006)": {
+        tag: "(3010,0006)",
+        vr: "UI",
+        name: "ConceptualVolumeUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0007)": {
+        tag: "(3010,0007)",
+        vr: "SQ",
+        name: "OriginatingSOPInstanceReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0008)": {
+        tag: "(3010,0008)",
+        vr: "SQ",
+        name: "ConceptualVolumeConstituentSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0009)": {
+        tag: "(3010,0009)",
+        vr: "SQ",
+        name: "EquivalentConceptualVolumeInstanceReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,000A)": {
+        tag: "(3010,000A)",
+        vr: "SQ",
+        name: "EquivalentConceptualVolumesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,000B)": {
+        tag: "(3010,000B)",
+        vr: "UI",
+        name: "ReferencedConceptualVolumeUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,000C)": {
+        tag: "(3010,000C)",
+        vr: "UT",
+        name: "ConceptualVolumeCombinationExpression",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,000D)": {
+        tag: "(3010,000D)",
+        vr: "US",
+        name: "ConceptualVolumeConstituentIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,000E)": {
+        tag: "(3010,000E)",
+        vr: "CS",
+        name: "ConceptualVolumeCombinationFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,000F)": {
+        tag: "(3010,000F)",
+        vr: "ST",
+        name: "ConceptualVolumeCombinationDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0010)": {
+        tag: "(3010,0010)",
+        vr: "CS",
+        name: "ConceptualVolumeSegmentationDefinedFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0011)": {
+        tag: "(3010,0011)",
+        vr: "SQ",
+        name: "ConceptualVolumeSegmentationReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0012)": {
+        tag: "(3010,0012)",
+        vr: "SQ",
+        name: "ConceptualVolumeConstituentSegmentationReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0013)": {
+        tag: "(3010,0013)",
+        vr: "UI",
+        name: "ConstituentConceptualVolumeUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0014)": {
+        tag: "(3010,0014)",
+        vr: "SQ",
+        name: "DerivationConceptualVolumeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0015)": {
+        tag: "(3010,0015)",
+        vr: "UI",
+        name: "SourceConceptualVolumeUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0016)": {
+        tag: "(3010,0016)",
+        vr: "SQ",
+        name: "ConceptualVolumeDerivationAlgorithmSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0017)": {
+        tag: "(3010,0017)",
+        vr: "ST",
+        name: "ConceptualVolumeDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0018)": {
+        tag: "(3010,0018)",
+        vr: "SQ",
+        name: "SourceConceptualVolumeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0019)": {
+        tag: "(3010,0019)",
+        vr: "SQ",
+        name: "AuthorIdentificationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,001A)": {
+        tag: "(3010,001A)",
+        vr: "LO",
+        name: "ManufacturerModelVersion",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,001B)": {
+        tag: "(3010,001B)",
+        vr: "UC",
+        name: "DeviceAlternateIdentifier",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,001C)": {
+        tag: "(3010,001C)",
+        vr: "CS",
+        name: "DeviceAlternateIdentifierType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,001D)": {
+        tag: "(3010,001D)",
+        vr: "LT",
+        name: "DeviceAlternateIdentifierFormat",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,001E)": {
+        tag: "(3010,001E)",
+        vr: "LO",
+        name: "SegmentationCreationTemplateLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,001F)": {
+        tag: "(3010,001F)",
+        vr: "UI",
+        name: "SegmentationTemplateUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0020)": {
+        tag: "(3010,0020)",
+        vr: "US",
+        name: "ReferencedSegmentReferenceIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0021)": {
+        tag: "(3010,0021)",
+        vr: "SQ",
+        name: "SegmentReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0022)": {
+        tag: "(3010,0022)",
+        vr: "US",
+        name: "SegmentReferenceIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0023)": {
+        tag: "(3010,0023)",
+        vr: "SQ",
+        name: "DirectSegmentReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0024)": {
+        tag: "(3010,0024)",
+        vr: "SQ",
+        name: "CombinationSegmentReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0025)": {
+        tag: "(3010,0025)",
+        vr: "SQ",
+        name: "ConceptualVolumeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0026)": {
+        tag: "(3010,0026)",
+        vr: "SQ",
+        name: "SegmentedRTAccessoryDeviceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0027)": {
+        tag: "(3010,0027)",
+        vr: "SQ",
+        name: "SegmentCharacteristicsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0028)": {
+        tag: "(3010,0028)",
+        vr: "SQ",
+        name: "RelatedSegmentCharacteristicsSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0029)": {
+        tag: "(3010,0029)",
+        vr: "US",
+        name: "SegmentCharacteristicsPrecedence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,002A)": {
+        tag: "(3010,002A)",
+        vr: "SQ",
+        name: "RTSegmentAnnotationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,002B)": {
+        tag: "(3010,002B)",
+        vr: "SQ",
+        name: "SegmentAnnotationCategoryCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,002C)": {
+        tag: "(3010,002C)",
+        vr: "SQ",
+        name: "SegmentAnnotationTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,002D)": {
+        tag: "(3010,002D)",
+        vr: "LO",
+        name: "DeviceLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,002E)": {
+        tag: "(3010,002E)",
+        vr: "SQ",
+        name: "DeviceTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,002F)": {
+        tag: "(3010,002F)",
+        vr: "SQ",
+        name: "SegmentAnnotationTypeModifierCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0030)": {
+        tag: "(3010,0030)",
+        vr: "SQ",
+        name: "PatientEquipmentRelationshipCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0031)": {
+        tag: "(3010,0031)",
+        vr: "UI",
+        name: "ReferencedFiducialsUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0032)": {
+        tag: "(3010,0032)",
+        vr: "SQ",
+        name: "PatientTreatmentOrientationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0033)": {
+        tag: "(3010,0033)",
+        vr: "SH",
+        name: "UserContentLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0034)": {
+        tag: "(3010,0034)",
+        vr: "LO",
+        name: "UserContentLongLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0035)": {
+        tag: "(3010,0035)",
+        vr: "SH",
+        name: "EntityLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0036)": {
+        tag: "(3010,0036)",
+        vr: "LO",
+        name: "EntityName",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0037)": {
+        tag: "(3010,0037)",
+        vr: "ST",
+        name: "EntityDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0038)": {
+        tag: "(3010,0038)",
+        vr: "LO",
+        name: "EntityLongLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0039)": {
+        tag: "(3010,0039)",
+        vr: "US",
+        name: "DeviceIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,003A)": {
+        tag: "(3010,003A)",
+        vr: "US",
+        name: "RTTreatmentPhaseIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,003B)": {
+        tag: "(3010,003B)",
+        vr: "UI",
+        name: "RTTreatmentPhaseUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,003C)": {
+        tag: "(3010,003C)",
+        vr: "US",
+        name: "RTPrescriptionIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,003D)": {
+        tag: "(3010,003D)",
+        vr: "US",
+        name: "RTSegmentAnnotationIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,003E)": {
+        tag: "(3010,003E)",
+        vr: "US",
+        name: "BasisRTTreatmentPhaseIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,003F)": {
+        tag: "(3010,003F)",
+        vr: "US",
+        name: "RelatedRTTreatmentPhaseIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0040)": {
+        tag: "(3010,0040)",
+        vr: "US",
+        name: "ReferencedRTTreatmentPhaseIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0041)": {
+        tag: "(3010,0041)",
+        vr: "US",
+        name: "ReferencedRTPrescriptionIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0042)": {
+        tag: "(3010,0042)",
+        vr: "US",
+        name: "ReferencedParentRTPrescriptionIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0043)": {
+        tag: "(3010,0043)",
+        vr: "ST",
+        name: "ManufacturerDeviceIdentifier",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0044)": {
+        tag: "(3010,0044)",
+        vr: "SQ",
+        name: "InstanceLevelReferencedPerformedProcedureStepSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0045)": {
+        tag: "(3010,0045)",
+        vr: "CS",
+        name: "RTTreatmentPhaseIntentPresenceFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0046)": {
+        tag: "(3010,0046)",
+        vr: "CS",
+        name: "RadiotherapyTreatmentType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0047)": {
+        tag: "(3010,0047)",
+        vr: "CS",
+        name: "TeletherapyRadiationType",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(3010,0048)": {
+        tag: "(3010,0048)",
+        vr: "CS",
+        name: "BrachytherapySourceType",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(3010,0049)": {
+        tag: "(3010,0049)",
+        vr: "SQ",
+        name: "ReferencedRTTreatmentPhaseSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,004A)": {
+        tag: "(3010,004A)",
+        vr: "SQ",
+        name: "ReferencedDirectSegmentInstanceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,004B)": {
+        tag: "(3010,004B)",
+        vr: "SQ",
+        name: "IntendedRTTreatmentPhaseSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,004C)": {
+        tag: "(3010,004C)",
+        vr: "DA",
+        name: "IntendedPhaseStartDate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,004D)": {
+        tag: "(3010,004D)",
+        vr: "DA",
+        name: "IntendedPhaseEndDate",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,004E)": {
+        tag: "(3010,004E)",
+        vr: "SQ",
+        name: "RTTreatmentPhaseIntervalSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,004F)": {
+        tag: "(3010,004F)",
+        vr: "CS",
+        name: "TemporalRelationshipIntervalAnchor",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0050)": {
+        tag: "(3010,0050)",
+        vr: "FD",
+        name: "MinimumNumberOfIntervalDays",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0051)": {
+        tag: "(3010,0051)",
+        vr: "FD",
+        name: "MaximumNumberOfIntervalDays",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0052)": {
+        tag: "(3010,0052)",
+        vr: "UI",
+        name: "PertinentSOPClassesInStudy",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(3010,0053)": {
+        tag: "(3010,0053)",
+        vr: "UI",
+        name: "PertinentSOPClassesInSeries",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(3010,0054)": {
+        tag: "(3010,0054)",
+        vr: "LO",
+        name: "RTPrescriptionLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0055)": {
+        tag: "(3010,0055)",
+        vr: "SQ",
+        name: "RTPhysicianIntentPredecessorSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0056)": {
+        tag: "(3010,0056)",
+        vr: "LO",
+        name: "RTTreatmentApproachLabel",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0057)": {
+        tag: "(3010,0057)",
+        vr: "SQ",
+        name: "RTPhysicianIntentSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0058)": {
+        tag: "(3010,0058)",
+        vr: "US",
+        name: "RTPhysicianIntentIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0059)": {
+        tag: "(3010,0059)",
+        vr: "CS",
+        name: "RTTreatmentIntentType",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,005A)": {
+        tag: "(3010,005A)",
+        vr: "UT",
+        name: "RTPhysicianIntentNarrative",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,005B)": {
+        tag: "(3010,005B)",
+        vr: "SQ",
+        name: "RTProtocolCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,005C)": {
+        tag: "(3010,005C)",
+        vr: "ST",
+        name: "ReasonForSuperseding",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,005D)": {
+        tag: "(3010,005D)",
+        vr: "SQ",
+        name: "RTDiagnosisCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,005E)": {
+        tag: "(3010,005E)",
+        vr: "US",
+        name: "ReferencedRTPhysicianIntentIndex",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,005F)": {
+        tag: "(3010,005F)",
+        vr: "SQ",
+        name: "RTPhysicianIntentInputInstanceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0060)": {
+        tag: "(3010,0060)",
+        vr: "SQ",
+        name: "RTAnatomicPrescriptionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0061)": {
+        tag: "(3010,0061)",
+        vr: "UT",
+        name: "PriorTreatmentDoseDescription",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0062)": {
+        tag: "(3010,0062)",
+        vr: "SQ",
+        name: "PriorTreatmentReferenceSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0063)": {
+        tag: "(3010,0063)",
+        vr: "CS",
+        name: "DosimetricObjectiveEvaluationScope",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0064)": {
+        tag: "(3010,0064)",
+        vr: "SQ",
+        name: "TherapeuticRoleCategoryCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0065)": {
+        tag: "(3010,0065)",
+        vr: "SQ",
+        name: "TherapeuticRoleTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0066)": {
+        tag: "(3010,0066)",
+        vr: "US",
+        name: "ConceptualVolumeOptimizationPrecedence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0067)": {
+        tag: "(3010,0067)",
+        vr: "SQ",
+        name: "ConceptualVolumeCategoryCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0068)": {
+        tag: "(3010,0068)",
+        vr: "CS",
+        name: "ConceptualVolumeBlockingConstraint",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0069)": {
+        tag: "(3010,0069)",
+        vr: "SQ",
+        name: "ConceptualVolumeTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,006A)": {
+        tag: "(3010,006A)",
+        vr: "SQ",
+        name: "ConceptualVolumeTypeModifierCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,006B)": {
+        tag: "(3010,006B)",
+        vr: "SQ",
+        name: "RTPrescriptionSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,006C)": {
+        tag: "(3010,006C)",
+        vr: "SQ",
+        name: "DosimetricObjectiveSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,006D)": {
+        tag: "(3010,006D)",
+        vr: "SQ",
+        name: "DosimetricObjectiveTypeCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,006E)": {
+        tag: "(3010,006E)",
+        vr: "UI",
+        name: "DosimetricObjectiveUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,006F)": {
+        tag: "(3010,006F)",
+        vr: "UI",
+        name: "ReferencedDosimetricObjectiveUID",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0070)": {
+        tag: "(3010,0070)",
+        vr: "SQ",
+        name: "DosimetricObjectiveParameterSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0071)": {
+        tag: "(3010,0071)",
+        vr: "SQ",
+        name: "ReferencedDosimetricObjectivesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0073)": {
+        tag: "(3010,0073)",
+        vr: "CS",
+        name: "AbsoluteDosimetricObjectiveFlag",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0074)": {
+        tag: "(3010,0074)",
+        vr: "FD",
+        name: "DosimetricObjectiveWeight",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0075)": {
+        tag: "(3010,0075)",
+        vr: "CS",
+        name: "DosimetricObjectivePurpose",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0076)": {
+        tag: "(3010,0076)",
+        vr: "SQ",
+        name: "PlanningInputInformationSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0077)": {
+        tag: "(3010,0077)",
+        vr: "LO",
+        name: "TreatmentSite",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0078)": {
+        tag: "(3010,0078)",
+        vr: "SQ",
+        name: "TreatmentSiteCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0079)": {
+        tag: "(3010,0079)",
+        vr: "SQ",
+        name: "FractionPatternSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,007A)": {
+        tag: "(3010,007A)",
+        vr: "UT",
+        name: "TreatmentTechniqueNotes",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,007B)": {
+        tag: "(3010,007B)",
+        vr: "UT",
+        name: "PrescriptionNotes",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,007C)": {
+        tag: "(3010,007C)",
+        vr: "IS",
+        name: "NumberOfIntervalFractions",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,007D)": {
+        tag: "(3010,007D)",
+        vr: "US",
+        name: "NumberOfFractions",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,007E)": {
+        tag: "(3010,007E)",
+        vr: "US",
+        name: "IntendedDeliveryDuration",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,007F)": {
+        tag: "(3010,007F)",
+        vr: "UT",
+        name: "FractionationNotes",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0080)": {
+        tag: "(3010,0080)",
+        vr: "SQ",
+        name: "RTTreatmentTechniqueCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0081)": {
+        tag: "(3010,0081)",
+        vr: "SQ",
+        name: "PrescriptionNotesSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0082)": {
+        tag: "(3010,0082)",
+        vr: "SQ",
+        name: "FractionBasedRelationshipSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0083)": {
+        tag: "(3010,0083)",
+        vr: "CS",
+        name: "FractionBasedRelationshipIntervalAnchor",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0084)": {
+        tag: "(3010,0084)",
+        vr: "FD",
+        name: "MinimumHoursBetweenFractions",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0085)": {
+        tag: "(3010,0085)",
+        vr: "TM",
+        name: "IntendedFractionStartTime",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(3010,0086)": {
+        tag: "(3010,0086)",
+        vr: "LT",
+        name: "IntendedStartDayOfWeek",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0087)": {
+        tag: "(3010,0087)",
+        vr: "SQ",
+        name: "WeekdayFractionPatternSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0088)": {
+        tag: "(3010,0088)",
+        vr: "SQ",
+        name: "DeliveryTimeStructureCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0089)": {
+        tag: "(3010,0089)",
+        vr: "SQ",
+        name: "TreatmentSiteModifierCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0090)": {
+        tag: "(3010,0090)",
+        vr: "CS",
+        name: "RoboticBaseLocationIndicator",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0091)": {
+        tag: "(3010,0091)",
+        vr: "SQ",
+        name: "RoboticPathNodeSetCodeSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0092)": {
+        tag: "(3010,0092)",
+        vr: "UL",
+        name: "RoboticNodeIdentifier",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0093)": {
+        tag: "(3010,0093)",
+        vr: "FD",
+        name: "RTTreatmentSourceCoordinates",
+        vm: "3",
+        version: "DICOM"
+    },
+    "(3010,0094)": {
+        tag: "(3010,0094)",
+        vr: "FD",
+        name: "RadiationSourceCoordinateSystemYawAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0095)": {
+        tag: "(3010,0095)",
+        vr: "FD",
+        name: "RadiationSourceCoordinateSystemRollAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0096)": {
+        tag: "(3010,0096)",
+        vr: "FD",
+        name: "RadiationSourceCoordinateSystemPitchAngle",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0097)": {
+        tag: "(3010,0097)",
+        vr: "SQ",
+        name: "RoboticPathControlPointSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0098)": {
+        tag: "(3010,0098)",
+        vr: "SQ",
+        name: "TomotherapeuticControlPointSequence",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(3010,0099)": {
+        tag: "(3010,0099)",
+        vr: "FD",
+        name: "TomotherapeuticLeafOpenDurations",
+        vm: "1-n",
+        version: "DICOM"
+    },
+    "(3010,009A)": {
+        tag: "(3010,009A)",
+        vr: "FD",
+        name: "TomotherapeuticLeafInitialClosedDurations",
+        vm: "1-n",
+        version: "DICOM"
+    },
     "(4FFE,0001)": {
         tag: "(4FFE,0001)",
         vr: "SQ",
@@ -24545,6 +30712,20 @@ const dictionary = {
         tag: "(6000-60FF,3000)",
         vr: "ox",
         name: "OverlayData",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(7FE0,0001)": {
+        tag: "(7FE0,0001)",
+        vr: "OV",
+        name: "ExtendedOffsetTable",
+        vm: "1",
+        version: "DICOM"
+    },
+    "(7FE0,0002)": {
+        tag: "(7FE0,0002)",
+        vr: "OV",
+        name: "ExtendedOffsetTableLengths",
         vm: "1",
         version: "DICOM"
     },
@@ -25476,6 +31657,13 @@ const dictionary = {
         tag: "(0018,0039)",
         vr: "CS",
         name: "RETIRED_TherapyDescription",
+        vm: "1",
+        version: "DICOM/retired"
+    },
+    "(0018,0061)": {
+        tag: "(0018,0061)",
+        vr: "DS",
+        name: "RETIRED_undefined",
         vm: "1",
         version: "DICOM/retired"
     },
@@ -27265,6 +33453,13 @@ const dictionary = {
         vm: "1-32",
         version: "DICOM/retired"
     },
+    "(0400,0315)": {
+        tag: "(0400,0315)",
+        vr: "FL",
+        name: "RETIRED_undefined",
+        vm: "1",
+        version: "DICOM/retired"
+    },
     "(1000,0010)": {
         tag: "(1000,0010)",
         vr: "US",
@@ -27612,6 +33807,13 @@ const dictionary = {
         tag: "(300A,008A)",
         vr: "FL",
         name: "RETIRED_BeamDosePointSSD",
+        vm: "1",
+        version: "DICOM/retired"
+    },
+    "(300A,0782)": {
+        tag: "(300A,0782)",
+        vr: "US",
+        name: "RETIRED_undefined",
         vm: "1",
         version: "DICOM/retired"
     },
@@ -35651,7 +41853,8 @@ const dictionary = {
         tag: '(0041,"PAPYRUS",b3)',
         vr: "UL",
         name: "InternalOffsetToImage",
-        vm: "1-n"
+        vm: "1-n",
+        version: "PrivateTag"
     },
     '(2001,"Philips Imaging DD 001",01)': {
         tag: '(2001,"Philips Imaging DD 001",01)',
