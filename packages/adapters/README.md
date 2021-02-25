@@ -118,7 +118,7 @@ Currently dcmjs is an early-stage development experiment, but already has valuab
 
 # Support
 
-The developers gratefully acknowledge their reseach support:
+The developers gratefully acknowledge their research support:
 
 - Open Health Imaging Foundation ([OHIF](http://ohif.org))
 - Quantitative Image Informatics for Cancer Research ([QIICR](http://qiicr.org))
