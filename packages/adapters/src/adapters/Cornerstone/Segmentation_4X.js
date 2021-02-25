@@ -659,7 +659,7 @@ function checkSEGsOverlapping(
             break;
         }
 
-        const segmentIndex = getSegmentIndex(multiframe);
+        const segmentIndex = getSegmentIndex(multiframe, i);
 
         let SourceImageSequence;
 
@@ -775,7 +775,7 @@ function insertOverlappingPixelDataPlanar(
             const PerFrameFunctionalGroups =
                 PerFrameFunctionalGroupsSequence[i];
 
-            const segmentIndex = getSegmentIndex(multiframe);
+            const segmentIndex = getSegmentIndex(multiframe, i);
 
             if (segmentIndex !== segmentIndexToProcess) {
                 continue;
@@ -891,13 +891,17 @@ function insertOverlappingPixelDataPlanar(
     }
 }
 
-const getSegmentIndex = multiframe => {
+const getSegmentIndex = (multiframe, frame) => {
     const {
+        PerFrameFunctionalGroups,
         SharedFunctionalGroupsSequence,
         PerFrameFunctionalGroupsSequence
     } = multiframe;
-    return PerFrameFunctionalGroupsSequence.SegmentIdentificationSequence
-        ? PerFrameFunctionalGroupsSequence.SegmentIdentificationSequence
+    return PerFrameFunctionalGroups.SegmentIdentificationSequence
+        ? PerFrameFunctionalGroups.SegmentIdentificationSequence
+              .ReferencedSegmentNumber
+        : PerFrameFunctionalGroupsSequence[frame].SegmentIdentificationSequence
+        ? PerFrameFunctionalGroupsSequence[frame].SegmentIdentificationSequence
               .ReferencedSegmentNumber
         : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
               .ReferencedSegmentNumber;
@@ -958,7 +962,7 @@ function insertPixelDataPlanar(
             break;
         }
 
-        const segmentIndex = getSegmentIndex(multiframe);
+        const segmentIndex = getSegmentIndex(multiframe, i);
 
         let SourceImageSequence;
 
