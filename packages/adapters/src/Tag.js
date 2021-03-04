@@ -116,13 +116,15 @@ class Tag {
                 isEncapsulated,
                 writeOptions
             );
-        } else {
+        } else if (vrType == "SQ") {
             valueLength = vr.writeBytes(
                 tagStream,
                 values,
                 useSyntax,
                 writeOptions
             );
+        } else {
+            valueLength = vr.writeBytes(tagStream, values, writeOptions);
         }
 
         if (vrType == "SQ") {

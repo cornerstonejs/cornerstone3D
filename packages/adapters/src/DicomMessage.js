@@ -94,10 +94,10 @@ class DicomMessage {
         return dicomDict;
     }
 
-    static writeTagObject(stream, tagString, vr, values, syntax) {
+    static writeTagObject(stream, tagString, vr, values, syntax, writeOptions) {
         var tag = Tag.fromString(tagString);
 
-        tag.write(stream, vr, values, syntax);
+        tag.write(stream, vr, values, syntax, writeOptions);
     }
 
     static write(jsonObjects, useStream, syntax, writeOptions) {

@@ -17,7 +17,7 @@ class DicomDict {
         }
     }
 
-    write(writeOptions = {}) {
+    write(writeOptions = { allowInvalidVRLength: false }) {
         var metaSyntax = EXPLICIT_LITTLE_ENDIAN;
         var fileStream = new WriteBufferStream(4096, true);
         fileStream.writeHex("00".repeat(128));
@@ -36,7 +36,8 @@ class DicomDict {
             "00020000",
             "UL",
             metaStream.size,
-            metaSyntax
+            metaSyntax,
+            writeOptions
         );
         fileStream.concat(metaStream);
 
