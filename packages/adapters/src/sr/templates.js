@@ -995,10 +995,14 @@ class _MeasurementsAndQualitatitiveEvaluations extends Template {
                 );
             }
             options.qualitativeEvaluations.forEach(evaluation => {
-                if (!evaluation || evaluation.constructor !== CodeContentItem) {
+                if (
+                    !evaluation ||
+                    (evaluation.constructor !== CodeContentItem &&
+                        evaluation.constructor !== TextContentItem)
+                ) {
                     throw new Error(
                         "Items of option 'qualitativeEvaluations' must have type " +
-                            "CodeContentItem."
+                            "CodeContentItem or TextContentItem."
                     );
                 }
                 groupItem.ContentSequence.push(evaluation);
