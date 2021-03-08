@@ -59,13 +59,15 @@ function generateToolState(
     imageIds,
     arrayBuffer,
     metadataProvider,
+    skipOverlapping = false,
     cornerstoneToolsVersion = 4
 ) {
     if (cornerstoneToolsVersion === 4) {
         return Segmentation_4X.generateToolState(
             imageIds,
             arrayBuffer,
-            metadataProvider
+            metadataProvider,
+            skipOverlapping
         );
     }
 
@@ -73,7 +75,8 @@ function generateToolState(
         return Segmentation_3X.generateToolState(
             imageIds,
             arrayBuffer,
-            metadataProvider
+            metadataProvider,
+            skipOverlapping
         );
     }
 

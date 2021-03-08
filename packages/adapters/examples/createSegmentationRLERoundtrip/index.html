@@ -66,7 +66,6 @@
     <script src="https://unpkg.com/hammerjs/hammer.min.js"></script>
 
     <script src="/js/initCornerstone.js"></script>
-
     <script src="/js/dcmjs.js"></script>
 
     <script
@@ -205,7 +204,7 @@
         const t0 = performance.now();
 
         const {
-          labelmapBuffer,
+          labelmapBufferArray,
           segMetadata,
           segmentsOnFrame
         } = dcmjs.adapters.Cornerstone.Segmentation.generateToolState(
@@ -220,7 +219,7 @@
 
         setters.labelmap3DByFirstImageId(
           imageIds[0],
-          labelmapBuffer,
+          labelmapBufferArray[0],
           1,
           segMetadata,
           imageIds.length,
