@@ -77,6 +77,8 @@ Use the following "Commit Message Format" when drafting commit messages. If you'
 
 Note: Be wary of `BREAKING_CHANGE` in commit message descriptions, as this can force a major version bump.
 
+Be sure to use lower case for the first letter of your semantic commit message, so use `fix` not `Fix` or `feat` not `Feat`.
+
 ## Community Participation
 
 Use this repository's issues page to report any bugs. Please follow [SSCCE](http://sscce.org/) guidelines when submitting issues.
