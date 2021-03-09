@@ -79,6 +79,8 @@ Note: Be wary of `BREAKING_CHANGE` in commit message descriptions, as this can f
 
 Be sure to use lower case for the first letter of your semantic commit message, so use `fix` not `Fix` or `feat` not `Feat`.
 
+Note: a new package version will be published only if the commit comes from a PR.
+
 ## Community Participation
 
 Use this repository's issues page to report any bugs. Please follow [SSCCE](http://sscce.org/) guidelines when submitting issues.
