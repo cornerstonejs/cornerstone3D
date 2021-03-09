@@ -78,6 +78,21 @@ Use the following "Commit Message Format" when drafting commit messages. If you'
 Note: Be wary of `BREAKING_CHANGE` in commit message descriptions, as this can force a major version bump.
 
 Be sure to use lower case for the first letter of your semantic commit message, so use `fix` not `Fix` or `feat` not `Feat`.
+It is advised to use the git-cz, i.e.:
+
+- install git-cz
+
+```
+npm install -g git-cz
+```
+
+- how to commit
+
+```
+git-cz --non-interactive --type=fix --subject="commit message"
+```
+
+More info at [git-cz](https://www.npmjs.com/package/git-cz).
 
 Note: a new package version will be published only if the commit comes from a PR.
 
