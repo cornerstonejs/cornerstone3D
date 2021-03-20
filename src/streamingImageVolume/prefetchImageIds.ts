@@ -1,19 +1,19 @@
 import cornerstone from 'cornerstone-core'
-import requestPoolManager from './requestPoolManager'
-import getImageIdInstanceMetadata from './getImageIdInstanceMetadata'
-import getInterleavedFrames from './getInterleavedFrames'
-import StreamingImageVolume from '../cache/classes/StreamingImageVolume'
 import { calculateSUVScalingFactors } from 'calculate-suv'
-import renderingEventTarget from '../RenderingEngine/renderingEventTarget'
-import { triggerEvent } from '../utilities/'
-import Events from '../enums/events'
+import requestPoolManager from '../imageLoader/requestPoolManager'
+import getImageIdInstanceMetadata from '../imageLoader/getImageIdInstanceMetadata'
+import getInterleavedFrames from '../imageLoader/getInterleavedFrames'
+import StreamingImageVolume from './StreamingImageVolume'
+import eventTarget from '../eventTarget'
+import { triggerEvent } from '../utilities'
+import EVENTS from '../enums/events'
 import configuration from '../configuration'
-import autoLoad from './autoLoad'
+import autoLoad from '../imageLoader/autoLoad'
 
 const requestType = 'prefetch'
 const preventCache = true // We are not using the cornerstone cache for this.
 
-type ScalingParamaters = {
+type ScalingParameters = {
   rescaleSlope: number
   rescaleIntercept: number
   modality: string
@@ -100,7 +100,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
       imageVolume: volume,
     }
 
-    triggerEvent(renderingEventTarget, Events.IMAGE_VOLUME_MODIFIED, eventData)
+    triggerEvent(eventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventData)
 
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true
@@ -193,7 +193,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
     const generalSeriesModule =
       cornerstone.metaData.get('generalSeriesModule', imageId) || {}
 
-    const scalingParameters: ScalingParamaters = {
+    const scalingParameters: ScalingParematers = {
       rescaleSlope: modalityLutModule.rescaleSlope,
       rescaleIntercept: modalityLutModule.rescaleIntercept,
       modality: generalSeriesModule.modality,

@@ -1,7 +1,7 @@
 import { BaseTool } from './base/index'
 import { getEnabledElement, cache, EVENTS } from './../../index'
 import triggerEvent from '../util/triggerEvent'
-import StreamingImageVolume from '../../cache/classes/StreamingImageVolume'
+import StreamingImageVolume from '../../streamingImageVolume/StreamingImageVolume'
 
 export default class WindowLevelTool extends BaseTool {
   touchDragCallback: () => void

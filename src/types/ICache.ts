@@ -1,5 +1,5 @@
 import ImageVolume from 'src/cache/classes/ImageVolume'
-import StreamingImageVolume from 'src/cache/classes/StreamingImageVolume'
+import StreamingImageVolume from 'src/streamingImageVolume/StreamingImageVolume'
 
 interface ICache {
   //getImageVolume: (uid: string) => ImageVolume | StreamingImageVolume
