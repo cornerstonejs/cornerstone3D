@@ -1,36 +1,52 @@
-import ImageVolume from './classes/ImageVolume'
-import { Point3, IImageCache } from './../types'
+import { IImageCache } from './../types'
 
-import StreamingImageVolume from './classes/StreamingImageVolume'
-import requestPoolManager from '../imageLoader/requestPoolManager'
-import { vec3 } from 'gl-matrix'
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
-import prefetchImageIds from '../imageLoader/prefetchImageIds'
-import createFloat32SharedArray from './../createFloat32SharedArray'
-import createUint8SharedArray from './../createUint8SharedArray'
-
-import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
-import { uuidv4 } from './../utilities'
 import ERROR_CODES from './../enums/ERROR_CODES'
-import _cloneDeep from 'lodash.clonedeep'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
 const REQUEST_TYPE = 'prefetch'
 
+interface ImageLoadObject {
+  promise: Promise
+  cancel?: Function
+  decache?: Function
+}
+
+interface VolumeLoadObject {
+  promise: Promise
+  cancel?: Function
+  decache?: Function
+}
+
+interface CachedImage {
+  imageId: string,
+  imageLoadObject: ImageLoadObject,
+  loaded: boolean,
+  sharedCacheKey?: string,
+  timeStamp: number,
+  sizeInBytes: number
+}
+
+interface CachedVolume {
+  volumeId: string,
+  volumeLoadObject: VolumeLoadObject,
+  loaded: boolean,
+  timeStamp: number,
+  sizeInBytes: number
+}
+
 class ImageCache implements IImageCache {
-  private _cache: Map<string, ImageVolume>
+  private _imageLoadObjects: Map<string, ImageLoadObject>
+  private _volumeLoadObjects: Map<string, VolumeLoadObject>
+  private _volatileCache: Map<string, CachedImage>
+  private _nonVolatileCache: Map<string, CachedVolume>
   private _cacheSize: number
   private _maxCacheSize: number
 
   constructor() {
-    this._cache = new Map()
+    this._volatileCache = new Map()
+    this._nonVolatileCache = new Map()
     this._cacheSize = 0
     this._maxCacheSize = MAX_CACHE_SIZE_1GB // Default 1GB
-  }
-
-  public getImageVolume = (uid: string): ImageVolume | StreamingImageVolume => {
-    return this._get(uid)
   }
 
   public setMaxCacheSize = (newMaxCacheSize: number) => {
@@ -42,537 +58,200 @@ class ImageCache implements IImageCache {
     }
   }
 
-  public getMaxCacheSize = (): number => {
-    return this._maxCacheSize
+  public getMaxCacheSize = (): number => this._maxCacheSize
+  public getCacheSize = (): number => this._cacheSize
+
+  public decacheImage = (imageId: string) => {
+    const imageLoadObject = this._imageLoadObjects.get(volumeId)
+
+    // Cancel any in-progress loading
+    if (imageLoadObject.cancel) {
+      imageLoadObject.cancel()
+    }
+
+    if (imageLoadObject.decache) {
+      imageLoadObject.decache();
+    }
+
+    this.volatileCache._delete(imageId)
   }
 
-  public getCacheSize = (): number => {
-    return this._cacheSize
-  }
+  public decacheVolume = (volumeId: string) => {
+    const volumeLoadObject = this._volumeLoadObjects.get(volumeId)
 
-  public decacheVolume = (uid: string) => {
-    const volume = this._get(uid)
+    // Cancel any in-progress loading
+    if (volumeLoadObject.cancel) {
+      volumeLoadObject.cancel()
+    }
 
-    this.cancelLoadVolume(uid)
+    if (volumeLoadObject.decache) {
+      volumeLoadObject.decache();
+    }
+
+    const volume = this.nonVolatileCache.get(volumeId)
 
     // Clear texture memory (it will probably only be released at garbage collection of the dom element, but might as well try)
     // TODO We need to actually check if this particular scalar is used.
-    volume.vtkOpenGLTexture.releaseGraphicsResources()
-
-    this._delete(uid)
-  }
-
-  public loadVolume = (volumeUID: string, callback: Function) => {
-    const volume = this._get(volumeUID)
-
-    if (!volume) {
-      throw new Error(
-        `Cannot load volume: volume with UID ${volumeUID} does not exist.`
-      )
+    // TODO: Put this in the volume loader's decache function?
+    if (volume && volume.vtkOpenGLTexture) {
+      volume.vtkOpenGLTexture.releaseGraphicsResources()
     }
 
-    if (!(volume instanceof StreamingImageVolume)) {
-      // Callback saying whole volume is loaded.
-      if (callback) {
-        callback({ success: true, framesLoaded: 1, numFrames: 1 })
-      }
-
-      return
-    }
-
-    const streamingVolume = <StreamingImageVolume>volume
-
-    const { imageIds, loadStatus } = streamingVolume
-
-    if (loadStatus.loading) {
-      return // Already loading, will get callbacks from main load.
-    }
-
-    const { loaded } = streamingVolume.loadStatus
-    const numFrames = imageIds.length
-
-    if (loaded) {
-      if (callback) {
-        callback({
-          success: true,
-          framesLoaded: numFrames,
-          numFrames,
-          framesProcessed: numFrames,
-        })
-      }
-      return
-    }
-
-    if (callback) {
-      streamingVolume.loadStatus.callbacks.push(callback)
-    }
-
-    prefetchImageIds(streamingVolume)
-  }
-
-  public clearLoadCallbacks = (volumeUID: string) => {
-    const volume = this._get(volumeUID)
-
-    if (!volume) {
-      throw new Error(
-        `Cannot load volume: volume with UID ${volumeUID} does not exist.`
-      )
-    }
-
-    if (!(volume instanceof StreamingImageVolume)) {
-      return
-    }
-
-    const streamingVolume = <StreamingImageVolume>volume
-
-    streamingVolume.loadStatus.callbacks = []
-  }
-
-  public cancelLoadAllVolumes() {
-    // Remove requests relating to this volume only.
-    requestPoolManager.clearRequestStack(REQUEST_TYPE)
-
-    // Get other volumes and if they are loading re-add their status
-    const iterator = this._cache.values()
-
-    /* eslint-disable no-constant-condition */
-    while (true) {
-      const { value: volume, done } = iterator.next()
-
-      if (done) {
-        break
-      }
-
-      if (volume instanceof StreamingImageVolume) {
-        const streamingVolume = <StreamingImageVolume>volume
-        const { loadStatus } = volume
-
-        // Set to not loading.
-        loadStatus.loading = false
-        // Set to loaded if all data is there.
-        loadStatus.loaded = this._hasLoaded(streamingVolume)
-        // Remove all the callback listeners
-        loadStatus.callbacks = []
-      }
-    }
-  }
-
-  public cancelLoadVolume = (volumeUID: string) => {
-    const volume = this._get(volumeUID)
-
-    if (!volume) {
-      throw new Error(
-        `Cannot load volume: volume with UID ${volumeUID} does not exist.`
-      )
-    }
-
-    if (!(volume instanceof StreamingImageVolume)) {
-      return
-    }
-
-    const streamingVolume = <StreamingImageVolume>volume
-
-    const { loadStatus } = streamingVolume
-
-    if (!loadStatus || !loadStatus.loading) {
-      return
-    }
-
-    // Set to not loading.
-    loadStatus.loading = false
-
-    // Set to loaded if all data is there.
-    loadStatus.loaded = this._hasLoaded(streamingVolume)
-    // Remove all the callback listeners
-    loadStatus.callbacks = []
-
-    // Remove requests relating to this volume only.
-    requestPoolManager.clearRequestStack(REQUEST_TYPE)
-
-    // Get other volumes and if they are loading re-add their status
-    const iterator = this._cache.values()
-
-    /* eslint-disable no-constant-condition */
-    while (true) {
-      const { value: volume, done } = iterator.next()
-
-      if (done) {
-        break
-      }
-
-      if (!(volume instanceof StreamingImageVolume)) {
-        continue
-      }
-
-      if (
-        volume.uid !== volumeUID &&
-        volume.loadStatus &&
-        volume.loadStatus.loading === true
-      ) {
-        // Other volume still loading. Add to prefetcher.
-        prefetchImageIds(volume)
-      }
-    }
-  }
-
-  public makeAndCacheImageVolume = (
-    imageIds: Array<string>,
-    uid: string
-  ): ImageVolume | StreamingImageVolume => {
-    if (uid === undefined) {
-      uid = uuidv4()
-    }
-
-    const cachedVolume = this._get(uid)
-
-    if (cachedVolume) {
-      return cachedVolume
-    }
-
-    const volumeMetadata = makeVolumeMetadata(imageIds)
-
-    const {
-      BitsAllocated,
-      PixelRepresentation,
-      ImageOrientationPatient,
-      PixelSpacing,
-      Columns,
-      Rows,
-    } = volumeMetadata
-
-    const rowCosineVec = vec3.fromValues(
-      ImageOrientationPatient[0],
-      ImageOrientationPatient[1],
-      ImageOrientationPatient[2]
-    )
-    const colCosineVec = vec3.fromValues(
-      ImageOrientationPatient[3],
-      ImageOrientationPatient[4],
-      ImageOrientationPatient[5]
-    )
-
-    const scanAxisNormal = vec3.create()
-
-    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec)
-
-    const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
-      imageIds,
-      scanAxisNormal
-    )
-
-    const numFrames = imageIds.length
-
-    // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-    const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing]
-    const dimensions = <Point3>[Columns, Rows, numFrames]
-    const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal]
-    const signed = PixelRepresentation === 1
-
-    // Check if it fits in the cache before we allocate data
-    const currentCacheSize = this.getCacheSize()
-
-    // TODO Improve this when we have support for more types
-    const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1
-
-    const byteLength =
-      bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
-
-    if (currentCacheSize + byteLength > this.getMaxCacheSize()) {
-      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
-    }
-
-    let scalarData
-
-    switch (BitsAllocated) {
-      case 8:
-        if (signed) {
-          throw new Error(
-            '8 Bit signed images are not yet supported by this plugin.'
-          )
-        } else {
-          scalarData = createUint8SharedArray(
-            dimensions[0] * dimensions[1] * dimensions[2]
-          )
-        }
-
-        break
-
-      case 16:
-        scalarData = createFloat32SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
-        )
-
-        break
-    }
-
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: 1,
-      values: scalarData,
-    })
-
-    const imageData = vtkImageData.newInstance()
-
-    imageData.setDimensions(...dimensions)
-    imageData.setSpacing(...spacing)
-    imageData.setDirection(...direction)
-    imageData.setOrigin(...origin)
-    imageData.getPointData().setScalars(scalarArray)
-
-    const streamingImageVolume = new StreamingImageVolume(
-      // ImageVolume properties
-      {
-        uid,
-        metadata: volumeMetadata,
-        dimensions,
-        spacing,
-        origin,
-        direction,
-        vtkImageData: imageData,
-        scalarData,
-      },
-      // Streaming properties
-      {
-        imageIds: sortedImageIds,
-        loadStatus: {
-          loaded: false,
-          loading: false,
-          cachedFrames: [],
-          callbacks: [],
-        },
-      }
-    )
-
-    this._set(uid, streamingImageVolume)
-
-    return streamingImageVolume
-  }
-
-  public makeAndCacheDerivedVolume = (
-    referencedVolumeUID,
-    options: any = {}
-  ): ImageVolume => {
-    const referencedVolume = this._get(referencedVolumeUID)
-
-    if (!referencedVolume) {
-      throw new Error(
-        `Cannot created derived volume: Referenced volume with UID ${referencedVolumeUID} does not exist.`
-      )
-    }
-
-    let { volumeScalarData, uid } = options
-
-    if (uid === undefined) {
-      uid = uuidv4()
-    }
-
-    const {
-      metadata,
-      dimensions,
-      spacing,
-      origin,
-      direction,
-      scalarData,
-    } = referencedVolume
-
-    const scalarLength = scalarData.length
-
-    // Check if it fits in the cache before we allocate data
-    const currentCacheSize = this.getCacheSize()
-
-    let byteLength
-
-    if (volumeScalarData) {
-      byteLength = volumeScalarData.buffer.byteLength
-    } else {
-      byteLength = scalarLength * 4
-    }
-
-    if (currentCacheSize + byteLength > this.getMaxCacheSize()) {
-      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
-    }
-
-    if (volumeScalarData) {
-      if (volumeScalarData.length !== scalarLength) {
-        throw new Error(
-          `volumeScalarData has incorrect length compared to source data. Length: ${volumeScalarData.length}, expected:scalarLength`
-        )
-      }
-
-      if (
-        !(volumeScalarData instanceof Uint8Array) &&
-        !(volumeScalarData instanceof Float32Array)
-      ) {
-        throw new Error(
-          `volumeScalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
-        )
-      }
-    } else {
-      volumeScalarData = new Float32Array(scalarLength)
-    }
-
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: 1,
-      values: volumeScalarData,
-    })
-
-    const derivedImageData = vtkImageData.newInstance()
-
-    derivedImageData.setDimensions(...dimensions)
-    derivedImageData.setSpacing(...spacing)
-    derivedImageData.setDirection(...direction)
-    derivedImageData.setOrigin(...origin)
-    derivedImageData.getPointData().setScalars(scalarArray)
-
-    const derivedVolume = new ImageVolume({
-      uid,
-      metadata: _cloneDeep(metadata),
-      dimensions: [dimensions[0], dimensions[1], dimensions[2]],
-      spacing: [...spacing],
-      origin: [...spacing],
-      direction: [...direction],
-      vtkImageData: derivedImageData,
-      scalarData: volumeScalarData,
-    })
-
-    this._set(uid, derivedVolume)
-
-    return derivedVolume
-  }
-
-  public makeAndCacheLocalImageVolume = (
-    properties: any = {},
-    uid: string
-  ): ImageVolume => {
-    if (uid === undefined) {
-      uid = uuidv4()
-    }
-
-    const cachedVolume = this._get(uid)
-
-    if (cachedVolume) {
-      return cachedVolume
-    }
-
-    let {
-      metadata,
-      dimensions,
-      spacing,
-      origin,
-      direction,
-      scalarData,
-    } = properties
-
-    const scalarLength = dimensions[0] * dimensions[1] * dimensions[2]
-
-    // Check if it fits in the cache before we allocate data
-    const currentCacheSize = this.getCacheSize()
-
-    const byteLength = scalarData
-      ? scalarData.buffer.byteLength
-      : scalarLength * 4
-
-    if (currentCacheSize + byteLength > this.getMaxCacheSize()) {
-      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
-    }
-
-    if (scalarData) {
-      if (
-        !(scalarData instanceof Uint8Array) &&
-        !(scalarData instanceof Float32Array)
-      ) {
-        throw new Error(
-          `scalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
-        )
-      }
-    } else {
-      scalarData = new Float32Array(scalarLength)
-    }
-
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: 1,
-      values: scalarData,
-    })
-
-    const imageData = vtkImageData.newInstance()
-
-    imageData.setDimensions(...dimensions)
-    imageData.setSpacing(...spacing)
-    imageData.setDirection(...direction)
-    imageData.setOrigin(...origin)
-    imageData.getPointData().setScalars(scalarArray)
-
-    const volume = new ImageVolume({
-      uid,
-      metadata,
-      dimensions,
-      spacing,
-      origin,
-      direction,
-      vtkImageData: imageData,
-      scalarData: scalarData,
-    })
-
-    this._set(uid, volume)
-
-    return volume
+    this.nonVolatileCache._delete(volumeId)
   }
 
   public purgeCache = () => {
-    const iterator = this._cache.values()
+    const imageIterator = this._volatileCache.keys()
 
     /* eslint-disable no-constant-condition */
     while (true) {
-      const { value: volume, done } = iterator.next()
+      const { value: imageId, done } = iterator.next()
 
       if (done) {
         break
       }
 
-      this.decacheVolume(volume.uid)
+      this.decacheImage(imageId)
+    }
+
+    const volumeIterator = this._nonVolatileCache.keys()
+
+    /* eslint-disable no-constant-condition */
+    while (true) {
+      const { value: volumeId, done } = iterator.next()
+
+      if (done) {
+        break
+      }
+
+      this.decacheVolume(volumeId)
     }
   }
 
-  private _get = (uid: string): ImageVolume | StreamingImageVolume => {
-    return this._cache.get(uid)
+  /**
+   * Puts a new image loader into the cache
+   *
+   * @param {string} imageId ImageId of the image loader
+   * @param {Object} imageLoadObject The object that is loading or loaded the image
+   * @returns {void}
+   */
+  public putImageLoadObject = (imageId: string, imageLoadObject: ImageLoadObject) {
+    if (imageId === undefined) {
+      throw new Error('putImageLoadObject: imageId must not be undefined');
+    }
+    if (imageLoadObject.promise === undefined) {
+      throw new Error('putImageLoadObject: imageLoadObject.promise must not be undefined');
+    }
+    if (imageCacheDict.hasOwnProperty(imageId) === true) {
+      throw new Error('putImageLoadObject: imageId already in cache');
+    }
+    if (imageLoadObject.cancelFn && typeof imageLoadObject.cancelFn !== 'function') {
+      throw new Error('putImageLoadObject: imageLoadObject.cancelFn must be a function');
+    }
+
+    const cachedImage : CachedImage = {
+      loaded: false,
+      imageId,
+      sharedCacheKey: undefined, // The sharedCacheKey for this imageId.  undefined by default
+      imageLoadObject,
+      timeStamp: Date.now(),
+      sizeInBytes: 0
+    };
+
+    this._volatileCache.add([imageId], cachedImage);
+    cachedImages.push(cachedImage);
+
+    imageLoadObject.promise.then(function (image: Image) {
+      if (!this._volatileCache.get(imageId)) {
+        // If the image has been purged before being loaded, we stop here.
+        console.warn('The image was purged from the cache before it completed loading.')
+        return;
+      }
+
+      cachedImage.loaded = true;
+      cachedImage.image = image;
+
+      if (image.sizeInBytes === undefined) {
+        throw new Error('putImageLoadObject: image.sizeInBytes must not be undefined');
+      }
+      if (image.sizeInBytes.toFixed === undefined) {
+        throw new Error('putImageLoadObject: image.sizeInBytes is not a number');
+      }
+
+      cachedImage.sizeInBytes = image.sizeInBytes;
+      this._incrementCacheSize(cachedImage.sizeInBytes);
+
+      /*const eventDetails = {
+        action: 'addImage',
+        image: cachedImage
+      };
+
+      triggerEvent(events, EVENTS.IMAGE_CACHE_CHANGED, eventDetails);*/
+
+      cachedImage.sharedCacheKey = image.sharedCacheKey;
+
+      purgeCacheIfNecessary();
+    }, (error) => {
+      console.warn(error);
+      this._imageLoadObjects.delete(imageId);
+      this._volatileCache.delete(imageId);
+    });
   }
 
-  private _set = (uid: string, volume: ImageVolume | StreamingImageVolume) => {
-    this._cache.set(uid, volume)
+  /**
+   * Retuns the object that is loading a given imageId
+   *
+   * @param {string} imageId Image ID
+   * @returns {void}
+   */
+  public getImageLoadObject = (imageId: string) => {
+    if (imageId === undefined) {
+      throw new Error('getImageLoadObject: imageId must not be undefined');
+    }
+    const cachedImage = this._volatileCache.get[imageId];
 
-    const increment = volume.scalarData.buffer.byteLength
+    if (cachedImage === undefined) {
+      return;
+    }
 
-    this._incrementCacheSize(increment)
+    // Bump time stamp for cached image
+    cachedImage.timeStamp = Date.now();
+
+    return this._imageLoadObjects.get(imageId);
   }
 
-  private _delete = (uid: string) => {
-    const volume = this._cache.get(uid)
-    const byteLength = volume.scalarData.byteLength
-    const increment = -byteLength
+  /**
+   * Removes the image loader associated with a given Id from the cache
+   *
+   * @param {string} imageId Image ID
+   * @returns {void}
+   */
+  public removeImageLoadObject = (imageId: string) => {
+    if (imageId === undefined) {
+      throw new Error('removeImageLoadObject: imageId must not be undefined');
+    }
+    const cachedImage = this._volatileCache.get(imageId);
 
-    this._cache.delete(uid)
-    this._incrementCacheSize(increment)
+    if (cachedImage === undefined) {
+      throw new Error('removeImageLoadObject: imageId was not present in imageCache');
+    }
+
+    cachedImages.splice(cachedImages.indexOf(cachedImage), 1);
+    this._incrementCacheSize(-cachedImage.sizeInBytes)
+
+    /*const eventDetails = {
+      action: 'deleteImage',
+      image: cachedImage
+    };
+
+    triggerEvent(events, EVENTS.IMAGE_CACHE_CHANGED, eventDetails);*/
+    this.decacheImage(imageId);
+
+    this._imageLoadObjects.delete(imageId)
   }
 
   private _incrementCacheSize = (increment: number) => {
     this._cacheSize += increment
-  }
-
-  private _hasLoaded = (
-    streamingImageVolume: StreamingImageVolume
-  ): boolean => {
-    const { loadStatus, imageIds } = streamingImageVolume
-    const numFrames = imageIds.length
-
-    for (let i = 0; i < numFrames; i++) {
-      if (!loadStatus.cachedFrames[i]) {
-        return false
-      }
-    }
-
-    return true
   }
 }
 

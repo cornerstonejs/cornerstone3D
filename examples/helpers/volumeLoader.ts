@@ -3,7 +3,7 @@ import {
   decodeImageFrame,
   getImageFrame,
 } from 'cornerstone-wado-image-loader'
-import { IRegisterImageLoader } from './types'
+import { IRegisterImageLoader } from '../../src/types'
 
 /**
  * Part of this library's setup. Required to setup image-loading capabilities. Our
@@ -29,7 +29,7 @@ import { IRegisterImageLoader } from './types'
  * registerImageLoader(cornerstone);
  * ```
  */
-function registerImageLoader(cornerstone: IRegisterImageLoader): void {
+function volumeLoader(cornerstone: IRegisterImageLoader): void {
   cornerstone.registerImageLoader('vtkjs', _loadImageIntoBuffer)
 }
 
@@ -144,4 +144,4 @@ function getTransferSyntaxForContentType(contentType: string): string {
   return defaultTransferSyntax
 }
 
-export { registerImageLoader, getTransferSyntaxForContentType }
+export { volumeLoader, getTransferSyntaxForContentType }

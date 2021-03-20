@@ -5,7 +5,7 @@ import cornerstone from 'cornerstone-core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import WADORSHeaderProvider from './WADORSHeaderProvider';
 // ~~
-import { registerImageLoader } from '@vtk-viewport';
+import { volumeLoader } from './registerImageLoader';
 import * as csTools3d from '@tools';
 
 // Wire up listeners for renderingEngine's element enabled events
@@ -36,4 +36,4 @@ var config = {
 };
 
 cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
-registerImageLoader(cornerstone);
+volumeLoader(cornerstone);
