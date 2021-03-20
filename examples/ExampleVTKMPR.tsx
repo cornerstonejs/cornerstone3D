@@ -6,7 +6,7 @@ import {
   imageCache,
   RenderingEngine,
   renderingEventTarget,
-  EVENTS as RENDERING_EVENTS,
+  Events as RENDERING_EVENTS,
 } from './../src/index';
 import { initToolGroups, destroyToolGroups } from './initToolGroups';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';

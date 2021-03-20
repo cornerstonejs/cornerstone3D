@@ -1,13 +1,15 @@
-import * as vtkjsViewport from '../src/index'
+import * as cornerstone3D from '../src/index'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const {
-  imageCache,
+  cache,
   RenderingEngine,
-  createFloat32SharedArray,
+  Utilities,
   VIEWPORT_TYPE,
   ORIENTATION,
-} = vtkjsViewport
+} = cornerstone3D
+
+const { createFloat32SharedArray } = Utilities
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID'
 
@@ -102,7 +104,7 @@ describe('RenderingEngine API:', () => {
 
     const testVolumeUID = 'testVolumeUID'
 
-    imageCache.makeAndCacheLocalImageVolume(testVolumeProps, testVolumeUID)
+    cache.makeAndCacheLocalImageVolume(testVolumeProps, testVolumeUID)
 
     let callbackCalledWithCorrectProps = false
     const callback = ({ volumeActor, volumeUID }) => {

@@ -3,7 +3,7 @@ import Viewport from './Viewport'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { createVolumeActor } from './helpers'
-import imageCache from '../imageCache'
+import imageCache from '../cache'
 
 type VolumeActor = {
   getProperty: () => any

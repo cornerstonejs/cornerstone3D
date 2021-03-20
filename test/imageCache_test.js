@@ -1,27 +1,31 @@
-import * as vtkjsViewport from '../src/index'
+import * as cornerstone3D from '../src/index'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const {
-  imageCache,
-  createUint8SharedArray,
-  createFloat32SharedArray,
-} = vtkjsViewport
+  cache,
+  Utilities
+} = cornerstone3D
 
-describe('imageCache:', () => {
+const {
+  createUint8SharedArray,
+  createFloat32SharedArray
+} = Utilities
+
+describe('cache', () => {
   beforeEach(() => {
-    imageCache.purgeCache()
+    cache.purgeCache()
   })
 
   it('purged cache to have size zero', () => {
-    const cacheSize = imageCache.getCacheSize()
+    const cacheSize = cache.getCacheSize()
 
     expect(cacheSize).toEqual(0)
   })
 
-  it('should cache two volumes and uncache one correctly', () => {
+  it('should cache two volumes and decache one correctly', () => {
     let expectedCacheSize = 0
 
-    expect(imageCache.getCacheSize()).toEqual(expectedCacheSize)
+    expect(cache.getCacheSize()).toEqual(expectedCacheSize)
 
     const volumeOneProps = {
       metadata: {},
@@ -32,11 +36,11 @@ describe('imageCache:', () => {
       scalarData: createFloat32SharedArray(512 * 512 * 512),
     }
 
-    imageCache.makeAndCacheLocalImageVolume(volumeOneProps)
+    cache.makeAndCacheLocalImageVolume(volumeOneProps)
 
     expectedCacheSize = 512 * 512 * 512 * 4 // Float32
 
-    expect(imageCache.getCacheSize()).toEqual(expectedCacheSize)
+    expect(cache.getCacheSize()).toEqual(expectedCacheSize)
 
     const volumeTwoProps = {
       metadata: {},
@@ -49,24 +53,24 @@ describe('imageCache:', () => {
 
     const volumeTwoUID = 'volumeTwoUID'
 
-    imageCache.makeAndCacheLocalImageVolume(volumeTwoProps, volumeTwoUID)
+    cache.makeAndCacheLocalImageVolume(volumeTwoProps, volumeTwoUID)
 
     expectedCacheSize += 256 * 256 * 256 // Uint8
 
-    expect(imageCache.getCacheSize()).toEqual(expectedCacheSize)
+    expect(cache.getCacheSize()).toEqual(expectedCacheSize)
 
-    imageCache.decacheVolume(volumeTwoUID)
+    cache.decacheVolume(volumeTwoUID)
 
     // Should now just be the size of the first volume.
     expectedCacheSize = 512 * 512 * 512 * 4 // Float32
 
-    expect(imageCache.getCacheSize()).toEqual(expectedCacheSize)
+    expect(cache.getCacheSize()).toEqual(expectedCacheSize)
   })
 
   it('should derive an image with deep-copied metadata properties', () => {
     let expectedCacheSize = 0
 
-    expect(imageCache.getCacheSize()).toEqual(expectedCacheSize)
+    expect(cache.getCacheSize()).toEqual(expectedCacheSize)
 
     const volumeOneProps = {
       metadata: { FrameOfReferenceUID: '0.1.2.3' },
@@ -79,9 +83,9 @@ describe('imageCache:', () => {
 
     const volumeOneUID = 'volumeOneUID'
 
-    imageCache.makeAndCacheLocalImageVolume(volumeOneProps, volumeOneUID)
+    cache.makeAndCacheLocalImageVolume(volumeOneProps, volumeOneUID)
 
-    const derivedVolumeBlank = imageCache.makeAndCacheDerivedVolume(
+    const derivedVolumeBlank = cache.makeAndCacheDerivedVolume(
       volumeOneUID
     )
 
@@ -99,7 +103,7 @@ describe('imageCache:', () => {
   it('should allow us to derive with data of equal length to source', () => {
     let expectedCacheSize = 0
 
-    expect(imageCache.getCacheSize()).toEqual(expectedCacheSize)
+    expect(cache.getCacheSize()).toEqual(expectedCacheSize)
 
     const volumeOneProps = {
       metadata: { FrameOfReferenceUID: '0.1.2.3' },
@@ -112,7 +116,7 @@ describe('imageCache:', () => {
 
     const volumeOneUID = 'volumeOneUID'
 
-    imageCache.makeAndCacheLocalImageVolume(volumeOneProps, volumeOneUID)
+    cache.makeAndCacheLocalImageVolume(volumeOneProps, volumeOneUID)
 
     const derivedScalarDataOfSameLength = createUint8SharedArray(
       512 * 512 * 512
@@ -120,7 +124,7 @@ describe('imageCache:', () => {
 
     let derivedVolumeBlank
 
-    derivedVolumeBlank = imageCache.makeAndCacheDerivedVolume(volumeOneUID, {
+    derivedVolumeBlank = cache.makeAndCacheDerivedVolume(volumeOneUID, {
       volumeScalarData: derivedScalarDataOfSameLength,
     })
 
@@ -130,7 +134,7 @@ describe('imageCache:', () => {
   it('should throw when trying to derive data with volumeScalarData of the wrong length', () => {
     let expectedCacheSize = 0
 
-    expect(imageCache.getCacheSize()).toEqual(expectedCacheSize)
+    expect(cache.getCacheSize()).toEqual(expectedCacheSize)
 
     const volumeOneProps = {
       metadata: { FrameOfReferenceUID: '0.1.2.3' },
@@ -143,14 +147,14 @@ describe('imageCache:', () => {
 
     const volumeOneUID = 'volumeOneUID'
 
-    imageCache.makeAndCacheLocalImageVolume(volumeOneProps, volumeOneUID)
+    cache.makeAndCacheLocalImageVolume(volumeOneProps, volumeOneUID)
 
     const derivedScalarDataOfSameLength = createUint8SharedArray(12345)
 
     let failed = false
 
     try {
-      imageCache.makeAndCacheDerivedVolume(volumeOneUID, {
+      cache.makeAndCacheDerivedVolume(volumeOneUID, {
         volumeScalarData: derivedScalarDataOfSameLength,
       })
     } catch (error) {

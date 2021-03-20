@@ -14,11 +14,11 @@ const { VOI_MODIFIED } = RENDERING_EVENTS
  * @returns {Synchronizer} A new `Synchronizer` instance.
  */
 export default function createVOISynchronizer(synchronizerName): Synchronizer {
-  const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
+  const cameraPositionSynchronizer = SynchronizerManager.createSynchronizer(
     synchronizerName,
     VOI_MODIFIED,
     voiSyncCallback
   )
 
-  return cameraPositionSyncrhonizer
+  return cameraPositionSynchronizer
 }

@@ -7,7 +7,7 @@ import {
 } from '../types/toolStateTypes'
 import cloneDeep from 'lodash.clonedeep'
 
-import { EVENTS as RENDERING_EVENTS, renderingEventTarget } from '../../index'
+import { EVENTS as RENDERING_EVENTS, eventTarget } from '../../index'
 
 interface FilterInterface {
   FrameOfReferenceUID?: string
@@ -44,7 +44,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
     this.uid = uid
 
     // Listen to the IMAGE_VOLUME_MODIFIED event to invalidate data.
-    renderingEventTarget.addEventListener(
+    eventTarget.addEventListener(
       RENDERING_EVENTS.IMAGE_VOLUME_MODIFIED,
       this._imageVolumeModifiedHandler
     )

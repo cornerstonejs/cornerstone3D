@@ -1,5 +1,5 @@
-import EVENTS from './../enums/EVENTS'
-import VIEWPORT_TYPE from './../constants/VIEWPORT_TYPE'
+import Events from './../enums/events'
+import VIEWPORT_TYPE from './../constants/viewportType'
 import { IViewport, ICamera } from './../types'
 import _cloneDeep from 'lodash.clonedeep'
 import renderingEngineCache from './renderingEngineCache'
@@ -430,7 +430,7 @@ class Viewport implements IViewport {
       renderingEngineUID: this.renderingEngineUID,
     }
 
-    triggerEvent(this.canvas, EVENTS.CAMERA_MODIFIED, eventDetail)
+    triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
 
     if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {
       const renderer = this.getRenderer()

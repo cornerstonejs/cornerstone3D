@@ -1,5 +1,5 @@
 // @TODO: WebPack alias for import to enforce clean separation
-import { renderingEventTarget, EVENTS as RENDERING_EVENTS } from './../index'
+import { eventTarget, EVENTS as RENDERING_EVENTS } from './../index'
 import { addEnabledElement, removeEnabledElement } from './store/index'
 
 export default function (defaultConfiguration = {}) {
@@ -21,8 +21,8 @@ function _addCornerstoneEventListeners() {
   const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
   const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
 
-  renderingEventTarget.addEventListener(elementEnabledEvent, addEnabledElement)
-  renderingEventTarget.addEventListener(
+  eventTarget.addEventListener(elementEnabledEvent, addEnabledElement)
+  eventTarget.addEventListener(
     elementDisabledEvent,
     removeEnabledElement
   )
@@ -40,11 +40,11 @@ function _removeCornerstoneEventListeners() {
   const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
   const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
 
-  renderingEventTarget.removeEventListener(
+  eventTarget.removeEventListener(
     elementEnabledEvent,
     addEnabledElement
   )
-  renderingEventTarget.removeEventListener(
+  eventTarget.removeEventListener(
     elementDisabledEvent,
     removeEnabledElement
   )

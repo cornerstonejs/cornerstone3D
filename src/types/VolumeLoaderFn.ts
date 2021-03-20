@@ -1,5 +1,5 @@
-type ImageLoaderFn = (
-  imageId: string,
+type VolumeLoaderFn = (
+  volumeId: string,
   options?: Record<string, any>
 ) => {
   promise: Promise<Record<string, any>>
@@ -7,4 +7,4 @@ type ImageLoaderFn = (
   decache?: () => void | undefined
 }
 
-export default ImageLoaderFn
+export default VolumeLoaderFn

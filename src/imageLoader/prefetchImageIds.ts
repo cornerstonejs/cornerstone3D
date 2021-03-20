@@ -2,11 +2,11 @@ import cornerstone from 'cornerstone-core'
 import requestPoolManager from './requestPoolManager'
 import getImageIdInstanceMetadata from './getImageIdInstanceMetadata'
 import getInterleavedFrames from './getInterleavedFrames'
-import StreamingImageVolume from '../imageCache/classes/StreamingImageVolume'
+import StreamingImageVolume from '../cache/classes/StreamingImageVolume'
 import { calculateSUVScalingFactors } from 'calculate-suv'
 import renderingEventTarget from '../RenderingEngine/renderingEventTarget'
 import { triggerEvent } from '../utilities/'
-import EVENTS from '../enums/EVENTS'
+import Events from '../enums/events'
 import configuration from '../configuration'
 import autoLoad from './autoLoad'
 
@@ -100,7 +100,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
       imageVolume: volume,
     }
 
-    triggerEvent(renderingEventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventData)
+    triggerEvent(renderingEventTarget, Events.IMAGE_VOLUME_MODIFIED, eventData)
 
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true

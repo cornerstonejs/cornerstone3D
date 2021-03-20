@@ -1,6 +1,6 @@
-import EVENTS from './../enums/EVENTS'
+import EVENTS from './../enums/events'
 import renderingEngineCache from './renderingEngineCache'
-import renderingEventTarget from './renderingEventTarget'
+import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from './../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
 import { ViewportInputOptions } from './../types'
@@ -166,7 +166,7 @@ class RenderingEngine {
         renderingEngineUID: this.uid,
       }
 
-      triggerEvent(renderingEventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+      triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
     }
   }
 
@@ -512,7 +512,7 @@ class RenderingEngine {
         canvas.removeAttribute('data-scene-uid')
         canvas.removeAttribute('data-rendering-engine-uid')
 
-        triggerEvent(renderingEventTarget, EVENTS.ELEMENT_DISABLED, eventData)
+        triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
       })
     })
 

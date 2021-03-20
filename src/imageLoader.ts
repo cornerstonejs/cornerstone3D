@@ -1,6 +1,7 @@
-import { getImageLoadObject, putImageLoadObject } from './imageCache/imageCache.js';
-import EVENTS, { events } from './enums/events.js';
-import triggerEvent from './src/utilities/triggerEvent.js';
+import cache from './cache/cache';
+import Events from './enums/events';
+import eventTarget from './eventTarget';
+import triggerEvent from './utilities/triggerEvent';
 
 /**
  * This module deals with ImageLoaders, loading images and caching images
@@ -41,14 +42,14 @@ function loadImageFromImageLoader (imageId, options) {
 
   // Broadcast an image loaded event once the image is loaded
   imageLoadObject.promise.then(function (image) {
-    triggerEvent(events, EVENTS.IMAGE_LOADED, { image });
+    triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
   }, function (error) {
     const errorObject = {
       imageId,
       error
     };
 
-    triggerEvent(events, EVENTS.IMAGE_LOAD_FAILED, errorObject);
+    triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorObject);
   });
 
   return imageLoadObject;
@@ -69,7 +70,7 @@ export function loadImage (imageId, options) {
     throw new Error('loadImage: parameter imageId must not be undefined');
   }
 
-  const imageLoadObject = getImageLoadObject(imageId);
+  const imageLoadObject = cache.getImageLoadObject(imageId);
 
   if (imageLoadObject !== undefined) {
     return imageLoadObject.promise;
@@ -103,7 +104,7 @@ export function loadAndCacheImage (imageId, options) {
 
   imageLoadObject = loadImageFromImageLoader(imageId, options);
 
-  putImageLoadObject(imageId, imageLoadObject);
+  cache.putImageLoadObject(imageId, imageLoadObject);
 
   return imageLoadObject.promise;
 }

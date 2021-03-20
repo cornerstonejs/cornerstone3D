@@ -1,7 +1,7 @@
 import ICamera from './ICamera'
 import IEnabledElement from './IEnabledElement'
-import IImageCache from './IImageCache'
-import IImageVolume from './IImageVolume'
+import ICache from './ICache'
+import IVolume from './IVolume'
 import ImageLoaderFn from './ImageLoaderFn'
 import IRegisterImageLoader from './IRegisterImageLoader'
 import IStreamingVolume from './IStreamingVolume'
@@ -16,8 +16,8 @@ import ViewportInputOptions from './ViewportInputOptions'
 export {
   ICamera,
   IEnabledElement,
-  IImageCache,
-  IImageVolume,
+  ICache,
+  IVolume,
   ImageLoaderFn,
   IRegisterImageLoader,
   IStreamingVolume,

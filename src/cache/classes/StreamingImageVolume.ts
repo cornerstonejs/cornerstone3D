@@ -19,4 +19,18 @@ export default class StreamingImageVolume extends ImageVolume {
     this.imageIds = streamingProperties.imageIds
     this.loadStatus = streamingProperties.loadStatus
   }
+
+  cancelLoading() {
+    const { loadStatus } = this;
+
+    if (!loadStatus || !loadStatus.loading) {
+      return
+    }
+
+    // Set to not loading.
+    loadStatus.loading = false
+
+    // Remove all the callback listeners
+    loadStatus.callbacks = []
+  }
 }

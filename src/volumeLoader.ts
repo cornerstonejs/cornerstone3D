@@ -1,9 +1,10 @@
-import { getImageLoadObject, putImageLoadObject } from './imageCache/imageCache.js';
-import EVENTS, { events } from './enums/events.js';
-import triggerEvent from './src/utilities/triggerEvent.js';
+import cache from './cache/cache';
+import Events from './enums/events';
+import eventTarget from './eventTarget';
+import triggerEvent from './utilities/triggerEvent';
 
 /**
- * This module deals with VolumeLoaders, loading images and caching images
+ * This module deals with VolumeLoaders and loading volumes
  * @module VolumeLoader
  */
 
@@ -13,106 +14,106 @@ const volumeLoaders = {};
 let unknownVolumeLoader;
 
 /**
- * Load an image using a registered Cornerstone Image Loader.
+ * Load a volume using a registered Cornerstone Volume Loader.
  *
- * The image loader that is used will be
- * determined by the image loader scheme matching against the imageId.
+ * The volume loader that is used will be
+ * determined by the volume loader scheme matching against the volumeId.
  *
- * @param {String} imageId A Cornerstone Image Object's imageId
- * @param {Object} [options] Options to be passed to the Image Loader
+ * @param {String} volumeId A Cornerstone Volume Object's volumeId
+ * @param {Object} [options] Options to be passed to the Volume Loader
  *
- * @returns {ImageLoadObject} An Object which can be used to act after an image is loaded or loading fails
+ * @returns {VolumeLoadObject} An Object which can be used to act after a volume is loaded or loading fails
  * @memberof VolumeLoader
  */
-function loadImageFromVolumeLoader (imageId, options) {
-  const colonIndex = imageId.indexOf(':');
-  const scheme = imageId.substring(0, colonIndex);
+function loadVolumeFromVolumeLoader (volumeId, options) {
+  const colonIndex = volumeId.indexOf(':');
+  const scheme = volumeId.substring(0, colonIndex);
   const loader = volumeLoaders[scheme];
 
   if (loader === undefined || loader === null) {
     if (unknownVolumeLoader !== undefined) {
-      return unknownVolumeLoader(imageId);
+      return unknownVolumeLoader(volumeId);
     }
 
-    throw new Error('loadImageFromVolumeLoader: no image loader for imageId');
+    throw new Error('loadVolumeFromVolumeLoader: no volume loader for volumeId');
   }
 
-  const imageLoadObject = loader(imageId, options);
+  const volumeLoadObject = loader(volumeId, options);
 
   // Broadcast a volume loaded event once the image is loaded
-  imageLoadObject.promise.then(function (image) {
-    triggerEvent(events, EVENTS.IMAGE_LOADED, { image });
+  volumeLoadObject.promise.then(function (volume) {
+    triggerEvent(events, Events.IMAGE_LOADED, { volume });
   }, function (error) {
     const errorObject = {
-      imageId,
+      volumeId,
       error
     };
 
-    triggerEvent(events, EVENTS.IMAGE_LOAD_FAILED, errorObject);
+    triggerEvent(events, Events.IMAGE_LOAD_FAILED, errorObject);
   });
 
-  return imageLoadObject;
+  return volumeLoadObject;
 }
 
 /**
- * Loads a volume given an imageId and optional priority and returns a promise which will resolve to
+ * Loads a volume given a volumeId and optional priority and returns a promise which will resolve to
  * the loaded image object or fail if an error occurred.  The loaded image is not stored in the cache.
  *
- * @param {String} imageId A Cornerstone Image Object's imageId
- * @param {Object} [options] Options to be passed to the Image Loader
+ * @param {String} volumeId A Cornerstone Image Object's volumeId
+ * @param {Object} [options] Options to be passed to the Volume Loader
  *
- * @returns {ImageLoadObject} An Object which can be used to act after an image is loaded or loading fails
+ * @returns {VolumeLoadObject} An Object which can be used to act after an image is loaded or loading fails
  * @memberof VolumeLoader
  */
-export function loadImage (imageId, options) {
-  if (imageId === undefined) {
-    throw new Error('loadImage: parameter imageId must not be undefined');
+export function loadVolume (volumeId, options) {
+  if (volumeId === undefined) {
+    throw new Error('loadVolume: parameter volumeId must not be undefined');
   }
 
-  const imageLoadObject = getImageLoadObject(imageId);
+  const volumeLoadObject = cache.getVolumeLoadObject(volumeId);
 
-  if (imageLoadObject !== undefined) {
-    return imageLoadObject.promise;
+  if (volumeLoadObject !== undefined) {
+    return volumeLoadObject.promise;
   }
 
-  return loadImageFromVolumeLoader(imageId, options).promise;
+  return loadVolumeFromVolumeLoader(volumeId, options).promise;
 }
 
 //
 
 /**
- * Loads an image given an imageId and optional priority and returns a promise which will resolve to
+ * Loads an image given an volumeId and optional priority and returns a promise which will resolve to
  * the loaded image object or fail if an error occurred. The image is stored in the cache.
  *
- * @param {String} imageId A Cornerstone Image Object's imageId
- * @param {Object} [options] Options to be passed to the Image Loader
+ * @param {String} volumeId A Cornerstone Image Object's volumeId
+ * @param {Object} [options] Options to be passed to the Volume Loader
  *
- * @returns {ImageLoadObject} Image Loader Object
+ * @returns {VolumeLoadObject} Volume Loader Object
  * @memberof VolumeLoader
  */
-export function loadAndCacheImage (imageId, options) {
-  if (imageId === undefined) {
-    throw new Error('loadAndCacheImage: parameter imageId must not be undefined');
+export function loadAndCacheVolume (volumeId, options) {
+  if (volumeId === undefined) {
+    throw new Error('loadAndCacheVolume: parameter volumeId must not be undefined');
   }
 
-  let imageLoadObject = getImageLoadObject(imageId);
+  let volumeLoadObject = getVolumeLoadObject(volumeId);
 
-  if (imageLoadObject !== undefined) {
-    return imageLoadObject.promise;
+  if (volumeLoadObject !== undefined) {
+    return volumeLoadObject.promise;
   }
 
-  imageLoadObject = loadImageFromVolumeLoader(imageId, options);
+  volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
-  putImageLoadObject(imageId, imageLoadObject);
+  cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
-  return imageLoadObject.promise;
+  return volumeLoadObject.promise;
 }
 
 /**
  * Registers an volumeLoader plugin with cornerstone for the specified scheme
  *
- * @param {String} scheme The scheme to use for this image loader (e.g. 'dicomweb', 'wadouri', 'http')
- * @param {Function} volumeLoader A Cornerstone Image Loader function
+ * @param {String} scheme The scheme to use for this volume loader (e.g. 'dicomweb', 'wadouri', 'http')
+ * @param {Function} volumeLoader A Cornerstone Volume Loader function
  * @returns {void}
  * @memberof VolumeLoader
  */
@@ -123,9 +124,9 @@ export function registerVolumeLoader (scheme, volumeLoader) {
 /**
  * Registers a new unknownVolumeLoader and returns the previous one
  *
- * @param {Function} volumeLoader A Cornerstone Image Loader
+ * @param {Function} volumeLoader A Cornerstone Volume Loader
  *
- * @returns {Function|Undefined} The previous Unknown Image Loader
+ * @returns {Function|Undefined} The previous Unknown Volume Loader
  * @memberof VolumeLoader
  */
 export function registerUnknownVolumeLoader (volumeLoader) {

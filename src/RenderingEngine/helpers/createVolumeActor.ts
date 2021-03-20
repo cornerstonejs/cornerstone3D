@@ -1,5 +1,5 @@
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume';
-import imageCache from '../../imageCache';
+import imageCache from '../../cache';
 //@ts-ignore
 import createVolumeMapper from './createVolumeMapper';
 

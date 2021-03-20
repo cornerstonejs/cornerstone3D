@@ -1,7 +1,7 @@
 import { BaseAnnotationTool } from './../base/index'
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
-import { getEnabledElement, imageCache } from '../../../index'
+import { getEnabledElement, cache } from '../../../index'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'

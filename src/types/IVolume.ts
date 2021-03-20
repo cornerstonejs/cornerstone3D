@@ -1,7 +1,7 @@
 import Point3 from './Point3'
 import Metadata from './Metadata'
 
-interface IImageVolume {
+interface IVolume {
   uid: string
   metadata: Metadata
   dimensions: Point3
@@ -13,4 +13,4 @@ interface IImageVolume {
   scalarData: Float32Array | Uint8Array
 }
 
-export default IImageVolume
+export default IVolume

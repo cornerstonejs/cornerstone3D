@@ -1,9 +1,9 @@
-import EVENTS from './../enums/EVENTS'
+import EVENTS from './../enums/events'
 
 /**
  * EventTarget - Provides the [EventTarget](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) interface
  */
-class RenderingEventTarget implements EventTarget {
+class CornerstoneEventTarget implements EventTarget {
   listeners: {
     cornerstoneelementdisabled: Array<Function>
     cornerstoneelementenabled: Array<Function>
@@ -46,6 +46,6 @@ class RenderingEventTarget implements EventTarget {
     return !event.defaultPrevented
   }
 }
-const renderingEventTarget = new RenderingEventTarget()
+const eventTarget = new CornerstoneEventTarget()
 
-export default renderingEventTarget
+export default eventTarget

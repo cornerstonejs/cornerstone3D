@@ -11,7 +11,7 @@ import {
 import init from './init'
 import { addTool, ToolGroupManager, SynchronizerManager } from './store/index'
 import drawing from './drawing'
-import synchronizers from './syncrhonizers'
+import synchronizers from './synchronizers'
 
 import {
   BaseTool,

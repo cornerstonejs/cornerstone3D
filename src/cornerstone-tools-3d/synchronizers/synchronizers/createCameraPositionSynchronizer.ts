@@ -16,11 +16,11 @@ const { CAMERA_MODIFIED } = RENDERING_EVENTS
 export default function createCameraPositionSynchronizer(
   synchronizerName: string
 ): Synchronizer {
-  const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
+  const cameraPositionSynchronizer = SynchronizerManager.createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
     cameraSyncCallback
   )
 
-  return cameraPositionSyncrhonizer
+  return cameraPositionSynchronizer
 }

@@ -1,4 +1,4 @@
-import { imageCache } from '../../../index';
+import { cache } from '../../../index';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 
 /**
@@ -28,7 +28,7 @@ export default function getTargetVolume(
   const numVolumeActors = volumeActors.length;
 
   const imageVolumes = volumeActors.map((va) =>
-    imageCache.getImageVolume(va.uid)
+    cache.getImageVolume(va.uid)
   );
 
   if (targetVolumeUID) {

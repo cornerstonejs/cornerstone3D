@@ -29,7 +29,7 @@ import { IRegisterImageLoader } from '../../src/types'
  * registerImageLoader(cornerstone);
  * ```
  */
-function volumeLoader(cornerstone: IRegisterImageLoader): void {
+function sharedArrayBufferImageLoader(cornerstone: IRegisterImageLoader): void {
   cornerstone.registerImageLoader('vtkjs', _loadImageIntoBuffer)
 }
 
@@ -144,4 +144,4 @@ function getTransferSyntaxForContentType(contentType: string): string {
   return defaultTransferSyntax
 }
 
-export { volumeLoader, getTransferSyntaxForContentType }
+export { sharedArrayBufferImageLoader, getTransferSyntaxForContentType }

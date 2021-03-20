@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@vtk-viewport';
+import { RenderingEngine, ORIENTATION, ViewportType } from '@vtk-viewport';
 
 
 const NUM_VIEWPORTS = 25;
@@ -42,7 +42,7 @@ class TwentyFiveCanvasExample extends Component {
       viewports.push({
         sceneUID,
         viewportUID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         canvas: this.containers[i].current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,

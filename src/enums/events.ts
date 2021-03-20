@@ -1,7 +1,7 @@
 /**
  *
  */
-enum EVENTS {
+enum Events {
   CAMERA_MODIFIED = 'cornerstonecameramodified',
   VOI_MODIFIED = 'cornerstonevoimodified',
   ELEMENT_DISABLED = 'cornerstoneelementdisabled',
@@ -10,4 +10,4 @@ enum EVENTS {
   IMAGE_VOLUME_MODIFIED = 'cornerstoneimagevolumemodified',
 }
 
-export default EVENTS
+export default Events

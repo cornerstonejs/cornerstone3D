@@ -1,7 +1,7 @@
 import { BaseAnnotationTool } from './../base/index'
 import { Point2, Point3 } from './../../types'
 // ~~ VTK Viewport
-import { getEnabledElement, imageCache } from '@vtk-viewport'
+import { getEnabledElement, cache } from '@vtk-viewport'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'

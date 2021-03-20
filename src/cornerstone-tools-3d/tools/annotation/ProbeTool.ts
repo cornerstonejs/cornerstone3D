@@ -1,6 +1,6 @@
 import { BaseAnnotationTool } from './../base/index'
 // ~~ VTK Viewport
-import { getEnabledElement, imageCache } from '../../../index'
+import { getEnabledElement, cache } from '../../../index'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
