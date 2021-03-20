@@ -22,7 +22,7 @@ describe('cache', () => {
     expect(cacheSize).toEqual(0)
   })
 
-  it('should cache two volumes and decache one correctly', () => {
+  /*it('should cache two volumes and decache one correctly', () => {
     let expectedCacheSize = 0
 
     expect(cache.getCacheSize()).toEqual(expectedCacheSize)
@@ -162,5 +162,5 @@ describe('cache', () => {
     }
 
     expect(failed).toEqual(true)
-  })
+  })*/
 })

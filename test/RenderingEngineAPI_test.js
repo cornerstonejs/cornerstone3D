@@ -90,7 +90,7 @@ describe('RenderingEngine API:', () => {
     expect(scene1Viewports.length).toEqual(2)
   })
 
-  it('Add a volume to the scene and call its callback correctly', () => {
+  /*it('Add a volume to the scene and call its callback correctly', () => {
     const scene1 = renderingEngine.getScene(scene1UID)
 
     const testVolumeProps = {
@@ -122,7 +122,7 @@ describe('RenderingEngine API:', () => {
     scene1.setVolumes([{ volumeUID: testVolumeUID, callback }])
 
     expect(callbackCalledWithCorrectProps).toEqual(true)
-  })
+  })*/
 
   it('Take an orientation given by AXIAL as well as set manually by sliceNormal and viewUp', () => {
     const scene1 = renderingEngine.getScene(scene1UID)
