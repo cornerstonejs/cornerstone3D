@@ -1,4 +1,4 @@
-import cornerstone from 'cornerstone-core';
+import { metaData } from '@vtk-viewport';
 import { Vector3 } from 'cornerstone-math';
 
 /**
@@ -12,7 +12,7 @@ export default function sortImageIdsByIPP(imageIds) {
   const {
     imagePositionPatient: referenceImagePositionPatient,
     imageOrientationPatient,
-  } = cornerstone.metaData.get('imagePlaneModule', imageIds[0]);
+  } = metaData.get('imagePlaneModule', imageIds[0]);
 
   const refIppVec = new Vector3(...referenceImagePositionPatient);
 

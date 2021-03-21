@@ -1,4 +1,4 @@
-import { imageCache } from './../../src/index';
+import { cache } from './../../src/index';
 
 export default function loadVolumes(
   loadedCallback = () => {},

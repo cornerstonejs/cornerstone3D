@@ -12,6 +12,7 @@ import { loadImage, loadAndCacheImage, registerImageLoader, registerUnknownImage
 import { loadVolume, loadAndCacheVolume, registerVolumeLoader, registerUnknownVolumeLoader } from './volumeLoader'
 import getEnabledElement from './getEnabledElement'
 import configuration from './configuration'
+import metaData from './metaData'
 
 // Namespaces
 import * as Types from './types'
@@ -46,6 +47,8 @@ export {
   loadAndCacheVolume,
   registerVolumeLoader,
   registerUnknownVolumeLoader,
+  //
+  metaData,
   //
   Utilities
 }

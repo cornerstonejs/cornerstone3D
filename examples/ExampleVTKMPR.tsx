@@ -3,10 +3,10 @@ import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
 import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
 import loadVolumes from './helpers/loadVolumes';
 import {
-  imageCache,
+  cache,
   RenderingEngine,
-  renderingEventTarget,
-  Events as RENDERING_EVENTS,
+  eventTarget,
+  EVENTS as RENDERING_EVENTS,
 } from './../src/index';
 import { initToolGroups, destroyToolGroups } from './initToolGroups';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
@@ -96,7 +96,7 @@ class VTKMPRExample extends Component {
     this.ctWLSync = createVOISynchronizer('ctWLSync');
     this.ptThresholdSync = createVOISynchronizer('ptThresholdSync');
 
-    renderingEventTarget.addEventListener(
+    eventTarget.addEventListener(
       RENDERING_EVENTS.ELEMENT_ENABLED,
       (evt) => {
         const eventData = evt.detail;
@@ -110,7 +110,7 @@ class VTKMPRExample extends Component {
       }
     );
 
-    renderingEventTarget.addEventListener(
+    eventTarget.addEventListener(
       RENDERING_EVENTS.ELEMENT_DISABLED,
       (evt) => {
         const eventData = evt.detail;

@@ -1,5 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import { ORIENTATION, VIEWPORT_TYPE, imageCache, Utilities } from '@vtk-viewport';
+import { ORIENTATION, VIEWPORT_TYPE, cache, Utilities } from '@vtk-viewport';
 
 function setLayout(renderingEngine, canvasContainers, { ptTypesSceneToolGroup }) {
   const viewportInput = [

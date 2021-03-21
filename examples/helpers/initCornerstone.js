@@ -1,11 +1,11 @@
 // @TODO: Only using `cornerstone-tools` for `requestPoolManager` in `prefetchImageIds`
 // This can be replaced w/ an implementation in render library
 import dicomParser from 'dicom-parser';
-import cornerstone from 'cornerstone-core';
+import * as cornerstone from '@vtk-viewport';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import WADORSHeaderProvider from './WADORSHeaderProvider';
 // ~~
-import { volumeLoader } from './registerImageLoader';
+//import { volumeLoader } from './registerImageLoader';
 import * as csTools3d from '@tools';
 
 // Wire up listeners for renderingEngine's element enabled events
@@ -36,4 +36,4 @@ var config = {
 };
 
 cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
-volumeLoader(cornerstone);
+//volumeLoader(cornerstone);

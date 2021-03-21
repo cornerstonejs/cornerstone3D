@@ -1,5 +1,5 @@
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
-import { ORIENTATION, VIEWPORT_TYPE, imageCache } from '@vtk-viewport';
+import { ORIENTATION, VIEWPORT_TYPE, cache } from '@vtk-viewport';
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
 import {
   setCTWWWC,

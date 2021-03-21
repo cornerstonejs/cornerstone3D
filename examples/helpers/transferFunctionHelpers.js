@@ -1,4 +1,4 @@
-import { imageCache, Utilities } from '@vtk-viewport';
+import { cache, Utilities } from '@vtk-viewport';
 import applyPreset from './applyPreset';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
