@@ -1,4 +1,4 @@
-import cornerstone from 'cornerstone-core';
+import metaData from '../metaData';
 import {
   InstanceMetadata,
   PhilipsPETPrivateGroup,
@@ -7,13 +7,13 @@ import {
 export default function getImageIdInstanceMetadata(
   imageId: string
 ): InstanceMetadata {
-  const dicomMetaData = cornerstone.metaData.get('instance', imageId);
+  const dicomMetaData = metaData.get('instance', imageId);
 
   if (!dicomMetaData) {
     throw new Error('dicom metadata are required');
   }
 
-  const petSequenceModule = cornerstone.metaData.get(
+  const petSequenceModule = metaData.get(
     'petIsotopeModule',
     imageId
   );

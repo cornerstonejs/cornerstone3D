@@ -1,7 +1,30 @@
 import cache from './cache/cache';
-import Events from './enums/events';
+import EVENTS from './enums/events';
 import eventTarget from './eventTarget';
 import triggerEvent from './utilities/triggerEvent';
+
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
+import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
+
+function createInternalVTKRepresentation(volume) {
+  const { dimensions, spacing, direction, origin, scalarData } = volume;
+
+  const scalarArray = vtkDataArray.newInstance({
+    name: 'Pixels',
+    numberOfComponents: 1,
+    values: scalarData,
+  })
+
+  const imageData = vtkImageData.newInstance()
+
+  imageData.setDimensions(...dimensions)
+  imageData.setSpacing(...spacing)
+  imageData.setDirection(...direction)
+  imageData.setOrigin(...origin)
+  imageData.getPointData().setScalars(scalarArray)
+
+  return imageData;
+}
 
 /**
  * This module deals with VolumeLoaders and loading volumes
@@ -42,14 +65,14 @@ function loadVolumeFromVolumeLoader (volumeId, options) {
 
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(function (volume) {
-    triggerEvent(events, Events.IMAGE_LOADED, { volume });
+    triggerEvent(eventTarget, EVENTS.IMAGE_LOADED, { volume });
   }, function (error) {
     const errorObject = {
       volumeId,
       error
     };
 
-    triggerEvent(events, Events.IMAGE_LOAD_FAILED, errorObject);
+    triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_FAILED, errorObject);
   });
 
   return volumeLoadObject;
@@ -76,7 +99,11 @@ export function loadVolume (volumeId, options) {
     return volumeLoadObject.promise;
   }
 
-  return loadVolumeFromVolumeLoader(volumeId, options).promise;
+  return loadVolumeFromVolumeLoader(volumeId, options).promise.then(volume => {
+    const vtkImageData = createInternalVTKRepresentation(volume);
+
+    volume.vtkImageData = vtkImageData;
+  });
 }
 
 //
@@ -96,13 +123,20 @@ export function loadAndCacheVolume (volumeId, options) {
     throw new Error('loadAndCacheVolume: parameter volumeId must not be undefined');
   }
 
-  let volumeLoadObject = getVolumeLoadObject(volumeId);
+  let volumeLoadObject = cache.getVolumeLoadObject(volumeId);
 
   if (volumeLoadObject !== undefined) {
     return volumeLoadObject.promise;
   }
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
+
+  // TODO: Make sure this doesn't run multiple times
+  volumeLoadObject.promise.then(volume => {
+    const vtkImageData = createInternalVTKRepresentation(volume);
+
+    volume.vtkImageData = vtkImageData;
+  });
 
   cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 

@@ -1,3 +1,5 @@
+import eventTarget from '../eventTarget'
+
 /**
  * Small utility to trigger a custom event for a given EventTarget.
  *
@@ -8,10 +10,14 @@
  * which received event called Event.preventDefault(). Otherwise it returns true.
  */
 export default function triggerEvent(
-  el: EventTarget,
+  el: EventTarget = eventTarget,
   type: string,
   detail: any = null
 ): boolean {
+  if (!type) {
+    throw new Error('Event type was not defined');
+  }
+
   const event = new CustomEvent(type, {
     detail,
     cancelable: true,

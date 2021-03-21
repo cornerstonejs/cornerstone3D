@@ -1,5 +1,9 @@
 import ImageVolume from '../cache/classes/ImageVolume'
 import { IImageVolume, IStreamingVolume } from '../types'
+import prefetchImageIds from './prefetchImageIds'
+
+// TODO: move registration to an index file
+import './sharedArrayBufferImageLoader'
 
 export default class StreamingImageVolume extends ImageVolume {
   readonly imageIds: Array<string>
@@ -51,7 +55,7 @@ export default class StreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = []
   }
 
-  public loadVolume = (callback: Function) => {
+  public loadImages = (callback: Function) => {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
@@ -59,7 +63,7 @@ export default class StreamingImageVolume extends ImageVolume {
       return // Already loading, will get callbacks from main load.
     }
 
-    const { loaded } = streamingVolume.loadStatus
+    const { loaded } = this.loadStatus
     const numFrames = imageIds.length
 
     if (loaded) {
@@ -75,9 +79,12 @@ export default class StreamingImageVolume extends ImageVolume {
     }
 
     if (callback) {
-      streamingVolume.loadStatus.callbacks.push(callback)
+      this.loadStatus.callbacks.push(callback)
     }
 
+    const streamingVolume = this;
+
+    // Todo: move to class method? this is circular now...
     prefetchImageIds(streamingVolume)
   }
 }

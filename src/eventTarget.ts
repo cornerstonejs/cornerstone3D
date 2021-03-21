@@ -4,25 +4,23 @@ import EVENTS from './../enums/events'
  * EventTarget - Provides the [EventTarget](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) interface
  */
 class CornerstoneEventTarget implements EventTarget {
-  listeners: {
-    cornerstoneelementdisabled: Array<Function>
-    cornerstoneelementenabled: Array<Function>
-    cornerstoneimagevolumemodified: Array<Function>
-  }
-
   constructor() {
-    this.listeners = {
-      cornerstoneelementdisabled: [],
-      cornerstoneelementenabled: [],
-      cornerstoneimagevolumemodified: [],
-    }
+    this.listeners = {}
   }
 
   public addEventListener(type, callback) {
+    if (!this.listeners[type]) {
+      this.listeners[type] = [];
+    }
+
     this.listeners[type].push(callback)
   }
 
   public removeEventListener(type, callback) {
+    if (!this.listeners[type]) {
+      return;
+    }
+
     const stack = this.listeners[type]
     const stackLength = stack.length
 
@@ -36,6 +34,11 @@ class CornerstoneEventTarget implements EventTarget {
   }
 
   dispatchEvent(event) {
+    if (!this.listeners[event.type]) {
+      console.warn(`Skipping dispatch since there are no listeners for ${event.type}`);
+      return;
+    }
+
     const stack = this.listeners[event.type]
     const stackLength = stack.length
 

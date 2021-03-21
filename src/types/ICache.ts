@@ -2,7 +2,7 @@ import ImageVolume from 'src/cache/classes/ImageVolume'
 import StreamingImageVolume from 'src/streamingImageVolume/StreamingImageVolume'
 
 interface ICache {
-  //getImageVolume: (uid: string) => ImageVolume | StreamingImageVolume
+  getImageVolume: (uid: string) => ImageVolume | StreamingImageVolume
   setMaxCacheSize: (maxCacheSize: number) => void
   getMaxCacheSize: () => number
   getCacheSize: () => number

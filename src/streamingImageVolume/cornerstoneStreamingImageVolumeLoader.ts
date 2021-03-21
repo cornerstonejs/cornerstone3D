@@ -3,20 +3,20 @@ import cache from '../cache/cache';
 import makeVolumeMetadata from '../cache/helpers/makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from '../cache/helpers/sortImageIdsAndGetSpacing';
 import StreamingImageVolume from './StreamingImageVolume';
+import { createUint8SharedArray, createFloat32SharedArray } from '../utilities';
+import { registerVolumeLoader, registerUnknownVolumeLoader } from '../volumeLoader';
 
-function makeAndCacheImageVolume = (
-  imageIds: Array<string>,
-  volumeId: string
-): StreamingImageVolume => {
-  if (volumeId === undefined) {
-    volumeId = uuidv4()
+function cornerstoneStreamingImageVolumeLoader(
+  volumeId: string,
+  options: {
+    imageIds: Array<string>,
+  }
+): StreamingImageVolume {
+  if (!options || !options.imageIds || !options.imageIds.length) {
+    throw new Error('ImageIds must be provided to create a streaming image volume')
   }
 
-  const volumeLoadObject = cache.getVolumeLoadObject(volumeId)
-
-  if (cachedVolume) {
-    return volumeLoadObject.promise
-  }
+  const { imageIds } = options;
 
   const volumeMetadata = makeVolumeMetadata(imageIds)
 
@@ -58,15 +58,15 @@ function makeAndCacheImageVolume = (
   const signed = PixelRepresentation === 1
 
   // Check if it fits in the cache before we allocate data
-  const currentCacheSize = this.getCacheSize()
+  const currentCacheSize = cache.getCacheSize()
 
   // TODO Improve this when we have support for more types
   const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1
 
-  const byteLength =
+  const sizeInBytes =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
-  cache.checkCacheSizeCanSupportVolume(byteLength);
+  cache.checkCacheSizeCanSupportVolume(sizeInBytes);
 
   let scalarData
 
@@ -92,31 +92,18 @@ function makeAndCacheImageVolume = (
       break
   }
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: 1,
-    values: scalarData,
-  })
-
-  const imageData = vtkImageData.newInstance()
-
-  imageData.setDimensions(...dimensions)
-  imageData.setSpacing(...spacing)
-  imageData.setDirection(...direction)
-  imageData.setOrigin(...origin)
-  imageData.getPointData().setScalars(scalarArray)
 
   const streamingImageVolume = new StreamingImageVolume(
     // ImageVolume properties
     {
-      uid,
+      uid: volumeId,
       metadata: volumeMetadata,
       dimensions,
       spacing,
       origin,
       direction,
-      vtkImageData: imageData,
       scalarData,
+      sizeInBytes
     },
     // Streaming properties
     {
@@ -130,12 +117,13 @@ function makeAndCacheImageVolume = (
     }
   )
 
-  cache.putVolumeLoadObject(volumeId,{
-    promise: Promise.resolve(streamingImageVolume)
-    //decache
-    //cancel: cancelLoadStreamingVolume
-  });
-
-  return streamingImageVolume
+  return {
+    promise: Promise.resolve(streamingImageVolume),
+    cancelFn: () => { console.log('cancel was called?') }
+  }
 }
 
+registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
+registerVolumeLoader('cornerstoneStreamingImageVolume', cornerstoneStreamingImageVolumeLoader)
+
+export default cornerstoneStreamingImageVolumeLoader

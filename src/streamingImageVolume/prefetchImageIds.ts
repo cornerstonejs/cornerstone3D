@@ -1,4 +1,4 @@
-import cornerstone from 'cornerstone-core'
+import metaData from '../metaData'
 import { calculateSUVScalingFactors } from 'calculate-suv'
 import requestPoolManager from '../imageLoader/requestPoolManager'
 import getImageIdInstanceMetadata from '../imageLoader/getImageIdInstanceMetadata'
@@ -100,6 +100,8 @@ function prefetchImageIds(volume: StreamingImageVolume) {
       imageVolume: volume,
     }
 
+    debugger;
+
     triggerEvent(eventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventData)
 
     if (framesProcessed === numFrames) {
@@ -129,6 +131,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
 
   function errorCallback(error, imageIdIndex, imageId) {
     framesProcessed++
+    debugger;
 
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true

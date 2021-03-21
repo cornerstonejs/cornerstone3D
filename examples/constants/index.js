@@ -1,6 +1,6 @@
 const renderingEngineUID = 'PETCTRenderingEngine';
-const ptVolumeUID = 'PET_VOLUME';
-const ctVolumeUID = 'CT_VOLUME';
+const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME';
+const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME';
 
 // This file just stores all the IDS used within the demo. In a real application
 /// These may associated with different hanging protocols/dynamically generated, etc.

@@ -1,5 +1,5 @@
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
-import { ORIENTATION, VIEWPORT_TYPE, cache } from '@vtk-viewport';
+import { ORIENTATION, VIEWPORT_TYPE, cache, loadVolume } from '@vtk-viewport';
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
 import {
   setCTWWWC,
@@ -231,7 +231,7 @@ function setLayout(
   renderingEngine.render();
 }
 
-function setVolumes(renderingEngine, ctVolumeUID, ptVolumeUID, petColorMap) {
+async function setVolumes(renderingEngine, ctVolumeUID, ptVolumeUID, petColorMap) {
   const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
   const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
   const fusionScene = renderingEngine.getScene(SCENE_IDS.FUSION);
@@ -279,7 +279,7 @@ function setVolumes(renderingEngine, ctVolumeUID, ptVolumeUID, petColorMap) {
   *        ignore the slab thickness. Check the vtkSlabCamera for more info.
   */
 
-  const ptVolume = imageCache.getImageVolume(ptVolumeUID);
+  const ptVolume = await loadVolume(ptVolumeUID);
   const ptVolumeDimensions = ptVolume.dimensions;
 
   // Only make the MIP as large as it needs to be.

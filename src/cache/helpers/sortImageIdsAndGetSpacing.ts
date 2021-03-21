@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import cornerstone from 'cornerstone-core';
+import metaData from '../../metaData';
 
 type SortedImageIdsItem = {
   zSpacing: number;
@@ -18,7 +18,7 @@ export default function sortImageIdsAndGetSpacing(
 ) {
   const {
     imagePositionPatient: referenceImagePositionPatient,
-  } = cornerstone.metaData.get('imagePlaneModule', imageIds[0]);
+  } = metaData.get('imagePlaneModule', imageIds[0]);
 
   const refIppVec = vec3.create();
 
@@ -30,7 +30,7 @@ export default function sortImageIdsAndGetSpacing(
   );
 
   const distanceImagePairs = imageIds.map(imageId => {
-    const { imagePositionPatient } = cornerstone.metaData.get(
+    const { imagePositionPatient } = metaData.get(
       'imagePlaneModule',
       imageId
     );
@@ -66,7 +66,7 @@ export default function sortImageIdsAndGetSpacing(
     ) /
     (numImages - 1);
 
-  const { imagePositionPatient: origin } = cornerstone.metaData.get(
+  const { imagePositionPatient: origin } = metaData.get(
     'imagePlaneModule',
     sortedImageIds[0]
   );

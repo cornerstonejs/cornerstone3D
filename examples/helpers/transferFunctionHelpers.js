@@ -1,11 +1,11 @@
-import { cache, Utilities } from '@vtk-viewport';
+import { cache, Utilities, loadVolume } from '@vtk-viewport';
 import applyPreset from './applyPreset';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 
-function setCTWWWC({ volumeActor, volumeUID }) {
-  const volume = imageCache.getImageVolume(volumeUID);
+async function setCTWWWC({ volumeActor, volumeUID }) {
+  const volume = await loadVolume(volumeUID);
 
   const { windowWidth, windowCenter } = volume.metadata.voiLut[0];
 

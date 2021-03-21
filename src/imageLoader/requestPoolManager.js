@@ -1,4 +1,5 @@
-import cornerstone from 'cornerstone-core';
+import { loadImage, loadAndCacheImage } from '../imageLoader';
+import cache from '../cache/cache'
 import { getMaxSimultaneousRequests } from './getMaxSimultaneousRequests.js';
 
 const requestPool = {
@@ -53,7 +54,7 @@ function addRequest(
   };
 
   // If this imageId is in the cache, resolve it immediately
-  const imageLoadObject = cornerstone.imageCache.getImageLoadObject(imageId);
+  const imageLoadObject = cache.getImageLoadObject(imageId);
 
   if (imageLoadObject) {
     imageLoadObject.promise.then(
@@ -113,7 +114,7 @@ function sendRequest(requestDetails) {
   const failCallback = requestDetails.failCallback;
 
   // Check if we already have this image promise in the cache
-  const imageLoadObject = cornerstone.imageCache.getImageLoadObject(imageId);
+  const imageLoadObject = cache.getImageLoadObject(imageId);
 
   if (imageLoadObject) {
     // If we do, remove from list (when resolved, as we could have
@@ -157,9 +158,9 @@ function sendRequest(requestDetails) {
   let loader;
 
   if (requestDetails.preventCache === true) {
-    loader = cornerstone.loadImage(imageId, options);
+    loader = loadImage(imageId, options);
   } else {
-    loader = cornerstone.loadAndCacheImage(imageId, options);
+    loader = loadAndCacheImage(imageId, options);
   }
 
   // Load and cache the image

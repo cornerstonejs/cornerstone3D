@@ -18,8 +18,9 @@ class ImageVolume {
       suvbwToSuvbsa?: number
     }
   }
+  sizeInBytes: number
   spacing: Array<number>
-  vtkImageData: any
+  vtkImageData?: any
   vtkOpenGLTexture: any // No good way of referencing vtk classes as they aren't classes.
 
   constructor(props: IImageVolume) {
@@ -31,6 +32,7 @@ class ImageVolume {
     this.direction = props.direction
     this.vtkImageData = props.vtkImageData
     this.scalarData = props.scalarData
+    this.sizeInBytes = props.sizeInBytes
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance()
 
     if (props.scaling) {

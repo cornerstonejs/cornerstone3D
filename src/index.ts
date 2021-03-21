@@ -14,9 +14,13 @@ import getEnabledElement from './getEnabledElement'
 import configuration from './configuration'
 import metaData from './metaData'
 
+// TODO: Figure out what we want to export from here, if anything
+import cornerstoneStreamingImageVolumeLoader from './streamingImageVolume/cornerstoneStreamingImageVolumeLoader'
+
 // Namespaces
 import * as Types from './types'
 import * as Utilities from './utilities'
+import triggerEvent from './utilities/triggerEvent'
 
 /** NAMED EXPORTS */
 export {
@@ -37,6 +41,7 @@ export {
   getEnabledElement,
   //
   eventTarget,
+  triggerEvent,
   //
   loadImage,
   loadAndCacheImage,
@@ -50,5 +55,7 @@ export {
   //
   metaData,
   //
-  Utilities
+  Utilities,
+  //
+  cornerstoneStreamingImageVolumeLoader
 }

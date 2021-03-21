@@ -6,6 +6,7 @@ import {
   cache,
   RenderingEngine,
   eventTarget,
+  loadAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
 } from './../src/index';
 import { initToolGroups, destroyToolGroups } from './initToolGroups';
@@ -37,8 +38,7 @@ const {
 
 const ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS);
 
-
-window.imageCache = imageCache;
+window.cache = cache;
 
 class VTKMPRExample extends Component {
   state = {
@@ -183,14 +183,15 @@ class VTKMPRExample extends Component {
     // Create volumes
     const imageIds = await this.imageIdsPromise;
     const { ptImageIds, ctImageIds } = imageIds;
-    const ptVolume = imageCache.makeAndCacheImageVolume(
-      ptImageIds,
-      ptVolumeUID
-    );
-    const ctVolume = imageCache.makeAndCacheImageVolume(
-      ctImageIds,
-      ctVolumeUID
-    );
+
+    // This only creates the volumes, it does not actually load all
+    // of the pixel data (yet)
+    const ptVolume = await loadAndCacheVolume(ptVolumeUID, {
+      imageIds: ptImageIds
+    });
+    const ctVolume = await loadAndCacheVolume(ctVolumeUID, {
+      imageIds: ctImageIds
+    });
 
     // Initialise all CT values to -1024 so we don't get a grey box?
     const { scalarData } = ctVolume;
@@ -202,7 +203,8 @@ class VTKMPRExample extends Component {
 
     const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], []);
+    ctVolume.loadImages(onLoad);
+    ptVolume.loadImages(onLoad);
 
     ptCtFusion.setVolumes(
       renderingEngine,
@@ -298,7 +300,7 @@ class VTKMPRExample extends Component {
 
     // Destroy synchronizers
     SynchronizerManager.destroy();
-    imageCache.purgeCache();
+    cache.purgeCache();
 
     this.renderingEngine.destroy();
   }
@@ -396,7 +398,7 @@ class VTKMPRExample extends Component {
     }
     this.renderingEngine.destroy();
 
-    imageCache.purgeCache();
+    cache.purgeCache();
   };
 
   swapPtCtTool = (evt) => {

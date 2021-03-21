@@ -11,9 +11,9 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     highBit,
     photometricInterpretation,
     samplesPerPixel,
-  } = cornerstone.metaData.get('imagePixelModule', imageId0)
+  } = metaData.get('imagePixelModule', imageId0)
 
-  const { windowWidth, windowCenter } = cornerstone.metaData.get(
+  const { windowWidth, windowCenter } = metaData.get(
     'voiLutModule',
     imageId0
   )
@@ -35,7 +35,7 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     })
   }
 
-  const { modality } = cornerstone.metaData.get('generalSeriesModule', imageId0)
+  const { modality } = metaData.get('generalSeriesModule', imageId0)
 
   const {
     imageOrientationPatient,
@@ -43,7 +43,7 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     frameOfReferenceUID,
     columns,
     rows,
-  } = cornerstone.metaData.get('imagePlaneModule', imageId0)
+  } = metaData.get('imagePlaneModule', imageId0)
 
   // Map to dcmjs-style keywords. This is becoming the standard and makes it
   // Easier to swap out cornerstoneWADOImageLoader at a later date.
