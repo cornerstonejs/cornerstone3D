@@ -1,6 +1,6 @@
 import { getToolState } from './../stateManagement/toolState'
 import { ToolAndToolStateArray } from '../types/toolStateTypes'
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 
 /**
  * @function getToolsWithDataForElement Filters an array of tools, returning only

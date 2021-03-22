@@ -1,5 +1,5 @@
 import { BaseTool } from './base/index'
-import { getEnabledElement, cache, EVENTS } from './../../index'
+import { getEnabledElement, getVolume, EVENTS } from '@cornerstone'
 import triggerEvent from '../util/triggerEvent'
 import StreamingImageVolume from '../../streamingImageVolume/StreamingImageVolume'
 
@@ -93,7 +93,7 @@ export default class WindowLevelTool extends BaseTool {
   }
 
   _getImageDynamicRange = (volumeUID) => {
-    const imageVolume = imageCache.getImageVolume(volumeUID)
+    const imageVolume = getVolume(volumeUID)
     const { dimensions, scalarData } = imageVolume
     const middleSliceIndex = Math.floor(dimensions[2] / 2)
 

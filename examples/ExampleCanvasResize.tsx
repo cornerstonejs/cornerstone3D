@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 // ~~
-import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@vtk-viewport';
+import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@cornerstone';
 
 class CanvasResizeExample extends Component {
   state = {

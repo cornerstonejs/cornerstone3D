@@ -24,10 +24,10 @@
     // TS version of Webpack aliases
     // relative to `baseUrl`
     "paths": {
-      "@vtk-viewport": [
+      "@cornerstone": [
         "src/index.ts"
       ],
-      "@tools": [
+      "@cornerstone-tools": [
         "src/cornerstone-tools-3d/index.ts"
       ],
     },

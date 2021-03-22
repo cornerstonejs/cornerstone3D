@@ -1,5 +1,5 @@
 import { BaseTool } from './base/index'
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
 import { Point3 } from './../types'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'

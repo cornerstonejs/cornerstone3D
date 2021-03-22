@@ -6,7 +6,7 @@ import {
   cache,
   RenderingEngine,
   eventTarget,
-  loadAndCacheVolume,
+  createAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
 } from './../src/index';
 import { initToolGroups, destroyToolGroups } from './initToolGroups';
@@ -186,10 +186,10 @@ class VTKMPRExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await loadAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
       imageIds: ptImageIds
     });
-    const ctVolume = await loadAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
       imageIds: ctImageIds
     });
 
@@ -203,8 +203,8 @@ class VTKMPRExample extends Component {
 
     const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    ctVolume.loadImages(onLoad);
-    ptVolume.loadImages(onLoad);
+    ctVolume.load(onLoad);
+    ptVolume.load(onLoad);
 
     ptCtFusion.setVolumes(
       renderingEngine,

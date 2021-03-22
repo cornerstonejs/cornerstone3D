@@ -1,4 +1,4 @@
-import { metaData } from '@vtk-viewport';
+import { metaData } from '@cornerstone';
 import { Vector3 } from 'cornerstone-math';
 
 /**

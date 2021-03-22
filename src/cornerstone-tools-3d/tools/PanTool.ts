@@ -1,6 +1,6 @@
 import { BaseTool } from './base/index'
 import { Point3 } from './../types'
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 
 /**
  * @class PanTool

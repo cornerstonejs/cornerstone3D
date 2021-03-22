@@ -9,7 +9,7 @@ import {
   //   touchToolEventDispatcher,
 } from './../eventDispatchers/index'
 // ~~
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 
 import { state } from './index'
 

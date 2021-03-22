@@ -107,6 +107,7 @@ class Scene {
   public async setVolumes(volumeInputArray: Array<VolumeInput>, immediate = false) {
     this._volumeActors = []
 
+    // TODO: should we have a get or fail? If it's in the cache, give it back, otherwise throw
     const firstImageVolume = await loadVolume(volumeInputArray[0].volumeUID);
 
     if (!firstImageVolume) {

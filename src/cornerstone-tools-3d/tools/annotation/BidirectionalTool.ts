@@ -2,7 +2,7 @@ import { BaseAnnotationTool } from './../base/index'
 import { Point3 } from './../../types'
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'

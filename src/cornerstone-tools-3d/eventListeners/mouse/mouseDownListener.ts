@@ -8,7 +8,7 @@ import {
   Point3,
 } from '../../types'
 // ~~ VIEWPORT LIBRARY
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 import getMouseEventPoints from './getMouseEventPoints'
 
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = CornerstoneTools3DEvents

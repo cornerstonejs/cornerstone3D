@@ -1,6 +1,6 @@
 import { BaseAnnotationTool } from './../base/index'
 // ~~ VTK Viewport
-import { getEnabledElement, cache } from '../../../index'
+import { getEnabledElement, getVolume } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
@@ -319,7 +319,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     if (Modality === 'PT') {
       // Check if we have scaling for the other 2 SUV types for the PET.
 
-      const imageVolume = imageCache.getImageVolume(targetVolumeUID)
+      const imageVolume = getVolume(targetVolumeUID)
 
       if (
         imageVolume.scaling.PET &&
@@ -361,7 +361,7 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     for (let i = 0; i < volumeUIDs.length; i++) {
       const volumeUID = volumeUIDs[i]
-      const imageVolume = imageCache.getImageVolume(volumeUID)
+      const imageVolume = getVolume(volumeUID)
 
       const {
         dimensions,

@@ -29,7 +29,7 @@ module.exports = (env, argv) => {
     output: {
       path: OUT_PATH,
       filename: outputFilename,
-      library: 'VTKViewport',
+      library: 'Cornerstone3D',
       libraryTarget: 'umd',
       globalObject: 'this',
     },
@@ -46,8 +46,8 @@ module.exports = (env, argv) => {
       modules: [path.resolve(PROJECT_ROOT, './node_modules'), SRC_PATH],
       alias: {
         // https://stackoverflow.com/a/40444084/1867984
-        '@vtk-viewport': RENDERING_ROOT,
-        '@tools': TOOLS_ROOT,
+        '@cornerstone': RENDERING_ROOT,
+        '@cornerstone-tools': TOOLS_ROOT,
       },
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       fallback: {

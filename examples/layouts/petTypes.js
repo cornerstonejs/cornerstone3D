@@ -1,5 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import { ORIENTATION, VIEWPORT_TYPE, cache, Utilities } from '@vtk-viewport';
+import { ORIENTATION, VIEWPORT_TYPE, getVolume, Utilities } from '@cornerstone';
 
 function setLayout(renderingEngine, canvasContainers, { ptTypesSceneToolGroup }) {
   const viewportInput = [
@@ -58,7 +58,7 @@ function setPetBWTransferFunction({ volumeActor, volumeUID }) {
 }
 
 function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = imageCache.getImageVolume(volumeUID)
+  const imageVolume = getVolume(volumeUID)
 
   let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET
 
@@ -81,7 +81,7 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 }
 
 function setPetBSATransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = imageCache.getImageVolume(volumeUID)
+  const imageVolume = getVolume(volumeUID)
 
   let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET
 

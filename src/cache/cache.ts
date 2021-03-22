@@ -59,6 +59,8 @@ class Cache implements IImageCache {
   }
 
   // todo need another name for this function
+  // should check if available cache space supports the volume
+  // if it does, clean it up
   public checkCacheSizeCanSupportVolume = (byteLength: number) => {
     if (this.getCacheSize() + byteLength > this.getMaxCacheSize()) {
      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
@@ -343,7 +345,7 @@ class Cache implements IImageCache {
   }
 
   /**
-   * Retuns the object that is loading a given imageId
+   * Returns the object that is loading a given imageId
    *
    * @param {string} imageId Image ID
    * @returns {void}
@@ -362,6 +364,28 @@ class Cache implements IImageCache {
     cachedVolume.timeStamp = Date.now();
 
     return cachedVolume.volumeLoadObject;
+  }
+
+  /**
+   *
+   *
+   * @param {string} imageId Image ID
+   * @returns {void}
+   */
+  public getVolume = (volumeId: string) => {
+    if (volumeId === undefined) {
+      throw new Error('getVolume: volumeId must not be undefined');
+    }
+    const cachedVolume = this._volumeCache.get(volumeId);
+
+    if (cachedVolume === undefined) {
+      return;
+    }
+
+    // Bump time stamp for cached volume (not used for anything for now)
+    cachedVolume.timeStamp = Date.now();
+
+    return cachedVolume.volume;
   }
 
   /**

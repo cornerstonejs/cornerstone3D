@@ -1,6 +1,6 @@
 import { BaseAnnotationTool } from './base/index'
 // ~~ VTK Viewport
-import { getEnabledElement } from '../../index'
+import { getEnabledElement } from '@cornerstone'
 import { addToolState, getToolState } from '../stateManagement/toolState'
 import {
   drawCircle as drawCircleSvg,
@@ -528,7 +528,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
     const { renderingEngine, viewport } = svgDrawingHelper.enabledElement
     const camera = viewport.getCamera()
-
+    
     const filteredToolState = this.filterInteractableToolStateForElement(
       element,
       toolState

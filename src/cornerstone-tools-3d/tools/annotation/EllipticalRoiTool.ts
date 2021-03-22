@@ -1,6 +1,6 @@
 import { BaseAnnotationTool } from './../base/index'
 // ~~ VTK Viewport
-import { getEnabledElement, cache } from '../../../index'
+import { getEnabledElement, getVolume } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
@@ -749,7 +749,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     for (let i = 0; i < volumeUIDs.length; i++) {
       const volumeUID = volumeUIDs[i]
-      const imageVolume = imageCache.getImageVolume(volumeUID)
+      const imageVolume = getVolume(volumeUID)
 
       const {
         dimensions,

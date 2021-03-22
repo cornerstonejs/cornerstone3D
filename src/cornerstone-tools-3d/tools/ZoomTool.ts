@@ -1,6 +1,6 @@
 import { BaseTool } from './base/index'
 // ~~ VTK Viewport
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 
 export default class ZoomTool extends BaseTool {
   touchDragCallback: Function

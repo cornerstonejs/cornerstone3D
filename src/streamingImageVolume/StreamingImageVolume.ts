@@ -5,6 +5,9 @@ import prefetchImageIds from './prefetchImageIds'
 // TODO: move registration to an index file
 import './sharedArrayBufferImageLoader'
 
+// James wants another layer in between ImageVolume and SliceStreamingImageVolume
+// which adds loaded/loading as an interface?
+
 export default class StreamingImageVolume extends ImageVolume {
   readonly imageIds: Array<string>
   loadStatus: {
@@ -55,7 +58,7 @@ export default class StreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = []
   }
 
-  public loadImages = (callback: Function) => {
+  public load = (callback: Function) => {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
@@ -86,5 +89,15 @@ export default class StreamingImageVolume extends ImageVolume {
 
     // Todo: move to class method? this is circular now...
     prefetchImageIds(streamingVolume)
+  }
+
+  decache(completelyRemove=false) {
+    if (completelyRemove) {
+
+    } else {
+      // Do we have enough space in volatile cache?
+      // If not, remove some
+      // Next, start convertToImages (createImage style) => putIntoImageCache
+    }
   }
 }

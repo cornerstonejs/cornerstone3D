@@ -1,5 +1,5 @@
 import { state } from './../store'
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 
 /**
  *

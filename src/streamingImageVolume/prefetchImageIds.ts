@@ -23,6 +23,7 @@ type ScalingParameters = {
 }
 
 function prefetchImageIds(volume: StreamingImageVolume) {
+  console.log('prefetchImageIds')
   const { scalarData, loadStatus } = volume
   const { cachedFrames } = loadStatus
 
@@ -100,8 +101,6 @@ function prefetchImageIds(volume: StreamingImageVolume) {
       imageVolume: volume,
     }
 
-    debugger;
-
     triggerEvent(eventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventData)
 
     if (framesProcessed === numFrames) {
@@ -131,7 +130,6 @@ function prefetchImageIds(volume: StreamingImageVolume) {
 
   function errorCallback(error, imageIdIndex, imageId) {
     framesProcessed++
-    debugger;
 
     if (framesProcessed === numFrames) {
       loadStatus.loaded = true
@@ -166,7 +164,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
     const { imageId } = frame
 
     const generalSeriesModule =
-      cornerstone.metaData.get('generalSeriesModule', imageId) || {}
+      metaData.get('generalSeriesModule', imageId) || {}
 
     if (generalSeriesModule.modality === 'PT') {
       const instanceMetadata = getImageIdInstanceMetadata(imageId)
@@ -191,10 +189,10 @@ function prefetchImageIds(volume: StreamingImageVolume) {
     }
 
     const modalityLutModule =
-      cornerstone.metaData.get('modalityLutModule', imageId) || {}
+      metaData.get('modalityLutModule', imageId) || {}
 
     const generalSeriesModule =
-      cornerstone.metaData.get('generalSeriesModule', imageId) || {}
+      metaData.get('generalSeriesModule', imageId) || {}
 
     const scalingParameters: ScalingParematers = {
       rescaleSlope: modalityLutModule.rescaleSlope,
@@ -206,6 +204,8 @@ function prefetchImageIds(volume: StreamingImageVolume) {
       const suvFactor = suvScalingFactors[imageIdIndex]
       scalingParameters.suvbw = suvFactor.suvbw
     }
+
+    console.log(scalingParameters);
 
     const options = {
       targetBuffer: {

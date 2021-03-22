@@ -26,7 +26,7 @@ the VTK Viewport and the app configuration configuration using a WebPack alias
 like so:
 
 ```js
-import VtkViewport from '@vtk-viewport'
+import VtkViewport from '@cornerstone'
 ```
 
 Any updates to the example files or the VtkViewport's source will cause WebPack

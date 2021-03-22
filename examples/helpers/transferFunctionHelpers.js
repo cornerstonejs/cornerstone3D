@@ -1,11 +1,11 @@
-import { cache, Utilities, loadVolume } from '@vtk-viewport';
+import { getVolume, Utilities } from '@cornerstone';
 import applyPreset from './applyPreset';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 
-async function setCTWWWC({ volumeActor, volumeUID }) {
-  const volume = await loadVolume(volumeUID);
+function setCTWWWC({ volumeActor, volumeUID }) {
+  const volume = getVolume(volumeUID);
 
   const { windowWidth, windowCenter } = volume.metadata.voiLut[0];
 
@@ -38,7 +38,7 @@ function setPetTransferFunction({ volumeActor, volumeUID }) {
 }
 
 function setCTVRTransferFunction({ volumeActor, volumeUID }) {
-  const volume = imageCache.getImageVolume(volumeUID);
+  const volume = getVolume(volumeUID);
 
   const { windowWidth, windowCenter } = volume.metadata.voiLut[0];
 

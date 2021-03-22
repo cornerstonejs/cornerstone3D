@@ -69,8 +69,8 @@ module.exports = {
     modules: [path.resolve(__dirname, './node_modules'), SRC_PATH],
     // https://www.basefactor.com/configuring-aliases-in-webpack-vs-code-typescript-jest
     alias: {
-      '@vtk-viewport': RENDERING_ROOT,
-      '@tools': TOOLS_ROOT,
+      '@cornerstone': RENDERING_ROOT,
+      '@cornerstone-tools': TOOLS_ROOT,
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {

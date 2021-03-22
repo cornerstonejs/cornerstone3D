@@ -35,7 +35,7 @@ class CornerstoneEventTarget implements EventTarget {
 
   dispatchEvent(event) {
     if (!this.listeners[event.type]) {
-      console.warn(`Skipping dispatch since there are no listeners for ${event.type}`);
+      //console.warn(`Skipping dispatch since there are no listeners for ${event.type}`);
       return;
     }
 

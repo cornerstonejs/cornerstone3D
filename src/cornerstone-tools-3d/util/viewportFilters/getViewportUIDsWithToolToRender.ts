@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID'
 import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled'
 

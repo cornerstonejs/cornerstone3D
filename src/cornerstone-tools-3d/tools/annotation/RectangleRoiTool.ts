@@ -1,7 +1,7 @@
 import { BaseAnnotationTool } from './../base/index'
 import { Point2, Point3 } from './../../types'
 // ~~ VTK Viewport
-import { getEnabledElement, cache } from '@vtk-viewport'
+import { getEnabledElement, getVolume } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
@@ -710,7 +710,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     for (let i = 0; i < volumeUIDs.length; i++) {
       const volumeUID = volumeUIDs[i]
-      const imageVolume = imageCache.getImageVolume(volumeUID)
+      const imageVolume = getVolume(volumeUID)
 
       const {
         dimensions,

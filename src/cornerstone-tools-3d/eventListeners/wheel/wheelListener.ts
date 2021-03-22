@@ -2,7 +2,7 @@ import normalizeWheel from './normalizeWheel'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import triggerEvent from './../../util/triggerEvent'
 // ~~ VIEWPORT LIBRARY
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 import getMouseEventPoints from '../mouse/getMouseEventPoints'
 
 /**

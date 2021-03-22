@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 import getTargetVolume from '../planar/getTargetVolume'
 import getSliceRange from './getSliceRange'
 import snapFocalPointToSlice from './snapFocalPointToSlice'

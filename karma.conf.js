@@ -60,8 +60,8 @@ module.exports = function (config) {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
         alias: {
           // https://stackoverflow.com/a/40444084/1867984
-          '@vtk-viewport': RENDERING_ROOT,
-          '@tools': TOOLS_ROOT,
+          '@cornerstone': RENDERING_ROOT,
+          '@cornerstone-tools': TOOLS_ROOT,
         },
         fallback: {
           fs: false,

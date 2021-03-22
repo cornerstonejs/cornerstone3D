@@ -67,6 +67,7 @@ function cornerstoneStreamingImageVolumeLoader(
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
   cache.checkCacheSizeCanSupportVolume(sizeInBytes);
+  // if so, start erasing volatile data so you can allocate
 
   let scalarData
 
@@ -108,7 +109,7 @@ function cornerstoneStreamingImageVolumeLoader(
     // Streaming properties
     {
       imageIds: sortedImageIds,
-      loadStatus: {
+      loadStatus: { // todo: loading and loaded should be on ImageVolume
         loaded: false,
         loading: false,
         cachedFrames: [],
@@ -119,7 +120,7 @@ function cornerstoneStreamingImageVolumeLoader(
 
   return {
     promise: Promise.resolve(streamingImageVolume),
-    cancelFn: () => { console.log('cancel was called?') }
+    cancelFn: () => { streamingImageVolume.cancelLoading() } // streamingImageVolume.cancelLoading()
   }
 }
 

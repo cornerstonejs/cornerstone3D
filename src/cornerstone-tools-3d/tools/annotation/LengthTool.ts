@@ -1,7 +1,7 @@
 import { BaseAnnotationTool } from './../base/index'
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
-import { getEnabledElement, cache } from '../../../index'
+import { getEnabledElement, getVolume } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
@@ -578,7 +578,7 @@ class LengthTool extends BaseAnnotationTool {
 
     for (let i = 0; i < volumeUIDs.length; i++) {
       const volumeUID = volumeUIDs[i]
-      const { metadata } = imageCache.getImageVolume(volumeUID)
+      const { metadata } = getVolume(volumeUID)
 
       const length = Math.sqrt(
         vtkMath.distance2BetweenPoints(worldPos1, worldPos2)

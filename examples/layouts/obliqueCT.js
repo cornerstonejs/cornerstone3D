@@ -1,5 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
-import { ORIENTATION, VIEWPORT_TYPE } from '@vtk-viewport';
+import { ORIENTATION, VIEWPORT_TYPE } from '@cornerstone';
 import {
   setCTWWWC,
   setCTVRTransferFunction,

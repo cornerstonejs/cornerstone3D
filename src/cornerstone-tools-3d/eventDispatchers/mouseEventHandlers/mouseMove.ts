@@ -1,7 +1,7 @@
 // // State
 import { state } from './../../store/index'
 import { ToolModes } from './../../enums/index'
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 
 // // Util
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'

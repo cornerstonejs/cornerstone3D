@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@vtk-viewport'
+import { getEnabledElement } from '@cornerstone'
 import { IPoints, Point2 } from '../../types'
 
 /**

@@ -106,6 +106,14 @@ export function loadVolume (volumeId, options) {
   });
 }
 
+export function getVolume (volumeId, options) {
+  if (volumeId === undefined) {
+    throw new Error('loadVolume: parameter volumeId must not be undefined');
+  }
+
+  return cache.getVolume(volumeId);
+}
+
 //
 
 /**
@@ -118,9 +126,9 @@ export function loadVolume (volumeId, options) {
  * @returns {VolumeLoadObject} Volume Loader Object
  * @memberof VolumeLoader
  */
-export function loadAndCacheVolume (volumeId, options) {
+export function createAndCacheVolume (volumeId, options) {
   if (volumeId === undefined) {
-    throw new Error('loadAndCacheVolume: parameter volumeId must not be undefined');
+    throw new Error('createAndCacheVolume: parameter volumeId must not be undefined');
   }
 
   let volumeLoadObject = cache.getVolumeLoadObject(volumeId);
