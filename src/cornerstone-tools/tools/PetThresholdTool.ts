@@ -1,7 +1,5 @@
+import { getEnabledElement, EVENTS, triggerEvent, eventTarget } from '@cornerstone'
 import { BaseTool } from './base/index'
-
-import { getEnabledElement, EVENTS } from './../../index'
-import triggerEvent from '../util/triggerEvent'
 
 export default class PetThresholdTool extends BaseTool {
   touchDragCallback: Function
@@ -72,6 +70,6 @@ export default class PetThresholdTool extends BaseTool {
       range: { lower, upper },
     }
 
-    triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
+    triggerEvent(eventTarget, EVENTS.VOI_MODIFIED, eventDetail)
   }
 }

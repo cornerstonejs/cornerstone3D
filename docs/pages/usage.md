@@ -67,9 +67,9 @@ renderingEngine.render()
 // Create and load our image volume
 // See: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration
 const imageIds = [
-  'vtkjs:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
-  'vtkjs:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/2',
-  'vtkjs:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
+  'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
+  'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/2',
+  'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
 ]
 
 imageCache.makeAndCacheImageVolume(imageIds, volumeUID)

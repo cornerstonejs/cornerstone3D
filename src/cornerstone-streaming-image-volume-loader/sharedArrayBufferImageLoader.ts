@@ -1,10 +1,10 @@
+import { registerImageLoader } from '@cornerstone'
 import {
   getPixelData,
   decodeImageFrame,
   getImageFrame,
 } from 'cornerstone-wado-image-loader'
 import { IRegisterImageLoader } from '../types'
-import { registerImageLoader } from '../imageLoader'
 
 /**
  * Small stripped down loader from cornerstoneWADOImageLoader
@@ -12,11 +12,11 @@ import { registerImageLoader } from '../imageLoader'
  *
  * @private
  */
-function _loadImageIntoBuffer(
+function sharedArrayBufferImageLoader(
   imageId: string,
   options?: Record<string, any>
 ): { promise: Promise<Record<string, any>>; cancelFn: () => void } {
-  const uri = imageId.substring(6)
+  const uri = imageId.slice(imageId.indexOf(':') + 1)
 
   const promise = new Promise((resolve, reject) => {
     // TODO: load bulk data items that we might need
@@ -117,7 +117,8 @@ function getTransferSyntaxForContentType(contentType: string): string {
   return defaultTransferSyntax
 }
 
-registerImageLoader('vtkjs', _loadImageIntoBuffer)
+registerImageLoader('csiv', _loadImageIntoBuffer)
 
+export default sharedArrayBufferImageLoader
 
 export { getTransferSyntaxForContentType }

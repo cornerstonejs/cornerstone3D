@@ -2,9 +2,6 @@ import ImageVolume from '../cache/classes/ImageVolume'
 import { IImageVolume, IStreamingVolume } from '../types'
 import prefetchImageIds from './prefetchImageIds'
 
-// TODO: move registration to an index file
-import './sharedArrayBufferImageLoader'
-
 // James wants another layer in between ImageVolume and SliceStreamingImageVolume
 // which adds loaded/loading as an interface?
 

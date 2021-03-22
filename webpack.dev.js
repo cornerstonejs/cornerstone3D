@@ -11,7 +11,8 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 // PATHS
 const PROJECT_ROOT = path.join(__dirname)
 const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/index.ts')
-const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools-3d/')
+const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/')
+const LOADER_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-streaming-image-volume-loader/')
 const ENTRY_EXAMPLES = path.join(PROJECT_ROOT, './examples/index.tsx')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const OUT_PATH = path.join(PROJECT_ROOT, './dist')
@@ -71,6 +72,7 @@ module.exports = {
     alias: {
       '@cornerstone': RENDERING_ROOT,
       '@cornerstone-tools': TOOLS_ROOT,
+      '@cornerstone-streaming-image-volume-loader': LOADER_ROOT,
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {

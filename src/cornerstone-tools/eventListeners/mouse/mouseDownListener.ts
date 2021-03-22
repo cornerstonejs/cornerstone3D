@@ -1,6 +1,6 @@
+import { getEnabledElement, triggerEvent } from '@cornerstone'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import mouseMoveListener from './mouseMoveListener'
-import triggerEvent from './../../util/triggerEvent'
 import {
   ICornerstoneToolsEventDetail,
   IPoints,
@@ -8,7 +8,6 @@ import {
   Point3,
 } from '../../types'
 // ~~ VIEWPORT LIBRARY
-import { getEnabledElement } from '@cornerstone'
 import getMouseEventPoints from './getMouseEventPoints'
 
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = CornerstoneTools3DEvents

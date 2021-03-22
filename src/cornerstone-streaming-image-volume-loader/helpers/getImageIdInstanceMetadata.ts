@@ -1,4 +1,4 @@
-import metaData from '../metaData';
+import { metaData } from '@cornerstone';
 import {
   InstanceMetadata,
   PhilipsPETPrivateGroup,

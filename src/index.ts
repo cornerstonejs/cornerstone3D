@@ -9,13 +9,11 @@ import eventTarget from './eventTarget'
 import getRenderingEngine from './RenderingEngine/getRenderingEngine'
 import cache from './cache'
 import { loadImage, loadAndCacheImage, registerImageLoader, registerUnknownImageLoader } from './imageLoader'
+import requestPoolManager from './requestPool/requestPoolManager';
 import { createAndCacheVolume, registerVolumeLoader, registerUnknownVolumeLoader } from './volumeLoader'
 import getEnabledElement from './getEnabledElement'
 import configuration from './configuration'
 import metaData from './metaData'
-
-// TODO: Figure out what we want to export from here, if anything (should this be another package?)
-import cornerstoneStreamingImageVolumeLoader from './streamingImageVolume/cornerstoneStreamingImageVolumeLoader'
 
 // Namespaces
 import * as Types from './types'
@@ -59,5 +57,5 @@ export {
   //
   Utilities,
   //
-  cornerstoneStreamingImageVolumeLoader
+  requestPoolManager
 }

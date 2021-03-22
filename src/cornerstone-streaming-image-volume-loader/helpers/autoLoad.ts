@@ -1,4 +1,4 @@
-import renderingEngineCache from '../RenderingEngine/renderingEngineCache';
+import renderingEngineCache from '../../RenderingEngine/renderingEngineCache';
 
 const autoLoad = (volumeUID) => {
   const { renderingEngine, sceneUIDs } = getRenderingEngineContainingVolume(

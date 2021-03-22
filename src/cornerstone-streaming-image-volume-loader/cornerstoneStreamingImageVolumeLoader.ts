@@ -1,10 +1,10 @@
+import { registerVolumeLoader, registerUnknownVolumeLoader } from '@cornerstone';
 import { vec3 } from 'gl-matrix';
 import cache from '../cache/cache';
 import makeVolumeMetadata from '../cache/helpers/makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from '../cache/helpers/sortImageIdsAndGetSpacing';
 import StreamingImageVolume from './StreamingImageVolume';
 import { createUint8SharedArray, createFloat32SharedArray } from '../utilities';
-import { registerVolumeLoader, registerUnknownVolumeLoader } from '../volumeLoader';
 
 function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,

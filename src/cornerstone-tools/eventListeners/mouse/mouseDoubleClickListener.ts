@@ -1,5 +1,5 @@
+import { triggerEvent } from '@cornerstone';
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents';
-import triggerEvent from './../../util/triggerEvent';
 import getMouseEventPoints from './getMouseEventPoints';
 import { IPoints } from '../../types/cornerstoneToolsEventDetailTypes'
 

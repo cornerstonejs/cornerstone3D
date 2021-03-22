@@ -1,4 +1,4 @@
-import * as csTools3d from './../src/cornerstone-tools-3d/index';
+import * as csTools3d from '@cornerstone-tools';
 import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID, VIEWPORT_IDS } from './constants';
 const {
   PanTool,

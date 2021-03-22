@@ -1,14 +1,9 @@
-import metaData from '../metaData'
+import { metaData, eventTarget, triggerEvent, EVENTS, requestPoolManager } from '@cornerstone'
 import { calculateSUVScalingFactors } from 'calculate-suv'
-import requestPoolManager from '../imageLoader/requestPoolManager'
-import getImageIdInstanceMetadata from '../imageLoader/getImageIdInstanceMetadata'
-import getInterleavedFrames from '../imageLoader/getInterleavedFrames'
 import StreamingImageVolume from './StreamingImageVolume'
-import eventTarget from '../eventTarget'
-import { triggerEvent } from '../utilities'
-import EVENTS from '../enums/events'
-import configuration from '../configuration'
-import autoLoad from '../imageLoader/autoLoad'
+import getInterleavedFrames from './helpers/getInterleavedFrames'
+import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
+import autoLoad from './helpers/autoLoad'
 
 const requestType = 'prefetch'
 const preventCache = true // We are not using the cornerstone cache for this.
@@ -23,7 +18,6 @@ type ScalingParameters = {
 }
 
 function prefetchImageIds(volume: StreamingImageVolume) {
-  console.log('prefetchImageIds')
   const { scalarData, loadStatus } = volume
   const { cachedFrames } = loadStatus
 
@@ -63,7 +57,8 @@ function prefetchImageIds(volume: StreamingImageVolume) {
   let framesLoaded = 0
   let framesProcessed = 0
 
-  const { autoRenderOnLoad, autoRenderPercentage } = configuration.get()
+  const autoRenderOnLoad = true
+  const autoRenderPercentage = 2;
 
   let reRenderFraction
   let reRenderTarget

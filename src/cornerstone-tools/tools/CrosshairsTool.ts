@@ -528,7 +528,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
     const { renderingEngine, viewport } = svgDrawingHelper.enabledElement
     const camera = viewport.getCamera()
-    
+
     const filteredToolState = this.filterInteractableToolStateForElement(
       element,
       toolState

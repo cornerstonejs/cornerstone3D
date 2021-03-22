@@ -4,7 +4,7 @@
 
   "entryPoints": [
     "./src/index.ts",
-    "./src/cornerstone-tools-3d/index.ts"],
+    "./src/cornerstone-tools/index.ts"],
   "tsconfig": "./tsconfig.json",
   "exclude": [
     "**/examples/**",

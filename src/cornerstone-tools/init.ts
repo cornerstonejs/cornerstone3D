@@ -1,5 +1,4 @@
-// @TODO: WebPack alias for import to enforce clean separation
-import { eventTarget, EVENTS as RENDERING_EVENTS } from './../index'
+import { eventTarget, EVENTS as RENDERING_EVENTS } from '@cornerstone'
 import { addEnabledElement, removeEnabledElement } from './store/index'
 
 export default function (defaultConfiguration = {}) {

@@ -1,4 +1,4 @@
-import * as cornerstoneTools3D from '../src/cornerstone-tools-3d/index'
+import * as cornerstoneTools3D from '@cornerstone-tools'
 
 const toolStateManager =
   cornerstoneTools3D.defaultFrameOfReferenceSpecificToolStateManager

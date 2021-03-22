@@ -1,5 +1,5 @@
 import cache from './cache/cache';
-import Events from './enums/events';
+import EVENTS from './enums/events';
 import eventTarget from './eventTarget';
 import triggerEvent from './utilities/triggerEvent';
 
@@ -42,14 +42,14 @@ function loadImageFromImageLoader (imageId, options) {
 
   // Broadcast an image loaded event once the image is loaded
   imageLoadObject.promise.then(function (image) {
-    triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
+    triggerEvent(eventTarget, EVENTS.IMAGE_LOADED, { image });
   }, function (error) {
     const errorObject = {
       imageId,
       error
     };
 
-    triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorObject);
+    triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_FAILED, errorObject);
   });
 
   return imageLoadObject;

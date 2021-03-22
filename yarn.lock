@@ -4259,11 +4259,6 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
-cornerstone-core@^2.3.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/cornerstone-core/-/cornerstone-core-2.3.0.tgz#b16430b0dc3883c795fbbd5f64d0f6357f91c889"
-  integrity sha512-1LiCfRIlQvR1j8OhF7/3pvvQvvnTYZUywEkuoEo5K5mMrlKdrQMS75uW1uXb/nXShQDJyyjtTCQSVGgv2yHA+w==
-
 cornerstone-math@^0.1.9:
   version "0.1.9"
   resolved "https://registry.yarnpkg.com/cornerstone-math/-/cornerstone-math-0.1.9.tgz#7ce5509e8b9f465b01f7c548470725e7569859fc"

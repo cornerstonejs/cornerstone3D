@@ -15,7 +15,7 @@ explanation of how its libraries are designed and fit together.
 This repository contains three projects:
 
 - `/src/`: The rendering library equivelant of `cornerstone-core`
-- `/src/cornerstone-tools-3d`: The tool library equivelant of `cornerstone-tools`
+- `/src/cornerstone-tools`: The tool library equivalent of `cornerstone-tools`
 - `/examples`: Consumes both of the above libraries to demonstrate functionality in a simple `react` app
 
 Notably missing is a separately packaged image loading library. We instead bundle
@@ -43,7 +43,7 @@ as follows:
                                 #
 - API                           # Generated from TypeScript + TSDoc
   - Modules                     # Index of libraries
-  - cornerstone-tools-3d        # Tools library
+  - cornerstone-tools           # Tools library
   - index                       # Rendering library
 ```
 

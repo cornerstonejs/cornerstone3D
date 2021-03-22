@@ -28,8 +28,11 @@
         "src/index.ts"
       ],
       "@cornerstone-tools": [
-        "src/cornerstone-tools-3d/index.ts"
+        "src/cornerstone-tools/index.ts"
       ],
+      "@cornerstone-streaming-image-volume-loader": [
+        "src/cornerstone-streaming-image-volume-loader/index.ts"
+      ]
     },
   },
   // typedoc (yarn run docs) picks these up when running

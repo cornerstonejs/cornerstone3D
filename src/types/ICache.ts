@@ -1,5 +1,5 @@
 import ImageVolume from 'src/cache/classes/ImageVolume'
-import StreamingImageVolume from 'src/streamingImageVolume/StreamingImageVolume'
+import StreamingImageVolume from '@cornerstone-streaming-image-volume-loader/StreamingImageVolume'
 
 interface ICache {
   getImageVolume: (uid: string) => ImageVolume | StreamingImageVolume

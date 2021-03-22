@@ -1,20 +1,23 @@
 import React, { Component } from 'react';
-import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
-import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
-import loadVolumes from './helpers/loadVolumes';
 import {
   cache,
   RenderingEngine,
   eventTarget,
   createAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
-} from './../src/index';
-import { initToolGroups, destroyToolGroups } from './initToolGroups';
+} from '@cornerstone';
+import { SynchronizerManager, synchronizers } from '@cornerstone-tools';
+import { cornerstoneStreamingImageVolumeLoader } from '@cornerstone-streaming-image-volume';
+
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
+
+import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
+import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
+//import loadVolumes from './helpers/loadVolumes';
 import ViewportGrid from './components/ViewportGrid';
-import { SynchronizerManager, synchronizers } from './../src/cornerstone-tools-3d/index';
+import { initToolGroups, destroyToolGroups } from './initToolGroups';
 import './ExampleVTKMPR.css';
 import {
   renderingEngineUID,
@@ -263,14 +266,14 @@ class VTKMPRExample extends Component {
           colormaps[this.state.petColorMapIndex]
         );
 
-        loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], []);
+        //loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], []);
       } else if (layout === 'ObliqueCT') {
         obliqueCT.setLayout(renderingEngine, this._canvasNodes, {
           ctObliqueToolGroup,
         });
         obliqueCT.setVolumes(renderingEngine, ctVolumeUID);
 
-        loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
+        //loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
       } else if (layout === 'CTVR') {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._canvasNodes, {
@@ -278,14 +281,14 @@ class VTKMPRExample extends Component {
           ctVRSceneToolGroup,
         });
         fourUpCT.setVolumes(renderingEngine, ctVolumeUID);
-        loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
+        //loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
       } else if (layout === 'PetTypes') {
         // petTypes
         petTypes.setLayout(renderingEngine, this._canvasNodes, {
           ptTypesSceneToolGroup,
         });
         petTypes.setVolumes(renderingEngine, ptVolumeUID);
-        loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID]);
+        //loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID]);
       } else {
         throw new Error('Unrecognised layout index');
       }

@@ -1,7 +1,6 @@
 import { BaseTool } from './base/index'
-import { getEnabledElement, getVolume, EVENTS } from '@cornerstone'
-import triggerEvent from '../util/triggerEvent'
-import StreamingImageVolume from '../../streamingImageVolume/StreamingImageVolume'
+import { getEnabledElement, getVolume, EVENTS, triggerEvent } from '@cornerstone'
+import { StreamingImageVolume } from '@cornerstone-streaming-image-volume-loader'
 
 export default class WindowLevelTool extends BaseTool {
   touchDragCallback: () => void

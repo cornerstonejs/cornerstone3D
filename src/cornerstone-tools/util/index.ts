@@ -17,7 +17,7 @@ import isObject from './isObject';
 import uuidv4 from './uuidv4';
 
 // Events
-import triggerEvent from './triggerEvent';
+import { triggerEvent } from '@cornerstone';
 
 export {
   math,

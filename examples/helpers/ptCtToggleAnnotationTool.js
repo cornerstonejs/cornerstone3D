@@ -1,4 +1,4 @@
-import { ToolBindings } from './../../src/cornerstone-tools-3d/index';
+import { ToolBindings } from '@cornerstone-tools';
 import { PET_CT_ANNOTATION_TOOLS } from '../constants';
 
 export default function ptCtToggleAnnotationTool(
