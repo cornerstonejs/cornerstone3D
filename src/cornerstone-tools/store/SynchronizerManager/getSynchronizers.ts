@@ -1,28 +1,28 @@
-import { state } from './../index';
-import Synchronizer from './Synchronizer';
+import { state } from './../index'
+import Synchronizer from './Synchronizer'
 
 function getSynchronizers(
   renderingEngineUID: string,
   sceneUID: string,
   viewportUID: string
 ): Array<Synchronizer> {
-  const synchronizersFilteredByUIDs = [];
+  const synchronizersFilteredByUIDs = []
 
   for (let i = 0; i < state.synchronizers.length; i++) {
-    const synchronizer = state.synchronizers[i];
-    const notDisabled = !synchronizer.isDisabled();
+    const synchronizer = state.synchronizers[i]
+    const notDisabled = !synchronizer.isDisabled()
     const hasSourceViewport = synchronizer.hasSourceViewport(
       renderingEngineUID,
       sceneUID,
       viewportUID
-    );
+    )
 
     if (notDisabled && hasSourceViewport) {
-      synchronizersFilteredByUIDs.push(synchronizer);
+      synchronizersFilteredByUIDs.push(synchronizer)
     }
   }
 
-  return synchronizersFilteredByUIDs;
+  return synchronizersFilteredByUIDs
 }
 
-export default getSynchronizers;
+export default getSynchronizers

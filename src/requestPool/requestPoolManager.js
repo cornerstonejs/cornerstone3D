@@ -1,27 +1,27 @@
-import { loadImage, loadAndCacheImage } from '../imageLoader';
+import { loadImage, loadAndCacheImage } from '../imageLoader'
 import cache from '../cache/cache'
-import { getMaxSimultaneousRequests } from './getMaxSimultaneousRequests.js';
+import { getMaxSimultaneousRequests } from './getMaxSimultaneousRequests'
 
 const requestPool = {
   interaction: [],
   thumbnail: [],
   prefetch: [],
-};
+}
 
 const numRequests = {
   interaction: 0,
   thumbnail: 0,
   prefetch: 0,
-};
+}
 
 let maxNumRequests = {
   interaction: 6,
   thumbnail: 6,
   prefetch: 5,
-};
+}
 
-let awake = false;
-const grabDelay = 20;
+let awake = false
+const grabDelay = 20
 
 function addRequest(
   element,
@@ -33,14 +33,14 @@ function addRequest(
   addToBeginning,
   options = {}
 ) {
-  if (!requestPool.hasOwnProperty(type)) {
+  if (!requestPool[type]) {
     throw new Error(
       'Request type must be one of interaction, thumbnail, or prefetch'
-    );
+    )
   }
 
   if (!element || !imageId) {
-    return;
+    return
   }
 
   // Describe the request
@@ -51,154 +51,154 @@ function addRequest(
     doneCallback,
     failCallback,
     options,
-  };
+  }
 
   // If this imageId is in the cache, resolve it immediately
-  const imageLoadObject = cache.getImageLoadObject(imageId);
+  const imageLoadObject = cache.getImageLoadObject(imageId)
 
   if (imageLoadObject) {
     imageLoadObject.promise.then(
-      function(image) {
-        doneCallback(image);
+      function (image) {
+        doneCallback(image)
       },
-      function(error) {
-        failCallback(error);
+      function (error) {
+        failCallback(error)
       }
-    );
+    )
 
-    return;
+    return
   }
 
   if (addToBeginning) {
     // Add it to the beginning of the stack
-    requestPool[type].unshift(requestDetails);
+    requestPool[type].unshift(requestDetails)
   } else {
     // Add it to the end of the stack
-    requestPool[type].push(requestDetails);
+    requestPool[type].push(requestDetails)
   }
 
   // Wake up
-  awake = true;
+  awake = true
 }
 
 function clearRequestStack(type) {
   // Console.log('clearRequestStack');
-  if (!requestPool.hasOwnProperty(type)) {
+  if (!requestPool[type]) {
     throw new Error(
       'Request type must be one of interaction, thumbnail, or prefetch'
-    );
+    )
   }
 
-  requestPool[type] = [];
+  requestPool[type] = []
 }
 
 function startAgain() {
   if (!awake) {
-    return;
+    return
   }
 
-  setTimeout(function() {
-    startGrabbing();
-  }, grabDelay);
+  setTimeout(function () {
+    startGrabbing()
+  }, grabDelay)
 }
 
 function sendRequest(requestDetails) {
   // Increment the number of current requests of this type
-  const type = requestDetails.type;
+  const type = requestDetails.type
 
-  numRequests[type]++;
+  numRequests[type]++
 
-  awake = true;
-  const imageId = requestDetails.imageId;
-  const doneCallback = requestDetails.doneCallback;
-  const failCallback = requestDetails.failCallback;
+  awake = true
+  const imageId = requestDetails.imageId
+  const doneCallback = requestDetails.doneCallback
+  const failCallback = requestDetails.failCallback
 
   // Check if we already have this image promise in the cache
-  const imageLoadObject = cache.getImageLoadObject(imageId);
+  const imageLoadObject = cache.getImageLoadObject(imageId)
 
   if (imageLoadObject) {
     // If we do, remove from list (when resolved, as we could have
     // Pending prefetch requests) and stop processing this iteration
     imageLoadObject.promise.then(
-      function(image) {
-        numRequests[type]--;
+      function (image) {
+        numRequests[type]--
         // Console.log(numRequests);
 
-        doneCallback(image);
-        startAgain();
+        doneCallback(image)
+        startAgain()
       },
-      function(error) {
-        numRequests[type]--;
+      function (error) {
+        numRequests[type]--
         // Console.log(numRequests);
-        failCallback(error);
-        startAgain();
+        failCallback(error)
+        startAgain()
       }
-    );
+    )
 
-    return;
+    return
   }
 
   function requestTypeToLoadPriority(requestDetails) {
     if (requestDetails.type === 'prefetch') {
-      return -5;
+      return -5
     } else if (requestDetails.type === 'interactive') {
-      return 0;
+      return 0
     } else if (requestDetails.type === 'thumbnail') {
-      return 5;
+      return 5
     }
   }
 
-  const priority = requestTypeToLoadPriority(requestDetails);
+  const priority = requestTypeToLoadPriority(requestDetails)
 
   const options = Object.assign({}, requestDetails.options, {
     priority,
     type: requestDetails.type,
-  });
+  })
 
-  let loader;
+  let loader
 
   if (requestDetails.preventCache === true) {
-    loader = loadImage(imageId, options);
+    loader = loadImage(imageId, options)
   } else {
-    loader = loadAndCacheImage(imageId, options);
+    loader = loadAndCacheImage(imageId, options)
   }
 
   // Load and cache the image
   loader.then(
-    function(image) {
-      numRequests[type]--;
+    function (image) {
+      numRequests[type]--
       // Console.log(numRequests);
-      doneCallback(image);
-      startAgain();
+      doneCallback(image)
+      startAgain()
     },
-    function(error) {
-      numRequests[type]--;
+    function (error) {
+      numRequests[type]--
       // Console.log(numRequests);
-      failCallback(error);
-      startAgain();
+      failCallback(error)
+      startAgain()
     }
-  );
+  )
 }
 
 function startGrabbing() {
   // Begin by grabbing X images
-  const maxSimultaneousRequests = getMaxSimultaneousRequests();
+  const maxSimultaneousRequests = getMaxSimultaneousRequests()
 
   maxNumRequests = {
     interaction: Math.max(maxSimultaneousRequests, 1),
     thumbnail: Math.max(maxSimultaneousRequests - 2, 1),
     prefetch: Math.max(maxSimultaneousRequests - 1, 1),
-  };
+  }
 
   const currentRequests =
-    numRequests.interaction + numRequests.thumbnail + numRequests.prefetch;
-  const requestsToSend = maxSimultaneousRequests - currentRequests;
+    numRequests.interaction + numRequests.thumbnail + numRequests.prefetch
+  const requestsToSend = maxSimultaneousRequests - currentRequests
 
   for (let i = 0; i < requestsToSend; i++) {
-    const requestDetails = getNextRequest();
+    const requestDetails = getNextRequest()
 
     if (requestDetails) {
-      sendRequest(requestDetails);
+      sendRequest(requestDetails)
     }
   }
 }
@@ -208,21 +208,21 @@ function getNextRequest() {
     requestPool.interaction.length &&
     numRequests.interaction < maxNumRequests.interaction
   ) {
-    return requestPool.interaction.shift();
+    return requestPool.interaction.shift()
   }
 
   if (
     requestPool.thumbnail.length &&
     numRequests.thumbnail < maxNumRequests.thumbnail
   ) {
-    return requestPool.thumbnail.shift();
+    return requestPool.thumbnail.shift()
   }
 
   if (
     requestPool.prefetch.length &&
     numRequests.prefetch < maxNumRequests.prefetch
   ) {
-    return requestPool.prefetch.shift();
+    return requestPool.prefetch.shift()
   }
 
   if (
@@ -230,14 +230,14 @@ function getNextRequest() {
     !requestPool.thumbnail.length &&
     !requestPool.prefetch.length
   ) {
-    awake = false;
+    awake = false
   }
 
-  return false;
+  return false
 }
 
 function getRequestPool() {
-  return requestPool;
+  return requestPool
 }
 
 export default {
@@ -245,4 +245,4 @@ export default {
   clearRequestStack,
   startGrabbing,
   getRequestPool,
-};
+}

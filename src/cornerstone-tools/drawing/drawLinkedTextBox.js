@@ -1,5 +1,5 @@
-import drawTextBox from './drawTextBox.js'
-import drawLink from './drawLink.js'
+import drawTextBox from './drawTextBox'
+import drawLink from './drawLink'
 
 export default function (
   context,

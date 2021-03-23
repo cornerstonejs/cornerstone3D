@@ -1,4 +1,4 @@
-import path from './path.js';
+import path from './path'
 
 /**
  * Draw a line between `start` and `end`.
@@ -14,8 +14,8 @@ import path from './path.js';
  * @returns {undefined}
  */
 export default function drawLine(context, start, end, options) {
-  path(context, options, context => {
-    context.moveTo(start[0], start[1]);
-    context.lineTo(end[0], end[1]);
-  });
+  path(context, options, (context) => {
+    context.moveTo(start[0], start[1])
+    context.lineTo(end[0], end[1])
+  })
 }

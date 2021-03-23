@@ -1,6 +1,6 @@
 let defaultFontSize = 15,
   defaultFontName = `Arial`,
-  defaultBackgroundColor = 'transparent';
+  defaultBackgroundColor = 'transparent'
 
 /**
  * @function setFont - Sets the font.
@@ -8,7 +8,7 @@ let defaultFontSize = 15,
  *
  */
 function setFontName(fontName) {
-  defaultFontName = fontName;
+  defaultFontName = fontName
 }
 
 /**
@@ -17,7 +17,7 @@ function setFontName(fontName) {
  * @returns {string} The font string.
  */
 function getFontName(): string {
-  return defaultFontName;
+  return defaultFontName
 }
 
 /**
@@ -26,7 +26,7 @@ function getFontName(): string {
  * @param {number} fontSize
  */
 function setFontSize(fontSize: number) {
-  defaultFontSize = fontSize;
+  defaultFontSize = fontSize
 }
 
 /**
@@ -35,7 +35,7 @@ function setFontSize(fontSize: number) {
  * @returns {number} The current font size.
  */
 function getFontSize(): number {
-  return defaultFontSize;
+  return defaultFontSize
 }
 
 /**
@@ -44,7 +44,7 @@ function getFontSize(): number {
  * @returns {string} The font string.
  */
 function getFont(): string {
-  return `${defaultFontSize}px ${defaultFontName}`;
+  return `${defaultFontSize}px ${defaultFontName}`
 }
 
 /**
@@ -53,7 +53,7 @@ function getFont(): string {
  * @param {string} backgroundColor A css, rgb, rgba or hex color.
  */
 function setBackgroundColor(backgroundColor: string) {
-  defaultBackgroundColor = backgroundColor;
+  defaultBackgroundColor = backgroundColor
 }
 
 /**
@@ -62,7 +62,7 @@ function setBackgroundColor(backgroundColor: string) {
  * @returns {string} A css, rgb, rgba or hex color.
  */
 function getBackgroundColor(): string {
-  return defaultBackgroundColor;
+  return defaultBackgroundColor
 }
 
 const textStyle = {
@@ -73,6 +73,6 @@ const textStyle = {
   getFont,
   setBackgroundColor,
   getBackgroundColor,
-};
+}
 
-export default textStyle;
+export default textStyle

@@ -1,5 +1,5 @@
-import macro from 'vtk.js/Sources/macro';
-import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture';
+import macro from 'vtk.js/Sources/macro'
+import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture'
 
 /**
  * vtkStreamingOpenGLTexture - A dervied class of the core vtkOpenGLTexture.
@@ -11,9 +11,9 @@ import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture';
  * @param {*} model The private model to extend.
  */
 function vtkStreamingOpenGLTexture(publicAPI, model) {
-  model.classHierarchy.push('vtkStreamingOpenGLTexture');
+  model.classHierarchy.push('vtkStreamingOpenGLTexture')
 
-  const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
+  const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw
 
   publicAPI.create3DFilterableFromRaw = (
     width,
@@ -23,8 +23,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     dataType,
     data
   ) => {
-    model.inputDataType = dataType;
-    model.inputNumComps = numComps;
+    model.inputDataType = dataType
+    model.inputNumComps = numComps
 
     superCreate3DFilterableFromRaw(
       width,
@@ -33,8 +33,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       numComps,
       dataType,
       data
-    );
-  };
+    )
+  }
 
   /**
    * This function updates the GPU texture memory to match the current
@@ -42,49 +42,49 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    *
    * @param {Float32Array|Uint8Array} data The data array which has been updated.
    */
-  publicAPI.update3DFromRaw = data => {
-    const { updatedFrames } = model;
+  publicAPI.update3DFromRaw = (data) => {
+    const { updatedFrames } = model
 
     if (!updatedFrames.length) {
-      return;
+      return
     }
 
-    model.openGLRenderWindow.activateTexture(publicAPI);
-    publicAPI.createTexture();
-    publicAPI.bind();
+    model.openGLRenderWindow.activateTexture(publicAPI)
+    publicAPI.createTexture()
+    publicAPI.bind()
 
-    let bytesPerVoxel;
-    let TypedArrayConstructor;
+    let bytesPerVoxel
+    let TypedArrayConstructor
 
     if (data instanceof Uint8Array) {
-      bytesPerVoxel = 1;
-      TypedArrayConstructor = Uint8Array;
+      bytesPerVoxel = 1
+      TypedArrayConstructor = Uint8Array
     } else if (data instanceof Int16Array) {
-      bytesPerVoxel = 2;
-      TypedArrayConstructor = Int16Array;
+      bytesPerVoxel = 2
+      TypedArrayConstructor = Int16Array
     } else if (data instanceof Float32Array) {
-      bytesPerVoxel = 4;
-      TypedArrayConstructor = Float32Array;
+      bytesPerVoxel = 4
+      TypedArrayConstructor = Float32Array
     } else {
-      throw new Error(`No support for given TypedArray.`);
+      throw new Error(`No support for given TypedArray.`)
     }
 
     for (let i = 0; i < updatedFrames.length; i++) {
       if (updatedFrames[i]) {
-        model.fillSubImage3D(data, i, bytesPerVoxel, TypedArrayConstructor);
+        model.fillSubImage3D(data, i, bytesPerVoxel, TypedArrayConstructor)
       }
     }
 
     // Reset updatedFrames
-    model.updatedFrames = [];
+    model.updatedFrames = []
 
     if (model.generateMipmap) {
-      model.context.generateMipmap(model.target);
+      model.context.generateMipmap(model.target)
     }
 
-    publicAPI.deactivate();
-    return true;
-  };
+    publicAPI.deactivate()
+    return true
+  }
 
   /**
    * This function updates the GPU texture memory to match the current
@@ -102,15 +102,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     bytesPerVoxel,
     TypedArrayConstructor
   ) => {
-    const buffer = data.buffer;
+    const buffer = data.buffer
 
-    const frameLength = model.width * model.height;
-    const frameLengthInBytes = frameLength * bytesPerVoxel;
+    const frameLength = model.width * model.height
+    const frameLengthInBytes = frameLength * bytesPerVoxel
 
-    const zOffset = frameIndex * frameLengthInBytes;
-    const rowLength = model.width;
+    const zOffset = frameIndex * frameLengthInBytes
+    const rowLength = model.width
 
-    const gl = model.context;
+    const gl = model.context
 
     /**
      * It appears that the implementation of texSubImage3D uses 2D textures to do the texture copy if
@@ -122,32 +122,32 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
      * There are certainly further optimizations that could be done here, we can do bigger chunks with other systems
      * But we need to find the _exact_ criteria. And then its not even guaranteed it'll be much fasteR.
      */
-    const MAX_TEXTURE_SIZE = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    const MAX_TEXTURE_SIZE = gl.getParameter(gl.MAX_TEXTURE_SIZE)
     let blockHeight = Math.floor(
       (bytesPerVoxel * MAX_TEXTURE_SIZE) / model.width
-    );
+    )
 
     // Cap to actual frame height:
-    blockHeight = Math.min(blockHeight, model.height);
+    blockHeight = Math.min(blockHeight, model.height)
 
-    const multiRowBlockLength = rowLength * blockHeight;
-    const multiRowBlockLengthInBytes = multiRowBlockLength * bytesPerVoxel;
+    const multiRowBlockLength = rowLength * blockHeight
+    const multiRowBlockLengthInBytes = multiRowBlockLength * bytesPerVoxel
 
-    const normalBlocks = Math.floor(model.height / blockHeight);
+    const normalBlocks = Math.floor(model.height / blockHeight)
 
-    const lastBlockHeight = model.height % blockHeight;
-    const multiRowLastBlockLength = rowLength * lastBlockHeight;
+    const lastBlockHeight = model.height % blockHeight
+    const multiRowLastBlockLength = rowLength * lastBlockHeight
 
     // Perform most blocks.
     for (let block = 0; block < normalBlocks; block++) {
-      const yOffset = block * blockHeight;
+      const yOffset = block * blockHeight
 
       // Dataview of block
       const dataView = new TypedArrayConstructor(
         buffer,
         zOffset + block * multiRowBlockLengthInBytes,
         multiRowBlockLength
-      );
+      )
 
       gl.texSubImage3D(
         model.target, // target
@@ -161,20 +161,20 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         model.format,
         model.openGLDataType,
         dataView
-      );
+      )
     }
 
     // perform last block if present
 
     if (lastBlockHeight !== 0) {
-      const yOffset = normalBlocks * blockHeight;
+      const yOffset = normalBlocks * blockHeight
 
       // Dataview of last block
       const dataView = new TypedArrayConstructor(
         buffer,
         zOffset + normalBlocks * multiRowBlockLengthInBytes,
         multiRowLastBlockLength
-      );
+      )
 
       gl.texSubImage3D(
         model.target, // target
@@ -188,9 +188,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         model.format,
         model.openGLDataType,
         dataView
-      );
+      )
     }
-  };
+  }
 
   publicAPI.getTextureParameters = () => {
     return {
@@ -199,16 +199,16 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       depth: model.depth,
       numComps: model.inputNumComps,
       dataType: model.inputDataType,
-    };
-  };
+    }
+  }
 
   /**
    * Called when a frame is loaded so that on next render we know which data to load in.
    * @param {number} frameIndex The frame to load in.
    */
-  publicAPI.setUpdatedFrame = frameIndex => {
-    model.updatedFrames[frameIndex] = true;
-  };
+  publicAPI.setUpdatedFrame = (frameIndex) => {
+    model.updatedFrames[frameIndex] = true
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -219,15 +219,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
 const DEFAULT_VALUES = {
   updatedFrames: [],
-};
+}
 
 export function extend(publicAPI, model, initialValues = {}) {
-  Object.assign(model, DEFAULT_VALUES, initialValues);
+  Object.assign(model, DEFAULT_VALUES, initialValues)
 
-  vtkOpenGLTexture.extend(publicAPI, model, initialValues);
+  vtkOpenGLTexture.extend(publicAPI, model, initialValues)
 
   // Object methods
-  vtkStreamingOpenGLTexture(publicAPI, model);
+  vtkStreamingOpenGLTexture(publicAPI, model)
 }
 
 // ----------------------------------------------------------------------------
@@ -235,8 +235,8 @@ export function extend(publicAPI, model, initialValues = {}) {
 export const newInstance = macro.newInstance(
   extend,
   'vtkStreamingOpenGLTexture'
-);
+)
 
 // ----------------------------------------------------------------------------
 
-export default { newInstance, extend };
+export default { newInstance, extend }

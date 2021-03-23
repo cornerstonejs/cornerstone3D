@@ -10,8 +10,8 @@
  * @param {ContextFn} fn - A function which performs drawing operations within the given context.
  * @returns {undefined}
  */
-export default function(context, fn) {
-  context.save();
-  fn(context);
-  context.restore();
+export default function (context, fn) {
+  context.save()
+  fn(context)
+  context.restore()
 }

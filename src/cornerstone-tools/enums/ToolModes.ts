@@ -21,4 +21,4 @@ enum ToolModes {
   Disabled = 'Disabled',
 }
 
-export default ToolModes;
+export default ToolModes

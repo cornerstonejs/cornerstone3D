@@ -1,4 +1,10 @@
-import { metaData, eventTarget, triggerEvent, EVENTS, requestPoolManager } from '@cornerstone'
+import {
+  metaData,
+  eventTarget,
+  triggerEvent,
+  EVENTS,
+  requestPoolManager,
+} from '@cornerstone'
 import { calculateSUVScalingFactors } from 'calculate-suv'
 import StreamingImageVolume from './StreamingImageVolume'
 import getInterleavedFrames from './helpers/getInterleavedFrames'
@@ -58,7 +64,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
   let framesProcessed = 0
 
   const autoRenderOnLoad = true
-  const autoRenderPercentage = 2;
+  const autoRenderPercentage = 2
 
   let reRenderFraction
   let reRenderTarget
@@ -183,8 +189,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
       return
     }
 
-    const modalityLutModule =
-      metaData.get('modalityLutModule', imageId) || {}
+    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {}
 
     const generalSeriesModule =
       metaData.get('generalSeriesModule', imageId) || {}
@@ -200,7 +205,7 @@ function prefetchImageIds(volume: StreamingImageVolume) {
       scalingParameters.suvbw = suvFactor.suvbw
     }
 
-    console.log(scalingParameters);
+    console.log(scalingParameters)
 
     const options = {
       targetBuffer: {

@@ -13,10 +13,7 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     samplesPerPixel,
   } = metaData.get('imagePixelModule', imageId0)
 
-  const { windowWidth, windowCenter } = metaData.get(
-    'voiLutModule',
-    imageId0
-  )
+  const { windowWidth, windowCenter } = metaData.get('voiLutModule', imageId0)
 
   // Add list of VOIs stored on the DICOM.
   const voiLut = []

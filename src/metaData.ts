@@ -1,7 +1,7 @@
 // This module defines a way to access various metadata about an imageId.  This layer of abstraction exists
 // So metadata can be provided in different ways (e.g. by parsing DICOM P10 or by a WADO-RS document)
 
-const providers = [];
+const providers = []
 
 /**
  * @module Metadata
@@ -15,21 +15,21 @@ const providers = [];
  * @returns {void}
  * @memberof Metadata
  */
-export function addProvider (provider, priority = 0) {
-  let i;
+export function addProvider(provider, priority = 0) {
+  let i
 
   // Find the right spot to insert this provider based on priority
   for (i = 0; i < providers.length; i++) {
     if (providers[i].priority <= priority) {
-      break;
+      break
     }
   }
 
   // Insert the decode task at position i
   providers.splice(i, 0, {
     priority,
-    provider
-  });
+    provider,
+  })
 }
 
 /**
@@ -40,12 +40,12 @@ export function addProvider (provider, priority = 0) {
  * @returns {void}
  * @memberof Metadata
  */
-export function removeProvider (provider) {
+export function removeProvider(provider) {
   for (let i = 0; i < providers.length; i++) {
     if (providers[i].provider === provider) {
-      providers.splice(i, 1);
+      providers.splice(i, 1)
 
-      break;
+      break
     }
   }
 }
@@ -60,13 +60,13 @@ export function removeProvider (provider) {
  * @returns {*} The metadata retrieved from the metadata store
  * @memberof Metadata
  */
-function getMetaData (type, imageId) {
+function getMetaData(type, imageId) {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, imageId);
+    const result = providers[i].provider(type, imageId)
 
     if (result !== undefined) {
-      return result;
+      return result
     }
   }
 }
@@ -74,9 +74,9 @@ function getMetaData (type, imageId) {
 const metaData = {
   addProvider,
   removeProvider,
-  get: getMetaData
+  get: getMetaData,
 }
 
 export { metaData }
 
-export default metaData;
+export default metaData

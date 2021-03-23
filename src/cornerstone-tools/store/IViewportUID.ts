@@ -3,7 +3,7 @@
  * to uniquely define a viewport.
  */
 export default interface IViewportUID {
-  renderingEngineUID: string;
-  sceneUID: string;
-  viewportUID: string;
+  renderingEngineUID: string
+  sceneUID: string
+  viewportUID: string
 }

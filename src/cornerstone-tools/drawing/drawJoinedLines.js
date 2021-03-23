@@ -1,4 +1,4 @@
-import path from './path.js';
+import path from './path'
 
 /**
  * Draw a series of joined lines, starting at `start` and then going to each point in `points`.
@@ -12,11 +12,11 @@ import path from './path.js';
  * @param {Object} options - See {@link path}
  * @returns {undefined}
  */
-export default function(context, start, points, options) {
-  path(context, options, context => {
-    context.moveTo(start[0], start[1]);
-    points.forEach(point => {
-      context.lineTo(point[0], point[1]);
-    });
-  });
+export default function (context, start, points, options) {
+  path(context, options, (context) => {
+    context.moveTo(start[0], start[1])
+    points.forEach((point) => {
+      context.lineTo(point[0], point[1])
+    })
+  })
 }

@@ -1,4 +1,4 @@
-import uuidv4 from '../util/uuidv4.js'
+import uuidv4 from '../util/uuidv4'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,

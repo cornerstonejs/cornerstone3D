@@ -1,40 +1,40 @@
-import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume';
-import { loadVolume } from '../../volumeLoader';
+import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
+import { loadVolume } from '../../volumeLoader'
 //@ts-ignore
-import createVolumeMapper from './createVolumeMapper';
+import createVolumeMapper from './createVolumeMapper'
 
 interface createVolumeActorInterface {
-  volumeUID: string;
-  callback?: Function;
-  blendMode?: string;
+  volumeUID: string
+  callback?: Function
+  blendMode?: string
 }
 
 async function createVolumeActor(props: createVolumeActorInterface) {
-  const { volumeUID, callback, blendMode } = props;
+  const { volumeUID, callback, blendMode } = props
 
   // todo: use getVolume?
-  const imageVolume = await loadVolume(volumeUID);
+  const imageVolume = await loadVolume(volumeUID)
 
   if (!imageVolume) {
-    throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`);
+    throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`)
   }
 
-  const { vtkImageData, vtkOpenGLTexture } = imageVolume;
+  const { vtkImageData, vtkOpenGLTexture } = imageVolume
 
-  const volumeMapper = createVolumeMapper(vtkImageData, vtkOpenGLTexture);
+  const volumeMapper = createVolumeMapper(vtkImageData, vtkOpenGLTexture)
 
   if (blendMode) {
-    volumeMapper.setBlendMode(blendMode);
+    volumeMapper.setBlendMode(blendMode)
   }
 
-  const volumeActor = vtkVolume.newInstance();
-  volumeActor.setMapper(volumeMapper);
+  const volumeActor = vtkVolume.newInstance()
+  volumeActor.setMapper(volumeMapper)
 
   if (callback) {
-    callback({ volumeActor, volumeUID });
+    callback({ volumeActor, volumeUID })
   }
 
-  return volumeActor;
+  return volumeActor
 }
 
 export default createVolumeActor

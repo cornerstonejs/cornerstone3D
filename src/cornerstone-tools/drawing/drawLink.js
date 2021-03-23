@@ -1,4 +1,4 @@
-import drawLine from './drawLine.js'
+import drawLine from './drawLine'
 import { vec2 as vec2Utils } from '../util/math'
 
 const { findClosestPoint } = vec2Utils

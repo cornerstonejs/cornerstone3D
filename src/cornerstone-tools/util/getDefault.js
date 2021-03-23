@@ -5,6 +5,6 @@
  * @param {*} defaultValue
  * @returns {*}
  */
-export default function(value, defaultValue) {
-  return value === undefined ? defaultValue : value;
+export default function (value, defaultValue) {
+  return value === undefined ? defaultValue : value
 }

@@ -1,4 +1,4 @@
-import {Point3} from '../../types'
+import { Point3 } from '../../types'
 
 /**
  * @function getVolumeActorCorners Converts `vtkVolumeActor` bounds to corners
@@ -8,10 +8,8 @@ import {Point3} from '../../types'
  *
  * @returns {Array<Point3>} An array of the corners of the `volumeActor` in world space.
  */
-export default function getVolumeActorCorners(
-  volumeActor
-): Array<Point3> {
-  const bounds = volumeActor.getMapper().getBounds();
+export default function getVolumeActorCorners(volumeActor): Array<Point3> {
+  const bounds = volumeActor.getMapper().getBounds()
 
   return [
     [bounds[0], bounds[2], bounds[4]],
@@ -22,5 +20,5 @@ export default function getVolumeActorCorners(
     [bounds[1], bounds[2], bounds[5]],
     [bounds[1], bounds[3], bounds[4]],
     [bounds[1], bounds[3], bounds[5]],
-  ];
+  ]
 }

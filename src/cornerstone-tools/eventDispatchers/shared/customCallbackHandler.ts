@@ -1,7 +1,7 @@
-import { state, ToolGroupManager } from './../../store/index';
-import ToolModes from '../../enums/ToolModes';
+import { state, ToolGroupManager } from './../../store/index'
+import ToolModes from '../../enums/ToolModes'
 
-const { Active } = ToolModes;
+const { Active } = ToolModes
 
 /**
  * @function customCallbackHandler This is used as a generic event handler for tool events
@@ -24,15 +24,15 @@ export default function customCallbackHandler(
   evt
 ) {
   if (state.isToolLocked) {
-    return false;
+    return false
   }
 
-  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail;
+  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
   const toolGroups = ToolGroupManager.getToolGroups(
     renderingEngineUID,
     sceneUID,
     viewportUID
-  );
+  )
 
   // TODO: Filter tools by interaction type?
   /**
@@ -41,16 +41,16 @@ export default function customCallbackHandler(
    * - has the custom callback function
    *
    */
-  let activeTool;
+  let activeTool
   for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i];
-    const toolGroupToolNames = Object.keys(toolGroup.tools);
+    const toolGroup = toolGroups[i]
+    const toolGroupToolNames = Object.keys(toolGroup.tools)
 
     for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j];
-      const tool = toolGroup.tools[toolName];
+      const toolName = toolGroupToolNames[j]
+      const tool = toolGroup.tools[toolName]
       // TODO: Should be getter
-      const toolInstance = toolGroup._tools[toolName];
+      const toolInstance = toolGroup._tools[toolName]
 
       if (
         // TODO: Should be enum?
@@ -61,19 +61,19 @@ export default function customCallbackHandler(
       ) {
         // This should be behind some API. Too much knowledge of ToolGroup
         // inner workings leaking out
-        activeTool = toolGroup._tools[toolName];
-        break;
+        activeTool = toolGroup._tools[toolName]
+        break
       }
     }
 
     if (activeTool) {
-      break;
+      break
     }
   }
 
   if (!activeTool) {
-    return;
+    return
   }
 
-  activeTool[customFunction](evt);
+  activeTool[customFunction](evt)
 }

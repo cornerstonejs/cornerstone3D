@@ -1,4 +1,9 @@
-import { getEnabledElement, EVENTS, triggerEvent, eventTarget } from '@cornerstone'
+import {
+  getEnabledElement,
+  EVENTS,
+  triggerEvent,
+  eventTarget,
+} from '@cornerstone'
 import { BaseTool } from './base/index'
 
 export default class PetThresholdTool extends BaseTool {
@@ -55,7 +60,9 @@ export default class PetThresholdTool extends BaseTool {
     const deltaY = deltaPoints.canvas[1]
     const multiplier = 5 / canvas.clientHeight
     const wcDelta = deltaY * multiplier
-    let [lower, upper] = rgbTransferFunction.getRange()
+    const range = rgbTransferFunction.getRange()
+    const lower = range[0]
+    let upper = range[1]
 
     upper -= wcDelta
     upper = Math.max(upper, 0.1)

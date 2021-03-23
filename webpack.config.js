@@ -25,6 +25,7 @@ module.exports = (env, argv) => {
     entry: {
       rendering: RENDERING_ROOT,
       tools: TOOLS_ROOT,
+      streaming_volume_loader: LOADER_ROOT,
     },
     devtool: 'source-map',
     output: {
@@ -62,13 +63,14 @@ module.exports = (env, argv) => {
       /\b(vtk.js)/,
       // Used to build/load metadata
       // TODO: Remove these as dependencies
+      {
         'cornerstone-wado-image-loader': {
           commonjs: 'cornerstone-wado-image-loader',
           commonjs2: 'cornerstone-wado-image-loader',
           amd: 'cornerstone-wado-image-loader',
           root: 'cornerstoneWADOImageLoader',
         }
-      },
+      }
     ],
     plugins: [
       // Uncomment to generate bundle analyzer

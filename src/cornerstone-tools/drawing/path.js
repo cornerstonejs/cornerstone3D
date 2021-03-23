@@ -1,4 +1,4 @@
-import toolStyle from './../stateManagement/toolStyle.ts';
+import toolStyle from './../stateManagement/toolStyle'
 
 /**
  * This function manages the beginPath/stroke pattern for working with
@@ -27,31 +27,31 @@ export default function (context, options = {}, fn) {
     fillStyle,
     lineDash,
     shouldDrawLines = true,
-  } = options;
+  } = options
 
-  context.beginPath();
-  context.strokeStyle = color || context.strokeStyle;
+  context.beginPath()
+  context.strokeStyle = color || context.strokeStyle
 
   context.lineWidth =
     lineWidth ||
     (lineWidth === undefined && toolStyle.getToolWidth()) ||
-    context.lineWidth;
+    context.lineWidth
   if (lineDash) {
-    context.setLineDash(lineDash);
+    context.setLineDash(lineDash)
   }
 
-  fn(context);
+  fn(context)
 
   if (fillStyle) {
-    context.fillStyle = fillStyle;
-    context.fill();
+    context.fillStyle = fillStyle
+    context.fill()
   }
 
   if (shouldDrawLines) {
-    context.stroke();
+    context.stroke()
   }
 
   if (lineDash) {
-    context.setLineDash([]);
+    context.setLineDash([])
   }
 }

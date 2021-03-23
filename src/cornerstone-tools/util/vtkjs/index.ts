@@ -1,5 +1,5 @@
-import getVolumeActorCorners from './getVolumeActorCorners';
-import indexWithinDimensions from './indexWithinDimensions';
+import getVolumeActorCorners from './getVolumeActorCorners'
+import indexWithinDimensions from './indexWithinDimensions'
 
-export default { getVolumeActorCorners, indexWithinDimensions };
-export { getVolumeActorCorners, indexWithinDimensions };
+export default { getVolumeActorCorners, indexWithinDimensions }
+export { getVolumeActorCorners, indexWithinDimensions }

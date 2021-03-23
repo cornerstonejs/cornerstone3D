@@ -1,4 +1,4 @@
-import BaseTool from './BaseTool';
-import BaseAnnotationTool from './BaseAnnotationTool';
+import BaseTool from './BaseTool'
+import BaseAnnotationTool from './BaseAnnotationTool'
 
-export { BaseTool, BaseAnnotationTool };
+export { BaseTool, BaseAnnotationTool }

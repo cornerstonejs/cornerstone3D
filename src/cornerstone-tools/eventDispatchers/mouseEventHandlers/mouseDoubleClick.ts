@@ -1,4 +1,4 @@
-import customCallbackHandler from './../shared/customCallbackHandler';
+import customCallbackHandler from './../shared/customCallbackHandler'
 
 /**
  * @function mouseDoubleClick - Event handler for mouse double click events. Uses `customCallbackHandler` to fire
@@ -8,6 +8,6 @@ const mouseDoubleClick = customCallbackHandler.bind(
   null,
   'Mouse',
   'doubleClickCallback'
-);
+)
 
-export default mouseDoubleClick;
+export default mouseDoubleClick

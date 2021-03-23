@@ -1,13 +1,13 @@
 let defaultColor = 'rgb(255, 255, 0)',
   activeColor = 'rgb(0, 255, 0)',
-  fillColor = 'transparent';
+  fillColor = 'transparent'
 
 /**
  * @function setFillColor Sets the fill color for tools that use fill.
  * @param {string} color A css, rgb, rgba or hex color.
  */
 function setFillColor(color) {
-  fillColor = color;
+  fillColor = color
 }
 
 /**
@@ -16,7 +16,7 @@ function setFillColor(color) {
  * @returns {string} color A css, rgb, rgba or hex color.
  */
 function getFillColor(): string {
-  return fillColor;
+  return fillColor
 }
 
 /**
@@ -24,7 +24,7 @@ function getFillColor(): string {
  * @param {string} color A css, rgb, rgba or hex color.
  */
 function setToolColor(color) {
-  defaultColor = color;
+  defaultColor = color
 }
 
 /**
@@ -33,7 +33,7 @@ function setToolColor(color) {
  * @returns {string} color A css, rgb, rgba or hex color.
  */
 function getToolColor(): string {
-  return defaultColor;
+  return defaultColor
 }
 
 /**
@@ -41,7 +41,7 @@ function getToolColor(): string {
  * @param {string} color A css, rgb, rgba or hex color.
  */
 function setActiveColor(color) {
-  activeColor = color;
+  activeColor = color
 }
 
 /**
@@ -50,7 +50,7 @@ function setActiveColor(color) {
  * @returns {string} color A css, rgb, rgba or hex color.
  */
 function getActiveColor(): string {
-  return activeColor;
+  return activeColor
 }
 
 /**
@@ -62,10 +62,10 @@ function getActiveColor(): string {
  */
 function getColorIfActive(data: { color?: string; active?: boolean }): string {
   if (data.color) {
-    return data.color;
+    return data.color
   }
 
-  return data.active ? activeColor : defaultColor;
+  return data.active ? activeColor : defaultColor
 }
 
 const toolColors = {
@@ -76,6 +76,6 @@ const toolColors = {
   setActiveColor,
   getActiveColor,
   getColorIfActive,
-};
+}
 
-export default toolColors;
+export default toolColors

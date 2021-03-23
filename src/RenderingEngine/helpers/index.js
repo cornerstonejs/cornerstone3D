@@ -1,3 +1,3 @@
-import createVolumeActor from './createVolumeActor';
+import createVolumeActor from './createVolumeActor'
 
-export { createVolumeActor };
+export { createVolumeActor }

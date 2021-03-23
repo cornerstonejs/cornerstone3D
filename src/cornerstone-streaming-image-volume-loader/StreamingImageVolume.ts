@@ -38,7 +38,7 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   public cancelLoading() {
-    const { loadStatus } = this;
+    const { loadStatus } = this
 
     if (!loadStatus || !loadStatus.loading) {
       return
@@ -48,7 +48,7 @@ export default class StreamingImageVolume extends ImageVolume {
     loadStatus.loading = false
 
     // Remove all the callback listeners
-    this.clearLoadCallbacks();
+    this.clearLoadCallbacks()
   }
 
   public clearLoadCallbacks() {
@@ -82,15 +82,14 @@ export default class StreamingImageVolume extends ImageVolume {
       this.loadStatus.callbacks.push(callback)
     }
 
-    const streamingVolume = this;
+    const streamingVolume = this
 
     // Todo: move to class method? this is circular now...
     prefetchImageIds(streamingVolume)
   }
 
-  decache(completelyRemove=false) {
+  decache(completelyRemove = false) {
     if (completelyRemove) {
-
     } else {
       // Do we have enough space in volatile cache?
       // If not, remove some

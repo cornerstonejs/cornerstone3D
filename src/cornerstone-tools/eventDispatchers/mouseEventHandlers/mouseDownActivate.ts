@@ -1,5 +1,5 @@
-import { state } from './../../store/index';
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
+import { state } from './../../store/index'
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
 
 /**
  * @function mouseDownActivate - If the `mouseDown` handler does not consume an event,
@@ -11,20 +11,20 @@ import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
 export default function mouseDownActivate(evt) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
   if (state.isToolLocked) {
-    return;
+    return
   }
 
-  const activeTool = getActiveToolForMouseEvent(evt);
+  const activeTool = getActiveToolForMouseEvent(evt)
 
   if (!activeTool) {
-    return;
+    return
   }
 
   if (state.isMultiPartToolActive) {
-    return;
+    return
   }
 
   if (activeTool.addNewMeasurement) {
-    activeTool.addNewMeasurement(evt, 'mouse');
+    activeTool.addNewMeasurement(evt, 'mouse')
   }
 }

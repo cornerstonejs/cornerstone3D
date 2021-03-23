@@ -1,5 +1,5 @@
-import findClosestPoint from './findClosestPoint';
-import liangBarksyClip from './liangBarksyClip';
-import isEqual from './isEqual';
+import findClosestPoint from './findClosestPoint'
+import liangBarksyClip from './liangBarksyClip'
+import isEqual from './isEqual'
 
-export default { isEqual, findClosestPoint, liangBarksyClip };
+export default { isEqual, findClosestPoint, liangBarksyClip }

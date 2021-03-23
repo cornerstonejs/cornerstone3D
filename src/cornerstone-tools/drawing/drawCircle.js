@@ -1,4 +1,4 @@
-import path from './path.js';
+import path from './path'
 
 /**
  * Draw a circle with given `center` and `radius`.
@@ -12,8 +12,8 @@ import path from './path.js';
  * @param {Object} options - See {@link path}
  * @returns {undefined}
  */
-export default function(context, center, radius, options) {
-  path(context, options, context => {
-    context.arc(center[0], center[1], radius, 0, 2 * Math.PI);
-  });
+export default function (context, center, radius, options) {
+  path(context, options, (context) => {
+    context.arc(center[0], center[1], radius, 0, 2 * Math.PI)
+  })
 }

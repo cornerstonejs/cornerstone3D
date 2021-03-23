@@ -1,4 +1,4 @@
-import path from './path.js';
+import path from './path'
 
 /**
  * Draw multiple lines.
@@ -11,13 +11,13 @@ import path from './path.js';
  * @param {Object} options - See {@link path}
  * @returns {undefined}
  */
-export default function(context, lines, options) {
-  path(context, options, context => {
-    lines.forEach(line => {
-      const { start, end } = line;
+export default function (context, lines, options) {
+  path(context, options, (context) => {
+    lines.forEach((line) => {
+      const { start, end } = line
 
-      context.moveTo(start[0], start[1]);
-      context.lineTo(end[0], end[1]);
-    });
-  });
+      context.moveTo(start[0], start[1])
+      context.lineTo(end[0], end[1])
+    })
+  })
 }

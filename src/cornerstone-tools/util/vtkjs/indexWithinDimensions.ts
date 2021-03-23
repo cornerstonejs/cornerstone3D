@@ -9,7 +9,10 @@ import { Point3 } from '../../types'
  *
  * @returns {boolean} True if the index is in-bounds.
  */
-export default function indexWithinDimensions(index: Point3, dimensions: Point3): boolean {
+export default function indexWithinDimensions(
+  index: Point3,
+  dimensions: Point3
+): boolean {
   if (
     index[0] < 0 ||
     index[0] >= dimensions[0] ||

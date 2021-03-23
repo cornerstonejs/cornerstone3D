@@ -1,4 +1,4 @@
-import pointInEllipse from './pointInEllipse';
+import pointInEllipse from './pointInEllipse'
 
-export { pointInEllipse };
-export default { pointInEllipse };
+export { pointInEllipse }
+export default { pointInEllipse }

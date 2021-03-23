@@ -1,22 +1,24 @@
-import { registerVolumeLoader, registerUnknownVolumeLoader } from '@cornerstone';
-import { vec3 } from 'gl-matrix';
-import cache from '../cache/cache';
-import makeVolumeMetadata from '../cache/helpers/makeVolumeMetadata';
-import sortImageIdsAndGetSpacing from '../cache/helpers/sortImageIdsAndGetSpacing';
-import StreamingImageVolume from './StreamingImageVolume';
-import { createUint8SharedArray, createFloat32SharedArray } from '../utilities';
+import { registerVolumeLoader, registerUnknownVolumeLoader } from '@cornerstone'
+import { vec3 } from 'gl-matrix'
+import cache from '../cache/cache'
+import makeVolumeMetadata from '../cache/helpers/makeVolumeMetadata'
+import sortImageIdsAndGetSpacing from '../cache/helpers/sortImageIdsAndGetSpacing'
+import StreamingImageVolume from './StreamingImageVolume'
+import { createUint8SharedArray, createFloat32SharedArray } from '../utilities'
 
 function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,
   options: {
-    imageIds: Array<string>,
+    imageIds: Array<string>
   }
 ): StreamingImageVolume {
   if (!options || !options.imageIds || !options.imageIds.length) {
-    throw new Error('ImageIds must be provided to create a streaming image volume')
+    throw new Error(
+      'ImageIds must be provided to create a streaming image volume'
+    )
   }
 
-  const { imageIds } = options;
+  const { imageIds } = options
 
   const volumeMetadata = makeVolumeMetadata(imageIds)
 
@@ -66,7 +68,7 @@ function cornerstoneStreamingImageVolumeLoader(
   const sizeInBytes =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
-  cache.checkCacheSizeCanSupportVolume(sizeInBytes);
+  cache.checkCacheSizeCanSupportVolume(sizeInBytes)
   // if so, start erasing volatile data so you can allocate
 
   let scalarData
@@ -93,7 +95,6 @@ function cornerstoneStreamingImageVolumeLoader(
       break
   }
 
-
   const streamingImageVolume = new StreamingImageVolume(
     // ImageVolume properties
     {
@@ -104,12 +105,13 @@ function cornerstoneStreamingImageVolumeLoader(
       origin,
       direction,
       scalarData,
-      sizeInBytes
+      sizeInBytes,
     },
     // Streaming properties
     {
       imageIds: sortedImageIds,
-      loadStatus: { // todo: loading and loaded should be on ImageVolume
+      loadStatus: {
+        // todo: loading and loaded should be on ImageVolume
         loaded: false,
         loading: false,
         cachedFrames: [],
@@ -120,11 +122,16 @@ function cornerstoneStreamingImageVolumeLoader(
 
   return {
     promise: Promise.resolve(streamingImageVolume),
-    cancelFn: () => { streamingImageVolume.cancelLoading() } // streamingImageVolume.cancelLoading()
+    cancelFn: () => {
+      streamingImageVolume.cancelLoading()
+    }, // streamingImageVolume.cancelLoading()
   }
 }
 
 registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
-registerVolumeLoader('cornerstoneStreamingImageVolume', cornerstoneStreamingImageVolumeLoader)
+registerVolumeLoader(
+  'cornerstoneStreamingImageVolume',
+  cornerstoneStreamingImageVolumeLoader
+)
 
 export default cornerstoneStreamingImageVolumeLoader

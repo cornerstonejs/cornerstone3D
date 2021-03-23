@@ -1,5 +1,5 @@
-import debounce from './debounce.js';
-import isObject from './isObject.js';
+import debounce from './debounce'
+import isObject from './isObject'
 
 /**
  * Creates a throttled function that only invokes `func` at most once per
@@ -50,22 +50,22 @@ import isObject from './isObject.js';
  * jQuery(window).on('popstate', throttled.cancel)
  */
 function throttle(func, wait, options) {
-  let leading = true;
-  let trailing = true;
+  let leading = true
+  let trailing = true
 
   if (typeof func !== 'function') {
-    throw new TypeError('Expected a function');
+    throw new TypeError('Expected a function')
   }
   if (isObject(options)) {
-    leading = 'leading' in options ? Boolean(options.leading) : leading;
-    trailing = 'trailing' in options ? Boolean(options.trailing) : trailing;
+    leading = 'leading' in options ? Boolean(options.leading) : leading
+    trailing = 'trailing' in options ? Boolean(options.trailing) : trailing
   }
 
   return debounce(func, wait, {
     leading,
     trailing,
     maxWait: wait,
-  });
+  })
 }
 
-export default throttle;
+export default throttle

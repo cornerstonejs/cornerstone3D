@@ -1,21 +1,21 @@
-import { state } from './../index';
-import IToolGroup from './IToolGroup';
+import { state } from './../index'
+import IToolGroup from './IToolGroup'
 
 function getToolGroups(
   renderingEngineUID: string,
   sceneUID: string,
   viewportUID: string
 ): Array<IToolGroup> {
-  const toolGroupsFilteredByUIDs = state.toolGroups.filter(tg =>
+  const toolGroupsFilteredByUIDs = state.toolGroups.filter((tg) =>
     tg.viewports.some(
-      vp =>
+      (vp) =>
         vp.renderingEngineUID === renderingEngineUID &&
         (!vp.sceneUID || vp.sceneUID === sceneUID) &&
         (!vp.viewportUID || vp.viewportUID === viewportUID)
     )
-  );
+  )
 
-  return toolGroupsFilteredByUIDs;
+  return toolGroupsFilteredByUIDs
 }
 
-export default getToolGroups;
+export default getToolGroups

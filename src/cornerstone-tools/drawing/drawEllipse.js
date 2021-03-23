@@ -1,4 +1,4 @@
-import path from './path.js'
+import path from './path'
 
 /**
  * Draw an ellipse within the bounding box defined by `corner1` and `corner2`.

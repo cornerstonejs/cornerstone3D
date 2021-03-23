@@ -1,4 +1,4 @@
-import getTextBoxCoordsCanvas from './getTextBoxCoordsCanvas';
+import getTextBoxCoordsCanvas from './getTextBoxCoordsCanvas'
 
-export { getTextBoxCoordsCanvas };
-export default { getTextBoxCoordsCanvas };
+export { getTextBoxCoordsCanvas }
+export default { getTextBoxCoordsCanvas }

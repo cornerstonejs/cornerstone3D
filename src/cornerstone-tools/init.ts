@@ -21,10 +21,7 @@ function _addCornerstoneEventListeners() {
   const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
 
   eventTarget.addEventListener(elementEnabledEvent, addEnabledElement)
-  eventTarget.addEventListener(
-    elementDisabledEvent,
-    removeEnabledElement
-  )
+  eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement)
 }
 
 /**
@@ -39,12 +36,6 @@ function _removeCornerstoneEventListeners() {
   const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
   const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
 
-  eventTarget.removeEventListener(
-    elementEnabledEvent,
-    addEnabledElement
-  )
-  eventTarget.removeEventListener(
-    elementDisabledEvent,
-    removeEnabledElement
-  )
+  eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement)
+  eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement)
 }

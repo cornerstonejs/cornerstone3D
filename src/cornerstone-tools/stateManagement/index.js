@@ -1,10 +1,10 @@
 import FrameOfReferenceSpecificToolStateManager, {
   defaultFrameOfReferenceSpecificToolStateManager,
-} from './FrameOfReferenceSpecificToolStateManager';
-import textStyle from './textStyle';
-import toolColors from './toolColors';
-import toolStyle from './toolStyle';
-import { getToolState, addToolState } from './toolState';
+} from './FrameOfReferenceSpecificToolStateManager'
+import textStyle from './textStyle'
+import toolColors from './toolColors'
+import toolStyle from './toolStyle'
+import { getToolState, addToolState } from './toolState'
 
 export {
   FrameOfReferenceSpecificToolStateManager,
@@ -14,4 +14,4 @@ export {
   toolStyle,
   getToolState,
   addToolState,
-};
+}

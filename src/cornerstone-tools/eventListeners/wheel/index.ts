@@ -1,4 +1,4 @@
-import wheelListener from './wheelListener';
+import wheelListener from './wheelListener'
 
 /**
  * Listens for the wheel event, and handles it. Handled event
@@ -9,8 +9,8 @@ import wheelListener from './wheelListener';
  * @returns {undefined}
  */
 function enable(element: HTMLElement) {
-  disable(element);
-  element.addEventListener('wheel', wheelListener, { passive: false });
+  disable(element)
+  element.addEventListener('wheel', wheelListener, { passive: false })
 }
 
 /**
@@ -22,10 +22,10 @@ function enable(element: HTMLElement) {
  * @returns {undefined}
  */
 function disable(element: HTMLElement) {
-  element.removeEventListener('wheel', wheelListener);
+  element.removeEventListener('wheel', wheelListener)
 }
 
 export default {
   enable,
   disable,
-};
+}

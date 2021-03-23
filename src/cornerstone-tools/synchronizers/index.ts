@@ -1,3 +1,3 @@
-import synchronizers from './synchronizers';
+import synchronizers from './synchronizers'
 
-export default synchronizers;
+export default synchronizers

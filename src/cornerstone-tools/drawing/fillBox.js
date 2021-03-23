@@ -9,12 +9,12 @@
  * @param {FillStyle} fillStyle - The fillStyle to apply to the region.
  * @returns {undefined}
  */
-export default function(context, boundingBox, fillStyle) {
-  context.fillStyle = fillStyle;
+export default function (context, boundingBox, fillStyle) {
+  context.fillStyle = fillStyle
   context.fillRect(
     boundingBox.left,
     boundingBox.top,
     boundingBox.width,
     boundingBox.height
-  );
+  )
 }

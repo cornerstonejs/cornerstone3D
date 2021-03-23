@@ -1,48 +1,48 @@
-import renderingEngineCache from '../../RenderingEngine/renderingEngineCache';
+import renderingEngineCache from '../../RenderingEngine/renderingEngineCache'
 
 const autoLoad = (volumeUID) => {
   const { renderingEngine, sceneUIDs } = getRenderingEngineContainingVolume(
     volumeUID
-  );
+  )
 
   if (
     !renderingEngine ||
     renderingEngine.hasBeenDestroyed ||
     !sceneUIDs.length
   ) {
-    return;
+    return
   }
 
-  renderingEngine.renderScenes(sceneUIDs);
-};
+  renderingEngine.renderScenes(sceneUIDs)
+}
 
 function getRenderingEngineContainingVolume(volumeUID) {
-  const renderingEngines = renderingEngineCache.getAll();
+  const renderingEngines = renderingEngineCache.getAll()
 
   for (let i = 0; i < renderingEngines.length; i++) {
-    const renderingEngine = renderingEngines[i];
-    const scenes = renderingEngine.getScenes();
+    const renderingEngine = renderingEngines[i]
+    const scenes = renderingEngine.getScenes()
 
-    const sceneUIDs = [];
+    const sceneUIDs = []
 
     scenes.forEach((scene) => {
-      const volumeActors = scene.getVolumeActors();
+      const volumeActors = scene.getVolumeActors()
 
       const hasVolume = volumeActors.some((va) => {
-        return va.uid === volumeUID;
-      });
+        return va.uid === volumeUID
+      })
 
       if (hasVolume) {
-        sceneUIDs.push(scene.uid);
+        sceneUIDs.push(scene.uid)
       }
-    });
+    })
 
     if (sceneUIDs.length) {
-      return { renderingEngine, sceneUIDs };
+      return { renderingEngine, sceneUIDs }
     }
   }
 
-  return { renderingEngine: undefined, sceneUIDs: [] };
+  return { renderingEngine: undefined, sceneUIDs: [] }
 }
 
-export default autoLoad;
+export default autoLoad

@@ -8,9 +8,18 @@ import RenderingEngine from './RenderingEngine'
 import eventTarget from './eventTarget'
 import getRenderingEngine from './RenderingEngine/getRenderingEngine'
 import cache from './cache'
-import { loadImage, loadAndCacheImage, registerImageLoader, registerUnknownImageLoader } from './imageLoader'
-import requestPoolManager from './requestPool/requestPoolManager';
-import { createAndCacheVolume, registerVolumeLoader, registerUnknownVolumeLoader } from './volumeLoader'
+import {
+  loadImage,
+  loadAndCacheImage,
+  registerImageLoader,
+  registerUnknownImageLoader,
+} from './imageLoader'
+import requestPoolManager from './requestPool/requestPoolManager'
+import {
+  createAndCacheVolume,
+  registerVolumeLoader,
+  registerUnknownVolumeLoader,
+} from './volumeLoader'
 import getEnabledElement from './getEnabledElement'
 import configuration from './configuration'
 import metaData from './metaData'
@@ -20,7 +29,7 @@ import * as Types from './types'
 import * as Utilities from './utilities'
 import triggerEvent from './utilities/triggerEvent'
 
-const getVolume = cache.getVolume;
+const getVolume = cache.getVolume
 
 /** NAMED EXPORTS */
 export {
@@ -57,5 +66,5 @@ export {
   //
   Utilities,
   //
-  requestPoolManager
+  requestPoolManager,
 }

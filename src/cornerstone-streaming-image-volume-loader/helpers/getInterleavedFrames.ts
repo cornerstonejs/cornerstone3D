@@ -1,35 +1,35 @@
 type InterleavedFrame = {
-  imageId: string;
-  imageIdIndex: number;
-};
+  imageId: string
+  imageIdIndex: number
+}
 
 export default function getInterleavedFrames(
   imageIds: Array<string>
 ): Array<InterleavedFrame> {
-  const minImageIdIndex = 0;
-  const maxImageIdIndex = imageIds.length - 1;
+  const minImageIdIndex = 0
+  const maxImageIdIndex = imageIds.length - 1
 
-  const middleImageIdIndex = Math.floor(imageIds.length / 2);
+  const middleImageIdIndex = Math.floor(imageIds.length / 2)
 
-  let lowerImageIdIndex = middleImageIdIndex;
-  let upperImageIdIndex = middleImageIdIndex;
+  let lowerImageIdIndex = middleImageIdIndex
+  let upperImageIdIndex = middleImageIdIndex
 
   // Build up an array of images to prefetch, starting with the current image.
   const imageIdsToPrefetch = [
     { imageId: imageIds[middleImageIdIndex], imageIdIndex: middleImageIdIndex },
-  ];
+  ]
 
   // 0: From current stack position down to minimum.
   // 1: From current stack position up to maximum.
 
-  const prefetchQueuedFilled = [false, false];
+  const prefetchQueuedFilled = [false, false]
 
   // Check if on edges and some criteria is already fulfilled
 
   if (middleImageIdIndex === minImageIdIndex) {
-    prefetchQueuedFilled[0] = true;
+    prefetchQueuedFilled[0] = true
   } else if (middleImageIdIndex === maxImageIdIndex) {
-    prefetchQueuedFilled[1] = true;
+    prefetchQueuedFilled[1] = true
   }
 
   while (
@@ -38,30 +38,30 @@ export default function getInterleavedFrames(
   ) {
     if (prefetchQueuedFilled[0] === false) {
       // Add imageId bellow
-      lowerImageIdIndex--;
+      lowerImageIdIndex--
       imageIdsToPrefetch.push({
         imageId: imageIds[lowerImageIdIndex],
         imageIdIndex: lowerImageIdIndex,
-      });
+      })
 
       if (lowerImageIdIndex === minImageIdIndex) {
-        prefetchQueuedFilled[0] = true;
+        prefetchQueuedFilled[0] = true
       }
     }
 
     if (prefetchQueuedFilled[1] === false) {
       // Add imageId above
-      upperImageIdIndex++;
+      upperImageIdIndex++
       imageIdsToPrefetch.push({
         imageId: imageIds[upperImageIdIndex],
         imageIdIndex: upperImageIdIndex,
-      });
+      })
 
       if (upperImageIdIndex === maxImageIdIndex) {
-        prefetchQueuedFilled[1] = true;
+        prefetchQueuedFilled[1] = true
       }
     }
   }
 
-  return imageIdsToPrefetch;
+  return imageIdsToPrefetch
 }

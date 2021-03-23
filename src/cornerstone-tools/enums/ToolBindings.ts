@@ -21,6 +21,6 @@ enum Touch {}
 const enums = {
   Mouse,
   Touch,
-};
+}
 
-export default enums;
+export default enums

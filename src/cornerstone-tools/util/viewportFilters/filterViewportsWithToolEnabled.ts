@@ -1,7 +1,7 @@
-import { ToolGroupManager } from '../../store';
-import { ToolModes } from '../../enums';
+import { ToolGroupManager } from '../../store'
+import { ToolModes } from '../../enums'
 
-const { Active, Passive, Enabled } = ToolModes;
+const { Active, Passive, Enabled } = ToolModes
 
 /**
  * @function filterViewportsWithToolEnabled Given an array of viewports,
@@ -13,29 +13,29 @@ const { Active, Passive, Enabled } = ToolModes;
  * @returns {object[]} A filtered array of viewports.
  */
 export default function filterViewportsWithToolEnabled(viewports, toolName) {
-  const numViewports = viewports.length;
+  const numViewports = viewports.length
 
-  const viewportsWithToolEnabled = [];
+  const viewportsWithToolEnabled = []
 
   for (let vp = 0; vp < numViewports; vp++) {
-    const viewport = viewports[vp];
+    const viewport = viewports[vp]
 
     const toolGroups = ToolGroupManager.getToolGroups(
       viewport.renderingEngineUID,
       viewport.sceneUID,
       viewport.uid
-    );
+    )
 
     const hasTool = toolGroups.some((tg) =>
       _toolGroupHasActiveEnabledOrPassiveTool(tg, toolName)
-    );
+    )
 
     if (hasTool) {
-      viewportsWithToolEnabled.push(viewport);
+      viewportsWithToolEnabled.push(viewport)
     }
   }
 
-  return viewportsWithToolEnabled;
+  return viewportsWithToolEnabled
 }
 
 /**
@@ -49,14 +49,14 @@ export default function filterViewportsWithToolEnabled(viewports, toolName) {
  * @returns {boolean} True if the tool is enabled, passive or active in the `toolGroup`.
  */
 function _toolGroupHasActiveEnabledOrPassiveTool(toolGroup, toolName) {
-  const { tools } = toolGroup;
-  const tool = tools[toolName];
+  const { tools } = toolGroup
+  const tool = tools[toolName]
 
   if (!tool) {
-    return false;
+    return false
   }
 
-  const toolMode = tool.mode;
+  const toolMode = tool.mode
 
-  return toolMode === Active || toolMode === Passive || toolMode === Enabled;
+  return toolMode === Active || toolMode === Passive || toolMode === Enabled
 }

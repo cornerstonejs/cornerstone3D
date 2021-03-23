@@ -1,4 +1,4 @@
-import makeVolumeMetadata from './makeVolumeMetadata';
-import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
+import makeVolumeMetadata from './makeVolumeMetadata'
+import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing'
 
-export { makeVolumeMetadata, sortImageIdsAndGetSpacing };
+export { makeVolumeMetadata, sortImageIdsAndGetSpacing }

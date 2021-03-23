@@ -1,3 +1,3 @@
 export default interface ISetToolModeOptions {
-  bindings: Array<string>;
+  bindings: Array<string>
 }

@@ -1,4 +1,4 @@
-import getDefault from '../util/getDefault';
+import getDefault from '../util/getDefault'
 
 /**
  * Set the {@link https://www.w3.org/TR/2dcontext/#shadows|shadow} properties of the context.
@@ -19,9 +19,9 @@ import getDefault from '../util/getDefault';
  */
 export default function (context, options = {}) {
   if (options.shadow) {
-    context.shadowColor = getDefault(options.shadowColor, '#000000');
-    context.shadowBlur = getDefault(options.shadowBlur, 0);
-    context.shadowOffsetX = getDefault(options.shadowOffsetX, 1);
-    context.shadowOffsetY = getDefault(options.shadowOffsetY, 1);
+    context.shadowColor = getDefault(options.shadowColor, '#000000')
+    context.shadowBlur = getDefault(options.shadowBlur, 0)
+    context.shadowOffsetX = getDefault(options.shadowOffsetX, 1)
+    context.shadowOffsetY = getDefault(options.shadowOffsetY, 1)
   }
 }

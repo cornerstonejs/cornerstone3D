@@ -15,7 +15,7 @@ export default function triggerEvent(
   detail: any = null
 ): boolean {
   if (!type) {
-    throw new Error('Event type was not defined');
+    throw new Error('Event type was not defined')
   }
 
   const event = new CustomEvent(type, {

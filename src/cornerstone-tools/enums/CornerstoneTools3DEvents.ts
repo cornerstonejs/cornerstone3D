@@ -168,4 +168,4 @@ enum CornerstoneTools3DEvents {
   KEY_PRESS = 'cornerstonetools3dkeypress',
 }
 
-export default CornerstoneTools3DEvents;
+export default CornerstoneTools3DEvents

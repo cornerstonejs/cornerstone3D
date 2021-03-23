@@ -1,4 +1,4 @@
-import EVENTS from './../enums/events'
+import EVENTS from './enums/events'
 
 /**
  * EventTarget - Provides the [EventTarget](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) interface
@@ -10,7 +10,7 @@ class CornerstoneEventTarget implements EventTarget {
 
   public addEventListener(type, callback) {
     if (!this.listeners[type]) {
-      this.listeners[type] = [];
+      this.listeners[type] = []
     }
 
     this.listeners[type].push(callback)
@@ -18,7 +18,7 @@ class CornerstoneEventTarget implements EventTarget {
 
   public removeEventListener(type, callback) {
     if (!this.listeners[type]) {
-      return;
+      return
     }
 
     const stack = this.listeners[type]
@@ -36,7 +36,7 @@ class CornerstoneEventTarget implements EventTarget {
   dispatchEvent(event) {
     if (!this.listeners[event.type]) {
       //console.warn(`Skipping dispatch since there are no listeners for ${event.type}`);
-      return;
+      return
     }
 
     const stack = this.listeners[event.type]

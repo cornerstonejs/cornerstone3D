@@ -104,11 +104,14 @@ class Scene {
    * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the volumes to add.
    * @param {boolean} [immediate=false] Whether the `Scene` should be rendered as soon as volumes are added.
    */
-  public async setVolumes(volumeInputArray: Array<VolumeInput>, immediate = false) {
+  public async setVolumes(
+    volumeInputArray: Array<VolumeInput>,
+    immediate = false
+  ) {
     this._volumeActors = []
 
     // TODO: should we have a get or fail? If it's in the cache, give it back, otherwise throw
-    const firstImageVolume = await loadVolume(volumeInputArray[0].volumeUID);
+    const firstImageVolume = await loadVolume(volumeInputArray[0].volumeUID)
 
     if (!firstImageVolume) {
       throw new Error(
@@ -124,7 +127,7 @@ class Scene {
     for (let i = 1; i < numVolumes; i++) {
       const volumeInput = volumeInputArray[i]
 
-      const imageVolume = await loadVolume(volumeInput.volumeUID);
+      const imageVolume = await loadVolume(volumeInput.volumeUID)
 
       if (!imageVolume) {
         throw new Error(

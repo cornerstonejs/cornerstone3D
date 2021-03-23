@@ -7,10 +7,16 @@ interface ICache {
   getMaxCacheSize: () => number
   getCacheSize: () => number
   decacheVolume: (uid: string) => void
-  putImageLoadObject: (imageId: string, imageLoadObject: ImageLoadObject) => void
+  putImageLoadObject: (
+    imageId: string,
+    imageLoadObject: ImageLoadObject
+  ) => void
   getImageLoadObject: (imageId: string) => ImageLoadObject | void
   decacheImage: (uid: string) => void
-  putVolumeLoadObject: (volumeId: string, volumeLoadObject: VolumeLoadObject) => void
+  putVolumeLoadObject: (
+    volumeId: string,
+    volumeLoadObject: VolumeLoadObject
+  ) => void
   getVolumeLoadObject: (volumeId: string) => VolumeLoadObject | void
   decacheVolume: (uid: string) => void
   purgeCache: () => void

@@ -1,8 +1,8 @@
-import { EVENTS as RenderingEngineEvents } from '../../index';
-import { ToolModes } from './../enums';
-import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent';
+import { EVENTS as RenderingEngineEvents } from '../../index'
+import { ToolModes } from './../enums'
+import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 
-const { Active, Passive, Enabled } = ToolModes;
+const { Active, Passive, Enabled } = ToolModes
 
 /**
  * @function onCameraModified - When the camera is modified, check what tools need to react to this.
@@ -17,30 +17,30 @@ const onCameraModified = function (evt) {
     Active,
     Passive,
     Enabled,
-  ]);
+  ])
 
   enabledTools.forEach((tool) => {
     if (tool.onCameraModified) {
-      tool.onCameraModified(evt);
+      tool.onCameraModified(evt)
     }
-  });
-};
+  })
+}
 
 const enable = function (element) {
   element.addEventListener(
     RenderingEngineEvents.CAMERA_MODIFIED,
     onCameraModified
-  );
-};
+  )
+}
 
 const disable = function (element) {
   element.removeEventListener(
     RenderingEngineEvents.CAMERA_MODIFIED,
     onCameraModified
-  );
-};
+  )
+}
 
 export default {
   enable,
   disable,
-};
+}

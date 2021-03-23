@@ -1,4 +1,4 @@
-import path from './path.js';
+import path from './path'
 
 /**
  * Fill the region outside a rectangle defined by `corner1` and `corner2`.
@@ -12,14 +12,14 @@ import path from './path.js';
  * @param {Object} options - See {@link path}
  * @returns {undefined}
  */
-export default function(context, corner1, corner2, options) {
-  const left = Math.min(corner1[0], corner2[0]);
-  const top = Math.min(corner1[1], corner2[1]);
-  const width = Math.abs(corner1[0] - corner2[0]);
-  const height = Math.abs(corner1[1] - corner2[1]);
+export default function (context, corner1, corner2, options) {
+  const left = Math.min(corner1[0], corner2[0])
+  const top = Math.min(corner1[1], corner2[1])
+  const width = Math.abs(corner1[0] - corner2[0])
+  const height = Math.abs(corner1[1] - corner2[1])
 
-  path(context, options, context => {
-    context.rect(0, 0, context.canvas.clientWidth, context.canvas.clientHeight);
-    context.rect(left + width, top, -width, height);
-  });
+  path(context, options, (context) => {
+    context.rect(0, 0, context.canvas.clientWidth, context.canvas.clientHeight)
+    context.rect(left + width, top, -width, height)
+  })
 }

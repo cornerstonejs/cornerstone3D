@@ -4,7 +4,7 @@
  * @param {HTMLElement} element The cornerstone3D enabled element.
  */
 function showToolCursor(element: HTMLElement) {
-  _setCursorStyle(element, 'initial');
+  _setCursorStyle(element, 'initial')
 }
 
 /**
@@ -13,7 +13,7 @@ function showToolCursor(element: HTMLElement) {
  * @param {HTMLElement} element The cornerstone3D enabled element.
  */
 function hideToolCursor(element: HTMLElement) {
-  _setCursorStyle(element, 'none');
+  _setCursorStyle(element, 'none')
 }
 
 /**
@@ -23,7 +23,7 @@ function hideToolCursor(element: HTMLElement) {
  * @param {string} cursorStyle The `style.cursor` property to set on the `element`.
  */
 function _setCursorStyle(element, cursorStyle) {
-  element.style.cursor = cursorStyle;
+  element.style.cursor = cursorStyle
 }
 
-export { showToolCursor, hideToolCursor };
+export { showToolCursor, hideToolCursor }

@@ -1,4 +1,4 @@
-import path from './path.js';
+import path from './path'
 
 /**
  * Draw a rectangle defined by `corner1` and `corner2`.
@@ -17,26 +17,26 @@ import path from './path.js';
  * @param {Number} initialRotation - Rectangle initial rotation
  * @returns {undefined}
  */
-export default function(context, inputCorner1, inputCorner2, options) {
-  const w = Math.abs(inputCorner1[0] - inputCorner2[0]);
-  const h = Math.abs(inputCorner1[1] - inputCorner2[1]);
+export default function (context, inputCorner1, inputCorner2, options) {
+  const w = Math.abs(inputCorner1[0] - inputCorner2[0])
+  const h = Math.abs(inputCorner1[1] - inputCorner2[1])
 
   const corner1 = [
     Math.min(inputCorner1[0], inputCorner2[0]),
     Math.min(inputCorner1[1], inputCorner2[1]),
-  ];
-  const corner2 = [corner1[0] + w, corner1[1] + h];
-  const corner3 = [corner1[0] + w, corner1[1]];
-  const corner4 = [corner1[0], corner1[1] + h];
+  ]
+  const corner2 = [corner1[0] + w, corner1[1] + h]
+  const corner3 = [corner1[0] + w, corner1[1]]
+  const corner4 = [corner1[0], corner1[1] + h]
 
-  path(context, options, context => {
-    context.moveTo(corner1[0], corner1[1]);
-    context.lineTo(corner3[0], corner3[1]);
-    context.moveTo(corner3[0], corner3[1]);
-    context.lineTo(corner2[0], corner2[1]);
-    context.moveTo(corner2[0], corner2[1]);
-    context.lineTo(corner4[0], corner4[1]);
-    context.moveTo(corner4[0], corner4[1]);
-    context.lineTo(corner1[0], corner1[1]);
-  });
+  path(context, options, (context) => {
+    context.moveTo(corner1[0], corner1[1])
+    context.lineTo(corner3[0], corner3[1])
+    context.moveTo(corner3[0], corner3[1])
+    context.lineTo(corner2[0], corner2[1])
+    context.moveTo(corner2[0], corner2[1])
+    context.lineTo(corner4[0], corner4[1])
+    context.moveTo(corner4[0], corner4[1])
+    context.lineTo(corner1[0], corner1[1])
+  })
 }

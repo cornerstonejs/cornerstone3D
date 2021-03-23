@@ -1,4 +1,4 @@
-import { Point3 } from '../../../types';
+import { Point3 } from '../../../types'
 
 /**
  * @function isEqual returns equal if the two vec3s are identical within the
@@ -13,11 +13,11 @@ import { Point3 } from '../../../types';
 export default function isEqual(
   v1: Point3,
   v2: Point3,
-  tolerance: number = 1e-5
+  tolerance = 1e-5
 ): boolean {
   return (
     Math.abs(v1[0] - v2[0]) < tolerance &&
     Math.abs(v1[1] - v2[1]) < tolerance &&
     Math.abs(v1[2] - v2[2]) < tolerance
-  );
+  )
 }

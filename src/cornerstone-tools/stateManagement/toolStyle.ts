@@ -1,12 +1,12 @@
 let defaultWidth = 1,
-  activeWidth = 2;
+  activeWidth = 2
 
 /**
  * @function setToolWidth Sets the tool width used to draw lines.
  * @param {number} width The new width.
  */
 function setToolWidth(width: number) {
-  defaultWidth = width;
+  defaultWidth = width
 }
 
 /**
@@ -14,7 +14,7 @@ function setToolWidth(width: number) {
  * @returns {number} The width.
  */
 function getToolWidth(): number {
-  return defaultWidth;
+  return defaultWidth
 }
 
 /**
@@ -22,7 +22,7 @@ function getToolWidth(): number {
  * @param {number} width The new width.
  */
 function setActiveWidth(width) {
-  activeWidth = width;
+  activeWidth = width
 }
 
 /**
@@ -30,7 +30,7 @@ function setActiveWidth(width) {
  * @returns {number} The width.
  */
 function getActiveWidth() {
-  return activeWidth;
+  return activeWidth
 }
 
 const toolStyle = {
@@ -38,6 +38,6 @@ const toolStyle = {
   getToolWidth,
   setActiveWidth,
   getActiveWidth,
-};
+}
 
-export default toolStyle;
+export default toolStyle

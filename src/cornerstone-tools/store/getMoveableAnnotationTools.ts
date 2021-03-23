@@ -1,14 +1,9 @@
-import {
-  ToolSpecificToolData,
-  ToolAndToolStateArray,
-  Point2
-} from '../types'
-
+import { ToolSpecificToolData, ToolAndToolStateArray, Point2 } from '../types'
 
 type ToolAndToolData = {
-  tool: any;
-  toolData: ToolSpecificToolData;
-};
+  tool: any
+  toolData: ToolSpecificToolData
+}
 
 /**
  * @function getMoveableAnnotationTools Filters an array of tools, returning only
@@ -24,12 +19,12 @@ export default function getMoveableAnnotationTools(
   element: HTMLElement,
   toolAndToolStateArray: ToolAndToolStateArray,
   canvasCoords: Point2,
-  interactionType: string = 'mouse'
+  interactionType = 'mouse'
 ): Array<ToolAndToolData> {
-  const proximity = 6;
+  const proximity = 6
 
   if (toolAndToolStateArray.length === 0) {
-    return [];
+    return []
   }
 
   // TODO - This could get pretty expensive pretty quickly. We don't want to fetch the camera
@@ -38,7 +33,7 @@ export default function getMoveableAnnotationTools(
   // We want to produce a matrix from canvas to world for the viewport and just do a matrix operation on each handle.
   // This could still be expensive for ROIs, but we probably shouldn't have "handles" for them anyway.
 
-  const moveableAnnotationTools = [];
+  const moveableAnnotationTools = []
 
   toolAndToolStateArray.forEach(({ tool, toolState }) => {
     for (let i = 0; i < toolState.length; i++) {
@@ -47,17 +42,17 @@ export default function getMoveableAnnotationTools(
         toolState[i],
         canvasCoords,
         proximity
-      );
+      )
 
       if (near) {
         moveableAnnotationTools.push({
           tool,
           toolData: toolState[i],
-        });
-        break;
+        })
+        break
       }
     }
-  });
+  })
 
-  return moveableAnnotationTools;
+  return moveableAnnotationTools
 }

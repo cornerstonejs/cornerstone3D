@@ -1,5 +1,5 @@
-import { cache } from '../../../index';
-import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import { cache } from '../../../index'
+import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 /**
  * @function getTargetVolume Given a scene and camera, find the target volume for a tool.
@@ -17,30 +17,28 @@ export default function getTargetVolume(
   camera,
   targetVolumeUID?: string
 ) {
-  const { viewPlaneNormal } = camera;
+  const { viewPlaneNormal } = camera
 
-  const volumeActors = scene.getVolumeActors();
+  const volumeActors = scene.getVolumeActors()
 
   if (!volumeActors && !volumeActors.length) {
     // No stack to scroll through
-    return { spacingInNormalDirection: null, imageVolume: null };
+    return { spacingInNormalDirection: null, imageVolume: null }
   }
-  const numVolumeActors = volumeActors.length;
+  const numVolumeActors = volumeActors.length
 
-  const imageVolumes = volumeActors.map((va) =>
-    cache.getImageVolume(va.uid)
-  );
+  const imageVolumes = volumeActors.map((va) => cache.getImageVolume(va.uid))
 
   if (targetVolumeUID) {
     // If a volumeUID is defined, set that volume as the target
-    const imageVolume = imageVolumes.find((iv) => iv.uid === targetVolumeUID);
+    const imageVolume = imageVolumes.find((iv) => iv.uid === targetVolumeUID)
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
-    );
+    )
 
-    return { imageVolume, spacingInNormalDirection };
+    return { imageVolume, spacingInNormalDirection }
   }
 
   // Fetch volume actor with finest resolution in direction of projection.
@@ -48,21 +46,21 @@ export default function getTargetVolume(
   const smallest = {
     spacingInNormalDirection: Infinity,
     imageVolume: null,
-  };
+  }
 
   for (let i = 0; i < numVolumeActors; i++) {
-    const imageVolume = imageVolumes[i];
+    const imageVolume = imageVolumes[i]
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
-    );
+    )
 
     if (spacingInNormalDirection < smallest.spacingInNormalDirection) {
-      smallest.spacingInNormalDirection = spacingInNormalDirection;
-      smallest.imageVolume = imageVolume;
+      smallest.spacingInNormalDirection = spacingInNormalDirection
+      smallest.imageVolume = imageVolume
     }
   }
 
-  return smallest;
+  return smallest
 }

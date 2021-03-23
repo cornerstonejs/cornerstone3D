@@ -13,24 +13,24 @@
  * @param {CanvasRenderingContext2D} context
  */
 
-import draw from './draw.js';
-import drawArrow from './drawArrow.js';
-import drawCircle from './drawCircle.js';
-import drawEllipse from './drawEllipse.js';
-import drawHandles from './drawHandles.js';
-import drawJoinedLines from './drawJoinedLines.js';
-import drawLine from './drawLine.js';
-import drawLines from './drawLines.js';
-import drawLink from './drawLink.js';
-import drawLinkedTextBox from './drawLinkedTextBox.js';
-import drawRect from './drawRect.js';
-import drawTextBox from './drawTextBox.js';
-import fillBox from './fillBox.js';
-import fillOutsideRect from './fillOutsideRect.js';
-import fillTextLines from './fillTextLines.js';
-import getNewContext from './getNewContext.js';
-import path from './path.js';
-import setShadow from './setShadow.js';
+import draw from './draw'
+import drawArrow from './drawArrow'
+import drawCircle from './drawCircle'
+import drawEllipse from './drawEllipse'
+import drawHandles from './drawHandles'
+import drawJoinedLines from './drawJoinedLines'
+import drawLine from './drawLine'
+import drawLines from './drawLines'
+import drawLink from './drawLink'
+import drawLinkedTextBox from './drawLinkedTextBox'
+import drawRect from './drawRect'
+import drawTextBox from './drawTextBox'
+import fillBox from './fillBox'
+import fillOutsideRect from './fillOutsideRect'
+import fillTextLines from './fillTextLines'
+import getNewContext from './getNewContext'
+import path from './path'
+import setShadow from './setShadow'
 
 // Named exports
 export {
@@ -52,7 +52,7 @@ export {
   getNewContext,
   path,
   setShadow,
-};
+}
 
 export default {
   draw,
@@ -73,4 +73,4 @@ export default {
   getNewContext,
   path,
   setShadow,
-};
+}

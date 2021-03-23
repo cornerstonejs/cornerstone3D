@@ -1,5 +1,5 @@
-import mouseEventListeners from './mouse/index';
-import wheelEventListener from './wheel/index';
-//import touchEventListeners from './touchEventListeners.js';
+import mouseEventListeners from './mouse/index'
+import wheelEventListener from './wheel/index'
+//import touchEventListeners from './touchEventListeners';
 
-export { mouseEventListeners, wheelEventListener };
+export { mouseEventListeners, wheelEventListener }

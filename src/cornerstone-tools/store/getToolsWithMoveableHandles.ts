@@ -1,14 +1,10 @@
-import {
-  ToolAndToolStateArray,
-  ToolSpecificToolData,
-  Point2
-} from '../types'
+import { ToolAndToolStateArray, ToolSpecificToolData, Point2 } from '../types'
 
 type ToolsWithMoveableHandles = {
-  tool: any;
-  toolData: ToolSpecificToolData;
-  handle: any;
-};
+  tool: any
+  toolData: ToolSpecificToolData
+  handle: any
+}
 
 /**
  * @function getToolsWithMoveableHandles Filters an array of tools, returning
@@ -29,13 +25,13 @@ export default function getToolsWithMoveableHandles(
   canvasCoords: Point2,
   interactionType = 'mouse'
 ): Array<ToolsWithMoveableHandles> {
-  const proximity = 6;
+  const proximity = 6
 
   if (toolAndToolStateArray.length === 0) {
-    return [];
+    return []
   }
 
-  const toolsWithMoveableHandles = [];
+  const toolsWithMoveableHandles = []
 
   toolAndToolStateArray.forEach(({ tool, toolState }) => {
     for (let i = 0; i < toolState.length; i++) {
@@ -44,18 +40,18 @@ export default function getToolsWithMoveableHandles(
         toolState[i],
         canvasCoords,
         proximity
-      );
+      )
 
       if (handle) {
         toolsWithMoveableHandles.push({
           tool,
           toolData: toolState[i],
           handle,
-        });
-        break;
+        })
+        break
       }
     }
-  });
+  })
 
-  return toolsWithMoveableHandles;
+  return toolsWithMoveableHandles
 }

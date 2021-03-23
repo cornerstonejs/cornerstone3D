@@ -1,5 +1,5 @@
-import drawLine from './drawLine.js';
-import drawJoinedLines from './drawJoinedLines.js';
+import drawLine from './drawLine'
+import drawJoinedLines from './drawJoinedLines'
 
 /**
  * Draw an arrow using the drawing API.
@@ -14,24 +14,24 @@ import drawJoinedLines from './drawJoinedLines.js';
  * @param  {number} lineWidth The width of the arrow line.
  * @returns {undefined}
  */
-export default function(context, start, end, color, lineWidth) {
+export default function (context, start, end, color, lineWidth) {
   // Variables to be used when creating the arrow
-  const headLength = 10;
+  const headLength = 10
 
-  const angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
+  const angle = Math.atan2(end[1] - start[1], end[0] - start[0])
 
   // Starting path of the arrow from the start square to the end square and drawing the stroke
   let options = {
     color,
     lineWidth,
-  };
+  }
 
-  drawLine(context, undefined, start, end, options, 'canvas');
+  drawLine(context, undefined, start, end, options, 'canvas')
   options = {
     color,
     lineWidth,
     fillStyle: color,
-  };
+  }
 
   const points = [
     [
@@ -43,7 +43,7 @@ export default function(context, start, end, color, lineWidth) {
       end[1] - headLength * Math.sin(angle + Math.PI / 7),
     ],
     end,
-  ];
+  ]
 
-  drawJoinedLines(context, undefined, end, points, options, 'canvas');
+  drawJoinedLines(context, undefined, end, points, options, 'canvas')
 }
