@@ -46,12 +46,12 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param  {any} handle - The selected handle.
    * @param  {string} interactionType - The intraction type the handle was selected with.
    */
-  public handleSelectedCallback(
+  public abstract handleSelectedCallback(
     evt,
     toolData: ToolSpecificToolData,
     handle,
     interactionType
-  ) {}
+  )
 
   /**
    * @virtual @method toolSelectedCallback Custom callback for when a tool is selected.
@@ -61,11 +61,11 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param  {ToolSpecificToolData} toolData - The `ToolSpecificToolData` to check.
    * @param  {string} [interactionType=mouse]
    */
-  public toolSelectedCallback(
+  public abstract toolSelectedCallback(
     evt,
     toolData: ToolSpecificToolData,
     interactionType
-  ) {}
+  )
 
   /**
    * @virtual @method Event handler for MOUSE_MOVE event.
@@ -126,12 +126,12 @@ abstract class BaseAnnotationTool extends BaseTool {
    *
    * @returns {any|undefined} The handle if found (may be a point, textbox or other).
    */
-  public getHandleNearImagePoint(
+  public abstract getHandleNearImagePoint(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
     canvasCoords: Point2,
     proximity: number
-  ): any | undefined {}
+  ): any | undefined
 
   /**
    * @virtual @method Returns true if the given coords are need the tool.
@@ -145,13 +145,13 @@ abstract class BaseAnnotationTool extends BaseTool {
    *
    * @returns {boolean} If the point is near the tool.
    */
-  public pointNearTool(
+  public abstract pointNearTool(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
     canvasCoords: Point2,
     proximity,
     interactionType = 'mouse'
-  ) {}
+  )
 
   /**
    * @protected @method _imagePointNearToolOrHandle Returns true if the

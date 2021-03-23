@@ -8,6 +8,7 @@ import RenderingEngine from './RenderingEngine'
 import eventTarget from './eventTarget'
 import getRenderingEngine from './RenderingEngine/getRenderingEngine'
 import cache from './cache'
+import { ImageVolume } from './cache/classes/ImageVolume'
 import {
   loadImage,
   loadAndCacheImage,
@@ -67,4 +68,5 @@ export {
   Utilities,
   //
   requestPoolManager,
+  ImageVolume,
 }

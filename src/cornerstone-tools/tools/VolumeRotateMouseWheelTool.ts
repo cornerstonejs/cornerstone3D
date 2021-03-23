@@ -11,8 +11,6 @@ enum DIRECTIONS {
 }
 
 export default class VolumeRotateMouseWheelTool extends BaseTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
   _configuration: any
 
   constructor(toolConfiguration = {}) {

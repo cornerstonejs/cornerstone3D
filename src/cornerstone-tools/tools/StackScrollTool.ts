@@ -2,8 +2,8 @@ import { BaseTool } from './base/index'
 import { scrollThroughStack } from '../util/stackScrollTool'
 
 export default class StackScrollTool extends BaseTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
+  touchDragCallback: () => void
+  mouseDragCallback: () => void
   _configuration: any
 
   // Apparently TS says super _must_ be the first call? This seems a bit opinionated.

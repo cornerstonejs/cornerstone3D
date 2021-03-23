@@ -22,7 +22,7 @@ export type VolumeActorEntry = {
 
 type VolumeInput = {
   volumeUID: string
-  callback?: Function
+  callback?: () => any
   blendMode?: string
   slabThickness?: number
 }

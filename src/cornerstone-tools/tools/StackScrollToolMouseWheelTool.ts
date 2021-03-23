@@ -2,8 +2,6 @@ import { BaseTool } from './base/index'
 import { scrollThroughStack } from '../util/stackScrollTool'
 
 export default class StackScrollMouseWheelTool extends BaseTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
   _configuration: any
 
   constructor(toolConfiguration = {}) {

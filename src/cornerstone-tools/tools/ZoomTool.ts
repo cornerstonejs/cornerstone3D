@@ -3,8 +3,8 @@ import { BaseTool } from './base/index'
 import { getEnabledElement } from '@cornerstone'
 
 export default class ZoomTool extends BaseTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
+  touchDragCallback: () => void
+  mouseDragCallback: () => void
 
   // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(toolConfiguration = {}) {
@@ -14,7 +14,7 @@ export default class ZoomTool extends BaseTool {
     })
 
     /**
-     * Will only fire fore cornerstone events:
+     * Will only fire two cornerstone events:
      * - TOUCH_DRAG
      * - MOUSE_DRAG
      *

@@ -117,7 +117,7 @@ function getTransferSyntaxForContentType(contentType: string): string {
   return defaultTransferSyntax
 }
 
-registerImageLoader('csiv', _loadImageIntoBuffer)
+registerImageLoader('csiv', sharedArrayBufferImageLoader)
 
 export default sharedArrayBufferImageLoader
 

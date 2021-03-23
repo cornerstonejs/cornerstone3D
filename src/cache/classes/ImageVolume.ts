@@ -1,7 +1,7 @@
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses'
 import { IImageVolume, Metadata, Point3 } from './../../types'
 
-class ImageVolume {
+export class ImageVolume {
   readonly uid: string
   dimensions: Point3
   direction: Array<number>
