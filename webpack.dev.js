@@ -10,7 +10,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 // PATHS
 const PROJECT_ROOT = path.join(__dirname)
-const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/index.ts')
+const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/cornerstone-core/')
 const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/')
 const LOADER_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-streaming-image-volume-loader/')
 const ENTRY_EXAMPLES = path.join(PROJECT_ROOT, './examples/index.tsx')

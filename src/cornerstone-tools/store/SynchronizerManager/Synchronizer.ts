@@ -4,7 +4,7 @@ import {
   getRenderingEngine,
   getEnabledElement,
   EVENTS as RENDERING_EVENTS,
-} from './../../../index'
+} from '@cornerstone'
 
 export interface ISynchronizerEventHandler {
   (
@@ -194,7 +194,6 @@ class Synchronizer {
     }
 
     viewports.forEach(function (vUid) {
-      //
       const canvas = getRenderingEngine(vUid.renderingEngineUID)
         .getScene(vUid.sceneUID)
         .getViewport(vUid.viewportUID)

@@ -284,7 +284,7 @@ export default class StreamingImageVolume extends ImageVolume {
       const generalSeriesModule =
         metaData.get('generalSeriesModule', imageId) || {}
 
-      const scalingParameters: ScalingParematers = {
+      const scalingParameters: ScalingParameters = {
         rescaleSlope: modalityLutModule.rescaleSlope,
         rescaleIntercept: modalityLutModule.rescaleIntercept,
         modality: generalSeriesModule.modality,

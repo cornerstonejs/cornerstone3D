@@ -19,7 +19,11 @@ import RenderingEngine from './RenderingEngine'
  * @returns the matching RenderingEngine, or `undefined` if there is no match
  * @public
  */
-function getRenderingEngine(uid: string): RenderingEngine | undefined {
+export function getRenderingEngine(uid: string): RenderingEngine | undefined {
+  if (!uid) {
+    return renderingEngineCache.getAll();
+  }
+
   return renderingEngineCache.get(uid)
 }
 

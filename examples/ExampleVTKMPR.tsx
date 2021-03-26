@@ -99,33 +99,6 @@ class VTKMPRExample extends Component {
     this.ctWLSync = createVOISynchronizer('ctWLSync');
     this.ptThresholdSync = createVOISynchronizer('ptThresholdSync');
 
-    eventTarget.addEventListener(
-      RENDERING_EVENTS.ELEMENT_ENABLED,
-      (evt) => {
-        const eventData = evt.detail;
-        const { canvas } = eventData;
-
-        canvas.addEventListener(
-          RENDERING_EVENTS.VOI_MODIFIED,
-
-          this.updateVOI
-        );
-      }
-    );
-
-    eventTarget.addEventListener(
-      RENDERING_EVENTS.ELEMENT_DISABLED,
-      (evt) => {
-        const eventData = evt.detail;
-        const { canvas } = eventData;
-
-        canvas.removeEventListener(
-          RENDERING_EVENTS.VOI_MODIFIED,
-          this.updateVOI
-        );
-      }
-    );
-
     this.viewportGridResizeObserver = new ResizeObserver(entries => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
@@ -134,22 +107,6 @@ class VTKMPRExample extends Component {
         this.renderingEngine.render();
       }
     });
-  }
-
-  updateVOI = (evt) => {
-    /*const eventData = evt.detail;
-    const { range, volumeUID } = eventData;
-
-    if (volumeUID === ctVolumeUID) {
-      // Process WL
-      const wc = (range.lower + range.upper) / 2;
-      const ww = range.upper - range.lower;
-
-      this.setState({ ctWindowLevelDisplay: { ww, wc } });
-    } else if (volumeUID === ptVolumeUID) {
-      // Process Threshold
-      this.setState({ ptThresholdDisplay: range.upper });
-    }*/
   };
 
   /**

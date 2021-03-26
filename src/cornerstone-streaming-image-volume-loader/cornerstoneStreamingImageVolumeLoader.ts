@@ -1,10 +1,9 @@
-import { registerVolumeLoader, registerUnknownVolumeLoader } from '@cornerstone'
+import { registerVolumeLoader, registerUnknownVolumeLoader, cache, Utilities } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
-import cache from '../cache/cache'
-import makeVolumeMetadata from '../cache/helpers/makeVolumeMetadata'
-import sortImageIdsAndGetSpacing from '../cache/helpers/sortImageIdsAndGetSpacing'
+import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers/'
 import StreamingImageVolume from './StreamingImageVolume'
-import { createUint8SharedArray, createFloat32SharedArray } from '../utilities'
+
+const { createUint8SharedArray, createFloat32SharedArray } = Utilities
 
 function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,
@@ -124,7 +123,7 @@ function cornerstoneStreamingImageVolumeLoader(
     promise: Promise.resolve(streamingImageVolume),
     cancelFn: () => {
       streamingImageVolume.cancelLoading()
-    }, // streamingImageVolume.cancelLoading()
+    },
   }
 }
 

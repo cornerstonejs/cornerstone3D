@@ -1,4 +1,4 @@
-import renderingEngineCache from '../../RenderingEngine/renderingEngineCache'
+import { getRenderingEngine } from '@cornerstone'
 
 const autoLoad = (volumeUID) => {
   const { renderingEngine, sceneUIDs } = getRenderingEngineContainingVolume(
@@ -17,7 +17,7 @@ const autoLoad = (volumeUID) => {
 }
 
 function getRenderingEngineContainingVolume(volumeUID) {
-  const renderingEngines = renderingEngineCache.getAll()
+  const renderingEngines = getRenderingEngine()
 
   for (let i = 0; i < renderingEngines.length; i++) {
     const renderingEngine = renderingEngines[i]

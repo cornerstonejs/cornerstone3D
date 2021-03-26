@@ -7,7 +7,7 @@ import {
 } from '../types/toolStateTypes'
 import cloneDeep from 'lodash.clonedeep'
 
-import { EVENTS as RENDERING_EVENTS, eventTarget } from '../../index'
+import { EVENTS as RENDERING_EVENTS, eventTarget } from '@cornerstone'
 
 interface FilterInterface {
   FrameOfReferenceUID?: string

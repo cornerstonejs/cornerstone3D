@@ -10,7 +10,7 @@ import { Orientation } from './../types'
  *  that represents the up direction for the view.
  * - `sliceNormal` - The direction of the projection
  *
- * These values may make slightly more sense when we peal back the curtains of
+ * These values may make slightly more sense when we peel back the curtains of
  * our solution and look at the camera that's leveraging these values.
  *
  * @see {@link https://faculty.washington.edu/chudler/slice.html|Axial vs Sagittal vs Coronal}

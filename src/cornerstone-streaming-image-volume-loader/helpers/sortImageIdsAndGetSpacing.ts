@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix'
-import metaData from '../../metaData'
+import { metaData } from '@cornerstone'
 
 type SortedImageIdsItem = {
   zSpacing: number

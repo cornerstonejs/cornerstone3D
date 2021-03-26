@@ -1,4 +1,4 @@
-import { EVENTS as RenderingEngineEvents } from '../../index'
+import { EVENTS as RenderingEngineEvents } from '@cornerstone'
 import { ToolModes } from './../enums'
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 

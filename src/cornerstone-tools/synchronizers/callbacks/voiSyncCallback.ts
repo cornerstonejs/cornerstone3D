@@ -1,4 +1,4 @@
-import { getRenderingEngine } from '../../../index'
+import { getRenderingEngine } from '@cornerstone'
 import IViewportUID from '../../store/IViewportUID'
 
 /**

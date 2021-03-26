@@ -1,7 +1,6 @@
-import metaData from '../../metaData'
-import { Metadata } from './../../types'
+import { metaData, Types } from '@cornerstone'
 
-export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
+export default function makeVolumeMetadata(imageIds: Array<string>): Types.Metadata {
   const imageId0 = imageIds[0]
 
   const {

@@ -1,4 +1,4 @@
-import { cache } from '../../../index'
+import { cache } from '@cornerstone'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 /**

@@ -1,5 +1,5 @@
 import { SynchronizerManager } from '../../store/'
-import { EVENTS as RENDERING_EVENTS } from '../../../index'
+import { EVENTS as RENDERING_EVENTS } from '@cornerstone'
 import cameraSyncCallback from '../callbacks/cameraSyncCallback'
 import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
 
