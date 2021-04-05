@@ -8,6 +8,7 @@ import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import { Representation } from 'vtk.js/Sources/Rendering/Core/Property/Constants'
 import { BlendMode } from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
+const { vtkWarningMacro } = macro
 /**
  * vtkStreamingOpenGLVolumeMapper - A dervied class of the core vtkOpenGLVolumeMapper class.
  * This class  replaces the buildBufferObjects function so that we progressively upload our textures
@@ -173,7 +174,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         const previousTextureSize =
           previousTextureParameters.width *
           previousTextureParameters.height *
-          previousTextureParameters.depth
+          previousTextureParameters.depth *
+          previousTextureParameters.numComps
         if (data.length === previousTextureSize) {
           shouldReset = false
         }

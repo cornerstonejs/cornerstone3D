@@ -11,8 +11,8 @@ import { getEnabledElement } from '@cornerstone'
  * @extends {BaseTool}
  */
 export default class PanTool extends BaseTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
+  touchDragCallback: () => void
+  mouseDragCallback: () => void
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {

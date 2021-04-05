@@ -8,7 +8,7 @@ interface IVolume {
   spacing: Array<number>
   origin: Array<number>
   direction: Array<number>
-  vtkImageData: object
+  vtkImageData: Record<string, unknown>
   scaling?: any
   scalarData: Float32Array | Uint8Array
 }

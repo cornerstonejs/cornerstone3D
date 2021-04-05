@@ -9,5 +9,5 @@ export {
   makeVolumeMetadata,
   getInterleavedFrames,
   getImageIdInstanceMetadata,
-  autoLoad
+  autoLoad,
 }

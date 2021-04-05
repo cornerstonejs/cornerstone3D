@@ -65,8 +65,12 @@ export default class WindowLevelTool extends BaseTool {
 
     const deltaPointsCanvas = deltaPoints.canvas
 
-    const imageDynamicRange = this._getImageDynamicRange(volumeUID)
-    const multiplier = Math.round(imageDynamicRange / 1024)
+    let multiplier = 1
+    if (volumeUID) {
+      const imageDynamicRange = this._getImageDynamicRange(volumeUID)
+
+      multiplier = Math.round(imageDynamicRange / 1024)
+    }
 
     const wwDelta = deltaPointsCanvas[0] * multiplier
     const wcDelta = deltaPointsCanvas[1] * multiplier

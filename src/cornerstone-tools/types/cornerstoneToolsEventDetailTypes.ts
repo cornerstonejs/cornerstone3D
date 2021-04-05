@@ -6,8 +6,8 @@ interface ICornerstoneToolsEventDetail {
   sceneUID: string
   viewportUID: string
 
-  event: object
-  camera: object
+  event: Record<string, unknown>
+  camera: Record<string, unknown>
   element: HTMLElement
   //
   startPoints: IPoints

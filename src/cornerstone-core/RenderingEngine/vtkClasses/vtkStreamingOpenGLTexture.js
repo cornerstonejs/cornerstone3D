@@ -105,10 +105,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const buffer = data.buffer
 
     const frameLength = model.width * model.height
-    const frameLengthInBytes = frameLength * bytesPerVoxel
+    const frameLengthInBytes = frameLength * model.components * bytesPerVoxel
 
     const zOffset = frameIndex * frameLengthInBytes
-    const rowLength = model.width
+    const rowLength = model.width * model.components
 
     const gl = model.context
 
@@ -120,7 +120,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
      * This block-size based on 2D texture size seems like the safest approach that should work on most systems.
      *
      * There are certainly further optimizations that could be done here, we can do bigger chunks with other systems
-     * But we need to find the _exact_ criteria. And then its not even guaranteed it'll be much fasteR.
+     * But we need to find the _exact_ criteria. And then its not even guaranteed it'll be much faster.
      */
     const MAX_TEXTURE_SIZE = gl.getParameter(gl.MAX_TEXTURE_SIZE)
     let blockHeight = Math.floor(

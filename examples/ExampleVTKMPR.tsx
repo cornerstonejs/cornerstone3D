@@ -7,7 +7,6 @@ import {
   EVENTS as RENDERING_EVENTS,
 } from '@cornerstone';
 import { SynchronizerManager, synchronizers } from '@cornerstone-tools';
-import { cornerstoneStreamingImageVolumeLoader } from '@cornerstone-streaming-image-volume';
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';

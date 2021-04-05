@@ -7,8 +7,8 @@ import {
 import { BaseTool } from './base/index'
 
 export default class PetThresholdTool extends BaseTool {
-  touchDragCallback: Function
-  mouseDragCallback: Function
+  touchDragCallback: () => void
+  mouseDragCallback: () => void
   _configuration: any
 
   constructor(toolConfiguration = {}) {

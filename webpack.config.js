@@ -6,9 +6,8 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 //
 const PROJECT_ROOT = path.join(__dirname)
-const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/cornerstone-core/')
+const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/index.ts')
 const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/')
-const LOADER_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-streaming-image-volume-loader/')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const OUT_PATH = path.join(PROJECT_ROOT, './dist')
 
@@ -25,9 +24,8 @@ module.exports = (env, argv) => {
     entry: {
       rendering: RENDERING_ROOT,
       tools: TOOLS_ROOT,
-      streaming_volume_loader: LOADER_ROOT,
     },
-    devtool: 'source-map',
+    devtool: 'eval-source-map',
     output: {
       path: OUT_PATH,
       filename: outputFilename,
@@ -50,7 +48,6 @@ module.exports = (env, argv) => {
         // https://stackoverflow.com/a/40444084/1867984
         '@cornerstone': RENDERING_ROOT,
         '@cornerstone-tools': TOOLS_ROOT,
-        '@cornerstone-streaming-image-volume-loader': LOADER_ROOT,
       },
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       fallback: {
@@ -64,17 +61,41 @@ module.exports = (env, argv) => {
       // Used to build/load metadata
       // TODO: Remove these as dependencies
       {
+        'cornerstone-core': {
+          commonjs: 'cornerstone-core',
+          commonjs2: 'cornerstone-core',
+          amd: 'cornerstone-core',
+          root: 'cornerstone',
+        },
+        'cornerstone-math': {
+          commonjs: 'cornerstone-math',
+          commonjs2: 'cornerstone-math',
+          amd: 'cornerstone-math',
+          root: 'cornerstoneMath',
+        },
+        'cornerstone-tools': {
+          commonjs: 'cornerstone-tools',
+          commonjs2: 'cornerstone-tools',
+          amd: 'cornerstone-tools',
+          root: 'cornerstoneTools',
+        },
         'cornerstone-wado-image-loader': {
           commonjs: 'cornerstone-wado-image-loader',
           commonjs2: 'cornerstone-wado-image-loader',
           amd: 'cornerstone-wado-image-loader',
           root: 'cornerstoneWADOImageLoader',
-        }
-      }
+        },
+        'gl-matrix': {
+          root: 'window',
+          commonjs: 'gl-matrix',
+          commonjs2: 'gl-matrix',
+          amd: 'gl-matrix',
+        },
+      },
     ],
     plugins: [
       // Uncomment to generate bundle analyzer
-      // new BundleAnalyzerPlugin(),
+      new BundleAnalyzerPlugin(),
       // Show build progress
       new webpack.ProgressPlugin(),
       // Clear dist between builds

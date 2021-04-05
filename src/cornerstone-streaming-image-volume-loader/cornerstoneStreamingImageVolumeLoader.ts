@@ -1,4 +1,9 @@
-import { registerVolumeLoader, registerUnknownVolumeLoader, cache, Utilities } from '@cornerstone'
+import {
+  registerVolumeLoader,
+  registerUnknownVolumeLoader,
+  cache,
+  Utilities,
+} from '@cornerstone'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers/'
 import StreamingImageVolume from './StreamingImageVolume'
@@ -24,6 +29,7 @@ function cornerstoneStreamingImageVolumeLoader(
   const {
     BitsAllocated,
     PixelRepresentation,
+    PhotometricInterpretation,
     ImageOrientationPatient,
     PixelSpacing,
     Columns,
@@ -70,6 +76,11 @@ function cornerstoneStreamingImageVolumeLoader(
   cache.checkCacheSizeCanSupportVolume(sizeInBytes)
   // if so, start erasing volatile data so you can allocate
 
+  let numComponents = 1
+  if (PhotometricInterpretation === 'RGB') {
+    numComponents = 3
+  }
+
   let scalarData
 
   switch (BitsAllocated) {
@@ -89,6 +100,14 @@ function cornerstoneStreamingImageVolumeLoader(
     case 16:
       scalarData = createFloat32SharedArray(
         dimensions[0] * dimensions[1] * dimensions[2]
+      )
+
+      break
+
+    case 24:
+      // hacky because we don't support alpha channel in dicom
+      scalarData = createUint8SharedArray(
+        dimensions[0] * dimensions[1] * dimensions[2] * numComponents
       )
 
       break

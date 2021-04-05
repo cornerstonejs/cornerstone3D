@@ -12,7 +12,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const PROJECT_ROOT = path.join(__dirname)
 const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/cornerstone-core/')
 const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/')
-const LOADER_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-streaming-image-volume-loader/')
+const LOADER_ROOT = path.resolve(
+  PROJECT_ROOT,
+  './src/cornerstone-streaming-image-volume-loader/'
+)
 const ENTRY_EXAMPLES = path.join(PROJECT_ROOT, './examples/index.tsx')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const OUT_PATH = path.join(PROJECT_ROOT, './dist')
@@ -31,12 +34,12 @@ module.exports = {
   entry: {
     examples: ENTRY_EXAMPLES,
   },
-  devtool: 'source-map',
+  devtool: 'eval-source-map',
   mode: 'development',
   output: {
     path: OUT_PATH,
     filename: '[name].bundle.[contenthash].js',
-    library: 'ReactVTKjsViewport',
+    library: 'Cornerstone3DAlpha',
     libraryTarget: 'umd',
     globalObject: 'this',
   },
@@ -91,6 +94,9 @@ module.exports = {
       template: path.resolve(__dirname, 'public', 'index.html'),
     }),
     // Copy "Public" Folder to Dist (test data)
+    /*
+    Disabling for now due to ERROR in Conflict: Multiple assets emit different content to the same filename index.html
+    CopyWebpackPlugin does not ignore things properly?
     new CopyWebpackPlugin({
       patterns: [
         {
@@ -102,16 +108,7 @@ module.exports = {
           },
         },
       ],
-    }),
-    new CopyWebpackPlugin({
-      patterns: [
-        // Copy over and rename our target app config file
-        {
-          from: APP_CONFIG_PATH,
-          to: `${OUT_PATH}/app-config.js`,
-        },
-      ],
-    }),
+    }),*/
   ],
   devServer: {
     hot: true,

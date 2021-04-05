@@ -1,78 +1,80 @@
-import cache from '../cache';
+// import cache from '../cache';
+// import ImageVolume from '../classes/ImageVolume';
 
-export default function makeAndCacheLocalImageVolume(
-  properties: any = {},
-  uid: string
-): ImageVolume => {
-  if (uid === undefined) {
-    uid = uuidv4()
-  }
+// export default function makeAndCacheLocalImageVolume(
+//   properties: any = {},
+//   uid: string,
+// ): ImageVolume => {
 
-  const cachedVolume = cache._get(uid)
+//   if (uid === undefined) {
+//     uid = uuidv4()
+//   }
 
-  if (cachedVolume) {
-    return cachedVolume
-  }
+//   const cachedVolume = cache._get(uid)
 
-  let {
-    metadata,
-    dimensions,
-    spacing,
-    origin,
-    direction,
-    scalarData,
-  } = properties
+//   if (cachedVolume) {
+//     return cachedVolume
+//   }
 
-  const scalarLength = dimensions[0] * dimensions[1] * dimensions[2]
+//   let {
+//     metadata,
+//     dimensions,
+//     spacing,
+//     origin,
+//     direction,
+//     scalarData,
+//   } = properties
 
-  // Check if it fits in the cache before we allocate data
-  const currentCacheSize = this.getCacheSize()
+//   const scalarLength = dimensions[0] * dimensions[1] * dimensions[2]
 
-  const byteLength = scalarData
-    ? scalarData.buffer.byteLength
-    : scalarLength * 4
+//   // Check if it fits in the cache before we allocate data
+//   const currentCacheSize = this.getCacheSize()
 
-  cache.checkCacheSizeCanSupportVolume(byteLength);
+//   const byteLength = scalarData
+//     ? scalarData.buffer.byteLength
+//     : scalarLength * 4
 
-  if (scalarData) {
-    if (
-      !(scalarData instanceof Uint8Array) &&
-      !(scalarData instanceof Float32Array)
-    ) {
-      throw new Error(
-        `scalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
-      )
-    }
-  } else {
-    scalarData = new Float32Array(scalarLength)
-  }
+//   cache.checkCacheSizeCanSupportVolume(byteLength);
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: 1,
-    values: scalarData,
-  })
+//   if (scalarData) {
+//     if (
+//       !(scalarData instanceof Uint8Array) &&
+//       !(scalarData instanceof Float32Array)
+//     ) {
+//       throw new Error(
+//         `scalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
+//       )
+//     }
+//   } else {
+//     scalarData = new Float32Array(scalarLength)
+//   }
 
-  const imageData = vtkImageData.newInstance()
+//   const scalarArray = vtkDataArray.newInstance({
+//     name: 'Pixels',
+//     numberOfComponents: 1,
+//     values: scalarData,
+//   })
 
-  imageData.setDimensions(...dimensions)
-  imageData.setSpacing(...spacing)
-  imageData.setDirection(...direction)
-  imageData.setOrigin(...origin)
-  imageData.getPointData().setScalars(scalarArray)
+//   const imageData = vtkImageData.newInstance()
 
-  const volume = new ImageVolume({
-    uid,
-    metadata,
-    dimensions,
-    spacing,
-    origin,
-    direction,
-    vtkImageData: imageData,
-    scalarData: scalarData,
-  })
+//   imageData.setDimensions(...dimensions)
+//   imageData.setSpacing(...spacing)
+//   imageData.setDirection(...direction)
+//   imageData.setOrigin(...origin)
+//   imageData.getPointData().setScalars(scalarArray)
 
-  this._set(uid, volume)
+//   const volume = new ImageVolume({
+//     uid,
+//     metadata,
+//     dimensions,
+//     spacing,
+//     origin,
+//     direction,
+//     vtkImageData: imageData,
+//     scalarData: scalarData,
+//   })
 
-  return volume
-}
+//   this._set(uid, volume)
+
+//   return volume
+// }

@@ -9,14 +9,14 @@ const REQUEST_TYPE = 'prefetch'
 
 interface ImageLoadObject {
   promise: Promise
-  cancel?: Function
-  decache?: Function
+  cancel?: () => void
+  decache?: () => void
 }
 
 interface VolumeLoadObject {
   promise: Promise
-  cancel?: Function
-  decache?: Function
+  cancel?: () => void
+  decache?: () => void
 }
 
 interface CachedImage {
@@ -118,7 +118,7 @@ class Cache implements IImageCache {
       volume.vtkOpenGLTexture.releaseGraphicsResources()
     }*/
 
-    this._volumeCache._delete(volumeId)
+    this._volumeCache.delete(volumeId)
   }
 
   public purgeCache = () => {
@@ -206,7 +206,9 @@ class Cache implements IImageCache {
         'putImageLoadObject: imageLoadObject.promise must not be undefined'
       )
     }
-    if (imageCacheDict.hasOwnProperty(imageId) === true) {
+    if (
+      Object.prototype.hasOwnProperty.call(this._imageCache, imageId) === true
+    ) {
       throw new Error('putImageLoadObject: imageId already in cache')
     }
     if (
@@ -314,7 +316,9 @@ class Cache implements IImageCache {
         'putVolumeLoadObject: volumeLoadObject.promise must not be undefined'
       )
     }
-    if (this._volumeCache.hasOwnProperty(volumeId) === true) {
+    if (
+      Object.prototype.hasOwnProperty.call(this._volumeCache, volumeId) === true
+    ) {
       throw new Error('putVolumeLoadObject: volumeId already in cache')
     }
     if (

@@ -4,7 +4,7 @@ interface IStreamingVolume {
     loaded: boolean
     loading: boolean
     cachedFrames: Array<boolean>
-    callbacks: Array<Function>
+    callbacks: Array<() => void>
   }
 }
 

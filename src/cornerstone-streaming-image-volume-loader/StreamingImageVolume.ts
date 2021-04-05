@@ -4,14 +4,16 @@ import {
   metaData,
   requestPoolManager,
   triggerEvent,
-  ImageVolume
+  ImageVolume,
+  Types,
 } from '@cornerstone'
 import { calculateSUVScalingFactors } from 'calculate-suv'
-import { IImageVolume, IStreamingVolume } from '../types'
 
 import getInterleavedFrames from './helpers/getInterleavedFrames'
 import autoLoad from './helpers/autoLoad'
 import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
+
+const { IImageVolume, IStreamingVolume } = Types
 
 const requestType = 'prefetch'
 const preventCache = true // We are not using the cornerstone cache for this.
@@ -39,7 +41,7 @@ export default class StreamingImageVolume extends ImageVolume {
     loaded: boolean
     loading: boolean
     cachedFrames: Array<boolean>
-    callbacks: Array<Function>
+    callbacks: Array<() => void>
   }
 
   constructor(
@@ -83,7 +85,7 @@ export default class StreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = []
   }
 
-  public load = (callback: Function) => {
+  public load = (callback: () => void) => {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
@@ -179,7 +181,11 @@ export default class StreamingImageVolume extends ImageVolume {
       loadStatus.callbacks.forEach((callback) => callback(evt))
     }
 
-    function successCallback(volume : StreamingImageVolume, imageIdIndex, imageId) {
+    function successCallback(
+      volume: StreamingImageVolume,
+      imageIdIndex,
+      imageId
+    ) {
       cachedFrames[imageIdIndex] = true
       framesLoaded++
       framesProcessed++

@@ -21,7 +21,7 @@ import RenderingEngine from './RenderingEngine'
  */
 export function getRenderingEngine(uid: string): RenderingEngine | undefined {
   if (!uid) {
-    return renderingEngineCache.getAll();
+    return renderingEngineCache.getAll()
   }
 
   return renderingEngineCache.get(uid)

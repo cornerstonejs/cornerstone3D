@@ -100,7 +100,7 @@ export function loadAndCacheImage(imageId, options) {
     )
   }
 
-  let imageLoadObject = getImageLoadObject(imageId)
+  let imageLoadObject = cache.getImageLoadObject(imageId)
 
   if (imageLoadObject !== undefined) {
     return imageLoadObject.promise

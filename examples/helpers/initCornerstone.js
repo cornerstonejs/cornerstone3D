@@ -3,9 +3,11 @@
 import dicomParser from 'dicom-parser';
 import * as cornerstone from '@cornerstone';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneWebImageLoader from 'cornerstone-web-image-loader';
 import WADORSHeaderProvider from './WADORSHeaderProvider';
+
+import { registerImageLoader, registerWebImageLoader } from '@cornerstone';
 // ~~
-//import { volumeLoader } from './registerImageLoader';
 import * as csTools3d from '@cornerstone-tools';
 
 // Wire up listeners for renderingEngine's element enabled events
@@ -19,6 +21,7 @@ WADORSHeaderProvider.get.bind(WADORSHeaderProvider),
   9999
 );
 
+cornerstoneWebImageLoader.external.cornerstone = cornerstone;
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
 cornerstoneWADOImageLoader.configure({ useWebWorkers: true });
@@ -36,4 +39,6 @@ var config = {
 };
 
 cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
+registerImageLoader(cornerstone);
+registerWebImageLoader(cornerstone);
 //volumeLoader(cornerstone);

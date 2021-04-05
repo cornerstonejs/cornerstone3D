@@ -18,7 +18,7 @@ import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
-import cornerstoneMath from 'cornerstone-math/dist/cornerstoneMath'
+import cornerstoneMath from 'cornerstone-math'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 

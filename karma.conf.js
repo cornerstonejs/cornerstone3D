@@ -4,7 +4,10 @@ const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 const PROJECT_ROOT = path.join(__dirname)
 const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/cornerstone-core/')
 const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/')
-const LOADER_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-streaming-image-volume-loader')
+const LOADER_ROOT = path.resolve(
+  PROJECT_ROOT,
+  './src/cornerstone-streaming-image-volume-loader'
+)
 
 module.exports = function (config) {
   config.set({
@@ -63,7 +66,7 @@ module.exports = function (config) {
           // https://stackoverflow.com/a/40444084/1867984
           '@cornerstone': RENDERING_ROOT,
           '@cornerstone-tools': TOOLS_ROOT,
-          '@cornerstone-streaming-image-volume-loader': LOADER_ROOT
+          '@cornerstone-streaming-image-volume-loader': LOADER_ROOT,
         },
         fallback: {
           fs: false,

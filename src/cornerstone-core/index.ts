@@ -15,6 +15,7 @@ import {
   registerImageLoader,
   registerUnknownImageLoader,
 } from './imageLoader'
+import { registerWebImageLoader } from './registerWebImageLoader'
 import requestPoolManager from './requestPool/requestPoolManager'
 import {
   createAndCacheVolume,
@@ -57,6 +58,7 @@ export {
   loadAndCacheImage,
   registerImageLoader,
   registerUnknownImageLoader,
+  registerWebImageLoader,
   //
   getVolume,
   createAndCacheVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())

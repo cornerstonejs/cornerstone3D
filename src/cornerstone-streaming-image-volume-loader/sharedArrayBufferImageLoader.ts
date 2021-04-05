@@ -4,7 +4,6 @@ import {
   decodeImageFrame,
   getImageFrame,
 } from 'cornerstone-wado-image-loader'
-import { IRegisterImageLoader } from '../types'
 
 /**
  * Small stripped down loader from cornerstoneWADOImageLoader

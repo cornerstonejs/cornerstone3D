@@ -1,8 +1,10 @@
-import React, { Component, useState } from 'react'
+import React, { Component } from 'react'
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom'
 import VTKMPRExample from './ExampleVTKMPR'
 import CanvasResizeExample from './ExampleCanvasResize'
 import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas'
+import ColorExample from './ExampleColor'
+import VolumeMapper2DExample from './Example2DVolumeMapper'
 
 function LinkOut({ href, text }) {
   return (
@@ -12,7 +14,7 @@ function LinkOut({ href, text }) {
   )
 }
 
-function ExampleEntry({ title, url, text, screenshotUrl }) {
+function ExampleEntry({ title, url, text }) {
   return (
     <div>
       <h5>
@@ -43,7 +45,18 @@ function Index() {
     {
       title: 'Twenty Five Canvas',
       url: '/twentyFiveCanvas',
-      text: 'Example with twenty five on screen canvases linked to a single RenderingEngine.',
+      text:
+        'Example with twenty five on screen canvases linked to a single RenderingEngine.',
+    },
+    {
+      title: 'color',
+      url: '/color',
+      text: 'Example with color.',
+    },
+    {
+      title: '2D rendering with vtkVolumeMapper',
+      url: '/volmeMapper2D',
+      text: 'Example for displaying 2D image with vtkVolumeMapper.',
     },
   ]
 
@@ -54,13 +67,16 @@ function Index() {
   return (
     <div className="container">
       <div className="row">
-        <h1>VTK React Viewport Component</h1>
+        <h1>Cornerstone 3D viewport</h1>
       </div>
       <div className="row">
         <div className="col-xs-12 col-lg-6">
-          <h4>VTK Viewport</h4>
           <p>
-            This is a framework build ontop of <LinkOut href={'https://github.com/Kitware/vtk-js'} text={'VTK.js'} />{' '}
+            This is a framework build on top of{' '}
+            <LinkOut
+              href={'https://github.com/Kitware/vtk-js'}
+              text={'VTK.js'}
+            />{' '}
             for easily managing data, displaying images and building tools.
           </p>
           <p>
@@ -105,6 +121,16 @@ function AppRouter() {
       children: <TwentyFiveCanvasExample />,
     })
 
+  const color = () =>
+    Example({
+      children: <ColorExample />,
+    })
+
+  const volmeMapper2D = () =>
+    Example({
+      children: <VolumeMapper2DExample />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -112,6 +138,8 @@ function AppRouter() {
         <Route exact path="/mpr/" render={mpr} />
         <Route exact path="/canvasResize/" render={canvasResize} />
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
+        <Route exact path="/color/" render={color} />
+        <Route exact path="/volmeMapper2D/" render={volmeMapper2D} />
         <Route exact component={Index} />
       </Switch>
     </Router>

@@ -7,11 +7,24 @@ import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 
 function createInternalVTKRepresentation(volume) {
-  const { dimensions, spacing, direction, origin, scalarData } = volume
+  const {
+    dimensions,
+    metadata,
+    spacing,
+    direction,
+    origin,
+    scalarData,
+  } = volume
+  const { PhotometricInterpretation } = metadata
+
+  let numComponents = 1
+  if (PhotometricInterpretation === 'RGB') {
+    numComponents = 3
+  }
 
   const scalarArray = vtkDataArray.newInstance({
     name: 'Pixels',
-    numberOfComponents: 1,
+    numberOfComponents: numComponents,
     values: scalarData,
   })
 
@@ -48,13 +61,14 @@ let unknownVolumeLoader
  * @memberof VolumeLoader
  */
 function loadVolumeFromVolumeLoader(volumeId, options) {
-  const colonIndex = volumeId.indexOf(':')
-  const scheme = volumeId.substring(0, colonIndex)
+  const imageId = options.imageIds[0]
+  const colonIndex = imageId.indexOf(':')
+  const scheme = imageId.substring(0, colonIndex)
   const loader = volumeLoaders[scheme]
 
   if (loader === undefined || loader === null) {
     if (unknownVolumeLoader !== undefined) {
-      return unknownVolumeLoader(volumeId)
+      return unknownVolumeLoader(volumeId, options)
     }
 
     throw new Error('loadVolumeFromVolumeLoader: no volume loader for volumeId')
@@ -135,6 +149,10 @@ export function createAndCacheVolume(volumeId, options) {
     throw new Error(
       'createAndCacheVolume: parameter volumeId must not be undefined'
     )
+  }
+
+  if (!options.imageIds.length) {
+    throw new Error('loadVolume: imageIds must be defined')
   }
 
   let volumeLoadObject = cache.getVolumeLoadObject(volumeId)

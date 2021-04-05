@@ -1,92 +1,93 @@
-import cache from '../cache';
+// import cache from '../cache';
+// import ImageVolume from '../classes/ImageVolume';
 
-export default function makeAndCacheDerivedVolume (
-  referencedVolumeUID,
-  options: any = {}
-): ImageVolume => {
-  const referencedVolume = cache._get(referencedVolumeUID)
+// export default function makeAndCacheDerivedVolume (
+//   referencedVolumeUID,
+//   options: any = {}
+// ): ImageVolume => {
+//   const referencedVolume = cache._get(referencedVolumeUID)
 
-  if (!referencedVolume) {
-    throw new Error(
-      `Cannot created derived volume: Referenced volume with UID ${referencedVolumeUID} does not exist.`
-    )
-  }
+//   if (!referencedVolume) {
+//     throw new Error(
+//       `Cannot created derived volume: Referenced volume with UID ${referencedVolumeUID} does not exist.`
+//     )
+//   }
 
-  let { volumeScalarData, uid } = options
+//   let { volumeScalarData, uid } = options
 
-  if (uid === undefined) {
-    uid = uuidv4()
-  }
+//   if (uid === undefined) {
+//     uid = uuidv4()
+//   }
 
-  const {
-    metadata,
-    dimensions,
-    spacing,
-    origin,
-    direction,
-    scalarData,
-  } = referencedVolume
+//   const {
+//     metadata,
+//     dimensions,
+//     spacing,
+//     origin,
+//     direction,
+//     scalarData,
+//   } = referencedVolume
 
-  const scalarLength = scalarData.length
+//   const scalarLength = scalarData.length
 
-  // Check if it fits in the cache before we allocate data
-  const currentCacheSize = this.getCacheSize()
+//   // Check if it fits in the cache before we allocate data
+//   const currentCacheSize = this.getCacheSize()
 
-  let byteLength
+//   let byteLength
 
-  if (volumeScalarData) {
-    byteLength = volumeScalarData.buffer.byteLength
-  } else {
-    byteLength = scalarLength * 4
-  }
+//   if (volumeScalarData) {
+//     byteLength = volumeScalarData.buffer.byteLength
+//   } else {
+//     byteLength = scalarLength * 4
+//   }
 
-  cache.checkCacheSizeCanSupportVolume(byteLength);
+//   cache.checkCacheSizeCanSupportVolume(byteLength);
 
-  if (volumeScalarData) {
-    if (volumeScalarData.length !== scalarLength) {
-      throw new Error(
-        `volumeScalarData has incorrect length compared to source data. Length: ${volumeScalarData.length}, expected:scalarLength`
-      )
-    }
+//   if (volumeScalarData) {
+//     if (volumeScalarData.length !== scalarLength) {
+//       throw new Error(
+//         `volumeScalarData has incorrect length compared to source data. Length: ${volumeScalarData.length}, expected:scalarLength`
+//       )
+//     }
 
-    if (
-      !(volumeScalarData instanceof Uint8Array) &&
-      !(volumeScalarData instanceof Float32Array)
-    ) {
-      throw new Error(
-        `volumeScalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
-      )
-    }
-  } else {
-    volumeScalarData = new Float32Array(scalarLength)
-  }
+//     if (
+//       !(volumeScalarData instanceof Uint8Array) &&
+//       !(volumeScalarData instanceof Float32Array)
+//     ) {
+//       throw new Error(
+//         `volumeScalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
+//       )
+//     }
+//   } else {
+//     volumeScalarData = new Float32Array(scalarLength)
+//   }
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: 1,
-    values: volumeScalarData,
-  })
+//   const scalarArray = vtkDataArray.newInstance({
+//     name: 'Pixels',
+//     numberOfComponents: 1,
+//     values: volumeScalarData,
+//   })
 
-  const derivedImageData = vtkImageData.newInstance()
+//   const derivedImageData = vtkImageData.newInstance()
 
-  derivedImageData.setDimensions(...dimensions)
-  derivedImageData.setSpacing(...spacing)
-  derivedImageData.setDirection(...direction)
-  derivedImageData.setOrigin(...origin)
-  derivedImageData.getPointData().setScalars(scalarArray)
+//   derivedImageData.setDimensions(...dimensions)
+//   derivedImageData.setSpacing(...spacing)
+//   derivedImageData.setDirection(...direction)
+//   derivedImageData.setOrigin(...origin)
+//   derivedImageData.getPointData().setScalars(scalarArray)
 
-  const derivedVolume = new ImageVolume({
-    uid,
-    metadata: _cloneDeep(metadata),
-    dimensions: [dimensions[0], dimensions[1], dimensions[2]],
-    spacing: [...spacing],
-    origin: [...spacing],
-    direction: [...direction],
-    vtkImageData: derivedImageData,
-    scalarData: volumeScalarData,
-  })
+//   const derivedVolume = new ImageVolume({
+//     uid,
+//     metadata: _cloneDeep(metadata),
+//     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
+//     spacing: [...spacing],
+//     origin: [...spacing],
+//     direction: [...direction],
+//     vtkImageData: derivedImageData,
+//     scalarData: volumeScalarData,
+//   })
 
-  this._set(uid, derivedVolume)
+//   this._set(uid, derivedVolume)
 
-  return derivedVolume
-}
+//   return derivedVolume
+// }
