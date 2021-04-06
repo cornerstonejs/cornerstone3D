@@ -1,4 +1,3 @@
-import { RenderingEngine } from '@cornerstone'
 import ICamera from './ICamera'
 import Point2 from './Point2'
 import Point3 from './Point3'
@@ -18,6 +17,7 @@ interface IViewport {
   //
   canvasToWorld: (canvasPos: Point2) => Point3
   getCamera: () => ICamera
+  getFrameOfReferenceUID: () => string
   render: () => void
   setCamera: (cameraOptions: ICamera) => void
   worldToCanvas: (worldPos: Point3) => Point2

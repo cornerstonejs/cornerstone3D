@@ -72,6 +72,17 @@ class VolumeViewport extends Viewport implements IViewport {
   }
 
   /**
+   * @method getScene Gets the `Scene` object that the `Viewport` is associated with.
+   *
+   * @returns {Scene} The `Scene` object.
+   */
+  public getScene(): Scene {
+    const renderingEngine = this.getRenderingEngine()
+
+    return renderingEngine.getScene(this.sceneUID)
+  }
+
+  /**
    * @method _setVolumeActors Attaches the volume actors to the viewport.
    *
    * @param {Array<VolumeActorEntry>} volumeActorEntries The volume actors to add the viewport.
@@ -193,6 +204,11 @@ class VolumeViewport extends Viewport implements IViewport {
     vtkCamera.setSlabThicknessActive(slabThicknessActive)
 
     return canvasCoord
+  }
+
+  getFrameOfReferenceUID(): string {
+    // TODO: Implement this instead of having it at the
+    return 'blah'
   }
 }
 

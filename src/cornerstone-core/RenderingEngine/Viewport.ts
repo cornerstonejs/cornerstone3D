@@ -88,17 +88,6 @@ class Viewport implements IViewport {
   }
 
   /**
-   * @method getScene Gets the `Scene` object that the `Viewport` is associated with.
-   *
-   * @returns {Scene} The `Scene` object.
-   */
-  public getScene(): Scene {
-    const renderingEngine = this.getRenderingEngine()
-
-    return renderingEngine.getScene(this.sceneUID)
-  }
-
-  /**
    * @method setOptions Sets new options and (TODO) applies them.
    *
    * @param {ViewportInputOptions} options The viewport options to set.
@@ -152,7 +141,7 @@ class Viewport implements IViewport {
     const {
       widthWorld,
       heightWorld,
-    } = this._getWorldDistanceViewupAndViewRight(
+    } = this._getWorldDistanceViewUpAndViewRight(
       bounds,
       viewUp,
       viewPlaneNormal
@@ -350,7 +339,7 @@ class Viewport implements IViewport {
     }
   }
 
-  private _getWorldDistanceViewupAndViewRight(bounds, viewUp, viewPlaneNormal) {
+  private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {
     const viewUpCorners = this._getCorners(bounds)
     const viewRightCorners = this._getCorners(bounds)
 

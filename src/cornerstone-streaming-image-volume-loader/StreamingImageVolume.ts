@@ -13,7 +13,7 @@ import getInterleavedFrames from './helpers/getInterleavedFrames'
 import autoLoad from './helpers/autoLoad'
 import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
 
-const { IImageVolume, IStreamingVolume } = Types
+const { IVolume, IStreamingVolume } = Types
 
 const requestType = 'prefetch'
 const preventCache = true // We are not using the cornerstone cache for this.
@@ -45,7 +45,7 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   constructor(
-    imageVolumeProperties: IImageVolume,
+    imageVolumeProperties: IVolume,
     streamingProperties: IStreamingVolume
   ) {
     super(imageVolumeProperties)

@@ -22,7 +22,6 @@ import {
   IViewport,
   ICamera,
 } from './../types'
-// import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
@@ -33,6 +32,7 @@ import { loadAndCacheImage } from '../imageLoader'
  */
 class StackViewport extends Viewport implements IViewport {
   private imageIds: Array<string>
+  private currentImageIdIndex: number
 
   constructor(props: ViewportInput) {
     super(props)
@@ -51,6 +51,7 @@ class StackViewport extends Viewport implements IViewport {
     camera.setViewUp(...viewUp)
     // camera.setFreezeFocalPoint(true)
     this.imageIds = []
+    this.currentImageIdIndex = 0
     this.resetCamera()
   }
 
@@ -167,10 +168,10 @@ class StackViewport extends Viewport implements IViewport {
     }
   }
 
-  public async setStack(imageIds: Array<string>, currentImageIdIndex = 0): any {
-    this.imageIds = imageIds
-    const { metaData0, metaDataMap, imageMetaData0 } = await this.buildMetadata(
-      imageIds
+  private _createVTKImageData(imageId: string, imageIds) {
+    // todo: explore replacing the texture later
+    const { metaData0, metaDataMap, imageMetaData0 } = this.buildMetadata(
+      imageIds // TODO: Why doens't this work right if we only give [imageId]? Shader crashes.
     )
 
     const { rowCosines, columnCosines } = metaData0
@@ -179,11 +180,10 @@ class StackViewport extends Viewport implements IViewport {
     const scanAxisNormal = vec3.create()
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec)
 
-    const {
-      spacing,
-      origin,
-      sortedDatasets,
-    } = this.sortDatasetsByImagePosition(scanAxisNormal, metaDataMap)
+    const { spacing, origin } = this.sortDatasetsByImagePosition(
+      scanAxisNormal,
+      metaDataMap
+    )
 
     const xSpacing = metaData0.columnPixelSpacing
     const ySpacing = metaData0.rowPixelSpacing
@@ -191,7 +191,6 @@ class StackViewport extends Viewport implements IViewport {
     const xVoxels = metaData0.columns
     const yVoxels = metaData0.rows
     const zVoxels = 2 // metaDataMap.size;
-    const signed = imageMetaData0.pixelRepresentation === 1
 
     let pixelArray
     switch (imageMetaData0.bitsAllocated) {
@@ -219,17 +218,25 @@ class StackViewport extends Viewport implements IViewport {
     imageData.setOrigin(...origin)
     imageData.getPointData().setScalars(scalarArray)
 
-    const imageId = this.imageIds[currentImageIdIndex]
-    const image = await loadAndCacheImage(imageId, {})
+    return imageData
+  }
 
+  public async setStack(imageIds: Array<string>, currentImageIdIndex = 0): any {
+    this.imageIds = imageIds
+    this.currentImageIdIndex = currentImageIdIndex
+
+    const imageId = this.imageIds[currentImageIdIndex]
+    const imageData = this._createVTKImageData(imageId, this.imageIds)
+
+    // TODO: Question... should setting the stack actually cause a render?
+    const image = await loadAndCacheImage(imageId, {})
     const pixels = image.getPixelData()
 
+    // Set the VTK Image Data TypedArray data from the pixel data array
+    // provided from the Cornerstone Image
     const scalars = imageData.getPointData().getScalars()
     const scalarData = scalars.getData()
-    for (let pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
-      scalarData[pixelIndex] = pixels[pixelIndex]
-      // scalarData[pixelIndex + pixels.length] = pixels[pixelIndex];
-    }
+    scalarData.set(pixels)
 
     const volActor = this.createActorMapper(imageData)
     // Todo : add to actors
@@ -240,62 +247,7 @@ class StackViewport extends Viewport implements IViewport {
     this.resetCamera()
 
     this.render()
-
-    // this.resetCamera()
-
-    // const activeCamera = renderer.getActiveCamera()
-
-    // // This is necessary to initialize the clipping range and it is not related
-    // // to our custom slabThickness.
-    // activeCamera.setThicknessFromFocalPoint(0.1)
-    // // This is necessary to give the slab thickness.
-    // // NOTE: our custom camera implementation has an additional slab thickness
-    // // values to handle MIP and non MIP volumes in the same viewport.
-    // activeCamera.setSlabThickness(0.1)
-    // activeCamera.setFreezeFocalPoint(true)
   }
-
-  /**
-   * @method _setVolumeActors Attaches the volume actors to the viewport.
-   *
-   * @param {Array<VolumeActorEntry>} volumeActorEntries The volume actors to add the viewport.
-   *
-   * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
-   */
-  // public _setVolumeActors(volumeActorEntries: Array<VolumeActorEntry>) {
-  //   const renderer = this.getRenderer()
-
-  //   volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))
-
-  //   let slabThickness = null
-  //   if (this.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
-  //     volumeActorEntries.forEach((va) => {
-  //       if (va.slabThickness && va.slabThickness > slabThickness) {
-  //         slabThickness = va.slabThickness
-  //       }
-  //     })
-
-  //     this.resetCamera()
-
-  //     const activeCamera = renderer.getActiveCamera()
-
-  //     // This is necessary to initialize the clipping range and it is not related
-  //     // to our custom slabThickness.
-  //     activeCamera.setThicknessFromFocalPoint(0.1)
-  //     // This is necessary to give the slab thickness.
-  //     // NOTE: our custom camera implementation has an additional slab thickness
-  //     // values to handle MIP and non MIP volumes in the same viewport.
-  //     activeCamera.setSlabThickness(slabThickness)
-  //     activeCamera.setFreezeFocalPoint(true)
-  //   } else {
-  //     // Use default renderer resetCamera, fits bounding sphere of data.
-  //     renderer.resetCamera()
-
-  //     const activeCamera = renderer.getActiveCamera()
-
-  //     activeCamera.setFreezeFocalPoint(true)
-  //   }
-  // }
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -320,6 +272,11 @@ class StackViewport extends Viewport implements IViewport {
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
     // implementation
+  }
+
+  public getFrameOfReferenceUID(): string {
+    // TODO: Implement this instead of having it at the
+    return 'blah'
   }
 }
 

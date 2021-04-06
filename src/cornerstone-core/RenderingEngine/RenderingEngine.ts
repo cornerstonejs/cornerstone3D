@@ -29,7 +29,6 @@ interface IRenderingEngine {
   hasBeenDestroyed: boolean
   offscreenMultiRenderWindow: any
   webGLCanvasContainer: any
-  renderFrameOfReference: undefined
   setViewports(viewports: Array<PublicViewportInput>): void
   resize(): void
   getScene(uid: string): Scene
@@ -41,6 +40,7 @@ interface IRenderingEngine {
   renderScenes(sceneUIDs: Array<string>): void
   renderViewports(viewportUIDs: Array<string>): void
   renderViewport(sceneUID: string, viewportUID: string): void
+  renderFrameOfReference(FrameOfReferenceUID: string): void
   destroy(): void
   _debugRender(): void
 }
