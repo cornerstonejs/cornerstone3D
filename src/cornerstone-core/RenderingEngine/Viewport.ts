@@ -1,6 +1,6 @@
 import Events from './../enums/events'
 import VIEWPORT_TYPE from './../constants/viewportType'
-import { IViewport, ICamera } from './../types'
+import { IViewport, ICamera, ViewportInput } from './../types'
 import _cloneDeep from 'lodash.clonedeep'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
@@ -29,7 +29,7 @@ class Viewport implements IViewport {
   readonly defaultOptions: any
   options: ViewportInputOptions
 
-  constructor(props: IViewport) {
+  constructor(props: ViewportInput) {
     this.uid = props.uid
     this.sceneUID = props.sceneUID
     this.renderingEngineUID = props.renderingEngineUID
@@ -54,6 +54,7 @@ class Viewport implements IViewport {
     this.defaultOptions = defaultOptions
     this.options = options
   }
+
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
 
@@ -83,7 +84,7 @@ class Viewport implements IViewport {
   public render() {
     const renderingEngine = this.getRenderingEngine()
 
-    renderingEngine.renderViewport(this.sceneUID, this.uid)
+    renderingEngine.renderViewport(this.uid)
   }
 
   /**
@@ -252,7 +253,7 @@ class Viewport implements IViewport {
    *
    * @returns {object} the vtkCamera.
    */
-  public getVtkActiveCamera() {
+  public getVtkActiveCamera(): ICamera {
     const renderer = this.getRenderer()
 
     return renderer.getActiveCamera()
@@ -280,7 +281,7 @@ class Viewport implements IViewport {
     }
   }
 
-  public setCamera(cameraInterface: ICamera) {
+  public setCamera(cameraInterface: ICamera): void {
     const vtkCamera = this.getVtkActiveCamera()
     const previousCamera = JSON.parse(JSON.stringify(this.getCamera()))
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface)
@@ -290,7 +291,6 @@ class Viewport implements IViewport {
       clippingRange,
       position,
       focalPoint,
-      parallelProjection,
       parallelScale,
       viewAngle,
       slabThickness,
@@ -403,7 +403,7 @@ class Viewport implements IViewport {
     return { widthWorld: maxX - minX, heightWorld: maxY - minY }
   }
 
-  _getCorners(bounds) {
+  _getCorners(bounds: Array<number>): Array<number>[] {
     return [
       [bounds[0], bounds[2], bounds[4]],
       [bounds[0], bounds[2], bounds[5]],

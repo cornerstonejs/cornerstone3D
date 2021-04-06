@@ -1,27 +1,13 @@
-import { ORIENTATION } from '@cornerstone'
 import EVENTS from './../enums/events'
 import renderingEngineCache from './renderingEngineCache'
 import VIEWPORT_TYPE from '../constants/viewportType'
 import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from './../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
-import { ViewportInputOptions } from './../types'
-import VolumeScene from './VolumeScene'
+import { PublicViewportInput, ViewportInput } from './../types'
 import VolumeViewport from './VolumeViewport'
-import StackScene from './StackScene'
 import StackViewport from './StackViewport'
-
-/**
- * @type ViewportInput
- * This type defines the shape of input, so we can throw when it is incorrect.
- */
-type ViewportInput = {
-  canvas: HTMLCanvasElement
-  sceneUID: string
-  viewportUID: string
-  type: string
-  defaultOptions: ViewportInputOptions
-}
+import Scene from './Scene'
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
@@ -37,7 +23,29 @@ type ViewportInput = {
  *
  * @public
  */
-class RenderingEngine {
+
+interface IRenderingEngine {
+  uid: string
+  hasBeenDestroyed: boolean
+  offscreenMultiRenderWindow: any
+  webGLCanvasContainer: any
+  renderFrameOfReference: undefined
+  setViewports(viewports: Array<PublicViewportInput>): void
+  resize(): void
+  getScene(uid: string): Scene
+  getScenes(): Array<Scene>
+  getViewport(uid: string): StackViewport | VolumeViewport
+  getViewports(): Array<StackViewport | VolumeViewport>
+  render(): void
+  renderScene(sceneUID: string): void
+  renderScenes(sceneUIDs: Array<string>): void
+  renderViewports(viewportUIDs: Array<string>): void
+  renderViewport(sceneUID: string, viewportUID: string): void
+  destroy(): void
+  _debugRender(): void
+}
+
+class RenderingEngine implements IRenderingEngine {
   readonly uid: string
   public hasBeenDestroyed: boolean
   /**
@@ -46,7 +54,8 @@ class RenderingEngine {
    */
   public offscreenMultiRenderWindow: any
   readonly webGLCanvasContainer: any
-  private _scenes: Array<StackScene | VolumeScene> = []
+  private _scenes: Array<Scene> = []
+  private _viewports: Array<StackViewport | VolumeViewport> = []
   private _needsRender: Set<string> = new Set()
   private _animationFrameSet = false
   private _animationFrameHandle: number | null = null
@@ -63,6 +72,7 @@ class RenderingEngine {
     this.webGLCanvasContainer = document.createElement('div')
     this.offscreenMultiRenderWindow.setContainer(this.webGLCanvasContainer)
     this._scenes = []
+    this._viewports = []
     this.hasBeenDestroyed = false
   }
 
@@ -71,10 +81,10 @@ class RenderingEngine {
    * window to allow offscreen rendering and transmission back to the target
    * canvas in each viewport.
    *
-   * @param viewports An array of viewport definitons to construct the rendering engine
-   *
+   * @param viewports An array of viewport definitions to construct the rendering engine
+   * /todo: if don't want scene don't' give uid
    */
-  public setViewports(viewports: Array<ViewportInput>): void {
+  public setViewports(viewports: Array<PublicViewportInput>): void {
     this._throwIfDestroyed()
     this._reset()
 
@@ -103,6 +113,10 @@ class RenderingEngine {
         i
       ]
 
+      if (Object.values(VIEWPORT_TYPE).indexOf(type) === -1) {
+        throw new Error(`currently not supporting ${type} viewport type`)
+      }
+
       const { clientWidth, clientHeight } = canvas
 
       // Set the canvas to be same resolution as the client.
@@ -110,25 +124,8 @@ class RenderingEngine {
         canvas.width = clientWidth
         canvas.height = clientHeight
       }
-
+      debugger
       const { width, height } = canvas
-
-      let scene = this.getScene(sceneUID)
-
-      if (!scene) {
-        if (type === VIEWPORT_TYPE.STACK) {
-          scene = new StackScene(sceneUID, this.uid)
-        } else if (
-          type === VIEWPORT_TYPE.ORTHOGRAPHIC ||
-          type === VIEWPORT_TYPE.PERSPECTIVE
-        ) {
-          scene = new VolumeScene(sceneUID, this.uid)
-        } else {
-          throw new Error(`currently not supporting ${type} viewport type`)
-        }
-
-        this._scenes.push(scene)
-      }
 
       // viewport location on source (offscreen) canvas
       const sx = xOffset
@@ -159,8 +156,9 @@ class RenderingEngine {
           : [0, 0, 0],
       })
 
-      scene.addViewport({
+      const viewportInput = <ViewportInput>{
         uid: viewportUID,
+        renderingEngineUID: this.uid,
         type,
         canvas,
         sx,
@@ -168,14 +166,36 @@ class RenderingEngine {
         sWidth,
         sHeight,
         defaultOptions: defaultOptions || {},
-      })
+      }
+
+      let scene = this.getScene(sceneUID)
+
+      if (!scene) {
+        // creating scenes for volume viewports
+        if (type !== VIEWPORT_TYPE.STACK) {
+          scene = new Scene(sceneUID, this.uid)
+          this._scenes.push(scene)
+        }
+      }
+
+      let viewport
+      // Todo: check if viewport already created?
+      if (type !== VIEWPORT_TYPE.STACK) {
+        viewportInput.sceneUID = scene.uid
+        viewport = new VolumeViewport(viewportInput)
+        scene.addViewport(viewportUID)
+      } else {
+        viewport = new StackViewport(viewportInput)
+      }
+
+      this._viewports.push(viewport)
 
       xOffset += width
 
       const eventData = {
         canvas,
         viewportUID,
-        sceneUID,
+        sceneUID: sceneUID || scene ? scene.uid : undefined, // if it is internal uid
         renderingEngineUID: this.uid,
       }
 
@@ -188,7 +208,7 @@ class RenderingEngine {
    * It is up to the parent app to call the size of the on-screen canvas changes.
    * This is left as an app level concern as one might want to debounce the changes, or the like.
    */
-  public resize() {
+  public resize(): void {
     this._throwIfDestroyed()
 
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this
@@ -271,7 +291,8 @@ class RenderingEngine {
   }
 
   /**
-   * @method getScene Returns the scene.
+   * @method getScene Returns the scene, only scenes with SceneUID (not internal)
+   * are returned
    * @param {string} uid The UID of the scene to fetch.
    *
    * @returns {Scene} The scene object.
@@ -279,7 +300,9 @@ class RenderingEngine {
   public getScene(uid: string): Scene {
     this._throwIfDestroyed()
 
-    return this._scenes.find((scene) => scene.uid === uid)
+    return this._scenes.find(
+      (scene) => scene.uid === uid && !scene.getIsInternalScene()
+    )
   }
 
   /**
@@ -290,7 +313,11 @@ class RenderingEngine {
   public getScenes(): Array<Scene> {
     this._throwIfDestroyed()
 
-    return this._scenes
+    return this._scenes.filter((scene) => scene.getIsInternalScene() === false)
+  }
+
+  public getViewport(uid: string): StackViewport | VolumeViewport {
+    return this._viewports.find((vp) => vp.uid === uid)
   }
 
   /**
@@ -298,22 +325,23 @@ class RenderingEngine {
    *
    * @returns {Viewport} The scene object.
    */
-  public getViewports() {
+  public getViewports(): Array<StackViewport | VolumeViewport> {
     this._throwIfDestroyed()
 
-    const scenes = this._scenes
-    const numScenes = scenes.length
-    const viewports = []
-
-    for (let s = 0; s < numScenes; s++) {
-      const scene = scenes[s]
-      const sceneViewports = scene.getViewports()
-
-      viewports.push(...sceneViewports)
-    }
-
-    return viewports
+    return this._viewports
   }
+  // const scenes = this._scenes
+  // const numScenes = scenes.length
+  // const viewports = []
+
+  // for (let s = 0; s < numScenes; s++) {
+  //   const scene = scenes[s]
+  //   const sceneViewports = scene.getViewports()
+
+  //   viewports.push(...sceneViewports)
+  // }
+
+  // return viewports
 
   private _setViewportsToBeRenderedNextFrame(viewportUIDs: string[]) {
     // Add the viewports to the set of flagged viewports
@@ -328,7 +356,7 @@ class RenderingEngine {
   /**
    * @method render Renders all viewports on the next animation frame.
    */
-  public render() {
+  public render(): void {
     const viewports = this.getViewports()
     const viewportUIDs = viewports.map((vp) => vp.uid)
 
@@ -372,29 +400,44 @@ class RenderingEngine {
     const context = openGLRenderWindow.get3DContext()
 
     const offScreenCanvas = context.canvas
-    const scenes = this._scenes
+    // const scenes = this._scenes
+    const viewports = this._viewports
 
-    for (let i = 0; i < scenes.length; i++) {
-      const scene = scenes[i]
-      const viewports = scene.getViewports()
+    for (let i = 0; i < viewports.length; i++) {
+      const viewport = viewports[i]
+      if (this._needsRender.has(viewport.uid)) {
+        this._renderViewportToCanvas(viewport, offScreenCanvas)
 
-      viewports.forEach((viewport) => {
-        // Only render viewports which are marked for rerendering
-        if (this._needsRender.has(viewport.uid)) {
-          this._renderViewportToCanvas(viewport, offScreenCanvas)
+        // This viewport has been rendered, we can remove it from the set
+        this._needsRender.delete(viewport.uid)
 
-          // This viewport has been rendered, we can remove it from the set
-          this._needsRender.delete(viewport.uid)
-
-          // If there is nothing left that is flagged for rendering, stop here
-          // and allow RAF to be called again
-          if (this._needsRender.size === 0) {
-            this._animationFrameSet = false
-            this._animationFrameHandle = null
-            return
-          }
+        // If there is nothing left that is flagged for rendering, stop here
+        // and allow RAF to be called again
+        if (this._needsRender.size === 0) {
+          this._animationFrameSet = false
+          this._animationFrameHandle = null
+          return
         }
-      })
+      }
+      // const viewports = this.getViewports()
+
+      // viewports.forEach((viewport) => {
+      //   // Only render viewports which are marked for re-rendering
+      //   if (this._needsRender.has(viewport.uid)) {
+      //     this._renderViewportToCanvas(viewport, offScreenCanvas)
+
+      //     // This viewport has been rendered, we can remove it from the set
+      //     this._needsRender.delete(viewport.uid)
+
+      //     // If there is nothing left that is flagged for rendering, stop here
+      //     // and allow RAF to be called again
+      //     if (this._needsRender.size === 0) {
+      //       this._animationFrameSet = false
+      //       this._animationFrameHandle = null
+      //       return
+      //     }
+      //   }
+      // })
     }
   }
 
@@ -403,7 +446,7 @@ class RenderingEngine {
    *
    * @param {string} sceneUID The UID of the scene to render.
    */
-  public renderScene(sceneUID: string) {
+  public renderScene(sceneUID: string): void {
     const scene = this.getScene(sceneUID)
     const viewports = scene.getViewports()
     const viewportUIDs = viewports.map((vp) => vp.uid)
@@ -411,7 +454,7 @@ class RenderingEngine {
     this._setViewportsToBeRenderedNextFrame(viewportUIDs)
   }
 
-  public renderFrameOfReference = (FrameOfReferenceUID) => {
+  public renderFrameOfReference = (FrameOfReferenceUID: string): void => {
     const scenes = this._scenes
 
     const scenesWithFrameOfReferenceUID = scenes.filter(
@@ -421,12 +464,12 @@ class RenderingEngine {
     return this._renderScenes(scenesWithFrameOfReferenceUID)
   }
 
-  public renderScenes(sceneUIDs: Array<string>) {
+  public renderScenes(sceneUIDs: Array<string>): void {
     const scenes = sceneUIDs.map((sUid) => this.getScene(sUid))
     return this._renderScenes(scenes)
   }
 
-  public renderViewports(viewportUIDs: Array<string>) {
+  public renderViewports(viewportUIDs: Array<string>): void {
     this._setViewportsToBeRenderedNextFrame(viewportUIDs)
   }
 
@@ -452,7 +495,7 @@ class RenderingEngine {
    * @param {string} sceneUID The UID of the scene the viewport belongs to.
    * @param {string} viewportUID The UID of the viewport.
    */
-  public renderViewport(sceneUID: string, viewportUID: string) {
+  public renderViewport(viewportUID: string): void {
     this._setViewportsToBeRenderedNextFrame([viewportUID])
   }
 
@@ -461,7 +504,10 @@ class RenderingEngine {
    * @param {Viewport} viewport The `Viewport` to rendfer.
    * @param {object} offScreenCanvas The offscreen canvas to render from.
    */
-  private _renderViewportToCanvas(viewport: Viewport, offScreenCanvas) {
+  private _renderViewportToCanvas(
+    viewport: StackViewport | VolumeViewport,
+    offScreenCanvas
+  ) {
     const {
       sx,
       sy,
@@ -539,9 +585,9 @@ class RenderingEngine {
   }
 
   /**
-   * @method destory
+   * @method destroy
    */
-  public destroy() {
+  public destroy(): void {
     if (this.hasBeenDestroyed) {
       return
     }
@@ -571,7 +617,7 @@ class RenderingEngine {
     }
   }
 
-  _debugRender() {
+  _debugRender(): void {
     // Renders all scenes
     const { offscreenMultiRenderWindow } = this
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow()

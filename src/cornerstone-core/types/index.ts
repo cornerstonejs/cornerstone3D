@@ -5,7 +5,7 @@ import IVolume from './IVolume'
 import ImageLoaderFn from './ImageLoaderFn'
 import IRegisterImageLoader from './IRegisterImageLoader'
 import IStreamingVolume from './IStreamingVolume'
-import IViewport from './IViewport'
+import IViewport, { ViewportInput, PublicViewportInput } from './IViewport'
 import LibraryConfiguration from './LibraryConfiguration'
 import Metadata from './Metadata'
 import Orientation from './Orientation'
@@ -22,6 +22,8 @@ export {
   IRegisterImageLoader,
   IStreamingVolume,
   IViewport,
+  ViewportInput,
+  PublicViewportInput,
   //
   LibraryConfiguration,
   Metadata,

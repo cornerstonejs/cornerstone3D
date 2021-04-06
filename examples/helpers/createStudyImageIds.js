@@ -39,8 +39,17 @@ export default async function createStudyImageIds() {
       SOPInstanceUID +
       '/frames/1';
 
+    const colonIndex = imageId.indexOf(':')
+    const wadoImageId = 'wadors' + imageId.substring(colonIndex)
+
     cornerstoneWADOImageLoader.wadors.metaDataManager.add(
       imageId,
+      instanceMetaData
+    );
+
+
+    cornerstoneWADOImageLoader.wadors.metaDataManager.add(
+      wadoImageId,
       instanceMetaData
     );
 

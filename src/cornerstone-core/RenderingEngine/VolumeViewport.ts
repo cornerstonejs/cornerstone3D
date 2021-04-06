@@ -9,7 +9,7 @@ import triggerEvent from '../utilities/triggerEvent'
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec3 } from 'gl-matrix'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import { ViewportInputOptions, Point2, Point3 } from './../types'
+import { ViewportInput, Point2, Point3 } from './../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import Viewport from './Viewport'
 
@@ -18,7 +18,7 @@ import Viewport from './Viewport'
  * looking into a scene, and an associated target output `canvas`.
  */
 class VolumeViewport extends Viewport implements IViewport {
-  constructor(props: IViewport) {
+  constructor(props: ViewportInput) {
     super(props)
 
     const renderer = this.getRenderer()
@@ -55,7 +55,7 @@ class VolumeViewport extends Viewport implements IViewport {
    *
    * @param {number} [slabThickness]
    */
-  public setSlabThickness(slabThickness) {
+  public setSlabThickness(slabThickness: number): void {
     this.setCamera({
       slabThickness,
     })
@@ -66,7 +66,7 @@ class VolumeViewport extends Viewport implements IViewport {
    *
    * @returns {number} [slabThickness]
    */
-  public getSlabThickness() {
+  public getSlabThickness(): number {
     const { slabThickness } = this.getCamera()
     return slabThickness
   }
@@ -78,7 +78,7 @@ class VolumeViewport extends Viewport implements IViewport {
    *
    * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */
-  public _setVolumeActors(volumeActorEntries: Array<VolumeActorEntry>) {
+  public _setVolumeActors(volumeActorEntries: Array<VolumeActorEntry>): void {
     const renderer = this.getRenderer()
 
     volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))

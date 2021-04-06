@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   eventTarget,
   createAndCacheVolume,
+  loadAndCacheImages,
   ORIENTATION,
   VIEWPORT_TYPE,
   EVENTS as RENDERING_EVENTS,
@@ -109,7 +110,6 @@ class StackViewportExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.STACK,
         viewportUID: VIEWPORT_IDS.STACK,
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(1),
@@ -135,17 +135,24 @@ class StackViewportExample extends Component {
 
     renderingEngine.render()
 
+    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
+    // temporary method for converting csiv to wadors
+    const wadoImageIds = ctImageIds.map((imageId) => {
+      const colonIndex = imageId.indexOf(':')
+      return 'wadors' + imageId.substring(colonIndex)
+    })
+    await stackViewport.setStack(wadoImageIds)
+
+
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ctVolume = await createAndCacheVolume(ctVolumeUID, {
       imageIds: ctImageIds,
     })
 
-    // const stackVolume = await createAndCacheVolume(ctStackUID, {
-    //   imageIds: ctImageIds,
-    // })
 
-    // Initialise all CT values to -1024 so we don't get a grey box?
+
+    // Initialize all CT values to -1024 so we don't get a grey box?
     const { scalarData } = ctVolume
     const ctLength = scalarData.length
 
@@ -158,27 +165,11 @@ class StackViewportExample extends Component {
     ctVolume.load(onLoad)
 
     const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    const stackScene = renderingEngine.getScene(SCENE_IDS.STACK)
-
     ctScene.setVolumes([
       {
         volumeUID: ctVolumeUID,
       },
     ])
-
-    // stackScene.setVolumes([
-    //   {
-    //     volumeUID: ctVolumeUID,
-    //   },
-    // ])
-
-    // ctScene.setStack([
-    //   {
-    //     imageIds: ctImageIds,
-    //   },
-    // ])
-
-    // This o
 
     // Set initial CT levels in UI
     const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
