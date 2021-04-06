@@ -124,7 +124,7 @@ class RenderingEngine implements IRenderingEngine {
         canvas.width = clientWidth
         canvas.height = clientHeight
       }
-      debugger
+
       const { width, height } = canvas
 
       // viewport location on source (offscreen) canvas
@@ -213,15 +213,16 @@ class RenderingEngine implements IRenderingEngine {
 
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this
 
-    const viewports = []
-    const scenes = this._scenes
+    // const viewports = []
+    // const scenes = this._scenes
 
-    for (let i = 0; i < scenes.length; i++) {
-      const scene = scenes[i]
-      const sceneViewports = scene.getViewports()
+    // for (let i = 0; i < scenes.length; i++) {
+    //   const scene = scenes[i]
+    //   const sceneViewports = scene.getViewports()
 
-      viewports.push(...sceneViewports)
-    }
+    //   viewports.push(...sceneViewports)
+    // }
+    const viewports = this._viewports
 
     // Set canvas size based on height and sum of widths
     const webglCanvasHeight = Math.max(
