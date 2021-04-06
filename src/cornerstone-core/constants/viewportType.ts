@@ -1,4 +1,5 @@
 const ViewportType = {
+  STACK: 'stack',
   PERSPECTIVE: 'perspective',
   ORTHOGRAPHIC: 'orthographic',
 }

@@ -1,11 +1,15 @@
+import { ORIENTATION } from '@cornerstone'
 import EVENTS from './../enums/events'
 import renderingEngineCache from './renderingEngineCache'
+import VIEWPORT_TYPE from '../constants/viewportType'
 import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from './../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
 import { ViewportInputOptions } from './../types'
-import Scene from './Scene'
-import Viewport from './Viewport'
+import VolumeScene from './VolumeScene'
+import VolumeViewport from './VolumeViewport'
+import StackScene from './StackScene'
+import StackViewport from './StackViewport'
 
 /**
  * @type ViewportInput
@@ -42,7 +46,7 @@ class RenderingEngine {
    */
   public offscreenMultiRenderWindow: any
   readonly webGLCanvasContainer: any
-  private _scenes: Array<Scene> = []
+  private _scenes: Array<StackScene | VolumeScene> = []
   private _needsRender: Set<string> = new Set()
   private _animationFrameSet = false
   private _animationFrameHandle: number | null = null
@@ -112,7 +116,16 @@ class RenderingEngine {
       let scene = this.getScene(sceneUID)
 
       if (!scene) {
-        scene = new Scene(sceneUID, this.uid)
+        if (type === VIEWPORT_TYPE.STACK) {
+          scene = new StackScene(sceneUID, this.uid)
+        } else if (
+          type === VIEWPORT_TYPE.ORTHOGRAPHIC ||
+          type === VIEWPORT_TYPE.PERSPECTIVE
+        ) {
+          scene = new VolumeScene(sceneUID, this.uid)
+        } else {
+          throw new Error(`currently not supporting ${type} viewport type`)
+        }
 
         this._scenes.push(scene)
       }

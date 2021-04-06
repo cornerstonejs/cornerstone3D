@@ -26,6 +26,7 @@ function getRenderingEngineContainingVolume(volumeUID) {
     const sceneUIDs = []
 
     scenes.forEach((scene) => {
+      if (!scene.getVolumeActors) return
       const volumeActors = scene.getVolumeActors()
 
       const hasVolume = volumeActors.some((va) => {

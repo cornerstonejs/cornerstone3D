@@ -5,6 +5,7 @@ import ORIENTATION from './constants/orientation'
 import VIEWPORT_TYPE from './constants/viewportType'
 //
 import RenderingEngine from './RenderingEngine'
+import VolumeViewport from './RenderingEngine/VolumeViewport'
 import eventTarget from './eventTarget'
 import getRenderingEngine from './RenderingEngine/getRenderingEngine'
 import cache from './cache'
@@ -45,6 +46,7 @@ export {
   configuration,
   Types,
   //
+  VolumeViewport,
   RenderingEngine,
   getRenderingEngine,
   //

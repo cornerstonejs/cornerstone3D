@@ -1,5 +1,5 @@
-import * as csTools3d from '@cornerstone-tools';
-import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID, VIEWPORT_IDS } from './constants';
+import * as csTools3d from '@cornerstone-tools'
+import { TOOL_GROUP_UIDS, ptVolumeUID, ctVolumeUID, ctStackUID, VIEWPORT_IDS } from './constants';
 const {
   PanTool,
   WindowLevelTool,
@@ -194,6 +194,7 @@ function initToolGroups() {
   csTools3d.addTool(BidirectionalTool, {});
   csTools3d.addTool(CrosshairsTool, {});
 
+  const stackSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.STACK);
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
@@ -212,6 +213,35 @@ function initToolGroups() {
   const ptTypesSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.PT_TYPES
   );
+
+  // Set up stack Scene tools
+
+  // @TODO: This kills the volumeUID and tool configuration
+  stackSceneToolGroup.addTool('WindowLevel', {
+    configuration: { stackUID: ctStackUID },
+  });
+  stackSceneToolGroup.addTool('Pan', {});
+  stackSceneToolGroup.addTool('Zoom', {});
+  stackSceneToolGroup.addTool('StackScrollMouseWheel', {});
+  // @TODO: We need an alternative to config that ties volume to an ID
+  // TODO ^ What does this mean? I don't think we do. The target volume could be changed for the same tool,
+  // its also optional for most of these.
+  // ctSceneToolGroup.addTool('Bidirectional', {
+  //   configuration: { volumeUID: ctVolumeUID },
+  // });
+  // ctSceneToolGroup.addTool('Length', {
+  //   configuration: { volumeUID: ctVolumeUID },
+  // });
+  // ctSceneToolGroup.addTool('Probe', {
+  //   configuration: { volumeUID: ctVolumeUID },
+  // });
+  // ctSceneToolGroup.addTool('RectangleRoi', {
+  //   configuration: { volumeUID: ctVolumeUID },
+  // });
+  // ctSceneToolGroup.addTool('EllipticalRoi', {
+  //   configuration: { volumeUID: ctVolumeUID },
+  // });
+
 
   // Set up CT Scene tools
 
@@ -412,6 +442,7 @@ function initToolGroups() {
   ptTypesSceneToolGroup.setToolActive('StackScrollMouseWheel');
 
   return {
+    stackSceneToolGroup,
     ctSceneToolGroup,
     ptSceneToolGroup,
     fusionSceneToolGroup,

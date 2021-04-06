@@ -1,6 +1,7 @@
 const renderingEngineUID = 'PETCTRenderingEngine';
 const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME';
 const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME';
+const ctStackUID = 'CT_Stack';
 
 // This file just stores all the IDS used within the demo. In a real application
 /// These may associated with different hanging protocols/dynamically generated, etc.
@@ -8,6 +9,7 @@ const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME';
 // IDs that unique define each scene used in the demo. A Scene is world space with a set of objects
 // In it that could potentially be rendered by multiple viewports.
 const SCENE_IDS = {
+  STACK: 'stackScene',
   CT: 'ctScene',
   PT: 'ptScene',
   FUSION: 'fusionScene',
@@ -21,6 +23,7 @@ const SCENE_IDS = {
 
 // IDs that define each viewport used in the demos. Here they are grouped by scene for convenience, only.
 const VIEWPORT_IDS = {
+  STACK: 'stack',
   CT: {
     AXIAL: 'ctAxial',
     SAGITTAL: 'ctSagittal',
@@ -59,6 +62,7 @@ const VIEWPORT_IDS = {
 // IDs for each toolgroup used. We currently use one toolGroup per scene in the demos, but you could have
 // Different viewports of the same scene with different toolgroup setups.
 const TOOL_GROUP_UIDS = {
+  STACK: 'stackSceneToolGroup',
   CT: 'ctSceneToolGroup',
   PT: 'ptSceneToolGroup',
   FUSION: 'fusionSceneToolGroup',
@@ -85,6 +89,7 @@ export {
   renderingEngineUID,
   ptVolumeUID,
   ctVolumeUID,
+  ctStackUID,
   SCENE_IDS,
   VIEWPORT_IDS,
   TOOL_GROUP_UIDS,

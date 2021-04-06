@@ -5,6 +5,7 @@ import CanvasResizeExample from './ExampleCanvasResize'
 import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas'
 import ColorExample from './ExampleColor'
 import VolumeMapper2DExample from './Example2DVolumeMapper'
+import StackViewportExample from './ExampleStackViewport'
 
 function LinkOut({ href, text }) {
   return (
@@ -55,8 +56,13 @@ function Index() {
     },
     {
       title: '2D rendering with vtkVolumeMapper',
-      url: '/volmeMapper2D',
+      url: '/volumeMapper2D',
       text: 'Example for displaying 2D image with vtkVolumeMapper.',
+    },
+    {
+      title: 'New stack viewport',
+      url: '/stackViewport',
+      text: 'Example for displaying stack and volume viewport',
     },
   ]
 
@@ -108,10 +114,10 @@ function Example(props) {
 }
 
 function AppRouter() {
-  const mpr = () =>
-    Example({
-      children: <VTKMPRExample />,
-    })
+  // const mpr = () =>
+  //   Example({
+  //     children: <VTKMPRExample />,
+  //   })
   const canvasResize = () =>
     Example({
       children: <CanvasResizeExample />,
@@ -126,20 +132,26 @@ function AppRouter() {
       children: <ColorExample />,
     })
 
-  const volmeMapper2D = () =>
+  const volumeMapper2D = () =>
     Example({
       children: <VolumeMapper2DExample />,
+    })
+
+  const stackViewport = () =>
+    Example({
+      children: <StackViewportExample />,
     })
 
   return (
     <Router>
       <Switch>
         <Route exact path="/" component={Index} />
-        <Route exact path="/mpr/" render={mpr} />
+        {/* <Route exact path="/mpr/" render={mpr} /> */}
         <Route exact path="/canvasResize/" render={canvasResize} />
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact path="/color/" render={color} />
-        <Route exact path="/volmeMapper2D/" render={volmeMapper2D} />
+        <Route exact path="/volumeMapper2D/" render={volumeMapper2D} />
+        <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact component={Index} />
       </Switch>
     </Router>

@@ -61,9 +61,8 @@ let unknownVolumeLoader
  * @memberof VolumeLoader
  */
 function loadVolumeFromVolumeLoader(volumeId, options) {
-  const imageId = options.imageIds[0]
-  const colonIndex = imageId.indexOf(':')
-  const scheme = imageId.substring(0, colonIndex)
+  const colonIndex = volumeId.indexOf(':')
+  const scheme = volumeId.substring(0, colonIndex)
   const loader = volumeLoaders[scheme]
 
   if (loader === undefined || loader === null) {
