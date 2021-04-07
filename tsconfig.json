@@ -25,10 +25,10 @@
     // relative to `baseUrl`
     "paths": {
       "@cornerstone": [
-        "src/index.ts"
+        "src/cornerstone-core/src/index.ts"
       ],
       "@cornerstone-tools": [
-        "src/cornerstone-tools/index.ts"
+        "src/cornerstone-tools/src/index.ts"
       ],
       "@cornerstone-streaming-image-volume-loader": [
         "src/cornerstone-streaming-image-volume-loader/index.ts"

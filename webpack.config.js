@@ -6,8 +6,12 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 //
 const PROJECT_ROOT = path.join(__dirname)
-const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/index.ts')
-const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/')
+const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/cornerstone-core/src/index.ts')
+const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/src/index.ts')
+const LOADER_ROOT = path.resolve(
+    PROJECT_ROOT,
+    './src/cornerstone-streaming-image-volume-loader/'
+)
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const OUT_PATH = path.join(PROJECT_ROOT, './dist')
 
@@ -48,6 +52,7 @@ module.exports = (env, argv) => {
         // https://stackoverflow.com/a/40444084/1867984
         '@cornerstone': RENDERING_ROOT,
         '@cornerstone-tools': TOOLS_ROOT,
+        '@cornerstone-streaming-image-volume-loader': LOADER_ROOT
       },
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       fallback: {
