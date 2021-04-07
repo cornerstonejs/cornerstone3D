@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@cornerstone'
+import { getEnabledElement, VIEWPORT_TYPE } from '@cornerstone'
 import clip from '../clip'
 import getTargetVolume from '../planar/getTargetVolume'
 import getSliceRange from './getSliceRange'
@@ -23,13 +23,12 @@ export default function scrollThroughStack(
   invert
 ) {
   const { element: canvas, wheel } = evt.detail
-  const enabledElement = getEnabledElement(canvas)
-  const { scene, viewport } = enabledElement
+  const { scene, viewport } = getEnabledElement(canvas)
   const camera = viewport.getCamera()
   const { focalPoint, viewPlaneNormal, position } = camera
 
   // Todo: shall we define a camera type? slabCamera for volume and default for stack?
-  if (camera.slabThickness === undefined) {
+  if (viewport.type === VIEWPORT_TYPE.STACK) {
     // stack viewport
     const { currentImageIdIndex } = viewport
     const numberOfFrames = viewport.imageIds.length
@@ -40,31 +39,33 @@ export default function scrollThroughStack(
     viewport.setImageIdIndex(newImageIdIndex)
     //
     return
+  } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
+    // Stack scroll across highest resolution volume.
+    const { spacingInNormalDirection, imageVolume } = getTargetVolume(
+      scene,
+      camera,
+      volumeUID
+    )
+
+    const volumeActor = scene.getVolumeActor(imageVolume.uid)
+    const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
+
+    // Todo: add inverted logic for volume camera
+    const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+      focalPoint,
+      position,
+      scrollRange,
+      viewPlaneNormal,
+      spacingInNormalDirection,
+      deltaFrames
+    )
+
+    viewport.setCamera({
+      focalPoint: newFocalPoint,
+      position: newPosition,
+    })
+    viewport.render()
+  } else {
+    throw new Error(`Not implemented for Viewport Type: ${viewport.type}`)
   }
-
-  // Stack scroll across highest resolution volume.
-  const { spacingInNormalDirection, imageVolume } = getTargetVolume(
-    scene,
-    camera,
-    volumeUID
-  )
-
-  const volumeActor = scene.getVolumeActor(imageVolume.uid)
-  const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
-
-  // Todo: add inverted logic for volume camera
-  const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-    focalPoint,
-    position,
-    scrollRange,
-    viewPlaneNormal,
-    spacingInNormalDirection,
-    deltaFrames
-  )
-
-  enabledElement.viewport.setCamera({
-    focalPoint: newFocalPoint,
-    position: newPosition,
-  })
-  enabledElement.viewport.render()
 }

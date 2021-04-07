@@ -209,6 +209,13 @@ class VolumeViewport extends Viewport implements IViewport {
   getFrameOfReferenceUID(): string {
     return this.getScene().getFrameOfReferenceUID()
   }
+
+  // this api only exists here for developers that are displaying data
+  // and who did not create a scene explicitly beforehand
+  // (scenes are optional for the public API but internally created either way)
+  /*setVolumes(a) {
+    scene.setVolumes(a)
+  }*/
 }
 
 export default VolumeViewport

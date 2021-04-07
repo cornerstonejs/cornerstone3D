@@ -2,7 +2,7 @@ import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 
 /**
- * Mehthod to retrieve a RenderingEngine by its unique identifier.
+ * Method to retrieve a RenderingEngine by its unique identifier.
  *
  * @example
  * How to get a RenderingEngine that was created earlier:
@@ -19,12 +19,18 @@ import RenderingEngine from './RenderingEngine'
  * @returns the matching RenderingEngine, or `undefined` if there is no match
  * @public
  */
-export function getRenderingEngine(uid: string): RenderingEngine | undefined {
+export function getRenderingEngine(
+  uid: string
+): RenderingEngine | RenderingEngine[] | undefined {
   if (!uid) {
     return renderingEngineCache.getAll()
   }
 
   return renderingEngineCache.get(uid)
+}
+
+export function getRenderingEngines(): RenderingEngine[] | undefined {
+  return renderingEngineCache.getAll()
 }
 
 export default getRenderingEngine

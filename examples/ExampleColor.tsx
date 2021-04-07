@@ -2,8 +2,6 @@ import React, { Component } from 'react';
 // ~~
 import {RenderingEngine, ORIENTATION, VIEWPORT_TYPE, createAndCacheVolume } from '@cornerstone';
 import { ToolGroupManager, ToolBindings } from '@cornerstone-tools';
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
 
 class ColorExample extends Component {
     state = {

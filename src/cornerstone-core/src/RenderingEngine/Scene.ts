@@ -196,6 +196,8 @@ class Scene {
     this._sceneViewports.push(viewportUID)
   }
 
+  //public removeViewport()...
+
   /**
    * @method getVolumeActor Gets a volume actor on the scene by its `uid`.
    *

@@ -144,12 +144,14 @@ class StackViewport extends Viewport implements IViewport {
     return numberOfComponents
   }
 
-  private _createVTKImageData(image, imageId: string) {
+  private _getImageDataMetadata(image) {
     // TODO: Creating a single image should probably not require a metadata provider.
     // We should define the minimum we need to display an image and it should live on
     // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
     // should be optional and used if provided through a metadata provider.
-    const { imagePlaneModule, imagePixelModule } = this.buildMetadata(imageId)
+    const { imagePlaneModule, imagePixelModule } = this.buildMetadata(
+      image.imageId
+    )
 
     const { rowCosines, columnCosines } = imagePlaneModule
     const rowCosineVec = vec3.fromValues(...rowCosines)
@@ -159,31 +161,67 @@ class StackViewport extends Viewport implements IViewport {
 
     const origin = imagePlaneModule.imagePositionPatient
     const xSpacing =
-      image.columnPixelSpacing || imagePlaneModule.columnPixelSpacing
-    const ySpacing = image.rowPixelSpacing || imagePlaneModule.rowPixelSpacing
+      imagePlaneModule.columnPixelSpacing || image.columnPixelSpacing
+    const ySpacing = imagePlaneModule.rowPixelSpacing || image.rowPixelSpacing
     const zSpacing = 1 // Todo
     const xVoxels = image.columns
     const yVoxels = image.rows
     const zVoxels = 2
 
-    const numberOfComponents =
+    const numComps =
       image.numComps ||
       this._getNumCompsFromPhotometricInterpretation(
         imagePixelModule.photometricInterpretation
       )
 
+    return {
+      bitsAllocated: imagePixelModule.bitsAllocated,
+      numComps,
+      origin,
+      direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
+      dimensions: [xVoxels, yVoxels, zVoxels],
+      spacing: [xSpacing, ySpacing, zSpacing],
+      numVoxels: xVoxels * yVoxels * zVoxels,
+    }
+  }
+
+  private _getCameraOrientation(direction) {
+    // returns the camera DOP and viewUp to be set
+  }
+
+  private _createVTKImageData(image, imageId: string) {
+    const {
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      bitsAllocated,
+      numComps,
+      numVoxels,
+    } = this._getImageDataMetadata(image)
+
+    console.log({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      bitsAllocated,
+      numComps,
+      numVoxels,
+    })
+
     let pixelArray
-    switch (imagePixelModule.bitsAllocated) {
+    switch (bitsAllocated) {
       case 8:
-        pixelArray = new Uint8Array(xVoxels * yVoxels * zVoxels)
+        pixelArray = new Uint8Array(numVoxels)
         break
 
       case 16:
-        pixelArray = new Float32Array(xVoxels * yVoxels * zVoxels)
+        pixelArray = new Float32Array(numVoxels)
 
         break
       case 24:
-        pixelArray = new Uint8Array(xVoxels * yVoxels * zVoxels * 3)
+        pixelArray = new Uint8Array(numVoxels * 3)
 
         break
       default:
@@ -192,20 +230,18 @@ class StackViewport extends Viewport implements IViewport {
 
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
-      numberOfComponents,
+      numberOfComponents: numComps,
       values: pixelArray,
     })
 
     const imageData = vtkImageData.newInstance()
-    const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal]
-
-    imageData.setDimensions(xVoxels, yVoxels, zVoxels)
-    imageData.setSpacing(xSpacing, ySpacing, zSpacing)
 
     // TODO: If we are going to actually set the direction / origin of each slice when
     // we render it, we also need to make sure we move the camera so it can see the slice
-    //imageData.setDirection(direction)
-    //imageData.setOrigin(...origin)
+    imageData.setDimensions(...dimensions)
+    imageData.setSpacing(...spacing)
+    imageData.setDirection(direction)
+    imageData.setOrigin(...origin)
 
     imageData.getPointData().setScalars(scalarArray)
     return imageData
@@ -246,7 +282,27 @@ class StackViewport extends Viewport implements IViewport {
     return true
   }
 
+  // todo: rename since it may do more than set scalars
   private _setScalarsFromPixelData(image) {
+    const {
+      origin,
+      direction,
+      dimensions,
+      spacing,
+    } = this._getImageDataMetadata(image)
+
+    console.log({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+    })
+
+    this._imageData.setDimensions(...dimensions)
+    this._imageData.setSpacing(...spacing)
+    this._imageData.setDirection(direction)
+    this._imageData.setOrigin(...origin)
+
     // 3. Update the pixel data in the vtkImageData object with the pixelData
     //    from the loaded Cornerstone image
     const pixelData = image.getPixelData()
@@ -273,6 +329,8 @@ class StackViewport extends Viewport implements IViewport {
       // TODO: What about SUV computation?
       scalarData.set(pixelData)
     }
+
+    // Set origin, direction, spacing, etc...
 
     // Trigger modified on the VTK Object so the texture is updated
     // TODO: evaluate directly changing things with texSubImage3D later
@@ -332,10 +390,22 @@ class StackViewport extends Viewport implements IViewport {
 
       // Add the new actor to the internal list of actors for the viewport
       this._stackActors.push({ volumeActor: stackActor, uid: this.uid })
-
-      // Reset the camera if the actor has changed
-      this.resetCamera()
     }
+
+    /*
+    TODO set camera direction of projection and viewUp
+     const { directionOfProjection, viewUp } = _getCameraOrientation()
+
+        camera.setDirectionOfProjection(
+      -sliceNormal[0],
+      -sliceNormal[1],
+      -sliceNormal[2]
+    )
+    camera.setViewUp(...viewUp)
+     */
+
+    // Reset the camera to point to the new slice location
+    this.resetCamera()
   }
 
   private _setImageIdIndex(imageIdIndex) {
@@ -420,6 +490,10 @@ class StackViewport extends Viewport implements IViewport {
 
   public getFrameOfReferenceUID(): string {
     // TODO: Implement this instead of having it at the
+
+    // look up current imageId's FOR?
+    // - (from metadata provider if it exists)
+    // - from image.FrameOfReferenceUID if it exists?
     return 'blah'
   }
 }

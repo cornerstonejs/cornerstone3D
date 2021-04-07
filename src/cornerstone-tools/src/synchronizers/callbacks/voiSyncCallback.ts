@@ -19,9 +19,14 @@ export default function voiSyncCallback(
   const eventData = voiModifiedEvent.detail
   const { volumeUID, sceneUID, range } = eventData
 
-  const tScene = getRenderingEngine(targetViewport.renderingEngineUID).getScene(
-    targetViewport.sceneUID
-  )
+  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineUID)
+  if (!renderingEngine) {
+    throw new Error(
+      `Rendering Engine does not exist: ${targetViewport.renderingEngineUID}`
+    )
+  }
+
+  const tScene = renderingEngine.getScene(targetViewport.sceneUID)
 
   if (tScene.uid === sceneUID) {
     // Same scene, no need to update.

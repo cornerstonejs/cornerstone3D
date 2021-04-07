@@ -7,7 +7,10 @@ import VIEWPORT_TYPE from './constants/viewportType'
 import RenderingEngine from './RenderingEngine'
 import VolumeViewport from './RenderingEngine/VolumeViewport'
 import eventTarget from './eventTarget'
-import getRenderingEngine from './RenderingEngine/getRenderingEngine'
+import {
+  getRenderingEngine,
+  getRenderingEngines,
+} from './RenderingEngine/getRenderingEngine'
 import cache from './cache'
 import { ImageVolume } from './cache/classes/ImageVolume'
 import {
@@ -49,6 +52,7 @@ export {
   VolumeViewport,
   RenderingEngine,
   getRenderingEngine,
+  getRenderingEngines,
   //
   cache,
   getEnabledElement,

@@ -40,7 +40,7 @@ type ViewportInput = {
   sceneUID?: string
   renderingEngineUID: string
   type: string
-  canvas: HTMLElement
+  canvas: HTMLCanvasElement
   sx: number
   sy: number
   sWidth: number

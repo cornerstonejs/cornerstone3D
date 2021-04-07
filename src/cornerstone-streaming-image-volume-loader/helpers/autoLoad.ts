@@ -1,4 +1,4 @@
-import { getRenderingEngine } from '@cornerstone'
+import { getRenderingEngines } from '@cornerstone'
 
 const autoLoad = (volumeUID) => {
   const { renderingEngine, sceneUIDs } = getRenderingEngineContainingVolume(
@@ -17,10 +17,11 @@ const autoLoad = (volumeUID) => {
 }
 
 function getRenderingEngineContainingVolume(volumeUID) {
-  const renderingEngines = getRenderingEngine()
+  const renderingEngines = getRenderingEngines()
 
   for (let i = 0; i < renderingEngines.length; i++) {
     const renderingEngine = renderingEngines[i]
+    // TODO: Switch to viewport search
     const scenes = renderingEngine.getScenes()
 
     const sceneUIDs = []

@@ -114,10 +114,10 @@ function Example(props) {
 }
 
 function AppRouter() {
-  // const mpr = () =>
-  //   Example({
-  //     children: <VTKMPRExample />,
-  //   })
+  const mpr = () =>
+     Example({
+       children: <VTKMPRExample />,
+     })
   const canvasResize = () =>
     Example({
       children: <CanvasResizeExample />,
@@ -146,7 +146,7 @@ function AppRouter() {
     <Router>
       <Switch>
         <Route exact path="/" component={Index} />
-        {/* <Route exact path="/mpr/" render={mpr} /> */}
+        <Route exact path="/mpr/" render={mpr} />
         <Route exact path="/canvasResize/" render={canvasResize} />
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact path="/color/" render={color} />

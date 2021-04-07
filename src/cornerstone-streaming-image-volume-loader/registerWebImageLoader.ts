@@ -112,10 +112,10 @@ const options = {
 }
 
 // Loads an image given a url to an image
-function loadImage(imageId) {
+function loadImage(uri, imageId) {
   const xhr = new XMLHttpRequest()
 
-  xhr.open('GET', imageId, true)
+  xhr.open('GET', uri, true)
   xhr.responseType = 'arraybuffer'
   options.beforeSend(xhr)
 
@@ -216,7 +216,7 @@ function _loadImageIntoBuffer(
 
   const promise = new Promise((resolve, reject) => {
     // get the pixel data from the server
-    loadImage(uri)
+    loadImage(uri, imageId)
       .promise.then(
         (image) => {
           if (!options || !options.targetBuffer) {

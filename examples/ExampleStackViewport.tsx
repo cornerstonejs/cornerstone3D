@@ -100,8 +100,6 @@ function hardcodedMetaDataProvider(type, imageId) {
 
 metaData.addProvider(hardcodedMetaDataProvider, 10000)
 
-const { ctSceneToolGroup, stackViewportToolGroup } = initToolGroups()
-
 window.cache = cache
 
 class StackViewportExample extends Component {
@@ -156,6 +154,8 @@ class StackViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    let { ctSceneToolGroup, stackViewportToolGroup } = initToolGroups()
+
     this.ctVolumeUID = ctVolumeUID
     this.ctStackUID = ctStackUID
 
@@ -303,7 +303,7 @@ class StackViewportExample extends Component {
 
     // This will initialise volumes in GPU memory
     renderingEngine.render()
-    // Start listening for resiz
+    // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
   }
 

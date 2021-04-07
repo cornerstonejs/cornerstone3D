@@ -6,8 +6,8 @@ const { wadoRsRoot, StudyInstanceUID } = config;
 
 const DX_CONFIG = {
   "wadoRsRoot": "https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs",
-  StudyInstanceUID: "1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1",
-  SeriesInstanceUID: "1.3.6.1.4.1.25403.345050719074.3824.20170125095258.2"
+  StudyInstanceUID: "1.3.6.1.4.1.14519.5.2.1.7009.2403.459769504433903221904322299373",
+  SeriesInstanceUID: "1.3.6.1.4.1.14519.5.2.1.7009.2403.573507813194776217846035126962"
 }
 
 /**
