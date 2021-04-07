@@ -71,7 +71,7 @@ class Cache implements IImageCache {
   public getCacheSize = (): number => this._cacheSize
 
   public decacheImage = (imageId: string) => {
-    const imageLoadObject = this._imageLoadObjects.get(volumeId)
+    const { imageLoadObject } = this._imageCache.get(imageId)
 
     // Cancel any in-progress loading
     if (imageLoadObject.cancel) {

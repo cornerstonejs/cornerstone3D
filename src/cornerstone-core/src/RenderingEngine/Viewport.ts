@@ -57,6 +57,7 @@ class Viewport implements IViewport {
     this.defaultOptions = defaultOptions
     this.options = options
   }
+  // getFrameOfReferenceUID: () => string
 
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
@@ -194,7 +195,6 @@ class Viewport implements IViewport {
     }
 
     // check view-up vector against view plane normal
-
     if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
       activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1])
     }

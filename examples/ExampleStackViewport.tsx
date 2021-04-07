@@ -10,7 +10,11 @@ import {
   VIEWPORT_TYPE,
   EVENTS as RENDERING_EVENTS,
 } from '@cornerstone'
-import { SynchronizerManager, synchronizers } from '@cornerstone-tools'
+import {
+  SynchronizerManager,
+  synchronizers,
+  ToolGroupManager,
+} from '@cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
@@ -316,6 +320,7 @@ class StackViewportExample extends Component {
     // Destroy synchronizers
     // SynchronizerManager.destroy()
     cache.purgeCache()
+    ToolGroupManager.destroy()
 
     this.renderingEngine.destroy()
   }

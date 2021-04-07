@@ -5,7 +5,14 @@ import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 import metaData from '../metaData'
 import Viewport from './Viewport'
 import { vec3 } from 'gl-matrix'
-import { Point2, Point3, ViewportInput, IViewport } from '../types'
+import {
+  Point2,
+  Point3,
+  ViewportInput,
+  IViewport,
+  VOIRange,
+  ICamera,
+} from '../types'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
@@ -19,7 +26,8 @@ class StackViewport extends Viewport implements IViewport {
   private currentImageIdIndex: number
   private _stackActors: Array<any>
   private _imageData: any // vtk image data
-  private windowRange: any // vtk image data
+  private _shouldCameraRestoreProps = false
+  private stackActorVOI: VOIRange
 
   constructor(props: ViewportInput) {
     super(props)
@@ -37,11 +45,10 @@ class StackViewport extends Viewport implements IViewport {
     )
     camera.setViewUp(...viewUp)
     camera.setParallelProjection(true)
-    // camera.setFreezeFocalPoint(true)
+    camera.setFreezeFocalPoint(true)
     this.imageIds = []
     this.currentImageIdIndex = 0
     this._stackActors = []
-    this.windowRange = {}
     this.resetCamera()
   }
 
@@ -53,32 +60,38 @@ class StackViewport extends Viewport implements IViewport {
     const actor = vtkVolume.newInstance()
     actor.setMapper(mapper)
 
-    // const sampleDistance =
-    //   1.2 *
-    //   Math.sqrt(
-    //     imageData
-    //       .getSpacing()
-    //       .map((v) => v * v)
-    //       .reduce((a, b) => a + b, 0)
-    //   )
+    const sampleDistance =
+      1.2 *
+      Math.sqrt(
+        imageData
+          .getSpacing()
+          .map((v) => v * v)
+          .reduce((a, b) => a + b, 0)
+      )
 
-    // mapper.setSampleDistance(sampleDistance)
+    mapper.setSampleDistance(sampleDistance)
 
-    if (imageData.getPointData().getNumberOfComponents() !== 3) {
-      const tfunc = actor.getProperty().getRGBTransferFunction(0)
+    // Todo: for some reason the following logic led to warning for sampleDistance
+    // being greater than the allowed limit
 
-      if (!this.windowRange.lower || !this.windowRange.upper) {
-        // setting range for the first time
-        const range = imageData.getPointData().getScalars().getRange()
-        tfunc.setRange(range[0], range[1])
-        this.windowRange.lower = range[0]
-        this.windowRange.upper = range[1]
-      } else {
-        // keeping the viewport range for a new image
-        tfunc.setRange(this.windowRange.lower, this.windowRange.upper)
-      }
+    // const spacing = imageData.getSpacing()
+    // Set the sample distance to half the mean length of one side. This is where the divide by 6 comes from.
+    // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
+    // const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6
+
+    const tfunc = actor.getProperty().getRGBTransferFunction(0)
+    if (!this.stackActorVOI!) {
+      // setting the range for the first time
+      const range = imageData.getPointData().getScalars().getRange()
+      tfunc.setRange(range[0], range[1])
+      this.stackActorVOI = { lower: range[0], upper: range[1] }
     } else {
-      // Independent components must be set to false to display colour images
+      // keeping the viewport range for a new image
+      const { lower, upper } = this.stackActorVOI
+      tfunc.setRange(lower, upper)
+    }
+
+    if (imageData.getPointData().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false)
     }
 
@@ -185,8 +198,19 @@ class StackViewport extends Viewport implements IViewport {
     }
   }
 
-  private _getCameraOrientation(direction) {
-    // returns the camera DOP and viewUp to be set
+  private _getCameraOrientation(
+    imageDataDirection
+  ): { viewPlaneNormal: Point3; viewUp: Point3 } {
+    const viewPlaneNormal = imageDataDirection.slice(6, 9)
+    const viewUp = imageDataDirection.slice(3, 6).map((x) => -x)
+    return {
+      viewPlaneNormal: [
+        viewPlaneNormal[0],
+        viewPlaneNormal[1],
+        viewPlaneNormal[2],
+      ],
+      viewUp: [viewUp[0], viewUp[1], viewUp[2]],
+    }
   }
 
   private _createVTKImageData(image, imageId: string) {
@@ -199,16 +223,6 @@ class StackViewport extends Viewport implements IViewport {
       numComps,
       numVoxels,
     } = this._getImageDataMetadata(image)
-
-    console.log({
-      origin,
-      direction,
-      dimensions,
-      spacing,
-      bitsAllocated,
-      numComps,
-      numVoxels,
-    })
 
     let pixelArray
     switch (bitsAllocated) {
@@ -250,15 +264,16 @@ class StackViewport extends Viewport implements IViewport {
   public setStack(imageIds: Array<string>, currentImageIdIndex = 0): any {
     this.imageIds = imageIds
     this.currentImageIdIndex = currentImageIdIndex
+    this.firstRender = true
 
     this._setImageIdIndex(currentImageIdIndex)
   }
 
-  public setWindowRange(range) {
-    this.windowRange = Object.assign({}, range)
+  public setStackActorVOI(range: VOIRange): void {
+    this.stackActorVOI = Object.assign({}, range)
   }
 
-  public getStackActors() {
+  public getStackActors(): Array<any> {
     return this._stackActors
   }
 
@@ -282,7 +297,7 @@ class StackViewport extends Viewport implements IViewport {
     return true
   }
 
-  // todo: rename since it may do more than set scalars
+  // Todo: rename since it may do more than set scalars
   private _setScalarsFromPixelData(image) {
     const {
       origin,
@@ -290,13 +305,6 @@ class StackViewport extends Viewport implements IViewport {
       dimensions,
       spacing,
     } = this._getImageDataMetadata(image)
-
-    console.log({
-      origin,
-      direction,
-      dimensions,
-      spacing,
-    })
 
     this._imageData.setDimensions(...dimensions)
     this._imageData.setSpacing(...spacing)
@@ -349,6 +357,8 @@ class StackViewport extends Viewport implements IViewport {
 
     // 2. Check if we can reuse the existing vtkImageData object, if one is present.
     const sameImageData = this._checkIfSameImageData(image, this._imageData)
+    // Get the VTK renderer for this Viewport
+    const renderer = this.getRenderer()
     if (sameImageData) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._setScalarsFromPixelData(image)
@@ -362,9 +372,6 @@ class StackViewport extends Viewport implements IViewport {
 
       // Create a VTK Volume actor to display the vtkImageData object
       const stackActor = this.createActorMapper(this._imageData)
-
-      // Get the VTK renderer for this Viewport
-      const renderer = this.getRenderer()
 
       // Remove the previous volume actor from the renderer
       const volumes = renderer.getVolumes()
@@ -392,20 +399,57 @@ class StackViewport extends Viewport implements IViewport {
       this._stackActors.push({ volumeActor: stackActor, uid: this.uid })
     }
 
-    /*
-    TODO set camera direction of projection and viewUp
-     const { directionOfProjection, viewUp } = _getCameraOrientation()
+    // Adjusting the camera based on slice axis. this is required if stack
+    // contains various image orientations (axial ct, sagittal xray)
+    const direction = this._imageData.getDirection()
+    const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
-        camera.setDirectionOfProjection(
-      -sliceNormal[0],
-      -sliceNormal[1],
-      -sliceNormal[2]
-    )
-    camera.setViewUp(...viewUp)
-     */
+    this.setCamera({ viewUp, viewPlaneNormal })
 
-    // Reset the camera to point to the new slice location
+    // Since the 3D location of the imageData is changing as we scroll, we need
+    // to modify the camera position to render this properly. However, resetting
+    // causes problem related to zoom and pan tools: upon rendering of a new slice
+    // the pan and zoom will get reset. To solve this, 1) we store the camera
+    // properties related to pan and zoom 2) reset the camera to correctly place
+    // it in the space 3) restore the pan, zoom props.
+    const cameraProps = this.getCamera()
+
+    // Reset the camera to point to the new slice location, reset camera doesn't
+    // modify the direction of projection and viewUp
     this.resetCamera()
+
+    // We shouldn't restore the focalPoint, position and parallelScale after reset
+    // if it is the first render or we have completely re-created the vtkImageData
+    // Todo: variable names
+    if (!this._shouldCameraRestoreProps || !sameImageData) return
+
+    this._restoreCameraProps(cameraProps)
+  }
+
+  private _restoreCameraProps({
+    focalPoint: prevFocal,
+    position: prevPos,
+    parallelScale: prevScale,
+  }: ICamera): void {
+    const renderer = this.getRenderer()
+
+    // get the focalPoint and position after the reset
+    const { position, focalPoint } = this.getCamera()
+
+    // Restoring previous state x,y and scale, keeping the new z
+    this.setCamera({
+      parallelScale: prevScale,
+      position: [prevPos[0], prevPos[1], position[2]],
+      focalPoint: [prevFocal[0], prevFocal[1], focalPoint[2]],
+    })
+
+    // Invoking render
+    const RESET_CAMERA_EVENT = {
+      type: 'ResetCameraEvent',
+      renderer,
+    }
+
+    renderer.invokeEvent(RESET_CAMERA_EVENT)
   }
 
   private _setImageIdIndex(imageIdIndex) {
@@ -443,6 +487,9 @@ class StackViewport extends Viewport implements IViewport {
     if (this.currentImageIdIndex === imageIdIndex) {
       return
     }
+
+    // If we are moving between slices, we need to keep the same zoom, pan state
+    this._shouldCameraRestoreProps = true
 
     // Otherwise, get the imageId and attempt to display it
     this._setImageIdIndex(imageIdIndex)

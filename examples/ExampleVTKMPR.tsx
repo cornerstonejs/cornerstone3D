@@ -6,7 +6,11 @@ import {
   createAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
 } from '@cornerstone';
-import { SynchronizerManager, synchronizers } from '@cornerstone-tools';
+import {
+  SynchronizerManager,
+  synchronizers,
+  ToolGroupManager,
+} from '@cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
@@ -28,17 +32,15 @@ import {
 } from './constants';
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts';
 
-const {
-  ctSceneToolGroup,
+
+let ctSceneToolGroup,
   ptSceneToolGroup,
   fusionSceneToolGroup,
   ptMipSceneToolGroup,
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
   ptTypesSceneToolGroup,
-} = initToolGroups();
-
-const ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS);
+  ptCtLayoutTools
 
 class VTKMPRExample extends Component {
   state = {
@@ -76,6 +78,18 @@ class VTKMPRExample extends Component {
 
   constructor(props) {
     super(props);
+
+    ;({
+      ctSceneToolGroup,
+      ptSceneToolGroup,
+      fusionSceneToolGroup,
+      ptMipSceneToolGroup,
+      ctVRSceneToolGroup,
+      ctObliqueToolGroup,
+      ptTypesSceneToolGroup,
+    } = initToolGroups())
+
+    ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map();
     this._viewportGridRef = React.createRef();
@@ -258,6 +272,7 @@ class VTKMPRExample extends Component {
     // Destroy synchronizers
     SynchronizerManager.destroy();
     cache.purgeCache();
+    ToolGroupManager.destroy()
 
     this.renderingEngine.destroy();
   }

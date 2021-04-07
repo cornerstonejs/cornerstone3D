@@ -107,8 +107,8 @@ export default class WindowLevelTool extends BaseTool {
       return
     }
 
+    viewport.setStackActorVOI(newRange)
     viewport.render()
-    viewport.setWindowRange(newRange)
   }
 
   _getImageDynamicRange = (volumeUID) => {

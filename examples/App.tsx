@@ -50,15 +50,15 @@ function Index() {
         'Example with twenty five on screen canvases linked to a single RenderingEngine.',
     },
     {
-      title: 'color',
+      title: 'Color',
       url: '/color',
       text: 'Example with color.',
     },
-    {
-      title: '2D rendering with vtkVolumeMapper',
-      url: '/volumeMapper2D',
-      text: 'Example for displaying 2D image with vtkVolumeMapper.',
-    },
+    // {
+    //   title: '2D rendering with vtkVolumeMapper',
+    //   url: '/volumeMapper2D',
+    //   text: 'Example for displaying 2D image with vtkVolumeMapper.',
+    // },
     {
       title: 'New stack viewport',
       url: '/stackViewport',
@@ -115,9 +115,9 @@ function Example(props) {
 
 function AppRouter() {
   const mpr = () =>
-     Example({
-       children: <VTKMPRExample />,
-     })
+    Example({
+      children: <VTKMPRExample />,
+    })
   const canvasResize = () =>
     Example({
       children: <CanvasResizeExample />,
@@ -150,7 +150,7 @@ function AppRouter() {
         <Route exact path="/canvasResize/" render={canvasResize} />
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact path="/color/" render={color} />
-        <Route exact path="/volumeMapper2D/" render={volumeMapper2D} />
+        {/* <Route exact path="/volumeMapper2D/" render={volumeMapper2D} /> */}
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact component={Index} />
       </Switch>

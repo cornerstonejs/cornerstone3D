@@ -130,7 +130,7 @@ class TwentyFiveCanvasExample extends Component {
       <div>
         <div className="row">
           <div className="col-xs-12">
-            <h1>Canvas Resize Example </h1>
+            <h1>Twenty Five Canvas </h1>
             <p>
               This example shows that it is possible to have 25 512x512 canvases
               from one render engine. Each viewport in the rendering engine is
@@ -147,7 +147,7 @@ class TwentyFiveCanvasExample extends Component {
           <div>{canvases}</div>
         </div>
       </div>
-    );
+    )
   }
 }
 

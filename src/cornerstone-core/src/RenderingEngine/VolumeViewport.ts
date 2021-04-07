@@ -206,7 +206,7 @@ class VolumeViewport extends Viewport implements IViewport {
     return canvasCoord
   }
 
-  getFrameOfReferenceUID(): string {
+  public getFrameOfReferenceUID(): string {
     return this.getScene().getFrameOfReferenceUID()
   }
 

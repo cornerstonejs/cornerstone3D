@@ -2,6 +2,7 @@ import ICamera from './ICamera'
 import IEnabledElement from './IEnabledElement'
 import ICache from './ICache'
 import IVolume from './IVolume'
+import VOI, { VOIRange } from './voi'
 import ImageLoaderFn from './ImageLoaderFn'
 import IRegisterImageLoader from './IRegisterImageLoader'
 import IStreamingVolume from './IStreamingVolume'
@@ -31,4 +32,6 @@ export {
   Point2,
   Point3,
   ViewportInputOptions,
+  VOIRange,
+  VOI,
 }

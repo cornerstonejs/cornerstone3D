@@ -1,6 +1,12 @@
-type voi = {
+type VOI = {
   windowWidth: number
   windowCenter: number
 }
 
-export default voi
+type VOIRange = {
+  upper: number
+  lower: number
+}
+
+export default VOI
+export { VOIRange }
