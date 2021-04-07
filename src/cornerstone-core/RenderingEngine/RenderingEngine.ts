@@ -213,15 +213,6 @@ class RenderingEngine implements IRenderingEngine {
 
     const { webGLCanvasContainer, offscreenMultiRenderWindow } = this
 
-    // const viewports = []
-    // const scenes = this._scenes
-
-    // for (let i = 0; i < scenes.length; i++) {
-    //   const scene = scenes[i]
-    //   const sceneViewports = scene.getViewports()
-
-    //   viewports.push(...sceneViewports)
-    // }
     const viewports = this._viewports
 
     // Set canvas size based on height and sum of widths
@@ -331,18 +322,6 @@ class RenderingEngine implements IRenderingEngine {
 
     return this._viewports
   }
-  // const scenes = this._scenes
-  // const numScenes = scenes.length
-  // const viewports = []
-
-  // for (let s = 0; s < numScenes; s++) {
-  //   const scene = scenes[s]
-  //   const sceneViewports = scene.getViewports()
-
-  //   viewports.push(...sceneViewports)
-  // }
-
-  // return viewports
 
   private _setViewportsToBeRenderedNextFrame(viewportUIDs: string[]) {
     // Add the viewports to the set of flagged viewports
@@ -420,25 +399,6 @@ class RenderingEngine implements IRenderingEngine {
           return
         }
       }
-      // const viewports = this.getViewports()
-
-      // viewports.forEach((viewport) => {
-      //   // Only render viewports which are marked for re-rendering
-      //   if (this._needsRender.has(viewport.uid)) {
-      //     this._renderViewportToCanvas(viewport, offScreenCanvas)
-
-      //     // This viewport has been rendered, we can remove it from the set
-      //     this._needsRender.delete(viewport.uid)
-
-      //     // If there is nothing left that is flagged for rendering, stop here
-      //     // and allow RAF to be called again
-      //     if (this._needsRender.size === 0) {
-      //       this._animationFrameSet = false
-      //       this._animationFrameHandle = null
-      //       return
-      //     }
-      //   }
-      // })
     }
   }
 
@@ -493,7 +453,7 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * @method renderViewport Renders only a specific `Viewport` on the next animation frame.
    *
-   * @param {string} sceneUID The UID of the scene the viewport belongs to.
+   * @param {string} viewportUID The UID of the scene the viewport belongs to.
    * @param {string} viewportUID The UID of the viewport.
    */
   public renderViewport(viewportUID: string): void {
@@ -502,7 +462,7 @@ class RenderingEngine implements IRenderingEngine {
 
   /**
    * @method _renderViewportToCanvas Renders a particular `Viewport`'s on screen canvas.
-   * @param {Viewport} viewport The `Viewport` to rendfer.
+   * @param {Viewport} viewport The `Viewport` to render.
    * @param {object} offScreenCanvas The offscreen canvas to render from.
    */
   private _renderViewportToCanvas(
@@ -550,30 +510,23 @@ class RenderingEngine implements IRenderingEngine {
    * @method _reset Resets the `RenderingEngine`
    */
   private _reset() {
-    const scenes = this.getScenes()
     const renderingEngineUID = this.uid
 
-    scenes.forEach((scene) => {
-      const viewports = scene.getViewports()
+    this._viewports.forEach((viewport) => {
+      const { canvas, uid: viewportUID } = viewport
 
-      const sceneUID = scene.uid
+      const eventData = {
+        canvas,
+        viewportUID,
+        //sceneUID, // todo: where to get this now?
+        renderingEngineUID,
+      }
 
-      viewports.forEach((viewport) => {
-        const { canvas, uid: viewportUID } = viewport
+      canvas.removeAttribute('data-viewport-uid')
+      canvas.removeAttribute('data-scene-uid')
+      canvas.removeAttribute('data-rendering-engine-uid')
 
-        const eventData = {
-          canvas,
-          viewportUID,
-          sceneUID,
-          renderingEngineUID,
-        }
-
-        canvas.removeAttribute('data-viewport-uid')
-        canvas.removeAttribute('data-scene-uid')
-        canvas.removeAttribute('data-rendering-engine-uid')
-
-        triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
-      })
+      triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
     })
 
     window.cancelAnimationFrame(this._animationFrameHandle)
@@ -582,6 +535,7 @@ class RenderingEngine implements IRenderingEngine {
     this._animationFrameSet = false
     this._animationFrameHandle = null
 
+    this._viewports = []
     this._scenes = []
   }
 
@@ -635,34 +589,28 @@ class RenderingEngine implements IRenderingEngine {
 
     const offScreenCanvas = context.canvas
     const dataURL = offScreenCanvas.toDataURL()
-    const scenes = this._scenes
 
-    for (let i = 0; i < scenes.length; i++) {
-      const scene = scenes[i]
-      const viewports = scene.getViewports()
+    this._viewports.forEach((viewport) => {
+      const { sx, sy, sWidth, sHeight } = viewport
 
-      viewports.forEach((viewport) => {
-        const { sx, sy, sWidth, sHeight } = viewport
+      const canvas = <HTMLCanvasElement>viewport.canvas
+      const { width: dWidth, height: dHeight } = canvas
 
-        const canvas = <HTMLCanvasElement>viewport.canvas
-        const { width: dWidth, height: dHeight } = canvas
+      const onScreenContext = canvas.getContext('2d')
 
-        const onScreenContext = canvas.getContext('2d')
-
-        //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
-        onScreenContext.drawImage(
-          offScreenCanvas,
-          sx,
-          sy,
-          sWidth,
-          sHeight,
-          0, //dx
-          0, // dy
-          dWidth,
-          dHeight
-        )
-      })
-    }
+      //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
+      onScreenContext.drawImage(
+        offScreenCanvas,
+        sx,
+        sy,
+        sWidth,
+        sHeight,
+        0, //dx
+        0, // dy
+        dWidth,
+        dHeight
+      )
+    })
 
     _TEMPDownloadURI(dataURL)
   }

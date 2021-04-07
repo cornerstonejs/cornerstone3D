@@ -67,7 +67,7 @@ function hardcodedMetaDataProvider(type, imageId) {
     return generalSeriesModule
   } else if (type === 'imagePlaneModule') {
     const index = colorImageIds.indexOf(imageId)
-    console.warn(index)
+
     const imagePlaneModule = {
       imageOrientationPatient: [1, 0, 0, 0, 1, 0],
       imagePositionPatient: [0, 0, index * 5],
@@ -255,12 +255,12 @@ class StackViewportExample extends Component {
 
 
     let fakeStake = [
-      // dxImageIds[0],
+      dxImageIds[0],
       colorImageIds[0],
-      // dxImageIds[1],
+      dxImageIds[1],
       wadoCTImageIds[40],
       colorImageIds[1],
-      // colorImageIds[2],
+      colorImageIds[2],
       wadoCTImageIds[41],
     ]
     await dxColorViewport.setStack(fakeStake)

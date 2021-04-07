@@ -1,27 +1,11 @@
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
-import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 import metaData from '../metaData'
-import Events from './../enums/events'
 import Viewport from './Viewport'
-import VIEWPORT_TYPE from './../constants/viewportType'
-import _cloneDeep from 'lodash.clonedeep'
-import renderingEngineCache from './renderingEngineCache'
-import RenderingEngine from './RenderingEngine'
-import Scene, { VolumeActorEntry } from './Scene'
-import triggerEvent from '../utilities/triggerEvent'
 import { vec3 } from 'gl-matrix'
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import {
-  ViewportInputOptions,
-  Point2,
-  Point3,
-  ViewportInput,
-  IViewport,
-  ICamera,
-} from './../types'
+import { Point2, Point3, ViewportInput, IViewport } from './../types'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
@@ -34,7 +18,7 @@ class StackViewport extends Viewport implements IViewport {
   private imageIds: Array<string>
   private currentImageIdIndex: number
   private _stackActors: Array<any>
-  private imageData: any // vtk image data
+  private _imageData: any // vtk image data
   private windowRange: any // vtk image data
 
   constructor(props: ViewportInput) {
@@ -60,45 +44,6 @@ class StackViewport extends Viewport implements IViewport {
     this.windowRange = {}
     this.resetCamera()
   }
-
-  // private sortDatasetsByImagePosition = (scanAxisNormal, imageMetaDataMap) => {
-  //   // See https://github.com/dcmjs-org/dcmjs/blob/4849ed50db8788741c2773b3d9c75cc52441dbcb/src/normalizers.js#L167
-  //   // TODO: Find a way to make this code generic?
-
-  //   const datasets = Array.from(imageMetaDataMap.values())
-  //   const referenceDataset = datasets[0]
-
-  //   const distanceDatasetPairs = datasets.map((dataset) => {
-  //     const positionVector = vec3.sub(
-  //       [],
-  //       referenceDataset.imagePositionPatient,
-  //       dataset.imagePositionPatient
-  //     )
-  //     const distance = vec3.dot(positionVector, scanAxisNormal)
-
-  //     return {
-  //       distance,
-  //       dataset,
-  //     }
-  //   })
-
-  //   distanceDatasetPairs.sort((a, b) => b.distance - a.distance)
-
-  //   const sortedDatasets = distanceDatasetPairs.map((a) => a.dataset)
-  //   const distances = distanceDatasetPairs.map((a) => a.distance)
-
-  //   // TODO: The way we calculate spacing determines how the volume shows up if
-  //   // we have missing slices.
-  //   // - Should we just bail out for now if missing slices are present?
-  //   // const spacing = mean(diff(distances));
-  //   const spacing = Math.abs(distances[1] - distances[0])
-
-  //   return {
-  //     spacing,
-  //     origin: distanceDatasetPairs[0].dataset.imagePositionPatient,
-  //     sortedDatasets,
-  //   }
-  // }
 
   private createActorMapper = (imageData) => {
     const mapper = vtkVolumeMapper.newInstance()
@@ -133,16 +78,14 @@ class StackViewport extends Viewport implements IViewport {
         tfunc.setRange(this.windowRange.lower, this.windowRange.upper)
       }
     } else {
+      // Independent components must be set to false to display colour images
       actor.getProperty().setIndependentComponents(false)
-      actor.getProperty().setInterpolationTypeToNearest()
     }
 
     return actor
   }
 
   private buildMetadata(imageId) {
-    // const imageId = imageIds[0]
-
     const {
       pixelRepresentation,
       bitsAllocated,
@@ -188,8 +131,24 @@ class StackViewport extends Viewport implements IViewport {
     }
   }
 
-  private _createVTKImageData(imageId: string, imageIds) {
-    // todo: explore replacing the texture later
+  private _getNumCompsFromPhotometricInterpretation(
+    photometricInterpretation: string
+  ): number {
+    // TODO: this function will need to have more logic later
+    // see http://dicom.nema.org/medical/Dicom/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.2
+    let numberOfComponents = 1
+    if (photometricInterpretation === 'RGB') {
+      numberOfComponents = 3
+    }
+
+    return numberOfComponents
+  }
+
+  private _createVTKImageData(image, imageId: string) {
+    // TODO: Creating a single image should probably not require a metadata provider.
+    // We should define the minimum we need to display an image and it should live on
+    // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
+    // should be optional and used if provided through a metadata provider.
     const { imagePlaneModule, imagePixelModule } = this.buildMetadata(imageId)
 
     const { rowCosines, columnCosines } = imagePlaneModule
@@ -199,34 +158,32 @@ class StackViewport extends Viewport implements IViewport {
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec)
 
     const origin = imagePlaneModule.imagePositionPatient
-
-    // const { spacing, origin } = this.sortDatasetsByImagePosition(
-    //   scanAxisNormal,
-    //   metaDataMap
-    // )
-
-    const xSpacing = imagePlaneModule.columnPixelSpacing
-    const ySpacing = imagePlaneModule.rowPixelSpacing
+    const xSpacing =
+      image.columnPixelSpacing || imagePlaneModule.columnPixelSpacing
+    const ySpacing = image.rowPixelSpacing || imagePlaneModule.rowPixelSpacing
     const zSpacing = 1 // Todo
-    const xVoxels = imagePlaneModule.columns
-    const yVoxels = imagePlaneModule.rows
-    const zVoxels = 2 // metaDataMap.size;
+    const xVoxels = image.columns
+    const yVoxels = image.rows
+    const zVoxels = 2
 
-    let numberOfComponents = 1
-    if (imagePixelModule.photometricInterpretation === 'RGB') {
-      numberOfComponents = 3
-    }
+    const numberOfComponents =
+      image.numComps ||
+      this._getNumCompsFromPhotometricInterpretation(
+        imagePixelModule.photometricInterpretation
+      )
 
     let pixelArray
     switch (imagePixelModule.bitsAllocated) {
       case 8:
-        throw new Error('8 Bit images are not yet supported by this plugin.')
+        pixelArray = new Uint8Array(xVoxels * yVoxels * zVoxels)
+        break
+
       case 16:
         pixelArray = new Float32Array(xVoxels * yVoxels * zVoxels)
 
         break
       case 24:
-        pixelArray = new Uint8ClampedArray(xVoxels * yVoxels * zVoxels * 3)
+        pixelArray = new Uint8Array(xVoxels * yVoxels * zVoxels * 3)
 
         break
       default:
@@ -235,7 +192,7 @@ class StackViewport extends Viewport implements IViewport {
 
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
-      numberOfComponents: numberOfComponents,
+      numberOfComponents,
       values: pixelArray,
     })
 
@@ -244,51 +201,21 @@ class StackViewport extends Viewport implements IViewport {
 
     imageData.setDimensions(xVoxels, yVoxels, zVoxels)
     imageData.setSpacing(xSpacing, ySpacing, zSpacing)
-    imageData.setDirection(direction)
-    imageData.setOrigin(...origin)
+
+    // TODO: If we are going to actually set the direction / origin of each slice when
+    // we render it, we also need to make sure we move the camera so it can see the slice
+    //imageData.setDirection(direction)
+    //imageData.setOrigin(...origin)
+
     imageData.getPointData().setScalars(scalarArray)
     return imageData
   }
 
-  public async setStack(imageIds: Array<string>, currentImageIdIndex = 0): any {
+  public setStack(imageIds: Array<string>, currentImageIdIndex = 0): any {
     this.imageIds = imageIds
     this.currentImageIdIndex = currentImageIdIndex
 
-    const imageId = this.imageIds[currentImageIdIndex]
-    const imageData = this._createVTKImageData(imageId, this.imageIds)
-    this.imageData = imageData
-
-    // TODO: Question... should setting the stack actually cause a render?
-    const image = await loadAndCacheImage(imageId, {})
-
-    const pixels = image.getPixelData()
-    // Set the VTK Image Data TypedArray data from the pixel data array
-    // provided from the Cornerstone Image
-    const scalars = imageData.getPointData().getScalars()
-    const scalarData = scalars.getData()
-
-    if (image.color) {
-      // RGB case
-      let j = 0
-      for (let i = 0; i < pixels.length; i += 4) {
-        scalarData[j] = pixels[i]
-        scalarData[j + 1] = pixels[i + 1]
-        scalarData[j + 2] = pixels[i + 2]
-        j += 3
-      }
-    } else {
-      scalarData.set(pixels)
-    }
-
-    const stackActor = this.createActorMapper(this.imageData)
-
-    const renderer = this.getRenderer()
-    renderer.addActor(stackActor)
-    this._stackActors.push({ volumeActor: stackActor, uid: this.uid })
-
-    this.resetCamera()
-
-    this.render()
+    this._setImageIdIndex(currentImageIdIndex)
   }
 
   public setWindowRange(range) {
@@ -300,13 +227,17 @@ class StackViewport extends Viewport implements IViewport {
   }
 
   private _checkIfSameImageData(image, imageData) {
+    if (!imageData) {
+      return false
+    }
+
     const [xSpacing, ySpacing, zSpacing] = imageData.getSpacing()
     const [xVoxels, yVoxels, zVoxels] = imageData.getDimensions()
 
     // using spacing and size only for now
     if (
-      xSpacing !== image.rowSpacing ||
-      ySpacing !== image.columnSpacing ||
+      xSpacing !== image.rowPixelSpacing ||
+      ySpacing !== image.columnPixelSpacing ||
       xVoxels !== image.rows ||
       yVoxels !== image.columns
     ) {
@@ -315,50 +246,69 @@ class StackViewport extends Viewport implements IViewport {
     return true
   }
 
-  public setImageIdIndex(imageIdIndex: number) {
-    if (this.currentImageIdIndex === imageIdIndex) return
-    //
-    const { imageIds, imageData } = this
+  private _setScalarsFromPixelData(image) {
+    // 3. Update the pixel data in the vtkImageData object with the pixelData
+    //    from the loaded Cornerstone image
+    const pixelData = image.getPixelData()
+    const scalars = this._imageData.getPointData().getScalars()
+    const scalarData = scalars.getData()
 
-    const imageId = this.imageIds[imageIdIndex]
-
-    const imagePromise = loadAndCacheImage(imageId, {})
-
-    // Set the VTK Image Data TypedArray data from the pixel data array
-    // provided from the Cornerstone Image
-    const scalars = this.imageData.getPointData().getScalars()
-    let scalarData = scalars.getData()
-
-    imagePromise.then((image) => {
-      // check if the new image is the same size of the previous one
-      // window.image = image
-      // window.imageData = imageData
-
-      const sameImageData = this._checkIfSameImageData(image, imageData)
-      if (!sameImageData) {
-        const newImageData = this._createVTKImageData(imageId, imageIds)
-        this.imageData = newImageData
-        const scalars = this.imageData.getPointData().getScalars()
-        scalarData = scalars.getData()
+    // Handle cases where Cornerstone is providing an RGBA array, but we need RGB
+    // for VTK.
+    // TODO: This conversion from Cornerstone to VTK may take many forms?
+    //       We need to nail down the types for Cornerstone Images
+    if (image.color) {
+      // RGB case
+      let j = 0
+      for (let i = 0; i < pixelData.length; i += 4) {
+        scalarData[j] = pixelData[i]
+        scalarData[j + 1] = pixelData[i + 1]
+        scalarData[j + 2] = pixelData[i + 2]
+        j += 3
       }
+    } else {
+      // In the general case, just set the VTK Image Data TypedArray data
+      // from the pixel data array provided from the Cornerstone Image
+      // TODO: What about Rescale Slope and Intercept?
+      // TODO: What about SUV computation?
+      scalarData.set(pixelData)
+    }
 
-      const pixels = image.getPixelData()
-      if (image.color) {
-        // RGB case
-        let j = 0
-        for (let i = 0; i < pixels.length; i += 4) {
-          scalarData[j] = pixels[i]
-          scalarData[j + 1] = pixels[i + 1]
-          scalarData[j + 2] = pixels[i + 2]
-          j += 3
-        }
-      } else {
-        scalarData.set(pixels)
-      }
+    // Trigger modified on the VTK Object so the texture is updated
+    // TODO: evaluate directly changing things with texSubImage3D later
+    this._imageData.modified()
+  }
 
+  private async _updateActorToDisplayImageId(imageId) {
+    // This function should do the following:
+    // - Load the specified Image
+    // - Get the existing actor's vtkImageData that is being used to render the current image and check if we can reuse the vtkImageData that is in place (i.e. do the image dimensions and data type match?)
+    // - If we can reuse it, replace the scalar data under the hood
+    // - If we cannot reuse it, create a new actor, remove the old one, and reset the camera
+
+    // 1. Load the image using the Image Loader
+    const image = await loadAndCacheImage(imageId, {})
+
+    // 2. Check if we can reuse the existing vtkImageData object, if one is present.
+    const sameImageData = this._checkIfSameImageData(image, this._imageData)
+    if (sameImageData) {
+      // 3a. If we can reuse it, replace the scalar data under the hood
+      this._setScalarsFromPixelData(image)
+    } else {
+      // 3b. If we cannot reuse the vtkImageData object, create a new one
+      this._imageData = this._createVTKImageData(image, imageId)
+
+      // Set the scalar data of the vtkImageData object from the Cornerstone
+      // Image's pixel data
+      this._setScalarsFromPixelData(image)
+
+      // Create a VTK Volume actor to display the vtkImageData object
+      const stackActor = this.createActorMapper(this._imageData)
+
+      // Get the VTK renderer for this Viewport
       const renderer = this.getRenderer()
 
-      // Todo: handle more than one stack actor by uids
+      // Remove the previous volume actor from the renderer
       const volumes = renderer.getVolumes()
       const prevStackActor = volumes[0]
 
@@ -366,24 +316,66 @@ class StackViewport extends Viewport implements IViewport {
         renderer.removeViewProp(volume)
       })
 
-      // removing previous actor
+      // Remove the previous actor from our internal list of actors
+      // TODO: Why do we need this at all? Is it just if we have
+      // images in a stack of different dimensions?
       const index = this._stackActors.findIndex(
         (stackActor) => stackActor.volumeActor === prevStackActor
       )
-      if (index > -1) this._stackActors.splice(index, 1)
 
-      // adding new actor
-      const stackActor = this.createActorMapper(this.imageData)
-      renderer.addActor(stackActor)
-      this._stackActors.push({ volumeActor: stackActor, uid: this.uid })
-
-      if (!sameImageData) {
-        this.resetCamera()
+      if (index > -1) {
+        this._stackActors.splice(index, 1)
       }
 
+      // Adding the new actor to the renderer
+      renderer.addActor(stackActor)
+
+      // Add the new actor to the internal list of actors for the viewport
+      this._stackActors.push({ volumeActor: stackActor, uid: this.uid })
+
+      // Reset the camera if the actor has changed
+      this.resetCamera()
+    }
+  }
+
+  private _setImageIdIndex(imageIdIndex) {
+    // Update the state of the viewport to the new imageIdIndex;
+    this.currentImageIdIndex = imageIdIndex
+
+    // Get the imageId from the stack
+    const imageId = this.imageIds[imageIdIndex]
+
+    // Todo: trigger an event to allow applications to hook into START of loading state
+    // Currently we use loadHandlerManagers for this
+
+    this._updateActorToDisplayImageId(imageId).then(() => {
+      // Todo: trigger an event to allow applications to hook into END of loading state
+      // Currently we use loadHandlerManagers for this
+
+      // Perform this check after the image has finished loading
+      // in case the user has already scrolled away to another image.
+      // In that case, do not render this image.
+      if (this.currentImageIdIndex !== imageIdIndex) {
+        return
+      }
+
+      // Trigger the image to be drawn on the next animation frame
       this.render()
+
+      // Update the viewport's currentImageIdIndex to reflect the newly
+      // rendered image
       this.currentImageIdIndex = imageIdIndex
     })
+  }
+
+  public setImageIdIndex(imageIdIndex: number) {
+    // If we are already on this imageId index, stop here
+    if (this.currentImageIdIndex === imageIdIndex) {
+      return
+    }
+
+    // Otherwise, get the imageId and attempt to display it
+    this._setImageIdIndex(imageIdIndex)
   }
 
   /**
@@ -406,14 +398,12 @@ class StackViewport extends Viewport implements IViewport {
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1]
 
-    const worldCoord = openGLRenderWindow.displayToWorld(
+    return openGLRenderWindow.displayToWorld(
       displayCoord[0],
       displayCoord[1],
       0,
       renderer
     )
-
-    return worldCoord
   }
 
   /**
