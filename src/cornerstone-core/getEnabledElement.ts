@@ -43,7 +43,7 @@ export default function getEnabledElement(
     renderingEngineUid: renderingEngineUID,
   } = canvas.dataset
 
-  if (!renderingEngineUID || !sceneUID || !viewportUID) {
+  if (!renderingEngineUID || !viewportUID) {
     return
   }
 
@@ -55,9 +55,7 @@ export default function getEnabledElement(
 
   const scene = renderingEngine.getScene(sceneUID)
   const viewport = renderingEngine.getViewport(viewportUID)
-  const FrameOfReferenceUID =
-    (scene && scene.getFrameOfReferenceUID && scene.getFrameOfReferenceUID()) ||
-    undefined
+  const FrameOfReferenceUID = viewport.getFrameOfReferenceUID()
 
   return {
     viewport,

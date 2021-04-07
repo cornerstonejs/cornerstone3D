@@ -66,12 +66,16 @@ class ColorExample extends Component {
                 const index = imageIds.indexOf(imageId);
                 console.warn(index);
                 const imagePlaneModule = {
-                    imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-                    imagePositionPatient: [0, 0, index * 5],
-                    pixelSpacing: [1, 1],
-                    frameOfReferenceUID: 'FORUID',
-                    columns: 2048,
-                    rows: 1216,
+                  imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+                  imagePositionPatient: [0, 0, index * 5],
+                  pixelSpacing: [1, 1],
+                  columnPixelSpacing: 1,
+                  rowPixelSpacing: 1,
+                  frameOfReferenceUID: 'FORUID',
+                  columns: 2048,
+                  rows: 1216,
+                  rowCosines: [1, 0, 0],
+                  columnCosines: [0, 1, 0],
                 }
 
                 return imagePlaneModule

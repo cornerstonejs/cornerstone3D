@@ -5,6 +5,7 @@ import {
   eventTarget,
   createAndCacheVolume,
   loadAndCacheImages,
+  metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
   EVENTS as RENDERING_EVENTS,
@@ -15,6 +16,7 @@ import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransfe
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata'
+import {createDXImageIds} from './helpers/createStudyImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
@@ -26,11 +28,79 @@ import {
   VIEWPORT_IDS,
 } from './constants'
 import LAYOUTS, { stackCT } from './layouts'
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
-// const STACK_RENDERING_ENGINE_UID = "stackRenderingEngine"
-// const VOLUME_RENDERING_ENGINE_UID = "volumeRenderingEngine"
+const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
-const { ctSceneToolGroup, stackSceneToolGroup } = initToolGroups()
+const colorImageIds = [
+  'web:http://localhost:3000/examples/head/avf1240c.png',
+  'web:http://localhost:3000/examples/head/avf1241a.png',
+  'web:http://localhost:3000/examples/head/avf1241b.png',
+  'web:http://localhost:3000/examples/head/avf1241c.png',
+  'web:http://localhost:3000/examples/head/avf1242a.png',
+  'web:http://localhost:3000/examples/head/avf1242b.png',
+  'web:http://localhost:3000/examples/head/avf1242c.png',
+  'web:http://localhost:3000/examples/head/avf1243a.png',
+]
+
+function hardcodedMetaDataProvider(type, imageId) {
+  const colonIndex = imageId.indexOf(':')
+  const scheme = imageId.substring(0, colonIndex)
+  if (scheme !== 'web') return
+
+  if (type === 'imagePixelModule') {
+    const imagePixelModule = {
+      pixelRepresentation: 0,
+      bitsAllocated: 24,
+      bitsStored: 24,
+      highBit: 24,
+      photometricInterpretation: 'RGB',
+      samplesPerPixel: 3,
+    }
+
+    return imagePixelModule
+  } else if (type === 'generalSeriesModule') {
+    const generalSeriesModule = {
+      modality: 'SC',
+    }
+
+    return generalSeriesModule
+  } else if (type === 'imagePlaneModule') {
+    const index = colorImageIds.indexOf(imageId)
+    console.warn(index)
+    const imagePlaneModule = {
+      imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+      imagePositionPatient: [0, 0, index * 5],
+      pixelSpacing: [1, 1],
+      columnPixelSpacing: 1,
+      rowPixelSpacing: 1,
+      frameOfReferenceUID: 'FORUID',
+      columns: 2048,
+      rows: 1216,
+      rowCosines: [1, 0, 0],
+      columnCosines: [0, 1, 0],
+    }
+
+    return imagePlaneModule
+  } else if (type === 'voiLutModule') {
+    return {
+      windowWidth: [255],
+      windowCenter: [127],
+    }
+  } else if (type === 'modalityLutModule') {
+    return {
+      rescaleSlope: 1,
+      rescaleIntercept: 0,
+    }
+  }
+
+  console.warn(type)
+  throw new Error('not available!')
+}
+
+metaData.addProvider(hardcodedMetaDataProvider, 10000)
+
+const { ctSceneToolGroup, stackViewportToolGroup } = initToolGroups()
 
 window.cache = cache
 
@@ -44,8 +114,8 @@ class StackViewportExample extends Component {
     //
     viewportGrid: {
       numCols: 2,
-      numRows: 1,
-      viewports: [{}, {}],
+      numRows: 2,
+      viewports: [{}, {}, {}, {}],
     },
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
   }
@@ -55,10 +125,11 @@ class StackViewportExample extends Component {
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
-    this.imageIdsPromise = getImageIdsAndCacheMetadata()
-    this.imageIdsPromise.then(() =>
-      this.setState({ progressText: 'Loading data...' })
-    )
+    this.petCTImageIdsPromise = getImageIdsAndCacheMetadata()
+    this.dxImageIdsPromise = createDXImageIds()
+    // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
+    //   this.setState({ progressText: 'Loading data...' })
+    // )
 
     // const {
     //   createCameraPositionSynchronizer,
@@ -89,7 +160,8 @@ class StackViewportExample extends Component {
     this.ctStackUID = ctStackUID
 
     // Create volumes
-    const imageIds = await this.imageIdsPromise
+    const imageIds = await this.petCTImageIdsPromise
+    const dxImageIds = await this.dxImageIdsPromise
     const { ctImageIds } = imageIds
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
@@ -99,7 +171,7 @@ class StackViewportExample extends Component {
     window.renderingEngine = renderingEngine
 
     const viewportInput = [
-      // CT
+      // CT volume axial
       {
         sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
@@ -110,9 +182,28 @@ class StackViewportExample extends Component {
         },
       },
       {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(1),
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+        },
+      },
+      // stack CT
+      {
         viewportUID: VIEWPORT_IDS.STACK,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(1),
+        canvas: this._canvasNodes.get(2),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      // dx
+      {
+        viewportUID: VIEWPORT_DX_COLOR,
+        type: VIEWPORT_TYPE.STACK,
+        canvas: this._canvasNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -121,27 +212,58 @@ class StackViewportExample extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
+    // volume ct
     ctSceneToolGroup.addViewports(
       renderingEngineUID,
       SCENE_IDS.CT,
       VIEWPORT_IDS.CT.AXIAL
     )
-
-    stackSceneToolGroup.addViewports(
+    ctSceneToolGroup.addViewports(
       renderingEngineUID,
-      SCENE_IDS.STACK,
+      SCENE_IDS.CT,
+      VIEWPORT_IDS.CT.SAGITTAL
+    )
+
+    // stack ct
+    stackViewportToolGroup.addViewports(
+      renderingEngineUID,
+      undefined,
       VIEWPORT_IDS.STACK
+    )
+
+    // dx and color
+    stackViewportToolGroup.addViewports(
+      renderingEngineUID,
+      undefined,
+      VIEWPORT_DX_COLOR
     )
 
     renderingEngine.render()
 
+
     const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
     // temporary method for converting csiv to wadors
-    const wadoImageIds = ctImageIds.map((imageId) => {
+    const wadoCTImageIds = ctImageIds.map((imageId) => {
       const colonIndex = imageId.indexOf(':')
       return 'wadors' + imageId.substring(colonIndex)
     })
-    await stackViewport.setStack(wadoImageIds)
+    await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds))
+
+
+    // ct + dx + color
+    const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
+
+
+    let fakeStake = [
+      // dxImageIds[0],
+      colorImageIds[0],
+      // dxImageIds[1],
+      wadoCTImageIds[40],
+      colorImageIds[1],
+      // colorImageIds[2],
+      wadoCTImageIds[41],
+    ]
+    await dxColorViewport.setStack(fakeStake)
 
 
     // This only creates the volumes, it does not actually load all
@@ -200,28 +322,39 @@ class StackViewportExample extends Component {
 
   render() {
     return (
-      <div style={{ paddingBottom: '55px' }}>
-        <ViewportGrid
-          numCols={this.state.viewportGrid.numCols}
-          numRows={this.state.viewportGrid.numRows}
-          renderingEngine={this.renderingEngine}
-          style={{ minHeight: '650px', marginTop: '35px' }}
-          ref={this._viewportGridRef}
-        >
-          {this.state.viewportGrid.viewports.map((vp, i) => (
-            <div
-              className="viewport-pane"
-              style={{
-                ...(vp.cellStyle || {}),
-                border: '2px solid grey',
-                background: 'black',
-              }}
-              key={i}
+      <div>
+          <div>
+            <h1>
+              Stack Viewport Example
+            </h1>
+            <p>
+              This is a demo for volume viewports (Top row) and stack viewports (bottom)
+             using the same rendering engine
+            </p>
+          </div>
+          <div style={{ paddingBottom: '55px' }}>
+            <ViewportGrid
+              numCols={this.state.viewportGrid.numCols}
+              numRows={this.state.viewportGrid.numRows}
+              renderingEngine={this.renderingEngine}
+              style={{ minHeight: '650px', marginTop: '35px' }}
+              ref={this._viewportGridRef}
             >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
-          ))}
-        </ViewportGrid>
+              {this.state.viewportGrid.viewports.map((vp, i) => (
+                <div
+                  className="viewport-pane"
+                  style={{
+                    ...(vp.cellStyle || {}),
+                    border: '2px solid grey',
+                    background: 'black',
+                  }}
+                  key={i}
+                >
+                  <canvas ref={(c) => this._canvasNodes.set(i, c)} />
+                </div>
+              ))}
+            </ViewportGrid>
+          </div>
       </div>
     )
   }

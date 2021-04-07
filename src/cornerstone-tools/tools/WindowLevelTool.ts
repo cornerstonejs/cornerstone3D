@@ -38,7 +38,7 @@ export default class WindowLevelTool extends BaseTool {
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(canvas)
-    const { scene, sceneUID } = enabledElement
+    const { scene, sceneUID, viewport } = enabledElement
     const { volumeUID } = this.configuration
 
     let volumeActor
@@ -46,9 +46,13 @@ export default class WindowLevelTool extends BaseTool {
     if (volumeUID) {
       volumeActor = scene.getVolumeActor(volumeUID)
     } else {
-      // Default to first volumeActor
-      const volumeActors = scene.getVolumeActors()
-
+      let volumeActors
+      if (scene) {
+        // Default to first volumeActor
+        volumeActors = scene.getVolumeActors()
+      } else {
+        volumeActors = viewport.getStackActors()
+      }
       if (volumeActors && volumeActors.length) {
         volumeActor = volumeActors[0].volumeActor
       }
@@ -65,7 +69,8 @@ export default class WindowLevelTool extends BaseTool {
 
     const deltaPointsCanvas = deltaPoints.canvas
 
-    let multiplier = 1
+    // 1 was too little
+    let multiplier = 4
     if (volumeUID) {
       const imageDynamicRange = this._getImageDynamicRange(volumeUID)
 
@@ -97,7 +102,13 @@ export default class WindowLevelTool extends BaseTool {
 
     triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
 
-    scene.render()
+    if (scene) {
+      scene.render()
+      return
+    }
+
+    viewport.render()
+    viewport.setWindowRange(newRange)
   }
 
   _getImageDynamicRange = (volumeUID) => {

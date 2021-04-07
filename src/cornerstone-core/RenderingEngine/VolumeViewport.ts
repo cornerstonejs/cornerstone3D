@@ -207,8 +207,7 @@ class VolumeViewport extends Viewport implements IViewport {
   }
 
   getFrameOfReferenceUID(): string {
-    // TODO: Implement this instead of having it at the
-    return 'blah'
+    return this.getScene().getFrameOfReferenceUID()
   }
 }
 

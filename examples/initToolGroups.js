@@ -194,7 +194,7 @@ function initToolGroups() {
   csTools3d.addTool(BidirectionalTool, {});
   csTools3d.addTool(CrosshairsTool, {});
 
-  const stackSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.STACK);
+  const stackViewportToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.STACK);
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT);
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT);
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
@@ -217,31 +217,22 @@ function initToolGroups() {
   // Set up stack Scene tools
 
   // @TODO: This kills the volumeUID and tool configuration
-  stackSceneToolGroup.addTool('WindowLevel', {
+  stackViewportToolGroup.addTool('WindowLevel', {
     configuration: { stackUID: ctStackUID },
   });
-  stackSceneToolGroup.addTool('Pan', {});
-  stackSceneToolGroup.addTool('Zoom', {});
-  stackSceneToolGroup.addTool('StackScrollMouseWheel', {});
-  // @TODO: We need an alternative to config that ties volume to an ID
-  // TODO ^ What does this mean? I don't think we do. The target volume could be changed for the same tool,
-  // its also optional for most of these.
-  // ctSceneToolGroup.addTool('Bidirectional', {
-  //   configuration: { volumeUID: ctVolumeUID },
-  // });
-  // ctSceneToolGroup.addTool('Length', {
-  //   configuration: { volumeUID: ctVolumeUID },
-  // });
-  // ctSceneToolGroup.addTool('Probe', {
-  //   configuration: { volumeUID: ctVolumeUID },
-  // });
-  // ctSceneToolGroup.addTool('RectangleRoi', {
-  //   configuration: { volumeUID: ctVolumeUID },
-  // });
-  // ctSceneToolGroup.addTool('EllipticalRoi', {
-  //   configuration: { volumeUID: ctVolumeUID },
-  // });
-
+  stackViewportToolGroup.addTool('Pan', {});
+  stackViewportToolGroup.addTool('Zoom', {});
+  stackViewportToolGroup.addTool('StackScrollMouseWheel', {});
+  stackViewportToolGroup.setToolActive('StackScrollMouseWheel');
+  stackViewportToolGroup.setToolActive('WindowLevel', {
+    bindings: [ToolBindings.Mouse.Primary],
+  });
+  stackViewportToolGroup.setToolActive('Pan', {
+    bindings: [ToolBindings.Mouse.Auxiliary],
+  });
+  stackViewportToolGroup.setToolActive('Zoom', {
+    bindings: [ToolBindings.Mouse.Secondary],
+  });
 
   // Set up CT Scene tools
 
@@ -442,7 +433,7 @@ function initToolGroups() {
   ptTypesSceneToolGroup.setToolActive('StackScrollMouseWheel');
 
   return {
-    stackSceneToolGroup,
+    stackViewportToolGroup,
     ctSceneToolGroup,
     ptSceneToolGroup,
     fusionSceneToolGroup,

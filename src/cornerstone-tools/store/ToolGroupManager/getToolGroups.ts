@@ -10,8 +10,8 @@ function getToolGroups(
     tg.viewports.some(
       (vp) =>
         vp.renderingEngineUID === renderingEngineUID &&
-        (!vp.sceneUID || vp.sceneUID === sceneUID) &&
-        (!vp.viewportUID || vp.viewportUID === viewportUID)
+        (!vp.viewportUID || vp.viewportUID === viewportUID) &&
+        (!vp.sceneUID || vp.sceneUID === sceneUID)
     )
   )
 

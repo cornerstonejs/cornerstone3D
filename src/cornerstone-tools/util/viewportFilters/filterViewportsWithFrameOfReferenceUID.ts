@@ -17,9 +17,9 @@ export default function filterViewportsWithFrameOfReferenceUID(
 
   for (let vp = 0; vp < numViewports; vp++) {
     const viewport = viewports[vp]
-    const scene = viewport.getScene()
+    // const scene = viewport.getScene()
 
-    if (scene.getFrameOfReferenceUID() === FrameOfReferenceUID) {
+    if (viewport.getFrameOfReferenceUID() === FrameOfReferenceUID) {
       viewportsWithFrameOfReferenceUID.push(viewport)
     }
   }

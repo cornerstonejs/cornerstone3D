@@ -18,7 +18,7 @@ import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
  */
 class Viewport implements IViewport {
   readonly uid: string
-  readonly sceneUID: string
+  readonly sceneUID?: string = undefined
   readonly renderingEngineUID: string
   readonly type: string
   readonly canvas: HTMLCanvasElement
@@ -31,7 +31,6 @@ class Viewport implements IViewport {
 
   constructor(props: ViewportInput) {
     this.uid = props.uid
-    this.sceneUID = props.sceneUID
     this.renderingEngineUID = props.renderingEngineUID
     this.type = props.type
     this.canvas = props.canvas
@@ -42,12 +41,16 @@ class Viewport implements IViewport {
 
     // Set data attributes for render events
     this.canvas.setAttribute('data-viewport-uid', this.uid)
-    this.canvas.setAttribute('data-scene-uid', this.sceneUID)
     this.canvas.setAttribute(
       'data-rendering-engine-uid',
       this.renderingEngineUID
     )
 
+    this.sceneUID = undefined
+    if (props.sceneUID) {
+      this.sceneUID = props.sceneUID
+      this.canvas.setAttribute('data-scene-uid', this.sceneUID)
+    }
     const options = _cloneDeep(props.defaultOptions)
     const defaultOptions = _cloneDeep(props.defaultOptions)
 
@@ -266,7 +269,9 @@ class Viewport implements IViewport {
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
-      slabThickness: vtkCamera.getSlabThickness(),
+      slabThickness: vtkCamera.getSlabThickness
+        ? vtkCamera.getSlabThickness()
+        : undefined,
     }
   }
 

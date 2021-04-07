@@ -10,6 +10,7 @@ export default class StackScrollTool extends BaseTool {
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
       name: 'StackScroll',
+      invert: false,
       supportedInteractionTypes: ['Mouse', 'Touch'],
     })
 
@@ -20,8 +21,8 @@ export default class StackScrollTool extends BaseTool {
   _dragCallback(evt) {
     const { deltaPoints } = evt.detail
     const deltaFrames = deltaPoints.canvas[1]
-    const { volumeUID } = this.configuration
+    const { volumeUID, invert } = this.configuration
 
-    scrollThroughStack(evt, deltaFrames, volumeUID)
+    scrollThroughStack(evt, deltaFrames, volumeUID, invert)
   }
 }

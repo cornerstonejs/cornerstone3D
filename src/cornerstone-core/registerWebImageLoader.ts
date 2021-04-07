@@ -216,6 +216,10 @@ function _loadImageIntoBuffer(
     loadImage(uri)
       .promise.then(
         (image) => {
+          if (!options || !options.targetBuffer) {
+            resolve(image)
+            return
+          }
           // If we have a target buffer, write to that instead. This helps reduce memory duplication.
           const { arrayBuffer, offset, length, type } = options.targetBuffer
 
