@@ -15,7 +15,11 @@ function cornerstoneStreamingImageVolumeLoader(
   options: {
     imageIds: Array<string>
   }
-): StreamingImageVolume {
+): {
+  // TODO: VolumeLoader interface?
+  promise: Promise<StreamingImageVolume>
+  cancelFn: () => void
+} {
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
       'ImageIds must be provided to create a streaming image volume'
@@ -60,16 +64,13 @@ function cornerstoneStreamingImageVolumeLoader(
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
   const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing]
-  const dimensions = <Point3>[Columns, Rows, numFrames]
+  const dimensions = [Columns, Rows, numFrames]
   const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal]
   const signed = PixelRepresentation === 1
 
   // Check if it fits in the cache before we allocate data
-  const currentCacheSize = cache.getCacheSize()
-
   // TODO Improve this when we have support for more types
   const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1
-
   const sizeInBytes =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 

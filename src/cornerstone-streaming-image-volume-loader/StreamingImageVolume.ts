@@ -6,6 +6,7 @@ import {
   triggerEvent,
   ImageVolume,
   Types,
+  loadImage,
 } from '@cornerstone'
 import { calculateSUVScalingFactors } from 'calculate-suv'
 
@@ -16,7 +17,13 @@ import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
 const { IVolume, IStreamingVolume } = Types
 
 const requestType = 'prefetch'
-const preventCache = true // We are not using the cornerstone cache for this.
+
+type LoadStatusInterface = {
+  success: boolean
+  framesLoaded: number
+  numFrames: number
+  framesProcessed: number
+}
 
 type ScalingParameters = {
   rescaleSlope: number
@@ -41,7 +48,7 @@ export default class StreamingImageVolume extends ImageVolume {
     loaded: boolean
     loading: boolean
     cachedFrames: Array<boolean>
-    callbacks: Array<() => void>
+    callbacks: Array<(LoadStatusInterface) => void>
   }
 
   constructor(
@@ -79,13 +86,24 @@ export default class StreamingImageVolume extends ImageVolume {
 
     // Remove all the callback listeners
     this.clearLoadCallbacks()
+
+    // Create a filter function which only keeps requests
+    // which do not match this volume's UID
+    const filterFunction = ({ additionalDetails }) => {
+      return additionalDetails.volumeUID !== this.uid
+    }
+
+    // Instruct the request pool manager to filter queued
+    // requests to ensure requests we no longer need are
+    // no longer sent.
+    requestPoolManager.filterRequests(filterFunction)
   }
 
   public clearLoadCallbacks() {
     this.loadStatus.callbacks = []
   }
 
-  public load = (callback: () => void) => {
+  public load = (callback: (LoadStatusInterface) => void) => {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
@@ -313,19 +331,32 @@ export default class StreamingImageVolume extends ImageVolume {
         },
       }
 
+      const requestFn = () => {
+        // Use loadImage because we are skipping the Cornerstone Image cache
+        // when we load directly into the Volume cache
+        return loadImage(imageId, options).then(
+          () => {
+            successCallback(this, imageIdIndex, imageId)
+          },
+          (error) => {
+            errorCallback(error, imageIdIndex, imageId)
+          }
+        )
+      }
+
+      const additionalDetails = {
+        volumeUID: this.uid,
+      }
+
+      const priority = 5
+      const addToBeginning = false
+
       requestPoolManager.addRequest(
-        {},
-        imageId,
+        requestFn,
         requestType,
-        preventCache,
-        () => {
-          successCallback(this, imageIdIndex, imageId)
-        },
-        (error) => {
-          errorCallback(error, imageIdIndex, imageId)
-        },
-        null, // addToBeginning option, need to pass something to pass options in correct spot.
-        options
+        priority,
+        additionalDetails,
+        addToBeginning
       )
     })
 
