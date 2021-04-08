@@ -719,7 +719,7 @@ class RenderingEngine {
     this._animationFrameHandle = null
 
     this._viewports = new Map()
-    this._scenes = []
+    this._scenes = new Map()
   }
 
   /**

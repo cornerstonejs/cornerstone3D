@@ -7,6 +7,7 @@ import ColorExample from './ExampleColor'
 import VolumeMapper2DExample from './Example2DVolumeMapper'
 import StackViewportExample from './ExampleStackViewport'
 import EnableDisableViewportExample from './ExampleEnableDisableAPI'
+import NineStackViewportExample from './ExampleNineStackViewport'
 
 function LinkOut({ href, text }) {
   return (
@@ -64,6 +65,11 @@ function Index() {
       title: 'New stack viewport',
       url: '/stackViewport',
       text: 'Example for displaying stack and volume viewport',
+    },
+    {
+      title: 'Nine Stack Viewports',
+      url: '/manyStackViewports',
+      text: 'Example for displaying 9 stack viewports at once',
     },
     {
       title: 'enableElement/disableElement API',
@@ -154,6 +160,11 @@ function AppRouter() {
       children: <EnableDisableViewportExample />,
     })
 
+  const manyStackViewport = () =>
+    Example({
+      children: <NineStackViewportExample />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -165,6 +176,7 @@ function AppRouter() {
         {/* <Route exact path="/volumeMapper2D/" render={volumeMapper2D} /> */}
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />
+        <Route exact path="/manyStackViewports/" render={manyStackViewport} />
         <Route exact component={Index} />
       </Switch>
     </Router>
