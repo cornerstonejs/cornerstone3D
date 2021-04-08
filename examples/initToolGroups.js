@@ -226,7 +226,7 @@ function initToolGroups() {
   stackViewportToolGroup.addTool('StackScrollMouseWheel', {});
   stackViewportToolGroup.setToolActive('StackScrollMouseWheel');
   stackViewportToolGroup.setToolEnabled('Length');
-  stackViewportToolGroup.setToolActive('Length', {
+  stackViewportToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
   });
   stackViewportToolGroup.setToolActive('Pan', {
@@ -278,7 +278,7 @@ function initToolGroups() {
   ctSceneToolGroup.setToolPassive('Crosshairs');
 
   ctSceneToolGroup.setToolActive('StackScrollMouseWheel');
-  ctSceneToolGroup.setToolActive('Length', {
+  ctSceneToolGroup.setToolActive('WindowLevel', {
     bindings: [ToolBindings.Mouse.Primary],
   });
   ctSceneToolGroup.setToolActive('Pan', {

@@ -88,32 +88,32 @@ class RenderingEngine {
   }
 
   public enableElement(viewportInputEntry: PublicViewportInput): void {
-    const { canvas } = viewportInputEntry
+    const { canvas, viewportUID } = viewportInputEntry
 
-    // Todo 1. Check if already exits, erase and add again. if canvas exits
-
-    // 2. if this is new we resize off screen
-    const viewports = this._getViewportsAsArray() // IViewport
-
-    const canvases = viewports.map((vp) => vp.canvas)
-    canvases.push(canvas)
-
-    if (!canvases.length) {
+    if (!canvas) {
       throw new Error('No canvases provided')
     }
 
+    // Todo 1. Check if already exits, erase and add again. if canvas exits
+
+    const viewports = this._getViewportsAsArray()
+    const canvases = viewports.map((vp) => vp.canvas)
+    canvases.push(viewportInputEntry.canvas)
+
+    // New off screen size based on all viewports
     const {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
     } = this._resizeOffScreenCanvas(canvases)
 
-    if (!offScreenCanvasWidth || !offScreenCanvasHeight) {
-      throw new Error('Invalid offscreen canvas width or height')
-    }
+    // re position previous viewports
+    const _xOffset = this._resize(
+      viewports,
+      offScreenCanvasWidth,
+      offScreenCanvasHeight
+    )
 
-    // Get the xOffset to render the new viewport, since we resized the
-    // offscreen canvas
-    const _xOffset = offScreenCanvasWidth - canvas.clientWidth
+    // add the new viewport
     this._addViewport(
       viewportInputEntry,
       offScreenCanvasWidth,
@@ -121,7 +121,14 @@ class RenderingEngine {
       _xOffset
     )
 
-    this.render()
+    const viewport = this.getViewport(viewportUID)
+
+    if (viewport instanceof VolumeViewport) {
+      const scene = viewport.getScene()
+      scene.addVolumeActors(viewportUID)
+    }
+
+    this._setViewportsToBeRenderedNextFrame([viewportInputEntry.viewportUID])
   }
 
   // public disableElement(viewportUID: string): void {}
@@ -153,8 +160,8 @@ class RenderingEngine {
       syEndDisplayCoords,
       sx,
       sy,
-      sHeight,
       sWidth,
+      sHeight,
     } = this._getViewportCoordsOnOffScreenCanvas(
       viewportInputEntry,
       offScreenCanvasWidth,
@@ -281,22 +288,7 @@ class RenderingEngine {
     return { offScreenCanvasWidth, offScreenCanvasHeight }
   }
 
-  /**
-   * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
-   * It is up to the parent app to call the size of the on-screen canvas changes.
-   * This is left as an app level concern as one might want to debounce the changes, or the like.
-   */
-  public resize(): void {
-    this._throwIfDestroyed()
-
-    const viewports = this._getViewportsAsArray()
-    const canvases = viewports.map((vp) => vp.canvas)
-
-    const {
-      offScreenCanvasWidth,
-      offScreenCanvasHeight,
-    } = this._resizeOffScreenCanvas(canvases)
-
+  private _resize(viewports, offScreenCanvasWidth, offScreenCanvasHeight) {
     // Redefine viewport properties
     let _xOffset = 0
 
@@ -309,8 +301,8 @@ class RenderingEngine {
         syEndDisplayCoords,
         sx,
         sy,
-        sHeight,
         sWidth,
+        sHeight,
       } = this._getViewportCoordsOnOffScreenCanvas(
         viewport,
         offScreenCanvasWidth,
@@ -336,6 +328,26 @@ class RenderingEngine {
     }
 
     // Render all viewports
+    return _xOffset
+  }
+
+  /**
+   * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
+   * It is up to the parent app to call the size of the on-screen canvas changes.
+   * This is left as an app level concern as one might want to debounce the changes, or the like.
+   */
+  public resize(): void {
+    this._throwIfDestroyed()
+
+    const viewports = this._getViewportsAsArray()
+    const canvases = viewports.map((vp) => vp.canvas)
+
+    const {
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+    } = this._resizeOffScreenCanvas(canvases)
+
+    this._resize(viewports, offScreenCanvasWidth, offScreenCanvasHeight)
     this.render()
   }
 

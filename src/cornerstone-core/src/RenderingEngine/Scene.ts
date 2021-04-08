@@ -181,10 +181,11 @@ class Scene {
    */
   public addViewport(viewportUID: string): void {
     this._sceneViewports.push(viewportUID)
+  }
 
-    // if a viewport is added after volumes have already been added to the
-    // scene, we add the existing volumeActors to the viewport.
-    // Todo
+  public addVolumeActors(viewportUID: string): void {
+    const volumeActor = this.getVolumeActors()
+    this.getViewport(viewportUID)._setVolumeActors(volumeActor)
   }
 
   public removeViewport(viewportUID: string): void {
