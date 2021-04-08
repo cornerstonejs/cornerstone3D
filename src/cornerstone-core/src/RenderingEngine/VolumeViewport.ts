@@ -211,6 +211,12 @@ class VolumeViewport extends Viewport implements IViewport {
     return this.getScene().getFrameOfReferenceUID()
   }
 
+  //public getCurrentImageId() : string | undefined => {
+  // check current viewPlane and focal point from camera
+  // against stack of imageIds. If we are within some precision,
+  // return that imageId.
+  //}
+
   // this api only exists here for developers that are displaying data
   // and who did not create a scene explicitly beforehand
   // (scenes are optional for the public API but internally created either way)

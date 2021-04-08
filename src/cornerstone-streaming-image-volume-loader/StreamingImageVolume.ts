@@ -430,13 +430,16 @@ export default class StreamingImageVolume extends ImageVolume {
       //    buffer to the smaller one
       imageScalarData.set(volumeBuffer, byteOffset)
 
-      // 5. If we know we won't be able to add another Image to the cache
+      // 5. TODO: Create an Image Object from imageScalarData and put it into the Image
+      // cache...
+
+      // 6. If we know we won't be able to add another Image to the cache
       //    without breaching the limit, stop here.
       if (bytesRemaining <= bytesPerImage) {
         break
       }
     }
-    // 5. When as much of the Volume is processed into Images as possible
+    // 7. When as much of the Volume is processed into Images as possible
     //    without breaching the cache limit, remove the Volume
     this._removeFromCache()
   }

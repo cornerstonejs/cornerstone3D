@@ -1,5 +1,3 @@
-import { loadImage, loadAndCacheImage } from '../imageLoader'
-import cache from '../cache/cache'
 import { getMaxSimultaneousRequests } from './getMaxSimultaneousRequests'
 
 const requestPool = {
