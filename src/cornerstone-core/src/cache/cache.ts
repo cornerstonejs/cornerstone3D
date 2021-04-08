@@ -5,7 +5,6 @@ import EVENTS from '../enums/events'
 import ERROR_CODES from '../enums/errorCodes'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
-const REQUEST_TYPE = 'prefetch'
 
 interface ImageLoadObject {
   promise: Promise
@@ -20,6 +19,7 @@ interface VolumeLoadObject {
 }
 
 interface CachedImage {
+  image: any // TODO We need to type this
   imageId: string
   imageLoadObject: ImageLoadObject
   loaded: boolean
@@ -29,6 +29,7 @@ interface CachedImage {
 }
 
 interface CachedVolume {
+  volume: any // TODO We need to type this
   volumeId: string
   volumeLoadObject: VolumeLoadObject
   loaded: boolean
@@ -70,7 +71,7 @@ class Cache implements IImageCache {
   public getMaxCacheSize = (): number => this._maxCacheSize
   public getCacheSize = (): number => this._cacheSize
 
-  public decacheImage = (imageId: string) => {
+  private _decacheImage = (imageId: string) => {
     const { imageLoadObject } = this._imageCache.get(imageId)
 
     // Cancel any in-progress loading
@@ -98,7 +99,7 @@ class Cache implements IImageCache {
     return cachedVolume.volume
   }
 
-  public decacheVolume = (volumeId: string) => {
+  private _decacheVolume = (volumeId: string) => {
     const cachedVolume = this._volumeCache.get(volumeId)
     const { volumeLoadObject } = cachedVolume
 
@@ -121,6 +122,31 @@ class Cache implements IImageCache {
     this._volumeCache.delete(volumeId)
   }
 
+  public decacheUntilBytesAvailable(numBytes: number): number {
+    const bytesAvailable = this.getMaxCacheSize() - this.getCacheSize()
+    if (bytesAvailable >= numBytes) {
+      return bytesAvailable
+    }
+
+    while (bytesAvailable < numBytes) {
+      const { value: imageId, done } = imageIterator.next()
+
+      if (done) {
+        break
+      }
+
+      this._decacheImage(imageId)
+    }
+
+    if (bytesAvailable >= numBytes) {
+      return bytesAvailable
+    }
+
+    // This means that we were unable to decache enough images to
+    // reach the demanded number of bytes
+    return bytesAvailable
+  }
+
   public purgeCache = () => {
     const imageIterator = this._imageCache.keys()
 
@@ -132,7 +158,7 @@ class Cache implements IImageCache {
         break
       }
 
-      this.decacheImage(imageId)
+      this._decacheImage(imageId)
     }
 
     const volumeIterator = this._volumeCache.keys()
@@ -145,7 +171,7 @@ class Cache implements IImageCache {
         break
       }
 
-      this.decacheVolume(volumeId)
+      this._decacheVolume(volumeId)
     }
   }
 
@@ -452,7 +478,29 @@ class Cache implements IImageCache {
     }
 
     triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, eventDetails)
-    this.decacheImage(imageId)
+    this._decacheImage(imageId)
+  }
+
+  public removeVolumeLoadObject = (volumeId: string) => {
+    if (volumeId === undefined) {
+      throw new Error('removeVolumeLoadObject: volumeId must not be undefined')
+    }
+    const cachedVolume = this._volumeCache.get(volumeId)
+
+    if (cachedVolume === undefined) {
+      throw new Error(
+        'removeVolumeLoadObject: volumeId was not present in volumeCache'
+      )
+    }
+
+    this._incrementCacheSize(-cachedVolume.sizeInBytes)
+
+    const eventDetails = {
+      volume: cachedVolume,
+    }
+
+    triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_VOLUME_REMOVED, eventDetails)
+    this._decacheVolume(volumeId)
   }
 
   private _incrementCacheSize = (increment: number) => {

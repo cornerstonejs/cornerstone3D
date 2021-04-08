@@ -6,6 +6,7 @@ import {
   triggerEvent,
   ImageVolume,
   Types,
+  cache,
   loadImage,
 } from '@cornerstone'
 import { calculateSUVScalingFactors } from 'calculate-suv'
@@ -388,12 +389,63 @@ export default class StreamingImageVolume extends ImageVolume {
     }
   }
 
-  /*decache(completelyRemove = false) {
-    if (completelyRemove) {
-    } else {
-      // Do we have enough space in volatile cache?
-      // If not, remove some
-      // Next, start convertToImages (createImage style) => putIntoImageCache
+  private _removeFromCache() {
+    // TODO: not 100% sure this is the same UID as the volume loader's volumeId?
+    // so I have no idea if this will work
+    cache.removeVolumeLoadObject(this.uid)
+  }
+
+  private _convertToImages() {
+    // 1. Try to decache images in the volatile Image Cache to provide
+    //    enough space to store another entire copy of the volume (as Images).
+    //    If we do not have enough, we will store as many images in the cache
+    //    as possible, and the rest of the volume will be decached.
+    const byteLength = this.sizeInBytes
+    const numImages = this.imageIds.length
+    let bytesRemaining = cache.decacheUntilBytesAvailable(byteLength)
+
+    // Divide the total volume size by the number of images in the stack
+    // to get the bytes per image
+    const bytesPerImage = byteLength / numImages
+
+    // TODO: Need to get this somehow from the volume
+    //const pixelsPerImage = this.dimensions[0] * this.dimensions[1]
+
+    // Grab the buffer and it's type
+    const volumeBuffer = this.scalarData.buffer
+    // (not sure if this actually works, TypeScript keeps complaining)
+    const TypedArray = this.scalarData.constructor
+
+    for (let imageIdIndex = 0; imageIdIndex < numImages; imageIdIndex++) {
+      bytesRemaining = bytesRemaining - bytesPerImage
+      // 2. Given the index of the image and frame length in bytes,
+      //    create a view on the volume arraybuffer
+      const byteOffset = bytesPerImage * imageIdIndex
+
+      // 3. Create a new TypedArray of the same type for the new
+      //    Image that will be created
+      const imageScalarData = new TypedArray(pixelsPerImage)
+
+      // 4. Use e.g. TypedArray.set() to copy the data from the larger
+      //    buffer to the smaller one
+      imageScalarData.set(volumeBuffer, byteOffset)
+
+      // 5. If we know we won't be able to add another Image to the cache
+      //    without breaching the limit, stop here.
+      if (bytesRemaining <= bytesPerImage) {
+        break
+      }
     }
-  }*/
+    // 5. When as much of the Volume is processed into Images as possible
+    //    without breaching the cache limit, remove the Volume
+    this._removeFromCache()
+  }
+
+  public decache(completelyRemove = false) {
+    if (completelyRemove) {
+      this._removeFromCache()
+    } else {
+      this._convertToImages()
+    }
+  }
 }
