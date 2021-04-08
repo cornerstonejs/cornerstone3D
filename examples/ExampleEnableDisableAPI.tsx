@@ -121,6 +121,7 @@ class EnableDisableViewportExample extends Component {
     },
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     selectedViewportIndex: 0, // for disabling and enabling viewports
+    viewportInputEntries: []
   }
 
   constructor(props) {
@@ -134,56 +135,7 @@ class EnableDisableViewportExample extends Component {
     this.numberOfViewports =
       this.state.viewportGrid.numCols * this.state.viewportGrid.numRows
 
-    this.viewportInputEntries = [
-      {
-        // CT volume axial
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(0),
-        defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      ,
-      {
-        // stack CT
-        viewportUID: VIEWPORT_IDS.STACK,
-        type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(2),
-        defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      {
-        // dx
-        viewportUID: VIEWPORT_DX_COLOR,
-        type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(3),
-        defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      {
-        // CT volume Coronal
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(4),
-        defaultOptions: {
-          orientation: ORIENTATION.CORONAL,
-        },
-      },
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(1),
-        defaultOptions: {
-          orientation: ORIENTATION.SAGITTAL,
-        },
-      },
-    ]
+
     // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
     // )
@@ -213,6 +165,55 @@ class EnableDisableViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    this.setState({viewportInputEntries:[
+      {
+        // CT volume axial
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(0),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        // stack CT
+        viewportUID: VIEWPORT_IDS.STACK,
+        type: VIEWPORT_TYPE.STACK,
+        canvas: this._canvasNodes.get(1),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        // dx
+        viewportUID: VIEWPORT_DX_COLOR,
+        type: VIEWPORT_TYPE.STACK,
+        canvas: this._canvasNodes.get(2),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        // CT volume Coronal
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(3),
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(4),
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+        },
+      },
+    ]})
     let { ctSceneToolGroup, stackViewportToolGroup } = initToolGroups()
 
     this.ctVolumeUID = ctVolumeUID
@@ -228,8 +229,8 @@ class EnableDisableViewportExample extends Component {
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
 
-    renderingEngine.enableElement(this.viewportInputEntries[0])
-    renderingEngine.enableElement(this.viewportInputEntries[1])
+    renderingEngine.enableElement(this.state.viewportInputEntries[0]) // ct volume
+    // renderingEngine.enableElement(this.state.viewportInputEntries[1]) // stack
 
     // Todo: tools for enabled/disabled element
     // volume ct
@@ -261,27 +262,27 @@ class EnableDisableViewportExample extends Component {
     renderingEngine.render()
 
     // todo: should we run these if we the viewport is not enabled?
-    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
-    // temporary method for converting csiv to wadors
-    const wadoCTImageIds = ctImageIds.map((imageId) => {
-      const colonIndex = imageId.indexOf(':')
-      return 'wadors' + imageId.substring(colonIndex)
-    })
-    await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds))
+    // const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
+    // // temporary method for converting csiv to wadors
+    // const wadoCTImageIds = ctImageIds.map((imageId) => {
+    //   const colonIndex = imageId.indexOf(':')
+    //   return 'wadors' + imageId.substring(colonIndex)
+    // })
+    // await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds))
 
-    // ct + dx + color
-    const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
+    // // ct + dx + color
+    // const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
 
-    let fakeStake = [
-      dxImageIds[0],
-      colorImageIds[0],
-      dxImageIds[1],
-      wadoCTImageIds[40],
-      colorImageIds[1],
-      colorImageIds[2],
-      wadoCTImageIds[41],
-    ]
-    await dxColorViewport.setStack(fakeStake)
+    // let fakeStake = [
+    //   dxImageIds[0],
+    //   colorImageIds[0],
+    //   dxImageIds[1],
+    //   wadoCTImageIds[40],
+    //   colorImageIds[1],
+    //   colorImageIds[2],
+    //   wadoCTImageIds[41],
+    // ]
+    // await dxColorViewport.setStack(fakeStake)
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
@@ -306,7 +307,9 @@ class EnableDisableViewportExample extends Component {
       {
         volumeUID: ctVolumeUID,
       },
-    ])
+
+    ],
+    true)
 
     // Set initial CT levels in UI
     const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
@@ -411,8 +414,8 @@ class EnableDisableViewportExample extends Component {
             onChange={this.setSelectedViewportIndex}
             className="form-control "
           >
-            {this.viewportInputEntries.map((vpEntry) => (
-              <option key={vpEntry} value={vpEntry}>
+            {this.state.viewportInputEntries && this.state.viewportInputEntries.map((vpEntry, index) => (
+              <option key={index} value={vpEntry}>
                 {vpEntry.viewportUID}
               </option>
             ))}

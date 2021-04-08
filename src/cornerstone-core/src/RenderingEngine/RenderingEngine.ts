@@ -4,7 +4,7 @@ import VIEWPORT_TYPE from '../constants/viewportType'
 import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from '../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
-import { PublicViewportInput, ViewportInput } from '../types'
+import { IViewport, PublicViewportInput, ViewportInput } from '../types'
 import VolumeViewport from './VolumeViewport'
 import StackViewport from './StackViewport'
 import Scene from './Scene'
@@ -70,7 +70,6 @@ class RenderingEngine {
   private _needsRender: Set<string> = new Set()
   private _animationFrameSet = false
   private _animationFrameHandle: number | null = null
-  private _xOffset = 0
 
   /**
    *
@@ -88,9 +87,128 @@ class RenderingEngine {
     this.hasBeenDestroyed = false
   }
 
-  // public enabledElement(viewport: PublicViewportInput): void {}
+  public enableElement(viewportInputEntry: PublicViewportInput): void {
+    const { canvas } = viewportInputEntry
+
+    // Todo 1. Check if already exits, erase and add again. if canvas exits
+
+    // 2. if this is new we resize off screen
+    const viewports = this._getViewportsAsArray() // IViewport
+
+    const canvases = viewports.map((vp) => vp.canvas)
+    canvases.push(canvas)
+
+    const {
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+    } = this._resizeOffScreenCanvas(canvases)
+
+    // Get the xOffset to render the new viewport, since we resized the
+    // offscreen canvas
+    const _xOffset = offScreenCanvasWidth - canvas.clientWidth
+    this._addViewport(
+      viewportInputEntry,
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+      _xOffset
+    )
+
+    this.render()
+  }
 
   // public disableElement(viewportUID: string): void {}
+
+  private _addViewport(
+    viewportInputEntry: PublicViewportInput,
+    offScreenCanvasWidth,
+    offScreenCanvasHeight,
+    _xOffset
+  ) {
+    const {
+      canvas,
+      sceneUID,
+      viewportUID,
+      type,
+      defaultOptions,
+    } = viewportInputEntry
+
+    if (this._viewports.get(viewportUID)) {
+      console.warn(
+        `The viewport ${viewportUID} is already added, if you want to add a new viewport, try a different uid`
+      )
+    }
+
+    const {
+      sxStartDisplayCoords,
+      syStartDisplayCoords,
+      sxEndDisplayCoords,
+      syEndDisplayCoords,
+      sx,
+      sy,
+      sHeight,
+      sWidth,
+    } = this._getViewportCoordsOnOffScreenCanvas(
+      viewportInputEntry,
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+      _xOffset
+    )
+
+    this.offscreenMultiRenderWindow.addRenderer({
+      viewport: [
+        sxStartDisplayCoords,
+        syStartDisplayCoords,
+        sxEndDisplayCoords,
+        syEndDisplayCoords,
+      ],
+      uid: viewportUID,
+      background: defaultOptions.background
+        ? defaultOptions.background
+        : [0, 0, 0],
+    })
+
+    const viewportInput = <ViewportInput>{
+      uid: viewportUID,
+      renderingEngineUID: this.uid,
+      type,
+      canvas,
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+      defaultOptions: defaultOptions || {},
+    }
+
+    let scene = this.getScene(sceneUID)
+
+    if (!scene) {
+      // creating scenes for volume viewports
+      if (type !== VIEWPORT_TYPE.STACK) {
+        scene = new Scene(sceneUID, this.uid)
+        this._scenes.push(scene)
+      }
+    }
+
+    let viewport
+    if (type !== VIEWPORT_TYPE.STACK) {
+      viewportInput.sceneUID = scene.uid
+      viewport = new VolumeViewport(viewportInput)
+      scene.addViewport(viewportUID)
+    } else {
+      viewport = new StackViewport(viewportInput)
+    }
+
+    this._viewports.set(viewportUID, viewport)
+
+    const eventData = {
+      canvas,
+      viewportUID,
+      sceneUID: sceneUID || scene ? scene.uid : undefined, // if it is internal uid
+      renderingEngineUID: this.uid,
+    }
+
+    triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+  }
 
   /**
    * Creates `Scene`s containing `Viewport`s and sets up the offscreen render
@@ -104,114 +222,42 @@ class RenderingEngine {
     this._throwIfDestroyed()
     this._reset()
 
+    let _xOffset = 0
+
     // Set canvas size based on height and sum of widths
     const {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
     } = this._resizeOffScreenCanvas(viewportInputEntries)
 
-    this._xOffset = 0
-
     for (let i = 0; i < viewportInputEntries.length; i++) {
       const viewportInputEntry = viewportInputEntries[i]
-      const {
-        canvas,
-        sceneUID,
-        viewportUID,
-        type,
-        defaultOptions,
-      } = viewportInputEntry
 
-      if (this._viewports.get(viewportUID)) {
-        console.warn(
-          `The viewport ${viewportUID} is already added, if you want to add a new viewport, try a different uid`
-        )
-      }
-
-      const {
-        sxStartDisplayCoords,
-        syStartDisplayCoords,
-        sxEndDisplayCoords,
-        syEndDisplayCoords,
-        sx,
-        sy,
-        sHeight,
-        sWidth,
-      } = this._getViewportCoordsOnOffScreenCanvas(
+      const { canvas } = viewportInputEntry
+      this._addViewport(
         viewportInputEntry,
         offScreenCanvasWidth,
-        offScreenCanvasHeight
+        offScreenCanvasHeight,
+        _xOffset
       )
 
-      this.offscreenMultiRenderWindow.addRenderer({
-        viewport: [
-          sxStartDisplayCoords,
-          syStartDisplayCoords,
-          sxEndDisplayCoords,
-          syEndDisplayCoords,
-        ],
-        uid: viewportUID,
-        background: defaultOptions.background
-          ? defaultOptions.background
-          : [0, 0, 0],
-      })
-
-      const viewportInput = <ViewportInput>{
-        uid: viewportUID,
-        renderingEngineUID: this.uid,
-        type,
-        canvas,
-        sx,
-        sy,
-        sWidth,
-        sHeight,
-        defaultOptions: defaultOptions || {},
-      }
-
-      let scene = this.getScene(sceneUID)
-
-      if (!scene) {
-        // creating scenes for volume viewports
-        if (type !== VIEWPORT_TYPE.STACK) {
-          scene = new Scene(sceneUID, this.uid)
-          this._scenes.push(scene)
-        }
-      }
-
-      let viewport
-      if (type !== VIEWPORT_TYPE.STACK) {
-        viewportInput.sceneUID = scene.uid
-        viewport = new VolumeViewport(viewportInput)
-        scene.addViewport(viewportUID)
-      } else {
-        viewport = new StackViewport(viewportInput)
-      }
-
-      this._viewports.set(viewportUID, viewport)
-
-      const eventData = {
-        canvas,
-        viewportUID,
-        sceneUID: sceneUID || scene ? scene.uid : undefined, // if it is internal uid
-        renderingEngineUID: this.uid,
-      }
-
-      triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+      _xOffset += canvas.clientWidth
     }
   }
 
-  private _resizeOffScreenCanvas(viewports: Array<PublicViewportInput>) {
+  // Todo: create Canvas type instead of publicViewportInput
+  private _resizeOffScreenCanvas(canvases: Array<HTMLCanvasElement>) {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this
 
     // Set canvas size based on height and sum of widths
     const offScreenCanvasHeight = Math.max(
-      ...viewports.map((vp) => vp.canvas.clientHeight)
+      ...canvases.map((canvas) => canvas.clientHeight)
     )
 
     let offScreenCanvasWidth = 0
 
-    viewports.forEach((vp) => {
-      offScreenCanvasWidth += vp.canvas.clientWidth
+    canvases.forEach((canvas) => {
+      offScreenCanvasWidth += canvas.clientWidth
     })
 
     offScreenCanvasContainer.width = offScreenCanvasWidth
@@ -238,7 +284,7 @@ class RenderingEngine {
     } = this._resizeOffScreenCanvas(viewports)
 
     // Redefine viewport properties
-    this._xOffset = 0
+    let _xOffset = 0
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i]
@@ -254,8 +300,11 @@ class RenderingEngine {
       } = this._getViewportCoordsOnOffScreenCanvas(
         viewport,
         offScreenCanvasWidth,
-        offScreenCanvasHeight
+        offScreenCanvasHeight,
+        _xOffset
       )
+
+      _xOffset += viewport.canvas.clientWidth
 
       viewport.sx = sx
       viewport.sy = sy
@@ -279,7 +328,8 @@ class RenderingEngine {
   public _getViewportCoordsOnOffScreenCanvas(
     viewport: PublicViewportInput,
     offScreenCanvasWidth: number,
-    offScreenCanvasHeight: number
+    offScreenCanvasHeight: number,
+    _xOffset: number
   ): ViewportDisplayCoords {
     const { canvas } = viewport
     const { clientWidth, clientHeight } = canvas
@@ -291,7 +341,7 @@ class RenderingEngine {
     }
 
     // Update the canvas drawImage offsets.
-    const sx = this._xOffset
+    const sx = _xOffset
     const sy = 0
     const sWidth = clientWidth
     const sHeight = clientHeight
@@ -304,8 +354,6 @@ class RenderingEngine {
 
     const sWidthDisplayCoords = sWidth / offScreenCanvasWidth
     const sHeightDisplayCoords = sHeight / offScreenCanvasHeight
-
-    this._xOffset += clientWidth
 
     return {
       sxStartDisplayCoords,
@@ -346,6 +394,8 @@ class RenderingEngine {
   }
 
   private _getViewportsAsArray() {
+    // Todo: array from
+    // Array.from(this._viewports.values())
     const viewportIterator = this._viewports.values()
     const viewports = []
     /* eslint-disable no-constant-condition */
