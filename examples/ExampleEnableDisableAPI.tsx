@@ -20,7 +20,7 @@ import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransfe
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata'
-import {createDXImageIds} from './helpers/createStudyImageIds'
+import { createDXImageIds } from './helpers/createStudyImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
@@ -106,7 +106,7 @@ metaData.addProvider(hardcodedMetaDataProvider, 10000)
 
 window.cache = cache
 
-class StackViewportExample extends Component {
+class EnableDisableViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
@@ -115,11 +115,12 @@ class StackViewportExample extends Component {
     destroyed: false,
     //
     viewportGrid: {
-      numCols: 2,
+      numCols: 3,
       numRows: 2,
-      viewports: [{}, {}, {}, {}],
+      viewports: [{}, {}, {}, {}, {}, {}],
     },
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
+    selectedViewportIndex: 0, // for disabling and enabling viewports
   }
 
   constructor(props) {
@@ -130,6 +131,59 @@ class StackViewportExample extends Component {
     this._offScreenRef = React.createRef()
     this.petCTImageIdsPromise = getImageIdsAndCacheMetadata()
     this.dxImageIdsPromise = createDXImageIds()
+    this.numberOfViewports =
+      this.state.viewportGrid.numCols * this.state.viewportGrid.numRows
+
+    this.viewportInputEntries = [
+      {
+        // CT volume axial
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(0),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      ,
+      {
+        // stack CT
+        viewportUID: VIEWPORT_IDS.STACK,
+        type: VIEWPORT_TYPE.STACK,
+        canvas: this._canvasNodes.get(2),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        // dx
+        viewportUID: VIEWPORT_DX_COLOR,
+        type: VIEWPORT_TYPE.STACK,
+        canvas: this._canvasNodes.get(3),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        // CT volume Coronal
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(4),
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(1),
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+        },
+      },
+    ]
     // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
     // )
@@ -170,81 +224,43 @@ class StackViewportExample extends Component {
     const { ctImageIds } = imageIds
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
-    // const renderingEngine = new RenderingEngine(renderingEngineUID)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
 
-    const viewportInput = [
-      // CT volume axial
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(0),
-        defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(1),
-        defaultOptions: {
-          orientation: ORIENTATION.SAGITTAL,
-        },
-      },
-      // stack CT
-      {
-        viewportUID: VIEWPORT_IDS.STACK,
-        type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(2),
-        defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      // dx
-      {
-        viewportUID: VIEWPORT_DX_COLOR,
-        type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(3),
-        defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-    ]
+    renderingEngine.enableElement(this.viewportInputEntries[0])
+    renderingEngine.enableElement(this.viewportInputEntries[1])
 
-    renderingEngine.setViewports(viewportInput)
-
+    // Todo: tools for enabled/disabled element
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
+    // ctSceneToolGroup.addViewports(
+    //   renderingEngineUID,
+    //   SCENE_IDS.CT,
+    //   VIEWPORT_IDS.CT.AXIAL
+    // )
+    // ctSceneToolGroup.addViewports(
+    //   renderingEngineUID,
+    //   SCENE_IDS.CT,
+    //   VIEWPORT_IDS.CT.SAGITTAL
+    // )
 
-    // stack ct
-    stackViewportToolGroup.addViewports(
-      renderingEngineUID,
-      undefined,
-      VIEWPORT_IDS.STACK
-    )
+    // // stack ct
+    // stackViewportToolGroup.addViewports(
+    //   renderingEngineUID,
+    //   undefined,
+    //   VIEWPORT_IDS.STACK
+    // )
 
-    // dx and color
-    stackViewportToolGroup.addViewports(
-      renderingEngineUID,
-      undefined,
-      VIEWPORT_DX_COLOR
-    )
+    // // dx and color
+    // stackViewportToolGroup.addViewports(
+    //   renderingEngineUID,
+    //   undefined,
+    //   VIEWPORT_DX_COLOR
+    // )
 
     renderingEngine.render()
 
+    // todo: should we run these if we the viewport is not enabled?
     const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
     // temporary method for converting csiv to wadors
     const wadoCTImageIds = ctImageIds.map((imageId) => {
@@ -320,6 +336,19 @@ class StackViewportExample extends Component {
     this.renderingEngine.destroy()
   }
 
+  setSelectedViewportIndex = (evt) => {
+    const index = evt.target.value
+    this.setState({ selectedViewportIndex: index })
+  }
+
+  disableSelectedViewport = () => {
+    console.debug('disabling', this.state.selectedViewportIndex)
+  }
+
+  enableSelectedViewport = () => {
+    console.debug('enabling', this.state.selectedViewportIndex)
+  }
+
   showOffScreenCanvas = () => {
     // remove all childs
     this._offScreenRef.current.innerHTML = ''
@@ -335,16 +364,59 @@ class StackViewportExample extends Component {
     // remove all childs
     this._offScreenRef.current.innerHTML = ''
   }
-
   render() {
     return (
       <div>
         <div>
-          <h1>Stack Viewport Example (setViewports API)</h1>
+          <h1>
+            Stack and Volume Viewports (enableElement and disableElement API)
+          </h1>
           <p>
-            This is a demo for volume viewports (Top row) and stack viewports
-            (bottom) using the same rendering engine
+            This is a demo using the enableElement and disableElement API for
+            volume viewports and stack viewports.
           </p>
+          <p>
+            By default, two viewports renders to the screen, the user can add
+            more viewports to the screen by selecting the viewportUID in the
+            list of available viewports.
+          </p>
+          <p>
+            Viewports can also be removed from the screen by selecting the
+            viewportUID in the dropdown and disabling it.
+          </p>
+          <p>
+            A render of offscreen canvas is shown below, to demonstrate correct
+            resizing upon enabling/disabling viewports.
+          </p>
+        </div>
+        <button
+          onClick={() => this.enableSelectedViewport()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Enable Selected Viewport
+        </button>
+        <button
+          onClick={() => this.disableSelectedViewport()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Disable Selected Viewport
+        </button>
+
+        <div className="col-md-4">
+          <label>Viewports:</label>
+          <select
+            value={this.state.selectedViewportIndex}
+            onChange={this.setSelectedViewportIndex}
+            className="form-control "
+          >
+            {this.viewportInputEntries.map((vpEntry) => (
+              <option key={vpEntry} value={vpEntry}>
+                {vpEntry.viewportUID}
+              </option>
+            ))}
+          </select>
         </div>
         <div style={{ paddingBottom: '55px' }}>
           <ViewportGrid
@@ -392,4 +464,4 @@ class StackViewportExample extends Component {
   }
 }
 
-export default StackViewportExample
+export default EnableDisableViewportExample
