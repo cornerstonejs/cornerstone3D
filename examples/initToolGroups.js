@@ -220,11 +220,13 @@ function initToolGroups() {
   stackViewportToolGroup.addTool('WindowLevel', {
     configuration: { stackUID: ctStackUID },
   });
+  stackViewportToolGroup.addTool('Length', {});
   stackViewportToolGroup.addTool('Pan', {});
   stackViewportToolGroup.addTool('Zoom', {});
   stackViewportToolGroup.addTool('StackScrollMouseWheel', {});
   stackViewportToolGroup.setToolActive('StackScrollMouseWheel');
-  stackViewportToolGroup.setToolActive('WindowLevel', {
+  stackViewportToolGroup.setToolEnabled('Length');
+  stackViewportToolGroup.setToolActive('Length', {
     bindings: [ToolBindings.Mouse.Primary],
   });
   stackViewportToolGroup.setToolActive('Pan', {
@@ -240,12 +242,10 @@ function initToolGroups() {
   ctSceneToolGroup.addTool('WindowLevel', {
     configuration: { volumeUID: ctVolumeUID },
   });
+  ctSceneToolGroup.addTool('Length', {});
   ctSceneToolGroup.addTool('Pan', {});
   ctSceneToolGroup.addTool('Zoom', {});
   ctSceneToolGroup.addTool('StackScrollMouseWheel', {});
-  // @TODO: We need an alternative to config that ties volume to an ID
-  // TODO ^ What does this mean? I don't think we do. The target volume could be changed for the same tool,
-  // its also optional for most of these.
   ctSceneToolGroup.addTool('Bidirectional', {
     configuration: { volumeUID: ctVolumeUID },
   });
@@ -278,7 +278,7 @@ function initToolGroups() {
   ctSceneToolGroup.setToolPassive('Crosshairs');
 
   ctSceneToolGroup.setToolActive('StackScrollMouseWheel');
-  ctSceneToolGroup.setToolActive('WindowLevel', {
+  ctSceneToolGroup.setToolActive('Length', {
     bindings: [ToolBindings.Mouse.Primary],
   });
   ctSceneToolGroup.setToolActive('Pan', {

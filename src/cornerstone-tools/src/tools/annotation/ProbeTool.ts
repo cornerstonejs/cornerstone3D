@@ -53,13 +53,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const worldPos = currentPoints.world
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, FrameOfReferenceUID, renderingEngine } = enabledElement
-
-    if (!FrameOfReferenceUID) {
-      console.warn('No FrameOfReferenceUID, empty scene, exiting early.')
-
-      return
-    }
+    const { viewport, renderingEngine } = enabledElement
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
@@ -68,7 +62,8 @@ export default class ProbeTool extends BaseAnnotationTool {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
         viewUp: [...viewUp],
-        FrameOfReferenceUID,
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        referencedImageId: viewport.getCurrentImageId(),
         toolName: this.name,
       },
       data: {

@@ -200,7 +200,11 @@ class StackViewport extends Viewport implements IViewport {
   private _getCameraOrientation(
     imageDataDirection
   ): { viewPlaneNormal: Point3; viewUp: Point3 } {
-    const viewPlaneNormal = imageDataDirection.slice(6, 9)
+    // TODO: Not sure why I had to add .map((x) => -x) to this,
+    // but otherwise it did not match the volumeviewport display for the
+    // same dataset
+    const viewPlaneNormal = imageDataDirection.slice(6, 9).map((x) => -x)
+
     const viewUp = imageDataDirection.slice(3, 6).map((x) => -x)
     return {
       viewPlaneNormal: [
@@ -263,7 +267,6 @@ class StackViewport extends Viewport implements IViewport {
   public setStack(imageIds: Array<string>, currentImageIdIndex = 0): any {
     this.imageIds = imageIds
     this.currentImageIdIndex = currentImageIdIndex
-    this.firstRender = true
 
     this._setImageIdIndex(currentImageIdIndex)
   }
@@ -410,6 +413,12 @@ class StackViewport extends Viewport implements IViewport {
   }
 
   private _setImageIdIndex(imageIdIndex) {
+    if (imageIdIndex >= this.imageIds.length) {
+      throw new Error(
+        `ImageIdIndex provided ${imageIdIndex} is invalid, the stack only has ${this.imageIds.length} elements`
+      )
+    }
+
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex
 
@@ -512,16 +521,55 @@ class StackViewport extends Viewport implements IViewport {
    * @public
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    // implementation
+    const renderer = this.getRenderer()
+    const offscreenMultiRenderWindow = this.getRenderingEngine()
+      .offscreenMultiRenderWindow
+    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow()
+    const size = openGLRenderWindow.getSize()
+    const displayCoord = openGLRenderWindow.worldToDisplay(
+      ...worldPos,
+      renderer
+    )
+
+    // The y axis display coordinates are inverted with respect to canvas coords
+    displayCoord[1] = size[1] - displayCoord[1]
+
+    const canvasCoord = <Point2>[
+      displayCoord[0] - this.sx,
+      displayCoord[1] - this.sy,
+    ]
+
+    return canvasCoord
   }
 
-  public getFrameOfReferenceUID = (): string => {
-    // TODO: Implement this instead of having it at the
+  public getFrameOfReferenceUID = (): string | undefined => {
+    // Get the current image that is displayed in the viewport
+    const imageId = this.getCurrentImageId()
 
-    // look up current imageId's FOR?
-    // - (from metadata provider if it exists)
-    // - from image.FrameOfReferenceUID if it exists?
-    return 'blah'
+    // Use the metadata provider to grab its imagePlaneModule metadata
+    const imagePlaneModule = metaData.get('imagePlaneModule', imageId)
+
+    // If nothing exists, return undefined
+    if (!imagePlaneModule) {
+      return
+    }
+
+    // Otherwise, provide the FrameOfReferenceUID so we can map
+    // annotations made on VolumeViewports back to StackViewports
+    // and vice versa
+    return imagePlaneModule.frameOfReferenceUID
+  }
+
+  public getCurrentImageIdIndex = (): number => {
+    return this.currentImageIdIndex
+  }
+
+  public getImageIds = (): Array<string> => {
+    return this.imageIds
+  }
+
+  public getCurrentImageId = (): string => {
+    return this.imageIds[this.currentImageIdIndex]
   }
 }
 

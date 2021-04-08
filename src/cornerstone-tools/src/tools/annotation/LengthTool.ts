@@ -1,8 +1,10 @@
-import { BaseAnnotationTool } from '../base'
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
-// ~~ VTK Viewport
-import { getEnabledElement, getVolume } from '@cornerstone'
-import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
+import { vec2 } from 'gl-matrix'
+import cornerstoneMath from 'cornerstone-math'
+import { getEnabledElement, VIEWPORT_TYPE } from '@cornerstone'
+
+import { getToolStateForDisplay } from '../../util/planar'
+import { BaseAnnotationTool } from '../base'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
@@ -12,11 +14,9 @@ import {
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
-import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import cornerstoneMath from 'cornerstone-math'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
@@ -69,15 +69,16 @@ class LengthTool extends BaseAnnotationTool {
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
     const enabledElement = getEnabledElement(element)
-    const { viewport, FrameOfReferenceUID, renderingEngine } = enabledElement
-
-    if (!FrameOfReferenceUID) {
-      console.warn('No FrameOfReferenceUID, empty scene, exiting early.')
-
-      return
-    }
+    const { viewport, renderingEngine } = enabledElement
 
     hideToolCursor(element)
+
+    // TODO: what do we do here? this feels wrong
+    let referencedImageId
+    if (viewport.type === VIEWPORT_TYPE.STACK) {
+      referencedImageId =
+        viewport.getCurrentImageId && viewport.getCurrentImageId()
+    }
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
@@ -85,7 +86,8 @@ class LengthTool extends BaseAnnotationTool {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
         viewUp: [...viewUp],
-        FrameOfReferenceUID,
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        referencedImageId,
         toolName: this.name,
       },
       data: {
@@ -138,14 +140,14 @@ class LengthTool extends BaseAnnotationTool {
         topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
         topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
         bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottmRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
       }
 
       if (
         canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottmRight[0] &&
+        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
+        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
       ) {
         data.handles.activeHandleIndex = null
         return textBox
@@ -173,17 +175,17 @@ class LengthTool extends BaseAnnotationTool {
     const { viewport } = enabledElement
     const { data } = toolData
     const [point1, point2] = data.handles.points
-    const canavasPoint1 = viewport.worldToCanvas(point1)
-    const canavasPoint2 = viewport.worldToCanvas(point2)
+    const canvasPoint1 = viewport.worldToCanvas(point1)
+    const canvasPoint2 = viewport.worldToCanvas(point2)
 
     const lineSegment = {
       start: {
-        x: canavasPoint1[0],
-        y: canavasPoint1[1],
+        x: canvasPoint1[0],
+        y: canvasPoint1[1],
       },
       end: {
-        x: canavasPoint2[0],
-        y: canavasPoint2[1],
+        x: canvasPoint2[0],
+        y: canvasPoint2[1],
       },
     }
 
@@ -404,6 +406,7 @@ class LengthTool extends BaseAnnotationTool {
   /**
    * getToolState = Custom getToolStateMethod with filtering.
    * @param element
+   * @param toolState
    */
   filterInteractableToolStateForElement(element, toolState) {
     if (!toolState || !toolState.length) {
@@ -411,19 +414,9 @@ class LengthTool extends BaseAnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, scene } = enabledElement
-    const camera = viewport.getCamera()
+    const { viewport } = enabledElement
 
-    const { spacingInNormalDirection } = getTargetVolume(scene, camera)
-
-    // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(
-      toolState,
-      camera,
-      spacingInNormalDirection
-    )
-
-    return toolDataWithinSlice
+    return getToolStateForDisplay(viewport, toolState)
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
@@ -444,8 +437,18 @@ class LengthTool extends BaseAnnotationTool {
       return
     }
 
-    const { viewport, scene } = svgDrawingHelper.enabledElement
-    const targetVolumeUID = this._getTargetVolumeUID(scene)
+    const { viewport } = svgDrawingHelper.enabledElement
+
+    let targetVolumeUID
+    if (viewport.type === VIEWPORT_TYPE.STACK) {
+      targetVolumeUID = 'targetVolumeUID'
+    } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
+      const scene = viewport.getScene()
+      targetVolumeUID = this._getTargetVolumeUID(scene)
+    } else {
+      throw new Error(`Viewport Type not supported: ${viewport.type}`)
+    }
+
     const lineWidth = toolStyle.getToolWidth()
 
     // Draw SVG
@@ -490,6 +493,7 @@ class LengthTool extends BaseAnnotationTool {
         canvasCoordinates[1],
         {
           color,
+          width: lineWidth,
         }
       )
 
@@ -497,11 +501,9 @@ class LengthTool extends BaseAnnotationTool {
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {}
 
-        const { viewPlaneNormal } = viewport.getCamera()
-        this._calculateCachedStats(data, viewPlaneNormal)
+        this._calculateCachedStats(data)
       } else if (data.invalidated) {
-        const { viewPlaneNormal } = viewport.getCamera()
-        this._throttledCalculateCachedStats(data, viewPlaneNormal)
+        this._throttledCalculateCachedStats(data)
       }
 
       const textLines = this._getTextLines(data, targetVolumeUID)
@@ -568,7 +570,7 @@ class LengthTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _calculateCachedStats(data, viewPlaneNormal) {
+  _calculateCachedStats(data) {
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
     const { cachedStats } = data
@@ -578,8 +580,8 @@ class LengthTool extends BaseAnnotationTool {
 
     for (let i = 0; i < volumeUIDs.length; i++) {
       const volumeUID = volumeUIDs[i]
-      const { metadata } = getVolume(volumeUID)
 
+      // TODO: Why are we doing a sqrt here?
       const length = Math.sqrt(
         vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
       )
@@ -589,7 +591,6 @@ class LengthTool extends BaseAnnotationTool {
       // corner is off the canvas.
 
       cachedStats[volumeUID] = {
-        Modality: metadata.Modality,
         length,
       }
     }

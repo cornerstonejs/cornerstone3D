@@ -3,7 +3,7 @@ import { IEnabledElement } from './types'
 
 /**
  * A convenience method to find an EnabledElement given a reference to its
- * associated canvas element. Commonly used in code that's handeling a custom
+ * associated canvas element. Commonly used in code that's handling a custom
  * event emitted by this library.
  *
  * @example

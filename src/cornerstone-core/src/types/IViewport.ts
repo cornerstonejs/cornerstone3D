@@ -22,6 +22,12 @@ interface IViewport {
   render: () => void
   setCamera: (cameraOptions: ICamera) => void
   worldToCanvas: (worldPos: Point3) => Point2
+  //
+  // These only exist on stack viewport, how do we handle this?
+  getImageIds?: () => Array<string>
+  getCurrentImageId?: () => string
+  getCurrentImageIdIndex?: () => number
+  setImageIdIndex?: (number) => void
 }
 
 /**

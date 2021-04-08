@@ -30,15 +30,14 @@ export default function scrollThroughStack(
   // Todo: shall we define a camera type? slabCamera for volume and default for stack?
   if (viewport.type === VIEWPORT_TYPE.STACK) {
     // stack viewport
-    const { currentImageIdIndex } = viewport
-    const numberOfFrames = viewport.imageIds.length
+    const currentImageIdIndex = viewport.getCurrentImageIdIndex()
+    const numberOfFrames = viewport.getImageIds().length
     const { direction } = wheel
     const stackDirection = invert ? -direction : direction
     let newImageIdIndex = currentImageIdIndex + stackDirection
     newImageIdIndex = clip(newImageIdIndex, 0, numberOfFrames - 1)
+
     viewport.setImageIdIndex(newImageIdIndex)
-    //
-    return
   } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
     // Stack scroll across highest resolution volume.
     const { spacingInNormalDirection, imageVolume } = getTargetVolume(
