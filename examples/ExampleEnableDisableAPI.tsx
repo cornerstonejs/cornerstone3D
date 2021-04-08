@@ -106,6 +106,7 @@ metaData.addProvider(hardcodedMetaDataProvider, 10000);
 
 window.cache = cache;
 
+let  ctSceneToolGroup, stackViewportToolGroup
 class EnableDisableViewportExample extends Component {
   state = {
     progressText: "fetching metadata...",
@@ -220,7 +221,7 @@ class EnableDisableViewportExample extends Component {
     this.renderingEngine = renderingEngine;
     window.renderingEngine = renderingEngine;
 
-    let { ctSceneToolGroup, stackViewportToolGroup } = initToolGroups();
+    ({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups());
 
 
     // Create volumes
@@ -351,6 +352,7 @@ class EnableDisableViewportExample extends Component {
   enableSelectedViewport = () => {
     console.debug("enabling", this.state.selectedViewportIndex);
 
+
     const viewportInput = this.state.viewportInputEntries[this.state.selectedViewportIndex]
 
     this.renderingEngine.enableElement(viewportInput)
@@ -361,7 +363,12 @@ class EnableDisableViewportExample extends Component {
     } else if (viewportInput.viewportUID === VIEWPORT_DX_COLOR) {
       this.dxColorLoad()
     } else {
-      console.warn("already loaded the volume")
+      ctSceneToolGroup.addViewports(
+        renderingEngineUID,
+        SCENE_IDS.CT,
+        viewportInput.viewportUID
+    );
+
     }
   };
 
