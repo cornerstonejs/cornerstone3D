@@ -7,20 +7,7 @@ import cache from '../cache'
 import { loadVolume } from '../volumeLoader'
 import { uuidv4 } from '../utilities'
 import VolumeViewport from './VolumeViewport'
-
-type VolumeActor = {
-  getProperty: () => any
-}
-
-/**
- * @type VolumeActorEntry
- * Defines the shape of volume actors entries added to the scene.
- */
-export type VolumeActorEntry = {
-  uid: string
-  volumeActor: VolumeActor
-  slabThickness: number
-}
+import { VolumeActor, ActorEntry } from './Viewport'
 
 type VolumeInput = {
   volumeUID: string
@@ -37,14 +24,14 @@ class Scene {
   readonly uid: string
   readonly renderingEngineUID: string
   private _sceneViewports: Array<string>
-  private _volumeActors: Array<VolumeActorEntry>
+  // private _volumeActors: Array<ActorEntry>
   private _FrameOfReferenceUID: string
   private _internalScene: boolean
 
   constructor(uid: string, renderingEngineUID: string) {
     this.renderingEngineUID = renderingEngineUID
     this._sceneViewports = []
-    this._volumeActors = []
+    // this._volumeActors = []
     this._internalScene = uid ? false : true
     this.uid = uid ? uid : uuidv4()
   }
@@ -70,12 +57,17 @@ class Scene {
    * @method getViewport - Returns a `Viewport` from the `Scene` by its `uid`.
    * @param {string } uid The UID of the viewport to get.
    */
-  public getViewport(uid: string): VolumeViewport {
+  public getViewport(viewportUID: string): VolumeViewport {
     const renderingEngine = this.getRenderingEngine()
-    if (this._sceneViewports.indexOf(uid) === -1) {
-      throw new Error(`scene ${this.uid} does not include viewport ${uid}`)
+    const index = this._sceneViewports.indexOf(viewportUID)
+
+    if (index > -1) {
+      return <VolumeViewport>renderingEngine.getViewport(viewportUID)
     }
-    return <VolumeViewport>renderingEngine.getViewport(uid)
+
+    throw new Error(
+      `Requested ${viewportUID} does not belong to ${this.uid} scene`
+    )
   }
 
   /**
@@ -113,7 +105,7 @@ class Scene {
     volumeInputArray: Array<VolumeInput>,
     immediate = false
   ): void {
-    this._volumeActors = []
+    // this._volumeActors = []
 
     // TODO: should we have a get or fail? If it's in the cache, give it back, otherwise throw
     const firstImageVolume = await loadVolume(volumeInputArray[0].volumeUID)
@@ -150,12 +142,14 @@ class Scene {
     this._FrameOfReferenceUID = FrameOfReferenceUID
 
     const slabThicknessValues = []
+    const _volumeActors = []
 
+    // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
       const { volumeUID, slabThickness } = volumeInputArray[i]
       const volumeActor = await createVolumeActor(volumeInputArray[i])
 
-      this._volumeActors.push({ volumeActor, uid: volumeUID, slabThickness })
+      _volumeActors.push({ uid: volumeUID, volumeActor, slabThickness })
 
       if (
         slabThickness !== undefined &&
@@ -173,7 +167,7 @@ class Scene {
 
     this._sceneViewports.forEach((uid) => {
       const viewport = this.getViewport(uid)
-      viewport._setVolumeActors(this._volumeActors)
+      viewport._setVolumeActors(_volumeActors)
     })
 
     if (immediate) {
@@ -183,30 +177,41 @@ class Scene {
 
   /**
    * @method addViewport Adds a `Viewport` to the `Scene`, as defined by the `ViewportInput`.
-   * @param {ViewportInput} viewportInput
+   * @param {viewportUID} viewoprtUID
    */
   public addViewport(viewportUID: string): void {
-    // const viewportInterface = <IViewport>Object.assign({}, viewportInput, {
-    //   sceneUID: this.uid,
-    //   renderingEngineUID: this.renderingEngineUID,
-    // })
-
-    // const viewport = new Viewport(viewportInterface)
-
     this._sceneViewports.push(viewportUID)
+
+    // if a viewport is added after volumes have already been added to the
+    // scene, we add the existing volumeActors to the viewport.
+    // Todo
   }
 
-  //public removeViewport()...
+  public removeViewport(viewportUID: string): void {
+    const index = this._sceneViewports.indexOf(viewportUID)
+
+    if (index > -1) {
+      this._sceneViewports.splice(index, 1)
+
+      // Todo: remove from the rendering engine as well
+      return
+    }
+
+    console.warn(
+      `Requested ${viewportUID} does not belong to ${this.uid} scene`
+    )
+  }
 
   /**
    * @method getVolumeActor Gets a volume actor on the scene by its `uid`.
    *
-   * @param {string }uid The UID of the volumeActor to fetch.
+   * @param {string }volumeUID The UID of the volumeActor to fetch.
    * @returns {object} The volume actor.
    */
   public getVolumeActor(uid: string): VolumeActor {
-    const volumeActors = this._volumeActors
-    const volumeActorEntry = volumeActors.find((va) => va.uid === uid)
+    const viewports = this.getViewports()
+    //Todo: should we check the actor in all viewports (they are the same)?
+    const volumeActorEntry = viewports[0].getActor(uid)
 
     if (volumeActorEntry) {
       return volumeActorEntry.volumeActor
@@ -218,8 +223,10 @@ class Scene {
    *
    * @returns {Array<VolumeActorEntry>} The array of volume actors.
    */
-  public getVolumeActors(): Array<VolumeActorEntry> {
-    return [...this._volumeActors]
+  public getVolumeActors(): Array<ActorEntry> {
+    const viewports = this.getViewports()
+    //Todo: should we check the actor in all viewports (they are the same)?
+    return viewports[0].getActors()
   }
 }
 

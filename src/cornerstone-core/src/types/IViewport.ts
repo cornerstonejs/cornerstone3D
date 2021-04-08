@@ -18,6 +18,7 @@ interface IViewport {
   canvasToWorld: (canvasPos: Point2) => Point3
   getCamera: () => ICamera
   getFrameOfReferenceUID: () => string
+  getActors: () => any
   render: () => void
   setCamera: (cameraOptions: ICamera) => void
   worldToCanvas: (worldPos: Point3) => Point2

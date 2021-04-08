@@ -28,7 +28,7 @@ interface IRenderingEngine {
   uid: string
   hasBeenDestroyed: boolean
   offscreenMultiRenderWindow: any
-  webGLCanvasContainer: any
+  offScreenCanvasContainer: any
   setViewports(viewports: Array<PublicViewportInput>): void
   resize(): void
   getScene(uid: string): Scene
@@ -45,7 +45,18 @@ interface IRenderingEngine {
   _debugRender(): void
 }
 
-class RenderingEngine implements IRenderingEngine {
+type ViewportDisplayCoords = {
+  sxStartDisplayCoords: number
+  syStartDisplayCoords: number
+  sxEndDisplayCoords: number
+  syEndDisplayCoords: number
+  sx: number
+  sy: number
+  sWidth: number
+  sHeight: number
+}
+
+class RenderingEngine {
   readonly uid: string
   public hasBeenDestroyed: boolean
   /**
@@ -53,12 +64,13 @@ class RenderingEngine implements IRenderingEngine {
    * @member {any}
    */
   public offscreenMultiRenderWindow: any
-  readonly webGLCanvasContainer: any
+  readonly offScreenCanvasContainer: any // WebGL
   private _scenes: Array<Scene> = []
   private _viewports: Array<StackViewport | VolumeViewport> = []
   private _needsRender: Set<string> = new Set()
   private _animationFrameSet = false
   private _animationFrameHandle: number | null = null
+  private _xOffset = 0
 
   /**
    *
@@ -69,12 +81,16 @@ class RenderingEngine implements IRenderingEngine {
     renderingEngineCache.set(this)
 
     this.offscreenMultiRenderWindow = vtkOffscreenMultiRenderWindow.newInstance()
-    this.webGLCanvasContainer = document.createElement('div')
-    this.offscreenMultiRenderWindow.setContainer(this.webGLCanvasContainer)
+    this.offScreenCanvasContainer = document.createElement('div')
+    this.offscreenMultiRenderWindow.setContainer(this.offScreenCanvasContainer)
     this._scenes = []
     this._viewports = []
     this.hasBeenDestroyed = false
   }
+
+  // public enabledElement(viewport: PublicViewportInput): void {}
+
+  // public disableElement(viewportUID: string): void {}
 
   /**
    * Creates `Scene`s containing `Viewport`s and sets up the offscreen render
@@ -88,67 +104,40 @@ class RenderingEngine implements IRenderingEngine {
     this._throwIfDestroyed()
     this._reset()
 
-    const { webGLCanvasContainer, offscreenMultiRenderWindow } = this
-
     // Set canvas size based on height and sum of widths
-    const webglCanvasHeight = Math.max(
-      ...viewports.map((vp) => vp.canvas.clientHeight)
-    )
+    const {
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+    } = this._resizeOffScreenCanvas(viewports)
 
-    let webglCanvasWidth = 0
-
-    viewports.forEach((vp) => {
-      webglCanvasWidth += vp.canvas.clientWidth
-    })
-
-    webGLCanvasContainer.width = webglCanvasWidth
-    webGLCanvasContainer.height = webglCanvasHeight
-
-    offscreenMultiRenderWindow.resize()
-
-    let xOffset = 0
+    this._xOffset = 0
 
     for (let i = 0; i < viewports.length; i++) {
       const { canvas, sceneUID, viewportUID, type, defaultOptions } = viewports[
         i
       ]
 
-      if (Object.values(VIEWPORT_TYPE).indexOf(type) === -1) {
-        throw new Error(`currently not supporting ${type} viewport type`)
-      }
+      const {
+        sxStartDisplayCoords,
+        syStartDisplayCoords,
+        sxEndDisplayCoords,
+        syEndDisplayCoords,
+        sx,
+        sy,
+        sHeight,
+        sWidth,
+      } = this._getViewportCoordsOnOffScreenCanvas(
+        viewports[i],
+        offScreenCanvasWidth,
+        offScreenCanvasHeight
+      )
 
-      const { clientWidth, clientHeight } = canvas
-
-      // Set the canvas to be same resolution as the client.
-      if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
-        canvas.width = clientWidth
-        canvas.height = clientHeight
-      }
-
-      const { width, height } = canvas
-
-      // viewport location on source (offscreen) canvas
-      const sx = xOffset
-      const sy = 0
-      const sWidth = width
-      const sHeight = height
-
-      // Calculate the position of the renderer in viewport coordinates
-      const sxDisplayCoords = sx / webglCanvasWidth
-
-      // Need to offset y if it not max height
-      const syDisplayCoords =
-        sy + (webglCanvasHeight - height) / webglCanvasHeight
-
-      const sWidthDisplayCoords = sWidth / webglCanvasWidth
-      const sHeightDisplayCoords = sHeight / webglCanvasHeight
-
-      offscreenMultiRenderWindow.addRenderer({
+      this.offscreenMultiRenderWindow.addRenderer({
         viewport: [
-          sxDisplayCoords,
-          syDisplayCoords,
-          sxDisplayCoords + sWidthDisplayCoords,
-          syDisplayCoords + sHeightDisplayCoords,
+          sxStartDisplayCoords,
+          syStartDisplayCoords,
+          sxEndDisplayCoords,
+          syEndDisplayCoords,
         ],
         uid: viewportUID,
         background: defaultOptions.background
@@ -190,8 +179,6 @@ class RenderingEngine implements IRenderingEngine {
 
       this._viewports.push(viewport)
 
-      xOffset += width
-
       const eventData = {
         canvas,
         viewportUID,
@@ -203,6 +190,28 @@ class RenderingEngine implements IRenderingEngine {
     }
   }
 
+  private _resizeOffScreenCanvas(viewports) {
+    const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this
+
+    // Set canvas size based on height and sum of widths
+    const offScreenCanvasHeight = Math.max(
+      ...viewports.map((vp) => vp.canvas.clientHeight)
+    )
+
+    let offScreenCanvasWidth = 0
+
+    viewports.forEach((vp) => {
+      offScreenCanvasWidth += vp.canvas.clientWidth
+    })
+
+    offScreenCanvasContainer.width = offScreenCanvasWidth
+    offScreenCanvasContainer.height = offScreenCanvasHeight
+
+    offscreenMultiRenderWindow.resize()
+
+    return { offScreenCanvasWidth, offScreenCanvasHeight }
+  }
+
   /**
    * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
    * It is up to the parent app to call the size of the on-screen canvas changes.
@@ -211,45 +220,32 @@ class RenderingEngine implements IRenderingEngine {
   public resize(): void {
     this._throwIfDestroyed()
 
-    const { webGLCanvasContainer, offscreenMultiRenderWindow } = this
+    const {
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+    } = this._resizeOffScreenCanvas(this._viewports)
 
     const viewports = this._viewports
 
-    // Set canvas size based on height and sum of widths
-    const webglCanvasHeight = Math.max(
-      ...viewports.map((vp) => vp.canvas.clientHeight)
-    )
-
-    let webglCanvasWidth = 0
-
-    viewports.forEach((vp) => {
-      webglCanvasWidth += vp.canvas.clientWidth
-    })
-
-    webGLCanvasContainer.width = webglCanvasWidth
-    webGLCanvasContainer.height = webglCanvasHeight
-
-    offscreenMultiRenderWindow.resize()
-
     // Redefine viewport properties
-    let xOffset = 0
+    this._xOffset = 0
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i]
-      const { canvas, uid: viewportUID } = viewport
-      const { clientWidth, clientHeight } = canvas
-
-      // Set the canvas to be same resolution as the client.
-      if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
-        canvas.width = clientWidth
-        canvas.height = clientHeight
-      }
-
-      // Update the canvas drawImage offsets.
-      const sx = xOffset
-      const sy = 0
-      const sWidth = clientWidth
-      const sHeight = clientHeight
+      const {
+        sxStartDisplayCoords,
+        syStartDisplayCoords,
+        sxEndDisplayCoords,
+        syEndDisplayCoords,
+        sx,
+        sy,
+        sHeight,
+        sWidth,
+      } = this._getViewportCoordsOnOffScreenCanvas(
+        viewport,
+        offScreenCanvasWidth,
+        offScreenCanvasHeight
+      )
 
       viewport.sx = sx
       viewport.sy = sy
@@ -257,29 +253,60 @@ class RenderingEngine implements IRenderingEngine {
       viewport.sHeight = sHeight
 
       // Set the viewport of the vtkRenderer
-      const renderer = offscreenMultiRenderWindow.getRenderer(viewportUID)
-
-      const sxDisplayCoords = sx / webglCanvasWidth
-
-      // Need to offset y if it not max height
-      const syDisplayCoords =
-        sy + (webglCanvasHeight - clientHeight) / webglCanvasHeight
-
-      const sWidthDisplayCoords = sWidth / webglCanvasWidth
-      const sHeightDisplayCoords = sHeight / webglCanvasHeight
-
+      const renderer = this.offscreenMultiRenderWindow.getRenderer(viewport.uid)
       renderer.setViewport([
-        sxDisplayCoords,
-        syDisplayCoords,
-        sxDisplayCoords + sWidthDisplayCoords,
-        syDisplayCoords + sHeightDisplayCoords,
+        sxStartDisplayCoords,
+        syStartDisplayCoords,
+        sxEndDisplayCoords,
+        syEndDisplayCoords,
       ])
-
-      xOffset += clientWidth
     }
 
     // Render all viewports
     this.render()
+  }
+
+  public _getViewportCoordsOnOffScreenCanvas(
+    viewport: PublicViewportInput,
+    offScreenCanvasWidth: number,
+    offScreenCanvasHeight: number
+  ): ViewportDisplayCoords {
+    const { canvas } = viewport
+    const { clientWidth, clientHeight } = canvas
+
+    // Set the canvas to be same resolution as the client.
+    if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
+      canvas.width = clientWidth
+      canvas.height = clientHeight
+    }
+
+    // Update the canvas drawImage offsets.
+    const sx = this._xOffset
+    const sy = 0
+    const sWidth = clientWidth
+    const sHeight = clientHeight
+
+    const sxStartDisplayCoords = sx / offScreenCanvasWidth
+
+    // Need to offset y if it not max height
+    const syStartDisplayCoords =
+      sy + (offScreenCanvasHeight - clientHeight) / offScreenCanvasHeight
+
+    const sWidthDisplayCoords = sWidth / offScreenCanvasWidth
+    const sHeightDisplayCoords = sHeight / offScreenCanvasHeight
+
+    this._xOffset += clientWidth
+
+    return {
+      sxStartDisplayCoords,
+      syStartDisplayCoords,
+      sxEndDisplayCoords: sxStartDisplayCoords + sWidthDisplayCoords,
+      syEndDisplayCoords: syStartDisplayCoords + sHeightDisplayCoords,
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+    }
   }
 
   /**
@@ -416,13 +443,14 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   public renderFrameOfReference = (FrameOfReferenceUID: string): void => {
-    const scenes = this._scenes
+    const viewports = this._viewports
+    const viewportUidsWithSameFrameOfReferenceUID = viewports.map((vp) => {
+      if (vp.getFrameOfReferenceUID() === FrameOfReferenceUID) {
+        return vp.uid
+      }
+    })
 
-    const scenesWithFrameOfReferenceUID = scenes.filter(
-      (s) => s.getFrameOfReferenceUID() === FrameOfReferenceUID
-    )
-
-    return this._renderScenes(scenesWithFrameOfReferenceUID)
+    return this.renderViewports(viewportUidsWithSameFrameOfReferenceUID)
   }
 
   public renderScenes(sceneUIDs: Array<string>): void {

@@ -4,14 +4,14 @@ import { IViewport, ICamera } from '../types'
 import _cloneDeep from 'lodash.clonedeep'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
-import Scene, { VolumeActorEntry } from './Scene'
+import Scene from './Scene'
 import triggerEvent from '../utilities/triggerEvent'
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec3 } from 'gl-matrix'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { ViewportInput, Point2, Point3 } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
-import Viewport from './Viewport'
+import Viewport, { ActorEntry } from './Viewport'
 
 /**
  * An object representing a single viewport, which is a camera
@@ -89,10 +89,11 @@ class VolumeViewport extends Viewport implements IViewport {
    *
    * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */
-  public _setVolumeActors(volumeActorEntries: Array<VolumeActorEntry>): void {
+  public _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
     const renderer = this.getRenderer()
 
-    volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))
+    this.setActors(volumeActorEntries)
+    // volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))
 
     let slabThickness = null
     if (this.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
@@ -206,7 +207,7 @@ class VolumeViewport extends Viewport implements IViewport {
     return canvasCoord
   }
 
-  public getFrameOfReferenceUID(): string {
+  public getFrameOfReferenceUID = (): string => {
     return this.getScene().getFrameOfReferenceUID()
   }
 

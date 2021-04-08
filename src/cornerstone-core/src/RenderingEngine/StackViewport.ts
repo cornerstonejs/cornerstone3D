@@ -24,9 +24,8 @@ import { loadAndCacheImage } from '../imageLoader'
 class StackViewport extends Viewport implements IViewport {
   private imageIds: Array<string>
   private currentImageIdIndex: number
-  private _stackActors: Array<any>
+  // private _stackActors: Map<string, any>
   private _imageData: any // vtk image data
-  private _shouldCameraRestoreProps = false
   private stackActorVOI: VOIRange
 
   constructor(props: ViewportInput) {
@@ -48,7 +47,7 @@ class StackViewport extends Viewport implements IViewport {
     camera.setFreezeFocalPoint(true)
     this.imageIds = []
     this.currentImageIdIndex = 0
-    this._stackActors = []
+    // this._stackActors = new Map()
     this.resetCamera()
   }
 
@@ -273,10 +272,6 @@ class StackViewport extends Viewport implements IViewport {
     this.stackActorVOI = Object.assign({}, range)
   }
 
-  public getStackActors(): Array<any> {
-    return this._stackActors
-  }
-
   private _checkIfSameImageData(image, imageData) {
     if (!imageData) {
       return false
@@ -357,48 +352,51 @@ class StackViewport extends Viewport implements IViewport {
 
     // 2. Check if we can reuse the existing vtkImageData object, if one is present.
     const sameImageData = this._checkIfSameImageData(image, this._imageData)
-    // Get the VTK renderer for this Viewport
-    const renderer = this.getRenderer()
+
     if (sameImageData) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._setScalarsFromPixelData(image)
-    } else {
-      // 3b. If we cannot reuse the vtkImageData object, create a new one
-      this._imageData = this._createVTKImageData(image, imageId)
 
-      // Set the scalar data of the vtkImageData object from the Cornerstone
-      // Image's pixel data
-      this._setScalarsFromPixelData(image)
+      // Adjusting the camera based on slice axis. this is required if stack
+      // contains various image orientations (axial ct, sagittal xray)
+      // Todo: the following setCamera is irrelevant almost: i.e., a stack that
+      // has the same size and same spacing, but the view is different
+      //  (sagittal vs coronal) really?
+      const direction = this._imageData.getDirection()
+      const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
-      // Create a VTK Volume actor to display the vtkImageData object
-      const stackActor = this.createActorMapper(this._imageData)
+      this.setCamera({ viewUp, viewPlaneNormal })
 
-      // Remove the previous volume actor from the renderer
-      const volumes = renderer.getVolumes()
-      const prevStackActor = volumes[0]
+      // Since the 3D location of the imageData is changing as we scroll, we need
+      // to modify the camera position to render this properly. However, resetting
+      // causes problem related to zoom and pan tools: upon rendering of a new slice
+      // the pan and zoom will get reset. To solve this, 1) we store the camera
+      // properties related to pan and zoom 2) reset the camera to correctly place
+      // it in the space 3) restore the pan, zoom props.
+      const cameraProps = this.getCamera()
 
-      volumes.forEach((volume) => {
-        renderer.removeViewProp(volume)
-      })
+      // Reset the camera to point to the new slice location, reset camera doesn't
+      // modify the direction of projection and viewUp
+      this.resetCamera()
 
-      // Remove the previous actor from our internal list of actors
-      // TODO: Why do we need this at all? Is it just if we have
-      // images in a stack of different dimensions?
-      const index = this._stackActors.findIndex(
-        (stackActor) => stackActor.volumeActor === prevStackActor
-      )
-
-      if (index > -1) {
-        this._stackActors.splice(index, 1)
-      }
-
-      // Adding the new actor to the renderer
-      renderer.addActor(stackActor)
-
-      // Add the new actor to the internal list of actors for the viewport
-      this._stackActors.push({ volumeActor: stackActor, uid: this.uid })
+      // We shouldn't restore the focalPoint, position and parallelScale after reset
+      // if it is the first render or we have completely re-created the vtkImageData
+      this._restoreCameraProps(cameraProps)
+      return
     }
 
+    // 3b. If we cannot reuse the vtkImageData object (either the first render
+    // or the size has changed), create a new one
+    this._imageData = this._createVTKImageData(image, imageId)
+
+    // Set the scalar data of the vtkImageData object from the Cornerstone
+    // Image's pixel data
+    this._setScalarsFromPixelData(image)
+
+    // Create a VTK Volume actor to display the vtkImageData object
+    const stackActor = this.createActorMapper(this._imageData)
+
+    this.setActors([{ uid: this.uid, volumeActor: stackActor }])
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
     const direction = this._imageData.getDirection()
@@ -406,50 +404,9 @@ class StackViewport extends Viewport implements IViewport {
 
     this.setCamera({ viewUp, viewPlaneNormal })
 
-    // Since the 3D location of the imageData is changing as we scroll, we need
-    // to modify the camera position to render this properly. However, resetting
-    // causes problem related to zoom and pan tools: upon rendering of a new slice
-    // the pan and zoom will get reset. To solve this, 1) we store the camera
-    // properties related to pan and zoom 2) reset the camera to correctly place
-    // it in the space 3) restore the pan, zoom props.
-    const cameraProps = this.getCamera()
-
     // Reset the camera to point to the new slice location, reset camera doesn't
     // modify the direction of projection and viewUp
     this.resetCamera()
-
-    // We shouldn't restore the focalPoint, position and parallelScale after reset
-    // if it is the first render or we have completely re-created the vtkImageData
-    // Todo: variable names
-    if (!this._shouldCameraRestoreProps || !sameImageData) return
-
-    this._restoreCameraProps(cameraProps)
-  }
-
-  private _restoreCameraProps({
-    focalPoint: prevFocal,
-    position: prevPos,
-    parallelScale: prevScale,
-  }: ICamera): void {
-    const renderer = this.getRenderer()
-
-    // get the focalPoint and position after the reset
-    const { position, focalPoint } = this.getCamera()
-
-    // Restoring previous state x,y and scale, keeping the new z
-    this.setCamera({
-      parallelScale: prevScale,
-      position: [prevPos[0], prevPos[1], position[2]],
-      focalPoint: [prevFocal[0], prevFocal[1], focalPoint[2]],
-    })
-
-    // Invoking render
-    const RESET_CAMERA_EVENT = {
-      type: 'ResetCameraEvent',
-      renderer,
-    }
-
-    renderer.invokeEvent(RESET_CAMERA_EVENT)
   }
 
   private _setImageIdIndex(imageIdIndex) {
@@ -488,11 +445,34 @@ class StackViewport extends Viewport implements IViewport {
       return
     }
 
-    // If we are moving between slices, we need to keep the same zoom, pan state
-    this._shouldCameraRestoreProps = true
-
     // Otherwise, get the imageId and attempt to display it
     this._setImageIdIndex(imageIdIndex)
+  }
+
+  private _restoreCameraProps({
+    focalPoint: prevFocal,
+    position: prevPos,
+    parallelScale: prevScale,
+  }: ICamera): void {
+    const renderer = this.getRenderer()
+
+    // get the focalPoint and position after the reset
+    const { position, focalPoint } = this.getCamera()
+
+    // Restoring previous state x,y and scale, keeping the new z
+    this.setCamera({
+      parallelScale: prevScale,
+      position: [prevPos[0], prevPos[1], position[2]],
+      focalPoint: [prevFocal[0], prevFocal[1], focalPoint[2]],
+    })
+
+    // Invoking render
+    const RESET_CAMERA_EVENT = {
+      type: 'ResetCameraEvent',
+      renderer,
+    }
+
+    renderer.invokeEvent(RESET_CAMERA_EVENT)
   }
 
   /**
@@ -535,7 +515,7 @@ class StackViewport extends Viewport implements IViewport {
     // implementation
   }
 
-  public getFrameOfReferenceUID(): string {
+  public getFrameOfReferenceUID = (): string => {
     // TODO: Implement this instead of having it at the
 
     // look up current imageId's FOR?

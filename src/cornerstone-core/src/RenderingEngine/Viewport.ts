@@ -12,6 +12,16 @@ import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { ViewportInputOptions, Point2, Point3 } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 
+export type VolumeActor = {
+  getProperty: () => any
+}
+
+export type ActorEntry = {
+  uid: string
+  volumeActor: VolumeActor
+  slabThickness?: number
+}
+
 /**
  * An object representing a single viewport, which is a camera
  * looking into a scene, and an associated target output `canvas`.
@@ -26,6 +36,7 @@ class Viewport implements IViewport {
   sy: number
   sWidth: number
   sHeight: number
+  _actors: Map<string, any>
   readonly defaultOptions: any
   options: ViewportInputOptions
 
@@ -38,7 +49,7 @@ class Viewport implements IViewport {
     this.sy = props.sy
     this.sWidth = props.sWidth
     this.sHeight = props.sHeight
-
+    this._actors = new Map()
     // Set data attributes for render events
     this.canvas.setAttribute('data-viewport-uid', this.uid)
     this.canvas.setAttribute(
@@ -57,10 +68,83 @@ class Viewport implements IViewport {
     this.defaultOptions = defaultOptions
     this.options = options
   }
-  // getFrameOfReferenceUID: () => string
-
+  getFrameOfReferenceUID: () => string
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
+
+  public getActors(): Array<ActorEntry> {
+    const actorIterator = this._actors.keys()
+    const actors = []
+
+    /* eslint-disable no-constant-condition */
+    while (true) {
+      const { value: actorUID, done } = actorIterator.next()
+
+      if (done) {
+        break
+      }
+
+      const actorObject = this.getActor(actorUID)
+      actors.push(Object.assign({}, actorObject))
+    }
+    return actors
+  }
+
+  public getActor(actorUID: string): ActorEntry {
+    return this._actors.get(actorUID)
+  }
+
+  public setActors(actors: Array<ActorEntry>): void {
+    this.removeAllActors()
+    this.addActors(actors)
+  }
+
+  public addActors(actors: Array<ActorEntry>): void {
+    actors.forEach((actor) => this.addActor(actor))
+  }
+
+  public addActor(actorEntry: ActorEntry): void {
+    const { uid: actorUID, volumeActor } = actorEntry
+    if (!actorUID || !volumeActor) {
+      throw new Error('Actors should have uid and vtk volumeActor properties')
+    }
+
+    const actor = this.getActor(actorUID)
+    if (actor) {
+      console.warn(`Actor ${actorUID} already exists for this viewport`)
+      return
+    }
+
+    const renderer = this.getRenderer()
+    renderer.addActor(volumeActor)
+    this._actors.set(actorUID, Object.assign({}, actorEntry))
+  }
+
+  /*
+  Todo: remove actor and remove actors does not work for some reason
+  public removeActor(actorUID: string): void {
+    const actor = this.getActor(actorUID)
+    if (!actor) {
+      console.warn(`Actor ${actorUID} does not exist for this viewport`)
+      return
+    }
+    const renderer = this.getRenderer()
+    renderer.removeViewProp(actor) // removeActor not implemented in vtk?
+    this._actors.delete(actorUID)
+  }
+
+  public removeActors(actorUIDs: Array<string>): void {
+    actorUIDs.forEach((actorUID) => {
+      this.removeActor(actorUID)
+    })
+  }
+  */
+
+  public removeAllActors(): void {
+    this.getRenderer().removeAllViewProps()
+    this._actors = new Map()
+    return
+  }
 
   /**
    * @method getRenderingEngine Returns the rendering engine driving the `Scene`.
@@ -124,7 +208,7 @@ class Viewport implements IViewport {
     }
   }
 
-  resetCamera = () => {
+  public resetCamera() {
     const renderer = this.getRenderer()
 
     const bounds = renderer.computeVisiblePropBounds()
