@@ -2,27 +2,19 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  eventTarget,
   createAndCacheVolume,
-  loadAndCacheImages,
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
-  EVENTS as RENDERING_EVENTS,
 } from '@cornerstone'
 import {
-  SynchronizerManager,
-  synchronizers,
   ToolGroupManager,
 } from '@cornerstone-tools'
 
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata'
 import { createDXImageIds } from './helpers/createStudyImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -31,7 +23,6 @@ import {
   SCENE_IDS,
   VIEWPORT_IDS,
 } from './constants'
-import LAYOUTS, { stackCT } from './layouts'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
@@ -135,22 +126,6 @@ class EnableDisableViewportExample extends Component {
     this.numberOfViewports =
       this.state.viewportGrid.numCols * this.state.viewportGrid.numRows
 
-
-    // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
-    //   this.setState({ progressText: 'Loading data...' })
-    // )
-
-    // const {
-    //   createCameraPositionSynchronizer,
-    //   createVOISynchronizer,
-    // } = synchronizers
-
-    // this.axialSync = createCameraPositionSynchronizer('axialSync')
-    // this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
-    // this.coronalSync = createCameraPositionSynchronizer('coronalSync')
-    // this.ctWLSync = createVOISynchronizer('ctWLSync')
-    // this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
-
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
@@ -230,7 +205,7 @@ class EnableDisableViewportExample extends Component {
     window.renderingEngine = renderingEngine
 
     renderingEngine.enableElement(this.state.viewportInputEntries[0]) // ct volume
-    // renderingEngine.enableElement(this.state.viewportInputEntries[1]) // stack
+    renderingEngine.enableElement(this.state.viewportInputEntries[1]) // stack
 
     // Todo: tools for enabled/disabled element
     // volume ct
@@ -262,13 +237,13 @@ class EnableDisableViewportExample extends Component {
     renderingEngine.render()
 
     // todo: should we run these if we the viewport is not enabled?
-    // const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
-    // // temporary method for converting csiv to wadors
-    // const wadoCTImageIds = ctImageIds.map((imageId) => {
-    //   const colonIndex = imageId.indexOf(':')
-    //   return 'wadors' + imageId.substring(colonIndex)
-    // })
-    // await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds))
+    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
+    // temporary method for converting csiv to wadors
+    const wadoCTImageIds = ctImageIds.map((imageId) => {
+      const colonIndex = imageId.indexOf(':')
+      return 'wadors' + imageId.substring(colonIndex)
+    })
+    await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds))
 
     // // ct + dx + color
     // const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
