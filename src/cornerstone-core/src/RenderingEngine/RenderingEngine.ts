@@ -8,6 +8,7 @@ import { IViewport, PublicViewportInput, ViewportInput } from '../types'
 import VolumeViewport from './VolumeViewport'
 import StackViewport from './StackViewport'
 import Scene from './Scene'
+import isEqual from 'lodash.isequal'
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
@@ -65,7 +66,7 @@ class RenderingEngine {
    */
   public offscreenMultiRenderWindow: any
   readonly offScreenCanvasContainer: any // WebGL
-  private _scenes: Array<Scene> = []
+  private _scenes: Map<string, Scene>
   private _viewports: Map<string, StackViewport | VolumeViewport>
   private _needsRender: Set<string> = new Set()
   private _animationFrameSet = false
@@ -82,7 +83,7 @@ class RenderingEngine {
     this.offscreenMultiRenderWindow = vtkOffscreenMultiRenderWindow.newInstance()
     this.offScreenCanvasContainer = document.createElement('div')
     this.offscreenMultiRenderWindow.setContainer(this.offScreenCanvasContainer)
-    this._scenes = []
+    this._scenes = new Map()
     this._viewports = new Map()
     this.hasBeenDestroyed = false
   }
@@ -94,19 +95,23 @@ class RenderingEngine {
       throw new Error('No canvases provided')
     }
 
-    // Todo 1. Check if already exits, erase and add again. if canvas exits
+    let viewport = this.getViewport(viewportUID)
+    if (viewport) {
+      // if viewport with the same uid exist we remove it, and add the requested one
+      this.removeViewport(viewportUID)
+    }
 
     const viewports = this._getViewportsAsArray()
     const canvases = viewports.map((vp) => vp.canvas)
     canvases.push(viewportInputEntry.canvas)
 
-    // New off screen size based on all viewports
+    // New offScreen size based on all viewports
     const {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
     } = this._resizeOffScreenCanvas(canvases)
 
-    // re position previous viewports
+    // re position previous viewports on the offScreen Canvas
     const _xOffset = this._resize(
       viewports,
       offScreenCanvasWidth,
@@ -121,17 +126,61 @@ class RenderingEngine {
       _xOffset
     )
 
-    const viewport = this.getViewport(viewportUID)
+    viewport = this.getViewport(viewportUID)
 
     if (viewport instanceof VolumeViewport) {
       const scene = viewport.getScene()
-      scene.addVolumeActors(viewportUID)
+      const volActors = scene.getVolumeActors()
+      const viewportActors = viewport.getActors()
+      if (!isEqual(volActors, viewportActors)) {
+        scene.addVolumeActors(viewportUID)
+      }
     }
 
     this._setViewportsToBeRenderedNextFrame([viewportInputEntry.viewportUID])
   }
 
-  // public disableElement(viewportUID: string): void {}
+  public disableElement(viewportUID: string): void {
+    const viewport = this.getViewport(viewportUID)
+
+    if (!viewport) {
+      console.warn(`viewport ${viewportUID} does not exist`)
+      return
+    }
+
+    this.removeViewport(viewportUID)
+
+    if (viewport instanceof VolumeViewport) {
+      const scene = viewport.getScene()
+      // if scene doesn't have any more viewports after this disabling, delete it
+      if (!scene.getViewports().length) {
+        this.removeScene(scene.uid)
+      }
+    }
+    this.offscreenMultiRenderWindow.removeRenderer(viewportUID)
+    this._resetViewport(viewport)
+    this.resize()
+  }
+
+  private removeViewport(viewportUID: string): void {
+    const viewport = this.getViewport(viewportUID)
+    if (!viewport) {
+      console.warn(`viewport ${viewportUID} does not exist`)
+      return
+    }
+    this._viewports.delete(viewportUID)
+
+    // remove viewport from scene if scene exists
+    if (viewport instanceof VolumeViewport) {
+      const scene = viewport.getScene()
+      if (!scene) return
+      const { sceneViewports } = scene
+      const index = sceneViewports.indexOf(viewportUID)
+      if (index > -1) {
+        sceneViewports.splice(index, 1)
+      }
+    }
+  }
 
   private _addViewport(
     viewportInputEntry: PublicViewportInput,
@@ -200,7 +249,7 @@ class RenderingEngine {
       // creating scenes for volume viewports
       if (type !== VIEWPORT_TYPE.STACK) {
         scene = new Scene(sceneUID, this.uid)
-        this._scenes.push(scene)
+        this._scenes.set(sceneUID, scene)
       }
     }
 
@@ -208,7 +257,7 @@ class RenderingEngine {
     if (type !== VIEWPORT_TYPE.STACK) {
       viewportInput.sceneUID = scene.uid
       viewport = new VolumeViewport(viewportInput)
-      scene.addViewport(viewportUID)
+      scene.sceneViewports.push(viewportUID)
     } else {
       viewport = new StackViewport(viewportInput)
     }
@@ -400,12 +449,10 @@ class RenderingEngine {
    *
    * @returns {Scene} The scene object.
    */
-  public getScene(uid: string): Scene {
+  public getScene(sceneUID: string): Scene {
     this._throwIfDestroyed()
 
-    return this._scenes.find(
-      (scene) => scene.uid === uid && !scene.getIsInternalScene()
-    )
+    return this._scenes.get(sceneUID)
   }
 
   /**
@@ -416,7 +463,18 @@ class RenderingEngine {
   public getScenes(): Array<Scene> {
     this._throwIfDestroyed()
 
-    return this._scenes.filter((scene) => scene.getIsInternalScene() === false)
+    return Array.from(this._scenes.values())
+  }
+
+  /**
+   * @method getScenes Returns an array of all `Scene`s on the `RenderingEngine` instance.
+   *
+   * @returns {Scene} The scene object.
+   */
+  public removeScene(sceneUID: string): void {
+    this._throwIfDestroyed()
+
+    this._scenes.delete(sceneUID)
   }
 
   private _getViewportsAsArray() {
@@ -621,29 +679,37 @@ class RenderingEngine {
     triggerEvent(canvas, EVENTS.IMAGE_RENDERED, eventData)
   }
 
+  private _resetViewport(viewport) {
+    const renderingEngineUID = this.uid
+
+    const { canvas, uid: viewportUID } = viewport
+
+    const eventData = {
+      canvas,
+      viewportUID,
+      //sceneUID, // todo: where to get this now?
+      renderingEngineUID,
+    }
+
+    canvas.removeAttribute('data-viewport-uid')
+    canvas.removeAttribute('data-scene-uid')
+    canvas.removeAttribute('data-rendering-engine-uid')
+
+    // clear drawing
+    const context = canvas.getContext('2d')
+    context.clearRect(0, 0, canvas.width, canvas.height)
+
+    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
+  }
+
   /**
    * @method _reset Resets the `RenderingEngine`
    */
   private _reset() {
-    const renderingEngineUID = this.uid
-
     const viewports = this._getViewportsAsArray()
 
     viewports.forEach((viewport) => {
-      const { canvas, uid: viewportUID } = viewport
-
-      const eventData = {
-        canvas,
-        viewportUID,
-        //sceneUID, // todo: where to get this now?
-        renderingEngineUID,
-      }
-
-      canvas.removeAttribute('data-viewport-uid')
-      canvas.removeAttribute('data-scene-uid')
-      canvas.removeAttribute('data-rendering-engine-uid')
-
-      triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
+      this._resetViewport(viewport)
     })
 
     window.cancelAnimationFrame(this._animationFrameHandle)

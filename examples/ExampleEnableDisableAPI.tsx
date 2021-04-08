@@ -106,7 +106,7 @@ metaData.addProvider(hardcodedMetaDataProvider, 10000);
 
 window.cache = cache;
 
-let  ctSceneToolGroup, stackViewportToolGroup
+let ctSceneToolGroup, stackViewportToolGroup;
 class EnableDisableViewportExample extends Component {
   state = {
     progressText: "fetching metadata...",
@@ -120,6 +120,7 @@ class EnableDisableViewportExample extends Component {
       numRows: 2,
       viewports: [{}, {}, {}, {}, {}, {}],
     },
+    enabledViewports: [],
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     selectedViewportIndex: 0, // for disabling and enabling viewports
     viewportInputEntries: [],
@@ -170,11 +171,11 @@ class EnableDisableViewportExample extends Component {
         {
           // CT volume axial
           sceneUID: SCENE_IDS.CT,
-          viewportUID: VIEWPORT_IDS.CT.AXIAL,
+          viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           canvas: this._canvasNodes.get(0),
           defaultOptions: {
-            orientation: ORIENTATION.AXIAL,
+            orientation: ORIENTATION.SAGITTAL,
           },
         },
         {
@@ -207,11 +208,11 @@ class EnableDisableViewportExample extends Component {
         },
         {
           sceneUID: SCENE_IDS.CT,
-          viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+          viewportUID: VIEWPORT_IDS.CT.AXIAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           canvas: this._canvasNodes.get(4),
           defaultOptions: {
-            orientation: ORIENTATION.SAGITTAL,
+            orientation: ORIENTATION.AXIAL,
           },
         },
       ],
@@ -243,7 +244,7 @@ class EnableDisableViewportExample extends Component {
     ctSceneToolGroup.addViewports(
       renderingEngineUID,
       SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
+      VIEWPORT_IDS.CT.SAGITTAL
     );
 
     // stack ct
@@ -253,7 +254,6 @@ class EnableDisableViewportExample extends Component {
       VIEWPORT_IDS.STACK
     );
 
-
     renderingEngine.render();
 
     const ctStackLoad = async () => {
@@ -261,7 +261,7 @@ class EnableDisableViewportExample extends Component {
       await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds));
     };
 
-    this.ctStackLoad = ctStackLoad
+    this.ctStackLoad = ctStackLoad;
 
     const dxColorLoad = async () => {
       const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR);
@@ -281,10 +281,10 @@ class EnableDisableViewportExample extends Component {
         renderingEngineUID,
         undefined,
         VIEWPORT_DX_COLOR
-    );
+      );
     };
 
-    this.dxColorLoad = dxColorLoad
+    this.dxColorLoad = dxColorLoad;
 
     const CTVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
@@ -312,13 +312,18 @@ class EnableDisableViewportExample extends Component {
       const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
       this.setState({
-        metadataLoaded: true,
         ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
       });
     };
 
-    ctStackLoad()
-    CTVolumeLoad()
+    ctStackLoad();
+    CTVolumeLoad();
+    this.CTVolumeLoad = CTVolumeLoad;
+
+    this.setState({
+      enabledViewports: [0, 1],
+      metadataLoaded: true,
+    });
 
     // This will initialize volumes in GPU memory
     renderingEngine.render();
@@ -342,34 +347,52 @@ class EnableDisableViewportExample extends Component {
 
   setSelectedViewportIndex = (evt) => {
     const index = evt.target.value;
-    this.setState({ selectedViewportIndex: index });
+    this.setState({ selectedViewportIndex: parseInt(index) });
   };
 
   disableSelectedViewport = () => {
-    console.debug("disabling", this.state.selectedViewportIndex);
+    const viewportIndex = this.state.selectedViewportIndex;
+
+    const viewportInput = this.state.viewportInputEntries[viewportIndex];
+
+    this.renderingEngine.disableElement(viewportInput.viewportUID);
+
+    this.setState(state => ({ ...state,
+        enabledViewports : state.enabledViewports.filter(item => item !== viewportIndex)
+     }))
+
   };
 
   enableSelectedViewport = () => {
-    console.debug("enabling", this.state.selectedViewportIndex);
+    const viewportIndex = this.state.selectedViewportIndex;
 
+    const viewportInput = this.state.viewportInputEntries[viewportIndex];
 
-    const viewportInput = this.state.viewportInputEntries[this.state.selectedViewportIndex]
-
-    this.renderingEngine.enableElement(viewportInput)
+    this.renderingEngine.enableElement(viewportInput);
 
     // load
-    if (viewportInput.viewportUID === VIEWPORT_IDS.STACK){
-      this.ctStackLoad()
+    if (viewportInput.viewportUID === VIEWPORT_IDS.STACK) {
+      this.ctStackLoad();
     } else if (viewportInput.viewportUID === VIEWPORT_DX_COLOR) {
-      this.dxColorLoad()
+      this.dxColorLoad();
     } else {
+      // if we have removed the scene when disabling all the related viewports
+      // set the volume again
+      const ctScene = this.renderingEngine.getScene(SCENE_IDS.CT)
+      if (! ctScene.getVolumeActors().length) {
+        this.CTVolumeLoad();
+      }
       ctSceneToolGroup.addViewports(
         renderingEngineUID,
         SCENE_IDS.CT,
         viewportInput.viewportUID
-    );
-
+      );
     }
+
+    this.setState((state) => ({
+      ...state,
+      enabledViewports: [...state.enabledViewports, viewportIndex],
+    }));
   };
 
   showOffScreenCanvas = () => {
@@ -428,7 +451,7 @@ class EnableDisableViewportExample extends Component {
         </button>
 
         <div className="col-md-4">
-          <label>Viewports:</label>
+          {/* <label>Viewports:</label> */}
           <select
             value={this.state.selectedViewportIndex}
             onChange={this.setSelectedViewportIndex}
@@ -437,7 +460,9 @@ class EnableDisableViewportExample extends Component {
             {this.state.viewportInputEntries &&
               this.state.viewportInputEntries.map((vpEntry, index) => (
                 <option key={index} value={index}>
-                  {vpEntry.viewportUID}
+                  {this.state.enabledViewports.includes(index)
+                    ? vpEntry.viewportUID + " --- enabled"
+                    : vpEntry.viewportUID + " --- disabled"}
                 </option>
               ))}
           </select>

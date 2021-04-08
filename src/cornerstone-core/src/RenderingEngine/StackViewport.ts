@@ -51,6 +51,24 @@ class StackViewport extends Viewport implements IViewport {
     this.resetCamera()
   }
 
+  public getFrameOfReferenceUID = (): string | undefined => {
+    // Get the current image that is displayed in the viewport
+    const imageId = this.getCurrentImageId()
+
+    // Use the metadata provider to grab its imagePlaneModule metadata
+    const imagePlaneModule = metaData.get('imagePlaneModule', imageId)
+
+    // If nothing exists, return undefined
+    if (!imagePlaneModule) {
+      return
+    }
+
+    // Otherwise, provide the FrameOfReferenceUID so we can map
+    // annotations made on VolumeViewports back to StackViewports
+    // and vice versa
+    return imagePlaneModule.frameOfReferenceUID
+  }
+
   private createActorMapper = (imageData) => {
     const mapper = vtkVolumeMapper.newInstance()
     mapper.setInputData(imageData)
@@ -540,24 +558,6 @@ class StackViewport extends Viewport implements IViewport {
     ]
 
     return canvasCoord
-  }
-
-  public getFrameOfReferenceUID = (): string | undefined => {
-    // Get the current image that is displayed in the viewport
-    const imageId = this.getCurrentImageId()
-
-    // Use the metadata provider to grab its imagePlaneModule metadata
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId)
-
-    // If nothing exists, return undefined
-    if (!imagePlaneModule) {
-      return
-    }
-
-    // Otherwise, provide the FrameOfReferenceUID so we can map
-    // annotations made on VolumeViewports back to StackViewports
-    // and vice versa
-    return imagePlaneModule.frameOfReferenceUID
   }
 
   public getCurrentImageIdIndex = (): number => {

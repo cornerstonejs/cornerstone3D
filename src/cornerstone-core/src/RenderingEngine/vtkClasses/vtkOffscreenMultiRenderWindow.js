@@ -54,6 +54,12 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
     model.rendererMap[uid] = renderer
   }
 
+  publicAPI.removeRenderer = (uid) => {
+    const renderer = publicAPI.getRenderer(uid)
+    model.renderWindow.removeRenderer(renderer)
+    delete model.rendererMap[uid]
+  }
+
   publicAPI.getRenderer = (uid) => {
     return model.rendererMap[uid]
   }

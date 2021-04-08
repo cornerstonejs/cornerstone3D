@@ -50,6 +50,10 @@ class VolumeViewport extends Viewport implements IViewport {
     this.resetCamera()
   }
 
+  public getFrameOfReferenceUID = (): string => {
+    return this.getScene().getFrameOfReferenceUID()
+  }
+
   /**
    * @method Sets the slab thickness option in the `Viewport`'s `options`.
    *
@@ -205,10 +209,6 @@ class VolumeViewport extends Viewport implements IViewport {
     vtkCamera.setSlabThicknessActive(slabThicknessActive)
 
     return canvasCoord
-  }
-
-  public getFrameOfReferenceUID = (): string => {
-    return this.getScene().getFrameOfReferenceUID()
   }
 
   //public getCurrentImageId() : string | undefined => {
