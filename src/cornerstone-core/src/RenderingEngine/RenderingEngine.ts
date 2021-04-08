@@ -98,10 +98,18 @@ class RenderingEngine {
     const canvases = viewports.map((vp) => vp.canvas)
     canvases.push(canvas)
 
+    if (!canvases.length) {
+      throw new Error('No canvases provided')
+    }
+
     const {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
     } = this._resizeOffScreenCanvas(canvases)
+
+    if (!offScreenCanvasWidth || !offScreenCanvasHeight) {
+      throw new Error('Invalid offscreen canvas width or height')
+    }
 
     // Get the xOffset to render the new viewport, since we resized the
     // offscreen canvas
@@ -222,14 +230,19 @@ class RenderingEngine {
     this._throwIfDestroyed()
     this._reset()
 
-    let _xOffset = 0
+    const canvases = viewportInputEntries.map((vp) => vp.canvas)
 
     // Set canvas size based on height and sum of widths
     const {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
-    } = this._resizeOffScreenCanvas(viewportInputEntries)
+    } = this._resizeOffScreenCanvas(canvases)
 
+    if (!offScreenCanvasWidth || !offScreenCanvasHeight) {
+      throw new Error('Invalid offscreen canvas width or height')
+    }
+
+    let _xOffset = 0
     for (let i = 0; i < viewportInputEntries.length; i++) {
       const viewportInputEntry = viewportInputEntries[i]
 
@@ -277,11 +290,12 @@ class RenderingEngine {
     this._throwIfDestroyed()
 
     const viewports = this._getViewportsAsArray()
+    const canvases = viewports.map((vp) => vp.canvas)
 
     const {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
-    } = this._resizeOffScreenCanvas(viewports)
+    } = this._resizeOffScreenCanvas(canvases)
 
     // Redefine viewport properties
     let _xOffset = 0
@@ -394,22 +408,7 @@ class RenderingEngine {
   }
 
   private _getViewportsAsArray() {
-    // Todo: array from
-    // Array.from(this._viewports.values())
-    const viewportIterator = this._viewports.values()
-    const viewports = []
-    /* eslint-disable no-constant-condition */
-    while (true) {
-      const { value, done } = viewportIterator.next()
-
-      if (done) {
-        break
-      }
-
-      viewports.push(value)
-    }
-
-    return viewports
+    return Array.from(this._viewports.values())
   }
 
   public getViewport(uid: string): StackViewport | VolumeViewport {
@@ -483,7 +482,7 @@ class RenderingEngine {
     const context = openGLRenderWindow.get3DContext()
 
     const offScreenCanvas = context.canvas
-    // const scenes = this._scenes
+
     const viewports = this._getViewportsAsArray()
 
     for (let i = 0; i < viewports.length; i++) {
