@@ -63,7 +63,8 @@ export default class ProbeTool extends BaseAnnotationTool {
         viewPlaneNormal: [...viewPlaneNormal],
         viewUp: [...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: viewport.getCurrentImageId(),
+        referencedImageId:
+          viewport.getCurrentImageId && viewport.getCurrentImageId(),
         toolName: this.name,
       },
       data: {
