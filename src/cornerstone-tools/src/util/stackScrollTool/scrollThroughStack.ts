@@ -18,9 +18,9 @@ import snapFocalPointToSlice from './snapFocalPointToSlice'
  */
 export default function scrollThroughStack(
   evt,
-  deltaFrames,
-  volumeUID,
-  invert
+  deltaFrames: number,
+  volumeUID: string,
+  invert = false
 ) {
   const { element: canvas, wheel } = evt.detail
   const { scene, viewport } = getEnabledElement(canvas)

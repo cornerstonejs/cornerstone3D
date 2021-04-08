@@ -5,7 +5,7 @@ import createVolumeMapper from './createVolumeMapper'
 
 interface createVolumeActorInterface {
   volumeUID: string
-  callback?: () => void
+  callback?: ({ volumeActor: any, volumeUID: string }) => void
   blendMode?: string
 }
 

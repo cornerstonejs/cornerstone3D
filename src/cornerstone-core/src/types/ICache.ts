@@ -6,7 +6,6 @@ interface ICache {
   setMaxCacheSize: (maxCacheSize: number) => void
   getMaxCacheSize: () => number
   getCacheSize: () => number
-  decacheVolume: (uid: string) => void
   putImageLoadObject: (
     imageId: string,
     imageLoadObject: ImageLoadObject

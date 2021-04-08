@@ -7,19 +7,19 @@ import ERROR_CODES from '../enums/errorCodes'
 const MAX_CACHE_SIZE_1GB = 1073741824
 
 interface ImageLoadObject {
-  promise: Promise
+  promise: any // Promise<Image>
   cancel?: () => void
   decache?: () => void
 }
 
 interface VolumeLoadObject {
-  promise: Promise
+  promise: any // Promise<Volume>
   cancel?: () => void
   decache?: () => void
 }
 
 interface CachedImage {
-  image: any // TODO We need to type this
+  image?: any // TODO We need to type this
   imageId: string
   imageLoadObject: ImageLoadObject
   loaded: boolean
@@ -29,7 +29,7 @@ interface CachedImage {
 }
 
 interface CachedVolume {
-  volume: any // TODO We need to type this
+  volume?: any // TODO We need to type this
   volumeId: string
   volumeLoadObject: VolumeLoadObject
   loaded: boolean
@@ -38,8 +38,8 @@ interface CachedVolume {
 }
 
 class Cache implements IImageCache {
-  private _imageCache: Map<string, CachedImage>
-  private _volumeCache: Map<string, CachedVolume>
+  private readonly _imageCache: Map<string, CachedImage>
+  private readonly _volumeCache: Map<string, CachedVolume>
   private _cacheSize: number
   private _maxCacheSize: number
 
@@ -128,6 +128,8 @@ class Cache implements IImageCache {
       return bytesAvailable
     }
 
+    const imageIterator = this._imageCache.keys()
+
     while (bytesAvailable < numBytes) {
       const { value: imageId, done } = imageIterator.next()
 
@@ -185,7 +187,7 @@ class Cache implements IImageCache {
       return
     }
 
-    const cachedImages = this._imageCache.values()
+    const cachedImages = Array.from(this._imageCache.values())
 
     // Cache size has been exceeded, create list of images sorted by timeStamp
     // So we can purge the least recently used image
@@ -238,11 +240,11 @@ class Cache implements IImageCache {
       throw new Error('putImageLoadObject: imageId already in cache')
     }
     if (
-      imageLoadObject.cancelFn &&
-      typeof imageLoadObject.cancelFn !== 'function'
+      imageLoadObject.cancel &&
+      typeof imageLoadObject.cancel !== 'function'
     ) {
       throw new Error(
-        'putImageLoadObject: imageLoadObject.cancelFn must be a function'
+        'putImageLoadObject: imageLoadObject.cancel must be a function'
       )
     }
 
@@ -302,7 +304,7 @@ class Cache implements IImageCache {
   }
 
   /**
-   * Retuns the object that is loading a given imageId
+   * Returns the object that is loading a given imageId
    *
    * @param {string} imageId Image ID
    * @returns {void}
@@ -348,11 +350,11 @@ class Cache implements IImageCache {
       throw new Error('putVolumeLoadObject: volumeId already in cache')
     }
     if (
-      volumeLoadObject.cancelFn &&
-      typeof volumeLoadObject.cancelFn !== 'function'
+      volumeLoadObject.cancel &&
+      typeof volumeLoadObject.cancel !== 'function'
     ) {
       throw new Error(
-        'putVolumeLoadObject: volumeLoadObject.cancelFn must be a function'
+        'putVolumeLoadObject: volumeLoadObject.cancel must be a function'
       )
     }
 
@@ -403,16 +405,15 @@ class Cache implements IImageCache {
       },
       (error) => {
         console.warn(error)
-        this._volumeLoadObjects.delete(volumeId)
         this._volumeCache.delete(volumeId)
       }
     )
   }
 
   /**
-   * Returns the object that is loading a given imageId
+   * Returns the object that is loading a given volumeId
    *
-   * @param {string} imageId Image ID
+   * @param {string} volumeId Volume ID
    * @returns {void}
    */
   public getVolumeLoadObject = (volumeId: string) => {
@@ -434,7 +435,7 @@ class Cache implements IImageCache {
   /**
    *
    *
-   * @param {string} imageId Image ID
+   * @param {string} volumeId Volume ID
    * @returns {void}
    */
   public getVolume = (volumeId: string) => {

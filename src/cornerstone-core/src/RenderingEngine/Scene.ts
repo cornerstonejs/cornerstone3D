@@ -104,7 +104,7 @@ class Scene {
   public async setVolumes(
     volumeInputArray: Array<VolumeInput>,
     immediate = false
-  ): void {
+  ): Promise<void> {
     // this._volumeActors = []
 
     // TODO: should we have a get or fail? If it's in the cache, give it back, otherwise throw

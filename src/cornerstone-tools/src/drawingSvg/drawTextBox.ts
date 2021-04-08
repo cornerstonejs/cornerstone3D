@@ -1,5 +1,5 @@
 import _getHash from './_getHash'
-import { Point2 } from 'src/types'
+import { Point2 } from '../types'
 import textStyle from '../stateManagement/textStyle'
 
 /**

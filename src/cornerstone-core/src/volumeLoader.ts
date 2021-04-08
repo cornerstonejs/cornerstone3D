@@ -103,7 +103,7 @@ function loadVolumeFromVolumeLoader(volumeId, options) {
  * @returns {VolumeLoadObject} An Object which can be used to act after an image is loaded or loading fails
  * @memberof VolumeLoader
  */
-export function loadVolume(volumeId, options) {
+export function loadVolume(volumeId: string, options = {}) {
   if (volumeId === undefined) {
     throw new Error('loadVolume: parameter volumeId must not be undefined')
   }
@@ -116,9 +116,7 @@ export function loadVolume(volumeId, options) {
 
   return loadVolumeFromVolumeLoader(volumeId, options).promise.then(
     (volume) => {
-      const vtkImageData = createInternalVTKRepresentation(volume)
-
-      volume.vtkImageData = vtkImageData
+      volume.vtkImageData = createInternalVTKRepresentation(volume)
     }
   )
 }
