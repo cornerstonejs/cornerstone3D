@@ -223,6 +223,7 @@ export default class StreamingImageVolume extends ImageVolume {
         loadStatus.loaded = true
         loadStatus.loading = false
 
+        // TODO: Should we remove the callbacks in favour of just using events?
         callLoadStatusCallback({
           success: true,
           imageIdIndex,

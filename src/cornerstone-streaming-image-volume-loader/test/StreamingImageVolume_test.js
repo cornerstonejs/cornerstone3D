@@ -97,7 +97,7 @@ describe('StreamingImageVolume', function () {
       .finally(done)
   })
 
-  it('load: can stream pixel data into SharedArrayBuffer', async function (done) {
+  it('load: correctly streams pixel data from Images into Volume', async function (done) {
     const volume = await cornerstone.getVolume('fakeVolumeLoader:VOLUME')
 
     function callback(loadStatus) {
@@ -110,6 +110,19 @@ describe('StreamingImageVolume', function () {
 
     // todo: create some synthetic image data and actually check to make sure
     // the pixel values are in the right places in the volume
+  })
+
+  it('load: leverages images already in the cache during loading', async function () {
+    // create some fake images and load them into the cache
+    // create a volume including the same imageIds that are in the cache
+    // verify that the loadStatusCallbacks progress reports properly log that
+    // the images were already loaded
+  })
+
+  it('cancelLoading: ', async function () {
+    // check loading flag is false
+    // check callbacks are cleared
+    // verify that requestPoolManager's requests related to the imageIds are removed
   })
 
   it('decache: properly decaches the Volume into a set of Images', async function () {
