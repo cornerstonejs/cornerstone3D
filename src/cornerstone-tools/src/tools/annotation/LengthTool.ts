@@ -1,9 +1,9 @@
 import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec2 } from 'gl-matrix'
 import cornerstoneMath from 'cornerstone-math'
-import { getEnabledElement, VIEWPORT_TYPE } from '@cornerstone'
+import { getEnabledElement, VIEWPORT_TYPE, getVolume } from '@cornerstone'
 
-import { getToolStateForDisplay } from '../../util/planar'
+import { getToolStateForDisplay, getImageIdForTool } from '../../util/planar'
 import { BaseAnnotationTool } from '../base'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
@@ -73,15 +73,30 @@ class LengthTool extends BaseAnnotationTool {
 
     hideToolCursor(element)
 
+    const camera = viewport.getCamera()
+    const { viewPlaneNormal, viewUp } = camera
+
     // TODO: what do we do here? this feels wrong
     let referencedImageId
     if (viewport.type === VIEWPORT_TYPE.STACK) {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
+    } else {
+      const { volumeUID } = this.configuration
+      const imageVolume = getVolume(volumeUID)
+      referencedImageId = getImageIdForTool(
+        worldPos,
+        viewPlaneNormal,
+        viewUp,
+        imageVolume
+      )
     }
 
-    const camera = viewport.getCamera()
-    const { viewPlaneNormal, viewUp } = camera
+    if (referencedImageId) {
+      const colonIndex = referencedImageId.indexOf(':')
+      referencedImageId = referencedImageId.substring(colonIndex + 1)
+    }
+
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],

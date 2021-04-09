@@ -14,6 +14,7 @@ import {
   SynchronizerManager,
   synchronizers,
   ToolGroupManager,
+  ToolBindings
 } from '@cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
@@ -106,11 +107,13 @@ metaData.addProvider(hardcodedMetaDataProvider, 10000)
 
 window.cache = cache
 
+let ctSceneToolGroup, stackViewportToolGroup
+
 class StackViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
-    petColorMapIndex: 0,
+    leftClickTool : 'WindowLevel',
     layoutIndex: 0,
     destroyed: false,
     //
@@ -159,7 +162,7 @@ class StackViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    let { ctSceneToolGroup, stackViewportToolGroup } = initToolGroups()
+    ({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID
     this.ctStackUID = ctStackUID
@@ -336,6 +339,33 @@ class StackViewportExample extends Component {
     this._offScreenRef.current.innerHTML = ''
   }
 
+  toggleLengthAndWindowLevel = () => {
+    const options = {
+    bindings: [ToolBindings.Mouse.Primary],
+    };
+
+    let newTool
+    if (this.state.leftClickTool === "Length"){
+      ctSceneToolGroup.setToolPassive("Length");
+      stackViewportToolGroup.setToolPassive("Length");
+
+
+      ctSceneToolGroup.setToolActive('WindowLevel', options);
+      stackViewportToolGroup.setToolActive('WindowLevel', options);
+      newTool = "WindowLevel"
+    } else {
+      ctSceneToolGroup.setToolPassive("WindowLevel");
+      stackViewportToolGroup.setToolPassive("WindowLevel");
+
+      ctSceneToolGroup.setToolActive('Length', options);
+      stackViewportToolGroup.setToolActive('Length', options);
+      newTool = "Length"
+    }
+
+    this.setState({ leftClickTool: newTool });
+
+  }
+
   render() {
     return (
       <div>
@@ -346,6 +376,13 @@ class StackViewportExample extends Component {
             (bottom) using the same rendering engine
           </p>
         </div>
+        <button
+          onClick={() => this.toggleLengthAndWindowLevel()}
+          className="btn btn-primary"
+          style={{ margin: "2px 4px" }}
+        >
+          Toggle Length and WindowLevel
+        </button>
         <div style={{ paddingBottom: '55px' }}>
           <ViewportGrid
             numCols={this.state.viewportGrid.numCols}

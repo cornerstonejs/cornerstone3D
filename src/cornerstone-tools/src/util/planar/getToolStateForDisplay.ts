@@ -8,9 +8,13 @@ import { VIEWPORT_TYPE } from '@cornerstone'
 export default function getToolStateForDisplay(viewport: IViewport, toolState) {
   if (viewport.type === VIEWPORT_TYPE.STACK) {
     // 1. Get the currently displayed imageId from the StackViewport
-    const imageId = viewport.getCurrentImageId()
+    let imageId = viewport.getCurrentImageId()
 
-    // 2. Filter tool data in the frame of reference by the referenced image ID property
+    // 2. remove the dataLoader scheme
+    const colonIndex = imageId.indexOf(':')
+    imageId = imageId.substring(colonIndex + 1)
+
+    // 3. Filter tool data in the frame of reference by the referenced image ID property
     return toolState.filter((toolData) => {
       return toolData.metadata.referencedImageId === imageId
     })
