@@ -354,6 +354,7 @@ export default class StreamingImageVolume extends ImageVolume {
       const priority = 5
       const addToBeginning = false
 
+      console.log('adding requests')
       requestPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),
         requestType,

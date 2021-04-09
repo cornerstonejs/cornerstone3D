@@ -120,9 +120,30 @@ describe('StreamingImageVolume', function () {
   })
 
   it('cancelLoading: ', async function () {
-    // check loading flag is false
-    // check callbacks are cleared
-    // verify that requestPoolManager's requests related to the imageIds are removed
+    const volumeId = 'fakeVolumeLoader:VOLUME'
+    const volume = cornerstone.getVolume(volumeId)
+    const completelyRemove = false
+
+    volume.load()
+    let pool = cornerstone.requestPoolManager.getRequestPool()
+    console.log(pool)
+
+    // TODO: this is showing up as zero, probably because the requests
+    // are immediately processed so the pool is empty. Not sure
+    // how to avoid that.
+    // let numImagesInPool = pool['prefetch'].length
+    // expect(numImagesInPool).toEqual(5)
+    // expect(volume.loadStatus.loading).toEqual(true)
+
+    volume.cancelLoading()
+
+    pool = cornerstone.requestPoolManager.getRequestPool()
+    let numImagesInPool = pool['prefetch'].length
+    expect(numImagesInPool).toEqual(0)
+
+    expect(volume.loadStatus.loaded).toEqual(false)
+    expect(volume.loadStatus.loading).toEqual(false)
+    expect(volume.loadStatus.callbacks.length).toEqual(0)
   })
 
   it('decache: properly decaches the Volume into a set of Images', async function () {
@@ -162,5 +183,9 @@ describe('StreamingImageVolume', function () {
     const cachedImage0 = cornerstone.cache.getImageLoadObject(this.imageIds[0])
 
     expect(cachedImage0).not.toBeDefined()
+  })
+
+  afterEach(function () {
+    cornerstone.cache.purgeCache()
   })
 })
