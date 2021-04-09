@@ -5,7 +5,7 @@ import {
   Utilities,
 } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
-import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers/'
+import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
 import StreamingImageVolume from './StreamingImageVolume'
 
 const { createUint8SharedArray, createFloat32SharedArray } = Utilities

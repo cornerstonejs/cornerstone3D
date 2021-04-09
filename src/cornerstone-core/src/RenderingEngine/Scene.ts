@@ -1,14 +1,10 @@
-import { IViewport } from '../types'
-import Viewport from './Viewport'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { createVolumeActor } from './helpers'
-import cache from '../cache'
 import { loadVolume } from '../volumeLoader'
 import { uuidv4 } from '../utilities'
 import VolumeViewport from './VolumeViewport'
 import { VolumeActor, ActorEntry } from './Viewport'
-import { PublicViewportInput } from '../types'
 
 type VolumeInput = {
   volumeUID: string
@@ -24,16 +20,14 @@ type VolumeInput = {
 class Scene {
   readonly uid: string
   readonly renderingEngineUID: string
-  public sceneViewports: Array<string>
-  // private _volumeActors: Array<ActorEntry>
+  readonly _sceneViewports: Array<string>
   private _FrameOfReferenceUID: string
-  private _internalScene: boolean
+  readonly _internalScene: boolean
 
   constructor(uid: string, renderingEngineUID: string) {
     this.renderingEngineUID = renderingEngineUID
-    this.sceneViewports = []
-    // this._volumeActors = []
-    this._internalScene = uid ? false : true
+    this._sceneViewports = []
+    this._internalScene = !uid
     this.uid = uid ? uid : uuidv4()
   }
 
@@ -57,23 +51,22 @@ class Scene {
   /**
    * @method getViewports Returns the viewports on the scene.
    *
-   * @returns {Array<Viewport>} The viewports.
+   * @returns {Array<VolumeViewport>} The viewports.
    */
   public getViewports(): Array<VolumeViewport> {
     const renderingEngine = this.getRenderingEngine()
-    const viewports = this.sceneViewports.map((uid) => {
+    return this._sceneViewports.map((uid) => {
       return <VolumeViewport>renderingEngine.getViewport(uid)
     })
-    return viewports
   }
 
   /**
    * @method getViewport - Returns a `Viewport` from the `Scene` by its `uid`.
-   * @param {string } uid The UID of the viewport to get.
+   * @param {string } viewportUID The UID of the viewport to get.
    */
   public getViewport(viewportUID: string): VolumeViewport {
     const renderingEngine = this.getRenderingEngine()
-    const index = this.sceneViewports.indexOf(viewportUID)
+    const index = this._sceneViewports.indexOf(viewportUID)
 
     if (index > -1) {
       return <VolumeViewport>renderingEngine.getViewport(viewportUID)
@@ -97,8 +90,6 @@ class Scene {
     volumeInputArray: Array<VolumeInput>,
     immediate = false
   ): Promise<void> {
-    // this._volumeActors = []
-
     // TODO: should we have a get or fail? If it's in the cache, give it back, otherwise throw
     const firstImageVolume = await loadVolume(volumeInputArray[0].volumeUID)
 
@@ -134,14 +125,14 @@ class Scene {
     this._FrameOfReferenceUID = FrameOfReferenceUID
 
     const slabThicknessValues = []
-    const _volumeActors = []
+    const volumeActors = []
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
       const { volumeUID, slabThickness } = volumeInputArray[i]
       const volumeActor = await createVolumeActor(volumeInputArray[i])
 
-      _volumeActors.push({ uid: volumeUID, volumeActor, slabThickness })
+      volumeActors.push({ uid: volumeUID, volumeActor, slabThickness })
 
       if (
         slabThickness !== undefined &&
@@ -157,9 +148,9 @@ class Scene {
       )
     }
 
-    this.sceneViewports.forEach((uid) => {
+    this._sceneViewports.forEach((uid) => {
       const viewport = this.getViewport(uid)
-      viewport._setVolumeActors(_volumeActors)
+      viewport._setVolumeActors(volumeActors)
     })
 
     if (immediate) {
@@ -175,18 +166,22 @@ class Scene {
 
     renderingEngine.renderScene(this.uid)
   }
-  /**
-   * @method addViewport Adds a `Viewport` to the `Scene`, as defined by the `ViewportInput`.
-   * @param {viewportUID} viewportUID
-   */
-  public addViewport(viewportInputEntry: PublicViewportInput): void {
-    const renderingEngine = this.getRenderingEngine()
-    renderingEngine.enableElement(viewportInputEntry)
+
+  public addViewportByUID(viewportUID: string): void {
+    if (this._sceneViewports.indexOf(viewportUID) < 0) {
+      this._sceneViewports.push(viewportUID)
+    }
   }
 
-  public removeViewport(viewportUID: string): void {
-    const renderingEngine = this.getRenderingEngine()
-    renderingEngine.disableElement(viewportUID)
+  public removeViewportByUID(viewportUID: string): void {
+    const index = this._sceneViewports.indexOf(viewportUID)
+    if (index > -1) {
+      this._sceneViewports.splice(index, 1)
+    }
+  }
+
+  public getViewportUIDs(): Array<string> {
+    return this._sceneViewports
   }
 
   public addVolumeActors(viewportUID: string): void {
@@ -198,12 +193,11 @@ class Scene {
   /**
    * @method getVolumeActor Gets a volume actor on the scene by its `uid`.
    *
-   * @param {string }volumeUID The UID of the volumeActor to fetch.
+   * @param {string } uid The UID of the volumeActor to fetch.
    * @returns {object} The volume actor.
    */
   public getVolumeActor(uid: string): VolumeActor {
     const viewports = this.getViewports()
-    //Todo: should we check the actor in all viewports (they are the same)?
     const volumeActorEntry = viewports[0].getActor(uid)
 
     if (volumeActorEntry) {
@@ -214,11 +208,10 @@ class Scene {
   /**
    * @method getVolumeActors Gets the array of `VolumeActorEntry`s.
    *
-   * @returns {Array<VolumeActorEntry>} The array of volume actors.
+   * @returns {Array<ActorEntry>} The array of volume actors.
    */
   public getVolumeActors(): Array<ActorEntry> {
     const viewports = this.getViewports()
-    //Todo: should we check the actor in all viewports (they are the same)?
     return viewports[0].getActors()
   }
 }

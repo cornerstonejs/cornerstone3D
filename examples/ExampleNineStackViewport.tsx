@@ -3,8 +3,6 @@ import {
   cache,
   RenderingEngine,
   eventTarget,
-  createAndCacheVolume,
-  loadAndCacheImages,
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
@@ -16,9 +14,6 @@ import {
   ToolGroupManager,
 } from "@cornerstone-tools";
 
-import vtkColorTransferFunction from "vtk.js/Sources/Rendering/Core/ColorTransferFunction";
-import vtkPiecewiseFunction from "vtk.js/Sources/Common/DataModel/PiecewiseFunction";
-import vtkColorMaps from "vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps";
 import getImageIdsAndCacheMetadata from "./helpers/getImageIdsAndCacheMetadata";
 import { createDXImageIds } from "./helpers/createStudyImageIds";
 import ViewportGrid from "./components/ViewportGrid";

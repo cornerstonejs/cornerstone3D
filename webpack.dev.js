@@ -14,7 +14,7 @@ const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/cornerstone-core/src/index
 const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/src/index.ts')
 const LOADER_ROOT = path.resolve(
   PROJECT_ROOT,
-  './src/cornerstone-streaming-image-volume-loader/'
+  './src/cornerstone-streaming-image-volume-loader/src/index.ts'
 )
 const ENTRY_EXAMPLES = path.join(PROJECT_ROOT, './examples/index.tsx')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')

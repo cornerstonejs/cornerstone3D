@@ -57,16 +57,13 @@ class Viewport implements IViewport {
       this.renderingEngineUID
     )
 
-    this.sceneUID = undefined
     if (props.sceneUID) {
       this.sceneUID = props.sceneUID
       this.canvas.setAttribute('data-scene-uid', this.sceneUID)
     }
-    const options = _cloneDeep(props.defaultOptions)
-    const defaultOptions = _cloneDeep(props.defaultOptions)
 
-    this.defaultOptions = defaultOptions
-    this.options = options
+    this.defaultOptions = _cloneDeep(props.defaultOptions)
+    this.options = _cloneDeep(props.defaultOptions)
   }
   getFrameOfReferenceUID: () => string
   canvasToWorld: (canvasPos: Point2) => Point3

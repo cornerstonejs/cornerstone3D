@@ -5,7 +5,7 @@ import {
   EVENTS,
   triggerEvent,
 } from '@cornerstone'
-import { StreamingImageVolume } from '@cornerstone-streaming-image-volume-loader'
+import { StreamingImageVolume } from '../../../cornerstone-streaming-image-volume-loader/src'
 
 export default class WindowLevelTool extends BaseTool {
   touchDragCallback: () => void

@@ -10,7 +10,7 @@ const RENDERING_ROOT = path.join(PROJECT_ROOT, './src/cornerstone-core/src/index
 const TOOLS_ROOT = path.resolve(PROJECT_ROOT, './src/cornerstone-tools/src/index.ts')
 const LOADER_ROOT = path.resolve(
     PROJECT_ROOT,
-    './src/cornerstone-streaming-image-volume-loader/'
+    './src/cornerstone-streaming-image-volume-loader/src/index.ts'
 )
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const OUT_PATH = path.join(PROJECT_ROOT, './dist')
@@ -66,23 +66,11 @@ module.exports = (env, argv) => {
       // Used to build/load metadata
       // TODO: Remove these as dependencies
       {
-        'cornerstone-core': {
-          commonjs: 'cornerstone-core',
-          commonjs2: 'cornerstone-core',
-          amd: 'cornerstone-core',
-          root: 'cornerstone',
-        },
         'cornerstone-math': {
           commonjs: 'cornerstone-math',
           commonjs2: 'cornerstone-math',
           amd: 'cornerstone-math',
           root: 'cornerstoneMath',
-        },
-        'cornerstone-tools': {
-          commonjs: 'cornerstone-tools',
-          commonjs2: 'cornerstone-tools',
-          amd: 'cornerstone-tools',
-          root: 'cornerstoneTools',
         },
         'cornerstone-wado-image-loader': {
           commonjs: 'cornerstone-wado-image-loader',

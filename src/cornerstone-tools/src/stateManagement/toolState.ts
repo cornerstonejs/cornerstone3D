@@ -1,7 +1,7 @@
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
 import { uuidv4 } from '../util'
 import { ToolSpecificToolState } from '../types/toolStateTypes'
-import { IEnabledElement } from 'src/types'
+import { IEnabledElement } from '../types'
 
 function getViewportSpecificStateManager(element: IEnabledElement) {
   // TODO:
@@ -13,6 +13,7 @@ function getViewportSpecificStateManager(element: IEnabledElement) {
   return defaultFrameOfReferenceSpecificToolStateManager
 }
 
+// TODO: Why is this now using enabledElement instead of element?
 /**
  * getToolState - Returns the toolState for the `FrameOfReference` of the `Scene`
  * being viewed by the cornerstone3D enabled `element`.

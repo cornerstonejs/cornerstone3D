@@ -148,10 +148,6 @@ export function createAndCacheVolume(volumeId, options) {
     )
   }
 
-  if (!options.imageIds.length) {
-    throw new Error('loadVolume: imageIds must be defined')
-  }
-
   let volumeLoadObject = cache.getVolumeLoadObject(volumeId)
 
   if (volumeLoadObject !== undefined) {
@@ -160,11 +156,8 @@ export function createAndCacheVolume(volumeId, options) {
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options)
 
-  // TODO: Make sure this doesn't run multiple times
   volumeLoadObject.promise.then((volume) => {
-    const vtkImageData = createInternalVTKRepresentation(volume)
-
-    volume.vtkImageData = vtkImageData
+    volume.vtkImageData = createInternalVTKRepresentation(volume)
   })
 
   cache.putVolumeLoadObject(volumeId, volumeLoadObject)

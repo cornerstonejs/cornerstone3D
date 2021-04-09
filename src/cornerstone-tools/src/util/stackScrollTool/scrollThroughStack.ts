@@ -27,7 +27,6 @@ export default function scrollThroughStack(
   const camera = viewport.getCamera()
   const { focalPoint, viewPlaneNormal, position } = camera
 
-  // Todo: shall we define a camera type? slabCamera for volume and default for stack?
   if (viewport.type === VIEWPORT_TYPE.STACK) {
     // stack viewport
     const currentImageIdIndex = viewport.getCurrentImageIdIndex()

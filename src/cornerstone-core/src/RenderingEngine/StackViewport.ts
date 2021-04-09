@@ -271,8 +271,6 @@ class StackViewport extends Viewport implements IViewport {
 
     const imageData = vtkImageData.newInstance()
 
-    // TODO: If we are going to actually set the direction / origin of each slice when
-    // we render it, we also need to make sure we move the camera so it can see the slice
     imageData.setDimensions(...dimensions)
     imageData.setSpacing(...spacing)
     imageData.setDirection(direction)
@@ -293,7 +291,7 @@ class StackViewport extends Viewport implements IViewport {
     this.stackActorVOI = Object.assign({}, range)
   }
 
-  private _checkIfSameImageData(image, imageData) {
+  private _checkVTKImageDataMatchesCornerstoneImage(image, imageData) {
     if (!imageData) {
       return false
     }
@@ -302,19 +300,16 @@ class StackViewport extends Viewport implements IViewport {
     const [xVoxels, yVoxels, zVoxels] = imageData.getDimensions()
 
     // using spacing and size only for now
-    if (
-      xSpacing !== image.rowPixelSpacing ||
-      ySpacing !== image.columnPixelSpacing ||
-      xVoxels !== image.rows ||
-      yVoxels !== image.columns
-    ) {
-      return false
-    }
-    return true
+    return (
+      xSpacing === image.rowPixelSpacing ||
+      ySpacing === image.columnPixelSpacing ||
+      xVoxels === image.rows ||
+      yVoxels === image.columns
+    )
   }
 
   // Todo: rename since it may do more than set scalars
-  private _setScalarsFromPixelData(image) {
+  private _updateVTKImageDataFromCornerstoneImage(image) {
     const {
       origin,
       direction,
@@ -372,17 +367,17 @@ class StackViewport extends Viewport implements IViewport {
     const image = await loadAndCacheImage(imageId, {})
 
     // 2. Check if we can reuse the existing vtkImageData object, if one is present.
-    const sameImageData = this._checkIfSameImageData(image, this._imageData)
+    const sameImageData = this._checkVTKImageDataMatchesCornerstoneImage(
+      image,
+      this._imageData
+    )
 
     if (sameImageData) {
       // 3a. If we can reuse it, replace the scalar data under the hood
-      this._setScalarsFromPixelData(image)
+      this._updateVTKImageDataFromCornerstoneImage(image)
 
       // Adjusting the camera based on slice axis. this is required if stack
       // contains various image orientations (axial ct, sagittal xray)
-      // Todo: the following setCamera is irrelevant almost: i.e., a stack that
-      // has the same size and same spacing, but the view is different
-      //  (sagittal vs coronal) really?
       const direction = this._imageData.getDirection()
       const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
@@ -412,7 +407,7 @@ class StackViewport extends Viewport implements IViewport {
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
     // Image's pixel data
-    this._setScalarsFromPixelData(image)
+    this._updateVTKImageDataFromCornerstoneImage(image)
 
     // Create a VTK Volume actor to display the vtkImageData object
     const stackActor = this.createActorMapper(this._imageData)

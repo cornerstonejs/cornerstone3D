@@ -18,7 +18,7 @@ export class ImageVolume {
       suvbwToSuvbsa?: number
     }
   }
-  sizeInBytes: number
+  sizeInBytes?: number // Seems weird to pass this in? Why not grab it from scalarData.byteLength
   spacing: Array<number>
   vtkImageData?: any
   vtkOpenGLTexture: any // No good way of referencing vtk classes as they aren't classes.

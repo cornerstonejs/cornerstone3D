@@ -12,7 +12,6 @@ interface createVolumeActorInterface {
 async function createVolumeActor(props: createVolumeActorInterface) {
   const { volumeUID, callback, blendMode } = props
 
-  // todo: use getVolume?
   const imageVolume = await loadVolume(volumeUID)
 
   if (!imageVolume) {

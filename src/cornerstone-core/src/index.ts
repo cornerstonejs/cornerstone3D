@@ -19,7 +19,7 @@ import {
   registerImageLoader,
   registerUnknownImageLoader,
 } from './imageLoader'
-import { registerWebImageLoader } from '../../cornerstone-streaming-image-volume-loader/registerWebImageLoader'
+import { registerWebImageLoader } from '../../cornerstone-streaming-image-volume-loader/src/registerWebImageLoader'
 import requestPoolManager from './requestPool/requestPoolManager'
 import {
   createAndCacheVolume,

@@ -35,7 +35,7 @@ type ScalingParameters = {
   suvbsa?: number
 }
 
-// James wants another layer in between ImageVolume and SliceStreamingImageVolume
+// TODO James wants another layer in between ImageVolume and SliceStreamingImageVolume
 // which adds loaded/loading as an interface?
 
 type PetScaling = {
@@ -320,6 +320,7 @@ export default class StreamingImageVolume extends ImageVolume {
         scalingParameters.suvbw = suvFactor.suvbw
       }
 
+      // Note: These options are specific to the WADO Image Loader
       const options = {
         targetBuffer: {
           arrayBuffer,
@@ -332,9 +333,9 @@ export default class StreamingImageVolume extends ImageVolume {
         },
       }
 
-      const requestFn = () => {
-        // Use loadImage because we are skipping the Cornerstone Image cache
-        // when we load directly into the Volume cache
+      // Use loadImage because we are skipping the Cornerstone Image cache
+      // when we load directly into the Volume cache
+      function sendRequest(imageId, imageIdIndex, options) {
         return loadImage(imageId, options).then(
           () => {
             successCallback(this, imageIdIndex, imageId)
@@ -353,7 +354,7 @@ export default class StreamingImageVolume extends ImageVolume {
       const addToBeginning = false
 
       requestPoolManager.addRequest(
-        requestFn,
+        sendRequest.bind(this, imageId, imageIdIndex, options),
         requestType,
         priority,
         additionalDetails,
