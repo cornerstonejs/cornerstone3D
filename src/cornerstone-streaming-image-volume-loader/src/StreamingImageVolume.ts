@@ -409,8 +409,12 @@ export default class StreamingImageVolume extends ImageVolume {
     // to get the bytes per image
     const bytesPerImage = byteLength / numImages
 
-    // TODO: Need to get this somehow from the volume
-    //const pixelsPerImage = this.dimensions[0] * this.dimensions[1]
+    // TODO: There is probably a better way to get this information
+    const numVoxels =
+      this.dimensions[0] * this.dimensions[1] * this.dimensions[2]
+    const numComponents = this.scalarData.length / numVoxels
+    const pixelsPerImage =
+      this.dimensions[0] * this.dimensions[1] * numComponents
 
     // Grab the buffer and it's type
     const volumeBuffer = this.scalarData.buffer
@@ -426,10 +430,15 @@ export default class StreamingImageVolume extends ImageVolume {
       // 3. Create a new TypedArray of the same type for the new
       //    Image that will be created
       const imageScalarData = new TypedArray(pixelsPerImage)
+      const volumeBufferView = new TypedArray(
+        volumeBuffer,
+        byteOffset,
+        pixelsPerImage
+      )
 
       // 4. Use e.g. TypedArray.set() to copy the data from the larger
-      //    buffer to the smaller one
-      imageScalarData.set(volumeBuffer, byteOffset)
+      //    buffer's view into the smaller one
+      imageScalarData.set(volumeBufferView)
 
       // 5. TODO: Create an Image Object from imageScalarData and put it into the Image
       // cache...

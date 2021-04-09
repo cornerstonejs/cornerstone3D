@@ -1,14 +1,6 @@
-import Events from '../enums/events'
 import VIEWPORT_TYPE from '../constants/viewportType'
 import { IViewport, ICamera } from '../types'
-import _cloneDeep from 'lodash.clonedeep'
-import renderingEngineCache from './renderingEngineCache'
-import RenderingEngine from './RenderingEngine'
 import Scene from './Scene'
-import triggerEvent from '../utilities/triggerEvent'
-import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
-import { vec3 } from 'gl-matrix'
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { ViewportInput, Point2, Point3 } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import Viewport, { ActorEntry } from './Viewport'
@@ -89,7 +81,7 @@ class VolumeViewport extends Viewport implements IViewport {
   /**
    * @method _setVolumeActors Attaches the volume actors to the viewport.
    *
-   * @param {Array<VolumeActorEntry>} volumeActorEntries The volume actors to add the viewport.
+   * @param {Array<ActorEntry>} volumeActorEntries The volume actors to add the viewport.
    *
    * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */

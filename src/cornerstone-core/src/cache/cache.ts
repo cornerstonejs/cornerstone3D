@@ -160,7 +160,9 @@ class Cache implements IImageCache {
         break
       }
 
-      this._decacheImage(imageId)
+      this.removeImageLoadObject(imageId)
+
+      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
     }
 
     const volumeIterator = this._volumeCache.keys()
@@ -173,7 +175,9 @@ class Cache implements IImageCache {
         break
       }
 
-      this._decacheVolume(volumeId)
+      this.removeVolumeLoadObject(volumeId)
+
+      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_VOLUME_REMOVED, { volumeId })
     }
   }
 

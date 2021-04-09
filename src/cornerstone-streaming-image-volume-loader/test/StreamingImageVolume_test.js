@@ -108,25 +108,35 @@ describe('StreamingImageVolume', function () {
       done()
     }
 
-    //volume.load(callback);
+    volume.load(callback)
   })
 
   it('decache: properly decaches the Volume into a set of Images', async function () {
-    const volume = await cornerstone.getVolume('fakeVolumeLoader:VOLUME')
-
+    const volumeId = 'fakeVolumeLoader:VOLUME'
+    const volume = cornerstone.getVolume(volumeId)
     const completelyRemove = false
 
-    //volume.load();
+    volume.load()
 
-    //volume.decache(completelyRemove);
+    volume.decache(completelyRemove)
+
+    // Gets the volume
+    const volAfterDecache = cornerstone.getVolume(volumeId)
+    expect(volAfterDecache).not.toBeDefined()
   })
 
   it('decache: completely removes the Volume from the cache', async function () {
-    const volume = await cornerstone.getVolume('fakeVolumeLoader:VOLUME')
+    const volumeId = 'fakeVolumeLoader:VOLUME'
+    const volume = cornerstone.getVolume(volumeId)
 
     const completelyRemove = true
-    //volume.load();
 
-    //volume.decache(completelyRemove);
+    volume.load()
+
+    volume.decache(completelyRemove)
+
+    // Gets the volume
+    const volAfterDecache = cornerstone.getVolume(volumeId)
+    expect(volAfterDecache).not.toBeDefined()
   })
 })

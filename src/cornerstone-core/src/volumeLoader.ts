@@ -6,15 +6,14 @@ import triggerEvent from './utilities/triggerEvent'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 
-function createInternalVTKRepresentation(volume) {
-  const {
-    dimensions,
-    metadata,
-    spacing,
-    direction,
-    origin,
-    scalarData,
-  } = volume
+function createInternalVTKRepresentation({
+  dimensions,
+  metadata,
+  spacing,
+  direction,
+  origin,
+  scalarData,
+}) {
   const { PhotometricInterpretation } = metadata
 
   let numComponents = 1
