@@ -32,8 +32,6 @@ function setupLoaders() {
   const volumeLoader = (volumeId) => {
     const dimensions = [100, 100, 5]
 
-    const uid = 'VOLUME1'
-
     const volumeMetadata = {
       BitsAllocated: 8,
       PixelRepresentation: 0,
@@ -51,7 +49,7 @@ function setupLoaders() {
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
       {
-        uid,
+        uid: volumeId, // TODO: should we differentiate between volumeId and a volume's UID?
         metadata: volumeMetadata,
         dimensions: dimensions,
         spacing: [1, 1, 1],
@@ -109,6 +107,9 @@ describe('StreamingImageVolume', function () {
     }
 
     volume.load(callback)
+
+    // todo: create some synthetic image data and actually check to make sure
+    // the pixel values are in the right places in the volume
   })
 
   it('decache: properly decaches the Volume into a set of Images', async function () {
@@ -123,6 +124,12 @@ describe('StreamingImageVolume', function () {
     // Gets the volume
     const volAfterDecache = cornerstone.getVolume(volumeId)
     expect(volAfterDecache).not.toBeDefined()
+
+    this.imageIds.forEach((imageId) => {
+      const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
+
+      expect(cachedImage).toBeDefined()
+    })
   })
 
   it('decache: completely removes the Volume from the cache', async function () {
@@ -138,5 +145,9 @@ describe('StreamingImageVolume', function () {
     // Gets the volume
     const volAfterDecache = cornerstone.getVolume(volumeId)
     expect(volAfterDecache).not.toBeDefined()
+
+    const cachedImage0 = cornerstone.cache.getImageLoadObject(this.imageIds[0])
+
+    expect(cachedImage0).not.toBeDefined()
   })
 })

@@ -443,6 +443,21 @@ export default class StreamingImageVolume extends ImageVolume {
       // 5. TODO: Create an Image Object from imageScalarData and put it into the Image
       // cache...
 
+      const imageId = this.imageIds[imageIdIndex]
+      const image = {
+        imageId,
+        rows: this.dimensions[0],
+        columns: this.dimensions[1],
+        sizeInBytes: imageScalarData.byteLength,
+        getPixelData: () => {
+          return imageScalarData
+        },
+      }
+
+      cache.putImageLoadObject(imageId, {
+        promise: Promise.resolve(image),
+      })
+
       // 6. If we know we won't be able to add another Image to the cache
       //    without breaching the limit, stop here.
       if (bytesRemaining <= bytesPerImage) {
