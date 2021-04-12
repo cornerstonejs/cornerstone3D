@@ -15,7 +15,10 @@ const providers = []
  * @returns {void}
  * @memberof Metadata
  */
-export function addProvider(provider, priority = 0) {
+export function addProvider(
+  provider: (type: string, imageId: string) => { any },
+  priority = 0
+): void {
   let i
 
   // Find the right spot to insert this provider based on priority
@@ -40,13 +43,28 @@ export function addProvider(provider, priority = 0) {
  * @returns {void}
  * @memberof Metadata
  */
-export function removeProvider(provider) {
+export function removeProvider(
+  provider: (type: string, imageId: string) => { any }
+): void {
   for (let i = 0; i < providers.length; i++) {
     if (providers[i].provider === provider) {
       providers.splice(i, 1)
 
       break
     }
+  }
+}
+
+/**
+ * Removes all providers
+ *
+ *
+ * @returns {void}
+ * @memberof Metadata
+ */
+export function removeAllProviders(): void {
+  while (providers.length > 0) {
+    providers.pop()
   }
 }
 
@@ -60,7 +78,7 @@ export function removeProvider(provider) {
  * @returns {*} The metadata retrieved from the metadata store
  * @memberof Metadata
  */
-function getMetaData(type, imageId) {
+function getMetaData(type: string, imageId: string): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
     const result = providers[i].provider(type, imageId)
@@ -74,6 +92,7 @@ function getMetaData(type, imageId) {
 const metaData = {
   addProvider,
   removeProvider,
+  removeAllProviders,
   get: getMetaData,
 }
 
