@@ -46,13 +46,7 @@ export default class WindowLevelTool extends BaseTool {
     if (volumeUID) {
       volumeActor = scene.getVolumeActor(volumeUID)
     } else {
-      let volumeActors
-      if (scene) {
-        // Default to first volumeActor
-        volumeActors = scene.getActors()
-      } else {
-        volumeActors = viewport.getActors()
-      }
+      const volumeActors = viewport.getActors()
       if (volumeActors && volumeActors.length) {
         volumeActor = volumeActors[0].volumeActor
       }

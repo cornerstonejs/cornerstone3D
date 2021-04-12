@@ -69,14 +69,14 @@ export default class PetThresholdTool extends BaseTool {
 
     rgbTransferFunction.setMappingRange(lower, upper)
 
-    scene.render()
-
     const eventDetail = {
       volumeUID,
       sceneUID,
       range: { lower, upper },
     }
 
-    triggerEvent(eventTarget, EVENTS.VOI_MODIFIED, eventDetail)
+    triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
+
+    scene.render()
   }
 }

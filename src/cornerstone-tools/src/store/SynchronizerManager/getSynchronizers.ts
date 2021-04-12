@@ -8,6 +8,12 @@ function getSynchronizers(
 ): Array<Synchronizer> {
   const synchronizersFilteredByUIDs = []
 
+  if (!renderingEngineUID && !sceneUID && !viewportUID) {
+    throw new Error(
+      'At least one of renderingEngineUID or sceneUID or viewportUID should be given'
+    )
+  }
+
   for (let i = 0; i < state.synchronizers.length; i++) {
     const synchronizer = state.synchronizers[i]
     const notDisabled = !synchronizer.isDisabled()
