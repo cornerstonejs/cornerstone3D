@@ -6,13 +6,13 @@ import ERROR_CODES from '../enums/errorCodes'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
 
-interface ImageLoadObject {
+export interface ImageLoadObject {
   promise: any // Promise<Image>
   cancel?: () => void
   decache?: () => void
 }
 
-interface VolumeLoadObject {
+export interface VolumeLoadObject {
   promise: any // Promise<Volume>
   cancel?: () => void
   decache?: () => void

@@ -1,7 +1,12 @@
-import cache from './cache/cache'
+import cache, { ImageLoadObject } from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
+import { IImage, ImageLoaderFn } from './types'
+
+interface ImageLoaderOptions {
+  [key: string]: any
+}
 
 /**
  * This module deals with ImageLoaders, loading images and caching images
@@ -24,9 +29,14 @@ let unknownImageLoader
  * @returns {ImageLoadObject} An Object which can be used to act after an image is loaded or loading fails
  * @memberof ImageLoader
  */
-function loadImageFromImageLoader(imageId, options) {
+function loadImageFromImageLoader(
+  imageId: string,
+  options: ImageLoaderOptions
+): ImageLoadObject {
+  // Extract the image loader scheme: wadors:https://image1 => wadors
   const colonIndex = imageId.indexOf(':')
   const scheme = imageId.substring(0, colonIndex)
+
   const loader = imageLoaders[scheme]
 
   if (loader === undefined || loader === null) {
@@ -37,6 +47,7 @@ function loadImageFromImageLoader(imageId, options) {
     throw new Error('loadImageFromImageLoader: no image loader for imageId')
   }
 
+  // Load using the registered loader
   const imageLoadObject = loader(imageId, options)
 
   // Broadcast an image loaded event once the image is loaded
@@ -67,7 +78,10 @@ function loadImageFromImageLoader(imageId, options) {
  * @returns {ImageLoadObject} An Object which can be used to act after an image is loaded or loading fails
  * @memberof ImageLoader
  */
-export function loadImage(imageId, options) {
+export function loadImage(
+  imageId: string,
+  options: ImageLoaderOptions
+): Promise<IImage> {
   if (imageId === undefined) {
     throw new Error('loadImage: parameter imageId must not be undefined')
   }
@@ -93,7 +107,10 @@ export function loadImage(imageId, options) {
  * @returns {ImageLoadObject} Image Loader Object
  * @memberof ImageLoader
  */
-export function loadAndCacheImage(imageId, options) {
+export function loadAndCacheImage(
+  imageId: string,
+  options: ImageLoaderOptions
+): Promise<IImage> {
   if (imageId === undefined) {
     throw new Error(
       'loadAndCacheImage: parameter imageId must not be undefined'
@@ -121,7 +138,10 @@ export function loadAndCacheImage(imageId, options) {
  * @returns {void}
  * @memberof ImageLoader
  */
-export function registerImageLoader(scheme, imageLoader) {
+export function registerImageLoader(
+  scheme: string,
+  imageLoader: ImageLoaderFn
+): void {
   imageLoaders[scheme] = imageLoader
 }
 
@@ -133,7 +153,9 @@ export function registerImageLoader(scheme, imageLoader) {
  * @returns {Function|Undefined} The previous Unknown Image Loader
  * @memberof ImageLoader
  */
-export function registerUnknownImageLoader(imageLoader) {
+export function registerUnknownImageLoader(
+  imageLoader: ImageLoaderFn
+): ImageLoaderFn {
   const oldImageLoader = unknownImageLoader
 
   unknownImageLoader = imageLoader
