@@ -18,6 +18,7 @@ import {
   loadAndCacheImage,
   registerImageLoader,
   registerUnknownImageLoader,
+  unregisterAllImageLoaders,
 } from './imageLoader'
 import { registerWebImageLoader } from '../../cornerstone-streaming-image-volume-loader/src/registerWebImageLoader'
 import requestPoolManager from './requestPool/requestPoolManager'
@@ -64,6 +65,7 @@ export {
   loadAndCacheImage,
   registerImageLoader,
   registerUnknownImageLoader,
+  unregisterAllImageLoaders,
   registerWebImageLoader,
   //
   getVolume,

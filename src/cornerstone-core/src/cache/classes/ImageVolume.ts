@@ -1,5 +1,5 @@
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses'
-import { IImageVolume, Metadata, Point3 } from '../../types'
+import { IVolume, Metadata, Point3 } from '../../types'
 
 export class ImageVolume {
   readonly uid: string
@@ -23,7 +23,7 @@ export class ImageVolume {
   vtkImageData?: any
   vtkOpenGLTexture: any // No good way of referencing vtk classes as they aren't classes.
 
-  constructor(props: IImageVolume) {
+  constructor(props: IVolume) {
     this.uid = props.uid
     this.metadata = props.metadata
     this.dimensions = props.dimensions

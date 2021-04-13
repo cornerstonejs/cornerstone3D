@@ -11,7 +11,7 @@ import RenderingEngine from './RenderingEngine'
  *
  * const renderingEngine = new RenderingEngine('my-engine');
  *
- * // gettting reference to rendering engine later...
+ * // getting reference to rendering engine later...
  * const renderingEngine = getRenderingEngine('my-engine');
  * ```
  *

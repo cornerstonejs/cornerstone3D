@@ -10,6 +10,7 @@ interface IVolume {
   direction: Array<number>
   vtkImageData: Record<string, unknown>
   scaling?: any
+  sizeInBytes?: number
   scalarData: Float32Array | Uint8Array
 }
 

@@ -17,7 +17,7 @@ const renderingEngineCache = {
    *
    * @param {RenderingEngine} The `RenderingEngine` to add.
    */
-  set: (re: RenderingEngine) => {
+  set: (re: RenderingEngine): void => {
     const uid = re.uid
 
     cache[uid] = re

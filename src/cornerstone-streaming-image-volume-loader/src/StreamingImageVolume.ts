@@ -14,6 +14,7 @@ import { calculateSUVScalingFactors } from 'calculate-suv'
 import getInterleavedFrames from './helpers/getInterleavedFrames'
 import autoLoad from './helpers/autoLoad'
 import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
+import { IImage } from 'src/cornerstone-core/src/types'
 
 const { IVolume, IStreamingVolume } = Types
 
@@ -423,6 +424,24 @@ export default class StreamingImageVolume extends ImageVolume {
     // (not sure if this actually works, TypeScript keeps complaining)
     const TypedArray = this.scalarData.constructor
 
+    const { PhotometricInterpretation, voiLut } = this.metadata
+
+    let windowCenter = []
+    let windowWidth = []
+
+    if (voiLut && voiLut.length) {
+      windowCenter = voiLut.map((voi) => {
+        return voi.windowCenter
+      })
+
+      windowWidth = voiLut.map((voi) => {
+        return voi.windowWidth
+      })
+    }
+
+    const pointData = this.vtkImageData.getPointData()
+    const color = pointData.getNumberOfComponents() > 1 ? true : false
+
     for (let imageIdIndex = 0; imageIdIndex < numImages; imageIdIndex++) {
       bytesRemaining = bytesRemaining - bytesPerImage
       // 2. Given the index of the image and frame length in bytes,
@@ -444,9 +463,11 @@ export default class StreamingImageVolume extends ImageVolume {
 
       // 5. TODO: Create an Image Object from imageScalarData and put it into the Image
       // cache...
-
       const imageId = this.imageIds[imageIdIndex]
-      const image = {
+      const modalityLutModule = metaData.get('modalityLutModule', imageId) || {}
+      const minMax = this.getMinMax(imageScalarData)
+
+      const image: IImage = {
         imageId,
         rows: this.dimensions[0],
         columns: this.dimensions[1],
@@ -454,8 +475,28 @@ export default class StreamingImageVolume extends ImageVolume {
         getPixelData: () => {
           return imageScalarData
         },
+        minPixelValue: minMax.min,
+        maxPixelValue: minMax.max,
+        slope: modalityLutModule.rescaleSlope
+          ? modalityLutModule.rescaleSlope
+          : 1,
+        intercept: modalityLutModule.rescaleIntercept
+          ? modalityLutModule.rescaleIntercept
+          : 0,
+        windowCenter,
+        windowWidth,
+        getCanvas: undefined, // todo: which canvas?
+        height: this.dimensions[0],
+        width: this.dimensions[1],
+        color,
+        rgba: undefined, // todo: how
+        columnPixelSpacing: this.spacing[0],
+        rowPixelSpacing: this.spacing[1],
+        invert: PhotometricInterpretation === 'MONOCHROME1',
       }
 
+      // todo: should we await here? since we are adding images to the imageCache
+      // and cache size doesn't get updated unless promise is resolved into the image
       cache.putImageLoadObject(imageId, {
         promise: Promise.resolve(image),
       })
@@ -471,11 +512,40 @@ export default class StreamingImageVolume extends ImageVolume {
     this._removeFromCache()
   }
 
-  public decache(completelyRemove = false) {
+  public decache(completelyRemove = false): void {
     if (completelyRemove) {
       this._removeFromCache()
     } else {
       this._convertToImages()
+    }
+  }
+
+  /**
+   * Calculate the minimum and maximum values in an Array
+   *
+   * @param {Number[]} storedPixelData
+   * @return {{min: Number, max: Number}}
+   */
+  private getMinMax(storedPixelData) {
+    // we always calculate the min max values since they are not always
+    // present in DICOM and we don't want to trust them anyway as cornerstone
+    // depends on us providing reliable values for these
+    let min = storedPixelData[0]
+
+    let max = storedPixelData[0]
+
+    let storedPixel
+    const numPixels = storedPixelData.length
+
+    for (let index = 1; index < numPixels; index++) {
+      storedPixel = storedPixelData[index]
+      min = Math.min(min, storedPixel)
+      max = Math.max(max, storedPixel)
+    }
+
+    return {
+      min,
+      max,
     }
   }
 }

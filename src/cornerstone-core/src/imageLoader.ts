@@ -18,7 +18,7 @@ const imageLoaders = {}
 let unknownImageLoader
 
 /**
- * Load an image using a registered Cornerstone Image Loader.
+ * Loads an image using a registered Cornerstone Image Loader.
  *
  * The image loader that is used will be
  * determined by the image loader scheme matching against the imageId.
@@ -161,4 +161,18 @@ export function registerUnknownImageLoader(
   unknownImageLoader = imageLoader
 
   return oldImageLoader
+}
+
+/**
+ * Removes all registered and unknown image loaders
+ *
+ *
+ * @returns {void}
+ * @memberof Metadata
+ */
+export function unregisterAllImageLoaders(): void {
+  Object.keys(imageLoaders).forEach(
+    (imageLoader) => delete imageLoaders[imageLoader]
+  )
+  unknownImageLoader = undefined
 }

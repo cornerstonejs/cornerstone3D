@@ -1,6 +1,7 @@
 import * as cornerstoneStreamingImageVolumeLoader from '../src'
 import * as cornerstone from '@cornerstone'
 
+const { cache } = cornerstone
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
@@ -20,6 +21,7 @@ function setupLoaders() {
       rows: 100,
       columns: 100,
       getPixelData: () => pixelData,
+      sizeInBytes: 10000, // 100 * 100 * 1
     }
 
     return {
@@ -131,6 +133,7 @@ describe('StreamingImageVolume', function () {
     // TODO: this is showing up as zero, probably because the requests
     // are immediately processed so the pool is empty. Not sure
     // how to avoid that.
+
     // let numImagesInPool = pool['prefetch'].length
     // expect(numImagesInPool).toEqual(5)
     // expect(volume.loadStatus.loading).toEqual(true)
@@ -153,17 +156,30 @@ describe('StreamingImageVolume', function () {
 
     volume.load()
 
+    const cacheSizeBeforeDecache = cache.getCacheSize()
+
     volume.decache(completelyRemove)
+
+    const cacheSizeAfterDecache = cache.getCacheSize()
 
     // Gets the volume
     const volAfterDecache = cornerstone.getVolume(volumeId)
     expect(volAfterDecache).not.toBeDefined()
 
-    this.imageIds.forEach((imageId) => {
+    // Todo: the following doesn't work since we are not awaiting the putImageLoadObject
+    // expect(cacheSizeAfterDecache - cacheSizeBeforeDecache).toBe(50000)
+
+    for (let imageId of this.imageIds) {
       const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
 
       expect(cachedImage).toBeDefined()
-    })
+
+      const image = await cachedImage.promise
+      expect(image.columns).toBe(100)
+      expect(image.rows).toBe(100)
+      expect(image.sizeInBytes).toBe(10000)
+      expect(image.invert).toBe(true)
+    }
   })
 
   it('decache: completely removes the Volume from the cache', async function () {
@@ -174,11 +190,17 @@ describe('StreamingImageVolume', function () {
 
     volume.load()
 
+    const cacheSizeBeforePurge = cache.getCacheSize()
+    expect(cacheSizeBeforePurge).toBe(50000)
+
     volume.decache(completelyRemove)
 
     // Gets the volume
     const volAfterDecache = cornerstone.getVolume(volumeId)
     expect(volAfterDecache).not.toBeDefined()
+
+    const cacheSizeAfterPurge = cache.getCacheSize()
+    expect(cacheSizeAfterPurge).toBe(0)
 
     const cachedImage0 = cornerstone.cache.getImageLoadObject(this.imageIds[0])
 
