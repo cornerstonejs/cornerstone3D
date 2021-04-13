@@ -198,8 +198,8 @@ function loadImage(uri, imageId) {
  * registerImageLoader(cornerstone);
  * ```
  */
-function registerWebImageLoader(cornerstone: IRegisterImageLoader): void {
-  cornerstone.registerImageLoader('web', _loadImageIntoBuffer)
+function registerWebImageLoader(cs): void {
+  cs.registerImageLoader('web', _loadImageIntoBuffer)
 }
 
 /**

@@ -27,7 +27,7 @@ export default function getTargetVolume(
   }
   const numVolumeActors = volumeActors.length
 
-  const imageVolumes = volumeActors.map((va) => cache.getImageVolume(va.uid))
+  const imageVolumes = volumeActors.map((va) => cache.getVolume(va.uid))
 
   if (targetVolumeUID) {
     // If a volumeUID is defined, set that volume as the target

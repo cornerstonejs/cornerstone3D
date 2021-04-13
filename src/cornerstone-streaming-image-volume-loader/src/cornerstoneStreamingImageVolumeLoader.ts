@@ -3,6 +3,7 @@ import {
   registerUnknownVolumeLoader,
   cache,
   Utilities,
+  ERROR_CODES,
 } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
@@ -74,7 +75,9 @@ function cornerstoneStreamingImageVolumeLoader(
   const sizeInBytes =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
-  cache.checkCacheSizeCanSupportVolume(sizeInBytes)
+  if (!cache.isCachable(sizeInBytes)) {
+    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+  }
   // if so, start erasing volatile data so you can allocate
 
   let numComponents = 1

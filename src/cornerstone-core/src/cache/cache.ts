@@ -79,13 +79,15 @@ interface CachedVolume {
 class Cache implements ICache {
   private readonly _imageCache: Map<string, CachedImage> // volatile space
   private readonly _volumeCache: Map<string, CachedVolume> // non-volatile space
-  private _cacheSize: number
+  private _imageCacheSize: number
+  private _volumeCacheSize: number
   private _maxCacheSize: number
 
   constructor() {
     this._imageCache = new Map()
     this._volumeCache = new Map()
-    this._cacheSize = 0
+    this._imageCacheSize = 0
+    this._volumeCacheSize = 0
     this._maxCacheSize = MAX_CACHE_SIZE_1GB // Default 1GB
   }
   getImageVolume: (uid: string) => any
@@ -110,28 +112,31 @@ class Cache implements ICache {
     }
 
     this._maxCacheSize = newMaxCacheSize
-
-    if (this._maxCacheSize > this._cacheSize) {
-      const errorMessage = `New max cacheSize ${this._maxCacheSize} larger than current cacheSize ${this._cacheSize}. You should set the maxCacheSize before adding data to the cache.`
+    const cacheSize = this.getCacheSize()
+    if (this._maxCacheSize > cacheSize) {
+      const errorMessage = `New max cacheSize ${this._maxCacheSize} larger than current cacheSize ${cacheSize}. You should set the maxCacheSize before adding data to the cache.`
       throw new Error(errorMessage)
     }
   }
 
   /**
-   * Checks if there is enough space in the cache for the volume
+   * Checks if there is enough space in the cache for requested byte size
    *
+   * It throws error, if the sum of volatile (image) cache and unallocated cache
+   * is less than the requested byteLength
    *
-   * @param {number} byteLength byte length of the volume
+   * @param {number} byteLength byte length of requested byte size
    *
-   * @returns {void}
+   * @returns {boolean}
    * @memberof Cache
    */
-  // should check if available cache space supports the volume
-  // if it does, clean it up
-  public checkCacheSizeCanSupportVolume = (byteLength: number) => {
-    if (this.getCacheSize() + byteLength > this.getMaxCacheSize()) {
-      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+  public isCachable = (byteLength: number) => {
+    const unallocatedSpace = this.getMaxCacheSize() - this.getCacheSize()
+
+    if (unallocatedSpace + this._imageCacheSize < byteLength) {
+      return false
     }
+    return true
   }
 
   /**
@@ -148,7 +153,8 @@ class Cache implements ICache {
    * @returns {number} current size of the cache
    * @memberof Cache
    */
-  public getCacheSize = (): number => this._cacheSize
+  public getCacheSize = (): number =>
+    this._imageCacheSize + this._volumeCacheSize
 
   /**
    * Deletes the imageId from the image cache
@@ -297,6 +303,11 @@ class Cache implements ICache {
 
   /**
    * Purges the cache if size exceeds maximum
+   *
+   * It sorts the volatile (image) cache based on the most recent used images
+   * and purge the oldest ones until the cache size becomes less thatn the maximum
+   * allowed cache size.
+   *
    * @returns {void}
    * @memberof Cache
    */
@@ -329,7 +340,7 @@ class Cache implements ICache {
 
       this.removeImageLoadObject(imageId)
 
-      // triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
+      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
     }
 
     //const cacheInfo = getCacheInfo();
@@ -401,9 +412,6 @@ class Cache implements ICache {
           return
         }
 
-        cachedImage.loaded = true
-        cachedImage.image = image
-
         if (image.sizeInBytes === undefined) {
           throw new Error(
             'putImageLoadObject: image.sizeInBytes must not be undefined'
@@ -415,8 +423,14 @@ class Cache implements ICache {
           )
         }
 
+        if (!this.isCachable(image.sizeInBytes)) {
+          throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+        }
+
+        cachedImage.loaded = true
+        cachedImage.image = image
         cachedImage.sizeInBytes = image.sizeInBytes
-        this._incrementCacheSize(cachedImage.sizeInBytes)
+        this._incrementImageCacheSize(cachedImage.sizeInBytes)
 
         const eventDetails = {
           image: cachedImage,
@@ -426,6 +440,7 @@ class Cache implements ICache {
 
         cachedImage.sharedCacheKey = image.sharedCacheKey
 
+        // todo: we are purging after we add to cache, should we change the order?
         this._purgeCacheIfNecessary()
       },
       (error) => {
@@ -518,9 +533,6 @@ class Cache implements ICache {
           return
         }
 
-        cachedVolume.loaded = true
-        cachedVolume.volume = volume
-
         if (volume.sizeInBytes === undefined) {
           throw new Error(
             'putVolumeLoadObject: volume.sizeInBytes must not be undefined'
@@ -532,8 +544,14 @@ class Cache implements ICache {
           )
         }
 
+        if (!this.isCachable(volume.sizeInBytes)) {
+          throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+        }
+
+        cachedVolume.loaded = true
+        cachedVolume.volume = volume
         cachedVolume.sizeInBytes = volume.sizeInBytes
-        this._incrementCacheSize(cachedVolume.sizeInBytes)
+        this._incrementVolumeCacheSize(cachedVolume.sizeInBytes)
 
         const eventDetails = {
           volume: cachedVolume,
@@ -542,6 +560,7 @@ class Cache implements ICache {
 
         triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_VOLUME_ADDED, eventDetails)
 
+        // todo: we are purging after we add to cache, should we change the order?
         this._purgeCacheIfNecessary()
       },
       (error) => {
@@ -618,7 +637,7 @@ class Cache implements ICache {
       )
     }
 
-    this._incrementCacheSize(-cachedImage.sizeInBytes)
+    this._incrementImageCacheSize(-cachedImage.sizeInBytes)
 
     const eventDetails = {
       image: cachedImage,
@@ -650,7 +669,7 @@ class Cache implements ICache {
       )
     }
 
-    this._incrementCacheSize(-cachedVolume.sizeInBytes)
+    this._incrementVolumeCacheSize(-cachedVolume.sizeInBytes)
 
     const eventDetails = {
       volume: cachedVolume,
@@ -662,14 +681,25 @@ class Cache implements ICache {
   }
 
   /**
+   * Increases the image cache size with the provided increment
+   *
+   * @param {number} increment bytes length
+   * @returns {void}
+   * @memberof Cache
+   */
+  private _incrementImageCacheSize = (increment: number) => {
+    this._imageCacheSize += increment
+  }
+
+  /**
    * Increases the cache size with the provided increment
    *
    * @param {number} increment bytes length
    * @returns {void}
    * @memberof Cache
    */
-  private _incrementCacheSize = (increment: number) => {
-    this._cacheSize += increment
+  private _incrementVolumeCacheSize = (increment: number) => {
+    this._volumeCacheSize += increment
   }
 }
 

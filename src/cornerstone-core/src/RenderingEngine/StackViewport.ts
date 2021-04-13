@@ -5,6 +5,9 @@ import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 import metaData from '../metaData'
 import Viewport from './Viewport'
 import { vec3 } from 'gl-matrix'
+import eventTarget from '../eventTarget'
+import EVENTS from '../enums/events'
+import { triggerEvent } from '../utilities'
 import {
   Point2,
   Point3,
@@ -12,11 +15,21 @@ import {
   IViewport,
   VOIRange,
   ICamera,
+  IImage,
 } from '../types'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
 
+interface ImageDataMetaData {
+  bitsAllocated: number
+  numComps: number
+  origin: Array<number>
+  direction: Array<number>
+  dimensions: Array<number>
+  spacing: Array<number>
+  numVoxels: number
+}
 /**
  * An object representing a single viewport, which is a camera
  * looking into a scene, and an associated target output `canvas`.
@@ -115,7 +128,7 @@ class StackViewport extends Viewport implements IViewport {
     return actor
   }
 
-  private buildMetadata(imageId) {
+  private buildMetadata(imageId: string) {
     const {
       pixelRepresentation,
       bitsAllocated,
@@ -174,7 +187,7 @@ class StackViewport extends Viewport implements IViewport {
     return numberOfComponents
   }
 
-  private _getImageDataMetadata(image) {
+  private _getImageDataMetadata(image: IImage): ImageDataMetaData {
     // TODO: Creating a single image should probably not require a metadata provider.
     // We should define the minimum we need to display an image and it should live on
     // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
@@ -216,11 +229,8 @@ class StackViewport extends Viewport implements IViewport {
   }
 
   private _getCameraOrientation(
-    imageDataDirection
+    imageDataDirection: Array<number>
   ): { viewPlaneNormal: Point3; viewUp: Point3 } {
-    // TODO: Not sure why I had to add .map((x) => -x) to this,
-    // but otherwise it did not match the volumeviewport display for the
-    // same dataset
     const viewPlaneNormal = imageDataDirection.slice(6, 9).map((x) => -x)
 
     const viewUp = imageDataDirection.slice(3, 6).map((x) => -x)
@@ -234,7 +244,7 @@ class StackViewport extends Viewport implements IViewport {
     }
   }
 
-  private _createVTKImageData(image, imageId: string) {
+  private _createVTKImageData(image: IImage): vtkImageData {
     const {
       origin,
       direction,
@@ -291,7 +301,10 @@ class StackViewport extends Viewport implements IViewport {
     this.stackActorVOI = Object.assign({}, range)
   }
 
-  private _checkVTKImageDataMatchesCornerstoneImage(image, imageData) {
+  private _checkVTKImageDataMatchesCornerstoneImage(
+    image: IImage,
+    imageData: vtkImageData
+  ): boolean {
     if (!imageData) {
       return false
     }
@@ -309,7 +322,7 @@ class StackViewport extends Viewport implements IViewport {
   }
 
   // Todo: rename since it may do more than set scalars
-  private _updateVTKImageDataFromCornerstoneImage(image) {
+  private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
     const {
       origin,
       direction,
@@ -356,7 +369,7 @@ class StackViewport extends Viewport implements IViewport {
     this._imageData.modified()
   }
 
-  private async _updateActorToDisplayImageId(imageId) {
+  private async _updateActorToDisplayImageId(imageId: string) {
     // This function should do the following:
     // - Load the specified Image
     // - Get the existing actor's vtkImageData that is being used to render the current image and check if we can reuse the vtkImageData that is in place (i.e. do the image dimensions and data type match?)
@@ -365,6 +378,13 @@ class StackViewport extends Viewport implements IViewport {
 
     // 1. Load the image using the Image Loader
     const image = await loadAndCacheImage(imageId, {})
+
+    const eventData = {
+      image,
+      imageId,
+    }
+
+    triggerEvent(eventTarget, EVENTS.STACK_NEW_IMAGE, eventData)
 
     // 2. Check if we can reuse the existing vtkImageData object, if one is present.
     const sameImageData = this._checkVTKImageDataMatchesCornerstoneImage(
@@ -403,7 +423,7 @@ class StackViewport extends Viewport implements IViewport {
 
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
-    this._imageData = this._createVTKImageData(image, imageId)
+    this._imageData = this._createVTKImageData(image)
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
     // Image's pixel data
@@ -425,7 +445,7 @@ class StackViewport extends Viewport implements IViewport {
     this.resetCamera()
   }
 
-  private _setImageIdIndex(imageIdIndex) {
+  private _setImageIdIndex(imageIdIndex: number): void {
     if (imageIdIndex >= this.imageIds.length) {
       throw new Error(
         `ImageIdIndex provided ${imageIdIndex} is invalid, the stack only has ${this.imageIds.length} elements`
@@ -461,7 +481,7 @@ class StackViewport extends Viewport implements IViewport {
     })
   }
 
-  public setImageIdIndex(imageIdIndex: number) {
+  public setImageIdIndex(imageIdIndex: number): void {
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
       return

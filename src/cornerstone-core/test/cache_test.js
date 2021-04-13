@@ -2,87 +2,8 @@ import * as cornerstoneStreamingImageVolumeLoader from '../../cornerstone-stream
 import * as cornerstone from '@cornerstone'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const { cache, Utilities, EVENTS } = cornerstone
+const { cache, Utilities, ERROR_CODES } = cornerstone
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
-
-function setupLoaders() {
-  const imageIds = [
-    'fakeImageLoader:imageId1',
-    'fakeImageLoader:imageId2',
-    'fakeImageLoader:imageId3',
-    'fakeImageLoader:imageId4',
-    'fakeImageLoader:imageId5',
-  ]
-
-  const imageLoader = (imageId) => {
-    const pixelData = new Uint8Array(100 * 100)
-
-    const image = {
-      rows: 100,
-      columns: 100,
-      getPixelData: () => pixelData,
-      sizeInBytes: 10000, // 100 * 100 * 1
-    }
-
-    return {
-      promise: Promise.resolve(image),
-    }
-  }
-
-  cornerstone.registerImageLoader('fakeImageLoader', imageLoader)
-
-  const volumeLoader = (volumeId) => {
-    const dimensions = [100, 100, 5]
-
-    const volumeMetadata = {
-      BitsAllocated: 8,
-      PixelRepresentation: 0,
-      PhotometricInterpretation: 'MONOCHROME1',
-      ImageOrientationPatient: [0, 0, 1, 1, 0, 0, 0, 1, 0],
-      PixelSpacing: [1, 1],
-      Columns: dimensions[0],
-      Rows: dimensions[1],
-    }
-
-    const scalarData = new Uint8Array(
-      dimensions[0] * dimensions[1] * dimensions[2]
-    )
-
-    const streamingImageVolume = new StreamingImageVolume(
-      // ImageVolume properties
-      {
-        uid: volumeId, // TODO: should we differentiate between volumeId and a volume's UID?
-        metadata: volumeMetadata,
-        dimensions: dimensions,
-        spacing: [1, 1, 1],
-        origin: [0, 0, 0],
-        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-        scalarData,
-        sizeInBytes: scalarData.byteLength,
-      },
-      // Streaming properties
-      {
-        imageIds,
-        loadStatus: {
-          loaded: false,
-          loading: false,
-          cachedFrames: [],
-          callbacks: [],
-        },
-      }
-    )
-
-    return {
-      promise: Promise.resolve(streamingImageVolume),
-    }
-  }
-
-  cornerstone.registerVolumeLoader('fakeVolumeLoader', volumeLoader)
-
-  return {
-    imageIds,
-  }
-}
 
 describe('Set maximum cache size', function () {
   beforeEach(() => {
@@ -96,27 +17,15 @@ describe('Set maximum cache size', function () {
   })
 
   it('should fail if numBytes is not defined', function () {
-    expect(function () {
-      cache.setMaxCacheSize(undefined)
-    }).toThrow()
+    expect(cache.setMaxCacheSize.bind(cache, undefined)).toThrow()
   })
 
   it('should fail if numBytes is not a number', function () {
-    expect(function () {
-      cache.setMaxCacheSize('10000')
-    }).toThrow()
+    expect(cache.setMaxCacheSize.bind(cache, '10000')).toThrow()
   })
 })
 
 describe('Image Cache: Store, retrieve, and remove imagePromises from the cache', function () {
-  beforeAll(function () {
-    // Act
-    cache.purgeCache()
-    const { imageIds } = setupLoaders()
-
-    this.imageIds = imageIds
-  })
-
   beforeEach(function () {
     // Arrange
     this.image = {
@@ -135,12 +44,11 @@ describe('Image Cache: Store, retrieve, and remove imagePromises from the cache'
   })
 
   it('should allow image promises to be added to the cache (putImageLoadObject)', async function () {
-    // Act
     const image = this.image
     const imageLoadObject = this.imageLoadObject
 
-    await cache.putImageLoadObject(image.imageId, imageLoadObject)
-    // Assert
+    cache.putImageLoadObject(image.imageId, imageLoadObject)
+    await imageLoadObject.promise
     const cacheSize = cache.getCacheSize()
 
     expect(cacheSize).toBe(image.sizeInBytes)
@@ -149,90 +57,53 @@ describe('Image Cache: Store, retrieve, and remove imagePromises from the cache'
     expect(imageLoad).toBeDefined()
   })
 
-  // it('should not change cache size if sizeInBytes is undefined (putImagePromise)', function (done) {
-  //   // Arrange
-  //   this.image.sizeInBytes = undefined
-  //   cache.putImageLoadObject(this.image.imageId, this.imageLoadObject)
-
-  //   // Act
-  //   this.imageLoadObject.promise.then(() => {
-  //     const cacheInfo = getCacheInfo()
-
-  //     // Assert
-  //     expect(cache.getCacheSize()).toBe(0)
-
-  //     done()
-  //   })
-  // })
-
-  // it('should not change cache size if sizeInBytes is not a number (putImagePromise)', function (done) {
-  //   // Arrange
-  //   this.image.sizeInBytes = '10000'
-  //   putImageLoadObject(this.image.imageId, this.imageLoadObject)
-
-  //   // Act
-  //   this.imageLoadObject.promise.then(() => {
-  //     const cacheInfo = getCacheInfo()
-
-  //     // Assert
-  //     assert.equal(cacheInfo.numberOfImagesCached, 1)
-  //     assert.equal(cacheInfo.cacheSizeInBytes, 0)
-
-  //     done()
-  //   })
-  // })
-
   it('should throw an error if imageId is not defined (putImageLoadObject)', function () {
-    // Assert
     expect(function () {
       cache.putImageLoadObject(undefined, this.imageLoadObject)
     }).toThrow()
   })
 
   it('should throw an error if imagePromise is not defined (putImageLoadObject)', function () {
-    // Assert
     expect(function () {
       cache.putImageLoadObject(this.image.imageId, undefined)
     }).toThrow()
   })
 
-  it('should throw an error if imageId is already in the cache (putImageLoadObject)', function () {
-    // Arrange
-    cache.putImageLoadObject(this.image.imageId, this.imageLoadObject)
-
-    // Assert
-    expect(function () {
-      cache.putImageLoadObject(this.image.imageId, this.imageLoadObject)
-    }).toThrow()
-  })
-
-  it('should allow image promises to be retrieved from the cache (getImageLoadObject()', function () {
+  it('should throw an error if imageId is already in the cache (putImageLoadObject)', async function () {
     const image = this.image
     const imageLoadObject = this.imageLoadObject
 
-    // Act
     cache.putImageLoadObject(image.imageId, imageLoadObject)
+    await imageLoadObject.promise
 
-    // Assert
+    expect(function () {
+      cache.putImageLoadObject(image.imageId, imageLoadObject)
+    }).toThrow()
+  })
+
+  it('should allow image promises to be retrieved from the cache (getImageLoadObject()', async function () {
+    const image = this.image
+    const imageLoadObject = this.imageLoadObject
+
+    cache.putImageLoadObject(image.imageId, imageLoadObject)
+    await imageLoadObject.promise
+
     const retrievedImageLoadObject = cache.getImageLoadObject(image.imageId)
 
     expect(retrievedImageLoadObject).toBe(imageLoadObject)
   })
 
   it('should throw an error if imageId is not defined (getImageLoadObject()', function () {
-    // Assert
     expect(function () {
       cache.getImageLoadObject(undefined)
     }).toThrow()
   })
 
   it('should fail silently to retrieve a promise for an imageId not in the cache', function () {
-    // Act
     const retrievedImageLoadObject = cache.getImageLoadObject(
       'AnImageIdNotInCache'
     )
 
-    // Assert
     expect(retrievedImageLoadObject).toBeUndefined()
   })
 
@@ -240,120 +111,455 @@ describe('Image Cache: Store, retrieve, and remove imagePromises from the cache'
     const image = this.image
     const imageLoadObject = this.imageLoadObject
 
-    // Arrange
-    await cache.putImageLoadObject(image.imageId, imageLoadObject)
+    cache.putImageLoadObject(image.imageId, imageLoadObject)
+    await imageLoadObject.promise
 
     expect(cache.getCacheSize()).not.toBe(0)
-    // Act
     cache.removeImageLoadObject(image.imageId)
 
-    // Assert
     expect(cache.getCacheSize()).toBe(0)
 
     expect(cache.getImageLoadObject(this.image.imageId)).toBeUndefined()
   })
 
-  it('should fail if imageId is not defined (removeImagePromise)', function () {
+  it('should fail if imageId is not defined (removeImageLoadObject)', function () {
     expect(function () {
       cache.removeImageLoadObject(undefined)
     }).toThrow()
   })
 
-  it('should fail if imageId is not in cache (removeImagePromise)', function () {
+  it('should fail if imageId is not in cache (removeImageLoadObject)', function () {
     expect(function () {
       cache.removeImageLoadObject('RandomImageId')
     }).toThrow()
   })
 
-  it('should be able to purge the entire cache', async function (done) {
+  it('should be able to purge the entire cache', async function () {
     const image = this.image
     const imageLoadObject = this.imageLoadObject
 
-    // Arrange
-    await cache.putImageLoadObject(image.imageId, imageLoadObject)
+    cache.putImageLoadObject(image.imageId, imageLoadObject)
+    await imageLoadObject.promise
 
     cache.purgeCache()
 
     expect(cache.getCacheSize()).toBe(0)
   })
+
+  it('should successfully caching an image when there is enough volatile + unallocated space', async function () {
+    const maxCacheSize = cache.getMaxCacheSize()
+
+    const image1SizeInBytes = maxCacheSize - 10000
+    const image2SizeInBytes = 9000
+
+    // Act
+    const image1 = {
+      imageId: 'anImageId1',
+      sizeInBytes: image1SizeInBytes,
+    }
+
+    const imageLoadObject1 = {
+      promise: Promise.resolve(image1),
+      cancelFn: undefined,
+    }
+
+    const image2 = {
+      imageId: 'anImageId2',
+      sizeInBytes: image2SizeInBytes,
+    }
+
+    const imageLoadObject2 = {
+      promise: Promise.resolve(image2),
+      cancelFn: undefined,
+    }
+
+    cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+    await imageLoadObject1.promise
+
+    let cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(image1.sizeInBytes)
+
+    cache.putImageLoadObject(image2.imageId, imageLoadObject2)
+    await imageLoadObject2.promise
+
+    cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(image1.sizeInBytes + image2.sizeInBytes)
+  })
+
+  it('should unsuccessfully caching an image when there is not enough volatile + unallocated space', async function () {
+    const maxCacheSize = cache.getMaxCacheSize()
+
+    const volumeSizeInBytes = maxCacheSize - 10000
+    const image1SizeInBytes = 11000
+
+    const volumeId = 'aVolumeId'
+
+    const volume = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        sizeInBytes: volumeSizeInBytes,
+      },
+      // Streaming properties
+      {
+        imageIds: ['imageid1', 'imageid2'],
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
+
+    const volumeLoadObject = {
+      promise: Promise.resolve(volume),
+      cancelFn: undefined,
+    }
+
+    const image1 = {
+      imageId: 'anImageId1',
+      sizeInBytes: image1SizeInBytes,
+    }
+
+    const imageLoadObject1 = {
+      promise: Promise.resolve(image1),
+      cancelFn: undefined,
+    }
+
+    cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+    await volumeLoadObject.promise
+
+    let cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume.sizeInBytes)
+
+    // For some reason the following code doesn't work in Jasmine
+    //
+    // expect(async function () {
+    //   cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+    //   await imageLoadObject1.promise
+    // }).toThrow()
+    //
+    // Not either the following
+    // let error
+    // try {
+    //   cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+    //   await imageLoadObject1.promise
+    // } catch (err) {
+    //   error = err
+    // }
+    // expect(error).toEqual(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+
+    cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume.sizeInBytes)
+  })
 })
 
-// it('should be able to kick the oldest image out of the cache', function (done) {
-//   // Arrange
-//   const promises = []
+describe('Volume Cache: ', function () {
+  beforeEach(function () {
+    const imageIds = [
+      'fakeImageLoader:imageId1',
+      'fakeImageLoader:imageId2',
+      'fakeImageLoader:imageId3',
+      'fakeImageLoader:imageId4',
+      'fakeImageLoader:imageId5',
+    ]
 
-//   for (let i = 0; i < 10; i++) {
-//     // Create the image
-//     const image = {
-//       imageId: `imageId-${i}`,
-//       sizeInBytes: 100,
-//     }
+    const volumeId = 'aVolumeId'
 
-//     image.decache = () => console.log('decaching image')
+    // Arrange
+    this.volume = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        sizeInBytes: 10000,
+      },
+      // Streaming properties
+      {
+        imageIds,
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
 
-//     const imageLoadObject = {
-//       promise: new Promise((resolve) => {
-//         resolve(image)
-//       }),
-//       cancelFn: undefined,
-//     }
+    this.volumeLoadObject = {
+      promise: Promise.resolve(this.volume),
+      cancelFn: undefined,
+    }
+  })
 
-//     // Add it to the cache
-//     cache.putImageLoadObject(image.imageId, imageLoadObject)
-//     promises.push(imageLoadObject.promise)
-//   }
+  afterEach(function () {
+    cache.purgeCache()
+  })
 
-//   // Retrieve a few of the imagePromises in order to bump their timestamps
-//   cache.getImageLoadObject('imageId-5')
-//   cache.getImageLoadObject('imageId-4')
-//   cache.getImageLoadObject('imageId-6')
+  it('should allow volume promises to be added to the cache (putVolumeLoadObject)', async function () {
+    const volume = this.volume
+    const volumeLoadObject = this.volumeLoadObject
 
-//   // Setup event listeners to check that the promise removed and cache full events have fired properly
-//   events.addEventListener(EVENTS.IMAGE_CACHE_IMAGE_REMOVED, (event) => {
-//     const imageId = event.detail.imageId
+    cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+    await volumeLoadObject.promise
 
-//     // Detect that the earliest image added has been removed
+    const cacheSize = cache.getCacheSize()
 
-//     // TODO: Figure out how to change the test setup to ensure the same
-//     // image is always kicked out of the cache. It looks like timestamps
-//     // are not in the expected order, probably since handling the promise
-//     // resolving is async
-//     // assert.equal(imageId, 'imageId-0');
-//     assert.isDefined(imageId)
-//     done()
-//   })
+    expect(cacheSize).toBe(volume.sizeInBytes)
 
-//   events.addEventListener('cornerstoneimagecachefull', (event) => {
-//     assert.equal(event.detail.numberOfImagesCached, 10)
-//     assert.equal(event.detail.cacheSizeInBytes, maxCacheSize)
-//     done()
-//   })
+    const volumeLoad = cache.getVolumeLoadObject(volume.uid)
+    expect(volumeLoad).toBeDefined()
+  })
 
-//   // Act
-//   // Create another image which will push us over the cache limit
-//   const extraImage = {
-//     imageId: 'imageId-11',
-//     sizeInBytes: 100,
-//   }
+  it('should throw an error if volumeId is not defined (putVolumeLoadObject)', function () {
+    expect(function () {
+      cache.putVolumeLoadObject(undefined, this.volumeLoadObject)
+    }).toThrow()
+  })
 
-//   const extraImageLoadObject = {
-//     promise: new Promise((resolve) => {
-//       resolve(extraImage)
-//     }),
-//     cancelFn: undefined,
-//   }
+  it('should throw an error if volumeLoadObject is not defined (putVolumeLoadObject)', function () {
+    // Assert
+    expect(function () {
+      cache.putVolumeLoadObject.bind(cache, this.volume.uid, undefined)
+    }).toThrow()
+  })
 
-//   Promise.all(promises).then(() => {
-//     // Add it to the cache
-//     putImageLoadObject(extraImage.imageId, extraImageLoadObject)
+  it('should throw an error if volumeId is already in the cache (putVolumeLoadObject)', async function () {
+    // Arrange
+    cache.putImageLoadObject(this.volume.uid, this.volumeLoadObject)
+    await this.volumeLoadObject.promise
 
-//     // Make sure that the cache has pushed out the first image
-//     const cacheInfo = getCacheInfo()
+    // Assert
+    expect(function () {
+      cache.putImageLoadObject(this.volume.uid, this.volumeLoadObject)
+    }).toThrow()
+  })
 
-//     assert.equal(cacheInfo.numberOfImagesCached, 10)
-//     assert.equal(cacheInfo.cacheSizeInBytes, 1000)
+  it('should allow volume promises to be retrieved from the cache (getVolumeLoadObject()', async function () {
+    const volume = this.volume
+    const volumeLoadObject = this.volumeLoadObject
 
-//     done()
-//   })
-// })
-// })
+    // Act
+    cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+    await volumeLoadObject.promise
+
+    // Assert
+    const retrievedVolumeLoadObject = cache.getVolumeLoadObject(volume.uid)
+
+    expect(retrievedVolumeLoadObject).toBe(volumeLoadObject)
+  })
+
+  it('should throw an error if volumeId is not defined (getVolumeLoadObject()', function () {
+    // Assert
+    expect(function () {
+      cache.getVolumeLoadObject(undefined)
+    }).toThrow()
+  })
+
+  it('should fail silently to retrieve a promise for an volumeId not in the cache', function () {
+    // Act
+    const retrievedVolumeLoadObject = cache.getVolumeLoadObject(
+      'AVolumeIdNotInCache'
+    )
+
+    // Assert
+    expect(retrievedVolumeLoadObject).toBeUndefined()
+  })
+
+  it('should allow cachedObject to be removed for volume (removeVolumeLoadObject)', async function () {
+    const volume = this.volume
+    const volumeLoadObject = this.volumeLoadObject
+
+    // Arrange
+    cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+    await volumeLoadObject.promise
+
+    expect(cache.getCacheSize()).not.toBe(0)
+    // Act
+    cache.removeVolumeLoadObject(volume.uid)
+
+    // Assert
+    expect(cache.getCacheSize()).toBe(0)
+
+    expect(cache.getVolumeLoadObject(this.volume.uid)).toBeUndefined()
+  })
+
+  it('should fail if volumeId is not defined (removeVolumeLoadObject)', function () {
+    expect(function () {
+      cache.removeVolumeLoadObject(undefined)
+    }).toThrow()
+  })
+
+  it('should fail if imageId is not in cache (removeImagePromise)', function () {
+    expect(function () {
+      cache.removeVolumeLoadObject('RandomImageId')
+    }).toThrow()
+  })
+
+  it('should be able to purge the entire cache', async function () {
+    const volume = this.volume
+    const volumeLoadObject = this.volumeLoadObject
+
+    // Arrange
+    await cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+
+    cache.purgeCache()
+
+    expect(cache.getCacheSize()).toBe(0)
+  })
+
+  it('should successfully caching a volume when there is enough volatile + unallocated space', async function () {
+    const maxCacheSize = cache.getMaxCacheSize()
+
+    const image1SizeInBytes = maxCacheSize - 1
+    const volumeSizeInBytes = maxCacheSize
+
+    const volumeId = 'aVolumeId'
+
+    // Arrange
+    const volume = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        sizeInBytes: volumeSizeInBytes,
+      },
+      // Streaming properties
+      {
+        imageIds: ['imageid1', 'imageid2'],
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
+
+    const volumeLoadObject = {
+      promise: Promise.resolve(volume),
+      cancelFn: undefined,
+    }
+
+    const image1 = {
+      imageId: 'anImageId1',
+      sizeInBytes: image1SizeInBytes,
+    }
+
+    const imageLoadObject1 = {
+      promise: Promise.resolve(image1),
+      cancelFn: undefined,
+    }
+
+    cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+    await imageLoadObject1.promise
+
+    let cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(image1.sizeInBytes)
+
+    expect(function () {
+      cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+    }).not.toThrow()
+
+    await volumeLoadObject.promise
+    cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume.sizeInBytes) // it should remove the image (volatile)
+  })
+
+  it('should unsuccessfully caching a volume when there is not enough volatile + unallocated space', async function () {
+    const maxCacheSize = cache.getMaxCacheSize()
+
+    const volume1SizeInBytes = maxCacheSize - 10000
+    const volume2SizeInBytes = maxCacheSize
+
+    const volumeId1 = 'aVolumeId1'
+    const volumeId2 = 'aVolumeId2'
+
+    // Arrange
+    const volume1 = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId1,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        sizeInBytes: volume1SizeInBytes,
+      },
+      // Streaming properties
+      {
+        imageIds: ['imageid1', 'imageid2'],
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
+
+    const volumeLoadObject1 = {
+      promise: Promise.resolve(volume1),
+      cancelFn: undefined,
+    }
+
+    const volume2 = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId2,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        sizeInBytes: volume2SizeInBytes,
+      },
+      // Streaming properties
+      {
+        imageIds: ['imageid11', 'imageid22'],
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
+
+    const volumeLoadObject2 = {
+      promise: Promise.resolve(volume2),
+      cancelFn: undefined,
+    }
+
+    cache.putVolumeLoadObject(volume1.uid, volumeLoadObject1)
+    await volumeLoadObject1
+
+    let cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume1.sizeInBytes)
+
+    // For some reason the following code doesn't work in Jasmine
+    //
+    // expect(async function () {
+    //   cache.putVolumeLoadObject(volume2.uid, volumeLoadObject2)
+    //   await volumeLoadObject2.promise
+    // }).toThrow()
+    //
+    // Not either the following
+    // let error
+    // try {
+    //   cache.putVolumeLoadObject(volume2.uid, volumeLoadObject2)
+    //   await volumeLoadObject2.promise
+    // } catch (err) {
+    //   error = err
+    // }
+    // expect(error).toEqual(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+
+    cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume1.sizeInBytes) // should not add the second volume
+  })
+})

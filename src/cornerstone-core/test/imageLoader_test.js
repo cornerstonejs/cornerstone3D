@@ -6,6 +6,7 @@ const {
   unregisterAllImageLoaders,
   loadImage,
   loadAndCacheImage,
+  cache,
 } = cornerstone3D
 
 describe('imageLoader -- ', function () {
@@ -62,6 +63,9 @@ describe('imageLoader -- ', function () {
   })
 
   describe('imageLoader registration module', function () {
+    afterEach(function () {
+      cache.purgeCache()
+    })
     it('allows registration of new image loader', async function () {
       registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
       registerImageLoader(this.exampleScheme2, this.exampleImageLoader2)
@@ -98,6 +102,10 @@ describe('imageLoader -- ', function () {
   })
 
   describe('imageLoader loading module', function () {
+    afterEach(function () {
+      cache.purgeCache()
+    })
+
     it('allows loading with storage in image cache (loadImage)', async function () {
       registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
       const imageLoadObject = loadAndCacheImage(
@@ -132,5 +140,6 @@ describe('imageLoader -- ', function () {
 
   afterEach(() => {
     unregisterAllImageLoaders()
+    cache.purgeCache()
   })
 })

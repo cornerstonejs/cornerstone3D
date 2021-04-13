@@ -20,7 +20,6 @@ import {
   registerUnknownImageLoader,
   unregisterAllImageLoaders,
 } from './imageLoader'
-import { registerWebImageLoader } from '../../cornerstone-streaming-image-volume-loader/src/registerWebImageLoader'
 import requestPoolManager from './requestPool/requestPoolManager'
 import {
   createAndCacheVolume,
@@ -66,7 +65,6 @@ export {
   registerImageLoader,
   registerUnknownImageLoader,
   unregisterAllImageLoaders,
-  registerWebImageLoader,
   //
   getVolume,
   createAndCacheVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())

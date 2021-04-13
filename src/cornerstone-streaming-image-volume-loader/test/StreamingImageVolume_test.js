@@ -114,6 +114,7 @@ describe('StreamingImageVolume', function () {
     // the pixel values are in the right places in the volume
   })
 
+  // todo: move this to cache_test?
   it('load: leverages images already in the cache during loading', async function () {
     // create some fake images and load them into the cache
     // create a volume including the same imageIds that are in the cache
@@ -149,6 +150,7 @@ describe('StreamingImageVolume', function () {
     expect(volume.loadStatus.callbacks.length).toEqual(0)
   })
 
+  // todo: move this to cache_test?
   it('decache: properly decaches the Volume into a set of Images', async function () {
     const volumeId = 'fakeVolumeLoader:VOLUME'
     const volume = cornerstone.getVolume(volumeId)

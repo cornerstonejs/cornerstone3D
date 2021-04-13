@@ -34,6 +34,9 @@ import {
 } from './constants'
 import LAYOUTS, { stackCT } from './layouts'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
+import * as cs from '@cornerstone'
+
+import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
@@ -104,6 +107,7 @@ function hardcodedMetaDataProvider(type, imageId) {
 }
 
 metaData.addProvider(hardcodedMetaDataProvider, 10000)
+registerWebImageLoader(cs)
 
 window.cache = cache
 

@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 // ~~
-import {RenderingEngine, ORIENTATION, VIEWPORT_TYPE, createAndCacheVolume } from '@cornerstone';
+import * as cs from '@cornerstone'
+import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE, createAndCacheVolume } from '@cornerstone';
 import { ToolGroupManager, ToolBindings } from '@cornerstone-tools';
+import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
+
 
 class ColorExample extends Component {
     state = {
@@ -25,6 +28,7 @@ class ColorExample extends Component {
     }
 
     async componentDidMount() {
+        registerWebImageLoader(cs)
         const renderingEngineUID = 'ExampleRenderingEngineID';
 
         const imageIds = [
