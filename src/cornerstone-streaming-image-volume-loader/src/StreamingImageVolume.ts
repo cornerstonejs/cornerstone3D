@@ -14,9 +14,11 @@ import { calculateSUVScalingFactors } from 'calculate-suv'
 import getInterleavedFrames from './helpers/getInterleavedFrames'
 import autoLoad from './helpers/autoLoad'
 import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
-import { IImage } from 'src/cornerstone-core/src/types'
-
-const { IVolume, IStreamingVolume } = Types
+import {
+  IImage,
+  IVolume,
+  IStreamingVolume,
+} from 'src/cornerstone-core/src/types'
 
 const requestType = 'prefetch'
 
@@ -406,7 +408,10 @@ export default class StreamingImageVolume extends ImageVolume {
     //    as possible, and the rest of the volume will be decached.
     const byteLength = this.sizeInBytes
     const numImages = this.imageIds.length
-    let bytesRemaining = cache.decacheUntilBytesAvailable(byteLength)
+    let bytesRemaining = cache.decacheIfNecessaryUntilBytesAvailable(
+      byteLength,
+      this.imageIds
+    )
 
     // Divide the total volume size by the number of images in the stack
     // to get the bytes per image

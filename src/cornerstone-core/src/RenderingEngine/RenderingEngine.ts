@@ -575,6 +575,7 @@ class RenderingEngine implements IRenderingEngine {
   public getScene(sceneUID: string): Scene {
     this._throwIfDestroyed()
 
+    // Todo: should the volume be decached?
     return this._scenes.get(sceneUID)
   }
 
@@ -733,15 +734,30 @@ class RenderingEngine implements IRenderingEngine {
     return this.renderViewports(viewportUidsWithSameFrameOfReferenceUID)
   }
 
+  /**
+   * @method renderScenes Renders the provided Scene UIDs.
+   *
+   * @returns{void}
+   */
   public renderScenes(sceneUIDs: Array<string>): void {
     const scenes = sceneUIDs.map((sUid) => this.getScene(sUid))
-    return this._renderScenes(scenes)
+    this._renderScenes(scenes)
   }
 
+  /**
+   * @method renderViewports Renders the provided Viewport UIDs.
+   *
+   * @returns{void}
+   */
   public renderViewports(viewportUIDs: Array<string>): void {
     this._setViewportsToBeRenderedNextFrame(viewportUIDs)
   }
 
+  /**
+   * @method _renderScenes setup for rendering the provided Scene UIDs.
+   *
+   * @returns{void}
+   */
   private _renderScenes(scenes: Array<Scene>) {
     this._throwIfDestroyed()
 
@@ -760,7 +776,6 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * @method renderViewport Renders only a specific `Viewport` on the next animation frame.
    *
-   * @param {string} viewportUID The UID of the scene the viewport belongs to.
    * @param {string} viewportUID The UID of the viewport.
    */
   public renderViewport(viewportUID: string): void {
@@ -813,6 +828,13 @@ class RenderingEngine implements IRenderingEngine {
     triggerEvent(canvas, EVENTS.IMAGE_RENDERED, eventData)
   }
 
+  /**
+   * @method _resetViewport Reset the viewport by removing the data attributes
+   * and clearing the context of draw. It also emits an element disabled event
+   *
+   * @param {Viewport} viewport The `Viewport` to render.
+   * @returns{void}
+   */
   private _resetViewport(viewport) {
     const renderingEngineUID = this.uid
 
@@ -857,7 +879,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method destroy
+   * @method destroy the rendering engine
    */
   public destroy(): void {
     if (this.hasBeenDestroyed) {
@@ -889,11 +911,13 @@ class RenderingEngine implements IRenderingEngine {
     }
   }
 
+  // debugging utils for offScreen canvas
   _downloadOffScreenCanvas() {
     const dataURL = this._debugRender()
     _TEMPDownloadURI(dataURL)
   }
 
+  // debugging utils for offScreen canvas
   _debugRender(): void {
     // Renders all scenes
     const { offscreenMultiRenderWindow } = this
@@ -940,6 +964,7 @@ class RenderingEngine implements IRenderingEngine {
 
 export default RenderingEngine
 
+// debugging utils for offScreen canvas
 function _TEMPDownloadURI(uri) {
   const link = document.createElement('a')
 

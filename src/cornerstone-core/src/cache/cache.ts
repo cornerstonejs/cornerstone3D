@@ -130,13 +130,15 @@ class Cache implements ICache {
    * @returns {boolean}
    * @memberof Cache
    */
-  public isCachable = (byteLength: number) => {
+  private isCachable = (byteLength: number) => {
     const unallocatedSpace = this.getMaxCacheSize() - this.getCacheSize()
+    const imageCacheSize = this._imageCacheSize
 
-    if (unallocatedSpace + this._imageCacheSize < byteLength) {
-      return false
+    if (unallocatedSpace + imageCacheSize < byteLength) {
+      throw new Error(
+        `${ERROR_CODES.CACHE_SIZE_EXCEEDED} - the cache does not have enough working space to allocate the image.`
+      )
     }
-    return true
   }
 
   /**
@@ -211,53 +213,6 @@ class Cache implements ICache {
   }
 
   /**
-   * Decaches the images until the requested number of bytes become available
-   *
-   * It starts by checking if the requested number of bytes is already available,
-   * if yes, it returns with the number of bytes available in the cache. Otherwise,
-   * it iteratively decache the images until the requested number of bytes become
-   * available and returns it. However, if decaching all the images did not
-   * result in the requested free space, it warns the user in the console, and
-   * returns the available bytes size.
-   *
-   * @param {number} numBytes number of bytes
-   *
-   * @returns {number} available number of bytes
-   * @memberof Cache
-   */
-  public decacheUntilBytesAvailable(numBytes: number): number {
-    const bytesAvailable = this.getMaxCacheSize() - this.getCacheSize()
-    if (bytesAvailable >= numBytes) {
-      return bytesAvailable
-    }
-
-    const imageIterator = this._imageCache.keys()
-
-    // Todo: shouldn't this be based on time stamps?
-    while (bytesAvailable < numBytes) {
-      const { value: imageId, done } = imageIterator.next()
-
-      if (done) {
-        break
-      }
-
-      this._decacheImage(imageId)
-    }
-
-    if (bytesAvailable >= numBytes) {
-      return bytesAvailable
-    }
-
-    // This means that we were unable to decache enough images to
-    // reach the demanded number of bytes
-    console.warn(
-      `Decaching did not make space for ${numBytes} bytes, the requested number of bytes is potentially greater than the maximumCacheSize`
-    )
-
-    return bytesAvailable
-  }
-
-  /**
    * Deletes all the images and volumes in the cache
    *
    * Relevant events are fired for each decached image (IMAGE_CACHE_IMAGE_REMOVED) and
@@ -302,22 +257,39 @@ class Cache implements ICache {
   }
 
   /**
-   * Purges the cache if size exceeds maximum
+   * Purges the cache if necessary
    *
-   * It sorts the volatile (image) cache based on the most recent used images
-   * and purge the oldest ones until the cache size becomes less thatn the maximum
-   * allowed cache size.
-   *
-   * @returns {void}
+   * It first checks if the current cache size + the upcoming image/volume
+   * size is less than the maximum amount of cache size allowed, if not:
+   * 1) it sorts the volatile (image) cache based on the most recent used images
+   * and purge the oldest ones.
+   * Note: for a volume, if the volume-related image Ids is provided, we start
+   * by purging the NON-related image Ids (those that are not related to the
+   * current volume)
+   * 2) If
+   * @params {number} numBytes number of bytes for the image/volume that is
+   * going to be stored inside the cache
+   * @params {Array} volumeImageIds list of imageIds that correspond to the
+   * volume whose numberOfBytes we want to store in the cache.
+   * @returns {number | undefined} bytesAvailable or undefined in purging cache
+   * does not successfully make enough space for the requested number of bytes
    * @memberof Cache
    */
-  private _purgeCacheIfNecessary(): void {
+  public decacheIfNecessaryUntilBytesAvailable(
+    numBytes: number,
+    volumeImageIds?: Array<string>
+  ): number | undefined {
+    // check if there is enough space to cache it
+    this.isCachable(numBytes)
+
+    const bytesAvailable = this.getMaxCacheSize() - this.getCacheSize()
+
     // If max cache size has not been exceeded, do nothing
-    if (this.getCacheSize() <= this.getMaxCacheSize()) {
-      return
+    if (bytesAvailable >= numBytes) {
+      return bytesAvailable
     }
 
-    const cachedImages = Array.from(this._imageCache.values())
+    let cachedImages = Array.from(this._imageCache.values())
 
     // Cache size has been exceeded, create list of images sorted by timeStamp
     // So we can purge the least recently used image
@@ -331,21 +303,57 @@ class Cache implements ICache {
 
       return 0
     }
+
     cachedImages.sort(compare)
+    let cachedImageIds = cachedImages.map((im) => im.imageId)
 
-    // Remove images as necessary)
-    while (this.getCacheSize() > this.getMaxCacheSize()) {
-      const lastCachedImage = cachedImages[cachedImages.length - 1]
-      const imageId = lastCachedImage.imageId
+    let imageIdsToPurge = cachedImageIds
 
+    // if we are making space for a volume, we start by purging the imageIds
+    // that are not going to corresponding to the volume
+    if (volumeImageIds) {
+      imageIdsToPurge = cachedImageIds.filter(
+        (id) => !volumeImageIds.includes(id)
+      )
+    }
+
+    // Remove images (that are not related to the volume) from volatile cache
+    // until the requested number of bytes become available
+    for (const imageId of imageIdsToPurge) {
       this.removeImageLoadObject(imageId)
 
       triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
+
+      if (bytesAvailable >= numBytes) {
+        return bytesAvailable
+      }
     }
 
-    //const cacheInfo = getCacheInfo();
+    // For a volume, if we purge all images that won't be included in this volume and still
+    // don't have enough unallocated space, purge images that will be included
+    // in this volume until we have enough space. These will need to be
+    // re-fetched, but we must do this not to straddle over the given memory
+    // limit, even for a short time, as this may crash the application.
+    // if we are making space for a volume, we start by purging the imageIds
+    // that are not going to be included in the volume
+    cachedImages = Array.from(this._imageCache.values())
+    cachedImageIds = cachedImages.map((im) => im.imageId)
 
-    //triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_FULL, cacheInfo);
+    // Remove volume-image Ids from volatile cache until the requested number of bytes
+    // become available
+    for (const imageId of cachedImageIds) {
+      this.removeImageLoadObject(imageId)
+
+      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
+
+      if (bytesAvailable >= numBytes) {
+        return bytesAvailable
+      }
+    }
+
+    // Technically we should not reach here, since isCachable will throw an
+    // error if unallocated + volatile (image) cache cannot fit the upcoming
+    // number of bytes
   }
 
   /**
@@ -423,9 +431,7 @@ class Cache implements ICache {
           )
         }
 
-        if (!this.isCachable(image.sizeInBytes)) {
-          throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
-        }
+        this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes)
 
         cachedImage.loaded = true
         cachedImage.image = image
@@ -439,9 +445,6 @@ class Cache implements ICache {
         triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_ADDED, eventDetails)
 
         cachedImage.sharedCacheKey = image.sharedCacheKey
-
-        // todo: we are purging after we add to cache, should we change the order?
-        this._purgeCacheIfNecessary()
       },
       (error) => {
         console.warn(error)
@@ -544,9 +547,10 @@ class Cache implements ICache {
           )
         }
 
-        if (!this.isCachable(volume.sizeInBytes)) {
-          throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
-        }
+        this.decacheIfNecessaryUntilBytesAvailable(
+          volume.sizeInBytes,
+          volume.imageIds
+        )
 
         cachedVolume.loaded = true
         cachedVolume.volume = volume
@@ -559,9 +563,6 @@ class Cache implements ICache {
         }
 
         triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_VOLUME_ADDED, eventDetails)
-
-        // todo: we are purging after we add to cache, should we change the order?
-        this._purgeCacheIfNecessary()
       },
       (error) => {
         console.warn(error)

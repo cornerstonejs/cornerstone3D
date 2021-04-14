@@ -75,10 +75,7 @@ function cornerstoneStreamingImageVolumeLoader(
   const sizeInBytes =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
-  if (!cache.isCachable(sizeInBytes)) {
-    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
-  }
-  // if so, start erasing volatile data so you can allocate
+  cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes)
 
   let numComponents = 1
   if (PhotometricInterpretation === 'RGB') {

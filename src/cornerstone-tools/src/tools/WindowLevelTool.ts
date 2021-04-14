@@ -63,6 +63,7 @@ export default class WindowLevelTool extends BaseTool {
 
     const deltaPointsCanvas = deltaPoints.canvas
 
+    // Todo: enabling a viewport twice in a row sets the imageDynamicRange to be zero for some reason
     // 1 was too little
     let multiplier = 4
     if (volumeUID) {

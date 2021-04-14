@@ -314,9 +314,9 @@ class StackViewport extends Viewport implements IViewport {
 
     // using spacing and size only for now
     return (
-      xSpacing === image.rowPixelSpacing ||
-      ySpacing === image.columnPixelSpacing ||
-      xVoxels === image.rows ||
+      xSpacing === image.rowPixelSpacing &&
+      ySpacing === image.columnPixelSpacing &&
+      xVoxels === image.rows &&
       yVoxels === image.columns
     )
   }
