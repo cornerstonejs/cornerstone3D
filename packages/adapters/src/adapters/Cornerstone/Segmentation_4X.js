@@ -291,10 +291,6 @@ function generateToolState(
 
     const SeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
 
-    console.warn(
-        "Note the cornerstoneTools 4.0 currently assumes the labelmaps are non-overlapping. Overlapping segments will allocate incorrectly. Feel free to submit a PR to improve this behaviour!"
-    );
-
     if (!imagePlaneModule) {
         console.warn("Insufficient metadata, imagePlaneModule missing.");
     }
@@ -636,16 +632,18 @@ function checkSEGsOverlapping(
         : undefined;
     const sliceLength = Columns * Rows;
 
-    var firstSegIndex = -1;
-    var previousimageIdIndex = -1;
-    var temp2DArray = new Uint16Array(sliceLength).fill(0);
-    var groupsLen = PerFrameFunctionalGroupsSequence.length;
-    var numberOfSegs = multiframe.SegmentSequence.length;
-    var numberOfFrames = imageIds.length;
+    let firstSegIndex = -1;
+    let previousimageIdIndex = -1;
+    let temp2DArray = new Uint16Array(sliceLength).fill(0);
+    const groupsLen = PerFrameFunctionalGroupsSequence.length;
+    const numberOfSegs = multiframe.SegmentSequence.length;
+    const numberOfFrames = imageIds.length;
 
     if (numberOfSegs * numberOfFrames !== groupsLen) {
         console.warn(
-            "Failed to check for overlap of segments: missing frames in PerFrameFunctionalGroupsSequence."
+            "Failed to check for overlap of segments: " +
+                "missing frames in PerFrameFunctionalGroupsSequence " +
+                "or the segmentation has different geometry respect to the source image."
         );
         return false;
     }
@@ -663,7 +661,7 @@ function checkSEGsOverlapping(
         return false;
     }
 
-    var i = 0;
+    let i = 0;
     while (i < groupsLen) {
         const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[i];
 
@@ -684,34 +682,18 @@ function checkSEGsOverlapping(
         );
 
         if (!alignedPixelDataI) {
-            // Individual SEG frames are out of plane with respect to the first SEG frame, this is not yet supported
-            i = i + numberOfFrames;
-            if (i >= groupsLen) {
-                i = i - numberOfFrames * numberOfSegs + 1;
-                if (i >= numberOfFrames) {
-                    break;
-                }
-            }
-
-            continue;
+            console.warn(
+                "Individual SEG frames are out of plane with respect to the first SEG frame, this is not yet supported, skipping this frame."
+            );
+            return false;
         }
 
         const segmentIndex = getSegmentIndex(multiframe, i);
-
         if (segmentIndex === undefined) {
             console.warn(
-                "Could not retrieve the segment index, skipping this frame. "
+                "Could not retrieve the segment index, skipping this frame."
             );
-
-            i = i + numberOfFrames;
-            if (i >= groupsLen) {
-                i = i - numberOfFrames * numberOfSegs + 1;
-                if (i >= numberOfFrames) {
-                    break;
-                }
-            }
-
-            continue;
+            return false;
         }
 
         let SourceImageSequence;
@@ -722,6 +704,13 @@ function checkSEGsOverlapping(
             SourceImageSequence =
                 PerFrameFunctionalGroups.DerivationImageSequence
                     .SourceImageSequence;
+        }
+
+        if (!SourceImageSequence) {
+            console.warn(
+                "Source Image Sequence information missing: individual SEG frames are out of plane, this is not yet supported, skipping this frame."
+            );
+            return false;
         }
 
         const imageId = getImageIdOfSourceImage(
@@ -805,16 +794,16 @@ function insertOverlappingPixelDataPlanar(
     const arrayBufferLength = sliceLength * imageIds.length * 2; // 2 bytes per label voxel in cst4.
 
     // indicate the number of labelMaps
-    var M = 1;
+    let M = 1;
 
     // indicate the current labelMap array index;
-    var m = 0;
+    let m = 0;
 
     // temp array for checking overlaps
-    var tempBuffer = labelmapBufferArray[m].slice(0);
+    let tempBuffer = labelmapBufferArray[m].slice(0);
 
     // temp list for checking overlaps
-    var tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
+    let tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
 
     /* split overlapping SEGs algorithm for each segment: 
     A) copy the labelmapBuffer in the array with index 0
@@ -823,7 +812,7 @@ function insertOverlappingPixelDataPlanar(
     D) if overlap, repeat increasing the index m up to M (if out of memory, add new buffer in the array and M++); 
     */
 
-    var numberOfSegs = multiframe.SegmentSequence.length;
+    let numberOfSegs = multiframe.SegmentSequence.length;
     for (
         let segmentIndexToProcess = 1;
         segmentIndexToProcess <= numberOfSegs;
@@ -839,10 +828,9 @@ function insertOverlappingPixelDataPlanar(
 
             const segmentIndex = getSegmentIndex(multiframe, i);
             if (segmentIndex === undefined) {
-                console.warn(
-                    "Could not retrieve the segment index, skipping this frame. "
+                throw new Error(
+                    "Could not retrieve the segment index. Aborting segmentation loading."
                 );
-                continue;
             }
 
             if (segmentIndex !== segmentIndexToProcess) {
@@ -866,15 +854,14 @@ function insertOverlappingPixelDataPlanar(
             );
 
             if (!alignedPixelDataI) {
-                console.warn(
-                    "Individual SEG frames are out of plane with respect to the first SEG frame, this is not yet supported, skipping this frame."
+                throw new Error(
+                    "Individual SEG frames are out of plane with respect to the first SEG frame. " +
+                        "This is not yet supported. Aborting segmentation loading."
                 );
-
-                inPlane = false;
-                break;
             }
 
-            let SourceImageSequence;
+            let imageId = undefined;
+            let SourceImageSequence = undefined;
 
             if (multiframe.SourceImageSequence) {
                 SourceImageSequence = multiframe.SourceImageSequence[i];
@@ -884,7 +871,14 @@ function insertOverlappingPixelDataPlanar(
                         .SourceImageSequence;
             }
 
-            const imageId = getImageIdOfSourceImage(
+            if (!SourceImageSequence) {
+                throw new Error(
+                    "Source Image Sequence information missing: individual SEG frames are out of plane. " +
+                        "This is not yet supported. Aborting segmentation loading."
+                );
+            }
+
+            imageId = getImageIdOfSourceImage(
                 SourceImageSequence,
                 imageIds,
                 metadataProvider
@@ -893,6 +887,21 @@ function insertOverlappingPixelDataPlanar(
             if (!imageId) {
                 // Image not present in stack, can't import this frame.
                 continue;
+            }
+
+            const sourceImageMetadata = cornerstone.metaData.get(
+                "instance",
+                imageId
+            );
+            if (
+                Rows !== sourceImageMetadata.Rows ||
+                Columns !== sourceImageMetadata.Columns
+            ) {
+                throw new Error(
+                    "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
+                        "respect to the source image reference frame. This is not yet supported. " +
+                        "Aborting segmentation loading. "
+                );
             }
 
             const imageIdIndex = imageIds.findIndex(
@@ -1022,24 +1031,21 @@ function insertPixelDataPlanar(
         );
 
         if (!alignedPixelDataI) {
-            console.warn(
-                "Individual SEG frames are out of plane with respect to the first SEG frame, this is not yet supported, skipping this frame."
+            throw new Error(
+                "Individual SEG frames are out of plane with respect to the first SEG frame. " +
+                    "This is not yet supported. Aborting segmentation loading."
             );
-
-            inPlane = false;
-            break;
         }
 
         const segmentIndex = getSegmentIndex(multiframe, i);
         if (segmentIndex === undefined) {
-            console.warn(
-                "Could not retrieve the segment index, skipping this frame. "
+            throw new Error(
+                "Could not retrieve the segment index. Aborting segmentation loading."
             );
-            break;
         }
 
-        let SourceImageSequence;
-
+        let imageId = undefined;
+        let SourceImageSequence = undefined;
         if (multiframe.SourceImageSequence) {
             SourceImageSequence = multiframe.SourceImageSequence[i];
         } else {
@@ -1048,7 +1054,14 @@ function insertPixelDataPlanar(
                     .SourceImageSequence;
         }
 
-        const imageId = getImageIdOfSourceImage(
+        if (!SourceImageSequence) {
+            throw new Error(
+                "Source Image Sequence information missing: individual SEG frames are out of plane. " +
+                    "This is not yet supported. Aborting segmentation loading."
+            );
+        }
+
+        imageId = getImageIdOfSourceImage(
             SourceImageSequence,
             imageIds,
             metadataProvider
@@ -1057,6 +1070,21 @@ function insertPixelDataPlanar(
         if (!imageId) {
             // Image not present in stack, can't import this frame.
             continue;
+        }
+
+        const sourceImageMetadata = cornerstone.metaData.get(
+            "instance",
+            imageId
+        );
+        if (
+            Rows !== sourceImageMetadata.Rows ||
+            Columns !== sourceImageMetadata.Columns
+        ) {
+            throw new Error(
+                "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
+                    "respect to the source image reference frame. This is not yet supported. " +
+                    "Aborting segmentation loading. "
+            );
         }
 
         const imageIdIndex = imageIds.findIndex(element => element === imageId);
