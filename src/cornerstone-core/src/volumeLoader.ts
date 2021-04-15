@@ -1,10 +1,19 @@
+import { ImageVolume } from './cache'
+import {
+  IVolume,
+  VolumeLoadObject,
+  VolumeLoaderFn,
+} from 'src/cornerstone-core/src/types'
 import cache from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
-
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
+
+interface VolumeLoaderOptions {
+  imageIds: Array<string>
+}
 
 function createInternalVTKRepresentation({
   dimensions,
@@ -54,12 +63,16 @@ let unknownVolumeLoader
  * determined by the volume loader scheme matching against the volumeId.
  *
  * @param {String} volumeId A Cornerstone Volume Object's volumeId
- * @param {Object} [options] Options to be passed to the Volume Loader
+ * @param {Object} [options] Options to be passed to the Volume Loader. Options
+ * contain the ImageIds that is passed to the loader
  *
  * @returns {VolumeLoadObject} An Object which can be used to act after a volume is loaded or loading fails
  * @memberof VolumeLoader
  */
-function loadVolumeFromVolumeLoader(volumeId, options) {
+function loadVolumeFromVolumeLoader(
+  volumeId: string,
+  options: VolumeLoaderOptions
+): VolumeLoadObject {
   const colonIndex = volumeId.indexOf(':')
   const scheme = volumeId.substring(0, colonIndex)
   const loader = volumeLoaders[scheme]
@@ -102,7 +115,10 @@ function loadVolumeFromVolumeLoader(volumeId, options) {
  * @returns {VolumeLoadObject} An Object which can be used to act after an image is loaded or loading fails
  * @memberof VolumeLoader
  */
-export function loadVolume(volumeId: string, options = {}) {
+export function loadVolume(
+  volumeId: string,
+  options: VolumeLoaderOptions = { imageIds: [] }
+): ImageVolume {
   if (volumeId === undefined) {
     throw new Error('loadVolume: parameter volumeId must not be undefined')
   }
@@ -120,7 +136,7 @@ export function loadVolume(volumeId: string, options = {}) {
   )
 }
 
-export function getVolume(volumeId, options) {
+export function getVolume(volumeId: string): IVolume {
   if (volumeId === undefined) {
     throw new Error('loadVolume: parameter volumeId must not be undefined')
   }
@@ -140,7 +156,10 @@ export function getVolume(volumeId, options) {
  * @returns {VolumeLoadObject} Volume Loader Object
  * @memberof VolumeLoader
  */
-export function createAndCacheVolume(volumeId, options) {
+export function createAndCacheVolume(
+  volumeId: string,
+  options: VolumeLoaderOptions
+): Promise<Record<string, any>> {
   if (volumeId === undefined) {
     throw new Error(
       'createAndCacheVolume: parameter volumeId must not be undefined'
@@ -172,7 +191,10 @@ export function createAndCacheVolume(volumeId, options) {
  * @returns {void}
  * @memberof VolumeLoader
  */
-export function registerVolumeLoader(scheme, volumeLoader) {
+export function registerVolumeLoader(
+  scheme: string,
+  volumeLoader: VolumeLoaderFn
+): void {
   volumeLoaders[scheme] = volumeLoader
 }
 
@@ -184,7 +206,9 @@ export function registerVolumeLoader(scheme, volumeLoader) {
  * @returns {Function|Undefined} The previous Unknown Volume Loader
  * @memberof VolumeLoader
  */
-export function registerUnknownVolumeLoader(volumeLoader) {
+export function registerUnknownVolumeLoader(
+  volumeLoader: VolumeLoaderFn
+): VolumeLoaderFn | undefined {
   const oldVolumeLoader = unknownVolumeLoader
 
   unknownVolumeLoader = volumeLoader

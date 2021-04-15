@@ -15,7 +15,7 @@ type SortedImageIdsItem = {
 export default function sortImageIdsAndGetSpacing(
   imageIds: Array<string>,
   scanAxisNormal: any // Get gl matrix types?
-) {
+): SortedImageIdsItem {
   const { imagePositionPatient: referenceImagePositionPatient } = metaData.get(
     'imagePlaneModule',
     imageIds[0]

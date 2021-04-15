@@ -78,9 +78,6 @@ class Cache implements ICache {
     this._volumeCacheSize = 0
     this._maxCacheSize = MAX_CACHE_SIZE_1GB // Default 1GB
   }
-  getImageVolume: (uid: string) => any
-  decacheImage: (uid: string) => void
-  decacheVolume: (uid: string) => void
 
   /**
    * Set the maximum cache Size
@@ -465,6 +462,44 @@ class Cache implements ICache {
   }
 
   /**
+   * Removes the data loader scheme from the imageId
+   *
+   * @param {string} imageId Image ID
+   * @returns {string} imageId without the data loader scheme
+   * @memberof Cache
+   */
+  private _removeSchemeFromImageId(imageId: string) {
+    const colonIndex = imageId.indexOf(':')
+    return imageId.substring(colonIndex + 1)
+  }
+
+  /**
+   * Returns the volume that contains the requested imageId. It will check the
+   * imageIds inside the volume to find a match.
+   *
+   * @param {string} imageId Image ID
+   * @returns {{ImageVolume, string}|undefined} {volume, imageIdIndex}
+   * @memberof Cache
+   */
+  public getVolumeContainingImageId(imageId: string): any {
+    const volumeIds = Array.from(this._volumeCache.keys())
+    const imageIdToUse = this._removeSchemeFromImageId(imageId)
+
+    for (const volumeId of volumeIds) {
+      const cachedVolume = this._volumeCache.get(volumeId)
+      let volumeImageIds = cachedVolume.volume.imageIds
+
+      volumeImageIds = volumeImageIds.map((id) =>
+        this._removeSchemeFromImageId(id)
+      )
+
+      const imageIdIndex = volumeImageIds.indexOf(imageIdToUse)
+      if (imageIdIndex > -1) {
+        return { volume: cachedVolume.volume, imageIdIndex }
+      }
+    }
+  }
+  /**
    * Puts a new image load object into the cache
    *
    * First, it creates a CachedVolume object and put it inside the volumeCache for
@@ -504,6 +539,9 @@ class Cache implements ICache {
       )
     }
 
+    // todo: @Erik there are two loaded flags, one inside cachedVolume and the other
+    // inside the volume.loadStatus.loaded, the actual all pixelData loaded is the
+    // loadStatus one. This causes confusion
     const cachedVolume: CachedVolume = {
       loaded: false,
       volumeId,
@@ -541,7 +579,7 @@ class Cache implements ICache {
           volume.imageIds
         )
 
-        cachedVolume.loaded = true
+        // cachedVolume.loaded = true
         cachedVolume.volume = volume
         cachedVolume.sizeInBytes = volume.sizeInBytes
         this._incrementVolumeCacheSize(cachedVolume.sizeInBytes)

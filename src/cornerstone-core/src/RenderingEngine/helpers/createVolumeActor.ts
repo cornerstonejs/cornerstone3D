@@ -1,3 +1,4 @@
+import { VolumeActor } from './../../types/IActor'
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import { loadVolume } from '../../volumeLoader'
 //@ts-ignore
@@ -9,7 +10,9 @@ interface createVolumeActorInterface {
   blendMode?: string
 }
 
-async function createVolumeActor(props: createVolumeActorInterface) {
+async function createVolumeActor(
+  props: createVolumeActorInterface
+): Promise<VolumeActor> {
   const { volumeUID, callback, blendMode } = props
 
   const imageVolume = await loadVolume(volumeUID)

@@ -4,6 +4,7 @@ import ICache from './ICache'
 import IVolume from './IVolume'
 import VOI, { VOIRange } from './voi'
 import ImageLoaderFn from './ImageLoaderFn'
+import VolumeLoaderFn from './VolumeLoaderFn'
 import IRegisterImageLoader from './IRegisterImageLoader'
 import IStreamingVolume from './IStreamingVolume'
 import IViewport, { ViewportInput, PublicViewportInput } from './IViewport'
@@ -24,6 +25,7 @@ export {
   IVolume,
   IImage,
   ImageLoaderFn,
+  VolumeLoaderFn,
   IRegisterImageLoader,
   IStreamingVolume,
   IViewport,

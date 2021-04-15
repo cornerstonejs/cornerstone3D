@@ -1,7 +1,7 @@
 import cache from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
-import triggerEvent from './utilities/triggerEvent'
+import { triggerEvent } from './utilities'
 import { IImage, ImageLoaderFn, ImageLoadObject } from './types'
 
 interface ImageLoaderOptions {
@@ -72,6 +72,10 @@ function loadImageFromImageLoader(
  * Loads an image given an imageId and optional priority and returns a promise which will resolve to
  * the loaded image object or fail if an error occurred.  The loaded image is not stored in the cache.
  *
+ * It first checks if the imageId and its cachedImage object is stored inside the
+ * cache, if not, checks inside the already loaded volumes to copy the pixelData
+ * from the exact slice in the volume to a cornerstoneImage.
+ *
  * @param {String} imageId A Cornerstone Image Object's imageId
  * @param {Object} [options] Options to be passed to the Image Loader
  *
@@ -86,12 +90,26 @@ export function loadImage(
     throw new Error('loadImage: parameter imageId must not be undefined')
   }
 
-  const imageLoadObject = cache.getImageLoadObject(imageId)
+  // 1. Check inside the cache for image
+  let imageLoadObject = cache.getImageLoadObject(imageId)
 
   if (imageLoadObject !== undefined) {
     return imageLoadObject.promise
   }
 
+  // 2. Check if there exists a volume in the cache containing the imageId
+  // we copy the pixelData over.
+  const cachedVolumeInfo = cache.getVolumeContainingImageId(imageId)
+  if (cachedVolumeInfo && cachedVolumeInfo.volume.loadStatus.loaded) {
+    // 3. Convert the volume at the specific slice to a cornerstoneImage object.
+    // this will copy the pixel data over.
+    const { volume, imageIdIndex } = cachedVolumeInfo
+    imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex)
+    return imageLoadObject.promise
+  }
+
+  // 3. if not in image cache nor inside the volume cache, we request the
+  // image loaders to load it
   return loadImageFromImageLoader(imageId, options).promise
 }
 
@@ -100,6 +118,11 @@ export function loadImage(
 /**
  * Loads an image given an imageId and optional priority and returns a promise which will resolve to
  * the loaded image object or fail if an error occurred. The image is stored in the cache.
+ *
+ * It first checks if the imageId and its cachedImage object is stored inside the
+ * cache, if not, checks inside the already loaded volumes to copy the pixelData
+ * from the exact slice in the volume to a cornerstoneImage. Finally
+ * the imageLoadObject will get cached.
  *
  * @param {String} imageId A Cornerstone Image Object's imageId
  * @param {Object} [options] Options to be passed to the Image Loader
@@ -117,14 +140,28 @@ export function loadAndCacheImage(
     )
   }
 
+  // 1. Check inside the cache for image
   let imageLoadObject = cache.getImageLoadObject(imageId)
 
   if (imageLoadObject !== undefined) {
     return imageLoadObject.promise
   }
+  // 2. Check if there exists a volume in the cache containing the imageId
+  // we copy the pixelData over.
+  const cachedVolumeInfo = cache.getVolumeContainingImageId(imageId)
+  if (cachedVolumeInfo && cachedVolumeInfo.volume.loadStatus.loaded) {
+    // 3. Convert the volume at the specific slice to a cornerstoneImage object.
+    // this will copy the pixel data over.
+    const { volume, imageIdIndex } = cachedVolumeInfo
+    imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex)
+  } else {
+    // 3. if not in image cache nor inside the volume cache, image loaders will
+    // load the imageId
+    imageLoadObject = loadImageFromImageLoader(imageId, options)
+  }
 
-  imageLoadObject = loadImageFromImageLoader(imageId, options)
-
+  // todo: fix data loader scheme etc
+  // 4. Caching the imageLoadObject
   cache.putImageLoadObject(imageId, imageLoadObject)
 
   return imageLoadObject.promise

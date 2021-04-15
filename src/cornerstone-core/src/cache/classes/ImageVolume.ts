@@ -20,6 +20,7 @@ export class ImageVolume {
   }
   sizeInBytes?: number // Seems weird to pass this in? Why not grab it from scalarData.byteLength
   spacing: Array<number>
+  numVoxels: number
   vtkImageData?: any
   vtkOpenGLTexture: any // No good way of referencing vtk classes as they aren't classes.
 
@@ -34,6 +35,8 @@ export class ImageVolume {
     this.scalarData = props.scalarData
     this.sizeInBytes = props.sizeInBytes
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance()
+    this.numVoxels =
+      this.dimensions[0] * this.dimensions[1] * this.dimensions[2]
 
     if (props.scaling) {
       this.scaling = props.scaling

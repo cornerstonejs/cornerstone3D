@@ -76,12 +76,12 @@ function cornerstoneStreamingImageVolumeLoader(
   const sizeInBytes =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
-  cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes)
-
   let numComponents = 1
   if (PhotometricInterpretation === 'RGB') {
     numComponents = 3
   }
+
+  cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes * numComponents)
 
   let scalarData
 

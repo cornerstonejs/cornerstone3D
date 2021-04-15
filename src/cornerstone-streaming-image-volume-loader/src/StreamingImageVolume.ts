@@ -1,3 +1,4 @@
+import { ImageLoadObject } from './../../cornerstone-core/src/types/ILoadObject'
 import {
   EVENTS,
   eventTarget,
@@ -8,6 +9,7 @@ import {
   Types,
   cache,
   loadImage,
+  Utilities,
 } from '@cornerstone'
 import { calculateSUVScalingFactors } from 'calculate-suv'
 
@@ -48,6 +50,8 @@ type PetScaling = {
 
 export default class StreamingImageVolume extends ImageVolume {
   readonly imageIds: Array<string>
+  private _cornerstoneImageMetaData
+
   loadStatus: {
     loaded: boolean
     loading: boolean
@@ -63,6 +67,51 @@ export default class StreamingImageVolume extends ImageVolume {
 
     this.imageIds = streamingProperties.imageIds
     this.loadStatus = streamingProperties.loadStatus
+
+    this._createCornerstoneImageMetaData()
+  }
+
+  /**
+   * Creates the metadata required for converting the volume to an cornerstoneImage
+   *
+   * @returns {void}
+   */
+  private _createCornerstoneImageMetaData() {
+    const numImages = this.imageIds.length
+    const bytesPerImage = this.sizeInBytes / numImages
+    const numComponents = this.scalarData.length / this.numVoxels
+    const pixelsPerImage =
+      this.dimensions[0] * this.dimensions[1] * numComponents
+
+    const { PhotometricInterpretation, voiLut } = this.metadata
+
+    let windowCenter = []
+    let windowWidth = []
+
+    if (voiLut && voiLut.length) {
+      windowCenter = voiLut.map((voi) => {
+        return voi.windowCenter
+      })
+
+      windowWidth = voiLut.map((voi) => {
+        return voi.windowWidth
+      })
+    }
+
+    const color = numComponents > 1 ? true : false //todo: fix this
+
+    this._cornerstoneImageMetaData = {
+      bytesPerImage,
+      numComponents,
+      pixelsPerImage,
+      windowCenter,
+      windowWidth,
+      color,
+      spacing: this.spacing,
+      dimensions: this.dimensions,
+      PhotometricInterpretation,
+      invert: PhotometricInterpretation === 'MONOCHROME1',
+    }
   }
 
   private _hasLoaded = (): boolean => {
@@ -401,6 +450,107 @@ export default class StreamingImageVolume extends ImageVolume {
     cache.removeVolumeLoadObject(this.uid)
   }
 
+  /**
+   * Converts the requested imageId inside the volume to a cornerstoneImage
+   * object. It uses the typedArray set method to copy the pixelData from the
+   * correct offset in the scalarData to a new array for the image
+   *
+   * @params{string} imageId
+   * @params{number} imageIdIndex
+   * @returns {ImageLoadObject} imageLoadObject containing the promise that resolves
+   * to the cornerstone image
+   */
+  public convertToCornerstoneImage(
+    imageId: string,
+    imageIdIndex: number
+  ): ImageLoadObject {
+    const { imageIds } = this
+
+    const {
+      bytesPerImage,
+      pixelsPerImage,
+      windowCenter,
+      windowWidth,
+      numberOfComponents,
+      color,
+      dimensions,
+      spacing,
+      invert,
+    } = this._cornerstoneImageMetaData
+
+    // 1. Grab the buffer and it's type
+    const volumeBuffer = this.scalarData.buffer
+    // (not sure if this actually works, TypeScript keeps complaining)
+    const TypedArray = this.scalarData.constructor
+
+    // 2. Given the index of the image and frame length in bytes,
+    //    create a view on the volume arraybuffer
+    const byteOffset = bytesPerImage * imageIdIndex
+
+    // 3. Create a new TypedArray of the same type for the new
+    //    Image that will be created
+    // @ts-ignore
+    const imageScalarData = new TypedArray(pixelsPerImage)
+    // @ts-ignore
+    const volumeBufferView = new TypedArray(
+      volumeBuffer,
+      byteOffset,
+      pixelsPerImage
+    )
+
+    // 4. Use e.g. TypedArray.set() to copy the data from the larger
+    //    buffer's view into the smaller one
+    imageScalarData.set(volumeBufferView)
+
+    // 5. Create an Image Object from imageScalarData and put it into the Image cache
+    const volumeImageId = imageIds[imageIdIndex]
+    const modalityLutModule =
+      metaData.get('modalityLutModule', volumeImageId) || {}
+    const minMax = Utilities.getMinMax(imageScalarData)
+    const intercept = modalityLutModule.rescaleIntercept
+      ? modalityLutModule.rescaleIntercept
+      : 0
+
+    const image: IImage = {
+      imageId,
+      intercept,
+      windowCenter,
+      windowWidth,
+      color,
+      numComps: numberOfComponents,
+      rows: dimensions[0],
+      columns: dimensions[1],
+      sizeInBytes: imageScalarData.byteLength,
+      getPixelData: () => imageScalarData,
+      minPixelValue: minMax.min,
+      maxPixelValue: minMax.max,
+      slope: modalityLutModule.rescaleSlope
+        ? modalityLutModule.rescaleSlope
+        : 1,
+      getCanvas: undefined, // todo: which canvas?
+      height: dimensions[0],
+      width: dimensions[1],
+      rgba: undefined, // todo: how
+      columnPixelSpacing: spacing[0],
+      rowPixelSpacing: spacing[1],
+      invert,
+    }
+
+    // 5. Create the imageLoadObject
+    const imageLoadObject = {
+      promise: Promise.resolve(image),
+    }
+
+    return imageLoadObject
+  }
+
+  /**
+   * Converts all the volume images (imageIds) to cornerstoneImages and caches them.
+   * It iterates over all the imageIds and convert them until there is no
+   * enough space left inside the imageCache. Finally it will decache the Volume.
+   *
+   * @returns {void}
+   */
   private _convertToImages() {
     // 1. Try to decache images in the volatile Image Cache to provide
     //    enough space to store another entire copy of the volume (as Images).
@@ -408,115 +558,35 @@ export default class StreamingImageVolume extends ImageVolume {
     //    as possible, and the rest of the volume will be decached.
     const byteLength = this.sizeInBytes
     const numImages = this.imageIds.length
+    const { bytesPerImage } = this._cornerstoneImageMetaData
+
     let bytesRemaining = cache.decacheIfNecessaryUntilBytesAvailable(
       byteLength,
       this.imageIds
     )
 
-    // Divide the total volume size by the number of images in the stack
-    // to get the bytes per image
-    const bytesPerImage = byteLength / numImages
-
-    // TODO: There is probably a better way to get this information
-    const numVoxels =
-      this.dimensions[0] * this.dimensions[1] * this.dimensions[2]
-    const numComponents = this.scalarData.length / numVoxels
-    const pixelsPerImage =
-      this.dimensions[0] * this.dimensions[1] * numComponents
-
-    // Grab the buffer and it's type
-    const volumeBuffer = this.scalarData.buffer
-    // (not sure if this actually works, TypeScript keeps complaining)
-    const TypedArray = this.scalarData.constructor
-
-    const { PhotometricInterpretation, voiLut } = this.metadata
-
-    let windowCenter = []
-    let windowWidth = []
-
-    if (voiLut && voiLut.length) {
-      windowCenter = voiLut.map((voi) => {
-        return voi.windowCenter
-      })
-
-      windowWidth = voiLut.map((voi) => {
-        return voi.windowWidth
-      })
-    }
-
-    const pointData = this.vtkImageData.getPointData()
-    const numComps = pointData.getNumberOfComponents()
-    const color = numComps > 1 ? true : false //todo: fix this
-
     for (let imageIdIndex = 0; imageIdIndex < numImages; imageIdIndex++) {
-      bytesRemaining = bytesRemaining - bytesPerImage
-      // 2. Given the index of the image and frame length in bytes,
-      //    create a view on the volume arraybuffer
-      const byteOffset = bytesPerImage * imageIdIndex
+      const imageId = this.imageIds[imageIdIndex]
 
-      // 3. Create a new TypedArray of the same type for the new
-      //    Image that will be created
-      // @ts-ignore
-      const imageScalarData = new TypedArray(pixelsPerImage)
-      // @ts-ignore
-      const volumeBufferView = new TypedArray(
-        volumeBuffer,
-        byteOffset,
-        pixelsPerImage
+      bytesRemaining = bytesRemaining - bytesPerImage
+
+      // 2. Convert each imageId to a cornerstone Image object which is
+      // resolved inside the promise of imageLoadObject
+      const imageLodObject = this.convertToCornerstoneImage(
+        imageId,
+        imageIdIndex
       )
 
-      // 4. Use e.g. TypedArray.set() to copy the data from the larger
-      //    buffer's view into the smaller one
-      imageScalarData.set(volumeBufferView)
+      // 3. Caching the image
+      cache.putImageLoadObject(imageId, imageLodObject)
 
-      // 5. TODO: Create an Image Object from imageScalarData and put it into the Image
-      // cache...
-      const imageId = this.imageIds[imageIdIndex]
-      const modalityLutModule = metaData.get('modalityLutModule', imageId) || {}
-      const minMax = this.getMinMax(imageScalarData)
-
-      const image: IImage = {
-        imageId,
-        rows: this.dimensions[0],
-        columns: this.dimensions[1],
-        sizeInBytes: imageScalarData.byteLength,
-        getPixelData: () => {
-          return imageScalarData
-        },
-        minPixelValue: minMax.min,
-        maxPixelValue: minMax.max,
-        slope: modalityLutModule.rescaleSlope
-          ? modalityLutModule.rescaleSlope
-          : 1,
-        intercept: modalityLutModule.rescaleIntercept
-          ? modalityLutModule.rescaleIntercept
-          : 0,
-        windowCenter,
-        windowWidth,
-        getCanvas: undefined, // todo: which canvas?
-        height: this.dimensions[0],
-        width: this.dimensions[1],
-        color,
-        rgba: undefined, // todo: how
-        columnPixelSpacing: this.spacing[0],
-        rowPixelSpacing: this.spacing[1],
-        numComps,
-        invert: PhotometricInterpretation === 'MONOCHROME1',
-      }
-
-      // todo: should we await here? since we are adding images to the imageCache
-      // and cache size doesn't get updated unless promise is resolved into the image
-      cache.putImageLoadObject(imageId, {
-        promise: Promise.resolve(image),
-      })
-
-      // 6. If we know we won't be able to add another Image to the cache
+      // 4. If we know we won't be able to add another Image to the cache
       //    without breaching the limit, stop here.
       if (bytesRemaining <= bytesPerImage) {
         break
       }
     }
-    // 7. When as much of the Volume is processed into Images as possible
+    // 5. When as much of the Volume is processed into Images as possible
     //    without breaching the cache limit, remove the Volume
     this._removeFromCache()
   }
@@ -526,35 +596,6 @@ export default class StreamingImageVolume extends ImageVolume {
       this._removeFromCache()
     } else {
       this._convertToImages()
-    }
-  }
-
-  /**
-   * Calculate the minimum and maximum values in an Array
-   *
-   * @param {Number[]} storedPixelData
-   * @return {{min: Number, max: Number}}
-   */
-  private getMinMax(storedPixelData) {
-    // we always calculate the min max values since they are not always
-    // present in DICOM and we don't want to trust them anyway as cornerstone
-    // depends on us providing reliable values for these
-    let min = storedPixelData[0]
-
-    let max = storedPixelData[0]
-
-    let storedPixel
-    const numPixels = storedPixelData.length
-
-    for (let index = 1; index < numPixels; index++) {
-      storedPixel = storedPixelData[index]
-      min = Math.min(min, storedPixel)
-      max = Math.max(max, storedPixel)
-    }
-
-    return {
-      min,
-      max,
     }
   }
 }

@@ -1,6 +1,6 @@
 export default {
-  //wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
-  wadoRsRoot: 'https://viewfinder-dev-data-cache.s3.eu-west-3.amazonaws.com',
+  wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+  // wadoRsRoot: 'https://viewfinder-dev-data-cache.s3.eu-west-3.amazonaws.com',
   StudyInstanceUID:
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
   ctSeriesInstanceUID:
