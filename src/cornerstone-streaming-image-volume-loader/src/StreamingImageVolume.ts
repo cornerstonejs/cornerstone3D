@@ -22,12 +22,12 @@ import {
 
 const requestType = 'prefetch'
 
-type LoadStatusInterface = {
-  success: boolean
-  framesLoaded: number
-  numFrames: number
-  framesProcessed: number
-}
+// type LoadStatusInterface = {
+//   success: boolean
+//   framesLoaded: number
+//   numFrames: number
+//   framesProcessed: number
+// }
 
 type ScalingParameters = {
   rescaleSlope: number
@@ -445,7 +445,8 @@ export default class StreamingImageVolume extends ImageVolume {
     }
 
     const pointData = this.vtkImageData.getPointData()
-    const color = pointData.getNumberOfComponents() > 1 ? true : false
+    const numComps = pointData.getNumberOfComponents()
+    const color = numComps > 1 ? true : false //todo: fix this
 
     for (let imageIdIndex = 0; imageIdIndex < numImages; imageIdIndex++) {
       bytesRemaining = bytesRemaining - bytesPerImage
@@ -455,7 +456,9 @@ export default class StreamingImageVolume extends ImageVolume {
 
       // 3. Create a new TypedArray of the same type for the new
       //    Image that will be created
+      // @ts-ignore
       const imageScalarData = new TypedArray(pixelsPerImage)
+      // @ts-ignore
       const volumeBufferView = new TypedArray(
         volumeBuffer,
         byteOffset,
@@ -497,6 +500,7 @@ export default class StreamingImageVolume extends ImageVolume {
         rgba: undefined, // todo: how
         columnPixelSpacing: this.spacing[0],
         rowPixelSpacing: this.spacing[1],
+        numComps,
         invert: PhotometricInterpretation === 'MONOCHROME1',
       }
 

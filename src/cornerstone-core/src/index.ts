@@ -6,6 +6,7 @@ import VIEWPORT_TYPE from './constants/viewportType'
 //
 import RenderingEngine from './RenderingEngine'
 import VolumeViewport from './RenderingEngine/VolumeViewport'
+import StackViewport from './RenderingEngine/StackViewport'
 import eventTarget from './eventTarget'
 import {
   getRenderingEngine,
@@ -50,6 +51,7 @@ export {
   Types,
   //
   VolumeViewport,
+  StackViewport,
   RenderingEngine,
   getRenderingEngine,
   getRenderingEngines,

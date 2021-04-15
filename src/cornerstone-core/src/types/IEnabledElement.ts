@@ -1,7 +1,7 @@
-import IViewport from './IViewport'
+import { VolumeViewport, StackViewport } from '@cornerstone'
 
 interface IEnabledElement {
-  viewport: IViewport
+  viewport: StackViewport | VolumeViewport
   scene: any
   renderingEngine: any
   viewportUID: string

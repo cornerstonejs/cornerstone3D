@@ -7,7 +7,7 @@ import Viewport from './Viewport'
 import { vec3 } from 'gl-matrix'
 import eventTarget from '../eventTarget'
 import EVENTS from '../enums/events'
-import { triggerEvent } from '../utilities'
+import { triggerEvent, isEqual } from '../utilities'
 import {
   Point2,
   Point3,
@@ -24,17 +24,17 @@ import { loadAndCacheImage } from '../imageLoader'
 interface ImageDataMetaData {
   bitsAllocated: number
   numComps: number
-  origin: Array<number>
-  direction: Array<number>
-  dimensions: Array<number>
-  spacing: Array<number>
+  origin: [number, number, number]
+  direction: Float32Array
+  dimensions: [number, number, number]
+  spacing: [number, number, number]
   numVoxels: number
 }
 /**
  * An object representing a single viewport, which is a camera
  * looking into a scene, and an associated target output `canvas`.
  */
-class StackViewport extends Viewport implements IViewport {
+class StackViewport extends Viewport {
   private imageIds: Array<string>
   private currentImageIdIndex: number
   // private _stackActors: Map<string, any>
@@ -48,7 +48,13 @@ class StackViewport extends Viewport implements IViewport {
     const camera = vtkCamera.newInstance()
     renderer.setActiveCamera(camera)
 
-    const { sliceNormal, viewUp } = this.defaultOptions.orientation
+    const {
+      sliceNormal,
+      viewUp,
+    }: {
+      sliceNormal: [number, number, number]
+      viewUp: [number, number, number]
+    } = this.defaultOptions.orientation
 
     camera.setDirectionOfProjection(
       -sliceNormal[0],
@@ -57,6 +63,7 @@ class StackViewport extends Viewport implements IViewport {
     )
     camera.setViewUp(...viewUp)
     camera.setParallelProjection(true)
+    // @ts-ignore: vtkjs incorrect typing
     camera.setFreezeFocalPoint(true)
     this.imageIds = []
     this.currentImageIdIndex = 0
@@ -109,6 +116,7 @@ class StackViewport extends Viewport implements IViewport {
     // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
     // const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6
 
+    // @ts-ignore: vtkjs incorrect typing
     const tfunc = actor.getProperty().getRGBTransferFunction(0)
     if (!this.stackActorVOI!) {
       // setting the range for the first time
@@ -122,6 +130,7 @@ class StackViewport extends Viewport implements IViewport {
     }
 
     if (imageData.getPointData().getNumberOfComponents() > 1) {
+      // @ts-ignore: vtkjs incorrect typing
       actor.getProperty().setIndependentComponents(false)
     }
 
@@ -196,7 +205,14 @@ class StackViewport extends Viewport implements IViewport {
       image.imageId
     )
 
-    const { rowCosines, columnCosines } = imagePlaneModule
+    const {
+      rowCosines,
+      columnCosines,
+    }: {
+      rowCosines: [number, number, number]
+      columnCosines: [number, number, number]
+    } = imagePlaneModule
+
     const rowCosineVec = vec3.fromValues(...rowCosines)
     const colCosineVec = vec3.fromValues(...columnCosines)
     const scanAxisNormal = vec3.create()
@@ -221,7 +237,11 @@ class StackViewport extends Viewport implements IViewport {
       bitsAllocated: imagePixelModule.bitsAllocated,
       numComps,
       origin,
-      direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
+      direction: new Float32Array([
+        ...rowCosineVec,
+        ...colCosineVec,
+        ...scanAxisNormal,
+      ]),
       dimensions: [xVoxels, yVoxels, zVoxels],
       spacing: [xSpacing, ySpacing, zSpacing],
       numVoxels: xVoxels * yVoxels * zVoxels,
@@ -281,10 +301,10 @@ class StackViewport extends Viewport implements IViewport {
 
     const imageData = vtkImageData.newInstance()
 
-    imageData.setDimensions(...dimensions)
-    imageData.setSpacing(...spacing)
+    imageData.setDimensions(dimensions)
+    imageData.setSpacing(spacing)
     imageData.setDirection(direction)
-    imageData.setOrigin(...origin)
+    imageData.setOrigin(origin)
 
     imageData.getPointData().setScalars(scalarArray)
     return imageData
@@ -311,14 +331,23 @@ class StackViewport extends Viewport implements IViewport {
 
     const [xSpacing, ySpacing, zSpacing] = imageData.getSpacing()
     const [xVoxels, yVoxels, zVoxels] = imageData.getDimensions()
+    const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId)
+    const direction = imageData.getDirection()
+    const rowCosines = direction.slice(0, 3)
+    const columnCosines = direction.slice(3, 6)
 
-    // using spacing and size only for now
-    return (
-      xSpacing === image.rowPixelSpacing &&
-      ySpacing === image.columnPixelSpacing &&
-      xVoxels === image.rows &&
-      yVoxels === image.columns
-    )
+    // using spacing, size, and direction only for now
+    if (
+      xSpacing !== image.rowPixelSpacing ||
+      ySpacing !== image.columnPixelSpacing ||
+      xVoxels !== image.rows ||
+      yVoxels !== image.columns ||
+      !isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) ||
+      !isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines)
+    ) {
+      return false
+    }
+    return true
   }
 
   // Todo: rename since it may do more than set scalars

@@ -149,8 +149,8 @@ abstract class BaseAnnotationTool extends BaseTool {
     element: HTMLElement,
     toolData: ToolSpecificToolData,
     canvasCoords: Point2,
-    proximity,
-    interactionType = 'mouse'
+    proximity: number,
+    interactionType: string
   )
 
   /**
@@ -182,11 +182,13 @@ abstract class BaseAnnotationTool extends BaseTool {
       return true
     }
 
+    // todo: support other interactions
     const toolNewImagePoint = this.pointNearTool(
       element,
       toolData,
       canvasCoords,
-      proximity
+      proximity,
+      'mouse'
     )
 
     return toolNewImagePoint

@@ -1,6 +1,6 @@
-import { Point3 } from '../../types'
 import getVolumeActorCorners from '../vtkjs/getVolumeActorCorners'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 
 /**
  * @function getSliceRange Given a `vtkVolumeActor`, and a normal direction,
@@ -18,7 +18,7 @@ export default function getSliceRange(
   volumeActor,
   viewPlaneNormal: Point3,
   focalPoint: Point3
-) {
+): { min: number; max: number; current: number } {
   const corners = getVolumeActorCorners(volumeActor)
 
   // Get rotation matrix from normal to +X (since bounds is aligned to XYZ)

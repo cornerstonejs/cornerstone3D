@@ -1,7 +1,7 @@
 import macro from 'vtk.js/Sources/macro'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 import { vec3, mat4 } from 'gl-matrix'
-import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 
 /**
  * vtkSlabCamera - A dervied class of the core vtkCamera class

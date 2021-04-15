@@ -1,4 +1,4 @@
-import { ICache, IImage } from '../types'
+import { ICache, IImage, ImageLoadObject, VolumeLoadObject } from '../types'
 import triggerEvent from '../utilities/triggerEvent'
 import eventTarget from '../eventTarget'
 import EVENTS from '../enums/events'
@@ -6,18 +6,6 @@ import ERROR_CODES from '../enums/errorCodes'
 import ImageVolume from './classes/ImageVolume'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
-
-export interface ImageLoadObject {
-  promise: any // Promise<Image>
-  cancel?: () => void
-  decache?: () => void
-}
-
-export interface VolumeLoadObject {
-  promise: any // Promise<Volume>
-  cancel?: () => void
-  decache?: () => void
-}
 
 interface CachedImage {
   image?: any // TODO We need to type this
@@ -549,6 +537,7 @@ class Cache implements ICache {
 
         this.decacheIfNecessaryUntilBytesAvailable(
           volume.sizeInBytes,
+          // @ts-ignore: // todo ImageVolume does not have imageIds
           volume.imageIds
         )
 
@@ -705,5 +694,4 @@ class Cache implements ICache {
 }
 
 const cache = new Cache()
-window.cache = cache
 export default cache

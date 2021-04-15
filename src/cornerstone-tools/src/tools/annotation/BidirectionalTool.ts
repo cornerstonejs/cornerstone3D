@@ -1,6 +1,6 @@
 import { BaseAnnotationTool } from '../base'
-import { Point3 } from '../../types'
-import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
+import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
 import { getEnabledElement } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
@@ -152,7 +152,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
       const near =
-        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+        vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
 
       if (near === true) {
         data.handles.activeHandleIndex = i
@@ -589,20 +589,20 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
       // 1. distance from intersection point to start handle?
       const distFromLeftHandle = vec2.distance(
-        canvasCoordHandlesCurrent[2],
+        <vec2>canvasCoordHandlesCurrent[2],
         intersectionCoord
       )
 
       // 2. distance from intersection point to end handle?
       const distFromRightHandle = vec2.distance(
-        canvasCoordHandlesCurrent[3],
+        <vec2>canvasCoordHandlesCurrent[3],
         intersectionCoord
       )
 
       // 3. distance from long's opposite handle and intersect point
       // Need new intersect x/y
       const distIntersectAndFixedPoint = Math.abs(
-        vec2.distance(fixedCanvasCoord, intersectionCoord)
+        vec2.distance(<vec2>fixedCanvasCoord, intersectionCoord)
       )
 
       // Find inclination of perpindicular
@@ -688,7 +688,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
       // 1. distance from intersection point to start handle?
       const distFromTranslateHandle = vec2.distance(
-        canvasCoordHandlesCurrent[translateHandleIndex],
+        <vec2>canvasCoordHandlesCurrent[translateHandleIndex],
         [newIntersectionPoint.x, newIntersectionPoint.y]
       )
 

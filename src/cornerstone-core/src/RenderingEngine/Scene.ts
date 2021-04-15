@@ -4,7 +4,7 @@ import { createVolumeActor } from './helpers'
 import { loadVolume } from '../volumeLoader'
 import { uuidv4 } from '../utilities'
 import VolumeViewport from './VolumeViewport'
-import { VolumeActor, ActorEntry } from './Viewport'
+import { VolumeActor, ActorEntry } from '../types'
 
 type VolumeInput = {
   volumeUID: string

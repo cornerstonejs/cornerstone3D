@@ -1,15 +1,16 @@
 import VIEWPORT_TYPE from '../constants/viewportType'
-import { IViewport, ICamera } from '../types'
 import Scene from './Scene'
+import Viewport from './Viewport'
+
 import { ViewportInput, Point2, Point3 } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
-import Viewport, { ActorEntry } from './Viewport'
+import { ActorEntry } from '../types'
 
 /**
  * An object representing a single viewport, which is a camera
  * looking into a scene, and an associated target output `canvas`.
  */
-class VolumeViewport extends Viewport implements IViewport {
+class VolumeViewport extends Viewport {
   constructor(props: ViewportInput) {
     super(props)
 
@@ -131,7 +132,8 @@ class VolumeViewport extends Viewport implements IViewport {
    * @public
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
-    const vtkCamera = this.getVtkActiveCamera()
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCamera
+
     const slabThicknessActive = vtkCamera.getSlabThicknessActive()
     // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
     // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used
@@ -171,7 +173,8 @@ class VolumeViewport extends Viewport implements IViewport {
    * @public
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    const vtkCamera = this.getVtkActiveCamera()
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCamera
+
     const slabThicknessActive = vtkCamera.getSlabThicknessActive()
     // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
     // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used

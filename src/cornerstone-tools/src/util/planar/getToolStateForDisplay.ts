@@ -1,12 +1,12 @@
 import getTargetVolume from './getTargetVolume'
 import getToolStateWithinSlice from './getToolStateWithinSlice'
-import { Types } from '@cornerstone'
-import { VIEWPORT_TYPE } from '@cornerstone'
+import { StackViewport, VIEWPORT_TYPE, VolumeViewport } from '@cornerstone'
+import IViewport from 'src/cornerstone-core/src/types/IViewport'
 
-//const { IViewport } = Types;
+// const { ICamera } = Types
 
 export default function getToolStateForDisplay(viewport: IViewport, toolState) {
-  if (viewport.type === VIEWPORT_TYPE.STACK) {
+  if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport
     let imageId = viewport.getCurrentImageId()
 
@@ -18,7 +18,7 @@ export default function getToolStateForDisplay(viewport: IViewport, toolState) {
     return toolState.filter((toolData) => {
       return toolData.metadata.referencedImageId === imageId
     })
-  } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
+  } else if (viewport instanceof VolumeViewport) {
     const scene = viewport.getScene()
     const camera = viewport.getCamera()
 

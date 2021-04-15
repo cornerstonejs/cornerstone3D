@@ -20,7 +20,7 @@ import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { pointInEllipse } from '../../util/math/ellipse'
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
-import { Point2 } from '../../types'
+import Point2 from 'src/cornerstone-core/src/types/Point2'
 
 export default class EllipticalRoiTool extends BaseAnnotationTool {
   touchDragCallback: any
@@ -150,7 +150,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
       const near =
-        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+        vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
 
       if (near === true) {
         data.handles.activeHandleIndex = i

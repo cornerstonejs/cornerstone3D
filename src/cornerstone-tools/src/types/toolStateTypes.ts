@@ -1,4 +1,4 @@
-import Point3 from './Point3'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 
 type ToolSpecificToolData = {
   metadata: {

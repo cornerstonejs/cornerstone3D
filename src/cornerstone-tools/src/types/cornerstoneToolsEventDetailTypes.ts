@@ -1,12 +1,12 @@
-import Point2 from './Point2'
-import Point3 from './Point3'
+import Point2 from 'src/cornerstone-core/src/types/Point2'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 
 interface ICornerstoneToolsEventDetail {
   renderingEngineUID: string
   sceneUID: string
   viewportUID: string
 
-  event: Record<string, unknown>
+  event: Record<string, unknown> | MouseEvent
   camera: Record<string, unknown>
   element: HTMLElement
   //

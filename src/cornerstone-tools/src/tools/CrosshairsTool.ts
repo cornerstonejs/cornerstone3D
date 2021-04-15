@@ -13,7 +13,7 @@ import { CornerstoneTools3DEvents as EVENTS } from '../enums'
 import { getViewportUIDsWithToolToRender } from '../util/viewportFilters'
 import { showToolCursor, hideToolCursor } from '../store/toolCursor'
 import { math } from '../util'
-import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import cornerstoneMath from 'cornerstone-math'
 import {
@@ -713,6 +713,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.normalize(worldUnitVectorFromCenter)
 
       const { viewPlaneNormal } = camera
+      // @ts-ignore
       const { matrix } = vtkMatrixBuilder
         .buildFromDegree()
         .rotate(90, viewPlaneNormal)
@@ -1685,8 +1686,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         finalPointCanvas,
         eventData.deltaPoints.canvas
       )
-      vec2.sub(dir1, originalPointCanvas, centerCanvas)
-      vec2.sub(dir2, finalPointCanvas, centerCanvas)
+      vec2.sub(dir1, originalPointCanvas, <vec2>centerCanvas)
+      vec2.sub(dir2, finalPointCanvas, <vec2>centerCanvas)
 
       let angle = vec2.angle(dir1, dir2)
 
@@ -1697,10 +1698,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
 
       const rotationAxis = viewport.getCamera().viewPlaneNormal
+      // @ts-ignore : vtkjs incorrect typing
       const { matrix } = vtkMatrixBuilder
         .buildFromRadian()
         .translate(center[0], center[1], center[2])
-        .rotate(angle, rotationAxis)
+        // @ts-ignore
+        .rotate(angle, rotationAxis) //todo: why we are passing
         .translate(-center[0], -center[1], -center[2])
 
       // update camera for the other viewports.

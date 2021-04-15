@@ -4,6 +4,7 @@ import {
   getVolume,
   EVENTS,
   triggerEvent,
+  VolumeViewport,
 } from '@cornerstone'
 import { StreamingImageVolume } from '../../../cornerstone-streaming-image-volume-loader/src'
 
@@ -97,7 +98,7 @@ export default class WindowLevelTool extends BaseTool {
 
     triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
 
-    if (scene) {
+    if (scene || viewport instanceof VolumeViewport) {
       scene.render()
       return
     }

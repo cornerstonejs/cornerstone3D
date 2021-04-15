@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { BaseAnnotationTool } from '../base'
 // ~~ VTK Viewport
-import { getEnabledElement, getVolume } from '@cornerstone'
+import { getEnabledElement, getVolume, StackViewport } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
@@ -14,9 +15,7 @@ import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
-import { Point3 } from '../../types'
-
-import { number } from 'prop-types'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 
 export default class ProbeTool extends BaseAnnotationTool {
   touchDragCallback: any
@@ -47,6 +46,10 @@ export default class ProbeTool extends BaseAnnotationTool {
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
+  pointNearTool() {}
+
+  toolSelectedCallback() {}
+
   addNewMeasurement(evt, interactionType) {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
@@ -58,13 +61,16 @@ export default class ProbeTool extends BaseAnnotationTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
+    let referencedImageId
+    if (viewport instanceof StackViewport) {
+      referencedImageId = viewport.getCurrentImageId()
+    }
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
         viewUp: [...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId:
-          viewport.getCurrentImageId && viewport.getCurrentImageId(),
+        referencedImageId,
         toolName: this.name,
       },
       data: {
@@ -104,7 +110,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
     const near =
-      vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+      vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
 
     if (near === true) {
       return point

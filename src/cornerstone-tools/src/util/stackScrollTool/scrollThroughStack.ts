@@ -1,4 +1,9 @@
-import { getEnabledElement, VIEWPORT_TYPE } from '@cornerstone'
+import {
+  getEnabledElement,
+  StackViewport,
+  VIEWPORT_TYPE,
+  VolumeViewport,
+} from '@cornerstone'
 import clip from '../clip'
 import getTargetVolume from '../planar/getTargetVolume'
 import getSliceRange from './getSliceRange'
@@ -24,10 +29,11 @@ export default function scrollThroughStack(
 ) {
   const { element: canvas, wheel } = evt.detail
   const { scene, viewport } = getEnabledElement(canvas)
+  const { type: viewportType } = viewport
   const camera = viewport.getCamera()
   const { focalPoint, viewPlaneNormal, position } = camera
 
-  if (viewport.type === VIEWPORT_TYPE.STACK) {
+  if (viewport instanceof StackViewport) {
     // stack viewport
     const currentImageIdIndex = viewport.getCurrentImageIdIndex()
     const numberOfFrames = viewport.getImageIds().length
@@ -37,7 +43,7 @@ export default function scrollThroughStack(
     newImageIdIndex = clip(newImageIdIndex, 0, numberOfFrames - 1)
 
     viewport.setImageIdIndex(newImageIdIndex)
-  } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
+  } else if (viewport instanceof VolumeViewport) {
     // Stack scroll across highest resolution volume.
     const { spacingInNormalDirection, imageVolume } = getTargetVolume(
       scene,
@@ -64,6 +70,6 @@ export default function scrollThroughStack(
     })
     viewport.render()
   } else {
-    throw new Error(`Not implemented for Viewport Type: ${viewport.type}`)
+    throw new Error(`Not implemented for Viewport Type: ${viewportType}`)
   }
 }

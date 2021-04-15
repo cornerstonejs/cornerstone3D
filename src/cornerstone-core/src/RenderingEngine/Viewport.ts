@@ -1,32 +1,22 @@
+import { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
 import Events from '../enums/events'
 import VIEWPORT_TYPE from '../constants/viewportType'
-import { IViewport, ICamera, ViewportInput } from '../types'
+import { IViewport, ICamera, ViewportInput, ActorEntry } from '../types'
 import _cloneDeep from 'lodash.clonedeep'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
-import Scene, { VolumeActorEntry } from './Scene'
 import triggerEvent from '../utilities/triggerEvent'
-import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec3 } from 'gl-matrix'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { ViewportInputOptions, Point2, Point3 } from '../types'
-import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
-
-export type VolumeActor = {
-  getProperty: () => any
-}
-
-export type ActorEntry = {
-  uid: string
-  volumeActor: VolumeActor
-  slabThickness?: number
-}
+import { vtkSlabCamera } from './vtkClasses'
 
 /**
  * An object representing a single viewport, which is a camera
  * looking into a scene, and an associated target output `canvas`.
  */
-class Viewport implements IViewport {
+class Viewport {
   readonly uid: string
   readonly sceneUID?: string = undefined
   readonly renderingEngineUID: string
@@ -178,7 +168,7 @@ class Viewport implements IViewport {
    * @param {ViewportInputOptions} options The viewport options to set.
    * @param {boolean} [immediate=false] If `true`, renders the viewport after the options are set.
    */
-  public setOptions(options: ViewportInputOptions, immediate = false) {
+  public setOptions(options: ViewportInputOptions, immediate = false): void {
     this.options = <ViewportInputOptions>_cloneDeep(options)
 
     // TODO When this is needed we need to move the camera position.
@@ -209,7 +199,7 @@ class Viewport implements IViewport {
     const renderer = this.getRenderer()
 
     const bounds = renderer.computeVisiblePropBounds()
-    const focalPoint = [0, 0, 0]
+    const focalPoint: [number, number, number] = [0, 0, 0]
 
     const activeCamera = this.getVtkActiveCamera()
     const viewPlaneNormal = activeCamera.getViewPlaneNormal()
@@ -326,7 +316,7 @@ class Viewport implements IViewport {
    *
    * @returns {object} the vtkCamera.
    */
-  public getVtkActiveCamera(): ICamera {
+  public getVtkActiveCamera(): vtkCamera | vtkSlabCamera {
     const renderer = this.getRenderer()
 
     return renderer.getActiveCamera()
@@ -336,23 +326,26 @@ class Viewport implements IViewport {
     const vtkCamera = this.getVtkActiveCamera()
 
     // TODO: Make sure these are deep copies.
+    let slabThickness
+    // Narrowing down the type for typescript
+    if ('getSlabThickness' in vtkCamera) {
+      slabThickness = vtkCamera.getSlabThickness()
+    }
 
     return {
-      viewUp: vtkCamera.getViewUp(),
-      viewPlaneNormal: vtkCamera.getViewPlaneNormal(),
-      clippingRange: vtkCamera.getClippingRange(),
+      viewUp: <Point3>vtkCamera.getViewUp(),
+      viewPlaneNormal: <Point3>vtkCamera.getViewPlaneNormal(),
+      clippingRange: <Point3>vtkCamera.getClippingRange(),
       // TODO: I'm really not sure about this, it requires a calculation, and
       // how useful is this without the renderer context?
       // Lets add it back if we find we need it.
       //compositeProjectionMatrix: vtkCamera.getCompositeProjectionMatrix(),
-      position: vtkCamera.getPosition(),
-      focalPoint: vtkCamera.getFocalPoint(),
+      position: <Point3>vtkCamera.getPosition(),
+      focalPoint: <Point3>vtkCamera.getFocalPoint(),
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
-      slabThickness: vtkCamera.getSlabThickness
-        ? vtkCamera.getSlabThickness()
-        : undefined,
+      slabThickness,
     }
   }
 
@@ -403,7 +396,7 @@ class Viewport implements IViewport {
       vtkCamera.setViewAngle(viewAngle)
     }
 
-    if (slabThickness !== undefined) {
+    if (slabThickness !== undefined && 'setSlabThickness' in vtkCamera) {
       vtkCamera.setSlabThickness(slabThickness)
     }
 

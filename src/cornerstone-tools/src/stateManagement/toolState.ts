@@ -1,7 +1,7 @@
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
 import { uuidv4 } from '../util'
 import { ToolSpecificToolState } from '../types/toolStateTypes'
-import { IEnabledElement } from '../types'
+import IEnabledElement from 'src/cornerstone-core/src/types/IEnabledElement'
 
 function getViewportSpecificStateManager(element: IEnabledElement) {
   // TODO:

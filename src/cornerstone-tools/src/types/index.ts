@@ -12,8 +12,8 @@ import {
 } from './cornerstoneToolsEventDetailTypes'
 import BoundingBox from './BoundingBox'
 import PlanarBoundingBox from './PlanarBoundingBox'
-import Point2 from './Point2'
-import Point3 from './Point3'
+import Point2 from 'src/cornerstone-core/src/types/Point2'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 
 export {
   // ToolState

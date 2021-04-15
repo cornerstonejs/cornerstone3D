@@ -6,6 +6,7 @@ import {
   ERROR_CODES,
 } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
 import StreamingImageVolume from './StreamingImageVolume'
 
@@ -65,7 +66,7 @@ function cornerstoneStreamingImageVolumeLoader(
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
   const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing]
-  const dimensions = [Columns, Rows, numFrames]
+  const dimensions = <Point3>[Columns, Rows, numFrames]
   const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal]
   const signed = PixelRepresentation === 1
 

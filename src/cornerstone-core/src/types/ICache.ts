@@ -1,5 +1,4 @@
-import ImageVolume from 'src/cache/classes/ImageVolume'
-import StreamingImageVolume from '@cornerstone-streaming-image-volume-loader/StreamingImageVolume'
+import { ImageLoadObject, VolumeLoadObject } from './ILoadObject'
 
 interface ICache {
   setMaxCacheSize: (maxCacheSize: number) => void

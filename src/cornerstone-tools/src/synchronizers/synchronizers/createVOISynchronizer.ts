@@ -24,5 +24,3 @@ export default function createVOISynchronizer(
 
   return VOISynchronizer
 }
-
-window.SynchronizerManager = SynchronizerManager

@@ -265,11 +265,11 @@ class StackViewportExample extends Component {
 
     let fakeStake = [
       dxImageIds[0],
-      // colorImageIds[0],
+      colorImageIds[0],
       dxImageIds[1],
       wadoCTImageIds[40],
-      // colorImageIds[1],
-      // colorImageIds[2],
+      colorImageIds[1],
+      colorImageIds[2],
       wadoCTImageIds[41],
     ]
     await dxColorViewport.setStack(fakeStake)

@@ -7,6 +7,8 @@ import ImageLoaderFn from './ImageLoaderFn'
 import IRegisterImageLoader from './IRegisterImageLoader'
 import IStreamingVolume from './IStreamingVolume'
 import IViewport, { ViewportInput, PublicViewportInput } from './IViewport'
+import { VolumeActor, ActorEntry } from './IActor'
+import { ImageLoadObject, VolumeLoadObject } from './ILoadObject'
 import LibraryConfiguration from './LibraryConfiguration'
 import Metadata from './Metadata'
 import Orientation from './Orientation'
@@ -27,6 +29,10 @@ export {
   IViewport,
   ViewportInput,
   PublicViewportInput,
+  VolumeActor,
+  ActorEntry,
+  ImageLoadObject,
+  VolumeLoadObject,
   //
   LibraryConfiguration,
   Metadata,

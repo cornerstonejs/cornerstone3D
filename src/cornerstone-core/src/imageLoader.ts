@@ -1,8 +1,8 @@
-import cache, { ImageLoadObject } from './cache/cache'
+import cache from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
-import { IImage, ImageLoaderFn } from './types'
+import { IImage, ImageLoaderFn, ImageLoadObject } from './types'
 
 interface ImageLoaderOptions {
   [key: string]: any

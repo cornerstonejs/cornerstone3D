@@ -20,9 +20,9 @@ import RenderingEngine from './RenderingEngine'
  * @public
  */
 export function getRenderingEngine(uid: string): RenderingEngine | undefined {
-  if (!uid) {
-    return renderingEngineCache.getAll()
-  }
+  // if (!uid) {
+  //   return renderingEngineCache.getAll()
+  // }
 
   return renderingEngineCache.get(uid)
 }

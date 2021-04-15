@@ -1,7 +1,11 @@
+import { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
 import ICamera from './ICamera'
 import Point2 from './Point2'
 import Point3 from './Point3'
 import ViewportInputOptions from './ViewportInputOptions'
+import { VOIRange } from './voi'
+import { ActorEntry } from './IActor'
+import { vtkSlabCamera } from '../RenderingEngine/vtkClasses'
 
 interface IViewport {
   uid: string
@@ -13,21 +17,29 @@ interface IViewport {
   sy: number
   sWidth: number
   sHeight: number
+  _actors: Map<string, any>
   defaultOptions: any
-  //
-  canvasToWorld: (canvasPos: Point2) => Point3
-  getCamera: () => ICamera
+  options: ViewportInputOptions
   getFrameOfReferenceUID: () => string
-  getActors: () => any
-  render: () => void
-  setCamera: (cameraOptions: ICamera) => void
+  canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
-  //
-  // These only exist on stack viewport, how do we handle this?
-  getImageIds?: () => Array<string>
-  getCurrentImageId?: () => string
-  getCurrentImageIdIndex?: () => number
-  setImageIdIndex?: (number) => void
+  getActors(): Array<ActorEntry>
+  getActor(actorUID: string): ActorEntry
+  setActors(actors: Array<ActorEntry>): void
+  addActors(actors: Array<ActorEntry>): void
+  addActor(actorEntry: ActorEntry): void
+  removeAllActors(): void
+  getRenderingEngine(): any
+  getRenderer(): void
+  render(): void
+  setOptions(options: ViewportInputOptions, immediate: boolean): void
+  reset(immediate: boolean): void
+  resetCamera(): void
+  getCanvas(): HTMLCanvasElement
+  getVtkActiveCamera(): vtkCamera | vtkSlabCamera
+  getCamera(): ICamera
+  setCamera(cameraInterface: ICamera): void
+  _getCorners(bounds: Array<number>): Array<number>[]
 }
 
 /**

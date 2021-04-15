@@ -1,5 +1,5 @@
 import { BaseAnnotationTool } from '../base'
-import { Point2, Point3 } from '../../types'
+import Point2 from 'src/cornerstone-core/src/types/Point2'
 // ~~ VTK Viewport
 import { getEnabledElement, getVolume } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
@@ -144,7 +144,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
       const near =
-        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+        vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
 
       if (near === true) {
         data.handles.activeHandleIndex = i

@@ -1,7 +1,7 @@
 import { BaseTool } from './base'
 import { getEnabledElement } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
-import { Point3 } from '../types'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 
 enum DIRECTIONS {
@@ -54,7 +54,7 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
         break
     }
 
-    const transformMatrix = transform.matrix
+    const transformMatrix = transform.getMatrix()
 
     vec3.transformMat4(viewUp, viewUp, transformMatrix)
     vec3.transformMat4(viewPlaneNormal, viewPlaneNormal, transformMatrix)

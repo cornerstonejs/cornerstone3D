@@ -1,6 +1,6 @@
 import { BaseTool } from './base'
-import { Point3 } from '../types'
 import { getEnabledElement } from '@cornerstone'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 
 /**
  * @class PanTool

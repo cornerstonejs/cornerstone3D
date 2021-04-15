@@ -15,6 +15,7 @@ interface IImage {
   width: number
   color: boolean
   rgba: boolean
+  numComps: number
   columnPixelSpacing: number
   rowPixelSpacing: number
   invert: boolean

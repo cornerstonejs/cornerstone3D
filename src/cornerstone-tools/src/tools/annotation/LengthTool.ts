@@ -1,7 +1,12 @@
-import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec2 } from 'gl-matrix'
 import cornerstoneMath from 'cornerstone-math'
-import { getEnabledElement, VIEWPORT_TYPE, getVolume } from '@cornerstone'
+import {
+  getEnabledElement,
+  VIEWPORT_TYPE,
+  getVolume,
+  StackViewport,
+} from '@cornerstone'
 
 import { getToolStateForDisplay, getImageIdForTool } from '../../util/planar'
 import { BaseAnnotationTool } from '../base'
@@ -78,7 +83,7 @@ class LengthTool extends BaseAnnotationTool {
 
     // TODO: what do we do here? this feels wrong
     let referencedImageId
-    if (viewport.type === VIEWPORT_TYPE.STACK) {
+    if (viewport instanceof StackViewport) {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
@@ -174,7 +179,7 @@ class LengthTool extends BaseAnnotationTool {
       const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
       const near =
-        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+        vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
 
       if (near === true) {
         data.handles.activeHandleIndex = i

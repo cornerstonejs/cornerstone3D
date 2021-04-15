@@ -1,6 +1,6 @@
-/**
- * This duplicates the typing established in gl-matrix for a vec3
- */
-type Point3 = [number, number, number] | Float32Array
+// /**
+//  * This duplicates the typing established in gl-matrix for a vec3
+//  */
+// type Point3 = number[] | Float32Array
 
-export default Point3
+// export default Point3

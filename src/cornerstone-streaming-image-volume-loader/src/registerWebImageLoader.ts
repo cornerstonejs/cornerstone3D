@@ -1,4 +1,5 @@
 import * as cornerstone from '@cornerstone'
+import IImage from 'src/cornerstone-core/src/types/IImage'
 const canvas = document.createElement('canvas')
 let lastImageIdDrawn
 
@@ -106,7 +107,7 @@ function arrayBufferToImage(arrayBuffer) {
 //
 const options = {
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-  beforeSend: () => {
+  beforeSend: (xhr) => {
     // xhr
   },
 }
@@ -142,10 +143,6 @@ function loadImage(uri, imageId) {
     }
   }
 
-  xhr.onerror = function (error) {
-    reject(error)
-  }
-
   const promise = new Promise((resolve, reject) => {
     xhr.onload = function () {
       const imagePromise = arrayBufferToImage(this.response)
@@ -159,6 +156,9 @@ function loadImage(uri, imageId) {
         .catch((error) => {
           console.error(error)
         })
+    }
+    xhr.onerror = function (error) {
+      reject(error)
     }
 
     xhr.send()
@@ -218,7 +218,7 @@ function _loadImageIntoBuffer(
     // get the pixel data from the server
     loadImage(uri, imageId)
       .promise.then(
-        (image) => {
+        (image: IImage) => {
           if (!options || !options.targetBuffer) {
             resolve(image)
             return
@@ -245,7 +245,7 @@ function _loadImageIntoBuffer(
           // Arrays of different types, which aren't simply memcpy ops.
           targetArray.set(pixelDataRGB, 0)
 
-          resolve()
+          resolve(true)
         },
         (error) => {
           console.warn('something??')

@@ -1,9 +1,7 @@
 import { metaData } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
 import math from '../math'
-import { ToolSpecificToolState, Point3 } from '../../types'
-import { IVolume } from 'src/cornerstone-core/src/types'
-import * as vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import Point3 from 'src/cornerstone-core/src/types/Point3'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 export default function getImageIdForTool(
