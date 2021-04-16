@@ -20,6 +20,7 @@ import {
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
+import requestPoolManager from '../requestPool/requestPoolManager'
 
 interface ImageDataMetaData {
   bitsAllocated: number
@@ -398,22 +399,71 @@ class StackViewport extends Viewport {
     this._imageData.modified()
   }
 
-  private async _updateActorToDisplayImageId(imageId: string) {
+  private _loadImage(imageId: string, imageIdIndex: number) {
+    // 1. Load the image using the Image Loader
+
+    function successCallback(image, imageId, imageIdIndex) {
+      const eventData = {
+        image,
+        imageId,
+      }
+
+      triggerEvent(eventTarget, EVENTS.STACK_NEW_IMAGE, eventData)
+
+      this._updateActorToDisplayImageId(image)
+
+      // Todo: trigger an event to allow applications to hook into END of loading state
+      // Currently we use loadHandlerManagers for this
+
+      // Perform this check after the image has finished loading
+      // in case the user has already scrolled away to another image.
+      // In that case, do not render this image.
+      if (this.currentImageIdIndex !== imageIdIndex) {
+        return
+      }
+
+      // Trigger the image to be drawn on the next animation frame
+      this.render()
+
+      // Update the viewport's currentImageIdIndex to reflect the newly
+      // rendered image
+      this.currentImageIdIndex = imageIdIndex
+    }
+
+    // Use loadImage because we are skipping the Cornerstone Image cache
+    // when we load directly into the Volume cache
+    function sendRequest(imageId, imageIdIndex, options) {
+      return loadAndCacheImage(imageId, options).then(
+        (image) => {
+          successCallback.call(this, image, imageId, imageIdIndex)
+        },
+        (error) => {
+          console.debug(error)
+        }
+      )
+    }
+
+    const priority = -5
+    const requestType = 'prefetch'
+    const additionalDetails = { stackViewport: true }
+    const options = {}
+
+    requestPoolManager.addRequest(
+      sendRequest.bind(this, imageId, imageIdIndex, options),
+      requestType,
+      additionalDetails,
+      priority
+    )
+
+    // todo: Does this makes two grabbers? it should be one StartGrabbing
+    requestPoolManager.startGrabbing()
+  }
+
+  private _updateActorToDisplayImageId(image) {
     // This function should do the following:
-    // - Load the specified Image
     // - Get the existing actor's vtkImageData that is being used to render the current image and check if we can reuse the vtkImageData that is in place (i.e. do the image dimensions and data type match?)
     // - If we can reuse it, replace the scalar data under the hood
     // - If we cannot reuse it, create a new actor, remove the old one, and reset the camera
-
-    // 1. Load the image using the Image Loader
-    const image = await loadAndCacheImage(imageId, {})
-
-    const eventData = {
-      image,
-      imageId,
-    }
-
-    triggerEvent(eventTarget, EVENTS.STACK_NEW_IMAGE, eventData)
 
     // 2. Check if we can reuse the existing vtkImageData object, if one is present.
     const sameImageData = this._checkVTKImageDataMatchesCornerstoneImage(
@@ -490,24 +540,7 @@ class StackViewport extends Viewport {
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
 
-    this._updateActorToDisplayImageId(imageId).then(() => {
-      // Todo: trigger an event to allow applications to hook into END of loading state
-      // Currently we use loadHandlerManagers for this
-
-      // Perform this check after the image has finished loading
-      // in case the user has already scrolled away to another image.
-      // In that case, do not render this image.
-      if (this.currentImageIdIndex !== imageIdIndex) {
-        return
-      }
-
-      // Trigger the image to be drawn on the next animation frame
-      this.render()
-
-      // Update the viewport's currentImageIdIndex to reflect the newly
-      // rendered image
-      this.currentImageIdIndex = imageIdIndex
-    })
+    this._loadImage(imageId, imageIdIndex)
   }
 
   public setImageIdIndex(imageIdIndex: number): void {

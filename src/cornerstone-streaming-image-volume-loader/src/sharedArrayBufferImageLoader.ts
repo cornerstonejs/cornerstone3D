@@ -14,7 +14,10 @@ import {
 function sharedArrayBufferImageLoader(
   imageId: string,
   options?: Record<string, any>
-): { promise: Promise<Record<string, any>>; cancelFn: () => void } {
+): {
+  promise: Promise<Record<string, any>>
+  cancelFn: () => void
+} {
   const uri = imageId.slice(imageId.indexOf(':') + 1)
 
   const promise = new Promise((resolve, reject) => {
@@ -48,11 +51,38 @@ function sharedArrayBufferImageLoader(
         decodePromise.then(() => {
           resolve(undefined)
         }, reject)
-      }, reject)
+      })
       .catch((error) => {
         reject(error)
       })
   })
+
+  // const imagePromise = new Promise((resolve, reject) => {
+  //   requestPromise.then((result) => {
+  //     const transferSyntax = getTransferSyntaxForContentType(result.contentType)
+
+  //     const pixelData = result.imageFrame.pixelData
+
+  //     if (!pixelData || !pixelData.length) {
+  //       reject(new Error('The file does not contain image data.'))
+  //       return
+  //     }
+
+  //     const canvas = document.createElement('canvas')
+  //     const imageFrame = getImageFrame(imageId)
+  //     const decodePromise = decodeImageFrame(
+  //       imageFrame,
+  //       transferSyntax,
+  //       pixelData,
+  //       canvas,
+  //       options
+  //     )
+
+  //     decodePromise.then(() => {
+  //       resolve(undefined)
+  //     }, reject)
+  //   })
+  // })
 
   return {
     promise,

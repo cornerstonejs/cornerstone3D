@@ -107,7 +107,6 @@ function hardcodedMetaDataProvider(type, imageId) {
 }
 
 metaData.addProvider(hardcodedMetaDataProvider, 10000)
-registerWebImageLoader(cs)
 
 window.cache = cache
 
@@ -132,6 +131,7 @@ class StackViewportExample extends Component {
   constructor(props) {
     super(props)
 
+    registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
@@ -434,3 +434,9 @@ class StackViewportExample extends Component {
 }
 
 export default StackViewportExample
+
+
+// https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs/
+//studies/1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463/
+//series/1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561/
+//instances/1.3.6.1.4.1.14519.5.2.1.7009.2403.113692692484570386248172588190/frames/1

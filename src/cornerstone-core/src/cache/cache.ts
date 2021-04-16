@@ -1,5 +1,5 @@
 import { ICache, IImage, ImageLoadObject, VolumeLoadObject } from '../types'
-import triggerEvent from '../utilities/triggerEvent'
+import { triggerEvent, imageIdToURI } from '../utilities'
 import eventTarget from '../eventTarget'
 import EVENTS from '../enums/events'
 import ERROR_CODES from '../enums/errorCodes'
@@ -462,18 +462,6 @@ class Cache implements ICache {
   }
 
   /**
-   * Removes the data loader scheme from the imageId
-   *
-   * @param {string} imageId Image ID
-   * @returns {string} imageId without the data loader scheme
-   * @memberof Cache
-   */
-  private _removeSchemeFromImageId(imageId: string) {
-    const colonIndex = imageId.indexOf(':')
-    return imageId.substring(colonIndex + 1)
-  }
-
-  /**
    * Returns the volume that contains the requested imageId. It will check the
    * imageIds inside the volume to find a match.
    *
@@ -483,15 +471,13 @@ class Cache implements ICache {
    */
   public getVolumeContainingImageId(imageId: string): any {
     const volumeIds = Array.from(this._volumeCache.keys())
-    const imageIdToUse = this._removeSchemeFromImageId(imageId)
+    const imageIdToUse = imageIdToURI(imageId)
 
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId)
       let volumeImageIds = cachedVolume.volume.imageIds
 
-      volumeImageIds = volumeImageIds.map((id) =>
-        this._removeSchemeFromImageId(id)
-      )
+      volumeImageIds = volumeImageIds.map((id) => imageIdToURI(id))
 
       const imageIdIndex = volumeImageIds.indexOf(imageIdToUse)
       if (imageIdIndex > -1) {

@@ -1,9 +1,11 @@
 import { getMaxSimultaneousRequests } from './getMaxSimultaneousRequests'
-
+// priority is fixed for interaction and thumbnail to be 0, however,
+// the priority of prefetch can be configured and it can have priorities other
+// than 0 (highest priority)
 const requestPool = {
-  interaction: [],
-  thumbnail: [],
-  prefetch: [],
+  interaction: { 0: [] },
+  thumbnail: { 0: [] },
+  prefetch: { 0: [] },
 }
 
 const numRequests = {
@@ -27,27 +29,40 @@ type RequestDetailsInterface = {
   additionalDetails: any
 }
 
+/**
+ * Adds the requests to the pool of requests.
+ *
+ * @param requestFn - A function that returns a promise which resolves in the image
+ * @param type - Priority category, it can be either of interaction, prefetch,
+ * or thumbnail.
+ * @param additionalDetails - Additional details that requests can contain.
+ * For instance the volumeUID for the volume requests
+ * @param priority - Priority number for each category of requests. Its default
+ * value is priority 0. The lower the priority number, the higher the priority number
+ *
+ * @returns void
+ *
+ */
 function addRequest(
   requestFn: () => Promise<void>,
   type: string,
-  priority: number,
   additionalDetails: Record<string, unknown>,
-  addToBeginning: boolean // todo I think we plan to remove this since we have priority?
-) {
+  priority = 0
+): void {
   // Describe the request
   const requestDetails: RequestDetailsInterface = {
     requestFn,
     type,
-    additionalDetails: {},
+    additionalDetails,
   }
 
-  if (addToBeginning) {
-    // Add it to the beginning of the stack
-    requestPool[type].unshift(requestDetails)
-  } else {
-    // Add it to the end of the stack
-    requestPool[type].push(requestDetails)
+  // Check if the priority group exists on the request type
+  if (requestPool[type][priority] === undefined) {
+    requestPool[type][priority] = []
   }
+
+  // Adding the request to the correct priority group of the request type
+  requestPool[type][priority].push(requestDetails)
 
   // Wake up
   awake = true
@@ -57,11 +72,14 @@ function filterRequests(
   filterFunction: (requestDetails: RequestDetailsInterface) => boolean
 ): void {
   Object.keys(requestPool).forEach((type: string) => {
-    requestPool[type] = requestPool[type].filter(
-      (requestDetails: RequestDetailsInterface) => {
-        return filterFunction(requestDetails)
-      }
-    )
+    const requestType = requestPool[type]
+    Object.keys(requestType).forEach((priority) => {
+      requestType[priority] = requestType[priority].filter(
+        (requestDetails: RequestDetailsInterface) => {
+          return filterFunction(requestDetails)
+        }
+      )
+    })
   })
 }
 
@@ -71,7 +89,7 @@ function clearRequestStack(type: string): void {
     throw new Error(`No category for the type ${type} found`)
   }
 
-  requestPool[type] = []
+  requestPool[type] = { 0: [] }
 }
 
 function startAgain(): void {
@@ -87,7 +105,6 @@ function startAgain(): void {
 function sendRequest({ requestFn, type }: RequestDetailsInterface) {
   // Increment the number of current requests of this type
   numRequests[type]++
-
   awake = true
 
   requestFn().finally(() => {
@@ -97,7 +114,7 @@ function sendRequest({ requestFn, type }: RequestDetailsInterface) {
   })
 }
 
-function startGrabbing() {
+function startGrabbing(): void {
   // Begin by grabbing X images
   const maxSimultaneousRequests = getMaxSimultaneousRequests()
 
@@ -120,32 +137,54 @@ function startGrabbing() {
   }
 }
 
+function getSortedPriorityGroups(type) {
+  const priorities = Object.keys(requestPool[type])
+    .filter((priority) => requestPool[type][priority].length)
+    .sort()
+  return priorities
+}
+
 function getNextRequest() {
-  if (
-    requestPool.interaction.length &&
-    numRequests.interaction < maxNumRequests.interaction
-  ) {
-    return requestPool.interaction.shift()
+  const interactionPriorities = getSortedPriorityGroups('interaction')
+
+  for (const priority of interactionPriorities) {
+    if (
+      requestPool.interaction[priority].length &&
+      numRequests.interaction < maxNumRequests.interaction
+    ) {
+      return requestPool.interaction[priority].shift()
+    }
+  }
+
+  const thumbnailPriorities = getSortedPriorityGroups('thumbnail')
+
+  for (const priority of thumbnailPriorities) {
+    if (
+      requestPool.thumbnail[priority].length &&
+      numRequests.thumbnail < maxNumRequests.thumbnail
+    ) {
+      return requestPool.thumbnail[priority].shift()
+    }
+  }
+
+  // const t0 = performance.now()
+  const prefetchPriorities = getSortedPriorityGroups('prefetch')
+  // const t1 = performance.now()
+  // console.debug('Call to doSomething took ' + (t1 - t0) + ' milliseconds.')
+
+  for (const priority of prefetchPriorities) {
+    if (
+      requestPool.prefetch[priority].length &&
+      numRequests.prefetch < maxNumRequests.prefetch
+    ) {
+      return requestPool.prefetch[priority].shift()
+    }
   }
 
   if (
-    requestPool.thumbnail.length &&
-    numRequests.thumbnail < maxNumRequests.thumbnail
-  ) {
-    return requestPool.thumbnail.shift()
-  }
-
-  if (
-    requestPool.prefetch.length &&
-    numRequests.prefetch < maxNumRequests.prefetch
-  ) {
-    return requestPool.prefetch.shift()
-  }
-
-  if (
-    !requestPool.interaction.length &&
-    !requestPool.thumbnail.length &&
-    !requestPool.prefetch.length
+    !interactionPriorities.length &&
+    !thumbnailPriorities.length &&
+    !prefetchPriorities.length
   ) {
     awake = false
   }

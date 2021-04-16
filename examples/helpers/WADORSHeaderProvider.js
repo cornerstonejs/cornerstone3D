@@ -1,5 +1,5 @@
 import dcmjs from 'dcmjs';
-
+import { Utilities as csUtils } from '@cornerstone'
 const metadataHeadersPerImageId = {};
 const INSTANCE = 'instance';
 
@@ -27,12 +27,15 @@ function addInstance(imageId, dicomJSONDatasetOrP10ArrayBuffer) {
     naturalizedDataset = dicomJSONDataset;
   }
 
-  metadataHeadersPerImageId[imageId] = naturalizedDataset;
+  const imageURI = csUtils.imageIdToURI(imageId)
+  metadataHeadersPerImageId[imageURI] = naturalizedDataset;
 }
 
 function get(query, imageId) {
+  const imageURI = csUtils.imageIdToURI(imageId)
+
   if (query === INSTANCE) {
-    return metadataHeadersPerImageId[imageId];
+    return metadataHeadersPerImageId[imageURI];
   }
 }
 
