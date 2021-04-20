@@ -68,7 +68,6 @@ class StackViewport extends Viewport {
     camera.setFreezeFocalPoint(true)
     this.imageIds = []
     this.currentImageIdIndex = 0
-    // this._stackActors = new Map()
     this.resetCamera()
   }
 
@@ -223,9 +222,14 @@ class StackViewport extends Viewport {
     const xSpacing =
       imagePlaneModule.columnPixelSpacing || image.columnPixelSpacing
     const ySpacing = imagePlaneModule.rowPixelSpacing || image.rowPixelSpacing
-    const zSpacing = 1 // Todo
     const xVoxels = image.columns
     const yVoxels = image.rows
+    // We are using vtkVolumeMappers for rendering of stack (2D) images,
+    // there seems to be a bug for having only one slice (zVoxel=1) and volume
+    // rendering. Until further investigation we are using two slices, however,
+    // we are only setting the scalar data for the first slice. The slice spacing
+    // is set to be a small amount (0.1) to enable the correct canvasToWorld
+    const zSpacing = 0.2
     const zVoxels = 2
 
     const numComps =
@@ -471,6 +475,8 @@ class StackViewport extends Viewport {
       this._imageData
     )
 
+    const activeCamera = this.getRenderer().getActiveCamera()
+
     if (sameImageData) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image)
@@ -493,6 +499,11 @@ class StackViewport extends Viewport {
       // Reset the camera to point to the new slice location, reset camera doesn't
       // modify the direction of projection and viewUp
       this.resetCamera()
+
+      // This is necessary to initialize the clipping range and it is not related
+      // to our custom slabThickness.
+      activeCamera.setThicknessFromFocalPoint(0.1)
+      activeCamera.setFreezeFocalPoint(true)
 
       // We shouldn't restore the focalPoint, position and parallelScale after reset
       // if it is the first render or we have completely re-created the vtkImageData
@@ -522,6 +533,11 @@ class StackViewport extends Viewport {
     // Reset the camera to point to the new slice location, reset camera doesn't
     // modify the direction of projection and viewUp
     this.resetCamera()
+
+    // This is necessary to initialize the clipping range and it is not related
+    // to our custom slabThickness.
+    activeCamera.setThicknessFromFocalPoint(0.1)
+    activeCamera.setFreezeFocalPoint(true)
   }
 
   private _setImageIdIndex(imageIdIndex: number): void {

@@ -54,7 +54,6 @@ export default function getImageIdForTool(
     // 4.d If the distance is withing range, return the imageId
     if (Math.abs(dot) < halfSpacingInNormalDirection) {
       imageIdForTool = imageId
-      console.debug(imageId)
     }
   }
 
