@@ -3,7 +3,7 @@ let configMaxSimultaneousRequests
 // Maximum concurrent connections to the same server
 // Information from http://sgdev-blog.blogspot.fr/2014/01/maximum-concurrent-connection-to-same.html
 const maxSimultaneousRequests = {
-  default: 6,
+  default: 16,
   IE: {
     9: 6,
     10: 8,
@@ -19,7 +19,7 @@ const maxSimultaneousRequests = {
     default: 6,
   },
   Chrome: {
-    default: 6,
+    default: 16,
   },
   Safari: {
     default: 6,

@@ -59,22 +59,12 @@ class Viewport {
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
 
+  public getDefaultActor(): ActorEntry {
+    return this.getActors()[0]
+  }
+
   public getActors(): Array<ActorEntry> {
-    const actorIterator = this._actors.keys()
-    const actors = []
-
-    /* eslint-disable no-constant-condition */
-    while (true) {
-      const { value: actorUID, done } = actorIterator.next()
-
-      if (done) {
-        break
-      }
-
-      const actorObject = this.getActor(actorUID)
-      actors.push(Object.assign({}, actorObject))
-    }
-    return actors
+    return Array.from(this._actors.values())
   }
 
   public getActor(actorUID: string): ActorEntry {

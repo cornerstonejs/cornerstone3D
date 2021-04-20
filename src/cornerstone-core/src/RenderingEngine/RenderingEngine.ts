@@ -109,7 +109,7 @@ class RenderingEngine implements IRenderingEngine {
    */
   public enableElement(viewportInputEntry: PublicViewportInput): void {
     this._throwIfDestroyed()
-    const { canvas, viewportUID } = viewportInputEntry
+    const { canvas, viewportUID, sceneUID } = viewportInputEntry
 
     // Throw error if no canvas
     if (!canvas) {
@@ -119,9 +119,12 @@ class RenderingEngine implements IRenderingEngine {
     // 1. Get the viewport from the list of available viewports.
     let viewport = this.getViewport(viewportUID)
 
-    // 1.a) If there is a found viewport remove it
+    // 1.a) If there is a found viewport, and the scene Id has changed, we
+    // remove the viewport and create a new viewport
     if (viewport) {
-      this._removeViewport(viewportUID)
+      this.disableElement(viewportUID)
+      // todo: if only removing the viewport, make sure resize also happens
+      // this._removeViewport(viewportUID)
     }
 
     // 2. Retrieving the list of viewports for calculation of the new size for
@@ -850,6 +853,7 @@ class RenderingEngine implements IRenderingEngine {
     canvas.removeAttribute('data-viewport-uid')
     canvas.removeAttribute('data-scene-uid')
     canvas.removeAttribute('data-rendering-engine-uid')
+    // todo: remove svg layer
 
     // clear drawing
     const context = canvas.getContext('2d')

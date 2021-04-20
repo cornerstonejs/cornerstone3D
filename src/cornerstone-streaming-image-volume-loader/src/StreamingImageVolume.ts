@@ -156,7 +156,7 @@ export default class StreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = []
   }
 
-  public load = (callback: (LoadStatusInterface) => void) => {
+  public load = (callback: (LoadStatusInterface) => void, priority = 5) => {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
@@ -183,10 +183,10 @@ export default class StreamingImageVolume extends ImageVolume {
       this.loadStatus.callbacks.push(callback)
     }
 
-    this._prefetchImageIds()
+    this._prefetchImageIds(priority)
   }
 
-  private _prefetchImageIds() {
+  private _prefetchImageIds(priority: number) {
     const { scalarData, loadStatus } = this
     const { cachedFrames } = loadStatus
 
@@ -402,8 +402,6 @@ export default class StreamingImageVolume extends ImageVolume {
       const additionalDetails = {
         volumeUID: this.uid,
       }
-
-      const priority = 5
 
       requestPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),

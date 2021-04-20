@@ -1,6 +1,7 @@
 import IToolGroup from './ToolGroupManager/IToolGroup'
 //
 import addTool from './addTool'
+import resetToolsState from './resetToolsState'
 import addEnabledElement from './addEnabledElement'
 import removeEnabledElement from './removeEnabledElement'
 //
@@ -44,6 +45,7 @@ export {
   // Store
   state,
   addTool,
+  resetToolsState,
   addEnabledElement,
   removeEnabledElement,
   svgNodeCache,

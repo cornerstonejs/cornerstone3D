@@ -42,6 +42,10 @@ function setupLoaders() {
       PixelSpacing: [1, 1],
       Columns: dimensions[0],
       Rows: dimensions[1],
+      voiLut: [
+        { windowCenter: 500, windowWidth: 500 },
+        { windowCenter: 1500, windowWidth: 1500 },
+      ],
     }
 
     const scalarData = new Uint8Array(
@@ -142,7 +146,10 @@ describe('StreamingImageVolume', function () {
     volume.cancelLoading()
 
     pool = cornerstone.requestPoolManager.getRequestPool()
-    let numImagesInPool = pool['prefetch'].length
+
+    const requests = Object.values(pool['prefetch']).flat()
+
+    let numImagesInPool = requests.length
     expect(numImagesInPool).toEqual(0)
 
     expect(volume.loadStatus.loaded).toEqual(false)

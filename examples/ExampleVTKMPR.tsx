@@ -1,27 +1,28 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import {
   cache,
   RenderingEngine,
   eventTarget,
   createAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
-} from '@cornerstone';
+} from "@cornerstone";
 import {
   SynchronizerManager,
   synchronizers,
   ToolGroupManager,
-} from '@cornerstone-tools'
+  resetToolsState,
+} from "@cornerstone-tools";
 
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkColorTransferFunction from "vtk.js/Sources/Rendering/Core/ColorTransferFunction";
+import vtkPiecewiseFunction from "vtk.js/Sources/Common/DataModel/PiecewiseFunction";
+import vtkColorMaps from "vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps";
 
-import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata';
-import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
+import getImageIds from "./helpers/getImageIds";
+import ptCtToggleAnnotationTool from "./helpers/ptCtToggleAnnotationTool";
 //import loadVolumes from './helpers/loadVolumes';
-import ViewportGrid from './components/ViewportGrid';
-import { initToolGroups, destroyToolGroups } from './initToolGroups';
-import './ExampleVTKMPR.css';
+import ViewportGrid from "./components/ViewportGrid";
+import { initToolGroups, destroyToolGroups } from "./initToolGroups";
+import "./ExampleVTKMPR.css";
 import {
   renderingEngineUID,
   ptVolumeUID,
@@ -29,9 +30,15 @@ import {
   colormaps,
   SCENE_IDS,
   PET_CT_ANNOTATION_TOOLS,
-} from './constants';
-import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts';
+} from "./constants";
+import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from "./layouts";
+import config from "./config/default";
 
+import sortImageIdsByIPP from "./helpers/sortImageIdsByIPP";
+import limitImageIds from "./helpers/limitImageIds";
+
+const VOLUME = "volume";
+const STACK = "stack";
 
 let ctSceneToolGroup,
   ptSceneToolGroup,
@@ -40,11 +47,16 @@ let ctSceneToolGroup,
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
   ptTypesSceneToolGroup,
-  ptCtLayoutTools
+  ptCtLayoutTools;
+
+const {
+  createCameraPositionSynchronizer,
+  createVOISynchronizer,
+} = synchronizers;
 
 class VTKMPRExample extends Component {
   state = {
-    progressText: 'fetching metadata...',
+    progressText: "fetching metadata...",
     metadataLoaded: false,
     petColorMapIndex: 0,
     layoutIndex: 0,
@@ -65,13 +77,13 @@ class VTKMPRExample extends Component {
         {},
         {
           cellStyle: {
-            gridRow: '1 / span 3',
-            gridColumn: '4',
+            gridRow: "1 / span 3",
+            gridColumn: "4",
           },
         },
       ],
     },
-    ptCtLeftClickTool: 'Levels',
+    ptCtLeftClickTool: "Levels",
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
   };
@@ -79,7 +91,50 @@ class VTKMPRExample extends Component {
   constructor(props) {
     super(props);
 
-    ;({
+    ptCtLayoutTools = ["Levels"].concat(PET_CT_ANNOTATION_TOOLS);
+
+    this._canvasNodes = new Map();
+    this._viewportGridRef = React.createRef();
+    this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this);
+
+    const { limitFrames } = config;
+
+    const callback = (imageIds) => {
+      if (limitFrames !== undefined && typeof limitFrames === "number") {
+        let NewImageIds = sortImageIdsByIPP(imageIds);
+        return limitImageIds(NewImageIds, limitFrames);
+      }
+      return imageIds;
+    };
+
+    this.petVolumeImageIds = getImageIds("pet1", VOLUME, callback);
+    this.ctVolumeImageIds = getImageIds("ct1", VOLUME, callback);
+
+    Promise.all([this.petVolumeImageIds, this.ctVolumeImageIds]).then(() =>
+      this.setState({ progressText: "Loading data..." })
+    );
+
+    this.viewportGridResizeObserver = new ResizeObserver((entries) => {
+      // ThrottleFn? May not be needed. This is lightning fast.
+      // Set in mount
+      if (this.renderingEngine) {
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
+      }
+    });
+  }
+
+  /**
+   * LIFECYCLE
+   */
+  async componentDidMount() {
+    this.axialSync = createCameraPositionSynchronizer("axialSync");
+    this.sagittalSync = createCameraPositionSynchronizer("sagittalSync");
+    this.coronalSync = createCameraPositionSynchronizer("coronalSync");
+    this.ctWLSync = createVOISynchronizer("ctWLSync");
+    this.ptThresholdSync = createVOISynchronizer("ptThresholdSync");
+
+    ({
       ctSceneToolGroup,
       ptSceneToolGroup,
       fusionSceneToolGroup,
@@ -87,43 +142,8 @@ class VTKMPRExample extends Component {
       ctVRSceneToolGroup,
       ctObliqueToolGroup,
       ptTypesSceneToolGroup,
-    } = initToolGroups())
+    } = initToolGroups());
 
-    ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS)
-
-    this._canvasNodes = new Map();
-    this._viewportGridRef = React.createRef();
-    this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this);
-    this.imageIdsPromise = getImageIdsAndCacheMetadata();
-    this.imageIdsPromise.then(() =>
-      this.setState({ progressText: 'Loading data...' })
-    );
-
-    const {
-      createCameraPositionSynchronizer,
-      createVOISynchronizer,
-    } = synchronizers;
-
-    this.axialSync = createCameraPositionSynchronizer('axialSync');
-    this.sagittalSync = createCameraPositionSynchronizer('sagittalSync');
-    this.coronalSync = createCameraPositionSynchronizer('coronalSync');
-    this.ctWLSync = createVOISynchronizer('ctWLSync');
-    this.ptThresholdSync = createVOISynchronizer('ptThresholdSync');
-
-    this.viewportGridResizeObserver = new ResizeObserver(entries => {
-      // ThrottleFn? May not be needed. This is lightning fast.
-      // Set in mount
-      if(this.renderingEngine) {
-        this.renderingEngine.resize();
-        this.renderingEngine.render();
-      }
-    });
-  };
-
-  /**
-   * LIFECYCLE
-   */
-  async componentDidMount() {
     this.ctVolumeUID = ctVolumeUID;
     this.ptVolumeUID = ptVolumeUID;
 
@@ -152,19 +172,19 @@ class VTKMPRExample extends Component {
     );
 
     // Create volumes
-    const imageIds = await this.imageIdsPromise;
-    const { ptImageIds, ctImageIds } = imageIds;
+    const ptImageIds = await this.petVolumeImageIds;
+    const ctVolumeImageIds = await this.ctVolumeImageIds;
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ptVolume = await createAndCacheVolume(ptVolumeUID, {
-      imageIds: ptImageIds
+      imageIds: ptImageIds,
     });
     const ctVolume = await createAndCacheVolume(ctVolumeUID, {
-      imageIds: ctImageIds
+      imageIds: ctVolumeImageIds,
     });
 
-    // Initialise all CT values to -1024 so we don't get a grey box?
+    // Initialize all CT values to -1024 so we don't get a grey box?
     const { scalarData } = ctVolume;
     const ctLength = scalarData.length;
 
@@ -172,7 +192,7 @@ class VTKMPRExample extends Component {
       scalarData[i] = -1024;
     }
 
-    const onLoad = () => this.setState({ progressText: 'Loaded.' });
+    const onLoad = () => this.setState({ progressText: "Loaded." });
 
     ctVolume.load(onLoad);
     ptVolume.load(onLoad);
@@ -192,7 +212,7 @@ class VTKMPRExample extends Component {
       ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
     });
 
-    // This will initialise volumes in GPU memory
+    // This will initialize volumes in GPU memory
     renderingEngine.render();
     // Start listening for resiz
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
@@ -201,12 +221,12 @@ class VTKMPRExample extends Component {
   componentDidUpdate(prevProps, prevState) {
     const { layoutIndex } = this.state;
     const { renderingEngine } = this;
-    const onLoad = () => this.setState({ progressText: 'Loaded.' });
+    const onLoad = () => this.setState({ progressText: "Loaded." });
 
     const layout = LAYOUTS[layoutIndex];
 
     if (prevState.layoutIndex !== layoutIndex) {
-      if (layout === 'FusionMIP') {
+      if (layout === "FusionMIP") {
         // FusionMIP
 
         ptCtFusion.setLayout(
@@ -235,14 +255,14 @@ class VTKMPRExample extends Component {
         );
 
         //loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], []);
-      } else if (layout === 'ObliqueCT') {
+      } else if (layout === "ObliqueCT") {
         obliqueCT.setLayout(renderingEngine, this._canvasNodes, {
           ctObliqueToolGroup,
         });
         obliqueCT.setVolumes(renderingEngine, ctVolumeUID);
 
         //loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
-      } else if (layout === 'CTVR') {
+      } else if (layout === "CTVR") {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._canvasNodes, {
           ctSceneToolGroup,
@@ -250,7 +270,7 @@ class VTKMPRExample extends Component {
         });
         fourUpCT.setVolumes(renderingEngine, ctVolumeUID);
         //loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
-      } else if (layout === 'PetTypes') {
+      } else if (layout === "PetTypes") {
         // petTypes
         petTypes.setLayout(renderingEngine, this._canvasNodes, {
           ptTypesSceneToolGroup,
@@ -258,7 +278,7 @@ class VTKMPRExample extends Component {
         petTypes.setVolumes(renderingEngine, ptVolumeUID);
         //loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID]);
       } else {
-        throw new Error('Unrecognised layout index');
+        throw new Error("Unrecognised layout index");
       }
     }
   }
@@ -270,9 +290,10 @@ class VTKMPRExample extends Component {
     }
 
     // Destroy synchronizers
+    resetToolsState();
     SynchronizerManager.destroy();
     cache.purgeCache();
-    ToolGroupManager.destroy()
+    ToolGroupManager.destroy();
 
     this.renderingEngine.destroy();
   }
@@ -289,7 +310,7 @@ class VTKMPRExample extends Component {
 
     const layout = LAYOUTS[layoutIndex];
 
-    if (layout === 'FusionMIP') {
+    if (layout === "FusionMIP") {
       viewportGrid.numCols = 4;
       viewportGrid.numRows = 3;
       [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((x) =>
@@ -297,19 +318,19 @@ class VTKMPRExample extends Component {
       );
       viewportGrid.viewports.push({
         cellStyle: {
-          gridRow: '1 / span 3',
-          gridColumn: '4',
+          gridRow: "1 / span 3",
+          gridColumn: "4",
         },
       });
-    } else if (layout === 'ObliqueCT') {
+    } else if (layout === "ObliqueCT") {
       viewportGrid.numCols = 1;
       viewportGrid.numRows = 1;
       viewportGrid.viewports.push({});
-    } else if (layout === 'CTVR') {
+    } else if (layout === "CTVR") {
       viewportGrid.numCols = 2;
       viewportGrid.numRows = 2;
       [0, 1, 2, 3].forEach((x) => viewportGrid.viewports.push({}));
-    } else if (layout === 'PetTypes') {
+    } else if (layout === "PetTypes") {
       viewportGrid.numRows = 1;
       viewportGrid.numCols = 3;
       [0, 1, 2].forEach((x) => viewportGrid.viewports.push({}));
@@ -376,7 +397,7 @@ class VTKMPRExample extends Component {
   swapPtCtTool = (evt) => {
     const toolName = evt.target.value;
 
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false;
+    const isAnnotationToolOn = toolName !== "Levels" ? true : false;
 
     ptCtToggleAnnotationTool(
       isAnnotationToolOn,
@@ -401,9 +422,9 @@ class VTKMPRExample extends Component {
 
     const layoutID = LAYOUTS[layoutIndex];
     const layoutButtons = [
-      { id: 'ObliqueCT', text: 'Oblique Layout' },
-      { id: 'FusionMIP', text: 'Fusion Layout' },
-      { id: 'PetTypes', text: 'SUV Types Layout' },
+      { id: "ObliqueCT", text: "Oblique Layout" },
+      { id: "FusionMIP", text: "Fusion Layout" },
+      { id: "PetTypes", text: "SUV Types Layout" },
     ];
 
     // TODO -> Move layout switching to a different example to reduce bloat.
@@ -414,23 +435,23 @@ class VTKMPRExample extends Component {
     );
 
     const SUVTypesList =
-      layoutID === 'PetTypes' ? (
-        <div style={{ display: 'flex', textAlign: 'center' }}>
-          <div style={{ flex: '1 1 0px' }}>Body Weight (BW)</div>
-          <div style={{ flex: '1 1 0px' }}>Lean Body Mass (LBM)</div>
-          <div style={{ flex: '1 1 0px' }}>Body Surface Area (BSA)</div>
+      layoutID === "PetTypes" ? (
+        <div style={{ display: "flex", textAlign: "center" }}>
+          <div style={{ flex: "1 1 0px" }}>Body Weight (BW)</div>
+          <div style={{ flex: "1 1 0px" }}>Lean Body Mass (LBM)</div>
+          <div style={{ flex: "1 1 0px" }}>Body Surface Area (BSA)</div>
         </div>
       ) : null;
 
     const fusionButtons =
-      layoutID === 'FusionMIP' ? (
+      layoutID === "FusionMIP" ? (
         <React.Fragment>
           <button
             onClick={() =>
               metadataLoaded && !destroyed && this.swapPetTransferFunction()
             }
             className="btn btn-primary"
-            style={{ margin: '2px 4px' }}
+            style={{ margin: "2px 4px" }}
           >
             SwapPetTransferFunction
           </button>
@@ -448,7 +469,7 @@ class VTKMPRExample extends Component {
       ) : null;
 
     const fusionWLDisplay =
-      layoutID === 'FusionMIP' ? (
+      layoutID === "FusionMIP" ? (
         <React.Fragment>
           <div className="col-xs-12">
             <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
@@ -460,14 +481,14 @@ class VTKMPRExample extends Component {
       ) : null;
 
     return (
-      <div style={{ paddingBottom: '55px' }}>
+      <div style={{ paddingBottom: "55px" }}>
         <div className="row">
-          <div className="col-xs-12" style={{ margin: '8px 0' }}>
+          <div className="col-xs-12" style={{ margin: "8px 0" }}>
             <h2>MPR Template Example ({this.state.progressText})</h2>
           </div>
           <div
             className="col-xs-12"
-            style={{ margin: '8px 0', marginLeft: '-4px' }}
+            style={{ margin: "8px 0", marginLeft: "-4px" }}
           >
             {/* LAYOUT BUTTONS */}
             {filteredLayoutButtons.map((layout) => (
@@ -475,7 +496,7 @@ class VTKMPRExample extends Component {
                 key={layout.id}
                 onClick={() => this.swapLayout(layout.id)}
                 className="btn btn-primary"
-                style={{ margin: '2px 4px' }}
+                style={{ margin: "2px 4px" }}
               >
                 {layout.text}
               </button>
@@ -490,7 +511,7 @@ class VTKMPRExample extends Component {
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}
           renderingEngine={this.renderingEngine}
-          style={{ minHeight: '650px', marginTop: '35px' }}
+          style={{ minHeight: "650px", marginTop: "35px" }}
           ref={this._viewportGridRef}
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
@@ -498,8 +519,8 @@ class VTKMPRExample extends Component {
               className="viewport-pane"
               style={{
                 ...(vp.cellStyle || {}),
-                border: '2px solid grey',
-                background: 'black',
+                border: "2px solid grey",
+                background: "black",
               }}
               key={i}
             >

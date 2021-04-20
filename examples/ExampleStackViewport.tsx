@@ -14,13 +14,14 @@ import {
   SynchronizerManager,
   synchronizers,
   ToolGroupManager,
-  ToolBindings
+  ToolBindings,
+  resetToolsState
 } from '@cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
-import getImageIdsAndCacheMetadata from './helpers/getImageIdsAndCacheMetadata'
+import getImageIds from './helpers/getImageIds'
 import {createDXImageIds} from './helpers/createStudyImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
@@ -35,78 +36,15 @@ import {
 import LAYOUTS, { stackCT } from './layouts'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import * as cs from '@cornerstone'
+import config from "./config/default";
+import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
 
 import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
-const colorImageIds = [
-  'web:http://localhost:3000/examples/head/avf1240c.png',
-  'web:http://localhost:3000/examples/head/avf1241a.png',
-  'web:http://localhost:3000/examples/head/avf1241b.png',
-  'web:http://localhost:3000/examples/head/avf1241c.png',
-  'web:http://localhost:3000/examples/head/avf1242a.png',
-  'web:http://localhost:3000/examples/head/avf1242b.png',
-  'web:http://localhost:3000/examples/head/avf1242c.png',
-  'web:http://localhost:3000/examples/head/avf1243a.png',
-]
-
-function hardcodedMetaDataProvider(type, imageId) {
-  const colonIndex = imageId.indexOf(':')
-  const scheme = imageId.substring(0, colonIndex)
-  if (scheme !== 'web') return
-
-  if (type === 'imagePixelModule') {
-    const imagePixelModule = {
-      pixelRepresentation: 0,
-      bitsAllocated: 24,
-      bitsStored: 24,
-      highBit: 24,
-      photometricInterpretation: 'RGB',
-      samplesPerPixel: 3,
-    }
-
-    return imagePixelModule
-  } else if (type === 'generalSeriesModule') {
-    const generalSeriesModule = {
-      modality: 'SC',
-    }
-
-    return generalSeriesModule
-  } else if (type === 'imagePlaneModule') {
-    const index = colorImageIds.indexOf(imageId)
-
-    const imagePlaneModule = {
-      imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-      imagePositionPatient: [0, 0, index * 5],
-      pixelSpacing: [1, 1],
-      columnPixelSpacing: 1,
-      rowPixelSpacing: 1,
-      frameOfReferenceUID: 'FORUID',
-      columns: 2048,
-      rows: 1216,
-      rowCosines: [1, 0, 0],
-      columnCosines: [0, 1, 0],
-    }
-
-    return imagePlaneModule
-  } else if (type === 'voiLutModule') {
-    return {
-      windowWidth: [255],
-      windowCenter: [127],
-    }
-  } else if (type === 'modalityLutModule') {
-    return {
-      rescaleSlope: 1,
-      rescaleIntercept: 0,
-    }
-  }
-
-  console.warn(type)
-  throw new Error('not available!')
-}
-
-metaData.addProvider(hardcodedMetaDataProvider, 10000)
+const VOLUME = "volume";
+const STACK = "stack";
 
 window.cache = cache
 
@@ -135,8 +73,23 @@ class StackViewportExample extends Component {
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
-    this.petCTImageIdsPromise = getImageIdsAndCacheMetadata()
-    this.dxImageIdsPromise = createDXImageIds()
+
+    this.ctVolumeImageIdsPromise = getImageIds("ct1", VOLUME);
+
+
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
+    this.dxImageIdsPromise = getImageIds('dx', STACK)
+
+    this.colorImageIds = config.colorImages.imageIds;
+
+    metaData.addProvider(
+      (type, imageId) => hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
+      10000
+    );
+
+    // Promise.all([this.petVolumeImageIds, this.ctImageIds]).then(() =>
+    //   this.setState({ progressText: "Loading data..." })
+    // );
     // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
     // )
@@ -172,12 +125,12 @@ class StackViewportExample extends Component {
     this.ctStackUID = ctStackUID
 
     // Create volumes
-    const imageIds = await this.petCTImageIdsPromise
     const dxImageIds = await this.dxImageIdsPromise
-    const { ctImageIds } = imageIds
+    const ctStackImageIds = await this.ctStackImageIdsPromise
+    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
+    const colorImageIds = this.colorImageIds
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
-    // const renderingEngine = new RenderingEngine(renderingEngineUID)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -253,12 +206,8 @@ class StackViewportExample extends Component {
     renderingEngine.render()
 
     const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
-    // temporary method for converting csiv to wadors
-    const wadoCTImageIds = ctImageIds.map((imageId) => {
-      const colonIndex = imageId.indexOf(':')
-      return 'wadors' + imageId.substring(colonIndex)
-    })
-    await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds))
+
+    await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds))
 
     // ct + dx + color
     const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
@@ -267,17 +216,17 @@ class StackViewportExample extends Component {
       dxImageIds[0],
       colorImageIds[0],
       dxImageIds[1],
-      wadoCTImageIds[40],
+      ctStackImageIds[40],
       colorImageIds[1],
       colorImageIds[2],
-      wadoCTImageIds[41],
+      ctStackImageIds[41],
     ]
     await dxColorViewport.setStack(fakeStake)
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ctVolume = await createAndCacheVolume(ctVolumeUID, {
-      imageIds: ctImageIds,
+      imageIds: ctVolumeImageIds,
     })
 
     // Initialize all CT values to -1024 so we don't get a grey box?
@@ -321,6 +270,7 @@ class StackViewportExample extends Component {
 
     // Destroy synchronizers
     // SynchronizerManager.destroy()
+    resetToolsState()
     cache.purgeCache()
     ToolGroupManager.destroy()
 

@@ -24,9 +24,9 @@ export default class PetThresholdTool extends BaseTool {
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(canvas)
-    const { scene, sceneUID } = enabledElement
+    const { scene, sceneUID, viewport } = enabledElement
 
-    const { volumeUID } = this.configuration
+    const { uid: volumeUID } = viewport.getDefaultActor()
 
     let volumeActor
 

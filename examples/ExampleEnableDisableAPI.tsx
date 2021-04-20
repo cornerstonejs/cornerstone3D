@@ -14,19 +14,27 @@ import {
   SynchronizerManager,
   synchronizers,
   ToolGroupManager,
+  resetToolsState
 } from "@cornerstone-tools";
+import * as cs from '@cornerstone'
 
 import vtkColorTransferFunction from "vtk.js/Sources/Rendering/Core/ColorTransferFunction";
 import vtkPiecewiseFunction from "vtk.js/Sources/Common/DataModel/PiecewiseFunction";
 import vtkColorMaps from "vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps";
-import getImageIdsAndCacheMetadata from "./helpers/getImageIdsAndCacheMetadata";
+import getImageIds from "./helpers/getImageIds";
 import { createDXImageIds } from "./helpers/createStudyImageIds";
 import ViewportGrid from "./components/ViewportGrid";
 import { initToolGroups, destroyToolGroups } from "./initToolGroups";
+import config from "./config/default";
+import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
+import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
+
+
 import "./ExampleVTKMPR.css";
 import {
   renderingEngineUID,
   ctVolumeUID,
+  ptVolumeUID,
   ctStackUID,
   SCENE_IDS,
   VIEWPORT_IDS,
@@ -36,73 +44,9 @@ import sortImageIdsByIPP from "./helpers/sortImageIdsByIPP";
 
 const VIEWPORT_DX_COLOR = "dx_and_color_viewport";
 
-const colorImageIds = [
-  "web:http://localhost:3000/examples/head/avf1240c.png",
-  "web:http://localhost:3000/examples/head/avf1241a.png",
-  "web:http://localhost:3000/examples/head/avf1241b.png",
-  "web:http://localhost:3000/examples/head/avf1241c.png",
-  "web:http://localhost:3000/examples/head/avf1242a.png",
-  "web:http://localhost:3000/examples/head/avf1242b.png",
-  "web:http://localhost:3000/examples/head/avf1242c.png",
-  "web:http://localhost:3000/examples/head/avf1243a.png",
-];
 
-function hardcodedMetaDataProvider(type, imageId) {
-  const colonIndex = imageId.indexOf(":");
-  const scheme = imageId.substring(0, colonIndex);
-  if (scheme !== "web") return;
-
-  if (type === "imagePixelModule") {
-    const imagePixelModule = {
-      pixelRepresentation: 0,
-      bitsAllocated: 24,
-      bitsStored: 24,
-      highBit: 24,
-      photometricInterpretation: "RGB",
-      samplesPerPixel: 3,
-    };
-
-    return imagePixelModule;
-  } else if (type === "generalSeriesModule") {
-    const generalSeriesModule = {
-      modality: "SC",
-    };
-
-    return generalSeriesModule;
-  } else if (type === "imagePlaneModule") {
-    const index = colorImageIds.indexOf(imageId);
-
-    const imagePlaneModule = {
-      imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-      imagePositionPatient: [0, 0, index * 5],
-      pixelSpacing: [1, 1],
-      columnPixelSpacing: 1,
-      rowPixelSpacing: 1,
-      frameOfReferenceUID: "FORUID",
-      columns: 2048,
-      rows: 1216,
-      rowCosines: [1, 0, 0],
-      columnCosines: [0, 1, 0],
-    };
-
-    return imagePlaneModule;
-  } else if (type === "voiLutModule") {
-    return {
-      windowWidth: [255],
-      windowCenter: [127],
-    };
-  } else if (type === "modalityLutModule") {
-    return {
-      rescaleSlope: 1,
-      rescaleIntercept: 0,
-    };
-  }
-
-  console.warn(type);
-  throw new Error("not available!");
-}
-
-metaData.addProvider(hardcodedMetaDataProvider, 10000);
+const VOLUME = "volume";
+const STACK = "stack";
 
 window.cache = cache;
 
@@ -132,8 +76,27 @@ class EnableDisableViewportExample extends Component {
     this._canvasNodes = new Map();
     this._viewportGridRef = React.createRef();
     this._offScreenRef = React.createRef();
-    this.petCTImageIdsPromise = getImageIdsAndCacheMetadata();
-    this.dxImageIdsPromise = createDXImageIds();
+
+    this.petVolumeImageIdsPromise = getImageIds("pet1", VOLUME);
+    this.ctVolumeImageIdsPromise = getImageIds("ct1", VOLUME);
+    this.ctVolumeImageIdsPromise2 = getImageIds("ct2", VOLUME);
+
+
+    this.dxImageIdsPromise = getImageIds('dx');
+    this.ctStackImageIdsPromise = getImageIds('ctStack');
+
+     this.colorImageIds = config.colorImages.imageIds;
+
+    metaData.addProvider(
+      (type, imageId) => hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
+      10000
+    );
+
+
+    registerWebImageLoader(cs)
+
+
+
     this.numberOfViewports =
       this.state.viewportGrid.numCols * this.state.viewportGrid.numRows;
 
@@ -226,14 +189,12 @@ class EnableDisableViewportExample extends Component {
 
 
     // Create volumes
-    const imageIds = await this.petCTImageIdsPromise;
     const dxImageIds = await this.dxImageIdsPromise;
-    const { ctImageIds } = imageIds;
-
-    const wadoCTImageIds = ctImageIds.map((imageId) => {
-      const colonIndex = imageId.indexOf(":");
-      return "wadors" + imageId.substring(colonIndex);
-    });
+    const ctStackImageIds = await this.ctStackImageIdsPromise;
+    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise;
+    const ctVolumeImageIds2 = await this.ctVolumeImageIdsPromise2;
+    const petVolumeImageIds = await this.petVolumeImageIdsPromise;
+    const colorImageIds = this.colorImageIds
 
     renderingEngine.enableElement(this.state.viewportInputEntries[0]); // ct volume
     renderingEngine.enableElement(this.state.viewportInputEntries[1]); // stack
@@ -258,7 +219,7 @@ class EnableDisableViewportExample extends Component {
 
     const ctStackLoad = async () => {
       const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK);
-      await stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds));
+      await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds));
     };
 
     this.ctStackLoad = ctStackLoad;
@@ -270,10 +231,10 @@ class EnableDisableViewportExample extends Component {
         dxImageIds[0],
         colorImageIds[0],
         dxImageIds[1],
-        wadoCTImageIds[40],
+        ctStackImageIds[40],
         colorImageIds[1],
         colorImageIds[2],
-        wadoCTImageIds[41],
+        ctStackImageIds[41],
       ];
       await dxColorViewport.setStack(fakeStake);
 
@@ -290,15 +251,18 @@ class EnableDisableViewportExample extends Component {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
       const ctVolume = await createAndCacheVolume(ctVolumeUID, {
-        imageIds: ctImageIds,
+        imageIds: ctVolumeImageIds,
       });
 
-      // Initialize all CT values to -1024 so we don't get a grey box?
       const { scalarData } = ctVolume;
       const ctLength = scalarData.length;
 
-      for (let i = 0; i < ctLength; i++) {
-        scalarData[i] = -1024;
+      // if this is the first time we are loading the volume
+      if (scalarData[0] === 0){
+        // Initialize all CT values to -1024 so we don't get a grey box?
+        for (let i = 0; i < ctLength; i++) {
+          scalarData[i] = -1024;
+        }
       }
 
       const onLoad = () => this.setState({ progressText: "Loaded." });
@@ -316,9 +280,24 @@ class EnableDisableViewportExample extends Component {
       });
     };
 
+    const PETVolumeLoad = async () => {
+      // This only creates the volumes, it does not actually load all
+      // of the pixel data (yet)
+      const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+        imageIds: ctVolumeImageIds2,
+      });
+
+      ptVolume.load();
+
+      const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
+      ctScene.setVolumes([{volumeUID: ptVolumeUID}]);
+      ctScene.render()
+    };
+
     ctStackLoad();
     CTVolumeLoad();
     this.CTVolumeLoad = CTVolumeLoad;
+    this.PETVolumeLoad = PETVolumeLoad;
 
     this.setState({
       enabledViewports: [0, 1],
@@ -338,7 +317,7 @@ class EnableDisableViewportExample extends Component {
     }
 
     // Destroy synchronizers
-    // SynchronizerManager.destroy()
+    resetToolsState()
     cache.purgeCache();
     ToolGroupManager.destroy();
 

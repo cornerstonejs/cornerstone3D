@@ -160,7 +160,6 @@ export function loadAndCacheImage(
     imageLoadObject = loadImageFromImageLoader(imageId, options)
   }
 
-  // todo: fix data loader scheme etc
   // 4. Caching the imageLoadObject
   cache.putImageLoadObject(imageId, imageLoadObject)
 

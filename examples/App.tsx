@@ -8,6 +8,7 @@ import VolumeMapper2DExample from './Example2DVolumeMapper'
 import StackViewportExample from './ExampleStackViewport'
 import EnableDisableViewportExample from './ExampleEnableDisableAPI'
 import NineStackViewportExample from './ExampleNineStackViewport'
+import VTKSetVolumesExample from './ExampleSetVolumes'
 
 function LinkOut({ href, text }) {
   return (
@@ -72,10 +73,16 @@ function Index() {
       text: 'Example for displaying 9 stack viewports at once',
     },
     {
-      title: 'enableElement/disableElement API',
+      title: 'EnableElement/disableElement API',
       url: '/enableDisableAPI',
       text:
         'Example for displaying stack and volume viewport using enableElement and disableElement API',
+    },
+    {
+      title: 'Set Volumes',
+      url: '/setVolumes',
+      text:
+        'Example for changing the volume while keeping the layout, synchronizers etc'
     },
   ]
 
@@ -165,6 +172,12 @@ function AppRouter() {
       children: <NineStackViewportExample />,
     })
 
+  const setVolumes = () =>
+    Example({
+      children: <VTKSetVolumesExample />,
+    })
+
+
   return (
     <Router>
       <Switch>
@@ -177,6 +190,7 @@ function AppRouter() {
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />
+        <Route exact path="/setVolumes/" render={setVolumes} />
         <Route exact component={Index} />
       </Switch>
     </Router>

@@ -40,11 +40,11 @@ export default class WindowLevelTool extends BaseTool {
     const { element: canvas, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(canvas)
     const { scene, sceneUID, viewport } = enabledElement
-    const { volumeUID } = this.configuration
+    const { uid: volumeUID } = viewport.getDefaultActor()
 
     let volumeActor
 
-    if (volumeUID) {
+    if (viewport instanceof VolumeViewport && volumeUID) {
       volumeActor = scene.getVolumeActor(volumeUID)
     } else {
       const volumeActors = viewport.getActors()
@@ -67,7 +67,7 @@ export default class WindowLevelTool extends BaseTool {
     // Todo: enabling a viewport twice in a row sets the imageDynamicRange to be zero for some reason
     // 1 was too little
     let multiplier = 4
-    if (volumeUID) {
+    if (viewport instanceof VolumeViewport && volumeUID) {
       const imageDynamicRange = this._getImageDynamicRange(volumeUID)
 
       multiplier = Math.round(imageDynamicRange / 1024)
@@ -107,7 +107,7 @@ export default class WindowLevelTool extends BaseTool {
     viewport.render()
   }
 
-  _getImageDynamicRange = (volumeUID) => {
+  _getImageDynamicRange = (volumeUID: string) => {
     const imageVolume = getVolume(volumeUID)
     const { dimensions, scalarData } = imageVolume
     const middleSliceIndex = Math.floor(dimensions[2] / 2)

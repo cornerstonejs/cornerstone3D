@@ -12,9 +12,10 @@ import {
   SynchronizerManager,
   synchronizers,
   ToolGroupManager,
+  resetToolsState
 } from "@cornerstone-tools";
 
-import getImageIdsAndCacheMetadata from "./helpers/getImageIdsAndCacheMetadata";
+import getImageIds from "./helpers/getImageIds";
 import { createDXImageIds } from "./helpers/createStudyImageIds";
 import ViewportGrid from "./components/ViewportGrid";
 import { initToolGroups, destroyToolGroups } from "./initToolGroups";
@@ -97,7 +98,6 @@ function hardcodedMetaDataProvider(type, imageId) {
   throw new Error("not available!");
 }
 
-metaData.addProvider(hardcodedMetaDataProvider, 10000);
 
 window.cache = cache;
 
@@ -120,12 +120,15 @@ class NineStackViewportExample extends Component {
   constructor(props) {
     super(props);
 
+    metaData.addProvider(hardcodedMetaDataProvider, 10000);
+
+
     this._canvasNodes = new Map();
     this._viewportGridRef = React.createRef();
     this._offScreenRef = React.createRef();
-    this.petCTImageIdsPromise = getImageIdsAndCacheMetadata();
-    this.dxImageIdsPromise = createDXImageIds();
-    // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
+    this.ctImageIdsPromise = getImageIds('ctStack', "STACK");
+    // this.dxImageIdsPromise = createDXImageIds();
+    // Promise.all([this.ctImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
     // )
 
@@ -159,10 +162,8 @@ class NineStackViewportExample extends Component {
     this.ctStackUID = ctStackUID;
 
     // Create volumes
-    const imageIds = await this.petCTImageIdsPromise;
+    const imageIds = await this.ctImageIdsPromise;
     // const dxImageIds = await this.dxImageIdsPromise
-
-    const { ctImageIds } = imageIds;
 
     const renderingEngine = new RenderingEngine(renderingEngineUID);
     // const renderingEngine = new RenderingEngine(renderingEngineUID)
@@ -260,15 +261,10 @@ class NineStackViewportExample extends Component {
 
     renderingEngine.render();
 
-    // temporary method for converting csiv to wadors
-    const wadoCTImageIds = ctImageIds.map((imageId) => {
-      const colonIndex = imageId.indexOf(":");
-      return "wadors" + imageId.substring(colonIndex);
-    });
 
     const promises = viewportInput.map((vpEntry) => {
       const stackViewport = renderingEngine.getViewport(vpEntry.viewportUID);
-      return stackViewport.setStack(sortImageIdsByIPP(wadoCTImageIds));
+      return stackViewport.setStack(sortImageIdsByIPP(imageIds));
     });
 
     Promise.all(promises).then(() => {
@@ -292,6 +288,7 @@ class NineStackViewportExample extends Component {
 
     // Destroy synchronizers
     // SynchronizerManager.destroy()
+    resetToolsState()
     cache.purgeCache();
     ToolGroupManager.destroy();
 
