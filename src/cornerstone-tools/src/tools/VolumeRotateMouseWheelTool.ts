@@ -1,15 +1,25 @@
 import { BaseTool } from './base'
 import { getEnabledElement } from '@cornerstone'
-import { vec3 } from 'gl-matrix'
+import { mat4, vec3 } from 'gl-matrix'
 import Point3 from 'src/cornerstone-core/src/types/Point3'
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 
-enum DIRECTIONS {
-  X = 0,
-  Y = 1,
-  Z = 2,
+const DIRECTIONS = {
+  X: [1, 0, 0],
+  Y: [0, 1, 0],
+  Z: [0, 0, 1],
+  CUSTOM: [],
 }
 
+/**
+ * @class VolumeRotateMouseWheelTool
+ * @classdesc Tool that rotates the camera on mouse wheel.
+ * It rotates the camera around the focal point, and around a defined axis. Default
+ * axis is set to be Z axis, but it can be configured to any custom normalized axis.
+ *
+ * @export
+ * @class VolumeRotateMouseWheelTool
+ * @extends {BaseTool}
+ */
 export default class VolumeRotateMouseWheelTool extends BaseTool {
   _configuration: any
 
@@ -19,13 +29,14 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         direction: DIRECTIONS.Z,
-        rotateIncrementDegrees: 5,
+        rotateIncrementDegrees: 20,
       },
     }
 
     super(toolConfiguration, defaultToolConfiguration)
   }
 
+  // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js#L73
   mouseWheelCallback(evt) {
     const { element: canvas, wheel } = evt.detail
     const enabledElement = getEnabledElement(canvas)
@@ -33,45 +44,38 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
     const { direction, rotateIncrementDegrees } = this.configuration
 
     const camera = viewport.getCamera()
-    const { viewUp, viewPlaneNormal, position, focalPoint } = camera
-    const focalLength = vec3.distance(position, focalPoint)
+    const { viewUp, position, focalPoint } = camera
+
     const { direction: deltaY } = wheel
 
-    // Rotate view up and viewPlaneNormal
+    const [cx, cy, cz] = focalPoint
+    const [ax, ay, az] = direction
 
-    const transform = vtkMatrixBuilder.buildFromDegree().identity()
+    const angle = deltaY * rotateIncrementDegrees
 
-    switch (direction) {
-      case DIRECTIONS.X:
-        transform.rotateX(deltaY * rotateIncrementDegrees)
-        break
-      case DIRECTIONS.Y:
-        transform.rotateY(deltaY * rotateIncrementDegrees)
-        break
+    // position[3] = 1.0
+    // focalPoint[3] = 1.0
+    // viewUp[3] = 0.0
 
-      case DIRECTIONS.Z:
-        transform.rotateZ(deltaY * rotateIncrementDegrees)
-        break
-    }
+    const newPosition: Point3 = [0, 0, 0]
+    const newFocalPoint: Point3 = [0, 0, 0]
+    const newViewUp: Point3 = [0, 0, 0]
 
-    const transformMatrix = transform.getMatrix()
+    const transform = mat4.identity(new Float64Array(16))
+    mat4.translate(transform, transform, [cx, cy, cz])
+    mat4.rotate(transform, transform, angle, [ax, ay, az])
+    mat4.translate(transform, transform, [-cx, -cy, -cz])
+    vec3.transformMat4(newPosition, position, transform)
+    vec3.transformMat4(newFocalPoint, focalPoint, transform)
 
-    vec3.transformMat4(viewUp, viewUp, transformMatrix)
-    vec3.transformMat4(viewPlaneNormal, viewPlaneNormal, transformMatrix)
-
-    // Set position of camera to be distance behind focal point with new direction.
-
-    const newPosition = <Point3>[
-      focalPoint[0] + focalLength * viewPlaneNormal[0],
-      focalPoint[1] + focalLength * viewPlaneNormal[1],
-      focalPoint[2] + focalLength * viewPlaneNormal[2],
-    ]
+    mat4.identity(transform)
+    mat4.rotate(transform, transform, angle, [ax, ay, az])
+    vec3.transformMat4(<Point3>newViewUp, viewUp, transform)
 
     viewport.setCamera({
       position: newPosition,
-      viewPlaneNormal,
-      viewUp,
-      focalPoint,
+      viewUp: newViewUp,
+      focalPoint: newFocalPoint,
     })
 
     viewport.render()

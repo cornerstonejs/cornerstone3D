@@ -194,8 +194,8 @@ class VTKMPRExample extends Component {
 
     const onLoad = () => this.setState({ progressText: "Loaded." });
 
-    ctVolume.load(onLoad);
     ptVolume.load(onLoad);
+    ctVolume.load(onLoad);
 
     ptCtFusion.setVolumes(
       renderingEngine,
