@@ -2738,27 +2738,17 @@ core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
-cornerstone-core@^2.3.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/cornerstone-core/-/cornerstone-core-2.3.0.tgz#b16430b0dc3883c795fbbd5f64d0f6357f91c889"
-  integrity sha512-1LiCfRIlQvR1j8OhF7/3pvvQvvnTYZUywEkuoEo5K5mMrlKdrQMS75uW1uXb/nXShQDJyyjtTCQSVGgv2yHA+w==
-
 cornerstone-math@^0.1.9:
   version "0.1.9"
   resolved "https://registry.yarnpkg.com/cornerstone-math/-/cornerstone-math-0.1.9.tgz#7ce5509e8b9f465b01f7c548470725e7569859fc"
   integrity sha512-NxdooV73asEQgav1S+0e+a4K+W3CXJdLXyFkVN24qqCtmIpzZzwtw3F9KWPCekzSAJmbhtQ3HicOQj3d4vRtuw==
 
-"cornerstone-wado-image-loader@git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#merge-suv-calculation":
+"cornerstone-wado-image-loader@git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#imageURI":
   version "3.0.7"
-  resolved "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#f0f94cc9122bc88e0980947574b99f6621978584"
+  resolved "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#e7494d1a0ac07c4e965e931d83c23583709d5994"
   dependencies:
     dicom-parser "^1.8.3"
     pako "^1.0.10"
-
-cornerstone-web-image-loader@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/cornerstone-web-image-loader/-/cornerstone-web-image-loader-2.1.1.tgz#531262668d3b44fb461161c67d58ebcaefbae73d"
-  integrity sha512-EYT7nLyXMFDeCCQhDkf6czFUm58EgqiTX+tOOLt79gPvbNRdEvPgQoXJgXOd5/3Xuc5QNqzTyOzYtf1v/KH0aA==
 
 cors@~2.8.5:
   version "2.8.5"

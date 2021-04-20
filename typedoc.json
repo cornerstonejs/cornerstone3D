@@ -3,8 +3,10 @@
   "theme": "pages-plugin",
 
   "entryPoints": [
-    "./src/index.ts",
-    "./src/cornerstone-tools/index.ts"],
+    "./src/cornerstone-core/src/index.ts",
+    "./src/cornerstone-tools/src/index.ts",
+    "./src/cornerstone-streaming-image-volume-loader/src/index.ts"
+  ],
   "tsconfig": "./tsconfig.json",
   "exclude": [
     "**/examples/**",
