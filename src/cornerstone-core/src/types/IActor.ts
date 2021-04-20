@@ -1,5 +1,6 @@
 export type VolumeActor = {
   getProperty: () => any
+  getMapper: () => any
 }
 
 export type ActorEntry = {

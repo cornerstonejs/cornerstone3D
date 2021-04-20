@@ -238,7 +238,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       return true
     } else if (data.activeViewportUIDs.length === 0) {
       const enabledElement = getEnabledElement(element)
-      this._Jump(enabledElement, canvasCoords)
+      const { viewport } = enabledElement
+      const jumpWorld = viewport.canvasToWorld(canvasCoords)
+
+      this._jump(enabledElement, jumpWorld)
 
       const { rotationPoints } = data.handles
       const viewportUIDArray = []
@@ -1490,13 +1493,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     showToolCursor(element)
   }
 
-  _Jump(enabledElement, canvasCoords) {
+  _jump = (enabledElement, jumpWorld) => {
     state.isToolLocked = true
 
     const toolState = getToolState(enabledElement, this.name)
-    const { renderingEngine, viewport, scene } = enabledElement
+    const { renderingEngine, scene } = enabledElement
 
-    const jumpWorld = viewport.canvasToWorld(canvasCoords)
     const delta: Point3 = [0, 0, 0]
     vtkMath.subtract(jumpWorld, this.toolCenter, delta)
 

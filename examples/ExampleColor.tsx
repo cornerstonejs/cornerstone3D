@@ -7,9 +7,8 @@ import {
   VIEWPORT_TYPE,
   metaData,
   createAndCacheVolume,
-  resetToolsState
 } from "@cornerstone";
-import { ToolGroupManager, ToolBindings } from "@cornerstone-tools";
+import { ToolGroupManager, ToolBindings, resetToolsState } from "@cornerstone-tools";
 import { registerWebImageLoader } from "@cornerstone-streaming-image-volume-loader";
 import config from "./config/default";
 import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";

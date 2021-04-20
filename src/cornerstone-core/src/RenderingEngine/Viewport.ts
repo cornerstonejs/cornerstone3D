@@ -59,6 +59,13 @@ class Viewport {
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
 
+  public getVoxelIntensity(point): any {
+    const volumeActor = this.getDefaultActor().volumeActor
+    const imageData = volumeActor.getMapper().getInputData()
+
+    return imageData.getScalarValueFromWorld(point)
+  }
+
   public getDefaultActor(): ActorEntry {
     return this.getActors()[0]
   }

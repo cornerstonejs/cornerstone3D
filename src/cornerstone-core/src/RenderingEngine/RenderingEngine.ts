@@ -624,6 +624,34 @@ class RenderingEngine implements IRenderingEngine {
   public getViewport(uid: string): StackViewport | VolumeViewport {
     return this._viewports.get(uid)
   }
+
+  /**
+   * @method getViewportsContainingVolumeUID Returns the viewport containing the volumeUID
+   *
+   * @returns {VolumeViewport} viewports
+   */
+  public getViewportsContainingVolumeUID(uid: string): Array<VolumeViewport> {
+    const viewports = this._getViewportsAsArray() as Array<VolumeViewport>
+    return viewports.filter((vp) => {
+      const volActors = vp.getDefaultActor()
+      return volActors.volumeActor && volActors.uid === uid
+    })
+  }
+
+  /**
+   * @method getScenesContainingVolumeUID Returns the scenes containing the volumeUID
+   *
+   * @returns {Scene} scenes
+   */
+  public getScenesContainingVolumeUID(uid: string): Array<Scene> {
+    const scenes = this.getScenes()
+    return scenes.filter((scene) => {
+      const volumeActors = scene.getVolumeActors()
+      const firstActor = volumeActors[0]
+      return firstActor.volumeActor && firstActor.uid === uid
+    })
+  }
+
   /**
    * @method getViewports Returns an array of all `Viewport`s on the `RenderingEngine` instance.
    *

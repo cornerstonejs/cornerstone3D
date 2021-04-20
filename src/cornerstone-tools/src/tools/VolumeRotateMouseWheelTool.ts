@@ -61,7 +61,7 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
     const newFocalPoint: Point3 = [0, 0, 0]
     const newViewUp: Point3 = [0, 0, 0]
 
-    const transform = mat4.identity(new Float64Array(16))
+    const transform = mat4.identity(new Float32Array(16))
     mat4.translate(transform, transform, [cx, cy, cz])
     mat4.rotate(transform, transform, angle, [ax, ay, az])
     mat4.translate(transform, transform, [-cx, -cy, -cz])

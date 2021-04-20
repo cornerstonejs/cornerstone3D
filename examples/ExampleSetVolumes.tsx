@@ -200,8 +200,8 @@ class VTKSetVolumesExample extends Component {
 
     const onLoad = () => this.setState({ progressText: "Loaded." });
 
-    ctVolume.load(onLoad);
     ptVolume.load(onLoad);
+    ctVolume.load(onLoad);
 
     ptCtFusion.setVolumes(
       renderingEngine,
@@ -280,8 +280,8 @@ class VTKSetVolumesExample extends Component {
     const ctOnLoad = () => this.setState({ progressText: "New CT Loaded." });
     const ptOnLoad = () => this.setState({ progressText: "New PET Loaded." });
 
-    ctVolume.load(ctOnLoad);
     ptVolume.load(ptOnLoad);
+    ctVolume.load(ctOnLoad);
 
     ptCtFusion.setVolumes(
       this.renderingEngine,
