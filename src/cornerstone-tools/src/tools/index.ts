@@ -6,7 +6,7 @@ import StackScrollTool from './StackScrollTool'
 import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool'
 import ZoomTool from './ZoomTool'
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool'
-import MIPJumpToTool from './MIPJumpToTool'
+import MIPJumpToClickTool from './MIPJumpToClickTool'
 import CrosshairsTool from './CrosshairsTool'
 //
 import BidirectionalTool from './annotation/BidirectionalTool'
@@ -27,7 +27,7 @@ export {
   StackScrollMouseWheelTool,
   ZoomTool,
   VolumeRotateMouseWheelTool,
-  MIPJumpToTool,
+  MIPJumpToClickTool,
   // Annotation Tools
   CrosshairsTool,
   BidirectionalTool,

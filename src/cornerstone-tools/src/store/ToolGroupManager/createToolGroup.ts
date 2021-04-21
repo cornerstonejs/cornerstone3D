@@ -23,6 +23,14 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     viewports: [],
     tools: {},
     //
+    getToolInstance: function (toolName) {
+      const toolInstance = this._tools[toolName]
+      if (!toolInstance) {
+        console.warn(`'${toolName}' is not registered with this toolGroup.`)
+        return
+      }
+      return toolInstance
+    },
     addTool: function (toolName, toolConfiguration = {}) {
       const toolDefinition = state.tools[toolName]
       const hasToolName = typeof toolName !== 'undefined' && toolName !== ''

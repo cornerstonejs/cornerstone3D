@@ -10,7 +10,7 @@ const {
   ToolGroupManager,
   ToolBindings,
   VolumeRotateMouseWheelTool,
-  MIPJumpToTool,
+  MIPJumpToClickTool,
   LengthTool,
   ProbeTool,
   RectangleRoiTool,
@@ -188,7 +188,7 @@ function initToolGroups() {
   csTools3d.addTool(StackScrollTool, {});
   csTools3d.addTool(ZoomTool, {});
   csTools3d.addTool(VolumeRotateMouseWheelTool, {});
-  csTools3d.addTool(MIPJumpToTool, {});
+  csTools3d.addTool(MIPJumpToClickTool, {});
   csTools3d.addTool(LengthTool, {});
   csTools3d.addTool(ProbeTool, {});
   csTools3d.addTool(RectangleRoiTool, {});
@@ -390,12 +390,12 @@ function initToolGroups() {
   });
 
   ptMipSceneToolGroup.addTool('VolumeRotateMouseWheel', {});
-  ptMipSceneToolGroup.addTool('MIPJumpToTool', {});
+  ptMipSceneToolGroup.addTool('MIPJumpToClickTool', {});
   ptMipSceneToolGroup.addTool('PetThreshold', {
     configuration: { volumeUID: ptVolumeUID },
   });
   ptMipSceneToolGroup.setToolActive('VolumeRotateMouseWheel');
-  ptMipSceneToolGroup.setToolActive('MIPJumpToTool');
+  ptMipSceneToolGroup.setToolActive('MIPJumpToClickTool');
   ptMipSceneToolGroup.setToolActive('PetThreshold', {
     bindings: [ToolBindings.Mouse.Primary],
   });

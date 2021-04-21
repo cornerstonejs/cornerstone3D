@@ -4,6 +4,7 @@ import getToolStateWithinSlice from './getToolStateWithinSlice'
 import getWorldWidthAndHeightInPlane from './getWorldWidthAndHeightInPlane'
 import getToolStateForDisplay from './getToolStateForDisplay'
 import getImageIdForTool from './getImageIdForTool'
+import getVoxelPositionBasedOnIntensity from './getVoxelPositionBasedOnIntensity'
 
 export default {
   getSpacingInNormalDirection,
@@ -12,6 +13,7 @@ export default {
   getWorldWidthAndHeightInPlane,
   getToolStateForDisplay,
   getImageIdForTool,
+  getVoxelPositionBasedOnIntensity,
 }
 
 export {
@@ -21,4 +23,5 @@ export {
   getWorldWidthAndHeightInPlane,
   getToolStateForDisplay,
   getImageIdForTool,
+  getVoxelPositionBasedOnIntensity,
 }

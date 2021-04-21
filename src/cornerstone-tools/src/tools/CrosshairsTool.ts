@@ -1539,6 +1539,30 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return true
   }
 
+  jumpToWorld = (enabledElement, jumpWorld) => {
+    state.isToolLocked = true
+
+    const toolState = getToolState(enabledElement, this.name)
+    const { renderingEngine, viewport } = enabledElement
+
+    const delta: Point3 = [0, 0, 0]
+    vtkMath.subtract(jumpWorld, this.toolCenter, delta)
+
+    const viewportToolData = toolState.find(
+      (toolData) => toolData.data.viewportUID === viewport.uid
+    )
+
+    this._applyDeltaShiftToViewportCamera(
+      renderingEngine,
+      viewportToolData,
+      delta
+    )
+
+    state.isToolLocked = false
+
+    return true
+  }
+
   _activateModify(element) {
     state.isToolLocked = true
 
@@ -1869,36 +1893,42 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // NOTE1: The lines then are rendered by the onCameraModified
     // NOTE2: crosshair center are automatically updated in the onCameraModified event
     viewportsToolDataToUpdate.forEach((toolData) => {
-      const { data } = toolData
-
-      const scene = renderingEngine.getScene(data.sceneUID)
-      const otherViewport = scene.getViewport(data.viewportUID)
-      const camera = otherViewport.getCamera()
-      const normal = camera.viewPlaneNormal
-
-      // Project delta over camera normal
-      // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
-      const dotProd = vtkMath.dot(delta, normal)
-      const projectedDelta = [...normal]
-      vtkMath.multiplyScalar(projectedDelta, dotProd)
-
-      if (
-        Math.abs(projectedDelta[0]) > 1e-3 ||
-        Math.abs(projectedDelta[1]) > 1e-3 ||
-        Math.abs(projectedDelta[2]) > 1e-3
-      ) {
-        const newFocalPoint = [0, 0, 0],
-          newPosition = [0, 0, 0]
-
-        vtkMath.add(camera.focalPoint, projectedDelta, newFocalPoint)
-        vtkMath.add(camera.position, projectedDelta, newPosition)
-
-        otherViewport.setCamera({
-          focalPoint: newFocalPoint,
-          position: newPosition,
-        })
-      }
+      this._applyDeltaShiftToViewportCamera(renderingEngine, toolData, delta)
     })
+  }
+  _applyDeltaShiftToViewportCamera(renderingEngine, toolData, delta) {
+    // update camera for the other viewports.
+    // NOTE1: The lines then are rendered by the onCameraModified
+    // NOTE2: crosshair center are automatically updated in the onCameraModified event
+    const { data } = toolData
+
+    const scene = renderingEngine.getScene(data.sceneUID)
+    const viewport = scene.getViewport(data.viewportUID)
+    const camera = viewport.getCamera()
+    const normal = camera.viewPlaneNormal
+
+    // Project delta over camera normal
+    // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
+    const dotProd = vtkMath.dot(delta, normal)
+    const projectedDelta = [...normal]
+    vtkMath.multiplyScalar(projectedDelta, dotProd)
+
+    if (
+      Math.abs(projectedDelta[0]) > 1e-3 ||
+      Math.abs(projectedDelta[1]) > 1e-3 ||
+      Math.abs(projectedDelta[2]) > 1e-3
+    ) {
+      const newFocalPoint = [0, 0, 0],
+        newPosition = [0, 0, 0]
+
+      vtkMath.add(camera.focalPoint, projectedDelta, newFocalPoint)
+      vtkMath.add(camera.position, projectedDelta, newPosition)
+
+      viewport.setCamera({
+        focalPoint: newFocalPoint,
+        position: newPosition,
+      })
+    }
   }
 
   _pointNearReferenceLine = (

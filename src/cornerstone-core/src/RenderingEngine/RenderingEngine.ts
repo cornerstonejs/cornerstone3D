@@ -639,11 +639,11 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method getScenesContainingVolumeUID Returns the scenes containing the volumeUID
+   * @method getScenesContainingVolume Returns the scenes containing the volumeUID
    *
    * @returns {Scene} scenes
    */
-  public getScenesContainingVolumeUID(uid: string): Array<Scene> {
+  public getScenesContainingVolume(uid: string): Array<Scene> {
     const scenes = this.getScenes()
     return scenes.filter((scene) => {
       const volumeActors = scene.getVolumeActors()

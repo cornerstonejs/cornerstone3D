@@ -59,7 +59,7 @@ class Viewport {
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
 
-  public getVoxelIntensity(point): any {
+  public getIntensityFromWorld(point: Point3): number {
     const volumeActor = this.getDefaultActor().volumeActor
     const imageData = volumeActor.getMapper().getInputData()
 
@@ -174,6 +174,16 @@ class Viewport {
     if (immediate) {
       this.render()
     }
+  }
+
+  /**
+   * @method getBounds gets the visible bounds of the viewport
+   *
+   * @param {any} bounds of the viewport
+   */
+  public getBounds() {
+    const renderer = this.getRenderer()
+    return renderer.computeVisiblePropBounds()
   }
 
   /**

@@ -28,7 +28,7 @@ import {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
-  MIPJumpToTool,
+  MIPJumpToClickTool,
   LengthTool,
   ProbeTool,
   RectangleRoiTool,
@@ -53,7 +53,7 @@ export {
   StackScrollTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
-  MIPJumpToTool,
+  MIPJumpToClickTool,
   // Annotation Tools
   LengthTool,
   CrosshairsTool,
