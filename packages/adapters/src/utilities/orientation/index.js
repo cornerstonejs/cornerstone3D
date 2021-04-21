@@ -4,6 +4,7 @@ import rotateDirectionCosinesInPlane from "./rotateDirectionCosinesInPlane.js";
 import rotateVectorAroundUnitVector from "./rotateVectorAroundUnitVector.js";
 import { flipMatrix2D } from "./flipMatrix2D.js";
 import rotateMatrix902D from "./rotateMatrix902D.js";
+import nearlyEqual from "./nearlyEqual.js";
 
 export {
     crossProduct3D,
@@ -11,5 +12,6 @@ export {
     rotateDirectionCosinesInPlane,
     rotateVectorAroundUnitVector,
     flipMatrix2D,
-    rotateMatrix902D
+    rotateMatrix902D,
+    nearlyEqual
 };
