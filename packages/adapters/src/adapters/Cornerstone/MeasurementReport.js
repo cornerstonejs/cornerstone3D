@@ -170,7 +170,14 @@ export default class MeasurementReport {
         return report;
     }
 
-    static generateToolState(dataset) {
+    /**
+     * Generate Cornerstone tool state from dataset
+     * @param {object} dataset dataset
+     * @param {object} hooks
+     * @param {object} hooks.getToolClass Function to map dataset to a tool class
+     * @returns
+     */
+    static generateToolState(dataset, hooks = {}) {
         // For now, bail out if the dataset is not a TID1500 SR with length measurements
         if (dataset.ContentTemplateSequence.TemplateIdentifier !== "1500") {
             throw new Error(
@@ -218,9 +225,17 @@ export default class MeasurementReport {
 
             const TrackingIdentifierValue = TrackingIdentifierGroup.TextValue;
 
-            const toolClass = registeredToolClasses.find(tc =>
-                tc.isValidCornerstoneTrackingIdentifier(TrackingIdentifierValue)
-            );
+            const toolClass = hooks.getToolClass
+                ? hooks.getToolClass(
+                      measurementGroup,
+                      dataset,
+                      registeredToolClasses
+                  )
+                : registeredToolClasses.find(tc =>
+                      tc.isValidCornerstoneTrackingIdentifier(
+                          TrackingIdentifierValue
+                      )
+                  );
 
             if (toolClass) {
                 const measurement = toolClass.getMeasurementData(
