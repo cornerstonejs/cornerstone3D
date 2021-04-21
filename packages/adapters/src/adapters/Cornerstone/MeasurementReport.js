@@ -174,7 +174,7 @@ export default class MeasurementReport {
      * Generate Cornerstone tool state from dataset
      * @param {object} dataset dataset
      * @param {object} hooks
-     * @param {object} hooks.getToolClass Function to map dataset to a tool class
+     * @param {function} hooks.getToolClass Function to map dataset to a tool class
      * @returns
      */
     static generateToolState(dataset, hooks = {}) {
