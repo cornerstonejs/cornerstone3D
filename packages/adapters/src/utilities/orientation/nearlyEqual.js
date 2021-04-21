@@ -9,8 +9,8 @@
  * the Creative Commons Attribution License (BY):
  * http://creativecommons.org/licenses/by/3.0/
  *
- * @param  {Number} a
- * @param  {Number} b
+ * @param {Number} a
+ * @param {Number} b
  * @param {Number} tolerance.
  * @return {Boolean} True if a and b are nearly equal.
  */
