@@ -1,4 +1,5 @@
-# vtkjs-viewport
+# Cornerstone-3d-alpha
+
 
 > VTK.js powered offscreen rendering engine and tool framework for 3D
 > visualisation of medical images.

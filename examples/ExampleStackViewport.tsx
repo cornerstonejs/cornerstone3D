@@ -15,14 +15,13 @@ import {
   synchronizers,
   ToolGroupManager,
   ToolBindings,
-  resetToolsState
+  resetToolsState,
 } from '@cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 import getImageIds from './helpers/getImageIds'
-import {createDXImageIds} from './helpers/createStudyImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
@@ -32,29 +31,32 @@ import {
   ctStackUID,
   SCENE_IDS,
   VIEWPORT_IDS,
+  PET_CT_ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { stackCT } from './layouts'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import * as cs from '@cornerstone'
-import config from "./config/default";
-import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
+import config from './config/default'
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 
 import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
+import getInterleavedFrames from './helpers/getInterleavedFrames'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
-const VOLUME = "volume";
-const STACK = "stack";
+const VOLUME = 'volume'
+const STACK = 'stack'
 
 window.cache = cache
 
 let ctSceneToolGroup, stackViewportToolGroup
+const ctLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS)
 
 class StackViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
-    leftClickTool : 'WindowLevel',
+    leftClickTool: 'WindowLevel',
     layoutIndex: 0,
     destroyed: false,
     //
@@ -63,6 +65,8 @@ class StackViewportExample extends Component {
       numRows: 2,
       viewports: [{}, {}, {}, {}],
     },
+    ptCtLeftClickTool: 'Levels',
+
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
   }
 
@@ -74,32 +78,32 @@ class StackViewportExample extends Component {
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
 
-    this.ctVolumeImageIdsPromise = getImageIds("ct1", VOLUME);
-
+    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME)
 
     this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
     this.dxImageIdsPromise = getImageIds('dx', STACK)
 
-    this.colorImageIds = config.colorImages.imageIds;
+    this.colorImageIds = config.colorImages.imageIds
 
     metaData.addProvider(
-      (type, imageId) => hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
+      (type, imageId) =>
+        hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
       10000
-    );
+    )
 
     // Promise.all([this.petVolumeImageIds, this.ctImageIds]).then(() =>
-    //   this.setState({ progressText: "Loading data..." })
+    //   this.setState({ progressText: 'Loading data...' })
     // );
     // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
     // )
 
-    // const {
-    //   createCameraPositionSynchronizer,
-    //   createVOISynchronizer,
-    // } = synchronizers
+    const {
+      createCameraPositionSynchronizer,
+      createVOISynchronizer,
+    } = synchronizers
 
-    // this.axialSync = createCameraPositionSynchronizer('axialSync')
+    this.axialSync = createCameraPositionSynchronizer('axialSync')
     // this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
     // this.coronalSync = createCameraPositionSynchronizer('coronalSync')
     // this.ctWLSync = createVOISynchronizer('ctWLSync')
@@ -119,14 +123,15 @@ class StackViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    ({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups())
+    ;({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID
     this.ctStackUID = ctStackUID
 
     // Create volumes
     const dxImageIds = await this.dxImageIdsPromise
-    const ctStackImageIds = await this.ctStackImageIdsPromise
+    let ctStackImageIds = await this.ctStackImageIdsPromise
+
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     const colorImageIds = this.colorImageIds
 
@@ -207,7 +212,11 @@ class StackViewportExample extends Component {
 
     const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
 
-    await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds))
+    const middleSlice = Math.floor(ctStackImageIds.length / 2)
+    await stackViewport.setStack(
+      sortImageIdsByIPP(ctStackImageIds),
+      middleSlice
+    )
 
     // ct + dx + color
     const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
@@ -295,29 +304,62 @@ class StackViewportExample extends Component {
 
   toggleLengthAndWindowLevel = () => {
     const options = {
-    bindings: [ToolBindings.Mouse.Primary],
-    };
-
-    let newTool
-    if (this.state.leftClickTool === "Length"){
-      ctSceneToolGroup.setToolPassive("Length");
-      stackViewportToolGroup.setToolPassive("Length");
-
-
-      ctSceneToolGroup.setToolActive('WindowLevel', options);
-      stackViewportToolGroup.setToolActive('WindowLevel', options);
-      newTool = "WindowLevel"
-    } else {
-      ctSceneToolGroup.setToolPassive("WindowLevel");
-      stackViewportToolGroup.setToolPassive("WindowLevel");
-
-      ctSceneToolGroup.setToolActive('Length', options);
-      stackViewportToolGroup.setToolActive('Length', options);
-      newTool = "Length"
+      bindings: [ToolBindings.Mouse.Primary],
     }
 
-    this.setState({ leftClickTool: newTool });
+    let newTool
+    if (this.state.leftClickTool === 'Length') {
+      ctSceneToolGroup.setToolPassive('Length')
+      stackViewportToolGroup.setToolPassive('Length')
 
+      ctSceneToolGroup.setToolActive('WindowLevel', options)
+      stackViewportToolGroup.setToolActive('WindowLevel', options)
+      newTool = 'WindowLevel'
+    } else {
+      ctSceneToolGroup.setToolPassive('WindowLevel')
+      stackViewportToolGroup.setToolPassive('WindowLevel')
+
+      ctSceneToolGroup.setToolActive('Length', options)
+      stackViewportToolGroup.setToolActive('Length', options)
+      newTool = 'Length'
+    }
+
+    this.setState({ leftClickTool: newTool })
+  }
+
+  swapTools = (evt) => {
+    const toolName = evt.target.value
+
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
+    const options = {
+      bindings: [ToolBindings.Mouse.Primary],
+    }
+    if (isAnnotationToolOn) {
+      // Set tool active
+
+      const toolsToSetPassive = PET_CT_ANNOTATION_TOOLS.filter(
+        (toolName) => toolName !== toolName
+      )
+
+      ctSceneToolGroup.setToolActive(toolName, options)
+
+      toolsToSetPassive.forEach((toolName) => {
+        ctSceneToolGroup.setToolPassive(toolName)
+      })
+
+      ctSceneToolGroup.setToolDisabled('WindowLevel')
+    } else {
+      // Set window level + threshold
+      ctSceneToolGroup.setToolActive('WindowLevel', options)
+
+      // Set all annotation tools passive
+      PET_CT_ANNOTATION_TOOLS.forEach((toolName) => {
+        ctSceneToolGroup.setToolPassive(toolName)
+      })
+    }
+
+    this.renderingEngine.render()
+    this.setState({ ptCtLeftClickTool: toolName })
   }
 
   render() {
@@ -333,10 +375,22 @@ class StackViewportExample extends Component {
         <button
           onClick={() => this.toggleLengthAndWindowLevel()}
           className="btn btn-primary"
-          style={{ margin: "2px 4px" }}
+          style={{ margin: '2px 4px' }}
         >
           Toggle Length and WindowLevel
         </button>
+        <div>
+          <select
+            value={this.state.ptCtLeftClickTool}
+            onChange={this.swapTools}
+          >
+            {ctLayoutTools.map((toolName) => (
+              <option key={toolName} value={toolName}>
+                {toolName}
+              </option>
+            ))}
+          </select>
+        </div>
         <div style={{ paddingBottom: '55px' }}>
           <ViewportGrid
             numCols={this.state.viewportGrid.numCols}
@@ -384,9 +438,3 @@ class StackViewportExample extends Component {
 }
 
 export default StackViewportExample
-
-
-// https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs/
-//studies/1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463/
-//series/1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561/
-//instances/1.3.6.1.4.1.14519.5.2.1.7009.2403.113692692484570386248172588190/frames/1

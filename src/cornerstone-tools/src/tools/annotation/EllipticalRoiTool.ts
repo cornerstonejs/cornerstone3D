@@ -757,8 +757,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         vtkImageData: imageData,
         metadata,
       } = imageVolume
-      const worldPos1Index = [0, 0, 0]
-      const worldPos2Index = [0, 0, 0]
+      const worldPos1Index = vec3.fromValues(0, 0, 0)
+      const worldPos2Index = vec3.fromValues(0, 0, 0)
 
       imageData.worldToIndexVec3(worldPos1, worldPos1Index)
 
@@ -804,15 +804,15 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
         // Calling worldToCanvas on voxels all the time is super slow,
         // So we instead work out the change in canvas position incrementing each index causes.
-        const start = [iMin, jMin, kMin]
+        const start = vec3.fromValues(iMin, jMin, kMin)
 
         const worldPosStart = vec3.create()
         imageData.indexToWorldVec3(start, worldPosStart)
         const canvasPosStart = viewport.worldToCanvas(worldPosStart)
 
-        const startPlusI = [iMin + 1, jMin, kMin]
-        const startPlusJ = [iMin, jMin + 1, kMin]
-        const startPlusK = [iMin, jMin, kMin + 1]
+        const startPlusI = vec3.fromValues(iMin + 1, jMin, kMin)
+        const startPlusJ = vec3.fromValues(iMin, jMin + 1, kMin)
+        const startPlusK = vec3.fromValues(iMin, jMin, kMin + 1)
 
         const worldPosStartPlusI = vec3.create()
         const plusICanvasDelta = vec2.create()

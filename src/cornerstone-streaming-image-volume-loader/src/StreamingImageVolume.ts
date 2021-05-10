@@ -1,4 +1,3 @@
-import { ImageLoadObject } from './../../cornerstone-core/src/types/ILoadObject'
 import {
   EVENTS,
   eventTarget,
@@ -6,7 +5,6 @@ import {
   requestPoolManager,
   triggerEvent,
   ImageVolume,
-  Types,
   cache,
   loadImage,
   Utilities,
@@ -20,16 +18,10 @@ import {
   IImage,
   IVolume,
   IStreamingVolume,
+  ImageLoadObject,
 } from 'src/cornerstone-core/src/types'
 
 const requestType = 'prefetch'
-
-// type LoadStatusInterface = {
-//   success: boolean
-//   framesLoaded: number
-//   numFrames: number
-//   framesProcessed: number
-// }
 
 type ScalingParameters = {
   rescaleSlope: number
@@ -49,7 +41,6 @@ type PetScaling = {
 }
 
 export default class StreamingImageVolume extends ImageVolume {
-  readonly imageIds: Array<string>
   private _cornerstoneImageMetaData
 
   loadStatus: {
@@ -127,7 +118,7 @@ export default class StreamingImageVolume extends ImageVolume {
     return true
   }
 
-  public cancelLoading() {
+  public cancelLoading(): void {
     const { loadStatus } = this
 
     if (!loadStatus || !loadStatus.loading) {
@@ -152,11 +143,14 @@ export default class StreamingImageVolume extends ImageVolume {
     requestPoolManager.filterRequests(filterFunction)
   }
 
-  public clearLoadCallbacks() {
+  public clearLoadCallbacks(): void {
     this.loadStatus.callbacks = []
   }
 
-  public load = (callback: (LoadStatusInterface) => void, priority = 5) => {
+  public load = (
+    callback: (LoadStatusInterface) => void,
+    priority = 5
+  ): void => {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
@@ -351,6 +345,41 @@ export default class StreamingImageVolume extends ImageVolume {
     interleavedFrames.forEach((frame) => {
       const { imageId, imageIdIndex } = frame
 
+      // Check if there is a cached image for the same imageURI (different
+      // data loader scheme)
+      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId)
+
+      if (cachedImage) {
+        // todo add scaling and slope
+        const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData
+        const TypedArray = this.scalarData.constructor
+        let byteOffset = bytesPerImage * imageIdIndex
+
+        //    create a view on the volume arraybuffer
+        const bytePerPixel = bytesPerImage / pixelsPerImage
+
+        if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
+          byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel
+        }
+
+        // @ts-ignore
+        const volumeBufferView = new TypedArray(
+          arrayBuffer,
+          byteOffset,
+          pixelsPerImage
+        )
+        cachedImage.imageLoadObject.promise
+          .then((image) => {
+            const imageScalarData = image.getPixelData()
+            volumeBufferView.set(imageScalarData)
+            successCallback(this, imageIdIndex, imageId)
+          })
+          .catch((err) => {
+            errorCallback(err, imageIdIndex, imageId)
+          })
+        return
+      }
+
       if (cachedFrames[imageIdIndex]) {
         framesLoaded++
         framesProcessed++
@@ -373,8 +402,8 @@ export default class StreamingImageVolume extends ImageVolume {
         scalingParameters.suvbw = suvFactor.suvbw
       }
 
-      // Note: These options are specific to the WADO Image Loader
       const options = {
+        // WADO Image Loader
         targetBuffer: {
           arrayBuffer,
           offset: imageIdIndex * lengthInBytes,
@@ -383,6 +412,12 @@ export default class StreamingImageVolume extends ImageVolume {
         },
         preScale: {
           scalingParameters,
+        },
+        // requestPoolManager
+        priority,
+        requestType,
+        additionalDetails: {
+          volumeUID: this.uid,
         },
       }
 
@@ -410,8 +445,6 @@ export default class StreamingImageVolume extends ImageVolume {
         priority
       )
     })
-
-    requestPoolManager.startGrabbing()
   }
 
   private _addScalingToVolume(suvScalingFactors) {
@@ -466,7 +499,7 @@ export default class StreamingImageVolume extends ImageVolume {
       pixelsPerImage,
       windowCenter,
       windowWidth,
-      numberOfComponents,
+      numComponents,
       color,
       dimensions,
       spacing,
@@ -480,7 +513,18 @@ export default class StreamingImageVolume extends ImageVolume {
 
     // 2. Given the index of the image and frame length in bytes,
     //    create a view on the volume arraybuffer
-    const byteOffset = bytesPerImage * imageIdIndex
+    const bytePerPixel = bytesPerImage / pixelsPerImage
+
+    let byteOffset = bytesPerImage * imageIdIndex
+
+    // If there is a discrepancy between the volume typed array
+    // and the bitsAllocated for the image. The reason is that VTK uses Float32
+    // on the GPU and if the type is not Float32, it will convert it. So for not
+    // having a performance issue, we convert all types initially to Float32 even
+    // if they are not Float32.
+    if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
+      byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel
+    }
 
     // 3. Create a new TypedArray of the same type for the new
     //    Image that will be created
@@ -512,7 +556,7 @@ export default class StreamingImageVolume extends ImageVolume {
       windowCenter,
       windowWidth,
       color,
-      numComps: numberOfComponents,
+      numComps: numComponents,
       rows: dimensions[0],
       columns: dimensions[1],
       sizeInBytes: imageScalarData.byteLength,
@@ -573,7 +617,9 @@ export default class StreamingImageVolume extends ImageVolume {
       )
 
       // 3. Caching the image
-      cache.putImageLoadObject(imageId, imageLodObject)
+      cache.putImageLoadObject(imageId, imageLodObject).catch((err) => {
+        console.error(err)
+      })
 
       // 4. If we know we won't be able to add another Image to the cache
       //    without breaching the limit, stop here.

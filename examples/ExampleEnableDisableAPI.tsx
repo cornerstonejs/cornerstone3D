@@ -2,13 +2,10 @@ import React, { Component } from "react";
 import {
   cache,
   RenderingEngine,
-  eventTarget,
   createAndCacheVolume,
-  loadAndCacheImages,
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
-  EVENTS as RENDERING_EVENTS,
 } from "@cornerstone";
 import {
   SynchronizerManager,

@@ -1,15 +1,15 @@
-import { ImageVolume } from './cache'
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
+import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
+
 import {
-  IVolume,
   VolumeLoadObject,
   VolumeLoaderFn,
+  IImageVolume,
 } from 'src/cornerstone-core/src/types'
 import cache from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>
@@ -22,7 +22,7 @@ function createInternalVTKRepresentation({
   direction,
   origin,
   scalarData,
-}) {
+}): vtkImageData {
   const { PhotometricInterpretation } = metadata
 
   let numComponents = 1
@@ -67,7 +67,7 @@ let unknownVolumeLoader
  * contain the ImageIds that is passed to the loader
  *
  * @returns {VolumeLoadObject} An Object which can be used to act after a volume is loaded or loading fails
- * @memberof VolumeLoader
+ *
  */
 function loadVolumeFromVolumeLoader(
   volumeId: string,
@@ -113,38 +113,29 @@ function loadVolumeFromVolumeLoader(
  * @param {Object} [options] Options to be passed to the Volume Loader
  *
  * @returns {VolumeLoadObject} An Object which can be used to act after an image is loaded or loading fails
- * @memberof VolumeLoader
+ * @category VolumeLoader
  */
 export function loadVolume(
   volumeId: string,
   options: VolumeLoaderOptions = { imageIds: [] }
-): ImageVolume {
+): Promise<IImageVolume> {
   if (volumeId === undefined) {
     throw new Error('loadVolume: parameter volumeId must not be undefined')
   }
 
-  const volumeLoadObject = cache.getVolumeLoadObject(volumeId)
+  let volumeLoadObject = cache.getVolumeLoadObject(volumeId)
 
   if (volumeLoadObject !== undefined) {
     return volumeLoadObject.promise
   }
 
-  return loadVolumeFromVolumeLoader(volumeId, options).promise.then(
-    (volume) => {
-      volume.vtkImageData = createInternalVTKRepresentation(volume)
-    }
-  )
+  volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options)
+
+  return volumeLoadObject.promise.then((volume: IImageVolume) => {
+    volume.vtkImageData = createInternalVTKRepresentation(volume)
+    return volume
+  })
 }
-
-export function getVolume(volumeId: string): IVolume {
-  if (volumeId === undefined) {
-    throw new Error('loadVolume: parameter volumeId must not be undefined')
-  }
-
-  return cache.getVolume(volumeId)
-}
-
-//
 
 /**
  * Loads an image given an volumeId and optional priority and returns a promise which will resolve to
@@ -154,7 +145,7 @@ export function getVolume(volumeId: string): IVolume {
  * @param {Object} [options] Options to be passed to the Volume Loader
  *
  * @returns {VolumeLoadObject} Volume Loader Object
- * @memberof VolumeLoader
+ * @category VolumeLoader
  */
 export function createAndCacheVolume(
   volumeId: string,
@@ -178,7 +169,9 @@ export function createAndCacheVolume(
     volume.vtkImageData = createInternalVTKRepresentation(volume)
   })
 
-  cache.putVolumeLoadObject(volumeId, volumeLoadObject)
+  cache.putVolumeLoadObject(volumeId, volumeLoadObject).catch((err) => {
+    throw err
+  })
 
   return volumeLoadObject.promise
 }
@@ -189,7 +182,7 @@ export function createAndCacheVolume(
  * @param {String} scheme The scheme to use for this volume loader (e.g. 'dicomweb', 'wadouri', 'http')
  * @param {Function} volumeLoader A Cornerstone Volume Loader function
  * @returns {void}
- * @memberof VolumeLoader
+ * @category VolumeLoader
  */
 export function registerVolumeLoader(
   scheme: string,
@@ -204,7 +197,7 @@ export function registerVolumeLoader(
  * @param {Function} volumeLoader A Cornerstone Volume Loader
  *
  * @returns {Function|Undefined} The previous Unknown Volume Loader
- * @memberof VolumeLoader
+ * @category VolumeLoader
  */
 export function registerUnknownVolumeLoader(
   volumeLoader: VolumeLoaderFn

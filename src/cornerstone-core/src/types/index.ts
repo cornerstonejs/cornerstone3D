@@ -4,6 +4,7 @@ import ICache from './ICache'
 import IVolume from './IVolume'
 import VOI, { VOIRange } from './voi'
 import ImageLoaderFn from './ImageLoaderFn'
+import IImageVolume from './IImageVolume'
 import VolumeLoaderFn from './VolumeLoaderFn'
 import IRegisterImageLoader from './IRegisterImageLoader'
 import IStreamingVolume from './IStreamingVolume'
@@ -15,6 +16,7 @@ import Metadata from './Metadata'
 import Orientation from './Orientation'
 import Point2 from './Point2'
 import Point3 from './Point3'
+import IStreamingImageVolume from './IStreamingImageVolume'
 import ViewportInputOptions from './ViewportInputOptions'
 import IImage from './IImage'
 
@@ -23,6 +25,8 @@ export {
   IEnabledElement,
   ICache,
   IVolume,
+  IImageVolume,
+  IStreamingImageVolume,
   IImage,
   ImageLoaderFn,
   VolumeLoaderFn,

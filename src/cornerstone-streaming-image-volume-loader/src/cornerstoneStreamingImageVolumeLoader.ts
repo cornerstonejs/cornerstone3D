@@ -3,7 +3,6 @@ import {
   registerUnknownVolumeLoader,
   cache,
   Utilities,
-  ERROR_CODES,
 } from '@cornerstone'
 import { vec3 } from 'gl-matrix'
 import Point3 from 'src/cornerstone-core/src/types/Point3'
@@ -12,16 +11,17 @@ import StreamingImageVolume from './StreamingImageVolume'
 
 const { createUint8SharedArray, createFloat32SharedArray } = Utilities
 
+interface IVolumeLoader {
+  promise: Promise<StreamingImageVolume>
+  cancel: () => void
+}
+
 function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,
   options: {
     imageIds: Array<string>
   }
-): {
-  // TODO: VolumeLoader interface?
-  promise: Promise<StreamingImageVolume>
-  cancelFn: () => void
-} {
+): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
       'ImageIds must be provided to create a streaming image volume'
@@ -65,14 +65,14 @@ function cornerstoneStreamingImageVolumeLoader(
   const numFrames = imageIds.length
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing]
+  const spacing = <Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing]
   const dimensions = <Point3>[Columns, Rows, numFrames]
   const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal]
   const signed = PixelRepresentation === 1
 
   // Check if it fits in the cache before we allocate data
   // TODO Improve this when we have support for more types
-  const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1
+  const bytesPerVoxel = BitsAllocated === 16 ? 2 : 1
   const sizeInBytes =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
@@ -81,7 +81,12 @@ function cornerstoneStreamingImageVolumeLoader(
     numComponents = 3
   }
 
-  cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes * numComponents)
+  const numBytes = sizeInBytes * numComponents
+
+  // check if there is enough space in unallocated + image Cache
+  cache.isCacheable(numBytes)
+
+  cache.decacheIfNecessaryUntilBytesAvailable(numBytes)
 
   let scalarData
 
@@ -142,7 +147,7 @@ function cornerstoneStreamingImageVolumeLoader(
 
   return {
     promise: Promise.resolve(streamingImageVolume),
-    cancelFn: () => {
+    cancel: () => {
       streamingImageVolume.cancelLoading()
     },
   }

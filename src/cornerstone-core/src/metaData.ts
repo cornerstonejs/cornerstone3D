@@ -4,16 +4,14 @@
 const providers = []
 
 /**
- * @module Metadata
- */
-
-/**
  * Adds a metadata provider with the specified priority
  * @param {Function} provider Metadata provider function
  * @param {Number} [priority=0] - 0 is default/normal, > 0 is high, < 0 is low
  *
  * @returns {void}
- * @memberof Metadata
+ *
+ * @function addProvider
+ * @category MetaData
  */
 export function addProvider(
   provider: (type: string, imageId: string) => { any },
@@ -41,7 +39,9 @@ export function addProvider(
  * @param {Function} provider Metadata provider function
  *
  * @returns {void}
- * @memberof Metadata
+ *
+ * @function removeProvider
+ * @category MetaData
  */
 export function removeProvider(
   provider: (type: string, imageId: string) => { any }
@@ -60,7 +60,9 @@ export function removeProvider(
  *
  *
  * @returns {void}
- * @memberof Metadata
+ *
+ * @function removeAllProviders
+ * @category MetaData
  */
 export function removeAllProviders(): void {
   while (providers.length > 0) {
@@ -76,7 +78,7 @@ export function removeAllProviders(): void {
  * @param {String} imageId The Cornerstone Image Object's imageId
  *
  * @returns {*} The metadata retrieved from the metadata store
- * @memberof Metadata
+ * @category MetaData
  */
 function getMetaData(type: string, imageId: string): any {
   // Invoke each provider in priority order until one returns something

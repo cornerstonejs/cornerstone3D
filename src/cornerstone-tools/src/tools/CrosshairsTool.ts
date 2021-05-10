@@ -410,8 +410,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
             // update camera
             otherViewport.setCamera({
-              focalPoint: newFocalPoint,
-              position: newPosition,
+              focalPoint: <Point3>newFocalPoint,
+              position: <Point3>newPosition,
             })
           }
 

@@ -51,6 +51,10 @@ export default function scrollThroughStack(
       volumeUID
     )
 
+    if (!imageVolume) {
+      return
+    }
+
     const volumeActor = scene.getVolumeActor(imageVolume.uid)
     const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
 

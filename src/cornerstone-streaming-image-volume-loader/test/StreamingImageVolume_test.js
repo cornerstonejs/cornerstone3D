@@ -1,21 +1,57 @@
 import * as cornerstoneStreamingImageVolumeLoader from '../src'
 import * as cornerstone from '@cornerstone'
 
-const { cache } = cornerstone
+const { cache, requestPoolManager } = cornerstone
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
 function setupLoaders() {
   const imageIds = [
-    'fakeImageLoader:imageId1',
-    'fakeImageLoader:imageId2',
-    'fakeImageLoader:imageId3',
-    'fakeImageLoader:imageId4',
-    'fakeImageLoader:imageId5',
+    'fakeSharedBufferImageLoader:imageId1',
+    'fakeSharedBufferImageLoader:imageId2',
+    'fakeSharedBufferImageLoader:imageId3',
+    'fakeSharedBufferImageLoader:imageId4',
+    'fakeSharedBufferImageLoader:imageId5',
   ]
 
-  const imageLoader = (imageId) => {
+  const fakeSharedBufferImageLoader = (imageId, options) => {
+    // imageId1 => all voxels = 1
+    // imageId2 => all voxels = 2
+    // etc.
+    const imageIdNumber = imageId.split('imageId')[1]
+
     const pixelData = new Uint8Array(100 * 100)
+
+    for (let i = 0; i < pixelData.length; i++) {
+      pixelData[i] = Number(imageIdNumber)
+    }
+
+    // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+    const { arrayBuffer, offset, length } = options.targetBuffer
+
+    const typedArray = new Uint8Array(arrayBuffer, offset, length)
+
+    // TypedArray.Set is api level and ~50x faster than copying elements even for
+    // Arrays of different types, which aren't simply memcpy ops.
+    typedArray.set(pixelData, 0)
+
+    return {
+      promise: Promise.resolve(undefined),
+    }
+  }
+
+  // regular imageLoader
+  const imageLoader = (imageId) => {
+    // imageId1 => all voxels = 1
+    // imageId2 => all voxels = 2
+    // etc.
+    const imageIdNumber = imageId.split('imageId')[1]
+
+    const pixelData = new Uint8Array(100 * 100)
+
+    for (let i = 0; i < pixelData.length; i++) {
+      pixelData[i] = Number(imageIdNumber)
+    }
 
     const image = {
       rows: 100,
@@ -30,6 +66,10 @@ function setupLoaders() {
   }
 
   cornerstone.registerImageLoader('fakeImageLoader', imageLoader)
+  cornerstone.registerImageLoader(
+    'fakeSharedBufferImageLoader',
+    fakeSharedBufferImageLoader
+  )
 
   const volumeLoader = (volumeId) => {
     const dimensions = [100, 100, 5]
@@ -42,10 +82,6 @@ function setupLoaders() {
       PixelSpacing: [1, 1],
       Columns: dimensions[0],
       Rows: dimensions[1],
-      voiLut: [
-        { windowCenter: 500, windowWidth: 500 },
-        { windowCenter: 1500, windowWidth: 1500 },
-      ],
     }
 
     const scalarData = new Uint8Array(
@@ -85,80 +121,192 @@ function setupLoaders() {
 
   return {
     imageIds,
+    imageLoader,
   }
 }
 
 describe('StreamingImageVolume', function () {
   beforeAll(function () {
-    const { imageIds } = setupLoaders()
+    const { imageIds, imageLoader } = setupLoaders()
 
     this.imageIds = imageIds
+    this.imageLoader = imageLoader
   })
 
-  beforeEach(function (done) {
-    cornerstone
-      .createAndCacheVolume('fakeVolumeLoader:VOLUME', {
-        imageIds: this.imageIds,
-      })
-      .finally(done)
-  })
+  it('load: correctly streams pixel data from Images into Volume via a SharedArrayBuffer', async function () {
+    const volumeId = 'fakeVolumeLoader:VOLUME'
 
-  it('load: correctly streams pixel data from Images into Volume', async function (done) {
-    const volume = await cornerstone.getVolume('fakeVolumeLoader:VOLUME')
+    await cornerstone.createAndCacheVolume(volumeId, {
+      imageIds: this.imageIds,
+    })
+    const volume = cornerstone.getVolume(volumeId)
 
-    function callback(loadStatus) {
-      console.log(loadStatus)
+    let framesLoaded = 0
+    const callback = (evt) => {
+      framesLoaded++
 
-      done()
+      if (framesLoaded === this.imageIds.length) {
+        // Getting the volume to check for voxel intensities
+        const volumeLoadObject = cache.getVolumeLoadObject(volumeId)
+        volumeLoadObject.promise.then((volume) => {
+          const volumeImage = volume.vtkImageData
+          // first slice (z=0) voxels to be all 1
+          let worldPos = volumeImage.indexToWorld([0, 0, 0])
+          let intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
+          expect(intensity).toBe(1)
+          // 4th slice (z=3) voxels to be all 4
+          worldPos = volumeImage.indexToWorld([0, 0, 3])
+          intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
+          expect(intensity).toBe(4)
+        })
+      }
     }
 
     volume.load(callback)
-
-    // todo: create some synthetic image data and actually check to make sure
-    // the pixel values are in the right places in the volume
   })
 
-  // todo: move this to cache_test?
-  it('load: leverages images already in the cache during loading', async function () {
-    // create some fake images and load them into the cache
-    // create a volume including the same imageIds that are in the cache
-    // verify that the loadStatusCallbacks progress reports properly log that
-    // the images were already loaded
-  })
-
-  it('cancelLoading: ', async function () {
+  it('load: leverages images already in the cache for loading a volume', async function () {
     const volumeId = 'fakeVolumeLoader:VOLUME'
+
+    const imageIds = [
+      'fakeImageLoader:imageId1',
+      'fakeImageLoader:imageId2',
+      'fakeImageLoader:imageId3',
+      'fakeImageLoader:imageId4',
+      'fakeImageLoader:imageId5',
+    ]
+
+    // loading the images first
+    await cornerstone.loadAndCacheImages(imageIds)
+
+    // only cached images so far
+    expect(cache.getCacheSize()).toBe(50000)
+    expect(cache.getImageLoadObject(imageIds[0])).toBeDefined()
+
+    // caching volume
+    await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      imageIds: this.imageIds,
+    })
+
+    expect(cache.getCacheSize()).toBe(100000)
+
+    // loading the volume
     const volume = cornerstone.getVolume(volumeId)
-    const completelyRemove = false
+    const prefetch = false
+    const callback = undefined
+    // adding requests to the pool manager
+    volume.load(callback, prefetch)
 
-    volume.load()
-    let pool = cornerstone.requestPoolManager.getRequestPool()
-    console.log(pool)
+    // awaiting all promises for images after requested to be copied over
+    for (let imageId of imageIds) {
+      const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
+      const image = await cachedImage.promise
+    }
+    const pool = cornerstone.requestPoolManager.getRequestPool()
 
-    // TODO: this is showing up as zero, probably because the requests
-    // are immediately processed so the pool is empty. Not sure
-    // how to avoid that.
+    // expect no requests to be added to the request manager, since images
+    // were already cached in the image cache
+    let requests = Object.values(pool['prefetch']).flat()
+    expect(requests.length).toBe(0)
 
-    // let numImagesInPool = pool['prefetch'].length
-    // expect(numImagesInPool).toEqual(5)
-    // expect(volume.loadStatus.loading).toEqual(true)
+    // Getting the volume to check for voxel intensities
+    const volumeImage = volume.vtkImageData
 
-    volume.cancelLoading()
+    // first slice (z=0) voxels to be all 1
+    let worldPos = volumeImage.indexToWorld([0, 0, 0])
+    let intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
+    expect(intensity).toBe(1)
 
-    pool = cornerstone.requestPoolManager.getRequestPool()
+    // 5th slice (z=4) voxels to be all 5
+    worldPos = volumeImage.indexToWorld([0, 0, 4])
+    intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
 
-    const requests = Object.values(pool['prefetch']).flat()
-
-    let numImagesInPool = requests.length
-    expect(numImagesInPool).toEqual(0)
-
-    expect(volume.loadStatus.loaded).toEqual(false)
-    expect(volume.loadStatus.loading).toEqual(false)
-    expect(volume.loadStatus.callbacks.length).toEqual(0)
+    expect(intensity).toBe(5)
   })
 
-  // todo: move this to cache_test?
+  it('load: leverages volume that are in the cache already for the image loading', async function () {
+    const spyedImageLoader = jasmine.createSpy(this.imageLoader)
+
+    const volumeId = 'fakeVolumeLoader:VOLUME'
+
+    const imageIds = [
+      'fakeImageLoader:imageId1',
+      'fakeImageLoader:imageId2',
+      'fakeImageLoader:imageId3',
+      'fakeImageLoader:imageId4',
+      'fakeImageLoader:imageId5',
+    ]
+
+    // caching volume
+    await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      imageIds: this.imageIds,
+    })
+
+    expect(cache.getCacheSize()).toBe(50000)
+
+    // loading the volume
+    const volume = cornerstone.getVolume(volumeId)
+    const callback = undefined
+    // adding requests to the pool manager
+    volume.load(callback)
+
+    expect(cache.getImageLoadObject(imageIds[0])).not.toBeDefined()
+
+    // loading the images
+    await cornerstone.loadAndCacheImages(imageIds)
+
+    // imageLoader is not being called for any imageIds
+    expect(spyedImageLoader).not.toHaveBeenCalled()
+
+    // Images are copied over from the volume, check for the fourth image (imageId4)
+    // which has pixel data of 4
+    const imageLoadObject = cache.getImageLoadObject(imageIds[3])
+    expect(cache.getCacheSize()).toBe(100000)
+    expect(imageLoadObject).toBeDefined()
+
+    imageLoadObject.promise.then((image) => {
+      const pixelData = image.getPixelData()
+      expect(pixelData[0]).toBe(4)
+    })
+  })
+
+  // it('cancelLoading: ', async function () {
+  //   await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+  //     imageIds: this.imageIds,
+  //   })
+
+  //   const volumeId = 'fakeVolumeLoader:VOLUME'
+  //   const volume = cornerstone.getVolume(volumeId)
+
+  //   const callback = undefined
+  //   const prefetch = false
+  //   volume.load(callback, prefetch)
+
+  //   let pool = cornerstone.requestPoolManager.getRequestPool()
+
+  //   let numImagesInPool = Object.values(pool['prefetch']).flat().length
+  //   expect(numImagesInPool).toEqual(5)
+  //   expect(volume.loadStatus.loading).toEqual(true)
+
+  //   volume.cancelLoading()
+
+  //   pool = cornerstone.requestPoolManager.getRequestPool()
+
+  //   const requests = Object.values(pool['prefetch']).flat()
+
+  //   numImagesInPool = requests.length
+  //   expect(numImagesInPool).toEqual(0)
+
+  //   expect(volume.loadStatus.loaded).toEqual(false)
+  //   expect(volume.loadStatus.loading).toEqual(false)
+  //   expect(volume.loadStatus.callbacks.length).toEqual(0)
+  // })
+
   it('decache: properly decaches the Volume into a set of Images', async function () {
+    await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      imageIds: this.imageIds,
+    })
+
     const volumeId = 'fakeVolumeLoader:VOLUME'
     const volume = cornerstone.getVolume(volumeId)
     const completelyRemove = false
@@ -167,6 +315,7 @@ describe('StreamingImageVolume', function () {
 
     const cacheSizeBeforeDecache = cache.getCacheSize()
 
+    // turn volume into images
     volume.decache(completelyRemove)
 
     const cacheSizeAfterDecache = cache.getCacheSize()
@@ -175,8 +324,7 @@ describe('StreamingImageVolume', function () {
     const volAfterDecache = cornerstone.getVolume(volumeId)
     expect(volAfterDecache).not.toBeDefined()
 
-    // Todo: the following doesn't work since we are not awaiting the putImageLoadObject
-    // expect(cacheSizeAfterDecache - cacheSizeBeforeDecache).toBe(50000)
+    expect(cacheSizeBeforeDecache - cacheSizeAfterDecache).toBe(50000)
 
     for (let imageId of this.imageIds) {
       const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
@@ -192,6 +340,10 @@ describe('StreamingImageVolume', function () {
   })
 
   it('decache: completely removes the Volume from the cache', async function () {
+    await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      imageIds: this.imageIds,
+    })
+
     const volumeId = 'fakeVolumeLoader:VOLUME'
     const volume = cornerstone.getVolume(volumeId)
 
@@ -211,12 +363,12 @@ describe('StreamingImageVolume', function () {
     const cacheSizeAfterPurge = cache.getCacheSize()
     expect(cacheSizeAfterPurge).toBe(0)
 
-    const cachedImage0 = cornerstone.cache.getImageLoadObject(this.imageIds[0])
+    const cachedImage0 = cache.getImageLoadObject(this.imageIds[0])
 
     expect(cachedImage0).not.toBeDefined()
   })
 
   afterEach(function () {
-    cornerstone.cache.purgeCache()
+    cache.purgeCache()
   })
 })

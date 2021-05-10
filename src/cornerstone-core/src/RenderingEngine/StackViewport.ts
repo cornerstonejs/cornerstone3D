@@ -12,7 +12,6 @@ import {
   Point2,
   Point3,
   ViewportInput,
-  IViewport,
   VOIRange,
   ICamera,
   IImage,
@@ -21,6 +20,7 @@ import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
 import requestPoolManager from '../requestPool/requestPoolManager'
+import ERROR_CODES from '../enums/errorCodes'
 
 interface ImageDataMetaData {
   bitsAllocated: number
@@ -406,7 +406,7 @@ class StackViewport extends Viewport {
   private _loadImage(imageId: string, imageIdIndex: number) {
     // 1. Load the image using the Image Loader
 
-    function successCallback(image, imageId, imageIdIndex) {
+    function successCallback(image, imageIdIndex, imageId) {
       const eventData = {
         image,
         imageId,
@@ -434,22 +434,30 @@ class StackViewport extends Viewport {
       this.currentImageIdIndex = imageIdIndex
     }
 
-    // Use loadImage because we are skipping the Cornerstone Image cache
-    // when we load directly into the Volume cache
+    function errorCallback(error, imageIdIndex, imageId) {
+      const eventData = {
+        error,
+        imageIdIndex,
+        imageId,
+      }
+
+      triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventData)
+    }
+
     function sendRequest(imageId, imageIdIndex, options) {
       return loadAndCacheImage(imageId, options).then(
         (image) => {
-          successCallback.call(this, image, imageId, imageIdIndex)
+          successCallback.call(this, image, imageIdIndex, imageId)
         },
         (error) => {
-          console.debug(error)
+          errorCallback.call(this, error, imageIdIndex, imageId)
         }
       )
     }
 
     const priority = -5
-    const requestType = 'prefetch'
-    const additionalDetails = { stackViewport: true }
+    const requestType = 'interaction'
+    const additionalDetails = { imageId }
     const options = {}
 
     requestPoolManager.addRequest(
@@ -458,9 +466,6 @@ class StackViewport extends Viewport {
       additionalDetails,
       priority
     )
-
-    // todo: Does this makes two grabbers? it should be one StartGrabbing
-    requestPoolManager.startGrabbing()
   }
 
   private _updateActorToDisplayImageId(image) {

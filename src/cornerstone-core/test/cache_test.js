@@ -135,6 +135,71 @@ describe('Image Cache: Store, retrieve, and remove imagePromises from the cache'
     }).toThrow()
   })
 
+  it('should fail if resolved image does not have sizeInBytes (putImageLoadObject)', async function () {
+    const image1 = {
+      imageId: 'anImageId1',
+      sizeInBytes: undefined,
+    }
+
+    const imageLoadObject1 = {
+      promise: Promise.resolve(image1),
+      cancelFn: undefined,
+    }
+
+    await expectAsync(
+      cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+    ).toBeRejected()
+
+    expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined()
+
+    const cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(0)
+  })
+
+  it("should fail if resolved image's sizeInBytes is not a number(putImageLoadObject)", async function () {
+    const image1 = {
+      imageId: 'anImageId1',
+      sizeInBytes: '123',
+    }
+
+    const imageLoadObject1 = {
+      promise: Promise.resolve(image1),
+      cancelFn: undefined,
+    }
+
+    await expectAsync(
+      cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+    ).toBeRejected()
+
+    expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined()
+
+    const cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(0)
+  })
+
+  it('should not cache the imageId if the imageId has been decached before loading(putImageLoadObject)', async function () {
+    const image1 = {
+      imageId: 'anImageId1',
+      sizeInBytes: 1234,
+    }
+
+    const imageLoadObject1 = {
+      promise: Promise.resolve(image1),
+      cancelFn: undefined,
+    }
+
+    const promise = cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+
+    cache.removeImageLoadObject(image1.imageId)
+
+    await promise
+
+    expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined()
+
+    const cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(0)
+  })
+
   it('should be able to purge the entire cache', async function () {
     const image = this.image
     const imageLoadObject = this.imageLoadObject
@@ -187,92 +252,80 @@ describe('Image Cache: Store, retrieve, and remove imagePromises from the cache'
     expect(cacheSize).toBe(image1.sizeInBytes + image2.sizeInBytes)
   })
 
-  // it('should unsuccessfully caching an image when there is not enough volatile + unallocated space', async function () {
-  //   const maxCacheSize = cache.getMaxCacheSize()
+  it('should unsuccessfully caching an image when there is not enough volatile + unallocated space', async function () {
+    const maxCacheSize = cache.getMaxCacheSize()
 
-  //   const volumeSizeInBytes = maxCacheSize - 10000
-  //   const image1SizeInBytes = 11000
+    const volumeSizeInBytes = maxCacheSize - 10000
+    const image1SizeInBytes = 11000
 
-  //   const volumeId = 'aVolumeId'
+    const volumeId = 'aVolumeId'
 
-  //   const dimensions = [10, 10, 10]
-  //   const scalarData = createFloat32SharedArray(
-  //     dimensions[0] * dimensions[1] * dimensions[2]
-  //   )
+    const dimensions = [10, 10, 10]
+    const scalarData = createFloat32SharedArray(
+      dimensions[0] * dimensions[1] * dimensions[2]
+    )
 
-  //   // Arrange
-  //   const volume = new StreamingImageVolume(
-  //     // ImageVolume properties
-  //     {
-  //       uid: volumeId,
-  //       spacing: [1, 1, 1],
-  //       origin: [0, 0, 0],
-  //       direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  //       dimensions,
-  //       sizeInBytes: volumeSizeInBytes,
-  //       scalarData,
-  //       metadata: {
-  //         voiLut: [
-  //           { windowCenter: 500, windowWidth: 500 },
-  //           { windowCenter: 1500, windowWidth: 1500 },
-  //         ],
-  //         PhotometricInterpretation: 'MONOCHROME2',
-  //       },
-  //     },
-  //     // Streaming properties
-  //     {
-  //       imageIds: ['imageid1', 'imageid2'],
-  //       loadStatus: {
-  //         loaded: false,
-  //         loading: false,
-  //         cachedFrames: [],
-  //         callbacks: [],
-  //       },
-  //     }
-  //   )
+    // Arrange
+    const volume = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        dimensions,
+        sizeInBytes: volumeSizeInBytes,
+        scalarData,
+        metadata: {
+          voiLut: [
+            { windowCenter: 500, windowWidth: 500 },
+            { windowCenter: 1500, windowWidth: 1500 },
+          ],
+          PhotometricInterpretation: 'MONOCHROME2',
+        },
+      },
+      // Streaming properties
+      {
+        imageIds: ['imageid1', 'imageid2'],
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
 
-  //   const volumeLoadObject = {
-  //     promise: Promise.resolve(volume),
-  //     cancelFn: undefined,
-  //   }
+    const volumeLoadObject = {
+      promise: Promise.resolve(volume),
+      cancelFn: undefined,
+    }
 
-  //   const image1 = {
-  //     imageId: 'anImageId1',
-  //     // sizeInBytes: image1SizeInBytes,
-  //     sizeInBytes: undefined,
-  //   }
+    const image1 = {
+      imageId: 'anImageId1',
+      sizeInBytes: image1SizeInBytes,
+    }
 
-  //   const imageLoadObject1 = {
-  //     promise: Promise.resolve(image1),
-  //     cancelFn: image1SizeInBytes,
-  //   }
+    const imageLoadObject1 = {
+      promise: Promise.resolve(image1),
+      cancelFn: undefined,
+    }
 
-  //   cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
-  //   await volumeLoadObject.promise
+    cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+    await volumeLoadObject.promise
 
-  //   let cacheSize = cache.getCacheSize()
-  //   expect(cacheSize).toBe(volume.sizeInBytes)
+    let cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume.sizeInBytes)
 
-  //   // cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-  //   // expect(async function () {
-  //   //   await imageLoadObject1.promise
-  //   // }).toThrow()
+    await expectAsync(
+      cache.putImageLoadObject(image1.imageId, imageLoadObject1)
+    ).toBeRejectedWithError(ERROR_CODES.CACHE_SIZE_EXCEEDED)
 
-  //   //
-  //   // Not either the following works
-  //   // let error
-  //   // try {
-  //   //   cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-  //   //   await imageLoadObject1.promise
-  //   // } catch (err) {
-  //   //   console.log('*************************')
-  //   //   error = err
-  //   // }
-  //   // expect(error).toEqual(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined()
 
-  //   // cacheSize = cache.getCacheSize()
-  //   // expect(cacheSize).toBe(volume.sizeInBytes)
-  // })
+    cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume.sizeInBytes)
+  })
 })
 
 describe('Volume Cache: ', function () {
@@ -469,10 +522,6 @@ describe('Volume Cache: ', function () {
         sizeInBytes: volumeSizeInBytes,
         scalarData,
         metadata: {
-          voiLut: [
-            { windowCenter: 500, windowWidth: 500 },
-            { windowCenter: 1500, windowWidth: 1500 },
-          ],
           PhotometricInterpretation: 'MONOCHROME2',
         },
       },
@@ -518,92 +567,92 @@ describe('Volume Cache: ', function () {
     expect(cacheSize).toBe(volume.sizeInBytes) // it should remove the image (volatile)
   })
 
-  // it('should unsuccessfully caching a volume when there is not enough volatile + unallocated space', async function () {
-  //   const maxCacheSize = cache.getMaxCacheSize()
+  it('should unsuccessfully cache a volume when there is not enough volatile + unallocated space', async function () {
+    const maxCacheSize = cache.getMaxCacheSize()
 
-  //   const volume1SizeInBytes = maxCacheSize - 10000
-  //   const volume2SizeInBytes = maxCacheSize
+    const volume1SizeInBytes = maxCacheSize - 10000
+    const volume2SizeInBytes = maxCacheSize
 
-  //   const volumeId1 = 'aVolumeId1'
-  //   const volumeId2 = 'aVolumeId2'
+    const dimensions = [10, 10, 10]
+    const scalarData = createFloat32SharedArray(
+      dimensions[0] * dimensions[1] * dimensions[2]
+    )
 
-  //   // Arrange
-  //   const volume1 = new StreamingImageVolume(
-  //     // ImageVolume properties
-  //     {
-  //       uid: volumeId1,
-  //       spacing: [1, 1, 1],
-  //       origin: [0, 0, 0],
-  //       direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  //       sizeInBytes: volume1SizeInBytes,
-  //     },
-  //     // Streaming properties
-  //     {
-  //       imageIds: ['imageid1', 'imageid2'],
-  //       loadStatus: {
-  //         loaded: false,
-  //         loading: false,
-  //         cachedFrames: [],
-  //         callbacks: [],
-  //       },
-  //     }
-  //   )
+    const volumeId1 = 'aVolumeId1'
+    const volumeId2 = 'aVolumeId2'
 
-  //   const volumeLoadObject1 = {
-  //     promise: Promise.resolve(volume1),
-  //     cancelFn: undefined,
-  //   }
+    // Arrange
+    const volume1 = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId1,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        dimensions,
+        scalarData,
+        sizeInBytes: volume1SizeInBytes,
+        metadata: {},
+      },
+      // Streaming properties
+      {
+        imageIds: ['imageid1', 'imageid2'],
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
 
-  //   const volume2 = new StreamingImageVolume(
-  //     // ImageVolume properties
-  //     {
-  //       uid: volumeId2,
-  //       spacing: [1, 1, 1],
-  //       origin: [0, 0, 0],
-  //       direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  //       sizeInBytes: volume2SizeInBytes,
-  //     },
-  //     // Streaming properties
-  //     {
-  //       imageIds: ['imageid11', 'imageid22'],
-  //       loadStatus: {
-  //         loaded: false,
-  //         loading: false,
-  //         cachedFrames: [],
-  //         callbacks: [],
-  //       },
-  //     }
-  //   )
+    const volumeLoadObject1 = {
+      promise: Promise.resolve(volume1),
+      cancelFn: undefined,
+    }
 
-  //   const volumeLoadObject2 = {
-  //     promise: Promise.resolve(volume2),
-  //     cancelFn: undefined,
-  //   }
+    const volume2 = new StreamingImageVolume(
+      // ImageVolume properties
+      {
+        uid: volumeId2,
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        sizeInBytes: volume2SizeInBytes,
+        dimensions,
+        scalarData,
+        metadata: {},
+      },
+      // Streaming properties
+      {
+        imageIds: ['imageid11', 'imageid22'],
+        loadStatus: {
+          loaded: false,
+          loading: false,
+          cachedFrames: [],
+          callbacks: [],
+        },
+      }
+    )
 
-  //   cache.putVolumeLoadObject(volume1.uid, volumeLoadObject1)
-  //   await volumeLoadObject1
+    const volumeLoadObject2 = {
+      promise: Promise.resolve(volume2),
+      cancelFn: undefined,
+    }
 
-  //   let cacheSize = cache.getCacheSize()
-  //   expect(cacheSize).toBe(volume1.sizeInBytes)
+    const promise1 = cache.putVolumeLoadObject(volume1.uid, volumeLoadObject1)
+    await promise1
 
-  //   // For some reason the following code doesn't work in Jasmine
-  //   //
-  //   // expect(async function () {
-  //   //   cache.putVolumeLoadObject(volume2.uid, volumeLoadObject2)
-  //   //   await volumeLoadObject2.promise
-  //   // }).toThrow()
-  //   //
-  //   // Not either the following
-  //   // let error
-  //   // try {
-  //   //   cache.putVolumeLoadObject(volume2.uid, volumeLoadObject2)
-  //   //   await volumeLoadObject2.promise
-  //   // } catch (err) {
-  //   //   error = err
-  //   // }
-  //   // expect(error).toEqual(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    let cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume1.sizeInBytes)
 
-  //   cacheSize = cache.getCacheSize()
-  //   expect(cacheSize).toBe(volume1.sizeInBytes) // should not add the second volume
-  // })
+    await expectAsync(
+      cache.putImageLoadObject(volume2.uid, volumeLoadObject2)
+    ).toBeRejectedWithError(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+
+    expect(cache.getVolumeLoadObject(volume2.uid)).not.toBeDefined()
+
+    cacheSize = cache.getCacheSize()
+    expect(cacheSize).toBe(volume1.sizeInBytes)
+  })
 })

@@ -19,7 +19,6 @@ import vtkColorMaps from "vtk.js/Sources/Rendering/Core/ColorTransferFunction/Co
 
 import getImageIds from "./helpers/getImageIds";
 import ptCtToggleAnnotationTool from "./helpers/ptCtToggleAnnotationTool";
-//import loadVolumes from './helpers/loadVolumes';
 import ViewportGrid from "./components/ViewportGrid";
 import { initToolGroups, destroyToolGroups } from "./initToolGroups";
 import "./ExampleVTKMPR.css";
@@ -254,14 +253,12 @@ class VTKMPRExample extends Component {
           colormaps[this.state.petColorMapIndex]
         );
 
-        //loadVolumes(onLoad, [ptVolumeUID, ctVolumeUID], []);
       } else if (layout === "ObliqueCT") {
         obliqueCT.setLayout(renderingEngine, this._canvasNodes, {
           ctObliqueToolGroup,
         });
         obliqueCT.setVolumes(renderingEngine, ctVolumeUID);
 
-        //loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
       } else if (layout === "CTVR") {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._canvasNodes, {
@@ -269,14 +266,12 @@ class VTKMPRExample extends Component {
           ctVRSceneToolGroup,
         });
         fourUpCT.setVolumes(renderingEngine, ctVolumeUID);
-        //loadVolumes(onLoad, [ctVolumeUID], [ptVolumeUID]);
       } else if (layout === "PetTypes") {
         // petTypes
         petTypes.setLayout(renderingEngine, this._canvasNodes, {
           ptTypesSceneToolGroup,
         });
         petTypes.setVolumes(renderingEngine, ptVolumeUID);
-        //loadVolumes(onLoad, [ptVolumeUID], [ctVolumeUID]);
       } else {
         throw new Error("Unrecognised layout index");
       }

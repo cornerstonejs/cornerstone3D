@@ -17,6 +17,7 @@ enum ERROR_CODES {
    * ```
    */
   CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
+  IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
 }
 
 export default ERROR_CODES

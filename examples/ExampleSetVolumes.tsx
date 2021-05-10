@@ -13,13 +13,8 @@ import {
   resetToolsState,
 } from "@cornerstone-tools";
 
-import vtkColorTransferFunction from "vtk.js/Sources/Rendering/Core/ColorTransferFunction";
-import vtkPiecewiseFunction from "vtk.js/Sources/Common/DataModel/PiecewiseFunction";
-import vtkColorMaps from "vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps";
-
 import getImageIds from "./helpers/getImageIds";
 import ptCtToggleAnnotationTool from "./helpers/ptCtToggleAnnotationTool";
-//import loadVolumes from './helpers/loadVolumes';
 import ViewportGrid from "./components/ViewportGrid";
 import { initToolGroups, destroyToolGroups } from "./initToolGroups";
 import "./ExampleVTKMPR.css";

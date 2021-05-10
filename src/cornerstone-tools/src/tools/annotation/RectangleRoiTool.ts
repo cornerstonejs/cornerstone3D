@@ -1,6 +1,7 @@
 import { BaseAnnotationTool } from '../base'
 import Point2 from 'src/cornerstone-core/src/types/Point2'
 // ~~ VTK Viewport
+import { vec3 } from 'gl-matrix'
 import { getEnabledElement, getVolume } from '@cornerstone'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
@@ -718,8 +719,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         vtkImageData: imageData,
         metadata,
       } = imageVolume
-      const worldPos1Index = [0, 0, 0]
-      const worldPos2Index = [0, 0, 0]
+      const worldPos1Index = vec3.fromValues(0, 0, 0)
+      const worldPos2Index = vec3.fromValues(0, 0, 0)
 
       imageData.worldToIndexVec3(worldPos1, worldPos1Index)
 

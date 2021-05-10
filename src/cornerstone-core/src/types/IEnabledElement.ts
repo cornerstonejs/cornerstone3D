@@ -1,9 +1,13 @@
-import { VolumeViewport, StackViewport } from '@cornerstone'
+import VolumeViewport from '../RenderingEngine/VolumeViewport'
+import StackViewport from '../RenderingEngine/StackViewport'
+
+import Scene from '../RenderingEngine/Scene'
+import RenderingEngine from '../RenderingEngine/RenderingEngine'
 
 interface IEnabledElement {
   viewport: StackViewport | VolumeViewport
-  scene: any
-  renderingEngine: any
+  scene: Scene
+  renderingEngine: RenderingEngine
   viewportUID: string
   sceneUID: string
   renderingEngineUID: string

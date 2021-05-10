@@ -59,7 +59,7 @@ describe('imageLoader -- ', function () {
     this.exampleScheme1ImageId = `${this.exampleScheme1}://image1`
     this.exampleScheme2ImageId = `${this.exampleScheme2}://image2`
 
-    this.options = {}
+    // this.options = {}
   })
 
   describe('imageLoader registration module', function () {
@@ -70,19 +70,12 @@ describe('imageLoader -- ', function () {
       registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
       registerImageLoader(this.exampleScheme2, this.exampleImageLoader2)
 
-      const imageLoadObject1 = loadImage(
-        this.exampleScheme1ImageId,
-        this.options
-      )
+      await loadAndCacheImage(this.exampleScheme1ImageId, this.options)
 
-      expect(imageLoadObject1).toBeDefined()
+      await loadAndCacheImage(this.exampleScheme2ImageId, this.options)
 
-      const imageLoadObject2 = loadImage(
-        this.exampleScheme2ImageId,
-        this.options
-      )
-
-      expect(imageLoadObject2).toBeDefined()
+      expect(cache.getImageLoadObject(this.exampleScheme1ImageId)).toBeDefined()
+      expect(cache.getImageLoadObject(this.exampleScheme2ImageId)).toBeDefined()
     })
 
     it('allows registration of unknown image loader', function () {
@@ -135,6 +128,22 @@ describe('imageLoader -- ', function () {
       )
 
       await expectAsync(imageLoadObject).toBeResolvedTo(this.image2)
+    })
+  })
+
+  describe('imageLoader cancelling images', function () {
+    afterEach(function () {
+      cache.purgeCache()
+    })
+
+    it('allows loading with storage in image cache (loadAndCacheImage)', async function () {
+      registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
+      const imageLoadObject = loadAndCacheImage(
+        this.exampleScheme1ImageId,
+        this.options
+      )
+
+      await expectAsync(imageLoadObject).toBeResolvedTo(this.image1)
     })
   })
 

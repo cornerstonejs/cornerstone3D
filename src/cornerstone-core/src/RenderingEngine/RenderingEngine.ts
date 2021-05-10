@@ -10,21 +10,6 @@ import StackViewport from './StackViewport'
 import Scene from './Scene'
 import isEqual from 'lodash.isequal'
 
-/**
- * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
- * them on a large offscreen canvas and transmitting this data back to the screen. This allows us
- * to leverage the power of vtk.js whilst only using one WebGL context for the processing, and allowing
- * us to share texture memory across on-screen viewports that show the same data.
- *
- * @example
- * Instantiating a rendering engine:
- * ```
- * const renderingEngine = new RenderingEngine('pet-ct-rendering-engine');
- * ```
- *
- * @public
- */
-
 interface IRenderingEngine {
   uid: string
   hasBeenDestroyed: boolean
@@ -57,6 +42,20 @@ type ViewportDisplayCoords = {
   sHeight: number
 }
 
+/**
+ * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
+ * them on a large offscreen canvas and transmitting this data back to the screen. This allows us
+ * to leverage the power of vtk.js whilst only using one WebGL context for the processing, and allowing
+ * us to share texture memory across on-screen viewports that show the same data.
+ *
+ * @example
+ * Instantiating a rendering engine:
+ * ```
+ * const renderingEngine = new RenderingEngine('pet-ct-rendering-engine');
+ * ```
+ *
+ * @public
+ */
 class RenderingEngine implements IRenderingEngine {
   readonly uid: string
   public hasBeenDestroyed: boolean

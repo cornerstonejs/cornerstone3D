@@ -1,33 +1,42 @@
 import { getMaxSimultaneousRequests } from './getMaxSimultaneousRequests'
+
+type AdditionalDetails = {
+  imageId?: string
+  volumeUID?: string
+}
+
+type RequestDetailsInterface = {
+  requestFn: () => Promise<void>
+  type: string
+  additionalDetails: AdditionalDetails
+}
+
+type RequestPool = {
+  interaction: { [key: number]: [] }
+  thumbnail: { [key: number]: [] }
+  prefetch: { [key: number]: [] }
+}
+
 // priority is fixed for interaction and thumbnail to be 0, however,
 // the priority of prefetch can be configured and it can have priorities other
 // than 0 (highest priority)
-const requestPool = {
+const requestPool: RequestPool = {
   interaction: { 0: [] },
   thumbnail: { 0: [] },
   prefetch: { 0: [] },
 }
-
 const numRequests = {
   interaction: 0,
   thumbnail: 0,
   prefetch: 0,
 }
-
 let maxNumRequests = {
   interaction: 6,
   thumbnail: 6,
   prefetch: 5,
 }
-
 let awake = false
 const grabDelay = 5
-
-type RequestDetailsInterface = {
-  requestFn: () => Promise<void>
-  type: string
-  additionalDetails: any
-}
 
 /**
  * Adds the requests to the pool of requests.
@@ -65,9 +74,19 @@ function addRequest(
   requestPool[type][priority].push(requestDetails)
 
   // Wake up
-  awake = true
+  if (!awake) {
+    awake = true
+    startGrabbing()
+  }
 }
 
+/**
+ * Filter the requestPoolManager's pool of request based on the result of
+ * provided filter function. The provided filter function needs to return false or true
+ *
+ * @param filterFunction The filter function for filtering of the requests to keep
+ * @category requestPool
+ */
 function filterRequests(
   filterFunction: (requestDetails: RequestDetailsInterface) => boolean
 ): void {
@@ -83,12 +102,18 @@ function filterRequests(
   })
 }
 
+/**
+ * Clears the requests specific to the provided type. For instance, the
+ * pool of requests of type 'interaction' can be cleared via this function.
+ *
+ *
+ * @param type category of the request (either interaction, prefetch or thumbnail)
+ * @category requestPool
+ */
 function clearRequestStack(type: string): void {
-  // Console.log('clearRequestStack');
   if (!requestPool[type]) {
     throw new Error(`No category for the type ${type} found`)
   }
-
   requestPool[type] = { 0: [] }
 }
 
@@ -96,7 +121,6 @@ function startAgain(): void {
   if (!awake) {
     return
   }
-
   setTimeout(function () {
     startGrabbing()
   }, grabDelay)
@@ -117,36 +141,32 @@ function sendRequest({ requestFn, type }: RequestDetailsInterface) {
 function startGrabbing(): void {
   // Begin by grabbing X images
   const maxSimultaneousRequests = getMaxSimultaneousRequests()
-
   maxNumRequests = {
     interaction: Math.max(maxSimultaneousRequests, 1),
     thumbnail: Math.max(maxSimultaneousRequests - 2, 1),
     prefetch: Math.max(maxSimultaneousRequests - 1, 1),
   }
-
   const currentRequests =
     numRequests.interaction + numRequests.thumbnail + numRequests.prefetch
   const requestsToSend = maxSimultaneousRequests - currentRequests
-
   for (let i = 0; i < requestsToSend; i++) {
     const requestDetails = getNextRequest()
-
     if (requestDetails) {
       sendRequest(requestDetails)
     }
   }
 }
 
-function getSortedPriorityGroups(type) {
+function getSortedPriorityGroups(type: string): Array<number> {
   const priorities = Object.keys(requestPool[type])
+    .map(Number)
     .filter((priority) => requestPool[type][priority].length)
     .sort()
   return priorities
 }
 
-function getNextRequest() {
+function getNextRequest(): RequestDetailsInterface | false {
   const interactionPriorities = getSortedPriorityGroups('interaction')
-
   for (const priority of interactionPriorities) {
     if (
       requestPool.interaction[priority].length &&
@@ -155,9 +175,7 @@ function getNextRequest() {
       return requestPool.interaction[priority].shift()
     }
   }
-
   const thumbnailPriorities = getSortedPriorityGroups('thumbnail')
-
   for (const priority of thumbnailPriorities) {
     if (
       requestPool.thumbnail[priority].length &&
@@ -166,12 +184,7 @@ function getNextRequest() {
       return requestPool.thumbnail[priority].shift()
     }
   }
-
-  // const t0 = performance.now()
   const prefetchPriorities = getSortedPriorityGroups('prefetch')
-  // const t1 = performance.now()
-  // console.debug('Call to doSomething took ' + (t1 - t0) + ' milliseconds.')
-
   for (const priority of prefetchPriorities) {
     if (
       requestPool.prefetch[priority].length &&
@@ -188,18 +201,25 @@ function getNextRequest() {
   ) {
     awake = false
   }
-
   return false
 }
 
-function getRequestPool() {
+/**
+ * Returns the request pool containing different categories, their priority and
+ * the added request details.
+ *
+ * @returns
+ * @category requestPool
+ */
+function getRequestPool(): RequestPool {
   return requestPool
 }
 
-export default {
+const requestPoolManager = {
   addRequest,
   clearRequestStack,
-  startGrabbing,
   getRequestPool,
   filterRequests,
 }
+
+export default requestPoolManager

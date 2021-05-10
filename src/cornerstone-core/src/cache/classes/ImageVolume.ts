@@ -1,12 +1,12 @@
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses'
-import { IVolume, Metadata, Point3 } from '../../types'
+import { IVolume, Metadata, Point3, IImageVolume } from '../../types'
 
-export class ImageVolume {
+export class ImageVolume implements IImageVolume {
   readonly uid: string
   dimensions: Point3
   direction: Array<number>
   metadata: Metadata
-  origin: Array<number>
+  origin: Point3
   scalarData: Float32Array | Uint8Array
   scaling?: {
     PET?: {
@@ -18,11 +18,14 @@ export class ImageVolume {
       suvbwToSuvbsa?: number
     }
   }
+
   sizeInBytes?: number // Seems weird to pass this in? Why not grab it from scalarData.byteLength
-  spacing: Array<number>
+  spacing: Point3
   numVoxels: number
   vtkImageData?: any
   vtkOpenGLTexture: any // No good way of referencing vtk classes as they aren't classes.
+  loadStatus?: Record<string, any>
+  imageIds?: Array<string>
 
   constructor(props: IVolume) {
     this.uid = props.uid

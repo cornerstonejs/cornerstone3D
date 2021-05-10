@@ -16,6 +16,7 @@
     "build:examples": "webpack --progress --config ./webpack.dev.js && yarn run docs",
     "dev": "webpack serve --config ./webpack.dev.js",
     "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
     "preinstall": "node preinstall.js",
     "start": "yarn run dev",
     "test": "karma start",

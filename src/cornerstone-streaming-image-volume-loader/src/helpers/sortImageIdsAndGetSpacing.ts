@@ -1,9 +1,9 @@
 import { vec3 } from 'gl-matrix'
-import { metaData } from '@cornerstone'
+import { metaData, Types } from '@cornerstone'
 
 type SortedImageIdsItem = {
   zSpacing: number
-  origin: Array<number>
+  origin: Types.Point3
   sortedImageIds: Array<string>
 }
 
@@ -14,7 +14,7 @@ type SortedImageIdsItem = {
  */
 export default function sortImageIdsAndGetSpacing(
   imageIds: Array<string>,
-  scanAxisNormal: any // Get gl matrix types?
+  scanAxisNormal: vec3 // Get gl matrix types?
 ): SortedImageIdsItem {
   const { imagePositionPatient: referenceImagePositionPatient } = metaData.get(
     'imagePlaneModule',

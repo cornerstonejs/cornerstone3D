@@ -1,7 +1,7 @@
 import { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
 import Events from '../enums/events'
 import VIEWPORT_TYPE from '../constants/viewportType'
-import { IViewport, ICamera, ViewportInput, ActorEntry } from '../types'
+import { ICamera, ViewportInput, ActorEntry } from '../types'
 import _cloneDeep from 'lodash.clonedeep'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'

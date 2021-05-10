@@ -1,5 +1,5 @@
-import cache from './cache'
+import cache, { Cache } from './cache'
 import ImageVolume from './classes/ImageVolume'
 
-export { ImageVolume }
+export { ImageVolume, Cache }
 export default cache

@@ -9,6 +9,7 @@ import StackViewportExample from './ExampleStackViewport'
 import EnableDisableViewportExample from './ExampleEnableDisableAPI'
 import NineStackViewportExample from './ExampleNineStackViewport'
 import VTKSetVolumesExample from './ExampleSetVolumes'
+import CacheDecacheExample from './ExampleCacheDecache'
 
 function LinkOut({ href, text }) {
   return (
@@ -18,12 +19,20 @@ function LinkOut({ href, text }) {
   )
 }
 
-function ExampleEntry({ title, url, text }) {
+function ExampleEntry({ title, url, text, style }) {
+  let CustomTag = `h5` as keyof JSX.IntrinsicElements;
+
+  if (style){
+    CustomTag = `h${style}` as keyof JSX.IntrinsicElements;
+  }
+
+
+
   return (
     <div>
-      <h5>
+      <CustomTag>
         <Link to={url}>{title}</Link>
-      </h5>
+      </CustomTag>
       <p>{text}</p>
       <hr />
     </div>
@@ -51,6 +60,13 @@ function Index() {
       url: '/twentyFiveCanvas',
       text:
         'Example with twenty five on screen canvases linked to a single RenderingEngine.',
+    },
+    {
+      title: 'Demo 1 - Cache Decache',
+      url: '/cacheDecache',
+      text:
+        'Demonstration of combined cache and image loader',
+        style: "3"
     },
     {
       title: 'Color',
@@ -84,6 +100,7 @@ function Index() {
       text:
         'Example for changing the volume while keeping the layout, synchronizers etc'
     },
+
   ]
 
   const exampleComponents = examples.map((e) => {
@@ -177,6 +194,11 @@ function AppRouter() {
       children: <VTKSetVolumesExample />,
     })
 
+  const cacheDecache = () =>
+    Example({
+      children: <CacheDecacheExample />,
+    })
+
 
   return (
     <Router>
@@ -191,6 +213,7 @@ function AppRouter() {
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />
         <Route exact path="/setVolumes/" render={setVolumes} />
+        <Route exact path="/cacheDecache/" render={cacheDecache} />
         <Route exact component={Index} />
       </Switch>
     </Router>
