@@ -28,7 +28,6 @@
   },
   "peerDependencies": {
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main",
-    "cornerstone-math": "0.1.9",
     "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#imageURI",
     "gl-matrix": "^3.3.0",
     "vtk.js": "17.3.0"
@@ -56,7 +55,6 @@
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^8.1.0",
-    "cornerstone-math": "^0.1.9",
     "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#imageURI",
     "css-loader": "^5.2.0",
     "cssnano": "^4.1.10",

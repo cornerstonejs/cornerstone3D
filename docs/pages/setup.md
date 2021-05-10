@@ -90,7 +90,7 @@ library features.
 
 - [Node >=12.13.0](https://nodejs.org/en/download/)
 - [Yarn >=1.19.1](https://classic.yarnpkg.com/en/docs/install/)
-- NPM Packages: `dicom-parser`, `cornerstone-core`, `cornerstone-math`, `cornerstone-wado-image-loader`, [`calculate-suv`](https://github.com/PrecisionMetrics/calculate-suv), `vtk.js`
+- NPM Packages: `dicom-parser`, `cornerstone-core`, `cornerstone-wado-image-loader`, [`calculate-suv`](https://github.com/PrecisionMetrics/calculate-suv), `vtk.js`
 
 _NOTE:_
 

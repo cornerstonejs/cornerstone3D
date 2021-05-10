@@ -15,7 +15,7 @@ import { showToolCursor, hideToolCursor } from '../store/toolCursor'
 import { math } from '../util'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import cornerstoneMath from 'cornerstone-math'
+import { lineSegment } from '../util/math'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
@@ -1964,12 +1964,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         },
       }
 
-      const distanceToPoint1 = cornerstoneMath.lineSegment.distanceToPoint(
-        lineSegment1,
-        {
-          x: canvasCoords[0],
-          y: canvasCoords[1],
-        }
+      const distanceToPoint1 = lineSegment.distanceToPoint(
+        [lineSegment1.start.x, lineSegment1.start.y],
+        [lineSegment1.end.x, lineSegment1.end.y],
+        [canvasCoords[0], canvasCoords[1]]
       )
 
       const lineSegment2 = {
@@ -1983,12 +1981,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         },
       }
 
-      const distanceToPoint2 = cornerstoneMath.lineSegment.distanceToPoint(
-        lineSegment2,
-        {
-          x: canvasCoords[0],
-          y: canvasCoords[1],
-        }
+      const distanceToPoint2 = lineSegment.distanceToPoint(
+        [lineSegment2.start.x, lineSegment2.start.y],
+        [lineSegment2.end.x, lineSegment2.end.y],
+        [canvasCoords[0], canvasCoords[1]]
       )
 
       if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
@@ -2121,12 +2117,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         },
       }
 
-      const distanceToPoint1 = cornerstoneMath.lineSegment.distanceToPoint(
-        lineSegment1,
-        {
-          x: canvasCoords[0],
-          y: canvasCoords[1],
-        }
+      const distanceToPoint1 = lineSegment.distanceToPoint(
+        [lineSegment1.start.x, lineSegment1.start.y],
+        [lineSegment1.end.x, lineSegment1.end.y],
+        [canvasCoords[0], canvasCoords[1]]
       )
 
       const lineSegment2 = {
@@ -2140,12 +2134,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         },
       }
 
-      const distanceToPoint2 = cornerstoneMath.lineSegment.distanceToPoint(
-        lineSegment2,
-        {
-          x: canvasCoords[0],
-          y: canvasCoords[1],
-        }
+      const distanceToPoint2 = lineSegment.distanceToPoint(
+        [lineSegment2.start.x, lineSegment2.start.y],
+        [lineSegment2.end.x, lineSegment2.end.y],
+        [canvasCoords[0], canvasCoords[1]]
       )
 
       if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
@@ -2220,12 +2212,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         },
       }
 
-      const distanceToPoint1 = cornerstoneMath.lineSegment.distanceToPoint(
-        lineSegment1,
-        {
-          x: canvasCoords[0],
-          y: canvasCoords[1],
-        }
+      const distanceToPoint1 = lineSegment.distanceToPoint(
+        [lineSegment1.start.x, lineSegment1.start.y],
+        [lineSegment1.end.x, lineSegment1.end.y],
+        [canvasCoords[0], canvasCoords[1]]
       )
 
       const lineSegment2 = {
@@ -2239,12 +2229,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         },
       }
 
-      const distanceToPoint2 = cornerstoneMath.lineSegment.distanceToPoint(
-        lineSegment2,
-        {
-          x: canvasCoords[0],
-          y: canvasCoords[1],
-        }
+      const distanceToPoint2 = lineSegment.distanceToPoint(
+        [lineSegment2.start.x, lineSegment2.start.y],
+        [lineSegment2.end.x, lineSegment2.end.y],
+        [canvasCoords[0], canvasCoords[1]]
       )
 
       if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {

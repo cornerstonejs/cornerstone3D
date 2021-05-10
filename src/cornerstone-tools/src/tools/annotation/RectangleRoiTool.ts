@@ -17,7 +17,7 @@ import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import cornerstoneMath from 'cornerstone-math'
+import rectangle from '../../util/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
 import { indexWithinDimensions } from '../../util/vtkjs'
@@ -171,10 +171,13 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       canvasPoint2,
     ])
 
-    const distanceToPoint = cornerstoneMath.rect.distanceToPoint(rect, {
-      x: canvasCoords[0],
-      y: canvasCoords[1],
-    })
+    const point = [canvasCoords[0], canvasCoords[1]]
+    const { left, top, width, height } = rect
+
+    const distanceToPoint = rectangle.distanceToPoint(
+      [left, top, width, height],
+      point
+    )
 
     if (distanceToPoint <= proximity) {
       return true

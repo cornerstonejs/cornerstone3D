@@ -18,7 +18,7 @@ import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
-import cornerstoneMath from 'cornerstone-math'
+import lineSegment from '../../util/math/line'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
@@ -173,7 +173,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     let canavasPoint1 = viewport.worldToCanvas(points[0])
     let canavasPoint2 = viewport.worldToCanvas(points[1])
 
-    let lineSegment = {
+    let line = {
       start: {
         x: canavasPoint1[0],
         y: canavasPoint1[1],
@@ -184,12 +184,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       },
     }
 
-    let distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
-      lineSegment,
-      {
-        x: canvasCoords[0],
-        y: canvasCoords[1],
-      }
+    let distanceToPoint = lineSegment.distanceToPoint(
+      [line.start.x, line.start.y],
+      [line.end.x, line.end.y],
+      [canvasCoords[0], canvasCoords[1]]
     )
 
     if (distanceToPoint <= proximity) {
@@ -200,7 +198,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     canavasPoint1 = viewport.worldToCanvas(points[2])
     canavasPoint2 = viewport.worldToCanvas(points[3])
 
-    lineSegment = {
+    line = {
       start: {
         x: canavasPoint1[0],
         y: canavasPoint1[1],
@@ -211,10 +209,11 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       },
     }
 
-    distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(lineSegment, {
-      x: canvasCoords[0],
-      y: canvasCoords[1],
-    })
+    distanceToPoint = lineSegment.distanceToPoint(
+      [line.start.x, line.start.y],
+      [line.end.x, line.end.y],
+      [canvasCoords[0], canvasCoords[1]]
+    )
 
     if (distanceToPoint <= proximity) {
       return true
@@ -578,14 +577,16 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
 
       // --> We need to preserve this distance
-      const intersectionPoint = cornerstoneMath.lineSegment.intersectLine(
-        secondLineSegment,
-        firstLineSegment
+      const intersectionPoint = lineSegment.intersectLine(
+        [secondLineSegment.start.x, secondLineSegment.start.y],
+        [secondLineSegment.end.x, secondLineSegment.end.y],
+        [firstLineSegment.start.x, firstLineSegment.start.y],
+        [firstLineSegment.end.x, firstLineSegment.end.y]
       )
 
       const intersectionCoord = vec2.create()
 
-      vec2.set(intersectionCoord, intersectionPoint.x, intersectionPoint.y)
+      vec2.set(intersectionCoord, intersectionPoint[0], intersectionPoint[1])
 
       // 1. distance from intersection point to start handle?
       const distFromLeftHandle = vec2.distance(
@@ -676,9 +677,18 @@ export default class BidirectionalTool extends BaseAnnotationTool {
           y: proposedCanvasCoordPoint.y + vectorX * multiplier * -1,
         },
       }
-      const newIntersectionPoint = cornerstoneMath.lineSegment.intersectLine(
-        canvasCoordsCurrent.longLineSegment,
-        helperLine
+
+      const newIntersectionPoint = lineSegment.intersectLine(
+        [
+          canvasCoordsCurrent.longLineSegment.start.x,
+          canvasCoordsCurrent.longLineSegment.start.y,
+        ],
+        [
+          canvasCoordsCurrent.longLineSegment.end.x,
+          canvasCoordsCurrent.longLineSegment.end.y,
+        ],
+        [helperLine.start.x, helperLine.start.y],
+        [helperLine.end.x, helperLine.end.y]
       )
 
       // short-circuit
@@ -689,18 +699,18 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       // 1. distance from intersection point to start handle?
       const distFromTranslateHandle = vec2.distance(
         <vec2>canvasCoordHandlesCurrent[translateHandleIndex],
-        [newIntersectionPoint.x, newIntersectionPoint.y]
+        [newIntersectionPoint[0], newIntersectionPoint[1]]
       )
 
       // isStart if index is 0 or 2
       const shortLineSegment = {
         start: {
-          x: newIntersectionPoint.x + vectorY * distFromTranslateHandle,
-          y: newIntersectionPoint.y + vectorX * distFromTranslateHandle * -1,
+          x: newIntersectionPoint[0] + vectorY * distFromTranslateHandle,
+          y: newIntersectionPoint[1] + vectorX * distFromTranslateHandle * -1,
         },
         end: {
-          x: newIntersectionPoint.x + vectorY * distFromTranslateHandle * -1,
-          y: newIntersectionPoint.y + vectorX * distFromTranslateHandle,
+          x: newIntersectionPoint[0] + vectorY * distFromTranslateHandle * -1,
+          y: newIntersectionPoint[1] + vectorX * distFromTranslateHandle,
         },
       }
       const translatedHandleCoords =
@@ -744,9 +754,11 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     // Add some buffer in the secondLineSegment when finding the proposedIntersectionPoint
     // Of points to stop us getting stack when rotating quickly.
 
-    const proposedIntersectionPoint = cornerstoneMath.lineSegment.intersectLine(
-      extendedSecondLineSegment,
-      proposedFirstLineSegment
+    const proposedIntersectionPoint = lineSegment.intersectLine(
+      [extendedSecondLineSegment.start.x, extendedSecondLineSegment.start.y],
+      [extendedSecondLineSegment.end.x, extendedSecondLineSegment.end.y],
+      [proposedFirstLineSegment.start.x, proposedFirstLineSegment.start.y],
+      [proposedFirstLineSegment.end.x, proposedFirstLineSegment.end.y]
     )
 
     const wouldPutThroughShortAxis = !proposedIntersectionPoint

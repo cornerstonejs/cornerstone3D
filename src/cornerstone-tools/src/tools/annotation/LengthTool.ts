@@ -1,6 +1,5 @@
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec2 } from 'gl-matrix'
-import cornerstoneMath from 'cornerstone-math'
 import {
   getEnabledElement,
   VIEWPORT_TYPE,
@@ -14,6 +13,8 @@ import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
 import toolColors from '../../stateManagement/toolColors'
 import toolStyle from '../../stateManagement/toolStyle'
+import { lineSegment } from '../../util/math'
+
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
@@ -198,7 +199,7 @@ class LengthTool extends BaseAnnotationTool {
     const canvasPoint1 = viewport.worldToCanvas(point1)
     const canvasPoint2 = viewport.worldToCanvas(point2)
 
-    const lineSegment = {
+    const line = {
       start: {
         x: canvasPoint1[0],
         y: canvasPoint1[1],
@@ -209,12 +210,10 @@ class LengthTool extends BaseAnnotationTool {
       },
     }
 
-    const distanceToPoint = cornerstoneMath.lineSegment.distanceToPoint(
-      lineSegment,
-      {
-        x: canvasCoords[0],
-        y: canvasCoords[1],
-      }
+    const distanceToPoint = lineSegment.distanceToPoint(
+      [line.start.x, line.start.y],
+      [line.end.x, line.end.y],
+      [canvasCoords[0], canvasCoords[1]]
     )
 
     if (distanceToPoint <= proximity) {

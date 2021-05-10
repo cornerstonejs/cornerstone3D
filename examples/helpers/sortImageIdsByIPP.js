@@ -1,5 +1,5 @@
 import { metaData } from '@cornerstone';
-import { Vector3 } from 'cornerstone-math';
+import { vec3 } from 'gl-matrix'
 
 /**
  * Sorts the given imageIds by image position based on image position patient
@@ -14,29 +14,37 @@ export default function sortImageIdsByIPP(imageIds) {
     imageOrientationPatient,
   } = metaData.get('imagePlaneModule', imageIds[0]);
 
-  const refIppVec = new Vector3(...referenceImagePositionPatient);
+  const refIppVec = vec3.fromValues(...referenceImagePositionPatient);
 
-  const scanAxisNormal = new Vector3(
+  let scanAxisNormal = vec3.create()
+
+  const vector1 = vec3.fromValues(
     imageOrientationPatient[0],
     imageOrientationPatient[1],
-    imageOrientationPatient[2]
-  ).cross(
-    new Vector3(
-      imageOrientationPatient[3],
-      imageOrientationPatient[4],
-      imageOrientationPatient[5]
-    )
-  );
+    imageOrientationPatient[2],
+  )
+
+  const vector2 = vec3.fromValues(
+    imageOrientationPatient[3],
+    imageOrientationPatient[4],
+    imageOrientationPatient[5],
+  )
+
+  vec3.cross(scanAxisNormal, vector1, vector2)
+
+
+  let positionVector = vec3.create()
+  let distance = vec3.create()
 
   const distanceImagePairs = imageIds.map(imageId => {
-    const { imagePositionPatient } = cornerstone.metaData.get(
+    const { imagePositionPatient } = metaData.get(
       'imagePlaneModule',
       imageId
     );
 
-    const ippVec = new Vector3(...imagePositionPatient);
-    const positionVector = refIppVec.clone().sub(ippVec);
-    const distance = positionVector.dot(scanAxisNormal);
+    const ippVec = vec3.fromValues(...imagePositionPatient);
+    vec3.subtract(positionVector, refIppVec, ippVec)
+    distance = vec3.dot(positionVector, scanAxisNormal);
 
     return {
       distance,
