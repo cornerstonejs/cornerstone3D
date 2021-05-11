@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 // ~~
-import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@cornerstone';
+import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@ohif/cornerstone-render';
 
 class CanvasResizeExample extends Component {
   state = {

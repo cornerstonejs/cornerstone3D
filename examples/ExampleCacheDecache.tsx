@@ -6,7 +6,7 @@ import {
   loadAndCacheImages,
   ORIENTATION,
   VIEWPORT_TYPE,
-} from '@cornerstone'
+} from '@ohif/cornerstone-render'
 import { ToolGroupManager, resetToolsState } from '@cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
@@ -21,9 +21,9 @@ import {
   VIEWPORT_IDS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@cornerstone'
+import * as cs from '@ohif/cornerstone-render'
 
-import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
+import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 

@@ -1,5 +1,5 @@
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants';
-import { ORIENTATION, VIEWPORT_TYPE, cache, getVolume } from '@cornerstone';
+import { ORIENTATION, VIEWPORT_TYPE, cache, getVolume } from '@ohif/cornerstone-render';
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
 import {
   setCTWWWC,

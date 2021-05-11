@@ -1,5 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import { ORIENTATION, VIEWPORT_TYPE, getVolume, Utilities } from '@cornerstone';
+import { ORIENTATION, VIEWPORT_TYPE, getVolume, Utilities } from '@ohif/cornerstone-render';
 
 function setLayout(renderingEngine, canvasContainers, { ptTypesSceneToolGroup }) {
   const viewportInput = [

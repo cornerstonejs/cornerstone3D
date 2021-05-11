@@ -1,5 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
-import { ORIENTATION, VIEWPORT_TYPE } from '@cornerstone';
+import { ORIENTATION, VIEWPORT_TYPE } from '@ohif/cornerstone-render';
 import {
   setCTWWWC,
   setCTVRTransferFunction,

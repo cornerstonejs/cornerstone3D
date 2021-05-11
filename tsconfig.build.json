@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
+    "checkJs": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "lib": ["ES6", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "outDir": "tsDist",
+    "pretty": true,
+    "removeComments": false,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": false,
+    "strictNullChecks": false,
+    "target": "esnext",
+  },
+  // typedoc (yarn run docs) picks these up when running
+  // @TODO: so either `examples/**` needs to have valid tsx
+  // or we need separate tsconfig files for these "separate" projects
+  "exclude": ["node_modules", "dist", "snippets", "examples"]
+}

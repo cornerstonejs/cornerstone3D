@@ -1,5 +1,5 @@
 import dicomParser from 'dicom-parser';
-import * as cornerstone from '@cornerstone';
+import * as cornerstone from '@ohif/cornerstone-render';
 import * as csTools3d from '@cornerstone-tools';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 

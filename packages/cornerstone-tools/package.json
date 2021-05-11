@@ -1,0 +1,24 @@
+{
+  "name": "@ohif/cornerstone-tools",
+  "version": "0.0.1",
+  "description": "The goal is for this to eventually be a separate package. Try to only use API\r exposed by `vtkjs-viewport` in it's top level `index.ts`.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "dev": "jest --watchAll",
+    "dev:core": "yarn run dev",
+    "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build:package": "yarn run build",
+    "prepublishOnly": "yarn run build",
+    "start": "yarn run dev",
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage"
+  },
+  "peerDependencies": {
+    "gl-matrix": "^3.3.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

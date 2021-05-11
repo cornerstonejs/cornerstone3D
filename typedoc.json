@@ -3,9 +3,9 @@
   "theme": "pages-plugin",
 
   "entryPoints": [
-    "./src/cornerstone-core/src/index.ts",
-    "./src/cornerstone-tools/src/index.ts",
-    "./src/cornerstone-streaming-image-volume-loader/src/index.ts"
+    "./packages/cornerstone-render/src/index.ts",
+    "./packages/cornerstone-tools/src/index.ts",
+    "./packages/cornerstone-image-loader-streaming-volume/src/index.ts"
   ],
   "tsconfig": "./tsconfig.json",
   "exclude": [

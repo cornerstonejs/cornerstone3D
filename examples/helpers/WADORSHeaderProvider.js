@@ -1,5 +1,5 @@
 import dcmjs from 'dcmjs';
-import { Utilities as csUtils } from '@cornerstone'
+import { Utilities as csUtils } from '@ohif/cornerstone-render'
 const metadataHeadersPerImageId = {};
 const INSTANCE = 'instance';
 

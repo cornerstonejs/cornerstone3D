@@ -1,0 +1,21 @@
+{
+  "name": "@ohif/cornerstone-image-loader-streaming-volume",
+  "version": "0.0.2",
+  "description": "",
+  "main": "dist/index.umd.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "dev": "jest --watchAll",
+    "dev:core": "yarn run dev",
+    "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build:package": "yarn run build",
+    "prepublishOnly": "yarn run build",
+    "start": "yarn run dev",
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage"
+  },
+  "author": "",
+  "license": "ISC"
+}

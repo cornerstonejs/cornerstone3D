@@ -13,7 +13,7 @@ import {
   ToolGroupManager,
   resetToolsState
 } from "@cornerstone-tools";
-import * as cs from '@cornerstone'
+import * as cs from '@ohif/cornerstone-render'
 
 import vtkColorTransferFunction from "vtk.js/Sources/Rendering/Core/ColorTransferFunction";
 import vtkPiecewiseFunction from "vtk.js/Sources/Common/DataModel/PiecewiseFunction";
@@ -24,7 +24,7 @@ import ViewportGrid from "./components/ViewportGrid";
 import { initToolGroups, destroyToolGroups } from "./initToolGroups";
 import config from "./config/default";
 import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
-import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
+import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
 
 
 import "./ExampleVTKMPR.css";

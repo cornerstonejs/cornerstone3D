@@ -9,7 +9,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   EVENTS as RENDERING_EVENTS,
-} from '@cornerstone'
+} from '@ohif/cornerstone-render'
 import {
   SynchronizerManager,
   synchronizers,
@@ -35,11 +35,11 @@ import {
 } from './constants'
 import LAYOUTS, { stackCT } from './layouts'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@cornerstone'
+import * as cs from '@ohif/cornerstone-render'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 
-import { registerWebImageLoader } from '@cornerstone-streaming-image-volume-loader'
+import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
 import getInterleavedFrames from './helpers/getInterleavedFrames'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'

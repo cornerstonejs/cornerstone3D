@@ -1,11 +1,9 @@
 {
-  "name": "cornerstone-3d-alpha",
-  "version": "0.0.1",
-  "description": "Viewport and annotation framework for vtk.js",
-  "author": "OHIF Contributors",
-  "license": "MIT",
-  "repository": "OHIF/react-vtkjs-viewport",
-  "main": "dist/rendering.umd.min.js",
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "engines": {
     "node": ">=12",
     "yarn": ">=1.19.1"
@@ -14,6 +12,7 @@
     "build": "webpack --progress --config ./webpack.config.js --mode development",
     "build:release": "webpack --progress --config ./webpack.config.js --mode production",
     "build:examples": "webpack --progress --config ./webpack.dev.js && yarn run docs",
+    "build:packages": "lerna run build:package --parallel --stream",
     "dev": "webpack serve --config ./webpack.dev.js",
     "docs": "typedoc",
     "docs:watch": "typedoc --watch",
@@ -24,12 +23,12 @@
     "lint-staged": "lint-staged",
     "lint": "eslint --quiet -c .eslintrc.json src",
     "predeploy": "yarn install && yarn run build:release",
-    "prepublishOnly": "yarn run build && yarn run build:release"
+    "prepublishOnly": "yarn run build && yarn run build:release",
+    "compile": "tsc -p tsconfig.build.json"
   },
   "peerDependencies": {
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main",
     "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#imageURI",
-    "gl-matrix": "^3.3.0",
     "vtk.js": "17.3.0"
   },
   "dependencies": {
@@ -56,6 +55,7 @@
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^8.1.0",
     "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#imageURI",
+    "cross-env": "^7.0.3",
     "css-loader": "^5.2.0",
     "cssnano": "^4.1.10",
     "dcmjs": "^0.18.3",
@@ -81,6 +81,7 @@
     "karma-jasmine": "^4.0.1",
     "karma-junit-reporter": "^2.0.1",
     "karma-webpack": "^5.0.0",
+    "lerna": "^4.0.0",
     "lint-staged": "^10.5.4",
     "path-browserify": "^1.0.1",
     "postcss": "^8.2.8",
@@ -105,7 +106,7 @@
     "webpack-bundle-analyzer": "^4.4.0",
     "webpack-cli": "^4.6.0",
     "webpack-dev-server": "^3.11.2",
-    "webpack-merge": "^5.7.3",
+    "webpack-merge": "5.7.3",
     "worker-loader": "^3.0.8"
   },
   "husky": {

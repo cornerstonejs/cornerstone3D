@@ -1,42 +1,12 @@
 {
+  "extends": "./tsconfig.build.json",
   "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
-    "checkJs": false,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "react-jsx",
-    "lib": ["ES6", "DOM"],
-    "module": "esnext",
-    "moduleResolution": "node",
-    "noEmit": false,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "outDir": "tsDist",
-    "pretty": true,
-    "removeComments": false,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "strict": false,
-    "strictNullChecks": false,
-    "target": "esnext",
-    // TS version of Webpack aliases
-    // relative to `baseUrl`
+    "baseUrl": "./packages",
     "paths": {
-      "@cornerstone": [
-        "src/cornerstone-core/src/index.ts"
-      ],
-      "@cornerstone-tools": [
-        "src/cornerstone-tools/src/index.ts"
-      ],
-      "@cornerstone-streaming-image-volume-loader": [
-        "src/cornerstone-streaming-image-volume-loader/index.ts"
-      ]
-    },
-  },
-  // typedoc (yarn run docs) picks these up when running
-  // @TODO: so either `examples/**` needs to have valid tsx
-  // or we need separate tsconfig files for these "separate" projects
-  "exclude": ["node_modules", "dist", "snippets", "examples"]
+      "@ohif/cornerstone-image-loader-streaming-volume": ["cornerstone-image-loader-streaming-volume/src"],
+      "@ohif/cornerstone-render": ["cornerstone-render/src"],
+      "@ohif/cornerstone-tools": ["cornerstone-tools/src"],
+      "@ohif/*": ["*/src"]
+    }
+  }
 }

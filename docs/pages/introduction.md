@@ -14,8 +14,8 @@ explanation of how its libraries are designed and fit together.
 
 This repository contains three projects:
 
-- `/src/`: The rendering library equivelant of `cornerstone-core`
-- `/src/cornerstone-tools`: The tool library equivalent of `cornerstone-tools`
+- `/packages/cornerstone-render`: The rendering library equivelant of `cornerstone-core`
+- `/packages/cornerstone-tools`: The tool library equivalent of `cornerstone-tools`
 - `/examples`: Consumes both of the above libraries to demonstrate functionality in a simple `react` app
 
 Notably missing is a separately packaged image loading library. We instead bundle

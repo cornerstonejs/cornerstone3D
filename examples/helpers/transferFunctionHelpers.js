@@ -1,4 +1,4 @@
-import { getVolume, Utilities } from '@cornerstone';
+import { getVolume, Utilities } from '@ohif/cornerstone-render';
 import applyPreset from './applyPreset';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';

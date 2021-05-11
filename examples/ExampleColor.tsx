@@ -1,15 +1,15 @@
 import React, { Component } from "react";
 // ~~
-import * as cs from "@cornerstone";
+import * as cs from "@ohif/cornerstone-render";
 import {
   RenderingEngine,
   ORIENTATION,
   VIEWPORT_TYPE,
   metaData,
   createAndCacheVolume,
-} from "@cornerstone";
-import { ToolGroupManager, ToolBindings, resetToolsState } from "@cornerstone-tools";
-import { registerWebImageLoader } from "@cornerstone-streaming-image-volume-loader";
+} from "@ohif/cornerstone-render";
+import { ToolGroupManager, ToolBindings, resetToolsState } from "@ohif/cornerstone-tools";
+import { registerWebImageLoader } from "@ohif/cornerstone-image-loader-streaming-volume";
 import config from "./config/default";
 import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
 

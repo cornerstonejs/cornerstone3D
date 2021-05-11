@@ -1,0 +1,27 @@
+{
+  "name": "@ohif/cornerstone-render",
+  "version": "0.0.2",
+  "description": "",
+  "main": "src/index.ts",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "dev": "jest --watchAll",
+    "dev:core": "yarn run dev",
+    "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build:package": "yarn run build",
+    "prepublishOnly": "yarn run build",
+    "start": "yarn run dev",
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage"
+  },
+  "peerDependencies": {
+    "gl-matrix": "^3.3.0"
+  },
+  "devDependencies": {
+    "gl-matrix": "^3.3.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -3,7 +3,7 @@ import vtkGenericRenderWindow from 'vtk.js/Sources/Rendering/Misc/GenericRenderW
 import { vec3 } from 'gl-matrix'
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import { api } from 'dicomweb-client'
-import { requestPoolManager } from '@cornerstone'
+import { requestPoolManager } from '@ohif/cornerstone-render'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
