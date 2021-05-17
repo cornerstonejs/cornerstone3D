@@ -1,6 +1,4 @@
-import * as utils from '../src/util'
-
-const lineSegment = utils.math.lineSegment
+import lineSegment from './index'
 
 describe('LineSegment:', function () {
   beforeEach(() => {

@@ -1,6 +1,4 @@
-import * as utils from '../src/util'
-
-const rectangle = utils.math.rectangle
+import rectangle from './index'
 
 describe('Rectangle:', function () {
   beforeEach(() => {

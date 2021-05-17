@@ -9,15 +9,12 @@ const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const NODE_ENV = process.NODE_ENV;
 
 // PATHS
 const PROJECT_ROOT = path.join(__dirname, '..', 'packages/demo')
-const ENTRY_EXAMPLES = path.join(PROJECT_ROOT, 'src/index.tsx')
-const SRC_PATH = path.join(PROJECT_ROOT, './src')
-const OUT_PATH = path.join(PROJECT_ROOT, './dist')
-// CONFIG
-const APP_CONFIG = process.env.APP_CONFIG || 'config/default.js'
-const APP_CONFIG_PATH = path.join(PROJECT_ROOT, `./${APP_CONFIG}`)
+const ENTRY_DEMO = path.join(PROJECT_ROOT, 'src/index.tsx')
+const OUT_PATH = path.join(__dirname, '../demo-dist')
 
 // Need to add this if you want to yarn link locally.
 // Add this additional call so we can yarn link vtk.js
@@ -27,7 +24,8 @@ const APP_CONFIG_PATH = path.join(PROJECT_ROOT, `./${APP_CONFIG}`)
 // };
 
 module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
-  const baseConfig = webpackBase(env, argv, { SRC_DIR, DIST_DIR });
+  const mode = NODE_ENV === 'production' ? 'production' : 'development';
+  // const baseConfig = webpackBase(env, argv, { SRC_DIR, DIST_DIR });
 
   // return merge(baseConfig, {
   //   // module: {
@@ -37,10 +35,10 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
 
   return {
     entry: {
-      examples: ENTRY_EXAMPLES,
+      demo: ENTRY_DEMO,
     },
     devtool: 'eval-source-map',
-    mode: 'development',
+    mode: mode,
     output: {
       path: OUT_PATH,
       filename: '[name].bundle.[contenthash].js',
@@ -88,7 +86,7 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
         path: require.resolve('path-browserify'),
       },
     },
-        plugins: [
+    plugins: [
       // Show build progress
       new webpack.ProgressPlugin(),
       // Clear dist between builds

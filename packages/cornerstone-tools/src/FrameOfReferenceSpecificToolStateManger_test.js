@@ -1,7 +1,6 @@
-import * as cornerstoneTools3D from '../src'
+import * as csTools from './index'
 
-const toolStateManager =
-  cornerstoneTools3D.defaultFrameOfReferenceSpecificToolStateManager
+const toolStateManager = csTools.defaultFrameOfReferenceSpecificToolStateManager
 
 const FrameOfReferenceUID = 'MY_FRAME_OF_REFERENCE_UID'
 

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "webpack serve --config ./.webpack/webpack.dev.js",
     "dev:demo": "yarn run dev",
-    "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build:demo": "yarn run build",
+    "build": "cross-env NODE_ENV=production webpack --progress --config .webpack/webpack.prod.js",
     "prepublishOnly": "yarn run build",
     "start": "yarn run dev",
     "test:unit": "jest --watchAll",
