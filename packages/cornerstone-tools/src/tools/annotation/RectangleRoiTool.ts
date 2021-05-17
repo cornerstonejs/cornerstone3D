@@ -1,18 +1,20 @@
 import { BaseAnnotationTool } from '../base'
 // ~~ VTK Viewport
-import { vec3 } from 'gl-matrix'
-import { getEnabledElement, getVolume, Point2 } from '@ohif/cornerstone-render'
+import {
+  Settings,
+  getEnabledElement,
+  getVolume,
+  Types,
+} from '@ohif/cornerstone-render'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
-import toolColors from '../../stateManagement/toolColors'
-import toolStyle from '../../stateManagement/toolStyle'
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
-import { vec2 } from 'gl-matrix'
+import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
@@ -21,6 +23,7 @@ import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import { ToolSpecificToolData } from '../../types'
 
 export default class RectangleRoiTool extends BaseAnnotationTool {
   _throttledCalculateCachedStats: any
@@ -48,7 +51,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement = (evt, interactionType) => {
+  addNewMeasurement = (evt: CustomEvent): ToolSpecificToolData => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -85,7 +88,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         cachedStats: {},
         active: true,
       },
-    }
+    } as ToolSpecificToolData
+
+    // Ensure settings are initialized after tool data instantiation
+    Settings.getObjectSettings(toolData, RectangleRoiTool)
 
     addToolState(element, toolData)
 
@@ -109,6 +115,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     evt.preventDefault()
 
     renderingEngine.renderViewports(viewportUIDsToRender)
+
+    return toolData
   }
 
   getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
@@ -263,12 +271,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const {
-      toolData,
-      viewportUIDsToRender,
-      newAnnotation,
-      hasMoved,
-    } = this.editData
+    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } =
+      this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
@@ -295,12 +299,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const {
-      toolData,
-      viewportUIDsToRender,
-      handleIndex,
-      movingTextBox,
-    } = this.editData
+    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } =
+      this.editData
     const { data } = toolData
 
     if (movingTextBox) {
@@ -374,8 +374,14 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           bottomRightCanvas = worldToCanvas(points[1])
           topLeftCanvas = worldToCanvas(points[2])
 
-          bottomLeftCanvas = <Point2>[topLeftCanvas[0], bottomRightCanvas[1]]
-          topRightCanvas = <Point2>[bottomRightCanvas[0], topLeftCanvas[1]]
+          bottomLeftCanvas = <Types.Point2>[
+            topLeftCanvas[0],
+            bottomRightCanvas[1],
+          ]
+          topRightCanvas = <Types.Point2>[
+            bottomRightCanvas[0],
+            topLeftCanvas[1],
+          ]
 
           bottomLeftWorld = canvasToWorld(bottomLeftCanvas)
           topRightWorld = canvasToWorld(topRightCanvas)
@@ -501,15 +507,17 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     const { viewport, scene } = svgDrawingHelper.enabledElement
     const targetVolumeUID = this._getTargetVolumeUID(scene)
-    const lineWidth = toolStyle.getToolWidth()
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
+      const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data
-      const color = toolColors.getColorIfActive(data)
       const { points, activeHandleIndex } = data.handles
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
+      const lineDash = this.getStyle(settings, 'lineDash', toolData)
+      const color = this.getStyle(settings, 'color', toolData)
 
       if (!data.cachedStats[targetVolumeUID]) {
         // This volume has not had its stats calulcated yet, so recalculate the stats.
@@ -554,7 +562,11 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         rectangleUID,
         canvasCoordinates[0],
         canvasCoordinates[3],
-        { color }
+        {
+          color,
+          lineDash,
+          lineWidth,
+        }
       )
 
       const textLines = this._getTextLines(data, targetVolumeUID)
@@ -565,9 +577,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       if (!data.handles.textBox.hasMoved) {
         const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
 
-        data.handles.textBox.worldPosition = viewport.canvasToWorld(
-          canvasTextBoxCoords
-        )
+        data.handles.textBox.worldPosition =
+          viewport.canvasToWorld(canvasTextBoxCoords)
       }
 
       const textBoxPosition = viewport.worldToCanvas(
@@ -584,9 +595,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        {
-          color,
-        }
+        this.getLinkedTextBoxStyle(settings, toolData)
       )
 
       const { x: left, y: top, width, height } = boundingBox
@@ -606,10 +615,11 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
    *
    * @param {} points - An array of points.
    */
-  _findTextBoxAnchorPoints = (points: Array<Point2>): Array<Point2> => {
-    const { left, top, width, height } = this._getRectangleImageCoordinates(
-      points
-    )
+  _findTextBoxAnchorPoints = (
+    points: Array<Types.Point2>
+  ): Array<Types.Point2> => {
+    const { left, top, width, height } =
+      this._getRectangleImageCoordinates(points)
 
     return [
       [
@@ -636,7 +646,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   }
 
   _getRectangleImageCoordinates = (
-    points: Array<Point2>
+    points: Array<Types.Point2>
   ): {
     left: number
     top: number

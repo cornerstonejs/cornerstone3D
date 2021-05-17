@@ -9,16 +9,19 @@ function drawEllipse(
   corner1: Point2,
   corner2: Point2,
   options = {}
-) {
-  const { color, lineWidth, lineDash } = Object.assign(
-    {},
+): void {
+  const { color, width, lineWidth, lineDash } = Object.assign(
     {
       color: 'dodgerblue',
-      lineWidth: '2',
+      width: '2',
+      lineWidth: undefined,
       lineDash: undefined,
     },
     options
   )
+
+  // for supporting both lineWidth and width options
+  const strokeWidth = lineWidth || width
 
   const svgns = 'http://www.w3.org/2000/svg'
   const svgNodeHash = _getHash(toolUID, annotationUID, 'ellipse', ellipseUID)
@@ -39,7 +42,13 @@ function drawEllipse(
     existingEllipse.setAttribute('rx', `${radiusX}`)
     existingEllipse.setAttribute('ry', `${radiusY}`)
     existingEllipse.setAttribute('stroke', color)
-    existingEllipse.setAttribute('stroke-width', lineWidth)
+    existingEllipse.setAttribute('stroke-width', strokeWidth)
+
+    if (lineDash) {
+      existingEllipse.setAttribute('stroke-dasharray', lineDash)
+    } else {
+      existingEllipse.removeAttribute('stroke-dasharray')
+    }
 
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
@@ -51,7 +60,7 @@ function drawEllipse(
     svgEllipseElement.setAttribute('ry', `${radiusY}`)
     svgEllipseElement.setAttribute('fill', 'transparent')
     svgEllipseElement.setAttribute('stroke', color)
-    svgEllipseElement.setAttribute('stroke-width', lineWidth)
+    svgEllipseElement.setAttribute('stroke-width', strokeWidth)
 
     if (lineDash) {
       svgEllipseElement.setAttribute('stroke-dasharray', lineDash)

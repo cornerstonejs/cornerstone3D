@@ -1,4 +1,4 @@
-import { state } from './index'
+import { state } from './state'
 
 /**
  * @function addTool
@@ -8,8 +8,8 @@ import { state } from './index'
  * @param {object} toolOptions The tool-specific configuration options for the tool.
  * @returns
  */
-export default function resetToolsState() {
-  state.tools = []
+export default function resetToolsState(): void {
+  state.tools = {}
   state.toolGroups = []
   state.synchronizers = []
   state.enabledElements = []

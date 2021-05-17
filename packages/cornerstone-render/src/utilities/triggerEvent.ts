@@ -12,7 +12,7 @@ import eventTarget from '../eventTarget'
 export default function triggerEvent(
   el: EventTarget = eventTarget,
   type: string,
-  detail: any = null
+  detail: unknown = null
 ): boolean {
   if (!type) {
     throw new Error('Event type was not defined')

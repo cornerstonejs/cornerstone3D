@@ -1,5 +1,6 @@
 import { state } from '../../store'
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
+import { selectToolData } from '../../stateManagement/toolDataSelection'
 
 /**
  * @function mouseDownActivate - If the `mouseDown` handler does not consume an event,
@@ -25,6 +26,6 @@ export default function mouseDownActivate(evt) {
   }
 
   if (activeTool.addNewMeasurement) {
-    activeTool.addNewMeasurement(evt, 'mouse')
+    selectToolData(activeTool.addNewMeasurement(evt, 'mouse'))
   }
 }

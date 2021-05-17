@@ -1,7 +1,4 @@
 import _getHash from './_getHash'
-import toolStyle from '../stateManagement/toolStyle'
-import toolColors from '../stateManagement/toolColors'
-import { state } from '../store'
 import { Point2 } from '../types'
 
 function drawHandles(
@@ -12,17 +9,20 @@ function drawHandles(
   handlePoints: Array<Point2>,
   options = {}
 ): void {
-  const { color, handleRadius, width, fill, type } = Object.assign(
-    {},
+  const { color, handleRadius, width, lineWidth, fill, type } = Object.assign(
     {
       color: 'dodgerblue',
       handleRadius: '6',
       width: '2',
+      lineWidth: undefined,
       fill: 'transparent',
       type: 'circle',
     },
     options
   )
+
+  // for supporting both lineWidth and width options
+  const strokeWidth = lineWidth || width
 
   for (let i = 0; i < handlePoints.length; i++) {
     const handle = handlePoints[i]
@@ -44,7 +44,7 @@ function drawHandles(
         existingHandleElement.setAttribute('r', handleRadius)
         existingHandleElement.setAttribute('stroke', color)
         existingHandleElement.setAttribute('fill', fill)
-        existingHandleElement.setAttribute('stroke-width', width)
+        existingHandleElement.setAttribute('stroke-width', strokeWidth)
       } else if (type === 'rect') {
         const handleRadiusFloat = parseFloat(handleRadius)
         const side = handleRadiusFloat * 1.5
@@ -56,7 +56,7 @@ function drawHandles(
         existingHandleElement.setAttribute('height', `${side}`)
         existingHandleElement.setAttribute('stroke', color)
         existingHandleElement.setAttribute('fill', fill)
-        existingHandleElement.setAttribute('stroke-width', width)
+        existingHandleElement.setAttribute('stroke-width', strokeWidth)
         existingHandleElement.setAttribute('rx', `${side * 0.1}`)
       }
 
@@ -70,7 +70,7 @@ function drawHandles(
         newHandleElement.setAttribute('r', handleRadius)
         newHandleElement.setAttribute('stroke', color)
         newHandleElement.setAttribute('fill', fill)
-        newHandleElement.setAttribute('stroke-width', width)
+        newHandleElement.setAttribute('stroke-width', strokeWidth)
       } else if (type === 'rect') {
         const handleRadiusFloat = parseFloat(handleRadius)
         const side = handleRadiusFloat * 1.5
@@ -82,7 +82,7 @@ function drawHandles(
         newHandleElement.setAttribute('height', `${side}`)
         newHandleElement.setAttribute('stroke', color)
         newHandleElement.setAttribute('fill', fill)
-        newHandleElement.setAttribute('stroke-width', width)
+        newHandleElement.setAttribute('stroke-width', strokeWidth)
         newHandleElement.setAttribute('rx', `${side * 0.1}`)
       } else {
         console.warn('handle type not valid')

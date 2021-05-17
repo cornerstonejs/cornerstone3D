@@ -1,9 +1,9 @@
+import { Types } from '@ohif/cornerstone-render'
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
 import { uuidv4 } from '../util'
 import { ToolSpecificToolState } from '../types/toolStateTypes'
-import IEnabledElement from '@ohif/cornerstone-render'
 
-function getViewportSpecificStateManager(element: IEnabledElement) {
+function getViewportSpecificStateManager(element: Types.IEnabledElement) {
   // TODO:
   // We may want multiple FrameOfReferenceSpecificStateManagers.
   // E.g. displaying two different radiologists annotations on the same underlying data/FoR.
@@ -24,7 +24,7 @@ function getViewportSpecificStateManager(element: IEnabledElement) {
  */
 function getToolState(
   // element: HTMLElement,
-  enabledElement: IEnabledElement,
+  enabledElement: Types.IEnabledElement,
   toolName: string
 ): ToolSpecificToolState {
   const toolStateManager = getViewportSpecificStateManager(enabledElement)

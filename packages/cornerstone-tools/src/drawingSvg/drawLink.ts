@@ -6,7 +6,7 @@ import { PlanarBoundingBox, Point2 } from '../types'
  * Draw a link between an annotation to a box.
  */
 function drawLink(
-  svgDrawingHelper: any,
+  svgDrawingHelper: Record<string, unknown>,
   toolUID: string,
   annotationUID: string,
   linkUID: string,
@@ -16,7 +16,7 @@ function drawLink(
   // Find bounding box point that's closest to our identified
   // start point
   boundingBox: PlanarBoundingBox,
-  options: any = {}
+  options = {}
 ): void {
   // The closest anchor point (for the annotation) to the
   // text box / bounding box
@@ -31,10 +31,14 @@ function drawLink(
   const end = findClosestPoint(boundingBoxPoints, start)
 
   // Finally we draw the dashed linking line
-  const defaultOptions = {
-    lineDash: [2, 3],
-  }
-  const mergedOptions = Object.assign({}, defaultOptions, options)
+  const mergedOptions = Object.assign(
+    {
+      color: 'rgb(255, 255, 0)',
+      lineWidth: '1',
+      lineDash: '2,3',
+    },
+    options
+  )
 
   drawLine(
     svgDrawingHelper,

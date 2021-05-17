@@ -1,5 +1,4 @@
-import toolStyle from '../stateManagement/toolStyle'
-import toolColors from '../stateManagement/toolColors'
+import { getDefaultStyleProperty } from '../stateManagement/toolStyle'
 import path from './path'
 import { state } from '../store'
 
@@ -20,7 +19,7 @@ import { state } from '../store'
  * @returns {undefined}
  */
 export default function (context, handles, options = {}) {
-  const defaultColor = toolColors.getToolColor()
+  const defaultColor = getDefaultStyleProperty('color')
 
   context.strokeStyle = options.color || defaultColor
 
@@ -38,9 +37,10 @@ export default function (context, handles, options = {}) {
       continue
     }
 
-    const lineWidth = handle.active
-      ? toolStyle.getActiveWidth()
-      : toolStyle.getToolWidth()
+    const lineWidth = parseInt(
+      getDefaultStyleProperty('lineWidth', handle.active ? 'Highlighted' : ''),
+      10
+    )
     const fillStyle = options.fill
 
     path(

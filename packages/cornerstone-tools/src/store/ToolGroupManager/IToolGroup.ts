@@ -27,4 +27,7 @@ export default interface IToolGroup {
   setToolDisabled: {
     (toolName: string, toolModeOptions: ISetToolModeOptions): void
   }
+  refreshViewports: {
+    (): void
+  }
 }

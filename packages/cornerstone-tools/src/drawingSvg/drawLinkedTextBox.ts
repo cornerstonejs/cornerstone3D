@@ -3,7 +3,7 @@ import { Point2, ToolStateTextBox } from '../types'
 import drawLink from './drawLink'
 
 function drawLinkedTextBox(
-  svgDrawingHelper: any,
+  svgDrawingHelper: Record<string, unknown>,
   //
   toolUID: string,
   annotationUID: string,
@@ -13,16 +13,13 @@ function drawLinkedTextBox(
   textBoxPosition: Point2,
   annotationAnchorPoints: Array<Point2>,
   // textBox: ToolStateTextBox,
-  textBox: any,
+  textBox: unknown,
   options = {}
   // TODO: yCenter as an option
-) {
+): SVGRect {
   const mergedOptions = Object.assign(
-    {},
     {
-      color: 'dodgerblue',
       handleRadius: '6',
-      width: '2',
       centering: {
         x: false,
         y: true, // yCenter,

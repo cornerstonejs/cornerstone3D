@@ -1,0 +1,100 @@
+.tool-style-controls {
+  position: absolute;
+  overflow: hidden;
+  left: calc(-480px + 16px);
+  top: 0px;
+  width: 480px;
+  height: auto;
+  border: 1px solid #bbb;
+  border-width: 0 1px 1px 0;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 16px;
+}
+
+.tool-style-controls .controls-wrapper {
+  display: block;
+  position: relative;
+  height: auto;
+  max-height: 640px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.tool-style-controls .controls-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.tool-style-controls input,
+.tool-style-controls button {
+  width: 160px;
+  height: 22px;
+  max-width: 160px;
+  display: block;
+  margin: 1px 0;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1em;
+  padding: 3px 2px 1px 2px;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.tool-style-controls .tool-style-control .input-fields {
+  position: 'relative';
+  overflow: hidden;
+}
+
+.tool-style-controls .tool-style-control .input-fields input,
+.tool-style-controls .tool-style-control .input-fields button {
+  display: block;
+  position: relative;
+  float: left;
+}
+
+.tool-style-controls .tool-style-control .input-fields button {
+  width: 22px;
+  margin-left: 1px;
+  font-size: 12px;
+}
+
+.tool-style-controls label {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  margin: 4px 0 1px 0;
+}
+
+.tool-style-controls:hover {
+  left: 0;
+}
+
+.tool-style-controls .hover-handle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translate(0, -50%);
+  width: 16px;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: bold;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+.tool-style-controls h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 0 16px 0;
+}
+
+.tool-style-controls .input-elements {
+  width: 256px;
+  max-width: 256px;
+}
+
+.tool-style-controls .control-elements {
+  float: right;
+  width: 180px;
+}

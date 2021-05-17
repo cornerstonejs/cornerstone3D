@@ -1,12 +1,10 @@
 import { BaseAnnotationTool } from '../base'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
-import { getEnabledElement, Point3 } from '@ohif/cornerstone-render'
+import { Settings, getEnabledElement, Types } from '@ohif/cornerstone-render'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
-import toolColors from '../../stateManagement/toolColors'
-import toolStyle from '../../stateManagement/toolStyle'
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -20,6 +18,7 @@ import { indexWithinDimensions } from '../../util/vtkjs'
 import lineSegment from '../../util/math/line'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import { ToolSpecificToolData } from '../../types'
 
 export default class BidirectionalTool extends BaseAnnotationTool {
   touchDragCallback: any
@@ -51,7 +50,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement = (evt, interactionType) => {
+  addNewMeasurement = (evt: CustomEvent): ToolSpecificToolData => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -93,7 +92,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         cachedStats: {},
         active: true,
       },
-    }
+    } as ToolSpecificToolData
+
+    // Ensure settings are initialized after tool data instantiation
+    Settings.getObjectSettings(toolData, BidirectionalTool)
 
     addToolState(element, toolData)
 
@@ -117,6 +119,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     evt.preventDefault()
 
     renderingEngine.renderViewports(viewportUIDsToRender)
+
+    return toolData
   }
 
   getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
@@ -299,12 +303,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const {
-      toolData,
-      viewportUIDsToRender,
-      newAnnotation,
-      hasMoved,
-    } = this.editData
+    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } =
+      this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
@@ -469,12 +469,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const { element } = eventData
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
-    const {
-      toolData,
-      viewportUIDsToRender,
-      handleIndex,
-      movingTextBox,
-    } = this.editData
+    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } =
+      this.editData
     const { data } = toolData
     if (movingTextBox) {
       const { deltaPoints } = eventData
@@ -546,7 +542,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     // Handle we've selected's proposed point
-    const proposedPoint = <Point3>[...worldPos]
+    const proposedPoint = <Types.Point3>[...worldPos]
     const proposedCanvasCoord = viewport.worldToCanvas(proposedPoint)
 
     if (handleIndex === 0 || handleIndex === 1) {
@@ -861,15 +857,17 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     const { viewport } = svgDrawingHelper.enabledElement
-    const lineWidth = toolStyle.getToolWidth()
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
+      const settings = Settings.getObjectSettings(toolData, BidirectionalTool)
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data
       const { points, activeHandleIndex } = data.handles
-      const color = toolColors.getColorIfActive(data)
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
+      const lineDash = this.getStyle(settings, 'lineDash', toolData)
+      const color = this.getStyle(settings, 'color', toolData)
 
       if (data.invalidated) {
         this._throttledCalculateCachedStats(data)
@@ -908,6 +906,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         canvasCoordinates[1],
         {
           color,
+          lineDash,
+          lineWidth,
         }
       )
 
@@ -921,6 +921,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         canvasCoordinates[3],
         {
           color,
+          lineDash,
+          lineWidth,
         }
       )
 
@@ -934,9 +936,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       if (!data.handles.textBox.hasMoved) {
         canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
 
-        data.handles.textBox.worldPosition = viewport.canvasToWorld(
-          canvasTextBoxCoords
-        )
+        data.handles.textBox.worldPosition =
+          viewport.canvasToWorld(canvasTextBoxCoords)
       }
 
       const textBoxPosition = viewport.worldToCanvas(
@@ -953,9 +954,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        {
-          color,
-        }
+        this.getLinkedTextBoxStyle(settings, toolData)
       )
 
       const { x: left, y: top, width, height } = boundingBox

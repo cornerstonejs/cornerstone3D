@@ -1,4 +1,4 @@
-import toolStyle from '../stateManagement/toolStyle'
+import { getDefaultStyleProperty } from '../stateManagement/toolStyle'
 
 /**
  * This function manages the beginPath/stroke pattern for working with
@@ -12,7 +12,7 @@ import toolStyle from '../stateManagement/toolStyle'
  * @param {Object} [options={}] - Drawing Options
  * @param {StrokeStyle} [options.color] - The stroke style of the path.
  * @param {number} [options.lineWidth] - The width of lines in the path. If null, no line width is set.
- *     If undefined then toolStyle.getToolWidth() is set.
+ *     If undefined then lineWidth from toolStyle is set.
  * @param {FillStyle} [options.fillStyle] - The style to fill the path with. If undefined then no filling is done.
  * @param {Number[]} [options.lineDash] - The {@link https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setLineDash|dash pattern}
  *     to use on the lines.
@@ -34,7 +34,8 @@ export default function (context, options = {}, fn) {
 
   context.lineWidth =
     lineWidth ||
-    (lineWidth === undefined && toolStyle.getToolWidth()) ||
+    (lineWidth === undefined &&
+      parseInt(getDefaultStyleProperty('lineWidth'), 10)) ||
     context.lineWidth
   if (lineDash) {
     context.setLineDash(lineDash)

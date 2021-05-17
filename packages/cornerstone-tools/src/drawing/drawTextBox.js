@@ -1,4 +1,4 @@
-import textStyle from '../stateManagement/textStyle'
+import { getFont, getDefaultStyleProperty } from '../stateManagement/toolStyle'
 import draw from './draw'
 import fillTextLines from './fillTextLines'
 import fillBox from './fillBox'
@@ -15,7 +15,7 @@ import fillBox from './fillBox'
  * @returns {Number} computed text box width
  */
 export function textBoxWidth(context, text, padding) {
-  const font = textStyle.getFont()
+  const font = getFont()
   const origFont = context.font
 
   if (font && font !== origFont) {
@@ -50,8 +50,9 @@ export default function (context, textLines, x, y, color, options = undefined) {
   }
 
   const padding = 5
-  const fontSize = textStyle.getFontSize()
-  const backgroundColor = textStyle.getBackgroundColor()
+  const fontSize =
+    parseInt(getDefaultStyleProperty('textBox.fontSize'), 10) || 14
+  const backgroundColor = getDefaultStyleProperty('textBox.background')
 
   // Find the longest text width in the array of text data
   let maxWidth = 0

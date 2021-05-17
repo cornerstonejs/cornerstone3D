@@ -5,6 +5,13 @@ import {
 } from '../../store'
 
 import { ToolModes } from '../../enums'
+import { ToolSpecificToolData } from '../../types'
+
+import {
+  selectToolData,
+  deselectToolData,
+  isToolDataSelected,
+} from '../../stateManagement/toolDataSelection'
 
 // // Util
 import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles'
@@ -84,10 +91,14 @@ export default function mouseDown(evt) {
     'mouse'
   )
 
+  // Preserve existing selections when shift key is pressed
+  const isMultiSelect = !!evt.detail.event.shiftKey
+
   if (annotationToolsWithMoveableHandles.length > 0) {
     // Choose first tool for now.
     const { tool, toolData, handle } = annotationToolsWithMoveableHandles[0]
 
+    toggleToolDataSelection(toolData, isMultiSelect)
     tool.handleSelectedCallback(evt, toolData, handle, 'mouse')
 
     return
@@ -104,6 +115,7 @@ export default function mouseDown(evt) {
     // Choose first tool for now.
     const { tool, toolData } = moveableAnnotationTools[0]
 
+    toggleToolDataSelection(toolData, isMultiSelect)
     tool.toolSelectedCallback(evt, toolData, 'mouse')
 
     return
@@ -116,5 +128,20 @@ export default function mouseDown(evt) {
       // If the tool claims it consumed the event, prevent further checks.
       return
     }
+  }
+}
+
+function toggleToolDataSelection(
+  toolData: ToolSpecificToolData,
+  isMultiSelect = false
+): void {
+  if (isMultiSelect) {
+    if (isToolDataSelected(toolData)) {
+      deselectToolData(toolData)
+    } else {
+      selectToolData(toolData, true)
+    }
+  } else {
+    selectToolData(toolData, false)
   }
 }

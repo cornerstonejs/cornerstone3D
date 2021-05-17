@@ -1,4 +1,4 @@
-import textStyle from '../stateManagement/textStyle'
+import { getFont, getDefaultStyleProperty } from '../stateManagement/toolStyle'
 
 /**
  * Draw multiple lines of text within a bounding box.
@@ -14,9 +14,10 @@ import textStyle from '../stateManagement/textStyle'
  * @returns {undefined}
  */
 export default function (context, boundingBox, textLines, fillStyle, padding) {
-  const fontSize = textStyle.getFontSize()
+  const fontSize =
+    parseInt(getDefaultStyleProperty('textBox.fontSize'), 10) || 14
 
-  context.font = textStyle.getFont()
+  context.font = getFont()
   context.textBaseline = 'top'
   context.fillStyle = fillStyle
   textLines.forEach(function (text, index) {

@@ -166,6 +166,12 @@ enum CornerstoneTools3DEvents {
    *  @type {String}
    */
   KEY_PRESS = 'cornerstonetools3dkeypress',
+
+  //
+  // MEASUREMENTS
+  //
+
+  MEASUREMENT_SELECTION_CHANGE = 'cornerstonetools3dmeasurementselectionchange',
 }
 
 export default CornerstoneTools3DEvents

@@ -37,6 +37,9 @@ import getEnabledElement from './getEnabledElement'
 import configuration from './configuration'
 import metaData from './metaData'
 
+// Classes
+import Settings from './Settings'
+
 // Namespaces
 import * as Types from './types'
 import * as Utilities from './utilities'
@@ -54,6 +57,7 @@ export {
   //
   configuration,
   Types,
+  Settings,
   //
   VolumeViewport,
   Viewport,

@@ -10,15 +10,18 @@ function drawCircle(
   radius: number,
   options = {}
 ): void {
-  const { color, fill, width } = Object.assign(
-    {},
+  const { color, fill, width, lineWidth } = Object.assign(
     {
       color: 'dodgerblue',
       fill: 'transparent',
-      width: 2,
+      width: '2',
+      lineWidth: undefined,
     },
     options
   )
+
+  // for supporting both lineWidth and width options
+  const strokeWidth = lineWidth || width
 
   // variable for the namespace
   const svgns = 'http://www.w3.org/2000/svg'
@@ -31,7 +34,7 @@ function drawCircle(
     existingCircleElement.setAttribute('r', `${radius}`)
     existingCircleElement.setAttribute('stroke', color)
     existingCircleElement.setAttribute('fill', fill)
-    existingCircleElement.setAttribute('stroke-width', `${width}`)
+    existingCircleElement.setAttribute('stroke-width', strokeWidth)
 
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
@@ -42,7 +45,7 @@ function drawCircle(
     newCircleElement.setAttribute('r', `${radius}`)
     newCircleElement.setAttribute('stroke', color)
     newCircleElement.setAttribute('fill', fill)
-    newCircleElement.setAttribute('stroke-width', `${width}`)
+    newCircleElement.setAttribute('stroke-width', strokeWidth)
 
     svgDrawingHelper._appendNode(newCircleElement, svgNodeHash)
   }

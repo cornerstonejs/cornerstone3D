@@ -6,9 +6,8 @@ import {
   //   touchToolEventDispatcher,
 } from '../eventDispatchers'
 // ~~
-import { getEnabledElement } from '@ohif/cornerstone-render'
 
-import { state } from './index'
+import { state } from './state'
 
 function removeEnabledElement(elementDisabledEvt) {
   // Is DOM element

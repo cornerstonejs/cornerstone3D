@@ -2,13 +2,14 @@
 import { BaseAnnotationTool } from '../base'
 // ~~ VTK Viewport
 import {
+  Settings,
   getEnabledElement,
   getVolume,
   StackViewport,
+  Types,
 } from '@ohif/cornerstone-render'
 import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
-import toolColors from '../../stateManagement/toolColors'
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
@@ -19,7 +20,7 @@ import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
-import { Point3 } from '@ohif/cornerstone-render'
+import { ToolSpecificToolData } from '../../types'
 
 export default class ProbeTool extends BaseAnnotationTool {
   touchDragCallback: any
@@ -50,11 +51,15 @@ export default class ProbeTool extends BaseAnnotationTool {
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
-  pointNearTool() {}
+  // Not necessary for this tool but needs to be defined since it's an abstract
+  // method from the parent class.
+  pointNearTool(): boolean {
+    return false
+  }
 
   toolSelectedCallback() {}
 
-  addNewMeasurement(evt, interactionType) {
+  addNewMeasurement(evt: CustomEvent): ToolSpecificToolData {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -83,7 +88,10 @@ export default class ProbeTool extends BaseAnnotationTool {
         cachedStats: {},
         active: true,
       },
-    }
+    } as ToolSpecificToolData
+
+    // Ensure settings are initialized after tool data instantiation
+    Settings.getObjectSettings(toolData, ProbeTool)
 
     addToolState(element, toolData)
 
@@ -103,6 +111,8 @@ export default class ProbeTool extends BaseAnnotationTool {
     evt.preventDefault()
 
     renderingEngine.renderViewports(viewportUIDsToRender)
+
+    return toolData
   }
 
   getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
@@ -265,11 +275,12 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
+      const settings = Settings.getObjectSettings(toolData, ProbeTool)
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data
-      const color = toolColors.getColorIfActive(data)
       const point = data.handles.points[0]
       const canvasCoordinates = viewport.worldToCanvas(point)
+      const color = this.getStyle(settings, 'color', toolData)
 
       if (!data.cachedStats[targetVolumeUID]) {
         data.cachedStats[targetVolumeUID] = {}
@@ -304,7 +315,7 @@ export default class ProbeTool extends BaseAnnotationTool {
           textUID,
           textLines,
           [textCanvasCoorinates[0], textCanvasCoorinates[1]],
-          { color }
+          this.getLinkedTextBoxStyle(settings, toolData)
         )
       }
     }
@@ -375,7 +386,7 @@ export default class ProbeTool extends BaseAnnotationTool {
         vtkImageData: imageData,
         metadata,
       } = imageVolume
-      const index = <Point3>[0, 0, 0]
+      const index = <Types.Point3>[0, 0, 0]
 
       imageData.worldToIndexVec3(worldPos, index)
 

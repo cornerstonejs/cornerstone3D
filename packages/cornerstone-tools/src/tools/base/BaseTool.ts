@@ -1,4 +1,5 @@
 import deepMerge from '../../util/deepMerge'
+import { ToolModes } from '../../enums'
 
 /**
  * Abstract base class from which all tools derive.
@@ -13,6 +14,7 @@ abstract class BaseTool {
   public defaultStrategy: string
   public activeStrategy: string
   public configuration: Record<string, any>
+  public mode: ToolModes
 
   constructor(
     toolConfiguration: Record<string, any>,
@@ -38,6 +40,7 @@ abstract class BaseTool {
       defaultStrategy || Object.keys(this.strategies)[0] || undefined
     this.activeStrategy = this.defaultStrategy
     this.configuration = Object.assign({}, configuration)
+    this.mode = ToolModes.Disabled
   }
 
   /**

@@ -10,6 +10,7 @@ import EnableDisableViewportExample from './ExampleEnableDisableAPI'
 import NineStackViewportExample from './ExampleNineStackViewport'
 import VTKSetVolumesExample from './ExampleSetVolumes'
 import CacheDecacheExample from './ExampleCacheDecache'
+import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration'
 
 function LinkOut({ href, text }) {
   return (
@@ -100,7 +101,11 @@ function Index() {
       text:
         'Example for changing the volume while keeping the layout, synchronizers etc'
     },
-
+    {
+      title: 'Tool Display Configuration',
+      url: '/toolDisplayConfiguration',
+      text: 'Example of display configuration options for tools'
+    },
   ]
 
   const exampleComponents = examples.map((e) => {
@@ -199,6 +204,10 @@ function AppRouter() {
       children: <CacheDecacheExample />,
     })
 
+  const toolDisplayConfiguration = () =>
+    Example({
+      children: <ToolDisplayConfigurationExample />,
+    })
 
   return (
     <Router>
@@ -214,6 +223,7 @@ function AppRouter() {
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />
         <Route exact path="/setVolumes/" render={setVolumes} />
         <Route exact path="/cacheDecache/" render={cacheDecache} />
+        <Route exact path="/toolDisplayConfiguration/" render={toolDisplayConfiguration} />
         <Route exact component={Index} />
       </Switch>
     </Router>

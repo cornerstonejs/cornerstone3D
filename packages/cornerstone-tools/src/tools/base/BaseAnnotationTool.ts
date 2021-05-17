@@ -1,9 +1,12 @@
+import { Settings } from '@ohif/cornerstone-render'
 import BaseTool from './BaseTool'
+import { getStyleProperty } from '../../stateManagement/toolStyle'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
   Point2,
 } from '../../types'
+import getToolDataStyle from '../../util/getToolDataStyle'
 
 /**
  * @class BaseAnnotationTool @extends BaseTool
@@ -24,7 +27,10 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param  {CustomEvent} evt The event.
    * @param  {string} interactionType The interaction type used to add the measurement.
    */
-  abstract addNewMeasurement(evt, interactionType)
+  abstract addNewMeasurement(
+    evt: CustomEvent,
+    interactionType: string
+  ): ToolSpecificToolData
 
   /**
    * @abstract @method renderToolData Used to redraw the tool's annotation data per render
@@ -51,7 +57,7 @@ abstract class BaseAnnotationTool extends BaseTool {
     toolData: ToolSpecificToolData,
     handle,
     interactionType
-  )
+  ): void
 
   /**
    * @virtual @method toolSelectedCallback Custom callback for when a tool is selected.
@@ -65,7 +71,7 @@ abstract class BaseAnnotationTool extends BaseTool {
     evt,
     toolData: ToolSpecificToolData,
     interactionType
-  )
+  ): void
 
   /**
    * @virtual @method Event handler for MOUSE_MOVE event.
@@ -131,7 +137,7 @@ abstract class BaseAnnotationTool extends BaseTool {
     toolData: ToolSpecificToolData,
     canvasCoords: Point2,
     proximity: number
-  ): any | undefined
+  ): unknown
 
   /**
    * @virtual @method Returns true if the given coords are need the tool.
@@ -151,7 +157,7 @@ abstract class BaseAnnotationTool extends BaseTool {
     canvasCoords: Point2,
     proximity: number,
     interactionType: string
-  )
+  ): boolean
 
   /**
    * @protected @method _imagePointNearToolOrHandle Returns true if the
@@ -170,7 +176,7 @@ abstract class BaseAnnotationTool extends BaseTool {
     toolData: ToolSpecificToolData,
     canvasCoords: Point2,
     proximity: number
-  ) {
+  ): boolean {
     const handleNearImagePoint = this.getHandleNearImagePoint(
       element,
       toolData,
@@ -192,6 +198,33 @@ abstract class BaseAnnotationTool extends BaseTool {
     )
 
     return toolNewImagePoint
+  }
+
+  public getStyle(
+    settings: Settings,
+    property: string,
+    toolData?: ToolSpecificToolData
+  ): unknown {
+    return getStyleProperty(
+      settings,
+      property,
+      getToolDataStyle(toolData),
+      this.mode
+    )
+  }
+
+  public getLinkedTextBoxStyle(
+    settings: Settings,
+    toolData?: ToolSpecificToolData
+  ): Record<string, unknown> {
+    return {
+      fontFamily: this.getStyle(settings, 'textBox.fontFamily', toolData),
+      fontSize: this.getStyle(settings, 'textBox.fontSize', toolData),
+      color: this.getStyle(settings, 'textBox.color', toolData),
+      background: this.getStyle(settings, 'textBox.background', toolData),
+      lineWidth: this.getStyle(settings, 'textBox.link.lineWidth', toolData),
+      lineDash: this.getStyle(settings, 'textBox.link.lineDash', toolData),
+    }
   }
 }
 

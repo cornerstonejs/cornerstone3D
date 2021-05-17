@@ -12,6 +12,7 @@ import deepMerge from './deepMerge'
 import throttle from './throttle'
 import getDefault from './getDefault'
 import isObject from './isObject'
+import getToolDataStyle from './getToolDataStyle'
 
 // UUID Generation
 import uuidv4 from './uuidv4'
@@ -33,6 +34,7 @@ export {
   isObject,
   uuidv4,
   triggerEvent,
+  getToolDataStyle,
 }
 
 export default {
@@ -49,4 +51,5 @@ export default {
   isObject,
   uuidv4,
   triggerEvent,
+  getToolDataStyle,
 }

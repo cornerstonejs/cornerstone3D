@@ -881,7 +881,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           line[2],
           {
             color,
-            width: lineWidth,
+            lineWidth,
           }
         )
 
@@ -895,7 +895,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           line[4],
           {
             color,
-            width: lineWidth,
+            lineWidth,
           }
         )
       } else {
@@ -908,7 +908,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           line[4],
           {
             color,
-            width: lineWidth,
+            lineWidth,
           }
         )
       }

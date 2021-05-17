@@ -5,16 +5,14 @@ import {
   VIEWPORT_TYPE,
   getVolume,
   StackViewport,
+  Settings,
 } from '@ohif/cornerstone-render'
 
 import { getToolStateForDisplay, getImageIdForTool } from '../../util/planar'
 import { BaseAnnotationTool } from '../base'
 import throttle from '../../util/throttle'
 import { addToolState, getToolState } from '../../stateManagement/toolState'
-import toolColors from '../../stateManagement/toolColors'
-import toolStyle from '../../stateManagement/toolStyle'
 import { lineSegment } from '../../util/math'
-
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
@@ -26,6 +24,7 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import { ToolSpecificToolData } from '../../types'
 
 class LengthTool extends BaseAnnotationTool {
   public touchDragCallback: any
@@ -70,7 +69,7 @@ class LengthTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement(evt, interactionType) {
+  addNewMeasurement(evt: CustomEvent): ToolSpecificToolData {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -124,7 +123,10 @@ class LengthTool extends BaseAnnotationTool {
         cachedStats: {},
         active: true,
       },
-    }
+    } as ToolSpecificToolData
+
+    // Ensure settings are initialized after tool data instantiation
+    Settings.getObjectSettings(toolData, LengthTool)
 
     addToolState(element, toolData)
 
@@ -146,6 +148,8 @@ class LengthTool extends BaseAnnotationTool {
     evt.preventDefault()
 
     renderingEngine.renderViewports(viewportUIDsToRender)
+
+    return toolData
   }
 
   getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
@@ -468,16 +472,17 @@ class LengthTool extends BaseAnnotationTool {
       throw new Error(`Viewport Type not supported: ${viewport.type}`)
     }
 
-    const lineWidth = toolStyle.getToolWidth()
-
     // Draw SVG
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
+      const settings = Settings.getObjectSettings(toolData, LengthTool)
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data
-      const color = toolColors.getColorIfActive(data)
       const { points, activeHandleIndex } = data.handles
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
+      const lineDash = this.getStyle(settings, 'lineDash', toolData)
+      const color = this.getStyle(settings, 'color', toolData)
 
       let activeHandleCanvasCoords
 
@@ -512,7 +517,8 @@ class LengthTool extends BaseAnnotationTool {
         canvasCoordinates[1],
         {
           color,
-          width: lineWidth,
+          lineDash,
+          lineWidth,
         }
       )
 
@@ -550,9 +556,7 @@ class LengthTool extends BaseAnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        {
-          color,
-        }
+        this.getLinkedTextBoxStyle(settings, toolData)
       )
 
       const { x: left, y: top, width, height } = boundingBox

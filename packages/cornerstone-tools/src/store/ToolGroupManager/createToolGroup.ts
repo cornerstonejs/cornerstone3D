@@ -1,3 +1,4 @@
+import { getRenderingEngine } from '@ohif/cornerstone-render'
 import { state } from '../index'
 import IToolGroup from './IToolGroup'
 import ISetToolModeOptions from './ISetToolModeOptions'
@@ -104,6 +105,8 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       )
 
       this.tools[toolName] = toolModeOptionsWithMode
+      this._tools[toolName].mode = Active
+      this.refreshViewports()
     },
     setToolPassive: function (
       toolName: string,
@@ -130,6 +133,8 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       )
 
       this.tools[toolName] = toolModeOptionsWithMode
+      this._tools[toolName].mode = Passive
+      this.refreshViewports()
     },
     setToolEnabled: function (
       toolName: string,
@@ -156,6 +161,8 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       )
 
       this.tools[toolName] = toolModeOptionsWithMode
+      this._tools[toolName].mode = Enabled
+      this.refreshViewports()
     },
     setToolDisabled: function (
       toolName: string,
@@ -180,8 +187,16 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
           mode: Disabled,
         }
       )
-
       this.tools[toolName] = toolModeOptionsWithMode
+      this._tools[toolName].mode = Disabled
+      this.refreshViewports()
+    },
+    // We need to refresh related viewports when a tool mode is changed in order
+    // to update the rendered measurements.
+    refreshViewports(): void {
+      this.viewports.forEach(({ renderingEngineUID, viewportUID }) => {
+        getRenderingEngine(renderingEngineUID).renderViewport(viewportUID)
+      })
     },
   }
 

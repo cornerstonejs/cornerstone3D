@@ -4,7 +4,7 @@ import {
   cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
 } from '../eventDispatchers'
-import { state } from './index'
+import { state } from './state'
 
 /**
  * When an element is "enabled", add event listeners and dispatchers to it

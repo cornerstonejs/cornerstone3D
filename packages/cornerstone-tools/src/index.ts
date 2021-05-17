@@ -1,17 +1,22 @@
 import {
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
-  textStyle,
-  toolColors,
   toolStyle,
   getToolState,
   addToolState,
+  toolDataSelection,
+  getStyle,
+  setGlobalStyle,
+  setToolStyle,
+  setToolDataStyle,
 } from './stateManagement'
 
 import init from './init'
 import {
   addTool,
   resetToolsState,
+  getToolDataNearPoint,
+  getToolDataNearPointOnEnabledElement,
   ToolGroupManager,
   SynchronizerManager,
 } from './store'
@@ -75,9 +80,14 @@ export {
   // Drawing API
   drawing,
   // State
-  textStyle,
-  toolColors,
   toolStyle,
   getToolState,
   addToolState,
+  toolDataSelection,
+  getStyle,
+  setGlobalStyle,
+  setToolStyle,
+  setToolDataStyle,
+  getToolDataNearPoint,
+  getToolDataNearPointOnEnabledElement,
 }

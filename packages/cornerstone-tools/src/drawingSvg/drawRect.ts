@@ -11,15 +11,18 @@ export default function drawRect(
   end: Point2,
   options = {}
 ): void {
-  const { color, lineWidth, lineDash } = Object.assign(
-    {},
+  const { color, width: _width, lineWidth, lineDash } = Object.assign(
     {
       color: 'dodgerblue',
-      lineWidth: '2',
+      width: '2',
+      lineWidth: undefined,
       lineDash: undefined,
     },
     options
   )
+
+  // for supporting both lineWidth and width options
+  const strokeWidth = lineWidth || _width
 
   const svgns = 'http://www.w3.org/2000/svg'
   const svgNodeHash = _getHash(toolUID, annotationUID, 'rect', rectangleUID)
@@ -35,19 +38,25 @@ export default function drawRect(
     existingRect.setAttribute('width', `${width}`)
     existingRect.setAttribute('height', `${height}`)
     existingRect.setAttribute('stroke', color)
-    existingRect.setAttribute('stroke-width', lineWidth)
+    existingRect.setAttribute('stroke-width', strokeWidth)
+
+    if (lineDash) {
+      existingRect.setAttribute('stroke-dasharray', lineDash)
+    } else {
+      existingRect.removeAttribute('stroke-dasharray')
+    }
 
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
     const svgRectElement = document.createElementNS(svgns, 'rect')
 
-    svgRectElement.setAttribute('x', `${start[0]}`)
-    svgRectElement.setAttribute('y', `${start[1]}`)
+    svgRectElement.setAttribute('x', `${tlhc[0]}`)
+    svgRectElement.setAttribute('y', `${tlhc[1]}`)
     svgRectElement.setAttribute('width', `${width}`)
     svgRectElement.setAttribute('height', `${height}`)
     svgRectElement.setAttribute('fill', 'transparent')
     svgRectElement.setAttribute('stroke', color)
-    svgRectElement.setAttribute('stroke-width', lineWidth)
+    svgRectElement.setAttribute('stroke-width', strokeWidth)
 
     if (lineDash) {
       svgRectElement.setAttribute('stroke-dasharray', lineDash)

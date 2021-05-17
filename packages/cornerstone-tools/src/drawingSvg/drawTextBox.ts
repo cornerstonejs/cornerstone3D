@@ -1,6 +1,5 @@
 import _getHash from './_getHash'
 import { Point2 } from '../types'
-import textStyle from '../stateManagement/textStyle'
 
 /**
  * Draws a textBox.
@@ -11,7 +10,7 @@ import textStyle from '../stateManagement/textStyle'
  * @returns Bounding box; can be used for pointNearTool
  */
 function drawTextBox(
-  svgDrawingHelper: any,
+  svgDrawingHelper: Record<string, unknown>,
   toolUID: string,
   annotationUID: string,
   textUID: string,
@@ -20,14 +19,12 @@ function drawTextBox(
   options = {}
 ): SVGRect {
   const mergedOptions = Object.assign(
-    {},
     {
-      color: 'dodgerblue',
-      fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif',
-      width: 2,
+      fontFamily: 'Helvetica, Arial, sans-serif',
+      fontSize: '14px',
+      color: 'rgb(255, 255, 0)',
+      background: '',
       padding: 25,
-      fontSize: undefined,
-      backgroundColor: 'transparent',
       centerX: false,
       centerY: true,
     },
@@ -70,7 +67,7 @@ function _drawTextGroup(
   position: Point2,
   options: any
 ): DOMRect {
-  const { padding, color } = options
+  const { padding, color, fontFamily, fontSize, background } = options
 
   let textGroupBoundingBox
   const [x, y] = [position[0] + padding, position[1] + padding]
@@ -92,10 +89,25 @@ function _drawTextGroup(
       textSpanElement.textContent = text
     }
 
-    if (color) {
-      textElement.setAttribute('fill', color)
+    if (fontFamily) {
+      textElement.setAttribute('font-family', fontFamily)
+    } else {
+      textElement.removeAttribute('font-family')
     }
 
+    if (fontSize) {
+      textElement.setAttribute('font-size', fontSize)
+    } else {
+      textElement.removeAttribute('font-size')
+    }
+
+    if (color) {
+      textElement.setAttribute('fill', color)
+    } else {
+      textElement.removeAttribute('fill')
+    }
+
+    _drawTextBackground(existingTextGroup, background)
     textGroupBoundingBox = existingTextGroup.getBBox()
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
@@ -114,6 +126,7 @@ function _drawTextGroup(
 
     textGroup.appendChild(textElement)
     svgDrawingHelper._appendNode(textGroup, svgNodeHash)
+    _drawTextBackground(textGroup, background)
     textGroupBoundingBox = textGroup.getBBox()
   }
 
@@ -129,7 +142,7 @@ function _drawTextGroup(
 }
 
 function _createTextElement(options: any): SVGElement {
-  const { color, fontFamily } = options
+  const { color, fontFamily, fontSize } = options
   const svgns = 'http://www.w3.org/2000/svg'
   const textElement = document.createElementNS(svgns, 'text')
   const noSelectStyle =
@@ -142,6 +155,7 @@ function _createTextElement(options: any): SVGElement {
   textElement.setAttribute('y', '0')
   textElement.setAttribute('fill', color)
   textElement.setAttribute('font-family', fontFamily)
+  textElement.setAttribute('font-size', fontSize)
   textElement.setAttribute('style', combinedStyle)
 
   return textElement
@@ -160,6 +174,25 @@ function _createTextSpan(text): SVGElement {
   textSpanElement.textContent = text
 
   return textSpanElement
+}
+
+function _drawTextBackground(group: SVGGElement, color: string): void {
+  let element = group.querySelector('rect.background')
+  if (color) {
+    if (!element) {
+      element = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      element.setAttribute('class', 'background')
+      group.insertBefore(element, group.firstChild)
+    }
+    const bBox = group.getBBox()
+    element.setAttribute('x', `${bBox.x}`)
+    element.setAttribute('y', `${bBox.y}`)
+    element.setAttribute('width', `${bBox.width}`)
+    element.setAttribute('height', `${bBox.height}`)
+    element.setAttribute('fill', color)
+  } else if (element) {
+    group.removeChild(element)
+  }
 }
 
 export default drawTextBox
