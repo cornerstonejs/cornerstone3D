@@ -1,72 +1,83 @@
 import React, { Component } from 'react'
 import {
   cache,
+  Settings,
+  getRenderingEngines,
   RenderingEngine,
-  eventTarget,
   createAndCacheVolume,
-  loadAndCacheImages,
   metaData,
+  eventTarget,
   ORIENTATION,
   VIEWPORT_TYPE,
-  EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import {
-  SynchronizerManager,
-  synchronizers,
+  CornerstoneTools3DEvents,
   ToolGroupManager,
   ToolBindings,
   resetToolsState,
-} from '@cornerstone-tools'
+  toolDataSelection,
+} from '@ohif/cornerstone-tools'
 
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
+import { initToolGroups } from './initToolGroups'
+import './ExampleToolDisplayConfiguration.css'
 import {
   renderingEngineUID,
   ctVolumeUID,
   ctStackUID,
   SCENE_IDS,
   VIEWPORT_IDS,
-  PET_CT_ANNOTATION_TOOLS,
 } from './constants'
-import LAYOUTS, { stackCT } from './layouts'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import * as cs from '@ohif/cornerstone-render'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 
 import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
-import getInterleavedFrames from './helpers/getInterleavedFrames'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
 
-window.cache = cache
-
 let ctSceneToolGroup, stackViewportToolGroup
-const ctLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS)
 
-class StackViewportExample extends Component {
+class ToolDisplayConfigurationExample extends Component {
+  listOfTools = [
+    'WindowLevel',
+    'Length',
+    'Bidirectional',
+    'RectangleRoi',
+    'EllipticalRoi',
+    'Probe',
+  ]
+
+  _canvasNodes = null
+  _viewportGridRef = null
+  _offScreenRef = null
+  ctVolumeImageIdsPromise = null
+  ctStackImageIdsPromise = null
+  dxImageIdsPromise = null
+  colorImageIds = null
+  renderingEngine = null
+  viewportGridResizeObserver = null
+  ctVolumeUID = null
+  ctStackUID = null
+
+  activeToolByGroup = new WeakMap()
+
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
-    leftClickTool: 'WindowLevel',
+    activeTools: 'WindowLevel',
     layoutIndex: 0,
     destroyed: false,
-    //
     viewportGrid: {
       numCols: 2,
       numRows: 2,
       viewports: [{}, {}, {}, {}],
     },
-    ptCtLeftClickTool: 'Levels',
-
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
   }
 
@@ -91,24 +102,6 @@ class StackViewportExample extends Component {
       10000
     )
 
-    // Promise.all([this.petVolumeImageIds, this.ctImageIds]).then(() =>
-    //   this.setState({ progressText: 'Loading data...' })
-    // );
-    // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
-    //   this.setState({ progressText: 'Loading data...' })
-    // )
-
-    const {
-      createCameraPositionSynchronizer,
-      createVOISynchronizer,
-    } = synchronizers
-
-    this.axialSync = createCameraPositionSynchronizer('axialSync')
-    // this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
-    // this.coronalSync = createCameraPositionSynchronizer('coronalSync')
-    // this.ctWLSync = createVOISynchronizer('ctWLSync')
-    // this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
-
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
@@ -130,15 +123,13 @@ class StackViewportExample extends Component {
 
     // Create volumes
     const dxImageIds = await this.dxImageIdsPromise
-    let ctStackImageIds = await this.ctStackImageIdsPromise
-
+    const ctStackImageIds = await this.ctStackImageIdsPromise
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     const colorImageIds = this.colorImageIds
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
     this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
 
     const viewportInput = [
       // CT volume axial
@@ -212,16 +203,12 @@ class StackViewportExample extends Component {
 
     const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
 
-    const middleSlice = Math.floor(ctStackImageIds.length / 2)
-    await stackViewport.setStack(
-      sortImageIdsByIPP(ctStackImageIds),
-      middleSlice
-    )
+    await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds))
 
     // ct + dx + color
     const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
 
-    let fakeStake = [
+    const fakeStake = [
       dxImageIds[0],
       colorImageIds[0],
       dxImageIds[1],
@@ -269,6 +256,15 @@ class StackViewportExample extends Component {
     renderingEngine.render()
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+
+    // Update Tool Style Settings
+    displayToolStyleValues()
+
+    // Register for Tool Data Selection Event
+    eventTarget.addEventListener(
+      CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
+      onMeasurementSelectionChange
+    )
   }
 
   componentWillUnmount() {
@@ -276,6 +272,12 @@ class StackViewportExample extends Component {
     if (this.viewportGridResizeObserver) {
       this.viewportGridResizeObserver.disconnect()
     }
+
+    // Remove listener for Tool Data Selection Event
+    eventTarget.removeEventListener(
+      CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
+      onMeasurementSelectionChange
+    )
 
     // Destroy synchronizers
     // SynchronizerManager.destroy()
@@ -302,95 +304,50 @@ class StackViewportExample extends Component {
     this._offScreenRef.current.innerHTML = ''
   }
 
-  toggleLengthAndWindowLevel = () => {
+  toggleActiveTool = () => {
+    const defaultTool = 'WindowLevel'
+    const activeTools = new Set()
     const options = {
       bindings: [ToolBindings.Mouse.Primary],
     }
 
-    let newTool
-    if (this.state.leftClickTool === 'Length') {
-      ctSceneToolGroup.setToolPassive('Length')
-      stackViewportToolGroup.setToolPassive('Length')
+    ;[ctSceneToolGroup, stackViewportToolGroup].forEach((toolGroup) => {
+      const activeTool = this.activeToolByGroup.get(toolGroup) || defaultTool
+      let newTool = activeTool
+      do {
+        newTool = this.listOfTools[
+          (this.listOfTools.indexOf(newTool) + 1) % this.listOfTools.length
+        ]
+      } while (!toolGroup.tools.hasOwnProperty(newTool))
+      if (activeTool !== newTool) {
+        toolGroup.setToolPassive(activeTool)
+        toolGroup.setToolActive(newTool, options)
+        this.activeToolByGroup.set(toolGroup, newTool)
+      }
+      activeTools.add(newTool)
+    })
 
-      ctSceneToolGroup.setToolActive('WindowLevel', options)
-      stackViewportToolGroup.setToolActive('WindowLevel', options)
-      newTool = 'WindowLevel'
-    } else {
-      ctSceneToolGroup.setToolPassive('WindowLevel')
-      stackViewportToolGroup.setToolPassive('WindowLevel')
-
-      ctSceneToolGroup.setToolActive('Length', options)
-      stackViewportToolGroup.setToolActive('Length', options)
-      newTool = 'Length'
-    }
-
-    this.setState({ leftClickTool: newTool })
-  }
-
-  swapTools = (evt) => {
-    const toolName = evt.target.value
-
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
-    const options = {
-      bindings: [ToolBindings.Mouse.Primary],
-    }
-    if (isAnnotationToolOn) {
-      // Set tool active
-
-      const toolsToSetPassive = PET_CT_ANNOTATION_TOOLS.filter(
-        (toolName) => toolName !== toolName
-      )
-
-      ctSceneToolGroup.setToolActive(toolName, options)
-
-      toolsToSetPassive.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-      })
-
-      ctSceneToolGroup.setToolDisabled('WindowLevel')
-    } else {
-      // Set window level + threshold
-      ctSceneToolGroup.setToolActive('WindowLevel', options)
-
-      // Set all annotation tools passive
-      PET_CT_ANNOTATION_TOOLS.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-      })
-    }
-
-    this.renderingEngine.render()
-    this.setState({ ptCtLeftClickTool: toolName })
+    this.setState({ activeTools: Array.from(activeTools).join('/') })
   }
 
   render() {
     return (
       <div>
         <div>
-          <h1>Stack Viewport Example (setViewports API)</h1>
+          <h1>Tool Display Configuration Example</h1>
           <p>
-            This is a demo for volume viewports (Top row) and stack viewports
-            (bottom) using the same rendering engine
+            Demo for testing selection and styling options for annotations (aka
+            tool data). In order to select multiple items or deselect a
+            previously selected one, please hold the SHIFT key during click.
           </p>
         </div>
         <button
-          onClick={() => this.toggleLengthAndWindowLevel()}
+          onClick={() => this.toggleActiveTool()}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Toggle Length and WindowLevel
+          Toggle Active Tool ({this.state.activeTools})
         </button>
-        <div>
-          <select
-            value={this.state.ptCtLeftClickTool}
-            onChange={this.swapTools}
-          >
-            {ctLayoutTools.map((toolName) => (
-              <option key={toolName} value={toolName}>
-                {toolName}
-              </option>
-            ))}
-          </select>
-        </div>
         <div style={{ paddingBottom: '55px' }}>
           <ViewportGrid
             numCols={this.state.viewportGrid.numCols}
@@ -432,9 +389,186 @@ class StackViewportExample extends Component {
           </button>
           <div ref={this._offScreenRef}></div>
         </div>
+        <div className="tool-style-controls">
+          <span className="hover-handle">HOVER</span>
+          <h1>Tool Style Controls</h1>
+          <div className="controls-wrapper">
+            <div className="control-elements">
+              <label>Target:</label>
+              <input
+                type="text"
+                id="output-target"
+                name="ouput-target"
+                placeholder="Runtime Settings"
+                disabled={true}
+              />
+              <button onClick={displayToolStyleValues}>Refresh</button>
+              <button onClick={onReset}>Reset</button>
+            </div>
+            <div className="input-elements">
+              {getAllSettings().map((name) => (
+                <ToolStyleControl key={name} name={name} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
 }
 
-export default StackViewportExample
+function onMeasurementSelectionChange(e: CustomEvent): void {
+  let toolData = null
+  const { added, selection } = e.detail
+  if (added.length > 0) {
+    toolData = added[0]
+  } else if (selection.length > 0) {
+    // Use the previous selection
+    toolData = selection[selection.length - 1]
+  }
+  updateTargetElement(toolData ? `toolData:${toolData.metadata.toolUID}` : '')
+  getRenderingEngines().forEach((renderEngine) => renderEngine.render())
+}
+
+function updateTargetElement(targetId: string): void {
+  ;(document.querySelector(
+    '.tool-style-controls input#output-target'
+  ) as HTMLInputElement).value = targetId
+  displayToolStyleValues()
+}
+
+function displayToolStyleValues() {
+  const settings = getTargetSettings()
+  const nodeList = document.querySelectorAll(
+    '.tool-style-controls .input-elements .tool-style-control input'
+  )
+  for (let i = 0; i < nodeList.length; ++i) {
+    const item = nodeList[i] as HTMLInputElement
+    const name = item.name
+    item.value = ''
+    item.placeholder = formatValue(settings.get(name))
+  }
+}
+
+function formatValue(value: unknown): string {
+  if (typeof value === 'object' && value !== null) {
+    return JSON.stringify(value)
+  } else {
+    return value === undefined || value === null ? '' : value + ''
+  }
+}
+
+function getTargetSettings(): Settings {
+  let settings: Settings
+  const output = document.querySelector(
+    '.tool-style-controls .control-elements input#output-target'
+  ) as HTMLInputElement
+  const target = getTargetFromTargetId(output.value + '')
+  if (typeof target === 'object' && target !== null) {
+    settings = Settings.getObjectSettings(target)
+  } else {
+    settings = Settings.getRuntimeSettings()
+    output.value = ''
+  }
+  console.info('Target settings:', settings)
+  return settings
+}
+
+function getTargetFromTargetId(id: string): unknown {
+  const toolDataRegex = /^toolData:(.+)$/
+  let match
+  if ((match = toolDataRegex.exec(id)) !== null) {
+    return toolDataSelection.getSelectedToolDataByUID(match[1])
+  }
+}
+
+/*
+ * Utility to get a sorted list of all settings properties
+ */
+
+function getAllSettings() {
+  const names = []
+  Settings.getDefaultSettings().forEach((name) => {
+    names.push(name)
+  })
+  names.sort((a, b) => {
+    if (a < b) return -1
+    if (a > b) return 1
+    return 0
+  })
+  return names
+}
+
+/*
+ * Utilities to facilitate setting or unsetting a property from
+ * the selected target
+ */
+
+function setStyleProperty(name: string, value: unknown): void {
+  const settings = getTargetSettings()
+  if (settings.set(name, value)) {
+    displayToolStyleValues()
+    getRenderingEngines().forEach((renderEngine) => renderEngine.render())
+    console.info('Style property "%s" successfully set!', name)
+  } else {
+    console.error('Failed to set style property "%s"...', name)
+  }
+}
+
+function unsetStyleProperty(name: string) {
+  const settings = getTargetSettings()
+  if (settings.unset(name)) {
+    displayToolStyleValues()
+    getRenderingEngines().forEach((renderEngine) => renderEngine.render())
+    console.info('Style property "%s" successfully unset!', name)
+  } else {
+    console.error('Failed to unset style property "%s"...', name)
+  }
+}
+
+/*
+ * Event handlers for the buttons next to the input fields
+ * (and other buttons)
+ */
+
+function onSetProperty(e: React.MouseEvent<Element>): void {
+  const input = (e.target as Element).parentElement.querySelector('input')
+  if (input) {
+    setStyleProperty(input.name + '', input.value + '')
+  } else {
+    console.error('Input field not found for set operation...')
+  }
+}
+
+function onUnsetProperty(e: React.MouseEvent<Element>) {
+  const input = (e.target as Element).parentElement.querySelector('input')
+  if (input) {
+    unsetStyleProperty(input.name + '')
+  } else {
+    console.error('Input field not found for unset operation...')
+  }
+}
+
+function onReset() {
+  unsetStyleProperty('.')
+}
+
+/*
+ * Tool Style Control Component
+ */
+
+function ToolStyleControl(props) {
+  const prefix = 'tool.style.'
+  return (
+    <div className="tool-style-control">
+      <label htmlFor={props.name}>{props.name.slice(prefix.length)}:</label>
+      <div className="input-fields">
+        <input type="text" id={props.name} name={props.name} />
+        <button onClick={onSetProperty}>➔</button>
+        <button onClick={onUnsetProperty}>✖</button>
+      </div>
+    </div>
+  )
+}
+
+export default ToolDisplayConfigurationExample

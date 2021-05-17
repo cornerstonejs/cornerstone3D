@@ -7,7 +7,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
-import { ToolGroupManager, resetToolsState } from '@cornerstone-tools'
+import { ToolGroupManager, resetToolsState } from '@ohif/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -88,7 +88,7 @@ class CacheDecacheExample extends Component {
     this.ctStackUID = ctStackUID
 
     // Create volumes
-    let ctStackImageIds = await this.ctStackImageIdsPromise
+    const ctStackImageIds = await this.ctStackImageIdsPromise
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -268,7 +268,7 @@ class CacheDecacheExample extends Component {
   }
 
   loadStack = async () => {
-    let ctStackImageIds = await this.ctStackImageIdsPromise
+    const ctStackImageIds = await this.ctStackImageIdsPromise
 
     loadAndCacheImages(ctStackImageIds)
   }
@@ -419,7 +419,7 @@ class CacheDecacheExample extends Component {
 export default CacheDecacheExample
 
 function humanFileSize(size) {
-  var i = Math.floor(Math.log(size) / Math.log(1024))
+  const i = Math.floor(Math.log(size) / Math.log(1024))
   return (
     (size / Math.pow(1024, i)).toFixed(2) * 1 +
     ' ' +

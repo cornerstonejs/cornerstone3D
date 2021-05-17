@@ -1,0 +1,38 @@
+{
+  "name": "@ohif/cornerstone-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.tsx",
+  "scripts": {
+    "dev": "webpack serve --config ./.webpack/webpack.dev.js",
+    "dev:demo": "yarn run dev",
+    "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "prepublishOnly": "yarn run build",
+    "start": "yarn run dev",
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ohif/cornerstone-image-loader-streaming-volume": "^0.0.2",
+    "@ohif/cornerstone-render": "^0.0.2",
+    "@ohif/cornerstone-tools": "^0.0.1",
+    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#imageURI",
+    "dcmjs": "^0.18.6",
+    "dicom-parser": "^1.8.7",
+    "dicomweb-client": "^0.7.0",
+    "gl-matrix": "^3.3.0",
+    "hammerjs": "^2.0.8",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "react-resize-detector": "6.6.4",
+    "react-router-dom": "5.2.0",
+    "vtk.js": "17.3.0"
+  },
+  "devDependencies": {
+    "eslint-config-react-app": "^6.0.0",
+    "eslint-plugin-react": "^7.23.2",
+    "eslint-plugin-react-hooks": "^4.2.0"
+  }
+}

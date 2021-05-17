@@ -1,5 +1,5 @@
 import * as cornerstoneStreamingImageVolumeLoader from '../../cornerstone-streaming-image-volume-loader/src'
-import * as cornerstone from '@cornerstone'
+import * as cornerstone from '@ohif/cornerstone-render'
 import { createFloat32SharedArray } from '../src/utilities'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up

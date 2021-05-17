@@ -3,6 +3,7 @@
   "version": "0.0.2",
   "description": "",
   "main": "src/index.ts",
+  "module": "src/index.ts",
   "directories": {
     "test": "test"
   },
@@ -17,10 +18,12 @@
     "test:unit:ci": "jest --ci --runInBand --collectCoverage"
   },
   "peerDependencies": {
-    "gl-matrix": "^3.3.0"
+    "gl-matrix": "^3.3.0",
+    "vtk.js": "17.3.0"
   },
   "devDependencies": {
-    "gl-matrix": "^3.3.0"
+    "gl-matrix": "^3.3.0",
+    "vtk.js": "17.3.0"
   },
   "author": "",
   "license": "ISC"

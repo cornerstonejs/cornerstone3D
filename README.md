@@ -1,6 +1,5 @@
 # Cornerstone-3d-alpha
 
-
 > VTK.js powered offscreen rendering engine and tool framework for 3D
 > visualisation of medical images.
 
@@ -27,7 +26,7 @@ the VTK Viewport and the app configuration configuration using a WebPack alias
 like so:
 
 ```js
-import VtkViewport from '@cornerstone-3d-alpha'
+import VtkViewport from '@ohif/cornerstone-tools'
 ```
 
 Any updates to the example files or the VtkViewport's source will cause WebPack

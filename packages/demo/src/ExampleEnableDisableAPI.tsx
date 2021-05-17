@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
@@ -6,28 +6,27 @@ import {
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
-} from "@cornerstone";
+} from '@ohif/cornerstone-render'
 import {
   SynchronizerManager,
   synchronizers,
   ToolGroupManager,
-  resetToolsState
-} from "@cornerstone-tools";
+  resetToolsState,
+} from '@ohif/cornerstone-tools'
 import * as cs from '@ohif/cornerstone-render'
 
-import vtkColorTransferFunction from "vtk.js/Sources/Rendering/Core/ColorTransferFunction";
-import vtkPiecewiseFunction from "vtk.js/Sources/Common/DataModel/PiecewiseFunction";
-import vtkColorMaps from "vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps";
-import getImageIds from "./helpers/getImageIds";
-import { createDXImageIds } from "./helpers/createStudyImageIds";
-import ViewportGrid from "./components/ViewportGrid";
-import { initToolGroups, destroyToolGroups } from "./initToolGroups";
-import config from "./config/default";
-import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
+import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
+import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
+import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
+import getImageIds from './helpers/getImageIds'
+import { createDXImageIds } from './helpers/createStudyImageIds'
+import ViewportGrid from './components/ViewportGrid'
+import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import config from './config/default'
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
 
-
-import "./ExampleVTKMPR.css";
+import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
   ctVolumeUID,
@@ -35,22 +34,21 @@ import {
   ctStackUID,
   SCENE_IDS,
   VIEWPORT_IDS,
-} from "./constants";
-import LAYOUTS, { stackCT } from "./layouts";
-import sortImageIdsByIPP from "./helpers/sortImageIdsByIPP";
+} from './constants'
+import LAYOUTS, { stackCT } from './layouts'
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
-const VIEWPORT_DX_COLOR = "dx_and_color_viewport";
+const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
+const VOLUME = 'volume'
+const STACK = 'stack'
 
-const VOLUME = "volume";
-const STACK = "stack";
+window.cache = cache
 
-window.cache = cache;
-
-let ctSceneToolGroup, stackViewportToolGroup;
+let ctSceneToolGroup, stackViewportToolGroup
 class EnableDisableViewportExample extends Component {
   state = {
-    progressText: "fetching metadata...",
+    progressText: 'fetching metadata...',
     metadataLoaded: false,
     petColorMapIndex: 0,
     layoutIndex: 0,
@@ -65,37 +63,34 @@ class EnableDisableViewportExample extends Component {
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     selectedViewportIndex: 0, // for disabling and enabling viewports
     viewportInputEntries: [],
-  };
+  }
 
   constructor(props) {
-    super(props);
+    super(props)
 
-    this._canvasNodes = new Map();
-    this._viewportGridRef = React.createRef();
-    this._offScreenRef = React.createRef();
+    this._canvasNodes = new Map()
+    this._viewportGridRef = React.createRef()
+    this._offScreenRef = React.createRef()
 
-    this.petVolumeImageIdsPromise = getImageIds("pet1", VOLUME);
-    this.ctVolumeImageIdsPromise = getImageIds("ct1", VOLUME);
-    this.ctVolumeImageIdsPromise2 = getImageIds("ct2", VOLUME);
+    this.petVolumeImageIdsPromise = getImageIds('pet1', VOLUME)
+    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME)
+    this.ctVolumeImageIdsPromise2 = getImageIds('ct2', VOLUME)
 
+    this.dxImageIdsPromise = getImageIds('dx')
+    this.ctStackImageIdsPromise = getImageIds('ctStack')
 
-    this.dxImageIdsPromise = getImageIds('dx');
-    this.ctStackImageIdsPromise = getImageIds('ctStack');
-
-     this.colorImageIds = config.colorImages.imageIds;
+    this.colorImageIds = config.colorImages.imageIds
 
     metaData.addProvider(
-      (type, imageId) => hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
+      (type, imageId) =>
+        hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
       10000
-    );
-
+    )
 
     registerWebImageLoader(cs)
 
-
-
     this.numberOfViewports =
-      this.state.viewportGrid.numCols * this.state.viewportGrid.numRows;
+      this.state.viewportGrid.numCols * this.state.viewportGrid.numRows
 
     // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
@@ -116,10 +111,10 @@ class EnableDisableViewportExample extends Component {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize();
-        this.renderingEngine.render();
+        this.renderingEngine.resize()
+        this.renderingEngine.render()
       }
-    });
+    })
   }
 
   /**
@@ -176,25 +171,23 @@ class EnableDisableViewportExample extends Component {
           },
         },
       ],
-    });
+    })
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID);
-    this.renderingEngine = renderingEngine;
-    window.renderingEngine = renderingEngine;
-
-    ({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups());
-
+    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    this.renderingEngine = renderingEngine
+    window.renderingEngine = renderingEngine
+    ;({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups())
 
     // Create volumes
-    const dxImageIds = await this.dxImageIdsPromise;
-    const ctStackImageIds = await this.ctStackImageIdsPromise;
-    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise;
-    const ctVolumeImageIds2 = await this.ctVolumeImageIdsPromise2;
-    const petVolumeImageIds = await this.petVolumeImageIdsPromise;
+    const dxImageIds = await this.dxImageIdsPromise
+    const ctStackImageIds = await this.ctStackImageIdsPromise
+    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
+    const ctVolumeImageIds2 = await this.ctVolumeImageIdsPromise2
+    const petVolumeImageIds = await this.petVolumeImageIdsPromise
     const colorImageIds = this.colorImageIds
 
-    renderingEngine.enableElement(this.state.viewportInputEntries[0]); // ct volume
-    renderingEngine.enableElement(this.state.viewportInputEntries[1]); // stack
+    renderingEngine.enableElement(this.state.viewportInputEntries[0]) // ct volume
+    renderingEngine.enableElement(this.state.viewportInputEntries[1]) // stack
 
     // Tools added for the first two viewports
 
@@ -203,28 +196,28 @@ class EnableDisableViewportExample extends Component {
       renderingEngineUID,
       SCENE_IDS.CT,
       VIEWPORT_IDS.CT.SAGITTAL
-    );
+    )
 
     // stack ct
     stackViewportToolGroup.addViewports(
       renderingEngineUID,
       undefined,
       VIEWPORT_IDS.STACK
-    );
+    )
 
-    renderingEngine.render();
+    renderingEngine.render()
 
     const ctStackLoad = async () => {
-      const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK);
-      await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds));
-    };
+      const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
+      await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds))
+    }
 
-    this.ctStackLoad = ctStackLoad;
+    this.ctStackLoad = ctStackLoad
 
     const dxColorLoad = async () => {
-      const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR);
+      const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
 
-      let fakeStake = [
+      const fakeStake = [
         dxImageIds[0],
         colorImageIds[0],
         dxImageIds[1],
@@ -232,160 +225,162 @@ class EnableDisableViewportExample extends Component {
         colorImageIds[1],
         colorImageIds[2],
         ctStackImageIds[41],
-      ];
-      await dxColorViewport.setStack(fakeStake);
+      ]
+      await dxColorViewport.setStack(fakeStake)
 
       stackViewportToolGroup.addViewports(
         renderingEngineUID,
         undefined,
         VIEWPORT_DX_COLOR
-      );
-    };
+      )
+    }
 
-    this.dxColorLoad = dxColorLoad;
+    this.dxColorLoad = dxColorLoad
 
     const CTVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
       const ctVolume = await createAndCacheVolume(ctVolumeUID, {
         imageIds: ctVolumeImageIds,
-      });
+      })
 
-      const { scalarData } = ctVolume;
-      const ctLength = scalarData.length;
+      const { scalarData } = ctVolume
+      const ctLength = scalarData.length
 
       // if this is the first time we are loading the volume
-      if (scalarData[0] === 0){
+      if (scalarData[0] === 0) {
         // Initialize all CT values to -1024 so we don't get a grey box?
         for (let i = 0; i < ctLength; i++) {
-          scalarData[i] = -1024;
+          scalarData[i] = -1024
         }
       }
 
-      const onLoad = () => this.setState({ progressText: "Loaded." });
+      const onLoad = () => this.setState({ progressText: 'Loaded.' })
 
-      ctVolume.load(onLoad);
+      ctVolume.load(onLoad)
 
-      const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
-      ctScene.setVolumes([{volumeUID: ctVolumeUID}]);
+      const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
+      ctScene.setVolumes([{ volumeUID: ctVolumeUID }])
 
       // Set initial CT levels in UI
-      const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
+      const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
 
       this.setState({
         ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-      });
-    };
+      })
+    }
 
     const PETVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
       const ptVolume = await createAndCacheVolume(ptVolumeUID, {
         imageIds: ctVolumeImageIds2,
-      });
+      })
 
-      ptVolume.load();
+      ptVolume.load()
 
-      const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
-      ctScene.setVolumes([{volumeUID: ptVolumeUID}]);
+      const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
+      ctScene.setVolumes([{ volumeUID: ptVolumeUID }])
       ctScene.render()
-    };
+    }
 
-    ctStackLoad();
-    CTVolumeLoad();
-    this.CTVolumeLoad = CTVolumeLoad;
-    this.PETVolumeLoad = PETVolumeLoad;
+    ctStackLoad()
+    CTVolumeLoad()
+    this.CTVolumeLoad = CTVolumeLoad
+    this.PETVolumeLoad = PETVolumeLoad
 
     this.setState({
       enabledViewports: [0, 1],
       metadataLoaded: true,
-    });
+    })
 
     // This will initialize volumes in GPU memory
-    renderingEngine.render();
+    renderingEngine.render()
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect();
+      this.viewportGridResizeObserver.disconnect()
     }
 
     // Destroy synchronizers
     resetToolsState()
-    cache.purgeCache();
-    ToolGroupManager.destroy();
+    cache.purgeCache()
+    ToolGroupManager.destroy()
 
-    this.renderingEngine.destroy();
+    this.renderingEngine.destroy()
   }
 
   setSelectedViewportIndex = (evt) => {
-    const index = evt.target.value;
-    this.setState({ selectedViewportIndex: parseInt(index) });
-  };
+    const index = evt.target.value
+    this.setState({ selectedViewportIndex: parseInt(index) })
+  }
 
   disableSelectedViewport = () => {
-    const viewportIndex = this.state.selectedViewportIndex;
+    const viewportIndex = this.state.selectedViewportIndex
 
-    const viewportInput = this.state.viewportInputEntries[viewportIndex];
+    const viewportInput = this.state.viewportInputEntries[viewportIndex]
 
-    this.renderingEngine.disableElement(viewportInput.viewportUID);
+    this.renderingEngine.disableElement(viewportInput.viewportUID)
 
-    this.setState(state => ({ ...state,
-        enabledViewports : state.enabledViewports.filter(item => item !== viewportIndex)
-     }))
-
-  };
+    this.setState((state) => ({
+      ...state,
+      enabledViewports: state.enabledViewports.filter(
+        (item) => item !== viewportIndex
+      ),
+    }))
+  }
 
   enableSelectedViewport = () => {
-    const viewportIndex = this.state.selectedViewportIndex;
+    const viewportIndex = this.state.selectedViewportIndex
 
-    const viewportInput = this.state.viewportInputEntries[viewportIndex];
+    const viewportInput = this.state.viewportInputEntries[viewportIndex]
 
-    this.renderingEngine.enableElement(viewportInput);
+    this.renderingEngine.enableElement(viewportInput)
 
     // load
     if (viewportInput.viewportUID === VIEWPORT_IDS.STACK) {
-      this.ctStackLoad();
+      this.ctStackLoad()
     } else if (viewportInput.viewportUID === VIEWPORT_DX_COLOR) {
-      this.dxColorLoad();
+      this.dxColorLoad()
     } else {
       // if we have removed the scene when disabling all the related viewports
       // set the volume again
       const ctScene = this.renderingEngine.getScene(SCENE_IDS.CT)
-      if (! ctScene.getVolumeActors().length) {
-        this.CTVolumeLoad();
+      if (!ctScene.getVolumeActors().length) {
+        this.CTVolumeLoad()
       }
       ctSceneToolGroup.addViewports(
         renderingEngineUID,
         SCENE_IDS.CT,
         viewportInput.viewportUID
-      );
+      )
     }
 
     this.setState((state) => ({
       ...state,
       enabledViewports: [...state.enabledViewports, viewportIndex],
-    }));
-  };
+    }))
+  }
 
   showOffScreenCanvas = () => {
     // remove all childs
-    this._offScreenRef.current.innerHTML = "";
-    const uri = this.renderingEngine._debugRender();
-    const image = document.createElement("img");
-    image.src = uri;
-    image.setAttribute("width", "100%");
+    this._offScreenRef.current.innerHTML = ''
+    const uri = this.renderingEngine._debugRender()
+    const image = document.createElement('img')
+    image.src = uri
+    image.setAttribute('width', '100%')
 
-    this._offScreenRef.current.appendChild(image);
-  };
+    this._offScreenRef.current.appendChild(image)
+  }
 
   hidOffScreenCanvas = () => {
     // remove all childs
-    this._offScreenRef.current.innerHTML = "";
-  };
+    this._offScreenRef.current.innerHTML = ''
+  }
   render() {
     return (
       <div>
@@ -414,14 +409,14 @@ class EnableDisableViewportExample extends Component {
         <button
           onClick={() => this.enableSelectedViewport()}
           className="btn btn-primary"
-          style={{ margin: "2px 4px" }}
+          style={{ margin: '2px 4px' }}
         >
           Enable Selected Viewport
         </button>
         <button
           onClick={() => this.disableSelectedViewport()}
           className="btn btn-primary"
-          style={{ margin: "2px 4px" }}
+          style={{ margin: '2px 4px' }}
         >
           Disable Selected Viewport
         </button>
@@ -437,18 +432,18 @@ class EnableDisableViewportExample extends Component {
               this.state.viewportInputEntries.map((vpEntry, index) => (
                 <option key={index} value={index}>
                   {this.state.enabledViewports.includes(index)
-                    ? vpEntry.viewportUID + " --- enabled"
-                    : vpEntry.viewportUID + " --- disabled"}
+                    ? vpEntry.viewportUID + ' --- enabled'
+                    : vpEntry.viewportUID + ' --- disabled'}
                 </option>
               ))}
           </select>
         </div>
-        <div style={{ paddingBottom: "55px" }}>
+        <div style={{ paddingBottom: '55px' }}>
           <ViewportGrid
             numCols={this.state.viewportGrid.numCols}
             numRows={this.state.viewportGrid.numRows}
             renderingEngine={this.renderingEngine}
-            style={{ minHeight: "650px", marginTop: "35px" }}
+            style={{ minHeight: '650px', marginTop: '35px' }}
             ref={this._viewportGridRef}
           >
             {this.state.viewportGrid.viewports.map((vp, i) => (
@@ -456,8 +451,8 @@ class EnableDisableViewportExample extends Component {
                 className="viewport-pane"
                 style={{
                   ...(vp.cellStyle || {}),
-                  border: "2px solid grey",
-                  background: "black",
+                  border: '2px solid grey',
+                  background: 'black',
                 }}
                 key={i}
               >
@@ -471,22 +466,22 @@ class EnableDisableViewportExample extends Component {
           <button
             onClick={this.showOffScreenCanvas}
             className="btn btn-primary"
-            style={{ margin: "2px 4px" }}
+            style={{ margin: '2px 4px' }}
           >
             Show OffScreenCanvas
           </button>
           <button
             onClick={this.hidOffScreenCanvas}
             className="btn btn-primary"
-            style={{ margin: "2px 4px" }}
+            style={{ margin: '2px 4px' }}
           >
             Hide OffScreenCanvas
           </button>
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    );
+    )
   }
 }
 
-export default EnableDisableViewportExample;
+export default EnableDisableViewportExample

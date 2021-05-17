@@ -4945,6 +4945,7 @@ __webpack_require__.d(__webpack_exports__, {
   "ORIENTATION": function() { return /* reexport */ orientation; },
   "RenderingEngine": function() { return /* reexport */ src_RenderingEngine; },
   "Scene": function() { return /* reexport */ RenderingEngine_Scene; },
+  "Settings": function() { return /* reexport */ Settings; },
   "StackViewport": function() { return /* reexport */ RenderingEngine_StackViewport; },
   "Types": function() { return /* reexport */ types_namespaceObject; },
   "Utilities": function() { return /* reexport */ utilities_namespaceObject; },
@@ -5136,7 +5137,7 @@ function _arrayWithoutHoles(arr) {
 }
 ;// CONCATENATED MODULE: ../../node_modules/@babel/runtime/helpers/esm/iterableToArray.js
 function _iterableToArray(iter) {
-  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
 }
 ;// CONCATENATED MODULE: ../../node_modules/@babel/runtime/helpers/esm/unsupportedIterableToArray.js
 
@@ -7525,14 +7526,17 @@ function _arrayWithHoles(arr) {
 }
 ;// CONCATENATED MODULE: ../../node_modules/@babel/runtime/helpers/esm/iterableToArrayLimit.js
 function _iterableToArrayLimit(arr, i) {
-  if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
+  var _i = arr && (typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]);
+
+  if (_i == null) return;
   var _arr = [];
   var _n = true;
   var _d = false;
-  var _e = undefined;
+
+  var _s, _e;
 
   try {
-    for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+    for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
       _arr.push(_s.value);
 
       if (i && _arr.length === i) break;
@@ -7668,7 +7672,7 @@ var metaData = {
 
 
 
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = cache_unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = cache_unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
 function cache_unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return cache_arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return cache_arrayLikeToArray(o, minLen); }
 
@@ -8482,7 +8486,7 @@ function isMobileDevice() {
 
 
 ;// CONCATENATED MODULE: ./src/requestPool/requestPoolManager.ts
-function requestPoolManager_createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = requestPoolManager_unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+function requestPoolManager_createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = requestPoolManager_unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
 function requestPoolManager_unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return requestPoolManager_arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return requestPoolManager_arrayLikeToArray(o, minLen); }
 
@@ -9767,7 +9771,7 @@ var unknownVolumeLoader;
  * @param {Object} [options] Options to be passed to the Volume Loader. Options
  * contain the ImageIds that is passed to the loader
  *
- * @returns {VolumeLoadObject} An Object which can be used to act after a volume is loaded or loading fails
+ * @returns {Types.VolumeLoadObject} An Object which can be used to act after a volume is loaded or loading fails
  *
  */
 
@@ -9806,7 +9810,7 @@ function loadVolumeFromVolumeLoader(volumeId, options) {
  * @param {String} volumeId A Cornerstone Image Object's volumeId
  * @param {Object} [options] Options to be passed to the Volume Loader
  *
- * @returns {VolumeLoadObject} An Object which can be used to act after an image is loaded or loading fails
+ * @returns {Types.VolumeLoadObject} An Object which can be used to act after an image is loaded or loading fails
  * @category VolumeLoader
  */
 
@@ -9839,7 +9843,7 @@ function loadVolume(volumeId) {
  * @param {String} volumeId A Cornerstone Image Object's volumeId
  * @param {Object} [options] Options to be passed to the Volume Loader
  *
- * @returns {VolumeLoadObject} Volume Loader Object
+ * @returns {Types.VolumeLoadObject} Volume Loader Object
  * @category VolumeLoader
  */
 
@@ -11460,6 +11464,251 @@ var configuration = {
   }
 };
 /* harmony default export */ var src_configuration = (configuration);
+;// CONCATENATED MODULE: ./src/Settings.ts
+
+
+
+
+/*
+ * Constants
+ */
+var DEFAULT_SETTINGS = Symbol('DefaultSettings');
+var RUNTIME_SETTINGS = Symbol('RuntimeSettings');
+var OBJECT_SETTINGS_MAP = Symbol('ObjectSettingsMap');
+var DICTIONARY = Symbol('Dictionary');
+/**
+ * @class Settings
+ */
+
+var Settings = /*#__PURE__*/function () {
+  function Settings(base) {
+    _classCallCheck(this, Settings);
+
+    var dictionary = Object.create(base instanceof Settings && DICTIONARY in base ? base[DICTIONARY] : null);
+    Object.seal(Object.defineProperty(this, DICTIONARY, {
+      value: dictionary
+    }));
+  }
+
+  _createClass(Settings, [{
+    key: "set",
+    value: function set(key, value) {
+      return _set(this[DICTIONARY], key, value, null);
+    }
+  }, {
+    key: "get",
+    value: function get(key) {
+      return _get(this[DICTIONARY], key);
+    }
+    /**
+     * Unset a specific key or a set of keys within a namespace when the key ends with a dot (ASCII #46).
+     * If the key is ".", all keys will be removed and this command works as a reset.
+     * @param {object} dictionary The dictionary on which to unset a key.
+     * @param {string} name The key to be unset or a namespace.
+     * @returns boolean
+     */
+
+  }, {
+    key: "unset",
+    value: function unset(key) {
+      return _unset(this[DICTIONARY], key + '');
+    }
+  }, {
+    key: "forEach",
+    value: function forEach(callback) {
+      iterate(this[DICTIONARY], callback);
+    }
+  }, {
+    key: "extend",
+    value: function extend() {
+      return new Settings(this);
+    }
+  }], [{
+    key: "assert",
+    value: function assert(subject) {
+      return subject instanceof Settings ? subject : Settings.getRuntimeSettings();
+    }
+  }, {
+    key: "getDefaultSettings",
+    value: function getDefaultSettings() {
+      var defaultSettings = Settings[DEFAULT_SETTINGS];
+
+      if (!(defaultSettings instanceof Settings)) {
+        defaultSettings = new Settings();
+        Settings[DEFAULT_SETTINGS] = defaultSettings;
+      }
+
+      return defaultSettings;
+    }
+  }, {
+    key: "getRuntimeSettings",
+    value: function getRuntimeSettings() {
+      var runtimeSettings = Settings[RUNTIME_SETTINGS];
+
+      if (!(runtimeSettings instanceof Settings)) {
+        runtimeSettings = new Settings(Settings.getDefaultSettings());
+        Settings[RUNTIME_SETTINGS] = runtimeSettings;
+      }
+
+      return runtimeSettings;
+    }
+  }, {
+    key: "getObjectSettings",
+    value: function getObjectSettings(subject, from) {
+      var settings = null;
+
+      if (subject instanceof Settings) {
+        settings = subject;
+      } else if (_typeof(subject) === 'object' && subject !== null) {
+        var objectSettingsMap = Settings[OBJECT_SETTINGS_MAP];
+
+        if (!(objectSettingsMap instanceof WeakMap)) {
+          objectSettingsMap = new WeakMap();
+          Settings[OBJECT_SETTINGS_MAP] = objectSettingsMap;
+        }
+
+        settings = objectSettingsMap.get(subject);
+
+        if (!(settings instanceof Settings)) {
+          settings = new Settings(Settings.assert(Settings.getObjectSettings(from)));
+          objectSettingsMap.set(subject, settings);
+        }
+      }
+
+      return settings;
+    }
+  }, {
+    key: "extendRuntimeSettings",
+    value: function extendRuntimeSettings() {
+      return Settings.getRuntimeSettings().extend();
+    }
+  }]);
+
+  return Settings;
+}();
+/*
+ * Local Helpers
+ */
+
+
+
+
+function _unset(dictionary, name) {
+  if (name.endsWith('.')) {
+    var deleteCount = 0;
+    var namespace = name;
+    var base = namespace.slice(0, -1);
+    var deleteAll = base.length === 0;
+
+    for (var _key in dictionary) {
+      if (Object.prototype.hasOwnProperty.call(dictionary, _key) && (deleteAll || _key.startsWith(namespace) || _key === base)) {
+        delete dictionary[_key];
+        ++deleteCount;
+      }
+    }
+
+    return deleteCount > 0;
+  }
+
+  return delete dictionary[name];
+}
+
+function iterate(dictionary, callback) {
+  for (var _key2 in dictionary) {
+    callback(_key2, dictionary[_key2]);
+  }
+}
+
+function setAll(dictionary, prefix, record, references) {
+  var failCount;
+
+  if (references.has(record)) {
+    return _set(dictionary, prefix, null, references);
+  }
+
+  references.add(record);
+  failCount = 0;
+
+  for (var field in record) {
+    if (Object.prototype.hasOwnProperty.call(record, field)) {
+      var _key3 = field.length === 0 ? prefix : "".concat(prefix, ".").concat(field);
+
+      if (!_set(dictionary, _key3, record[field], references)) {
+        ++failCount;
+      }
+    }
+  }
+
+  references.delete(record);
+  return failCount === 0;
+}
+/**
+ * Set the key-value pair on a given dictionary. If the given value is a
+ * plain javascript object, every property of that object will also be set.
+ * @param dictionary {Record<string, unknown>} The target dictionary
+ * @param key {string} The given key
+ * @param value {unknown} The given value
+ * @param references {WeakSet<Record<string, unknown>>} references is a WeakSet
+ *  instance used to keep track of which objects have already been iterated
+ *  through preventing thus possible stack overflows caused by cyclic references
+ * @returns {boolean} Returns true if every given key-value pair has been
+ * successfully set
+ */
+
+
+function _set(dictionary, key, value, references) {
+  if (isValidKey(key)) {
+    if (isPlainObject(value)) {
+      return setAll(dictionary, key, value, references instanceof WeakSet ? references : new WeakSet());
+    }
+
+    dictionary[key] = value;
+    return true;
+  }
+
+  return false;
+}
+
+function _get(dictionary, key) {
+  return dictionary[key];
+}
+/**
+ * Make sure the -provided key correctly formatted.
+ * e.g.:
+ *  "my.cool.property" (valid)
+ *  "my.cool.property." (invalid)
+ *  ".my.cool.property" (invalid)
+ *  "my.cool..property" (invalid)
+ * @param key {string} The property name to be used as key within the internal
+ *  dictionary
+ * @returns {boolean} True on success, false otherwise
+ */
+
+
+function isValidKey(key) {
+  var last, current, previous;
+  if (typeof key !== 'string' || (last = key.length - 1) < 0) return false;
+  previous = -1;
+
+  while ((current = key.indexOf('.', previous + 1)) >= 0) {
+    if (current - previous < 2 || current === last) return false;
+    previous = current;
+  }
+
+  return true;
+}
+
+function isPlainObject(subject) {
+  if (_typeof(subject) === 'object' && subject !== null) {
+    var prototype = Object.getPrototypeOf(subject);
+
+    if (prototype === Object.prototype || prototype === null) {
+      return true;
+    }
+  }
+
+  return false;
+}
 // EXTERNAL MODULE: ./src/types/ICamera.ts
 var ICamera = __webpack_require__(469);
 var ICamera_default = /*#__PURE__*/__webpack_require__.n(ICamera);
@@ -11564,6 +11813,8 @@ var IImage_default = /*#__PURE__*/__webpack_require__.n(IImage);
 
 
 
+
+ // Classes
 
  // Namespaces
 

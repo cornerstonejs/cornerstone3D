@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "The goal is for this to eventually be a separate package. Try to only use API\r exposed by `vtkjs-viewport` in it's top level `index.ts`.",
   "main": "index.js",
+  "module": "src/index.ts",
   "directories": {
     "test": "test"
   },
@@ -17,7 +18,11 @@
     "test:unit:ci": "jest --ci --runInBand --collectCoverage"
   },
   "peerDependencies": {
-    "gl-matrix": "^3.3.0"
+    "gl-matrix": "^3.3.0",
+    "vtk.js": "17.3.0"
+  },
+  "devDependencies": {
+    "vtk.js": "17.3.0"
   },
   "author": "",
   "license": "ISC"
