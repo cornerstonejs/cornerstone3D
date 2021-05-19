@@ -20,6 +20,7 @@ import {
   getToolState,
   removeToolState,
 } from '../../stateManagement/toolState'
+import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
 import { lineSegment } from '../../util/math'
 
 import {
@@ -530,9 +531,12 @@ class LengthTool extends BaseAnnotationTool {
 
       let activeHandleCanvasCoords
 
-      if (!this.editData && activeHandleIndex !== null) {
-        // Not creating and hovering over handle, so render handle.
-
+      if (
+        !isToolDataLocked(toolData) &&
+        !this.editData &&
+        activeHandleIndex !== null
+      ) {
+        // Not locked or creating and hovering over handle, so render handle.
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
       }
 

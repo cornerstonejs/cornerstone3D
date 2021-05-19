@@ -47,8 +47,8 @@ function getToolState(
 /**
  * @function addToolState
  *
- * @param {*} element
- * @param {*} toolData
+ * @param {HTMLCanvasElement} element
+ * @param {ToolSpecificToolData} toolData
  */
 function addToolState(
   element: HTMLCanvasElement,
@@ -57,7 +57,7 @@ function addToolState(
   const toolStateManager = getViewportSpecificStateManager(element)
 
   if (toolData.metadata.toolUID === undefined) {
-    toolData.metadata.toolUID = uuidv4()
+    toolData.metadata.toolUID = uuidv4() as string
   }
 
   toolStateManager.addToolState(toolData)

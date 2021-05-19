@@ -42,7 +42,7 @@ function selectToolData(
   if (!preserveSelected) {
     clearSelectionSet(selectedToolData, detail)
   }
-  if (toolData) {
+  if (toolData && !selectedToolData.has(toolData)) {
     selectedToolData.add(toolData)
     detail.added.push(toolData)
   }

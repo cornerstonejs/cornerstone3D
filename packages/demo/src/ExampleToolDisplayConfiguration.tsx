@@ -15,6 +15,7 @@ import {
   ToolGroupManager,
   ToolBindings,
   resetToolsState,
+  toolDataLocking,
   toolDataSelection,
 } from '@ohif/cornerstone-tools'
 
@@ -266,6 +267,12 @@ class ToolDisplayConfigurationExample extends Component {
       CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
       onMeasurementSelectionChange
     )
+
+    // Register for Tool Data Locking Event
+    eventTarget.addEventListener(
+      CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
+      onLockedToolDataChange
+    )
   }
 
   componentWillUnmount() {
@@ -278,6 +285,12 @@ class ToolDisplayConfigurationExample extends Component {
     eventTarget.removeEventListener(
       CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
       onMeasurementSelectionChange
+    )
+
+    // Remove listener for Tool Data Locking Event
+    eventTarget.removeEventListener(
+      CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
+      onLockedToolDataChange
     )
 
     // Destroy synchronizers
@@ -343,8 +356,8 @@ class ToolDisplayConfigurationExample extends Component {
           <h1>Tool Display Configuration Example</h1>
           <p>
             Demo for testing selection and styling options for annotations (aka
-            tool data). In order to select multiple items or deselect a
-            previously selected one, please hold the SHIFT key during click.
+            tool data). In order to select multiple items or <em>unselect</em>
+            one, just hold the <em>SHIFT</em> key on click.
           </p>
         </div>
         <button
@@ -408,8 +421,26 @@ class ToolDisplayConfigurationExample extends Component {
                 placeholder="Runtime Settings"
                 disabled={true}
               />
+              <button
+                id="use-selected-annotation"
+                onClick={onUseSelectedAnnotation}
+              >
+                Use Selected Annotation
+              </button>
+              <button onClick={onUseRuntimeSettings}>
+                Use Runtime Settings
+              </button>
               <button onClick={displayToolStyleValues}>Refresh</button>
               <button onClick={onReset}>Reset</button>
+              <button onClick={onLockSelected}>Lock Selected</button>
+              <button onClick={onUnlockAll}>Unlock All</button>
+              <button onClick={onExportSettings}>Export Settings (JSON)</button>
+              <label>Import Settings (JSON):</label>
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={onFileInputChange}
+              />
             </div>
             <div className="input-elements">
               {getAllSettings().map((name) => (
@@ -423,6 +454,69 @@ class ToolDisplayConfigurationExample extends Component {
   }
 }
 
+function onExportSettings(e: React.MouseEvent<HTMLElement>) {
+  const settings = getTargetSettings()
+  const blob = new Blob([JSON.stringify(settings.dump(), null, 2)], {
+    type: 'application/octet-stream',
+  })
+  const url = URL.createObjectURL(blob)
+  const previousUrl = e.currentTarget.dataset.previousUrl
+  if (previousUrl) {
+    URL.revokeObjectURL(previousUrl)
+  }
+  e.currentTarget.dataset.previousUrl = url
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `settings-${Date.now()}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}
+
+function onLockSelected() {
+  toolDataLocking.lockToolDataList(toolDataSelection.getSelectedToolData())
+}
+
+function onUnlockAll() {
+  toolDataLocking.unlockAllToolData()
+}
+
+function onLockedToolDataChange(e: CustomEvent) {
+  console.info('Locked Tool Data Changed:', e.detail)
+  getRenderingEngines().forEach((renderEngine) => renderEngine.render())
+}
+
+function onUseRuntimeSettings() {
+  updateTargetElement('')
+}
+
+function onUseSelectedAnnotation(e: React.MouseEvent<HTMLElement>) {
+  const targetId = (e.currentTarget.dataset.targetId || '') + ''
+  updateTargetElement(targetId)
+}
+
+function onFileInputChange(e: React.FormEvent<HTMLInputElement>) {
+  const fileInput = e.target as HTMLInputElement
+  if (fileInput.files.length > 0) {
+    const reader = new FileReader()
+    reader.onload = function () {
+      try {
+        const json = reader.result + ''
+        console.info('Loaded JSON:', json)
+        const settings = JSON.parse(json)
+        getTargetSettings().import(settings)
+        displayToolStyleValues()
+        getRenderingEngines().forEach((renderEngine) => renderEngine.render())
+      } catch (e) {
+        console.error('Error reading settings JSON', e)
+      }
+    }
+    reader.readAsText(fileInput.files[0])
+  } else {
+    console.info('No file selected...')
+  }
+}
+
 function onMeasurementSelectionChange(e: CustomEvent): void {
   let toolData = null
   const { added, selection } = e.detail
@@ -432,7 +526,11 @@ function onMeasurementSelectionChange(e: CustomEvent): void {
     // Use the previous selection
     toolData = selection[selection.length - 1]
   }
-  updateTargetElement(toolData ? `toolData:${toolData.metadata.toolUID}` : '')
+  ;(
+    document.querySelector(
+      '.tool-style-controls button#use-selected-annotation'
+    ) as HTMLElement
+  ).dataset.targetId = toolData ? `toolData:${toolData.metadata.toolUID}` : ''
   getRenderingEngines().forEach((renderEngine) => renderEngine.render())
 }
 
@@ -539,8 +637,8 @@ function unsetStyleProperty(name: string) {
  * (and other buttons)
  */
 
-function onSetProperty(e: React.MouseEvent<Element>): void {
-  const input = (e.target as Element).parentElement.querySelector('input')
+function onSetProperty(e: React.MouseEvent<HTMLElement>): void {
+  const input = e.currentTarget.parentElement.querySelector('input')
   if (input) {
     setStyleProperty(input.name + '', input.value + '')
   } else {
@@ -548,8 +646,8 @@ function onSetProperty(e: React.MouseEvent<Element>): void {
   }
 }
 
-function onUnsetProperty(e: React.MouseEvent<Element>) {
-  const input = (e.target as Element).parentElement.querySelector('input')
+function onUnsetProperty(e: React.MouseEvent<HTMLElement>) {
+  const input = e.currentTarget.parentElement.querySelector('input')
   if (input) {
     unsetStyleProperty(input.name + '')
   } else {

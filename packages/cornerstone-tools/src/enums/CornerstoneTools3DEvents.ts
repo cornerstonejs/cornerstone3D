@@ -192,6 +192,12 @@ enum CornerstoneTools3DEvents {
   MEASUREMENT_REMOVED = 'cornerstonetoolsmeasurementremoved',
 
   MEASUREMENT_SELECTION_CHANGE = 'cornerstonetools3dmeasurementselectionchange',
+
+  //
+  // LOCKED TOOL DATA
+  //
+
+  LOCKED_TOOL_DATA_CHANGE = 'cornerstonetools3dlockedtooldatachange',
 }
 
 export default CornerstoneTools3DEvents

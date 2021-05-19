@@ -1,6 +1,10 @@
 import { Point3 } from './../types'
 
 type ToolSpecificToolData = {
+  /**
+   * Determine if the tool data instance is in a locked state.
+   */
+  isLocked?: boolean
   metadata: {
     /**
      * The position of the camera in world space
@@ -37,7 +41,7 @@ type ToolSpecificToolData = {
      */
     toolName: string
   }
-  data: any // Data specific to the toolType
+  data: unknown // Data specific to the toolType
 }
 
 type ToolSpecificToolState = Array<ToolSpecificToolData>
@@ -53,7 +57,7 @@ type ToolState = {
 }
 
 type ToolAndToolStateArray = Array<{
-  tool: any
+  tool: unknown
   toolState: ToolSpecificToolState
 }>
 

@@ -13,12 +13,25 @@ import {
   isToolDataSelected,
 } from '../../stateManagement/toolDataSelection'
 
+import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
+
 // // Util
 import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles'
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
 import getMoveableAnnotationTools from '../../store/getMoveableAnnotationTools'
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
+
+type Tool = {
+  handleSelectedCallback: CallableFunction
+  toolSelectedCallback: CallableFunction
+}
+
+type ToolAndToolData = {
+  tool: Tool
+  toolData: ToolSpecificToolData
+  handle?: unknown
+}
 
 const { Active, Passive } = ToolModes
 
@@ -95,11 +108,16 @@ export default function mouseDown(evt) {
   const isMultiSelect = !!evt.detail.event.shiftKey
 
   if (annotationToolsWithMoveableHandles.length > 0) {
-    // Choose first tool for now.
-    const { tool, toolData, handle } = annotationToolsWithMoveableHandles[0]
+    const { tool, toolData, handle } = selectSuitableAnnotationTool(
+      annotationToolsWithMoveableHandles as [ToolAndToolData]
+    )
 
     toggleToolDataSelection(toolData, isMultiSelect)
-    tool.handleSelectedCallback(evt, toolData, handle, 'mouse')
+    if (isToolDataLocked(toolData)) {
+      evt.preventDefault()
+    } else {
+      tool.handleSelectedCallback(evt, toolData, handle, 'mouse')
+    }
 
     return
   }
@@ -112,11 +130,16 @@ export default function mouseDown(evt) {
   )
 
   if (moveableAnnotationTools.length > 0) {
-    // Choose first tool for now.
-    const { tool, toolData } = moveableAnnotationTools[0]
+    const { tool, toolData } = selectSuitableAnnotationTool(
+      moveableAnnotationTools as [ToolAndToolData]
+    )
 
     toggleToolDataSelection(toolData, isMultiSelect)
-    tool.toolSelectedCallback(evt, toolData, 'mouse')
+    if (isToolDataLocked(toolData)) {
+      evt.preventDefault()
+    } else {
+      tool.toolSelectedCallback(evt, toolData, 'mouse')
+    }
 
     return
   }
@@ -129,6 +152,16 @@ export default function mouseDown(evt) {
       return
     }
   }
+}
+
+function selectSuitableAnnotationTool(
+  annotationTools: [ToolAndToolData]
+): ToolAndToolData {
+  return (
+    (annotationTools.length > 1 &&
+      annotationTools.find((item) => !isToolDataLocked(item.toolData))) ||
+    annotationTools[0]
+  )
 }
 
 function toggleToolDataSelection(

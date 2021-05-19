@@ -23,7 +23,7 @@ import {
   Point3,
 } from '../types'
 import { ToolGroupManager } from '../store'
-import { elementType } from 'prop-types'
+import { isToolDataLocked } from '../stateManagement/toolDataLocking'
 
 const { liangBarksyClip } = math.vec2
 const { isEqual, isOpposite } = math.vec3
@@ -112,10 +112,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
-  addNewMeasurement(
-    evt: CustomEvent,
-    interactionType: string
-  ): any {
+  addNewMeasurement(evt: CustomEvent, interactionType: string): any {
     // not used, but is necessary if BaseAnnotationTool.
     // NOTE: this is a BaseAnnotationTool and not a BaseTool, because in future
     // we will likely pre-filter all tools using typeof / instanceof
@@ -267,9 +264,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         const viewportControllable = this._getReferenceLineControllable(
           otherViewport.uid
         )
-        const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-          otherViewport.uid
-        )
+        const viewportDraggableRotatable =
+          this._getReferenceLineDraggableRotatable(otherViewport.uid)
 
         if (!viewportControllable || !viewportDraggableRotatable) {
           continue
@@ -368,9 +364,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const viewportControllable = this._getReferenceLineControllable(
         viewport.uid
       )
-      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-        viewport.uid
-      )
+      const viewportDraggableRotatable =
+        this._getReferenceLineDraggableRotatable(viewport.uid)
       if (
         !isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
         viewportControllable &&
@@ -397,10 +392,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         ) {
           // update linked view in the same scene that have the same camera
           // this goes here, because the parent viewport translation may happen in another tool
-          const otherLinkedViewportsToolDataWithSameCameraDirection = this._filterLinkedViewportWithSameOrientationAndScene(
-            enabledElement,
-            toolState
-          )
+          const otherLinkedViewportsToolDataWithSameCameraDirection =
+            this._filterLinkedViewportWithSameOrientationAndScene(
+              enabledElement,
+              toolState
+            )
 
           for (
             let i = 0;
@@ -452,8 +448,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     for (let i = 0; i < filteredToolState.length; i++) {
       const toolData = filteredToolState[i]
-      const { data } = toolData
 
+      if (isToolDataLocked(toolData)) {
+        continue
+      }
+
+      const { data } = toolData
       if (!data.handles) {
         continue
       }
@@ -591,12 +591,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const otherViewportControllable = this._getReferenceLineControllable(
         otherViewport.uid
       )
-      const otherViewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-        otherViewport.uid
-      )
-      const otherViewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
-        otherViewport.uid
-      )
+      const otherViewportDraggableRotatable =
+        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+      const otherViewportSlabThicknessControlsOn =
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
 
       // get coordinates for the reference line
       const { sWidth, sHeight } = otherViewport
@@ -604,9 +602,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         sWidth * sWidth + sHeight * sHeight
       )
       const otherCanvasCenter = [sWidth * 0.5, sHeight * 0.5]
-      const otherViewportCenterWorld = otherViewport.canvasToWorld(
-        otherCanvasCenter
-      )
+      const otherViewportCenterWorld =
+        otherViewport.canvasToWorld(otherCanvasCenter)
 
       const direction = [0, 0, 0]
       vtkMath.cross(
@@ -863,12 +860,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.uid
       )
-      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-        otherViewport.uid
-      )
-      const viewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
-        otherViewport.uid
-      )
+      const viewportDraggableRotatable =
+        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+      const viewportSlabThicknessControlsOn =
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
       const selectedViewportUID = data.activeViewportUIDs.find(
         (uid) => uid === otherViewport.uid
       )
@@ -1242,8 +1237,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const viewPlaneNormal = camera.viewPlaneNormal
     vtkMath.normalize(viewPlaneNormal)
 
-    const otherLinkedViewportsToolDataWithSameCameraDirection = otherLinkedViewportToolDataFromSameScene.filter(
-      (toolData) => {
+    const otherLinkedViewportsToolDataWithSameCameraDirection =
+      otherLinkedViewportToolDataFromSameScene.filter((toolData) => {
         const { sceneUID, viewportUID } = toolData.data
         const scene = renderingEngine.getScene(sceneUID)
         const otherViewport = scene.getViewport(viewportUID)
@@ -1255,8 +1250,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) &&
           isEqual(camera.viewUp, otherCamera.viewUp, 1e-2)
         )
-      }
-    )
+      })
 
     return otherLinkedViewportsToolDataWithSameCameraDirection
   }
@@ -1465,12 +1459,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { canvas: element } = eventData
     const enabledElement = getEnabledElement(element)
-    const {
-      viewport,
-      FrameOfReferenceUID,
-      viewportUID,
-      sceneUID,
-    } = enabledElement
+    const { viewport, FrameOfReferenceUID, viewportUID, sceneUID } =
+      enabledElement
     const { sHeight, sWidth, canvasToWorld } = viewport
     const centerCanvas: Point2 = [sWidth * 0.5, sHeight * 0.5]
 
@@ -1484,8 +1474,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        cameraPosition: <Point3> [...position],
-        cameraFocalPoint: <Point3> [...focalPoint],
+        cameraPosition: <Point3>[...position],
+        cameraFocalPoint: <Point3>[...focalPoint],
         FrameOfReferenceUID,
         toolName: this.name,
       },
@@ -1699,9 +1689,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           const otherViewportControllable = this._getReferenceLineControllable(
             otherViewport.uid
           )
-          const otherViewportRotatable = this._getReferenceLineDraggableRotatable(
-            otherViewport.uid
-          )
+          const otherViewportRotatable =
+            this._getReferenceLineDraggableRotatable(otherViewport.uid)
 
           return (
             scene === otherScene &&
@@ -1822,9 +1811,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           ]
 
           // use this.toolCenter only if viewportDraggableRotatable
-          const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-            otherViewport.uid
-          )
+          const viewportDraggableRotatable =
+            this._getReferenceLineDraggableRotatable(otherViewport.uid)
           if (!viewportDraggableRotatable) {
             const { rotationPoints } = this.editData.toolData.data.handles
             const otherViewportRotationPoints = rotationPoints.filter(
@@ -2033,9 +2021,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         continue
       }
 
-      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-        otherViewport.uid
-      )
+      const viewportDraggableRotatable =
+        this._getReferenceLineDraggableRotatable(otherViewport.uid)
       if (!viewportDraggableRotatable) {
         continue
       }
@@ -2074,9 +2061,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         continue
       }
 
-      const viewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
-        otherViewport.uid
-      )
+      const viewportSlabThicknessControlsOn =
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
       if (!viewportSlabThicknessControlsOn) {
         continue
       }
@@ -2114,9 +2100,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.uid
       )
-      const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-        otherViewport.uid
-      )
+      const viewportDraggableRotatable =
+        this._getReferenceLineDraggableRotatable(otherViewport.uid)
 
       if (!viewportControllable || !viewportDraggableRotatable) {
         continue
@@ -2174,9 +2159,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.uid
       )
-      const viewportSlabThicknessControlsOn = this._getReferenceLineSlabThicknessControlsOn(
-        otherViewport.uid
-      )
+      const viewportSlabThicknessControlsOn =
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
 
       if (!viewportControllable || !viewportSlabThicknessControlsOn) {
         continue

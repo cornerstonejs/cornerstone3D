@@ -12,6 +12,11 @@ import {
   eventTarget,
 } from '@ohif/cornerstone-render'
 
+import {
+  setToolDataLocked,
+  checkAndDefineIsLockedProperty,
+} from './toolDataLocking'
+
 interface FilterInterface {
   FrameOfReferenceUID?: string
   toolName?: string
@@ -75,7 +80,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
       const toolSpecificToolState = frameOfReferenceSpecificToolState[toolName]
 
       toolSpecificToolState.forEach((toolData) => {
-        const { data } = toolData
+        const data: { invalidated?: boolean } = toolData.data
 
         if (data && data.invalidated !== undefined) {
           data.invalidated = true
@@ -135,7 +140,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
    *
    * @param {ToolSpecificToolData} toolData The toolData to add.
    */
-  addToolState = (toolData: ToolSpecificToolData) => {
+  addToolState = (toolData: ToolSpecificToolData): void => {
     const { metadata } = toolData
     const { FrameOfReferenceUID, toolName } = metadata
 
@@ -158,6 +163,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
     }
 
     toolSpecificToolState.push(toolData)
+    checkAndDefineIsLockedProperty(toolData)
   }
 
   /**
@@ -165,7 +171,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
    *
    * @param {ToolSpecificToolData} toolData The toolData to remove.
    */
-  removeToolState = (toolData: ToolSpecificToolData) => {
+  removeToolState = (toolData: ToolSpecificToolData): void => {
     const { metadata } = toolData
     const { FrameOfReferenceUID, toolName, toolUID } = metadata
     const toolState = this.toolState
@@ -195,6 +201,9 @@ export default class FrameOfReferenceSpecificToolStateManager {
     if (!toolSpecificToolState.length) {
       delete frameOfReferenceSpecificToolState[toolName]
     }
+
+    // Make sure it is not held in the global set of locked instances
+    setToolDataLocked(toolData, false)
   }
 
   /**

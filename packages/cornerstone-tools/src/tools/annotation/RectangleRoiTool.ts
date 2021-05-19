@@ -18,6 +18,7 @@ import {
   getToolState,
   removeToolState,
 } from '../../stateManagement'
+import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
 
 import {
   drawHandles as drawHandlesSvg,
@@ -639,9 +640,12 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
       let activeHandleCanvasCoords
 
-      if (!this.editData && activeHandleIndex !== null) {
-        // Not creating and hovering over handle, so render handle.
-
+      if (
+        !isToolDataLocked(toolData) &&
+        !this.editData &&
+        activeHandleIndex !== null
+      ) {
+        // Not locked or creating and hovering over handle, so render handle.
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
       }
 

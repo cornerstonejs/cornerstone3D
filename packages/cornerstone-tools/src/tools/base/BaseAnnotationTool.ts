@@ -1,5 +1,6 @@
 import { Settings } from '@ohif/cornerstone-render'
 import BaseTool from './BaseTool'
+import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
 import { getStyleProperty } from '../../stateManagement/toolStyle'
 import {
   ToolSpecificToolData,
@@ -91,8 +92,12 @@ abstract class BaseAnnotationTool extends BaseTool {
 
     for (let i = 0; i < filteredToolState.length; i++) {
       const toolData = filteredToolState[i]
-      const { data } = toolData
 
+      if (isToolDataLocked(toolData)) {
+        continue
+      }
+
+      const { data } = toolData
       const activateHandleIndex = data.handles
         ? data.handles.activeHandleIndex
         : undefined

@@ -23,10 +23,6 @@ export default function getMoveableAnnotationTools(
 ): Array<ToolAndToolData> {
   const proximity = 6
 
-  if (toolAndToolStateArray.length === 0) {
-    return []
-  }
-
   // TODO - This could get pretty expensive pretty quickly. We don't want to fetch the camera
   // And do world to canvas on each coord.
 

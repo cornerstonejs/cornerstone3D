@@ -163,4 +163,32 @@ describe('Settings', () => {
     settings.forEach((key) => keys.push(key))
     expect(keys.length).toBe(7)
   })
+
+  it('should support import and export (dump) features', () => {
+    const settings = new Settings()
+    const source = {
+      my: {
+        awesome: {
+          property: true,
+        },
+        yet: {
+          even: {
+            more: {
+              awesome: {
+                property: 'Love is all around you!',
+                nothing: {
+                  '': 1048576,
+                  name: '2^20',
+                },
+              },
+            },
+          },
+        },
+      },
+    }
+    settings.import(source)
+    expect(settings.get('my.yet.even.more.awesome.nothing')).toBe(1048576)
+    expect(settings.get('my.yet.even.more.awesome.nothing.name')).toBe('2^20')
+    expect(JSON.stringify(settings.dump())).toBe(JSON.stringify(source))
+  })
 })

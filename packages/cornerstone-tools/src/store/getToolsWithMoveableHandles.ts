@@ -26,11 +26,6 @@ export default function getToolsWithMoveableHandles(
   interactionType = 'mouse'
 ): Array<ToolsWithMoveableHandles> {
   const proximity = 6
-
-  if (toolAndToolStateArray.length === 0) {
-    return []
-  }
-
   const toolsWithMoveableHandles = []
 
   toolAndToolStateArray.forEach(({ tool, toolState }) => {

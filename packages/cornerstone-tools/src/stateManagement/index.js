@@ -6,6 +6,7 @@ import getStyle from './getStyle'
 import setGlobalStyle from './setGlobalStyle'
 import setToolStyle from './setToolStyle'
 import setToolDataStyle from './setToolDataStyle'
+import * as toolDataLocking from './toolDataLocking'
 import * as toolDataSelection from './toolDataSelection'
 import {
   getToolState,
@@ -17,6 +18,7 @@ import {
 export {
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
+  toolDataLocking,
   toolDataSelection,
   toolStyle,
   getToolState,

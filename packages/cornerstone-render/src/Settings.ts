@@ -50,6 +50,37 @@ export default class Settings {
     return new Settings(this)
   }
 
+  /**
+   * Recursively import all properties from the given plain JavaScript object.
+   * This method has the opposite effect of the `dump` method.
+   * @param {Record<string, unknown>} root The root object whose properties will
+   * be imported.
+   */
+  import(root: Record<string, unknown>): void {
+    if (isPlainObject(root)) {
+      Object.keys(root).forEach((key) => {
+        set(this[DICTIONARY], key, root[key], null)
+      })
+    }
+  }
+
+  /**
+   * Build a JSON representation of the current internal state of this settings
+   * object. The returned object can be safely passed to `JSON.stringify`
+   * function.
+   * @returns {Record<string, unknown>} The JSON representation of the current
+   * state of this settings instance
+   */
+  dump(): Record<string, unknown> {
+    const context = {}
+    iterate(this[DICTIONARY], (key, value) => {
+      if (typeof value !== 'undefined') {
+        deepSet(context, key, value)
+      }
+    })
+    return context
+  }
+
   static assert(subject: Settings): Settings {
     return subject instanceof Settings ? subject : Settings.getRuntimeSettings()
   }
@@ -222,4 +253,23 @@ function isPlainObject(subject: unknown) {
     }
   }
   return false
+}
+
+function deepSet(context, key, value) {
+  const separator = key.indexOf('.')
+  if (separator >= 0) {
+    const subKey = key.slice(0, separator)
+    let subContext = context[subKey]
+    if (typeof subContext !== 'object' || subContext === null) {
+      const subContextValue = subContext
+      subContext = {}
+      if (typeof subContextValue !== 'undefined') {
+        subContext[''] = subContextValue
+      }
+      context[subKey] = subContext
+    }
+    deepSet(subContext, key.slice(separator + 1, key.length), value)
+  } else {
+    context[key] = value
+  }
 }

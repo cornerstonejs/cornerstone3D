@@ -23,6 +23,7 @@ import {
   getToolState,
   removeToolState,
 } from '../../stateManagement/toolState'
+import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -967,9 +968,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
       let activeHandleCanvasCoords
 
-      if (!this.editData && activeHandleIndex !== null) {
-        // Not creating and hovering over handle, so render handle.
-
+      if (
+        !isToolDataLocked(toolData) &&
+        !this.editData &&
+        activeHandleIndex !== null
+      ) {
+        // Not locked or creating and hovering over handle, so render handle.
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
       }
 
