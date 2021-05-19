@@ -1,0 +1,1 @@
+{"version":3,"file":"jest.config.js","sourceRoot":"","sources":["../../../packages/cornerstone-render/jest.config.js"],"names":[],"mappings":"AAAA,MAAM,IAAI,GAAG,OAAO,CAAC,2BAA2B,CAAC,CAAC;AAClD,MAAM,GAAG,GAAG,OAAO,CAAC,WAAW,CAAC,CAAC;AAEjC,MAAM,CAAC,OAAO,GAAG;IACf,GAAG,IAAI;IACP,IAAI,EAAE,GAAG,CAAC,IAAI;IACd,WAAW,EAAE,GAAG,CAAC,IAAI;CACtB,CAAC"}
