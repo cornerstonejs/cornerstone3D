@@ -96,7 +96,7 @@ class Tag {
                 useSyntax == EXPLICIT_LITTLE_ENDIAN
                     ? true
                     : false,
-            isEncapsulated = DicomMessage.isEncapsulated(syntax);
+            isEncapsulated = this.isPixelDataTag() && DicomMessage.isEncapsulated(syntax);
 
         var oldEndian = stream.isLittleEndian;
         stream.setEndian(isLittleEndian);
