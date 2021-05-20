@@ -362,17 +362,48 @@ class BinaryRepresentation extends ValueRepresentation {
                 // to combine the for and while loops non-confusingly so went with the explicit but
                 // redundant approach.
                 if (offsets.length > 0) {
-                    for (let i = 0; i < offsets.length; i++) {
-                        const nextTag = Tag.readTag(stream);
+                    offsets.push(stream.size);
 
-                        if (!nextTag.is(0xfffee000)) {
-                            break;
+                    for (var _i = 0; _i < offsets.length - 1; _i++) {
+                        let fragments = [];
+
+                        while (stream.offset < offsets[_i + 1]) {
+                            var nextTag = Tag.readTag(stream);
+
+                            if (!nextTag.is(0xfffee000)) {
+                                break;
+                            }
+
+                            let fragmentItemLength = stream.readUint32();
+
+                            fragments.push(stream.more(fragmentItemLength));
                         }
 
-                        const frameItemLength = stream.readUint32();
-                        const fragmentStream = stream.more(frameItemLength);
+                        const frameSize = (() => {
+                            let size = 0;
 
-                        frames.push(fragmentStream.buffer);
+                            for (const fragment of fragments) {
+                                size += fragment.size;
+                            }
+
+                            return size;
+                        })();
+                        const frame = (() => {
+                            const frame = new Uint8Array(frameSize);
+                            let offset = 0;
+
+                            for (const fragment of fragments) {
+                                frame.set(
+                                    new Uint8Array(fragment.buffer),
+                                    offset
+                                );
+                                offset += fragment.size;
+                            }
+
+                            return frame;
+                        })();
+
+                        frames.push(frame.buffer);
                     }
                 }
                 // If no offset table, loop through remainder of stream looking for termination tag

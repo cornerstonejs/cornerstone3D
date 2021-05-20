@@ -270,6 +270,28 @@ const tests = {
         console.log("Finished test_multiframe_us");
     },
 
+    test_fragment_multiframe: () => {
+        const url =
+            "https://github.com/dcmjs-org/data/releases/download/encapsulation/encapsulation-fragment-multiframe.dcm";
+        const dcmPath = path.join(os.tmpdir(), "encapsulation-fragment-multiframe.dcm");
+
+        downloadToFile(url, dcmPath).then(() => {
+            const file = fs.readFileSync(dcmPath);
+            const dicomData = dcmjs.data.DicomMessage.readFile(file.buffer, {
+                // ignoreErrors: true,
+            });
+            const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+                dicomData.dict
+            );
+            // eslint-disable-next-line no-underscore-dangle
+            dataset._meta = dcmjs.data.DicomMetaDictionary.namifyDataset(
+                dicomData.meta
+            );
+            expect(dataset.NumberOfFrames).to.equal(2);
+            console.log("Finished test_fragment_multiframe");
+        });
+    },
+
     test_null_number_vrs: () => {
         const dicomDict = new DicomDict({
             TransferSynxtaxUID: "1.2.840.10008.1.2.1"
