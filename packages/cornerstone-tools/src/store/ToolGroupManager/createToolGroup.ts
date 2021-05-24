@@ -57,10 +57,8 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       // Should these be renamed higher up, so we don't have to alias?
       // Wrap in try-catch so 3rd party tools don't explode?
-      const {
-        toolClass: ToolClass,
-        toolOptions: defaultToolOptions,
-      } = toolDefinition
+      const { toolClass: ToolClass, toolOptions: defaultToolOptions } =
+        toolDefinition
       const mergedToolConfiguration = Object.assign(
         {},
         defaultToolOptions,
@@ -78,6 +76,46 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       viewportUID?: string
     ): void {
       this.viewports.push({ renderingEngineUID, sceneUID, viewportUID })
+    },
+    /**
+     * Removes viewport from the toolGroup. If only renderingEngineUID is defined
+     * it removes all the viewports with the same renderingEngineUID, if more filters
+     * are provided, it uses them to search the viewport.
+     * @param renderingEngineUID renderingEngine uid
+     * @param sceneUID scene uid
+     * @param viewportUID viewport uid
+     */
+    removeViewports: function (
+      renderingEngineUID: string,
+      sceneUID?: string,
+      viewportUID?: string
+    ): void {
+      const indices = []
+
+      this.viewports.forEach((vp, index) => {
+        let match = false
+        if (vp.renderingEngineUID === renderingEngineUID) {
+          match = true
+
+          if (sceneUID && vp.sceneUID !== sceneUID) {
+            match = false
+          }
+
+          if (viewportUID && vp.viewportUID !== viewportUID) {
+            match = false
+          }
+        }
+        if (match) {
+          indices.push(index)
+        }
+      })
+
+      if (indices.length) {
+        // going in reverse to not mess up the indexes to be removed
+        for (let i = indices.length - 1; i >= 0; i--) {
+          this.viewports.splice(indices[i], 1)
+        }
+      }
     },
     // ~ setToolMode
     setToolActive: function (

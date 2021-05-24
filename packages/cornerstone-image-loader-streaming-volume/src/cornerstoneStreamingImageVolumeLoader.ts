@@ -3,7 +3,8 @@ import {
   registerUnknownVolumeLoader,
   cache,
   Utilities,
-  Point3,
+  ERROR_CODES,
+  Types,
 } from '@ohif/cornerstone-render'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
@@ -65,8 +66,8 @@ function cornerstoneStreamingImageVolumeLoader(
   const numFrames = imageIds.length
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = <Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing]
-  const dimensions = <Point3>[Columns, Rows, numFrames]
+  const spacing = <Types.Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing]
+  const dimensions = <Types.Point3>[Columns, Rows, numFrames]
   const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal]
   const signed = PixelRepresentation === 1
 
@@ -84,7 +85,10 @@ function cornerstoneStreamingImageVolumeLoader(
   const numBytes = sizeInBytes * numComponents
 
   // check if there is enough space in unallocated + image Cache
-  cache.isCacheable(numBytes)
+  const isCacheable = cache.isCacheable(numBytes)
+  if (!isCacheable) {
+    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+  }
 
   cache.decacheIfNecessaryUntilBytesAvailable(numBytes)
 

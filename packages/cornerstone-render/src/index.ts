@@ -28,6 +28,7 @@ import {
   cancelLoadImages,
 } from './imageLoader'
 import requestPoolManager from './requestPool/requestPoolManager'
+import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
 import {
   createAndCacheVolume,
   registerVolumeLoader,
@@ -95,5 +96,6 @@ export {
   Utilities,
   //
   requestPoolManager,
+  setMaxSimultaneousRequests,
   ImageVolume,
 }

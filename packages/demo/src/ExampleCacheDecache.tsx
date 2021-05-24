@@ -6,6 +6,7 @@ import {
   loadAndCacheImages,
   ORIENTATION,
   VIEWPORT_TYPE,
+  setMaxSimultaneousRequests,
 } from '@ohif/cornerstone-render'
 import { ToolGroupManager, resetToolsState } from '@ohif/cornerstone-tools'
 
@@ -94,6 +95,8 @@ class CacheDecacheExample extends Component {
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
+
+    // setMaxSimultaneousRequests(1000)
 
     this.viewportInput = [
       // CT volume axial

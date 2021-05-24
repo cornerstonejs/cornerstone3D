@@ -13,6 +13,9 @@ export default interface IToolGroup {
   addViewports: {
     (renderingEngineUID: string, sceneUID?: string, viewportUID?: string): void
   }
+  removeViewports: {
+    (renderingEngineUID: string, sceneUID?: string, viewportUID?: string): void
+  }
   // ~ setToolMode
   setToolActive: {
     (toolName: string, toolModeOptions: ISetToolModeOptions): void

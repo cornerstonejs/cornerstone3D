@@ -115,13 +115,12 @@ class Cache implements ICache {
    *
    * @returns {boolean}
    */
-  public isCacheable = (byteLength: number): void => {
+  public isCacheable = (byteLength: number): boolean => {
     const unallocatedSpace = this.getBytesAvailable()
     const imageCacheSize = this._imageCacheSize
+    const availableSpace = unallocatedSpace + imageCacheSize
 
-    if (unallocatedSpace + imageCacheSize < byteLength) {
-      throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
-    }
+    return availableSpace > byteLength
   }
 
   /**
@@ -412,7 +411,9 @@ class Cache implements ICache {
         }
 
         // check if there is enough space in unallocated + image Cache
-        this.isCacheable(image.sizeInBytes)
+        if (!this.isCacheable(image.sizeInBytes)) {
+          throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+        }
 
         // if there is, decache if necessary
         this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes)
@@ -466,9 +467,7 @@ class Cache implements ICache {
    * @param {string} imageId Image ID
    * @returns {{ImageVolume, string}|undefined} {volume, imageIdIndex}
    */
-  public getVolumeContainingImageId(
-    imageId: string
-  ): {
+  public getVolumeContainingImageId(imageId: string): {
     volume: IImageVolume
     imageIdIndex: number
   } {
