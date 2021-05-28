@@ -1,10 +1,28 @@
 import { BaseAnnotationTool } from '../base'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
-import { Settings, getEnabledElement, Types } from '@ohif/cornerstone-render'
-import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
+import {
+  Settings,
+  Types,
+  getEnabledElement,
+  getVolume,
+  StackViewport,
+  triggerEvent,
+  eventTarget,
+  VIEWPORT_TYPE,
+} from '@ohif/cornerstone-render'
+import {
+  getImageIdForTool,
+  getTargetVolume,
+  getToolStateForDisplay,
+  getToolStateWithinSlice,
+} from '../../util/planar'
 import throttle from '../../util/throttle'
-import { addToolState, getToolState } from '../../stateManagement/toolState'
+import {
+  addToolState,
+  getToolState,
+  removeToolState,
+} from '../../stateManagement/toolState'
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -33,6 +51,9 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     hasMoved?: boolean
   } | null
   _configuration: any
+  isDrawing: boolean
+  isHandleOutsideImage: boolean
+  preventHandleOutsideImage: boolean
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
@@ -40,6 +61,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
+        preventHandleOutsideImage: false,
       },
     })
 
@@ -63,14 +85,38 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       return
     }
 
+    this.isDrawing = true
+
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
+
+    let referencedImageId
+    if (viewport instanceof StackViewport) {
+      referencedImageId =
+        viewport.getCurrentImageId && viewport.getCurrentImageId()
+    } else {
+      const { volumeUID } = this.configuration
+      const imageVolume = getVolume(volumeUID)
+      referencedImageId = getImageIdForTool(
+        worldPos,
+        viewPlaneNormal,
+        viewUp,
+        imageVolume
+      )
+    }
+
+    if (referencedImageId) {
+      const colonIndex = referencedImageId.indexOf(':')
+      referencedImageId = referencedImageId.substring(colonIndex + 1)
+    }
+
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
         viewUp: [...viewUp],
         FrameOfReferenceUID,
         toolName: this.name,
+        referencedImageId,
       },
       data: {
         invalidated: true,
@@ -382,12 +428,22 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       }
     }
 
-    this.editData = null
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeToolState(element, toolData)
+    }
 
     renderingEngine.renderViewports(viewportUIDsToRender)
+
+    this.editData = null
+    this.isDrawing = false
   }
 
   _mouseDragDrawCallback = (evt) => {
+    this.isDrawing = true
+
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const enabledElement = getEnabledElement(element)
@@ -465,6 +521,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   _mouseDragModifyCallback = (evt) => {
+    this.isDrawing = true
+
     const eventData = evt.detail
     const { element } = eventData
     const enabledElement = getEnabledElement(element)
@@ -761,6 +819,30 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return wouldPutThroughShortAxis
   }
 
+  cancel(element) {
+    // If it is mid-draw or mid-modify
+    if (this.isDrawing) {
+      this.isDrawing = false
+      this._deactivateDraw(element)
+      this._deactivateModify(element)
+      showToolCursor(element)
+
+      const { toolData, viewportUIDsToRender } = this.editData
+      const { data } = toolData
+
+      data.active = false
+      data.handles.activeHandleIndex = null
+
+      const enabledElement = getEnabledElement(element)
+      const { renderingEngine } = enabledElement
+
+      renderingEngine.renderViewports(viewportUIDsToRender)
+
+      this.editData = null
+      return toolData.metadata.toolUID
+    }
+  }
+
   _activateDraw = (element) => {
     state.isToolLocked = true
 
@@ -823,27 +905,18 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, scene } = enabledElement
-    const camera = viewport.getCamera()
-
-    const { spacingInNormalDirection } = getTargetVolume(scene, camera)
-
-    // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(
-      toolState,
-      camera,
-      spacingInNormalDirection
-    )
-
-    return toolDataWithinSlice
+    const { viewport } = enabledElement
+    return getToolStateForDisplay(viewport, toolState)
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
-    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
+    const { enabledElement } = svgDrawingHelper
 
-    if (!toolState) {
+    let toolState = getToolState(enabledElement, this.name)
+
+    if (!toolState?.length) {
       return
     }
 
@@ -852,11 +925,22 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       toolState
     )
 
-    if (!toolState.length) {
+    if (!toolState?.length) {
       return
     }
 
-    const { viewport } = svgDrawingHelper.enabledElement
+    const { viewport } = enabledElement
+    let targetUID
+    if (viewport.type === VIEWPORT_TYPE.STACK) {
+      targetUID = this._getTargetStackUID(viewport)
+    } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
+      const scene = viewport.getScene()
+      targetUID = this._getTargetVolumeUID(scene)
+    } else {
+      throw new Error(`Viewport Type not supported: ${viewport.type}`)
+    }
+
+    const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
@@ -869,8 +953,16 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       const lineDash = this.getStyle(settings, 'lineDash', toolData)
       const color = this.getStyle(settings, 'color', toolData)
 
-      if (data.invalidated) {
-        this._throttledCalculateCachedStats(data)
+      if (!data.cachedStats[targetUID]) {
+        data.cachedStats[targetUID] = {}
+
+        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
+      } else if (data.invalidated) {
+        this._throttledCalculateCachedStats(
+          toolData,
+          renderingEngine,
+          enabledElement
+        )
       }
 
       let activeHandleCanvasCoords
@@ -926,7 +1018,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         }
       )
 
-      const textLines = this._getTextLines(data)
+      const textLines = this._getTextLines(data, targetUID)
 
       if (!textLines || textLines.length === 0) {
         continue
@@ -968,9 +1060,9 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
   }
 
-  _getTextLines = (data) => {
+  _getTextLines = (data, targetUID) => {
     const { cachedStats } = data
-    const { length, width } = cachedStats
+    const { length, width } = cachedStats[targetUID]
 
     if (length === undefined) {
       return
@@ -986,34 +1078,93 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _calculateCachedStats = (data) => {
+  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
+    let imageVolume, viewport
+    if (targetUID.startsWith('stackTarget')) {
+      const coloneIndex = targetUID.indexOf(':')
+      const viewportUID = targetUID.substring(coloneIndex + 1)
+      viewport = renderingEngine.getViewport(viewportUID)
+      imageVolume = viewport.getImageData()
+    } else {
+      imageVolume = getVolume(targetUID)
+    }
+
+    return { imageVolume, viewport }
+  }
+
+  _calculateCachedStats = (toolData, renderingEngine, enabledElement) => {
+    const { data } = toolData
+    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
     const worldPos3 = data.handles.points[2]
     const worldPos4 = data.handles.points[3]
 
     // https://github.com/Kitware/vtk-js/blob/b50fd091cb9b5b65981bc7c64af45e8f2472d7a1/Sources/Common/Core/Math/index.js#L331
-    const dist1 = Math.sqrt(
-      vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
-    )
-    const dist2 = Math.sqrt(
-      vtkMath.distance2BetweenPoints(worldPos3, worldPos4)
-    )
-    const length = dist1 > dist2 ? dist1 : dist2
-    const width = dist1 > dist2 ? dist2 : dist1
+    const { cachedStats } = data
+    const targetUIDs = Object.keys(cachedStats)
 
-    data.cachedStats = {
-      length,
-      width,
+    for (let i = 0; i < targetUIDs.length; i++) {
+      const targetUID = targetUIDs[i]
+
+      const { imageVolume } = this._getImageVolumeFromTargetUID(
+        targetUID,
+        renderingEngine
+      )
+
+      const { vtkImageData: imageData, dimensions } = imageVolume
+
+      // https://github.com/Kitware/vtk-js/blob/b50fd091cb9b5b65981bc7c64af45e8f2472d7a1/Sources/Common/Core/Math/index.js#L331
+      const dist1 = Math.sqrt(
+        vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
+      )
+      const dist2 = Math.sqrt(
+        vtkMath.distance2BetweenPoints(worldPos3, worldPos4)
+      )
+      const length = dist1 > dist2 ? dist1 : dist2
+      const width = dist1 > dist2 ? dist2 : dist1
+
+      const index1 = <Types.Point3>[0, 0, 0]
+      const index2 = <Types.Point3>[0, 0, 0]
+      const index3 = <Types.Point3>[0, 0, 0]
+      const index4 = <Types.Point3>[0, 0, 0]
+
+      imageData.worldToIndexVec3(worldPos1, index1)
+      imageData.worldToIndexVec3(worldPos2, index2)
+      imageData.worldToIndexVec3(worldPos3, index3)
+      imageData.worldToIndexVec3(worldPos4, index4)
+
+      this._isInsideVolume(index1, index2, index3, index4, dimensions)
+        ? (this.isHandleOutsideImage = false)
+        : (this.isHandleOutsideImage = true)
+
+      cachedStats[targetUID] = {
+        length,
+        width,
+      }
     }
 
     data.invalidated = false
+
+    // Dispatching measurement modified
+    const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+    const eventDetail = {
+      toolData,
+      viewportUID,
+      renderingEngineUID,
+      sceneUID: sceneUID,
+    }
+    triggerEvent(eventTarget, eventType, eventDetail)
   }
 
-  _isInsideVolume = (index1, index2, dimensions) => {
+  _isInsideVolume = (index1, index2, index3, index4, dimensions): boolean => {
     return (
       indexWithinDimensions(index1, dimensions) &&
-      indexWithinDimensions(index2, dimensions)
+      indexWithinDimensions(index2, dimensions) &&
+      indexWithinDimensions(index3, dimensions) &&
+      indexWithinDimensions(index4, dimensions)
     )
   }
 
@@ -1025,6 +1176,10 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         index[i] = dimensions[i] - 1
       }
     }
+  }
+
+  _getTargetStackUID(viewport) {
+    return `stackTarget:${viewport.uid}`
   }
 
   _getTargetVolumeUID = (scene) => {

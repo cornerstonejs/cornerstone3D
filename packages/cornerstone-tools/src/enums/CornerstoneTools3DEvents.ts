@@ -171,6 +171,26 @@ enum CornerstoneTools3DEvents {
   // MEASUREMENTS
   //
 
+  /**
+   *  @type {String}
+   */
+  MEASUREMENT_ADDED = 'cornerstonetoolsmeasurementadded',
+
+  /**
+   *  @type {String}
+   */
+  MEASUREMENT_MODIFIED = 'cornerstonetoolsmeasurementmodified',
+
+  /**
+   *  @type {String}
+   */
+  MEASUREMENT_COMPLETED = 'cornerstonetoolsmeasurementcompleted',
+
+  /**
+   *  @type {String}
+   */
+  MEASUREMENT_REMOVED = 'cornerstonetoolsmeasurementremoved',
+
   MEASUREMENT_SELECTION_CHANGE = 'cornerstonetools3dmeasurementselectionchange',
 }
 

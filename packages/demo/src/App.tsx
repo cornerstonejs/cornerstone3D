@@ -11,6 +11,7 @@ import NineStackViewportExample from './ExampleNineStackViewport'
 import VTKSetVolumesExample from './ExampleSetVolumes'
 import CacheDecacheExample from './ExampleCacheDecache'
 import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration'
+import OneVolumeExample from './ExampleOneVolume'
 
 function LinkOut({ href, text }) {
   return (
@@ -21,13 +22,11 @@ function LinkOut({ href, text }) {
 }
 
 function ExampleEntry({ title, url, text, style }) {
-  let CustomTag = `h5` as keyof JSX.IntrinsicElements;
+  let CustomTag = `h5` as keyof JSX.IntrinsicElements
 
-  if (style){
-    CustomTag = `h${style}` as keyof JSX.IntrinsicElements;
+  if (style) {
+    CustomTag = `h${style}` as keyof JSX.IntrinsicElements
   }
-
-
 
   return (
     <div>
@@ -52,6 +51,11 @@ function Index() {
       text: 'Example MPR playground.',
     },
     {
+      title: 'One Volume',
+      url: '/oneVolume',
+      text: 'Example one volume',
+    },
+    {
       title: 'Canvas Resize',
       url: '/canvasResize',
       text: 'Onscreen/Offscreen Canvas Resize Example.',
@@ -59,15 +63,13 @@ function Index() {
     {
       title: 'Twenty Five Canvas',
       url: '/twentyFiveCanvas',
-      text:
-        'Example with twenty five on screen canvases linked to a single RenderingEngine.',
+      text: 'Example with twenty five on screen canvases linked to a single RenderingEngine.',
     },
     {
       title: 'Demo 1 - Cache Decache',
       url: '/cacheDecache',
-      text:
-        'Demonstration of combined cache and image loader',
-        style: "3"
+      text: 'Demonstration of combined cache and image loader',
+      style: '3',
     },
     {
       title: 'Color',
@@ -92,19 +94,17 @@ function Index() {
     {
       title: 'EnableElement/disableElement API',
       url: '/enableDisableAPI',
-      text:
-        'Example for displaying stack and volume viewport using enableElement and disableElement API',
+      text: 'Example for displaying stack and volume viewport using enableElement and disableElement API',
     },
     {
       title: 'Set Volumes',
       url: '/setVolumes',
-      text:
-        'Example for changing the volume while keeping the layout, synchronizers etc'
+      text: 'Example for changing the volume while keeping the layout, synchronizers etc',
     },
     {
       title: 'Tool Display Configuration',
       url: '/toolDisplayConfiguration',
-      text: 'Example of display configuration options for tools'
+      text: 'Example of display configuration options for tools',
     },
   ]
 
@@ -209,6 +209,11 @@ function AppRouter() {
       children: <ToolDisplayConfigurationExample />,
     })
 
+  const OneVolume = () =>
+    Example({
+      children: <OneVolumeExample />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -223,7 +228,12 @@ function AppRouter() {
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />
         <Route exact path="/setVolumes/" render={setVolumes} />
         <Route exact path="/cacheDecache/" render={cacheDecache} />
-        <Route exact path="/toolDisplayConfiguration/" render={toolDisplayConfiguration} />
+        <Route exact path="/oneVolume/" render={OneVolume} />
+        <Route
+          exact
+          path="/toolDisplayConfiguration/"
+          render={toolDisplayConfiguration}
+        />
         <Route exact component={Index} />
       </Switch>
     </Router>

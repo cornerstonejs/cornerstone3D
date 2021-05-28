@@ -8,29 +8,14 @@ import {
   VIEWPORT_TYPE,
   EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
-import {
-  SynchronizerManager,
-  synchronizers,
-  ToolGroupManager,
-  resetToolsState,
-} from '@ohif/cornerstone-tools'
+import { ToolGroupManager, resetToolsState } from '@ohif/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
-import { createDXImageIds } from './helpers/createStudyImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import {
-  renderingEngineUID,
-  ctVolumeUID,
-  ctStackUID,
-  SCENE_IDS,
-  VIEWPORT_IDS,
-} from './constants'
+import { ctVolumeUID, ctStackUID, SCENE_IDS, VIEWPORT_IDS } from './constants'
 import LAYOUTS, { stackCT } from './layouts'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-
-const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
 const colorImageIds = [
   'web:http://localhost:3000/examples/head/avf1240c.png',
@@ -171,7 +156,7 @@ class NineStackViewportExample extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--0',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--0',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(0),
         defaultOptions: {
@@ -179,7 +164,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--1',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--1',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(1),
         defaultOptions: {
@@ -187,7 +172,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--2',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--2',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(2),
         defaultOptions: {
@@ -195,7 +180,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--3',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--3',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(3),
         defaultOptions: {
@@ -203,7 +188,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--4',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--4',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(4),
         defaultOptions: {
@@ -211,7 +196,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--5',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--5',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(5),
         defaultOptions: {
@@ -219,7 +204,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--6',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--6',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(6),
         defaultOptions: {
@@ -227,7 +212,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--7',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--7',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(7),
         defaultOptions: {
@@ -235,7 +220,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK + '--8',
+        viewportUID: VIEWPORT_IDS.STACK.CT + '--8',
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(8),
         defaultOptions: {

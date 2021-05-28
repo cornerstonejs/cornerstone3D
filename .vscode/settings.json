@@ -1,10 +1,8 @@
 {
   "editor.rulers": [80, 120],
-
   // ===
   // Spacing
   // ===
-
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
   "editor.trimAutoWhitespace": true,
@@ -12,35 +10,25 @@
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
-
   // ===
   // Event Triggers
   // ===
-
-  // "editor.defaultFormatter": "esbenp.prettier-vscode",
-  // "[javascript]": {
-  //   "editor.defaultFormatter": "esbenp.prettier-vscode"
-  // },
-
-  // Deprecated
+  // "editor.formatOnSave": true,
   // "eslint.autoFixOnSave": true,
+  "editor.formatOnSave": false,
+  "javascript.format.enable": false,
+  "eslint.autoFixOnSave": true,
+  "eslint.alwaysShowStatus": true,
+  "eslint.options": {
+    "extensions": [ ".html", ".js", ".vue", ".jsx" ]
+  },
+  "eslint.validate": [
+    { "language": "html", "autoFix": true },
+    { "language": "javascript", "autoFix": true },
+    { "language": "javascriptreact", "autoFix": true }
+  ],
+  "workbench.colorCustomizations": {},
   "editor.codeActionsOnSave": {
-    "source.fixAll": true,
     "source.fixAll.eslint": true
   },
-  // Default (format when you paste)
-  "editor.formatOnPaste": true,
-  // Default (format when you save)
-  "editor.formatOnSave": true,
-  "eslint.run": "onSave",
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "Babel Javascript",
-    "typescript",
-    "typescriptreact"
-  ],
-  "eslint.alwaysShowStatus": true,
-  "prettier.disableLanguages": [],
-  "workbench.colorCustomizations": {}
 }

@@ -2,6 +2,7 @@ import addTool from './addTool'
 import resetToolsState from './resetToolsState'
 import addEnabledElement from './addEnabledElement'
 import removeEnabledElement from './removeEnabledElement'
+import cancelActiveManipulations from './cancelActiveManipulations'
 //
 import ToolGroupManager from './ToolGroupManager'
 import SynchronizerManager from './SynchronizerManager'
@@ -26,6 +27,7 @@ export {
   resetToolsState,
   addEnabledElement,
   removeEnabledElement,
+  cancelActiveManipulations,
   getToolDataNearPoint,
   getToolDataNearPointOnEnabledElement,
   svgNodeCache,

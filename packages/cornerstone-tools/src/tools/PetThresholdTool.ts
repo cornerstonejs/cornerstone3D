@@ -3,6 +3,7 @@ import {
   EVENTS,
   triggerEvent,
   eventTarget,
+  VolumeViewport,
 } from '@ohif/cornerstone-render'
 import { BaseTool } from './base'
 
@@ -30,19 +31,10 @@ export default class PetThresholdTool extends BaseTool {
 
     let volumeActor
 
-    if (volumeUID) {
+    if (viewport instanceof VolumeViewport && volumeUID) {
       volumeActor = scene.getVolumeActor(volumeUID)
-
-      if (!volumeActor) {
-        // Intentional use of volumeUID which is not defined, so throw.
-        throw new Error(
-          `Scene does not have a volume actor with specified volumeUID: ${volumeUID}`
-        )
-      }
     } else {
-      // Default to first volumeActor
-      const volumeActors = scene.getVolumeActors()
-
+      const volumeActors = viewport.getActors()
       if (volumeActors && volumeActors.length) {
         volumeActor = volumeActors[0].volumeActor
       }
@@ -67,6 +59,8 @@ export default class PetThresholdTool extends BaseTool {
     upper -= wcDelta
     upper = Math.max(upper, 0.1)
 
+    const newRange = { lower, upper }
+
     rgbTransferFunction.setMappingRange(lower, upper)
 
     const eventDetail = {
@@ -77,6 +71,12 @@ export default class PetThresholdTool extends BaseTool {
 
     triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
 
-    scene.render()
+    if (scene || viewport instanceof VolumeViewport) {
+      scene.render()
+      return
+    }
+
+    viewport.setStackActorVOI(newRange)
+    viewport.render()
   }
 }

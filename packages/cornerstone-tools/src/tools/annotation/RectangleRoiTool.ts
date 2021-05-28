@@ -1,20 +1,30 @@
 import { BaseAnnotationTool } from '../base'
 // ~~ VTK Viewport
+import { vec3 } from 'gl-matrix'
 import {
-  Settings,
   getEnabledElement,
   getVolume,
-  Types,
+  Settings,
+  StackViewport,
+  VolumeViewport,
+  getRenderingEngines,
+  triggerEvent,
+  eventTarget,
 } from '@ohif/cornerstone-render'
-import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
+import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
-import { addToolState, getToolState } from '../../stateManagement/toolState'
+import {
+  addToolState,
+  getToolState,
+  removeToolState,
+} from '../../stateManagement/toolState'
+import toolStyle from '../../stateManagement/toolStyle'
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
-import { vec2, vec3 } from 'gl-matrix'
+import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
@@ -23,6 +33,7 @@ import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+
 import { ToolSpecificToolData } from '../../types'
 
 export default class RectangleRoiTool extends BaseAnnotationTool {
@@ -36,12 +47,14 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     hasMoved?: boolean
   } | null
   _configuration: any
+  isDrawing: boolean
+  isHandleOutsideImage: boolean
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
       name: 'RectangleRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true },
+      configuration: { shadow: true, preventHandleOutsideImage: false },
     })
 
     this._throttledCalculateCachedStats = throttle(
@@ -65,14 +78,37 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       return
     }
 
+    this.isDrawing = true
+
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
+
+    let referencedImageId
+    if (viewport instanceof StackViewport) {
+      referencedImageId =
+        viewport.getCurrentImageId && viewport.getCurrentImageId()
+    } else {
+      const { volumeUID } = this.configuration
+      const imageVolume = getVolume(volumeUID)
+      referencedImageId = getImageIdForTool(
+        worldPos,
+        viewPlaneNormal,
+        viewUp,
+        imageVolume
+      )
+    }
+
+    if (referencedImageId) {
+      const colonIndex = referencedImageId.indexOf(':')
+      referencedImageId = referencedImageId.substring(colonIndex + 1)
+    }
 
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
         viewUp: [...viewUp],
         FrameOfReferenceUID,
+        referencedImageId,
         toolName: this.name,
       },
       data: {
@@ -290,12 +326,22 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    renderingEngine.renderViewports(viewportUIDsToRender)
-
     this.editData = null
+    this.isDrawing = false
+
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeToolState(element, toolData)
+    }
+
+    renderingEngine.renderViewports(viewportUIDsToRender)
   }
 
   _mouseDragCallback = (evt) => {
+    this.isDrawing = true
+
     const eventData = evt.detail
     const { element } = eventData
 
@@ -374,14 +420,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           bottomRightCanvas = worldToCanvas(points[1])
           topLeftCanvas = worldToCanvas(points[2])
 
-          bottomLeftCanvas = <Types.Point2>[
-            topLeftCanvas[0],
-            bottomRightCanvas[1],
-          ]
-          topRightCanvas = <Types.Point2>[
-            bottomRightCanvas[0],
-            topLeftCanvas[1],
-          ]
+          bottomLeftCanvas = <Point2>[topLeftCanvas[0], bottomRightCanvas[1]]
+          topRightCanvas = <Point2>[bottomRightCanvas[0], topLeftCanvas[1]]
 
           bottomLeftWorld = canvasToWorld(bottomLeftCanvas)
           topRightWorld = canvasToWorld(topRightCanvas)
@@ -402,6 +442,30 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     renderingEngine.renderViewports(viewportUIDsToRender)
   }
 
+  cancel(element) {
+    // If it is mid-draw or mid-modify
+    if (this.isDrawing) {
+      this.isDrawing = false
+      this._deactivateDraw(element)
+      this._deactivateModify(element)
+      showToolCursor(element)
+
+      const { toolData, viewportUIDsToRender } = this.editData
+
+      const { data } = toolData
+
+      data.active = false
+      data.handles.activeHandleIndex = null
+
+      const enabledElement = getEnabledElement(element)
+      const { renderingEngine } = enabledElement
+
+      renderingEngine.renderViewports(viewportUIDsToRender)
+
+      this.editData = null
+      return toolData.metadata.toolUID
+    }
+  }
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.
    */
@@ -471,28 +535,21 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, scene } = enabledElement
-    const camera = viewport.getCamera()
+    const { viewport } = enabledElement
 
-    const { spacingInNormalDirection } = getTargetVolume(scene, camera)
-
-    // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(
-      toolState,
-      camera,
-      spacingInNormalDirection
-    )
-
-    return toolDataWithinSlice
+    return getToolStateForDisplay(viewport, toolState)
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
+    this._renderingEngines = getRenderingEngines()
+
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
 
+    const { enabledElement } = svgDrawingHelper
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
-    if (!toolState) {
+    if (!toolState?.length) {
       return
     }
 
@@ -501,17 +558,30 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       toolState
     )
 
-    if (!toolState.length) {
+    if (!toolState?.length) {
       return
     }
 
-    const { viewport, scene } = svgDrawingHelper.enabledElement
-    const targetVolumeUID = this._getTargetVolumeUID(scene)
+    const { viewport } = enabledElement
+
+    let targetUID
+    if (viewport instanceof StackViewport) {
+      targetUID = this._getTargetStackUID(viewport)
+    } else if (viewport instanceof VolumeViewport) {
+      const scene = viewport.getScene()
+      targetUID = this._getTargetVolumeUID(scene)
+    } else {
+      throw new Error(`Viewport Type not supported: ${viewport.type}`)
+    }
+
+    const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
       const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
-      const annotationUID = toolData.metadata.toolUID
+      const toolMetadata = toolData.metadata
+      const annotationUID = toolMetadata.toolUID
+
       const data = toolData.data
       const { points, activeHandleIndex } = data.handles
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
@@ -519,16 +589,54 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       const lineDash = this.getStyle(settings, 'lineDash', toolData)
       const color = this.getStyle(settings, 'color', toolData)
 
-      if (!data.cachedStats[targetVolumeUID]) {
-        // This volume has not had its stats calulcated yet, so recalculate the stats.
-        data.cachedStats[targetVolumeUID] = {}
+      const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
-        const { viewPlaneNormal, viewUp } = viewport.getCamera()
-        this._calculateCachedStats(data, viewPlaneNormal, viewUp)
+      if (!data.cachedStats[targetUID]) {
+        data.cachedStats[targetUID] = {}
+        this._calculateCachedStats(
+          toolData,
+          viewPlaneNormal,
+          viewUp,
+          renderingEngine,
+          enabledElement
+        )
       } else if (data.invalidated) {
-        // The data has been invalidated as it was just edited. Recalculate cached stats.
-        const { viewPlaneNormal, viewUp } = viewport.getCamera()
-        this._throttledCalculateCachedStats(data, viewPlaneNormal, viewUp)
+        this._throttledCalculateCachedStats(
+          toolData,
+          viewPlaneNormal,
+          viewUp,
+          renderingEngine,
+          enabledElement
+        )
+
+        // If the invalidated data is as a result of volumeViewport manipulation
+        // of the tools, we need to invalidate the related stackViewports data if
+        // they are not at the referencedImageId, so that
+        // when scrolling to the related slice in which the tool were manipulated
+        // we re-render the correct tool position. This is due to stackViewport
+        // which doesn't have the full volume at each time, and we are only working
+        // on one slice at a time.
+        if (viewport instanceof VolumeViewport) {
+          const { referencedImageId } = toolData.metadata
+
+          // todo: this is not efficient, but necessary
+          // invalidate all the relevant stackViewports if they are not
+          // at the referencedImageId
+          const viewports = renderingEngine.getViewports()
+          viewports.forEach((vp) => {
+            const stackTargetUID = this._getTargetStackUID(vp)
+            // only delete the cachedStats for the stackedViewports if the tool
+            // is dragged inside the volume and the stackViewports are not at the
+            // referencedImageId for the tool
+            if (
+              vp instanceof StackViewport &&
+              !vp.getCurrentImageId().includes(referencedImageId) &&
+              data.cachedStats[stackTargetUID]
+            ) {
+              delete data.cachedStats[stackTargetUID]
+            }
+          })
+        }
       }
 
       let activeHandleCanvasCoords
@@ -569,7 +677,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         }
       )
 
-      const textLines = this._getTextLines(data, targetVolumeUID)
+      const textLines = this._getTextLines(data, targetUID)
       if (!textLines || textLines.length === 0) {
         continue
       }
@@ -615,9 +723,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
    *
    * @param {} points - An array of points.
    */
-  _findTextBoxAnchorPoints = (
-    points: Array<Types.Point2>
-  ): Array<Types.Point2> => {
+  _findTextBoxAnchorPoints = (points: Array<Point2>): Array<Point2> => {
     const { left, top, width, height } =
       this._getRectangleImageCoordinates(points)
 
@@ -646,7 +752,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   }
 
   _getRectangleImageCoordinates = (
-    points: Array<Types.Point2>
+    points: Array<Point2>
   ): {
     left: number
     top: number
@@ -668,10 +774,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
    * target volume enclosed by the rectangle.
    *
    * @param {object} data - The toolDatas tool-specific data.
-   * @param {string} targetVolumeUID - The volumeUID of the volume to display the stats for.
+   * @param {string} targetUID - The volumeUID of the volume to display the stats for.
    */
-  _getTextLines = (data, targetVolumeUID: string) => {
-    const cachedVolumeStats = data.cachedStats[targetVolumeUID]
+  _getTextLines = (data, targetUID: string) => {
+    const cachedVolumeStats = data.cachedStats[targetUID]
     const { area, mean, stdDev, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
@@ -703,6 +809,20 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     return textLines
   }
 
+  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
+    let imageVolume, viewport
+    if (targetUID.startsWith('stackTarget')) {
+      const coloneIndex = targetUID.indexOf(':')
+      const viewportUID = targetUID.substring(coloneIndex + 1)
+      const viewport = renderingEngine.getViewport(viewportUID)
+      imageVolume = viewport.getImageData()
+    } else {
+      imageVolume = getVolume(targetUID)
+    }
+
+    return { imageVolume, viewport }
+  }
+
   /**
    * _calculateCachedStats - For each volume in the frame of reference that a
    * tool instance in particular viewport defines as its target volume, find the
@@ -710,26 +830,40 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
    * will be constant across the two points. In the other two directions iterate
    * over the voxels and calculate the first and second-order statistics.
    *
-   * @param {object} data - The toolDatas tool-specific data.
+   * @param {object} data - The toolData tool-specific data.
    * @param {Array<number>} viewPlaneNormal The normal vector of the camera.
    * @param {Array<number>} viewUp The viewUp vector of the camera.
    */
-  _calculateCachedStats = (data, viewPlaneNormal, viewUp) => {
+  _calculateCachedStats = (
+    toolData,
+    viewPlaneNormal,
+    viewUp,
+    renderingEngine,
+    enabledElement
+  ) => {
+    const { data } = toolData
+    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[3]
     const { cachedStats } = data
 
-    const volumeUIDs = Object.keys(cachedStats)
+    const targetUIDs = Object.keys(cachedStats)
 
-    for (let i = 0; i < volumeUIDs.length; i++) {
-      const volumeUID = volumeUIDs[i]
-      const imageVolume = getVolume(volumeUID)
+    for (let i = 0; i < targetUIDs.length; i++) {
+      const targetUID = targetUIDs[i]
+
+      const { imageVolume } = this._getImageVolumeFromTargetUID(
+        targetUID,
+        renderingEngine
+      )
 
       const {
         dimensions,
         scalarData,
         vtkImageData: imageData,
         metadata,
+        direction,
       } = imageVolume
       const worldPos1Index = vec3.fromValues(0, 0, 0)
       const worldPos2Index = vec3.fromValues(0, 0, 0)
@@ -750,7 +884,9 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       // Some area to do stats over.
 
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        // Calculate index bounds to itterate over
+        this.isHandleOutsideImage = false
+
+        // Calculate index bounds to iterate over
 
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0])
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0])
@@ -764,7 +900,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         const { worldWidth, worldHeight } = getWorldWidthAndHeightInPlane(
           viewPlaneNormal,
           viewUp,
-          imageVolume,
+          direction,
           worldPos1,
           worldPos2
         )
@@ -778,7 +914,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         const yMultiple = dimensions[0]
         const zMultiple = dimensions[0] * dimensions[1]
 
-        // This is a tripple loop, but one of these 3 values will be constant
+        // This is a triple loop, but one of these 3 values will be constant
         // In the planar view.
         for (let k = kMin; k <= kMax; k++) {
           for (let j = jMin; j <= jMax; j++) {
@@ -808,20 +944,32 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         stdDev /= count
         stdDev = Math.sqrt(stdDev)
 
-        cachedStats[volumeUID] = {
+        cachedStats[targetUID] = {
           Modality: metadata.Modality,
           area,
           mean,
           stdDev,
         }
       } else {
-        cachedStats[volumeUID] = {
+        this.isHandleOutsideImage = true
+        cachedStats[targetUID] = {
           Modality: metadata.Modality,
         }
       }
     }
 
     data.invalidated = false
+
+    // Dispatching measurement modified
+    const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+    const eventDetail = {
+      toolData,
+      viewportUID,
+      renderingEngineUID,
+      sceneUID: sceneUID,
+    }
+    triggerEvent(eventTarget, eventType, eventDetail)
 
     return cachedStats
   }
@@ -831,6 +979,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       indexWithinDimensions(index1, dimensions) &&
       indexWithinDimensions(index2, dimensions)
     )
+  }
+
+  _getTargetStackUID(viewport) {
+    return `stackTarget:${viewport.uid}`
   }
 
   _getTargetVolumeUID = (scene) => {

@@ -3,6 +3,7 @@ import { state } from '../index'
 import IToolGroup from './IToolGroup'
 import ISetToolModeOptions from './ISetToolModeOptions'
 import ToolModes from '../../enums/ToolModes'
+import deepmerge from '../../util/deepMerge'
 
 const { Active, Passive, Enabled, Disabled } = ToolModes
 
@@ -59,8 +60,8 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       // Wrap in try-catch so 3rd party tools don't explode?
       const { toolClass: ToolClass, toolOptions: defaultToolOptions } =
         toolDefinition
-      const mergedToolConfiguration = Object.assign(
-        {},
+
+      const mergedToolConfiguration = deepmerge(
         defaultToolOptions,
         toolConfiguration
       )

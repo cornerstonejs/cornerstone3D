@@ -1,4 +1,8 @@
-import { mouseEventListeners, wheelEventListener } from '../eventListeners'
+import {
+  mouseEventListeners,
+  wheelEventListener,
+  keyEventListener,
+} from '../eventListeners'
 import {
   imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
@@ -18,6 +22,7 @@ function removeEnabledElement(elementDisabledEvt) {
   // Listeners
   mouseEventListeners.disable(canvas)
   wheelEventListener.disable(canvas)
+  keyEventListener.disable(canvas)
   // Dispatchers: renderer
   imageRenderedEventDispatcher.disable(canvas)
   cameraModifiedEventDispatcher.disable(canvas)

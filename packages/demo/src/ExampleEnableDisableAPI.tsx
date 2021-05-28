@@ -7,19 +7,10 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
-import {
-  SynchronizerManager,
-  synchronizers,
-  ToolGroupManager,
-  resetToolsState,
-} from '@ohif/cornerstone-tools'
+import { ToolGroupManager, resetToolsState } from '@ohif/cornerstone-tools'
 import * as cs from '@ohif/cornerstone-render'
 
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 import getImageIds from './helpers/getImageIds'
-import { createDXImageIds } from './helpers/createStudyImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
 import config from './config/default'
@@ -35,17 +26,14 @@ import {
   SCENE_IDS,
   VIEWPORT_IDS,
 } from './constants'
-import LAYOUTS, { stackCT } from './layouts'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-
-const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
 
-let ctSceneToolGroup, stackViewportToolGroup
+let ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup
 class EnableDisableViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
@@ -72,7 +60,7 @@ class EnableDisableViewportExample extends Component {
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
 
-    this.petVolumeImageIdsPromise = getImageIds('pet1', VOLUME)
+    this.petVolumeImageIdsPromise = getImageIds('pt1', VOLUME)
     this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME)
     this.ctVolumeImageIdsPromise2 = getImageIds('ct2', VOLUME)
 
@@ -135,7 +123,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // stack CT
-          viewportUID: VIEWPORT_IDS.STACK,
+          viewportUID: VIEWPORT_IDS.STACK.CT,
           type: VIEWPORT_TYPE.STACK,
           canvas: this._canvasNodes.get(1),
           defaultOptions: {
@@ -144,7 +132,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // dx
-          viewportUID: VIEWPORT_DX_COLOR,
+          viewportUID: VIEWPORT_IDS.STACK.DX,
           type: VIEWPORT_TYPE.STACK,
           canvas: this._canvasNodes.get(2),
           defaultOptions: {
@@ -176,7 +164,8 @@ class EnableDisableViewportExample extends Component {
     const renderingEngine = new RenderingEngine(renderingEngineUID)
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
-    ;({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups())
+    ;({ ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup } =
+      initToolGroups())
 
     // Create volumes
     const dxImageIds = await this.dxImageIdsPromise
@@ -199,23 +188,23 @@ class EnableDisableViewportExample extends Component {
     )
 
     // stack ct
-    stackViewportToolGroup.addViewports(
+    stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
       undefined,
-      VIEWPORT_IDS.STACK
+      VIEWPORT_IDS.STACK.CT
     )
 
     renderingEngine.render()
 
     const ctStackLoad = async () => {
-      const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
+      const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
       await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds))
     }
 
     this.ctStackLoad = ctStackLoad
 
     const dxColorLoad = async () => {
-      const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
+      const dxColorViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
 
       const fakeStake = [
         dxImageIds[0],
@@ -228,10 +217,10 @@ class EnableDisableViewportExample extends Component {
       ]
       await dxColorViewport.setStack(fakeStake)
 
-      stackViewportToolGroup.addViewports(
+      stackDXViewportToolGroup.addViewports(
         renderingEngineUID,
         undefined,
-        VIEWPORT_DX_COLOR
+        VIEWPORT_IDS.STACK.DX
       )
     }
 
@@ -342,9 +331,9 @@ class EnableDisableViewportExample extends Component {
     this.renderingEngine.enableElement(viewportInput)
 
     // load
-    if (viewportInput.viewportUID === VIEWPORT_IDS.STACK) {
+    if (viewportInput.viewportUID === VIEWPORT_IDS.STACK.CT) {
       this.ctStackLoad()
-    } else if (viewportInput.viewportUID === VIEWPORT_DX_COLOR) {
+    } else if (viewportInput.viewportUID === VIEWPORT_IDS.STACK.DX) {
       this.dxColorLoad()
     } else {
       // if we have removed the scene when disabling all the related viewports

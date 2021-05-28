@@ -19,6 +19,8 @@ const onCameraModified = function (evt) {
     Enabled,
   ])
 
+  // todo: this will trigger crosshair tool onCameraModified in cases
+  // where crosshair is not active, shall we only filter active?
   enabledTools.forEach((tool) => {
     if (tool.onCameraModified) {
       tool.onCameraModified(evt)

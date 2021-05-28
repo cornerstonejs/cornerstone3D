@@ -1,3 +1,4 @@
+import { getVolume } from '@ohif/cornerstone-render'
 import VIEWPORT_TYPE from '../constants/viewportType'
 import Scene from './Scene'
 import Viewport from './Viewport'
@@ -41,6 +42,19 @@ class VolumeViewport extends Viewport {
     camera.setFreezeFocalPoint(true)
 
     this.resetCamera()
+  }
+
+  public getImageData(): any {
+    const volumeActors = this.getActors()
+    const imageVolume = getVolume(volumeActors[0].uid)
+    const {
+      dimensions,
+      scalarData,
+      direction,
+      vtkImageData: imageData,
+      metadata,
+    } = imageVolume
+    return { dimensions, direction, scalarData, imageData, metadata }
   }
 
   public getFrameOfReferenceUID = (): string => {
@@ -106,7 +120,7 @@ class VolumeViewport extends Viewport {
 
       // This is necessary to initialize the clipping range and it is not related
       // to our custom slabThickness.
-      activeCamera.setThicknessFromFocalPoint(0.1)
+      // activeCamera.setThicknessFromFocalPoint(0.1)
       // This is necessary to give the slab thickness.
       // NOTE: our custom camera implementation has an additional slab thickness
       // values to handle MIP and non MIP volumes in the same viewport.
@@ -143,9 +157,10 @@ class VolumeViewport extends Viewport {
     vtkCamera.setSlabThicknessActive(false)
 
     const renderer = this.getRenderer()
-    const offscreenMultiRenderWindow = this.getRenderingEngine()
-      .offscreenMultiRenderWindow
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow()
+    const offscreenMultiRenderWindow =
+      this.getRenderingEngine().offscreenMultiRenderWindow
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const size = openGLRenderWindow.getSize()
     const displayCoord = [canvasPos[0] + this.sx, canvasPos[1] + this.sy]
 
@@ -184,9 +199,10 @@ class VolumeViewport extends Viewport {
     vtkCamera.setSlabThicknessActive(false)
 
     const renderer = this.getRenderer()
-    const offscreenMultiRenderWindow = this.getRenderingEngine()
-      .offscreenMultiRenderWindow
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow()
+    const offscreenMultiRenderWindow =
+      this.getRenderingEngine().offscreenMultiRenderWindow
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const size = openGLRenderWindow.getSize()
     const displayCoord = openGLRenderWindow.worldToDisplay(
       ...worldPos,

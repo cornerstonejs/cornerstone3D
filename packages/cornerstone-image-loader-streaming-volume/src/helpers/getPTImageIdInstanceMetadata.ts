@@ -4,7 +4,7 @@ import {
   PhilipsPETPrivateGroup,
 } from 'calculate-suv/src/types'
 
-export default function getImageIdInstanceMetadata(
+export default function getPTImageIdInstanceMetadata(
   imageId: string
 ): InstanceMetadata {
   const dicomMetaData = metaData.get('instance', imageId)

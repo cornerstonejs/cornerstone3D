@@ -1,12 +1,12 @@
-import config from "./../config/default";
-import { api } from "dicomweb-client";
-import WADORSHeaderProvider from "./WADORSHeaderProvider";
-
-
+import config from './../config/default'
+import { api } from 'dicomweb-client'
+import WADORSHeaderProvider from './WADORSHeaderProvider'
+import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
+import { calculateSUVScalingFactors } from 'calculate-suv'
+import { getPTImageIdInstanceMetadata } from '@ohif/cornerstone-image-loader-streaming-volume'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
-
 
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
@@ -21,64 +21,89 @@ const STACK = 'stack'
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
+  wadoRsRoot,
   type,
 }) {
-  const { wadoRsRoot } = config;
-
-  const SOP_INSTANCE_UID = "00080018";
-  const SERIES_INSTANCE_UID = "0020000E";
+  const SOP_INSTANCE_UID = '00080018'
+  const SERIES_INSTANCE_UID = '0020000E'
+  const MODALITY = '00080060'
 
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
     seriesInstanceUID: SeriesInstanceUID,
-  };
+  }
 
-  const client = new api.DICOMwebClient({ url: wadoRsRoot });
-  const instances = await client.retrieveSeriesMetadata(studySearchOptions);
+  const client = new api.DICOMwebClient({ url: wadoRsRoot })
+  const instances = await client.retrieveSeriesMetadata(studySearchOptions)
+  const modality = instances[0][MODALITY].Value[0]
+
   const imageIds = instances.map((instanceMetaData) => {
-    const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
-    const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
+    const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0]
+    const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0]
 
-    let imageId;
+    let imageId
     if (type === VOLUME) {
       imageId =
         `csiv:` +
         wadoRsRoot +
-        "/studies/" +
+        '/studies/' +
         StudyInstanceUID +
-        "/series/" +
+        '/series/' +
         SeriesInstanceUID +
-        "/instances/" +
+        '/instances/' +
         SOPInstanceUID +
-        "/frames/1";
+        '/frames/1'
 
       cornerstoneWADOImageLoader.wadors.metaDataManager.add(
         imageId,
         instanceMetaData
-      );
+      )
 
-      WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
-
+      // WADORSHeaderProvider.addInstance(imageId, instanceMetaData)
     } else {
       imageId =
         `wadors:` +
         wadoRsRoot +
-        "/studies/" +
+        '/studies/' +
         StudyInstanceUID +
-        "/series/" +
+        '/series/' +
         SeriesInstanceUID +
-        "/instances/" +
+        '/instances/' +
         SOPInstanceUID +
-        "/frames/1";
+        '/frames/1'
 
       cornerstoneWADOImageLoader.wadors.metaDataManager.add(
         imageId,
         instanceMetaData
-      );
+      )
     }
+    WADORSHeaderProvider.addInstance(imageId, instanceMetaData)
 
-    return imageId;
-  });
+    return imageId
+  })
 
-  return imageIds;
+  // we don't want to add non-pet
+  // Note: for 99% of scanners SUV calculation is consistent bw slices
+  if (modality === 'PT') {
+    const InstanceMetadataArray = []
+    imageIds.forEach((imageId) => {
+      const instanceMetadata = getPTImageIdInstanceMetadata(imageId)
+      if (instanceMetadata) {
+        InstanceMetadataArray.push(instanceMetadata)
+      }
+    })
+    if (InstanceMetadataArray.length) {
+      const suvScalingFactors = calculateSUVScalingFactors(
+        InstanceMetadataArray
+      )
+      InstanceMetadataArray.forEach((instanceMetadata, index) => {
+        ptScalingMetaDataProvider.addInstance(
+          imageIds[index],
+          suvScalingFactors[index]
+        )
+      })
+    }
+  }
+
+  return imageIds
 }

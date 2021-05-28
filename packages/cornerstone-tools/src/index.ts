@@ -9,6 +9,8 @@ import {
   setGlobalStyle,
   setToolStyle,
   setToolDataStyle,
+  removeToolState,
+  removeToolStateByToolUID,
 } from './stateManagement'
 
 import init from './init'
@@ -19,9 +21,11 @@ import {
   getToolDataNearPointOnEnabledElement,
   ToolGroupManager,
   SynchronizerManager,
+  cancelActiveManipulations,
 } from './store'
 import drawing from './drawing'
 import synchronizers from './synchronizers'
+import * as Utilities from './util'
 
 import {
   BaseTool,
@@ -46,6 +50,7 @@ import { ToolBindings, CornerstoneTools3DEvents } from './enums'
 export {
   // LifeCycle
   addTool,
+  cancelActiveManipulations,
   resetToolsState,
   init,
   BaseTool,
@@ -83,6 +88,8 @@ export {
   toolStyle,
   getToolState,
   addToolState,
+  removeToolState,
+  removeToolStateByToolUID,
   toolDataSelection,
   getStyle,
   setGlobalStyle,
@@ -90,4 +97,6 @@ export {
   setToolDataStyle,
   getToolDataNearPoint,
   getToolDataNearPointOnEnabledElement,
+  // Utilities
+  Utilities,
 }

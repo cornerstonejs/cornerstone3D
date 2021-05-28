@@ -20,6 +20,16 @@ interface IImage {
   rowPixelSpacing: number
   invert: boolean
   sizeInBytes: number
+  scaling?: {
+    PET?: {
+      // @TODO: Do these values exist?
+      SUVlbmFactor?: number
+      SUVbsaFactor?: number
+      // accessed in ProbeTool
+      suvbwToSuvlbm?: number
+      suvbwToSuvbsa?: number
+    }
+  }
 }
 
 export default IImage

@@ -1,9 +1,20 @@
+import {
+  getEnabledElement,
+  triggerEvent,
+  eventTarget,
+} from '@ohif/cornerstone-render'
+import { CornerstoneTools3DEvents as EVENTS } from '../enums'
 import { Types } from '@ohif/cornerstone-render'
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
 import { uuidv4 } from '../util'
-import { ToolSpecificToolState } from '../types/toolStateTypes'
+import {
+  ToolSpecificToolState,
+  ToolSpecificToolData,
+} from '../types/toolStateTypes'
 
-function getViewportSpecificStateManager(element: Types.IEnabledElement) {
+function getViewportSpecificStateManager(
+  element: Types.IEnabledElement | HTMLCanvasElement
+) {
   // TODO:
   // We may want multiple FrameOfReferenceSpecificStateManagers.
   // E.g. displaying two different radiologists annotations on the same underlying data/FoR.
@@ -39,7 +50,10 @@ function getToolState(
  * @param {*} element
  * @param {*} toolData
  */
-function addToolState(element, toolData) {
+function addToolState(
+  element: HTMLCanvasElement,
+  toolData: ToolSpecificToolData
+): void {
   const toolStateManager = getViewportSpecificStateManager(element)
 
   if (toolData.metadata.toolUID === undefined) {
@@ -47,6 +61,84 @@ function addToolState(element, toolData) {
   }
 
   toolStateManager.addToolState(toolData)
+
+  // trigger measurement added
+  const enabledElement = getEnabledElement(element)
+  const { renderingEngine } = enabledElement
+  const { viewportUID, sceneUID } = enabledElement
+
+  const eventType = EVENTS.MEASUREMENT_ADDED
+
+  const eventDetail = {
+    toolData,
+    viewportUID,
+    renderingEngineUID: renderingEngine.uid,
+    sceneUID: sceneUID,
+  }
+
+  triggerEvent(eventTarget, eventType, eventDetail)
 }
 
-export { getToolState, addToolState }
+/**
+ * @function removeToolState
+ *
+ * @param {*} element
+ * @param {*} toolData
+ */
+function removeToolState(
+  element: HTMLCanvasElement,
+  toolData: ToolSpecificToolData
+): void {
+  const toolStateManager = getViewportSpecificStateManager(element)
+  toolStateManager.removeToolState(toolData)
+
+  // trigger measurement removed
+  const enabledElement = getEnabledElement(element)
+  const { renderingEngine } = enabledElement
+  const { viewportUID, sceneUID } = enabledElement
+
+  const eventType = EVENTS.MEASUREMENT_REMOVED
+
+  const eventDetail = {
+    toolData,
+    viewportUID,
+    renderingEngineUID: renderingEngine.uid,
+    sceneUID: sceneUID,
+  }
+
+  triggerEvent(eventTarget, eventType, eventDetail)
+}
+
+/**
+ * @function removeToolStateByToolUID
+ *
+ * @param {*} element
+ * @param {*} toolUID
+ */
+function removeToolStateByToolUID(
+  element: HTMLCanvasElement,
+  toolUID: string
+): void {
+  const toolStateManager = getViewportSpecificStateManager(element)
+
+  const toolData = toolStateManager.getToolStateByToolUID(toolUID)
+  toolStateManager.removeToolStateByToolUID(toolUID)
+
+  // trigger measurement removed
+  const enabledElement = getEnabledElement(element)
+  const { renderingEngine } = enabledElement
+  const { viewportUID, sceneUID } = enabledElement
+
+  const eventType = EVENTS.MEASUREMENT_REMOVED
+
+  const eventDetail = {
+    toolData,
+    viewportUID,
+    renderingEngineUID: renderingEngine.uid,
+    sceneUID: sceneUID,
+  }
+
+  triggerEvent(eventTarget, eventType, eventDetail)
+}
+
+export { getToolState, addToolState, removeToolState, removeToolStateByToolUID }

@@ -102,6 +102,10 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
       open: true,
       port: 3000,
       historyApiFallback: true,
+      headers: {
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin"
+      }
     },
   }
 };

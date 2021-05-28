@@ -37,7 +37,7 @@ export default function getToolsWithDataForElement(
       toolState = tool.filterInteractableToolStateForElement(element, toolState)
     }
 
-    if (toolState.length > 0) {
+    if (toolState?.length > 0) {
       result.push({ tool, toolState })
     }
   }

@@ -6,31 +6,16 @@ import {
   triggerEvent,
   ImageVolume,
   cache,
+  Types,
   loadImage,
-  Utilities,
+  Utilities as cornerstoneUtils,
 } from '@ohif/cornerstone-render'
-import { calculateSUVScalingFactors } from 'calculate-suv'
 
 import getInterleavedFrames from './helpers/getInterleavedFrames'
 import autoLoad from './helpers/autoLoad'
-import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
-import {
-  IImage,
-  IVolume,
-  IStreamingVolume,
-  ImageLoadObject,
-} from '@ohif/cornerstone-render'
 
 const requestType = 'prefetch'
-
-type ScalingParameters = {
-  rescaleSlope: number
-  rescaleIntercept: number
-  modality: string
-  suvbw?: number
-  suvlbm?: number
-  suvbsa?: number
-}
+const { getMinMax } = cornerstoneUtils
 
 // TODO James wants another layer in between ImageVolume and SliceStreamingImageVolume
 // which adds loaded/loading as an interface?
@@ -51,8 +36,8 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   constructor(
-    imageVolumeProperties: IVolume,
-    streamingProperties: IStreamingVolume
+    imageVolumeProperties: Types.IVolume,
+    streamingProperties: Types.IStreamingVolume
   ) {
     super(imageVolumeProperties)
 
@@ -322,28 +307,32 @@ export default class StreamingImageVolume extends ImageVolume {
       }
     }
 
-    const InstanceMetadataArray = []
     interleavedFrames.forEach((frame) => {
-      const { imageId } = frame
+      const { imageId, imageIdIndex } = frame
+
+      if (cachedFrames[imageIdIndex]) {
+        framesLoaded++
+        framesProcessed++
+        return
+      }
+
+      const modalityLutModule = metaData.get('modalityLutModule', imageId) || {}
 
       const generalSeriesModule =
         metaData.get('generalSeriesModule', imageId) || {}
 
-      if (generalSeriesModule.modality === 'PT') {
-        const instanceMetadata = getImageIdInstanceMetadata(imageId)
-        InstanceMetadataArray.push(instanceMetadata)
+      const scalingParameters: Types.ScalingParameters = {
+        rescaleSlope: modalityLutModule.rescaleSlope,
+        rescaleIntercept: modalityLutModule.rescaleIntercept,
+        modality: generalSeriesModule.modality,
       }
-    })
 
-    let suvScalingFactors
-    if (InstanceMetadataArray.length > 0) {
-      suvScalingFactors = calculateSUVScalingFactors(InstanceMetadataArray)
+      if (scalingParameters.modality === 'PT') {
+        const suvFactor = metaData.get('scalingModule', imageId)
 
-      this._addScalingToVolume(suvScalingFactors)
-    }
-
-    interleavedFrames.forEach((frame) => {
-      const { imageId, imageIdIndex } = frame
+        this._addScalingToVolume(suvFactor)
+        scalingParameters.suvbw = suvFactor.suvbw
+      }
 
       // Check if there is a cached image for the same imageURI (different
       // data loader scheme)
@@ -378,28 +367,6 @@ export default class StreamingImageVolume extends ImageVolume {
             errorCallback(err, imageIdIndex, imageId)
           })
         return
-      }
-
-      if (cachedFrames[imageIdIndex]) {
-        framesLoaded++
-        framesProcessed++
-        return
-      }
-
-      const modalityLutModule = metaData.get('modalityLutModule', imageId) || {}
-
-      const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {}
-
-      const scalingParameters: ScalingParameters = {
-        rescaleSlope: modalityLutModule.rescaleSlope,
-        rescaleIntercept: modalityLutModule.rescaleIntercept,
-        modality: generalSeriesModule.modality,
-      }
-
-      if (scalingParameters.modality === 'PT') {
-        const suvFactor = suvScalingFactors[imageIdIndex]
-        scalingParameters.suvbw = suvFactor.suvbw
       }
 
       const options = {
@@ -447,16 +414,14 @@ export default class StreamingImageVolume extends ImageVolume {
     })
   }
 
-  private _addScalingToVolume(suvScalingFactors) {
+  private _addScalingToVolume(suvFactor) {
     if (!this.scaling) {
       this.scaling = {}
     }
 
-    const firstSUVFactor = suvScalingFactors[0]
-
     if (!this.scaling.PET) {
       // These ratios are constant across all frames, so only need one.
-      const { suvbw, suvlbm, suvbsa } = firstSUVFactor
+      const { suvbw, suvlbm, suvbsa } = suvFactor
 
       const petScaling = <PetScaling>{}
 
@@ -491,7 +456,7 @@ export default class StreamingImageVolume extends ImageVolume {
   public convertToCornerstoneImage(
     imageId: string,
     imageIdIndex: number
-  ): ImageLoadObject {
+  ): Types.ImageLoadObject {
     const { imageIds } = this
 
     const {
@@ -545,12 +510,12 @@ export default class StreamingImageVolume extends ImageVolume {
     const volumeImageId = imageIds[imageIdIndex]
     const modalityLutModule =
       metaData.get('modalityLutModule', volumeImageId) || {}
-    const minMax = Utilities.getMinMax(imageScalarData)
+    const minMax = getMinMax(imageScalarData)
     const intercept = modalityLutModule.rescaleIntercept
       ? modalityLutModule.rescaleIntercept
       : 0
 
-    const image: IImage = {
+    const image: Types.IImage = {
       imageId,
       intercept,
       windowCenter,

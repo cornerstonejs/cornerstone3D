@@ -18,12 +18,10 @@ import { vec3 } from 'gl-matrix'
 export default function getWorldWidthAndHeightInPlane(
   viewPlaneNormal: Point3,
   viewUp: Point3,
-  imageVolume,
+  direction,
   worldPos1: Point3,
   worldPos2: Point3
 ) {
-  const { direction } = imageVolume
-
   const iDirection = direction.slice(0, 3)
   const jDirection = direction.slice(3, 6)
   const kDirection = direction.slice(6, 9)

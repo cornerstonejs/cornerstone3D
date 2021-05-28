@@ -15,12 +15,15 @@ import {
   VOIRange,
   ICamera,
   IImage,
+  ScalingParameters,
 } from '../types'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
 import requestPoolManager from '../requestPool/requestPoolManager'
 import ERROR_CODES from '../enums/errorCodes'
+
+const EPSILON = 1e-4
 
 interface ImageDataMetaData {
   bitsAllocated: number
@@ -30,6 +33,11 @@ interface ImageDataMetaData {
   dimensions: [number, number, number]
   spacing: [number, number, number]
   numVoxels: number
+}
+
+type PetScaling = {
+  suvbwToSuvlbm?: number
+  suvbwToSuvbsa?: number
 }
 /**
  * An object representing a single viewport, which is a camera
@@ -41,11 +49,17 @@ class StackViewport extends Viewport {
   // private _stackActors: Map<string, any>
   private _imageData: any // vtk image data
   private stackActorVOI: VOIRange
+  public modality: string // this is needed for tools
+  public scaling: any
+  loadCallbacks: any
+  panCache: Point3
+  cameraPosOnRender: Point3
 
   constructor(props: ViewportInput) {
     super(props)
+    this.scaling = {}
+    this.modality = null
     const renderer = this.getRenderer()
-
     const camera = vtkCamera.newInstance()
     renderer.setActiveCamera(camera)
 
@@ -67,13 +81,33 @@ class StackViewport extends Viewport {
     // @ts-ignore: vtkjs incorrect typing
     camera.setFreezeFocalPoint(true)
     this.imageIds = []
+    this.loadCallbacks = []
     this.currentImageIdIndex = 0
+    this.panCache = [0, 0, 0]
+    this.cameraPosOnRender = [0, 0, 0]
     this.resetCamera()
+  }
+
+  public getImageData(): any {
+    const { volumeActor } = this.getDefaultActor()
+    const vtkImageData = volumeActor.getMapper().getInputData()
+    return {
+      dimensions: vtkImageData.getDimensions(),
+      direction: vtkImageData.getDirection(),
+      scalarData: vtkImageData.getPointData().getScalars().getData(),
+      vtkImageData: volumeActor.getMapper().getInputData(),
+      metadata: { Modality: this.modality },
+      scaling: this.scaling,
+    }
   }
 
   public getFrameOfReferenceUID = (): string | undefined => {
     // Get the current image that is displayed in the viewport
     const imageId = this.getCurrentImageId()
+
+    if (!imageId) {
+      return
+    }
 
     // Use the metadata provider to grab its imagePlaneModule metadata
     const imagePlaneModule = metaData.get('imagePlaneModule', imageId)
@@ -159,7 +193,14 @@ class StackViewport extends Viewport {
     }
 
     const { modality } = metaData.get('generalSeriesModule', imageId)
+    const imageIdScalingFactor = metaData.get('scalingModule', imageId)
 
+    if (modality === 'PT' && imageIdScalingFactor) {
+      this._addScalingToViewport(imageIdScalingFactor)
+    }
+
+    // todo: some tools rely on the modality, i'm passing modality like this for now
+    this.modality = modality
     // Compute the image size and spacing given the meta data we already have available.
     // const metaDataMap = new Map()
     // imageIds.forEach((imageId) => {
@@ -180,6 +221,25 @@ class StackViewport extends Viewport {
         windowCenter,
         modality,
       },
+    }
+  }
+
+  private _addScalingToViewport(imageIdScalingFactor) {
+    if (!this.scaling.PET) {
+      // These ratios are constant across all frames, so only need one.
+      const { suvbw, suvlbm, suvbsa } = imageIdScalingFactor
+
+      const petScaling = <PetScaling>{}
+
+      if (suvlbm) {
+        petScaling.suvbwToSuvlbm = suvlbm / suvbw
+      }
+
+      if (suvbsa) {
+        petScaling.suvbwToSuvbsa = suvbsa / suvbw
+      }
+
+      this.scaling.PET = petScaling
     }
   }
 
@@ -229,7 +289,7 @@ class StackViewport extends Viewport {
     // rendering. Until further investigation we are using two slices, however,
     // we are only setting the scalar data for the first slice. The slice spacing
     // is set to be a small amount (0.1) to enable the correct canvasToWorld
-    const zSpacing = 0.2
+    const zSpacing = EPSILON
     const zVoxels = 2
 
     const numComps =
@@ -253,9 +313,10 @@ class StackViewport extends Viewport {
     }
   }
 
-  private _getCameraOrientation(
-    imageDataDirection: Array<number>
-  ): { viewPlaneNormal: Point3; viewUp: Point3 } {
+  private _getCameraOrientation(imageDataDirection: Array<number>): {
+    viewPlaneNormal: Point3
+    viewUp: Point3
+  } {
     const viewPlaneNormal = imageDataDirection.slice(6, 9).map((x) => -x)
 
     const viewUp = imageDataDirection.slice(3, 6).map((x) => -x)
@@ -269,7 +330,7 @@ class StackViewport extends Viewport {
     }
   }
 
-  private _createVTKImageData(image: IImage): vtkImageData {
+  private _createVTKImageData(image: IImage): void {
     const {
       origin,
       direction,
@@ -304,20 +365,30 @@ class StackViewport extends Viewport {
       values: pixelArray,
     })
 
-    const imageData = vtkImageData.newInstance()
+    this._imageData = vtkImageData.newInstance()
 
-    imageData.setDimensions(dimensions)
-    imageData.setSpacing(spacing)
-    imageData.setDirection(direction)
-    imageData.setOrigin(origin)
-
-    imageData.getPointData().setScalars(scalarArray)
-    return imageData
+    this._imageData.setDimensions(dimensions)
+    this._imageData.setSpacing(spacing)
+    this._imageData.setDirection(direction)
+    this._imageData.setOrigin(origin)
+    this._imageData.getPointData().setScalars(scalarArray)
   }
 
-  public setStack(imageIds: Array<string>, currentImageIdIndex = 0): any {
+  public setStack(
+    imageIds: Array<string>,
+    currentImageIdIndex = 0,
+    callbacks = []
+  ): any {
     this.imageIds = imageIds
     this.currentImageIdIndex = currentImageIdIndex
+
+    if (callbacks.length) {
+      callbacks.forEach((callback) => {
+        if (!this.loadCallbacks.includes(callback)) {
+          this.loadCallbacks.push(callback)
+        }
+      })
+    }
 
     this._setImageIdIndex(currentImageIdIndex)
   }
@@ -357,19 +428,11 @@ class StackViewport extends Viewport {
 
   // Todo: rename since it may do more than set scalars
   private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
-    const {
-      origin,
-      direction,
-      dimensions,
-      spacing,
-    } = this._getImageDataMetadata(image)
+    const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId)
+    const origin = imagePlaneModule.imagePositionPatient
 
-    this._imageData.setDimensions(...dimensions)
-    this._imageData.setSpacing(...spacing)
-    this._imageData.setDirection(direction)
     this._imageData.setOrigin(...origin)
-
-    // 3. Update the pixel data in the vtkImageData object with the pixelData
+    // 1. Update the pixel data in the vtkImageData object with the pixelData
     //    from the loaded Cornerstone image
     const pixelData = image.getPixelData()
     const scalars = this._imageData.getPointData().getScalars()
@@ -455,10 +518,36 @@ class StackViewport extends Viewport {
       )
     }
 
+    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {}
+    const suvFactor = metaData.get('scalingModule', imageId) || {}
+
+    const generalSeriesModule =
+      metaData.get('generalSeriesModule', imageId) || {}
+
+    const scalingParameters: ScalingParameters = {
+      rescaleSlope: modalityLutModule.rescaleSlope,
+      rescaleIntercept: modalityLutModule.rescaleIntercept,
+      modality: generalSeriesModule.modality,
+      suvbw: suvFactor.suvbw,
+    }
+
+    // Todo: Note that eventually all viewport data is converted into Float32Array,
+    // we use it here for the purpose of scaling for now.
+    const type = 'Float32Array'
+
     const priority = -5
     const requestType = 'interaction'
     const additionalDetails = { imageId }
-    const options = {}
+    const options = {
+      targetBuffer: {
+        type,
+        offset: null,
+        length: null,
+      },
+      preScale: {
+        scalingParameters,
+      },
+    }
 
     requestPoolManager.addRequest(
       sendRequest.bind(this, imageId, imageIdIndex, options),
@@ -501,13 +590,19 @@ class StackViewport extends Viewport {
       // it in the space 3) restore the pan, zoom props.
       const cameraProps = this.getCamera()
 
+      this.panCache[0] = this.cameraPosOnRender[0] - cameraProps.position[0]
+      this.panCache[1] = this.cameraPosOnRender[1] - cameraProps.position[1]
+      this.panCache[2] = this.cameraPosOnRender[2] - cameraProps.position[2]
+
       // Reset the camera to point to the new slice location, reset camera doesn't
       // modify the direction of projection and viewUp
       this.resetCamera()
+      const { position } = this.getCamera()
+      this.cameraPosOnRender = position
 
       // This is necessary to initialize the clipping range and it is not related
       // to our custom slabThickness.
-      activeCamera.setThicknessFromFocalPoint(0.1)
+      // activeCamera.setThicknessFromFocalPoint(0.1)
       activeCamera.setFreezeFocalPoint(true)
 
       // We shouldn't restore the focalPoint, position and parallelScale after reset
@@ -518,7 +613,7 @@ class StackViewport extends Viewport {
 
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
-    this._imageData = this._createVTKImageData(image)
+    this._createVTKImageData(image)
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
     // Image's pixel data
@@ -526,6 +621,12 @@ class StackViewport extends Viewport {
 
     // Create a VTK Volume actor to display the vtkImageData object
     const stackActor = this.createActorMapper(this._imageData)
+
+    if (this.loadCallbacks.length) {
+      this.loadCallbacks.forEach((callback) =>
+        callback({ volumeActor: stackActor })
+      )
+    }
 
     this.setActors([{ uid: this.uid, volumeActor: stackActor }])
     // Adjusting the camera based on slice axis. this is required if stack
@@ -541,8 +642,12 @@ class StackViewport extends Viewport {
 
     // This is necessary to initialize the clipping range and it is not related
     // to our custom slabThickness.
-    activeCamera.setThicknessFromFocalPoint(0.1)
+    // activeCamera.setThicknessFromFocalPoint(0.1)
     activeCamera.setFreezeFocalPoint(true)
+
+    // Saving position of camera on render, to cache the panning
+    const { position } = this.getCamera()
+    this.cameraPosOnRender = position
   }
 
   private _setImageIdIndex(imageIdIndex: number): void {
@@ -574,21 +679,29 @@ class StackViewport extends Viewport {
     this._setImageIdIndex(imageIdIndex)
   }
 
-  private _restoreCameraProps({
-    focalPoint: prevFocal,
-    position: prevPos,
-    parallelScale: prevScale,
-  }: ICamera): void {
+  private _restoreCameraProps({ parallelScale: prevScale }: ICamera): void {
     const renderer = this.getRenderer()
 
     // get the focalPoint and position after the reset
     const { position, focalPoint } = this.getCamera()
 
+    const newPosition = <Point3>[
+      position[0] - this.panCache[0],
+      position[1] - this.panCache[1],
+      position[2] - this.panCache[2],
+    ]
+
+    const newFocal = <Point3>[
+      focalPoint[0] - this.panCache[0],
+      focalPoint[1] - this.panCache[1],
+      focalPoint[2] - this.panCache[2],
+    ]
+
     // Restoring previous state x,y and scale, keeping the new z
     this.setCamera({
       parallelScale: prevScale,
-      position: [prevPos[0], prevPos[1], position[2]],
-      focalPoint: [prevFocal[0], prevFocal[1], focalPoint[2]],
+      position: newPosition,
+      focalPoint: newFocal,
     })
 
     // Invoking render
@@ -611,9 +724,10 @@ class StackViewport extends Viewport {
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer()
-    const offscreenMultiRenderWindow = this.getRenderingEngine()
-      .offscreenMultiRenderWindow
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow()
+    const offscreenMultiRenderWindow =
+      this.getRenderingEngine().offscreenMultiRenderWindow
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const size = openGLRenderWindow.getSize()
     const displayCoord = [canvasPos[0] + this.sx, canvasPos[1] + this.sy]
 
@@ -638,9 +752,10 @@ class StackViewport extends Viewport {
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
     const renderer = this.getRenderer()
-    const offscreenMultiRenderWindow = this.getRenderingEngine()
-      .offscreenMultiRenderWindow
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow()
+    const offscreenMultiRenderWindow =
+      this.getRenderingEngine().offscreenMultiRenderWindow
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const size = openGLRenderWindow.getSize()
     const displayCoord = openGLRenderWindow.worldToDisplay(
       ...worldPos,

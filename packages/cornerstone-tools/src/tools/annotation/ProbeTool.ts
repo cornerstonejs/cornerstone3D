@@ -2,14 +2,21 @@
 import { BaseAnnotationTool } from '../base'
 // ~~ VTK Viewport
 import {
-  Settings,
   getEnabledElement,
+  Settings,
   getVolume,
-  StackViewport,
   Types,
+  StackViewport,
+  VolumeViewport,
+  triggerEvent,
+  eventTarget,
 } from '@ohif/cornerstone-render'
-import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
-import { addToolState, getToolState } from '../../stateManagement/toolState'
+import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
+import {
+  addToolState,
+  getToolState,
+  removeToolState,
+} from '../../stateManagement/toolState'
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
@@ -20,6 +27,7 @@ import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+
 import { ToolSpecificToolData } from '../../types'
 
 export default class ProbeTool extends BaseAnnotationTool {
@@ -27,15 +35,20 @@ export default class ProbeTool extends BaseAnnotationTool {
   mouseDragCallback: any
   editData: { toolData: any; viewportUIDsToRender: string[] } | null
   _configuration: any
+  eventDispatchDetail: {
+    viewportUID: string
+    sceneUID: string
+    renderingEngineUID: string
+  }
+  isDrawing: boolean
+  isHandleOutsideImage: boolean
 
   constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+    super(toolConfiguration, {
       name: 'Probe',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true },
-    }
-
-    super(toolConfiguration, defaultToolConfiguration)
+      configuration: { shadow: true, preventHandleOutsideImage: false },
+    })
 
     /**
      * Will only fire fore cornerstone events:
@@ -67,13 +80,30 @@ export default class ProbeTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { viewport, renderingEngine } = enabledElement
 
+    this.isDrawing = true
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
     let referencedImageId
     if (viewport instanceof StackViewport) {
-      referencedImageId = viewport.getCurrentImageId()
+      referencedImageId =
+        viewport.getCurrentImageId && viewport.getCurrentImageId()
+    } else {
+      const { volumeUID } = this.configuration
+      const imageVolume = getVolume(volumeUID)
+      referencedImageId = getImageIdForTool(
+        worldPos,
+        viewPlaneNormal,
+        viewUp,
+        imageVolume
+      )
     }
+
+    if (referencedImageId) {
+      const colonIndex = referencedImageId.indexOf(':')
+      referencedImageId = referencedImageId.substring(colonIndex + 1)
+    }
+
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
@@ -174,19 +204,35 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     data.active = false
 
+    const enabledElement = getEnabledElement(element)
+    const { renderingEngine } = enabledElement
+
+    const { viewportUID, sceneUID } = enabledElement
+    this.eventDispatchDetail = {
+      viewportUID,
+      sceneUID,
+      renderingEngineUID: renderingEngine.uid,
+    }
+
     this._deactivateModify(element)
 
     showToolCursor(element)
 
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine } = enabledElement
+    this.editData = null
+    this.isDrawing = false
+
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeToolState(element, toolData)
+    }
 
     renderingEngine.renderViewports(viewportUIDsToRender)
-
-    this.editData = null
   }
 
   _mouseDragCallback(evt) {
+    this.isDrawing = true
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -201,6 +247,29 @@ export default class ProbeTool extends BaseAnnotationTool {
     const { renderingEngine } = enabledElement
 
     renderingEngine.renderViewports(viewportUIDsToRender)
+  }
+
+  cancel(element) {
+    // If it is mid-draw or mid-modify
+    if (this.isDrawing) {
+      this.isDrawing = false
+      this._deactivateModify(element)
+      showToolCursor(element)
+
+      const { toolData, viewportUIDsToRender } = this.editData
+      const { data } = toolData
+
+      data.active = false
+      data.handles.activeHandleIndex = null
+
+      const enabledElement = getEnabledElement(element)
+      const { renderingEngine } = enabledElement
+
+      renderingEngine.renderViewports(viewportUIDsToRender)
+
+      this.editData = null
+      return toolData.metadata.toolUID
+    }
   }
 
   _activateModify(element) {
@@ -235,29 +304,19 @@ export default class ProbeTool extends BaseAnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, scene } = enabledElement
-    const camera = viewport.getCamera()
+    const { viewport } = enabledElement
 
-    // TODO -> Cache this on camera change and on volume added?
-    const { spacingInNormalDirection } = getTargetVolume(scene, camera)
-
-    // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(
-      toolState,
-      camera,
-      spacingInNormalDirection
-    )
-
-    return toolDataWithinSlice
+    return getToolStateForDisplay(viewport, toolState)
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
+    const { enabledElement } = svgDrawingHelper
 
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
-    if (!toolState) {
+    if (!toolState?.length) {
       return
     }
 
@@ -266,12 +325,23 @@ export default class ProbeTool extends BaseAnnotationTool {
       toolState
     )
 
-    if (!toolState.length) {
+    if (!toolState?.length) {
       return
     }
 
-    const { viewport, scene } = svgDrawingHelper.enabledElement
-    const targetVolumeUID = this._getTargetVolumeUID(scene)
+    const { viewport } = enabledElement
+
+    let targetUID
+    if (viewport instanceof StackViewport) {
+      targetUID = this._getTargetStackUID(viewport)
+    } else if (viewport instanceof VolumeViewport) {
+      const scene = viewport.getScene()
+      targetUID = this._getTargetVolumeUID(scene)
+    } else {
+      throw new Error(`Viewport Type not supported: ${viewport.type}`)
+    }
+
+    const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
@@ -282,11 +352,40 @@ export default class ProbeTool extends BaseAnnotationTool {
       const canvasCoordinates = viewport.worldToCanvas(point)
       const color = this.getStyle(settings, 'color', toolData)
 
-      if (!data.cachedStats[targetVolumeUID]) {
-        data.cachedStats[targetVolumeUID] = {}
-        this._calculateCachedStats(data)
+      if (!data.cachedStats[targetUID]) {
+        data.cachedStats[targetUID] = {}
+        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
       } else if (data.invalidated) {
-        this._calculateCachedStats(data)
+        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
+
+        // If the invalidated data is as a result of volumeViewport manipulation
+        // of the tools, we need to invalidate the related stackViewports data if
+        // they are not at the referencedImageId, so that
+        // when scrolling to the related slice in which the tool were manipulated
+        // we re-render the correct tool position. This is due to stackViewport
+        // which doesn't have the full volume at each time, and we are only working
+        // on one slice at a time.
+        if (viewport instanceof VolumeViewport) {
+          const { referencedImageId } = toolData.metadata
+
+          // todo: this is not efficient, but necessary
+          // invalidate all the relevant stackViewports if they are not
+          // at the referencedImageId
+          const viewports = renderingEngine.getViewports()
+          viewports.forEach((vp) => {
+            const stackTargetUID = this._getTargetStackUID(vp)
+            // only delete the cachedStats for the stackedViewports if the tool
+            // is dragged inside the volume and the stackViewports are not at the
+            // referencedImageId for the tool
+            if (
+              vp instanceof StackViewport &&
+              !vp.getCurrentImageId().includes(referencedImageId) &&
+              data.cachedStats[stackTargetUID]
+            ) {
+              delete data.cachedStats[stackTargetUID]
+            }
+          })
+        }
       }
 
       const handleGroupUID = '0'
@@ -300,7 +399,7 @@ export default class ProbeTool extends BaseAnnotationTool {
         { color }
       )
 
-      const textLines = this._getTextLines(data, targetVolumeUID)
+      const textLines = this._getTextLines(data, targetUID)
       if (textLines) {
         const textCanvasCoorinates = [
           canvasCoordinates[0] + 6,
@@ -321,11 +420,11 @@ export default class ProbeTool extends BaseAnnotationTool {
     }
   }
 
-  _getTextLines(data, targetVolumeUID) {
-    const cachedVolumeStats = data.cachedStats[targetVolumeUID]
-    const { index, value, Modality } = cachedVolumeStats
+  _getTextLines(data, targetUID) {
+    const cachedVolumeStats = data.cachedStats[targetUID]
+    const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats
 
-    if (value === undefined) {
+    if (value === undefined && SUVBw === undefined) {
       return
     }
 
@@ -335,31 +434,18 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     if (Modality === 'PT') {
       // Check if we have scaling for the other 2 SUV types for the PET.
+      // If we have scaling, value should be undefined
+      if (value) {
+        textLines.push(`${value.toFixed(2)} SUV`)
+      } else {
+        textLines.push(`${SUVBw.toFixed(2)} SUV bw`)
 
-      const imageVolume = getVolume(targetVolumeUID)
-
-      if (
-        imageVolume.scaling.PET &&
-        (imageVolume.scaling.PET.suvbwToSuvbsa ||
-          imageVolume.scaling.PET.suvbwToSuvlbm)
-      ) {
-        const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET
-
-        textLines.push(`${value.toFixed(2)} SUV bw`)
-
-        if (suvbwToSuvlbm) {
-          const SUVLbm = value * suvbwToSuvlbm
-
+        if (SUVLbm) {
           textLines.push(`${SUVLbm.toFixed(2)} SUV lbm`)
         }
-
-        if (suvbwToSuvlbm) {
-          const SUVBsa = value * suvbwToSuvbsa
-
+        if (SUVBsa) {
           textLines.push(`${SUVBsa.toFixed(2)} SUV bsa`)
         }
-      } else {
-        textLines.push(`${value.toFixed(2)} SUV`)
       }
     } else if (Modality === 'CT') {
       textLines.push(`${value.toFixed(2)} HU`)
@@ -370,15 +456,71 @@ export default class ProbeTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _calculateCachedStats(data) {
+  _getValueForModality(value, imageVolume, modality) {
+    const values = {}
+
+    if (modality === 'PT') {
+      // Check if we have scaling for the other 2 SUV types for the PET.
+      if (
+        imageVolume.scaling.PET &&
+        (imageVolume.scaling.PET.suvbwToSuvbsa ||
+          imageVolume.scaling.PET.suvbwToSuvlbm)
+      ) {
+        const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET
+
+        values['SUVBw'] = value
+
+        if (suvbwToSuvlbm) {
+          const SUVLbm = value * suvbwToSuvlbm
+
+          values['SUVLbm'] = SUVLbm
+        }
+
+        if (suvbwToSuvlbm) {
+          const SUVBsa = value * suvbwToSuvbsa
+
+          values['SUVBsa'] = SUVBsa
+        }
+      } else {
+        values['value'] = value
+      }
+    } else {
+      values['value'] = value
+    }
+
+    return values
+  }
+
+  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
+    let imageVolume, viewport
+    if (targetUID.startsWith('stackTarget')) {
+      const coloneIndex = targetUID.indexOf(':')
+      const viewportUID = targetUID.substring(coloneIndex + 1)
+      viewport = renderingEngine.getViewport(viewportUID)
+      imageVolume = viewport.getImageData()
+    } else {
+      imageVolume = getVolume(targetUID)
+    }
+
+    return { imageVolume, viewport }
+  }
+
+  _calculateCachedStats(toolData, renderingEngine, enabledElement) {
+    const data = toolData.data
+    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+
     const worldPos = data.handles.points[0]
     const { cachedStats } = data
 
-    const volumeUIDs = Object.keys(cachedStats)
+    const targetUIDs = Object.keys(cachedStats)
 
-    for (let i = 0; i < volumeUIDs.length; i++) {
-      const volumeUID = volumeUIDs[i]
-      const imageVolume = getVolume(volumeUID)
+    for (let i = 0; i < targetUIDs.length; i++) {
+      const targetUID = targetUIDs[i]
+
+      const { imageVolume, viewport } = this._getImageVolumeFromTargetUID(
+        targetUID,
+        renderingEngine
+      )
 
       const {
         dimensions,
@@ -386,6 +528,9 @@ export default class ProbeTool extends BaseAnnotationTool {
         vtkImageData: imageData,
         metadata,
       } = imageVolume
+
+      const modality = metadata.Modality
+
       const index = <Types.Point3>[0, 0, 0]
 
       imageData.worldToIndexVec3(worldPos, index)
@@ -395,26 +540,52 @@ export default class ProbeTool extends BaseAnnotationTool {
       index[2] = Math.floor(index[2])
 
       if (indexWithinDimensions(index, dimensions)) {
+        this.isHandleOutsideImage = false
         const yMultiple = dimensions[0]
         const zMultiple = dimensions[0] * dimensions[1]
 
         const value =
           scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]]
 
-        cachedStats[volumeUID] = {
+        // Index[2] for stackViewport is always 0, but for visualization
+        // we reset it to be imageId index
+        if (viewport instanceof StackViewport) {
+          index[2] = viewport.getCurrentImageIdIndex()
+        }
+
+        const values = this._getValueForModality(value, imageVolume, modality)
+
+        cachedStats[targetUID] = {
           index,
-          value,
-          Modality: metadata.Modality,
+          ...values,
+          Modality: modality,
         }
       } else {
-        cachedStats[volumeUID] = {
+        this.isHandleOutsideImage = true
+        cachedStats[targetUID] = {
           index,
-          Modality: metadata.Modality,
+          Modality: modality,
         }
       }
-    }
 
-    data.invalidated = false
+      data.invalidated = false
+
+      // Dispatching measurement modified
+      const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+      const eventDetail = {
+        toolData,
+        viewportUID,
+        renderingEngineUID,
+        sceneUID: sceneUID,
+      }
+
+      triggerEvent(eventTarget, eventType, eventDetail)
+    }
+  }
+
+  _getTargetStackUID(viewport) {
+    return `stackTarget:${viewport.uid}`
   }
 
   _getTargetVolumeUID(scene) {

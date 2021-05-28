@@ -26,14 +26,12 @@ import * as cs from '@ohif/cornerstone-render'
 
 import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
 
-const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
-
 const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
 
-let ctSceneToolGroup, stackViewportToolGroup
+let ctSceneToolGroup, stackCTViewportToolGroup
 
 class CacheDecacheExample extends Component {
   state = {
@@ -83,7 +81,7 @@ class CacheDecacheExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    ;({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups())
+    ;({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID
     this.ctStackUID = ctStackUID
@@ -129,7 +127,7 @@ class CacheDecacheExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK,
+        viewportUID: VIEWPORT_IDS.STACK.CT,
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(3),
         defaultOptions: {
@@ -158,22 +156,15 @@ class CacheDecacheExample extends Component {
     )
 
     // stack ct
-    stackViewportToolGroup.addViewports(
+    stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
       undefined,
-      VIEWPORT_IDS.STACK
-    )
-
-    // dx and color
-    stackViewportToolGroup.addViewports(
-      renderingEngineUID,
-      undefined,
-      VIEWPORT_DX_COLOR
+      VIEWPORT_IDS.STACK.CT
     )
 
     renderingEngine.render()
 
-    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
+    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
     const middleSlice = Math.floor(ctStackImageIds.length / 2)
     await stackViewport.setStack(
@@ -260,7 +251,7 @@ class CacheDecacheExample extends Component {
   }
 
   decacheStackImage = () => {
-    const viewport = this.renderingEngine.getViewport(STACK)
+    const viewport = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
     const imageId = viewport.getCurrentImageId()
 
     cache.removeImageLoadObject(imageId)

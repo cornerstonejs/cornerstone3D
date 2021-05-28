@@ -202,11 +202,13 @@ class Viewport {
     }
   }
 
-  public resetCamera() {
+  // old reset camera
+  /*
+  resetCamera = () => {
     const renderer = this.getRenderer()
 
     const bounds = renderer.computeVisiblePropBounds()
-    const focalPoint: [number, number, number] = [0, 0, 0]
+    const focalPoint = [0, 0, 0]
 
     const activeCamera = this.getVtkActiveCamera()
     const viewPlaneNormal = activeCamera.getViewPlaneNormal()
@@ -220,14 +222,8 @@ class Viewport {
     focalPoint[1] = (bounds[2] + bounds[3]) / 2.0
     focalPoint[2] = (bounds[4] + bounds[5]) / 2.0
 
-    const {
-      widthWorld,
-      heightWorld,
-    } = this._getWorldDistanceViewUpAndViewRight(
-      bounds,
-      viewUp,
-      viewPlaneNormal
-    )
+    const { widthWorld, heightWorld } =
+      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal)
 
     const canvasSize = [this.sWidth, this.sHeight]
 
@@ -273,6 +269,7 @@ class Viewport {
     }
 
     // check view-up vector against view plane normal
+
     if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
       activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1])
     }
@@ -309,9 +306,111 @@ class Viewport {
 
     return true
   }
+  */
+
+  // new reset camera
+  // *
+  public resetCamera() {
+    const renderer = this.getRenderer()
+
+    const bounds = renderer.computeVisiblePropBounds()
+    const focalPoint: [number, number, number] = [0, 0, 0]
+
+    const activeCamera = this.getVtkActiveCamera()
+    const viewPlaneNormal = activeCamera.getViewPlaneNormal()
+    const viewUp = activeCamera.getViewUp()
+
+    // Reset the perspective zoom factors, otherwise subsequent zooms will cause
+    // the view angle to become very small and cause bad depth sorting.
+    // todo: parallel projection only
+    activeCamera.setViewAngle(90.0)
+
+    focalPoint[0] = (bounds[0] + bounds[1]) / 2.0
+    focalPoint[1] = (bounds[2] + bounds[3]) / 2.0
+    focalPoint[2] = (bounds[4] + bounds[5]) / 2.0
+
+    const { widthWorld, heightWorld } =
+      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal)
+
+    const canvasSize = [this.sWidth, this.sHeight]
+
+    const boundsAspectRatio = widthWorld / heightWorld
+    const canvasAspectRatio = canvasSize[0] / canvasSize[1]
+
+    let radius
+
+    if (boundsAspectRatio < canvasAspectRatio) {
+      // can fit full height, so use it.
+      radius = heightWorld / 2
+    } else {
+      const scaleFactor = boundsAspectRatio / canvasAspectRatio
+
+      radius = (heightWorld * scaleFactor) / 2
+    }
+
+    const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
+    const parallelScale = radius
+
+    let w1 = bounds[1] - bounds[0]
+    let w2 = bounds[3] - bounds[2]
+    let w3 = bounds[5] - bounds[4]
+    w1 *= w1
+    w2 *= w2
+    w3 *= w3
+    radius = w1 + w2 + w3
+
+    // If we have just a single point, pick a radius of 1.0
+    radius = radius === 0 ? 1.0 : radius
+
+    // compute the radius of the enclosing sphere
+    radius = Math.sqrt(radius) * 0.5
+
+    const distance = radius / Math.sin(angle * 0.5)
+
+    // check view-up vector against view plane normal
+    if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
+      activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1])
+    }
+
+    // update the camera
+    activeCamera.setFocalPoint(...focalPoint)
+    activeCamera.setPosition(
+      focalPoint[0] + distance * viewPlaneNormal[0],
+      focalPoint[1] + distance * viewPlaneNormal[1],
+      focalPoint[2] + distance * viewPlaneNormal[2]
+    )
+
+    renderer.resetCameraClippingRange(bounds)
+
+    // setup default parallel scale
+    activeCamera.setParallelScale(parallelScale)
+
+    // update reasonable world to physical values
+    activeCamera.setPhysicalScale(radius)
+    activeCamera.setPhysicalTranslation(
+      -focalPoint[0],
+      -focalPoint[1],
+      -focalPoint[2]
+    )
+
+    // instead of setThicknessFromFocalPoint we should do it here
+    activeCamera.setClippingRange(distance, distance + 0.1)
+
+    const RESET_CAMERA_EVENT = {
+      type: 'ResetCameraEvent',
+      renderer,
+    }
+
+    // Here to let parallel/distributed compositing intercept
+    // and do the right thing.
+    renderer.invokeEvent(RESET_CAMERA_EVENT)
+
+    return true
+  }
+  // */
 
   /**
-   * @method getCanvas Gets the target ouput canvas for the `Viewport`.
+   * @method getCanvas Gets the target output canvas for the `Viewport`.
    *
    * @returns {HTMLCanvasElement}
    */

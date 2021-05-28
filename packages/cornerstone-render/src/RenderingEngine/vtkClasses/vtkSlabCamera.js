@@ -90,11 +90,11 @@ function vtkSlabCamera(publicAPI, model) {
       let width
       let height
       if (model.useHorizontalViewAngle === true) {
-        width = crange0 * tmp
-        height = (crange0 * tmp) / aspect
+        width = cRange0 * tmp
+        height = (cRange0 * tmp) / aspect
       } else {
-        width = crange0 * tmp * aspect
-        height = crange0 * tmp
+        width = cRange0 * tmp * aspect
+        height = cRange0 * tmp
       }
 
       const xmin = (model.windowCenter[0] - 1.0) * width

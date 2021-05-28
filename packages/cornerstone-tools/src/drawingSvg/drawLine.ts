@@ -10,6 +10,11 @@ export default function drawLine(
   end: Point2,
   options = {}
 ): void {
+  // if length is NaN return
+  if (!start[0] || !start[1] || !end[0] || !end[1]) {
+    return
+  }
+
   const { color, width, lineWidth, lineDash } = Object.assign(
     {
       color: 'dodgerblue',

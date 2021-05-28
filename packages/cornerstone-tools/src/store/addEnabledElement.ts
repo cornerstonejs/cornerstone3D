@@ -1,4 +1,8 @@
-import { mouseEventListeners, wheelEventListener } from '../eventListeners'
+import {
+  mouseEventListeners,
+  wheelEventListener,
+  keyEventListener,
+} from '../eventListeners'
 import {
   imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
@@ -23,6 +27,7 @@ export default function addEnabledElement(evt: CustomEvent): void {
   // Listeners
   mouseEventListeners.enable(canvas)
   wheelEventListener.enable(canvas)
+  keyEventListener.enable(canvas)
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(canvas)
   cameraModifiedEventDispatcher.enable(canvas)

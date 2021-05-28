@@ -12,15 +12,15 @@ import {
 export default function getToolStateForDisplay(viewport: IViewport, toolState) {
   if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport
-    let imageId = viewport.getCurrentImageId()
+    const imageId = viewport.getCurrentImageId()
 
     // 2. remove the dataLoader scheme
     const colonIndex = imageId.indexOf(':')
-    imageId = imageId.substring(colonIndex + 1)
+    const imageURI = imageId.substring(colonIndex + 1)
 
     // 3. Filter tool data in the frame of reference by the referenced image ID property
     return toolState.filter((toolData) => {
-      return toolData.metadata.referencedImageId === imageId
+      return toolData.metadata.referencedImageId === imageURI
     })
   } else if (viewport instanceof VolumeViewport) {
     const scene = viewport.getScene()

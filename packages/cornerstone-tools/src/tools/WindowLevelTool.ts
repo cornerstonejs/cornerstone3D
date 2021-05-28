@@ -70,7 +70,11 @@ export default class WindowLevelTool extends BaseTool {
     if (viewport instanceof VolumeViewport && volumeUID) {
       const imageDynamicRange = this._getImageDynamicRange(volumeUID)
 
-      multiplier = Math.round(imageDynamicRange / 1024)
+      const ratio = imageDynamicRange / 1024
+
+      if (ratio > 1) {
+        multiplier = Math.round(ratio)
+      }
     }
 
     const wwDelta = deltaPointsCanvas[0] * multiplier

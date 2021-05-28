@@ -1,14 +1,22 @@
 import { BaseAnnotationTool } from '../base'
 // ~~ VTK Viewport
 import {
-  Settings,
   getEnabledElement,
-  getVolume,
+  Settings,
   Types,
+  getVolume,
+  StackViewport,
+  VolumeViewport,
+  eventTarget,
+  triggerEvent,
 } from '@ohif/cornerstone-render'
-import { getTargetVolume, getToolStateWithinSlice } from '../../util/planar'
+import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
-import { addToolState, getToolState } from '../../stateManagement/toolState'
+import {
+  addToolState,
+  getToolState,
+  removeToolState,
+} from '../../stateManagement/toolState'
 import {
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
@@ -42,12 +50,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     hasMoved?: boolean
   } | null
   _configuration: any
+  isDrawing: boolean
+  isHandleOutsideImage: boolean
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
       name: 'EllipticalRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true },
+      configuration: { shadow: true, preventHandleOutsideImage: false },
     })
 
     this._throttledCalculateCachedStats = throttle(
@@ -72,14 +82,37 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       return
     }
 
+    this.isDrawing = true
+
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
+
+    let referencedImageId
+    if (viewport instanceof StackViewport) {
+      referencedImageId =
+        viewport.getCurrentImageId && viewport.getCurrentImageId()
+    } else {
+      const { volumeUID } = this.configuration
+      const imageVolume = getVolume(volumeUID)
+      referencedImageId = getImageIdForTool(
+        worldPos,
+        viewPlaneNormal,
+        viewUp,
+        imageVolume
+      )
+    }
+
+    if (referencedImageId) {
+      const colonIndex = referencedImageId.indexOf(':')
+      referencedImageId = referencedImageId.substring(colonIndex + 1)
+    }
 
     const toolData = {
       metadata: {
         viewPlaneNormal: [...viewPlaneNormal],
         viewUp: [...viewUp],
         FrameOfReferenceUID,
+        referencedImageId,
         toolName: this.name,
       },
       data: {
@@ -331,11 +364,20 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { renderingEngine } = enabledElement
 
     this.editData = null
+    this.isDrawing = false
+
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeToolState(element, toolData)
+    }
 
     renderingEngine.renderViewports(viewportUIDsToRender)
   }
 
   _mouseDragDrawCallback = (evt) => {
+    this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
     const { currentPoints } = eventData
@@ -371,6 +413,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   _mouseDragModifyCallback = (evt) => {
+    this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
 
@@ -496,6 +539,30 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
   }
 
+  cancel(element) {
+    // If it is mid-draw or mid-modify
+    if (this.isDrawing) {
+      this.isDrawing = false
+      this._deactivateDraw(element)
+      this._deactivateModify(element)
+      showToolCursor(element)
+
+      const { toolData, viewportUIDsToRender } = this.editData
+      const { data } = toolData
+
+      data.active = false
+      data.handles.activeHandleIndex = null
+
+      const enabledElement = getEnabledElement(element)
+      const { renderingEngine } = enabledElement
+
+      renderingEngine.renderViewports(viewportUIDsToRender)
+
+      this.editData = null
+      return toolData.metadata.toolUID
+    }
+  }
+
   _activateModify = (element) => {
     state.isToolLocked = true
 
@@ -558,27 +625,18 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, scene } = enabledElement
-    const camera = viewport.getCamera()
-
-    const { spacingInNormalDirection } = getTargetVolume(scene, camera)
-
-    // Get data with same normal
-    const toolDataWithinSlice = getToolStateWithinSlice(
-      toolState,
-      camera,
-      spacingInNormalDirection
-    )
-
-    return toolDataWithinSlice
+    const { viewport } = enabledElement
+    return getToolStateForDisplay(viewport, toolState)
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
+
+    const { enabledElement } = svgDrawingHelper
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
-    if (!toolState) {
+    if (!toolState?.length) {
       return
     }
 
@@ -587,20 +645,33 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       toolState
     )
 
-    if (!toolState.length) {
+    if (!toolState?.length) {
       return
     }
 
-    const { viewport, scene } = svgDrawingHelper.enabledElement
-    const targetVolumeUID = this._getTargetVolumeUID(scene)
+    const { viewport } = enabledElement
+
+    let targetUID
+    if (viewport instanceof StackViewport) {
+      targetUID = this._getTargetStackUID(viewport)
+    } else if (viewport instanceof VolumeViewport) {
+      const scene = viewport.getScene()
+      targetUID = this._getTargetVolumeUID(scene)
+    } else {
+      throw new Error(`Viewport Type not supported: ${viewport.type}`)
+    }
+    const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i]
       const settings = Settings.getObjectSettings(toolData, EllipticalRoiTool)
-      const annotationUID = toolData.metadata.toolUID
+      const toolMetadata = toolData.metadata
+      const annotationUID = toolMetadata.toolUID
       const data = toolData.data
+
       const { handles, isDrawing } = data
       const { points, activeHandleIndex } = handles
+
       const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
       const lineDash = this.getStyle(settings, 'lineDash', toolData)
       const color = this.getStyle(settings, 'color', toolData)
@@ -609,13 +680,49 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const canvasCorners = <Array<Types.Point2>>(
         this._getCanvasEllipseCorners(canvasCoordinates)
       )
-
-      if (!data.cachedStats[targetVolumeUID]) {
-        data.cachedStats[targetVolumeUID] = {}
-
-        this._calculateCachedStats(data, viewport, canvasCorners)
+      if (!data.cachedStats[targetUID]) {
+        data.cachedStats[targetUID] = {}
+        this._calculateCachedStats(
+          toolData,
+          viewport,
+          renderingEngine,
+          enabledElement
+        )
       } else if (data.invalidated) {
-        this._throttledCalculateCachedStats(data, viewport, canvasCorners)
+        this._throttledCalculateCachedStats(
+          toolData,
+          viewport,
+          renderingEngine,
+          enabledElement
+        )
+
+        // If the invalidated data is as a result of volumeViewport manipulation
+        // of the tools, we need to invalidate the related viewports data, so that
+        // when scrolling to the related slice in which the tool were manipulated
+        // we re-render the correct tool position. This is due to stackViewport
+        // which doesn't have the full volume at each time, and we are only working
+        // on one slice at a time.
+        if (viewport instanceof VolumeViewport) {
+          const { referencedImageId } = toolData.metadata
+
+          // todo: this is not efficient, but necessary
+          // invalidate all the relevant stackViewports if they are not
+          // at the referencedImageId
+          const viewports = renderingEngine.getViewports()
+          viewports.forEach((vp) => {
+            const stackTargetUID = this._getTargetStackUID(vp)
+            // only delete the cachedStats for the stackedViewports if the tool
+            // is dragged inside the volume and the stackViewports are not at the
+            // referencedImageId for the tool
+            if (
+              vp instanceof StackViewport &&
+              !vp.getCurrentImageId().includes(referencedImageId) &&
+              data.cachedStats[stackTargetUID]
+            ) {
+              delete data.cachedStats[stackTargetUID]
+            }
+          })
+        }
       }
 
       let activeHandleCanvasCoords
@@ -654,7 +761,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         }
       )
 
-      const textLines = this._getTextLines(data, targetVolumeUID)
+      const textLines = this._getTextLines(data, targetUID)
       if (!textLines || textLines.length === 0) {
         continue
       }
@@ -708,8 +815,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     return [topLeft, bottomRight]
   }
 
-  _getTextLines = (data, targetVolumeUID) => {
-    const cachedVolumeStats = data.cachedStats[targetVolumeUID]
+  _getTextLines = (data, targetUID) => {
+    const cachedVolumeStats = data.cachedStats[targetUID]
     const { area, mean, stdDev, isEmptyArea, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
@@ -742,32 +849,66 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _calculateCachedStats = (data, viewport, canvasCorners) => {
-    const [canvasPoint1, canvasPoint2] = canvasCorners
-    const worldPos1 = viewport.canvasToWorld(canvasPoint1)
-    const worldPos2 = viewport.canvasToWorld(canvasPoint2)
+  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
+    let imageVolume, viewport
+    if (targetUID.startsWith('stackTarget')) {
+      const coloneIndex = targetUID.indexOf(':')
+      const viewportUID = targetUID.substring(coloneIndex + 1)
+      viewport = renderingEngine.getViewport(viewportUID)
+      imageVolume = viewport.getImageData()
+    } else {
+      imageVolume = getVolume(targetUID)
+    }
 
+    return { imageVolume, viewport }
+  }
+
+  _calculateCachedStats = (
+    toolData,
+    viewport,
+    renderingEngine,
+    enabledElement
+  ) => {
+    const data = toolData.data
+    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+
+    const { points } = data.handles
     const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
-    const { cachedStats } = data
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+
+    const canvasCorners = <Array<Types.Point2>>(
+      this._getCanvasEllipseCorners(canvasCoordinates)
+    )
+    const [canvasPoint1, canvasPoint2] = canvasCorners
 
     const ellipse = {
       left: Math.min(canvasPoint1[0], canvasPoint2[0]),
+      // todo: which top is minimum of y for points?
       top: Math.min(canvasPoint1[1], canvasPoint2[1]),
       width: Math.abs(canvasPoint1[0] - canvasPoint2[0]),
       height: Math.abs(canvasPoint1[1] - canvasPoint2[1]),
     }
 
-    const volumeUIDs = Object.keys(cachedStats)
+    const worldPos1 = viewport.canvasToWorld(canvasPoint1)
+    const worldPos2 = viewport.canvasToWorld(canvasPoint2)
+    const { cachedStats } = data
 
-    for (let i = 0; i < volumeUIDs.length; i++) {
-      const volumeUID = volumeUIDs[i]
-      const imageVolume = getVolume(volumeUID)
+    const targetUIDs = Object.keys(cachedStats)
+
+    for (let i = 0; i < targetUIDs.length; i++) {
+      const targetUID = targetUIDs[i]
+
+      const { imageVolume } = this._getImageVolumeFromTargetUID(
+        targetUID,
+        renderingEngine
+      )
 
       const {
         dimensions,
         scalarData,
         vtkImageData: imageData,
+        direction,
         metadata,
       } = imageVolume
       const worldPos1Index = vec3.fromValues(0, 0, 0)
@@ -789,6 +930,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       // Some area to do stats over.
 
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
+        this.isHandleOutsideImage = false
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0])
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0])
 
@@ -801,7 +943,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         const { worldWidth, worldHeight } = getWorldWidthAndHeightInPlane(
           viewPlaneNormal,
           viewUp,
-          imageVolume,
+          direction,
           worldPos1,
           worldPos2
         )
@@ -845,7 +987,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         const canvasPosStartPlusK = viewport.worldToCanvas(worldPosStartPlusK)
         vec2.sub(plusKCanvasDelta, canvasPosStartPlusK, canvasPosStart)
 
-        // This is a tripple loop, but one of these 3 values will be constant
+        // This is a triple loop, but one of these 3 values will be constant
         // In the planar view.
         for (let k = kMin; k <= kMax; k++) {
           for (let j = jMin; j <= jMax; j++) {
@@ -897,7 +1039,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         stdDev /= count
         stdDev = Math.sqrt(stdDev)
 
-        cachedStats[volumeUID] = {
+        cachedStats[targetUID] = {
           Modality: metadata.Modality,
           area,
           mean,
@@ -905,13 +1047,27 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           isEmptyArea,
         }
       } else {
-        cachedStats[volumeUID] = {
+        this.isHandleOutsideImage = true
+
+        cachedStats[targetUID] = {
           Modality: metadata.Modality,
         }
       }
     }
 
     data.invalidated = false
+
+    // Dispatching measurement modified
+    const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+    const eventDetail = {
+      toolData,
+      viewportUID,
+      renderingEngineUID,
+      sceneUID: sceneUID,
+    }
+
+    triggerEvent(eventTarget, eventType, eventDetail)
 
     return cachedStats
   }
@@ -921,6 +1077,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       indexWithinDimensions(index1, dimensions) &&
       indexWithinDimensions(index2, dimensions)
     )
+  }
+
+  _getTargetStackUID(viewport) {
+    return `stackTarget:${viewport.uid}`
   }
 
   _getTargetVolumeUID = (scene) => {

@@ -48,10 +48,8 @@ let ctSceneToolGroup,
   ptTypesSceneToolGroup,
   ptCtLayoutTools
 
-const {
-  createCameraPositionSynchronizer,
-  createVOISynchronizer,
-} = synchronizers
+const { createCameraPositionSynchronizer, createVOISynchronizer } =
+  synchronizers
 
 class VTKMPRExample extends Component {
   state = {
@@ -106,7 +104,7 @@ class VTKMPRExample extends Component {
       return imageIds
     }
 
-    this.petVolumeImageIds = getImageIds('pet1', VOLUME, callback)
+    this.petVolumeImageIds = getImageIds('pt1', VOLUME, callback)
     this.ctVolumeImageIds = getImageIds('ct1', VOLUME, callback)
 
     Promise.all([this.petVolumeImageIds, this.ctVolumeImageIds]).then(() =>
@@ -161,7 +159,7 @@ class VTKMPRExample extends Component {
         ptMipSceneToolGroup,
       },
       {
-        axialSynchronizers: [this.axialSync],
+        axialSynchronizers: [],
         sagittalSynchronizers: [this.sagittalSync],
         coronalSynchronizers: [this.coronalSync],
         ptThresholdSynchronizer: this.ptThresholdSync,

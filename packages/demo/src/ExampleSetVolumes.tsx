@@ -44,10 +44,8 @@ let ctSceneToolGroup,
   ptTypesSceneToolGroup,
   ptCtLayoutTools
 
-const {
-  createCameraPositionSynchronizer,
-  createVOISynchronizer,
-} = synchronizers
+const { createCameraPositionSynchronizer, createVOISynchronizer } =
+  synchronizers
 
 const ctVolumeUID2 = 'ctvolume2'
 const ptVolumeUID2 = 'petvolume2'
@@ -105,10 +103,10 @@ class VTKSetVolumesExample extends Component {
       return imageIds
     }
 
-    this.petVolumeImageIds1 = getImageIds('pet1', VOLUME, callback)
+    this.petVolumeImageIds1 = getImageIds('pt1', VOLUME, callback)
     this.ctVolumeImageIds1 = getImageIds('ct1', VOLUME, callback)
 
-    this.petVolumeImageIds2 = getImageIds('pet2', VOLUME, callback)
+    this.petVolumeImageIds2 = getImageIds('pt2', VOLUME, callback)
     this.ctVolumeImageIds2 = getImageIds('ct2', VOLUME, callback)
 
     Promise.all([this.petVolumeImageIds1, this.ctVolumeImageIds1]).then(() =>

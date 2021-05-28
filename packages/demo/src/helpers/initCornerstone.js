@@ -4,6 +4,7 @@ import * as csTools3d from '@ohif/cornerstone-tools'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'
+import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 
 // Wire up listeners for renderingEngine's element enabled events
 csTools3d.init()
@@ -14,6 +15,11 @@ window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader
 cornerstone.metaData.addProvider(
   WADORSHeaderProvider.get.bind(WADORSHeaderProvider),
   9999
+)
+
+cornerstone.metaData.addProvider(
+  ptScalingMetaDataProvider.get.bind(ptScalingMetaDataProvider),
+  111111
 )
 
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
@@ -85,8 +91,10 @@ export function hardcodedMetaDataProvider(type, imageId, imageIds) {
       rescaleSlope: 1,
       rescaleIntercept: 0,
     }
+  } else {
+    return undefined
   }
 
-  console.warn(type)
-  throw new Error('not available!')
+  // console.warn(type);
+  // throw new Error('not available!')
 }

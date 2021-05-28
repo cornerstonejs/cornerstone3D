@@ -21,8 +21,8 @@ abstract class BaseTool {
     defaultToolConfiguration: Record<string, any>
   ) {
     this.initialConfiguration = deepMerge(
-      toolConfiguration,
-      defaultToolConfiguration
+      defaultToolConfiguration,
+      toolConfiguration
     )
 
     const {

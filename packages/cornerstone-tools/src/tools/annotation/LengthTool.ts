@@ -1,29 +1,38 @@
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec2 } from 'gl-matrix'
+import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import {
   getEnabledElement,
   VIEWPORT_TYPE,
   getVolume,
   StackViewport,
   Settings,
+  triggerEvent,
+  eventTarget,
+  Types,
 } from '@ohif/cornerstone-render'
 
 import { getToolStateForDisplay, getImageIdForTool } from '../../util/planar'
 import { BaseAnnotationTool } from '../base'
 import throttle from '../../util/throttle'
-import { addToolState, getToolState } from '../../stateManagement/toolState'
+import {
+  addToolState,
+  getToolState,
+  removeToolState,
+} from '../../stateManagement/toolState'
 import { lineSegment } from '../../util/math'
+
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+
 import { ToolSpecificToolData } from '../../types'
 
 class LengthTool extends BaseAnnotationTool {
@@ -39,6 +48,8 @@ class LengthTool extends BaseAnnotationTool {
     hasMoved?: boolean
   } | null
   _configuration: any
+  isDrawing: boolean
+  isHandleOutsideImage: boolean
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
@@ -46,6 +57,7 @@ class LengthTool extends BaseAnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
+        preventHandleOutsideImage: false,
       },
     })
 
@@ -77,6 +89,7 @@ class LengthTool extends BaseAnnotationTool {
     const { viewport, renderingEngine } = enabledElement
 
     hideToolCursor(element)
+    this.isDrawing = true
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
@@ -300,15 +313,13 @@ class LengthTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const {
-      toolData,
-      viewportUIDsToRender,
-      newAnnotation,
-      hasMoved,
-    } = this.editData
+    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } =
+      this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
+      // when user starts the drawing by click, and moving the mouse, instead
+      // of click and drag
       return
     }
 
@@ -322,21 +333,26 @@ class LengthTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeToolState(element, toolData)
+    }
+
     renderingEngine.renderViewports(viewportUIDsToRender)
 
     this.editData = null
+    this.isDrawing = false
   }
 
   _mouseDragCallback(evt) {
+    this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
 
-    const {
-      toolData,
-      viewportUIDsToRender,
-      handleIndex,
-      movingTextBox,
-    } = this.editData
+    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } =
+      this.editData
     const { data } = toolData
 
     if (movingTextBox) {
@@ -378,6 +394,30 @@ class LengthTool extends BaseAnnotationTool {
     const { renderingEngine } = enabledElement
 
     renderingEngine.renderViewports(viewportUIDsToRender)
+  }
+
+  cancel(element) {
+    // If it is mid-draw or mid-modify
+    if (this.isDrawing) {
+      this.isDrawing = false
+      this._deactivateDraw(element)
+      this._deactivateModify(element)
+      showToolCursor(element)
+
+      const { toolData, viewportUIDsToRender } = this.editData
+      const { data } = toolData
+
+      data.active = false
+      data.handles.activeHandleIndex = null
+
+      const enabledElement = getEnabledElement(element)
+      const { renderingEngine } = enabledElement
+
+      renderingEngine.renderViewports(viewportUIDsToRender)
+
+      this.editData = null
+      return toolData.metadata.toolUID
+    }
   }
 
   _activateModify(element) {
@@ -445,9 +485,11 @@ class LengthTool extends BaseAnnotationTool {
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
-    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
+    const { enabledElement } = svgDrawingHelper
 
-    if (!toolState) {
+    let toolState = getToolState(enabledElement, this.name)
+
+    if (!toolState?.length) {
       return
     }
 
@@ -456,21 +498,22 @@ class LengthTool extends BaseAnnotationTool {
       toolState
     )
 
-    if (!toolState.length) {
+    if (!toolState?.length) {
       return
     }
 
-    const { viewport } = svgDrawingHelper.enabledElement
-
-    let targetVolumeUID
+    const { viewport } = enabledElement
+    let targetUID
     if (viewport.type === VIEWPORT_TYPE.STACK) {
-      targetVolumeUID = 'targetVolumeUID'
+      targetUID = this._getTargetStackUID(viewport)
     } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
       const scene = viewport.getScene()
-      targetVolumeUID = this._getTargetVolumeUID(scene)
+      targetUID = this._getTargetVolumeUID(scene)
     } else {
       throw new Error(`Viewport Type not supported: ${viewport.type}`)
     }
+
+    const renderingEngine = viewport.getRenderingEngine()
 
     // Draw SVG
     for (let i = 0; i < toolState.length; i++) {
@@ -479,10 +522,11 @@ class LengthTool extends BaseAnnotationTool {
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data
       const { points, activeHandleIndex } = data.handles
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
       const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
       const lineDash = this.getStyle(settings, 'lineDash', toolData)
       const color = this.getStyle(settings, 'color', toolData)
+
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
 
       let activeHandleCanvasCoords
 
@@ -503,6 +547,8 @@ class LengthTool extends BaseAnnotationTool {
           canvasCoordinates,
           {
             color,
+            lineDash,
+            lineWidth,
           }
         )
       }
@@ -517,29 +563,31 @@ class LengthTool extends BaseAnnotationTool {
         canvasCoordinates[1],
         {
           color,
-          lineDash,
-          lineWidth,
+          width: lineWidth,
         }
       )
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetVolumeUID]) {
-        data.cachedStats[targetVolumeUID] = {}
+      if (!data.cachedStats[targetUID]) {
+        data.cachedStats[targetUID] = {}
 
-        this._calculateCachedStats(data)
+        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
       } else if (data.invalidated) {
-        this._throttledCalculateCachedStats(data)
+        this._throttledCalculateCachedStats(
+          toolData,
+          renderingEngine,
+          enabledElement
+        )
       }
 
-      const textLines = this._getTextLines(data, targetVolumeUID)
+      const textLines = this._getTextLines(data, targetUID)
 
       // Need to update to sync w/ annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
         const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
 
-        data.handles.textBox.worldPosition = viewport.canvasToWorld(
-          canvasTextBoxCoords
-        )
+        data.handles.textBox.worldPosition =
+          viewport.canvasToWorld(canvasTextBoxCoords)
       }
 
       const textBoxPosition = viewport.worldToCanvas(
@@ -578,8 +626,9 @@ class LengthTool extends BaseAnnotationTool {
     ]
   }
 
-  _getTextLines(data, targetVolumeUID) {
-    const cachedVolumeStats = data.cachedStats[targetVolumeUID]
+  // text line for the current active length measurement
+  _getTextLines(data, targetUID) {
+    const cachedVolumeStats = data.cachedStats[targetUID]
     const { length } = cachedVolumeStats
 
     if (length === undefined) {
@@ -593,32 +642,77 @@ class LengthTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _calculateCachedStats(data) {
+  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
+    let imageVolume, viewport
+    if (targetUID.startsWith('stackTarget')) {
+      const coloneIndex = targetUID.indexOf(':')
+      const viewportUID = targetUID.substring(coloneIndex + 1)
+      viewport = renderingEngine.getViewport(viewportUID)
+      imageVolume = viewport.getImageData()
+    } else {
+      imageVolume = getVolume(targetUID)
+    }
+
+    return { imageVolume, viewport }
+  }
+
+  _calculateCachedStats(toolData, renderingEngine, enabledElement) {
+    const data = toolData.data
+    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
     const { cachedStats } = data
-    const volumeUIDs = Object.keys(cachedStats)
+    const targetUIDs = Object.keys(cachedStats)
 
     // TODO clean up, this doesn't need a length per volume, it has no stats derived from volumes.
 
-    for (let i = 0; i < volumeUIDs.length; i++) {
-      const volumeUID = volumeUIDs[i]
+    for (let i = 0; i < targetUIDs.length; i++) {
+      const targetUID = targetUIDs[i]
 
-      // TODO: Why are we doing a sqrt here?
+      const { imageVolume } = this._getImageVolumeFromTargetUID(
+        targetUID,
+        renderingEngine
+      )
+
+      const { vtkImageData: imageData, dimensions } = imageVolume
+
       const length = Math.sqrt(
         vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
       )
+
+      const index1 = <Types.Point3>[0, 0, 0]
+      const index2 = <Types.Point3>[0, 0, 0]
+
+      imageData.worldToIndexVec3(worldPos1, index1)
+      imageData.worldToIndexVec3(worldPos2, index2)
+
+      this._isInsideVolume(index1, index2, dimensions)
+        ? (this.isHandleOutsideImage = false)
+        : (this.isHandleOutsideImage = true)
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
       // corner is off the canvas.
 
-      cachedStats[volumeUID] = {
+      // todo: add insideVolume calculation, for removing tool if outside
+      cachedStats[targetUID] = {
         length,
       }
     }
 
     data.invalidated = false
+
+    // Dispatching measurement modified
+    const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+    const eventDetail = {
+      toolData,
+      viewportUID,
+      renderingEngineUID,
+      sceneUID,
+    }
+    triggerEvent(eventTarget, eventType, eventDetail)
 
     return cachedStats
   }
@@ -638,6 +732,10 @@ class LengthTool extends BaseAnnotationTool {
         index[i] = dimensions[i] - 1
       }
     }
+  }
+
+  _getTargetStackUID(viewport) {
+    return `stackTarget:${viewport.uid}`
   }
 
   _getTargetVolumeUID(scene) {

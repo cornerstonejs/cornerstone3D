@@ -41,7 +41,7 @@ const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 const VOLUME = 'volume'
 const STACK = 'stack'
 
-let ctSceneToolGroup, stackViewportToolGroup
+let ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup
 
 class ToolDisplayConfigurationExample extends Component {
   listOfTools = [
@@ -116,7 +116,8 @@ class ToolDisplayConfigurationExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    ;({ ctSceneToolGroup, stackViewportToolGroup } = initToolGroups())
+    ;({ ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup } =
+      initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID
     this.ctStackUID = ctStackUID
@@ -153,7 +154,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK,
+        viewportUID: VIEWPORT_IDS.STACK.CT,
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(2),
         defaultOptions: {
@@ -162,7 +163,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       // dx
       {
-        viewportUID: VIEWPORT_DX_COLOR,
+        viewportUID: VIEWPORT_IDS.STACK.DX,
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(3),
         defaultOptions: {
@@ -186,27 +187,27 @@ class ToolDisplayConfigurationExample extends Component {
     )
 
     // stack ct
-    stackViewportToolGroup.addViewports(
+    stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
       undefined,
-      VIEWPORT_IDS.STACK
+      VIEWPORT_IDS.STACK.CT
     )
 
     // dx and color
-    stackViewportToolGroup.addViewports(
+    stackDXViewportToolGroup.addViewports(
       renderingEngineUID,
       undefined,
-      VIEWPORT_DX_COLOR
+      VIEWPORT_IDS.STACK.DX
     )
 
     renderingEngine.render()
 
-    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK)
+    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
     await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds))
 
     // ct + dx + color
-    const dxColorViewport = renderingEngine.getViewport(VIEWPORT_DX_COLOR)
+    const dxColorViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
 
     const fakeStake = [
       dxImageIds[0],
@@ -311,13 +312,18 @@ class ToolDisplayConfigurationExample extends Component {
       bindings: [ToolBindings.Mouse.Primary],
     }
 
-    ;[ctSceneToolGroup, stackViewportToolGroup].forEach((toolGroup) => {
+    ;[
+      ctSceneToolGroup,
+      stackCTViewportToolGroup,
+      stackDXViewportToolGroup,
+    ].forEach((toolGroup) => {
       const activeTool = this.activeToolByGroup.get(toolGroup) || defaultTool
       let newTool = activeTool
       do {
-        newTool = this.listOfTools[
-          (this.listOfTools.indexOf(newTool) + 1) % this.listOfTools.length
-        ]
+        newTool =
+          this.listOfTools[
+            (this.listOfTools.indexOf(newTool) + 1) % this.listOfTools.length
+          ]
       } while (!toolGroup.tools.hasOwnProperty(newTool))
       if (activeTool !== newTool) {
         toolGroup.setToolPassive(activeTool)
@@ -431,9 +437,11 @@ function onMeasurementSelectionChange(e: CustomEvent): void {
 }
 
 function updateTargetElement(targetId: string): void {
-  ;(document.querySelector(
-    '.tool-style-controls input#output-target'
-  ) as HTMLInputElement).value = targetId
+  ;(
+    document.querySelector(
+      '.tool-style-controls input#output-target'
+    ) as HTMLInputElement
+  ).value = targetId
   displayToolStyleValues()
 }
 

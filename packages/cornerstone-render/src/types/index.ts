@@ -17,6 +17,7 @@ import Orientation from './Orientation'
 import Point2 from './Point2'
 import Point3 from './Point3'
 import IStreamingImageVolume from './IStreamingImageVolume'
+import ScalingParameters from './ScalingParameters'
 import ViewportInputOptions from './ViewportInputOptions'
 import IImage from './IImage'
 
@@ -26,6 +27,7 @@ export {
   ICache,
   IVolume,
   IImageVolume,
+  ScalingParameters,
   IStreamingImageVolume,
   IImage,
   ImageLoaderFn,
