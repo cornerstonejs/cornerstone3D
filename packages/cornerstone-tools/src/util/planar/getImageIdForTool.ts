@@ -1,7 +1,6 @@
 import { metaData } from '@ohif/cornerstone-render'
 import { vec3 } from 'gl-matrix'
-import math from '../math'
-import { Point3 } from '@ohif/cornerstone-render'
+import { Point3 } from './../../types'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 export default function getImageIdForTool(

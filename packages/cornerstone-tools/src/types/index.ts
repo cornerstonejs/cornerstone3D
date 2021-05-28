@@ -1,20 +1,21 @@
-import {
+import type {
   ToolSpecificToolData,
   ToolSpecificToolState,
   FrameOfReferenceSpecificToolState,
   ToolAndToolStateArray,
   ToolState,
 } from './toolStateTypes'
-import ToolStateTextBox from './ToolStateTextBox'
-import {
+import type ToolStateTextBox from './ToolStateTextBox'
+import type {
   ICornerstoneToolsEventDetail,
   IPoints,
 } from './cornerstoneToolsEventDetailTypes'
-import BoundingBox from './BoundingBox'
-import PlanarBoundingBox from './PlanarBoundingBox'
-import { Point2, Point3 } from '@ohif/cornerstone-render'
+import type BoundingBox from './BoundingBox'
+import type PlanarBoundingBox from './PlanarBoundingBox'
+import type Point2 from './Point2'
+import type Point3 from './Point3'
 
-export {
+export type {
   // ToolState
   ToolSpecificToolData,
   ToolSpecificToolState,

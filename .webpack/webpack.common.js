@@ -8,8 +8,8 @@ const webpackBase = require('./webpack.base.js');
  * sure we're bundling styles and other files that would normally be split in a
  * PWA.
  */
-module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
-  const baseConfig = webpackBase(env, argv, { SRC_DIR, DIST_DIR });
+module.exports = (env, argv) => {
+  const baseConfig = webpackBase(env, argv);
 
   return merge(baseConfig, {
     // module: {

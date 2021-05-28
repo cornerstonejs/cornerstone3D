@@ -112,11 +112,27 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
-  addNewMeasurement(evt, interactionType) {
+  addNewMeasurement(
+    evt: CustomEvent,
+    interactionType: string
+  ): any {
     // not used, but is necessary if BaseAnnotationTool.
     // NOTE: this is a BaseAnnotationTool and not a BaseTool, because in future
     // we will likely pre-filter all tools using typeof / instanceof
     // in the mouse down dispatchers where we check for methods like pointNearTool.
+    const toolSpecificToolData = {
+      metadata: {
+        viewPlaneNormal: [0, 0, 0],
+        viewUp: [0, 0, 0],
+        toolUID: '1',
+        FrameOfReferenceUID: '1',
+        referencedImageId: '1',
+        toolName: this.name,
+      },
+      data: {},
+    }
+
+    return toolSpecificToolData
   }
 
   getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {

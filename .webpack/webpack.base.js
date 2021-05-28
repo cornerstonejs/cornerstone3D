@@ -14,25 +14,25 @@ const NODE_ENV = process.env.NODE_ENV;
  * `-d` - Development shorthand, sets `debug`, `devtool`, and `mode`
  * `-p` - Production shorthand, sets `minimize`, `NODE_ENV`, and `mode`
  */
-module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
+module.exports = (env, argv) => {
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
   const isProdBuild = argv.mode !== 'development'
   const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js'
 
   const config = {
-    entry: {
-      library: SRC_DIR,
-    },
     devtool: 'eval-source-map',
-    output: {
-      path: DIST_DIR,
-      filename: outputFilename,
-      library: 'Cornerstone3D',
-      libraryTarget: 'umd',
-      globalObject: 'this',
-    },
     module: {
       rules: [
+        // ts-loader: convert typescript (es6) to javascript (es6),
+        // {
+        //   test: /\.ts$/,
+        //   exclude: /node_modules/,
+        //   loader: 'ts-loader',
+        //   options: {
+        //     configFile: 'tsconfig.build.json'
+        //   }
+        // },
+        // babel-loader: converts javascript (es6) to javascript (es5)
         {
           test: /\.(js|ts)$/,
           exclude: /node_modules/,

@@ -3,14 +3,20 @@ const path = require('path');
 const webpackCommon = require('./../../../.webpack/webpack.common.js');
 const pkg = require('./../package.json');
 
-const SRC_DIR = path.join(__dirname, '../src');
-const DIST_DIR = path.join(__dirname, '../dist');
-
 module.exports = (env, argv) => {
-  const commonConfig = webpackCommon(env, argv, { SRC_DIR, DIST_DIR });
+  const commonConfig = webpackCommon(env, argv);
 
   return merge(commonConfig, {
     devtool: 'source-map',
+    entry: {
+      lib: path.join(__dirname, '../src/index.ts'),
+    },
+    output: {
+      path: path.join(__dirname, '../dist/umd'),
+      library: 'cornerstoneImageLoaderStreamingVolume',
+      libraryTarget: 'umd',
+      filename: 'index.js',
+    },
     stats: {
       colors: true,
       hash: true,
@@ -25,12 +31,6 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: true,
       sideEffects: true,
-    },
-    output: {
-      path: DIST_DIR,
-      library: 'cornerstoneImageLoaderStreamingVolume',
-      libraryTarget: 'umd',
-      filename: pkg.main,
     },
     externals: [
       /\b(vtk.js)/,

@@ -1,4 +1,4 @@
-import voi from './voi'
+import type { VOI } from './voi'
 
 type Metadata = {
   BitsAllocated: number
@@ -13,7 +13,7 @@ type Metadata = {
   FrameOfReferenceUID: string
   Columns: number
   Rows: number
-  voiLut: Array<voi>
+  voiLut: Array<VOI>
 }
 
 export default Metadata

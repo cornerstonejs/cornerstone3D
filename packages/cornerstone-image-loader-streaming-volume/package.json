@@ -2,23 +2,29 @@
   "name": "@ohif/cornerstone-image-loader-streaming-volume",
   "version": "0.0.2",
   "description": "",
-  "main": "dist/index.umd.js",
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
   "module": "src/index.ts",
   "directories": {
     "test": "test"
   },
   "peerDependencies": {
+    "@ohif/cornerstone-render": "^0.0.2",
     "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#fix/targetBuffer",
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
   },
   "devDependencies": {
+    "@ohif/cornerstone-render": "^0.0.2",
     "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#fix/targetBuffer",
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
   },
   "scripts": {
     "dev": "jest --watchAll",
     "dev:core": "yarn run dev",
-    "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build": "yarn run build:webpack && yarn run build:lib && yarn run build:lib-esm",
+    "build:lib": "tsc --project ./tsconfig.build.json",
+    "build:lib-esm": "tsc --project ./tsconfig.build.json -m es6 --outDir ./dist/lib-esm",
+    "build:webpack": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:package": "yarn run build",
     "prepublishOnly": "yarn run build",
     "start": "yarn run dev",

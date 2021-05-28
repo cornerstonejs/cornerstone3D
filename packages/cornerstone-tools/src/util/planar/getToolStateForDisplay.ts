@@ -4,12 +4,15 @@ import {
   StackViewport,
   VIEWPORT_TYPE,
   VolumeViewport,
-  IViewport,
+  Types,
 } from '@ohif/cornerstone-render'
 
 // const { ICamera } = Types
 
-export default function getToolStateForDisplay(viewport: IViewport, toolState) {
+export default function getToolStateForDisplay(
+  viewport: Types.IViewport,
+  toolState
+) {
   if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport
     const imageId = viewport.getCurrentImageId()

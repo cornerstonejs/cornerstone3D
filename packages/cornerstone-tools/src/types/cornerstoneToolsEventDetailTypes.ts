@@ -1,4 +1,4 @@
-import { Point2, Point3 } from '@ohif/cornerstone-render'
+import { Types } from '@ohif/cornerstone-render'
 
 interface ICornerstoneToolsEventDetail {
   renderingEngineUID: string
@@ -17,10 +17,10 @@ interface ICornerstoneToolsEventDetail {
 }
 
 type IPoints = {
-  page: Point2
-  client: Point2
-  canvas: Point2
-  world: Point3
+  page: Types.Point2
+  client: Types.Point2
+  canvas: Types.Point2
+  world: Types.Point3
 }
 
 export default ICornerstoneToolsEventDetail

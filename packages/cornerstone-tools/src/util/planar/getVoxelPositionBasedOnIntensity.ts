@@ -1,6 +1,6 @@
 import getTargetVolume from './getTargetVolume'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
-import { Point3 } from '@ohif/cornerstone-render'
+import { Point3 } from './../../types'
 import { Scene, Viewport } from '@ohif/cornerstone-render'
 
 /**

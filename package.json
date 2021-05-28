@@ -82,6 +82,7 @@
     "style-loader": "^2.0.0",
     "stylelint": "^13.12.0",
     "stylelint-config-recommended": "^4.0.0",
+    "ts-loader": "^9.1.2",
     "typedoc": "^0.20.34",
     "typedoc-plugin-pages-fork": "^0.0.1",
     "typescript": "^4.2.3",

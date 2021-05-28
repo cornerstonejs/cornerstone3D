@@ -8,5 +8,4 @@ type VOIRange = {
   lower: number
 }
 
-export default VOI
-export { VOIRange }
+export type { VOI, VOIRange }

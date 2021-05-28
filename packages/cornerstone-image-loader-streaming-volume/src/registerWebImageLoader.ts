@@ -217,7 +217,7 @@ function _loadImageIntoBuffer(
     // get the pixel data from the server
     loadImage(uri, imageId)
       .promise.then(
-        (image: cornerstone.IImage) => {
+        (image: cornerstone.Types.IImage) => {
           if (!options || !options.targetBuffer) {
             resolve(image)
             return

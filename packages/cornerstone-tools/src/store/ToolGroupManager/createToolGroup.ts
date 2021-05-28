@@ -65,6 +65,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         defaultToolOptions,
         toolConfiguration
       )
+
       const instantiatedTool = new ToolClass(mergedToolConfiguration)
 
       // API instead of directly exposing schema?

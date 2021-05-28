@@ -1,8 +1,7 @@
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 
-import { Types } from '@ohif/cornerstone-render'
-
+import * as Types from './types'
 import cache from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'

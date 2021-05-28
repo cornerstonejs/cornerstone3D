@@ -1,5 +1,5 @@
 import { BaseTool } from './base'
-import { getEnabledElement, Point3 } from '@ohif/cornerstone-render'
+import { getEnabledElement, Types } from '@ohif/cornerstone-render'
 import { mat4, vec3 } from 'gl-matrix'
 
 const DIRECTIONS = {
@@ -56,9 +56,9 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
     // focalPoint[3] = 1.0
     // viewUp[3] = 0.0
 
-    const newPosition: Point3 = [0, 0, 0]
-    const newFocalPoint: Point3 = [0, 0, 0]
-    const newViewUp: Point3 = [0, 0, 0]
+    const newPosition: Types.Point3 = [0, 0, 0]
+    const newFocalPoint: Types.Point3 = [0, 0, 0]
+    const newViewUp: Types.Point3 = [0, 0, 0]
 
     const transform = mat4.identity(new Float32Array(16))
     mat4.translate(transform, transform, [cx, cy, cz])
@@ -69,7 +69,7 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
 
     mat4.identity(transform)
     mat4.rotate(transform, transform, angle, [ax, ay, az])
-    vec3.transformMat4(<Point3>newViewUp, viewUp, transform)
+    vec3.transformMat4(<Types.Point3>newViewUp, viewUp, transform)
 
     viewport.setCamera({
       position: newPosition,

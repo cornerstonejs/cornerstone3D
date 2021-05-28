@@ -1,5 +1,5 @@
 import { BaseTool } from './base'
-import { getEnabledElement, Point3 } from '@ohif/cornerstone-render'
+import { getEnabledElement, Types } from '@ohif/cornerstone-render'
 
 /**
  * @class PanTool
@@ -31,13 +31,13 @@ export default class PanTool extends BaseTool {
     const camera = enabledElement.viewport.getCamera()
     const { focalPoint, position } = camera
 
-    const updatedPosition = <Point3>[
+    const updatedPosition = <Types.Point3>[
       position[0] - deltaPointsWorld[0],
       position[1] - deltaPointsWorld[1],
       position[2] - deltaPointsWorld[2],
     ]
 
-    const updatedFocalPoint = <Point3>[
+    const updatedFocalPoint = <Types.Point3>[
       focalPoint[0] - deltaPointsWorld[0],
       focalPoint[1] - deltaPointsWorld[1],
       focalPoint[2] - deltaPointsWorld[2],

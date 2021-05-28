@@ -2,7 +2,8 @@
   "name": "@ohif/cornerstone-tools",
   "version": "0.0.1",
   "description": "The goal is for this to eventually be a separate package. Try to only use API\r exposed by `vtkjs-viewport` in it's top level `index.ts`.",
-  "main": "index.js",
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
   "module": "src/index.ts",
   "directories": {
     "test": "test"
@@ -10,7 +11,10 @@
   "scripts": {
     "dev": "jest --watchAll",
     "dev:core": "yarn run dev",
-    "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build": "yarn run build:webpack && yarn run build:lib && yarn run build:lib-esm",
+    "build:lib": "tsc --project ./tsconfig.build.json",
+    "build:lib-esm": "tsc --project ./tsconfig.build.json -m es6 --outDir ./dist/lib-esm",
+    "build:webpack": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:package": "yarn run build",
     "prepublishOnly": "yarn run build",
     "start": "yarn run dev",
@@ -19,10 +23,12 @@
   },
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "17.3.0"
+    "vtk.js": "17.3.0",
+    "@ohif/cornerstone-image-loader-streaming-volume": "^0.0.2"
   },
   "devDependencies": {
-    "vtk.js": "17.3.0"
+    "vtk.js": "17.3.0",
+    "@ohif/cornerstone-image-loader-streaming-volume": "^0.0.2"
   },
   "author": "",
   "license": "ISC"

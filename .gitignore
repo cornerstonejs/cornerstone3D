@@ -26,6 +26,9 @@ package-lock.json
 dist/docs/
 demo-dist/
 dist/
+tsDist/
+lib/
+lib-esm/
 
 
 # Report Output

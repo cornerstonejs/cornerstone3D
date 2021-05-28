@@ -4,26 +4,33 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
     "checkJs": false,
+
+    // Ensure that .d.ts files are created by tsc, but not .js files
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    // Ensure that Babel can safely transpile files in the TypeScript project
+    "isolatedModules": false,
+
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-    "lib": ["ES6", "DOM"],
-    "module": "esnext",
+    "lib": ["ES6", "dom"], // "ES6", "DOM" | "es2015", "dom"
+    "module": "esnext", // esnext | commonjs
     "moduleResolution": "node",
-    "noEmit": false,
     "noImplicitAny": false,
     "noImplicitThis": false,
-    "outDir": "tsDist",
+    "outDir": "lib",
     "pretty": true,
-    "removeComments": false,
+    "removeComments": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": false,
     "strictNullChecks": false,
-    "target": "esnext",
+    "target": "es5", // esnext | es5
+    "downlevelIteration": true,
   },
   // typedoc (yarn run docs) picks these up when running
   // @TODO: so either `examples/**` needs to have valid tsx
   // or we need separate tsconfig files for these "separate" projects
-  "exclude": ["node_modules", "dist", "snippets", "examples"]
+  "exclude": ["node_modules", "dist", "demo", "snippets", "examples"]
 }

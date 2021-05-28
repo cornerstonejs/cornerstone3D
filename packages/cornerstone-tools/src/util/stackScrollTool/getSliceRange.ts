@@ -1,6 +1,6 @@
 import getVolumeActorCorners from '../vtkjs/getVolumeActorCorners'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import { Point3 } from '@ohif/cornerstone-render'
+import { Point3 } from './../../types'
 
 /**
  * @function getSliceRange Given a `vtkVolumeActor`, and a normal direction,

@@ -1,4 +1,4 @@
-import { Point3 } from '@ohif/cornerstone-render'
+import { Point3 } from './../types'
 
 type ToolStateTextBox = {
   hasMoved: boolean

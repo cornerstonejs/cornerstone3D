@@ -4,7 +4,7 @@ import svgNodeCache from './svgNodeCache'
 import { BaseTool } from '../tools'
 
 interface IToolClassReference {
-  toolClass: new <T extends BaseTool>() => T
+  toolClass: new <T extends BaseTool>(config: any) => T
   toolOptions: Record<string, unknown>
 }
 

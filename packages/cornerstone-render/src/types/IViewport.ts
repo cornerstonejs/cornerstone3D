@@ -3,7 +3,6 @@ import ICamera from './ICamera'
 import Point2 from './Point2'
 import Point3 from './Point3'
 import ViewportInputOptions from './ViewportInputOptions'
-import { VOIRange } from './voi'
 import { ActorEntry } from './IActor'
 import { vtkSlabCamera } from '../RenderingEngine/vtkClasses'
 
@@ -67,6 +66,4 @@ type ViewportInput = {
   defaultOptions: any
 }
 
-export { ViewportInput, PublicViewportInput }
-
-export default IViewport
+export type { IViewport, ViewportInput, PublicViewportInput }
