@@ -9,7 +9,7 @@
     "yarn": ">=1.19.1"
   },
   "scripts": {
-    "build": "lerna run build:package --parallel --stream",
+    "build": "lerna run build:package --stream",
     "build:demo": "lerna run build:demo --stream",
     "dev": "lerna run dev:demo --stream",
     "docs": "typedoc",

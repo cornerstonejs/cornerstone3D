@@ -13,7 +13,6 @@ import {
 
 import getInterleavedFrames from './helpers/getInterleavedFrames'
 import autoLoad from './helpers/autoLoad'
-import getImageIdInstanceMetadata from './helpers/getImageIdInstanceMetadata'
 
 const requestType = 'prefetch'
 const { getMinMax } = cornerstoneUtils

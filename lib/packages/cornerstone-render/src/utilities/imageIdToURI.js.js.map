@@ -1,1 +1,0 @@
-{"version":3,"file":"imageIdToURI.js.js","sourceRoot":"","sources":["../../../../../packages/cornerstone-render/src/utilities/imageIdToURI.js.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,MAAM,CAAC,OAAO,UAAU,YAAY,CAAC,OAAe;IAClD,MAAM,UAAU,GAAG,OAAO,CAAC,OAAO,CAAC,GAAG,CAAC,CAAA;IACvC,OAAO,OAAO,CAAC,SAAS,CAAC,UAAU,GAAG,CAAC,CAAC,CAAA;AAC1C,CAAC"}

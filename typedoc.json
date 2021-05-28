@@ -7,9 +7,10 @@
     "./packages/cornerstone-tools/src/index.ts",
     "./packages/cornerstone-image-loader-streaming-volume/src/index.ts"
   ],
-  "tsconfig": "./tsconfig.json",
+  "tsconfig": "./tsconfig.build.json",
   "exclude": [
-    "**/examples/**",
+    "**/demo/**",
+    "**/dist/**",
     "**/*.tsx"
   ],
 

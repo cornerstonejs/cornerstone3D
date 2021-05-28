@@ -159,7 +159,7 @@ class VTKMPRExample extends Component {
         ptMipSceneToolGroup,
       },
       {
-        axialSynchronizers: [],
+        axialSynchronizers: [this.axialSync],
         sagittalSynchronizers: [this.sagittalSync],
         coronalSynchronizers: [this.coronalSync],
         ptThresholdSynchronizer: this.ptThresholdSync,

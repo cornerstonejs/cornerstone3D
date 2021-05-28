@@ -17,8 +17,8 @@ import {
   addToolState,
   getToolState,
   removeToolState,
-} from '../../stateManagement/toolState'
-import toolStyle from '../../stateManagement/toolStyle'
+} from '../../stateManagement'
+
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
@@ -34,7 +34,7 @@ import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHei
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
-import { ToolSpecificToolData } from '../../types'
+import { ToolSpecificToolData, Point2 } from '../../types'
 
 export default class RectangleRoiTool extends BaseAnnotationTool {
   _throttledCalculateCachedStats: any
@@ -541,8 +541,6 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    this._renderingEngines = getRenderingEngines()
-
     const eventData = evt.detail
     const { canvas: canvasElement } = eventData
 

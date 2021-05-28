@@ -196,8 +196,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     data.active = true
 
     // NOTE: handle index or coordinates are not used when dragging.
-    // This beacause the handle points are actually generated in the renderTool and they are a derivate
-    // from the camera varibales of the viewports and of the slab thickness variable.
+    // This because the handle points are actually generated in the renderTool and they are a derivative
+    // from the camera variables of the viewports and of the slab thickness variable.
     // Remember that the translation and rotation operations operate on the camera
     // variables and not really on the handles. Similar for the slab thickness.
 
@@ -1484,8 +1484,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        cameraPosition: [...position],
-        cameraFocalPoint: [...focalPoint],
+        cameraPosition: <Point3> [...position],
+        cameraFocalPoint: <Point3> [...focalPoint],
         FrameOfReferenceUID,
         toolName: this.name,
       },

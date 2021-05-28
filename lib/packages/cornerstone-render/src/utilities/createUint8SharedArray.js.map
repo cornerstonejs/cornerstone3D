@@ -1,1 +1,0 @@
-{"version":3,"file":"createUint8SharedArray.js","sourceRoot":"","sources":["../../../../../packages/cornerstone-render/src/utilities/createUint8SharedArray.ts"],"names":[],"mappings":"AAEA;;;;;;;;;;;;;;;;;;;;;;;GAuBG;AACH,SAAS,sBAAsB,CAAC,MAAc;IAC5C,MAAM,iBAAiB,GAAG,IAAI,iBAAiB,CAAC,MAAM,CAAC,CAAA;IAEvD,OAAO,IAAI,UAAU,CAAC,iBAAiB,CAAC,CAAA;AAC1C,CAAC;AAED,eAAe,sBAAsB,CAAA"}

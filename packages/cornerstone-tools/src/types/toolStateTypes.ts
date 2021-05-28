@@ -3,17 +3,25 @@ import { Point3 } from './../types'
 type ToolSpecificToolData = {
   metadata: {
     /**
+     * The position of the camera in world space
+     */
+    cameraPosition?: Point3
+    /**
+     * The focal point of the camera in world space
+     */
+    cameraFocalPoint?: Point3
+    /**
      * The normal on which the tool was drawn
      */
-    viewPlaneNormal: Point3
+    viewPlaneNormal?: Point3
     /**
      * The viewUp on which the tool was drawn.
      */
-    viewUp: Point3
+    viewUp?: Point3
     /**
      * A unique identifier for this tool data.
      */
-    toolUID: string
+    toolUID?: string
     /**
      * The FrameOfReferenceUID
      */
