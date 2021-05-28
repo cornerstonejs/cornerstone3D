@@ -1,3 +1,5 @@
+// @see: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#-type-only-imports-and-export
+
 import type ICamera from './ICamera'
 import type IEnabledElement from './IEnabledElement'
 import type ICache from './ICache'
@@ -17,10 +19,9 @@ import type Orientation from './Orientation'
 import type Point2 from './Point2'
 import type Point3 from './Point3'
 import type IStreamingImageVolume from './IStreamingImageVolume'
-import type ScalingParameters from './ScalingParameters'
 import type ViewportInputOptions from './ViewportInputOptions'
 import type IImage from './IImage'
-// @see: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#-type-only-imports-and-export
+import type ScalingParameters from './ScalingParameters'
 
 export type {
   ICamera,
