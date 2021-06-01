@@ -354,7 +354,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     data.handles.activeHandleIndex = null
 
     delete data.isDrawing
-    delete data.isDrawing
 
     this._deactivateModify(element)
     this._deactivateDraw(element)

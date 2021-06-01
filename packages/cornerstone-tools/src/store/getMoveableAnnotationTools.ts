@@ -1,7 +1,8 @@
 import { ToolSpecificToolData, ToolAndToolStateArray, Point2 } from '../types'
+import BaseAnnotationTool from '../tools/base/BaseAnnotationTool';
 
 type ToolAndToolData = {
-  tool: any
+  tool: BaseAnnotationTool
   toolData: ToolSpecificToolData
 }
 

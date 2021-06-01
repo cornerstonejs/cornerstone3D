@@ -39,6 +39,20 @@ interface ToolConfiguration {
   }
 }
 
+interface CrosshairsSpecificToolData extends ToolSpecificToolData {
+  data: {
+    handles: {
+      rotationPoints: any[], // rotation handles, used for rotation interactions
+      slabThicknessPoints: any[], // slab thickness handles, used for setting the slab thickness
+      activeOperation: Number | null, // 0 translation, 1 rotation handles, 2 slab thickness handles
+    },
+    active: boolean,
+    activeViewportUIDs: string[], // a list of the viewport uids connected to the reference lines being translated
+    viewportUID: string,
+    sceneUID: string,
+  },
+}
+
 function defaultReferenceLineColor() {
   return 'rgb(200, 200, 200)'
 }
@@ -112,21 +126,31 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
-  addNewMeasurement(evt: CustomEvent, interactionType: string): any {
+  addNewMeasurement(evt: CustomEvent, interactionType: string): CrosshairsSpecificToolData {
     // not used, but is necessary if BaseAnnotationTool.
     // NOTE: this is a BaseAnnotationTool and not a BaseTool, because in future
     // we will likely pre-filter all tools using typeof / instanceof
     // in the mouse down dispatchers where we check for methods like pointNearTool.
     const toolSpecificToolData = {
       metadata: {
-        viewPlaneNormal: [0, 0, 0],
-        viewUp: [0, 0, 0],
+        viewPlaneNormal: <Point3>[0, 0, 0],
+        viewUp: <Point3>[0, 0, 0],
         toolUID: '1',
         FrameOfReferenceUID: '1',
         referencedImageId: '1',
         toolName: this.name,
       },
-      data: {},
+      data: {
+        handles: {
+          rotationPoints: [], // rotation handles, used for rotation interactions
+          slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
+          activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
+        },
+        active: false,
+        activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
+        viewportUID: '1',
+        sceneUID: '1',
+      },
     }
 
     return toolSpecificToolData
@@ -331,7 +355,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     // viewport ToolData
-    const viewportToolData = filteredToolState[0]
+    const viewportToolData = filteredToolState[0] as CrosshairsSpecificToolData
 
     // -- Update the camera of other linked viewports in the same scene that
     //    have the same camera in case of translation
@@ -447,7 +471,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     let imageNeedsUpdate = false
 
     for (let i = 0; i < filteredToolState.length; i++) {
-      const toolData = filteredToolState[i]
+      const toolData = filteredToolState[i] as CrosshairsSpecificToolData
 
       if (isToolDataLocked(toolData)) {
         continue
@@ -1555,7 +1579,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     vtkMath.subtract(jumpWorld, this.toolCenter, delta)
 
     const viewportToolData = toolState.find(
-      (toolData) => toolData.data.viewportUID === viewport.uid
+      (toolData: CrosshairsSpecificToolData) => toolData.data.viewportUID === viewport.uid
     )
 
     this._applyDeltaShiftToViewportCamera(
@@ -1768,7 +1792,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     } else if (handles.activeOperation === OPERATION.SLAB) {
       // SLAB THICKNESS
       // this should be just the active one under the mouse,
-      const viewportsToolDataToUpdate = toolState.filter((toolData) => {
+      const viewportsToolDataToUpdate = toolState.filter((toolData: CrosshairsSpecificToolData) => {
         const { data } = toolData
         const scene = renderingEngine.getScene(data.sceneUID)
         const otherViewport = scene.getViewport(data.viewportUID)
@@ -1778,7 +1802,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         )
       })
 
-      viewportsToolDataToUpdate.forEach((toolData) => {
+      viewportsToolDataToUpdate.forEach((toolData: CrosshairsSpecificToolData) => {
         const { data } = toolData
 
         const scene = renderingEngine.getScene(data.sceneUID)

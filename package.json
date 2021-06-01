@@ -19,7 +19,7 @@
     "test": "karma start",
     "test:ci": "karma start --single-run",
     "lint-staged": "lint-staged",
-    "lint": "eslint --quiet -c .eslintrc.json src",
+    "lint": "eslint --quiet -c .eslintrc.json packages/**/src",
     "predeploy": "yarn install && yarn run build:release",
     "prepublishOnly": "yarn run build && yarn run build:release",
     "compile": "tsc -p tsconfig.build.json"

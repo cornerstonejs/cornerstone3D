@@ -109,7 +109,7 @@ export default function mouseDown(evt) {
 
   if (annotationToolsWithMoveableHandles.length > 0) {
     const { tool, toolData, handle } = selectSuitableAnnotationTool(
-      annotationToolsWithMoveableHandles as [ToolAndToolData]
+      annotationToolsWithMoveableHandles as ToolAndToolData[]
     )
 
     toggleToolDataSelection(toolData, isMultiSelect)
@@ -131,7 +131,7 @@ export default function mouseDown(evt) {
 
   if (moveableAnnotationTools.length > 0) {
     const { tool, toolData } = selectSuitableAnnotationTool(
-      moveableAnnotationTools as [ToolAndToolData]
+      moveableAnnotationTools as ToolAndToolData[]
     )
 
     toggleToolDataSelection(toolData, isMultiSelect)
@@ -155,7 +155,7 @@ export default function mouseDown(evt) {
 }
 
 function selectSuitableAnnotationTool(
-  annotationTools: [ToolAndToolData]
+  annotationTools: ToolAndToolData[]
 ): ToolAndToolData {
   return (
     (annotationTools.length > 1 &&
