@@ -35,7 +35,29 @@ import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHei
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
-import { ToolSpecificToolData, Point2 } from '../../types'
+import { ToolSpecificToolData, Point2, Point3 } from '../../types'
+
+interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
+  data: {
+    invalidated: boolean
+    handles: {
+      points: Point3[]
+      activeHandleIndex: number | null
+      textBox: {
+        hasMoved: boolean
+        worldPosition: Point3
+        worldBoundingBox: {
+          topLeft: Point3
+          topRight: Point3
+          bottomLeft: Point3
+          bottomRight: Point3
+        }
+      }
+    }
+    cachedStats: any
+    active: boolean
+  }
+}
 
 export default class RectangleRoiTool extends BaseAnnotationTool {
   _throttledCalculateCachedStats: any
@@ -65,7 +87,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement = (evt: CustomEvent): ToolSpecificToolData => {
+  addNewMeasurement = (evt: CustomEvent): RectangleRoiSpecificToolData => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -106,8 +128,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: [...viewPlaneNormal],
-        viewUp: [...viewUp],
+        viewPlaneNormal: <Point3>[...viewPlaneNormal],
+        viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID,
         referencedImageId,
         toolName: this.name,
@@ -115,17 +137,28 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       data: {
         invalidated: true,
         handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
+          points: [
+            <Point3>[...worldPos],
+            <Point3>[...worldPos],
+            <Point3>[...worldPos],
+            <Point3>[...worldPos],
+          ],
           textBox: {
             hasMoved: false,
-            worldPosition: [0, 0, 0],
+            worldPosition: <Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Point3>[0, 0, 0],
+              topRight: <Point3>[0, 0, 0],
+              bottomLeft: <Point3>[0, 0, 0],
+              bottomRight: <Point3>[0, 0, 0],
+            },
           },
           activeHandleIndex: null,
         },
         cachedStats: {},
         active: true,
       },
-    } as ToolSpecificToolData
+    }
 
     // Ensure settings are initialized after tool data instantiation
     Settings.getObjectSettings(toolData, RectangleRoiTool)
@@ -576,7 +609,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i]
+      const toolData = toolState[i] as RectangleRoiSpecificToolData
       const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
       const toolMetadata = toolData.metadata
       const annotationUID = toolMetadata.toolUID

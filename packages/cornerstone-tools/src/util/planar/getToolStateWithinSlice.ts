@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix'
 import math from '../math'
 import { ToolSpecificToolState, Point3 } from '../../types'
+import { BaseAnnotationToolSpecificToolData } from '../../tools/base/BaseAnnotationTool'
 
 /**
  * @function getToolStateWithinSlice given some `ToolSpecificToolState`, and the slice
@@ -38,7 +39,9 @@ export default function getToolStateWithinSlice(
   for (let i = 0; i < toolStateWithSameNormal.length; i++) {
     // TODO -> see if annotation lies within slice distance.
     // Get vector
-    const toolState = toolStateWithSameNormal[i]
+    const toolState = toolStateWithSameNormal[
+      i
+    ] as BaseAnnotationToolSpecificToolData
     const data = toolState.data
     const point = data.handles.points[0]
 

@@ -42,15 +42,15 @@ interface ToolConfiguration {
 interface CrosshairsSpecificToolData extends ToolSpecificToolData {
   data: {
     handles: {
-      rotationPoints: any[], // rotation handles, used for rotation interactions
-      slabThicknessPoints: any[], // slab thickness handles, used for setting the slab thickness
-      activeOperation: Number | null, // 0 translation, 1 rotation handles, 2 slab thickness handles
-    },
-    active: boolean,
-    activeViewportUIDs: string[], // a list of the viewport uids connected to the reference lines being translated
-    viewportUID: string,
-    sceneUID: string,
-  },
+      rotationPoints: any[] // rotation handles, used for rotation interactions
+      slabThicknessPoints: any[] // slab thickness handles, used for setting the slab thickness
+      activeOperation: number | null // 0 translation, 1 rotation handles, 2 slab thickness handles
+    }
+    active: boolean
+    activeViewportUIDs: string[] // a list of the viewport uids connected to the reference lines being translated
+    viewportUID: string
+    sceneUID: string
+  }
 }
 
 function defaultReferenceLineColor() {
@@ -126,7 +126,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
-  addNewMeasurement(evt: CustomEvent, interactionType: string): CrosshairsSpecificToolData {
+  addNewMeasurement(
+    evt: CustomEvent,
+    interactionType: string
+  ): CrosshairsSpecificToolData {
     // not used, but is necessary if BaseAnnotationTool.
     // NOTE: this is a BaseAnnotationTool and not a BaseTool, because in future
     // we will likely pre-filter all tools using typeof / instanceof
@@ -154,6 +157,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     return toolSpecificToolData
+  }
+
+  cancel = () => {
+    console.log('Not implemented yet')
   }
 
   getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
@@ -1579,7 +1586,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     vtkMath.subtract(jumpWorld, this.toolCenter, delta)
 
     const viewportToolData = toolState.find(
-      (toolData: CrosshairsSpecificToolData) => toolData.data.viewportUID === viewport.uid
+      (toolData: CrosshairsSpecificToolData) =>
+        toolData.data.viewportUID === viewport.uid
     )
 
     this._applyDeltaShiftToViewportCamera(
@@ -1792,118 +1800,122 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     } else if (handles.activeOperation === OPERATION.SLAB) {
       // SLAB THICKNESS
       // this should be just the active one under the mouse,
-      const viewportsToolDataToUpdate = toolState.filter((toolData: CrosshairsSpecificToolData) => {
-        const { data } = toolData
-        const scene = renderingEngine.getScene(data.sceneUID)
-        const otherViewport = scene.getViewport(data.viewportUID)
+      const viewportsToolDataToUpdate = toolState.filter(
+        (toolData: CrosshairsSpecificToolData) => {
+          const { data } = toolData
+          const scene = renderingEngine.getScene(data.sceneUID)
+          const otherViewport = scene.getViewport(data.viewportUID)
 
-        return viewportToolData.data.activeViewportUIDs.find(
-          (uid) => uid === otherViewport.uid
-        )
-      })
-
-      viewportsToolDataToUpdate.forEach((toolData: CrosshairsSpecificToolData) => {
-        const { data } = toolData
-
-        const scene = renderingEngine.getScene(data.sceneUID)
-        const otherViewport = scene.getViewport(data.viewportUID)
-        const camera = otherViewport.getCamera()
-        const normal = camera.viewPlaneNormal
-
-        const dotProd = vtkMath.dot(delta, normal)
-        const projectedDelta = [...normal]
-        vtkMath.multiplyScalar(projectedDelta, dotProd)
-
-        if (
-          Math.abs(projectedDelta[0]) > 1e-3 ||
-          Math.abs(projectedDelta[1]) > 1e-3 ||
-          Math.abs(projectedDelta[2]) > 1e-3
-        ) {
-          const mod = Math.sqrt(
-            projectedDelta[0] * projectedDelta[0] +
-              projectedDelta[1] * projectedDelta[1] +
-              projectedDelta[2] * projectedDelta[2]
+          return viewportToolData.data.activeViewportUIDs.find(
+            (uid) => uid === otherViewport.uid
           )
+        }
+      )
 
-          const currentPoint = eventData.lastPoints.world
-          const direction: Point3 = [0, 0, 0]
+      viewportsToolDataToUpdate.forEach(
+        (toolData: CrosshairsSpecificToolData) => {
+          const { data } = toolData
 
-          const currentCenter: Point3 = [
-            this.toolCenter[0],
-            this.toolCenter[1],
-            this.toolCenter[2],
-          ]
+          const scene = renderingEngine.getScene(data.sceneUID)
+          const otherViewport = scene.getViewport(data.viewportUID)
+          const camera = otherViewport.getCamera()
+          const normal = camera.viewPlaneNormal
 
-          // use this.toolCenter only if viewportDraggableRotatable
-          const viewportDraggableRotatable =
-            this._getReferenceLineDraggableRotatable(otherViewport.uid)
-          if (!viewportDraggableRotatable) {
-            const { rotationPoints } = this.editData.toolData.data.handles
-            const otherViewportRotationPoints = rotationPoints.filter(
-              (point) => point[1].uid === otherViewport.uid
+          const dotProd = vtkMath.dot(delta, normal)
+          const projectedDelta = [...normal]
+          vtkMath.multiplyScalar(projectedDelta, dotProd)
+
+          if (
+            Math.abs(projectedDelta[0]) > 1e-3 ||
+            Math.abs(projectedDelta[1]) > 1e-3 ||
+            Math.abs(projectedDelta[2]) > 1e-3
+          ) {
+            const mod = Math.sqrt(
+              projectedDelta[0] * projectedDelta[0] +
+                projectedDelta[1] * projectedDelta[1] +
+                projectedDelta[2] * projectedDelta[2]
             )
-            if (otherViewportRotationPoints.length === 2) {
-              const point1 = viewport.canvasToWorld(
-                otherViewportRotationPoints[0][3]
+
+            const currentPoint = eventData.lastPoints.world
+            const direction: Point3 = [0, 0, 0]
+
+            const currentCenter: Point3 = [
+              this.toolCenter[0],
+              this.toolCenter[1],
+              this.toolCenter[2],
+            ]
+
+            // use this.toolCenter only if viewportDraggableRotatable
+            const viewportDraggableRotatable =
+              this._getReferenceLineDraggableRotatable(otherViewport.uid)
+            if (!viewportDraggableRotatable) {
+              const { rotationPoints } = this.editData.toolData.data.handles
+              const otherViewportRotationPoints = rotationPoints.filter(
+                (point) => point[1].uid === otherViewport.uid
               )
-              const point2 = viewport.canvasToWorld(
-                otherViewportRotationPoints[1][3]
+              if (otherViewportRotationPoints.length === 2) {
+                const point1 = viewport.canvasToWorld(
+                  otherViewportRotationPoints[0][3]
+                )
+                const point2 = viewport.canvasToWorld(
+                  otherViewportRotationPoints[1][3]
+                )
+                vtkMath.add(point1, point2, currentCenter)
+                vtkMath.multiplyScalar(currentCenter, 0.5)
+              }
+            }
+
+            vtkMath.subtract(currentPoint, currentCenter, direction)
+            const dotProdDirection = vtkMath.dot(direction, normal)
+            const projectedDirection = [...normal]
+            vtkMath.multiplyScalar(projectedDirection, dotProdDirection)
+            const normalizedProjectedDirection: Point3 = [
+              projectedDirection[0],
+              projectedDirection[1],
+              projectedDirection[2],
+            ]
+            vec3.normalize(
+              normalizedProjectedDirection,
+              normalizedProjectedDirection
+            )
+            const normalizedProjectedDelta: Point3 = [
+              projectedDelta[0],
+              projectedDelta[1],
+              projectedDelta[2],
+            ]
+            vec3.normalize(normalizedProjectedDelta, normalizedProjectedDelta)
+
+            let slabThicknessValue = otherViewport.getSlabThickness()
+            if (
+              isOpposite(
+                normalizedProjectedDirection,
+                normalizedProjectedDelta,
+                1e-3
               )
-              vtkMath.add(point1, point2, currentCenter)
-              vtkMath.multiplyScalar(currentCenter, 0.5)
+            ) {
+              slabThicknessValue -= mod
+            } else {
+              slabThicknessValue += mod
+            }
+
+            slabThicknessValue = Math.abs(slabThicknessValue)
+            slabThicknessValue = Math.max(0.1, slabThicknessValue)
+
+            const near = this._pointNearReferenceLine(
+              viewportToolData,
+              canvasCoords,
+              6,
+              otherViewport
+            )
+
+            if (near) {
+              otherViewport.setSlabThickness(null)
+            } else {
+              otherViewport.setSlabThickness(slabThicknessValue)
             }
           }
-
-          vtkMath.subtract(currentPoint, currentCenter, direction)
-          const dotProdDirection = vtkMath.dot(direction, normal)
-          const projectedDirection = [...normal]
-          vtkMath.multiplyScalar(projectedDirection, dotProdDirection)
-          const normalizedProjectedDirection: Point3 = [
-            projectedDirection[0],
-            projectedDirection[1],
-            projectedDirection[2],
-          ]
-          vec3.normalize(
-            normalizedProjectedDirection,
-            normalizedProjectedDirection
-          )
-          const normalizedProjectedDelta: Point3 = [
-            projectedDelta[0],
-            projectedDelta[1],
-            projectedDelta[2],
-          ]
-          vec3.normalize(normalizedProjectedDelta, normalizedProjectedDelta)
-
-          let slabThicknessValue = otherViewport.getSlabThickness()
-          if (
-            isOpposite(
-              normalizedProjectedDirection,
-              normalizedProjectedDelta,
-              1e-3
-            )
-          ) {
-            slabThicknessValue -= mod
-          } else {
-            slabThicknessValue += mod
-          }
-
-          slabThicknessValue = Math.abs(slabThicknessValue)
-          slabThicknessValue = Math.max(0.1, slabThicknessValue)
-
-          const near = this._pointNearReferenceLine(
-            viewportToolData,
-            canvasCoords,
-            6,
-            otherViewport
-          )
-
-          if (near) {
-            otherViewport.setSlabThickness(null)
-          } else {
-            otherViewport.setSlabThickness(slabThicknessValue)
-          }
         }
-      })
+      )
     }
   }
 

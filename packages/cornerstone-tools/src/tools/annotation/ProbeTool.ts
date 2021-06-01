@@ -28,8 +28,16 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
-import { ToolSpecificToolData } from '../../types'
+import { ToolSpecificToolData, Point3 } from '../../types'
 
+interface ProbeSpecificToolData extends ToolSpecificToolData {
+  data: {
+    invalidated: boolean
+    handles: { points: Point3[] }
+    cachedStats: any
+    active: boolean
+  }
+}
 export default class ProbeTool extends BaseAnnotationTool {
   touchDragCallback: any
   mouseDragCallback: any
@@ -72,7 +80,7 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   toolSelectedCallback() {}
 
-  addNewMeasurement(evt: CustomEvent): ToolSpecificToolData {
+  addNewMeasurement(evt: CustomEvent): ProbeSpecificToolData {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -106,19 +114,19 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: [...viewPlaneNormal],
-        viewUp: [...viewUp],
+        viewPlaneNormal: <Point3>[...viewPlaneNormal],
+        viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
       },
       data: {
         invalidated: true,
-        handles: { points: [[...worldPos]] },
+        handles: { points: [<Point3>[...worldPos]] },
         cachedStats: {},
         active: true,
       },
-    } as ToolSpecificToolData
+    }
 
     // Ensure settings are initialized after tool data instantiation
     Settings.getObjectSettings(toolData, ProbeTool)
@@ -344,7 +352,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i]
+      const toolData = toolState[i] as ProbeSpecificToolData
       const settings = Settings.getObjectSettings(toolData, ProbeTool)
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data

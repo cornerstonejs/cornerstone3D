@@ -37,7 +37,29 @@ import { indexWithinDimensions } from '../../util/vtkjs'
 import lineSegment from '../../util/math/line'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
-import { ToolSpecificToolData } from '../../types'
+import { ToolSpecificToolData, Point3 } from '../../types'
+
+interface BidirectionalSpecificToolData extends ToolSpecificToolData {
+  data: {
+    invalidated: boolean
+    handles: {
+      points: Point3[]
+      activeHandleIndex: number | null
+      textBox: {
+        hasMoved: boolean
+        worldPosition: Point3
+        worldBoundingBox: {
+          topLeft: Point3
+          topRight: Point3
+          bottomLeft: Point3
+          bottomRight: Point3
+        }
+      }
+    }
+    cachedStats: any
+    active: boolean
+  }
+}
 
 export default class BidirectionalTool extends BaseAnnotationTool {
   touchDragCallback: any
@@ -73,7 +95,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement = (evt: CustomEvent): ToolSpecificToolData => {
+  addNewMeasurement(evt: CustomEvent): BidirectionalSpecificToolData {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -113,8 +135,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: [...viewPlaneNormal],
-        viewUp: [...viewUp],
+        viewPlaneNormal: <Point3>[...viewPlaneNormal],
+        viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID,
         toolName: this.name,
         referencedImageId,
@@ -124,22 +146,28 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         handles: {
           points: [
             // long
-            [...worldPos],
-            [...worldPos],
+            <Point3>[...worldPos],
+            <Point3>[...worldPos],
             // short
-            [...worldPos],
-            [...worldPos],
+            <Point3>[...worldPos],
+            <Point3>[...worldPos],
           ],
           textBox: {
             hasMoved: false,
-            worldPosition: [0, 0, 0],
+            worldPosition: <Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Point3>[0, 0, 0],
+              topRight: <Point3>[0, 0, 0],
+              bottomLeft: <Point3>[0, 0, 0],
+              bottomRight: <Point3>[0, 0, 0],
+            },
           },
           activeHandleIndex: null,
         },
         cachedStats: {},
         active: true,
       },
-    } as ToolSpecificToolData
+    }
 
     // Ensure settings are initialized after tool data instantiation
     Settings.getObjectSettings(toolData, BidirectionalTool)
@@ -944,7 +972,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i]
+      const toolData = toolState[i] as BidirectionalSpecificToolData
       const settings = Settings.getObjectSettings(toolData, BidirectionalTool)
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data

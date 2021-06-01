@@ -6,16 +6,6 @@ import { getEnabledElement } from '@ohif/cornerstone-render'
 // // Util
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
-import { ToolSpecificToolState } from '../../types'
-
-type Tool = {
-  mouseMoveCallback: CallableFunction
-}
-
-type ToolAndToolState = {
-  tool: Tool
-  toolState: ToolSpecificToolState
-}
 
 const { Active, Passive } = ToolModes
 
@@ -43,7 +33,7 @@ export default function mouseMove(evt) {
   const annotationTools = getToolsWithDataForElement(
     element,
     activeAndPassiveTools
-  ) as [ToolAndToolState]
+  )
 
   const numAnnotationTools = annotationTools.length
   let imageNeedsUpdate = false

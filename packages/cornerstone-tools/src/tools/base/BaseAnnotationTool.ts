@@ -9,6 +9,15 @@ import {
 } from '../../types'
 import getToolDataStyle from '../../util/getToolDataStyle'
 
+export interface BaseAnnotationToolSpecificToolData
+  extends ToolSpecificToolData {
+  data: {
+    active: boolean
+    handles: any
+    cachedStats: any
+  }
+}
+
 /**
  * @class BaseAnnotationTool @extends BaseTool
  * @classdesc Abstract class for tools which create and display annotations on the
@@ -39,6 +48,12 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param {CustomEvent} evt The IMAGE_RENDERED event.
    */
   abstract renderToolData(evt: any, svgDrawingHelper: any)
+
+  /**
+   * @abstract @method cancel Used to cancel the ongoing tool drawing and manipulation
+   *
+   */
+  abstract cancel(element: HTMLElement)
 
   // ===================================================================
   // Virtual Methods - Have default behavior or are optional.
@@ -91,7 +106,9 @@ abstract class BaseAnnotationTool extends BaseTool {
     let imageNeedsUpdate = false
 
     for (let i = 0; i < filteredToolState.length; i++) {
-      const toolData = filteredToolState[i]
+      const toolData = filteredToolState[
+        i
+      ] as BaseAnnotationToolSpecificToolData
 
       if (isToolDataLocked(toolData)) {
         continue

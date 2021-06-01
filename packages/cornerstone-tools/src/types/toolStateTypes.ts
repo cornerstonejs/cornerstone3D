@@ -1,4 +1,5 @@
 import { Point3 } from './../types'
+import BaseAnnotationTool from '../tools/base/BaseAnnotationTool'
 
 type ToolSpecificToolData = {
   /**
@@ -57,7 +58,7 @@ type ToolState = {
 }
 
 type ToolAndToolStateArray = Array<{
-  tool: unknown
+  tool: BaseAnnotationTool
   toolState: ToolSpecificToolState
 }>
 

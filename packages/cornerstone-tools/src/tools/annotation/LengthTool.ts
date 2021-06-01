@@ -34,7 +34,29 @@ import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
 
-import { ToolSpecificToolData } from '../../types'
+import { ToolSpecificToolData, Point3, Point2 } from '../../types'
+
+interface LengthSpecificToolData extends ToolSpecificToolData {
+  data: {
+    invalidated: boolean
+    handles: {
+      points: Point3[]
+      activeHandleIndex: number | null
+      textBox: {
+        hasMoved: boolean
+        worldPosition: Point3
+        worldBoundingBox: {
+          topLeft: Point3
+          topRight: Point3
+          bottomLeft: Point3
+          bottomRight: Point3
+        }
+      }
+    }
+    cachedStats: any
+    active: boolean
+  }
+}
 
 class LengthTool extends BaseAnnotationTool {
   public touchDragCallback: any
@@ -82,7 +104,7 @@ class LengthTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement(evt: CustomEvent): ToolSpecificToolData {
+  addNewMeasurement(evt: CustomEvent): LengthSpecificToolData {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -118,8 +140,8 @@ class LengthTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: [...viewPlaneNormal],
-        viewUp: [...viewUp],
+        viewPlaneNormal: <Point3>[...viewPlaneNormal],
+        viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
@@ -127,17 +149,23 @@ class LengthTool extends BaseAnnotationTool {
       data: {
         invalidated: true,
         handles: {
-          points: [[...worldPos], [...worldPos]],
+          points: [<Point3>[...worldPos], <Point3>[...worldPos]],
           activeHandleIndex: null,
           textBox: {
             hasMoved: false,
-            worldPosition: [0, 0, 0],
+            worldPosition: <Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Point3>[0, 0, 0],
+              topRight: <Point3>[0, 0, 0],
+              bottomLeft: <Point3>[0, 0, 0],
+              bottomRight: <Point3>[0, 0, 0],
+            },
           },
         },
         cachedStats: {},
         active: true,
       },
-    } as ToolSpecificToolData
+    }
 
     // Ensure settings are initialized after tool data instantiation
     Settings.getObjectSettings(toolData, LengthTool)
@@ -518,7 +546,7 @@ class LengthTool extends BaseAnnotationTool {
 
     // Draw SVG
     for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i]
+      const toolData = toolState[i] as LengthSpecificToolData
       const settings = Settings.getObjectSettings(toolData, LengthTool)
       const annotationUID = toolData.metadata.toolUID
       const data = toolData.data

@@ -1,5 +1,5 @@
 import { ToolSpecificToolData, ToolAndToolStateArray, Point2 } from '../types'
-import BaseAnnotationTool from '../tools/base/BaseAnnotationTool';
+import BaseAnnotationTool from '../tools/base/BaseAnnotationTool'
 
 type ToolAndToolData = {
   tool: BaseAnnotationTool
@@ -38,7 +38,8 @@ export default function getMoveableAnnotationTools(
         element,
         toolState[i],
         canvasCoords,
-        proximity
+        proximity,
+        interactionType
       )
 
       if (near) {
