@@ -3,6 +3,7 @@ import destroy from './destroy'
 import getSynchronizers from './getSynchronizers'
 import getSynchronizerById from './getSynchronizerById'
 import getAllSynchronizers from './getAllSynchronizers'
+import destroySynchronizerById from './destroySynchronizerById'
 
 export default {
   createSynchronizer,
@@ -10,4 +11,5 @@ export default {
   getSynchronizerById,
   getSynchronizers,
   getAllSynchronizers,
+  destroySynchronizerById,
 }

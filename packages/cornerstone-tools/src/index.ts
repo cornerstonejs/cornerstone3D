@@ -27,6 +27,7 @@ import {
 import drawing from './drawing'
 import synchronizers from './synchronizers'
 import * as Utilities from './util'
+import * as Types from './types'
 
 import {
   BaseTool,
@@ -101,4 +102,5 @@ export {
   getToolDataNearPointOnEnabledElement,
   // Utilities
   Utilities,
+  Types,
 }

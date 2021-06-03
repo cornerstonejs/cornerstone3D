@@ -1,6 +1,6 @@
 import { state } from '../index'
 
-// Synchronizers are a bit more tenatious. We need to make sure we remove
+// Synchronizers are a bit more tenacious. We need to make sure we remove
 // any attached events
 // We should probably just have a destroySynchronizer call
 // then use getByX to allow versatility in how we can call destroy
