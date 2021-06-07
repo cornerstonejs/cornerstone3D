@@ -1113,7 +1113,7 @@ function insertPixelDataPlanar(
         //
         for (let j = 0, len = alignedPixelDataI.data.length; j < len; ++j) {
             if (data[j]) {
-                for (let x = j + 1; x < len; ++x) {
+                for (let x = j; x < len; ++x) {
                     if (data[x]) {
                         labelmap2DView[x] = segmentIndex;
                     }
