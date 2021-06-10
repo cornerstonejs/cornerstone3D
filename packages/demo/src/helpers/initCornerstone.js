@@ -24,7 +24,12 @@ cornerstone.metaData.addProvider(
 
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser
-cornerstoneWADOImageLoader.configure({ useWebWorkers: true })
+cornerstoneWADOImageLoader.configure({
+  useWebWorkers: true,
+  decodeConfig: {
+    convertFloatPixelDataToInt: false
+  },
+})
 
 var config = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
