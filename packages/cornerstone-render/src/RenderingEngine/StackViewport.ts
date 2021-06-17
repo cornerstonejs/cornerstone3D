@@ -28,16 +28,29 @@ const EPSILON = 1e-4
 interface ImageDataMetaData {
   bitsAllocated: number
   numComps: number
-  origin: [number, number, number]
+  origin: Point3
   direction: Float32Array
-  dimensions: [number, number, number]
-  spacing: [number, number, number]
+  dimensions: Point3
+  spacing: Point3
   numVoxels: number
 }
 
 type PetScaling = {
   suvbwToSuvlbm?: number
   suvbwToSuvbsa?: number
+}
+
+type Scaling = {
+  PET?: PetScaling
+}
+
+type PublicImageData = {
+  dimensions: Point3
+  direction: Float32Array
+  scalarData: Float32Array
+  vtkImageData: vtkImageData
+  metadata: { Modality: string }
+  scaling?: Scaling
 }
 /**
  * An object representing a single viewport, which is a camera
@@ -46,12 +59,11 @@ type PetScaling = {
 class StackViewport extends Viewport {
   private imageIds: Array<string>
   private currentImageIdIndex: number
-  // private _stackActors: Map<string, any>
-  private _imageData: any // vtk image data
+  private _imageData: vtkImageData // vtk image data
   private stackActorVOI: VOIRange
   public modality: string // this is needed for tools
-  public scaling: any
-  loadCallbacks: any
+  public scaling: Scaling
+  loadCallbacks: (({ volumeActor: vtkVolume }) => void)[]
   panCache: Point3
   cameraPosOnRender: Point3
 
@@ -67,8 +79,8 @@ class StackViewport extends Viewport {
       sliceNormal,
       viewUp,
     }: {
-      sliceNormal: [number, number, number]
-      viewUp: [number, number, number]
+      sliceNormal: Point3
+      viewUp: Point3
     } = this.defaultOptions.orientation
 
     camera.setDirectionOfProjection(
@@ -88,7 +100,7 @@ class StackViewport extends Viewport {
     this.resetCamera()
   }
 
-  public getImageData(): any {
+  public getImageData(): PublicImageData {
     const { volumeActor } = this.getDefaultActor()
     const vtkImageData = volumeActor.getMapper().getInputData()
     return {
@@ -199,7 +211,7 @@ class StackViewport extends Viewport {
       this._addScalingToViewport(imageIdScalingFactor)
     }
 
-    // todo: some tools rely on the modality, i'm passing modality like this for now
+    // todo: some tools rely on the modality
     this.modality = modality
     // Compute the image size and spacing given the meta data we already have available.
     // const metaDataMap = new Map()
@@ -269,8 +281,8 @@ class StackViewport extends Viewport {
       rowCosines,
       columnCosines,
     }: {
-      rowCosines: [number, number, number]
-      columnCosines: [number, number, number]
+      rowCosines: Point3
+      columnCosines: Point3
     } = imagePlaneModule
 
     const rowCosineVec = vec3.fromValues(...rowCosines)
@@ -313,7 +325,7 @@ class StackViewport extends Viewport {
     }
   }
 
-  private _getCameraOrientation(imageDataDirection: Array<number>): {
+  private _getCameraOrientation(imageDataDirection: Float32Array): {
     viewPlaneNormal: Point3
     viewUp: Point3
   } {
@@ -378,7 +390,7 @@ class StackViewport extends Viewport {
     imageIds: Array<string>,
     currentImageIdIndex = 0,
     callbacks = []
-  ): any {
+  ): void {
     this.imageIds = imageIds
     this.currentImageIdIndex = currentImageIdIndex
 
@@ -431,7 +443,7 @@ class StackViewport extends Viewport {
     const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId)
     const origin = imagePlaneModule.imagePositionPatient
 
-    this._imageData.setOrigin(...origin)
+    this._imageData.setOrigin(origin)
     // 1. Update the pixel data in the vtkImageData object with the pixelData
     //    from the loaded Cornerstone image
     const pixelData = image.getPixelData()
@@ -473,9 +485,11 @@ class StackViewport extends Viewport {
       const eventData = {
         image,
         imageId,
+        viewportUID: this.uid,
+        renderingEngineUID: this.renderingEngineUID,
       }
 
-      triggerEvent(eventTarget, EVENTS.STACK_NEW_IMAGE, eventData)
+      triggerEvent(this.canvas, EVENTS.STACK_NEW_IMAGE, eventData)
 
       this._updateActorToDisplayImageId(image)
 
@@ -577,7 +591,7 @@ class StackViewport extends Viewport {
 
       // Adjusting the camera based on slice axis. this is required if stack
       // contains various image orientations (axial ct, sagittal xray)
-      const direction = this._imageData.getDirection()
+      const direction = this._imageData.getDirection() as Float32Array
       const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
       this.setCamera({ viewUp, viewPlaneNormal })
@@ -631,7 +645,7 @@ class StackViewport extends Viewport {
     this.setActors([{ uid: this.uid, volumeActor: stackActor }])
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
-    const direction = this._imageData.getDirection()
+    const direction = this._imageData.getDirection() as Float32Array
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
     this.setCamera({ viewUp, viewPlaneNormal })

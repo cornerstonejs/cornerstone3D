@@ -1,5 +1,4 @@
-import { getRenderingEngine } from '@ohif/cornerstone-render'
-import IViewportUID from '../../store/IViewportUID'
+import { getRenderingEngine, Types } from '@ohif/cornerstone-render'
 
 /**
  * @function cameraSyncCallback - Synchronizer callback to synchronize the camera. Synchronization
@@ -11,10 +10,10 @@ import IViewportUID from '../../store/IViewportUID'
  */
 export default function cameraSyncCallback(
   synchronizerInstance,
-  sourceViewport: IViewportUID,
-  targetViewport: IViewportUID,
+  sourceViewport: Types.IViewportUID,
+  targetViewport: Types.IViewportUID,
   cameraModifiedEvent: CustomEvent
-) {
+): void {
   // We need a helper for this
   if (
     sourceViewport.renderingEngineUID === targetViewport.renderingEngineUID &&

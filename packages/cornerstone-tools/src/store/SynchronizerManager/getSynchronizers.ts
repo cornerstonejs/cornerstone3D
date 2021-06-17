@@ -1,11 +1,12 @@
+import { Types } from '@ohif/cornerstone-render'
 import { state } from '../index'
 import Synchronizer from './Synchronizer'
 
-function getSynchronizers(
-  renderingEngineUID: string,
-  sceneUID: string,
-  viewportUID: string
-): Array<Synchronizer> {
+function getSynchronizers({
+  renderingEngineUID,
+  sceneUID,
+  viewportUID,
+}: Types.IViewportUID): Array<Synchronizer> {
   const synchronizersFilteredByUIDs = []
 
   if (!renderingEngineUID && !sceneUID && !viewportUID) {

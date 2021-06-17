@@ -1,3 +1,4 @@
+import { getEnabledElement } from '@ohif/cornerstone-render'
 import {
   mouseEventListeners,
   wheelEventListener,
@@ -11,13 +12,25 @@ import {
 } from '../eventDispatchers'
 // ~~
 
+import getToolsWithDataForElement from './getToolsWithDataForElement'
 import { state } from './state'
+import getToolsWithModesForElement from '../eventDispatchers/shared/getToolsWithModesForElement'
+import { ToolModes } from '../enums'
+import { removeToolState } from '../stateManagement'
+import getSynchronizers from './SynchronizerManager/getSynchronizers'
+import getToolGroups from './ToolGroupManager/getToolGroups'
 
-function removeEnabledElement(elementDisabledEvt) {
+function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   // Is DOM element
-  const canvas = elementDisabledEvt.detail.canvas
-  // Is construct - WON'T BE ABLE TO GET
-  //const enabledElement = getEnabledElement(canvas);
+  const { canvas } = elementDisabledEvt.detail
+
+  _resetSvgNodeCacheForCanvas(canvas)
+  // Remove svg layer
+  const viewportNode = canvas.parentNode
+  const svgLayer = viewportNode.querySelector('svg')
+  if (svgLayer) {
+    viewportNode.removeChild(svgLayer)
+  }
 
   // Listeners
   mouseEventListeners.disable(canvas)
@@ -31,21 +44,54 @@ function removeEnabledElement(elementDisabledEvt) {
   // touchToolEventDispatcher.disable(canvas);
 
   // State
-  // @TODO: Remove enabledElement from Synchronizer Managers & Tool Groups/Managers?
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?
-  //_removeAllToolsForElement(enabledElement);
+  _removeViewportFromSynchronizers(canvas)
+  _removeViewportFromToolGroups(canvas)
+
+  // _removeAllToolsForElement(canvas)
   _removeEnabledElement(canvas)
 }
 
-const _removeAllToolsForElement = function (enabledElement) {
-  // store.state.tools.forEach(tool => {
-  //   if (tool.element === enabledElement) {
-  //     setToolDisabledForElement(tool.element, tool.name);
-  //   }
-  // });
-  // store.state.tools = store.state.tools.filter(
-  //   tool => tool.element !== enabledElement
-  // );
+const _removeViewportFromSynchronizers = (canvas) => {
+  const enabledElement = getEnabledElement(canvas)
+  const synchronizers = getSynchronizers(enabledElement)
+  synchronizers.forEach((sync) => {
+    sync.remove(enabledElement)
+  })
+}
+
+const _removeViewportFromToolGroups = (canvas) => {
+  const { renderingEngineUID, sceneUID, viewportUID } =
+    getEnabledElement(canvas)
+  const toolGroups = getToolGroups(renderingEngineUID, sceneUID, viewportUID)
+  toolGroups.forEach((toolGroup) => {
+    toolGroup.removeViewports(renderingEngineUID, sceneUID, viewportUID)
+  })
+}
+
+const _removeAllToolsForElement = function (element) {
+  const tools = getToolsWithModesForElement(element, [
+    ToolModes.Active,
+    ToolModes.Passive,
+  ])
+
+  const toolsWithData = getToolsWithDataForElement(element, tools)
+  toolsWithData.forEach(({ toolState }) => {
+    toolState.forEach((state) => {
+      removeToolState(element, state)
+    })
+  })
+}
+
+function _resetSvgNodeCacheForCanvas(canvas) {
+  const {
+    viewportUid: viewportUID,
+    sceneUid: sceneUID,
+    renderingEngineUid: renderingEngineUID,
+  } = canvas.dataset
+  const canvasHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
+
+  delete state.svgNodeCache[canvasHash]
 }
 
 /**

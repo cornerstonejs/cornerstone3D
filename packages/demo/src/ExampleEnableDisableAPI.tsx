@@ -7,7 +7,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
-import { ToolGroupManager, resetToolsState } from '@ohif/cornerstone-tools'
+import { ToolGroupManager, resetToolsState, ToolBindings } from '@ohif/cornerstone-tools'
 import * as cs from '@ohif/cornerstone-render'
 
 import getImageIds from './helpers/getImageIds'
@@ -22,18 +22,27 @@ import {
   renderingEngineUID,
   ctVolumeUID,
   ptVolumeUID,
-  ctStackUID,
   SCENE_IDS,
   VIEWPORT_IDS,
+  PET_CT_ANNOTATION_TOOLS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
 const VOLUME = 'volume'
-const STACK = 'stack'
+
 
 window.cache = cache
 
-let ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup
+let ctSceneToolGroup,
+  stackCTViewportToolGroup,
+  stackPTViewportToolGroup,
+  stackDXViewportToolGroup,
+  ptSceneToolGroup
+
+const toolsToUse = PET_CT_ANNOTATION_TOOLS
+const ctLayoutTools = ['Levels'].concat(toolsToUse)
+
+
 class EnableDisableViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
@@ -47,6 +56,8 @@ class EnableDisableViewportExample extends Component {
       numRows: 2,
       viewports: [{}, {}, {}, {}, {}, {}],
     },
+    leftClickTool: 'Levels',
+
     enabledViewports: [],
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     selectedViewportIndex: 0, // for disabling and enabling viewports
@@ -109,6 +120,15 @@ class EnableDisableViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    ;({
+      ctSceneToolGroup,
+      stackCTViewportToolGroup,
+      stackDXViewportToolGroup,
+      ptSceneToolGroup,
+    } = initToolGroups({
+      configuration: { preventHandleOutsideImage: true },
+    }))
+
     this.setState({
       viewportInputEntries: [
         {
@@ -117,6 +137,7 @@ class EnableDisableViewportExample extends Component {
           viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           canvas: this._canvasNodes.get(0),
+          toolGroup: ctSceneToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.SAGITTAL,
           },
@@ -126,6 +147,7 @@ class EnableDisableViewportExample extends Component {
           viewportUID: VIEWPORT_IDS.STACK.CT,
           type: VIEWPORT_TYPE.STACK,
           canvas: this._canvasNodes.get(1),
+          toolGroup: stackCTViewportToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
           },
@@ -135,6 +157,7 @@ class EnableDisableViewportExample extends Component {
           viewportUID: VIEWPORT_IDS.STACK.DX,
           type: VIEWPORT_TYPE.STACK,
           canvas: this._canvasNodes.get(2),
+          toolGroup: stackDXViewportToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
           },
@@ -145,6 +168,7 @@ class EnableDisableViewportExample extends Component {
           viewportUID: VIEWPORT_IDS.CT.CORONAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           canvas: this._canvasNodes.get(3),
+          toolGroup: ctSceneToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.CORONAL,
           },
@@ -154,6 +178,7 @@ class EnableDisableViewportExample extends Component {
           viewportUID: VIEWPORT_IDS.CT.AXIAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           canvas: this._canvasNodes.get(4),
+          toolGroup: ctSceneToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
           },
@@ -164,8 +189,6 @@ class EnableDisableViewportExample extends Component {
     const renderingEngine = new RenderingEngine(renderingEngineUID)
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
-    ;({ ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup } =
-      initToolGroups())
 
     // Create volumes
     const dxImageIds = await this.dxImageIdsPromise
@@ -330,23 +353,27 @@ class EnableDisableViewportExample extends Component {
 
     this.renderingEngine.enableElement(viewportInput)
 
+
+    const { toolGroup, sceneUID, viewportUID, type, canvas} = viewportInput
+
+    toolGroup.addViewports(
+      renderingEngineUID,
+      sceneUID,
+      viewportUID
+    )
+
     // load
-    if (viewportInput.viewportUID === VIEWPORT_IDS.STACK.CT) {
+    if (viewportUID === VIEWPORT_IDS.STACK.CT) {
       this.ctStackLoad()
-    } else if (viewportInput.viewportUID === VIEWPORT_IDS.STACK.DX) {
+    } else if (viewportUID === VIEWPORT_IDS.STACK.DX) {
       this.dxColorLoad()
     } else {
       // if we have removed the scene when disabling all the related viewports
       // set the volume again
-      const ctScene = this.renderingEngine.getScene(SCENE_IDS.CT)
+      const ctScene = this.renderingEngine.getScene(sceneUID)
       if (!ctScene.getVolumeActors().length) {
         this.CTVolumeLoad()
       }
-      ctSceneToolGroup.addViewports(
-        renderingEngineUID,
-        SCENE_IDS.CT,
-        viewportInput.viewportUID
-      )
     }
 
     this.setState((state) => ({
@@ -354,6 +381,56 @@ class EnableDisableViewportExample extends Component {
       enabledViewports: [...state.enabledViewports, viewportIndex],
     }))
   }
+
+
+  swapTools = (evt) => {
+    const toolName = evt.target.value
+
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
+    const options = {
+      bindings: [ToolBindings.Mouse.Primary],
+    }
+    if (isAnnotationToolOn) {
+      // Set tool active
+
+      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName)
+
+      ctSceneToolGroup.setToolActive(toolName, options)
+      ptSceneToolGroup.setToolActive(toolName, options)
+      stackCTViewportToolGroup.setToolActive(toolName, options)
+      stackDXViewportToolGroup.setToolActive(toolName, options)
+
+      toolsToSetPassive.forEach((toolName) => {
+        ctSceneToolGroup.setToolPassive(toolName)
+        ptSceneToolGroup.setToolPassive(toolName)
+        stackCTViewportToolGroup.setToolPassive(toolName)
+        stackDXViewportToolGroup.setToolPassive(toolName)
+      })
+
+      ctSceneToolGroup.setToolDisabled('WindowLevel')
+      ptSceneToolGroup.setToolDisabled('PetThreshold')
+      stackCTViewportToolGroup.setToolDisabled('WindowLevel')
+      stackDXViewportToolGroup.setToolDisabled('WindowLevel')
+    } else {
+      // Set window level + threshold
+      ctSceneToolGroup.setToolActive('WindowLevel', options)
+      ptSceneToolGroup.setToolActive('PetThreshold', options)
+      stackCTViewportToolGroup.setToolActive('WindowLevel', options)
+      stackDXViewportToolGroup.setToolActive('WindowLevel', options)
+
+      // Set all annotation tools passive
+      toolsToUse.forEach((toolName) => {
+        ctSceneToolGroup.setToolPassive(toolName)
+        ptSceneToolGroup.setToolPassive(toolName)
+        stackCTViewportToolGroup.setToolPassive(toolName)
+        stackDXViewportToolGroup.setToolPassive(toolName)
+      })
+    }
+
+    this.renderingEngine.render()
+    this.setState({ leftClickTool: toolName })
+  }
+
 
   showOffScreenCanvas = () => {
     // remove all childs
@@ -409,7 +486,16 @@ class EnableDisableViewportExample extends Component {
         >
           Disable Selected Viewport
         </button>
-
+        <select
+            value={this.state.ptCtLeftClickTool}
+            onChange={this.swapTools}
+          >
+            {ctLayoutTools.map((toolName) => (
+              <option key={toolName} value={toolName}>
+                {toolName}
+              </option>
+            ))}
+          </select>
         <div className="col-md-4">
           {/* <label>Viewports:</label> */}
           <select

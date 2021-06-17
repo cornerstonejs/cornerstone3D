@@ -22,12 +22,14 @@ import type IStreamingImageVolume from './IStreamingImageVolume'
 import type ViewportInputOptions from './ViewportInputOptions'
 import type IImage from './IImage'
 import type ScalingParameters from './ScalingParameters'
+import type IViewportUID from './IViewportUID'
 
 export type {
   ICamera,
   IEnabledElement,
   ICache,
   IVolume,
+  IViewportUID,
   IImageVolume,
   ScalingParameters,
   IStreamingImageVolume,

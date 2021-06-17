@@ -1,5 +1,4 @@
-import { getRenderingEngine } from '@ohif/cornerstone-render'
-import IViewportUID from '../../store/IViewportUID'
+import { getRenderingEngine, Types } from '@ohif/cornerstone-render'
 
 /**
  * @function cameraSyncCallback - Synchronizer callback to synchronize the voi of volumeActors of identical volumes
@@ -12,10 +11,10 @@ import IViewportUID from '../../store/IViewportUID'
  */
 export default function voiSyncCallback(
   synchronizerInstance,
-  sourceViewport: IViewportUID,
-  targetViewport: IViewportUID,
+  sourceViewport: Types.IViewportUID,
+  targetViewport: Types.IViewportUID,
   voiModifiedEvent: CustomEvent
-) {
+): void {
   const eventData = voiModifiedEvent.detail
   const { volumeUID, sceneUID, range } = eventData
 

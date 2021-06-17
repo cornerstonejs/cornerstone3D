@@ -1,11 +1,12 @@
-import IViewportUID from '../IViewportUID'
+import { Types } from '@ohif/cornerstone-render'
+
 import ISetToolModeOptions from './ISetToolModeOptions'
 
 export default interface IToolGroup {
   // Unserializable instantiated tool classes, keyed by name
   _tools: Record<string, any>
   id: string
-  viewports: Array<IViewportUID>
+  viewports: Array<Types.IViewportUID>
   tools: Record<string, any>
   //
   getToolInstance: { (toolName: string): any }

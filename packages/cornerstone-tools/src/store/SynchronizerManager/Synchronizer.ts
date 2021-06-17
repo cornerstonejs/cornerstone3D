@@ -1,16 +1,16 @@
-import IViewportUID from '../IViewportUID'
 // ~~ VIEWPORT LIBRARY
 import {
   getRenderingEngine,
   getEnabledElement,
   EVENTS as RENDERING_EVENTS,
+  Types,
 } from '@ohif/cornerstone-render'
 
 export interface ISynchronizerEventHandler {
   (
     synchronizer: Synchronizer,
-    sourceViewport: IViewportUID,
-    targetViewport: IViewportUID,
+    sourceViewport: Types.IViewportUID,
+    targetViewport: Types.IViewportUID,
     sourceEvent: any
   ): void
 }
@@ -21,8 +21,8 @@ class Synchronizer {
   private _eventName: string
   private _eventHandler: ISynchronizerEventHandler
   private _ignoreFiredEvents: boolean
-  private _sourceViewports: Array<IViewportUID>
-  private _targetViewports: Array<IViewportUID>
+  private _sourceViewports: Array<Types.IViewportUID>
+  private _targetViewports: Array<Types.IViewportUID>
   //
   public id: string
 
@@ -51,12 +51,12 @@ class Synchronizer {
    * TODO: LISTENERS TO CATCH RenderingEngine/Scene specific adds for addSource/addTarget (and remove)
    * ========================
    */
-  public add(viewport: IViewportUID): void {
+  public add(viewport: Types.IViewportUID): void {
     this.addTarget(viewport)
     this.addSource(viewport)
   }
 
-  public addSource(viewport: IViewportUID) {
+  public addSource(viewport: Types.IViewportUID) {
     const { renderingEngineUID, sceneUID, viewportUID } = viewport
 
     // TODO: exit early if already in list
@@ -74,7 +74,7 @@ class Synchronizer {
     this._sourceViewports.push(viewport)
   }
 
-  public addTarget(viewport: IViewportUID) {
+  public addTarget(viewport: Types.IViewportUID) {
     // const { renderingEngineUID, sceneUID, viewportUID } = viewport
 
     // TODO: exit early if already in list
@@ -92,12 +92,12 @@ class Synchronizer {
     this._targetViewports.forEach((t) => this.removeTarget(t))
   }
 
-  public remove(viewport: IViewportUID) {
+  public remove(viewport: Types.IViewportUID) {
     this.removeTarget(viewport)
     this.removeSource(viewport)
   }
 
-  public removeSource(viewport: IViewportUID) {
+  public removeSource(viewport: Types.IViewportUID) {
     const index = _getViewportIndex(this._sourceViewports, viewport)
 
     if (index === -1) {
@@ -112,7 +112,7 @@ class Synchronizer {
     this._updateDisableHandlers()
   }
 
-  public removeTarget(viewport: IViewportUID) {
+  public removeTarget(viewport: Types.IViewportUID) {
     const index = _getViewportIndex(this._sourceViewports, viewport)
 
     if (index === -1) {
@@ -135,7 +135,7 @@ class Synchronizer {
     return containsExactMatch
   }
 
-  public fireEvent(sourceViewport: IViewportUID, sourceEvent: any): void {
+  public fireEvent(sourceViewport: Types.IViewportUID, sourceEvent: any): void {
     if (this.isDisabled() || this._ignoreFiredEvents) {
       return
     }
@@ -239,7 +239,7 @@ function _getViewportIndex(arr, vp) {
   )
 }
 
-function _getViewportCanvas(vp: IViewportUID) {
+function _getViewportCanvas(vp: Types.IViewportUID) {
   return getRenderingEngine(vp.renderingEngineUID)
     .getScene(vp.sceneUID)
     .getViewport(vp.viewportUID)

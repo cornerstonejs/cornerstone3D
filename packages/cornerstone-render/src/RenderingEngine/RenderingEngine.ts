@@ -79,7 +79,8 @@ class RenderingEngine implements IRenderingEngine {
     this.uid = uid ? uid : uuidv4()
     renderingEngineCache.set(this)
 
-    this.offscreenMultiRenderWindow = vtkOffscreenMultiRenderWindow.newInstance()
+    this.offscreenMultiRenderWindow =
+      vtkOffscreenMultiRenderWindow.newInstance()
     this.offScreenCanvasContainer = document.createElement('div')
     this.offscreenMultiRenderWindow.setContainer(this.offScreenCanvasContainer)
     this._scenes = new Map()
@@ -133,10 +134,8 @@ class RenderingEngine implements IRenderingEngine {
     canvases.push(viewportInputEntry.canvas)
 
     // 2.a Calculating the new size for offScreen Canvas
-    const {
-      offScreenCanvasWidth,
-      offScreenCanvasHeight,
-    } = this._resizeOffScreenCanvas(canvases)
+    const { offScreenCanvasWidth, offScreenCanvasHeight } =
+      this._resizeOffScreenCanvas(canvases)
 
     // 2.b Re-position previous viewports on the offScreen Canvas based on the new
     // offScreen canvas size
@@ -190,22 +189,22 @@ class RenderingEngine implements IRenderingEngine {
     // 1. Getting the viewport to remove it
     const viewport = this.getViewport(viewportUID)
 
-    // 1.a To throw if there is no viewport stored in rendering engine
+    // 2 To throw if there is no viewport stored in rendering engine
     if (!viewport) {
       console.warn(`viewport ${viewportUID} does not exist`)
       return
     }
 
-    // 1.b Remove the requested viewport from the rendering engine
-    this._removeViewport(viewportUID)
-
-    // 2. Remove the related renderer from the offScreenMultiRenderWindow
-    this.offscreenMultiRenderWindow.removeRenderer(viewportUID)
-
     // 3. Reset the viewport to remove attributes, and reset the canvas
     this._resetViewport(viewport)
 
-    // 4. Resize the offScreen canvas to accommodate for the new size (after removal)
+    // 4. Remove the related renderer from the offScreenMultiRenderWindow
+    this.offscreenMultiRenderWindow.removeRenderer(viewportUID)
+
+    // 5. Remove the requested viewport from the rendering engine
+    this._removeViewport(viewportUID)
+
+    // 6. Resize the offScreen canvas to accommodate for the new size (after removal)
     this.resize()
   }
 
@@ -263,13 +262,8 @@ class RenderingEngine implements IRenderingEngine {
     offScreenCanvasHeight: number,
     _xOffset: number
   ): void {
-    const {
-      canvas,
-      sceneUID,
-      viewportUID,
-      type,
-      defaultOptions,
-    } = viewportInputEntry
+    const { canvas, sceneUID, viewportUID, type, defaultOptions } =
+      viewportInputEntry
 
     // 1. Calculate the size of location of the viewport on the offScreen canvas
     const {
@@ -375,10 +369,8 @@ class RenderingEngine implements IRenderingEngine {
     const canvases = viewportInputEntries.map((vp) => vp.canvas)
 
     // 2. Set canvas size based on height and sum of widths
-    const {
-      offScreenCanvasWidth,
-      offScreenCanvasHeight,
-    } = this._resizeOffScreenCanvas(canvases)
+    const { offScreenCanvasWidth, offScreenCanvasHeight } =
+      this._resizeOffScreenCanvas(canvases)
 
     /*
     TODO: Commenting this out until we can mock the Canvas usage in the tests (or use jsdom?)
@@ -505,10 +497,8 @@ class RenderingEngine implements IRenderingEngine {
     const canvases = viewports.map((vp) => vp.canvas)
 
     // 2. Recalculate and resize the offscreen canvas size
-    const {
-      offScreenCanvasWidth,
-      offScreenCanvasHeight,
-    } = this._resizeOffScreenCanvas(canvases)
+    const { offScreenCanvasWidth, offScreenCanvasHeight } =
+      this._resizeOffScreenCanvas(canvases)
 
     // 3. Recalculate the viewports location on the off screen canvas
     this._resize(viewports, offScreenCanvasWidth, offScreenCanvasHeight)
@@ -715,7 +705,8 @@ class RenderingEngine implements IRenderingEngine {
 
     renderWindow.render()
 
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow()
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const context = openGLRenderWindow.get3DContext()
 
     const offScreenCanvas = context.canvas
@@ -821,15 +812,8 @@ class RenderingEngine implements IRenderingEngine {
     viewport: StackViewport | VolumeViewport,
     offScreenCanvas
   ) {
-    const {
-      sx,
-      sy,
-      sWidth,
-      sHeight,
-      uid,
-      sceneUID,
-      renderingEngineUID,
-    } = viewport
+    const { sx, sy, sWidth, sHeight, uid, sceneUID, renderingEngineUID } =
+      viewport
 
     const canvas = <HTMLCanvasElement>viewport.canvas
     const { width: dWidth, height: dHeight } = canvas
@@ -877,16 +861,17 @@ class RenderingEngine implements IRenderingEngine {
       renderingEngineUID,
     }
 
+    // Trigger first before removing the data attributes, as we need the enabled
+    // element to remove tools associated with the viewport
+    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
+
     canvas.removeAttribute('data-viewport-uid')
     canvas.removeAttribute('data-scene-uid')
     canvas.removeAttribute('data-rendering-engine-uid')
-    // todo: remove svg layer
 
     // clear drawing
     const context = canvas.getContext('2d')
     context.clearRect(0, 0, canvas.width, canvas.height)
-
-    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
   }
 
   /**
@@ -961,7 +946,8 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     renderWindow.render()
-    const openGLRenderWindow = offscreenMultiRenderWindow.getOpenGLRenderWindow()
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const context = openGLRenderWindow.get3DContext()
 
     const offScreenCanvas = context.canvas
