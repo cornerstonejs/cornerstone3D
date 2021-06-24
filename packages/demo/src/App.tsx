@@ -12,6 +12,7 @@ import VTKSetVolumesExample from './ExampleSetVolumes'
 import CacheDecacheExample from './ExampleCacheDecache'
 import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration'
 import OneVolumeExample from './ExampleOneVolume'
+import PriorityLoadExample from './ExamplePriorityLoad'
 
 function LinkOut({ href, text }) {
   return (
@@ -66,10 +67,9 @@ function Index() {
       text: 'Example with twenty five on screen canvases linked to a single RenderingEngine.',
     },
     {
-      title: 'Demo 1 - Cache Decache',
+      title: 'Cache Decache',
       url: '/cacheDecache',
       text: 'Demonstration of combined cache and image loader',
-      style: '3',
     },
     {
       title: 'Color',
@@ -100,6 +100,11 @@ function Index() {
       title: 'Set Volumes',
       url: '/setVolumes',
       text: 'Example for changing the volume while keeping the layout, synchronizers etc',
+    },
+    {
+      title: 'Custom priority for loading a volumes',
+      url: '/priorityLoad',
+      text: 'Example for setting a custom priority for loading a volume',
     },
     {
       title: 'Tool Display Configuration',
@@ -214,6 +219,11 @@ function AppRouter() {
       children: <OneVolumeExample />,
     })
 
+  const PriorityLoad = () =>
+    Example({
+      children: <PriorityLoadExample />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -222,7 +232,7 @@ function AppRouter() {
         <Route exact path="/canvasResize/" render={canvasResize} />
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact path="/color/" render={color} />
-        {/* <Route exact path="/volumeMapper2D/" render={volumeMapper2D} /> */}
+        <Route exact path="/priorityLoad/" render={PriorityLoad} />
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />

@@ -165,7 +165,12 @@ export default class StreamingImageVolume extends ImageVolume {
     this._prefetchImageIds(priority)
   }
 
-  private _prefetchImageIds(priority: number) {
+  /**
+   * Useful for sorting requests outside of the volume loader itself
+   * e.g. loading a single slice of CT, followed by a single slice of PET, before
+   * moving to the next slice
+   */
+  public getImageLoadRequests = () => {
     const { scalarData, loadStatus } = this
     const { cachedFrames } = loadStatus
 
@@ -178,14 +183,11 @@ export default class StreamingImageVolume extends ImageVolume {
     } = this
 
     const { FrameOfReferenceUID } = metadata
-
-    const interleavedFrames = getInterleavedFrames(imageIds)
-
     loadStatus.loading = true
 
     // SharedArrayBuffer
     const arrayBuffer = scalarData.buffer
-    const numFrames = interleavedFrames.length
+    const numFrames = imageIds.length
 
     // Length of one frame in voxels
     const length = scalarData.length / numFrames
@@ -217,6 +219,7 @@ export default class StreamingImageVolume extends ImageVolume {
     }
 
     function callLoadStatusCallback(evt) {
+      // TODO: probably don't want this here
       if (autoRenderOnLoad) {
         if (
           evt.framesProcessed > reRenderTarget ||
@@ -307,9 +310,7 @@ export default class StreamingImageVolume extends ImageVolume {
       }
     }
 
-    interleavedFrames.forEach((frame) => {
-      const { imageId, imageIdIndex } = frame
-
+    const requests = imageIds.map((imageId, imageIdIndex) => {
       if (cachedFrames[imageIdIndex]) {
         framesLoaded++
         framesProcessed++
@@ -380,12 +381,6 @@ export default class StreamingImageVolume extends ImageVolume {
         preScale: {
           scalingParameters,
         },
-        // requestPoolManager
-        priority,
-        requestType,
-        additionalDetails: {
-          volumeUID: this.uid,
-        },
       }
 
       // Use loadImage because we are skipping the Cornerstone Image cache
@@ -400,6 +395,22 @@ export default class StreamingImageVolume extends ImageVolume {
           }
         )
       }
+
+      return { sendRequest, imageId, imageIdIndex, options }
+    })
+
+    return requests
+  }
+  private _prefetchImageIds(priority: number) {
+    const requests = this.getImageLoadRequests()
+
+    requests.reverse().forEach((request) => {
+      if (!request) {
+        // there is a cached image for the imageId and no requests will fire
+        return
+      }
+
+      const { sendRequest, imageId, imageIdIndex, options } = request
 
       const additionalDetails = {
         volumeUID: this.uid,
