@@ -14,6 +14,7 @@ import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration'
 import OneVolumeExample from './ExampleOneVolume'
 import PriorityLoadExample from './ExamplePriorityLoad'
 import OneStackExample from './ExampleOneStack'
+import FlipViewportExample from './ExampleFlipViewport'
 
 function LinkOut({ href, text }) {
   return (
@@ -61,6 +62,10 @@ function Index() {
       title: 'One Stack',
       url: '/oneStack',
       text: 'Example one Stack',
+    },
+    { title: 'Flip Viewport',
+      url: '/flip',
+      text: 'Example for flipping viewport horrizontally or vertically volume'
     },
     {
       title: 'Canvas Resize',
@@ -235,6 +240,11 @@ function AppRouter() {
       children: <OneStackExample />,
     })
 
+  const Flip = () =>
+    Example({
+      children: <FlipViewportExample />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -244,6 +254,8 @@ function AppRouter() {
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact path="/color/" render={color} />
         <Route exact path="/priorityLoad/" render={PriorityLoad} />
+        <Route exact path="/flip/" render={Flip} />
+        {/* <Route exact path="/volumeMapper2D/" render={volumeMapper2D} /> */}
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />

@@ -153,7 +153,7 @@ class VolumeViewport extends Viewport {
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1]
 
-    const worldCoord = openGLRenderWindow.displayToWorld(
+    let worldCoord = openGLRenderWindow.displayToWorld(
       displayCoord[0],
       displayCoord[1],
       0,
@@ -162,6 +162,7 @@ class VolumeViewport extends Viewport {
 
     vtkCamera.setSlabThicknessActive(slabThicknessActive)
 
+    worldCoord = this.applyFlipTx(worldCoord)
     return worldCoord
   }
 
@@ -191,7 +192,7 @@ class VolumeViewport extends Viewport {
       offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const size = openGLRenderWindow.getSize()
     const displayCoord = openGLRenderWindow.worldToDisplay(
-      ...worldPos,
+      ...this.applyFlipTx(worldPos),
       renderer
     )
 

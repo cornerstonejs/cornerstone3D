@@ -7,6 +7,7 @@ import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import triggerEvent from '../utilities/triggerEvent'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import { vec3 } from 'gl-matrix'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { ViewportInputOptions, Point2, Point3 } from '../types'
@@ -200,6 +201,57 @@ class Viewport {
     if (immediate) {
       this.render()
     }
+  }
+
+  public applyFlipTx = (worldPos: Point3): Point3 => {
+    // One vol actor is enough to get the flip direction. If not flipped
+    // the transformation is identity
+    const volumeActor = this.getDefaultActor().volumeActor as vtkVolume
+    const mat = volumeActor.getMatrix()
+
+    const p1 = worldPos[0]
+    const p2 = worldPos[1]
+    const p3 = worldPos[2]
+    const p4 = 1
+
+    // Apply flip tx
+    const newPos = [0, 0, 0, 1]
+    newPos[0] = p1 * mat[0] + p2 * mat[4] + p3 * mat[8] + p4 * mat[12]
+    newPos[1] = p1 * mat[1] + p2 * mat[5] + p3 * mat[9] + p4 * mat[13]
+    newPos[2] = p1 * mat[2] + p2 * mat[6] + p3 * mat[10] + p4 * mat[14]
+    newPos[3] = p1 * mat[3] + p2 * mat[7] + p3 * mat[11] + p4 * mat[15]
+
+    return [newPos[0], newPos[1], newPos[2]]
+  }
+
+  /**
+   * Flip the viewport on horizontal or vertical axis
+   *
+   * @param direction 0 for horizontal, 1 for vertical
+   */
+  public flip = (direction: number): void => {
+    const scale = [1, 1]
+    scale[direction] *= -1
+
+    const actors = this.getActors()
+    actors.forEach((actor) => {
+      const volumeActor = actor.volumeActor as vtkVolume
+      const mat = volumeActor.getUserMatrix()
+
+      const actorScale = [mat[0], mat[5], mat[10]]
+
+      const tx = vtkMatrixBuilder
+        .buildFromRadian()
+        .identity()
+        .scale(
+          actorScale[0] * scale[0],
+          actorScale[1] * scale[1],
+          actorScale[2]
+        )
+      volumeActor.setUserMatrix(tx.getMatrix())
+    })
+
+    this.getRenderingEngine().render()
   }
 
   // old reset camera

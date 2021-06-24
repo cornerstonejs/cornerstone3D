@@ -884,12 +884,16 @@ class StackViewport extends Viewport {
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1]
 
-    return openGLRenderWindow.displayToWorld(
+    let worldCoord = openGLRenderWindow.displayToWorld(
       displayCoord[0],
       displayCoord[1],
       0,
       renderer
     )
+
+    worldCoord = this.applyFlipTx(worldCoord)
+
+    return worldCoord
   }
 
   /**
@@ -908,7 +912,7 @@ class StackViewport extends Viewport {
       offscreenMultiRenderWindow.getOpenGLRenderWindow()
     const size = openGLRenderWindow.getSize()
     const displayCoord = openGLRenderWindow.worldToDisplay(
-      ...worldPos,
+      ...this.applyFlipTx(worldPos),
       renderer
     )
 
