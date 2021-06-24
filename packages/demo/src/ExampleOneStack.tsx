@@ -12,7 +12,11 @@ import {
   ToolBindings,
   resetToolsState,
 } from '@ohif/cornerstone-tools'
-
+import {
+  setCTWWWC,
+  setPetTransferFunction,
+} from './helpers/transferFunctionHelpers'
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
@@ -26,17 +30,18 @@ import {
 } from './constants'
 
 const VOLUME = 'volume'
+const STACK = 'stack'
 
 window.cache = cache
 
-let ctSceneToolGroup
+let stackCTViewportToolGroup
 
 const toolsToUse = PET_CT_ANNOTATION_TOOLS.filter(
   (tool) => tool !== 'Crosshairs'
 )
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
-class OneVolumeExample extends Component {
+class OneStackExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
@@ -45,9 +50,9 @@ class OneVolumeExample extends Component {
     destroyed: false,
     //
     viewportGrid: {
-      numCols: 3,
+      numCols: 1,
       numRows: 1,
-      viewports: [{}, {}, {}],
+      viewports: [{}],
     },
     ptCtLeftClickTool: 'Levels',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
@@ -58,11 +63,13 @@ class OneVolumeExample extends Component {
     super(props)
 
     this._canvasNodes = new Map()
+    this._offScreenRef = React.createRef()
+
     this._viewportGridRef = React.createRef()
 
-    this.volumeImageIds = getImageIds('ct1', VOLUME)
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
 
-    Promise.all([this.volumeImageIds]).then(() =>
+    Promise.all([this.ctStackImageIdsPromise]).then(() =>
       this.setState({ progressText: 'Loading data...' })
     )
 
@@ -80,9 +87,9 @@ class OneVolumeExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    ;({ ctSceneToolGroup } = initToolGroups())
+    ;({ stackCTViewportToolGroup } = initToolGroups())
 
-    const volumeImageIds = await this.volumeImageIds
+    const ctStackImageIds = await this.ctStackImageIdsPromise
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -90,93 +97,35 @@ class OneVolumeExample extends Component {
     window.renderingEngine = renderingEngine
 
     const viewportInput = [
-      // CT volume axial
       {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        viewportUID: VIEWPORT_IDS.STACK.CT,
+        type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(0),
         defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(1),
-        defaultOptions: {
-          orientation: ORIENTATION.SAGITTAL,
-        },
-      },
-      {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(2),
-        defaultOptions: {
-          orientation: ORIENTATION.CORONAL,
+          background: [0, 0, 0],
         },
       },
     ]
 
     renderingEngine.setViewports(viewportInput)
 
-    // volume ct
-    ctSceneToolGroup.addViewports(
+    stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
+      undefined,
+      VIEWPORT_IDS.STACK.CT
     )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.CORONAL
-    )
-
-    renderingEngine.render()
-
-    // This only creates the volumes, it does not actually load all
-    // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
-      imageIds: volumeImageIds,
-    })
-
-    // Initialize all CT values to -1024 so we don't get a grey box?
-    // const { scalarData } = ctVolume
-    // const ctLength = scalarData.length
-
-    // for (let i = 0; i < ctLength; i++) {
-    //   scalarData[i] = -1024
-    // }
-
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
-
-    ctVolume.load(onLoad)
-
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    ctScene.setVolumes([
-      {
-        volumeUID: ctVolumeUID,
-        // callback: setCTWWWC,
-      },
-    ])
-
-    // Set initial CT levels in UI
-    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
-
-    this.setState({
-      metadataLoaded: true,
-      ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-    })
 
     // This will initialise volumes in GPU memory
     renderingEngine.render()
+
+    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+
+    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
+    await ctStackViewport.setStack(
+      sortImageIdsByIPP(ctStackImageIds),
+      ctMiddleSlice,
+      [setCTWWWC]
+    )
 
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
@@ -223,27 +172,44 @@ class OneVolumeExample extends Component {
       // Set tool active
 
       const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName)
-
-      ctSceneToolGroup.setToolActive(toolName, options)
-
+      stackCTViewportToolGroup.setToolActive(toolName, options)
       toolsToSetPassive.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
+        stackCTViewportToolGroup.setToolPassive(toolName)
       })
 
-      ctSceneToolGroup.setToolDisabled('WindowLevel')
+      stackCTViewportToolGroup.setToolDisabled('WindowLevel')
     } else {
       // Set window level + threshold
-      ctSceneToolGroup.setToolActive('WindowLevel', options)
+      stackCTViewportToolGroup.setToolActive('WindowLevel', options)
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
+        stackCTViewportToolGroup.setToolPassive(toolName)
       })
     }
 
     this.renderingEngine.render()
     this.setState({ ptCtLeftClickTool: toolName })
   }
+
+  showOffScreenCanvas = () => {
+    // remove all childs
+    this._offScreenRef.current.innerHTML = ''
+    const uri = this.renderingEngine._debugRender()
+    const image = document.createElement('img')
+    image.src = uri
+    image.setAttribute('width', '100%')
+
+    this._offScreenRef.current.appendChild(image)
+  }
+
+  rotateViewport = (rotateDeg) => {
+    // remove all childs
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    vp.setRotation(rotateDeg)
+  }
+
+
 
   render() {
     return (
@@ -267,6 +233,35 @@ class OneVolumeExample extends Component {
           ))}
         </select>
 
+        <button
+          onClick={() => this.rotateViewport(90)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 90
+        </button>
+        <button
+          onClick={() => this.rotateViewport(180)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 180
+        </button>
+        <button
+          onClick={() => this.rotateViewport(270)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 270
+        </button>
+        <button
+          onClick={() => this.rotateViewport(360)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 360 OR 0
+        </button>
+
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}
@@ -288,9 +283,27 @@ class OneVolumeExample extends Component {
             </div>
           ))}
         </ViewportGrid>
+        <div>
+          <h1>OffScreen Canvas Render</h1>
+          <button
+            onClick={this.showOffScreenCanvas}
+            className="btn btn-primary"
+            style={{ margin: '2px 4px' }}
+          >
+            Show OffScreenCanvas
+          </button>
+          <button
+            onClick={this.hidOffScreenCanvas}
+            className="btn btn-primary"
+            style={{ margin: '2px 4px' }}
+          >
+            Hide OffScreenCanvas
+          </button>
+          <div ref={this._offScreenRef}></div>
+        </div>
       </div>
     )
   }
 }
 
-export default OneVolumeExample
+export default OneStackExample

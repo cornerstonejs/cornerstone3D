@@ -13,6 +13,7 @@ import CacheDecacheExample from './ExampleCacheDecache'
 import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration'
 import OneVolumeExample from './ExampleOneVolume'
 import PriorityLoadExample from './ExamplePriorityLoad'
+import OneStackExample from './ExampleOneStack'
 
 function LinkOut({ href, text }) {
   return (
@@ -55,6 +56,11 @@ function Index() {
       title: 'One Volume',
       url: '/oneVolume',
       text: 'Example one volume',
+    },
+    {
+      title: 'One Stack',
+      url: '/oneStack',
+      text: 'Example one Stack',
     },
     {
       title: 'Canvas Resize',
@@ -224,6 +230,11 @@ function AppRouter() {
       children: <PriorityLoadExample />,
     })
 
+  const OneStack = () =>
+    Example({
+      children: <OneStackExample />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -239,6 +250,7 @@ function AppRouter() {
         <Route exact path="/setVolumes/" render={setVolumes} />
         <Route exact path="/cacheDecache/" render={cacheDecache} />
         <Route exact path="/oneVolume/" render={OneVolume} />
+        <Route exact path="/oneStack/" render={OneStack} />
         <Route
           exact
           path="/toolDisplayConfiguration/"

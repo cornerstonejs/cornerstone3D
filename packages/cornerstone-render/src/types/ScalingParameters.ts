@@ -7,4 +7,13 @@ type ScalingParameters = {
   suvbsa?: number
 }
 
-export default ScalingParameters
+type PetScaling = {
+  suvbwToSuvlbm?: number
+  suvbwToSuvbsa?: number
+}
+
+type Scaling = {
+  PET?: PetScaling
+}
+
+export { PetScaling, Scaling, ScalingParameters }

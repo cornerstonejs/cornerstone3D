@@ -20,8 +20,13 @@ import type Point2 from './Point2'
 import type Point3 from './Point3'
 import type IStreamingImageVolume from './IStreamingImageVolume'
 import type ViewportInputOptions from './ViewportInputOptions'
+import type IImageData from './IImageData'
 import type IImage from './IImage'
-import type ScalingParameters from './ScalingParameters'
+import type {
+  PetScaling,
+  Scaling,
+  ScalingParameters,
+} from './ScalingParameters'
 import type IViewportUID from './IViewportUID'
 
 export type {
@@ -32,8 +37,11 @@ export type {
   IViewportUID,
   IImageVolume,
   ScalingParameters,
+  PetScaling,
+  Scaling,
   IStreamingImageVolume,
   IImage,
+  IImageData,
   ImageLoaderFn,
   VolumeLoaderFn,
   IRegisterImageLoader,

@@ -1,4 +1,3 @@
-import cache from '../cache/cache'
 import VIEWPORT_TYPE from '../constants/viewportType'
 import Scene from './Scene'
 import Viewport from './Viewport'
@@ -6,8 +5,6 @@ import Viewport from './Viewport'
 import { ViewportInput, Point2, Point3 } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import { ActorEntry } from '../types'
-
-const { getVolume } = cache;
 
 /**
  * An object representing a single viewport, which is a camera
@@ -44,19 +41,6 @@ class VolumeViewport extends Viewport {
     camera.setFreezeFocalPoint(true)
 
     this.resetCamera()
-  }
-
-  public getImageData(): any {
-    const volumeActors = this.getActors()
-    const imageVolume = getVolume(volumeActors[0].uid)
-    const {
-      dimensions,
-      scalarData,
-      direction,
-      vtkImageData: imageData,
-      metadata,
-    } = imageVolume
-    return { dimensions, direction, scalarData, imageData, metadata }
   }
 
   public getFrameOfReferenceUID = (): string => {

@@ -16,6 +16,9 @@ import {
   ICamera,
   IImage,
   ScalingParameters,
+  IImageData,
+  PetScaling,
+  Scaling,
 } from '../types'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
@@ -35,26 +38,9 @@ interface ImageDataMetaData {
   numVoxels: number
 }
 
-type PetScaling = {
-  suvbwToSuvlbm?: number
-  suvbwToSuvbsa?: number
-}
-
-type Scaling = {
-  PET?: PetScaling
-}
-
-type PublicImageData = {
-  dimensions: Point3
-  direction: Float32Array
-  scalarData: Float32Array
-  vtkImageData: vtkImageData
-  metadata: { Modality: string }
-  scaling?: Scaling
-}
 /**
- * An object representing a single viewport, which is a camera
- * looking into a scene, and an associated target output `canvas`.
+ * An object representing a single stack viewport, which is a camera
+ * looking into an internal scene, and an associated target output `canvas`.
  */
 class StackViewport extends Viewport {
   private imageIds: Array<string>
@@ -66,6 +52,8 @@ class StackViewport extends Viewport {
   loadCallbacks: (({ volumeActor: vtkVolume }) => void)[]
   panCache: Point3
   cameraPosOnRender: Point3
+  rotation: number
+  invalidated: boolean // if true -> new stack is set for the viewport
 
   constructor(props: ViewportInput) {
     super(props)
@@ -75,13 +63,8 @@ class StackViewport extends Viewport {
     const camera = vtkCamera.newInstance()
     renderer.setActiveCamera(camera)
 
-    const {
-      sliceNormal,
-      viewUp,
-    }: {
-      sliceNormal: Point3
-      viewUp: Point3
-    } = this.defaultOptions.orientation
+    const sliceNormal = <Point3>[0, 0, -1]
+    const viewUp = <Point3>[0, -1, 0]
 
     camera.setDirectionOfProjection(
       -sliceNormal[0],
@@ -97,10 +80,19 @@ class StackViewport extends Viewport {
     this.currentImageIdIndex = 0
     this.panCache = [0, 0, 0]
     this.cameraPosOnRender = [0, 0, 0]
+    this.rotation = 0
+    this.invalidated = false
     this.resetCamera()
   }
 
-  public getImageData(): PublicImageData {
+  /**
+   * Returns the image and its propertise that is being shown inside the
+   * stack viewport. It returns, the image dimensions, image direction,
+   * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
+   *
+   * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
+   */
+  public getImageData(): IImageData {
     const { volumeActor } = this.getDefaultActor()
     const vtkImageData = volumeActor.getMapper().getInputData()
     return {
@@ -113,6 +105,11 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * Returns the frame of reference UID, if the image doesn't have imagePlaneModule
+   * metadata, it returns undefined, otherwise, frameOfReferenceUID is returned.
+   * @returns frameOfReferenceUID : string representing frame of reference id
+   */
   public getFrameOfReferenceUID = (): string | undefined => {
     // Get the current image that is displayed in the viewport
     const imageId = this.getCurrentImageId()
@@ -135,6 +132,16 @@ class StackViewport extends Viewport {
     return imagePlaneModule.frameOfReferenceUID
   }
 
+  /**
+   * Creates a volume actor and volume mapper based on the provided vtkImageData
+   * It sets the sampleDistance for the volumeMapper, and sets the actor VOI range
+   * initially, and assigns it to the class property to be saved for future slices.
+   * For color stack images, it sets the independent components to be false which
+   * is required in vtk.
+   *
+   * @param imageData vtkImageData for the viewport
+   * @returns actor vtkActor
+   */
   private createActorMapper = (imageData) => {
     const mapper = vtkVolumeMapper.newInstance()
     mapper.setInputData(imageData)
@@ -183,6 +190,13 @@ class StackViewport extends Viewport {
     return actor
   }
 
+  /**
+   * Retrieves the metadata from the metadata provider, and optionally adds the
+   * scaling to the viewport if modality is PET and scaling metadata is provided.
+   *
+   * @param imageId a string representing the imageId for the image
+   * @returns imagePlaneModule and imagePixelModule containing the metadata for the image
+   */
   private buildMetadata(imageId: string) {
     const {
       pixelRepresentation,
@@ -236,6 +250,11 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * Adds scaling parameters to the viewport to be used along all slices
+   *
+   * @param imageIdScalingFactor suvbw, suvlbm, suvbsa
+   */
   private _addScalingToViewport(imageIdScalingFactor) {
     if (!this.scaling.PET) {
       // These ratios are constant across all frames, so only need one.
@@ -255,6 +274,12 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * Calculates number of components based on the dicom metadata
+   *
+   * @param photometricInterpretation string dicom tag
+   * @returns number representing number of components
+   */
   private _getNumCompsFromPhotometricInterpretation(
     photometricInterpretation: string
   ): number {
@@ -268,6 +293,14 @@ class StackViewport extends Viewport {
     return numberOfComponents
   }
 
+  /**
+   * Calculates image metadata based on the image object. It calculates normal
+   * axis for the images, and output image metadata
+   *
+   * @param image stack image containing cornerstone image
+   * @returns image metadata: { bitsAllocated, number of components, origin,
+   *  direction, dimensions, spacing, number of voxels.}
+   */
   private _getImageDataMetadata(image: IImage): ImageDataMetaData {
     // TODO: Creating a single image should probably not require a metadata provider.
     // We should define the minimum we need to display an image and it should live on
@@ -325,6 +358,12 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * Converts the image direction to camera viewup and viewplaneNornaml
+   *
+   * @param imageDataDirection vtkImageData direction
+   * @returns viewplane normal and viewUp of the camera
+   */
   private _getCameraOrientation(imageDataDirection: Float32Array): {
     viewPlaneNormal: Point3
     viewUp: Point3
@@ -342,6 +381,13 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * Creates vtkImagedata based on the image object, it creates
+   * and empty scalar data for the image based on the metadata
+   * tags (e.g., bitsAllocated)
+   *
+   * @param image cornerstone Image object
+   */
   private _createVTKImageData(image: IImage): void {
     const {
       origin,
@@ -386,6 +432,17 @@ class StackViewport extends Viewport {
     this._imageData.getPointData().setScalars(scalarArray)
   }
 
+  /**
+   * Sets the imageIds to be visualized inside the stack viewport. It accepts
+   * list of imageIds, the index of the first imageId to be viewed, and the callbacks
+   * to be run on the volume actors upon creaction. Invalidated property of
+   * the viewport is set to be true so that a new actor is forced to be created
+   *
+   *
+   * @param imageIds list of strings, that represents list of image Ids
+   * @param currentImageIdIndex number representing the index of the initial image to be displayed
+   * @param callbacks list of function that runs on the volume actor
+   */
   public setStack(
     imageIds: Array<string>,
     currentImageIdIndex = 0,
@@ -393,6 +450,7 @@ class StackViewport extends Viewport {
   ): void {
     this.imageIds = imageIds
     this.currentImageIdIndex = currentImageIdIndex
+    this.invalidated = true
 
     if (callbacks.length) {
       callbacks.forEach((callback) => {
@@ -405,10 +463,25 @@ class StackViewport extends Viewport {
     this._setImageIdIndex(currentImageIdIndex)
   }
 
+  /**
+   * Sets the VOI lower and upper range for the VOI for the image data
+   *
+   * @param range {upper, lower} object representing the upper and lower
+   * range of the VOI
+   */
   public setStackActorVOI(range: VOIRange): void {
     this.stackActorVOI = Object.assign({}, range)
   }
 
+  /**
+   * It checks if the new image object matches the dimensions, spacing,
+   * and direction of the previously displayed image in the viewport or not.
+   * It returns a boolean
+   *
+   * @param image Cornerstone Image object
+   * @param imageData vtkImageData
+   * @returns boolean
+   */
   private _checkVTKImageDataMatchesCornerstoneImage(
     image: IImage,
     imageData: vtkImageData
@@ -438,7 +511,12 @@ class StackViewport extends Viewport {
     return true
   }
 
-  // Todo: rename since it may do more than set scalars
+  /**
+   * It Updates the vtkImageData of the viewport with the new pixel data
+   * from the provided image object.
+   *
+   * @param image Cornerstone Image object
+   */
   private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
     const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId)
     const origin = imagePlaneModule.imagePositionPatient
@@ -478,9 +556,16 @@ class StackViewport extends Viewport {
     this._imageData.modified()
   }
 
+  /**
+   * It uses requestPoolManager to add request for the imageId. It loadsAndCache
+   * the image and triggers the STACK_NEW_IMAGE when the request successfully retrieves
+   * the image. Next, the volume actor gets updated with the new new retrieved image.
+   *
+   * @param imageId string representing the imageId
+   * @param imageIdIndex index of the imageId in the imageId list
+   */
   private _loadImage(imageId: string, imageIdIndex: number) {
     // 1. Load the image using the Image Loader
-
     function successCallback(image, imageIdIndex, imageId) {
       const eventData = {
         image,
@@ -571,6 +656,17 @@ class StackViewport extends Viewport {
     )
   }
 
+  /**
+   * It updates the volume actor with the retrieved cornerstone image.
+   * It first checks if the new image has the same dimensions, spacings, and
+   * dimensions of the previous one: 1) If yes, it updates the pixel data 2) if not,
+   * it creates a whole new volume actor for the image.
+   * Note: Camera gets reset for both situations. Therefore, each image renders at
+   * its exact 3D location in the space, and both image and camera moves while scrolling.
+   *
+   * @param image Cornerstone image
+   * @returns
+   */
   private _updateActorToDisplayImageId(image) {
     // This function should do the following:
     // - Get the existing actor's vtkImageData that is being used to render the current image and check if we can reuse the vtkImageData that is in place (i.e. do the image dimensions and data type match?)
@@ -585,7 +681,7 @@ class StackViewport extends Viewport {
 
     const activeCamera = this.getRenderer().getActiveCamera()
 
-    if (sameImageData) {
+    if (sameImageData && !this.invalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image)
 
@@ -622,6 +718,14 @@ class StackViewport extends Viewport {
       // We shouldn't restore the focalPoint, position and parallelScale after reset
       // if it is the first render or we have completely re-created the vtkImageData
       this._restoreCameraProps(cameraProps)
+
+      // Restore viewport rotation if assigned before
+      const previousRotation = this.rotation
+      if (previousRotation !== 0) {
+        // initial rotation for new slice is 0
+        this.rotation = 0
+        this.setRotation(previousRotation)
+      }
       return
     }
 
@@ -662,8 +766,13 @@ class StackViewport extends Viewport {
     // Saving position of camera on render, to cache the panning
     const { position } = this.getCamera()
     this.cameraPosOnRender = position
+    this.invalidated = false
   }
 
+  /**
+   * Loads the image based on the provided imageIdIndex
+   * @param imageIdIndex number represents imageId index
+   */
   private _setImageIdIndex(imageIdIndex: number): void {
     if (imageIdIndex >= this.imageIds.length) {
       throw new Error(
@@ -683,6 +792,12 @@ class StackViewport extends Viewport {
     this._loadImage(imageId, imageIdIndex)
   }
 
+  /**
+   * Loads the image based on the provided imageIdIndex
+   *
+   * @param imageIdIndex number represents imageId index in the list of
+   * provided imageIds in setStack
+   */
   public setImageIdIndex(imageIdIndex: number): void {
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
@@ -693,6 +808,12 @@ class StackViewport extends Viewport {
     this._setImageIdIndex(imageIdIndex)
   }
 
+  /**
+   * Restores the camera props such zooming and panning after an image is
+   * changed, if needed (after scroll)
+   *
+   * @param parallelScale camera parallel scale
+   */
   private _restoreCameraProps({ parallelScale: prevScale }: ICamera): void {
     const renderer = this.getRenderer()
 
@@ -725,6 +846,21 @@ class StackViewport extends Viewport {
     }
 
     renderer.invokeEvent(RESET_CAMERA_EVENT)
+  }
+
+  /**
+   * Rotates the camera with the provided rotation amount
+   * @param rotation number for rotation
+   */
+  public setRotation = (rotation: number): void => {
+    // Moving back to zero rotation, for new scrolled slice rotation is 0 after
+    // camera reset
+    this.getVtkActiveCamera().roll(-this.rotation)
+
+    // rotating camera to the new value
+    this.getVtkActiveCamera().roll(rotation)
+    this.rotation = rotation
+    this.render()
   }
 
   /**
@@ -787,14 +923,27 @@ class StackViewport extends Viewport {
     return canvasCoord
   }
 
+  /**
+   * Returns the index of the imageId being renderer
+   *
+   * @returns currently shown imageId index
+   */
   public getCurrentImageIdIndex = (): number => {
     return this.currentImageIdIndex
   }
 
+  /**
+   * Returns the list of image Ids for the current viewport
+   * @returns list of strings for image Ids
+   */
   public getImageIds = (): Array<string> => {
     return this.imageIds
   }
 
+  /**
+   * Returns the currently rendered imageId
+   * @returns string for imageId
+   */
   public getCurrentImageId = (): string => {
     return this.imageIds[this.currentImageIdIndex]
   }
