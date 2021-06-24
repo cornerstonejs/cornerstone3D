@@ -10,12 +10,12 @@
   },
   "peerDependencies": {
     "@ohif/cornerstone-render": "^0.0.2",
-    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#fix/targetBuffer",
+    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#dev",
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
   },
   "devDependencies": {
     "@ohif/cornerstone-render": "^0.0.2",
-    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#fix/targetBuffer",
+    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#dev",
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
   },
   "scripts": {
