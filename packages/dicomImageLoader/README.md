@@ -81,7 +81,7 @@ Backlog
 * Support for high bit (e.g. mask out burned in overlays)
 * Free up DICOM P10 instance after decoding to reduce memory consumption
 * Add support for compressed images to WADO-RS loader
-* Look at using EMSCRIPEN based build of IJG for JPEG
+* Look at using EMSCRIPTEN based build of IJG for JPEG
 * Consolidate all EMSCRIPTEN codecs into one build to cut down on memory use and startup times
 * Add support for bulk data items to WADO-RS Loader
 * Add events to webWorkerManager so its activity can be monitored
