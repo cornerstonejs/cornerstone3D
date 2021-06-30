@@ -1,4 +1,4 @@
-import { Orientation } from '../types'
+import { Orientation, Point3 } from '../types'
 
 /**
  * Convenient reference values often used to set a specific orientation
@@ -34,16 +34,16 @@ import { Orientation } from '../types'
  */
 const ORIENTATION: Record<string, Orientation> = {
   AXIAL: {
-    sliceNormal: [0, 0, -1],
-    viewUp: [0, -1, 0],
+    sliceNormal: <Point3>[0, 0, -1],
+    viewUp: <Point3>[0, -1, 0],
   },
   SAGITTAL: {
-    sliceNormal: [1, 0, 0],
-    viewUp: [0, 0, 1],
+    sliceNormal: <Point3>[1, 0, 0],
+    viewUp: <Point3>[0, 0, 1],
   },
   CORONAL: {
-    sliceNormal: [0, 1, 0],
-    viewUp: [0, 0, 1],
+    sliceNormal: <Point3>[0, 1, 0],
+    viewUp: <Point3>[0, 0, 1],
   },
 }
 

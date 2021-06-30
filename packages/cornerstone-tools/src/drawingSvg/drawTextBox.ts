@@ -58,7 +58,7 @@ function _drawTextGroup(
   const { padding, color, fontFamily, fontSize, background } = options
 
   let textGroupBoundingBox
-  const [x, y] = [position[0] - padding, position[1] - padding]
+  const [x, y] = [position[0] + padding, position[1] + padding]
   const svgns = 'http://www.w3.org/2000/svg'
   const svgNodeHash = _getHash(toolUID, annotationUID, 'text', textUID)
   const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash)
@@ -80,8 +80,8 @@ function _drawTextGroup(
     const attributes = {
       fill: color,
       'font-size': fontSize,
-      'font-family': fontFamily
-    };
+      'font-family': fontFamily,
+    }
 
     _setNewAttributesIfValid(attributes, textElement)
 
@@ -163,7 +163,7 @@ function _drawTextBackground(group: SVGGElement, color: string) {
       group.removeChild(element)
     }
 
-    return group.getBBox();
+    return group.getBBox()
   }
 
   // Otherwise, check if we have a <rect> element. If not, create one
@@ -181,7 +181,7 @@ function _drawTextBackground(group: SVGGElement, color: string) {
   element.setAttribute('height', `${bBox.height}`)
   element.setAttribute('fill', color)
 
-  return bBox;
+  return bBox
 }
 
 export default drawTextBox

@@ -358,6 +358,50 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return isCrosshairsActive
   }
 
+  _initCrosshairs = (evt, toolState) => {
+    const eventData = evt.detail
+    const { canvas: element } = eventData
+    const enabledElement = getEnabledElement(element)
+    const { viewport, FrameOfReferenceUID, viewportUID, sceneUID } =
+      enabledElement
+    const { sHeight, sWidth, canvasToWorld } = viewport
+    const centerCanvas: Point2 = [sWidth * 0.5, sHeight * 0.5]
+
+    // Calculate the crosshair center
+    // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
+    // This because the rotation operations rotates also all the other active/intersecting reference lines of the same angle
+    this.toolCenter = canvasToWorld(centerCanvas)
+
+    const camera = viewport.getCamera()
+    const { position, focalPoint } = camera
+
+    const toolData = {
+      metadata: {
+        cameraPosition: <Point3>[...position],
+        cameraFocalPoint: <Point3>[...focalPoint],
+        FrameOfReferenceUID,
+        toolName: this.name,
+      },
+      data: {
+        handles: {
+          rotationPoints: [], // rotation handles, used for rotation interactions
+          slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
+        },
+        active: false,
+        activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
+        activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
+        viewportUID,
+        sceneUID,
+      },
+    }
+
+    // NOTE: rotation handles are initialized in renderTool when drawing.
+
+    addToolState(element, toolData)
+
+    showToolCursor(element)
+  }
+
   onCameraModified = (evt) => {
     const eventData = evt.detail
     const { canvas: element } = eventData
@@ -1512,50 +1556,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     return otherViewportsToolDataWithUniqueCameras
-  }
-
-  _initCrosshairs = (evt, toolState) => {
-    const eventData = evt.detail
-    const { canvas: element } = eventData
-    const enabledElement = getEnabledElement(element)
-    const { viewport, FrameOfReferenceUID, viewportUID, sceneUID } =
-      enabledElement
-    const { sHeight, sWidth, canvasToWorld } = viewport
-    const centerCanvas: Point2 = [sWidth * 0.5, sHeight * 0.5]
-
-    // Calculate the crosshair center
-    // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
-    // This because the rotation operations rotates also all the other active/intersecting reference lines of the same angle
-    this.toolCenter = canvasToWorld(centerCanvas)
-
-    const camera = viewport.getCamera()
-    const { position, focalPoint } = camera
-
-    const toolData = {
-      metadata: {
-        cameraPosition: <Point3>[...position],
-        cameraFocalPoint: <Point3>[...focalPoint],
-        FrameOfReferenceUID,
-        toolName: this.name,
-      },
-      data: {
-        handles: {
-          rotationPoints: [], // rotation handles, used for rotation interactions
-          slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
-        },
-        active: false,
-        activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
-        activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
-        viewportUID,
-        sceneUID,
-      },
-    }
-
-    // NOTE: rotation handles are initialized in renderTool when drawing.
-
-    addToolState(element, toolData)
-
-    showToolCursor(element)
   }
 
   _jump = (enabledElement, jumpWorld) => {

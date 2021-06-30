@@ -3740,7 +3740,7 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
 
 "cornerstone-wado-image-loader@git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#dev":
   version "3.0.7"
-  resolved "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#e9fb03b2e0f1a353bc4c61314a5f3f35f6e905e8"
+  resolved "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#44e4d5e32794e3af2248cc2541246ee0a9896732"
   dependencies:
     dicom-parser "^1.8.3"
     pako "^1.0.10"

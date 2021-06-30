@@ -6,7 +6,7 @@ import Orientation from './Orientation'
  */
 type ViewportInputOptions = {
   background?: Array<number>
-  orientation: Orientation
+  orientation?: Orientation
 }
 
 export default ViewportInputOptions

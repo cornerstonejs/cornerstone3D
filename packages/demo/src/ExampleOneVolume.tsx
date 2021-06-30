@@ -12,6 +12,13 @@ import {
   ToolBindings,
   resetToolsState,
 } from '@ohif/cornerstone-tools'
+import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
+
+
+import {
+  setCTWWWC,
+} from './helpers/transferFunctionHelpers'
+
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -30,10 +37,10 @@ const VOLUME = 'volume'
 window.cache = cache
 
 let ctSceneToolGroup
+const { BlendMode } = vtkConstants
 
-const toolsToUse = PET_CT_ANNOTATION_TOOLS.filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = PET_CT_ANNOTATION_TOOLS
+
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
 class OneVolumeExample extends Component {
@@ -160,10 +167,11 @@ class OneVolumeExample extends Component {
     ctVolume.load(onLoad)
 
     const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    ctScene.setVolumes([
+    await ctScene.setVolumes([
       {
         volumeUID: ctVolumeUID,
-        // callback: setCTWWWC,
+        callback: setCTWWWC,
+        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
       },
     ])
 

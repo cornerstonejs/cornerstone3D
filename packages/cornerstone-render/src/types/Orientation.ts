@@ -1,6 +1,8 @@
+import { Point3 } from '../types'
+
 type Orientation = {
-  sliceNormal: Array<number>
-  viewUp: Array<number>
+  sliceNormal: Point3
+  viewUp: Point3
 }
 
 export default Orientation

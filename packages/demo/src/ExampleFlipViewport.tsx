@@ -21,6 +21,9 @@ import {
   removeToolStateByToolUID,
 } from '@ohif/cornerstone-tools'
 
+import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
+
+
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
@@ -47,6 +50,7 @@ import getToolDetailForDisplay from './helpers/getToolDetailForDisplay'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
+const { BlendMode } = vtkConstants
 
 window.cache = cache
 
@@ -56,9 +60,7 @@ let ctSceneToolGroup,
   stackDXViewportToolGroup,
   ptSceneToolGroup
 
-const toolsToUse = PET_CT_ANNOTATION_TOOLS.filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = PET_CT_ANNOTATION_TOOLS
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 let viewportInput
 class FlipViewportExample extends Component {
@@ -238,6 +240,7 @@ class FlipViewportExample extends Component {
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
+        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
       },
     ])
 
@@ -404,7 +407,6 @@ class FlipViewportExample extends Component {
                 <canvas
                   tabIndex={-1}
                   ref={(c) => this._canvasNodes.set(i, c)}
-                  onKeyDown={(evt) => this.cancelToolDrawing(evt)}
                 />
               </div>
             ))}

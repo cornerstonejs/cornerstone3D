@@ -1,17 +1,19 @@
 import { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
+import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
+import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
+import { vec3, mat4 } from 'gl-matrix'
+import _cloneDeep from 'lodash.clonedeep'
+
 import Events from '../enums/events'
 import VIEWPORT_TYPE from '../constants/viewportType'
 import { ICamera, ViewportInput, ActorEntry } from '../types'
-import _cloneDeep from 'lodash.clonedeep'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
-import triggerEvent from '../utilities/triggerEvent'
+import { triggerEvent, isEqual } from '../utilities'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
-import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
-import { vec3 } from 'gl-matrix'
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { ViewportInputOptions, Point2, Point3 } from '../types'
 import { vtkSlabCamera } from './vtkClasses'
+import ORIENTATION from '../constants/orientation'
 
 /**
  * An object representing a single viewport, which is a camera
@@ -206,7 +208,14 @@ class Viewport {
   public applyFlipTx = (worldPos: Point3): Point3 => {
     // One vol actor is enough to get the flip direction. If not flipped
     // the transformation is identity
-    const volumeActor = this.getDefaultActor().volumeActor as vtkVolume
+    const actor = this.getDefaultActor()
+
+    if (!actor) {
+      // Until viewports set up their actors
+      return worldPos
+    }
+
+    const volumeActor = actor.volumeActor as vtkVolume
     const mat = volumeActor.getMatrix()
 
     const p1 = worldPos[0]
@@ -230,25 +239,39 @@ class Viewport {
    * @param direction 0 for horizontal, 1 for vertical
    */
   public flip = (direction: number): void => {
+    const scene = this.getRenderingEngine().getScene(this.sceneUID)
+
     const scale = [1, 1]
     scale[direction] *= -1
 
     const actors = this.getActors()
     actors.forEach((actor) => {
       const volumeActor = actor.volumeActor as vtkVolume
-      const mat = volumeActor.getUserMatrix()
-
-      const actorScale = [mat[0], mat[5], mat[10]]
 
       const tx = vtkMatrixBuilder
         .buildFromRadian()
         .identity()
-        .scale(
-          actorScale[0] * scale[0],
-          actorScale[1] * scale[1],
-          actorScale[2]
-        )
-      volumeActor.setUserMatrix(tx.getMatrix())
+        .scale(scale[0], scale[1], 1)
+
+      const mat = mat4.create()
+      mat4.multiply(mat, volumeActor.getUserMatrix(), tx.getMatrix())
+      volumeActor.setUserMatrix(mat)
+
+      this.getRenderingEngine().render()
+
+      if (scene) {
+        // If volume viewport
+        const viewports = scene.getViewports()
+        viewports.forEach((vp) => {
+          const { focalPoint, position } = vp.getCamera()
+          tx.apply(focalPoint)
+          tx.apply(position)
+          vp.setCamera({
+            focalPoint,
+            position,
+          })
+        })
+      }
     })
 
     this.getRenderingEngine().render()
@@ -457,6 +480,16 @@ class Viewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT)
 
+    const eventDetail = {
+      camera: this.getCamera(),
+      canvas: this.canvas,
+      viewportUID: this.uid,
+      sceneUID: this.sceneUID,
+      renderingEngineUID: this.renderingEngineUID,
+    }
+
+    // For crosshairs to adapt to new viewport size
+    triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
     return true
   }
   // */
@@ -498,8 +531,16 @@ class Viewport {
       // how useful is this without the renderer context?
       // Lets add it back if we find we need it.
       //compositeProjectionMatrix: vtkCamera.getCompositeProjectionMatrix(),
-      position: <Point3>vtkCamera.getPosition(),
-      focalPoint: <Point3>vtkCamera.getFocalPoint(),
+      //
+      //
+      // Compensating for the flipped viewport. Since our method for flipping is
+      // flipping the actor matrix itself, the focal point won't change; therefore,
+      // we need to accomodate for this required change elsewhere
+      // vec3.sub(dir, viewport.applyFlipTx(focalPoint), point)
+      position: <Point3>this.applyFlipTx(vtkCamera.getPosition() as Point3),
+      focalPoint: <Point3>this.applyFlipTx(vtkCamera.getFocalPoint() as Point3),
+      // position: <Point3>vtkCamera.getPosition(),
+      // focalPoint: <Point3>vtkCamera.getFocalPoint(),
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
@@ -539,11 +580,11 @@ class Viewport {
     }
 
     if (position !== undefined) {
-      vtkCamera.setPosition(...position)
+      vtkCamera.setPosition(...this.applyFlipTx(position))
     }
 
     if (focalPoint !== undefined) {
-      vtkCamera.setFocalPoint(...focalPoint)
+      vtkCamera.setFocalPoint(...this.applyFlipTx(focalPoint))
     }
 
     if (parallelScale !== undefined) {
