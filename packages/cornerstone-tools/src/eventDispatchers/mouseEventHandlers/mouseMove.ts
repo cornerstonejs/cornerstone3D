@@ -1,11 +1,11 @@
 // // State
 import { state } from '../../store'
 import { ToolModes } from '../../enums'
-import { getEnabledElement } from '@ohif/cornerstone-render'
 
 // // Util
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
+import triggerAnnotationRender from '../../util/triggerAnnotationRender'
 
 const { Active, Passive } = ToolModes
 
@@ -36,21 +36,18 @@ export default function mouseMove(evt) {
   )
 
   const numAnnotationTools = annotationTools.length
-  let imageNeedsUpdate = false
+  let annotationsNeedToBeRedrawn = false
 
   for (let t = 0; t < numAnnotationTools; t++) {
     const { tool, toolState } = annotationTools[t]
     if (typeof tool.mouseMoveCallback === 'function') {
-      imageNeedsUpdate =
-        tool.mouseMoveCallback(evt, toolState) || imageNeedsUpdate
+      annotationsNeedToBeRedrawn =
+        tool.mouseMoveCallback(evt, toolState) || annotationsNeedToBeRedrawn
     }
   }
 
-  // Tool data activation status changed, redraw the image
-  if (imageNeedsUpdate === true) {
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
-
-    viewport.render()
+  // Tool data activation status changed, redraw the annotations
+  if (annotationsNeedToBeRedrawn === true) {
+    triggerAnnotationRender(element)
   }
 }

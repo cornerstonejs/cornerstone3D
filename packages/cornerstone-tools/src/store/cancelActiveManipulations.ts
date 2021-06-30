@@ -1,5 +1,5 @@
 import { ToolModes } from '../enums'
-import getToolsWithModesForElement from '../eventDispatchers/shared/getToolsWithModesForElement'
+import getToolsWithModesForElement from '../util/getToolsWithModesForElement'
 import getToolsWithDataForElement from './getToolsWithDataForElement'
 
 /**

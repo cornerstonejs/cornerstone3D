@@ -103,7 +103,7 @@ abstract class BaseAnnotationTool extends BaseTool {
   ): boolean => {
     const { element, currentPoints } = evt.detail
     const canvasCoords = currentPoints.canvas
-    let imageNeedsUpdate = false
+    let annotationsNeedToBeRedrawn = false
 
     for (let i = 0; i < filteredToolState.length; i++) {
       const toolData = filteredToolState[
@@ -130,17 +130,17 @@ abstract class BaseAnnotationTool extends BaseTool {
       const notNearToolAndMarkedActive = !near && data.active
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
         data.active = !data.active
-        imageNeedsUpdate = true
+        annotationsNeedToBeRedrawn = true
       } else if (
         data.handles &&
         data.handles.activeHandleIndex !== activateHandleIndex
       ) {
         // Active handle index has changed, re-render.
-        imageNeedsUpdate = true
+        annotationsNeedToBeRedrawn = true
       }
     }
 
-    return imageNeedsUpdate
+    return annotationsNeedToBeRedrawn
   }
 
   /**

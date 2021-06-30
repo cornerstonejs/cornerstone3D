@@ -1,4 +1,6 @@
 import _getHash from './_getHash'
+import _setNewAttributesIfValid from './_setNewAttributesIfValid'
+import _setAttributesIfNecessary from './_setAttributesIfNecessary'
 import { Point2 } from '../types'
 
 export default function drawLine(
@@ -32,34 +34,25 @@ export default function drawLine(
   const svgNodeHash = _getHash(toolUID, annotationUID, 'line', lineUID)
   const existingLine = svgDrawingHelper._getSvgNode(svgNodeHash)
 
-  if (existingLine) {
-    existingLine.setAttribute('x1', `${start[0]}`)
-    existingLine.setAttribute('y1', `${start[1]}`)
-    existingLine.setAttribute('x2', `${end[0]}`)
-    existingLine.setAttribute('y2', `${end[1]}`)
-    existingLine.setAttribute('stroke', color)
-    existingLine.setAttribute('stroke-width', strokeWidth)
+  const attributes = {
+    x1: `${start[0]}`,
+    y1: `${start[1]}`,
+    x2: `${end[0]}`,
+    y2: `${end[1]}`,
+    stroke: color,
+    'stroke-width': strokeWidth,
+    'stroke-dasharray': lineDash
+  }
 
-    if (lineDash) {
-      existingLine.setAttribute('stroke-dasharray', lineDash)
-    } else {
-      existingLine.removeAttribute('stroke-dasharray')
-    }
+  if (existingLine) {
+    // This is run to avoid re-rendering annotations that actually haven't changed
+    _setAttributesIfNecessary(attributes, existingLine)
 
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
     const newLine = document.createElementNS(svgns, 'line')
 
-    newLine.setAttribute('x1', `${start[0]}`)
-    newLine.setAttribute('y1', `${start[1]}`)
-    newLine.setAttribute('x2', `${end[0]}`)
-    newLine.setAttribute('y2', `${end[1]}`)
-    newLine.setAttribute('stroke', color)
-    newLine.setAttribute('stroke-width', strokeWidth)
-
-    if (lineDash) {
-      newLine.setAttribute('stroke-dasharray', lineDash)
-    }
+    _setNewAttributesIfValid(attributes, newLine)
 
     svgDrawingHelper._appendNode(newLine, svgNodeHash)
   }

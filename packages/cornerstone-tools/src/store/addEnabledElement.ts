@@ -53,6 +53,8 @@ function _createSvgAnnotationLayer(): SVGElement {
   svgLayer.style.height = '100%'
   svgLayer.style.pointerEvents = 'none'
   svgLayer.style.position = 'absolute'
+  // TODO: we should test this on high-res monitors
+  //svgLayer.style.textRendering = 'optimizeSpeed'
 
   // Single dropshadow config for now
   const defs = document.createElementNS(svgns, 'defs')

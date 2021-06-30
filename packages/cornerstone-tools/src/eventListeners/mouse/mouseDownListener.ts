@@ -13,7 +13,7 @@ import getMouseEventPoints from './getMouseEventPoints'
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = CornerstoneTools3DEvents
 
 interface IMouseDownListenerState {
-  renderingEngingUID: string
+  renderingEngineUID: string
   sceneUID: string
   viewportUID: string
   isClickEvent: boolean
@@ -27,7 +27,7 @@ interface IMouseDownListenerState {
 // STATE
 const defaultState: IMouseDownListenerState = {
   //
-  renderingEngingUID: undefined,
+  renderingEngineUID: undefined,
   sceneUID: undefined,
   viewportUID: undefined,
   //
@@ -51,7 +51,7 @@ const defaultState: IMouseDownListenerState = {
 
 let state: IMouseDownListenerState = {
   //
-  renderingEngingUID: undefined,
+  renderingEngineUID: undefined,
   sceneUID: undefined,
   viewportUID: undefined,
   //
@@ -91,7 +91,7 @@ function mouseDownListener(evt: MouseEvent) {
   const enabledElement = getEnabledElement(state.element)
   const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
 
-  state.renderingEngingUID = renderingEngineUID
+  state.renderingEngineUID = renderingEngineUID
   state.sceneUID = sceneUID
   state.viewportUID = viewportUID
 
@@ -104,7 +104,7 @@ function mouseDownListener(evt: MouseEvent) {
   const deltaPoints = _getDeltaPoints(startPoints, startPoints)
 
   const eventData: ICornerstoneToolsEventDetail = {
-    renderingEngineUID: state.renderingEngingUID,
+    renderingEngineUID: state.renderingEngineUID,
     sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     event: evt,
@@ -152,7 +152,7 @@ function _onMouseDrag(evt: MouseEvent) {
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints)
 
   const eventData: ICornerstoneToolsEventDetail = {
-    renderingEngineUID: state.renderingEngingUID,
+    renderingEngineUID: state.renderingEngineUID,
     sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     event: evt,
@@ -188,7 +188,7 @@ function _onMouseUp(evt: MouseEvent): void {
   const currentPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints)
   const eventData = {
-    renderingEngineUID: state.renderingEngingUID,
+    renderingEngineUID: state.renderingEngineUID,
     sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     event: evt,

@@ -1,5 +1,6 @@
 import _getHash from './_getHash'
 import { Point2 } from '../types'
+import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 
 /**
  * Draws a textBox.
@@ -42,19 +43,6 @@ function drawTextBox(
     mergedOptions
   )
 
-  // let [x, y] = position
-
-  // // Draw the background box with padding
-  // if (centerX === true) {
-  //   x -= textGroupBoundingBox.width / 2
-  // }
-
-  // if (centerY === true) {
-  //   y -= textGroupBoundingBox.height / 2
-  // }
-  // TODO: Must be under text nodes
-  // Rectangle....
-  // fillBox(boundingBox, fillStyle)
   return textGroupBoundingBox
 }
 
@@ -66,11 +54,11 @@ function _drawTextGroup(
   textLines: Array<string>,
   position: Point2,
   options: any
-): DOMRect {
+): SVGRect {
   const { padding, color, fontFamily, fontSize, background } = options
 
   let textGroupBoundingBox
-  const [x, y] = [position[0] + padding, position[1] + padding]
+  const [x, y] = [position[0] - padding, position[1] - padding]
   const svgns = 'http://www.w3.org/2000/svg'
   const svgNodeHash = _getHash(toolUID, annotationUID, 'text', textUID)
   const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash)
@@ -89,26 +77,16 @@ function _drawTextGroup(
       textSpanElement.textContent = text
     }
 
-    if (fontFamily) {
-      textElement.setAttribute('font-family', fontFamily)
-    } else {
-      textElement.removeAttribute('font-family')
-    }
+    const attributes = {
+      fill: color,
+      'font-size': fontSize,
+      'font-family': fontFamily
+    };
 
-    if (fontSize) {
-      textElement.setAttribute('font-size', fontSize)
-    } else {
-      textElement.removeAttribute('font-size')
-    }
+    _setNewAttributesIfValid(attributes, textElement)
 
-    if (color) {
-      textElement.setAttribute('fill', color)
-    } else {
-      textElement.removeAttribute('fill')
-    }
+    textGroupBoundingBox = _drawTextBackground(existingTextGroup, background)
 
-    _drawTextBackground(existingTextGroup, background)
-    textGroupBoundingBox = existingTextGroup.getBBox()
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
     const textGroup = document.createElementNS(svgns, 'g')
@@ -126,8 +104,7 @@ function _drawTextGroup(
 
     textGroup.appendChild(textElement)
     svgDrawingHelper._appendNode(textGroup, svgNodeHash)
-    _drawTextBackground(textGroup, background)
-    textGroupBoundingBox = textGroup.getBBox()
+    textGroupBoundingBox = _drawTextBackground(textGroup, background)
   }
 
   // We translate the group using `position`
@@ -176,23 +153,35 @@ function _createTextSpan(text): SVGElement {
   return textSpanElement
 }
 
-function _drawTextBackground(group: SVGGElement, color: string): void {
+function _drawTextBackground(group: SVGGElement, color: string) {
   let element = group.querySelector('rect.background')
-  if (color) {
-    if (!element) {
-      element = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-      element.setAttribute('class', 'background')
-      group.insertBefore(element, group.firstChild)
+
+  // If we have no background color, remove any element that exists and return
+  // the bounding box of the text
+  if (!color) {
+    if (element) {
+      group.removeChild(element)
     }
-    const bBox = group.getBBox()
-    element.setAttribute('x', `${bBox.x}`)
-    element.setAttribute('y', `${bBox.y}`)
-    element.setAttribute('width', `${bBox.width}`)
-    element.setAttribute('height', `${bBox.height}`)
-    element.setAttribute('fill', color)
-  } else if (element) {
-    group.removeChild(element)
+
+    return group.getBBox();
   }
+
+  // Otherwise, check if we have a <rect> element. If not, create one
+  if (!element) {
+    element = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+    element.setAttribute('class', 'background')
+    group.insertBefore(element, group.firstChild)
+  }
+
+  // Get the text groups's bounding box and use it to draw the background rectangle
+  const bBox = group.getBBox()
+  element.setAttribute('x', `${bBox.x}`)
+  element.setAttribute('y', `${bBox.y}`)
+  element.setAttribute('width', `${bBox.width}`)
+  element.setAttribute('height', `${bBox.height}`)
+  element.setAttribute('fill', color)
+
+  return bBox;
 }
 
 export default drawTextBox

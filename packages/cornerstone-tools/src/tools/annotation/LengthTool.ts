@@ -33,8 +33,9 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import { ToolSpecificToolData, Point3, Point2 } from '../../types'
+import { ToolSpecificToolData, Point3 } from '../../types'
 
 interface LengthSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -189,7 +190,10 @@ class LengthTool extends BaseAnnotationTool {
 
     evt.preventDefault()
 
-    renderingEngine.renderViewports(viewportUIDsToRender)
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportUIDsToRender
+    )
 
     return toolData
   }
@@ -293,7 +297,10 @@ class LengthTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    renderingEngine.renderViewports(viewportUIDsToRender)
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportUIDsToRender
+    )
 
     evt.preventDefault()
   }
@@ -333,7 +340,10 @@ class LengthTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    renderingEngine.renderViewports(viewportUIDsToRender)
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportUIDsToRender
+    )
 
     evt.preventDefault()
   }
@@ -369,7 +379,10 @@ class LengthTool extends BaseAnnotationTool {
       removeToolState(element, toolData)
     }
 
-    renderingEngine.renderViewports(viewportUIDsToRender)
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportUIDsToRender
+    )
 
     this.editData = null
     this.isDrawing = false
@@ -422,7 +435,10 @@ class LengthTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    renderingEngine.renderViewports(viewportUIDsToRender)
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportUIDsToRender
+    )
   }
 
   cancel(element) {
@@ -442,7 +458,10 @@ class LengthTool extends BaseAnnotationTool {
       const enabledElement = getEnabledElement(element)
       const { renderingEngine } = enabledElement
 
-      renderingEngine.renderViewports(viewportUIDsToRender)
+      triggerAnnotationRenderForViewportUIDs(
+        renderingEngine,
+        viewportUIDsToRender
+      )
 
       this.editData = null
       return toolData.metadata.toolUID

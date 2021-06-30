@@ -1,4 +1,6 @@
 import _getHash from './_getHash'
+import _setNewAttributesIfValid from './_setNewAttributesIfValid'
+import _setAttributesIfNecessary from './_setAttributesIfNecessary'
 import { Point2 } from '../types'
 
 function drawHandles(
@@ -35,58 +37,47 @@ function drawHandles(
       'handle',
       `hg-${handleGroupUID}-index-${i}`
     )
+
+    let attributes
+    if (type === 'circle') {
+      attributes = {
+        cx: `${handle[0]}`,
+        cy: `${handle[1]}`,
+        r: handleRadius,
+        stroke: color,
+        fill,
+        'stroke-width': strokeWidth
+      }
+    } else if (type === 'rect') {
+      const handleRadiusFloat = parseFloat(handleRadius)
+      const side = handleRadiusFloat * 1.5
+      const x = handle[0] - side * 0.5
+      const y = handle[1] - side * 0.5
+
+      attributes = {
+        x: `${x}`,
+        y: `${y}`,
+        width: `${side}`,
+        height: `${side}`,
+        stroke: color,
+        fill,
+        'stroke-width': strokeWidth,
+        rx: `${side * 0.1}`
+      }
+    } else {
+      throw new Error(`Unsupported handle type: ${type}`)
+    }
+
     const existingHandleElement = svgDrawingHelper._getSvgNode(svgNodeHash)
 
     if (existingHandleElement) {
-      if (type === 'circle') {
-        existingHandleElement.setAttribute('cx', `${handle[0]}`)
-        existingHandleElement.setAttribute('cy', `${handle[1]}`)
-        existingHandleElement.setAttribute('r', handleRadius)
-        existingHandleElement.setAttribute('stroke', color)
-        existingHandleElement.setAttribute('fill', fill)
-        existingHandleElement.setAttribute('stroke-width', strokeWidth)
-      } else if (type === 'rect') {
-        const handleRadiusFloat = parseFloat(handleRadius)
-        const side = handleRadiusFloat * 1.5
-        const x = handle[0] - side * 0.5
-        const y = handle[1] - side * 0.5
-        existingHandleElement.setAttribute('x', `${x}`)
-        existingHandleElement.setAttribute('y', `${y}`)
-        existingHandleElement.setAttribute('width', `${side}`)
-        existingHandleElement.setAttribute('height', `${side}`)
-        existingHandleElement.setAttribute('stroke', color)
-        existingHandleElement.setAttribute('fill', fill)
-        existingHandleElement.setAttribute('stroke-width', strokeWidth)
-        existingHandleElement.setAttribute('rx', `${side * 0.1}`)
-      }
+      _setAttributesIfNecessary(attributes, existingHandleElement)
 
       svgDrawingHelper._setNodeTouched(svgNodeHash)
     } else {
       const newHandleElement = document.createElementNS(svgns, type)
 
-      if (type === 'circle') {
-        newHandleElement.setAttribute('cx', `${handle[0]}`)
-        newHandleElement.setAttribute('cy', `${handle[1]}`)
-        newHandleElement.setAttribute('r', handleRadius)
-        newHandleElement.setAttribute('stroke', color)
-        newHandleElement.setAttribute('fill', fill)
-        newHandleElement.setAttribute('stroke-width', strokeWidth)
-      } else if (type === 'rect') {
-        const handleRadiusFloat = parseFloat(handleRadius)
-        const side = handleRadiusFloat * 1.5
-        const x = handle[0] - side * 0.5
-        const y = handle[1] - side * 0.5
-        newHandleElement.setAttribute('x', `${x}`)
-        newHandleElement.setAttribute('y', `${y}`)
-        newHandleElement.setAttribute('width', `${side}`)
-        newHandleElement.setAttribute('height', `${side}`)
-        newHandleElement.setAttribute('stroke', color)
-        newHandleElement.setAttribute('fill', fill)
-        newHandleElement.setAttribute('stroke-width', strokeWidth)
-        newHandleElement.setAttribute('rx', `${side * 0.1}`)
-      } else {
-        console.warn('handle type not valid')
-      }
+      _setNewAttributesIfValid(attributes, newHandleElement)
 
       svgDrawingHelper._appendNode(newHandleElement, svgNodeHash)
     }

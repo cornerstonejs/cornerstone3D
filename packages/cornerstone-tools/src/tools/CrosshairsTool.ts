@@ -24,6 +24,7 @@ import {
 } from '../types'
 import { ToolGroupManager } from '../store'
 import { isToolDataLocked } from '../stateManagement/toolDataLocking'
+import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
 
 const { liangBarksyClip } = math.vec2
 const { isEqual, isOpposite } = math.vec3
@@ -333,15 +334,42 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
+  _isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID }) {
+    const toolGroups = ToolGroupManager.getToolGroups(
+      renderingEngineUID,
+      sceneUID,
+      viewportUID
+    )
+
+    // This iterates all instances of Crosshairs across all toolGroups
+    // And updates `isCrosshairsActive` if ANY are active?
+    let isCrosshairsActive = false
+    for (let i = 0; i < toolGroups.length; ++i) {
+      const toolGroup = toolGroups[i]
+      const tool = toolGroup.tools['Crosshairs']
+
+      if (tool.mode === 'Active') {
+        isCrosshairsActive = true
+        break
+      }
+    }
+
+    // So if none are active, we have nothing to render, and we peace out
+    return isCrosshairsActive
+  }
+
   onCameraModified = (evt) => {
     const eventData = evt.detail
     const { canvas: element } = eventData
     const enabledElement = getEnabledElement(element)
     const { FrameOfReferenceUID, renderingEngine, viewport } = enabledElement
+    const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
 
+    const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      this.name,
+      requireSameOrientation
     )
 
     let toolState = getToolState(enabledElement, this.name)
@@ -364,108 +392,121 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // viewport ToolData
     const viewportToolData = filteredToolState[0] as CrosshairsSpecificToolData
 
+    if (!viewportToolData) {
+      return
+    }
+
+    if (
+      !this._isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID })
+    ) {
+      return
+    }
+
     // -- Update the camera of other linked viewports in the same scene that
     //    have the same camera in case of translation
     // -- Update the crosshair center in world coordinates in toolData.
     // This is necessary because other tools can modify the position of the slices,
     // e.g. stackscroll tool at wheel scroll. So we update the coordinates of the center always here.
     // NOTE: rotation and slab thickness handles are created/updated in renderTool.
-    if (viewportToolData) {
-      const currentCamera = viewport.getCamera()
-      const oldCameraPosition = viewportToolData.metadata.cameraPosition
-      const deltaCameraPosition: Point3 = [0, 0, 0]
-      vtkMath.subtract(
-        currentCamera.position,
-        oldCameraPosition,
-        deltaCameraPosition
-      )
+    const currentCamera = viewport.getCamera()
+    const oldCameraPosition = viewportToolData.metadata.cameraPosition
+    const deltaCameraPosition: Point3 = [0, 0, 0]
+    vtkMath.subtract(
+      currentCamera.position,
+      oldCameraPosition,
+      deltaCameraPosition
+    )
 
-      const oldCameraFocalPoint = viewportToolData.metadata.cameraFocalPoint
-      const deltaCameraFocalPoint: Point3 = [0, 0, 0]
-      vtkMath.subtract(
-        currentCamera.focalPoint,
-        oldCameraFocalPoint,
-        deltaCameraFocalPoint
-      )
+    const oldCameraFocalPoint = viewportToolData.metadata.cameraFocalPoint
+    const deltaCameraFocalPoint: Point3 = [0, 0, 0]
+    vtkMath.subtract(
+      currentCamera.focalPoint,
+      oldCameraFocalPoint,
+      deltaCameraFocalPoint
+    )
 
-      // updated cached "previous" camera position and focal point
-      viewportToolData.metadata.cameraPosition = [...currentCamera.position]
-      viewportToolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
+    // updated cached "previous" camera position and focal point
+    viewportToolData.metadata.cameraPosition = [...currentCamera.position]
+    viewportToolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
 
-      const viewportControllable = this._getReferenceLineControllable(
-        viewport.uid
-      )
-      const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(viewport.uid)
+    const viewportControllable = this._getReferenceLineControllable(
+      viewport.uid
+    )
+    const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
+      viewport.uid
+    )
+    if (
+      !isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
+      viewportControllable &&
+      viewportDraggableRotatable
+    ) {
+      // Is camera Modified a TRANSLATION or ROTATION?
+      let IsTranslation = true
+
+      // NOTE: it is a translation if the the focal point and camera position shifts are the same
+      if (!isEqual(deltaCameraPosition, deltaCameraFocalPoint, 1e-3)) {
+        IsTranslation = false
+      }
+
+      // TRANSLATION
+      // NOTE1: if it's a panning don't update the crosshair center
+      // NOTE2: rotation handles are updates in renderTool
+      // panning check is:
+      // -- deltaCameraPosition dot viewPlaneNormal > 1e-2
       if (
-        !isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
-        viewportControllable &&
-        viewportDraggableRotatable
+        IsTranslation &&
+        Math.abs(
+          vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
+        ) > 1e-2
       ) {
-        // Is camera Modified a TRANSLATION or ROTATION?
-        let IsTranslation = true
+        // update linked view in the same scene that have the same camera
+        // this goes here, because the parent viewport translation may happen in another tool
+        const otherLinkedViewportsToolDataWithSameCameraDirection =
+          this._filterLinkedViewportWithSameOrientationAndScene(
+            enabledElement,
+            toolState
+          )
 
-        // NOTE: it is a translation if the the focal point and camera position shifts are the same
-        if (!isEqual(deltaCameraPosition, deltaCameraFocalPoint, 1e-3)) {
-          IsTranslation = false
-        }
-
-        // TRANSLATION
-        // NOTE1: if it's a panning don't update the crosshair center
-        // NOTE2: rotation handles are updates in renderTool
-        // panning check is:
-        // -- deltaCameraPosition dot viewPlaneNormal > 1e-2
-        if (
-          IsTranslation &&
-          Math.abs(
-            vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
-          ) > 1e-2
+        for (
+          let i = 0;
+          i < otherLinkedViewportsToolDataWithSameCameraDirection.length;
+          ++i
         ) {
-          // update linked view in the same scene that have the same camera
-          // this goes here, because the parent viewport translation may happen in another tool
-          const otherLinkedViewportsToolDataWithSameCameraDirection =
-            this._filterLinkedViewportWithSameOrientationAndScene(
-              enabledElement,
-              toolState
-            )
+          const toolData =
+            otherLinkedViewportsToolDataWithSameCameraDirection[i]
+          const { data } = toolData
+          const scene = renderingEngine.getScene(data.sceneUID)
+          const otherViewport = scene.getViewport(data.viewportUID)
+          const camera = otherViewport.getCamera()
 
-          for (
-            let i = 0;
-            i < otherLinkedViewportsToolDataWithSameCameraDirection.length;
-            ++i
-          ) {
-            const toolData =
-              otherLinkedViewportsToolDataWithSameCameraDirection[i]
-            const { data } = toolData
-            const scene = renderingEngine.getScene(data.sceneUID)
-            const otherViewport = scene.getViewport(data.viewportUID)
-            const camera = otherViewport.getCamera()
+          const newFocalPoint = [0, 0, 0]
+          const newPosition = [0, 0, 0]
 
-            const newFocalPoint = [0, 0, 0]
-            const newPosition = [0, 0, 0]
+          vtkMath.add(camera.focalPoint, deltaCameraPosition, newFocalPoint)
+          vtkMath.add(camera.position, deltaCameraPosition, newPosition)
 
-            vtkMath.add(camera.focalPoint, deltaCameraPosition, newFocalPoint)
-            vtkMath.add(camera.position, deltaCameraPosition, newPosition)
+          // updated cached "previous" camera position and focal point
+          toolData.metadata.cameraPosition = [...currentCamera.position]
+          toolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
 
-            // updated cached "previous" camera position and focal point
-            toolData.metadata.cameraPosition = [...currentCamera.position]
-            toolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
-
-            // update camera
-            otherViewport.setCamera({
-              focalPoint: <Point3>newFocalPoint,
-              position: <Point3>newPosition,
-            })
-          }
-
-          // update center of the crosshair
-          this.toolCenter[0] += deltaCameraPosition[0]
-          this.toolCenter[1] += deltaCameraPosition[1]
-          this.toolCenter[2] += deltaCameraPosition[2]
+          // update camera
+          otherViewport.setCamera({
+            focalPoint: <Point3>newFocalPoint,
+            position: <Point3>newPosition,
+          })
         }
+
+        // update center of the crosshair
+        this.toolCenter[0] += deltaCameraPosition[0]
+        this.toolCenter[1] += deltaCameraPosition[1]
+        this.toolCenter[2] += deltaCameraPosition[2]
       }
     }
 
+    // triggerAnnotationRenderForViewportUIDs(
+    //   renderingEngine,
+    //   viewportUIDsToRender
+    // )
     renderingEngine.renderViewports(viewportUIDsToRender)
   }
 
@@ -549,27 +590,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
-    const toolGroups = ToolGroupManager.getToolGroups(
-      renderingEngineUID,
-      sceneUID,
-      viewportUID
-    )
 
     // This iterates all instances of Crosshairs across all toolGroups
     // And updates `isCrosshairsActive` if ANY are active?
-    let isCrosshairsActive = false
-    for (let i = 0; i < toolGroups.length; ++i) {
-      const toolGroup = toolGroups[i]
-      const tool = toolGroup.tools['Crosshairs']
-
-      if (tool.mode === 'Active') {
-        isCrosshairsActive = true
-        break
-      }
-    }
-
     // So if none are active, we have nothing to render, and we peace out
-    if (!isCrosshairsActive) {
+    if (
+      !this._isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID })
+    ) {
       return
     }
 
@@ -1163,6 +1190,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     data.handles.slabThicknessPoints = newStpoints
 
     // render a circle to pin point the viewport color
+    // TODO: This should not be part of the tool, and definitely not part of the renderToolData loop
     const referenceColorCoordinates = [sWidth * 0.95, sHeight * 0.05] as Point2
     const circleRadius = canvasDiagonalLength * 0.01
 
@@ -1640,12 +1668,17 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
+    const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      this.name,
+      requireSameOrientation
     )
 
-    renderingEngine.renderViewports(viewportUIDsToRender)
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportUIDsToRender
+    )
   }
 
   _mouseDragCallback(evt) {

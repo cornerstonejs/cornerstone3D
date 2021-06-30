@@ -1,5 +1,7 @@
 import _getHash from './_getHash'
 import { Point2 } from '../types'
+import _setAttributesIfNecessary from './_setAttributesIfNecessary'
+import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 
 // <rect x="120" y="100" width="100" height="100" />
 export default function drawRect(
@@ -32,35 +34,25 @@ export default function drawRect(
   const width = Math.abs(start[0] - end[0])
   const height = Math.abs(start[1] - end[1])
 
-  if (existingRect) {
-    existingRect.setAttribute('x', `${tlhc[0]}`)
-    existingRect.setAttribute('y', `${tlhc[1]}`)
-    existingRect.setAttribute('width', `${width}`)
-    existingRect.setAttribute('height', `${height}`)
-    existingRect.setAttribute('stroke', color)
-    existingRect.setAttribute('stroke-width', strokeWidth)
+  const attributes = {
+    x: `${tlhc[0]}`,
+    y: `${tlhc[1]}`,
+    width: `${width}`,
+    height: `${height}`,
+    stroke: color,
+    fill: 'transparent',
+    'stroke-width': strokeWidth,
+    'stroke-dasharray': lineDash
+  }
 
-    if (lineDash) {
-      existingRect.setAttribute('stroke-dasharray', lineDash)
-    } else {
-      existingRect.removeAttribute('stroke-dasharray')
-    }
+  if (existingRect) {
+    _setAttributesIfNecessary(attributes, existingRect)
 
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
     const svgRectElement = document.createElementNS(svgns, 'rect')
 
-    svgRectElement.setAttribute('x', `${tlhc[0]}`)
-    svgRectElement.setAttribute('y', `${tlhc[1]}`)
-    svgRectElement.setAttribute('width', `${width}`)
-    svgRectElement.setAttribute('height', `${height}`)
-    svgRectElement.setAttribute('fill', 'transparent')
-    svgRectElement.setAttribute('stroke', color)
-    svgRectElement.setAttribute('stroke-width', strokeWidth)
-
-    if (lineDash) {
-      svgRectElement.setAttribute('stroke-dasharray', lineDash)
-    }
+    _setNewAttributesIfValid(attributes, svgRectElement)
 
     svgDrawingHelper._appendNode(svgRectElement, svgNodeHash)
   }

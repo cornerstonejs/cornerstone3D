@@ -1,5 +1,7 @@
 import _getHash from './_getHash'
 import { Point2 } from '../types'
+import _setAttributesIfNecessary from './_setAttributesIfNecessary'
+import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 
 function drawCircle(
   svgDrawingHelper: any,
@@ -28,24 +30,23 @@ function drawCircle(
   const svgNodeHash = _getHash(toolUID, annotationUID, 'circle', circleUID)
   const existingCircleElement = svgDrawingHelper._getSvgNode(svgNodeHash)
 
+  const attributes = {
+    cx: `${center[0]}`,
+    cy: `${center[1]}`,
+    r: `${radius}`,
+    stroke: color,
+    fill,
+    'stroke-width': strokeWidth,
+  }
+
   if (existingCircleElement) {
-    existingCircleElement.setAttribute('cx', `${center[0]}`)
-    existingCircleElement.setAttribute('cy', `${center[1]}`)
-    existingCircleElement.setAttribute('r', `${radius}`)
-    existingCircleElement.setAttribute('stroke', color)
-    existingCircleElement.setAttribute('fill', fill)
-    existingCircleElement.setAttribute('stroke-width', strokeWidth)
+    _setAttributesIfNecessary(attributes, existingCircleElement)
 
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
     const newCircleElement = document.createElementNS(svgns, 'circle')
 
-    newCircleElement.setAttribute('cx', `${center[0]}`)
-    newCircleElement.setAttribute('cy', `${center[1]}`)
-    newCircleElement.setAttribute('r', `${radius}`)
-    newCircleElement.setAttribute('stroke', color)
-    newCircleElement.setAttribute('fill', fill)
-    newCircleElement.setAttribute('stroke-width', strokeWidth)
+    _setNewAttributesIfValid(attributes, newCircleElement)
 
     svgDrawingHelper._appendNode(newCircleElement, svgNodeHash)
   }

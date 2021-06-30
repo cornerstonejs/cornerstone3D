@@ -14,7 +14,7 @@ import {
 
 import getToolsWithDataForElement from './getToolsWithDataForElement'
 import { state } from './state'
-import getToolsWithModesForElement from '../eventDispatchers/shared/getToolsWithModesForElement'
+import getToolsWithModesForElement from '../util/getToolsWithModesForElement'
 import { ToolModes } from '../enums'
 import { removeToolState } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'

@@ -1,5 +1,7 @@
 import _getHash from './_getHash'
 import { Point2 } from '../types'
+import _setAttributesIfNecessary from './_setAttributesIfNecessary'
+import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 
 function drawEllipse(
   svgDrawingHelper: any,
@@ -36,35 +38,25 @@ function drawEllipse(
   const radiusX = w / 2
   const radiusY = h / 2
 
-  if (existingEllipse) {
-    existingEllipse.setAttribute('cx', `${center[0]}`)
-    existingEllipse.setAttribute('cy', `${center[1]}`)
-    existingEllipse.setAttribute('rx', `${radiusX}`)
-    existingEllipse.setAttribute('ry', `${radiusY}`)
-    existingEllipse.setAttribute('stroke', color)
-    existingEllipse.setAttribute('stroke-width', strokeWidth)
+  const attributes = {
+    cx: `${center[0]}`,
+    cy: `${center[1]}`,
+    rx: `${radiusX}`,
+    ry: `${radiusY}`,
+    stroke: color,
+    fill: 'transparent',
+    'stroke-width': strokeWidth,
+    'stroke-dasharray': lineDash
+  }
 
-    if (lineDash) {
-      existingEllipse.setAttribute('stroke-dasharray', lineDash)
-    } else {
-      existingEllipse.removeAttribute('stroke-dasharray')
-    }
+  if (existingEllipse) {
+    _setAttributesIfNecessary(attributes, existingEllipse)
 
     svgDrawingHelper._setNodeTouched(svgNodeHash)
   } else {
     const svgEllipseElement = document.createElementNS(svgns, 'ellipse')
 
-    svgEllipseElement.setAttribute('cx', `${center[0]}`)
-    svgEllipseElement.setAttribute('cy', `${center[1]}`)
-    svgEllipseElement.setAttribute('rx', `${radiusX}`)
-    svgEllipseElement.setAttribute('ry', `${radiusY}`)
-    svgEllipseElement.setAttribute('fill', 'transparent')
-    svgEllipseElement.setAttribute('stroke', color)
-    svgEllipseElement.setAttribute('stroke-width', strokeWidth)
-
-    if (lineDash) {
-      svgEllipseElement.setAttribute('stroke-dasharray', lineDash)
-    }
+    _setNewAttributesIfValid(attributes, svgEllipseElement)
 
     svgDrawingHelper._appendNode(svgEllipseElement, svgNodeHash)
   }
