@@ -440,11 +440,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       return
     }
 
-    if (
-      !this._isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID })
-    ) {
-      return
-    }
+    // if (
+    //   !this._isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID })
+    // ) {
+    //   return
+    // }
 
     // -- Update the camera of other linked viewports in the same scene that
     //    have the same camera in case of translation
