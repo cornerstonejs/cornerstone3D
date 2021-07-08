@@ -7,9 +7,10 @@ const { cache, Utilities, ERROR_CODES } = cornerstone
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
 describe('Set maximum cache size', function () {
-  beforeEach(() => {
+  afterEach(function () {
     cache.purgeCache()
   })
+
   it('should start by allocating 1GB of cache size', function () {
     // Arrange
     const maximumSizeInBytes = 1073741824 // 1GB

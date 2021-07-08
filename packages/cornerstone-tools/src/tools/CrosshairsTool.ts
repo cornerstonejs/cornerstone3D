@@ -714,7 +714,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         direction
       )
       vtkMath.normalize(direction)
-      vtkMath.multiplyScalar(direction, otherCanvasDiagonalLength)
+      vtkMath.multiplyScalar(<vec3>direction, otherCanvasDiagonalLength)
 
       const pointWorld0 = [0, 0, 0]
       vtkMath.add(otherViewportCenterWorld, direction, pointWorld0)
@@ -845,7 +845,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       const slabThicknessValue = otherViewport.getSlabThickness()
       const worldOrthoVectorFromCenter = [...worldUnitOrthoVectorFromCenter]
-      vtkMath.multiplyScalar(worldOrthoVectorFromCenter, slabThicknessValue)
+      vtkMath.multiplyScalar(
+        <vec3>worldOrthoVectorFromCenter,
+        slabThicknessValue
+      )
 
       const worldVerticalRefPoint: Point3 = [0, 0, 0]
       vtkMath.add(
@@ -1856,7 +1859,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
           const dotProd = vtkMath.dot(delta, normal)
           const projectedDelta = [...normal]
-          vtkMath.multiplyScalar(projectedDelta, dotProd)
+          vtkMath.multiplyScalar(<vec3>projectedDelta, dotProd)
 
           if (
             Math.abs(projectedDelta[0]) > 1e-3 ||
@@ -1901,7 +1904,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
             vtkMath.subtract(currentPoint, currentCenter, direction)
             const dotProdDirection = vtkMath.dot(direction, normal)
             const projectedDirection = [...normal]
-            vtkMath.multiplyScalar(projectedDirection, dotProdDirection)
+            vtkMath.multiplyScalar(<vec3>projectedDirection, dotProdDirection)
             const normalizedProjectedDirection: Point3 = [
               projectedDirection[0],
               projectedDirection[1],
@@ -1984,7 +1987,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
     const dotProd = vtkMath.dot(delta, normal)
     const projectedDelta = [...normal]
-    vtkMath.multiplyScalar(projectedDelta, dotProd)
+    vtkMath.multiplyScalar(<vec3>projectedDelta, dotProd)
 
     if (
       Math.abs(projectedDelta[0]) > 1e-3 ||

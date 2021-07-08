@@ -23,12 +23,15 @@
   },
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "17.3.0"
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation"
   },
   "devDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "17.3.0"
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "resemblejs": "^3.2.5"
+  }
 }

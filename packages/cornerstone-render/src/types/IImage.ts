@@ -18,6 +18,7 @@ interface IImage {
   numComps: number
   columnPixelSpacing: number
   rowPixelSpacing: number
+  sliceThickness?: number
   invert: boolean
   sizeInBytes: number
   scaling?: {

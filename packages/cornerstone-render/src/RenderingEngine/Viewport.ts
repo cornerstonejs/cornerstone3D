@@ -383,13 +383,21 @@ class Viewport {
   }
   */
 
+  private getDefaultImageData(): any {
+    const actor = this.getDefaultActor()
+
+    if (actor) {
+      return actor.volumeActor.getMapper().getInputData()
+    }
+  }
+
   // new reset camera
   // *
   public resetCamera() {
     const renderer = this.getRenderer()
 
     const bounds = renderer.computeVisiblePropBounds()
-    const focalPoint: [number, number, number] = [0, 0, 0]
+    const focalPoint = new Float64Array(3)
 
     const activeCamera = this.getVtkActiveCamera()
     const viewPlaneNormal = activeCamera.getViewPlaneNormal()
@@ -403,6 +411,16 @@ class Viewport {
     focalPoint[0] = (bounds[0] + bounds[1]) / 2.0
     focalPoint[1] = (bounds[2] + bounds[3]) / 2.0
     focalPoint[2] = (bounds[4] + bounds[5]) / 2.0
+
+    const imageData = this.getDefaultImageData()
+
+    if (imageData) {
+      const dimensions = imageData.getDimensions()
+      const middleIJK = dimensions.map((d) => Math.floor(d / 2))
+
+      const idx = new Float64Array([middleIJK[0], middleIJK[1], middleIJK[2]])
+      imageData.indexToWorld(idx, focalPoint)
+    }
 
     const { widthWorld, heightWorld } =
       this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal)
@@ -424,7 +442,7 @@ class Viewport {
     }
 
     const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = radius
+    const parallelScale = 1.1 * radius
 
     let w1 = bounds[1] - bounds[0]
     let w2 = bounds[3] - bounds[2]
@@ -440,7 +458,8 @@ class Viewport {
     // compute the radius of the enclosing sphere
     radius = Math.sqrt(radius) * 0.5
 
-    const distance = radius / Math.sin(angle * 0.5)
+    const distance = 1.1 * radius
+    // const distance = radius / Math.sin(angle * 0.5)
 
     // check view-up vector against view plane normal
     if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
@@ -448,7 +467,7 @@ class Viewport {
     }
 
     // update the camera
-    activeCamera.setFocalPoint(...focalPoint)
+    activeCamera.setFocalPoint(focalPoint[0], focalPoint[1], focalPoint[2])
     activeCamera.setPosition(
       focalPoint[0] + distance * viewPlaneNormal[0],
       focalPoint[1] + distance * viewPlaneNormal[1],

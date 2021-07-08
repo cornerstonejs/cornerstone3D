@@ -1,5 +1,5 @@
 import macro from 'vtk.js/Sources/macro'
-import vtkGenericWidgetRepresentation from 'vtk.js/Sources/Rendering/SceneGraph/GenericWidgetRepresentation'
+// import vtkGenericWidgetRepresentation from 'vtk.js/Sources/Rendering/SceneGraph/GenericWidgetRepresentation'
 import vtkOpenGLActor from 'vtk.js/Sources/Rendering/OpenGL/Actor'
 import vtkOpenGLActor2D from 'vtk.js/Sources/Rendering/OpenGL/Actor2D'
 import vtkOpenGLCamera from 'vtk.js/Sources/Rendering/OpenGL/Camera'
@@ -135,10 +135,10 @@ export function extend(publicAPI, model, initialValues = {}) {
     'vtkSharedVolumeMapper',
     vtkStreamingOpenGLVolumeMapper.newInstance
   )
-  publicAPI.registerOverride(
-    'vtkWidgetRepresentation',
-    vtkGenericWidgetRepresentation.newInstance
-  )
+  // publicAPI.registerOverride(
+  //   'vtkWidgetRepresentation',
+  //   vtkGenericWidgetRepresentation.newInstance
+  // )
 }
 
 // ----------------------------------------------------------------------------

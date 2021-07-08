@@ -160,7 +160,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // Build the textures
       const dims = image.getDimensions()
 
-      const previousTextureParameters = model.scalarTexture.getTextureParameters()
+      const previousTextureParameters =
+        model.scalarTexture.getTextureParameters()
 
       const dataType = image.getPointData().getScalars().getDataType()
       const data = image.getPointData().getScalars().getData()
@@ -271,12 +272,23 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     mat4.multiply(model.modelToView, keyMats.wcvc, actMats.mcwc)
 
     const bounds = model.currentInput.getBounds()
+    const spc = model.currentInput.getSpacing()
     const dims = model.currentInput.getDimensions()
+
+    // TODO: need a better name because this is not physical?
+    // TODO: this should probably use extent, not bounds?
+    const physicalBounds = [...bounds]
+    physicalBounds[0] -= 0.5 * spc[0]
+    physicalBounds[1] += 0.5 * spc[0]
+    physicalBounds[2] -= 0.5 * spc[1]
+    physicalBounds[3] += 0.5 * spc[1]
+    physicalBounds[4] -= 0.5 * spc[2]
+    physicalBounds[5] += 0.5 * spc[2]
 
     // compute the viewport bounds of the volume
     // we will only render those fragments.
-    const pos = vec3.create()
-    const dir = vec3.create()
+    const pos = new Float64Array(3)
+    const dir = new Float64Array(3)
     let dcxmin = 1.0
     let dcxmax = -1.0
     let dcymin = 1.0
@@ -285,9 +297,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     for (let i = 0; i < 8; ++i) {
       vec3.set(
         pos,
-        bounds[i % 2],
-        bounds[2 + (Math.floor(i / 2) % 2)],
-        bounds[4 + Math.floor(i / 4)]
+        physicalBounds[i % 2],
+        physicalBounds[2 + (Math.floor(i / 2) % 2)],
+        physicalBounds[4 + Math.floor(i / 4)]
       )
       vec3.transformMat4(pos, pos, model.modelToView)
       if (!cam.getParallelProjection()) {
@@ -320,8 +332,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     }
 
     const ext = model.currentInput.getExtent()
-    const spc = model.currentInput.getSpacing()
-    const vsize = vec3.create()
+    const vsize = new Float64Array(3)
     vec3.set(
       vsize,
       (ext[1] - ext[0] + 1) * spc[0],
@@ -337,6 +348,12 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     vec3.transformMat4(pos, pos, model.modelToView)
 
     program.setUniform3f('vOriginVC', pos[0], pos[1], pos[2])
+
+    vec3.set(pos, ext[0] + 0.5, ext[2] + 0.5, ext[4] + 0.5)
+    model.currentInput.indexToWorldVec3(pos, pos)
+
+    vec3.transformMat4(pos, pos, model.modelToView)
+    program.setUniform3f('vOriginPlusHalfVoxelVC', pos[0], pos[1], pos[2])
 
     // apply the image directions
     const i2wmat4 = model.currentInput.getIndexToWorld()
@@ -363,7 +380,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         volumeMapper sampleDistance or its maximum number of samples.`)
     }
 
-    const vctoijk = vec3.create()
+    const vctoijk = new Float64Array(3)
 
     vec3.set(vctoijk, 1.0, 1.0, 1.0)
     vec3.divide(vctoijk, vctoijk, vsize)
@@ -381,34 +398,34 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     // map normals through normal matrix
     // then use a point on the plane to compute the distance
-    const normal = vec3.create()
-    const pos2 = vec3.create()
+    const normal = new Float64Array(3)
+    const pos2 = new Float64Array(3)
     for (let i = 0; i < 6; ++i) {
       switch (i) {
         default:
         case 0:
           vec3.set(normal, 1.0, 0.0, 0.0)
-          vec3.set(pos2, ext[1], ext[3], ext[5])
+          vec3.set(pos2, ext[1] + 0.5, ext[3] + 0.5, ext[5] + 0.5)
           break
         case 1:
           vec3.set(normal, -1.0, 0.0, 0.0)
-          vec3.set(pos2, ext[0], ext[2], ext[4])
+          vec3.set(pos2, ext[0] - 0.5, ext[2] - 0.5, ext[4] - 0.5)
           break
         case 2:
           vec3.set(normal, 0.0, 1.0, 0.0)
-          vec3.set(pos2, ext[1], ext[3], ext[5])
+          vec3.set(pos2, ext[1] + 0.5, ext[3] + 0.5, ext[5] + 0.5)
           break
         case 3:
           vec3.set(normal, 0.0, -1.0, 0.0)
-          vec3.set(pos2, ext[0], ext[2], ext[4])
+          vec3.set(pos2, ext[0] - 0.5, ext[2] - 0.5, ext[4] - 0.5)
           break
         case 4:
           vec3.set(normal, 0.0, 0.0, 1.0)
-          vec3.set(pos2, ext[1], ext[3], ext[5])
+          vec3.set(pos2, ext[1] + 0.5, ext[3] + 0.5, ext[5] + 0.5)
           break
         case 5:
           vec3.set(normal, 0.0, 0.0, -1.0)
-          vec3.set(pos2, ext[0], ext[2], ext[4])
+          vec3.set(pos2, ext[0] - 0.5, ext[2] - 0.5, ext[4] - 0.5)
           break
       }
       vec3.transformMat3(normal, normal, model.idxNormalMatrix)

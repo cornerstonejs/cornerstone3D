@@ -29,7 +29,7 @@
     "react-dom": "17.0.2",
     "react-resize-detector": "6.6.4",
     "react-router-dom": "5.2.0",
-    "vtk.js": "17.3.0"
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation"
   },
   "devDependencies": {
     "eslint-config-react-app": "^6.0.0",

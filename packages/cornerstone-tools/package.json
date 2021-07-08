@@ -23,11 +23,11 @@
   },
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "17.3.0",
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation",
     "@ohif/cornerstone-image-loader-streaming-volume": "^0.0.2"
   },
   "devDependencies": {
-    "vtk.js": "17.3.0",
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation",
     "@ohif/cornerstone-image-loader-streaming-volume": "^0.0.2"
   },
   "author": "",

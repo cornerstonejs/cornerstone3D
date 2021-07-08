@@ -65,6 +65,8 @@ class OneVolumeExample extends Component {
     super(props)
 
     this._canvasNodes = new Map()
+    this._offScreenRef = React.createRef()
+
     this._viewportGridRef = React.createRef()
 
     this.volumeImageIds = getImageIds('ct1', VOLUME)
@@ -105,6 +107,7 @@ class OneVolumeExample extends Component {
         canvas: this._canvasNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
+          background: [1, 0, 1],
         },
       },
       {
@@ -114,6 +117,7 @@ class OneVolumeExample extends Component {
         canvas: this._canvasNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
+          background: [1, 0, 1],
         },
       },
       {
@@ -123,6 +127,7 @@ class OneVolumeExample extends Component {
         canvas: this._canvasNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
+          background: [1, 0, 1],
         },
       },
     ]
@@ -253,6 +258,17 @@ class OneVolumeExample extends Component {
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
+  showOffScreenCanvas = () => {
+    // remove all childs
+    this._offScreenRef.current.innerHTML = ''
+    const uri = this.renderingEngine._debugRender()
+    const image = document.createElement('img')
+    image.src = uri
+    image.setAttribute('width', '100%')
+
+    this._offScreenRef.current.appendChild(image)
+  }
+
   render() {
     return (
       <div style={{ paddingBottom: '55px' }}>
@@ -296,6 +312,24 @@ class OneVolumeExample extends Component {
             </div>
           ))}
         </ViewportGrid>
+        <div>
+          <h1>OffScreen Canvas Render</h1>
+          <button
+            onClick={this.showOffScreenCanvas}
+            className="btn btn-primary"
+            style={{ margin: '2px 4px' }}
+          >
+            Show OffScreenCanvas
+          </button>
+          <button
+            onClick={this.hidOffScreenCanvas}
+            className="btn btn-primary"
+            style={{ margin: '2px 4px' }}
+          >
+            Hide OffScreenCanvas
+          </button>
+          <div ref={this._offScreenRef}></div>
+        </div>
       </div>
     )
   }

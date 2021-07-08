@@ -26,7 +26,7 @@ import { loadAndCacheImage } from '../imageLoader'
 import requestPoolManager from '../requestPool/requestPoolManager'
 import ERROR_CODES from '../enums/errorCodes'
 
-const EPSILON = 1e-4
+const EPSILON = 1
 
 interface ImageDataMetaData {
   bitsAllocated: number
@@ -145,29 +145,13 @@ class StackViewport extends Viewport {
   private createActorMapper = (imageData) => {
     const mapper = vtkVolumeMapper.newInstance()
     mapper.setInputData(imageData)
-    mapper.setSampleDistance(1.0)
 
     const actor = vtkVolume.newInstance()
     actor.setMapper(mapper)
 
-    const sampleDistance =
-      1.2 *
-      Math.sqrt(
-        imageData
-          .getSpacing()
-          .map((v) => v * v)
-          .reduce((a, b) => a + b, 0)
-      )
-
-    mapper.setSampleDistance(sampleDistance)
-
-    // Todo: for some reason the following logic led to warning for sampleDistance
-    // being greater than the allowed limit
-
-    // const spacing = imageData.getSpacing()
-    // Set the sample distance to half the mean length of one side. This is where the divide by 6 comes from.
-    // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
-    // const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6
+    const spacing = imageData.getSpacing()
+    // We set the sample distance to be equal to zSpacing
+    mapper.setSampleDistance(spacing[2])
 
     // @ts-ignore: vtkjs incorrect typing
     const tfunc = actor.getProperty().getRGBTransferFunction(0)
@@ -329,13 +313,9 @@ class StackViewport extends Viewport {
     const ySpacing = imagePlaneModule.rowPixelSpacing || image.rowPixelSpacing
     const xVoxels = image.columns
     const yVoxels = image.rows
-    // We are using vtkVolumeMappers for rendering of stack (2D) images,
-    // there seems to be a bug for having only one slice (zVoxel=1) and volume
-    // rendering. Until further investigation we are using two slices, however,
-    // we are only setting the scalar data for the first slice. The slice spacing
-    // is set to be a small amount (0.1) to enable the correct canvasToWorld
-    const zSpacing = EPSILON
-    const zVoxels = 2
+
+    const zSpacing = image.sliceThickness || EPSILON
+    const zVoxels = 1
 
     const numComps =
       image.numComps ||
@@ -526,7 +506,7 @@ class StackViewport extends Viewport {
     //    from the loaded Cornerstone image
     const pixelData = image.getPixelData()
     const scalars = this._imageData.getPointData().getScalars()
-    const scalarData = scalars.getData()
+    const scalarData = scalars.getData() as Uint8Array | Float32Array
 
     // Handle cases where Cornerstone is providing an RGBA array, but we need RGB
     // for VTK.

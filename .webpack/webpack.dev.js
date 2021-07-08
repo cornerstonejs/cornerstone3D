@@ -18,10 +18,10 @@ const OUT_PATH = path.join(__dirname, '../demo-dist')
 
 // Need to add this if you want to yarn link locally.
 // Add this additional call so we can yarn link vtk.js
-// const shaderLoader = {
-//   test: /\.glsl$/i,
-//   loader: 'shader-loader',
-// };
+const shaderLoader = {
+  test: /\.glsl$/i,
+  loader: 'shader-loader',
+};
 
 module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
@@ -75,6 +75,14 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
             },
           ],
         },
+        {
+          test: /\.png$/i,
+          use: [
+            {
+              loader: 'url-loader',
+            },
+          ],
+      },
       ].concat(vtkRules),
       //.concat(shaderLoader),
     },
