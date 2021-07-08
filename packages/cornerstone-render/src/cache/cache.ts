@@ -476,6 +476,11 @@ class Cache implements ICache {
 
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId)
+
+      if (!cachedVolume.volume) {
+        return
+      }
+
       let volumeImageIds = cachedVolume.volume.imageIds
 
       volumeImageIds = volumeImageIds.map((id) => imageIdToURI(id))

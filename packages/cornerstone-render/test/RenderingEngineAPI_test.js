@@ -1,13 +1,8 @@
 import * as cornerstone3D from '../src/index'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const {
-  cache,
-  RenderingEngine,
-  Utilities,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-} = cornerstone3D
+const { cache, RenderingEngine, Utilities, VIEWPORT_TYPE, ORIENTATION } =
+  cornerstone3D
 
 //const { createFloat32SharedArray } = Utilities
 

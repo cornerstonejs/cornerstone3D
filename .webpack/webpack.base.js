@@ -8,7 +8,8 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const PROJECT_ROOT = path.join(__dirname, '../')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const NODE_ENV = process.env.NODE_ENV;
-
+const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
+    .rules;
 /**
  * `argv` are options from the CLI. They will override our config here if set.
  * `-d` - Development shorthand, sets `debug`, `devtool`, and `mode`

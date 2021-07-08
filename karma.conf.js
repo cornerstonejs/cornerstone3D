@@ -1,5 +1,12 @@
 const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 
+// Need to add this if you want to yarn link locally.
+// Add this additional call so we can yarn link vtk.js
+const shaderLoader = {
+  test: /\.glsl$/i,
+  loader: 'shader-loader',
+}
+
 module.exports = function (config) {
   config.set({
     reporters: ['junit', 'coverage', 'progress'],
@@ -46,6 +53,14 @@ module.exports = function (config) {
               },
             ],
           },
+          {
+            test: /\.png$/i,
+            use: [
+              {
+                loader: 'url-loader',
+              },
+            ],
+          },
         ].concat(vtkRules),
       },
       resolve: {
@@ -62,9 +77,20 @@ module.exports = function (config) {
     customLaunchers: {
       ChromeHeadlessNoSandbox: {
         base: 'ChromeHeadless',
-        flags: ['--no-sandbox', '--ignore-gpu-blacklist'],
+        flags: [
+          '--disable-translate',
+          '--disable-extensions',
+          '--no-sandbox',
+          '--ignore-gpu-blacklist',
+          '--remote-debugging-port=9229',
+        ],
       },
     },
     browsers: ['ChromeHeadlessNoSandbox'],
+    // browsers: ['Chrome'],
+    // browsers: ['Chrome'],
+    // singleRun: true,
+    // colors: true,
+    // autoWatch: true,
   })
 }

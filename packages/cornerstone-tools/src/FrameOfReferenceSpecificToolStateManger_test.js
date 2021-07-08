@@ -76,19 +76,19 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
     const { metadata } = toolData
     const { toolUID, FrameOfReferenceUID, toolName } = metadata
 
-    const toolDataFoundByToolUID = toolStateManager.getToolStateByToolUID(
-      toolUID
-    )
+    const toolDataFoundByToolUID =
+      toolStateManager.getToolStateByToolUID(toolUID)
 
     const toolDataFoundByToolUIDAndFoR = toolStateManager.getToolStateByToolUID(
       toolUID,
       { FrameOfReferenceUID }
     )
 
-    const toolDataFoundByToolAllFilters = toolStateManager.getToolStateByToolUID(
-      toolUID,
-      { FrameOfReferenceUID, toolName }
-    )
+    const toolDataFoundByToolAllFilters =
+      toolStateManager.getToolStateByToolUID(toolUID, {
+        FrameOfReferenceUID,
+        toolName,
+      })
 
     expect(toolData).toEqual(toolDataFoundByToolUID)
     expect(toolData).toEqual(toolDataFoundByToolUIDAndFoR)
@@ -99,14 +99,11 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
     const { metadata } = toolData
     const { toolUID, FrameOfReferenceUID, toolName } = metadata
 
-    const toolSpecificToolStateForFrameOfReference = toolStateManager.saveToolState(
-      FrameOfReferenceUID,
-      toolName
-    )
+    const toolSpecificToolStateForFrameOfReference =
+      toolStateManager.saveToolState(FrameOfReferenceUID, toolName)
 
-    const frameOfReferenceSpecificToolState = toolStateManager.saveToolState(
-      FrameOfReferenceUID
-    )
+    const frameOfReferenceSpecificToolState =
+      toolStateManager.saveToolState(FrameOfReferenceUID)
 
     const entireToolState = toolStateManager.saveToolState()
 

@@ -23,12 +23,15 @@
   },
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "17.3.0"
+    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "devDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "17.3.0"
+    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "resemblejs": "^3.2.5"
+  }
 }

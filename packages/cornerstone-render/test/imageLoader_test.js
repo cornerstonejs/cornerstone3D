@@ -62,6 +62,10 @@ describe('imageLoader -- ', function () {
     // this.options = {}
   })
 
+  afterEach(function () {
+    cache.purgeCache()
+  })
+
   describe('imageLoader registration module', function () {
     afterEach(function () {
       cache.purgeCache()

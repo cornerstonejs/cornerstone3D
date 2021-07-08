@@ -42,9 +42,9 @@ export default {
   testRender: {
     wadoRsRoot: 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs',
     StudyInstanceUID:
-      '1.2.826.0.1.3680043.8.498.89515756153419402831179022658541245246',
+      '1.2.826.0.1.3680043.8.498.62453947377885188916859342059398232266',
     SeriesInstanceUID:
-      '1.2.826.0.1.3680043.8.498.94866033580937989770888665857070522827',
+      '1.2.826.0.1.3680043.8.498.95761650623702141948748826678788764509',
   },
   prostateX: {
     wadoRsRoot: 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs',

@@ -29,7 +29,7 @@
     "react-dom": "17.0.2",
     "react-resize-detector": "6.6.4",
     "react-router-dom": "5.2.0",
-    "vtk.js": "17.3.0"
+    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "devDependencies": {
     "eslint-config-react-app": "^6.0.0",
