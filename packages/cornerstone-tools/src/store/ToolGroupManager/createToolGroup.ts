@@ -4,6 +4,8 @@ import IToolGroup from './IToolGroup'
 import ISetToolModeOptions from './ISetToolModeOptions'
 import ToolModes from '../../enums/ToolModes'
 import deepmerge from '../../util/deepMerge'
+import { MouseCursor, SVGMouseCursor } from '../../cursors'
+import { initElementCursor } from '../../cursors/elementCursor'
 
 const { Active, Passive, Enabled, Disabled } = ToolModes
 
@@ -146,6 +148,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       this.tools[toolName] = toolModeOptionsWithMode
       this._tools[toolName].mode = Active
+      this.resetViewportsCursor(this._tools[toolName])
       this.refreshViewports()
     },
     setToolPassive: function (
@@ -236,6 +239,19 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     refreshViewports(): void {
       this.viewports.forEach(({ renderingEngineUID, viewportUID }) => {
         getRenderingEngine(renderingEngineUID).renderViewport(viewportUID)
+      })
+    },
+    resetViewportsCursor(tool: { name: string }): void {
+      let cursor = SVGMouseCursor.getDefinedCursor(tool.name, true)
+      if (!cursor) {
+        cursor = MouseCursor.getDefinedCursor('default')
+      }
+      this.viewports.forEach(({ renderingEngineUID, viewportUID }) => {
+        const viewport =
+          getRenderingEngine(renderingEngineUID).getViewport(viewportUID)
+        if (viewport && viewport.canvas) {
+          initElementCursor(viewport.canvas, cursor)
+        }
       })
     },
   }

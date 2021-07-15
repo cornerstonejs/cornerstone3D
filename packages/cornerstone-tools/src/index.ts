@@ -28,6 +28,7 @@ import drawing from './drawing'
 import synchronizers from './synchronizers'
 import * as Utilities from './util'
 import * as Types from './types'
+import * as Cursors from './cursors'
 
 import {
   BaseTool,
@@ -103,4 +104,5 @@ export {
   // Utilities
   Utilities,
   Types,
+  Cursors,
 }

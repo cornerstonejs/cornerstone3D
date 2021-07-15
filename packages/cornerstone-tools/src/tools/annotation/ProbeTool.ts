@@ -26,7 +26,10 @@ import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
-import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import {
+  resetElementCursor,
+  hideElementCursor,
+} from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point3 } from '../../types'
@@ -145,7 +148,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     }
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     evt.preventDefault()
 
@@ -197,7 +200,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     }
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -231,7 +234,7 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     this._deactivateModify(element)
 
-    showToolCursor(element)
+    resetElementCursor(element)
 
     this.editData = null
     this.isDrawing = false
@@ -275,7 +278,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     if (this.isDrawing) {
       this.isDrawing = false
       this._deactivateModify(element)
-      showToolCursor(element)
+      resetElementCursor(element)
 
       const { toolData, viewportUIDsToRender } = this.editData
       const { data } = toolData

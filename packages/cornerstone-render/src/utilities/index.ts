@@ -3,6 +3,7 @@ import scaleRgbTransferFunction from './scaleRgbTransferFunction'
 import triggerEvent from './triggerEvent'
 import uuidv4 from './uuidv4'
 import getMinMax from './getMinMax'
+import getRuntimeId from './getRuntimeId'
 import imageIdToURI from './imageIdToURI.js'
 import isEqual from './isEqual'
 import createUint8SharedArray from './createUint8SharedArray'
@@ -15,6 +16,7 @@ export {
   imageIdToURI,
   uuidv4,
   getMinMax,
+  getRuntimeId,
   isEqual,
   createFloat32SharedArray,
   createUint8SharedArray,

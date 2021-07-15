@@ -44,7 +44,11 @@ function initializeDefaultStyleAlternatives(): void {
   const defaultSettings = Settings.getDefaultSettings()
   defaultSettings.forEach((name: string) => {
     const nameEndsWith = (string) => string.length > 0 && name.endsWith(string)
-    if (states.some(nameEndsWith) || modes.some(nameEndsWith)) {
+    if (
+      !name.startsWith('tool.style.') ||
+      states.some(nameEndsWith) ||
+      modes.some(nameEndsWith)
+    ) {
       return
     }
     states.forEach((state) => {
