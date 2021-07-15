@@ -17,47 +17,61 @@ function decodeImageFrame(
 ) {
   const start = new Date().getTime();
 
-  if (transferSyntax === '1.2.840.10008.1.2') {
-    // Implicit VR Little Endian
-    imageFrame = decodeLittleEndian(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.1') {
-    // Explicit VR Little Endian
-    imageFrame = decodeLittleEndian(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.2') {
-    // Explicit VR Big Endian (retired)
-    imageFrame = decodeBigEndian(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.1.99') {
-    // Deflate transfer syntax (deflated by dicomParser)
-    imageFrame = decodeLittleEndian(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.5') {
-    // RLE Lossless
-    imageFrame = decodeRLE(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.50') {
-    // JPEG Baseline lossy process 1 (8 bit)
-    imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.51') {
-    // JPEG Baseline lossy process 2 & 4 (12 bit)
-    imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.57') {
-    // JPEG Lossless, Nonhierarchical (Processes 14)
-    imageFrame = decodeJPEGLossless(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.70') {
-    // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-    imageFrame = decodeJPEGLossless(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.80') {
-    // JPEG-LS Lossless Image Compression
-    imageFrame = decodeJPEGLS(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.81') {
-    // JPEG-LS Lossy (Near-Lossless) Image Compression
-    imageFrame = decodeJPEGLS(imageFrame, pixelData);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.90') {
-    // JPEG 2000 Lossless
-    imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
-  } else if (transferSyntax === '1.2.840.10008.1.2.4.91') {
-    // JPEG 2000 Lossy
-    imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
-  } else {
-    throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
+  switch (transferSyntax) {
+    case '1.2.840.10008.1.2':
+      // Implicit VR Little Endian
+      imageFrame = decodeLittleEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.1':
+      // Explicit VR Little Endian
+      imageFrame = decodeLittleEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.2':
+      // Explicit VR Big Endian (retired)
+      imageFrame = decodeBigEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.1.99':
+      // Deflate transfer syntax (deflated by dicomParser)
+      imageFrame = decodeLittleEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.5':
+      // RLE Lossless
+      imageFrame = decodeRLE(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.50':
+      // JPEG Baseline lossy process 1 (8 bit)
+      imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.51':
+      // JPEG Baseline lossy process 2 & 4 (12 bit)
+      imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.57':
+      // JPEG Lossless, Nonhierarchical (Processes 14)
+      imageFrame = decodeJPEGLossless(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.70':
+      // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
+      imageFrame = decodeJPEGLossless(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.80':
+      // JPEG-LS Lossless Image Compression
+      imageFrame = decodeJPEGLS(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.81':
+      // JPEG-LS Lossy (Near-Lossless) Image Compression
+      imageFrame = decodeJPEGLS(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.90':
+      // JPEG 2000 Lossless
+      imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
+      break;
+    case '1.2.840.10008.1.2.4.91':
+      // JPEG 2000 Lossy
+      imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
+      break;
+    default:
+      throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
   }
 
   /* Don't know if these work...
