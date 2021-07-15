@@ -547,11 +547,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
     }
 
-    // triggerAnnotationRenderForViewportUIDs(
-    //   renderingEngine,
-    //   viewportUIDsToRender
-    // )
-    renderingEngine.renderViewports(viewportUIDsToRender)
+    triggerAnnotationRenderForViewportUIDs(
+       renderingEngine,
+       viewportUIDsToRender
+    )
   }
 
   mouseMoveCallback = (

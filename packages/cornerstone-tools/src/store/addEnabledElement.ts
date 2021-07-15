@@ -10,6 +10,8 @@ import {
 } from '../eventDispatchers'
 import { state } from './state'
 
+import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
+
 /**
  * When an element is "enabled", add event listeners and dispatchers to it
  * so we can use interactions to affect tool behaviors
@@ -23,6 +25,9 @@ export default function addEnabledElement(evt: CustomEvent): void {
   // Reset/Create svgNodeCache for element
   _setSvgNodeCacheForCanvas(canvas)
   _insertAfter(svgLayer, canvas)
+
+  // Add this element to the annotation rendering engine
+  annotationRenderingEngine.addViewportElement(canvas)
 
   // Listeners
   mouseEventListeners.enable(canvas)
