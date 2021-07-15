@@ -32,7 +32,10 @@ import { state } from '../../store'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
-import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import {
+  resetElementCursor,
+  hideElementCursor,
+} from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point3 } from '../../types'
@@ -112,7 +115,7 @@ class LengthTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { viewport, renderingEngine } = enabledElement
 
-    hideToolCursor(element)
+    hideElementCursor(element)
     this.isDrawing = true
 
     const camera = viewport.getCamera()
@@ -292,7 +295,7 @@ class LengthTool extends BaseAnnotationTool {
 
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -335,7 +338,7 @@ class LengthTool extends BaseAnnotationTool {
     }
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -367,7 +370,7 @@ class LengthTool extends BaseAnnotationTool {
 
     this._deactivateModify(element)
     this._deactivateDraw(element)
-    showToolCursor(element)
+    resetElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -447,7 +450,7 @@ class LengthTool extends BaseAnnotationTool {
       this.isDrawing = false
       this._deactivateDraw(element)
       this._deactivateModify(element)
-      showToolCursor(element)
+      resetElementCursor(element)
 
       const { toolData, viewportUIDsToRender } = this.editData
       const { data } = toolData

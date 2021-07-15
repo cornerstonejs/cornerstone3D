@@ -34,4 +34,7 @@ export default interface IToolGroup {
   refreshViewports: {
     (): void
   }
+  resetViewportsCursor: {
+    ({ name: string }): void
+  }
 }

@@ -17,6 +17,7 @@ import {
   resetToolsState,
   toolDataLocking,
   toolDataSelection,
+  Cursors,
 } from '@ohif/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
@@ -273,6 +274,17 @@ class ToolDisplayConfigurationExample extends Component {
       CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
       onLockedToolDataChange
     )
+
+    // Set WindowLevel tool as active in order to initialize the mouse cursor
+    ;[
+      ctSceneToolGroup,
+      stackCTViewportToolGroup,
+      stackDXViewportToolGroup,
+    ].forEach(toolGroup => {
+      toolGroup.setToolActive('WindowLevel', {
+        bindings: [ToolBindings.Mouse.Primary],
+      })
+    })
   }
 
   componentWillUnmount() {

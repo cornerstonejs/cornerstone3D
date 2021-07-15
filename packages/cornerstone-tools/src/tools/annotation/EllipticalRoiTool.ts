@@ -31,7 +31,10 @@ import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { pointInEllipse } from '../../util/math/ellipse'
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
-import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import {
+  resetElementCursor,
+  hideElementCursor,
+} from '../../cursors/elementCursor'
 import { ToolSpecificToolData, Point3 } from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
@@ -186,7 +189,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
     this._activateDraw(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     evt.preventDefault()
 
@@ -294,7 +297,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       movingTextBox: false,
     }
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     this._activateModify(element)
 
@@ -369,7 +372,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -402,7 +405,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     this._deactivateModify(element)
     this._deactivateDraw(element)
 
-    showToolCursor(element)
+    resetElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -598,7 +601,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       this.isDrawing = false
       this._deactivateDraw(element)
       this._deactivateModify(element)
-      showToolCursor(element)
+      resetElementCursor(element)
 
       const { toolData, viewportUIDsToRender } = this.editData
       const { data } = toolData

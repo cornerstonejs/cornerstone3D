@@ -11,7 +11,7 @@ import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../enums'
 import { getViewportUIDsWithToolToRender } from '../util/viewportFilters'
-import { showToolCursor, hideToolCursor } from '../store/toolCursor'
+import { resetElementCursor, hideElementCursor } from '../cursors/elementCursor'
 import { math } from '../util'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
@@ -232,7 +232,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     evt.preventDefault()
   }
@@ -329,7 +329,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     evt.preventDefault()
   }
@@ -399,7 +399,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     addToolState(element, toolData)
 
-    showToolCursor(element)
+    resetElementCursor(element)
   }
 
   onCameraModified = (evt) => {
@@ -1663,7 +1663,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     this._deactivateModify(element)
 
-    showToolCursor(element)
+    resetElementCursor(element)
 
     this.editData = null
 

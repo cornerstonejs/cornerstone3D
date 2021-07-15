@@ -33,7 +33,10 @@ import rectangle from '../../util/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
 import { indexWithinDimensions } from '../../util/vtkjs'
-import { showToolCursor, hideToolCursor } from '../../store/toolCursor'
+import {
+  resetElementCursor,
+  hideElementCursor,
+} from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point2, Point3 } from '../../types'
@@ -181,7 +184,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     }
     this._activateDraw(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     evt.preventDefault()
 
@@ -286,7 +289,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -334,7 +337,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     }
     this._activateModify(element)
 
-    hideToolCursor(element)
+    hideElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -365,7 +368,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     this._deactivateModify(element)
     this._deactivateDraw(element)
 
-    showToolCursor(element)
+    resetElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -498,7 +501,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       this.isDrawing = false
       this._deactivateDraw(element)
       this._deactivateModify(element)
-      showToolCursor(element)
+      resetElementCursor(element)
 
       const { toolData, viewportUIDsToRender } = this.editData
 
