@@ -5,7 +5,7 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: circleci/node:10.15.1-browsers
+    - image: circleci/node:14.17.3-browsers
       environment:
         TERM: xterm # Enable colors in term
         CHROME_BIN: "/usr/bin/google-chrome"
