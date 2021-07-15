@@ -48,6 +48,10 @@ import triggerEvent from './utilities/triggerEvent'
 
 const getVolume = cache.getVolume
 
+/**
+ * @packageDocumentation
+ * @module cornerstone-render
+ */
 export {
   // enums
   ERROR_CODES,

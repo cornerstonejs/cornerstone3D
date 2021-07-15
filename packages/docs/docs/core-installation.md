@@ -1,4 +1,8 @@
-# Setup
+---
+id: core-installation
+---
+
+# Installation
 
 This is repository is unpublished and unversioned. It's installation and
 configuration may be unfamiliar or difficult for those unacquainted with JS
@@ -14,7 +18,7 @@ any issues or innacuracies.
   - `@Tools` Library
 - Next Steps
 
-## Installing
+## Setup
 
 The packages in this repository are not yet published to a public or private
 package registry. As a consumer, you have a few options:
