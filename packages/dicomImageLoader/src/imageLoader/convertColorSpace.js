@@ -2,6 +2,7 @@ import {
   convertRGBColorByPixel,
   convertRGBColorByPlane,
   convertYBRFullByPixel,
+  convertYBRFull422ByPixel,
   convertYBRFullByPlane,
   convertPALETTECOLOR,
 } from './colorSpaceConverters/index.js';
@@ -35,7 +36,7 @@ export default function convertColorSpace(imageFrame, imageData) {
   } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
     convertPALETTECOLOR(imageFrame, rgbaBuffer);
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL_422') {
-    convertRGB(imageFrame, rgbaBuffer);
+    convertYBRFull422ByPixel(imageFrame.pixelData, rgbaBuffer);
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL') {
     convertYBRFull(imageFrame, rgbaBuffer);
   } else {
