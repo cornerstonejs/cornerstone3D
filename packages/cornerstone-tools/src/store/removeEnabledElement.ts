@@ -19,6 +19,7 @@ import { ToolModes } from '../enums'
 import { removeToolState } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'
 import getToolGroups from './ToolGroupManager/getToolGroups'
+import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
 
 function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   // Is DOM element
@@ -31,6 +32,9 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   if (svgLayer) {
     viewportNode.removeChild(svgLayer)
   }
+
+  // Remove this element from the annotation rendering engine
+  annotationRenderingEngine.removeViewportElement(canvas)
 
   // Listeners
   mouseEventListeners.disable(canvas)
