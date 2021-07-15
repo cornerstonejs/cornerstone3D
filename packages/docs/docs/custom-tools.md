@@ -1,3 +1,7 @@
+---
+title: Custom Tools
+---
+
 # Custom Tools
 
 A Cornerstone Tool is any class that implements or extends the interface defined

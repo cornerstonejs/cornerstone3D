@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.tsx",
   "scripts": {
+    "preinstall": "node preinstall.js",
     "dev": "webpack serve --config ./.webpack/webpack.dev.js",
     "dev:demo": "yarn run dev",
     "build:demo": "yarn run build",

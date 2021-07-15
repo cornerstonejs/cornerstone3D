@@ -23,8 +23,8 @@ yalc.lock
 package-lock.json
 
 # Docs output
-dist/docs/
-demo-dist/
+packages/docs/dist/
+packages/demo/dist
 dist/
 tsDist/
 lib/

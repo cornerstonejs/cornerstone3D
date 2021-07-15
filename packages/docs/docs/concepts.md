@@ -1,30 +1,5 @@
-# Usage
+## Rendering
 
-This page attempts to outline basic usage guidance. A more detailed, real-world
-example exists in the `./examples/` directory of this repository. All guidance
-here builds on the steps outlined on the "Setup" page.
-
-- Usage
-  - @Rendering
-  - @Tools
-    - Adding Tools
-    - Tool Manager
-    - Tool Modes
-    - Sync Groups
-  - Next steps
-
-## @Rendering
-
-The rendering library organizes viewports by:
-
-- `renderingEngine --> scene --> viewport`
-
-- Where each `RenderingEngine` has one or more `Scene`s, and each `Scene` has one
-  or more `Viewport`s.
-- Each `Scene` has a `setVolume` method that allows us to link a volume and callback
-  function.
-- Each `Viewport` has a camera that can be acted upon to provide a different rendering
-  of its `Scene`'s volume.
 
 _index.html_
 
@@ -43,7 +18,7 @@ import {
 
 // RENDER
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
-const volumeUID = 'VOLUME_UID'
+const volumeUID = 'VOLUME_UID '
 const sceneUID = 'SCENE_UID'
 const viewports = []
 const viewport = {
@@ -110,8 +85,14 @@ aggressively, most constructs have a `.destroy` method. For example:
 renderingEngine.destroy()
 ```
 
-## @Tools
+## Tools
 
+A tool is an uninstantiated class that implements at least the `BaseTool` interface.
+Tools can be configured via their constructor. To use a tool, one must:
+A tool is an uninstantiated class that implements at least the `BaseTool` interface.
+Tools can be configured via their constructor. To use a tool, one must:
+A tool is an uninstantiated class that implements at least the `BaseTool` interface.
+Tools can be configured via their constructor. To use a tool, one must:
 A tool is an uninstantiated class that implements at least the `BaseTool` interface.
 Tools can be configured via their constructor. To use a tool, one must:
 
@@ -175,7 +156,6 @@ interactions. Those modes are:
     <td>Tool Mode</td>
     <td>Description</td>
   </tr>
-  <!-- ACTIVE -->
   <tr>
     <td>Active</td>
     <td>
@@ -186,7 +166,6 @@ interactions. Those modes are:
       </ul>
     </td>
   </tr>
-  <!-- PASIVE -->
   <tr>
     <td>Passive (default)</td>
     <td>
@@ -196,7 +175,6 @@ interactions. Those modes are:
       </ul>
     </td>
   </tr>
-  <!-- ENABLED -->
   <tr>
     <td>Enabled</td>
     <td>
@@ -205,7 +183,6 @@ interactions. Those modes are:
       </ul>
     </td>
   </tr>
-  <!-- DISABLED -->
   <tr>
     <td>Disabled</td>
     <td>

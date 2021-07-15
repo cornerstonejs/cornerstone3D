@@ -1,6 +1,6 @@
 import { BaseAnnotationTool } from './base'
 // ~~ VTK Viewport
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement, RenderingEngine } from '@ohif/cornerstone-render'
 import { addToolState, getToolState } from '../stateManagement/toolState'
 import {
   drawCircle as drawCircleSvg,
@@ -706,14 +706,14 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const otherViewportCenterWorld =
         otherViewport.canvasToWorld(otherCanvasCenter)
 
-      const direction = [0, 0, 0]
+      const direction: Point3 = [0, 0, 0]
       vtkMath.cross(
         camera.viewPlaneNormal,
         otherCamera.viewPlaneNormal,
         direction
       )
       vtkMath.normalize(direction)
-      vtkMath.multiplyScalar(<vec3>direction, otherCanvasDiagonalLength)
+      vtkMath.multiplyScalar(direction, otherCanvasDiagonalLength)
 
       const pointWorld0 = [0, 0, 0]
       vtkMath.add(otherViewportCenterWorld, direction, pointWorld0)
@@ -843,9 +843,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       )
 
       const slabThicknessValue = otherViewport.getSlabThickness()
-      const worldOrthoVectorFromCenter = [...worldUnitOrthoVectorFromCenter]
+      const worldOrthoVectorFromCenter: Point3 = [...worldUnitOrthoVectorFromCenter]
       vtkMath.multiplyScalar(
-        <vec3>worldOrthoVectorFromCenter,
+        worldOrthoVectorFromCenter,
         slabThicknessValue
       )
 
@@ -1857,8 +1857,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           const normal = camera.viewPlaneNormal
 
           const dotProd = vtkMath.dot(delta, normal)
-          const projectedDelta = [...normal]
-          vtkMath.multiplyScalar(<vec3>projectedDelta, dotProd)
+          const projectedDelta: Point3 = [...normal]
+          vtkMath.multiplyScalar(projectedDelta, dotProd)
 
           if (
             Math.abs(projectedDelta[0]) > 1e-3 ||
@@ -1902,8 +1902,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
             vtkMath.subtract(currentPoint, currentCenter, direction)
             const dotProdDirection = vtkMath.dot(direction, normal)
-            const projectedDirection = [...normal]
-            vtkMath.multiplyScalar(<vec3>projectedDirection, dotProdDirection)
+            const projectedDirection: Point3 = [...normal]
+            vtkMath.multiplyScalar(projectedDirection, dotProdDirection)
             const normalizedProjectedDirection: Point3 = [
               projectedDirection[0],
               projectedDirection[1],
@@ -1971,7 +1971,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       this._applyDeltaShiftToViewportCamera(renderingEngine, toolData, delta)
     })
   }
-  _applyDeltaShiftToViewportCamera(renderingEngine, toolData, delta) {
+  _applyDeltaShiftToViewportCamera(renderingEngine: RenderingEngine, toolData, delta) {
     // update camera for the other viewports.
     // NOTE1: The lines then are rendered by the onCameraModified
     // NOTE2: crosshair center are automatically updated in the onCameraModified event
@@ -1985,16 +1985,16 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // Project delta over camera normal
     // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
     const dotProd = vtkMath.dot(delta, normal)
-    const projectedDelta = [...normal]
-    vtkMath.multiplyScalar(<vec3>projectedDelta, dotProd)
+    const projectedDelta: Point3 = [...normal]
+    vtkMath.multiplyScalar(projectedDelta, dotProd)
 
     if (
       Math.abs(projectedDelta[0]) > 1e-3 ||
       Math.abs(projectedDelta[1]) > 1e-3 ||
       Math.abs(projectedDelta[2]) > 1e-3
     ) {
-      const newFocalPoint = [0, 0, 0],
-        newPosition = [0, 0, 0]
+      const newFocalPoint: Point3 = [0, 0, 0]
+      const newPosition: Point3 = [0, 0, 0]
 
       vtkMath.add(camera.focalPoint, projectedDelta, newFocalPoint)
       vtkMath.add(camera.position, projectedDelta, newPosition)

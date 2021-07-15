@@ -1,20 +1,17 @@
 const path = require('path')
 const webpack = require('webpack')
-const webpackBase = require('./webpack.base.js');
-const { merge } = require('webpack-merge');
 const autoprefixer = require('autoprefixer')
 const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
   .rules
 // Plugins
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
-const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const NODE_ENV = process.NODE_ENV;
 
 // PATHS
 const PROJECT_ROOT = path.join(__dirname, '..', 'packages/demo')
 const ENTRY_DEMO = path.join(PROJECT_ROOT, 'src/index.tsx')
-const OUT_PATH = path.join(__dirname, '../demo-dist')
+const OUT_PATH = path.join(__dirname, '..', 'packages', 'demo', 'dist')
 
 // Need to add this if you want to yarn link locally.
 // Add this additional call so we can yarn link vtk.js
