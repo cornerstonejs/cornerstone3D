@@ -49,7 +49,7 @@
     "chai": "^4.3.4",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^8.1.0",
-    "cornerstone-wado-image-loader": "git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#dev",
+    "cornerstone-wado-image-loader": "^3.3.2",
     "cross-env": "^7.0.3",
     "css-loader": "^5.2.0",
     "cssnano": "^4.1.10",
