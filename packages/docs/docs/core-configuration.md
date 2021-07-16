@@ -17,8 +17,7 @@ library features.
 _NOTE:_
 
 - **vtk.js** has [special instructions for consuming it as an ES6 dependency](https://kitware.github.io/vtk-js/docs/intro_vtk_as_es6_dependency.html) and must resolve to an unpublished variant using this [URL](https://github.com/swederik/vtk-js.git#perf/md5-built)
-- **calculate-suv** nees to resolve to an unpublished variant using this URL: `git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main`
-- **cornerstone-wado-image-loader** needs to resolve to an unpublished variant using this URL: `git+ssh://git@github.com/PrecisionMetrics/cornerstoneWADOImageLoader.git#merge-suv-calculation`
+- **calculate-suv** needs to resolve to an unpublished variant using this URL: `git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main`
 - **calculat-suv** and **cornerstone-wado-image-loader** require the user to have permission to read from those repositories (reach out to your Radical Imaging / MGH contact to request access)
 
 ### Rendering Configuration
