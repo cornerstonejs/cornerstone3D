@@ -7,7 +7,7 @@ type SVGPoint = {
   y: number
 }
 
-type SVGCursorDescriptor = {
+export type SVGCursorDescriptor = {
   iconContent: string
   iconSize: number
   viewBox: SVGPoint
@@ -440,6 +440,5 @@ function getDefinedSVGCursorDescriptor(
 
 export {
   SVGCursorDescriptor as default,
-  SVGCursorDescriptor,
   getDefinedSVGCursorDescriptor,
 }
