@@ -23,9 +23,20 @@ module.exports = function (config) {
       'karma-junit-reporter',
     ],
     frameworks: ['jasmine', 'webpack'],
-    files: [{ pattern: 'packages/**/*_test.js', watched: false }],
+    files: [{ // NOTE: This is super ugly, but I coulnd't get the !(node_modules) approach to work properly
+      pattern: 'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js', watched: false
+    },{
+      pattern: 'packages/cornerstone-render/test/**/*_test.js', watched: false
+    },{
+      pattern: 'packages/cornerstone-tools/test/**/**_test.js', watched: false
+    },{
+      pattern: 'packages/demo/test/**/*_test.js', watched: false
+    }],
     preprocessors: {
-      'packages/**/*_test.js': ['webpack'],
+      'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js': ['webpack'],
+      'packages/cornerstone-render/test/**/*_test.js': ['webpack'],
+      'packages/cornerstone-tools/test/**/*_test.js': ['webpack'],
+      'packages/demo/test/**/*_test.js': ['webpack'],
     },
     webpack: {
       devtool: 'eval-source-map',
