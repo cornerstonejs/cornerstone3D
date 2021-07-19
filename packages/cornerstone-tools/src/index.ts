@@ -22,6 +22,7 @@ import {
   getToolDataNearPointOnEnabledElement,
   ToolGroupManager,
   SynchronizerManager,
+  Synchronizer,
   cancelActiveManipulations,
 } from './store'
 import drawing from './drawing'
@@ -76,6 +77,7 @@ export {
   BidirectionalTool,
   // Synchronizers
   synchronizers,
+  Synchronizer,
   // Managers
   ToolGroupManager,
   SynchronizerManager,

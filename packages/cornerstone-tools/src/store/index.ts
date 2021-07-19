@@ -6,6 +6,8 @@ import cancelActiveManipulations from './cancelActiveManipulations'
 //
 import ToolGroupManager from './ToolGroupManager'
 import SynchronizerManager from './SynchronizerManager'
+import Synchronizer from './SynchronizerManager/Synchronizer'
+
 import svgNodeCache from './svgNodeCache'
 import state from './state'
 //
@@ -34,4 +36,6 @@ export {
   // Managers
   ToolGroupManager,
   SynchronizerManager,
+  // Classes
+  Synchronizer
 }
