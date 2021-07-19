@@ -5,13 +5,13 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula')
 module.exports = {
   title: 'Cornerstone JS',
   tagline: 'Medical Imaging, Simplified',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://cornerstonejs.org',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'CornerstoneJS', // Usually your GitHub org/user name.
-  projectName: 'Cornerstone3D', // Usually your repo name.
+  projectName: 'Cornerstone', // Usually your repo name.
   themeConfig: {
     navbar: {
       title: 'Cornerstone JS',
@@ -121,7 +121,7 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl:
-            'https://github.com/facebook/docusaurus/edit/master/website/',
+            'https://github.com/cornerstonejs/cornerstone-3d-alpha/edit/master/website/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -189,6 +189,6 @@ module.exports = {
           sidebarFile: null,
         },
       },
-    ],
+    ]
   ],
 }

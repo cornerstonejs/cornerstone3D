@@ -31,10 +31,6 @@
   // - prettier/react               # react conflicts
   // - prettier/@typescript-eslint  # typescript conflicts
   //
-  // eslint-config-react-app
-  // - react-app
-  // - react-app/jest
-  //
   // eslint-plugin-prettier
   // - plugin:prettier/recommended
   //
@@ -94,7 +90,6 @@
   "env": {
     "es6": true,
     "browser": true,
-    "jest": true,
     "node": true
   },
 
