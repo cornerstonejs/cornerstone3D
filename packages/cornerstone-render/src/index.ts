@@ -3,6 +3,7 @@ import ERROR_CODES from './enums/errorCodes'
 //
 import ORIENTATION from './constants/orientation'
 import VIEWPORT_TYPE from './constants/viewportType'
+import INTERPOLATION_TYPE from './constants/interpolationType'
 //
 import RenderingEngine from './RenderingEngine'
 import VolumeViewport from './RenderingEngine/VolumeViewport'
@@ -59,6 +60,7 @@ export {
   // constants
   ORIENTATION,
   VIEWPORT_TYPE,
+  INTERPOLATION_TYPE,
   //
   configuration,
   Types,

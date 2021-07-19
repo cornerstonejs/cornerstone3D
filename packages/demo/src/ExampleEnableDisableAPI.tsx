@@ -229,7 +229,7 @@ class EnableDisableViewportExample extends Component {
     const dxColorLoad = async () => {
       const dxColorViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
 
-      const fakeStake = [
+      const fakeStack = [
         dxImageIds[0],
         colorImageIds[0],
         dxImageIds[1],
@@ -238,7 +238,7 @@ class EnableDisableViewportExample extends Component {
         colorImageIds[2],
         ctStackImageIds[41],
       ]
-      await dxColorViewport.setStack(fakeStake)
+      await dxColorViewport.setStack(fakeStack)
 
       stackDXViewportToolGroup.addViewports(
         renderingEngineUID,
@@ -433,7 +433,7 @@ class EnableDisableViewportExample extends Component {
 
 
   showOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
     const uri = this.renderingEngine._debugRender()
     const image = document.createElement('img')
@@ -444,7 +444,7 @@ class EnableDisableViewportExample extends Component {
   }
 
   hidOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
   }
   render() {

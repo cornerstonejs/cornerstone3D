@@ -39,7 +39,7 @@ export default class WindowLevelTool extends BaseTool {
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(canvas)
-    const { scene, sceneUID, viewport } = enabledElement
+    const { scene, sceneUID, viewportUID, viewport } = enabledElement
     const { uid: volumeUID } = viewport.getDefaultActor()
 
     let volumeActor
@@ -96,6 +96,7 @@ export default class WindowLevelTool extends BaseTool {
 
     const eventDetail = {
       volumeUID,
+      viewportUID,
       sceneUID,
       range: newRange,
     }
@@ -107,7 +108,11 @@ export default class WindowLevelTool extends BaseTool {
       return
     }
 
-    viewport.setStackActorVOI(newRange)
+    // store the new range for viewport to preserve it during scrolling
+    viewport.setProperties({
+      voi: newRange
+    })
+
     viewport.render()
   }
 

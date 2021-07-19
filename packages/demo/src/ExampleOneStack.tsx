@@ -68,10 +68,12 @@ class OneStackExample extends Component {
     this._viewportGridRef = React.createRef()
 
     this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
+    this.dxStackImageIdsPromise = getImageIds('dx', STACK)
 
-    Promise.all([this.ctStackImageIdsPromise]).then(() =>
-      this.setState({ progressText: 'Loading data...' })
-    )
+    Promise.all([
+      this.ctStackImageIdsPromise,
+      this.dxStackImageIdsPromise,
+    ]).then(() => this.setState({ progressText: 'Loading data...' }))
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
@@ -90,6 +92,7 @@ class OneStackExample extends Component {
     ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise
+    const dxStackImageIds = await this.dxStackImageIdsPromise
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -102,7 +105,7 @@ class OneStackExample extends Component {
         type: VIEWPORT_TYPE.STACK,
         canvas: this._canvasNodes.get(0),
         defaultOptions: {
-          background: [0, 0, 0],
+          background: [0.2, 0, 0.2],
         },
       },
     ]
@@ -119,13 +122,24 @@ class OneStackExample extends Component {
     renderingEngine.render()
 
     const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    this.ctStackViewport = ctStackViewport
 
     const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
-    await ctStackViewport.setStack(
-      sortImageIdsByIPP(ctStackImageIds),
-      ctMiddleSlice,
-      [setCTWWWC]
-    )
+
+    this.dxStackImageIds = dxStackImageIds
+    this.ctStackImageIds = ctStackImageIds
+
+    let fakeStack = [
+      dxStackImageIds[0],
+      ctStackImageIds[ctMiddleSlice],
+      dxStackImageIds[1],
+      ctStackImageIds[ctMiddleSlice+1],
+      ctStackImageIds[ctMiddleSlice+2],
+    ]
+
+
+    ctStackViewport.setStack(fakeStack, 0)
+    ctStackViewport.setProperties({ voi: { lower: -160, upper: 240 } })
 
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
@@ -193,7 +207,7 @@ class OneStackExample extends Component {
   }
 
   showOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
     const uri = this.renderingEngine._debugRender()
     const image = document.createElement('img')
@@ -204,12 +218,45 @@ class OneStackExample extends Component {
   }
 
   rotateViewport = (rotateDeg) => {
-    // remove all childs
+    // remove all children
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.setRotation(rotateDeg)
+    vp.setProperties({rotation:rotateDeg})
+    vp.render()
   }
 
+  invertColors = () => {
+    // remove all children
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const invert = vp.invert
+    vp.setProperties({ invert: !invert })
+    vp.render()
+  }
 
+  applyPreset = () => {
+    // remove all children
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    vp.setProperties({ voi: {lower: 100, upper: 500} })
+    vp.render()
+  }
+
+  switchStack = () => {
+    // switch to a random new stack
+    let fakeStack = [...this.dxStackImageIds, ...this.ctStackImageIds].map((a) => ({sort: Math.random(), value: a}))
+      .sort((a, b) => a.sort - b.sort)
+      .map((a) => a.value).slice(0,8)
+
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+
+    vp.setStack(fakeStack, 0)
+    vp.resetProperties();
+  }
+
+  resetViewportProperties = () => {
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    vp.resetProperties();
+    vp.resetCamera();
+    vp.render();
+  }
 
   render() {
     return (
@@ -233,6 +280,35 @@ class OneStackExample extends Component {
           ))}
         </select>
 
+        <button
+          onClick={() => this.switchStack()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Switch Stack
+        </button>
+
+        <button
+          onClick={() => this.resetViewportProperties()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Reset Properties
+        </button>
+        <button
+          onClick={() => this.invertColors()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Invert Colors
+        </button>
+        <button
+          onClick={() => this.applyPreset()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Apply Preset
+        </button>
         <button
           onClick={() => this.rotateViewport(90)}
           className="btn btn-primary"

@@ -21,6 +21,7 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
+  INTERPOLATION_TYPE,
   registerImageLoader,
   unregisterAllImageLoaders,
   metaData,
@@ -102,11 +103,9 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
       ).then(done, done.fail)
     })
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     try {
-      vp.setStack([imageId], 0, [callback])
+      vp.setStack([imageId], 0)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -120,9 +119,6 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
 
     const vp = this.renderingEngine.getViewport(viewportUID)
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       const image = canvas.toDataURL('image/png')
       compareImages(
@@ -133,7 +129,8 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
     })
 
     try {
-      vp.setStack([imageId], 0, [callback])
+      vp.setStack([imageId], 0)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -157,11 +154,9 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
       ).then(done, done.fail)
     })
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     try {
-      vp.setStack([imageId], 0, [callback])
+      vp.setStack([imageId], 0)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -187,11 +182,9 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
       ).then(done, done.fail)
     })
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     try {
-      vp.setStack([imageId1, imageId2, imageId3], 0, [callback])
+      vp.setStack([imageId1, imageId2, imageId3], 0)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -216,11 +209,9 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
       ).then(done, done.fail)
     })
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     try {
-      vp.setStack([imageId1, imageId2, imageId3], 2, [callback])
+      vp.setStack([imageId1, imageId2, imageId3], 2)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -244,11 +235,12 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
       ).then(done, done.fail)
     })
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     try {
-      vp.setStack([imageId], 0, [setCTWWWC, callback])
+      vp.setStack([imageId], 0)
+      vp.setProperties({
+        voi: { lower: -160, upper: 240 },
+        interpolationType: INTERPOLATION_TYPE.NEAREST,
+      })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -273,11 +265,9 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
       ).then(done, done.fail)
     })
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     try {
-      vp.setStack([imageId1, imageId2], 0, [callback])
+      vp.setStack([imageId1, imageId2], 0)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -301,11 +291,10 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
         'imageURI_64_64_30_10_5_5_0_nearest'
       ).then(done, done.fail)
     })
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
 
     try {
-      vp.setStack([imageId1, imageId2], 1, [callback])
+      vp.setStack([imageId1, imageId2], 1)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
@@ -441,11 +430,9 @@ describe('Color Stack Images', () => {
       ).then(done, done.fail)
     })
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest()
-
     try {
-      vp.setStack([imageId1], 0, [callback])
+      vp.setStack([imageId1], 0)
+      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
       this.renderingEngine.render()
     } catch (e) {
       done.fail(e)
