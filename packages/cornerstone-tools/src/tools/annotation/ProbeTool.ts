@@ -295,7 +295,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolUID
+      return toolData.metadata.toolDataUID
     }
   }
 
@@ -373,7 +373,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i] as ProbeSpecificToolData
       const settings = Settings.getObjectSettings(toolData, ProbeTool)
-      const annotationUID = toolData.metadata.toolUID
+      const annotationUID = toolData.metadata.toolDataUID
       const data = toolData.data
       const point = data.handles.points[0]
       const canvasCoordinates = viewport.worldToCanvas(point)

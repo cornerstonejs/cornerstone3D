@@ -5,7 +5,7 @@ import { Point2 } from '../types'
 
 export default function drawLine(
   svgDrawingHelper: any,
-  toolUID: string,
+  toolName: string,
   annotationUID: string,
   lineUID: string,
   start: Point2,
@@ -31,7 +31,7 @@ export default function drawLine(
   const strokeWidth = lineWidth || width
 
   const svgns = 'http://www.w3.org/2000/svg'
-  const svgNodeHash = _getHash(toolUID, annotationUID, 'line', lineUID)
+  const svgNodeHash = _getHash(toolName, annotationUID, 'line', lineUID)
   const existingLine = svgDrawingHelper._getSvgNode(svgNodeHash)
 
   const attributes = {
@@ -41,7 +41,7 @@ export default function drawLine(
     y2: `${end[1]}`,
     stroke: color,
     'stroke-width': strokeWidth,
-    'stroke-dasharray': lineDash
+    'stroke-dasharray': lineDash,
   }
 
   if (existingLine) {

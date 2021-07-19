@@ -26,7 +26,7 @@ type ToolSpecificToolData = {
     /**
      * A unique identifier for this tool data.
      */
-    toolUID?: string
+    toolDataUID?: string
     /**
      * The FrameOfReferenceUID
      */

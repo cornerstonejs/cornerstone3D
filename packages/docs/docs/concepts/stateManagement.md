@@ -60,18 +60,18 @@ toolStateManager.removeToolState(toolData);
 
 // Returns the full toolState for a given Frame of Reference.
 // Optional: If a toolName is given only returns the toolState for that tool.
-// Optional: If a toolUID is given, only that specific toolData is returned.
+// Optional: If a toolDataUID is given, only that specific toolData is returned.
 toolStateManager.getToolStateByFrameOfReference(FrameOfReferenceUID,
  toolName,
- toolUID
+ toolDataUID
 );
 
 // A helper which returns the single toolData entry matching the UID.
 // Less efficient than getToolStateByFrameOfReference with all arguments, but allows
 // you to find the annotation if you don't have all the information.
-toolStateManager.getToolStateByToolUID(toolUID);
+toolStateManager.getToolStateByToolDataUID(toolDataUID);
 
 // Deletes the tool data found by the given UID.
 // Less efficient than removeToolState, but can be called if you have only the UID.
-toolStateManager.removeToolStateByToolUID(toolUID);
+toolStateManager.removeToolStateByToolDataUID(toolDataUID);
 ```

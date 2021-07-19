@@ -8,7 +8,7 @@ export default function getToolDetailForDisplay(eventDetail) {
     viewportUID: eventDetail.viewportUID,
     stats: {},
     toolName: metadata.toolName,
-    toolId: metadata.toolUID,
+    toolId: metadata.toolDataUID,
   }
 
   const targetUIDs = Object.keys(cachedStats)

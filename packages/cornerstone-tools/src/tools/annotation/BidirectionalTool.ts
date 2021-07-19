@@ -893,7 +893,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolUID
+      return toolData.metadata.toolDataUID
     }
   }
 
@@ -999,7 +999,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i] as BidirectionalSpecificToolData
       const settings = Settings.getObjectSettings(toolData, BidirectionalTool)
-      const annotationUID = toolData.metadata.toolUID
+      const annotationUID = toolData.metadata.toolDataUID
       const data = toolData.data
       const { points, activeHandleIndex } = data.handles
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))

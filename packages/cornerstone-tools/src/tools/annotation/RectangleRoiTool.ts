@@ -519,7 +519,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolUID
+      return toolData.metadata.toolDataUID
     }
   }
   /**
@@ -634,7 +634,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       const toolData = toolState[i] as RectangleRoiSpecificToolData
       const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
       const toolMetadata = toolData.metadata
-      const annotationUID = toolMetadata.toolUID
+      const annotationUID = toolMetadata.toolDataUID
 
       const data = toolData.data
       const { points, activeHandleIndex } = data.handles

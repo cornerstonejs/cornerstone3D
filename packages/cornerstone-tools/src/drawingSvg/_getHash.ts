@@ -1,10 +1,10 @@
 function _getHash(
-  toolUID: string,
+  toolName: string,
   annotationUID: string,
   drawingElementType: string,
   nodeUID: string
 ): string {
-  return `${toolUID}::${annotationUID}::${drawingElementType}::${nodeUID}`
+  return `${toolName}::${annotationUID}::${drawingElementType}::${nodeUID}`
 }
 
 export default _getHash

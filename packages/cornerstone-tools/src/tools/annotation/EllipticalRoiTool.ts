@@ -618,7 +618,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolUID
+      return toolData.metadata.toolDataUID
     }
   }
 
@@ -725,7 +725,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       const toolData = toolState[i] as EllipticalRoiSpecificToolData
       const settings = Settings.getObjectSettings(toolData, EllipticalRoiTool)
       const toolMetadata = toolData.metadata
-      const annotationUID = toolMetadata.toolUID
+      const annotationUID = toolMetadata.toolDataUID
       const data = toolData.data
 
       const { handles, isDrawing } = data

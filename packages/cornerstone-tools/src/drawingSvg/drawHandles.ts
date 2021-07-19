@@ -5,7 +5,7 @@ import { Point2 } from '../types'
 
 function drawHandles(
   svgDrawingHelper: any,
-  toolUID: string,
+  toolName: string,
   annotationUID: string,
   handleGroupUID: string,
   handlePoints: Array<Point2>,
@@ -32,7 +32,7 @@ function drawHandles(
     // variable for the namespace
     const svgns = 'http://www.w3.org/2000/svg'
     const svgNodeHash = _getHash(
-      toolUID,
+      toolName,
       annotationUID,
       'handle',
       `hg-${handleGroupUID}-index-${i}`
@@ -46,7 +46,7 @@ function drawHandles(
         r: handleRadius,
         stroke: color,
         fill,
-        'stroke-width': strokeWidth
+        'stroke-width': strokeWidth,
       }
     } else if (type === 'rect') {
       const handleRadiusFloat = parseFloat(handleRadius)
@@ -62,7 +62,7 @@ function drawHandles(
         stroke: color,
         fill,
         'stroke-width': strokeWidth,
-        rx: `${side * 0.1}`
+        rx: `${side * 0.1}`,
       }
     } else {
       throw new Error(`Unsupported handle type: ${type}`)

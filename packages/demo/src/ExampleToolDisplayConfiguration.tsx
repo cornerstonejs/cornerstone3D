@@ -542,7 +542,7 @@ function onMeasurementSelectionChange(e: CustomEvent): void {
     document.querySelector(
       '.tool-style-controls button#use-selected-annotation'
     ) as HTMLElement
-  ).dataset.targetId = toolData ? `toolData:${toolData.metadata.toolUID}` : ''
+  ).dataset.targetId = toolData ? `toolData:${toolData.metadata.toolDataUID}` : ''
   getRenderingEngines().forEach((renderEngine) => renderEngine.render())
 }
 
