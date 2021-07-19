@@ -6,12 +6,12 @@
  */
 function _setHashFromSvgElement(
   svgElement: SVGElement,
-  toolUID: string,
+  toolDataUID: string,
   annotationUID: string,
   drawingElementType: string,
   nodeUID: string
 ): void {
-  svgElement.setAttribute('data-tool-uid', toolUID)
+  svgElement.setAttribute('data-tool-uid', toolDataUID)
   svgElement.setAttribute('data-annotation-uid', annotationUID)
   svgElement.setAttribute('data-drawing-element-type', drawingElementType)
   svgElement.setAttribute('data-node-uid', nodeUID)

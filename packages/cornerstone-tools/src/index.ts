@@ -11,7 +11,7 @@ import {
   setToolStyle,
   setToolDataStyle,
   removeToolState,
-  removeToolStateByToolUID,
+  removeToolStateByToolDataUID,
 } from './stateManagement'
 
 import init from './init'
@@ -92,7 +92,7 @@ export {
   getToolState,
   addToolState,
   removeToolState,
-  removeToolStateByToolUID,
+  removeToolStateByToolDataUID,
   toolDataLocking,
   toolDataSelection,
   getStyle,

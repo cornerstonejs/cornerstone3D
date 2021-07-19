@@ -68,9 +68,9 @@ function getLockedToolData(): Array<ToolSpecificToolData> {
   return Array.from(globalSetOfLockedToolData)
 }
 
-function getLockedToolDataByUID(toolUID: string): ToolSpecificToolData {
+function getLockedToolDataByUID(toolDataUID: string): ToolSpecificToolData {
   return getLockedToolData().find((toolData) => {
-    return toolData.metadata.toolUID === toolUID
+    return toolData.metadata.toolDataUID === toolDataUID
   })
 }
 

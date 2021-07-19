@@ -17,7 +17,7 @@ import {
   resetToolsState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
-  removeToolStateByToolUID,
+  removeToolStateByToolDataUID,
 } from '@ohif/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
@@ -393,12 +393,12 @@ class StackViewportExample extends Component {
   cancelToolDrawing = (evt) => {
     const element = evt.currentTarget
     if (evt.code === 'Escape') {
-      const toolUID = cancelActiveManipulations(element)
-      if (toolUID) {
-        this.setState({ cancelledMeasurements: toolUID })
+      const toolDataUID = cancelActiveManipulations(element)
+      if (toolDataUID) {
+        this.setState({ cancelledMeasurements: toolDataUID })
 
         if (this.state.deleteOnToolCancel) {
-          removeToolStateByToolUID(element, toolUID)
+          removeToolStateByToolDataUID(element, toolDataUID)
           this.renderingEngine.render()
         }
       }
@@ -412,7 +412,7 @@ class StackViewportExample extends Component {
     const detail = {
       viewportUID,
       toolName: metadata.toolName,
-      toolId: metadata.toolUID,
+      toolId: metadata.toolDataUID,
     }
     this.setState({
       measurementsAdded: [...this.state.measurementsAdded, detail],
@@ -426,7 +426,7 @@ class StackViewportExample extends Component {
     const detail = {
       viewportUID,
       toolName: metadata.toolName,
-      toolId: metadata.toolUID,
+      toolId: metadata.toolDataUID,
     }
     this.setState({
       measurementsRemoved: [...this.state.measurementsRemoved, detail],

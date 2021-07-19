@@ -56,8 +56,8 @@ function addToolState(
 ): void {
   const toolStateManager = getViewportSpecificStateManager(element)
 
-  if (toolData.metadata.toolUID === undefined) {
-    toolData.metadata.toolUID = uuidv4() as string
+  if (toolData.metadata.toolDataUID === undefined) {
+    toolData.metadata.toolDataUID = uuidv4() as string
   }
 
   toolStateManager.addToolState(toolData)
@@ -110,19 +110,19 @@ function removeToolState(
 }
 
 /**
- * @function removeToolStateByToolUID
+ * @function removeToolStateByToolDataUID
  *
  * @param {*} element
- * @param {*} toolUID
+ * @param {*} toolDataUID
  */
-function removeToolStateByToolUID(
+function removeToolStateByToolDataUID(
   element: HTMLCanvasElement,
-  toolUID: string
+  toolDataUID: string
 ): void {
   const toolStateManager = getViewportSpecificStateManager(element)
 
-  const toolData = toolStateManager.getToolStateByToolUID(toolUID)
-  toolStateManager.removeToolStateByToolUID(toolUID)
+  const toolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
+  toolStateManager.removeToolStateByToolDataUID(toolDataUID)
 
   // trigger measurement removed
   const enabledElement = getEnabledElement(element)
@@ -141,4 +141,9 @@ function removeToolStateByToolUID(
   triggerEvent(eventTarget, eventType, eventDetail)
 }
 
-export { getToolState, addToolState, removeToolState, removeToolStateByToolUID }
+export {
+  getToolState,
+  addToolState,
+  removeToolState,
+  removeToolStateByToolDataUID,
+}

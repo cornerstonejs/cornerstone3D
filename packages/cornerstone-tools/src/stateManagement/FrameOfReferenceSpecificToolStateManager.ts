@@ -110,21 +110,21 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method getToolStateByToolUID Given the unique identified for the some `toolData`,
+   * @method getToolStateByToolDataUID Given the unique identified for the some `toolData`,
    * returns the `toolData` from the `toolState`. Searches are more efficient if either/both of
    * the `FrameOfReferenceUID` and the `toolName` are given by the `filter`.
    *
-   * @param {string} toolUID The unique identifier of the `toolData`.
+   * @param {string} toolDataUID The unique identifier of the `toolData`.
    * @param {FilterInterface} [filter] A `filter` which reduces the scope of the search.
    *
    * @returns {ToolSpecificToolData} The retrieved `toolData`.
    */
-  getToolStateByToolUID = (
-    toolUID: string,
+  getToolStateByToolDataUID = (
+    toolDataUID: string,
     filter: FilterInterface = {}
   ): ToolSpecificToolData => {
     const toolSpecificToolStateAndIndex =
-      this._getToolSpecificToolStateAndIndex(toolUID, filter)
+      this._getToolSpecificToolStateAndIndex(toolDataUID, filter)
 
     if (!toolSpecificToolStateAndIndex) {
       return
@@ -173,7 +173,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
    */
   removeToolState = (toolData: ToolSpecificToolData): void => {
     const { metadata } = toolData
-    const { FrameOfReferenceUID, toolName, toolUID } = metadata
+    const { FrameOfReferenceUID, toolName, toolDataUID } = metadata
     const toolState = this.toolState
 
     const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
@@ -192,7 +192,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
     }
 
     const index = toolSpecificToolState.findIndex(
-      (toolData) => toolData.metadata.toolUID === toolUID
+      (toolData) => toolData.metadata.toolDataUID === toolDataUID
     )
 
     toolSpecificToolState.splice(index, 1)
@@ -207,19 +207,19 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method removeToolStateByToolUID Given the unique identified for the some `toolData`,
+   * @method removeToolStateByToolDataUID Given the unique identified for the some `toolData`,
    * removes the `toolData` from the `toolState`. Searches are more efficient if either/both of
    * the `FrameOfReferenceUID` and the `toolName` are given by the `filter`.
    *
-   * @param {string} toolUID The unique identifier of the `toolData` to remove.
+   * @param {string} toolDataUID The unique identifier of the `toolData` to remove.
    * @param {FilterInterface} [filter] A `filter` which reduces the scope of the search.
    */
-  removeToolStateByToolUID = (
-    toolUID: string,
+  removeToolStateByToolDataUID = (
+    toolDataUID: string,
     filter: FilterInterface = {}
   ) => {
     const toolSpecificToolStateAndIndex =
-      this._getToolSpecificToolStateAndIndex(toolUID, filter)
+      this._getToolSpecificToolStateAndIndex(toolDataUID, filter)
 
     if (!toolSpecificToolStateAndIndex) {
       return
@@ -325,7 +325,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * @method _getToolSpecificToolStateAndIndex Given the unique identifier for a tool,
    * returns the `ToolSpecificToolState` it belongs to, and the `index` of its position in that array.
    *
-   * @param {string} toolUID The unique identifier of the `toolData`.
+   * @param {string} toolDataUID The unique identifier of the `toolData`.
    * @param {FilterInterface} [filter] A `filter` which reduces the scope of the search.
    *
    * @returns {object}
@@ -333,7 +333,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * @returns {object.index} The `index` of the `toolData` in the `toolSpecificToolState` array.
    */
   private _getToolSpecificToolStateAndIndex(
-    toolUID: string,
+    toolDataUID: string,
     filter: FilterInterface
   ): { toolSpecificToolState: ToolSpecificToolState; index: number } {
     const { toolName, FrameOfReferenceUID } = filter
@@ -370,7 +370,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
           frameOfReferenceSpecificToolState[toolName]
 
         const index = toolSpecificToolState.findIndex(
-          (toolData) => toolData.metadata.toolUID === toolUID
+          (toolData) => toolData.metadata.toolDataUID === toolDataUID
         )
 
         if (index !== -1) {

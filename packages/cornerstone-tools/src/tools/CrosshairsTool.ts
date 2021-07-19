@@ -139,7 +139,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       metadata: {
         viewPlaneNormal: <Point3>[0, 0, 0],
         viewUp: <Point3>[0, 0, 0],
-        toolUID: '1',
+        toolDataUID: '1',
         FrameOfReferenceUID: '1',
         referencedImageId: '1',
         toolName: this.name,
@@ -548,8 +548,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     triggerAnnotationRenderForViewportUIDs(
-       renderingEngine,
-       viewportUIDsToRender
+      renderingEngine,
+      viewportUIDsToRender
     )
   }
 
@@ -661,7 +661,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       return
     }
 
-    const annotationUID = viewportToolData.metadata.toolUID
+    const annotationUID = viewportToolData.metadata.toolDataUID
 
     // Get cameras/canvases for each of these.
     // -- Get two world positions for this canvas in this line (e.g. the diagonal)
@@ -843,11 +843,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       )
 
       const slabThicknessValue = otherViewport.getSlabThickness()
-      const worldOrthoVectorFromCenter: Point3 = [...worldUnitOrthoVectorFromCenter]
-      vtkMath.multiplyScalar(
-        worldOrthoVectorFromCenter,
-        slabThicknessValue
-      )
+      const worldOrthoVectorFromCenter: Point3 = [
+        ...worldUnitOrthoVectorFromCenter,
+      ]
+      vtkMath.multiplyScalar(worldOrthoVectorFromCenter, slabThicknessValue)
 
       const worldVerticalRefPoint: Point3 = [0, 0, 0]
       vtkMath.add(
@@ -1971,7 +1970,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       this._applyDeltaShiftToViewportCamera(renderingEngine, toolData, delta)
     })
   }
-  _applyDeltaShiftToViewportCamera(renderingEngine: RenderingEngine, toolData, delta) {
+  _applyDeltaShiftToViewportCamera(
+    renderingEngine: RenderingEngine,
+    toolData,
+    delta
+  ) {
     // update camera for the other viewports.
     // NOTE1: The lines then are rendered by the onCameraModified
     // NOTE2: crosshair center are automatically updated in the onCameraModified event

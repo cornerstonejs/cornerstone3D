@@ -7,14 +7,14 @@ const FrameOfReferenceUID = 'MY_FRAME_OF_REFERENCE_UID'
 const TOOLNAME_0 = 'toolName_0'
 const TOOLNAME_1 = 'toolName_1'
 
-const toolUID0 = 'toolData_000'
-const toolUID1 = 'toolData_001'
+const toolDataUID0 = 'toolData_000'
+const toolDataUID1 = 'toolData_001'
 
 function addAndReturnToolName0ToolData() {
   const toolData = {
     metadata: {
       viewPlaneNormal: [0, 0, 1],
-      toolUID: toolUID0,
+      toolDataUID: toolDataUID0,
       FrameOfReferenceUID,
       toolName: TOOLNAME_0,
     },
@@ -37,7 +37,7 @@ function addAndReturnToolName1ToolData() {
   const toolData = {
     metadata: {
       viewPlaneNormal: [0, 0, 1],
-      toolUID: toolUID1,
+      toolDataUID: toolDataUID1,
       FrameOfReferenceUID,
       toolName: TOOLNAME_1,
     },
@@ -67,37 +67,38 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
 
     toolStateManager.removeToolState(toolData)
 
-    const undefinedToolData = toolStateManager.getToolStateByToolUID(toolUID0)
+    const undefinedToolData =
+      toolStateManager.getToolStateByToolDataUID(toolDataUID0)
 
     expect(undefinedToolData).toBeUndefined()
   })
   it('should correctly add toolState and get it by its UID using different levels of efficient filtering', () => {
     const toolData = addAndReturnToolName0ToolData()
     const { metadata } = toolData
-    const { toolUID, FrameOfReferenceUID, toolName } = metadata
+    const { toolDataUID, FrameOfReferenceUID, toolName } = metadata
 
-    const toolDataFoundByToolUID =
-      toolStateManager.getToolStateByToolUID(toolUID)
+    const toolDataFoundByToolDataUID =
+      toolStateManager.getToolStateByToolDataUID(toolDataUID)
 
-    const toolDataFoundByToolUIDAndFoR = toolStateManager.getToolStateByToolUID(
-      toolUID,
-      { FrameOfReferenceUID }
-    )
+    const toolDataFoundByToolDataUIDAndFoR =
+      toolStateManager.getToolStateByToolDataUID(toolDataUID, {
+        FrameOfReferenceUID,
+      })
 
     const toolDataFoundByToolAllFilters =
-      toolStateManager.getToolStateByToolUID(toolUID, {
+      toolStateManager.getToolStateByToolDataUID(toolDataUID, {
         FrameOfReferenceUID,
         toolName,
       })
 
-    expect(toolData).toEqual(toolDataFoundByToolUID)
-    expect(toolData).toEqual(toolDataFoundByToolUIDAndFoR)
+    expect(toolData).toEqual(toolDataFoundByToolDataUID)
+    expect(toolData).toEqual(toolDataFoundByToolDataUIDAndFoR)
     expect(toolData).toEqual(toolDataFoundByToolAllFilters)
   })
   it('should get various parts of the toolState hierarchy', () => {
     const toolData = addAndReturnToolName0ToolData()
     const { metadata } = toolData
-    const { toolUID, FrameOfReferenceUID, toolName } = metadata
+    const { toolDataUID, FrameOfReferenceUID, toolName } = metadata
 
     const toolSpecificToolStateForFrameOfReference =
       toolStateManager.saveToolState(FrameOfReferenceUID, toolName)
@@ -108,8 +109,8 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
     const entireToolState = toolStateManager.saveToolState()
 
     expect(
-      toolSpecificToolStateForFrameOfReference[0].metadata.toolUID
-    ).toEqual(toolUID)
+      toolSpecificToolStateForFrameOfReference[0].metadata.toolDataUID
+    ).toEqual(toolDataUID)
     expect(frameOfReferenceSpecificToolState[toolName]).toBeDefined()
     expect(entireToolState[FrameOfReferenceUID]).toBeDefined()
   })
@@ -118,7 +119,7 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
     const toolData_1 = addAndReturnToolName1ToolData()
     const metadata_0 = toolData_0.metadata
     const metadata_1 = toolData_1.metadata
-    //const { toolUID, FrameOfReferenceUID, toolName } = metadata;
+    //const { toolDataUID, FrameOfReferenceUID, toolName } = metadata;
 
     // Make copy of toolState
     const toolState = toolStateManager.saveToolState()
@@ -184,34 +185,36 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
   it('Should remove toolState by UID using different levels of efficient filtering', () => {
     const toolData = addAndReturnToolName0ToolData()
     const { metadata } = toolData
-    const { toolUID, FrameOfReferenceUID, toolName } = metadata
+    const { toolDataUID, FrameOfReferenceUID, toolName } = metadata
 
     let undefinedToolData
 
     const toolStateSnapshot = toolStateManager.saveToolState()
 
     // Remove toolData by UID, and check it was removed.
-    toolStateManager.removeToolStateByToolUID(toolUID)
-    undefinedToolData = toolStateManager.getToolStateByToolUID(toolUID)
+    toolStateManager.removeToolStateByToolDataUID(toolDataUID)
+    undefinedToolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
     expect(undefinedToolData).toBeUndefined()
 
     // Restore toolState
     toolStateManager.restoreToolState(toolStateSnapshot)
 
     // Remove toolData by UID and FrameOfReferenceUID, and check it was removed.
-    toolStateManager.removeToolStateByToolUID(toolUID, { FrameOfReferenceUID })
-    undefinedToolData = toolStateManager.getToolStateByToolUID(toolUID)
+    toolStateManager.removeToolStateByToolDataUID(toolDataUID, {
+      FrameOfReferenceUID,
+    })
+    undefinedToolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
     expect(undefinedToolData).toBeUndefined()
 
     // Restore toolState
     toolStateManager.restoreToolState(toolStateSnapshot)
 
     // Remove toolData by UID, FrameOfReferenceUID and toolName, and check it was removed.
-    toolStateManager.removeToolStateByToolUID(toolUID, {
+    toolStateManager.removeToolStateByToolDataUID(toolDataUID, {
       FrameOfReferenceUID,
       toolName,
     })
-    undefinedToolData = toolStateManager.getToolStateByToolUID(toolUID)
+    undefinedToolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
     expect(undefinedToolData).toBeUndefined()
   })
 })

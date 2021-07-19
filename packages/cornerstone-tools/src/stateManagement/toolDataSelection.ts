@@ -72,9 +72,9 @@ function getSelectedToolData(): Array<ToolSpecificToolData> {
   return Array.from(selectedToolData)
 }
 
-function getSelectedToolDataByUID(toolUID: string): ToolSpecificToolData {
+function getSelectedToolDataByUID(toolDataUID: string): ToolSpecificToolData {
   return getSelectedToolData().find((toolData) => {
-    return toolData.metadata.toolUID === toolUID
+    return toolData.metadata.toolDataUID === toolDataUID
   })
 }
 

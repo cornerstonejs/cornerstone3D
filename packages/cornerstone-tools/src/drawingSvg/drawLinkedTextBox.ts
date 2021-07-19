@@ -5,7 +5,7 @@ import drawLink from './drawLink'
 function drawLinkedTextBox(
   svgDrawingHelper: Record<string, unknown>,
   //
-  toolUID: string,
+  toolName: string,
   annotationUID: string,
   textBoxUID: string,
   //
@@ -31,7 +31,7 @@ function drawLinkedTextBox(
   // Draw the text box
   const canvasBoundingBox = drawTextBox(
     svgDrawingHelper,
-    toolUID,
+    toolName,
     annotationUID,
     textBoxUID,
     textLines,
@@ -42,7 +42,7 @@ function drawLinkedTextBox(
   //   // Draw dashed link line between tool and text
   drawLink(
     svgDrawingHelper,
-    toolUID,
+    toolName,
     annotationUID,
     textBoxUID,
     annotationAnchorPoints, // annotationAnchorPoints

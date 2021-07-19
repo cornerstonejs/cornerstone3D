@@ -12,7 +12,7 @@ import {
   getToolState,
   addToolState,
   removeToolState,
-  removeToolStateByToolUID,
+  removeToolStateByToolDataUID,
 } from './toolState'
 
 export {
@@ -28,5 +28,5 @@ export {
   setToolStyle,
   setToolDataStyle,
   removeToolState,
-  removeToolStateByToolUID,
+  removeToolStateByToolDataUID,
 }

@@ -18,7 +18,7 @@ import {
   resetToolsState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
-  removeToolStateByToolUID,
+  removeToolStateByToolDataUID,
 } from '@ohif/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'

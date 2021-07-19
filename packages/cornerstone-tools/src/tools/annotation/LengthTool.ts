@@ -467,7 +467,7 @@ class LengthTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolUID
+      return toolData.metadata.toolDataUID
     }
   }
 
@@ -570,7 +570,7 @@ class LengthTool extends BaseAnnotationTool {
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i] as LengthSpecificToolData
       const settings = Settings.getObjectSettings(toolData, LengthTool)
-      const annotationUID = toolData.metadata.toolUID
+      const annotationUID = toolData.metadata.toolDataUID
       const data = toolData.data
       const { points, activeHandleIndex } = data.handles
       const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
