@@ -2,12 +2,13 @@ import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
+
 import metaData from '../metaData'
 import Viewport from './Viewport'
 import { vec3 } from 'gl-matrix'
 import eventTarget from '../eventTarget'
 import EVENTS from '../enums/events'
-import { triggerEvent, isEqual } from '../utilities'
+import { triggerEvent, isEqual, invertRgbTransferFunction } from '../utilities'
 import {
   Point2,
   Point3,
@@ -25,6 +26,7 @@ import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 import { loadAndCacheImage } from '../imageLoader'
 import requestPoolManager from '../requestPool/requestPoolManager'
 import ERROR_CODES from '../enums/errorCodes'
+import INTERPOLATION_TYPE from '../constants/interpolationType'
 
 const EPSILON = 1
 
@@ -38,22 +40,39 @@ interface ImageDataMetaData {
   numVoxels: number
 }
 
+type StackProperties = {
+  voi?: VOIRange
+  invert?: boolean
+  interpolationType?: number
+  rotation?: number
+}
+
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
  */
 class StackViewport extends Viewport {
+  // Viewport Data
   private imageIds: Array<string>
   private currentImageIdIndex: number
-  private _imageData: vtkImageData // vtk image data
-  private stackActorVOI: VOIRange
+
+  // Viewport Properties
+  private voi: VOIRange
+  private invert = false
+  private interpolationType: number
+  private rotation = 0
+
+  // Helpers
+  private _imageData: vtkImageData
+  private cameraPosOnRender: Point3
+  private invalidated = false // if true -> new actor is forced to be created for the stack
+  private panCache: Point3
+  private shouldInvert = false // since invert is getting applied on the actor we should track it
+  private rotationCache = 0
+
+  // TODO: These should not be here and will be nuked
   public modality: string // this is needed for tools
   public scaling: Scaling
-  loadCallbacks: (({ volumeActor: vtkVolume }) => void)[]
-  panCache: Point3
-  cameraPosOnRender: Point3
-  rotation: number
-  invalidated: boolean // if true -> new stack is set for the viewport
 
   constructor(props: ViewportInput) {
     super(props)
@@ -76,24 +95,27 @@ class StackViewport extends Viewport {
     // @ts-ignore: vtkjs incorrect typing
     camera.setFreezeFocalPoint(true)
     this.imageIds = []
-    this.loadCallbacks = []
     this.currentImageIdIndex = 0
     this.panCache = [0, 0, 0]
     this.cameraPosOnRender = [0, 0, 0]
-    this.rotation = 0
-    this.invalidated = false
     this.resetCamera()
   }
 
   /**
-   * Returns the image and its propertise that is being shown inside the
+   * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
    *
    * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
    */
-  public getImageData(): IImageData {
-    const { volumeActor } = this.getDefaultActor()
+  public getImageData(): IImageData | undefined {
+    const actor = this.getDefaultActor()
+
+    if (!actor) {
+      return
+    }
+
+    const { volumeActor } = actor
     const vtkImageData = volumeActor.getMapper().getInputData()
     return {
       dimensions: vtkImageData.getDimensions(),
@@ -152,19 +174,6 @@ class StackViewport extends Viewport {
     const spacing = imageData.getSpacing()
     // We set the sample distance to be equal to zSpacing
     mapper.setSampleDistance(spacing[2])
-
-    // @ts-ignore: vtkjs incorrect typing
-    const tfunc = actor.getProperty().getRGBTransferFunction(0)
-    if (!this.stackActorVOI!) {
-      // setting the range for the first time
-      const range = imageData.getPointData().getScalars().getRange()
-      tfunc.setRange(range[0], range[1])
-      this.stackActorVOI = { lower: range[0], upper: range[1] }
-    } else {
-      // keeping the viewport range for a new image
-      const { lower, upper } = this.stackActorVOI
-      tfunc.setRange(lower, upper)
-    }
 
     if (imageData.getPointData().getNumberOfComponents() > 1) {
       // @ts-ignore: vtkjs incorrect typing
@@ -231,6 +240,101 @@ class StackViewport extends Viewport {
         windowCenter,
         modality,
       },
+    }
+  }
+
+  /**
+   * Applies the properties to the volume actor.
+   * @param actor VolumeActor
+   */
+  private applyProperties(volumeActor) {
+    const tfunc = volumeActor.getProperty().getRGBTransferFunction(0)
+
+    // apply voi if defined
+    if (typeof this.voi !== 'undefined') {
+      const { lower, upper } = this.voi
+      tfunc.setRange(lower, upper)
+    } else {
+      const imageData = volumeActor.getMapper().getInputData()
+      const range = imageData.getPointData().getScalars().getRange()
+      tfunc.setRange(range[0], range[1])
+      this.voi = { lower: range[0], upper: range[1] }
+    }
+
+    // apply invert if defined
+    if (this.shouldInvert) {
+      invertRgbTransferFunction(tfunc)
+      this.shouldInvert = false
+    }
+
+    // change interpolation if defined
+    if (typeof this.interpolationType !== 'undefined') {
+      const volumeProperty = volumeActor.getProperty()
+      volumeProperty.setInterpolationType(this.interpolationType)
+    }
+
+    // apply rotation
+    if (this.rotationCache !== this.rotation) {
+      // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
+      this.getVtkActiveCamera().roll(-this.rotationCache)
+
+      // rotating camera to the new value
+      this.getVtkActiveCamera().roll(this.rotation)
+      this.rotationCache = this.rotation
+    }
+  }
+
+  /**
+   * Sets the properties for the viewport on the default actor. Properties include
+   * setting the VOI, inverting the colors and setting the interpolation type
+   * @param voi Sets the lower and upper voi
+   * @param invert Inverts the colors
+   * @param interpolationType Changes the interpolation type (1:linear, 0: nearest)
+   */
+  public setProperties({
+    voi,
+    invert,
+    interpolationType,
+    rotation,
+  }: StackProperties = {}): void {
+    if (typeof voi !== 'undefined') {
+      this.voi = voi
+    }
+
+    if (typeof invert !== 'undefined') {
+      this.shouldInvert = invert !== this.invert
+      this.invert = invert
+    }
+
+    if (typeof interpolationType !== 'undefined') {
+      this.interpolationType = interpolationType
+    }
+
+    if (typeof rotation !== 'undefined') {
+      this.rotation = rotation
+    }
+
+    const actor = this.getDefaultActor()
+    if (actor?.volumeActor) {
+      this.applyProperties(actor.volumeActor)
+    }
+  }
+
+  /**
+   * Reset the viewport properties
+   */
+  public resetProperties(): void {
+    this.voi = undefined;
+    this.rotation = 0;
+    this.interpolationType = INTERPOLATION_TYPE.LINEAR;
+
+    // Ensure that the invert setting is applied properly
+    this.shouldInvert = this.invert === true
+    this.invert = false;
+
+    const actor = this.getDefaultActor()
+    if (actor?.volumeActor) {
+      this.applyProperties(actor.volumeActor)
     }
   }
 
@@ -423,34 +527,19 @@ class StackViewport extends Viewport {
    * @param currentImageIdIndex number representing the index of the initial image to be displayed
    * @param callbacks list of function that runs on the volume actor
    */
-  public setStack(
-    imageIds: Array<string>,
-    currentImageIdIndex = 0,
-    callbacks = []
-  ): void {
+  public setStack(imageIds: Array<string>, currentImageIdIndex = 0): void {
     this.imageIds = imageIds
     this.currentImageIdIndex = currentImageIdIndex
     this.invalidated = true
 
-    if (callbacks.length) {
-      callbacks.forEach((callback) => {
-        if (!this.loadCallbacks.includes(callback)) {
-          this.loadCallbacks.push(callback)
-        }
-      })
-    }
+    const { canvas, options } = this
+    const ctx = canvas.getContext("2d")
+    const rgb = options.background.map(f => Math.floor(255 * f));
+
+    ctx.fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
     this._setImageIdIndex(currentImageIdIndex)
-  }
-
-  /**
-   * Sets the VOI lower and upper range for the VOI for the image data
-   *
-   * @param range {upper, lower} object representing the upper and lower
-   * range of the VOI
-   */
-  public setStackActorVOI(range: VOIRange): void {
-    this.stackActorVOI = Object.assign({}, range)
   }
 
   /**
@@ -699,13 +788,11 @@ class StackViewport extends Viewport {
       // if it is the first render or we have completely re-created the vtkImageData
       this._restoreCameraProps(cameraProps)
 
-      // Restore viewport rotation if assigned before
-      const previousRotation = this.rotation
-      if (previousRotation !== 0) {
-        // initial rotation for new slice is 0
-        this.rotation = 0
-        this.setRotation(previousRotation)
-      }
+      // Restore rotation for the new slice of the image
+      this.rotationCache = 0
+      const stackActor = this.getDefaultActor().volumeActor
+      this.applyProperties(stackActor)
+
       return
     }
 
@@ -719,12 +806,6 @@ class StackViewport extends Viewport {
 
     // Create a VTK Volume actor to display the vtkImageData object
     const stackActor = this.createActorMapper(this._imageData)
-
-    if (this.loadCallbacks.length) {
-      this.loadCallbacks.forEach((callback) =>
-        callback({ volumeActor: stackActor })
-      )
-    }
 
     this.setActors([{ uid: this.uid, volumeActor: stackActor }])
     // Adjusting the camera based on slice axis. this is required if stack
@@ -742,6 +823,11 @@ class StackViewport extends Viewport {
     // to our custom slabThickness.
     // activeCamera.setThicknessFromFocalPoint(0.1)
     activeCamera.setFreezeFocalPoint(true)
+
+    // Restore rotation for the new actor
+    this.rotationCache = 0
+    this.shouldInvert = this.invert
+    this.applyProperties(stackActor)
 
     // Saving position of camera on render, to cache the panning
     const { position } = this.getCamera()
@@ -826,21 +912,6 @@ class StackViewport extends Viewport {
     }
 
     renderer.invokeEvent(RESET_CAMERA_EVENT)
-  }
-
-  /**
-   * Rotates the camera with the provided rotation amount
-   * @param rotation number for rotation
-   */
-  public setRotation = (rotation: number): void => {
-    // Moving back to zero rotation, for new scrolled slice rotation is 0 after
-    // camera reset
-    this.getVtkActiveCamera().roll(-this.rotation)
-
-    // rotating camera to the new value
-    this.getVtkActiveCamera().roll(rotation)
-    this.rotation = rotation
-    this.render()
   }
 
   /**

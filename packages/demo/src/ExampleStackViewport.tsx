@@ -7,6 +7,7 @@ import {
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
+  INTERPOLATION_TYPE,
   EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import {
@@ -95,7 +96,7 @@ class StackViewportExample extends Component {
     this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME)
     this.ptVolumeImageIdsPromise = getImageIds('pt1', VOLUME)
 
-    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
+    this.ctStackImageIdsPromise = getImageIds('dx', STACK)
     this.ptStackImageIdsPromise = getImageIds('pt1', STACK)
     this.dxImageIdsPromise = getImageIds('dx', STACK)
 
@@ -276,23 +277,28 @@ class StackViewportExample extends Component {
     const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
     await ctStackViewport.setStack(
       sortImageIdsByIPP(ctStackImageIds),
-      ctMiddleSlice,
-      [setCTWWWC]
+      ctMiddleSlice
     )
+
+    ctStackViewport.setProperties({
+      voi: { lower: -160, upper: 240 },
+      interpolationType: INTERPOLATION_TYPE.NEAREST,
+    })
 
     const ptStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.PT)
 
     const ptMiddleSlice = Math.floor(ptStackImageIds.length / 2)
     await ptStackViewport.setStack(
       sortImageIdsByIPP(ptStackImageIds),
-      ptMiddleSlice,
-      [setPetTransferFunction]
+      ptMiddleSlice
     )
+
+    ptStackViewport.setProperties({ invert: true, voi: { lower: 0, upper: 5 } })
 
     // ct + dx + color
     // const dxColorViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
 
-    // let fakeStake = [
+    // let fakeStack = [
     //   dxImageIds[0],
     //   colorImageIds[0],
     //   dxImageIds[1],
@@ -301,7 +307,7 @@ class StackViewportExample extends Component {
     //   colorImageIds[2],
     //   ctStackImageIds[41],
     // ]
-    // await dxColorViewport.setStack(fakeStake)
+    // await dxColorViewport.setStack(fakeStack)
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
@@ -454,7 +460,7 @@ class StackViewportExample extends Component {
   }
 
   showOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
     const uri = this.renderingEngine._debugRender()
     const image = document.createElement('img')
@@ -465,7 +471,7 @@ class StackViewportExample extends Component {
   }
 
   hidOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
   }
 
@@ -522,6 +528,28 @@ class StackViewportExample extends Component {
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
+  rotateViewport = (rotateDeg) => {
+    // remove all children
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    vp.setProperties({ rotation: rotateDeg })
+    vp.render()
+  }
+
+  invertColors = () => {
+    // remove all children
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const invert = vp.invert
+    vp.setProperties({ invert: !invert })
+    vp.render()
+  }
+
+  applyPreset = () => {
+    // remove all children
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    vp.setProperties({ voi: { lower: 100, upper: 500 } })
+    vp.render()
+  }
+
   render() {
     return (
       <div>
@@ -532,6 +560,48 @@ class StackViewportExample extends Component {
             (bottom) using the same rendering engine
           </p>
         </div>
+        <button
+          onClick={() => this.invertColors()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Invert Colors
+        </button>
+        <button
+          onClick={() => this.applyPreset()}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Apply Preset
+        </button>
+        <button
+          onClick={() => this.rotateViewport(90)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 90
+        </button>
+        <button
+          onClick={() => this.rotateViewport(180)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 180
+        </button>
+        <button
+          onClick={() => this.rotateViewport(270)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 270
+        </button>
+        <button
+          onClick={() => this.rotateViewport(360)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Rotate = 360 OR 0
+        </button>
         <div>
           <select
             value={this.state.ptCtLeftClickTool}

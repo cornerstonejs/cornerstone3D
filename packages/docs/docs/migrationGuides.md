@@ -78,16 +78,15 @@ In Cornerstone-3D for loading images we have
 
 const viewport = renderingEngine.getViewport('CTViewport')
 
-// no callback, one image in the stack
+// one image in the stack
 await viewport.setStack(
   [imageId],
 )
 
-// with callback, muliple imageIds
+// muliple imageIds
 await viewport.setStack(
   [imageId1, imageId2],
   1, // frame 1
-  [callback1, callback2] // callbacks
 )
 ```
 

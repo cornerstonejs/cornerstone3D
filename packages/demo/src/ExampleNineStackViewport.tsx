@@ -278,7 +278,7 @@ class NineStackViewportExample extends Component {
   }
 
   showOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
     const uri = this.renderingEngine._debugRender()
     const image = document.createElement('img')
@@ -289,7 +289,7 @@ class NineStackViewportExample extends Component {
   }
 
   hidOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
   }
 

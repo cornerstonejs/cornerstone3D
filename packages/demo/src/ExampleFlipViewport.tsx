@@ -214,8 +214,11 @@ class FlipViewportExample extends Component {
     await ctStackViewport.setStack(
       sortImageIdsByIPP(ctStackImageIds),
       ctMiddleSlice,
-      [setCTWWWC]
+
     )
+
+    ctStackViewport.setProperties({ voi: { lower: -160, upper: 240 } })
+
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
@@ -275,7 +278,7 @@ class FlipViewportExample extends Component {
   }
 
   showOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
     const uri = this.renderingEngine._debugRender()
     const image = document.createElement('img')
@@ -286,7 +289,7 @@ class FlipViewportExample extends Component {
   }
 
   hidOffScreenCanvas = () => {
-    // remove all childs
+    // remove all children
     this._offScreenRef.current.innerHTML = ''
   }
 
