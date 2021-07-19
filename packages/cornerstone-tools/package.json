@@ -9,7 +9,6 @@
     "test": "test"
   },
   "scripts": {
-    "dev": "jest --watchAll",
     "dev:core": "yarn run dev",
     "build": "yarn run build:webpack && yarn run build:lib && yarn run build:lib-esm",
     "build:lib": "tsc --project ./tsconfig.build.json",
@@ -17,9 +16,7 @@
     "build:webpack": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:package": "yarn run build",
     "prepublishOnly": "yarn run build",
-    "start": "yarn run dev",
-    "test:unit": "jest --watchAll",
-    "test:unit:ci": "jest --ci --runInBand --collectCoverage"
+    "start": "yarn run dev"
   },
   "peerDependencies": {
     "gl-matrix": "^3.3.0",

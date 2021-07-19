@@ -5,14 +5,10 @@
   "main": "index.tsx",
   "scripts": {
     "preinstall": "node preinstall.js",
-    "dev": "webpack serve --config ./.webpack/webpack.dev.js",
-    "dev:demo": "yarn run dev",
+    "dev:demo": "webpack serve --config ./.webpack/webpack.dev.js",
     "build:demo": "yarn run build",
     "build": "cross-env NODE_ENV=production webpack --progress --config .webpack/webpack.prod.js",
-    "prepublishOnly": "yarn run build",
-    "start": "yarn run dev",
-    "test:unit": "jest --watchAll",
-    "test:unit:ci": "jest --ci --runInBand --collectCoverage"
+    "prepublishOnly": "yarn run build"
   },
   "author": "",
   "license": "ISC",

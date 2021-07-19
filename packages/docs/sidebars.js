@@ -1,3 +1,5 @@
+//import useBaseUrl from '@docusaurus/useBaseUrl';
+
 module.exports = {
   docs: [
     {
@@ -62,6 +64,11 @@ module.exports = {
     'migrationGuides',
     'help',
     'contributing',
+    {
+      type: 'link',
+      label: 'Test Coverage Report',
+      href: '/coverage',
+    },
   ],
   api: [
     {
