@@ -52,7 +52,7 @@ export default function voiSyncCallback(
       .setRange(range.lower, range.upper)
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties({
-      voi: range
+      voiRange: range
     })
   } else {
     throw new Error('Viewport type not supported.')

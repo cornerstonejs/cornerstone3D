@@ -20,6 +20,7 @@ import {
   IImageData,
   PetScaling,
   Scaling,
+  StackProperties,
 } from '../types'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
@@ -40,13 +41,6 @@ interface ImageDataMetaData {
   numVoxels: number
 }
 
-type StackProperties = {
-  voi?: VOIRange
-  invert?: boolean
-  interpolationType?: number
-  rotation?: number
-}
-
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
@@ -57,7 +51,7 @@ class StackViewport extends Viewport {
   private currentImageIdIndex: number
 
   // Viewport Properties
-  private voi: VOIRange
+  private voiRange: VOIRange
   private invert = false
   private interpolationType: number
   private rotation = 0
@@ -250,15 +244,15 @@ class StackViewport extends Viewport {
   private applyProperties(volumeActor) {
     const tfunc = volumeActor.getProperty().getRGBTransferFunction(0)
 
-    // apply voi if defined
-    if (typeof this.voi !== 'undefined') {
-      const { lower, upper } = this.voi
+    // apply voiRange if defined
+    if (typeof this.voiRange !== 'undefined') {
+      const { lower, upper } = this.voiRange
       tfunc.setRange(lower, upper)
     } else {
       const imageData = volumeActor.getMapper().getInputData()
       const range = imageData.getPointData().getScalars().getRange()
       tfunc.setRange(range[0], range[1])
-      this.voi = { lower: range[0], upper: range[1] }
+      this.voiRange = { lower: range[0], upper: range[1] }
     }
 
     // apply invert if defined
@@ -287,18 +281,18 @@ class StackViewport extends Viewport {
   /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type
-   * @param voi Sets the lower and upper voi
+   * @param voiRange Sets the lower and upper voi
    * @param invert Inverts the colors
    * @param interpolationType Changes the interpolation type (1:linear, 0: nearest)
    */
   public setProperties({
-    voi,
+    voiRange,
     invert,
     interpolationType,
     rotation,
   }: StackProperties = {}): void {
-    if (typeof voi !== 'undefined') {
-      this.voi = voi
+    if (typeof voiRange !== 'undefined') {
+      this.voiRange = voiRange
     }
 
     if (typeof invert !== 'undefined') {
@@ -321,10 +315,22 @@ class StackViewport extends Viewport {
   }
 
   /**
+   * Retrieve the viewport properties
+   */
+  public getProperties(): StackProperties {
+    return {
+      voiRange: this.voiRange,
+      rotation: this.rotation,
+      interpolationType: this.interpolationType,
+      invert: this.invert
+    };
+  }
+
+  /**
    * Reset the viewport properties
    */
   public resetProperties(): void {
-    this.voi = undefined;
+    this.voiRange = undefined;
     this.rotation = 0;
     this.interpolationType = INTERPOLATION_TYPE.LINEAR;
 

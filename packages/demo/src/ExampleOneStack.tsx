@@ -139,7 +139,7 @@ class OneStackExample extends Component {
 
 
     ctStackViewport.setStack(fakeStack, 0)
-    ctStackViewport.setProperties({ voi: { lower: -160, upper: 240 } })
+    ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
 
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
@@ -235,7 +235,7 @@ class OneStackExample extends Component {
   applyPreset = () => {
     // remove all children
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.setProperties({ voi: {lower: 100, upper: 500} })
+    vp.setProperties({ voiRange: {lower: 100, upper: 500} })
     vp.render()
   }
 

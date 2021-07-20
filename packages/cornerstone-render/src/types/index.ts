@@ -27,6 +27,7 @@ import type {
   Scaling,
   ScalingParameters,
 } from './ScalingParameters'
+import type StackProperties from './StackProperties'
 import type IViewportUID from './IViewportUID'
 
 export type {
@@ -48,6 +49,7 @@ export type {
   IStreamingVolume,
   IViewport,
   ViewportInput,
+  StackProperties,
   PublicViewportInput,
   VolumeActor,
   ActorEntry,

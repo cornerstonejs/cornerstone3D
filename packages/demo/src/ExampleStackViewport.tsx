@@ -281,7 +281,7 @@ class StackViewportExample extends Component {
     )
 
     ctStackViewport.setProperties({
-      voi: { lower: -160, upper: 240 },
+      voiRange: { lower: -160, upper: 240 },
       interpolationType: INTERPOLATION_TYPE.NEAREST,
     })
 
@@ -293,7 +293,7 @@ class StackViewportExample extends Component {
       ptMiddleSlice
     )
 
-    ptStackViewport.setProperties({ invert: true, voi: { lower: 0, upper: 5 } })
+    ptStackViewport.setProperties({ invert: true, voiRange: { lower: 0, upper: 5 } })
 
     // ct + dx + color
     // const dxColorViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
@@ -546,7 +546,7 @@ class StackViewportExample extends Component {
   applyPreset = () => {
     // remove all children
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.setProperties({ voi: { lower: 100, upper: 500 } })
+    vp.setProperties({ voiRange: { lower: 100, upper: 500 } })
     vp.render()
   }
 
