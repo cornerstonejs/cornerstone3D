@@ -14,9 +14,10 @@ import {
   removeToolStateByToolDataUID,
 } from './stateManagement'
 
-import init from './init'
+import { init, destroy } from './init'
 import {
   addTool,
+  removeTool,
   resetToolsState,
   getToolDataNearPoint,
   getToolDataNearPointOnEnabledElement,
@@ -54,9 +55,11 @@ import { ToolBindings, CornerstoneTools3DEvents } from './enums'
 export {
   // LifeCycle
   addTool,
+  removeTool,
   cancelActiveManipulations,
   resetToolsState,
   init,
+  destroy,
   BaseTool,
   BaseAnnotationTool,
   // Tools

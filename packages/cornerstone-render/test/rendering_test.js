@@ -9,9 +9,10 @@ const {
   EVENTS,
   registerVolumeLoader,
   createAndCacheVolume,
+  Utilities,
 } = cornerstone3D
 
-import { volumeLoader } from './testUtils'
+const { volumeLoader } = Utilities.testUtils
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID'
 

@@ -1,11 +1,7 @@
 import resemble from 'resemblejs'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
-import * as cornerstone3D from '../src/index'
-import * as csLoader from '../../cornerstone-image-loader-streaming-volume/src/index'
-
-const { ImageVolume } = cornerstone3D
-const { StreamingImageVolume } = csLoader
+import { ImageVolume } from '../index'
 
 // 10 slice, 10 colors
 const colors = [
@@ -20,6 +16,8 @@ const colors = [
   [0, 0, 128],
   [255, 0, 255],
 ]
+
+Object.freeze(colors)
 
 const imageIds = [
   'fakeSharedBufferImageLoader:imageId1',
@@ -227,30 +225,6 @@ const volumeLoader = (volumeId) => {
     imageIds: [],
   })
 
-  // const streamingImageVolume = new StreamingImageVolume(
-  //   // ImageVolume properties
-  //   {
-  //     uid: volumeId,
-  //     metadata: volumeMetadata,
-  //     dimensions: dimensions,
-  //     spacing: [1, 1, 1],
-  //     origin: [0, 0, 0],
-  //     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  //     scalarData: pixelData,
-  //     sizeInBytes: pixelData.byteLength,
-  //   },
-  //   // Streaming properties
-  //   {
-  //     imageIds,
-  //     loadStatus: {
-  //       loaded: false,
-  //       loading: false,
-  //       cachedFrames: [],
-  //       callbacks: [],
-  //     },
-  //   }
-  // )
-
   return {
     promise: Promise.resolve(imageVolume),
   }
@@ -302,7 +276,7 @@ function compareImages(imageDataURL, baseline, outputName) {
   })
 }
 
-export {
+const testUtils = {
   makeTestImage1,
   fakeImageLoader,
   volumeLoader,
@@ -310,3 +284,5 @@ export {
   compareImages,
   downloadURI,
 }
+
+export default testUtils

@@ -1,4 +1,4 @@
-import addTool from './addTool'
+import { addTool, removeTool } from './addTool'
 import resetToolsState from './resetToolsState'
 import addEnabledElement from './addEnabledElement'
 import removeEnabledElement from './removeEnabledElement'
@@ -17,8 +17,6 @@ import {
 } from './getToolDataNearPoint'
 
 // TODO:
-// - addTool
-// - removeTool?
 // - getToolGroupsForViewport?
 // - getToolGroupsForScene?
 
@@ -26,6 +24,7 @@ export {
   // Store
   state,
   addTool,
+  removeTool,
   resetToolsState,
   addEnabledElement,
   removeEnabledElement,

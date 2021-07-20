@@ -23,9 +23,11 @@ const {
   EVENTS,
   registerVolumeLoader,
   createAndCacheVolume,
+  Utilities,
 } = cornerstone3D
 
-import { fakeMetaDataProvider, compareImages, volumeLoader } from './testUtils'
+const { fakeMetaDataProvider, compareImages, volumeLoader } =
+  Utilities.testUtils
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID'
 
