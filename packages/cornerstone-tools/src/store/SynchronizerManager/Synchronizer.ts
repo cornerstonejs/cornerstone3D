@@ -57,9 +57,10 @@ class Synchronizer {
   }
 
   public addSource(viewport: Types.IViewportUID): void {
-    if (this._sourceViewports.includes(viewport)) {
+    if (_containsViewport(this._sourceViewports, viewport)) {
       return
     }
+
     const { renderingEngineUID, viewportUID } = viewport
 
     const canvas = getRenderingEngine(renderingEngineUID)
@@ -74,7 +75,7 @@ class Synchronizer {
   }
 
   public addTarget(viewport: Types.IViewportUID): void {
-    if (this._targetViewports.includes(viewport)) {
+    if (_containsViewport(this._targetViewports, viewport)) {
       return
     }
 
@@ -124,11 +125,7 @@ class Synchronizer {
   }
 
   public hasSourceViewport(renderingEngineUID: string, viewportUID: string): boolean {
-    return this._sourceViewports.some(
-      (vp) =>
-        vp.renderingEngineUID === renderingEngineUID &&
-        vp.viewportUID === viewportUID
-    )
+    return _containsViewport(this._sourceViewports, { renderingEngineUID, viewportUID})
   }
 
   public fireEvent(sourceViewport: Types.IViewportUID, sourceEvent: any): void {
@@ -235,6 +232,14 @@ function _getViewportIndex(
     (ar) =>
       vp.renderingEngineUID === ar.renderingEngineUID &&
       vp.viewportUID === ar.viewportUID
+  )
+}
+
+function _containsViewport(arr: Array<Types.IViewportUID>, vp: Types.IViewportUID) {
+  return arr.some(
+    (ar) =>
+      ar.renderingEngineUID === vp.renderingEngineUID &&
+      ar.viewportUID === vp.viewportUID
   )
 }
 
