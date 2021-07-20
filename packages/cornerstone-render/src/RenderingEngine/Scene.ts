@@ -212,6 +212,9 @@ class Scene {
    */
   public getVolumeActors(): Array<ActorEntry> {
     const viewports = this.getViewports()
+
+    // TODO: this is a bit confusing that this returns something different
+    // than getVolumeActor(). We should change getVolumeActor() I think
     return viewports[0].getActors()
   }
 }

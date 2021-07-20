@@ -105,7 +105,7 @@ class FlipViewportExample extends Component {
     this.axialSync = createCameraPositionSynchronizer('axialSync')
     // this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
     // this.coronalSync = createCameraPositionSynchronizer('coronalSync')
-    // this.ctWLSync = createVOISynchronizer('ctWLSync')
+    this.ctWLSync = createVOISynchronizer('ctWLSync')
     // this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
@@ -206,6 +206,15 @@ class FlipViewportExample extends Component {
       VIEWPORT_IDS.STACK.CT
     )
 
+
+    this.axialSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.CT.AXIAL });
+    this.axialSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.STACK.CT });
+
+    this.ctWLSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.CT.AXIAL });
+    this.ctWLSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.CT.CORONAL });
+    this.ctWLSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.CT.SAGITTAL });
+    this.ctWLSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.STACK.CT });
+
     renderingEngine.render()
 
     const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
@@ -278,7 +287,7 @@ class FlipViewportExample extends Component {
   }
 
   showOffScreenCanvas = () => {
-    // remove all children
+    // remove children
     this._offScreenRef.current.innerHTML = ''
     const uri = this.renderingEngine._debugRender()
     const image = document.createElement('img')
@@ -289,7 +298,7 @@ class FlipViewportExample extends Component {
   }
 
   hidOffScreenCanvas = () => {
-    // remove all children
+    // remove children
     this._offScreenRef.current.innerHTML = ''
   }
 

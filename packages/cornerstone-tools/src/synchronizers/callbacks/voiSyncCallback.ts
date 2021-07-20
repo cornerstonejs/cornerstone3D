@@ -1,4 +1,4 @@
-import { getRenderingEngine, Types } from '@ohif/cornerstone-render'
+import { getRenderingEngine, StackViewport, Types, VolumeViewport } from '@ohif/cornerstone-render'
 
 /**
  * @function cameraSyncCallback - Synchronizer callback to synchronize the voi of volumeActors of identical volumes
@@ -27,18 +27,36 @@ export default function voiSyncCallback(
 
   const tScene = renderingEngine.getScene(targetViewport.sceneUID)
 
-  if (tScene.uid === sceneUID) {
+  if (tScene && tScene.uid === sceneUID) {
     // Same scene, no need to update.
     return
   }
 
-  const tViewport = tScene.getViewport(targetViewport.viewportUID)
-  const volumeActor = tScene.getVolumeActor(volumeUID)
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportUID)
 
-  volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setRange(range.lower, range.upper)
+  if (tViewport instanceof VolumeViewport) {
+    const scene = renderingEngine.getScene(tViewport.sceneUID)
+    let volumeActor = scene.getVolumeActor(volumeUID)
+
+    // TODO: This may not be what we want. It is a fallback
+    // for cases when we are syncing from a stack to a volume viewport
+    if (!volumeActor) {
+      // TODO: this is a bit confusing that this returns something different
+    // than getVolumeActor(). We should change getVolumeActor() I think
+      volumeActor = scene.getVolumeActors()[0].volumeActor
+    }
+
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setRange(range.lower, range.upper)
+  } else if (tViewport instanceof StackViewport) {
+    tViewport.setProperties({
+      voi: range
+    })
+  } else {
+    throw new Error('Viewport type not supported.')
+  }
 
   tViewport.render()
 }
