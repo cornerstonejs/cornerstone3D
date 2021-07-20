@@ -110,7 +110,7 @@ export default class WindowLevelTool extends BaseTool {
 
     // store the new range for viewport to preserve it during scrolling
     viewport.setProperties({
-      voi: newRange
+      voiRange: newRange
     })
 
     viewport.render()

@@ -237,7 +237,7 @@ describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
     try {
       vp.setStack([imageId], 0)
       vp.setProperties({
-        voi: { lower: -160, upper: 240 },
+        voiRange: { lower: -160, upper: 240 },
         interpolationType: INTERPOLATION_TYPE.NEAREST,
       })
       this.renderingEngine.render()

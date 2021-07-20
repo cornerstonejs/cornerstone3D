@@ -226,7 +226,7 @@ class FlipViewportExample extends Component {
 
     )
 
-    ctStackViewport.setProperties({ voi: { lower: -160, upper: 240 } })
+    ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
 
 
     // This only creates the volumes, it does not actually load all
