@@ -15,6 +15,7 @@ import OneVolumeExample from './ExampleOneVolume'
 import PriorityLoadExample from './ExamplePriorityLoad'
 import OneStackExample from './ExampleOneStack'
 import FlipViewportExample from './ExampleFlipViewport'
+import TestUtils from './ExampleTestUtils'
 
 function LinkOut({ href, text }) {
   return (
@@ -122,6 +123,11 @@ function Index() {
       url: '/toolDisplayConfiguration',
       text: 'Example of display configuration options for tools',
     },
+    {
+      title: 'Test Utils',
+      url: '/testUtils',
+      text: 'Example demo for test utils',
+    },
   ]
 
   const exampleComponents = examples.map((e) => {
@@ -190,11 +196,6 @@ function AppRouter() {
       children: <ColorExample />,
     })
 
-  const volumeMapper2D = () =>
-    Example({
-      children: <VolumeMapper2DExample />,
-    })
-
   const stackViewport = () =>
     Example({
       children: <StackViewportExample />,
@@ -245,6 +246,11 @@ function AppRouter() {
       children: <FlipViewportExample />,
     })
 
+  const Test = () =>
+    Example({
+      children: <TestUtils />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -263,6 +269,7 @@ function AppRouter() {
         <Route exact path="/cacheDecache/" render={cacheDecache} />
         <Route exact path="/oneVolume/" render={OneVolume} />
         <Route exact path="/oneStack/" render={OneStack} />
+        <Route exact path="/testUtils/" render={Test} />
         <Route
           exact
           path="/toolDisplayConfiguration/"

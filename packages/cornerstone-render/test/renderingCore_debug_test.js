@@ -1,41 +1,18 @@
 import * as cornerstone3D from '../src/index'
 
-// nearest neighbor interpolation
-import * as imageURI_64_33_20_5_1_1_0_nearest from './groundTruth/imageURI_64_33_20_5_1_1_0_nearest.png'
-import * as imageURI_64_64_20_5_1_1_0_nearest from './groundTruth/imageURI_64_64_20_5_1_1_0_nearest.png'
-import * as imageURI_64_64_30_10_5_5_0_nearest from './groundTruth/imageURI_64_64_30_10_5_5_0_nearest.png'
-import * as imageURI_256_256_100_100_1_1_0_nearest from './groundTruth/imageURI_256_256_100_100_1_1_0_nearest.png'
-import * as imageURI_256_256_100_100_1_1_0_CT_nearest from './groundTruth/imageURI_256_256_100_100_1_1_0_CT_nearest.png'
-import * as imageURI_64_64_54_10_5_5_0_nearest from './groundTruth/imageURI_64_64_54_10_5_5_0_nearest.png'
-import * as imageURI_64_64_0_10_5_5_0_nearest from './groundTruth/imageURI_64_64_0_10_5_5_0_nearest.png'
-import * as imageURI_100_100_0_10_1_1_1_nearest_color from './groundTruth/imageURI_100_100_0_10_1_1_1_nearest_color.png'
-
-// linear interpolation
-import * as imageURI_11_11_4_1_1_1_0 from './groundTruth/imageURI_11_11_4_1_1_1_0.png'
-import * as imageURI_256_256_50_10_1_1_0 from './groundTruth/imageURI_256_256_50_10_1_1_0.png'
-import * as imageURI_100_100_0_10_1_1_1_linear_color from './groundTruth/imageURI_100_100_0_10_1_1_1_linear_color.png'
-
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
   registerImageLoader,
   registerVolumeLoader,
   unregisterAllImageLoaders,
   metaData,
-  createAndCacheVolume,
-  EVENTS,
+  Utilities,
 } = cornerstone3D
 
-import { setCTWWWC } from '../../demo/src/helpers/transferFunctionHelpers'
-import {
-  fakeImageLoader,
-  fakeMetaDataProvider,
-  compareImages,
-  volumeLoader,
-} from './testUtils'
+const { fakeImageLoader, fakeMetaDataProvider, volumeLoader } =
+  Utilities.testUtils
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID'
 

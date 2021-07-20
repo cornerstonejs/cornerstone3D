@@ -3,9 +3,19 @@ import {
   EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import { addEnabledElement, removeEnabledElement } from './store'
+import { state } from './store/state'
 
-export default function (defaultConfiguration = {}) {
+export function init (defaultConfiguration = {}) {
   _addCornerstoneEventListeners()
+}
+
+export function destroy () {
+  _removeCornerstoneEventListeners()
+
+  // Remove all tools
+  for (const prop of Object.getOwnPropertyNames(state)) {
+    delete state[prop];
+  }
 }
 
 /**
@@ -42,3 +52,5 @@ function _removeCornerstoneEventListeners() {
   eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement)
   eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement)
 }
+
+export default init

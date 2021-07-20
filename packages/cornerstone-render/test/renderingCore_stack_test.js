@@ -15,25 +15,24 @@ import * as imageURI_11_11_4_1_1_1_0 from './groundTruth/imageURI_11_11_4_1_1_1_
 import * as imageURI_256_256_50_10_1_1_0 from './groundTruth/imageURI_256_256_50_10_1_1_0.png'
 import * as imageURI_100_100_0_10_1_1_1_linear_color from './groundTruth/imageURI_100_100_0_10_1_1_1_linear_color.png'
 
+import { setCTWWWC } from '../../demo/src/helpers/transferFunctionHelpers'
 // import { User } from ... doesn't work right now since we don't have named exports set up
+
 const {
   cache,
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
   INTERPOLATION_TYPE,
+  Utilities,
   registerImageLoader,
   unregisterAllImageLoaders,
   metaData,
   EVENTS,
 } = cornerstone3D
 
-import { setCTWWWC } from '../../demo/src/helpers/transferFunctionHelpers'
-import {
-  fakeImageLoader,
-  fakeMetaDataProvider,
-  compareImages,
-} from './testUtils'
+const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
+  Utilities.testUtils
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID'
 

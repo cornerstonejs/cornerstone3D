@@ -1,4 +1,4 @@
-import * as csTools from './index'
+import * as csTools from '../src/index'
 
 const toolStateManager = csTools.defaultFrameOfReferenceSpecificToolStateManager
 
