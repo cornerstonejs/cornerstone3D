@@ -534,9 +534,19 @@ class StackViewport extends Viewport {
 
     const { canvas, options } = this
     const ctx = canvas.getContext("2d")
-    const rgb = options.background.map(f => Math.floor(255 * f));
 
-    ctx.fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+    // Default to black if no background color is set
+    let fillStyle;
+    if (options && options.background) {
+      const rgb = options.background.map(f => Math.floor(255 * f));
+      fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+    } else {
+      fillStyle = 'black'
+    }
+
+    // We draw over the previous stack with the background color while we
+    // wait for the next stack to load
+    ctx.fillStyle = fillStyle
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
     this._setImageIdIndex(currentImageIdIndex)

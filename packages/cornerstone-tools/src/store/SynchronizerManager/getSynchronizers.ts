@@ -20,7 +20,6 @@ function getSynchronizers({
     const notDisabled = !synchronizer.isDisabled()
     const hasSourceViewport = synchronizer.hasSourceViewport(
       renderingEngineUID,
-      sceneUID,
       viewportUID
     )
 

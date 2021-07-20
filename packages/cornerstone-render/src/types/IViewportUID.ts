@@ -4,6 +4,6 @@
  */
 export default interface IViewportUID {
   renderingEngineUID: string
-  sceneUID: string
+  sceneUID?: string
   viewportUID: string
 }

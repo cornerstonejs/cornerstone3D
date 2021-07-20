@@ -400,7 +400,7 @@ class StackViewportExample extends Component {
     const element = evt.currentTarget
     if (evt.code === 'Escape') {
       const toolDataUID = cancelActiveManipulations(element)
-      if (toolDataUID) {
+      if (!!toolDataUID) {
         this.setState({ cancelledMeasurements: toolDataUID })
 
         if (this.state.deleteOnToolCancel) {

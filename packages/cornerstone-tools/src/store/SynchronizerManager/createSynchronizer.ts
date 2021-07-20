@@ -5,14 +5,13 @@ function createSynchronizer(
   synchronizerId: string,
   eventName: string,
   eventHandler: ISynchronizerEventHandler
-): Synchronizer | undefined {
+): Synchronizer {
   const toolGroupWithIdExists = state.synchronizers.some(
     (tg) => tg.id === synchronizerId
   )
 
   if (toolGroupWithIdExists) {
-    console.warn(`'${synchronizerId}' already exists.`)
-    return
+    throw new Error(`Synchronizer with id '${synchronizerId}' already exists.`)
   }
 
   // Create

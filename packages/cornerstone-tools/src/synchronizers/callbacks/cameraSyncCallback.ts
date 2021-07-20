@@ -25,9 +25,14 @@ export default function cameraSyncCallback(
 
   const { camera } = cameraModifiedEvent.detail
 
-  const tViewport = getRenderingEngine(targetViewport.renderingEngineUID)
-    .getScene(targetViewport.sceneUID)
-    .getViewport(targetViewport.viewportUID)
+  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineUID)
+  if (!renderingEngine) {
+    throw new Error(`No RenderingEngine for UID: ${targetViewport.renderingEngineUID}`)
+  }
+
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportUID)
+
+  // TODO: only sync in-plane movements if one viewport is a stack viewport
 
   tViewport.setCamera(camera)
   tViewport.render()

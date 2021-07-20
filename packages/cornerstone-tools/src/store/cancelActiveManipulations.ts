@@ -10,9 +10,9 @@ import getToolsWithDataForElement from './getToolsWithDataForElement'
  * short circuit early
  *
  * @param element canvas element
- * @returns {string} toolDataUID that is cancelled
+ * @returns {string | undefined} toolDataUID that is cancelled
  */
-export default function cancelActiveManipulations(element: HTMLElement): void {
+export default function cancelActiveManipulations(element: HTMLElement): string | undefined {
   const tools = getToolsWithModesForElement(element, [
     ToolModes.Active,
     ToolModes.Passive,
