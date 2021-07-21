@@ -19,11 +19,11 @@
   },
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation"
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev"
   },
   "devDependencies": {
     "gl-matrix": "^3.3.0",
-    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation"
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev"
   },
   "author": "",
   "license": "ISC",

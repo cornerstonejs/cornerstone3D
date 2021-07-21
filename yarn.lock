@@ -15243,9 +15243,9 @@ vscode-textmate@5.2.0:
   resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-5.2.0.tgz#01f01760a391e8222fe4f33fbccbd1ad71aed74e"
   integrity sha512-Uw5ooOQxRASHgu6C7GVvUxisKXfSgW4oFlO+aa+PAkgmH89O3CXxEEzNRNtHSqtXFTl0nAC1uYj0GMSH27uwtQ==
 
-"vtk.js@git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#bug/interpolation":
+"vtk.js@git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev":
   version "0.0.0-semantically-release"
-  resolved "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#c1fb10cc804b2568272fc2e541798671a4502216"
+  resolved "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#4ff7aed73f9fccf62c7f1d3cc610102b97acdb51"
   dependencies:
     "@babel/runtime" "7.13.10"
     blueimp-md5 "2.18.0"
