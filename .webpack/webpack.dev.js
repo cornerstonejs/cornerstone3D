@@ -80,7 +80,9 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
             },
           ],
       },
-      ].concat(vtkRules).concat(shaderLoader),
+      ].concat(vtkRules)
+      // Only enable this with a linked version of VTK
+      //.concat(shaderLoader),
     },
     resolve: {
       modules: [path.resolve(__dirname, './../node_modules')],
