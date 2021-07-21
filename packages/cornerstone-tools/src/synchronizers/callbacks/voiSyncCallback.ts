@@ -40,16 +40,18 @@ export default function voiSyncCallback(
 
     // TODO: This may not be what we want. It is a fallback
     // for cases when we are syncing from a stack to a volume viewport
-    if (!volumeActor) {
+    //if (!volumeActor) {
       // TODO: this is a bit confusing that this returns something different
     // than getVolumeActor(). We should change getVolumeActor() I think
-      volumeActor = scene.getVolumeActors()[0].volumeActor
-    }
+    //  volumeActor = scene.getVolumeActors()[0].volumeActor
+    //}
 
-    volumeActor
+    if (volumeActor) {
+      volumeActor
       .getProperty()
       .getRGBTransferFunction(0)
       .setRange(range.lower, range.upper)
+    }
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties({
       voiRange: range
