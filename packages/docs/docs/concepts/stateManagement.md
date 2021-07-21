@@ -4,7 +4,7 @@ title: State Management
 ---
 
 
-## State Management
+# State Management
 
 We will shift from using an image ID-based default tool state manager to a FrameOfReference tool state manager, where measurements use world coordinates for points. Under the hood, the tool state manager will have a very familiar structure to current cornerstoneTools toolState managers:
 

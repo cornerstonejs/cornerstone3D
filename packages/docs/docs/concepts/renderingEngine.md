@@ -28,3 +28,139 @@ canvas get updated, and at render time, we copy from offscreen to onscreen for e
 `vtk.js` provides standard rendering functionalities which we use for rendering. In addition, in `Cornerstone-3D` we have introduced `Shared Volume Mappers` to enable re-using the texture for any viewport that might need it without duplicating the data.
 
 For instance for PET-CT fusion which has 3x3 layout which includes CT (Axial, Sagittal, Coronal), PET (Axial, Sagittal, Coronal) and Fusion (Axial, Sagittal, Coronal), we create two volume mappers for CT and PET individually, and for the Fusion viewports we re-use both created textures instead of re-creating a new one.
+
+
+## General usage
+After creating a renderingEngine, we can assign viewports to it for rendering. There are two main approach for creating `Stack` or `Volume` viewports which we will
+discuss now.
+
+### Viewport Input
+Viewports (both stack and volume) are defined using their properties.  Viewport's public interface  can be seen below.
+
+```js
+type PublicViewportInput = {
+  canvas: HTMLCanvasElement // Canvas element to render
+  sceneUID?: string // Unique scene UID (optional for stackViewports)
+  viewportUID: string // Unique viewport UID
+  type: string // Stack or Volume
+  defaultOptions: ViewportInputOptions // Viewport options
+}
+```
+
+Each viewport entry can accept a [`viewportinputoptions`](/docs/cornerstone-render/modules/Types#viewportinputoptions) by which you can set the `background` color (black by default), and
+`orientation` (Axial, Sagittal, Coronal) of the viewport.
+
+
+Now that you learned the properties of viewports, we explain how to use the
+created instance of `renderingEngine` API and use it for rendering of the viewports.
+
+### setViewports API
+`setViewoirts` method is suitable for creation of a set of viewports at once.
+After setting the array of viewports, the `renderingEngine` will adapt its
+offScreen canvas size to the size of the provided canvases, and triggers the corresponding
+events.
+
+```js
+import {
+  RenderingEngine,
+  ORIENTATION,
+  VIEWPORT_TYPE,
+} from '@ohif/cornerstone-render'
+
+
+const renderingEngineUID = 'myEngine'
+const renderingEngine = new RenderingEngine(renderingEngineUID)
+
+
+const viewportInput = [
+  // CT Volume Viewport - Axial
+  {
+    sceneUID: 'ctScene',
+    viewportUID: 'ctAxial',
+    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    canvas: canvas1,
+    defaultOptions: {
+      orientation: ORIENTATION.AXIAL,
+    },
+  },
+  // CT Volume Viewport - Sagittal
+  {
+    sceneUID: 'ctScene',
+    viewportUID: 'ctSagittal',
+    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    canvas: canvas2,
+    defaultOptions: {
+      orientation: ORIENTATION.SAGITTAL,
+    },
+  },
+  // CT Axial Stack Viewport
+  {
+    viewportUID: 'ctStack',
+    type: VIEWPORT_TYPE.STACK,
+    canvas: canvas3,
+    defaultOptions: {
+      orientation: ORIENTATION.AXIAL,
+    },
+  },
+]
+
+renderingEngine.setViewports(viewportInput)
+```
+
+### Enable/Disable API
+For having a full control over enabling/disabling each viewport separately, you
+can use the `enableElement` and `disableElement` API.
+
+
+#### enableElement
+it gets the `publicViewportEntry` as the input and enables the viewport for rendering.
+After enabling the element, `renderingEngine` adapts its size and state with the new viewport
+and a
+
+```js
+import {
+  RenderingEngine,
+  ORIENTATION,
+  VIEWPORT_TYPE,
+} from '@ohif/cornerstone-render'
+
+
+const renderingEngineUID = 'myEngine'
+const renderingEngine = new RenderingEngine(renderingEngineUID)
+
+const viewport = {
+  sceneUID: 'ctScene',
+  viewportUID: 'ctAxial',
+  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+  canvas: canvas1,
+  defaultOptions: {
+    orientation: ORIENTATION.AXIAL,
+  },
+}
+
+renderingEngine.enableElement(viewport)
+```
+
+
+
+#### DisableElement
+You can disable any viewport by using its `viewportUID`, after disabling,
+renderingEngine will resize its offScreen canvas.
+
+```js
+disableElement(viewportUID: string)
+```
+
+
+[`element_enabled`](/docs/cornerstone-render/enums/EVENTS#element_enabled) and
+[`element_disabled`](/docs/cornerstone-render/enums/EVENTS#element_enabled) events are fired
+with below event data.
+
+
+```js
+const eventData = {
+  canvas,
+  viewportUID,
+  renderingEngineUID,
+}
+```

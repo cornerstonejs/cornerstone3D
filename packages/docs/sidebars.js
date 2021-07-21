@@ -52,10 +52,10 @@ module.exports = {
           label: 'Concepts',
           collapsed: true,
           items: [
-            'concepts/tools-eventListeners',
-            'concepts/toolGroups',
+            'concepts/tools',
             'concepts/synchronizers',
             'concepts/state-management',
+            'concepts/tools-eventListeners',
           ],
         },
         'tools-usage',
