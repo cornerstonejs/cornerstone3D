@@ -80,8 +80,7 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
             },
           ],
       },
-      ].concat(vtkRules),
-      //.concat(shaderLoader),
+      ].concat(vtkRules).concat(shaderLoader),
     },
     resolve: {
       modules: [path.resolve(__dirname, './../node_modules')],
