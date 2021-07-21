@@ -2,7 +2,6 @@ import {
   getEnabledElement,
   EVENTS,
   triggerEvent,
-  eventTarget,
   VolumeViewport,
 } from '@ohif/cornerstone-render'
 import { BaseTool } from './base'
@@ -27,7 +26,13 @@ export default class PetThresholdTool extends BaseTool {
     const enabledElement = getEnabledElement(canvas)
     const { scene, sceneUID, viewportUID, viewport } = enabledElement
 
-    const { uid: volumeUID } = viewport.getDefaultActor()
+    let volumeUID;
+    if (this.configuration && this.configuration.volumeUID) {
+      volumeUID = this.configuration.volumeUID
+    } else {
+      const defaultActor = viewport.getDefaultActor();
+      volumeUID = defaultActor.uid;
+    }
 
     let volumeActor
 

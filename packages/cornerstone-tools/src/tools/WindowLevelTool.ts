@@ -40,7 +40,14 @@ export default class WindowLevelTool extends BaseTool {
     const { element: canvas, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(canvas)
     const { scene, sceneUID, viewportUID, viewport } = enabledElement
-    const { uid: volumeUID } = viewport.getDefaultActor()
+
+    let volumeUID;
+    if (this.configuration && this.configuration.volumeUID) {
+      volumeUID = this.configuration.volumeUID
+    } else {
+      const defaultActor = viewport.getDefaultActor();
+      volumeUID = defaultActor.uid;
+    }
 
     let volumeActor
 
