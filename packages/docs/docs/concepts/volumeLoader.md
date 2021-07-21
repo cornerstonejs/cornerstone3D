@@ -13,10 +13,11 @@ a volume progressively into the GPU.
 You can use [`registerVolumeLoader`](/docs/cornerstone-render#registervolumeloader) to define a volume loader which should be called on a particular `scheme`.
 Below you can see a simplified code for our `cornerstoneStreamingImageVolumeLoader` in which:
 
-1. Based a set of imageIds, we compute volume metadata such as: spacing, origin, direction, etc.
+1. Based on a set of imageIds, we compute volume metadata such as: spacing, origin, direction, etc.
 2. Instantiate a new [`StreamingImageVolume`](/docs/cornerstone-image-loader-streaming-volume/classes/StreamingImageVolume)
    - StreamingImageVolume implements methods for loading, cancelLoading
    - It implements load via using `requestPoolManager`
+   - A `SharedArrayBufferImageLoader` is used to process the images which is a simplified version of the CornerstoneWADOImageLoader that doesn't implement the creation of the Cornerstone Image object (as it is not needed for the volumes).
    - Each loaded frame is put at the correct slice in the 3D volume
 
 3. Return a `Volume Load Object` which has a promise that resolves to the streamed volume.
