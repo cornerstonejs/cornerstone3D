@@ -2,6 +2,7 @@ import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
+import _cloneDeep from 'lodash.clonedeep'
 
 import metaData from '../metaData'
 import Viewport from './Viewport'
@@ -766,6 +767,10 @@ class StackViewport extends Viewport {
 
     const activeCamera = this.getRenderer().getActiveCamera()
 
+    // Cache camera props so we can trigger one camera changed event after
+    // The full transition.
+    const previousCameraProps = _cloneDeep(this.getCamera());
+
     if (sameImageData && !this.invalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image)
@@ -775,7 +780,7 @@ class StackViewport extends Viewport {
       const direction = this._imageData.getDirection() as Float32Array
       const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
-      this.setCamera({ viewUp, viewPlaneNormal })
+      this.setCameraNoEvent({ viewUp, viewPlaneNormal });
 
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting
@@ -791,7 +796,7 @@ class StackViewport extends Viewport {
 
       // Reset the camera to point to the new slice location, reset camera doesn't
       // modify the direction of projection and viewUp
-      this.resetCamera()
+      this.resetCameraNoEvent()
       const { position } = this.getCamera()
       this.cameraPosOnRender = position
 
@@ -802,7 +807,7 @@ class StackViewport extends Viewport {
 
       // We shouldn't restore the focalPoint, position and parallelScale after reset
       // if it is the first render or we have completely re-created the vtkImageData
-      this._restoreCameraProps(cameraProps)
+      this._restoreCameraProps(cameraProps, previousCameraProps)
 
       // Restore rotation for the new slice of the image
       this.rotationCache = 0
@@ -829,11 +834,13 @@ class StackViewport extends Viewport {
     const direction = this._imageData.getDirection() as Float32Array
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
-    this.setCamera({ viewUp, viewPlaneNormal })
+    this.setCameraNoEvent({ viewUp, viewPlaneNormal })
 
     // Reset the camera to point to the new slice location, reset camera doesn't
     // modify the direction of projection and viewUp
-    this.resetCamera()
+    this.resetCameraNoEvent();
+
+    this.triggerCameraEvent(this.getCamera(), previousCameraProps);
 
     // This is necessary to initialize the clipping range and it is not related
     // to our custom slabThickness.
@@ -896,7 +903,7 @@ class StackViewport extends Viewport {
    *
    * @param parallelScale camera parallel scale
    */
-  private _restoreCameraProps({ parallelScale: prevScale }: ICamera): void {
+  private _restoreCameraProps({ parallelScale: prevScale }: ICamera, previousCamera: ICamera): void {
     const renderer = this.getRenderer()
 
     // get the focalPoint and position after the reset
@@ -915,11 +922,17 @@ class StackViewport extends Viewport {
     ]
 
     // Restoring previous state x,y and scale, keeping the new z
-    this.setCamera({
-      parallelScale: prevScale,
-      position: newPosition,
-      focalPoint: newFocal,
-    })
+    this.setCameraNoEvent(
+      {
+        parallelScale: prevScale,
+        position: newPosition,
+        focalPoint: newFocal,
+      }
+    );
+
+    const camera = this.getCamera();
+
+    this.triggerCameraEvent(camera, previousCamera);
 
     // Invoking render
     const RESET_CAMERA_EVENT = {
@@ -928,6 +941,21 @@ class StackViewport extends Viewport {
     }
 
     renderer.invokeEvent(RESET_CAMERA_EVENT)
+  }
+
+  private triggerCameraEvent(camera: ICamera, previousCamera: ICamera) {
+    // Finally emit event for the full camera change cause during load image.
+    const eventDetail = {
+      previousCamera,
+      camera,
+      canvas: this.canvas,
+      viewportUID: this.uid,
+      sceneUID: this.sceneUID,
+      renderingEngineUID: this.renderingEngineUID,
+    };
+
+    // For crosshairs to adapt to new viewport size
+    triggerEvent(this.canvas, EVENTS.CAMERA_MODIFIED, eventDetail)
   }
 
   /**
