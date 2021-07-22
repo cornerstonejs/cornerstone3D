@@ -32,6 +32,7 @@ class Viewport {
   _actors: Map<string, any>
   readonly defaultOptions: any
   options: ViewportInputOptions
+  private _suppressCameraModifiedEvents: boolean = false;
 
   constructor(props: ViewportInput) {
     this.uid = props.uid
@@ -391,10 +392,23 @@ class Viewport {
     }
   }
 
+  protected resetCameraNoEvent() {
+    this._suppressCameraModifiedEvents = true;
+    this.resetCamera();
+    this._suppressCameraModifiedEvents = false;
+  }
+
+  protected setCameraNoEvent(camera: ICamera) {
+    this._suppressCameraModifiedEvents = true;
+    this.setCamera(camera);
+    this._suppressCameraModifiedEvents = false;
+  }
+
   // new reset camera
   // *
   public resetCamera() {
     const renderer = this.getRenderer()
+    const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds()
     const focalPoint = new Float64Array(3)
@@ -441,7 +455,7 @@ class Viewport {
       radius = (heightWorld * scaleFactor) / 2
     }
 
-    const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
+    //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
     const parallelScale = 1.1 * radius
 
     let w1 = bounds[1] - bounds[0]
@@ -499,16 +513,20 @@ class Viewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT)
 
-    const eventDetail = {
-      camera: this.getCamera(),
-      canvas: this.canvas,
-      viewportUID: this.uid,
-      sceneUID: this.sceneUID,
-      renderingEngineUID: this.renderingEngineUID,
+    if (!this._suppressCameraModifiedEvents) {
+      const eventDetail = {
+        previousCamera: previousCamera,
+        camera: this.getCamera(),
+        canvas: this.canvas,
+        viewportUID: this.uid,
+        sceneUID: this.sceneUID,
+        renderingEngineUID: this.renderingEngineUID,
+      }
+
+      // For crosshairs to adapt to new viewport size
+      triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
     }
 
-    // For crosshairs to adapt to new viewport size
-    triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
     return true
   }
   // */
@@ -569,7 +587,7 @@ class Viewport {
 
   public setCamera(cameraInterface: ICamera): void {
     const vtkCamera = this.getVtkActiveCamera()
-    const previousCamera = JSON.parse(JSON.stringify(this.getCamera()))
+    const previousCamera = _cloneDeep(this.getCamera());
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface)
     const {
       viewUp,
@@ -618,16 +636,19 @@ class Viewport {
       vtkCamera.setSlabThickness(slabThickness)
     }
 
-    const eventDetail = {
-      previousCamera,
-      camera: updatedCamera,
-      canvas: this.canvas,
-      viewportUID: this.uid,
-      sceneUID: this.sceneUID,
-      renderingEngineUID: this.renderingEngineUID,
-    }
+    if (!this._suppressCameraModifiedEvents) {
+      const eventDetail = {
+        previousCamera,
+        camera: updatedCamera,
+        canvas: this.canvas,
+        viewportUID: this.uid,
+        sceneUID: this.sceneUID,
+        renderingEngineUID: this.renderingEngineUID,
+      }
 
-    triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
+
+      triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail);
+    }
 
     if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {
       const renderer = this.getRenderer()
