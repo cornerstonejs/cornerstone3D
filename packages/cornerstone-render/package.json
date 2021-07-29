@@ -23,11 +23,9 @@
   },
   "devDependencies": {
     "gl-matrix": "^3.3.0",
+    "resemblejs": "^3.2.5",
     "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev"
   },
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "resemblejs": "^3.2.5"
-  }
+  "license": "ISC"
 }
