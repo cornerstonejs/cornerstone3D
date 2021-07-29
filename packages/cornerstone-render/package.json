@@ -26,8 +26,5 @@
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "resemblejs": "^3.2.5"
-  }
+  "license": "ISC"
 }
