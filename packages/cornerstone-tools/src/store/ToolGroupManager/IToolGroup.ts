@@ -1,6 +1,6 @@
 import { Types } from '@ohif/cornerstone-render'
 
-import ISetToolModeOptions from './ISetToolModeOptions'
+import ISetToolModeOptions from '../../types/ISetToolModeOptions'
 
 export default interface IToolGroup {
   // Unserializable instantiated tool classes, keyed by name
@@ -30,6 +30,9 @@ export default interface IToolGroup {
   }
   setToolDisabled: {
     (toolName: string, toolModeOptions: ISetToolModeOptions): void
+  }
+  isPrimaryButtonBinding: {
+    (toolModeOptions: ISetToolModeOptions): boolean
   }
   refreshViewports: {
     (): void

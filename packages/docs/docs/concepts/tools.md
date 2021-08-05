@@ -152,13 +152,13 @@ You can use `setToolActive` for each toolGroup to activate a tool providing a co
 // Possible modes include: 'Active', 'Passive', 'Enabled', 'Disabled'
 ctSceneToolGroup.setToolActive('StackScrollMouseWheel')
 ctSceneToolGroup.setToolActive('Length', {
-  bindings: [ToolBindings.Mouse.Primary],
+  bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
 })
 ctSceneToolGroup.setToolActive('Pan', {
-  bindings: [ToolBindings.Mouse.Auxiliary],
+  bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
 })
 ctSceneToolGroup.setToolActive('Zoom', {
-  bindings: [ToolBindings.Mouse.Secondary],
+  bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
 })
 ```
 

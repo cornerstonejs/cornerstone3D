@@ -106,13 +106,13 @@ class ColorExample extends Component {
 
     ctSceneToolGroup.setToolActive("StackScrollMouseWheel");
     ctSceneToolGroup.setToolActive("WindowLevel", {
-      bindings: [ToolBindings.Mouse.Primary],
+      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
     });
     ctSceneToolGroup.setToolActive("Pan", {
-      bindings: [ToolBindings.Mouse.Auxiliary],
+      bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
     });
     ctSceneToolGroup.setToolActive("Zoom", {
-      bindings: [ToolBindings.Mouse.Secondary],
+      bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
     });
 
     ctScene.setVolumes([

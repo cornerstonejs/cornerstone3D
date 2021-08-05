@@ -1,7 +1,8 @@
+import { ToolBindings } from '../../enums'
 import { getRenderingEngine } from '@ohif/cornerstone-render'
 import { state } from '../index'
 import IToolGroup from './IToolGroup'
-import ISetToolModeOptions from './ISetToolModeOptions'
+import ISetToolModeOptions from '../../types/ISetToolModeOptions'
 import ToolModes from '../../enums/ToolModes'
 import deepmerge from '../../util/deepMerge'
 import { MouseCursor, SVGMouseCursor } from '../../cursors'
@@ -148,7 +149,11 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       this.tools[toolName] = toolModeOptionsWithMode
       this._tools[toolName].mode = Active
-      this.resetViewportsCursor(this._tools[toolName])
+
+      // reset the mouse cursor if tool has left click binding
+      if (this.isPrimaryButtonBinding(toolModeOptions)) {
+        this.resetViewportsCursor(this._tools[toolName])
+      }
       this.refreshViewports()
     },
     setToolPassive: function (
@@ -234,8 +239,13 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       this._tools[toolName].mode = Disabled
       this.refreshViewports()
     },
-    // We need to refresh related viewports when a tool mode is changed in order
-    // to update the rendered measurements.
+    isPrimaryButtonBinding(toolModeOptions) {
+      return toolModeOptions?.bindings?.some(
+        (binding) =>
+          binding.mouseButton === ToolBindings.Mouse.Primary &&
+          binding.modifierKey === undefined
+      )
+    },
     refreshViewports(): void {
       this.viewports.forEach(({ renderingEngineUID, viewportUID }) => {
         getRenderingEngine(renderingEngineUID).renderViewport(viewportUID)

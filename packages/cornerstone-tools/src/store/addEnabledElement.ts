@@ -7,6 +7,7 @@ import {
   imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
+  keyboardToolEventDispatcher,
 } from '../eventDispatchers'
 import { state } from './state'
 
@@ -38,6 +39,7 @@ export default function addEnabledElement(evt: CustomEvent): void {
   cameraModifiedEventDispatcher.enable(canvas)
   // Dispatchers: interaction
   mouseToolEventDispatcher.enable(canvas)
+  keyboardToolEventDispatcher.enable(canvas)
   // touchToolEventDispatcher.enable(enabledElement);
 
   // State

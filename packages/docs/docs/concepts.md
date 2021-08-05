@@ -202,13 +202,13 @@ _NOTE:_
 // Possible modes include: 'Active', 'Passive', 'Enabled', 'Disabled'
 sceneToolGroup.setToolActive('StackScrollMouseWheel')
 sceneToolGroup.setToolActive('Length', {
-  bindings: [ToolBindings.Mouse.Primary],
+  bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
 })
 sceneToolGroup.setToolActive('Pan', {
-  bindings: [ToolBindings.Mouse.Auxiliary],
+  bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
 })
 sceneToolGroup.setToolActive('Zoom', {
-  bindings: [ToolBindings.Mouse.Secondary],
+  bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
 })
 ```
 

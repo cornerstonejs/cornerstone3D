@@ -8,6 +8,7 @@ import {
   imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
+  keyboardToolEventDispatcher,
   //   touchToolEventDispatcher,
 } from '../eventDispatchers'
 // ~~
@@ -45,6 +46,7 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   cameraModifiedEventDispatcher.disable(canvas)
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(canvas)
+  keyboardToolEventDispatcher.disable(canvas)
   // touchToolEventDispatcher.disable(canvas);
 
   // State

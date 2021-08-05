@@ -15,6 +15,7 @@ import OneVolumeExample from './ExampleOneVolume'
 import PriorityLoadExample from './ExamplePriorityLoad'
 import OneStackExample from './ExampleOneStack'
 import FlipViewportExample from './ExampleFlipViewport'
+import ModifierKeysExample from './ExampleModifierKeys'
 import TestUtils from './ExampleTestUtils'
 
 function LinkOut({ href, text }) {
@@ -64,9 +65,10 @@ function Index() {
       url: '/oneStack',
       text: 'Example one Stack',
     },
-    { title: 'Flip Viewport',
+    {
+      title: 'Flip Viewport',
       url: '/flip',
-      text: 'Example for flipping viewport horrizontally or vertically volume'
+      text: 'Example for flipping viewport horrizontally or vertically volume',
     },
     {
       title: 'Canvas Resize',
@@ -122,6 +124,11 @@ function Index() {
       title: 'Tool Display Configuration',
       url: '/toolDisplayConfiguration',
       text: 'Example of display configuration options for tools',
+    },
+    {
+      title: 'Modifier Keys',
+      url: '/modifierKeys',
+      text: 'Example of using modifier keys',
     },
     {
       title: 'Test Utils',
@@ -246,6 +253,11 @@ function AppRouter() {
       children: <FlipViewportExample />,
     })
 
+  const ModifierKeys = () =>
+    Example({
+      children: <ModifierKeysExample />,
+    })
+
   const Test = () =>
     Example({
       children: <TestUtils />,
@@ -261,6 +273,7 @@ function AppRouter() {
         <Route exact path="/color/" render={color} />
         <Route exact path="/priorityLoad/" render={PriorityLoad} />
         <Route exact path="/flip/" render={Flip} />
+        <Route exact path="/modifierKeys/" render={ModifierKeys} />
         {/* <Route exact path="/volumeMapper2D/" render={volumeMapper2D} /> */}
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />

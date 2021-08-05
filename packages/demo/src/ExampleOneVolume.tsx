@@ -22,14 +22,14 @@ import {
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
   ctVolumeUID,
   SCENE_IDS,
   VIEWPORT_IDS,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 } from './constants'
 
 const VOLUME = 'volume'
@@ -39,9 +39,7 @@ window.cache = cache
 let ctSceneToolGroup
 const { BlendMode } = vtkConstants
 
-const toolsToUse = PET_CT_ANNOTATION_TOOLS
-
-const ctLayoutTools = ['Levels'].concat(toolsToUse)
+const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS]
 
 class OneVolumeExample extends Component {
   state = {
@@ -56,7 +54,7 @@ class OneVolumeExample extends Component {
       numRows: 1,
       viewports: [{}, {}, {}],
     },
-    ptCtLeftClickTool: 'Levels',
+    ptCtLeftClickTool: 'WindowLevel',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
   }
@@ -151,6 +149,8 @@ class OneVolumeExample extends Component {
       VIEWPORT_IDS.CT.CORONAL
     )
 
+    addToolsToToolGroups({ctSceneToolGroup})
+
     renderingEngine.render()
 
     // This only creates the volumes, it does not actually load all
@@ -225,38 +225,50 @@ class OneVolumeExample extends Component {
     cache.purgeCache()
   }
 
+  resetToolModes = (toolGroup) => {
+    ANNOTATION_TOOLS.forEach((toolName) => {
+      toolGroup.setToolPassive(toolName)
+    })
+    toolGroup.setToolActive('WindowLevel', {
+      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+    })
+    toolGroup.setToolActive('Pan', {
+      bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
+    })
+    toolGroup.setToolActive('Zoom', {
+      bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
+    })
+  }
+
   swapTools = (evt) => {
     const toolName = evt.target.value
 
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
-    const options = {
-      bindings: [ToolBindings.Mouse.Primary],
-    }
-    if (isAnnotationToolOn) {
-      // Set tool active
+    this.resetToolModes(ctSceneToolGroup)
 
-      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName)
+    const tools = Object.entries(ctSceneToolGroup.tools)
 
-      ctSceneToolGroup.setToolActive(toolName, options)
+    // Disabling any tool that is active on mouse primary
+    const [activeTool] = tools.find(
+      ([tool, { bindings, mode }]) =>
+        mode === 'Active' &&
+        bindings.length &&
+        bindings.some(binding => binding.mouseButton === ToolBindings.Mouse.Primary)
+    )
 
-      toolsToSetPassive.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-      })
+    ctSceneToolGroup.setToolPassive(activeTool)
 
-      ctSceneToolGroup.setToolDisabled('WindowLevel')
-    } else {
-      // Set window level + threshold
-      ctSceneToolGroup.setToolActive('WindowLevel', options)
+    // Using mouse primary for the selected tool
+    const currentBindings = ctSceneToolGroup.tools[toolName].bindings
 
-      // Set all annotation tools passive
-      toolsToUse.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-      })
-    }
+    ctSceneToolGroup.setToolActive(toolName, {
+      bindings: [...currentBindings, { mouseButton: ToolBindings.Mouse.Primary } ],
+    })
 
     this.renderingEngine.render()
     this.setState({ ptCtLeftClickTool: toolName })
   }
+
+
 
   showOffScreenCanvas = () => {
     // remove all children
@@ -284,7 +296,7 @@ class OneVolumeExample extends Component {
           </div>
         </div>
         <select value={this.state.ptCtLeftClickTool} onChange={this.swapTools}>
-          {ctLayoutTools.map((toolName) => (
+          {toolsToUse.map((toolName) => (
             <option key={toolName} value={toolName}>
               {toolName}
             </option>

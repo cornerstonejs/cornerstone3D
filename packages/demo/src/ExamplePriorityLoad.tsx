@@ -32,7 +32,7 @@ import {
   ctVolumeUID,
   colormaps,
   SCENE_IDS,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
 import config from './config/default'
@@ -92,7 +92,7 @@ class PriorityLoadExample extends Component {
   constructor(props) {
     super(props)
 
-    ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS)
+    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -457,23 +457,6 @@ class PriorityLoadExample extends Component {
     cache.purgeCache()
   }
 
-  swapPtCtTool = (evt) => {
-    const toolName = evt.target.value
-
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
-
-    ptCtToggleAnnotationTool(
-      isAnnotationToolOn,
-      ctSceneToolGroup,
-      ptSceneToolGroup,
-      fusionSceneToolGroup,
-      toolName
-    )
-
-    this.renderingEngine.render()
-    this.setState({ ptCtLeftClickTool: toolName })
-  }
-
   render() {
     const {
       layoutIndex,
@@ -516,16 +499,6 @@ class PriorityLoadExample extends Component {
           >
             SwapPetTransferFunction
           </button>
-          <select
-            value={this.state.ptCtLeftClickTool}
-            onChange={this.swapPtCtTool}
-          >
-            {ptCtLayoutTools.map((toolName) => (
-              <option key={toolName} value={toolName}>
-                {toolName}
-              </option>
-            ))}
-          </select>
         </React.Fragment>
       ) : null
 
