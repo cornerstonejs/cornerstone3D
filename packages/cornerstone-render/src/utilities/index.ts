@@ -4,7 +4,8 @@ import triggerEvent from './triggerEvent'
 import uuidv4 from './uuidv4'
 import getMinMax from './getMinMax'
 import getRuntimeId from './getRuntimeId'
-import imageIdToURI from './imageIdToURI.js'
+import imageIdToURI from './imageIdToURI'
+import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider'
 import isEqual from './isEqual'
 import testUtils from './testUtils'
 import createUint8SharedArray from './createUint8SharedArray'
@@ -15,6 +16,7 @@ export {
   scaleRgbTransferFunction,
   triggerEvent,
   imageIdToURI,
+  calibratedPixelSpacingMetadataProvider,
   uuidv4,
   getMinMax,
   getRuntimeId,

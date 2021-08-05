@@ -9,6 +9,7 @@ import {
   VolumeViewport,
   eventTarget,
   triggerEvent,
+  metaData,
 } from '@ohif/cornerstone-render'
 import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
@@ -30,11 +31,11 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import { pointInEllipse } from '../../util/math/ellipse'
-import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
+import getWorldWidthAndHeightFromTwoPoints from '../../util/planar/getWorldWidthAndHeightFromTwoPoints'
 import { ToolSpecificToolData, Point3 } from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
@@ -1003,10 +1004,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2])
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2])
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightInPlane(
+        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
           viewPlaneNormal,
           viewUp,
-          direction,
           worldPos1,
           worldPos2
         )

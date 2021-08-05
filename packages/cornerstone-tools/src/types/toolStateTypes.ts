@@ -42,7 +42,31 @@ type ToolSpecificToolData = {
      */
     toolName: string
   }
-  data: unknown // Data specific to the toolType
+  data: {
+    handles: {
+      points?: Point3[]
+      activeHandleIndex?: number | null
+      textBox?: {
+        hasMoved: boolean
+        worldPosition: Point3
+        worldBoundingBox: {
+          topLeft: Point3
+          topRight: Point3
+          bottomLeft: Point3
+          bottomRight: Point3
+        }
+      }
+      activeOperation?: number | null
+      rotationPoints?: unknown
+      slabThicknessPoints?: unknown
+    }
+    active: boolean
+    cachedStats?: unknown
+    invalidated?: boolean
+    activeViewportUIDs?: string[]
+    viewportUID?: string
+    sceneUID?: string
+  } // Data specific to the toolType
 }
 
 type ToolSpecificToolState = Array<ToolSpecificToolData>

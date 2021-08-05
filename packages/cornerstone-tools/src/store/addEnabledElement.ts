@@ -8,6 +8,7 @@ import {
   cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
   keyboardToolEventDispatcher,
+  imageSpacingCalibratedEventDispatcher,
 } from '../eventDispatchers'
 import { state } from './state'
 
@@ -37,6 +38,7 @@ export default function addEnabledElement(evt: CustomEvent): void {
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(canvas)
   cameraModifiedEventDispatcher.enable(canvas)
+  imageSpacingCalibratedEventDispatcher.enable(canvas)
   // Dispatchers: interaction
   mouseToolEventDispatcher.enable(canvas)
   keyboardToolEventDispatcher.enable(canvas)

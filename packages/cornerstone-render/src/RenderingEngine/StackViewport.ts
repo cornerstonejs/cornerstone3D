@@ -3,10 +3,11 @@ import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 import _cloneDeep from 'lodash.clonedeep'
+import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
+import { vec3 } from 'gl-matrix'
 
 import metaData from '../metaData'
 import Viewport from './Viewport'
-import { vec3 } from 'gl-matrix'
 import eventTarget from '../eventTarget'
 import EVENTS from '../enums/events'
 import { triggerEvent, isEqual, invertRgbTransferFunction } from '../utilities'
@@ -23,7 +24,6 @@ import {
   Scaling,
   StackProperties,
 } from '../types'
-import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 
 import { loadAndCacheImage } from '../imageLoader'
 import requestPoolManager from '../requestPool/requestPoolManager'
@@ -40,6 +40,11 @@ interface ImageDataMetaData {
   dimensions: Point3
   spacing: Point3
   numVoxels: number
+}
+
+type CalibrationEvent = {
+  rowScale: number
+  columnScale: number
 }
 
 /**
@@ -64,6 +69,8 @@ class StackViewport extends Viewport {
   private panCache: Point3
   private shouldInvert = false // since invert is getting applied on the actor we should track it
   private rotationCache = 0
+  private _publishCalibratedEvent = false
+  private _calibrationEvent: CalibrationEvent
 
   // TODO: These should not be here and will be nuked
   public modality: string // this is needed for tools
@@ -114,6 +121,8 @@ class StackViewport extends Viewport {
     const vtkImageData = volumeActor.getMapper().getInputData()
     return {
       dimensions: vtkImageData.getDimensions(),
+      spacing: vtkImageData.getSpacing(),
+      origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
       scalarData: vtkImageData.getPointData().getScalars().getData(),
       vtkImageData: volumeActor.getMapper().getInputData(),
@@ -221,9 +230,11 @@ class StackViewport extends Viewport {
     //   metaDataMap.set(imageId, metaData.get('imagePlaneModule', imageId))
     // })
 
+    let imagePlaneModule = metaData.get('imagePlaneModule', imageId)
+    imagePlaneModule = this.calibrateIfNecessary(imageId, imagePlaneModule)
+
     return {
-      imagePlaneModule: metaData.get('imagePlaneModule', imageId),
-      // metaDataMap,
+      imagePlaneModule,
       imagePixelModule: {
         bitsAllocated,
         bitsStored,
@@ -236,6 +247,87 @@ class StackViewport extends Viewport {
         modality,
       },
     }
+  }
+
+  /**
+   * Checks the metadataProviders to see if a calibratedPixelSpacing is
+   * given. If so, checks the actor to see if it needs to be modified, and
+   * set the flags for imageCalibration if a new actor needs to be created
+   * @param imageId imageId
+   * @param imagePlaneModule imaagePlaneModule
+   * @returns modified imagePlaneModule with the calibrated spacings
+   */
+  private calibrateIfNecessary(imageId, imagePlaneModule) {
+    const calibratedPixelSpacing = metaData.get(
+      'calibratedPixelSpacing',
+      imageId
+    )
+
+    if (!calibratedPixelSpacing) {
+      return imagePlaneModule
+    }
+
+    const [calibratedRowSpacing, calibratedColumnSpacing] =
+      calibratedPixelSpacing
+
+    // Check if there is already an actor
+    const imageData = this.getImageData()
+
+    // If no actor (first load) and calibration matches the dicom header
+    if (
+      !imageData &&
+      imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
+      imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
+    ) {
+      return imagePlaneModule
+    }
+
+    // If no actor (first load) and calibration doesn't match headers
+    // -> needs calibration
+    if (
+      !imageData &&
+      (imagePlaneModule.rowPixelSpacing !== calibratedRowSpacing ||
+        imagePlaneModule.columnPixelSpacing !== calibratedColumnSpacing)
+    ) {
+      this._publishCalibratedEvent = true
+
+      this._calibrationEvent = <CalibrationEvent>{
+        rowScale: calibratedRowSpacing / imagePlaneModule.rowPixelSpacing,
+        columnScale:
+          calibratedColumnSpacing / imagePlaneModule.columnPixelSpacing,
+      }
+
+      // modify imagePlaneModule for actor to use calibrated spacing
+      imagePlaneModule.rowPixelSpacing = calibratedRowSpacing
+      imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing
+      return imagePlaneModule
+    }
+
+    // If there is already an actor, check if calibration is needed for the current actor
+    const { vtkImageData } = imageData
+    const [columnPixelSpacing, rowPixelSpacing] = vtkImageData.getSpacing()
+
+    imagePlaneModule.rowPixelSpacing = calibratedRowSpacing
+    imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing
+
+    // If current actor spacing matches the calibrated spacing
+    if (
+      rowPixelSpacing === calibratedRowSpacing &&
+      columnPixelSpacing === calibratedPixelSpacing
+    ) {
+      // No calibration is required
+      return imagePlaneModule
+    }
+
+    // Calibration is required
+    this._publishCalibratedEvent = true
+
+    this._calibrationEvent = <CalibrationEvent>{
+      rowScale: calibratedRowSpacing / rowPixelSpacing,
+      columnScale: calibratedColumnSpacing / columnPixelSpacing,
+    }
+
+    return imagePlaneModule
   }
 
   /**
@@ -323,21 +415,21 @@ class StackViewport extends Viewport {
       voiRange: this.voiRange,
       rotation: this.rotation,
       interpolationType: this.interpolationType,
-      invert: this.invert
-    };
+      invert: this.invert,
+    }
   }
 
   /**
    * Reset the viewport properties
    */
   public resetProperties(): void {
-    this.voiRange = undefined;
-    this.rotation = 0;
-    this.interpolationType = INTERPOLATION_TYPE.LINEAR;
+    this.voiRange = undefined
+    this.rotation = 0
+    this.interpolationType = INTERPOLATION_TYPE.LINEAR
 
     // Ensure that the invert setting is applied properly
     this.shouldInvert = this.invert === true
-    this.invert = false;
+    this.invert = false
 
     const actor = this.getDefaultActor()
     if (actor?.volumeActor) {
@@ -401,24 +493,41 @@ class StackViewport extends Viewport {
     // We should define the minimum we need to display an image and it should live on
     // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
     // should be optional and used if provided through a metadata provider.
+
     const { imagePlaneModule, imagePixelModule } = this.buildMetadata(
       image.imageId
     )
 
-    const {
-      rowCosines,
-      columnCosines,
-    }: {
-      rowCosines: Point3
-      columnCosines: Point3
-    } = imagePlaneModule
+    let rowCosines, columnCosines
 
-    const rowCosineVec = vec3.fromValues(...rowCosines)
-    const colCosineVec = vec3.fromValues(...columnCosines)
+    rowCosines = <Point3>imagePlaneModule.rowCosines
+    columnCosines = <Point3>imagePlaneModule.columnCosines
+
+    // if null or undefined
+    if (rowCosines == null || columnCosines == null) {
+      rowCosines = <Point3>[1, 0, 0]
+      columnCosines = <Point3>[0, 1, 0]
+    }
+
+    const rowCosineVec = vec3.fromValues(
+      rowCosines[0],
+      rowCosines[1],
+      rowCosines[2]
+    )
+    const colCosineVec = vec3.fromValues(
+      columnCosines[0],
+      columnCosines[1],
+      columnCosines[2]
+    )
     const scanAxisNormal = vec3.create()
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec)
 
-    const origin = imagePlaneModule.imagePositionPatient
+    let origin = imagePlaneModule.imagePositionPatient
+    // if null or undefined
+    if (origin == null) {
+      origin = [0, 0, 0]
+    }
+
     const xSpacing =
       imagePlaneModule.columnPixelSpacing || image.columnPixelSpacing
     const ySpacing = imagePlaneModule.rowPixelSpacing || image.rowPixelSpacing
@@ -489,7 +598,6 @@ class StackViewport extends Viewport {
       numComps,
       numVoxels,
     } = this._getImageDataMetadata(image)
-
     let pixelArray
     switch (bitsAllocated) {
       case 8:
@@ -540,12 +648,12 @@ class StackViewport extends Viewport {
     this.invalidated = true
 
     const { canvas, options } = this
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext('2d')
 
     // Default to black if no background color is set
-    let fillStyle;
+    let fillStyle
     if (options && options.background) {
-      const rgb = options.background.map(f => Math.floor(255 * f));
+      const rgb = options.background.map((f) => Math.floor(255 * f))
       fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
     } else {
       fillStyle = 'black'
@@ -605,7 +713,11 @@ class StackViewport extends Viewport {
    */
   private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
     const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId)
-    const origin = imagePlaneModule.imagePositionPatient
+    let origin = imagePlaneModule.imagePositionPatient
+
+    if (origin == null) {
+      origin = [0, 0, 0]
+    }
 
     this._imageData.setOrigin(origin)
     // 1. Update the pixel data in the vtkImageData object with the pixelData
@@ -769,7 +881,7 @@ class StackViewport extends Viewport {
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
-    const previousCameraProps = _cloneDeep(this.getCamera());
+    const previousCameraProps = _cloneDeep(this.getCamera())
 
     if (sameImageData && !this.invalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
@@ -780,7 +892,7 @@ class StackViewport extends Viewport {
       const direction = this._imageData.getDirection() as Float32Array
       const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction)
 
-      this.setCameraNoEvent({ viewUp, viewPlaneNormal });
+      this.setCameraNoEvent({ viewUp, viewPlaneNormal })
 
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting
@@ -838,9 +950,9 @@ class StackViewport extends Viewport {
 
     // Reset the camera to point to the new slice location, reset camera doesn't
     // modify the direction of projection and viewUp
-    this.resetCameraNoEvent();
+    this.resetCameraNoEvent()
 
-    this.triggerCameraEvent(this.getCamera(), previousCameraProps);
+    this.triggerCameraEvent(this.getCamera(), previousCameraProps)
 
     // This is necessary to initialize the clipping range and it is not related
     // to our custom slabThickness.
@@ -856,6 +968,10 @@ class StackViewport extends Viewport {
     const { position } = this.getCamera()
     this.cameraPosOnRender = position
     this.invalidated = false
+
+    if (this._publishCalibratedEvent) {
+      this.triggerCalibrationEvent()
+    }
   }
 
   /**
@@ -898,12 +1014,29 @@ class StackViewport extends Viewport {
   }
 
   /**
+   * Calibrates the actor with new metadata that has been added for imageId. To calibrate
+   * a viewport, you should add your calibration data manually to
+   * calibratedPixelSpacingMetadataProvider and call viewport.calibrateSpacing
+   * for it get applied.
+   *
+   * @param imageId imageId to be calibrated
+   */
+  public calibrateSpacing(imageId: string): void {
+    const imageIdIndex = this.getImageIds().indexOf(imageId)
+    this.invalidated = true
+    this._loadImage(imageId, imageIdIndex)
+  }
+
+  /**
    * Restores the camera props such zooming and panning after an image is
    * changed, if needed (after scroll)
    *
    * @param parallelScale camera parallel scale
    */
-  private _restoreCameraProps({ parallelScale: prevScale }: ICamera, previousCamera: ICamera): void {
+  private _restoreCameraProps(
+    { parallelScale: prevScale }: ICamera,
+    previousCamera: ICamera
+  ): void {
     const renderer = this.getRenderer()
 
     // get the focalPoint and position after the reset
@@ -922,17 +1055,15 @@ class StackViewport extends Viewport {
     ]
 
     // Restoring previous state x,y and scale, keeping the new z
-    this.setCameraNoEvent(
-      {
-        parallelScale: prevScale,
-        position: newPosition,
-        focalPoint: newFocal,
-      }
-    );
+    this.setCameraNoEvent({
+      parallelScale: prevScale,
+      position: newPosition,
+      focalPoint: newFocal,
+    })
 
-    const camera = this.getCamera();
+    const camera = this.getCamera()
 
-    this.triggerCameraEvent(camera, previousCamera);
+    this.triggerCameraEvent(camera, previousCamera)
 
     // Invoking render
     const RESET_CAMERA_EVENT = {
@@ -952,10 +1083,33 @@ class StackViewport extends Viewport {
       viewportUID: this.uid,
       sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,
-    };
+    }
 
     // For crosshairs to adapt to new viewport size
     triggerEvent(this.canvas, EVENTS.CAMERA_MODIFIED, eventDetail)
+  }
+
+  private triggerCalibrationEvent() {
+    // Update the indexToWorld and WorldToIndex for viewport
+    const { vtkImageData } = this.getImageData()
+
+    // Finally emit event for the full camera change cause during load image.
+    const eventDetail = {
+      canvas: this.canvas,
+      viewportUID: this.uid,
+      sceneUID: this.sceneUID,
+      renderingEngineUID: this.renderingEngineUID,
+      imageId: this.getCurrentImageId(),
+      imageData: vtkImageData,
+      ...this._calibrationEvent,
+      indexToWorld: vtkImageData.getIndexToWorld(),
+      worldToIndex: vtkImageData.getWorldToIndex(),
+    }
+
+    // Let the tools know the image spacing has been calibrated
+    triggerEvent(this.canvas, EVENTS.IMAGE_SPACING_CALIBRATED, eventDetail)
+
+    this._publishCalibratedEvent = false
   }
 
   /**

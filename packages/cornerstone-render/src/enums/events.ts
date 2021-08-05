@@ -20,6 +20,7 @@ enum Events {
   IMAGE_CACHE_FULL = 'cornerstoneimagecachefull',
   IMAGE_LOAD_FAILED = 'cornerstoneimageloadfailed',
   STACK_NEW_IMAGE = 'cornerstonenewimageinstack',
+  IMAGE_SPACING_CALIBRATED = 'cornerstoneImageSpacingCalibrated',
 }
 
 export default Events

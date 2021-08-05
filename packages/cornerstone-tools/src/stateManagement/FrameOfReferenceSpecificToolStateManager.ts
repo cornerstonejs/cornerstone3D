@@ -90,6 +90,26 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
+   * Returns all the available frameOfReferences inside the state manager
+   * @returns - All the registered frame of references inside the manager
+   */
+  getFramesOfReference = (): Array<string> => {
+    return Object.keys(this.toolState)
+  }
+
+  /**
+   * get all tools `ToolSpecificToolState` for the provided FrameOfReference
+   *
+   * @param FrameOfReferenceUID - The UID of the FrameOfReference to retrieve data for.
+   * @returns FrameOfReferenceSpecificToolState
+   */
+  getFrameOfReferenceToolState = (
+    FrameOfReferenceUID: string
+  ): FrameOfReferenceSpecificToolState => {
+    return this.toolState[FrameOfReferenceUID]
+  }
+
+  /**
    * @method get - get `ToolSpecificToolState` from the the manager given the `FrameOfReferenceUID` and `toolName`.
    *
    * @param {string} FrameOfReferenceUID - The UID of the FrameOfReference to retrieve data for.

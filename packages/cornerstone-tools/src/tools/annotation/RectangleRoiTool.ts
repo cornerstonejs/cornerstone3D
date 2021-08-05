@@ -7,7 +7,7 @@ import {
   Settings,
   StackViewport,
   VolumeViewport,
-  getRenderingEngines,
+  metaData,
   triggerEvent,
   eventTarget,
 } from '@ohif/cornerstone-render'
@@ -31,7 +31,7 @@ import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import rectangle from '../../util/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
-import getWorldWidthAndHeightInPlane from '../../util/planar/getWorldWidthAndHeightInPlane'
+import getWorldWidthAndHeightFromTwoPoints from '../../util/planar/getWorldWidthAndHeightFromTwoPoints'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import {
   resetElementCursor,
@@ -954,10 +954,9 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2])
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2])
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightInPlane(
+        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
           viewPlaneNormal,
           viewUp,
-          direction,
           worldPos1,
           worldPos2
         )
