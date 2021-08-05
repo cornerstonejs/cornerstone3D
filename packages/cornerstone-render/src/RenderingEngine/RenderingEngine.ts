@@ -652,6 +652,24 @@ class RenderingEngine implements IRenderingEngine {
     return this._getViewportsAsArray()
   }
 
+  /**
+   * Filters all the available viewports and return the stack viewports
+   * @returns stack viewports registered on the rendering Engine
+   */
+  public getStackViewports(): Array<StackViewport> {
+    this._throwIfDestroyed()
+
+    const viewports = this.getViewports()
+
+    const isStackViewport = (
+      viewport: StackViewport | VolumeViewport
+    ): viewport is StackViewport => {
+      return viewport instanceof StackViewport
+    }
+
+    return viewports.filter(isStackViewport)
+  }
+
   private _setViewportsToBeRenderedNextFrame(viewportUIDs: string[]) {
     // Add the viewports to the set of flagged viewports
     viewportUIDs.forEach((viewportUID) => {

@@ -32,7 +32,7 @@ class Viewport {
   _actors: Map<string, any>
   readonly defaultOptions: any
   options: ViewportInputOptions
-  private _suppressCameraModifiedEvents: boolean = false;
+  private _suppressCameraModifiedEvents = false
 
   constructor(props: ViewportInput) {
     this.uid = props.uid
@@ -393,22 +393,22 @@ class Viewport {
   }
 
   protected resetCameraNoEvent() {
-    this._suppressCameraModifiedEvents = true;
-    this.resetCamera();
-    this._suppressCameraModifiedEvents = false;
+    this._suppressCameraModifiedEvents = true
+    this.resetCamera()
+    this._suppressCameraModifiedEvents = false
   }
 
   protected setCameraNoEvent(camera: ICamera) {
-    this._suppressCameraModifiedEvents = true;
-    this.setCamera(camera);
-    this._suppressCameraModifiedEvents = false;
+    this._suppressCameraModifiedEvents = true
+    this.setCamera(camera)
+    this._suppressCameraModifiedEvents = false
   }
 
   // new reset camera
   // *
   public resetCamera() {
     const renderer = this.getRenderer()
-    const previousCamera = _cloneDeep(this.getCamera());
+    const previousCamera = _cloneDeep(this.getCamera())
 
     const bounds = renderer.computeVisiblePropBounds()
     const focalPoint = new Float64Array(3)
@@ -587,7 +587,7 @@ class Viewport {
 
   public setCamera(cameraInterface: ICamera): void {
     const vtkCamera = this.getVtkActiveCamera()
-    const previousCamera = _cloneDeep(this.getCamera());
+    const previousCamera = _cloneDeep(this.getCamera())
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface)
     const {
       viewUp,
@@ -646,8 +646,7 @@ class Viewport {
         renderingEngineUID: this.renderingEngineUID,
       }
 
-
-      triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail);
+      triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
     }
 
     if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {

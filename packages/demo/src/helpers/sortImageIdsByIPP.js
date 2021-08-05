@@ -14,6 +14,11 @@ export default function sortImageIdsByIPP(imageIds) {
     imageOrientationPatient,
   } = metaData.get('imagePlaneModule', imageIds[0]);
 
+  // If there is no imagePositionPatientInformation
+  if (referenceImagePositionPatient === undefined){
+    return imageIds
+  }
+
   const refIppVec = vec3.fromValues(...referenceImagePositionPatient);
 
   let scanAxisNormal = vec3.create()

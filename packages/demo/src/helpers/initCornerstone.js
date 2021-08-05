@@ -6,6 +6,8 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 
+const { calibratedPixelSpacingMetadataProvider } = cornerstone.Utilities
+
 // Wire up listeners for renderingEngine's element enabled events
 csTools3d.init()
 
@@ -19,7 +21,12 @@ cornerstone.metaData.addProvider(
 
 cornerstone.metaData.addProvider(
   ptScalingMetaDataProvider.get.bind(ptScalingMetaDataProvider),
-  111111
+  10000
+)
+
+cornerstone.metaData.addProvider(
+  calibratedPixelSpacingMetadataProvider.get.bind(calibratedPixelSpacingMetadataProvider),
+  11000
 )
 
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone

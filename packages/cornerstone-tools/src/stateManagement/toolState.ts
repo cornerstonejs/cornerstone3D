@@ -146,4 +146,5 @@ export {
   addToolState,
   removeToolState,
   removeToolStateByToolDataUID,
+  getViewportSpecificStateManager,
 }

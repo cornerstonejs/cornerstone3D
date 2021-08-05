@@ -1,5 +1,4 @@
 import { BaseAnnotationTool } from '../base'
-import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 // ~~ VTK Viewport
 import {
   Settings,
@@ -9,14 +8,10 @@ import {
   StackViewport,
   triggerEvent,
   eventTarget,
+  metaData,
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
-import {
-  getImageIdForTool,
-  getTargetVolume,
-  getToolStateForDisplay,
-  getToolStateWithinSlice,
-} from '../../util/planar'
+import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
 import {
   addToolState,
@@ -1149,8 +1144,16 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return { imageVolume, viewport }
   }
 
+  _calculateLength(pos1, pos2) {
+    const dx = pos1[0] - pos2[0]
+    const dy = pos1[1] - pos2[1]
+    const dz = pos1[2] - pos2[2]
+
+    return Math.sqrt(dx * dx + dy * dy + dz * dz)
+  }
+
   _calculateCachedStats = (toolData, renderingEngine, enabledElement) => {
-    const { data } = toolData
+    const { data, metadata } = toolData
     const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
@@ -1172,13 +1175,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
       const { vtkImageData: imageData, dimensions } = imageVolume
 
-      // https://github.com/Kitware/vtk-js/blob/b50fd091cb9b5b65981bc7c64af45e8f2472d7a1/Sources/Common/Core/Math/index.js#L331
-      const dist1 = Math.sqrt(
-        vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
-      )
-      const dist2 = Math.sqrt(
-        vtkMath.distance2BetweenPoints(worldPos3, worldPos4)
-      )
+      const dist1 = this._calculateLength(worldPos1, worldPos2)
+      const dist2 = this._calculateLength(worldPos3, worldPos4)
       const length = dist1 > dist2 ? dist1 : dist2
       const width = dist1 > dist2 ? dist2 : dist1
 

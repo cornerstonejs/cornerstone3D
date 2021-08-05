@@ -713,7 +713,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         direction
       )
       vtkMath.normalize(direction)
-      vtkMath.multiplyScalar(direction, otherCanvasDiagonalLength)
+      vtkMath.multiplyScalar(<vec3>direction, otherCanvasDiagonalLength)
 
       const pointWorld0 = [0, 0, 0]
       vtkMath.add(otherViewportCenterWorld, direction, pointWorld0)
@@ -1895,7 +1895,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
                   otherViewportRotationPoints[1][3]
                 )
                 vtkMath.add(point1, point2, currentCenter)
-                vtkMath.multiplyScalar(currentCenter, 0.5)
+                vtkMath.multiplyScalar(<vec3>currentCenter, 0.5)
               }
             }
 

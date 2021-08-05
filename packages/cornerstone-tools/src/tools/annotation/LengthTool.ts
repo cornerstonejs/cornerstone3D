@@ -1,4 +1,3 @@
-import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec2 } from 'gl-matrix'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import {
@@ -32,11 +31,12 @@ import { state } from '../../store'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
+import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point3 } from '../../types'
 
@@ -710,8 +710,17 @@ class LengthTool extends BaseAnnotationTool {
     return { imageVolume, viewport }
   }
 
+  _calculateLength(pos1, pos2) {
+    const dx = pos1[0] - pos2[0]
+    const dy = pos1[1] - pos2[1]
+    const dz = pos1[2] - pos2[2]
+
+    return Math.sqrt(dx * dx + dy * dy + dz * dz)
+  }
+
   _calculateCachedStats(toolData, renderingEngine, enabledElement) {
     const data = toolData.data
+    const { referencedImageId } = toolData.metadata
     const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
@@ -731,9 +740,7 @@ class LengthTool extends BaseAnnotationTool {
 
       const { vtkImageData: imageData, dimensions } = imageVolume
 
-      const length = Math.sqrt(
-        vtkMath.distance2BetweenPoints(worldPos1, worldPos2)
-      )
+      const length = this._calculateLength(worldPos1, worldPos2)
 
       const index1 = <Types.Point3>[0, 0, 0]
       const index2 = <Types.Point3>[0, 0, 0]

@@ -17,6 +17,7 @@ import OneStackExample from './ExampleOneStack'
 import FlipViewportExample from './ExampleFlipViewport'
 import ModifierKeysExample from './ExampleModifierKeys'
 import TestUtils from './ExampleTestUtils'
+import CalibrationExample from './ExampleCalibration'
 
 function LinkOut({ href, text }) {
   return (
@@ -135,6 +136,11 @@ function Index() {
       url: '/testUtils',
       text: 'Example demo for test utils',
     },
+    {
+      title: 'Calibrated Images',
+      url: '/calibratedImages',
+      text: 'Example that shows support for calibrated images',
+    },
   ]
 
   const exampleComponents = examples.map((e) => {
@@ -201,6 +207,11 @@ function AppRouter() {
   const color = () =>
     Example({
       children: <ColorExample />,
+    })
+
+  const calibratedImages = () =>
+    Example({
+      children: <CalibrationExample />,
     })
 
   const stackViewport = () =>
@@ -283,6 +294,7 @@ function AppRouter() {
         <Route exact path="/oneVolume/" render={OneVolume} />
         <Route exact path="/oneStack/" render={OneStack} />
         <Route exact path="/testUtils/" render={Test} />
+        <Route exact path="/calibratedImages/" render={calibratedImages} />
         <Route
           exact
           path="/toolDisplayConfiguration/"

@@ -1,14 +1,17 @@
-import { Settings } from '@ohif/cornerstone-render'
+import { Settings, Utilities, Types } from '@ohif/cornerstone-render'
+import { vec4 } from 'gl-matrix'
+
 import BaseTool from './BaseTool'
 import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
 import { getStyleProperty } from '../../stateManagement/toolStyle'
+import { getViewportSpecificStateManager } from '../../stateManagement/toolState'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
   Point2,
 } from '../../types'
 import getToolDataStyle from '../../util/getToolDataStyle'
-
+import triggerAnnotationRender from '../../util/triggerAnnotationRender'
 export interface BaseAnnotationToolSpecificToolData
   extends ToolSpecificToolData {
   data: {
@@ -141,6 +144,82 @@ abstract class BaseAnnotationTool extends BaseTool {
     }
 
     return annotationsNeedToBeRedrawn
+  }
+
+  public onImageSpacingCalibrated = (evt) => {
+    const eventData = evt.detail
+    const { canvas } = eventData
+    const {
+      rowScale,
+      columnScale,
+      imageId,
+      imageData: calibratedImageData,
+      worldToIndex: noneCalibratedWorldToIndex,
+    } = evt.detail
+
+    const calibratedIndexToWorld = calibratedImageData.getIndexToWorld()
+
+    const imageURI = Utilities.imageIdToURI(imageId)
+
+    // Todo: handle other specific state managers that we might add in future
+    let element
+    const stateManager = getViewportSpecificStateManager(element)
+
+    const framesOfReferenece = stateManager.getFramesOfReference()
+
+    // For all the frameOfReferences
+    framesOfReferenece.forEach((frameOfReference) => {
+      const frameOfReferenceSpecificToolState =
+        stateManager.getFrameOfReferenceToolState(frameOfReference)
+
+      const toolSpecificToolState = frameOfReferenceSpecificToolState[this.name]
+
+      if (!toolSpecificToolState || !toolSpecificToolState.length) {
+        return
+      }
+
+      // for this specific tool
+      toolSpecificToolState.forEach((toolData) => {
+        // if the tooldata is drawn on the same imageId
+        if (toolData.metadata.referencedImageId === imageURI) {
+          toolData.data.invalidated = true
+          toolData.data.cachedStats = {}
+
+          toolData.data.handles.points = toolData.data.handles.points.map(
+            (point) => {
+              const p = vec4.fromValues(...point, 1)
+              const pCalibrated = vec4.fromValues(0, 0, 0, 1)
+              const nonCalibratedIndexVec4 = vec4.create()
+              vec4.transformMat4(
+                nonCalibratedIndexVec4,
+                p,
+                noneCalibratedWorldToIndex
+              )
+              const calibratedIndex = [
+                columnScale * nonCalibratedIndexVec4[0],
+                rowScale * nonCalibratedIndexVec4[1],
+                nonCalibratedIndexVec4[2],
+              ]
+
+              vec4.transformMat4(
+                pCalibrated,
+                vec4.fromValues(
+                  calibratedIndex[0],
+                  calibratedIndex[1],
+                  calibratedIndex[2],
+                  1
+                ),
+                calibratedIndexToWorld
+              )
+
+              return <Types.Point3>pCalibrated.slice(0, 3)
+            }
+          )
+        }
+      })
+
+      triggerAnnotationRender(canvas)
+    })
   }
 
   /**

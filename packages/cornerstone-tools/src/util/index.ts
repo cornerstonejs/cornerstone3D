@@ -13,6 +13,7 @@ import throttle from './throttle'
 import getDefault from './getDefault'
 import isObject from './isObject'
 import getToolDataStyle from './getToolDataStyle'
+import calibrateImageSpacing from './calibrateImageSpacing'
 
 // UUID Generation
 import uuidv4 from './uuidv4'
@@ -35,6 +36,7 @@ export {
   uuidv4,
   triggerEvent,
   getToolDataStyle,
+  calibrateImageSpacing,
 }
 
 export default {
@@ -52,4 +54,5 @@ export default {
   uuidv4,
   triggerEvent,
   getToolDataStyle,
+  calibrateImageSpacing,
 }
