@@ -36,11 +36,11 @@ window.cache = cache
 
 let stackCTViewportToolGroup
 
-const toolsToUse = [ 'WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
+const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
   (tool) => tool !== 'Crosshairs'
 )
 
-class OneStackExample extends Component {
+class ModifierKeysExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
@@ -119,6 +119,19 @@ class OneStackExample extends Component {
 
     addToolsToToolGroups({ stackCTViewportToolGroup })
 
+    // Overriding the lenght tool bindings
+    stackCTViewportToolGroup.setToolActive('Length', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+          modifierKey: ToolBindings.Keyboard.Shift,
+        },
+      ],
+    })
+
+    // To enable the modifier keys cursor on viewport before first interaction
+    document.querySelectorAll('div.viewport-pane > canvas')[0].focus()
+
     // This will initialise volumes in GPU memory
     renderingEngine.render()
 
@@ -131,9 +144,7 @@ class OneStackExample extends Component {
     this.ctStackImageIds = ctStackImageIds
 
     let fakeStack = [
-      dxStackImageIds[0],
       ctStackImageIds[ctMiddleSlice],
-      dxStackImageIds[1],
       ctStackImageIds[ctMiddleSlice + 1],
       ctStackImageIds[ctMiddleSlice + 2],
     ]
@@ -201,13 +212,23 @@ class OneStackExample extends Component {
     const [activeTool] = tools.find(
       ([tool, { bindings, mode }]) =>
         mode === 'Active' &&
-        bindings.length &&
         bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+          (binding) =>
+            binding.mouseButton === ToolBindings.Mouse.Primary &&
+            binding.modifierKey === undefined
         )
     )
-
     stackCTViewportToolGroup.setToolPassive(activeTool)
+
+    // Since disabling/passive tools makes the bindings to be []
+    stackCTViewportToolGroup.setToolActive('Length', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+          modifierKey: ToolBindings.Keyboard.Shift,
+        },
+      ],
+    })
 
     // Using mouse primary for the selected tool
     const currentBindings = stackCTViewportToolGroup.tools[toolName].bindings
@@ -215,11 +236,19 @@ class OneStackExample extends Component {
     stackCTViewportToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
       ],
     })
 
     this.renderingEngine.render()
+
+    // To enable modifier key cursor before tool interaction
+    // Should be changed after canvas is wrapped in a div and keyboard event
+    // listener is added to the div instead of canvas
+    document.querySelectorAll("div.viewport-pane > canvas")[0].focus()
+
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
@@ -282,7 +311,8 @@ class OneStackExample extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>MPR Template Example ({this.state.progressText})</h2>
+            <h2>Modifier keys ({this.state.progressText})</h2>
+            <h4>Hold Shift+left click to have legnth activate on any tool</h4>
           </div>
           <div
             className="col-xs-12"
@@ -374,7 +404,7 @@ class OneStackExample extends Component {
               }}
               key={i}
             >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
+              <canvas tabIndex={-1} ref={(c) => this._canvasNodes.set(i, c)} />
             </div>
           ))}
         </ViewportGrid>
@@ -401,4 +431,4 @@ class OneStackExample extends Component {
   }
 }
 
-export default OneStackExample
+export default ModifierKeysExample

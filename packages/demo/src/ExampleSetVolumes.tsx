@@ -24,7 +24,7 @@ import {
   ctVolumeUID,
   colormaps,
   SCENE_IDS,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
 import config from './config/default'
@@ -87,7 +87,7 @@ class VTKSetVolumesExample extends Component {
   constructor(props) {
     super(props)
 
-    ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS)
+    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()

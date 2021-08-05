@@ -14,6 +14,7 @@ import type BoundingBox from './BoundingBox'
 import type PlanarBoundingBox from './PlanarBoundingBox'
 import type Point2 from './Point2'
 import type Point3 from './Point3'
+import type { IToolBinding } from './ISetToolModeOptions'
 
 export type {
   // ToolState
@@ -31,4 +32,6 @@ export type {
   // Event data
   ICornerstoneToolsEventDetail,
   IPoints,
+  // ToolBindings
+  IToolBinding,
 }

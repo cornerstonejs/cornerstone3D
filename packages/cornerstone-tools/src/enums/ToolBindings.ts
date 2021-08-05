@@ -16,10 +16,17 @@ enum Mouse {
   Fifth_Button = 16,
 }
 
+enum Keyboard {
+  Shift = 16,
+  Ctrl = 18,
+  Alt = 17,
+}
+
 enum Touch {}
 
 const enums = {
   Mouse,
+  Keyboard,
   Touch,
 }
 

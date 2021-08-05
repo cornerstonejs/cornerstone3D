@@ -26,7 +26,7 @@ import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -34,7 +34,7 @@ import {
   ptVolumeUID,
   SCENE_IDS,
   VIEWPORT_IDS,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import * as cs from '@ohif/cornerstone-render'
@@ -60,7 +60,7 @@ let ctSceneToolGroup,
   stackDXViewportToolGroup,
   ptSceneToolGroup
 
-const toolsToUse = PET_CT_ANNOTATION_TOOLS
+const toolsToUse = ANNOTATION_TOOLS
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 let viewportInput
 class FlipViewportExample extends Component {
@@ -206,6 +206,13 @@ class FlipViewportExample extends Component {
       VIEWPORT_IDS.STACK.CT
     )
 
+    addToolsToToolGroups({
+      ctSceneToolGroup,
+      stackCTViewportToolGroup,
+      stackPTViewportToolGroup,
+      stackDXViewportToolGroup,
+      ptSceneToolGroup,
+    })
 
     this.axialSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.CT.AXIAL });
     this.axialSync.add({ renderingEngineUID, viewportUID: VIEWPORT_IDS.STACK.CT });
@@ -307,7 +314,7 @@ class FlipViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [ToolBindings.Mouse.Primary],
+      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
     }
     if (isAnnotationToolOn) {
       // Set tool active

@@ -22,7 +22,7 @@ import {
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleToolDisplayConfiguration.css'
 import {
   renderingEngineUID,
@@ -202,6 +202,12 @@ class ToolDisplayConfigurationExample extends Component {
       VIEWPORT_IDS.STACK.DX
     )
 
+    addToolsToToolGroups({
+       ctSceneToolGroup,
+       stackCTViewportToolGroup,
+       stackDXViewportToolGroup,
+     })
+
     renderingEngine.render()
 
     const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
@@ -282,7 +288,7 @@ class ToolDisplayConfigurationExample extends Component {
       stackDXViewportToolGroup,
     ].forEach(toolGroup => {
       toolGroup.setToolActive('WindowLevel', {
-        bindings: [ToolBindings.Mouse.Primary],
+        bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
       })
     })
   }
@@ -334,7 +340,7 @@ class ToolDisplayConfigurationExample extends Component {
     const defaultTool = 'WindowLevel'
     const activeTools = new Set()
     const options = {
-      bindings: [ToolBindings.Mouse.Primary],
+      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
     }
 
     ;[

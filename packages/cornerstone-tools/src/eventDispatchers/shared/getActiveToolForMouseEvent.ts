@@ -1,5 +1,6 @@
 import { ToolGroupManager } from '../../store'
 import { ToolModes } from '../../enums'
+import { keyEventListener } from '../../eventListeners'
 
 const { Active } = ToolModes
 
@@ -14,6 +15,7 @@ const { Active } = ToolModes
 export default function getActiveToolForMouseEvent(evt) {
   const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
   const mouseEvent = evt.detail.event
+  const modifierKey = keyEventListener.getModifierKey()
 
   const toolGroups = ToolGroupManager.getToolGroups(
     renderingEngineUID,
@@ -29,7 +31,17 @@ export default function getActiveToolForMouseEvent(evt) {
       const toolName = toolGroupToolNames[j]
       const tool = toolGroup.tools[toolName]
 
-      if (tool.mode === Active && tool.bindings.includes(mouseEvent.buttons)) {
+      // tool has binding that matches the mouse button, if mouseEvent is undefined
+      // it uses the primary button
+      const correctBinding =
+        tool.bindings.length &&
+        tool.bindings.some(
+          (binding) =>
+            binding.mouseButton === (mouseEvent ? mouseEvent.buttons : 1) &&
+            binding.modifierKey === modifierKey
+        )
+
+      if (tool.mode === Active && correctBinding) {
         // This should be behind some API. Too much knowledge of ToolGroup
         // inner workings leaking out
         return toolGroup._tools[toolName]

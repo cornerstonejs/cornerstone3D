@@ -1,15 +1,16 @@
-import keyListener from './keyListener'
+import keyDownListener, { getModifierKey } from './keyDownListener'
 
-function enable(element: HTMLElement): void {
-  disable(element)
-  element.addEventListener('keydown', keyListener)
+function enable(enabledDomElement: HTMLElement): void {
+  disable(enabledDomElement)
+  enabledDomElement.addEventListener('keydown', keyDownListener)
 }
 
-function disable(element: HTMLElement): void {
-  element.removeEventListener('keydown', keyListener)
+function disable(enabledDomElement: HTMLElement): void {
+  enabledDomElement.removeEventListener('keydown', keyDownListener)
 }
 
 export default {
   enable,
   disable,
+  getModifierKey,
 }

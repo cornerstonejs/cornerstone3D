@@ -246,338 +246,6 @@ function initToolGroups(toolConfiguration = {}) {
     TOOL_GROUP_UIDS.PT_TYPES
   )
 
-  // Set up stack Scene tools
-
-  stackPTViewportToolGroup.addTool('PetThreshold', {
-    configuration: { stackUID: '' },
-  })
-  stackPTViewportToolGroup.setToolActive('PetThreshold', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  stackPTViewportToolGroup.addTool('Length', {})
-  stackPTViewportToolGroup.addTool('Pan', {})
-  stackPTViewportToolGroup.addTool('Zoom', {})
-  stackPTViewportToolGroup.addTool('StackScrollMouseWheel', {})
-  stackPTViewportToolGroup.addTool('Bidirectional', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackPTViewportToolGroup.addTool('Length', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackPTViewportToolGroup.addTool('Probe', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackPTViewportToolGroup.addTool('RectangleRoi', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackPTViewportToolGroup.addTool('EllipticalRoi', {
-    configuration: { stackUID: ctStackUID },
-  })
-
-  stackPTViewportToolGroup.setToolPassive('Bidirectional')
-  stackPTViewportToolGroup.setToolPassive('Length')
-  stackPTViewportToolGroup.setToolPassive('Probe')
-  stackPTViewportToolGroup.setToolPassive('RectangleRoi')
-  stackPTViewportToolGroup.setToolPassive('EllipticalRoi')
-  stackPTViewportToolGroup.setToolPassive('Crosshairs')
-
-  stackPTViewportToolGroup.setToolActive('StackScrollMouseWheel')
-  stackPTViewportToolGroup.setToolActive('WindowLevel', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  stackPTViewportToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  stackPTViewportToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-
-  stackCTViewportToolGroup.addTool('WindowLevel', {
-    configuration: { stackUID: '' },
-  })
-  stackCTViewportToolGroup.addTool('Length', {})
-  stackCTViewportToolGroup.addTool('Pan', {})
-  stackCTViewportToolGroup.addTool('Zoom', {})
-  stackCTViewportToolGroup.addTool('StackScrollMouseWheel', {})
-  stackCTViewportToolGroup.addTool('Bidirectional', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackCTViewportToolGroup.addTool('Length', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackCTViewportToolGroup.addTool('Probe', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackCTViewportToolGroup.addTool('RectangleRoi', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackCTViewportToolGroup.addTool('EllipticalRoi', {
-    configuration: { stackUID: ctStackUID },
-  })
-
-  stackCTViewportToolGroup.setToolActive('WindowLevel', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  stackCTViewportToolGroup.setToolPassive('Bidirectional')
-  stackCTViewportToolGroup.setToolPassive('Length')
-  stackCTViewportToolGroup.setToolPassive('Probe')
-  stackCTViewportToolGroup.setToolPassive('RectangleRoi')
-  stackCTViewportToolGroup.setToolPassive('EllipticalRoi')
-  stackCTViewportToolGroup.setToolPassive('Crosshairs')
-
-  stackCTViewportToolGroup.setToolActive('StackScrollMouseWheel')
-  stackCTViewportToolGroup.setToolActive('WindowLevel', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  stackCTViewportToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  stackCTViewportToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-
-  stackDXViewportToolGroup.addTool('WindowLevel', {
-    configuration: { stackUID: '' },
-  })
-  stackDXViewportToolGroup.addTool('Length', {})
-  stackDXViewportToolGroup.addTool('Pan', {})
-  stackDXViewportToolGroup.addTool('Zoom', {})
-  stackDXViewportToolGroup.addTool('StackScrollMouseWheel', {})
-  stackDXViewportToolGroup.addTool('Bidirectional', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackDXViewportToolGroup.addTool('Length', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackDXViewportToolGroup.addTool('Probe', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackDXViewportToolGroup.addTool('RectangleRoi', {
-    configuration: { stackUID: ctStackUID },
-  })
-  stackDXViewportToolGroup.addTool('EllipticalRoi', {
-    configuration: { stackUID: ctStackUID },
-  })
-
-  stackDXViewportToolGroup.setToolActive('WindowLevel', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  stackDXViewportToolGroup.setToolPassive('Bidirectional')
-  stackDXViewportToolGroup.setToolPassive('Length')
-  stackDXViewportToolGroup.setToolPassive('Probe')
-  stackDXViewportToolGroup.setToolPassive('RectangleRoi')
-  stackDXViewportToolGroup.setToolPassive('EllipticalRoi')
-  stackDXViewportToolGroup.setToolPassive('Crosshairs')
-
-  stackDXViewportToolGroup.setToolActive('StackScrollMouseWheel')
-  stackDXViewportToolGroup.setToolActive('WindowLevel', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  stackDXViewportToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  stackDXViewportToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-
-  // Set up CT Scene tools
-
-  // @TODO: This kills the volumeUID and tool configuration
-  ctSceneToolGroup.addTool('WindowLevel', {
-    configuration: { volumeUID: ctVolumeUID },
-  })
-  ctSceneToolGroup.addTool('Length', {})
-  ctSceneToolGroup.addTool('Pan', {})
-  ctSceneToolGroup.addTool('Zoom', {})
-  ctSceneToolGroup.addTool('StackScrollMouseWheel', {})
-  ctSceneToolGroup.addTool('Bidirectional', {
-    configuration: { volumeUID: ctVolumeUID },
-  })
-  ctSceneToolGroup.addTool('Length', {
-    configuration: { volumeUID: ctVolumeUID },
-  })
-  ctSceneToolGroup.addTool('Probe', {
-    configuration: { volumeUID: ctVolumeUID },
-  })
-  ctSceneToolGroup.addTool('RectangleRoi', {
-    configuration: { volumeUID: ctVolumeUID },
-  })
-  ctSceneToolGroup.addTool('EllipticalRoi', {
-    configuration: { volumeUID: ctVolumeUID },
-  })
-  ctSceneToolGroup.addTool('Crosshairs', {
-    configuration: {
-      getReferenceLineColor,
-      getReferenceLineControllable,
-      getReferenceLineDraggableRotatable,
-      getReferenceLineSlabThicknessControlsOn,
-    },
-  })
-
-  ctSceneToolGroup.setToolPassive('Bidirectional')
-  ctSceneToolGroup.setToolPassive('Length')
-  ctSceneToolGroup.setToolPassive('Probe')
-  ctSceneToolGroup.setToolPassive('RectangleRoi')
-  ctSceneToolGroup.setToolPassive('EllipticalRoi')
-  ctSceneToolGroup.setToolPassive('Crosshairs')
-
-  ctSceneToolGroup.setToolActive('StackScrollMouseWheel')
-  ctSceneToolGroup.setToolActive('WindowLevel', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  ctSceneToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  ctSceneToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-
-  // Set up PT Scene tools
-  ptSceneToolGroup.addTool('Bidirectional', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptSceneToolGroup.addTool('Length', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptSceneToolGroup.addTool('PetThreshold', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptSceneToolGroup.addTool('Probe', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptSceneToolGroup.addTool('RectangleRoi', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptSceneToolGroup.addTool('EllipticalRoi', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptSceneToolGroup.addTool('Crosshairs', {
-    configuration: {
-      getReferenceLineColor,
-      getReferenceLineControllable,
-      getReferenceLineDraggableRotatable,
-      getReferenceLineSlabThicknessControlsOn,
-    },
-  })
-
-  ptSceneToolGroup.addTool('Pan', {})
-  ptSceneToolGroup.addTool('Zoom', {})
-  ptSceneToolGroup.addTool('StackScrollMouseWheel', {})
-  ptSceneToolGroup.setToolPassive('Probe')
-  ptSceneToolGroup.setToolPassive('Length')
-  ptSceneToolGroup.setToolPassive('RectangleRoi')
-  ptSceneToolGroup.setToolPassive('EllipticalRoi')
-  ptSceneToolGroup.setToolPassive('Bidirectional')
-  ptSceneToolGroup.setToolPassive('Crosshairs')
-
-  ptSceneToolGroup.setToolActive('StackScrollMouseWheel')
-  ptSceneToolGroup.setToolActive('PetThreshold', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  ptSceneToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  ptSceneToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-
-  // Set up Fusion Scene tools
-  fusionSceneToolGroup.addTool('Pan', {})
-  fusionSceneToolGroup.addTool('StackScrollMouseWheel', {})
-  fusionSceneToolGroup.addTool('Bidirectional', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  fusionSceneToolGroup.addTool('Length', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  fusionSceneToolGroup.addTool('Probe', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  fusionSceneToolGroup.addTool('RectangleRoi', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  fusionSceneToolGroup.addTool('EllipticalRoi', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  fusionSceneToolGroup.addTool('Zoom', {})
-
-  fusionSceneToolGroup.addTool('PetThreshold', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  fusionSceneToolGroup.addTool('Crosshairs', {
-    configuration: {
-      getReferenceLineColor,
-      getReferenceLineControllable,
-      getReferenceLineDraggableRotatable,
-      getReferenceLineSlabThicknessControlsOn,
-    },
-  })
-
-  fusionSceneToolGroup.setToolPassive('Bidirectional')
-  fusionSceneToolGroup.setToolPassive('Length')
-  fusionSceneToolGroup.setToolPassive('Probe')
-  fusionSceneToolGroup.setToolPassive('RectangleRoi')
-  fusionSceneToolGroup.setToolPassive('EllipticalRoi')
-  fusionSceneToolGroup.setToolPassive('Crosshairs')
-
-  fusionSceneToolGroup.setToolActive('StackScrollMouseWheel')
-  fusionSceneToolGroup.setToolActive('PetThreshold', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-  fusionSceneToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  fusionSceneToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-
-  ptMipSceneToolGroup.addTool('VolumeRotateMouseWheel', {})
-  ptMipSceneToolGroup.addTool('MIPJumpToClickTool', {})
-  ptMipSceneToolGroup.addTool('PetThreshold', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptMipSceneToolGroup.setToolActive('VolumeRotateMouseWheel')
-  ptMipSceneToolGroup.setToolActive('MIPJumpToClickTool')
-  ptMipSceneToolGroup.setToolActive('PetThreshold', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-
-  // Set up CTVR Scene tools
-  ctVRSceneToolGroup.addTool('Pan', {})
-  ctVRSceneToolGroup.addTool('Zoom', {})
-  ctVRSceneToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  ctVRSceneToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-
-  // Set up CTOBLIQUE Scene tools
-  ctObliqueToolGroup.addTool('VolumeRotateMouseWheel', {})
-  ctObliqueToolGroup.addTool('StackScroll', {})
-  ctObliqueToolGroup.setToolActive('VolumeRotateMouseWheel')
-  ctObliqueToolGroup.setToolActive('StackScroll', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-
-  ptTypesSceneToolGroup.addTool('PetThreshold', {
-    configuration: { volumeUID: ptVolumeUID },
-  })
-  ptTypesSceneToolGroup.addTool('Pan', {})
-  ptTypesSceneToolGroup.addTool('Zoom', {})
-  ptTypesSceneToolGroup.addTool('StackScrollMouseWheel', {})
-  ptTypesSceneToolGroup.setToolActive('PetThreshold', {
-    bindings: [ToolBindings.Mouse.Primary],
-  })
-
-  ptTypesSceneToolGroup.setToolActive('Pan', {
-    bindings: [ToolBindings.Mouse.Auxiliary],
-  })
-  ptTypesSceneToolGroup.setToolActive('Zoom', {
-    bindings: [ToolBindings.Mouse.Secondary],
-  })
-  ptTypesSceneToolGroup.setToolActive('StackScrollMouseWheel')
-
   return {
     stackCTViewportToolGroup,
     stackPTViewportToolGroup,
@@ -592,8 +260,481 @@ function initToolGroups(toolConfiguration = {}) {
   }
 }
 
-function destroyToolGroups(toolGroupUIDs) {
-  // TODO
+function addToolsToToolGroups({
+  stackCTViewportToolGroup,
+  stackPTViewportToolGroup,
+  stackDXViewportToolGroup,
+  ctSceneToolGroup,
+  ptSceneToolGroup,
+  fusionSceneToolGroup,
+  ptMipSceneToolGroup,
+  ctVRSceneToolGroup,
+  ctObliqueToolGroup,
+  ptTypesSceneToolGroup,
+}) {
+  // Set up stack Scene tools
+
+  if (stackPTViewportToolGroup) {
+    stackPTViewportToolGroup.addTool('PetThreshold', {
+      configuration: { stackUID: '' },
+    })
+    stackPTViewportToolGroup.setToolActive('PetThreshold', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    stackPTViewportToolGroup.addTool('Length', {})
+    stackPTViewportToolGroup.addTool('Pan', {})
+    stackPTViewportToolGroup.addTool('Zoom', {})
+    stackPTViewportToolGroup.addTool('StackScrollMouseWheel', {})
+    stackPTViewportToolGroup.addTool('Bidirectional', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackPTViewportToolGroup.addTool('Length', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackPTViewportToolGroup.addTool('Probe', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackPTViewportToolGroup.addTool('RectangleRoi', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackPTViewportToolGroup.addTool('EllipticalRoi', {
+      configuration: { stackUID: ctStackUID },
+    })
+
+    stackPTViewportToolGroup.setToolPassive('Bidirectional')
+    stackPTViewportToolGroup.setToolPassive('Length')
+    stackPTViewportToolGroup.setToolPassive('Probe')
+    stackPTViewportToolGroup.setToolPassive('RectangleRoi')
+    stackPTViewportToolGroup.setToolPassive('EllipticalRoi')
+    stackPTViewportToolGroup.setToolPassive('Crosshairs')
+
+    stackPTViewportToolGroup.setToolActive('StackScrollMouseWheel')
+    stackPTViewportToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    stackPTViewportToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    stackPTViewportToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (stackCTViewportToolGroup) {
+    stackCTViewportToolGroup.addTool('WindowLevel', {
+      configuration: { stackUID: '' },
+    })
+    stackCTViewportToolGroup.addTool('Length', {})
+    stackCTViewportToolGroup.addTool('Pan', {})
+    stackCTViewportToolGroup.addTool('Zoom', {})
+    stackCTViewportToolGroup.addTool('StackScrollMouseWheel', {})
+    stackCTViewportToolGroup.addTool('Bidirectional', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackCTViewportToolGroup.addTool('Length', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackCTViewportToolGroup.addTool('Probe', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackCTViewportToolGroup.addTool('RectangleRoi', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackCTViewportToolGroup.addTool('EllipticalRoi', {
+      configuration: { stackUID: ctStackUID },
+    })
+
+    stackCTViewportToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    stackCTViewportToolGroup.setToolPassive('Bidirectional')
+    stackCTViewportToolGroup.setToolPassive('Probe')
+    stackCTViewportToolGroup.setToolPassive('RectangleRoi')
+    stackCTViewportToolGroup.setToolPassive('EllipticalRoi')
+    stackCTViewportToolGroup.setToolPassive('Crosshairs')
+
+    stackCTViewportToolGroup.setToolPassive('Length')
+    stackCTViewportToolGroup.setToolActive('StackScrollMouseWheel')
+    stackCTViewportToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    stackCTViewportToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    stackCTViewportToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (stackDXViewportToolGroup) {
+    stackDXViewportToolGroup.addTool('WindowLevel', {
+      configuration: { stackUID: '' },
+    })
+    stackDXViewportToolGroup.addTool('Length', {})
+    stackDXViewportToolGroup.addTool('Pan', {})
+    stackDXViewportToolGroup.addTool('Zoom', {})
+    stackDXViewportToolGroup.addTool('StackScrollMouseWheel', {})
+    stackDXViewportToolGroup.addTool('Bidirectional', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackDXViewportToolGroup.addTool('Length', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackDXViewportToolGroup.addTool('Probe', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackDXViewportToolGroup.addTool('RectangleRoi', {
+      configuration: { stackUID: ctStackUID },
+    })
+    stackDXViewportToolGroup.addTool('EllipticalRoi', {
+      configuration: { stackUID: ctStackUID },
+    })
+
+    stackDXViewportToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    stackDXViewportToolGroup.setToolPassive('Bidirectional')
+    stackDXViewportToolGroup.setToolPassive('Length')
+    stackDXViewportToolGroup.setToolPassive('Probe')
+    stackDXViewportToolGroup.setToolPassive('RectangleRoi')
+    stackDXViewportToolGroup.setToolPassive('EllipticalRoi')
+    stackDXViewportToolGroup.setToolPassive('Crosshairs')
+
+    stackDXViewportToolGroup.setToolActive('StackScrollMouseWheel')
+    stackDXViewportToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    stackDXViewportToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    stackDXViewportToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (ctSceneToolGroup) {
+    // Set up CT Scene tools
+
+    // @TODO: This kills the volumeUID and tool configuration
+    ctSceneToolGroup.addTool('WindowLevel', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
+    ctSceneToolGroup.addTool('Length', {})
+    ctSceneToolGroup.addTool('Pan', {})
+    ctSceneToolGroup.addTool('Zoom', {})
+    ctSceneToolGroup.addTool('StackScrollMouseWheel', {})
+    ctSceneToolGroup.addTool('Bidirectional', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
+    ctSceneToolGroup.addTool('Length', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
+    ctSceneToolGroup.addTool('Probe', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
+    ctSceneToolGroup.addTool('RectangleRoi', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
+    ctSceneToolGroup.addTool('EllipticalRoi', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
+    ctSceneToolGroup.addTool('Crosshairs', {
+      configuration: {
+        getReferenceLineColor,
+        getReferenceLineControllable,
+        getReferenceLineDraggableRotatable,
+        getReferenceLineSlabThicknessControlsOn,
+      },
+    })
+
+    ctSceneToolGroup.setToolPassive('Bidirectional')
+    ctSceneToolGroup.setToolPassive('Length')
+    ctSceneToolGroup.setToolPassive('Probe')
+    ctSceneToolGroup.setToolPassive('RectangleRoi')
+    ctSceneToolGroup.setToolPassive('EllipticalRoi')
+    ctSceneToolGroup.setToolPassive('Crosshairs')
+
+    ctSceneToolGroup.setToolActive('StackScrollMouseWheel')
+    ctSceneToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    ctSceneToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    ctSceneToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (ptSceneToolGroup) {
+    // Set up PT Scene tools
+    ptSceneToolGroup.addTool('Bidirectional', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('Length', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('PetThreshold', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('Probe', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('RectangleRoi', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('EllipticalRoi', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('Crosshairs', {
+      configuration: {
+        getReferenceLineColor,
+        getReferenceLineControllable,
+        getReferenceLineDraggableRotatable,
+        getReferenceLineSlabThicknessControlsOn,
+      },
+    })
+
+    ptSceneToolGroup.addTool('Pan', {})
+    ptSceneToolGroup.addTool('Zoom', {})
+    ptSceneToolGroup.addTool('StackScrollMouseWheel', {})
+    ptSceneToolGroup.setToolPassive('Probe')
+    ptSceneToolGroup.setToolPassive('Length')
+    ptSceneToolGroup.setToolPassive('RectangleRoi')
+    ptSceneToolGroup.setToolPassive('EllipticalRoi')
+    ptSceneToolGroup.setToolPassive('Bidirectional')
+    ptSceneToolGroup.setToolPassive('Crosshairs')
+
+    ptSceneToolGroup.setToolActive('StackScrollMouseWheel')
+    ptSceneToolGroup.setToolActive('PetThreshold', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    ptSceneToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    ptSceneToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (fusionSceneToolGroup) {
+    // Set up Fusion Scene tools
+    fusionSceneToolGroup.addTool('Pan', {})
+    fusionSceneToolGroup.addTool('StackScrollMouseWheel', {})
+    fusionSceneToolGroup.addTool('Bidirectional', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    fusionSceneToolGroup.addTool('Length', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    fusionSceneToolGroup.addTool('Probe', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    fusionSceneToolGroup.addTool('RectangleRoi', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    fusionSceneToolGroup.addTool('EllipticalRoi', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    fusionSceneToolGroup.addTool('Zoom', {})
+
+    fusionSceneToolGroup.addTool('PetThreshold', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    fusionSceneToolGroup.addTool('Crosshairs', {
+      configuration: {
+        getReferenceLineColor,
+        getReferenceLineControllable,
+        getReferenceLineDraggableRotatable,
+        getReferenceLineSlabThicknessControlsOn,
+      },
+    })
+
+    fusionSceneToolGroup.setToolPassive('Bidirectional')
+    fusionSceneToolGroup.setToolPassive('Length')
+    fusionSceneToolGroup.setToolPassive('Probe')
+    fusionSceneToolGroup.setToolPassive('RectangleRoi')
+    fusionSceneToolGroup.setToolPassive('EllipticalRoi')
+    fusionSceneToolGroup.setToolPassive('Crosshairs')
+
+    fusionSceneToolGroup.setToolActive('StackScrollMouseWheel')
+    fusionSceneToolGroup.setToolActive('PetThreshold', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    fusionSceneToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    fusionSceneToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (ptMipSceneToolGroup) {
+    ptMipSceneToolGroup.addTool('VolumeRotateMouseWheel', {})
+    ptMipSceneToolGroup.addTool('MIPJumpToClickTool', {})
+    ptMipSceneToolGroup.addTool('PetThreshold', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptMipSceneToolGroup.setToolActive('VolumeRotateMouseWheel')
+    ptMipSceneToolGroup.setToolActive('MIPJumpToClickTool')
+    ptMipSceneToolGroup.setToolActive('PetThreshold', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+  }
+
+  if (ctVRSceneToolGroup) {
+    // Set up CTVR Scene tools
+    ctVRSceneToolGroup.addTool('Pan', {})
+    ctVRSceneToolGroup.addTool('Zoom', {})
+    ctVRSceneToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    ctVRSceneToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (ctObliqueToolGroup) {
+    // Set up CTOBLIQUE Scene tools
+    ctObliqueToolGroup.addTool('VolumeRotateMouseWheel', {})
+    ctObliqueToolGroup.addTool('StackScroll', {})
+    ctObliqueToolGroup.setToolActive('VolumeRotateMouseWheel')
+    ctObliqueToolGroup.setToolActive('StackScroll', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+  }
+
+  if (ptTypesSceneToolGroup) {
+    ptTypesSceneToolGroup.addTool('PetThreshold', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptTypesSceneToolGroup.addTool('Pan', {})
+    ptTypesSceneToolGroup.addTool('Zoom', {})
+    ptTypesSceneToolGroup.addTool('StackScrollMouseWheel', {})
+    ptTypesSceneToolGroup.setToolActive('PetThreshold', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+
+    ptTypesSceneToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    ptTypesSceneToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+    ptTypesSceneToolGroup.setToolActive('StackScrollMouseWheel')
+  }
 }
 
-export { initToolGroups, destroyToolGroups }
+export { initToolGroups, addToolsToToolGroups }

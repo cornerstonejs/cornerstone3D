@@ -80,9 +80,7 @@ const TOOL_GROUP_UIDS = {
 }
 
 // A string helper for the drop down.
-const PET_CT_ANNOTATION_TOOLS = [
-  'Pan',
-  'Zoom',
+const ANNOTATION_TOOLS = [
   'Probe',
   'Crosshairs',
   'Length',
@@ -104,5 +102,5 @@ export {
   VIEWPORT_IDS,
   TOOL_GROUP_UIDS,
   colormaps,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 }

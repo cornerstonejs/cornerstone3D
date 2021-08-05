@@ -20,7 +20,7 @@ import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/Co
 import getImageIds from './helpers/getImageIds'
 import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -28,7 +28,7 @@ import {
   ctVolumeUID,
   colormaps,
   SCENE_IDS,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
 import config from './config/default'
@@ -88,7 +88,7 @@ class VTKMPRExample extends Component {
   constructor(props) {
     super(props)
 
-    ptCtLayoutTools = ['Levels'].concat(PET_CT_ANNOTATION_TOOLS)
+    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -166,6 +166,16 @@ class VTKMPRExample extends Component {
         ctWLSynchronizer: this.ctWLSync,
       }
     )
+
+    addToolsToToolGroups({
+      ctSceneToolGroup,
+      ptSceneToolGroup,
+      fusionSceneToolGroup,
+      ptMipSceneToolGroup,
+      ctVRSceneToolGroup,
+      ctObliqueToolGroup,
+      ptTypesSceneToolGroup,
+    })
 
     // Create volumes
     const ptImageIds = await this.petVolumeImageIds

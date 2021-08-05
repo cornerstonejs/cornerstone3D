@@ -79,7 +79,9 @@ describe('Cornerstone Tools: ', () => {
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool('Probe')
-    this.stackToolGroup.setToolActive('Probe', { bindings: [1] })
+    this.stackToolGroup.setToolActive('Probe', {
+      bindings: [{ mouseButton: 1 }],
+    })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
     registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -99,7 +101,6 @@ describe('Cornerstone Tools: ', () => {
       }
     })
   })
-
 
   it('Should successfully click to put a probe tool on a canvas - 512 x 128', function (done) {
     const canvas = createCanvas(this.renderingEngine, AXIAL, 512, 128)
@@ -241,7 +242,7 @@ describe('Cornerstone Tools: ', () => {
         expect(targets.length).toBe(1)
 
         // The world coordinate is on the white bar so value is 255
-        console.warn(data);
+        console.warn(data)
         console.warn(data[targets[0]])
         expect(data[targets[0]].value).toBe(255)
 

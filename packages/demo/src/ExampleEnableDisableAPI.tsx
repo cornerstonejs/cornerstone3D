@@ -12,7 +12,7 @@ import * as cs from '@ohif/cornerstone-render'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
@@ -24,7 +24,7 @@ import {
   ptVolumeUID,
   SCENE_IDS,
   VIEWPORT_IDS,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
@@ -39,7 +39,7 @@ let ctSceneToolGroup,
   stackDXViewportToolGroup,
   ptSceneToolGroup
 
-const toolsToUse = PET_CT_ANNOTATION_TOOLS
+const toolsToUse = ANNOTATION_TOOLS
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
 
@@ -217,6 +217,13 @@ class EnableDisableViewportExample extends Component {
       VIEWPORT_IDS.STACK.CT
     )
 
+    addToolsToToolGroups({
+      ctSceneToolGroup,
+      stackCTViewportToolGroup,
+      stackDXViewportToolGroup,
+      ptSceneToolGroup,
+    })
+
     renderingEngine.render()
 
     const ctStackLoad = async () => {
@@ -388,7 +395,7 @@ class EnableDisableViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [ToolBindings.Mouse.Primary],
+      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
     }
     if (isAnnotationToolOn) {
       // Set tool active

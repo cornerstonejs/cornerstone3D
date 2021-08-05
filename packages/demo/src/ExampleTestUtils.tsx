@@ -27,7 +27,7 @@ import {
   ctVolumeUID,
   SCENE_IDS,
   VIEWPORT_IDS,
-  PET_CT_ANNOTATION_TOOLS,
+  ANNOTATION_TOOLS,
 } from './constants'
 
 const VOLUME = 'volume'
@@ -40,7 +40,7 @@ const { fakeImageLoader, fakeMetaDataProvider } = Utilities.testUtils
 
 let stackCTViewportToolGroup
 
-const toolsToUse = PET_CT_ANNOTATION_TOOLS.filter(
+const toolsToUse = ANNOTATION_TOOLS.filter(
   (tool) => tool !== 'Crosshairs'
 )
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
@@ -165,7 +165,7 @@ class testUtil extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [ToolBindings.Mouse.Primary],
+      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
     }
     if (isAnnotationToolOn) {
       // Set tool active

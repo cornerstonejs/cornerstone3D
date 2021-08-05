@@ -1,5 +1,5 @@
 import { ToolBindings } from '@ohif/cornerstone-tools'
-import { PET_CT_ANNOTATION_TOOLS } from '../constants'
+import { ANNOTATION_TOOLS } from '../constants'
 
 export default function ptCtToggleAnnotationTool(
   enableAnnotationTool,
@@ -9,13 +9,13 @@ export default function ptCtToggleAnnotationTool(
   annotationToolName
 ) {
   const options = {
-    bindings: [ToolBindings.Mouse.Primary],
+    bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
   }
 
   if (enableAnnotationTool) {
     // Set tool active
 
-    const toolsToSetPassive = PET_CT_ANNOTATION_TOOLS.filter(
+    const toolsToSetPassive = ANNOTATION_TOOLS.filter(
       (toolName) => toolName !== annotationToolName
     )
 
@@ -39,7 +39,7 @@ export default function ptCtToggleAnnotationTool(
     fusionSceneToolGroup.setToolActive('PetThreshold', options)
 
     // Set all annotation tools passive
-    PET_CT_ANNOTATION_TOOLS.forEach((toolName) => {
+    ANNOTATION_TOOLS.forEach((toolName) => {
       ctSceneToolGroup.setToolPassive(toolName)
       ptSceneToolGroup.setToolPassive(toolName)
       fusionSceneToolGroup.setToolPassive(toolName)
