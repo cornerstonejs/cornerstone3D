@@ -503,7 +503,12 @@ class RenderingEngine implements IRenderingEngine {
     // 3. Recalculate the viewports location on the off screen canvas
     this._resize(viewports, offScreenCanvasWidth, offScreenCanvasHeight)
 
-    // 4. Render all
+    // 4. Reset viewport cameras
+    viewports.forEach((vp) => {
+      vp.resetCamera()
+    })
+
+    // 5. Render all
     this.render()
   }
 

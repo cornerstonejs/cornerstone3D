@@ -142,7 +142,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
   getToolStateByToolDataUID = (
     toolDataUID: string,
     filter: FilterInterface = {}
-  ): ToolSpecificToolData => {
+  ): ToolSpecificToolData | undefined => {
     const toolSpecificToolStateAndIndex =
       this._getToolSpecificToolStateAndIndex(toolDataUID, filter)
 

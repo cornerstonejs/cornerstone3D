@@ -9,6 +9,8 @@ import {
   createAndCacheVolume,
 } from "@ohif/cornerstone-render";
 import { ToolGroupManager, ToolBindings, resetToolsState } from "@ohif/cornerstone-tools";
+import * as csTools3d from '@ohif/cornerstone-tools'
+
 import { registerWebImageLoader } from "@ohif/cornerstone-image-loader-streaming-volume";
 import config from "./config/default";
 import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
@@ -25,13 +27,15 @@ class ColorExample extends Component {
   constructor(props) {
     super(props);
 
+    csTools3d.init()
     this.axialContainer = React.createRef();
     this.sagittalContainer = React.createRef();
     this.coronalContainer = React.createRef();
   }
 
   componentWillUnmount() {
-    resetToolsState()
+
+    csTools3d.destroy()
     this.renderingEngine.destroy();
 
   }

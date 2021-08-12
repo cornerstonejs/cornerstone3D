@@ -19,6 +19,7 @@ enum CornerstoneTools3DEvents {
   //
   // MOUSE
   //
+  ANNOTATION_RENDERED = 'cornerstonetools3dannotationrendered',
 
   /**
    * https://developer.mozilla.org/en-US/docs/Web/Events/mousedown

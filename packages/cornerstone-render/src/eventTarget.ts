@@ -8,6 +8,10 @@ class CornerstoneEventTarget implements EventTarget {
     this.listeners = {}
   }
 
+  public reset() {
+    this.listeners = {}
+  }
+
   public addEventListener(type, callback) {
     if (!this.listeners[type]) {
       this.listeners[type] = []

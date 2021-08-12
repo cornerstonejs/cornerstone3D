@@ -60,7 +60,7 @@ const { Active, Passive } = ToolModes
  */
 export default function mouseDown(evt) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
-  if (state.isToolLocked) {
+  if (state.isInteractingWithTool) {
     return
   }
 
@@ -113,11 +113,7 @@ export default function mouseDown(evt) {
     )
 
     toggleToolDataSelection(toolData, isMultiSelect)
-    if (isToolDataLocked(toolData)) {
-      evt.preventDefault()
-    } else {
-      tool.handleSelectedCallback(evt, toolData, handle, 'mouse')
-    }
+    tool.handleSelectedCallback(evt, toolData, handle, 'mouse')
 
     return
   }
@@ -135,11 +131,7 @@ export default function mouseDown(evt) {
     )
 
     toggleToolDataSelection(toolData, isMultiSelect)
-    if (isToolDataLocked(toolData)) {
-      evt.preventDefault()
-    } else {
-      tool.toolSelectedCallback(evt, toolData, 'mouse')
-    }
+    tool.toolSelectedCallback(evt, toolData, 'mouse')
 
     return
   }

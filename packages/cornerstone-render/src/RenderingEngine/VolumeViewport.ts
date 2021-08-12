@@ -2,7 +2,7 @@ import VIEWPORT_TYPE from '../constants/viewportType'
 import Scene from './Scene'
 import Viewport from './Viewport'
 
-import { ViewportInput, Point2, Point3 } from '../types'
+import { ViewportInput, Point2, Point3, IImageData } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import { ActorEntry } from '../types'
 
@@ -77,6 +77,34 @@ class VolumeViewport extends Viewport {
     const renderingEngine = this.getRenderingEngine()
 
     return renderingEngine.getScene(this.sceneUID)
+  }
+
+  /**
+   * Returns the image and its properties that is being shown inside the
+   * stack viewport. It returns, the image dimensions, image direction,
+   * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
+   *
+   * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
+   */
+  public getImageData(): IImageData | undefined {
+    const actor = this.getDefaultActor()
+
+    if (!actor) {
+      return
+    }
+
+    const { volumeActor } = actor
+    const vtkImageData = volumeActor.getMapper().getInputData()
+    return {
+      dimensions: vtkImageData.getDimensions(),
+      spacing: vtkImageData.getSpacing(),
+      origin: vtkImageData.getOrigin(),
+      direction: vtkImageData.getDirection(),
+      scalarData: vtkImageData.getPointData().getScalars().getData(),
+      vtkImageData: volumeActor.getMapper().getInputData(),
+      metadata: undefined,
+      scaling: undefined,
+    }
   }
 
   /**

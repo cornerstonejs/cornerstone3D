@@ -9,9 +9,8 @@ import {
 import {
   SynchronizerManager,
   synchronizers,
-  ToolGroupManager,
-  resetToolsState,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
@@ -87,6 +86,8 @@ class VTKMPRExample extends Component {
 
   constructor(props) {
     super(props)
+
+    csTools3d.init()
 
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
@@ -289,12 +290,8 @@ class VTKMPRExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    resetToolsState()
-    SynchronizerManager.destroy()
     cache.purgeCache()
-    ToolGroupManager.destroy()
-
+    csTools3d.destroy()
     this.renderingEngine.destroy()
   }
 

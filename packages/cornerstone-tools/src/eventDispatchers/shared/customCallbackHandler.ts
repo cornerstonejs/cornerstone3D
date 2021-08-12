@@ -23,7 +23,7 @@ export default function customCallbackHandler(
   customFunction: string,
   evt
 ) {
-  if (state.isToolLocked) {
+  if (state.isInteractingWithTool) {
     return false
   }
 

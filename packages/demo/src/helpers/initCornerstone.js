@@ -8,9 +8,6 @@ import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 
 const { calibratedPixelSpacingMetadataProvider } = cornerstone.Utilities
 
-// Wire up listeners for renderingEngine's element enabled events
-csTools3d.init()
-
 window.cornerstone = cornerstone
 window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader
 

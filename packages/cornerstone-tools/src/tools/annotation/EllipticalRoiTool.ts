@@ -103,13 +103,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const canvasPos = currentPoints.canvas
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, FrameOfReferenceUID, renderingEngine } = enabledElement
-
-    if (!FrameOfReferenceUID) {
-      console.warn('No FrameOfReferenceUID, empty scene, exiting early.')
-
-      return
-    }
+    const { viewport, renderingEngine } = enabledElement
 
     this.isDrawing = true
 
@@ -140,7 +134,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       metadata: {
         viewPlaneNormal: <Point3>[...viewPlaneNormal],
         viewUp: <Point3>[...viewUp],
-        FrameOfReferenceUID,
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
       },
@@ -624,7 +618,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   _activateModify = (element) => {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback)
@@ -635,7 +629,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   _deactivateModify = (element) => {
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(
@@ -652,7 +646,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   _activateDraw = (element) => {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback)
@@ -664,7 +658,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   _deactivateDraw = (element) => {
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback)
@@ -783,6 +777,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
             }
           })
         }
+      }
+
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed')
+        return
       }
 
       let activeHandleCanvasCoords

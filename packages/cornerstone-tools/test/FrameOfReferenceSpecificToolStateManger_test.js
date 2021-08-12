@@ -57,6 +57,14 @@ function addAndReturnToolName1ToolData() {
 }
 
 describe('FrameOfReferenceSpecificToolStateManager:', () => {
+  beforeAll(function () {
+    csTools.init()
+  })
+
+  afterAll(function () {
+    csTools.destroy()
+  })
+
   beforeEach(() => {
     // Reset the toolStateManager
     toolStateManager.restoreToolState({})

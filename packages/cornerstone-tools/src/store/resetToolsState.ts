@@ -13,7 +13,7 @@ export default function resetToolsState(): void {
   state.toolGroups = []
   state.synchronizers = []
   state.enabledElements = []
-  state.isToolLocked = false
+  state.isInteractingWithTool = false
   state.isMultiPartToolActive = false
   state.handleRadius = 6
 }

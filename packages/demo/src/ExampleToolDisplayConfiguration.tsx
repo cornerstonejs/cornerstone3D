@@ -19,6 +19,8 @@ import {
   toolDataSelection,
   Cursors,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
+
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -86,6 +88,7 @@ class ToolDisplayConfigurationExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -294,6 +297,7 @@ class ToolDisplayConfigurationExample extends Component {
   }
 
   componentWillUnmount() {
+
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
       this.viewportGridResizeObserver.disconnect()
@@ -303,20 +307,16 @@ class ToolDisplayConfigurationExample extends Component {
     eventTarget.removeEventListener(
       CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
       onMeasurementSelectionChange
-    )
+      )
 
-    // Remove listener for Tool Data Locking Event
+      // Remove listener for Tool Data Locking Event
     eventTarget.removeEventListener(
       CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
       onLockedToolDataChange
-    )
+      )
 
-    // Destroy synchronizers
-    // SynchronizerManager.destroy()
-    resetToolsState()
     cache.purgeCache()
-    ToolGroupManager.destroy()
-
+    csTools3d.destroy()
     this.renderingEngine.destroy()
   }
 

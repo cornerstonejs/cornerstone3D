@@ -12,6 +12,10 @@ import {
   ToolSpecificToolData,
 } from '../types/toolStateTypes'
 
+function getDefaultToolStateManager() {
+  return defaultFrameOfReferenceSpecificToolStateManager
+}
+
 function getViewportSpecificStateManager(
   element: Types.IEnabledElement | HTMLCanvasElement
 ) {
@@ -147,4 +151,5 @@ export {
   removeToolState,
   removeToolStateByToolDataUID,
   getViewportSpecificStateManager,
+  getDefaultToolStateManager,
 }

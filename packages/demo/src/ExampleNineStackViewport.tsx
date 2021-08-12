@@ -15,7 +15,8 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, destroyToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import { ctVolumeUID, ctStackUID, SCENE_IDS, VIEWPORT_IDS } from './constants'
-import LAYOUTS, { stackCT } from './layouts'
+import * as csTools3d from '@ohif/cornerstone-tools'
+
 
 const colorImageIds = [
   'web:http://localhost:3000/examples/head/avf1240c.png',
@@ -104,6 +105,7 @@ class NineStackViewportExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     metaData.addProvider(hardcodedMetaDataProvider, 10000)
 
     this._canvasNodes = new Map()
@@ -268,11 +270,9 @@ class NineStackViewportExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    // SynchronizerManager.destroy()
-    resetToolsState()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
+
 
     this.renderingEngine.destroy()
   }

@@ -2,20 +2,31 @@ import {
   eventTarget,
   EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
+import { getDefaultToolStateManager } from './stateManagement/toolState'
 import { addEnabledElement, removeEnabledElement } from './store'
-import { state } from './store/state'
+import { resetCornerstoneToolsState } from './store/state'
 
-export function init (defaultConfiguration = {}) {
+let csToolsInitialized = false
+
+export function init(defaultConfiguration = {}) {
+  if (csToolsInitialized) {
+    return
+  }
+
   _addCornerstoneEventListeners()
+  csToolsInitialized = true
 }
 
-export function destroy () {
+export function destroy() {
   _removeCornerstoneEventListeners()
 
   // Remove all tools
-  for (const prop of Object.getOwnPropertyNames(state)) {
-    delete state[prop];
-  }
+  resetCornerstoneToolsState()
+
+  // remove all toolData
+  const toolStateManager = getDefaultToolStateManager()
+  toolStateManager.restoreToolState({})
+  csToolsInitialized = false
 }
 
 /**

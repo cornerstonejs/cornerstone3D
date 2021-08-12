@@ -1,7 +1,12 @@
-import { getEnabledElement } from '@ohif/cornerstone-render'
-import { ToolModes } from '../enums'
+import {
+  getEnabledElement,
+  triggerEvent,
+  getRenderingEngine,
+} from '@ohif/cornerstone-render'
+import { CornerstoneTools3DEvents as EVENTS, ToolModes } from '../enums'
 import { draw as drawSvg } from '../drawingSvg'
 import getToolsWithModesForElement from './getToolsWithModesForElement'
+import { getToolState } from '../stateManagement'
 
 const { Active, Passive, Enabled } = ToolModes
 
@@ -51,13 +56,27 @@ class AnnotationRenderingEngine {
   }
 
   _triggerRender(element) {
+    const enabledElement = getEnabledElement(element)
+
+    if (!enabledElement) {
+      console.warn('Element has been disabled')
+      return
+    }
+
+    const renderingEngine = getRenderingEngine(
+      enabledElement.renderingEngineUID
+    )
+    if (!renderingEngine) {
+      console.warn('rendering Engine has been destroyed')
+      return
+    }
+
     const enabledTools = getToolsWithModesForElement(element, [
       Active,
       Passive,
       Enabled,
     ])
 
-    const enabledElement = getEnabledElement(element)
     const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
     const eventData = {
       canvas: element,
@@ -66,16 +85,21 @@ class AnnotationRenderingEngine {
       viewportUID,
     }
 
+    const enabledToolsWithToolState = enabledTools.filter((tool) => {
+      const toolState = getToolState(enabledElement, tool.name)
+      return toolState && toolState.length
+    })
+
     drawSvg(eventData.canvas, (svgDrawingHelper) => {
       const handleDrawSvg = (tool) => {
-        // TODO: Could short-circuit if there's no ToolState?
         // Are there situations where that would be bad (Canvas Overlay Tool?)
         if (tool.renderToolData) {
           tool.renderToolData({ detail: eventData }, svgDrawingHelper)
+          triggerEvent(element, EVENTS.ANNOTATION_RENDERED, { ...eventData })
         }
       }
 
-      enabledTools.forEach(handleDrawSvg)
+      enabledToolsWithToolState.forEach(handleDrawSvg)
     })
   }
 
@@ -109,6 +133,11 @@ class AnnotationRenderingEngine {
 
   public removeViewportElement(element) {
     this._viewportElements.delete(element)
+
+    // Reset the request animation frame if no enabled elements
+    if (this._viewportElements.size === 0) {
+      this._reset()
+    }
   }
 
   public renderViewport(element): void {

@@ -12,11 +12,12 @@ import {
   ToolGroupManager,
   resetToolsState,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -87,6 +88,7 @@ class VTKSetVolumesExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
@@ -226,11 +228,8 @@ class VTKSetVolumesExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    resetToolsState()
-    SynchronizerManager.destroy()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
 
     this.renderingEngine.destroy()
   }
