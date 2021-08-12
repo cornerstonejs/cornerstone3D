@@ -4,6 +4,8 @@ import {
   ptVolumeUID,
   ctVolumeUID,
   ctStackUID,
+  ctVolumeTestUID,
+  ptVolumeTestUID,
   VIEWPORT_IDS,
 } from './constants'
 const {
@@ -246,6 +248,14 @@ function initToolGroups(toolConfiguration = {}) {
     TOOL_GROUP_UIDS.PT_TYPES
   )
 
+  const ctTestSceneToolGroup = ToolGroupManager.createToolGroup(
+    'ctTestVolume'
+  )
+
+  const ptTestSceneToolGroup = ToolGroupManager.createToolGroup(
+    'ptTestVolume'
+  )
+
   return {
     stackCTViewportToolGroup,
     stackPTViewportToolGroup,
@@ -257,6 +267,8 @@ function initToolGroups(toolConfiguration = {}) {
     ctVRSceneToolGroup,
     ctObliqueToolGroup,
     ptTypesSceneToolGroup,
+    ctTestSceneToolGroup,
+    ptTestSceneToolGroup
   }
 }
 
@@ -271,6 +283,8 @@ function addToolsToToolGroups({
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
   ptTypesSceneToolGroup,
+  ctTestSceneToolGroup,
+  ptTestSceneToolGroup,
 }) {
   // Set up stack Scene tools
 
@@ -696,6 +710,42 @@ function addToolsToToolGroups({
     ctObliqueToolGroup.addTool('StackScroll', {})
     ctObliqueToolGroup.setToolActive('VolumeRotateMouseWheel')
     ctObliqueToolGroup.setToolActive('StackScroll', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+  }
+
+  if (ctTestSceneToolGroup) {
+    // Set up CTOBLIQUE Scene tools
+    ctTestSceneToolGroup.addTool('Crosshairs', {
+      configuration: {
+      },
+    })
+    ctTestSceneToolGroup.addTool('StackScrollMouseWheel')
+    ctTestSceneToolGroup.setToolActive('StackScrollMouseWheel')
+    ctTestSceneToolGroup.setToolPassive('Crosshairs', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+  }
+
+  if (ptTestSceneToolGroup) {
+    // Set up CTOBLIQUE Scene tools
+    ptTestSceneToolGroup.addTool('Crosshairs', {
+      configuration: {
+        getReferenceLineColor,
+        getReferenceLineControllable,
+        getReferenceLineDraggableRotatable,
+        getReferenceLineSlabThicknessControlsOn,
+      },
+    })
+    ptTestSceneToolGroup.setToolActive('Crosshairs', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,

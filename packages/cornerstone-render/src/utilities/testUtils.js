@@ -96,9 +96,10 @@ const fakeImageLoader = (imageId) => {
 
 function fakeMetaDataProvider(type, imageId) {
   const imageURI = imageId.split(':')[1]
-  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb] =
+  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
     imageURI.split('_').map((v) => parseFloat(v))
 
+  const modality = PT ? 'PT' : 'MR'
   const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2'
   if (type === 'imagePixelModule') {
     const imagePixelModule = {
@@ -115,9 +116,16 @@ function fakeMetaDataProvider(type, imageId) {
     return imagePixelModule
   } else if (type === 'generalSeriesModule') {
     const generalSeriesModule = {
-      modality: 'MR',
+      modality: modality,
     }
     return generalSeriesModule
+  } else if (type === 'scalingModule') {
+    const scalingModule = {
+      suvbw: 100,
+      suvlbm: 100,
+      suvbsa: 100,
+    }
+    return scalingModule
   } else if (type === 'imagePlaneModule') {
     const imagePlaneModule = {
       rows,
@@ -145,7 +153,7 @@ function fakeMetaDataProvider(type, imageId) {
   }
 }
 
-const volumeLoader = (volumeId) => {
+const fakeVolumeLoader = (volumeId) => {
   const volumeURI = volumeId.split(':')[1]
   const [_, rows, columns, slices, x_spacing, y_spacing, z_spacing, rgb] =
     volumeURI.split('_').map((v) => parseFloat(v))
@@ -161,6 +169,7 @@ const volumeLoader = (volumeId) => {
     HighBit: rgb ? 24 : 8,
     PixelRepresentation: 0,
     PhotometricInterpretation: photometricInterpretation,
+    FrameOfReferenceUID: 'Volume_Frame_Of_Reference',
     ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
     PixelSpacing: [x_spacing, y_spacing, z_spacing],
     Columns: columns,
@@ -276,13 +285,51 @@ function compareImages(imageDataURL, baseline, outputName) {
   })
 }
 
+function _canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
+  const rect = DomCanvasElement.getBoundingClientRect()
+  return [
+    canvasPoint[0] + rect.left + window.pageXOffset,
+    canvasPoint[1] + rect.top + window.pageYOffset,
+  ]
+}
+
+/**
+ * This function uses the imageData being displayed on the viewport and
+ * an index (IJK) on the image to normalize the mouse event details.
+ * It should be noted that the normalization is required since client and page XY
+ * cannot accept a double. Therefore, for the requested index, canvas coordinate
+ * will get calculated and normalized (rounded) to enable normalized client/page XY
+ *
+ * @param {vtkImageData} imageData
+ * @param {[number, number,number]} index IJK index of the point to click
+ * @param {HTMLCanvasElement} canvas the canvas to be clicked on
+ * @param {StackViewport|VolumeViewport} viewport
+ * @returns pageX, pageY, clientX, clientY, worldCoordinate
+ */
+function createNormalizedMouseEvent(imageData, index, canvas, viewport) {
+  const tempWorld1 = imageData.indexToWorldVec3(index)
+  const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1)
+  const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p))
+  const [pageX, pageY] = _canvasPointsToPagePoints(canvas, canvasPoint1)
+  const worldCoord = viewport.canvasToWorld(canvasPoint1)
+
+  return {
+    pageX,
+    pageY,
+    clientX: pageX,
+    clientY: pageY,
+    worldCoord,
+  }
+}
+
 const testUtils = {
   makeTestImage1,
   fakeImageLoader,
-  volumeLoader,
+  fakeVolumeLoader,
   fakeMetaDataProvider,
   compareImages,
   downloadURI,
+  createNormalizedMouseEvent,
 }
 
 export default testUtils

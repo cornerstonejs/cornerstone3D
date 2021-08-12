@@ -11,6 +11,10 @@ export default function getImageIdForTool(
 ): string {
   const { direction, imageIds } = imageVolume
 
+  if (!imageIds || !imageIds.length) {
+    return
+  }
+
   // 1. Get ScanAxis vector
   const kVector = direction.slice(6, 9)
 

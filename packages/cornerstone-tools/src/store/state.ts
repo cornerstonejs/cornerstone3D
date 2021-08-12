@@ -1,6 +1,8 @@
+import _cloneDeep from 'lodash.clonedeep'
+
 import IToolGroup from './ToolGroupManager/IToolGroup'
 import Synchronizer from './SynchronizerManager/Synchronizer'
-import svgNodeCache from './svgNodeCache'
+import svgNodeCache, { resetSvgNodeCache } from './svgNodeCache'
 import { BaseTool } from '../tools'
 
 interface IToolClassReference {
@@ -9,7 +11,7 @@ interface IToolClassReference {
 }
 
 interface ICornerstoneTools3dState {
-  isToolLocked: boolean
+  isInteractingWithTool: boolean
   isMultiPartToolActive: boolean
   tools: Record<string, IToolClassReference>
   toolGroups: Array<IToolGroup>
@@ -19,8 +21,8 @@ interface ICornerstoneTools3dState {
   handleRadius: number
 }
 
-const state: ICornerstoneTools3dState = {
-  isToolLocked: false,
+const defaultState: ICornerstoneTools3dState = {
+  isInteractingWithTool: false,
   isMultiPartToolActive: false,
   tools: {},
   toolGroups: [],
@@ -31,4 +33,26 @@ const state: ICornerstoneTools3dState = {
   handleRadius: 6,
 }
 
-export { ICornerstoneTools3dState, state, state as default }
+let state: ICornerstoneTools3dState = {
+  isInteractingWithTool: false,
+  isMultiPartToolActive: false,
+  tools: {},
+  toolGroups: [],
+  synchronizers: [],
+  svgNodeCache: svgNodeCache,
+  // Should this be named... canvases?
+  enabledElements: [], // switch to Uids?
+  handleRadius: 6,
+}
+
+function resetCornerstoneToolsState(): void {
+  resetSvgNodeCache()
+  state = _cloneDeep(defaultState)
+}
+
+export {
+  ICornerstoneTools3dState,
+  resetCornerstoneToolsState,
+  state,
+  state as default,
+}

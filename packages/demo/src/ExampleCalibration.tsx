@@ -11,6 +11,8 @@ import {
   resetToolsState,
   Utilities,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
+
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import getImageIds from './helpers/getImageIds'
@@ -57,6 +59,7 @@ class CalibrationExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
 
@@ -139,11 +142,8 @@ class CalibrationExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    resetToolsState()
-    SynchronizerManager.destroy()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
 
     this.renderingEngine.destroy()
   }

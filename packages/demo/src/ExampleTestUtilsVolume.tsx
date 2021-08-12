@@ -3,8 +3,11 @@ import {
   cache,
   RenderingEngine,
   registerImageLoader,
+  registerVolumeLoader,
   metaData,
   VIEWPORT_TYPE,
+  ORIENTATION,
+  createAndCacheVolume,
   Utilities,
 } from '@ohif/cornerstone-render'
 import {
@@ -38,16 +41,14 @@ const STACK = 'stack'
 window.cache = cache
 
 
-const { fakeImageLoader, fakeMetaDataProvider } = Utilities.testUtils
+const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } = Utilities.testUtils
 
-let stackCTViewportToolGroup
+let ctTestSceneToolGroup, ptTestSceneToolGroup
 
-const toolsToUse = ANNOTATION_TOOLS.filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = ANNOTATION_TOOLS
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
-class testUtil extends Component {
+class testUtilVolume extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
@@ -57,8 +58,8 @@ class testUtil extends Component {
     //
     viewportGrid: {
       numCols: 1,
-      numRows: 1,
-      viewports: [{}],
+      numRows: 3,
+      viewports: [{}, {}, {}],
     },
     ptCtLeftClickTool: 'Levels',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
@@ -73,11 +74,11 @@ class testUtil extends Component {
     this._offScreenRef = React.createRef()
     this._viewportGridRef = React.createRef()
 
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
+    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
 
-
-    this.ctStackImageIdsPromise = ['fakeImageLoader:imageURI_64_64_10_5_1_1_0']
+    this.ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
+    this.ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
@@ -93,10 +94,7 @@ class testUtil extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-
-    ({ stackCTViewportToolGroup } = initToolGroups())
-
-    const ctStackImageIds = await this.ctStackImageIdsPromise
+    ;({ ctTestSceneToolGroup, ptTestSceneToolGroup } = initToolGroups())
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -105,40 +103,89 @@ class testUtil extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this._canvasNodes.get(0),
         defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
           background: [1, 0, 1],
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(1),
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+          background: [0, 1, 1],
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.CT,
+        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        canvas: this._canvasNodes.get(2),
+        defaultOptions: {
+          orientation: ORIENTATION.CORONAL,
+          background: [1, 1, 0],
         },
       },
     ]
 
     renderingEngine.setViewports(viewportInput)
 
-    stackCTViewportToolGroup.addViewports(
+    ctTestSceneToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
-      VIEWPORT_IDS.STACK.CT
+      SCENE_IDS.CT,
+      VIEWPORT_IDS.CT.AXIAL
+    )
+    ctTestSceneToolGroup.addViewports(
+      renderingEngineUID,
+      SCENE_IDS.CT,
+      VIEWPORT_IDS.CT.SAGITTAL
+    )
+    ctTestSceneToolGroup.addViewports(
+      renderingEngineUID,
+      SCENE_IDS.CT,
+      VIEWPORT_IDS.CT.CORONAL
     )
 
-    addToolsToToolGroups({ stackCTViewportToolGroup })
-    // This will initialise volumes in GPU memory
+    // ptTestSceneToolGroup.addViewports(
+    //   renderingEngineUID,
+    //   SCENE_IDS.PT,
+    //   VIEWPORT_IDS.PT.AXIAL
+    // )
+
+    addToolsToToolGroups({ ctTestSceneToolGroup })
+
+    // This only creates the volumes, it does not actually load all
+    // of the pixel data (yet)
+    await createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
+    // await createAndCacheVolume(this.ptVolumeId, {imageIds: []})
+
+    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
+    await ctScene.setVolumes([
+      {
+        volumeUID: this.ctVolumeId,
+      },
+    ])
+
+    // const ptScene = renderingEngine.getScene(SCENE_IDS.PT)
+    // await ptScene.setVolumes([
+    //   {
+    //     volumeUID: this.ptVolumeId,
+    //   },
+    // ])
+
     renderingEngine.render()
-
-    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-
-    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
-    await ctStackViewport.setStack(
-      sortImageIdsByIPP(ctStackImageIds),
-      ctMiddleSlice,
-    )
 
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
   }
 
-    componentWillUnmount() {
+  componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
       this.viewportGridResizeObserver.disconnect()
@@ -164,25 +211,25 @@ class testUtil extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active
 
       const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName)
-      stackCTViewportToolGroup.setToolActive(toolName, options)
+      ctTestSceneToolGroup.setToolActive(toolName, options)
       toolsToSetPassive.forEach((toolName) => {
-        stackCTViewportToolGroup.setToolPassive(toolName)
+        ctTestSceneToolGroup.setToolPassive(toolName)
       })
 
-      stackCTViewportToolGroup.setToolDisabled('WindowLevel')
+      ctTestSceneToolGroup.setToolDisabled('WindowLevel')
     } else {
       // Set window level + threshold
-      stackCTViewportToolGroup.setToolActive('WindowLevel', options)
+      ctTestSceneToolGroup.setToolActive('WindowLevel', options)
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {
-        stackCTViewportToolGroup.setToolPassive(toolName)
+        ctTestSceneToolGroup.setToolPassive(toolName)
       })
     }
 
@@ -212,7 +259,11 @@ class testUtil extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>MPR Template Example ({this.state.progressText})</h2>
+            <h2>Fake Volume Testings</h2>
+            <h4>
+              This demo uses ImageVolume instead of StreamingImageVolume and
+              renders two volumes
+            </h4>
           </div>
           <div
             className="col-xs-12"
@@ -228,36 +279,6 @@ class testUtil extends Component {
             </option>
           ))}
         </select>
-
-        <button
-          onClick={() => this.rotateViewport(90)}
-          className="btn btn-primary"
-          style={{ margin: '2px 4px' }}
-        >
-          Rotate = 90
-        </button>
-        <button
-          onClick={() => this.rotateViewport(180)}
-          className="btn btn-primary"
-          style={{ margin: '2px 4px' }}
-        >
-          Rotate = 180
-        </button>
-        <button
-          onClick={() => this.rotateViewport(270)}
-          className="btn btn-primary"
-          style={{ margin: '2px 4px' }}
-        >
-          Rotate = 270
-        </button>
-        <button
-          onClick={() => this.rotateViewport(360)}
-          className="btn btn-primary"
-          style={{ margin: '2px 4px' }}
-        >
-          Rotate = 360 OR 0
-        </button>
-
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}
@@ -301,4 +322,4 @@ class testUtil extends Component {
   }
 }
 
-export default testUtil
+export default testUtilVolume

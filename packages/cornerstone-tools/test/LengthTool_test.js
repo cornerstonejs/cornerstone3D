@@ -6,19 +6,19 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
-  Utilities,
+  EVENTS,
   eventTarget,
+  Utilities,
   registerImageLoader,
   unregisterAllImageLoaders,
   metaData,
-  EVENTS,
   getEnabledElement,
   createAndCacheVolume,
   registerVolumeLoader,
 } = cornerstone3D
 
 const {
-  ProbeTool,
+  LengthTool,
   ToolGroupManager,
   getToolState,
   removeToolState,
@@ -27,8 +27,8 @@ const {
 
 const {
   fakeImageLoader,
-  fakeMetaDataProvider,
   fakeVolumeLoader,
+  fakeMetaDataProvider,
   createNormalizedMouseEvent,
 } = Utilities.testUtils
 
@@ -41,7 +41,13 @@ const AXIAL = 'AXIAL'
 
 const DOMElements = []
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
+function calculateLength(pos1, pos2) {
+  const dx = pos1[0] - pos2[0]
+  const dy = pos1[1] - pos2[1]
+  const dz = pos1[2] - pos2[2]
+
+  return Math.sqrt(dx * dx + dy * dy + dz * dz)
+}
 
 function createCanvas(renderingEngine, viewportType, width, height) {
   // TODO: currently we need to have a parent div on the canvas with
@@ -78,16 +84,18 @@ function createCanvas(renderingEngine, viewportType, width, height) {
   return canvas
 }
 
+const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
+
 describe('Cornerstone Tools: ', () => {
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(ProbeTool, {})
+    csTools3d.addTool(LengthTool, {})
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-    this.stackToolGroup.addTool('Probe', {
-      configuration: { volumeUID: volumeId }, // Only for volume viewport
+    this.stackToolGroup.addTool('Length', {
+      configuration: { volumeUID: volumeId },
     })
-    this.stackToolGroup.setToolActive('Probe', {
+    this.stackToolGroup.setToolActive('Length', {
       bindings: [{ mouseButton: 1 }],
     })
 
@@ -113,7 +121,7 @@ describe('Cornerstone Tools: ', () => {
     })
   })
 
-  it('Should successfully click to put a probe tool on a canvas - 512 x 128', function (done) {
+  it('Should successfully create a length tool on a canvas with mouse drag - 512 x 128', function (done) {
     const canvas = createCanvas(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
@@ -124,38 +132,39 @@ describe('Cornerstone Tools: ', () => {
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)
 
+    let p1, p2
+
     const addEventListenerForAnnotationRendered = () => {
       canvas.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          // Can successfully add probe tool to toolStateManager
           const enabledElement = getEnabledElement(canvas)
-          const probeToolState = getToolState(enabledElement, 'Probe')
-          expect(probeToolState).toBeDefined()
-          expect(probeToolState.length).toBe(1)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
 
-          const probeToolData = probeToolState[0]
-          expect(probeToolData.metadata.referencedImageId).toBe(
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(probeToolData.metadata.toolName).toBe('Probe')
-          expect(probeToolData.data.invalidated).toBe(false)
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
 
-          const data = probeToolData.data.cachedStats
+          const data = lengthToolData.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(255)
-
-          removeToolState(canvas, probeToolData)
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          removeToolState(canvas, lengthToolData)
           done()
         }
       )
     }
 
     canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [11, 20, 0]
+      const index1 = [32, 32, 0]
+      const index2 = [10, 1, 0]
 
       const { vtkImageData } = vp.getImageData()
 
@@ -166,17 +175,38 @@ describe('Cornerstone Tools: ', () => {
         clientY: clientY1,
         worldCoord: worldCoord1,
       } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      p1 = worldCoord1
+
+      const {
+        pageX: pageX2,
+        pageY: pageY2,
+        clientX: clientX2,
+        clientY: clientY2,
+        worldCoord: worldCoord2,
+      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      p2 = worldCoord2
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
         target: canvas,
         buttons: 1,
-        pageX: pageX1,
-        pageY: pageY1,
         clientX: clientX1,
         clientY: clientY1,
+        pageX: pageX1,
+        pageY: pageY1,
       })
       canvas.dispatchEvent(evt)
+
+      // Mouse move to put the end somewhere else
+      evt = new MouseEvent('mousemove', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX2,
+        clientY: clientY2,
+        pageX: pageX2,
+        pageY: pageY2,
+      })
+      document.dispatchEvent(evt)
 
       // Mouse Up instantly after
       evt = new MouseEvent('mouseup')
@@ -201,304 +231,7 @@ describe('Cornerstone Tools: ', () => {
     }
   })
 
-  it('Should successfully click to put two probe tools on a canvas - 256 x 256', function (done) {
-    const canvas = createCanvas(
-      this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
-      256,
-      256
-    )
-
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
-
-    const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          // Can successfully add probe tool to toolStateManager
-          const enabledElement = getEnabledElement(canvas)
-          const probeToolState = getToolState(enabledElement, 'Probe')
-          expect(probeToolState).toBeDefined()
-          expect(probeToolState.length).toBe(2)
-
-          const firstProbeToolData = probeToolState[0]
-          expect(firstProbeToolData.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(firstProbeToolData.metadata.toolName).toBe('Probe')
-          expect(firstProbeToolData.data.invalidated).toBe(false)
-
-          let data = firstProbeToolData.data.cachedStats
-          let targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
-
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(255)
-
-          // Second click
-          const secondProbeToolData = probeToolState[1]
-          expect(secondProbeToolData.metadata.toolName).toBe('Probe')
-          expect(secondProbeToolData.data.invalidated).toBe(false)
-
-          data = secondProbeToolData.data.cachedStats
-          targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
-
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(0)
-
-          //
-          removeToolState(canvas, firstProbeToolData)
-          removeToolState(canvas, secondProbeToolData)
-
-          done()
-        }
-      )
-    }
-
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [11, 20, 0] // 255
-      const index2 = [20, 20, 0] // 0
-
-      const { vtkImageData } = vp.getImageData()
-
-      const {
-        pageX: pageX1,
-        pageY: pageY1,
-        clientX: clientX1,
-        clientY: clientY1,
-        worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
-
-      const {
-        pageX: pageX2,
-        pageY: pageY2,
-        clientX: clientX2,
-        clientY: clientY2,
-        worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
-
-      // Mouse Down
-      let evt1 = new MouseEvent('mousedown', {
-        target: canvas,
-        buttons: 1,
-        pageX: pageX1,
-        pageY: pageY1,
-        clientX: clientX1,
-        clientY: clientY1,
-      })
-      canvas.dispatchEvent(evt1)
-
-      // Mouse Up instantly after
-      evt1 = new MouseEvent('mouseup')
-      document.dispatchEvent(evt1)
-
-      // Mouse Down
-      let evt2 = new MouseEvent('mousedown', {
-        target: canvas,
-        buttons: 1,
-        pageX: pageX2,
-        pageY: pageY2,
-        clientX: clientX2,
-        clientY: clientY2,
-      })
-      canvas.dispatchEvent(evt2)
-
-      // Mouse Up instantly after
-      evt2 = new MouseEvent('mouseup')
-
-      addEventListenerForAnnotationRendered()
-      document.dispatchEvent(evt2)
-    })
-
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
-
-    try {
-      vp.setStack([imageId1], 0)
-      this.renderingEngine.render()
-    } catch (e) {
-      done.fail(e)
-    }
-  })
-
-  it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
-    const canvas = createCanvas(
-      this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
-      256,
-      512
-    )
-
-    const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
-
-    const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          // Can successfully add probe tool to toolStateManager
-          const enabledElement = getEnabledElement(canvas)
-          const probeToolState = getToolState(enabledElement, 'Probe')
-          expect(probeToolState).toBeDefined()
-          expect(probeToolState.length).toBe(1)
-
-          const probeToolData = probeToolState[0]
-          expect(probeToolData.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(probeToolData.metadata.toolName).toBe('Probe')
-          expect(probeToolData.data.invalidated).toBe(false)
-
-          const data = probeToolData.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
-
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(255)
-
-          removeToolState(canvas, probeToolData)
-          done()
-        }
-      )
-    }
-
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [150, 100, 0] // 255
-
-      const { vtkImageData } = vp.getImageData()
-
-      const {
-        pageX: pageX1,
-        pageY: pageY1,
-        clientX: clientX1,
-        clientY: clientY1,
-        worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
-
-      // Mouse Down
-      let evt = new MouseEvent('mousedown', {
-        target: canvas,
-        buttons: 1,
-        pageX: pageX1,
-        pageY: pageY1,
-        clientX: clientX1,
-        clientY: clientY1,
-      })
-      canvas.dispatchEvent(evt)
-
-      // Mouse Up instantly after
-      evt = new MouseEvent('mouseup')
-
-      addEventListenerForAnnotationRendered()
-      document.dispatchEvent(evt)
-    })
-
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
-
-    try {
-      vp.setStack([imageId1], 0)
-      this.renderingEngine.render()
-    } catch (e) {
-      done.fail(e)
-    }
-  })
-
-  it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
-    const canvas = createCanvas(
-      this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
-      256,
-      512
-    )
-
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
-
-    const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          // Can successfully add probe tool to toolStateManager
-          const enabledElement = getEnabledElement(canvas)
-          const probeToolState = getToolState(enabledElement, 'Probe')
-          expect(probeToolState).toBeDefined()
-          expect(probeToolState.length).toBe(1)
-
-          const probeToolData = probeToolState[0]
-          expect(probeToolData.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(probeToolData.metadata.toolName).toBe('Probe')
-          expect(probeToolData.data.invalidated).toBe(false)
-
-          const data = probeToolData.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
-
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(0)
-
-          removeToolState(canvas, probeToolData)
-          done()
-        }
-      )
-    }
-
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [35, 35, 0] // 0
-
-      const { vtkImageData } = vp.getImageData()
-
-      const {
-        pageX: pageX1,
-        pageY: pageY1,
-        clientX: clientX1,
-        clientY: clientY1,
-        worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
-
-      // Mouse Down
-      let evt = new MouseEvent('mousedown', {
-        target: canvas,
-        buttons: 1,
-        pageX: pageX1,
-        pageY: pageY1,
-        clientX: clientX1,
-        clientY: clientY1,
-      })
-      canvas.dispatchEvent(evt)
-
-      // Mouse Up instantly after
-      evt = new MouseEvent('mouseup')
-
-      addEventListenerForAnnotationRendered()
-      document.dispatchEvent(evt)
-    })
-
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
-
-    try {
-      vp.setStack([imageId1], 0)
-      this.renderingEngine.render()
-    } catch (e) {
-      done.fail(e)
-    }
-  })
-
-  it('Should successfully create a prob tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
+  it('Should successfully create a length tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const canvas = createCanvas(
       this.renderingEngine,
       VIEWPORT_TYPE.ORTHOGRAPHIC,
@@ -508,34 +241,37 @@ describe('Cornerstone Tools: ', () => {
 
     const vp = this.renderingEngine.getViewport(viewportUID)
 
+    let p1, p2
+
     const addEventListenerForAnnotationRendered = () => {
       canvas.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
           const enabledElement = getEnabledElement(canvas)
-          const probeToolState = getToolState(enabledElement, 'Probe')
+          const lengthToolState = getToolState(enabledElement, 'Length')
           // Can successfully add Length tool to toolStateManager
-          expect(probeToolState).toBeDefined()
-          expect(probeToolState.length).toBe(1)
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
 
-          const probeToolData = probeToolState[0]
-          expect(probeToolData.metadata.toolName).toBe('Probe')
-          expect(probeToolData.data.invalidated).toBe(false)
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
 
-          const data = probeToolData.data.cachedStats
+          const data = lengthToolData.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].value).toBe(255)
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeToolState(canvas, probeToolData)
+          removeToolState(canvas, lengthToolData)
           done()
         }
       )
     }
 
     canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [50, 50, 4]
+      const index1 = [32, 32, 4]
+      const index2 = [10, 1, 4]
 
       const { vtkImageData } = vp.getImageData()
 
@@ -546,102 +282,7 @@ describe('Cornerstone Tools: ', () => {
         clientY: clientY1,
         worldCoord: worldCoord1,
       } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
-
-      // Mouse Down
-      let evt = new MouseEvent('mousedown', {
-        target: canvas,
-        buttons: 1,
-        clientX: clientX1,
-        clientY: clientY1,
-        pageX: pageX1,
-        pageY: pageY1,
-      })
-      canvas.dispatchEvent(evt)
-
-      // Mouse Up instantly after
-      evt = new MouseEvent('mouseup')
-
-      addEventListenerForAnnotationRendered()
-      document.dispatchEvent(evt)
-    })
-
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
-
-    try {
-      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        const ctScene = this.renderingEngine.getScene(scene1UID)
-        ctScene.setVolumes([{ volumeUID: volumeId }])
-        ctScene.render()
-      })
-    } catch (e) {
-      done.fail(e)
-    }
-  })
-
-  it('Should successfully create a length tool and select AND move it', function (done) {
-    const canvas = createCanvas(
-      this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
-      256,
-      256
-    )
-
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
-
-    let p2
-
-    const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const enabledElement = getEnabledElement(canvas)
-          const probeToolState = getToolState(enabledElement, 'Probe')
-          // Can successfully add Length tool to toolStateManager
-          expect(probeToolState).toBeDefined()
-          expect(probeToolState.length).toBe(1)
-
-          const probeToolData = probeToolState[0]
-          expect(probeToolData.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(probeToolData.metadata.toolName).toBe('Probe')
-          expect(probeToolData.data.invalidated).toBe(false)
-
-          const data = probeToolData.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
-
-          // We expect the probeTool which was original on 255 strip should be 0 now
-          expect(data[targets[0]].value).toBe(0)
-
-          const handles = probeToolData.data.handles.points
-
-          expect(handles[0]).toEqual(p2)
-
-          removeToolState(canvas, probeToolData)
-          done()
-        }
-      )
-    }
-
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [11, 20, 0] // 255
-      const index2 = [40, 40, 0] // 0
-
-      const { vtkImageData } = vp.getImageData()
-
-      const {
-        pageX: pageX1,
-        pageY: pageY1,
-        clientX: clientX1,
-        clientY: clientY1,
-        worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      p1 = worldCoord1
 
       const {
         pageX: pageX2,
@@ -663,12 +304,116 @@ describe('Cornerstone Tools: ', () => {
       })
       canvas.dispatchEvent(evt)
 
-      // Mouse Up instantly after
-      evt = new MouseEvent('mouseup')
+      // Mouse move to put the end somewhere else
+      evt = new MouseEvent('mousemove', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX2,
+        clientY: clientY2,
+        pageX: pageX2,
+        pageY: pageY2,
+      })
       document.dispatchEvent(evt)
 
-      // Grab the probe tool again
-      evt = new MouseEvent('mousedown', {
+      // Mouse Up instantly after
+      evt = new MouseEvent('mouseup')
+      addEventListenerForAnnotationRendered()
+      document.dispatchEvent(evt)
+    })
+
+    this.stackToolGroup.addViewports(
+      this.renderingEngine.uid,
+      undefined,
+      vp.uid
+    )
+
+    try {
+      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        const ctScene = this.renderingEngine.getScene(scene1UID)
+        ctScene.setVolumes([{ volumeUID: volumeId }])
+        ctScene.render()
+      })
+    } catch (e) {
+      done.fail(e)
+    }
+  })
+
+  it('Should successfully create a length tool and modify its handle', function (done) {
+    const canvas = createCanvas(
+      this.renderingEngine,
+      VIEWPORT_TYPE.STACK,
+      256,
+      256
+    )
+
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
+
+    let p2, p3
+
+    const addEventListenerForAnnotationRendered = () => {
+      canvas.addEventListener(
+        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        () => {
+          const enabledElement = getEnabledElement(canvas)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
+
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
+
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
+
+          expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
+
+          removeToolState(canvas, lengthToolData)
+          done()
+        }
+      )
+    }
+    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const index1 = [50, 50, 0]
+      const index2 = [5, 5, 0]
+      const index3 = [33, 33, 0]
+
+      const { vtkImageData } = vp.getImageData()
+
+      const {
+        pageX: pageX1,
+        pageY: pageY1,
+        clientX: clientX1,
+        clientY: clientY1,
+        worldCoord: p1,
+      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+
+      const {
+        pageX: pageX2,
+        pageY: pageY2,
+        clientX: clientX2,
+        clientY: clientY2,
+        worldCoord: worldCoord2,
+      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      p2 = worldCoord2
+
+      const {
+        pageX: pageX3,
+        pageY: pageY3,
+        clientX: clientX3,
+        clientY: clientY3,
+        worldCoord: worldCoord3,
+      } = createNormalizedMouseEvent(vtkImageData, index3, canvas, vp)
+      p3 = worldCoord3
+
+      // Mouse Down
+      let evt = new MouseEvent('mousedown', {
         target: canvas,
         buttons: 1,
         clientX: clientX1,
@@ -686,6 +431,366 @@ describe('Cornerstone Tools: ', () => {
         clientY: clientY2,
         pageX: pageX2,
         pageY: pageY2,
+      })
+      document.dispatchEvent(evt)
+
+      // Mouse Up instantly after
+      evt = new MouseEvent('mouseup')
+      document.dispatchEvent(evt)
+
+      // Select the first handle
+      evt = new MouseEvent('mousedown', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX1,
+        clientY: clientY1,
+        pageX: pageX1,
+        pageY: pageY1,
+      })
+      canvas.dispatchEvent(evt)
+
+      // Drag it somewhere else
+      evt = new MouseEvent('mousemove', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX3,
+        clientY: clientY3,
+        pageX: pageX3,
+        pageY: pageY3,
+      })
+      document.dispatchEvent(evt)
+
+      // Mouse Up instantly after
+      evt = new MouseEvent('mouseup')
+
+      addEventListenerForAnnotationRendered()
+      document.dispatchEvent(evt)
+    })
+
+    this.stackToolGroup.addViewports(
+      this.renderingEngine.uid,
+      undefined,
+      vp.uid
+    )
+
+    try {
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
+    } catch (e) {
+      done.fail(e)
+    }
+  })
+
+  it('Should successfully create a length tool and select but not move it', function (done) {
+    const canvas = createCanvas(
+      this.renderingEngine,
+      VIEWPORT_TYPE.STACK,
+      256,
+      256
+    )
+
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
+
+    let p1, p2
+
+    const addEventListenerForAnnotationRendered = () => {
+      canvas.addEventListener(
+        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        () => {
+          const enabledElement = getEnabledElement(canvas)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
+
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
+
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
+
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+
+          removeToolState(canvas, lengthToolData)
+          done()
+        }
+      )
+    }
+
+    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const index1 = [20, 20, 0]
+      const index2 = [20, 30, 0]
+
+      // grab the tool in its middle (just to make it easy)
+      const index3 = [20, 25, 0]
+
+      const { vtkImageData } = vp.getImageData()
+
+      const {
+        pageX: pageX1,
+        pageY: pageY1,
+        clientX: clientX1,
+        clientY: clientY1,
+        worldCoord: worldCoord1,
+      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      p1 = worldCoord1
+
+      const {
+        pageX: pageX2,
+        pageY: pageY2,
+        clientX: clientX2,
+        clientY: clientY2,
+        worldCoord: worldCoord2,
+      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      p2 = worldCoord2
+
+      const {
+        pageX: pageX3,
+        pageY: pageY3,
+        clientX: clientX3,
+        clientY: clientY3,
+        worldCoord: worldCoord3,
+      } = createNormalizedMouseEvent(vtkImageData, index3, canvas, vp)
+
+      // Mouse Down
+      let evt = new MouseEvent('mousedown', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX1,
+        clientY: clientY1,
+        pageX: pageX1,
+        pageY: pageY1,
+      })
+      canvas.dispatchEvent(evt)
+
+      // Mouse move to put the end somewhere else
+      evt = new MouseEvent('mousemove', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX2,
+        clientY: clientY2,
+        pageX: pageX2,
+        pageY: pageY2,
+      })
+      document.dispatchEvent(evt)
+
+      // Mouse Up instantly after
+      evt = new MouseEvent('mouseup')
+      document.dispatchEvent(evt)
+
+      // Mouse down on the middle of the length tool, just to select
+      evt = new MouseEvent('mousedown', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX3,
+        clientY: clientY3,
+        pageX: pageX3,
+        pageY: pageY3,
+      })
+      canvas.dispatchEvent(evt)
+
+      // Just grab and don't really move it
+      evt = new MouseEvent('mouseup')
+
+      addEventListenerForAnnotationRendered()
+      document.dispatchEvent(evt)
+    })
+
+    this.stackToolGroup.addViewports(
+      this.renderingEngine.uid,
+      undefined,
+      vp.uid
+    )
+
+    try {
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
+    } catch (e) {
+      done.fail(e)
+    }
+  })
+
+  it('Should successfully create a length tool and select AND move it', function (done) {
+    const canvas = createCanvas(
+      this.renderingEngine,
+      VIEWPORT_TYPE.STACK,
+      256,
+      256
+    )
+
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
+
+    let p1, p2, p3, p4
+
+    const addEventListenerForAnnotationRendered = () => {
+      canvas.addEventListener(
+        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        () => {
+          const enabledElement = getEnabledElement(canvas)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
+
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
+
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
+
+          // We don't expect the length to change on tool move
+          expect(data[targets[0]].length).toBeCloseTo(
+            calculateLength(p1, p2),
+            6
+          )
+
+          const handles = lengthToolData.data.handles.points
+
+          const preMoveFirstHandle = p1
+          const preMoveSecondHandle = p2
+          const preMoveCenter = p3
+
+          const centerToHandle1 = [
+            preMoveCenter[0] - preMoveFirstHandle[0],
+            preMoveCenter[1] - preMoveFirstHandle[1],
+            preMoveCenter[2] - preMoveFirstHandle[2],
+          ]
+
+          const centerToHandle2 = [
+            preMoveCenter[0] - preMoveSecondHandle[0],
+            preMoveCenter[1] - preMoveSecondHandle[1],
+            preMoveCenter[2] - preMoveSecondHandle[2],
+          ]
+
+          const afterMoveCenter = p4
+
+          const afterMoveFirstHandle = [
+            afterMoveCenter[0] - centerToHandle1[0],
+            afterMoveCenter[1] - centerToHandle1[1],
+            afterMoveCenter[2] - centerToHandle1[2],
+          ]
+
+          const afterMoveSecondHandle = [
+            afterMoveCenter[0] - centerToHandle2[0],
+            afterMoveCenter[1] - centerToHandle2[1],
+            afterMoveCenter[2] - centerToHandle2[2],
+          ]
+
+          // Expect handles are moved accordingly
+          expect(handles[0]).toEqual(afterMoveFirstHandle)
+          expect(handles[1]).toEqual(afterMoveSecondHandle)
+
+          removeToolState(canvas, lengthToolData)
+          done()
+        }
+      )
+    }
+
+    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const index1 = [20, 20, 0]
+      const index2 = [20, 30, 0]
+
+      // grab the tool in its middle (just to make it easy)
+      const index3 = [20, 25, 0]
+
+      // Where to move the center of the tool
+      const index4 = [40, 40, 0]
+
+      const { vtkImageData } = vp.getImageData()
+
+      const {
+        pageX: pageX1,
+        pageY: pageY1,
+        clientX: clientX1,
+        clientY: clientY1,
+        worldCoord: worldCoord1,
+      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      p1 = worldCoord1
+
+      const {
+        pageX: pageX2,
+        pageY: pageY2,
+        clientX: clientX2,
+        clientY: clientY2,
+        worldCoord: worldCoord2,
+      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      p2 = worldCoord2
+
+      const {
+        pageX: pageX3,
+        pageY: pageY3,
+        clientX: clientX3,
+        clientY: clientY3,
+        worldCoord: worldCoord3,
+      } = createNormalizedMouseEvent(vtkImageData, index3, canvas, vp)
+      p3 = worldCoord3
+
+      const {
+        pageX: pageX4,
+        pageY: pageY4,
+        clientX: clientX4,
+        clientY: clientY4,
+        worldCoord: worldCoord4,
+      } = createNormalizedMouseEvent(vtkImageData, index4, canvas, vp)
+      p4 = worldCoord4
+
+      // Mouse Down
+      let evt = new MouseEvent('mousedown', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX1,
+        clientY: clientY1,
+        pageX: pageX1,
+        pageY: pageY1,
+      })
+      canvas.dispatchEvent(evt)
+
+      // Mouse move to put the end somewhere else
+      evt = new MouseEvent('mousemove', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX2,
+        clientY: clientY2,
+        pageX: pageX2,
+        pageY: pageY2,
+      })
+      document.dispatchEvent(evt)
+
+      // Mouse Up instantly after
+      evt = new MouseEvent('mouseup')
+      document.dispatchEvent(evt)
+
+      // Drag the middle of the tool
+      evt = new MouseEvent('mousedown', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX3,
+        clientY: clientY3,
+        pageX: pageX3,
+        pageY: pageY3,
+      })
+      canvas.dispatchEvent(evt)
+
+      // Move the middle of the tool to point4
+      evt = new MouseEvent('mousemove', {
+        target: canvas,
+        buttons: 1,
+        clientX: clientX4,
+        clientY: clientY4,
+        pageX: pageX4,
+        pageY: pageY4,
       })
       document.dispatchEvent(evt)
 

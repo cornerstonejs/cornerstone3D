@@ -4,7 +4,6 @@ import VTKMPRExample from './ExampleVTKMPR'
 import CanvasResizeExample from './ExampleCanvasResize'
 import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas'
 import ColorExample from './ExampleColor'
-import VolumeMapper2DExample from './Example2DVolumeMapper'
 import StackViewportExample from './ExampleStackViewport'
 import EnableDisableViewportExample from './ExampleEnableDisableAPI'
 import NineStackViewportExample from './ExampleNineStackViewport'
@@ -17,6 +16,7 @@ import OneStackExample from './ExampleOneStack'
 import FlipViewportExample from './ExampleFlipViewport'
 import ModifierKeysExample from './ExampleModifierKeys'
 import TestUtils from './ExampleTestUtils'
+import TestUtilsVolume from './ExampleTestUtilsVolume'
 import CalibrationExample from './ExampleCalibration'
 
 function LinkOut({ href, text }) {
@@ -91,15 +91,10 @@ function Index() {
       url: '/color',
       text: 'Example with color.',
     },
-    // {
-    //   title: '2D rendering with vtkVolumeMapper',
-    //   url: '/volumeMapper2D',
-    //   text: 'Example for displaying 2D image with vtkVolumeMapper.',
-    // },
     {
       title: 'New stack viewport',
       url: '/stackViewport',
-      text: 'Example for displaying stack and volume viewport',
+      text: 'Example for displaying stack images and measurement events',
     },
     {
       title: 'Nine Stack Viewports',
@@ -135,6 +130,11 @@ function Index() {
       title: 'Test Utils',
       url: '/testUtils',
       text: 'Example demo for test utils',
+    },
+    {
+      title: 'Test Utils two volumes',
+      url: '/testUtilsVolume',
+      text: 'Example demo for test utils that have two side by side demos',
     },
     {
       title: 'Calibrated Images',
@@ -274,6 +274,11 @@ function AppRouter() {
       children: <TestUtils />,
     })
 
+  const TestVolume = () =>
+    Example({
+      children: <TestUtilsVolume />,
+    })
+
   return (
     <Router>
       <Switch>
@@ -285,7 +290,6 @@ function AppRouter() {
         <Route exact path="/priorityLoad/" render={PriorityLoad} />
         <Route exact path="/flip/" render={Flip} />
         <Route exact path="/modifierKeys/" render={ModifierKeys} />
-        {/* <Route exact path="/volumeMapper2D/" render={volumeMapper2D} /> */}
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />
@@ -294,6 +298,7 @@ function AppRouter() {
         <Route exact path="/oneVolume/" render={OneVolume} />
         <Route exact path="/oneStack/" render={OneStack} />
         <Route exact path="/testUtils/" render={Test} />
+        <Route exact path="/testUtilsVolume/" render={TestVolume} />
         <Route exact path="/calibratedImages/" render={calibratedImages} />
         <Route
           exact

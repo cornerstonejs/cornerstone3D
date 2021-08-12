@@ -6,13 +6,13 @@ import {
   loadAndCacheImages,
   ORIENTATION,
   VIEWPORT_TYPE,
-  setMaxSimultaneousRequests,
 } from '@ohif/cornerstone-render'
-import { ToolGroupManager, resetToolsState } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
+
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -58,6 +58,7 @@ class CacheDecacheExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -184,11 +185,8 @@ class CacheDecacheExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    // SynchronizerManager.destroy()
-    resetToolsState()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
 
     this.renderingEngine.destroy()
   }

@@ -472,7 +472,7 @@ class LengthTool extends BaseAnnotationTool {
   }
 
   _activateModify(element) {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
@@ -483,7 +483,7 @@ class LengthTool extends BaseAnnotationTool {
   }
 
   _deactivateModify(element) {
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
@@ -494,7 +494,7 @@ class LengthTool extends BaseAnnotationTool {
   }
 
   _activateDraw(element) {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
@@ -506,7 +506,7 @@ class LengthTool extends BaseAnnotationTool {
   }
 
   _deactivateDraw(element) {
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
@@ -540,6 +540,7 @@ class LengthTool extends BaseAnnotationTool {
 
     let toolState = getToolState(enabledElement, this.name)
 
+    // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!toolState?.length) {
       return
     }
@@ -632,6 +633,12 @@ class LengthTool extends BaseAnnotationTool {
           renderingEngine,
           enabledElement
         )
+      }
+
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed')
+        return
       }
 
       const textLines = this._getTextLines(data, targetUID)

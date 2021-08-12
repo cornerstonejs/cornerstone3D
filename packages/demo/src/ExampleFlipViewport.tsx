@@ -16,10 +16,8 @@ import {
   ToolGroupManager,
   ToolBindings,
   resetToolsState,
-  CornerstoneTools3DEvents,
-  cancelActiveManipulations,
-  removeToolStateByToolDataUID,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
@@ -91,6 +89,7 @@ class FlipViewportExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -284,11 +283,8 @@ class FlipViewportExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    // SynchronizerManager.destroy()
-    resetToolsState()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
 
     this.renderingEngine.destroy()
   }

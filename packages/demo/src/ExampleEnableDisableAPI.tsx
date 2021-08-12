@@ -10,6 +10,8 @@ import {
 import { ToolGroupManager, resetToolsState, ToolBindings } from '@ohif/cornerstone-tools'
 import * as cs from '@ohif/cornerstone-render'
 
+import * as csTools3d from '@ohif/cornerstone-tools'
+
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
@@ -67,6 +69,7 @@ class EnableDisableViewportExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
@@ -325,10 +328,8 @@ class EnableDisableViewportExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    resetToolsState()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
 
     this.renderingEngine.destroy()
   }

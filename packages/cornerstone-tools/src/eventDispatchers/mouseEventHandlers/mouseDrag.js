@@ -8,7 +8,7 @@ import { state } from '../../store'
  * @param {Event} evt The normalized mouseDown event.
  */
 export default function mouseDrag(evt) {
-  if (state.isToolLocked) {
+  if (state.isInteractingWithTool) {
     return
   }
 

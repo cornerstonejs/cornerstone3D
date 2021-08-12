@@ -17,7 +17,7 @@ const { Active, Passive } = ToolModes
  * @param {Event} evt The normalized mouseDown event.
  */
 export default function mouseMove(evt) {
-  if (state.isToolLocked || state.isMultiPartToolActive) {
+  if (state.isInteractingWithTool || state.isMultiPartToolActive) {
     return
   }
 

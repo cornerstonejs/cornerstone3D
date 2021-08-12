@@ -1,6 +1,8 @@
 const renderingEngineUID = 'PETCTRenderingEngine'
 const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME'
 const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME'
+const ctVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+const ptVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0'
 const ctStackUID = 'CT_Stack'
 const petStackUID = 'PET_Stack'
 
@@ -97,6 +99,8 @@ export {
   ptVolumeUID,
   ctVolumeUID,
   ctStackUID,
+  ctVolumeTestUID,
+  ptVolumeTestUID,
   petStackUID,
   SCENE_IDS,
   VIEWPORT_IDS,

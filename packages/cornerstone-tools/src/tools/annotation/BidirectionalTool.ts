@@ -99,13 +99,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
     const enabledElement = getEnabledElement(element)
-    const { viewport, FrameOfReferenceUID, renderingEngine } = enabledElement
-
-    if (!FrameOfReferenceUID) {
-      console.warn('No FrameOfReferenceUID, empty scene, exiting early.')
-
-      return
-    }
+    const { viewport, renderingEngine } = enabledElement
 
     this.isDrawing = true
 
@@ -136,7 +130,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       metadata: {
         viewPlaneNormal: <Point3>[...viewPlaneNormal],
         viewUp: <Point3>[...viewUp],
-        FrameOfReferenceUID,
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         toolName: this.name,
         referencedImageId,
       },
@@ -893,7 +887,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   _activateDraw = (element) => {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback)
@@ -905,7 +899,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   _deactivateDraw = (element) => {
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback)
@@ -917,7 +911,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   _activateModify = (element) => {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback)
@@ -928,7 +922,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   _deactivateModify = (element) => {
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(
@@ -1012,6 +1006,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
           renderingEngine,
           enabledElement
         )
+      }
+
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed')
+        return
       }
 
       let activeHandleCanvasCoords

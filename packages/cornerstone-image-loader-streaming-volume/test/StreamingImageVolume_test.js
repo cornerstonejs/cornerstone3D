@@ -71,7 +71,7 @@ function setupLoaders() {
     fakeSharedBufferImageLoader
   )
 
-  const volumeLoader = (volumeId) => {
+  const fakeVolumeLoader = (volumeId) => {
     const dimensions = [100, 100, 5]
 
     const volumeMetadata = {
@@ -117,7 +117,7 @@ function setupLoaders() {
     }
   }
 
-  cornerstone.registerVolumeLoader('fakeVolumeLoader', volumeLoader)
+  cornerstone.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
 
   return {
     imageIds,

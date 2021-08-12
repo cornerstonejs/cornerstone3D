@@ -15,11 +15,12 @@ import {
   synchronizers,
   ToolGroupManager,
   ToolBindings,
-  resetToolsState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeToolStateByToolDataUID,
+  destroy as CS3dToolsDestroy,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -88,6 +89,7 @@ class StackViewportExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -395,11 +397,8 @@ class StackViewportExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    // SynchronizerManager.destroy()
-    resetToolsState()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
 
     this.renderingEngine.destroy()
   }

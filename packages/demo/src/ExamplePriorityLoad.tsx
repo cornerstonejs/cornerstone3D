@@ -13,6 +13,7 @@ import {
   ToolGroupManager,
   resetToolsState,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
 
 import _ from 'lodash'
 import { getInterleavedFrames } from '@ohif/cornerstone-image-loader-streaming-volume'
@@ -92,6 +93,7 @@ class PriorityLoadExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
@@ -352,11 +354,8 @@ class PriorityLoadExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    resetToolsState()
-    SynchronizerManager.destroy()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
 
     this.renderingEngine.destroy()
   }

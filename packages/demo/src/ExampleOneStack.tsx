@@ -12,6 +12,8 @@ import {
   ToolBindings,
   resetToolsState,
 } from '@ohif/cornerstone-tools'
+import * as csTools3d from '@ohif/cornerstone-tools'
+
 import {
   setCTWWWC,
   setPetTransferFunction,
@@ -61,6 +63,7 @@ class OneStackExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
 
@@ -157,11 +160,9 @@ class OneStackExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Destroy synchronizers
-    resetToolsState()
-    SynchronizerManager.destroy()
     cache.purgeCache()
-    ToolGroupManager.destroy()
+    csTools3d.destroy()
+
 
     this.renderingEngine.destroy()
   }

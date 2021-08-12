@@ -43,12 +43,22 @@ function _getSvgLayer(canvasElement) {
 }
 
 function getSvgNode(canvasHash, cacheKey) {
+  // If state has been reset
+  if (!state.svgNodeCache[canvasHash]) {
+    return
+  }
+
   if (state.svgNodeCache[canvasHash][cacheKey]) {
     return state.svgNodeCache[canvasHash][cacheKey].domRef
   }
 }
 
 function appendNode(svgLayerElement, canvasHash, svgNode, cacheKey) {
+  // If state has been reset
+  if (!state.svgNodeCache[canvasHash]) {
+    return null
+  }
+
   state.svgNodeCache[canvasHash][cacheKey] = {
     touched: true,
     domRef: svgNode,
@@ -58,12 +68,22 @@ function appendNode(svgLayerElement, canvasHash, svgNode, cacheKey) {
 }
 
 function setNodeTouched(canvasHash, cacheKey) {
+  // If state has been reset
+  if (!state.svgNodeCache[canvasHash]) {
+    return
+  }
+
   if (state.svgNodeCache[canvasHash][cacheKey]) {
     state.svgNodeCache[canvasHash][cacheKey].touched = true
   }
 }
 
 function clearUntouched(svgLayerElement, canvasHash) {
+  // If state has been reset
+  if (!state.svgNodeCache[canvasHash]) {
+    return
+  }
+
   Object.keys(state.svgNodeCache[canvasHash]).forEach((cacheKey) => {
     const cacheEntry = state.svgNodeCache[canvasHash][cacheKey]
 

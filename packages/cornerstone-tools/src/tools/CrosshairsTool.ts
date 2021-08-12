@@ -46,6 +46,7 @@ interface CrosshairsSpecificToolData extends ToolSpecificToolData {
       rotationPoints: any[] // rotation handles, used for rotation interactions
       slabThicknessPoints: any[] // slab thickness handles, used for setting the slab thickness
       activeOperation: number | null // 0 translation, 1 rotation handles, 2 slab thickness handles
+      toolCenter: Point3
     }
     active: boolean
     activeViewportUIDs: string[] // a list of the viewport uids connected to the reference lines being translated
@@ -149,6 +150,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           rotationPoints: [], // rotation handles, used for rotation interactions
           slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
           activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
+          toolCenter: <Point3>[0, 0, 0], // Used in testings
         },
         active: false,
         activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
@@ -386,6 +388,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         handles: {
           rotationPoints: [], // rotation handles, used for rotation interactions
           slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
+          toolCenter: this.toolCenter,
         },
         active: false,
         activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
@@ -407,7 +410,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const { canvas: element } = eventData
     const enabledElement = getEnabledElement(element)
     const { FrameOfReferenceUID, renderingEngine, viewport } = enabledElement
-    const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
 
     const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
@@ -532,12 +534,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           // updated cached "previous" camera position and focal point
           toolData.metadata.cameraPosition = [...currentCamera.position]
           toolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
-
-          // update camera
-          otherViewport.setCamera({
-            focalPoint: <Point3>newFocalPoint,
-            position: <Point3>newPosition,
-          })
         }
 
         // update center of the crosshair
@@ -684,6 +680,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     otherViewportToolData.forEach((toolData) => {
       const { data } = toolData
+
+      data.handles.toolCenter = this.toolCenter
 
       const scene = renderingEngine.getScene(data.sceneUID)
       const otherViewport = scene.getViewport(data.viewportUID)
@@ -1560,7 +1558,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   _jump = (enabledElement, jumpWorld) => {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     const toolState = getToolState(enabledElement, this.name)
     const { renderingEngine, scene } = enabledElement
@@ -1590,7 +1588,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     )
 
     if (viewportsToolDataToUpdate.length === 0) {
-      state.isToolLocked = false
+      state.isInteractingWithTool = false
       return false
     }
 
@@ -1600,13 +1598,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       delta
     )
 
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     return true
   }
 
   jumpToWorld = (enabledElement, jumpWorld) => {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     const toolState = getToolState(enabledElement, this.name)
     const { renderingEngine, viewport } = enabledElement
@@ -1625,13 +1623,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       delta
     )
 
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     return true
   }
 
   _activateModify(element) {
-    state.isToolLocked = true
+    state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
@@ -1642,7 +1640,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   _deactivateModify(element) {
-    state.isToolLocked = false
+    state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
@@ -1750,6 +1748,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const viewportsToolDataToUpdate = otherViewportToolData.filter(
         (toolData) => {
           const { data } = toolData
+          data.handles.toolCenter = center
           const otherScene = renderingEngine.getScene(data.sceneUID)
           const otherViewport = otherScene.getViewport(data.viewportUID)
           const otherViewportControllable = this._getReferenceLineControllable(
@@ -1774,6 +1773,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         this.toolCenter[1],
         this.toolCenter[2],
       ]
+
       const centerCanvas = viewport.worldToCanvas(center)
 
       const finalPointCanvas = eventData.currentPoints.canvas
@@ -1803,10 +1803,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         .rotate(angle, rotationAxis) //todo: why we are passing
         .translate(-center[0], -center[1], -center[2])
 
+      const otherViewportsUIDs = []
       // update camera for the other viewports.
       // NOTE: The lines then are rendered by the onCameraModified
       viewportsToolDataToUpdate.forEach((toolData) => {
         const { data } = toolData
+        data.handles.toolCenter = center
 
         const scene = renderingEngine.getScene(data.sceneUID)
         const otherViewport = scene.getViewport(data.viewportUID)
@@ -1830,7 +1832,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           viewUp,
           focalPoint,
         })
+        otherViewportsUIDs.push(otherViewport.uid)
       })
+      renderingEngine.renderViewports(otherViewportsUIDs)
     } else if (handles.activeOperation === OPERATION.SLAB) {
       // SLAB THICKNESS
       // this should be just the active one under the mouse,
@@ -2006,6 +2010,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         focalPoint: newFocalPoint,
         position: newPosition,
       })
+      viewport.render()
     }
   }
 

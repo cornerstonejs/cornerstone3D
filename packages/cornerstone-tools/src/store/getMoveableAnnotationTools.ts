@@ -34,6 +34,10 @@ export default function getMoveableAnnotationTools(
 
   toolAndToolStateArray.forEach(({ tool, toolState }) => {
     for (let i = 0; i < toolState.length; i++) {
+      if (toolState[i].isLocked) {
+        continue
+      }
+
       const near = tool.pointNearTool(
         element,
         toolState[i],

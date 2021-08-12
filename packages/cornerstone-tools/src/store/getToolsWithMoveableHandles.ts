@@ -8,7 +8,7 @@ type ToolsWithMoveableHandles = {
 
 /**
  * @function getToolsWithMoveableHandles Filters an array of tools, returning
- * only tools with moveable handles at the mouse location.
+ * only tools with moveable handles at the mouse location that are not locked
  *
  * @public
  * @function getToolsWithMoveableHandles
@@ -30,6 +30,10 @@ export default function getToolsWithMoveableHandles(
 
   toolAndToolStateArray.forEach(({ tool, toolState }) => {
     for (let i = 0; i < toolState.length; i++) {
+      if (toolState[i].isLocked) {
+        continue
+      }
+
       const handle = tool.getHandleNearImagePoint(
         element,
         toolState[i],

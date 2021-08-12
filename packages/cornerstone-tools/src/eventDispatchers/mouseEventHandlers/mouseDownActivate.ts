@@ -11,7 +11,7 @@ import { selectToolData } from '../../stateManagement/toolDataSelection'
  */
 export default function mouseDownActivate(evt) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
-  if (state.isToolLocked) {
+  if (state.isInteractingWithTool) {
     return
   }
 
