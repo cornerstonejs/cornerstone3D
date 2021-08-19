@@ -23,16 +23,17 @@ import {
   RenderingEngine, // class
   ORIENTATION, // constant
   VIEWPORT_TYPE, // enum
-} from 'vtkjs-viewport'
+} from '@ohif/cornerstone-render'
 
 // RENDER
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
 const volumeUID = 'VOLUME_UID'
 const sceneUID = 'SCENE_UID'
+const viewportUID = 'viewport_UID_0'
 const viewports = []
 const viewport = {
   sceneUID,
-  viewportUID: 'viewportUID_0',
+  viewportUID,
   type: VIEWPORT_TYPE.ORTHOGRAPHIC,
   canvas: document.querySelector('.target-canvas'),
   defaultOptions: {
