@@ -56,6 +56,7 @@ module.exports = {
             'concepts/synchronizers',
             'concepts/state-management',
             'concepts/tools-eventListeners',
+            'concepts/toolsStyle',
           ],
         },
         'tools-usage',
