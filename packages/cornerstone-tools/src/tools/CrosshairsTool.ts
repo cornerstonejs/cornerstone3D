@@ -1950,6 +1950,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
               otherViewport.setSlabThickness(null)
             } else {
               otherViewport.setSlabThickness(slabThicknessValue)
+              otherViewport.render()
             }
           }
         }
