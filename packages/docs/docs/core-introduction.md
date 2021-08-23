@@ -4,26 +4,27 @@ id: core-introduction
 
 # Introduction
 
-`Cornerstone-3D` is a lightweight Javascript libraries for visualization and manipulation of the medical images in modern web browsers that support HTML5 canvas element.
 
-We have revisited the idea of image rendering on the browsers, and re-built various
+`Cornerstone-3D` is a lightweight Javascript library for visualization and manipulation of medical images in modern web browsers that support the HTML5 canvas element.
+
+We have revisited the idea of image rendering in browsers, and re-built various
 functionalities to enable fast and performant visualization for most complex imaging use cases.
+
 
 ## What is new?
 
 - 3D rendering of medical images
   - *New engine:* We have re-architectured the rendering engine for Cornerstone which implemented a `WebGL` rendering, and have created a wrapper around [vtk.js](https://github.com/kitware/vtk-js)
-  - *Shared Texture:* Our rendering engine can optimally share textures between canvases, so for complex scenarios that may require > 10 viewports, we share the
-  texture between the viewports that _might_ look into the same data from different
+  - *Shared Texture:* Our rendering engine can optimally share textures between canvases, so for complex scenarios that may require > 10 viewports, we share the texture between the viewports that _might_ look into the same data from different
   angles (axial, sagittal, or coronal) or fuse them on top of each other.
 
 - Streaming of Volume data
   - We have added a new volume loader which implements a progressive loading of volumes
   to the GPU. You don't need to wait for all of the volume to load to have an initial view. Below, you can see
-  streaming of two volumes that are simultaneously loaded in the scenes to for a 3x3 PET/CT fusion layout with a MIP view on the right.
+  streaming of two volumes that are simultaneously loaded into the scenes for a 3x3 PET/CT fusion layout with a MIP view on the right.
 
 
-![progressiveLoading](assets/progressiveLoading.gif)
+<!-- ![progressiveLoading](assets/progressiveLoading.gif) -->
 
 
 
@@ -62,13 +63,13 @@ as follows:
 - Docs                            # Generated from markdown
   - Cornerstone-Core              # Cornerstone3D Core rendering
     - Introduction                # High level overview
-    - Installation                # Installatino of the library
+    - Installation                # Installation of the library
     - Concepts                    # Cornerstone-Core building blocks
     - Usage                       # How to do X (basics)
 
   - Cornerstone-Tools             # Cornerstone3D Tools
     - Introduction                # High level overview
-    - Installation                # Installatino of the library
+    - Installation                # Installation of the library
     - Concepts                    # Cornerstone-Tools building blocks
     - Usage                       # How to do X (basics)
 

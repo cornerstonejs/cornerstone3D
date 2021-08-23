@@ -15,6 +15,7 @@ import {
   ToolGroupManager,
   ToolBindings,
   resetToolsState,
+  synchronizers,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
@@ -34,6 +35,8 @@ import {
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
+const { createCameraPositionSynchronizer, createVOISynchronizer } =
+  synchronizers
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -78,7 +81,7 @@ class testUtilVolume extends Component {
     metaData.addProvider(fakeMetaDataProvider, 10000)
 
     this.ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
-    this.ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`
+    this.ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_15_1_1_1_0`
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
@@ -95,6 +98,7 @@ class testUtilVolume extends Component {
    */
   async componentDidMount() {
     ;({ ctTestSceneToolGroup, ptTestSceneToolGroup } = initToolGroups())
+
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -113,12 +117,12 @@ class testUtilVolume extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        sceneUID: SCENE_IDS.PT,
+        viewportUID: VIEWPORT_IDS.PT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         canvas: this._canvasNodes.get(1),
         defaultOptions: {
-          orientation: ORIENTATION.SAGITTAL,
+          orientation: ORIENTATION.AXIAL,
           background: [0, 1, 1],
         },
       },
@@ -141,43 +145,65 @@ class testUtilVolume extends Component {
       SCENE_IDS.CT,
       VIEWPORT_IDS.CT.AXIAL
     )
-    ctTestSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
+    // ctTestSceneToolGroup.addViewports(
+    //   renderingEngineUID,
+    //   SCENE_IDS.PT,
+    //   VIEWPORT_IDS.CT.AXIAL
+    // )
     ctTestSceneToolGroup.addViewports(
       renderingEngineUID,
       SCENE_IDS.CT,
       VIEWPORT_IDS.CT.CORONAL
     )
 
-    // ptTestSceneToolGroup.addViewports(
-    //   renderingEngineUID,
-    //   SCENE_IDS.PT,
-    //   VIEWPORT_IDS.PT.AXIAL
-    // )
+    ptTestSceneToolGroup.addViewports(
+      renderingEngineUID,
+      SCENE_IDS.PT,
+      VIEWPORT_IDS.PT.AXIAL
+    )
 
     addToolsToToolGroups({ ctTestSceneToolGroup })
+    addToolsToToolGroups({ ptTestSceneToolGroup })
+
+    const axialSync = createVOISynchronizer('axialSync')
+
+
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     await createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
-    // await createAndCacheVolume(this.ptVolumeId, {imageIds: []})
+    await createAndCacheVolume(this.ptVolumeId, {imageIds: []})
 
     const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
+    const ptScene = renderingEngine.getScene(SCENE_IDS.PT)
+
+    axialSync.addSource({
+      renderingEngineUID: ctScene.renderingEngineUID,
+      sceneUID: ctScene.uid,
+      viewportUID: ctScene.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
+    })
+    axialSync.addTarget({
+      renderingEngineUID: ptScene.renderingEngineUID,
+      sceneUID: ptScene.uid,
+      viewportUID: ptScene.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
+    })
+
     await ctScene.setVolumes([
       {
         volumeUID: this.ctVolumeId,
       },
     ])
 
-    // const ptScene = renderingEngine.getScene(SCENE_IDS.PT)
-    // await ptScene.setVolumes([
-    //   {
-    //     volumeUID: this.ptVolumeId,
-    //   },
-    // ])
+
+
+    await ptScene.setVolumes([
+      {
+        volumeUID: this.ptVolumeId,
+      },
+    ])
+
+
+
 
     renderingEngine.render()
 
