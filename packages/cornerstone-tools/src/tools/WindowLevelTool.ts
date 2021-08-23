@@ -41,12 +41,12 @@ export default class WindowLevelTool extends BaseTool {
     const enabledElement = getEnabledElement(canvas)
     const { scene, sceneUID, viewportUID, viewport } = enabledElement
 
-    let volumeUID;
+    let volumeUID
     if (this.configuration && this.configuration.volumeUID) {
       volumeUID = this.configuration.volumeUID
     } else {
-      const defaultActor = viewport.getDefaultActor();
-      volumeUID = defaultActor.uid;
+      const defaultActor = viewport.getDefaultActor()
+      volumeUID = defaultActor.uid
     }
 
     let volumeActor
@@ -117,7 +117,7 @@ export default class WindowLevelTool extends BaseTool {
 
     // store the new range for viewport to preserve it during scrolling
     viewport.setProperties({
-      voiRange: newRange
+      voiRange: newRange,
     })
 
     viewport.render()
@@ -128,15 +128,16 @@ export default class WindowLevelTool extends BaseTool {
     const { dimensions, scalarData } = imageVolume
     const middleSliceIndex = Math.floor(dimensions[2] / 2)
 
-    if (!(imageVolume instanceof StreamingImageVolume)) {
-      return
-    }
+    // Todo: volume shouldn't only be streaming image volume, it can be imageVolume
+    // if (!(imageVolume instanceof StreamingImageVolume)) {
+    //   return
+    // }
 
-    const streamingVolume = <StreamingImageVolume>imageVolume
+    // const streamingVolume = <StreamingImageVolume>imageVolume
 
-    if (!streamingVolume.loadStatus.cachedFrames[middleSliceIndex]) {
-      return DEFAULT_IMAGE_DYNAMIC_RANGE
-    }
+    // if (!streamingVolume.loadStatus.cachedFrames[middleSliceIndex]) {
+    //   return DEFAULT_IMAGE_DYNAMIC_RANGE
+    // }
 
     const frameLength = dimensions[0] * dimensions[1]
     let bytesPerVoxel

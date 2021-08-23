@@ -285,7 +285,7 @@ function compareImages(imageDataURL, baseline, outputName) {
   })
 }
 
-function _canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
+function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
   const rect = DomCanvasElement.getBoundingClientRect()
   return [
     canvasPoint[0] + rect.left + window.pageXOffset,
@@ -310,7 +310,7 @@ function createNormalizedMouseEvent(imageData, index, canvas, viewport) {
   const tempWorld1 = imageData.indexToWorldVec3(index)
   const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1)
   const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p))
-  const [pageX, pageY] = _canvasPointsToPagePoints(canvas, canvasPoint1)
+  const [pageX, pageY] = canvasPointsToPagePoints(canvas, canvasPoint1)
   const worldCoord = viewport.canvasToWorld(canvasPoint1)
 
   return {
@@ -330,6 +330,7 @@ const testUtils = {
   compareImages,
   downloadURI,
   createNormalizedMouseEvent,
+  canvasPointsToPagePoints,
 }
 
 export default testUtils

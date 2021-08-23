@@ -8,12 +8,18 @@ example exists in the `./packages/demo` directory of this repository. All guidan
 here builds on the steps outlined on the "Setup" page.
 
 
-
+## Example
+In this example we render three viewports side by side:
+- Viewport-1 (Volume): rendering axial view of CT volume
+- Viewport-2 (Volume): rendering sagittal view of CT volume
+- Viewport-3 (Stack): rendering x-ray
 
 _index.html_
 
 ```html
-<canvas class="target-canvas"></canvas>
+<canvas class="target-canvas-1"></canvas>
+<canvas class="target-canvas-2"></canvas>
+<canvas class="target-canvas-3"></canvas>
 ```
 
 _app.js_
@@ -25,49 +31,86 @@ import {
   VIEWPORT_TYPE, // enum
 } from '@ohif/cornerstone-render'
 
-// RENDER
-const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
-const volumeUID = 'VOLUME_UID'
 const sceneUID = 'SCENE_UID'
-const viewportUID = 'viewport_UID_0'
-const viewports = []
-const viewport = {
-  sceneUID,
-  viewportUID,
-  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-  canvas: document.querySelector('.target-canvas'),
-  defaultOptions: {
-    orientation: ORIENTATION.AXIAL,
-    background: [Math.random(), Math.random(), Math.random()],
-  },
-}
+const volumeUID = 'VOLUME_UID'
+const viewportUID1 = 'viewport_UID_1'
+const viewportUID2 = 'viewport_UID_2'
+const viewportUID3 = 'viewport_UID_3'
 
-// Kick-off rendering
-viewports.push(viewport)
-renderingEngine.setViewports(viewports)
-
-// Render backgrounds
-renderingEngine.render()
-
-// Create and load our image volume
-// See: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration
-const imageIds = [
+// 0. ImageIds to use for this volume, see: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration how to add metadata
+const ctImageIds = [
   'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
   'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/2',
   'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
+  ......
 ]
 
-imageCache.makeAndCacheImageVolume(imageIds, volumeUID)
-imageCache.loadVolume(volumeUID, (event) => {
-  if (event.framesProcessed === event.numFrames) {
-    console.log('done loading!')
+const xrayImageIds = [
+  'wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
+]
+
+// 1. Creating a Rendering Engine
+const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
+
+// 2. Defining the 3 viewports
+// - sceneUID and viewportUID are specified
+// - type of viewport (orthographic -> volume)
+// - which HTML canvas element to use for this viewport
+// - defaultOptions: what is the orientation and background of this viewport
+const viewportInput = [
+  // Volume viewport (axial)
+  {
+    sceneUID,
+    viewportUID: viewportUID1,
+    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    canvas: document.querySelector('.target-canvas-2'),
+    defaultOptions: {
+      orientation: ORIENTATION.AXIAL,
+      background: [0, 0, 0],
+    },
   }
-})
+  // Volume viewport (sagittal)
+  {
+    sceneUID,
+    viewportUID: viewportUID2,
+    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    canvas: document.querySelector('.target-canvas-2'),
+    defaultOptions: {
+      orientation: ORIENTATION.SAGITTAL,
+      background: [0, 0, 0],
+    },
+  }
+  // stack viewport
+  {
+    sceneUID,
+    viewportUID: viewportUID3,
+    type: VIEWPORT_TYPE.STACK,
+    canvas: document.querySelector('.target-canvas-3'),
+    defaultOptions: {
+      background: [0, 0, 0],
+    },
+  }
+]
 
-// Tie scene to one or more image volumes
-const scene = renderingEngine.getScene(sceneUID)
+// 3. Kick-off rendering
+renderingEngine.setViewports(viewportInput)
 
-scene.setVolumes([
+// 4. Render backgrounds
+renderingEngine.render()
+
+// 5. This only creates the volumes, it does not actually load all
+// of the pixel data (yet)
+const ctVolume = await createAndCacheVolume(volumeUID, { imageIds })
+
+// 6. Actual load of the volume. Look into StreamingImageVolume to
+// get insight on what happens in a load: Spoiler Alert: each 2D image is requested and its pixel data is put at the correct position in the volume
+ctVolume.load(onLoad)
+
+// 7. Tie scene to one or more image volumes
+const ctScene = renderingEngine.getScene(sceneUID)
+
+// 8. Setting the volumes for the scene => creating actor and mappers
+ctScene.setVolumes([
   {
     volumeUID,
     callback: ({ volumeActor, volumeUID }) => {
@@ -77,330 +120,22 @@ scene.setVolumes([
   },
 ])
 
-const viewport = scene.getViewport(viewports[0].viewportUID)
+// 9. Setting the stack viewport
+const stackViewport = renderingEngine.getViewport(viewportUID3)
 
-// This will initialise volumes in GPU memory
+// 10. Setting initial rendering properties (optional)
+stackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
+
+
+// 10. This will initialize volumes in GPU memory
 renderingEngine.render()
 ```
 
-For the most part, updating is as simple as using:
-
-- `RenderingEngine.setViewports` and
-- `Scene.setVolumes`
-
-If you're using clientside routing and/or need to clean up resources more
+If you're using client-side routing and/or need to clean up resources more
 aggressively, most constructs have a `.destroy` method. For example:
 
 ```js
 renderingEngine.destroy()
 ```
 
-
-
-
-
-## NEW
-
-3x3+1 column Layout with the following hanging protocol
-
-3x3
-
-3 Rows: Axial, Sagittal, Coronal
-
-3 Columns: CT, PET, Fusion
-
-1 Column MIP for the PET image
-
-PET is displayed Inverted in the PET and MIP Viewports
-
-
-```js
-/*
-Assume an HTML page is present with nine <canvas/> elements in a 3x3 layout, and one column with another <canvas/> for the PET MIP.
-These canvases are references as React Refs in this example, using notation such as 'containers.CT.AXIAL.current'.
-*/
-
-// Import the RenderingEngine, imageCache and some constants
-import { CONSTANTS, imageCache, RenderingEngine } from '@vtk-viewport';
-const { ORIENTATION, VIEWPORT_TYPE } = CONSTANTS;
-
-// Define some IDs for referencing each viewport, scene, or volume later
-const renderingEngineUID = 'PETCTRenderingEngine';
-const ptVolumeUID = 'PET_VOLUME';
-const ctVolumeUID = 'CT_VOLUME';
-const SCENE_IDS = {
-  CT: 'ctScene',
-  PT: 'ptScene',
-  FUSION: 'fusionScene',
-  PTMIP: 'ptMipScene',
-};
-const VIEWPORT_IDS = {
-  CT: {
-    AXIAL: 'ctAxial',
-    SAGITTAL: 'ctSagittal',
-    CORONAL: 'ctCoronal',
-  },
-  PT: {
-    AXIAL: 'ptAxial',
-    SAGITTAL: 'ptSagittal',
-    CORONAL: 'ptCoronal',
-  },
-  FUSION: {
-    AXIAL: 'fusionAxial',
-    SAGITTAL: 'fusionSagittal',
-    CORONAL: 'fusionCoronal',
-  },
-  PTMIP: {
-    CORONAL: 'ptMipCoronal',
-  },
-};
-
-// Instantiate the RenderingEngine
-const renderingEngine = new RenderingEngine(renderingEngineUID);
-
-renderingEngine.setViewports([
-  // CT
-  {
-    sceneUID: SCENE_IDS.CT,
-    viewportUID: VIEWPORT_IDS.CT.AXIAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.CT.AXIAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
-    },
-  }, {
-    sceneUID: SCENE_IDS.CT,
-    viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.CT.SAGITTAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
-    },
-  }, {
-    sceneUID: SCENE_IDS.CT,
-    viewportUID: VIEWPORT_IDS.CT.CORONAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.CT.CORONAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.CORONAL,
-    },
-  },
-  // PT
-  {
-    sceneUID: SCENE_IDS.PT,
-    viewportUID: VIEWPORT_IDS.PT.AXIAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.PT.AXIAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
-      background: [1, 1, 1], // Set background to white because PET will be displayed inverted
-    },
-  }, {
-    sceneUID: SCENE_IDS.PT,
-    viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.PT.SAGITTAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
-      background: [1, 1, 1],
-    },
-  }, {
-    sceneUID: SCENE_IDS.PT,
-    viewportUID: VIEWPORT_IDS.PT.CORONAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.PT.CORONAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.CORONAL,
-      background: [1, 1, 1],
-    },
-  },
-  // Fusion
-  {
-    sceneUID: SCENE_IDS.FUSION,
-    viewportUID: VIEWPORT_IDS.FUSION.AXIAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.FUSION.AXIAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
-    },
-  }, {
-    sceneUID: SCENE_IDS.FUSION,
-    viewportUID: VIEWPORT_IDS.FUSION.SAGITTAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.FUSION.SAGITTAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
-    },
-  }, {
-    sceneUID: SCENE_IDS.FUSION,
-    viewportUID: VIEWPORT_IDS.FUSION.CORONAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.FUSION.CORONAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.CORONAL,
-    },
-  },
-  // PET MIP
-  {
-    sceneUID: SCENE_IDS.PTMIP,
-    viewportUID: VIEWPORT_IDS.PTMIP.CORONAL,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-    canvas: containers.PTMIP.CORONAL.current,
-    defaultOptions: {
-      orientation: ORIENTATION.CORONAL,
-      background: [1, 1, 1],
-    },
-  },
-]);
-
-
-/*
-- Assume we have the DICOM Metadata from WADO-RS RetrieveMetadata at the Study or Series level already present in the application. These could be provided by any Cornerstone metadata provider.
-- Assume we already know the Cornerstone imageIds for the PET and CT Series
-*/
-
-const { ptImageIds, ctImageIds } = imageIds;
-
-// Create the Volumes for the PET and CT Series
-const ptVolume = imageCache.makeAndCacheImageVolume(
-  ptImageIds,
-  ptVolumeUID
-);
-const ctVolume = imageCache.makeAndCacheImageVolume(
-  ctImageIds,
-  ctVolumeUID
-);
-
-// Define two functions to set up the actors for the PET volume inside the inverted PET scene and the Fusion scene
-// These use VTK.js APIs to define and manipulate the color transfer functions for the volume actors.
-function setPetInvertedTransferFunction({ volumeActor, volumeUID }) {
-  const rgbTransferFunction = volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0);
-
-  rgbTransferFunction.setRange(0, 5);
-
-  const size = rgbTransferFunction.getSize();
-
-  for (let index = 0; index < size; index++) {
-    const nodeValue1 = [];
-
-    rgbTransferFunction.getNodeValue(index, nodeValue1);
-
-    nodeValue1[1] = 1 - nodeValue1[1];
-    nodeValue1[2] = 1 - nodeValue1[2];
-    nodeValue1[3] = 1 - nodeValue1[3];
-
-    rgbTransferFunction.setNodeValue(index, nodeValue1);
-  }
-}
-
-function setPetFusionColorMapTransferFunction({ volumeActor }) {
-  const mapper = volumeActor.getMapper();
-  mapper.setSampleDistance(1.0);
-
-  const cfun = vtkColorTransferFunction.newInstance();
-  const preset = vtkColorMaps.getPresetByName('hsv');
-  cfun.applyColorMap(preset);
-  cfun.setMappingRange(0, 5);
-
-  volumeActor.getProperty().setRGBTransferFunction(0, cfun);
-
-  // Create scalar opacity function
-  const ofun = vtkPiecewiseFunction.newInstance();
-  ofun.addPoint(0, 0.0);
-  ofun.addPoint(0.1, 0.9);
-  ofun.addPoint(5, 1.0);
-
-  volumeActor.getProperty().setScalarOpacity(0, ofun);
-}
-
-// Retrieve the Scenes from the RenderingEngine instance
-const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
-const ptScene = renderingEngine.getScene(SCENE_IDS.PT);
-const fusionScene = renderingEngine.getScene(SCENE_IDS.FUSION);
-const ptMipScene = renderingEngine.getScene(SCENE_IDS.PTMIP);
-
-// Set the Volumes for each Scene.
-// - Assume there is a function for setting the CT Window/Level once the actor has been created
-// - The PET transfer function examples are shown above.
-// - Note that the Fusion Scene includes both the PET and CT volumes
-ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
-ptScene.setVolumes([
-  { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
-]);
-fusionScene.setVolumes([
-  { volumeUID: ctVolumeUID, callback: setCTWWWC },
-  { volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction },
-]);
-ptMipScene.setVolumes([
-  { volumeUID: ptVolumeUID, callback: setPetTransferFunction },
-]);
-
-// Initialize the rendering engine by calling a first render
-// - This creates the buffers in the GPU, which is computationally expensive so it is best to get it out of the way while
-//   the rest of the image data is loading.
-renderingEngine.render();
-
-// Initialize the loading of the PET volume.
-imageCache.loadVolume(ptVolumeUID, event => {
-  // Called whenever the volume data has changed.
-  // Currently this happens when each slice has been downloaded, decoded, and inserted into the volume Array.
-  // When it changes, re-render all Scenes displaying this volume.
-  ptVolume.render();
-});
-
-// Similarly, initialize the loading of the CT volume.
-imageCache.loadVolume(ctVolumeUID, event => {
-  ctVolume.render();
-});
-
-// On page navigate, or unmount of the component, destory the RenderingEngine instance and decache the volumes
-// - If you decache a volume while it is loading, any in-progress image data requests will be **cancelled** (if the image loader supports cancellation)
-imageCache.decacheVolume(ctVolumeUID);
-imageCache.decacheVolume(ptVolumeUID);
-renderingEngine.destroy();
-```
-
-### Example screenshot
-
-Note: MIP is not yet active in rightmost viewport, border lines are CSS in the example and not part of the framework.
-
-
-```js
-const stack = {
-  currentImageIdIndex: 0,
-  imageIds: ['imageId1', 'imageId2']
-}
-
-// Creating a canvas
-const canvas = document.createElement('canvas')
-canvas.style.width = `128px`
-canvas.style.height = `128px`
-document.body.appendChild(canvas)
-
-// Creating a rendering Engine and UIDs
-const renderingEngineUID = "myEngine"
-const viewportUID = "myViewport"
-const renderingEngine = new RenderingEngine(renderingEngineUID)
-
-// Letting rendering Engine know about the canvases and viewport UIDs
-renderingEngine.setViewports([
-    {
-      sceneUID: "", // No need for sceneUID for stacks
-      viewportUID: viewportUID,
-      type: "stack",
-      canvas: canvas,
-      defaultOptions: {
-        background: [0, 0, 0], // Black background
-      },
-    },
-  ])
-
-// Setting the stack for the viewport
-const viewport = renderingEngine.getViewport(viewportUID)
-
-
-viewport.setStack(stack.imageIds, 0)
-renderingEngine.render()
-```
+## Loading a Stack

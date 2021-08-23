@@ -21,7 +21,9 @@ cornerstone.enable(element);
 // Triggers ELEMENT_ENABLED event
 ```
 
-In Cornerstone-3D:
+In Cornerstone-3D you have two APIs for this:
+- `setViewports`: enables a list of viewports at once
+- `enableElement`: enables the element
 
 ```js
 const canvas = document.getElementById('canvas-element');
@@ -40,10 +42,19 @@ renderingEngine.setViewports([
  }
 ]);
 
-// setViewports triggers events on the Canvas
-renderingEngine.events.addEventListener(...)
+renderingEngine.enableElement(
+ {
+    sceneUID: "CT",
+    viewportUID: "CTAxial",
+    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    canvas,
+    defaultOptions: {
+      orientation: ORIENTATION.AXIAL,
+    },
+ }
+);
 
-ELEMENT_ENABLED eventData includes:
+// ELEMENT_ENABLED eventData includes:
 {
   canvas,
   sceneUID,
@@ -55,9 +66,7 @@ ELEMENT_ENABLED eventData includes:
 ### loadAndCacheImage
 
 
-First, a volume is defined (similar to “stacks” in Cornerstone), and memory for this volume is allocated, then the user can trigger a load to fetch the data.
-
-As the data corresponding to each imageId is fetched and decoded, the volume is filled up with data, the callback is called as each frame returns, and the eventData given to the callback is shown in the example.
+In Cornerstone-3D, first, a volume is defined (similar to “stacks” in Cornerstone), and memory for this volume is allocated, then the user can trigger a load to fetch the data. As the data corresponding to each imageId is fetched and decoded, the volume is filled up with data, the callback is called as each frame returns, and the eventData given to the callback is shown in the example.
 
 We are still using `cornerstoneWADOImageLoader` to process requests, but are instead filling up a volume instead of creating individual Cornerstone images.
 
@@ -83,16 +92,14 @@ await viewport.setStack(
   [imageId],
 )
 
-// muliple imageIds
+// multiple imageIds
 await viewport.setStack(
   [imageId1, imageId2],
   1, // frame 1
 )
 ```
 
-
-
-In Cornerstone-3D for loading volumes we have
+For loading volumes we have
 
 ```js
 // Define a set of imageIds as a volume.
@@ -169,6 +176,8 @@ on IMAGE_RENDERED
 eventData: {
   viewport,
 }
+
+viewport.render()
 ```
 
 
@@ -230,10 +239,10 @@ cornerstone.disable(element);
 In Cornerstone-3D we have:
 
 ```js
-renderingEngine.setViewports()
+renderingEngine.disableElement(element)
 ```
 
-to reset the layout, which may remove viewports. an element disabled event will be fired for each canvas not retained.
+element disabled event will be fired for each canvas not retained.
 
 OR
 
@@ -256,7 +265,11 @@ eventData: {
 
 
 ### pageToPixel and pixelToCanvas
-We are no longer rendering a single image at a time. In this framework, the viewport is rendering a specific plane in 3D space, determined by the camera parameters (e.g. focal point, frustum, clipping range). Data and annotations will be stored in 3D space ('world space', per frame of reference), and so in order to interact with, and render representations of annotations to the screen, you need to be able to convert between canvas space and world space.
+
+We are no longer rendering a single image at a time. In this framework, the viewport renders a specific plane in 3D space, determined by the camera parameters (e.g. focal point, frustum, clipping range). Data and annotations will be stored in 3D space ('world space', per frame of reference), and so in order to interact with, and render representations of annotations on the screen, you need to be able to convert between canvas space and world space.
+It should be noted that, in order to share tools between Stack and Volume viewports, we also render StackViewports in 3D space. So basically,
+they are 2D images positioned and oriented based on their metadata in space.
+
 
 In Cornerstone we had:
 
@@ -294,50 +307,26 @@ cornerstone.getPixels(element, x, y, width, height);
 In Cornerstone-3D we have:
 
 ```js
-const volume = imageCache.getImageVolume(volumeUID)
+const {
+  dimensions: Point3
+  direction: Float32Array
+  spacing: Float32Array
+  origin: Float32Array
+  scalarData: Float32Array
+  vtkImageData: vtkImageData
+  metadata: { Modality: string }
+  scaling?: Scaling
+} = viewport.getImageData()
 ```
 
-The volume then has the following properties:
+You can grab the vtkImageData to get pixel information
 
-- uid - The volume’s UID
-- metadata - The volume’s DICOM metadata
-- dimensions - The x,y,z dimensions of the volume
-- spacing - The x,y,z spacing of the volume
-- origin - The x,y,z position of the center of the first voxel.
-- direction - The row, column and normal direction cosines.
-- vtkImageData - The underlying vtkImageData object (The renderable object used in the underlying vtk.js rendering library).
-- scalarData - This a single TypedArray (e.g. Float32Array) which contains all of the voxel values for the volume. Through the VTK API this could also be accessed using getScalars() from the vtkDataArray underlying the vtkImageData object.
-- volumeMapper - The vtkVolumeMapper, a rendering mapper referencing GPU texture memory for the object. referenced when adding the volume to a scene.
-
-The metadata has the following properties, which are the DICOM tags associated with the volume’s position and its data representation:
-
-```js
-  metadata: {
-    BitsAllocated,
-    BitsStored,
-    SamplesPerPixel,
-    HighBit,
-    PhotometricInterpretation,
-    PixelRepresentation,
-    Modality,
-    ImageOrientationPatient,
-    PixelSpacing,
-    FrameOfReferenceUID,
-    Columns,
-    Rows,
-    voiLut,
-  };
-```
-
-If the volume was created by imageIds you have these two additional properties:
-
-```js
-imageIds - An array of per-frame imageIds
-loadStatus: {
-  loaded // Boolean: Whether or not the entire volume has loaded.
-  cachedFrames: // A Boolean array of same length of as the imageIds, which states if they have been loaded.
-}
-```
+- `dimensions` - The x,y,z dimensions of the volume
+- `spacing` - The x,y,z spacing of the volume
+- `origin` - The x,y,z position of the center of the first voxel.
+- `direction` - The row, column and normal direction cosines.
+- `vtkImageData` - The underlying vtkImageData object (The tenderable object used in the underlying vtk.js rendering library).
+- `scalarData` - This a single TypedArray (e.g. Float32Array) which contains all of the voxel values for the volume. Through the VTK API this could also be accessed using getScalars() from the vtkDataArray underlying the vtkImageData object.
 
 
 ### getImageLoadObject
@@ -347,16 +336,13 @@ Now that we have volumes, all the data is stored there, rather than in an image-
 In Cornerstone we had:
 
 ```js
-cornerstone.imageCache.getImageLoadObject(imageId);
+cornerstone.cache.getImageLoadObject(imageId);
 ```
 
 In Cornerstone-3D we have:
 
 ```js
-const volume = imageCache.getImageVolume(volumeUID)
-
-// Add a callback for when each image is rendered (also starts loading volume if loadVolume has not already been called):
-imageCache.loadVolume(volumeUID, callback);
+const volume = cache.getVolume(volumeUID)
 
 // Check which frames have already been loaded:
 // - true if all frames have loaded.

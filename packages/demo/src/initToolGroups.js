@@ -724,8 +724,14 @@ function addToolsToToolGroups({
       configuration: {
       },
     })
-    ctTestSceneToolGroup.addTool('StackScrollMouseWheel')
-    ctTestSceneToolGroup.setToolActive('StackScrollMouseWheel')
+    ctTestSceneToolGroup.addTool('WindowLevel')
+    ctTestSceneToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
     ctTestSceneToolGroup.setToolPassive('Crosshairs', {
       bindings: [
         {
@@ -745,7 +751,15 @@ function addToolsToToolGroups({
         getReferenceLineSlabThicknessControlsOn,
       },
     })
-    ptTestSceneToolGroup.setToolActive('Crosshairs', {
+    ptTestSceneToolGroup.addTool('WindowLevel')
+    ptTestSceneToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    ptTestSceneToolGroup.setToolPassive('Crosshairs', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
