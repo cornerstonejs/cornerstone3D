@@ -278,112 +278,6 @@ class Viewport {
     this.getRenderingEngine().render()
   }
 
-  // old reset camera
-  /*
-  resetCamera = () => {
-    const renderer = this.getRenderer()
-
-    const bounds = renderer.computeVisiblePropBounds()
-    const focalPoint = [0, 0, 0]
-
-    const activeCamera = this.getVtkActiveCamera()
-    const viewPlaneNormal = activeCamera.getViewPlaneNormal()
-    const viewUp = activeCamera.getViewUp()
-
-    // Reset the perspective zoom factors, otherwise subsequent zooms will cause
-    // the view angle to become very small and cause bad depth sorting.
-    activeCamera.setViewAngle(30.0)
-
-    focalPoint[0] = (bounds[0] + bounds[1]) / 2.0
-    focalPoint[1] = (bounds[2] + bounds[3]) / 2.0
-    focalPoint[2] = (bounds[4] + bounds[5]) / 2.0
-
-    const { widthWorld, heightWorld } =
-      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal)
-
-    const canvasSize = [this.sWidth, this.sHeight]
-
-    const boundsAspectRatio = widthWorld / heightWorld
-    const canvasAspectRatio = canvasSize[0] / canvasSize[1]
-
-    let radius
-
-    if (boundsAspectRatio < canvasAspectRatio) {
-      // can fit full height, so use it.
-      radius = heightWorld / 2
-    } else {
-      const scaleFactor = boundsAspectRatio / canvasAspectRatio
-
-      radius = (heightWorld * scaleFactor) / 2
-    }
-
-    const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = radius
-
-    let distance
-
-    if (activeCamera.getParallelProjection()) {
-      // Stick the camera just outside of the bounding sphere of all the volumeData so that MIP behaves correctly.
-
-      let w1 = bounds[1] - bounds[0]
-      let w2 = bounds[3] - bounds[2]
-      let w3 = bounds[5] - bounds[4]
-
-      w1 *= w1
-      w2 *= w2
-      w3 *= w3
-
-      distance = w1 + w2 + w3
-
-      // If we have just a single point, pick a radius of 1.0
-      distance = distance === 0 ? 1.0 : distance
-
-      // compute the radius of the enclosing sphere
-      distance = 1.1 * (Math.sqrt(distance) / 2)
-    } else {
-      distance = radius / Math.sin(angle * 0.5)
-    }
-
-    // check view-up vector against view plane normal
-
-    if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
-      activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1])
-    }
-
-    // update the camera
-    activeCamera.setFocalPoint(...focalPoint)
-    activeCamera.setPosition(
-      focalPoint[0] + distance * viewPlaneNormal[0],
-      focalPoint[1] + distance * viewPlaneNormal[1],
-      focalPoint[2] + distance * viewPlaneNormal[2]
-    )
-
-    renderer.resetCameraClippingRange(bounds)
-
-    // setup default parallel scale
-    activeCamera.setParallelScale(parallelScale)
-
-    // update reasonable world to physical values
-    activeCamera.setPhysicalScale(radius)
-    activeCamera.setPhysicalTranslation(
-      -focalPoint[0],
-      -focalPoint[1],
-      -focalPoint[2]
-    )
-
-    const RESET_CAMERA_EVENT = {
-      type: 'ResetCameraEvent',
-      renderer,
-    }
-
-    // Here to let parallel/distributed compositing intercept
-    // and do the right thing.
-    renderer.invokeEvent(RESET_CAMERA_EVENT)
-
-    return true
-  }
-  */
-
   private getDefaultImageData(): any {
     const actor = this.getDefaultActor()
 
@@ -404,9 +298,15 @@ class Viewport {
     this._suppressCameraModifiedEvents = false
   }
 
-  // new reset camera
-  // *
-  public resetCamera() {
+  /**
+   * Resets the camera based on the rendering volume(s) bounds. If
+   * resetFocalPoint is selected, it puts the focal point at the
+   * center of the volume (or slice); otherwise, only the camera scale (zoom)
+   * is reset.
+   * @param resetFocalPoint if focal point reset is needed
+   * @returns boolean
+   */
+  public resetCamera(resetFocalPoint = true) {
     const renderer = this.getRenderer()
     const previousCamera = _cloneDeep(this.getCamera())
 
@@ -480,13 +380,15 @@ class Viewport {
       activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1])
     }
 
-    // update the camera
-    activeCamera.setFocalPoint(focalPoint[0], focalPoint[1], focalPoint[2])
-    activeCamera.setPosition(
-      focalPoint[0] + distance * viewPlaneNormal[0],
-      focalPoint[1] + distance * viewPlaneNormal[1],
-      focalPoint[2] + distance * viewPlaneNormal[2]
-    )
+    // update the focal point if needed
+    if (resetFocalPoint) {
+      activeCamera.setFocalPoint(focalPoint[0], focalPoint[1], focalPoint[2])
+      activeCamera.setPosition(
+        focalPoint[0] + distance * viewPlaneNormal[0],
+        focalPoint[1] + distance * viewPlaneNormal[1],
+        focalPoint[2] + distance * viewPlaneNormal[2]
+      )
+    }
 
     renderer.resetCameraClippingRange(bounds)
 
@@ -495,11 +397,14 @@ class Viewport {
 
     // update reasonable world to physical values
     activeCamera.setPhysicalScale(radius)
-    activeCamera.setPhysicalTranslation(
-      -focalPoint[0],
-      -focalPoint[1],
-      -focalPoint[2]
-    )
+
+    if (resetFocalPoint) {
+      activeCamera.setPhysicalTranslation(
+        -focalPoint[0],
+        -focalPoint[1],
+        -focalPoint[2]
+      )
+    }
 
     // instead of setThicknessFromFocalPoint we should do it here
     activeCamera.setClippingRange(distance, distance + 0.1)
@@ -529,7 +434,6 @@ class Viewport {
 
     return true
   }
-  // */
 
   /**
    * @method getCanvas Gets the target output canvas for the `Viewport`.
