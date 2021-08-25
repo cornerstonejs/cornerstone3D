@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   createAndCacheVolume,
   ORIENTATION,
+  eventTarget,
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
 import {
@@ -11,6 +12,9 @@ import {
   ToolGroupManager,
   ToolBindings,
   resetToolsState,
+  CornerstoneTools3DEvents,
+  cancelActiveManipulations,
+  removeToolStateByToolDataUID,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
@@ -155,6 +159,10 @@ class ModifierKeysExample extends Component {
     ctStackViewport.setStack(fakeStack, 0)
     ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
 
+    eventTarget.addEventListener(
+      CornerstoneTools3DEvents.KEY_DOWN,
+      this.cancelToolDrawing
+    )
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
   }
@@ -163,6 +171,21 @@ class ModifierKeysExample extends Component {
     const { layoutIndex } = this.state
     const { renderingEngine } = this
     const onLoad = () => this.setState({ progressText: 'Loaded.' })
+  }
+
+  cancelToolDrawing = (evt) => {
+    const element = evt.currentTarget
+    if (evt.code === 'Escape') {
+      const toolDataUID = cancelActiveManipulations(element)
+      if (!!toolDataUID) {
+        this.setState({ cancelledMeasurements: toolDataUID })
+
+        if (this.state.deleteOnToolCancel) {
+          removeToolStateByToolDataUID(element, toolDataUID)
+          this.renderingEngine.render()
+        }
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -247,7 +270,7 @@ class ModifierKeysExample extends Component {
     // To enable modifier key cursor before tool interaction
     // Should be changed after canvas is wrapped in a div and keyboard event
     // listener is added to the div instead of canvas
-    document.querySelectorAll("div.viewport-pane > canvas")[0].focus()
+    document.querySelectorAll('div.viewport-pane > canvas')[0].focus()
 
     this.setState({ ptCtLeftClickTool: toolName })
   }

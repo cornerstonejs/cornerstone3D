@@ -504,8 +504,9 @@ class RenderingEngine implements IRenderingEngine {
     this._resize(viewports, offScreenCanvasWidth, offScreenCanvasHeight)
 
     // 4. Reset viewport cameras
+    const resetFocalPoint = false
     viewports.forEach((vp) => {
-      vp.resetCamera()
+      vp.resetCamera(resetFocalPoint)
     })
 
     // 5. Render all
