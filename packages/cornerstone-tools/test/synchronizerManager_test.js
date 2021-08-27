@@ -25,7 +25,7 @@ const {
   ToolBindings,
 } = csTools3d
 
-const { fakeMetaDataProvider, fakeVolumeLoader, compareImages, downloadURI } =
+const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } =
   Utilities.testUtils
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
@@ -96,9 +96,6 @@ describe('Synchronizer Manager: ', () => {
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
     this.firstToolGroup.addTool('StackScrollMouseWheel')
     this.firstToolGroup.setToolActive('StackScrollMouseWheel')
-    this.secondToolGroup = ToolGroupManager.createToolGroup('volume2')
-    this.secondToolGroup.addTool('StackScrollMouseWheel')
-    this.secondToolGroup.setToolActive('StackScrollMouseWheel')
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -114,7 +111,6 @@ describe('Synchronizer Manager: ', () => {
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupById('volume1')
-    ToolGroupManager.destroyToolGroupById('volume2')
 
     DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -191,7 +187,7 @@ describe('Synchronizer Manager: ', () => {
       scene1UID,
       viewportUID1
     )
-    this.secondToolGroup.addViewports(
+    this.firstToolGroup.addViewports(
       this.renderingEngine.uid,
       scene2UID,
       viewportUID2
@@ -233,17 +229,10 @@ describe('Synchronizer Manager: ', () => {
     csTools3d.addTool(WindowLevelTool, {})
     cache.purgeCache()
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
-    this.firstToolGroup.addTool('WindowLevel')
-    this.firstToolGroup.setToolActive('WindowLevel', {
-      bindings: [
-        {
-          mouseButton: ToolBindings.Mouse.Primary,
-        },
-      ],
+    this.firstToolGroup.addTool('WindowLevel', {
+      configuration: { volumeUID: ctVolumeId },
     })
-    this.secondToolGroup = ToolGroupManager.createToolGroup('volume2')
-    this.secondToolGroup.addTool('WindowLevel')
-    this.secondToolGroup.setToolActive('WindowLevel', {
+    this.firstToolGroup.setToolActive('WindowLevel', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
@@ -265,7 +254,6 @@ describe('Synchronizer Manager: ', () => {
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupById('volume1')
-    ToolGroupManager.destroyToolGroupById('volume2')
 
     DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -301,17 +289,16 @@ describe('Synchronizer Manager: ', () => {
     ])
 
     let canvasesRendered = 0
+    const [pageX1, pageY1] = [316, 125]
+    const [pageX2, pageY2] = [211, 20]
 
     const addEventListenerForVOI = () => {
-      canvas1.addEventListener(EVENTS.VOI_MODIFIED, () => {
-        setTimeout(() => {
-          const image2 = canvas2.toDataURL('image/png')
-          compareImages(
-            image2,
-            windowLevel_canvas2,
-            'windowLevel_canvas2'
-          ).then(done, done.fail)
-        })
+      canvas2.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const image2 = canvas2.toDataURL('image/png')
+        compareImages(image2, windowLevel_canvas2, 'windowLevel_canvas2').then(
+          done,
+          done.fail
+        )
       })
     }
 
@@ -322,9 +309,6 @@ describe('Synchronizer Manager: ', () => {
         return
       }
 
-      const [pageX1, pageY1] = [316, 125]
-      const [pageX2, pageY2] = [211, 20]
-
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
         target: canvas1,
@@ -333,9 +317,8 @@ describe('Synchronizer Manager: ', () => {
         clientY: pageY1,
         pageX: pageX1,
         pageY: pageY1,
-        bubbles: true,
-        cancelable: true,
       })
+
       canvas1.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
@@ -346,25 +329,17 @@ describe('Synchronizer Manager: ', () => {
         clientY: pageY2,
         pageX: pageX2,
         pageY: pageY2,
-        bubbles: true,
-        cancelable: true,
       })
 
       addEventListenerForVOI()
+      document.dispatchEvent(evt1)
 
-      setTimeout(() => {
-        document.dispatchEvent(evt1)
-      })
-
-      // Mouse Up instantly after
       const evt3 = new MouseEvent('mouseup', {
         bubbles: true,
         cancelable: true,
       })
 
-      setTimeout(() => {
-        document.dispatchEvent(evt3)
-      })
+      document.dispatchEvent(evt3)
     }
 
     canvas1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
@@ -375,7 +350,7 @@ describe('Synchronizer Manager: ', () => {
       scene1UID,
       viewportUID1
     )
-    this.secondToolGroup.addViewports(
+    this.firstToolGroup.addViewports(
       this.renderingEngine.uid,
       scene1UID,
       viewportUID2

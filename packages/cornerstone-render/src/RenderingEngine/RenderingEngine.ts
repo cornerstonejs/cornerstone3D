@@ -741,10 +741,15 @@ class RenderingEngine implements IRenderingEngine {
 
     const viewports = this._getViewportsAsArray()
 
+    const eventDataArray = []
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i]
       if (this._needsRender.has(viewport.uid)) {
-        this._renderViewportToCanvas(viewport, offScreenCanvas)
+        const eventData = this._renderViewportToCanvas(
+          viewport,
+          offScreenCanvas
+        )
+        eventDataArray.push(eventData)
 
         // This viewport has been rendered, we can remove it from the set
         this._needsRender.delete(viewport.uid)
@@ -754,10 +759,14 @@ class RenderingEngine implements IRenderingEngine {
         if (this._needsRender.size === 0) {
           this._animationFrameSet = false
           this._animationFrameHandle = null
-          return
+          break
         }
       }
     }
+
+    eventDataArray.forEach((eventData) => {
+      triggerEvent(eventData.canvas, EVENTS.IMAGE_RENDERED, eventData)
+    })
   }
 
   /**
@@ -839,7 +848,12 @@ class RenderingEngine implements IRenderingEngine {
   private _renderViewportToCanvas(
     viewport: StackViewport | VolumeViewport,
     offScreenCanvas
-  ) {
+  ): {
+    canvas: HTMLCanvasElement
+    viewportUID: string
+    sceneUID: string
+    renderingEngineUID: string
+  } {
     const { sx, sy, sWidth, sHeight, uid, sceneUID, renderingEngineUID } =
       viewport
 
@@ -860,14 +874,12 @@ class RenderingEngine implements IRenderingEngine {
       dHeight
     )
 
-    const eventData = {
+    return {
       canvas,
       viewportUID: uid,
       sceneUID,
       renderingEngineUID,
     }
-
-    triggerEvent(canvas, EVENTS.IMAGE_RENDERED, eventData)
   }
 
   /**
