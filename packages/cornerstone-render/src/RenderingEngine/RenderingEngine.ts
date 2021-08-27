@@ -489,7 +489,7 @@ class RenderingEngine implements IRenderingEngine {
    * It is up to the parent app to call the size of the on-screen canvas changes.
    * This is left as an app level concern as one might want to debounce the changes, or the like.
    *
-   * @param {boolean} [immediate=false] Whether all of the viewports should be rendered immediately.
+   * @param {boolean} [immediate=true] Whether all of the viewports should be rendered immediately.
    */
   public resize(immediate: boolean = true): void {
     this._throwIfDestroyed()
