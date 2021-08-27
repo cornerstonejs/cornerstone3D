@@ -333,6 +333,15 @@ const DefinedDescriptorsMap = {
       y: 18,
     },
   }),
+  PetThreshold: extend(BASE, {
+    iconContent: `
+    <path fill="{{color}}" d="M14.5,3.5 a1 1 0 0 1 -11,11 Z" stroke="none" opacity="0.8" />
+    <circle cx="9" cy="9" r="8" fill="none" stroke-width="2" stroke="{{color}}" />`,
+    viewBox: {
+      x: 18,
+      y: 18,
+    },
+  }),
   Zoom: extend(BASE, {
     iconContent: `
   <path fill="{{color}}" d="M508.5 481.6l-129-129c-2.3-2.3-5.3-3.5-8.5-3.5h-10.3C395
@@ -438,7 +447,4 @@ function getDefinedSVGCursorDescriptor(
  * Exports
  */
 
-export {
-  SVGCursorDescriptor as default,
-  getDefinedSVGCursorDescriptor,
-}
+export { SVGCursorDescriptor as default, getDefinedSVGCursorDescriptor }
