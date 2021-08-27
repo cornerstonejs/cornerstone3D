@@ -488,8 +488,10 @@ class RenderingEngine implements IRenderingEngine {
    * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
    * It is up to the parent app to call the size of the on-screen canvas changes.
    * This is left as an app level concern as one might want to debounce the changes, or the like.
+   *
+   * @param {boolean} [immediate=false] Whether all of the viewports should be rendered immediately.
    */
-  public resize(): void {
+  public resize(immediate: boolean = true): void {
     this._throwIfDestroyed()
 
     // 1. Get the viewports' canvases
@@ -509,8 +511,10 @@ class RenderingEngine implements IRenderingEngine {
       vp.resetCamera(resetFocalPoint)
     })
 
-    // 5. Render all
-    this.render()
+    // 5. If render is immediate: Render all
+    if (immediate === true) {
+      this.render()
+    }
   }
 
   /**
