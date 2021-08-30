@@ -31,7 +31,7 @@ const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } =
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
-const renderingEngineUID = 'RENDERING_ENGINE_UID'
+const renderingEngineUID = Utilities.uuidv4()
 
 const scene1UID = 'SCENE_1'
 const scene2UID = 'SCENE_2'

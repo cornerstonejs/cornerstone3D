@@ -590,11 +590,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         point[1] += worldPosDelta[1]
         point[2] += worldPosDelta[2]
       })
+      data.invalidated = true
     } else {
       this._mouseDragModifyHandle(evt)
+      data.invalidated = true
     }
 
-    data.invalidated = true
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
       viewportUIDsToRender

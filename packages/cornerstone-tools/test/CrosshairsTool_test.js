@@ -26,7 +26,7 @@ const {
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
   Utilities.testUtils
 
-const renderingEngineUID = 'RENDERING_ENGINE_UID'
+const renderingEngineUID = Utilities.uuidv4()
 
 const scene1UID = 'SCENE_1'
 const viewportUID1 = 'VIEWPORT1'
@@ -511,8 +511,8 @@ describe('Cornerstone Tools: ', () => {
             })
           })
           done()
-        }, 1000)
-      }, 1000)
+        }, 500)
+      }, 500)
     }
 
     canvas1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)

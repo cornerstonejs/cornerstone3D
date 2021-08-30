@@ -29,7 +29,7 @@ const {
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   Utilities.testUtils
 
-const renderingEngineUID = 'RENDERING_ENGINE_UID'
+const renderingEngineUID = Utilities.uuidv4()
 
 const scene1UID = 'SCENE_1'
 const viewportUID = 'VIEWPORT'

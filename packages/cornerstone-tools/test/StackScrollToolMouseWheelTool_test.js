@@ -144,9 +144,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       attachEventHandler()
 
       // Note: I don't know why I need this setTimeOut here
-      setTimeout(() => {
-        canvas.dispatchEvent(evt)
-      })
+      canvas.dispatchEvent(evt)
     }
 
     const attachEventHandler = () => {
@@ -218,9 +216,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       })
 
       attachEventHandler()
-      setTimeout(() => {
-        canvas.dispatchEvent(evt)
-      })
+      canvas.dispatchEvent(evt)
     }
 
     const attachEventHandler = () => {

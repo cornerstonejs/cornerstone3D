@@ -493,11 +493,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         point[1] += worldPosDelta[1]
         point[2] += worldPosDelta[2]
       })
+      data.invalidated = true
     } else {
       this._dragHandle(evt)
+      data.invalidated = true
     }
-
-    data.invalidated = true
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
