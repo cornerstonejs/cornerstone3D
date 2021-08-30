@@ -16,7 +16,7 @@ const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = Utilities.testUtils
 
-const renderingEngineUID = 'RENDERING_ENGINE_UID'
+const renderingEngineUID = Utilities.uuidv4()
 
 const scene1UID = 'SCENE_1'
 const scene2UID = 'SCENE_2'

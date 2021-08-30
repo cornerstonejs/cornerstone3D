@@ -424,15 +424,16 @@ class LengthTool extends BaseAnnotationTool {
         point[1] += worldPosDelta[1]
         point[2] += worldPosDelta[2]
       })
+      data.invalidated = true
     } else {
       // Moving handle
       const { currentPoints } = eventData
       const worldPos = currentPoints.world
 
       data.handles.points[handleIndex] = [...worldPos]
+      data.invalidated = true
     }
 
-    data.invalidated = true
     this.editData.hasMoved = true
 
     const enabledElement = getEnabledElement(element)

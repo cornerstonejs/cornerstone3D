@@ -34,14 +34,13 @@ const {
 
 const { calibratedPixelSpacingMetadataProvider } = Utilities
 
-const { fakeImageLoader, fakeMetaDataProvider, compareImages, downloadURI } =
+const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
   Utilities.testUtils
 
-const renderingEngineUID = 'RENDERING_ENGINE_UID'
+const renderingEngineUID = Utilities.uuidv4()
 
 const scene1UID = 'SCENE_1'
 const viewportUID = 'VIEWPORT'
-const viewportUID2 = 'VIEWPORT2'
 
 const AXIAL = 'AXIAL'
 

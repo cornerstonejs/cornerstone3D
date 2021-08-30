@@ -418,6 +418,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         point[1] += worldPosDelta[1]
         point[2] += worldPosDelta[2]
       })
+      data.invalidated = true
     } else {
       // Moving handle.
       const { currentPoints } = eventData
@@ -475,9 +476,9 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
           break
       }
+      data.invalidated = true
     }
 
-    data.invalidated = true
     this.editData.hasMoved = true
 
     const enabledElement = getEnabledElement(element)
