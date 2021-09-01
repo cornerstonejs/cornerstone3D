@@ -2,11 +2,12 @@ const expect = require("chai").expect;
 const dcmjs = require("../build/dcmjs");
 
 const fs = require("fs");
-const { http, https } = require("follow-redirects");
+const { https } = require("follow-redirects");
 const os = require("os");
 const path = require("path");
 const unzipper = require("unzipper");
 const datasetWithNullNumberVRs = require("./mocks/null_number_vrs_dataset.json");
+const minimalDataset = require("./mocks/minimal_fields_dataset.json");
 
 const { DicomMetaDictionary, DicomDict, DicomMessage, ReadBufferStream } = dcmjs.data;
 
@@ -412,11 +413,11 @@ const tests = {
         console.timeEnd('readFile');
 
         console.time('readFile without untilTag');
-        const dicomData = DicomMessage.readFile(buffer.buffer, options={ untilTag: '7FE00010', includeUntilTagValue: false });
+        const dicomData = DicomMessage.readFile(buffer.buffer, options = { untilTag: '7FE00010', includeUntilTagValue: false });
         console.timeEnd('readFile without untilTag');
 
         console.time('readFile with untilTag');
-        const dicomData2 = DicomMessage.readFile(buffer.buffer, options={ untilTag: '7FE00010', includeUntilTagValue: true });
+        const dicomData2 = DicomMessage.readFile(buffer.buffer, options = { untilTag: '7FE00010', includeUntilTagValue: true });
         console.timeEnd('readFile with untilTag');
 
         const full_dataset = DicomMetaDictionary.naturalizeDataset(fullData.dict);
@@ -503,6 +504,34 @@ const tests = {
 
             console.log("Finished test_encapsulation");
         });
+    },
+    test_custom_dictionary: () => {
+        const customDictionary = DicomMetaDictionary.dictionary;
+
+        customDictionary["(0013,1010)"] = {
+            tag: "(0013,1010)",
+            vr: "LO",
+            name: "TrialName",
+            vm: "1",
+            version: "Custom"
+        }
+
+        const dicomMetaDictionary = new DicomMetaDictionary(customDictionary);
+        const dicomDict = new DicomDict(metadata);
+        minimalDataset["TrialName"] = "Test Trial";
+        dicomDict.dict = dicomMetaDictionary.denaturalizeDataset(
+            minimalDataset
+        );
+        const part10Buffer = dicomDict.write();
+        const dicomData = DicomMessage.readFile(part10Buffer);
+        const dataset = DicomMetaDictionary.naturalizeDataset(
+            dicomData.dict
+        );
+
+        expect(dataset.TrialName).to.equal("Test Trial");
+        //check that all other fields were preserved, 15 original + 1 for _vr and +1 for "TrialName"
+        expect(Object.keys(dataset).length).to.equal(17)
+        console.log("Finished test_custom_dictionary");
     },
 };
 

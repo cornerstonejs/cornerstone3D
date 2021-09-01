@@ -1,0 +1,17 @@
+{
+  "StudyDate": "20200924",
+  "StudyTime": "114538",
+  "AccessionNumber": "1234",
+  "ReferringPhysicianName": "Test Physician",
+  "PatientName": "Patient^Test",
+  "PatientID": "EM-12123123-123123",
+  "PatientBirthDate": "20200924",
+  "PatientSex": null,
+  "PatientAge": "000Y",
+  "StudyInstanceUID": "1.2.276.0.123.849752024.12300924094123.637365375382409123",
+  "SeriesInstanceUID": "1.2.276.0.123.2119584848.12300924095444.123365380848527123",
+  "StudyID": "2",
+  "SeriesNumber": 1,
+  "AcquisitionNumber": 8,
+  "InstanceNumber": null
+}
