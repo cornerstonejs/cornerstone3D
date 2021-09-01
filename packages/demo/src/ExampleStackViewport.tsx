@@ -292,7 +292,7 @@ class StackViewportExample extends Component {
 
     ctStackViewport.setProperties({
       voiRange: { lower: -160, upper: 240 },
-      interpolationType: INTERPOLATION_TYPE.NEAREST,
+      interpolationType: INTERPOLATION_TYPE.LINEAR,
     })
 
     const ptStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.PT)

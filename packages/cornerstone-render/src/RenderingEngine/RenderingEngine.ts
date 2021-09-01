@@ -491,7 +491,7 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @param {boolean} [immediate=true] Whether all of the viewports should be rendered immediately.
    */
-  public resize(immediate: boolean = true): void {
+  public resize(immediate = true): void {
     this._throwIfDestroyed()
 
     // 1. Get the viewports' canvases
@@ -728,10 +728,22 @@ class RenderingEngine implements IRenderingEngine {
     const renderers = offscreenMultiRenderWindow.getRenderers()
 
     for (let i = 0; i < renderers.length; i++) {
-      renderers[i].renderer.setDraw(true)
+      const { renderer, uid } = renderers[i]
+
+      // Requesting viewports that need rendering to be rendered only
+      if (this._needsRender.has(uid)) {
+        renderer.setDraw(true)
+      } else {
+        renderer.setDraw(false)
+      }
     }
 
     renderWindow.render()
+
+    // After redraw we set all renderers to not render until necessary
+    for (let i = 0; i < renderers.length; i++) {
+      renderers[i].renderer.setDraw(false)
+    }
 
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow()

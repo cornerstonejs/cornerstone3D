@@ -30,7 +30,7 @@ import requestPoolManager from '../requestPool/requestPoolManager'
 import ERROR_CODES from '../enums/errorCodes'
 import INTERPOLATION_TYPE from '../constants/interpolationType'
 
-const EPSILON = 1
+const EPSILON = 1 // Slice Thickness
 
 interface ImageDataMetaData {
   bitsAllocated: number
@@ -175,9 +175,15 @@ class StackViewport extends Viewport {
     const actor = vtkVolume.newInstance()
     actor.setMapper(mapper)
 
-    const spacing = imageData.getSpacing()
-    // We set the sample distance to be equal to zSpacing
-    mapper.setSampleDistance(spacing[2])
+    // We set the sample distance to vSize to not get warning
+    const [xSize, ySize, zSize] = imageData.getDimensions()
+    const [xSpacing, ySpacing, zSpacing] = imageData.getSpacing()
+    const vSize = vec3.length([
+      xSize * xSpacing,
+      ySize * ySpacing,
+      zSize * zSpacing,
+    ])
+    mapper.setSampleDistance(vSize / mapper.getMaximumSamplesPerRay())
 
     if (imageData.getPointData().getNumberOfComponents() > 1) {
       // @ts-ignore: vtkjs incorrect typing
