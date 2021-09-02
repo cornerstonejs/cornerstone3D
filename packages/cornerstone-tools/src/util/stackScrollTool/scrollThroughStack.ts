@@ -1,7 +1,6 @@
 import {
   getEnabledElement,
   StackViewport,
-  VIEWPORT_TYPE,
   VolumeViewport,
 } from '@ohif/cornerstone-render'
 import clip from '../clip'
@@ -58,14 +57,15 @@ export default function scrollThroughStack(
     const volumeActor = scene.getVolumeActor(imageVolume.uid)
     const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
 
-    // Todo: add inverted logic for volume camera
+    const delta = invert ? -deltaFrames : deltaFrames
+
     const { newFocalPoint, newPosition } = snapFocalPointToSlice(
       focalPoint,
       position,
       scrollRange,
       viewPlaneNormal,
       spacingInNormalDirection,
-      deltaFrames
+      delta
     )
 
     viewport.setCamera({

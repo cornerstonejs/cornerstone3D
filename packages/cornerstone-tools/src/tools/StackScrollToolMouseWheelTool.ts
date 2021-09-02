@@ -8,6 +8,7 @@ export default class StackScrollMouseWheelTool extends BaseTool {
     super(toolConfiguration, {
       name: 'StackScrollMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      invert: false,
     })
   }
 
@@ -15,7 +16,7 @@ export default class StackScrollMouseWheelTool extends BaseTool {
     const { wheel } = evt.detail
     const { direction: deltaFrames } = wheel
 
-    const { volumeUID } = this.configuration
-    scrollThroughStack(evt, deltaFrames, volumeUID)
+    const { volumeUID, invert } = this.configuration
+    scrollThroughStack(evt, deltaFrames, volumeUID, invert)
   }
 }
