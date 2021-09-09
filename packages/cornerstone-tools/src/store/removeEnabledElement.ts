@@ -25,7 +25,7 @@ import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
 
 function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   // Is DOM element
-  const { canvas } = elementDisabledEvt.detail
+  const { canvas, viewportUID } = elementDisabledEvt.detail
 
   _resetSvgNodeCacheForCanvas(canvas)
   // Remove svg layer
@@ -36,7 +36,7 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   }
 
   // Remove this element from the annotation rendering engine
-  annotationRenderingEngine.removeViewportElement(canvas)
+  annotationRenderingEngine.removeViewportElement(viewportUID)
 
   // Listeners
   mouseEventListeners.disable(canvas)
