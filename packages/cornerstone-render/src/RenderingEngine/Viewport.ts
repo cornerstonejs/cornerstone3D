@@ -6,6 +6,7 @@ import _cloneDeep from 'lodash.clonedeep'
 
 import Events from '../enums/events'
 import VIEWPORT_TYPE from '../constants/viewportType'
+import FlipDirection from '../enums/flipDirection'
 import { ICamera, ViewportInput, ActorEntry } from '../types'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
@@ -206,7 +207,7 @@ class Viewport {
     }
   }
 
-  public applyFlipTx = (worldPos: Point3): Point3 => {
+  protected applyFlipTx = (worldPos: Point3): Point3 => {
     // One vol actor is enough to get the flip direction. If not flipped
     // the transformation is identity
     const actor = this.getDefaultActor()
@@ -239,7 +240,7 @@ class Viewport {
    *
    * @param direction 0 for horizontal, 1 for vertical
    */
-  public flip = (direction: number): void => {
+  public flip = (direction: FlipDirection): void => {
     const scene = this.getRenderingEngine().getScene(this.sceneUID)
 
     const scale = [1, 1]
