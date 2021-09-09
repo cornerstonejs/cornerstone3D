@@ -8,6 +8,7 @@ import {
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
+  FLIP_DIRECTION,
   EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import {
@@ -373,14 +374,14 @@ class FlipViewportExample extends Component {
           </select>
 
           <button
-            onClick={() => this.flip(0)}
+            onClick={() => this.flip(FLIP_DIRECTION.HORIZONTAL)}
             className="btn btn-primary"
             style={{ margin: '2px 4px', float: 'right' }}
           >
             Flip Horizontally
           </button>
           <button
-            onClick={() => this.flip(1)}
+            onClick={() => this.flip(FLIP_DIRECTION.VERTICAL)}
             className="btn btn-primary"
             style={{ margin: '2px 4px', float: 'right' }}
           >
