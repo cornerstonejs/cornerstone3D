@@ -21,7 +21,7 @@ import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
  * @param evt The ELEMENT_ENABLED event
  */
 export default function addEnabledElement(evt: CustomEvent): void {
-  const canvas = <HTMLElement>evt.detail.canvas
+  const { canvas, viewportUID } = evt.detail
   const svgLayer = _createSvgAnnotationLayer()
 
   // Reset/Create svgNodeCache for element
@@ -29,7 +29,7 @@ export default function addEnabledElement(evt: CustomEvent): void {
   _insertAfter(svgLayer, canvas)
 
   // Add this element to the annotation rendering engine
-  annotationRenderingEngine.addViewportElement(canvas)
+  annotationRenderingEngine.addViewportElement(viewportUID, canvas)
 
   // Listeners
   mouseEventListeners.enable(canvas)

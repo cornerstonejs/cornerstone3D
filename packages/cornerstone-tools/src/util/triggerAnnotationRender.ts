@@ -15,7 +15,11 @@ class AnnotationRenderingEngine {
   private _animationFrameSet = false
   private _animationFrameHandle: number | null = null
   public hasBeenDestroyed: boolean
-  private _viewportElements: Set<HTMLElement> = new Set()
+  private _viewportElements: Map<string, HTMLElement>
+
+  constructor() {
+    this._viewportElements = new Map()
+  }
 
   private _setViewportsToBeRenderedNextFrame(elements: HTMLElement[]) {
     // Add the viewports to the set of flagged viewports
@@ -106,7 +110,7 @@ class AnnotationRenderingEngine {
   private _renderFlaggedViewports = () => {
     this._throwIfDestroyed()
 
-    const elements = Array.from(this._viewportElements)
+    const elements = Array.from(this._viewportElements.values())
 
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i]
@@ -127,12 +131,23 @@ class AnnotationRenderingEngine {
     }
   }
 
-  public addViewportElement(element) {
-    this._viewportElements.add(element)
+  /**
+   * Add the viewport's HTMLElement to the viewports for rendering. This method
+   * just informs the annotationRenderingEngine about the viewport and
+   * does not initiate a render.
+   * @param viewportUID Viewport Unique identifier
+   * @param element HTMLElement
+   */
+  public addViewportElement(viewportUID: string, element: HTMLElement) {
+    this._viewportElements.set(viewportUID, element)
   }
 
-  public removeViewportElement(element) {
-    this._viewportElements.delete(element)
+  /**
+   * Remove the viewport's HTMLElement from subsequent annotation renders
+   * @param viewportUID Viewport Unique identifier
+   */
+  public removeViewportElement(viewportUID: string) {
+    this._viewportElements.delete(viewportUID)
 
     // Reset the request animation frame if no enabled elements
     if (this._viewportElements.size === 0) {
