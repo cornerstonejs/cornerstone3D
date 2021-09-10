@@ -204,7 +204,16 @@ class RenderingEngine implements IRenderingEngine {
     // 5. Remove the requested viewport from the rendering engine
     this._removeViewport(viewportUID)
 
-    // 6. Resize the offScreen canvas to accommodate for the new size (after removal)
+    // 6. Avoid rendering for the disabled viewport
+    this._needsRender.delete(viewportUID)
+
+    // 7. Clear RAF if no viewport is left
+    const viewports = this.getViewports()
+    if (!viewports.length) {
+      this._clearAnimationFrame()
+    }
+
+    // 8. Resize the offScreen canvas to accommodate for the new size (after removal)
     this.resize()
   }
 
@@ -768,15 +777,16 @@ class RenderingEngine implements IRenderingEngine {
         // This viewport has been rendered, we can remove it from the set
         this._needsRender.delete(viewport.uid)
 
-        // If there is nothing left that is flagged for rendering, stop here
-        // and allow RAF to be called again
+        // If there is nothing left that is flagged for rendering, stop the loop
         if (this._needsRender.size === 0) {
-          this._animationFrameSet = false
-          this._animationFrameHandle = null
           break
         }
       }
     }
+
+    // allow RAF to be called again
+    this._animationFrameSet = false
+    this._animationFrameHandle = null
 
     eventDataArray.forEach((eventData) => {
       triggerEvent(eventData.canvas, EVENTS.IMAGE_RENDERED, eventData)
@@ -928,6 +938,14 @@ class RenderingEngine implements IRenderingEngine {
     context.clearRect(0, 0, canvas.width, canvas.height)
   }
 
+  private _clearAnimationFrame() {
+    window.cancelAnimationFrame(this._animationFrameHandle)
+
+    this._needsRender.clear()
+    this._animationFrameSet = false
+    this._animationFrameHandle = null
+  }
+
   /**
    * @method _reset Resets the `RenderingEngine`
    */
@@ -938,11 +956,7 @@ class RenderingEngine implements IRenderingEngine {
       this._resetViewport(viewport)
     })
 
-    window.cancelAnimationFrame(this._animationFrameHandle)
-
-    this._needsRender.clear()
-    this._animationFrameSet = false
-    this._animationFrameHandle = null
+    this._clearAnimationFrame()
 
     this._viewports = new Map()
     this._scenes = new Map()
