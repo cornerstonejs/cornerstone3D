@@ -3,6 +3,7 @@ import scaleRgbTransferFunction from './scaleRgbTransferFunction'
 import triggerEvent from './triggerEvent'
 import uuidv4 from './uuidv4'
 import getMinMax from './getMinMax'
+import planar from './planar'
 import getRuntimeId from './getRuntimeId'
 import imageIdToURI from './imageIdToURI'
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider'
@@ -18,6 +19,7 @@ export {
   imageIdToURI,
   calibratedPixelSpacingMetadataProvider,
   uuidv4,
+  planar,
   getMinMax,
   getRuntimeId,
   isEqual,

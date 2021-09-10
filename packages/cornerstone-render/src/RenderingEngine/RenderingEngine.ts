@@ -60,7 +60,7 @@ class RenderingEngine implements IRenderingEngine {
   readonly uid: string
   public hasBeenDestroyed: boolean
   /**
-   * A hook into VTK's `vtkOffscreenMultiRenderWindow`
+   * A hook into vtk-js `vtkOffscreenMultiRenderWindow`
    * @member {any}
    */
   public offscreenMultiRenderWindow: any
@@ -490,8 +490,11 @@ class RenderingEngine implements IRenderingEngine {
    * This is left as an app level concern as one might want to debounce the changes, or the like.
    *
    * @param {boolean} [immediate=true] Whether all of the viewports should be rendered immediately.
+   * @param {boolean} [resetPanZoomForViewPlane=true] Whether each viewport gets centered (reset pan) and
+   * its zoom gets reset upon resize.
+   *
    */
-  public resize(immediate = true): void {
+  public resize(immediate = true, resetPanZoomForViewPlane = true): void {
     this._throwIfDestroyed()
 
     // 1. Get the viewports' canvases
@@ -506,9 +509,8 @@ class RenderingEngine implements IRenderingEngine {
     this._resize(viewports, offScreenCanvasWidth, offScreenCanvasHeight)
 
     // 4. Reset viewport cameras
-    const resetFocalPoint = false
     viewports.forEach((vp) => {
-      vp.resetCamera(resetFocalPoint)
+      vp.resetCamera(resetPanZoomForViewPlane)
     })
 
     // 5. If render is immediate: Render all

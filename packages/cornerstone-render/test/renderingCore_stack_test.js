@@ -579,12 +579,6 @@ describe('Stack Viewport Calibration and Scaling --- ', () => {
         imageURI_11_11_4_1_1_1_0_nearest_invert_90deg,
         'imageURI_11_11_4_1_1_1_0_nearest_invert_90deg'
       ).then(done, done.fail)
-
-      vp.resetProperties()
-      props = vp.getProperties()
-      expect(props.rotation).toBe(0)
-      expect(props.interpolationType).toBe(INTERPOLATION_TYPE.LINEAR)
-      expect(props.invert).toBe(false)
     })
     try {
       vp.setStack([imageId1], 0)
@@ -599,4 +593,37 @@ describe('Stack Viewport Calibration and Scaling --- ', () => {
       done.fail(e)
     }
   })
+
+  // it('Should be able to resetProperties API', function (done) {
+  //   const canvas = createCanvas(this.renderingEngine, AXIAL, 256, 256)
+
+  //   const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
+
+  //   const vp = this.renderingEngine.getViewport(viewportUID)
+  //   canvas.addEventListener(EVENTS.IMAGE_RENDERED, (evt) => {
+  //     let props = vp.getProperties()
+  //     expect(props.rotation).toBe(90)
+  //     expect(props.interpolationType).toBe(INTERPOLATION_TYPE.NEAREST)
+  //     expect(props.invert).toBe(true)
+
+  //     vp.resetProperties()
+  //     props = vp.getProperties()
+  //     expect(props.rotation).toBe(0)
+  //     expect(props.interpolationType).toBe(INTERPOLATION_TYPE.LINEAR)
+  //     expect(props.invert).toBe(false)
+  //     done()
+  //   })
+  //   try {
+  //     vp.setStack([imageId1], 0)
+  //     vp.setProperties({
+  //       interpolationType: INTERPOLATION_TYPE.NEAREST,
+  //       invert: true,
+  //       rotation: 90,
+  //     })
+
+  //     this.renderingEngine.render()
+  //   } catch (e) {
+  //     done.fail(e)
+  //   }
+  // })
 })
