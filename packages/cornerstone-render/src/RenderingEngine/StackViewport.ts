@@ -1004,6 +1004,16 @@ class StackViewport extends Viewport {
   }
 
   /**
+   * Centers Pan and resets the zoom for stack viewport.
+   */
+  public resetCamera(): void {
+    // Since for StackViewport, placing the focal point in the center of the volume
+    // equals resetting the slice to center
+    const resetPanZoomForViewPlane = false
+    this.resetViewportCamera(resetPanZoomForViewPlane)
+  }
+
+  /**
    * Loads the image based on the provided imageIdIndex
    *
    * @param imageIdIndex number represents imageId index in the list of

@@ -55,7 +55,7 @@ Now that you learned the properties of viewports, we explain how to use the
 created instance of `renderingEngine` API and use it for rendering of the viewports.
 
 ### setViewports API
-`setViewoirts` method is suitable for creation of a set of viewports at once.
+`setViewports` method is suitable for creation of a set of viewports at once.
 After setting the array of viewports, the `renderingEngine` will adapt its
 offScreen canvas size to the size of the provided canvases, and triggers the corresponding
 events.

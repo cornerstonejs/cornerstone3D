@@ -43,6 +43,16 @@ class VolumeViewport extends Viewport {
     this.resetCamera()
   }
 
+  /**
+   * Reset the camera for the volume viewport
+   * @param resetPanZoomForViewPlane=false only reset Pan and Zoom, if true,
+   * it renders the center of the volume instead
+   * viewport to the middle of the volume
+   */
+  public resetCamera(resetPanZoomForViewPlane = false): void {
+    this.resetViewportCamera(resetPanZoomForViewPlane)
+  }
+
   public getFrameOfReferenceUID = (): string => {
     return this.getScene().getFrameOfReferenceUID()
   }

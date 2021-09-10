@@ -10,11 +10,10 @@ import FlipDirection from '../enums/flipDirection'
 import { ICamera, ViewportInput, ActorEntry } from '../types'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
-import { triggerEvent, isEqual } from '../utilities'
+import { triggerEvent, isEqual, planar } from '../utilities'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { ViewportInputOptions, Point2, Point3 } from '../types'
 import { vtkSlabCamera } from './vtkClasses'
-import ORIENTATION from '../constants/orientation'
 
 /**
  * An object representing a single viewport, which is a camera
@@ -289,7 +288,7 @@ class Viewport {
 
   protected resetCameraNoEvent() {
     this._suppressCameraModifiedEvents = true
-    this.resetCamera()
+    this.resetViewportCamera()
     this._suppressCameraModifiedEvents = false
   }
 
@@ -300,19 +299,68 @@ class Viewport {
   }
 
   /**
+   * Calculates the intersections between the volume's boundaries and the viewplane.
+   * 1) Determine the viewplane using the camera's ViewplaneNormal and focalPoint.
+   * 2) Using volumeBounds, calculate the line equation for the 3D volume's 12 edges.
+   * 3) Intersect each edge to the viewPlane and see whether the intersection point is inside the volume bounds.
+   * 4) Return list of intersection points
+   * It should be noted that intersection points may range from 3 to 6 points.
+   * Orthogonal views have four places of intersection.
+   *
+   * @param imageData vtkImageData
+   * @param focalPoint camera focal point
+   * @param normal view plane normal
+   * @returns intersections list
+   */
+  private _getViewImageDataIntersections(imageData, focalPoint, normal) {
+    // Viewplane equation: Ax+By+Cz=D
+    const A = normal[0]
+    const B = normal[1]
+    const C = normal[2]
+    const D = A * focalPoint[0] + B * focalPoint[1] + C * focalPoint[2]
+
+    // Computing the edges of the 3D cube
+    const bounds = imageData.getBounds()
+    const edges = this._getEdges(bounds)
+
+    const intersections = []
+
+    for (const edge of edges) {
+      // start point: [x0, y0, z0], end point: [x1, y1, z1]
+      const [[x0, y0, z0], [x1, y1, z1]] = edge
+      // Check if the edge is parallel to plane
+      if (A * (x1 - x0) + B * (y1 - y0) + C * (z1 - z0) === 0) {
+        continue
+      }
+      const intersectionPoint = planar.linePlaneIntersection(
+        [x0, y0, z0],
+        [x1, y1, z1],
+        [A, B, C, D]
+      )
+
+      if (this._isInBounds(intersectionPoint, bounds)) {
+        intersections.push(intersectionPoint)
+      }
+    }
+
+    return intersections
+  }
+
+  /**
    * Resets the camera based on the rendering volume(s) bounds. If
-   * resetFocalPoint is selected, it puts the focal point at the
-   * center of the volume (or slice); otherwise, only the camera scale (zoom)
-   * is reset.
-   * @param resetFocalPoint if focal point reset is needed
+   * resetPanZoomForViewPlane is not chosen (default behaviour), it places
+   * the focal point at the center of the volume (or slice); otherwise,
+   * only the camera scale (zoom) and camera Pan is reset for the current view
+   * @param resetPanZoomForViewPlane=false only reset Pan and Zoom, if true,
+   * it renders the center of the volume instead
    * @returns boolean
    */
-  public resetCamera(resetFocalPoint = true) {
+  protected resetViewportCamera(resetPanZoomForViewPlane = false) {
     const renderer = this.getRenderer()
     const previousCamera = _cloneDeep(this.getCamera())
 
     const bounds = renderer.computeVisiblePropBounds()
-    const focalPoint = new Float64Array(3)
+    const focalPoint = [0, 0, 0]
 
     const activeCamera = this.getVtkActiveCamera()
     const viewPlaneNormal = activeCamera.getViewPlaneNormal()
@@ -333,7 +381,7 @@ class Viewport {
       const dimensions = imageData.getDimensions()
       const middleIJK = dimensions.map((d) => Math.floor(d / 2))
 
-      const idx = new Float64Array([middleIJK[0], middleIJK[1], middleIJK[2]])
+      const idx = [middleIJK[0], middleIJK[1], middleIJK[2]]
       imageData.indexToWorld(idx, focalPoint)
     }
 
@@ -381,31 +429,36 @@ class Viewport {
       activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1])
     }
 
-    // update the focal point if needed
-    if (resetFocalPoint) {
-      activeCamera.setFocalPoint(focalPoint[0], focalPoint[1], focalPoint[2])
-      activeCamera.setPosition(
-        focalPoint[0] + distance * viewPlaneNormal[0],
-        focalPoint[1] + distance * viewPlaneNormal[1],
-        focalPoint[2] + distance * viewPlaneNormal[2]
-      )
+    let focalPointToSet = focalPoint
+
+    if (resetPanZoomForViewPlane && imageData) {
+      focalPointToSet = this._getFocalPointForViewPlaneReset(imageData)
     }
+
+    activeCamera.setFocalPoint(
+      focalPointToSet[0],
+      focalPointToSet[1],
+      focalPointToSet[2]
+    )
+    activeCamera.setPosition(
+      focalPointToSet[0] + distance * viewPlaneNormal[0],
+      focalPointToSet[1] + distance * viewPlaneNormal[1],
+      focalPointToSet[2] + distance * viewPlaneNormal[2]
+    )
 
     renderer.resetCameraClippingRange(bounds)
 
-    // setup default parallel scale
     activeCamera.setParallelScale(parallelScale)
 
     // update reasonable world to physical values
     activeCamera.setPhysicalScale(radius)
 
-    if (resetFocalPoint) {
-      activeCamera.setPhysicalTranslation(
-        -focalPoint[0],
-        -focalPoint[1],
-        -focalPoint[2]
-      )
-    }
+    // TODO: The PhysicalXXX stuff are used for VR only, do we need this?
+    activeCamera.setPhysicalTranslation(
+      -focalPointToSet[0],
+      -focalPointToSet[1],
+      -focalPointToSet[2]
+    )
 
     // instead of setThicknessFromFocalPoint we should do it here
     activeCamera.setClippingRange(distance, distance + 0.1)
@@ -434,6 +487,42 @@ class Viewport {
     }
 
     return true
+  }
+
+  /**
+   * Because the focalPoint is always in the centre of the viewport,
+   * we must do planar computations if the frame (image "slice") is to be preserved.
+   * 1. Calculate the intersection of the view plane with the imageData
+   * which results in points of intersection (minimum of 3, maximum of 6)
+   * 2. Calculate average of the intersection points to get newFocalPoint
+   * 3. Set the new focalPoint
+   * @param imageData vtkImageData
+   * @returns focalPoint
+   */
+  private _getFocalPointForViewPlaneReset(imageData) {
+    const { focalPoint, viewPlaneNormal: normal } = this.getCamera()
+    const intersections = this._getViewImageDataIntersections(
+      imageData,
+      focalPoint,
+      normal
+    )
+
+    let x = 0
+    let y = 0
+    let z = 0
+
+    intersections.forEach(([point_x, point_y, point_z]) => {
+      x += point_x
+      y += point_y
+      z += point_z
+    })
+
+    // Set the focal point on the average of the intersection points
+    return [
+      x / intersections.length,
+      y / intersections.length,
+      z / intersections.length,
+    ]
   }
 
   /**
@@ -624,6 +713,53 @@ class Viewport {
       [bounds[1], bounds[2], bounds[5]],
       [bounds[1], bounds[3], bounds[4]],
       [bounds[1], bounds[3], bounds[5]],
+    ]
+  }
+
+  /**
+   * Determines whether or not the 3D point position is inside the boundaries of the 3D imageData.
+   * @param point 3D coordinate
+   * @param bounds Bounds of the image
+   * @returns boolean
+   */
+  _isInBounds(point: Point3, bounds: number[]): boolean {
+    const [xMin, xMax, yMin, yMax, zMin, zMax] = bounds
+    const [x, y, z] = point
+    if (x < xMin || x > xMax || y < yMin || y > yMax || z < zMin || z > zMax) {
+      return false
+    }
+    return true
+  }
+
+  /**
+   * Returns a list of edges for the imageData bounds, which are
+   * the cube edges in the case of volumeViewport edges.
+   * p1: front, bottom, left
+   * p2: front, top, left
+   * p3: back, bottom, left
+   * p4: back, top, left
+   * p5: front, bottom, right
+   * p6: front, top, right
+   * p7: back, bottom, right
+   * p8: back, top, right
+   * @param bounds Bounds of the renderer
+   * @returns Edges of the containing bounds
+   */
+  _getEdges(bounds: Array<number>): Array<[number[], number[]]> {
+    const [p1, p2, p3, p4, p5, p6, p7, p8] = this._getCorners(bounds)
+    return [
+      [p1, p2],
+      [p1, p5],
+      [p1, p3],
+      [p2, p4],
+      [p2, p6],
+      [p3, p4],
+      [p3, p7],
+      [p4, p8],
+      [p5, p7],
+      [p5, p6],
+      [p6, p8],
+      [p7, p8],
     ]
   }
 }
