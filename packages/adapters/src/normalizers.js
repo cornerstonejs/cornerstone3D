@@ -451,7 +451,7 @@ class MRImageNormalizer extends ImageNormalizer {
             ds.ImageType = ["ORIGINAL", "PRIMARY", "OTHER", "NONE"];
         }
 
-        ds.SharedFunctionalGroupsSequence.MRImageFrameType = {
+        ds.SharedFunctionalGroupsSequence.MRImageFrameTypeSequence = {
             FrameType: ds.ImageType,
             PixelPresentation: "MONOCHROME",
             VolumetricProperties: "VOLUME",
