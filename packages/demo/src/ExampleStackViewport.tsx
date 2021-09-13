@@ -561,10 +561,17 @@ class StackViewportExample extends Component {
     return (
       <div>
         <div>
-          <h1>Stack Viewport Example (setViewports API)</h1>
+          <h1>Stack Viewport Example(setViewports API)</h1>
+          {!window.crossOriginIsolated ? (
+            <h1 style={{ color: 'red' }}>
+              This Demo requires SharedArrayBuffer but your browser does not
+              support it
+            </h1>
+          ) : null}
           <p>
-            This is a demo for volume viewports (Top row) and stack viewports
-            (bottom) using the same rendering engine
+            This is a demo for rendering a stack and volume viewport together:
+            Top row left and middle: Volume CT, Top row right: Stack DX; Bottom
+            row left and middle Volume PET, Bottom row right: Stack PET.
           </p>
         </div>
         <button

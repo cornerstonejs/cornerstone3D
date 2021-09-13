@@ -355,6 +355,12 @@ class FlipViewportExample extends Component {
       <div>
         <div>
           <h1>Flip Viewport Example </h1>
+          {!window.crossOriginIsolated ? (
+            <h1 style={{ color: 'red' }}>
+              This Demo requires SharedArrayBuffer but your browser does not
+              support it
+            </h1>
+          ) : null}
           <p>
             This is a demo for flipping viewports: viewports 1,2,3 are volume
             viewports and viewport 4 (bottom right) is stack viewport of the

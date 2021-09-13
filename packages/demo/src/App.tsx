@@ -27,7 +27,7 @@ function LinkOut({ href, text }) {
   )
 }
 
-function ExampleEntry({ title, url, text, style }) {
+function ExampleEntry({ title, url, text, style, warningDiv }) {
   let CustomTag = `h5` as keyof JSX.IntrinsicElements
 
   if (style) {
@@ -69,7 +69,7 @@ function Index() {
     {
       title: 'Flip Viewport',
       url: '/flip',
-      text: 'Example for flipping viewport horrizontally or vertically volume',
+      text: 'Example for flipping viewport horizontally or vertically volume',
     },
     {
       title: 'Canvas Resize',
@@ -143,6 +143,8 @@ function Index() {
     },
   ]
 
+
+
   const exampleComponents = examples.map((e) => {
     return <ExampleEntry key={e.title} {...e} />
   })
@@ -154,6 +156,12 @@ function Index() {
       </div>
       <div className="row">
         <div className="col-xs-12 col-lg-6">
+          {!window.crossOriginIsolated ? (
+            <h2 style={{ color: 'red' }}>
+              Your page is NOT cross-origin isolated, see
+              https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
+            </h2>
+          ) : null}
           <p>
             This is a framework build on top of{' '}
             <LinkOut

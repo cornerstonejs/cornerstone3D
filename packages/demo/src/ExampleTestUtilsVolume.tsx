@@ -288,7 +288,7 @@ class testUtilVolume extends Component {
             <h2>Fake Volume Testings</h2>
             <h4>
               This demo uses ImageVolume instead of StreamingImageVolume and
-              renders two volumes
+              renders two volumes; however, it does not use the SharedArrayBuffer
             </h4>
           </div>
           <div

@@ -50,7 +50,7 @@ let ctSceneToolGroup,
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
-class VTKMPRExample extends Component {
+class MPRExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
@@ -479,7 +479,13 @@ class VTKMPRExample extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>MPR Template Example ({this.state.progressText})</h2>
+            <h2>MPR Example ({this.state.progressText})</h2>
+            {!window.crossOriginIsolated ? (
+              <h1 style={{ color: 'red' }}>
+                This Demo requires SharedArrayBuffer but your browser does not
+                support it
+              </h1>
+            ) : null}
           </div>
           <div
             className="col-xs-12"
@@ -528,4 +534,4 @@ class VTKMPRExample extends Component {
   }
 }
 
-export default VTKMPRExample
+export default MPRExample

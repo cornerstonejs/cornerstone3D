@@ -518,6 +518,12 @@ class PriorityLoadExample extends Component {
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
             <h2>Priority Loading</h2>
+            {!window.crossOriginIsolated ? (
+              <h1 style={{ color: 'red' }}>
+                This Demo requires SharedArrayBuffer but your browser does not
+                support it
+              </h1>
+            ) : null}
           </div>
           <div
             className="col-xs-12"

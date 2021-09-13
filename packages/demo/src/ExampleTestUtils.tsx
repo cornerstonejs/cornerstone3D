@@ -212,13 +212,13 @@ class testUtil extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>MPR Template Example ({this.state.progressText})</h2>
+            <h2>Test Stack Render ({this.state.progressText})</h2>
+            <p>The purpose of this demo is to render the stack test data that we utilize in testing</p>
           </div>
           <div
             className="col-xs-12"
             style={{ margin: '8px 0', marginLeft: '-4px' }}
           >
-            {/* Hide until we update react in a better way  {fusionWLDisplay} */}
           </div>
         </div>
         <select value={this.state.ptCtLeftClickTool} onChange={this.swapTools}>

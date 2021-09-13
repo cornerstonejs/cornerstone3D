@@ -290,7 +290,13 @@ class VTKSetVolumesExample extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>MPR Template Example ({this.state.progressText})</h2>
+            <h2>Set Volume API ({this.state.progressText})</h2>
+            {!window.crossOriginIsolated ? (
+              <h1 style={{ color: 'red' }}>
+                This Demo requires SharedArrayBuffer but your browser does not
+                support it
+              </h1>
+            ) : null}
           </div>
           <button
             onClick={() => this.swapVolume()}

@@ -9,80 +9,20 @@ import {
   EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import { ToolGroupManager, resetToolsState } from '@ohif/cornerstone-tools'
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import { ctVolumeUID, ctStackUID, SCENE_IDS, VIEWPORT_IDS } from './constants'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 
-const colorImageIds = [
-  'web:http://localhost:3000/examples/head/avf1240c.png',
-  'web:http://localhost:3000/examples/head/avf1241a.png',
-  'web:http://localhost:3000/examples/head/avf1241b.png',
-  'web:http://localhost:3000/examples/head/avf1241c.png',
-  'web:http://localhost:3000/examples/head/avf1242a.png',
-  'web:http://localhost:3000/examples/head/avf1242b.png',
-  'web:http://localhost:3000/examples/head/avf1242c.png',
-  'web:http://localhost:3000/examples/head/avf1243a.png',
-]
 
-function hardcodedMetaDataProvider(type, imageId) {
-  const colonIndex = imageId.indexOf(':')
-  const scheme = imageId.substring(0, colonIndex)
-  if (scheme !== 'web') return
+const renderingEngineUID = 'renderingEngineUID'
 
-  if (type === 'imagePixelModule') {
-    const imagePixelModule = {
-      pixelRepresentation: 0,
-      bitsAllocated: 24,
-      bitsStored: 24,
-      highBit: 24,
-      photometricInterpretation: 'RGB',
-      samplesPerPixel: 3,
-    }
 
-    return imagePixelModule
-  } else if (type === 'generalSeriesModule') {
-    const generalSeriesModule = {
-      modality: 'SC',
-    }
-
-    return generalSeriesModule
-  } else if (type === 'imagePlaneModule') {
-    const index = colorImageIds.indexOf(imageId)
-
-    const imagePlaneModule = {
-      imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-      imagePositionPatient: [0, 0, index * 5],
-      pixelSpacing: [1, 1],
-      columnPixelSpacing: 1,
-      rowPixelSpacing: 1,
-      frameOfReferenceUID: 'FORUID',
-      columns: 2048,
-      rows: 1216,
-      rowCosines: [1, 0, 0],
-      columnCosines: [0, 1, 0],
-    }
-
-    return imagePlaneModule
-  } else if (type === 'voiLutModule') {
-    return {
-      windowWidth: [255],
-      windowCenter: [127],
-    }
-  } else if (type === 'modalityLutModule') {
-    return {
-      rescaleSlope: 1,
-      rescaleIntercept: 0,
-    }
-  }
-
-  console.warn(type)
-  throw new Error('not available!')
-}
 
 window.cache = cache
 
@@ -106,7 +46,6 @@ class NineStackViewportExample extends Component {
     super(props)
 
     csTools3d.init()
-    metaData.addProvider(hardcodedMetaDataProvider, 10000)
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -142,7 +81,7 @@ class NineStackViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    const { ctSceneToolGroup, stackViewportToolGroup } = initToolGroups()
+    const { stackCTViewportToolGroup } = initToolGroups()
 
     this.ctStackUID = ctStackUID
 
@@ -233,11 +172,12 @@ class NineStackViewportExample extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
+    addToolsToToolGroups({stackCTViewportToolGroup})
     // volume ct
 
     // stack ct
     viewportInput.forEach((vpEntry) => {
-      stackViewportToolGroup.addViewports(
+      stackCTViewportToolGroup.addViewports(
         renderingEngineUID,
         undefined,
         vpEntry.viewportUID

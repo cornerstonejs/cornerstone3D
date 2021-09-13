@@ -372,6 +372,12 @@ class ToolDisplayConfigurationExample extends Component {
       <div>
         <div>
           <h1>Tool Display Configuration Example</h1>
+          {!window.crossOriginIsolated ? (
+            <h1 style={{ color: 'red' }}>
+              This Demo requires SharedArrayBuffer but your browser does not
+              support it
+            </h1>
+          ) : null}
           <p>
             Demo for testing selection and styling options for annotations (aka
             tool data). In order to select multiple items or <em>unselect</em>
