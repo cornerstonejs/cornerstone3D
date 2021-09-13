@@ -170,7 +170,13 @@ class ColorExample extends Component {
       <div>
         <div className="row">
           <div className="col-xs-12">
-            <h1>Color Example </h1>
+            <h1>Color Example</h1>
+            {!window.crossOriginIsolated ? (
+              <h1 style={{ color: 'red' }}>
+                This Demo requires SharedArrayBuffer but your browser does not
+                support it
+              </h1>
+            ) : null}
           </div>
         </div>
         <div className="row">
@@ -198,7 +204,7 @@ class ColorExample extends Component {
           </div>
         </div>
       </div>
-    );
+    )
   }
 }
 

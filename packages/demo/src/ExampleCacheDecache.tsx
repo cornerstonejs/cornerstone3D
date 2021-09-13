@@ -281,6 +281,12 @@ class CacheDecacheExample extends Component {
       <div>
         <div>
           <h1>Cache Decache Demo</h1>
+          {!window.crossOriginIsolated ? (
+            <h1 style={{ color: 'red' }}>
+              This Demo requires SharedArrayBuffer but your browser does not
+              support it
+            </h1>
+          ) : null}
           <p>
             This is a demo for volume viewports (Top row + left viewport of the
             second row) and a stack viewport (bottom row - right) which contains

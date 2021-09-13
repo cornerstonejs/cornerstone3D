@@ -462,6 +462,12 @@ class EnableDisableViewportExample extends Component {
           <h1>
             Stack and Volume Viewports (enableElement and disableElement API)
           </h1>
+          {!window.crossOriginIsolated ? (
+            <h1 style={{ color: 'red' }}>
+              This Demo requires SharedArrayBuffer but your browser does not
+              support it
+            </h1>
+          ) : null}
           <p>
             This is a demo using the enableElement and disableElement API for
             volume viewports and stack viewports.
@@ -494,16 +500,13 @@ class EnableDisableViewportExample extends Component {
         >
           Disable Selected Viewport
         </button>
-        <select
-            value={this.state.ptCtLeftClickTool}
-            onChange={this.swapTools}
-          >
-            {ctLayoutTools.map((toolName) => (
-              <option key={toolName} value={toolName}>
-                {toolName}
-              </option>
-            ))}
-          </select>
+        <select value={this.state.ptCtLeftClickTool} onChange={this.swapTools}>
+          {ctLayoutTools.map((toolName) => (
+            <option key={toolName} value={toolName}>
+              {toolName}
+            </option>
+          ))}
+        </select>
         <div className="col-md-4">
           {/* <label>Viewports:</label> */}
           <select

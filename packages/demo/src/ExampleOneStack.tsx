@@ -283,7 +283,7 @@ class OneStackExample extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>MPR Template Example ({this.state.progressText})</h2>
+            <h2>One Stack Viewport Example ({this.state.progressText})</h2>
           </div>
           <div
             className="col-xs-12"
