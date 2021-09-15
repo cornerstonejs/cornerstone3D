@@ -26,45 +26,97 @@
 //   in PostScript Level 2, Technical Note #5116
 //   (partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf)
 
-var ColorSpace = {Unkown: 0, Grayscale: 1, AdobeRGB: 2, RGB: 3, CYMK: 4};
+var ColorSpace = { Unkown: 0, Grayscale: 1, AdobeRGB: 2, RGB: 3, CYMK: 4 };
 var JpegImage = (function jpegImage() {
-  "use strict";
+  'use strict';
   var dctZigZag = new Int32Array([
     0,
-    1, 8,
-    16, 9, 2,
-    3, 10, 17, 24,
-    32, 25, 18, 11, 4,
-    5, 12, 19, 26, 33, 40,
-    48, 41, 34, 27, 20, 13, 6,
-    7, 14, 21, 28, 35, 42, 49, 56,
-    57, 50, 43, 36, 29, 22, 15,
-    23, 30, 37, 44, 51, 58,
-    59, 52, 45, 38, 31,
-    39, 46, 53, 60,
-    61, 54, 47,
-    55, 62,
-    63
+    1,
+    8,
+    16,
+    9,
+    2,
+    3,
+    10,
+    17,
+    24,
+    32,
+    25,
+    18,
+    11,
+    4,
+    5,
+    12,
+    19,
+    26,
+    33,
+    40,
+    48,
+    41,
+    34,
+    27,
+    20,
+    13,
+    6,
+    7,
+    14,
+    21,
+    28,
+    35,
+    42,
+    49,
+    56,
+    57,
+    50,
+    43,
+    36,
+    29,
+    22,
+    15,
+    23,
+    30,
+    37,
+    44,
+    51,
+    58,
+    59,
+    52,
+    45,
+    38,
+    31,
+    39,
+    46,
+    53,
+    60,
+    61,
+    54,
+    47,
+    55,
+    62,
+    63,
   ]);
 
-  var dctCos1 = 4017;   // cos(pi/16)
-  var dctSin1 = 799;   // sin(pi/16)
-  var dctCos3 = 3406;   // cos(3*pi/16)
-  var dctSin3 = 2276;   // sin(3*pi/16)
-  var dctCos6 = 1567;   // cos(6*pi/16)
-  var dctSin6 = 3784;   // sin(6*pi/16)
-  var dctSqrt2 = 5793;   // sqrt(2)
-  var dctSqrt1d2 = 2896;  // sqrt(2) / 2
+  var dctCos1 = 4017; // cos(pi/16)
+  var dctSin1 = 799; // sin(pi/16)
+  var dctCos3 = 3406; // cos(3*pi/16)
+  var dctSin3 = 2276; // sin(3*pi/16)
+  var dctCos6 = 1567; // cos(6*pi/16)
+  var dctSin6 = 3784; // sin(6*pi/16)
+  var dctSqrt2 = 5793; // sqrt(2)
+  var dctSqrt1d2 = 2896; // sqrt(2) / 2
 
-  function constructor() {
-  }
+  function constructor() {}
 
   function buildHuffmanTable(codeLengths, values) {
-    var k = 0, code = [], i, j, length = 16;
-    while (length > 0 && !codeLengths[length - 1])
-      length--;
-    code.push({children: [], index: 0});
-    var p = code[0], q;
+    var k = 0,
+      code = [],
+      i,
+      j,
+      length = 16;
+    while (length > 0 && !codeLengths[length - 1]) length--;
+    code.push({ children: [], index: 0 });
+    var p = code[0],
+      q;
     for (i = 0; i < length; i++) {
       for (j = 0; j < codeLengths[i]; j++) {
         p = code.pop();
@@ -75,7 +127,7 @@ var JpegImage = (function jpegImage() {
         p.index++;
         code.push(p);
         while (code.length <= i) {
-          code.push(q = {children: [], index: 0});
+          code.push((q = { children: [], index: 0 }));
           p.children[p.index] = q.children;
           p = q;
         }
@@ -83,7 +135,7 @@ var JpegImage = (function jpegImage() {
       }
       if (i + 1 < length) {
         // p here points to last code
-        code.push(q = {children: [], index: 0});
+        code.push((q = { children: [], index: 0 }));
         p.children[p.index] = q.children;
         p = q;
       }
@@ -95,18 +147,28 @@ var JpegImage = (function jpegImage() {
     return 64 * ((component.blocksPerLine + 1) * row + col);
   }
 
-  function decodeScan(data, offset,
-                      frame, components, resetInterval,
-                      spectralStart, spectralEnd,
-                      successivePrev, successive) {
+  function decodeScan(
+    data,
+    offset,
+    frame,
+    components,
+    resetInterval,
+    spectralStart,
+    spectralEnd,
+    successivePrev,
+    successive
+  ) {
     var precision = frame.precision;
     var samplesPerLine = frame.samplesPerLine;
     var scanLines = frame.scanLines;
     var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
-    var maxH = frame.maxH, maxV = frame.maxV;
+    var maxH = frame.maxH,
+      maxV = frame.maxV;
 
-    var startOffset = offset, bitsData = 0, bitsCount = 0;
+    var startOffset = offset,
+      bitsData = 0,
+      bitsCount = 0;
 
     function readBit() {
       if (bitsCount > 0) {
@@ -114,10 +176,11 @@ var JpegImage = (function jpegImage() {
         return (bitsData >> bitsCount) & 1;
       }
       bitsData = data[offset++];
-      if (bitsData == 0xFF) {
+      if (bitsData == 0xff) {
         var nextByte = data[offset++];
         if (nextByte) {
-          throw "unexpected marker: " + ((bitsData << 8) | nextByte).toString(16);
+          throw 'unexpected marker: ' +
+            ((bitsData << 8) | nextByte).toString(16);
         }
         // unstuff 0
       }
@@ -130,10 +193,8 @@ var JpegImage = (function jpegImage() {
       var bit;
       while ((bit = readBit()) !== null) {
         node = node[bit];
-        if (typeof node === 'number')
-          return node;
-        if (typeof node !== 'object')
-          throw "invalid huffman sequence";
+        if (typeof node === 'number') return node;
+        if (typeof node !== 'object') throw 'invalid huffman sequence';
       }
       return null;
     }
@@ -142,8 +203,7 @@ var JpegImage = (function jpegImage() {
       var n = 0;
       while (length > 0) {
         var bit = readBit();
-        if (bit === null)
-          return;
+        if (bit === null) return;
         n = (n << 1) | bit;
         length--;
       }
@@ -152,22 +212,21 @@ var JpegImage = (function jpegImage() {
 
     function receiveAndExtend(length) {
       var n = receive(length);
-      if (n >= 1 << (length - 1))
-        return n;
+      if (n >= 1 << (length - 1)) return n;
       return n + (-1 << length) + 1;
     }
 
     function decodeBaseline(component, offset) {
       var t = decodeHuffman(component.huffmanTableDC);
       var diff = t === 0 ? 0 : receiveAndExtend(t);
-      component.blockData[offset] = (component.pred += diff);
+      component.blockData[offset] = component.pred += diff;
       var k = 1;
       while (k < 64) {
         var rs = decodeHuffman(component.huffmanTableAC);
-        var s = rs & 15, r = rs >> 4;
+        var s = rs & 15,
+          r = rs >> 4;
         if (s === 0) {
-          if (r < 15)
-            break;
+          if (r < 15) break;
           k += 16;
           continue;
         }
@@ -180,8 +239,8 @@ var JpegImage = (function jpegImage() {
 
     function decodeDCFirst(component, offset) {
       var t = decodeHuffman(component.huffmanTableDC);
-      var diff = t === 0 ? 0 : (receiveAndExtend(t) << successive);
-      component.blockData[offset] = (component.pred += diff);
+      var diff = t === 0 ? 0 : receiveAndExtend(t) << successive;
+      component.blockData[offset] = component.pred += diff;
     }
 
     function decodeDCSuccessive(component, offset) {
@@ -194,10 +253,12 @@ var JpegImage = (function jpegImage() {
         eobrun--;
         return;
       }
-      var k = spectralStart, e = spectralEnd;
+      var k = spectralStart,
+        e = spectralEnd;
       while (k <= e) {
         var rs = decodeHuffman(component.huffmanTableAC);
-        var s = rs & 15, r = rs >> 4;
+        var s = rs & 15,
+          r = rs >> 4;
         if (s === 0) {
           if (r < 15) {
             eobrun = receive(r) + (1 << r) - 1;
@@ -208,14 +269,18 @@ var JpegImage = (function jpegImage() {
         }
         k += r;
         var z = dctZigZag[k];
-        component.blockData[offset + z] = receiveAndExtend(s) * (1 << successive);
+        component.blockData[offset + z] =
+          receiveAndExtend(s) * (1 << successive);
         k++;
       }
     }
 
-    var successiveACState = 0, successiveACNextValue;
+    var successiveACState = 0,
+      successiveACNextValue;
     function decodeACSuccessive(component, offset) {
-      var k = spectralStart, e = spectralEnd, r = 0;
+      var k = spectralStart,
+        e = spectralEnd,
+        r = 0;
       while (k <= e) {
         var z = dctZigZag[k];
         switch (successiveACState) {
@@ -232,8 +297,7 @@ var JpegImage = (function jpegImage() {
                 successiveACState = 1;
               }
             } else {
-              if (s !== 1)
-                throw "invalid ACn encoding";
+              if (s !== 1) throw 'invalid ACn encoding';
               successiveACNextValue = receiveAndExtend(s);
               successiveACState = r ? 2 : 3;
             }
@@ -241,24 +305,24 @@ var JpegImage = (function jpegImage() {
           case 1: // skipping r zero items
           case 2:
             if (component.blockData[offset + z]) {
-              component.blockData[offset + z] += (readBit() << successive);
+              component.blockData[offset + z] += readBit() << successive;
             } else {
               r--;
-              if (r === 0)
-                successiveACState = successiveACState == 2 ? 3 : 0;
+              if (r === 0) successiveACState = successiveACState == 2 ? 3 : 0;
             }
             break;
           case 3: // set value for a zero item
             if (component.blockData[offset + z]) {
-              component.blockData[offset + z] += (readBit() << successive);
+              component.blockData[offset + z] += readBit() << successive;
             } else {
-              component.blockData[offset + z] = successiveACNextValue << successive;
+              component.blockData[offset + z] =
+                successiveACNextValue << successive;
               successiveACState = 0;
             }
             break;
           case 4: // eob
             if (component.blockData[offset + z]) {
-              component.blockData[offset + z] += (readBit() << successive);
+              component.blockData[offset + z] += readBit() << successive;
             }
             break;
         }
@@ -266,8 +330,7 @@ var JpegImage = (function jpegImage() {
       }
       if (successiveACState === 4) {
         eobrun--;
-        if (eobrun === 0)
-          successiveACState = 0;
+        if (eobrun === 0) successiveACState = 0;
       }
     }
 
@@ -293,13 +356,13 @@ var JpegImage = (function jpegImage() {
     if (progressive) {
       if (spectralStart === 0)
         decodeFn = successivePrev === 0 ? decodeDCFirst : decodeDCSuccessive;
-      else
-        decodeFn = successivePrev === 0 ? decodeACFirst : decodeACSuccessive;
+      else decodeFn = successivePrev === 0 ? decodeACFirst : decodeACSuccessive;
     } else {
       decodeFn = decodeBaseline;
     }
 
-    var mcu = 0, marker;
+    var mcu = 0,
+      marker;
     var mcuExpected;
     if (componentsLength == 1) {
       mcuExpected = components[0].blocksPerLine * components[0].blocksPerColumn;
@@ -343,11 +406,12 @@ var JpegImage = (function jpegImage() {
       // find marker
       bitsCount = 0;
       marker = (data[offset] << 8) | data[offset + 1];
-      if (marker <= 0xFF00) {
-        throw "marker was not found";
+      if (marker <= 0xff00) {
+        throw 'marker was not found';
       }
 
-      if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
+      if (marker >= 0xffd0 && marker <= 0xffd7) {
+        // RSTx
         offset += 2;
       } else {
         break;
@@ -377,9 +441,15 @@ var JpegImage = (function jpegImage() {
       var row = 8 * i;
 
       // check for all-zero AC coefficients
-      if (p[1 + row] === 0 && p[2 + row] === 0 && p[3 + row] === 0 &&
-        p[4 + row] === 0 && p[5 + row] === 0 && p[6 + row] === 0 &&
-        p[7 + row] === 0) {
+      if (
+        p[1 + row] === 0 &&
+        p[2 + row] === 0 &&
+        p[3 + row] === 0 &&
+        p[4 + row] === 0 &&
+        p[5 + row] === 0 &&
+        p[6 + row] === 0 &&
+        p[7 + row] === 0
+      ) {
         t = (dctSqrt2 * p[0 + row] + 512) >> 10;
         p[0 + row] = t;
         p[1 + row] = t;
@@ -446,9 +516,15 @@ var JpegImage = (function jpegImage() {
       var col = i;
 
       // check for all-zero AC coefficients
-      if (p[1 * 8 + col] === 0 && p[2 * 8 + col] === 0 && p[3 * 8 + col] === 0 &&
-        p[4 * 8 + col] === 0 && p[5 * 8 + col] === 0 && p[6 * 8 + col] === 0 &&
-        p[7 * 8 + col] === 0) {
+      if (
+        p[1 * 8 + col] === 0 &&
+        p[2 * 8 + col] === 0 &&
+        p[3 * 8 + col] === 0 &&
+        p[4 * 8 + col] === 0 &&
+        p[5 * 8 + col] === 0 &&
+        p[6 * 8 + col] === 0 &&
+        p[7 * 8 + col] === 0
+      ) {
         t = (dctSqrt2 * p[i + 0] + 8192) >> 14;
         p[0 * 8 + col] = t;
         p[1 * 8 + col] = t;
@@ -514,9 +590,12 @@ var JpegImage = (function jpegImage() {
     for (i = 0; i < 64; ++i) {
       var index = blockBufferOffset + i;
       var q = p[i];
-      q = (q <= -2056 / component.bitConversion) ? 0 :
-        (q >= 2024 / component.bitConversion) ? 255 / component.bitConversion :
-        (q + 2056 / component.bitConversion) >> 4;
+      q =
+        q <= -2056 / component.bitConversion
+          ? 0
+          : q >= 2024 / component.bitConversion
+          ? 255 / component.bitConversion
+          : (q + 2056 / component.bitConversion) >> 4;
       component.blockData[index] = q;
     }
   }
@@ -528,7 +607,9 @@ var JpegImage = (function jpegImage() {
     var samplesPerLine = blocksPerLine << 3;
     var computationBuffer = new Int32Array(64);
 
-    var i, j, ll = 0;
+    var i,
+      j,
+      ll = 0;
     for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
       for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
         var offset = getBlockBufferOffset(component, blockRow, blockCol);
@@ -544,14 +625,13 @@ var JpegImage = (function jpegImage() {
 
   constructor.prototype = {
     load: function load(path) {
-      var handleData = (function (data) {
+      var handleData = function(data) {
         this.parse(data);
-        if (this.onload)
-          this.onload();
-      }).bind(this);
+        if (this.onload) this.onload();
+      }.bind(this);
 
-      if (path.indexOf("data:") > -1) {
-        var offset = path.indexOf("base64,") + 7;
+      if (path.indexOf('data:') > -1) {
+        var offset = path.indexOf('base64,') + 7;
         var data = atob(path.substring(offset));
         var arr = new Uint8Array(data.length);
         for (var i = data.length - 1; i >= 0; i--) {
@@ -560,18 +640,17 @@ var JpegImage = (function jpegImage() {
         handleData(data);
       } else {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", path, true);
-        xhr.responseType = "arraybuffer";
-        xhr.onload = (function () {
+        xhr.open('GET', path, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
           // TODO catch parse error
           var data = new Uint8Array(xhr.response);
           handleData(data);
-        }).bind(this);
+        }.bind(this);
         xhr.send(null);
       }
     },
     parse: function parse(data) {
-
       function readUint16() {
         var value = (data[offset] << 8) | data[offset + 1];
         offset += 2;
@@ -590,12 +669,17 @@ var JpegImage = (function jpegImage() {
         var mcusPerColumn = Math.ceil(frame.scanLines / 8 / frame.maxV);
         for (var i = 0; i < frame.components.length; i++) {
           component = frame.components[i];
-          var blocksPerLine = Math.ceil(Math.ceil(frame.samplesPerLine / 8) * component.h / frame.maxH);
-          var blocksPerColumn = Math.ceil(Math.ceil(frame.scanLines / 8) * component.v / frame.maxV);
+          var blocksPerLine = Math.ceil(
+            (Math.ceil(frame.samplesPerLine / 8) * component.h) / frame.maxH
+          );
+          var blocksPerColumn = Math.ceil(
+            (Math.ceil(frame.scanLines / 8) * component.v) / frame.maxV
+          );
           var blocksPerLineForMcu = mcusPerLine * component.h;
           var blocksPerColumnForMcu = mcusPerColumn * component.v;
 
-          var blocksBufferSize = 64 * blocksPerColumnForMcu * (blocksPerLineForMcu + 1);
+          var blocksBufferSize =
+            64 * blocksPerColumnForMcu * (blocksPerLineForMcu + 1);
           component.blockData = new Int16Array(blocksBufferSize);
           component.blocksPerLine = blocksPerLine;
           component.blocksPerColumn = blocksPerColumn;
@@ -604,123 +688,144 @@ var JpegImage = (function jpegImage() {
         frame.mcusPerColumn = mcusPerColumn;
       }
 
-      var offset = 0, length = data.length;
+      var offset = 0,
+        length = data.length;
       var jfif = null;
       var adobe = null;
       var pixels = null;
       var frame, resetInterval;
       var quantizationTables = [];
-      var huffmanTablesAC = [], huffmanTablesDC = [];
+      var huffmanTablesAC = [],
+        huffmanTablesDC = [];
       var fileMarker = readUint16();
-      if (fileMarker != 0xFFD8) { // SOI (Start of Image)
-        throw "SOI not found";
+      if (fileMarker != 0xffd8) {
+        // SOI (Start of Image)
+        throw 'SOI not found';
       }
 
       fileMarker = readUint16();
-      while (fileMarker != 0xFFD9) { // EOI (End of image)
+      while (fileMarker != 0xffd9) {
+        // EOI (End of image)
         var i, j, l;
         switch (fileMarker) {
-          case 0xFFE0: // APP0 (Application Specific)
-          case 0xFFE1: // APP1
-          case 0xFFE2: // APP2
-          case 0xFFE3: // APP3
-          case 0xFFE4: // APP4
-          case 0xFFE5: // APP5
-          case 0xFFE6: // APP6
-          case 0xFFE7: // APP7
-          case 0xFFE8: // APP8
-          case 0xFFE9: // APP9
-          case 0xFFEA: // APP10
-          case 0xFFEB: // APP11
-          case 0xFFEC: // APP12
-          case 0xFFED: // APP13
-          case 0xFFEE: // APP14
-          case 0xFFEF: // APP15
-          case 0xFFFE: // COM (Comment)
+          case 0xffe0: // APP0 (Application Specific)
+          case 0xffe1: // APP1
+          case 0xffe2: // APP2
+          case 0xffe3: // APP3
+          case 0xffe4: // APP4
+          case 0xffe5: // APP5
+          case 0xffe6: // APP6
+          case 0xffe7: // APP7
+          case 0xffe8: // APP8
+          case 0xffe9: // APP9
+          case 0xffea: // APP10
+          case 0xffeb: // APP11
+          case 0xffec: // APP12
+          case 0xffed: // APP13
+          case 0xffee: // APP14
+          case 0xffef: // APP15
+          case 0xfffe: // COM (Comment)
             var appData = readDataBlock();
 
-            if (fileMarker === 0xFFE0) {
-              if (appData[0] === 0x4A && appData[1] === 0x46 && appData[2] === 0x49 &&
-                appData[3] === 0x46 && appData[4] === 0) { // 'JFIF\x00'
+            if (fileMarker === 0xffe0) {
+              if (
+                appData[0] === 0x4a &&
+                appData[1] === 0x46 &&
+                appData[2] === 0x49 &&
+                appData[3] === 0x46 &&
+                appData[4] === 0
+              ) {
+                // 'JFIF\x00'
                 jfif = {
-                  version: {major: appData[5], minor: appData[6]},
+                  version: { major: appData[5], minor: appData[6] },
                   densityUnits: appData[7],
                   xDensity: (appData[8] << 8) | appData[9],
                   yDensity: (appData[10] << 8) | appData[11],
                   thumbWidth: appData[12],
                   thumbHeight: appData[13],
-                  thumbData: appData.subarray(14, 14 + 3 * appData[12] * appData[13])
+                  thumbData: appData.subarray(
+                    14,
+                    14 + 3 * appData[12] * appData[13]
+                  ),
                 };
               }
             }
             // TODO APP1 - Exif
-            if (fileMarker === 0xFFEE) {
-              if (appData[0] === 0x41 && appData[1] === 0x64 && appData[2] === 0x6F &&
-                appData[3] === 0x62 && appData[4] === 0x65 && appData[5] === 0) { // 'Adobe\x00'
+            if (fileMarker === 0xffee) {
+              if (
+                appData[0] === 0x41 &&
+                appData[1] === 0x64 &&
+                appData[2] === 0x6f &&
+                appData[3] === 0x62 &&
+                appData[4] === 0x65 &&
+                appData[5] === 0
+              ) {
+                // 'Adobe\x00'
                 adobe = {
                   version: appData[6],
                   flags0: (appData[7] << 8) | appData[8],
                   flags1: (appData[9] << 8) | appData[10],
-                  transformCode: appData[11]
+                  transformCode: appData[11],
                 };
               }
             }
             break;
 
-          case 0xFFDB: // DQT (Define Quantization Tables)
+          case 0xffdb: // DQT (Define Quantization Tables)
             var quantizationTablesLength = readUint16();
             var quantizationTablesEnd = quantizationTablesLength + offset - 2;
             while (offset < quantizationTablesEnd) {
               var quantizationTableSpec = data[offset++];
               var tableData = new Int32Array(64);
-              if ((quantizationTableSpec >> 4) === 0) { // 8 bit values
+              if (quantizationTableSpec >> 4 === 0) {
+                // 8 bit values
                 for (j = 0; j < 64; j++) {
                   var z = dctZigZag[j];
                   tableData[z] = data[offset++];
                 }
-              } else if ((quantizationTableSpec >> 4) === 1) { //16 bit
+              } else if (quantizationTableSpec >> 4 === 1) {
+                //16 bit
                 for (j = 0; j < 64; j++) {
                   var zz = dctZigZag[j];
                   tableData[zz] = readUint16();
                 }
-              } else
-                throw "DQT: invalid table spec";
+              } else throw 'DQT: invalid table spec';
               quantizationTables[quantizationTableSpec & 15] = tableData;
             }
             break;
 
-          case 0xFFC0: // SOF0 (Start of Frame, Baseline DCT)
-          case 0xFFC1: // SOF1 (Start of Frame, Extended DCT)
-          case 0xFFC2: // SOF2 (Start of Frame, Progressive DCT)
+          case 0xffc0: // SOF0 (Start of Frame, Baseline DCT)
+          case 0xffc1: // SOF1 (Start of Frame, Extended DCT)
+          case 0xffc2: // SOF2 (Start of Frame, Progressive DCT)
             if (frame) {
-              throw "Only single frame JPEGs supported";
+              throw 'Only single frame JPEGs supported';
             }
             readUint16(); // skip data length
             frame = {};
-            frame.extended = (fileMarker === 0xFFC1);
-            frame.progressive = (fileMarker === 0xFFC2);
+            frame.extended = fileMarker === 0xffc1;
+            frame.progressive = fileMarker === 0xffc2;
             frame.precision = data[offset++];
             frame.scanLines = readUint16();
             frame.samplesPerLine = readUint16();
             frame.components = [];
             frame.componentIds = {};
-            var componentsCount = data[offset++], componentId;
-            var maxH = 0, maxV = 0;
+            var componentsCount = data[offset++],
+              componentId;
+            var maxH = 0,
+              maxV = 0;
             for (i = 0; i < componentsCount; i++) {
               componentId = data[offset];
               var h = data[offset + 1] >> 4;
               var v = data[offset + 1] & 15;
-              if (maxH < h)
-                maxH = h;
-              if (maxV < v)
-                maxV = v;
+              if (maxH < h) maxH = h;
+              if (maxV < v) maxV = v;
               var qId = data[offset + 2];
               l = frame.components.push({
                 h: h,
                 v: v,
                 quantizationTable: quantizationTables[qId],
                 quantizationTableId: qId,
-                bitConversion: 255 / ((1 << frame.precision) - 1)
+                bitConversion: 255 / ((1 << frame.precision) - 1),
               });
               frame.componentIds[componentId] = l - 1;
               offset += 3;
@@ -730,34 +835,35 @@ var JpegImage = (function jpegImage() {
             prepareComponents(frame);
             break;
 
-          case 0xFFC4: // DHT (Define Huffman Tables)
+          case 0xffc4: // DHT (Define Huffman Tables)
             var huffmanLength = readUint16();
             for (i = 2; i < huffmanLength; ) {
               var huffmanTableSpec = data[offset++];
               var codeLengths = new Uint8Array(16);
               var codeLengthSum = 0;
               for (j = 0; j < 16; j++, offset++)
-                codeLengthSum += (codeLengths[j] = data[offset]);
+                codeLengthSum += codeLengths[j] = data[offset];
               var huffmanValues = new Uint8Array(codeLengthSum);
               for (j = 0; j < codeLengthSum; j++, offset++)
                 huffmanValues[j] = data[offset];
               i += 17 + codeLengthSum;
 
-              ((huffmanTableSpec >> 4) === 0 ?
-                huffmanTablesDC : huffmanTablesAC)[huffmanTableSpec & 15] =
-                buildHuffmanTable(codeLengths, huffmanValues);
+              (huffmanTableSpec >> 4 === 0 ? huffmanTablesDC : huffmanTablesAC)[
+                huffmanTableSpec & 15
+              ] = buildHuffmanTable(codeLengths, huffmanValues);
             }
             break;
 
-          case 0xFFDD: // DRI (Define Restart Interval)
+          case 0xffdd: // DRI (Define Restart Interval)
             readUint16(); // skip data length
             resetInterval = readUint16();
             break;
 
-          case 0xFFDA: // SOS (Start of Scan)
+          case 0xffda: // SOS (Start of Scan)
             var scanLength = readUint16();
             var selectorsCount = data[offset++];
-            var components = [], component;
+            var components = [],
+              component;
             for (i = 0; i < selectorsCount; i++) {
               var componentIndex = frame.componentIds[data[offset++]];
               component = frame.components[componentIndex];
@@ -769,26 +875,37 @@ var JpegImage = (function jpegImage() {
             var spectralStart = data[offset++];
             var spectralEnd = data[offset++];
             var successiveApproximation = data[offset++];
-            var processed = decodeScan(data, offset,
-              frame, components, resetInterval,
-              spectralStart, spectralEnd,
-              successiveApproximation >> 4, successiveApproximation & 15);
+            var processed = decodeScan(
+              data,
+              offset,
+              frame,
+              components,
+              resetInterval,
+              spectralStart,
+              spectralEnd,
+              successiveApproximation >> 4,
+              successiveApproximation & 15
+            );
             offset += processed;
             break;
-          case 0xFFFF: // Fill bytes
-            if (data[offset] !== 0xFF) { // Avoid skipping a valid marker.
+          case 0xffff: // Fill bytes
+            if (data[offset] !== 0xff) {
+              // Avoid skipping a valid marker.
               offset--;
             }
             break;
           default:
-            if (data[offset - 3] == 0xFF &&
-              data[offset - 2] >= 0xC0 && data[offset - 2] <= 0xFE) {
+            if (
+              data[offset - 3] == 0xff &&
+              data[offset - 2] >= 0xc0 &&
+              data[offset - 2] <= 0xfe
+            ) {
               // could be incorrect encoding -- last 0xFF byte of the previous
               // block was eaten by the encoder
               offset -= 3;
               break;
             }
-            throw "unknown JPEG marker " + fileMarker.toString(16);
+            throw 'unknown JPEG marker ' + fileMarker.toString(16);
         }
         fileMarker = readUint16();
       }
@@ -798,16 +915,13 @@ var JpegImage = (function jpegImage() {
       this.jfif = jfif;
       this.adobe = adobe;
       this.components = [];
-      switch (frame.components.length)
-      {
+      switch (frame.components.length) {
         case 1:
           this.colorspace = ColorSpace.Grayscale;
           break;
         case 3:
-          if (this.adobe)
-            this.colorspace = ColorSpace.AdobeRGB;
-          else
-            this.colorspace = ColorSpace.RGB;
+          if (this.adobe) this.colorspace = ColorSpace.AdobeRGB;
+          else this.colorspace = ColorSpace.RGB;
           break;
         case 4:
           this.colorspace = ColorSpace.CYMK;
@@ -817,22 +931,26 @@ var JpegImage = (function jpegImage() {
       }
       for (var i = 0; i < frame.components.length; i++) {
         var component = frame.components[i];
-        if (!component.quantizationTable && component.quantizationTableId !== null)
-          component.quantizationTable = quantizationTables[component.quantizationTableId];
+        if (
+          !component.quantizationTable &&
+          component.quantizationTableId !== null
+        )
+          component.quantizationTable =
+            quantizationTables[component.quantizationTableId];
         this.components.push({
           output: buildComponentData(frame, component),
           scaleX: component.h / frame.maxH,
           scaleY: component.v / frame.maxV,
           blocksPerLine: component.blocksPerLine,
           blocksPerColumn: component.blocksPerColumn,
-          bitConversion: component.bitConversion
+          bitConversion: component.bitConversion,
         });
       }
     },
     getData16: function getData16(width, height) {
-      if (this.components.length !== 1)
-        throw 'Unsupported color mode';
-      var scaleX = this.width / width, scaleY = this.height / height;
+      if (this.components.length !== 1) throw 'Unsupported color mode';
+      var scaleX = this.width / width,
+        scaleY = this.height / height;
 
       var component, componentScaleX, componentScaleY;
       var x, y, i;
@@ -844,8 +962,11 @@ var JpegImage = (function jpegImage() {
 
       // lineData is reused for all components. Assume first component is
       // the biggest
-      var lineData = new Uint16Array((this.components[0].blocksPerLine << 3) *
-      this.components[0].blocksPerColumn * 8);
+      var lineData = new Uint16Array(
+        (this.components[0].blocksPerLine << 3) *
+          this.components[0].blocksPerColumn *
+          8
+      );
 
       // First construct image data ...
       for (i = 0; i < numComponents; i++) {
@@ -854,13 +975,20 @@ var JpegImage = (function jpegImage() {
         var blocksPerColumn = component.blocksPerColumn;
         var samplesPerLine = blocksPerLine << 3;
 
-        var j, k, ll = 0;
+        var j,
+          k,
+          ll = 0;
         var lineOffset = 0;
         for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
           var scanLine = blockRow << 3;
           for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
-            var bufferOffset = getBlockBufferOffset(component, blockRow, blockCol);
-            var offset = 0, sample = blockCol << 3;
+            var bufferOffset = getBlockBufferOffset(
+              component,
+              blockRow,
+              blockCol
+            );
+            var offset = 0,
+              sample = blockCol << 3;
             for (j = 0; j < 8; j++) {
               var lineOffset = (scanLine + j) * samplesPerLine;
               for (k = 0; k < 8; k++) {
@@ -890,7 +1018,8 @@ var JpegImage = (function jpegImage() {
       return data;
     },
     getData: function getData(width, height) {
-      var scaleX = this.width / width, scaleY = this.height / height;
+      var scaleX = this.width / width,
+        scaleY = this.height / height;
 
       var component, componentScaleX, componentScaleY;
       var x, y, i;
@@ -904,8 +1033,11 @@ var JpegImage = (function jpegImage() {
 
       // lineData is reused for all components. Assume first component is
       // the biggest
-      var lineData = new Uint8Array((this.components[0].blocksPerLine << 3) *
-      this.components[0].blocksPerColumn * 8);
+      var lineData = new Uint8Array(
+        (this.components[0].blocksPerLine << 3) *
+          this.components[0].blocksPerColumn *
+          8
+      );
 
       // First construct image data ...
       for (i = 0; i < numComponents; i++) {
@@ -914,18 +1046,26 @@ var JpegImage = (function jpegImage() {
         var blocksPerColumn = component.blocksPerColumn;
         var samplesPerLine = blocksPerLine << 3;
 
-        var j, k, ll = 0;
+        var j,
+          k,
+          ll = 0;
         var lineOffset = 0;
         for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
           var scanLine = blockRow << 3;
           for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
-            var bufferOffset = getBlockBufferOffset(component, blockRow, blockCol);
-            var offset = 0, sample = blockCol << 3;
+            var bufferOffset = getBlockBufferOffset(
+              component,
+              blockRow,
+              blockCol
+            );
+            var offset = 0,
+              sample = blockCol << 3;
             for (j = 0; j < 8; j++) {
               var lineOffset = (scanLine + j) * samplesPerLine;
               for (k = 0; k < 8; k++) {
                 lineData[lineOffset + sample + k] =
-                  component.output[bufferOffset + offset++] * component.bitConversion;
+                  component.output[bufferOffset + offset++] *
+                  component.bitConversion;
               }
             }
           }
@@ -959,14 +1099,13 @@ var JpegImage = (function jpegImage() {
           // The default transform for three components is true
           colorTransform = true;
           // The adobe transform marker overrides any previous setting
-          if (this.adobe && this.adobe.transformCode)
-            colorTransform = true;
+          if (this.adobe && this.adobe.transformCode) colorTransform = true;
           else if (typeof this.colorTransform !== 'undefined')
             colorTransform = !!this.colorTransform;
 
           if (colorTransform) {
             for (i = 0; i < dataLength; i += numComponents) {
-              Y = data[i    ];
+              Y = data[i];
               Cb = data[i + 1];
               Cr = data[i + 2];
 
@@ -974,20 +1113,18 @@ var JpegImage = (function jpegImage() {
               G = clampToUint8(Y + 135.459 - 0.344 * Cb - 0.714 * Cr);
               B = clampToUint8(Y - 226.816 + 1.772 * Cb);
 
-              data[i    ] = R;
+              data[i] = R;
               data[i + 1] = G;
               data[i + 2] = B;
             }
           }
           break;
         case 4:
-          if (!this.adobe)
-            throw 'Unsupported color mode (4 components)';
+          if (!this.adobe) throw 'Unsupported color mode (4 components)';
           // The default transform for four components is false
           colorTransform = false;
           // The adobe transform marker overrides any previous setting
-          if (this.adobe && this.adobe.transformCode)
-            colorTransform = true;
+          if (this.adobe && this.adobe.transformCode) colorTransform = true;
           else if (typeof this.colorTransform !== 'undefined')
             colorTransform = !!this.colorTransform;
 
@@ -1001,7 +1138,7 @@ var JpegImage = (function jpegImage() {
               M = clampToUint8(119.541 - Y + 0.344 * Cb + 0.714 * Cr);
               Y = clampToUint8(481.816 - Y - 1.772 * Cb);
 
-              data[i    ] = C;
+              data[i] = C;
               data[i + 1] = M;
               data[i + 2] = Y;
               // K is unchanged
@@ -1012,7 +1149,7 @@ var JpegImage = (function jpegImage() {
           throw 'Unsupported color mode';
       }
       return data;
-    }
+    },
   };
 
   return constructor;

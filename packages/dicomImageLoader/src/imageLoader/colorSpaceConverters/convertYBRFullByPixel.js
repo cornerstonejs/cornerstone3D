@@ -1,4 +1,4 @@
-export default function(imageFrame, rgbaBuffer) {
+export default function (imageFrame, rgbaBuffer) {
   if (imageFrame === undefined) {
     throw new Error('decodeRGB: ybrBuffer must not be undefined');
   }

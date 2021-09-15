@@ -11,7 +11,7 @@ dcmconv $1 $1_LittleEndianExplicitTransferSyntax_1.2.840.10008.1.2.1.dcm --write
 dcmconv $1 $1_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2.dcm --write-xfer-big
 dcmconv $1 $1_DeflatedExplicitVRLittleEndianTransferSyntax_1.2.840.10008.1.2.1.99.dcm --write-xfer-deflated
 
-dcmcjpeg $1 $1_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50.dcm --encode-baseline
+dcmcjpeg $1 $1_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50.dcm --encode-baseline +q 100
 dcmcjpeg $1 $1_JPEGProcess2_4TransferSyntax_1.2.840.10008.1.2.4.51.dcm --encode-extended
 dcmcjpeg $1 $1_JPEGProcess6_8TransferSyntax_1.2.840.10008.1.2.4.53.dcm --encode-spectral
 dcmcjpeg $1 $1_JPEGProcess10_12TransferSyntax_1.2.840.10008.1.2.4.55.dcm --encode-progressive
@@ -26,5 +26,5 @@ gdcmconv --j2k -i $1 -o $1_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.
 
 dcmcrle $1 $1_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm
 
-gdcmconv --lossy --jpegls -e 1  -i $1 -o $1_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm 
+gdcmconv --lossy --jpegls -e 1  -i $1 -o $1_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm
 gdcmconv --lossy -q 100 --j2k -i $1 -o $1_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm

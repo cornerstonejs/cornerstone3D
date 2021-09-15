@@ -1,4 +1,15 @@
+// Not sure why but webpack isn't splitting this out unless we explicitly use worker-loader!
+// eslint-disable-next-line
+// import cornerstoneWADOImageLoaderWebWorker from 'worker-loader!../webWorker/index.worker.js';
 import cornerstoneWADOImageLoaderWebWorker from '../webWorker/index.worker.js';
+
+// This is for the Webpack 5 approch but it's currently broken
+// so we will continue relying on worker-loader for now
+// https://github.com/webpack/webpack/issues/13899
+/* const cornerstoneWADOImageLoaderWebWorkerPath = new URL(
+  '../webWorker/index.js',
+  import.meta.url
+);*/
 
 import { getOptions } from './internal/options.js';
 
@@ -21,7 +32,6 @@ const defaultConfig = {
   taskConfiguration: {
     decodeTask: {
       initializeCodecsOnStartup: false,
-      usePDFJS: false,
       strict: options.strict,
     },
   },
@@ -129,6 +139,19 @@ function spawnWebWorker() {
   // spawn the webworker
   const worker = new cornerstoneWADOImageLoaderWebWorker();
 
+  // This is for the Webpack 5 approach but it's currently broken
+  /* const worker = new Worker(cornerstoneWADOImageLoaderWebWorkerPath, {
+    name: `cornerstoneWADOImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
+    type: 'module',
+  });*/
+
+  // const worker = new Worker(
+  //   './cornerstoneWADOImageLoaderWebWorker.bundle.min.js',
+  //   {
+  //     name: `cornerstoneWADOImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
+  //   }
+  // );
+
   webWorkers.push({
     worker,
     status: 'initializing',
@@ -150,7 +173,7 @@ function initialize(configObject) {
 
   // prevent being initialized more than once
   if (config) {
-    throw new Error('WebWorkerManager already initialized');
+    // throw new Error('WebWorkerManager already initialized');
   }
 
   config = configObject;

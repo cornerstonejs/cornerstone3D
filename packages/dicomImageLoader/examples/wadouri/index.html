@@ -9,12 +9,6 @@
 <div class="container">
     <div class="page-header">
         <h1>Example of displaying a DICOM P10 image using Cornerstone</h1>
-        <p class="lead">
-            Enter a URL for a DICOM P10 object below to view it using cornerstone.
-            <button id='toggleCollapseInfo' class="btn btn-primary" type="button">
-                Click for more info
-            </button>
-        </p>
         <ul>
             <!--
             <li>/cornerstoneWADOImageLoader/examples/testImages/ile/gray16.DCM</li>
@@ -24,10 +18,6 @@
             <li>/cornerstoneWADOImageLoader/examples/testImages/rle/gray16.dcm</li>
             <li>/cornerstoneWADOImageLoader/examples/testImages/rle/rgb.dcm</li>
             <li>/cornerstoneWADOImageLoader/examples/testImages/rle/multiframe.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/ybrFull422.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/gray8.dcm</li>
-            <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.50/multiframe.dcm</li>
             <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.51/grayu16.dcm</li>
             <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.57/grayu16.dcm</li>
             <li>/cornerstoneWADOImageLoader/examples/testImages/jpeg.70/gray8.dcm</li>
@@ -41,38 +31,57 @@
             -->
         </ul>
     </div>
-    <div id="collapseInfo" class="collapse" style="display:none;">
-        <p>
-            This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
-            SOP instance using HTTP and display it in your web browser using cornerstone.
-            Not all transfer syntaxes are currently supported,
-            <a href="https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
-                click here for the full list.
-            </a>
-            For WADO-URI requests,
-            you can request that the server return the SOP Instance in explicit little endian by
-            appending the following query string to your URL:
-            <code>&transferSyntax=1.2.840.10008.1.2.1</code>
-        </p>
-        <P>
-            Use the query string parameter <i>frame</i> to specify which frame to display from a multiframe
-            object (defaults to the first frame if not specified). <code>?frame=2</code>
-        </P>
-        <strong>If you get an HTTP error and your URL is correct, it is probably because the server is not configured to
-            allow <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross Origin Requests</a>.
-            Most browsers will allow you to enable cross domain requests via settings or command line switches,
-            you can start chrome with the command line switch <code>--disable-web-security</code> to allow cross origin requests.
-            See the  <a href="http://enable-cors.org/">Enable CORS site</a> for information about CORS.
-        </strong>
-        <br>
-        <br>
-        <p>
-            Looking for a CORS proxy?  Try <a href="https://www.npmjs.com/package/corsproxy">CORSProxy</a>
-        </p>
-        <strong>Use of this example require IE10+ or any other modern browser.</strong>
-        <hr>
-    </div>
     <div id="loadProgress">Image Load Progress:</div>
+
+    <h2>CharLS</h2>
+    <button class="imgbtn">
+        CTImage.dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80.dcm
+    </button>
+    <button class="imgbtn">
+        CTImage.dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm
+    </button>
+
+    <h2>libjpeg-turbo 8-bit</h2>
+    <button class="imgbtn">
+        CTImage.dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50.dcm
+    </button>
+
+    <h2>libjpeg-turbo 12-bit</h2>
+    <button class="imgbtn">
+        CTImage.dcm_JPEGProcess2_4TransferSyntax_1.2.840.10008.1.2.4.51.dcm
+    </button>
+
+    <h2>RLE</h2>
+    <button class="imgbtn">
+        CTImage.dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm
+    </button>
+
+    <h2>JPEG Lossless</h2>
+    <button class="imgbtn">
+        CTImage.dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57.dcm
+    </button>
+    <button class="imgbtn">
+        CTImage.dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70.dcm
+    </button>
+
+    <h2>JPEG 2000</h2>
+    <button class="imgbtn">
+        CT1_J2KR
+    </button>
+    <button class="imgbtn">
+        CT2_J2KR
+    </button>
+    <button class="imgbtn">
+        CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm
+    </button>
+    <button class="imgbtn">
+        CTImage.dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm
+    </button>
+
+    <h2>Deflate</h2>
+    <button class="imgbtn">
+        CTImage.dcm_DeflatedExplicitVRLittleEndianTransferSyntax_1.2.840.10008.1.2.1.99.dcm
+    </button>
 
     <div class="row">
         <form id="form" class="form-horizontal">
@@ -155,12 +164,9 @@
 <script src="../dicomParser.min.js"></script>
 
 <!-- include the cornerstoneWADOImageLoader library -->
-<script src="../../dist/cornerstoneWADOImageLoader.js"></script>
+<script src="../dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
 
 <script src="../dicomfile/uids.js"></script>
-
-<!-- Lines ONLY required for this example to run without building the project -->
-<script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
 <script src="../utils/initializeWebWorkers.js"></script>
 
 <script>
@@ -170,7 +176,7 @@
         beforeSend: function(xhr) {
             // Add custom headers here (e.g. auth tokens)
             //xhr.setRequestHeader('APIKEY', 'my auth token');
-        }
+        },
     });
 
     var loaded = false;
@@ -253,22 +259,31 @@
                 document.getElementById('decodeTime').textContent = image.decodeTimeInMS + "ms";
 
             }, function(err) {
-                alert(err);
+                throw err;
             });
         }
         catch(err) {
-            alert(err);
+            throw err;
         }
     }
 
-    function downloadAndView() {
-        let url = document.getElementById('wadoURL').value;
+    function downloadAndView(downloadUrl) {
+        let url = downloadUrl || document.getElementById('wadoURL').value;
 
         // prefix the url with wadouri: so cornerstone can find the image loader
         url = "wadouri:" + url;
 
         // image enable the dicomImage element and activate a few tools
         loadAndViewImage(url);
+    }
+
+    const imageButtons = document.getElementsByClassName('imgbtn');
+    for(let i = 0; i < imageButtons.length; i++){
+        const el = imageButtons[i];
+        el.addEventListener('click', function(e) {
+            const img = e.target.innerText;
+            downloadAndView('https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/testImages/' + img);
+        });
     }
 
     cornerstone.events.addEventListener('cornerstoneimageloadprogress', function(event) {
@@ -335,14 +350,6 @@
             viewport.voiLUT = undefined;
         }
         cornerstone.setViewport(element, viewport);
-    });
-
-    document.getElementById('toggleCollapseInfo').addEventListener('click', function() {
-        if (document.getElementById('collapseInfo').style.display === 'none') {
-            document.getElementById('collapseInfo').style.display = 'block';
-        } else {
-            document.getElementById('collapseInfo').style.display = 'none';
-        }
     });
 </script>
 </html>

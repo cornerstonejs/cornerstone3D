@@ -1,5 +1,4 @@
 // This script will load the WebWorkers and Codecs from unpkg url
-
 try {
   window.cornerstoneWADOImageLoader.webWorkerManager.initialize({
     maxWebWorkers: 4,
@@ -7,13 +6,11 @@ try {
     webWorkerTaskPaths: [],
     taskConfiguration: {
       decodeTask: {
-        initializeCodecsOnStartup: false,
-        usePDFJS: false,
-        strict: true
-      }
-    }
+        initializeCodecsOnStartup: true,
+        strict: true,
+      },
+    },
   });
 } catch (error) {
   throw new Error('cornerstoneWADOImageLoader is not loaded');
 }
-

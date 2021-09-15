@@ -68,8 +68,10 @@ function populatePaletteColorLut(dataSet, imagePixelModule) {
     lutBitsAllocated
   ) {
     imagePixelModule.redPaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
-    imagePixelModule.greenPaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
-    imagePixelModule.bluePaletteColorLookupTableDescriptor[2] = lutBitsAllocated;
+    imagePixelModule.greenPaletteColorLookupTableDescriptor[2] =
+      lutBitsAllocated;
+    imagePixelModule.bluePaletteColorLookupTableDescriptor[2] =
+      lutBitsAllocated;
   }
 
   imagePixelModule.redPaletteColorLookupTableData = getLutData(

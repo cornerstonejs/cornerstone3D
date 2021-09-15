@@ -1,25 +1,29 @@
 const path = require('path');
+const webpack = require('webpack');
 const rootPath = process.cwd();
 const context = path.join(rootPath, 'src');
 const codecs = path.join(rootPath, 'codecs');
 const outputPath = path.join(rootPath, 'dist');
-const bannerPlugin = require('./plugins/banner');
+
+const BundleAnalyzerPlugin =
+  require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
   mode: 'development',
   context,
   entry: {
     cornerstoneWADOImageLoader: './imageLoader/index.js',
-    cornerstoneWADOImageLoaderWebWorker: './webWorker/index.worker.js',
   },
   target: 'web',
   output: {
-    filename: '[name].js',
-    library: '[name]',
-    libraryTarget: 'umd',
+    library: {
+      name: '[name]',
+      type: 'umd',
+      umdNamedDefine: true,
+    },
     globalObject: 'this',
     path: outputPath,
-    umdNamedDefine: true,
+    publicPath: '',
   },
   devtool: 'source-map',
   externals: {
@@ -28,6 +32,12 @@ module.exports = {
       commonjs2: 'dicom-parser',
       amd: 'dicom-parser',
       root: 'dicomParser',
+    },
+  },
+  resolve: {
+    fallback: {
+      fs: false,
+      path: false,
     },
   },
   module: {
@@ -39,40 +49,23 @@ module.exports = {
         exclude: /(node_modules)|(codecs)/,
         loader: 'eslint-loader',
         options: {
-          failOnError: true,
+          failOnError: false,
         },
+      },
+      {
+        test: /\.wasm/,
+        type: 'asset/resource',
       },
       {
         test: /\.worker\.js$/,
-        use: {
-          loader: 'worker-loader',
-          options: { inline: true, fallback: false },
-        },
-      },
-      /*{
-      test: /\.js$/,
-      include: /(codecs)/,
-      use: {
-        loader: 'babel-loader',
-        options: {
-          compact: false
-        }
-      },
-    },*/ {
-        test: path.join(codecs, 'openJPEG-FixedMemory.js'),
-        use: 'exports-loader?OpenJPEG',
-      },
-      {
-        test: path.join(codecs, 'charLS-FixedMemory-browser.js'),
-        use: 'exports-loader?CharLS',
-      },
-      {
-        test: path.join(codecs, 'jpeg.js'),
-        use: 'exports-loader?JpegImage',
-      },
-      {
-        test: path.join(codecs, 'jpx.min.js'),
-        use: 'exports-loader?JpxImage',
+        use: [
+          {
+            loader: 'worker-loader',
+          },
+          // {
+          //   loader: 'babel-loader',
+          // },
+        ],
       },
       {
         test: /\.js$/,
@@ -81,8 +74,19 @@ module.exports = {
           loader: 'babel-loader',
         },
       },
+      {
+        test: path.join(codecs, 'jpeg.js'),
+        loader: 'exports-loader',
+        options: {
+          type: 'commonjs',
+          exports: 'JpegImage',
+        },
+      },
     ],
   },
-  plugins: [bannerPlugin()],
-  node: { fs: 'empty' },
+  // experiments: {
+  //   asyncWebAssembly: true,
+  // },
+  plugins: [new webpack.ProgressPlugin()],
+  // plugins: [new webpack.ProgressPlugin(), new BundleAnalyzerPlugin()],
 };

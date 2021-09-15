@@ -127,7 +127,7 @@
 <script src="../dicomParser.min.js"></script>
 
 <!-- include the cornerstoneWADOImageLoader library -->
-<script src="../../dist/cornerstoneWADOImageLoader.js"></script>
+<script src="../dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
 
 <!-- Lines ONLY required for this example to run without building the project -->
 <script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
@@ -149,7 +149,7 @@
         const element = document.getElementById('dicomImage');
         try {
             const start = new Date().getTime();
-            cornerstone.loadAndCacheImage(imageId, {usePDFJS: false}).then(function(image) {
+            cornerstone.loadAndCacheImage(imageId).then(function(image) {
                 console.log(image);
                 loadedImage = image;
                 updateStatistics();

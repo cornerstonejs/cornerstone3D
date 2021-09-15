@@ -36,7 +36,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - run: npm run build && npm run test
+      - run: npm run build && npm run test:ci
       # https://circleci.com/docs/2.0/collect-test-data/#karma
       # - store_test_results:
       #     path: reports/junit

@@ -18,7 +18,7 @@ function convertLUTto8Bit(lut, shift) {
  * @param {Uint8ClampedArray} rgbaBuffer
  * @returns {void}
  */
-export default function(imageFrame, rgbaBuffer) {
+export default function (imageFrame, rgbaBuffer) {
   const numPixels = imageFrame.columns * imageFrame.rows;
   const pixelData = imageFrame.pixelData;
   const rData = imageFrame.redPaletteColorLookupTableData;

@@ -40,10 +40,10 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
       fileReader.readAsBinaryString(imgBlob); // doesn't work on IE11
     }
 
-    fileReader.onload = function() {
+    fileReader.onload = function () {
       const img = new Image();
 
-      img.onload = function() {
+      img.onload = function () {
         canvas.height = img.height;
         canvas.width = img.width;
         imageFrame.rows = img.height;
@@ -67,7 +67,7 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
         resolve(imageFrame);
       };
 
-      img.onerror = function(error) {
+      img.onerror = function (error) {
         reject(error);
       };
 
@@ -80,7 +80,7 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
       }
     };
 
-    fileReader.onerror = e => {
+    fileReader.onerror = (e) => {
       reject(e);
     };
   });

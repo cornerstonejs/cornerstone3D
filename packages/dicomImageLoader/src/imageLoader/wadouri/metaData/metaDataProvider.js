@@ -100,9 +100,8 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === 'voiLutModule') {
-    const modalityLUTOutputPixelRepresentation = getModalityLUTOutputPixelRepresentation(
-      dataSet
-    );
+    const modalityLUTOutputPixelRepresentation =
+      getModalityLUTOutputPixelRepresentation(dataSet);
 
     return {
       windowCenter: getNumberValues(dataSet, 'x00281050', 1),
@@ -136,12 +135,10 @@ function metaDataProvider(type, imageId) {
         radiopharmaceuticalStartTime: dicomParser.parseTM(
           firstRadiopharmaceuticalInfoDataSet.string('x00181072') || ''
         ),
-        radionuclideTotalDose: firstRadiopharmaceuticalInfoDataSet.floatString(
-          'x00181074'
-        ),
-        radionuclideHalfLife: firstRadiopharmaceuticalInfoDataSet.floatString(
-          'x00181075'
-        ),
+        radionuclideTotalDose:
+          firstRadiopharmaceuticalInfoDataSet.floatString('x00181074'),
+        radionuclideHalfLife:
+          firstRadiopharmaceuticalInfoDataSet.floatString('x00181075'),
       },
     };
   }

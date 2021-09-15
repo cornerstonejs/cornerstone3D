@@ -1,11 +1,11 @@
 import external from '../../externalModules.js';
 import { getOptions } from './options.js';
 
-function xhrRequest(url, imageId, headers = {}, params = {}) {
+function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
   const { cornerstone } = external;
   const options = getOptions();
 
-  const errorInterceptor = xhr => {
+  const errorInterceptor = (xhr) => {
     if (typeof options.errorInterceptor === 'function') {
       const error = new Error('request failed');
 
@@ -22,8 +22,15 @@ function xhrRequest(url, imageId, headers = {}, params = {}) {
 
     xhr.open('get', url, true);
     xhr.responseType = 'arraybuffer';
-    options.beforeSend(xhr, imageId, headers, params);
-    Object.keys(headers).forEach(function(key) {
+    const beforeSendHeaders = options.beforeSend(
+      xhr,
+      imageId,
+      defaultHeaders,
+      params
+    );
+    const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
+
+    Object.keys(headers).forEach(function (key) {
       xhr.setRequestHeader(key, headers[key]);
     });
 
@@ -35,7 +42,7 @@ function xhrRequest(url, imageId, headers = {}, params = {}) {
     params.imageId = imageId;
 
     // Event triggered when downloading an image starts
-    xhr.onloadstart = function(event) {
+    xhr.onloadstart = function (event) {
       // Action
       if (options.onloadstart) {
         options.onloadstart(event, params);
@@ -55,7 +62,7 @@ function xhrRequest(url, imageId, headers = {}, params = {}) {
     };
 
     // Event triggered when downloading an image ends
-    xhr.onloadend = function(event) {
+    xhr.onloadend = function (event) {
       // Action
       if (options.onloadend) {
         options.onloadend(event, params);
@@ -75,7 +82,7 @@ function xhrRequest(url, imageId, headers = {}, params = {}) {
     };
 
     // handle response data
-    xhr.onreadystatechange = function(event) {
+    xhr.onreadystatechange = function (event) {
       // Action
       if (options.onreadystatechange) {
         options.onreadystatechange(event, params);
@@ -104,7 +111,7 @@ function xhrRequest(url, imageId, headers = {}, params = {}) {
     };
 
     // Event triggered when downloading an image progresses
-    xhr.onprogress = function(oProgress) {
+    xhr.onprogress = function (oProgress) {
       // console.log('progress:',oProgress)
       const loaded = oProgress.loaded; // evt.loaded the bytes browser receive
 
@@ -133,16 +140,16 @@ function xhrRequest(url, imageId, headers = {}, params = {}) {
 
       cornerstone.triggerEvent(
         cornerstone.events,
-        'cornerstoneimageloadprogress',
+        cornerstone.EVENTS.IMAGE_LOAD_PROGRESS,
         eventData
       );
     };
-    xhr.onerror = function() {
+    xhr.onerror = function () {
       errorInterceptor(xhr);
       reject(xhr);
     };
 
-    xhr.onabort = function() {
+    xhr.onabort = function () {
       errorInterceptor(xhr);
       reject(xhr);
     };

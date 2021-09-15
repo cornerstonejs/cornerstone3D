@@ -33,7 +33,7 @@ function load(uri, loadRequest = xhrRequest, imageId) {
   // if already loaded return it right away
   if (loadedDataSets[uri]) {
     // console.log('using loaded dataset ' + uri);
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       loadedDataSets[uri].cacheCount++;
       resolve(loadedDataSets[uri].dataSet);
     });
@@ -53,7 +53,7 @@ function load(uri, loadRequest = xhrRequest, imageId) {
   // handle success and failure of the XHR request load
   const promise = new Promise((resolve, reject) => {
     loadDICOMPromise
-      .then(function(dicomPart10AsArrayBuffer /* , xhr*/) {
+      .then(function (dicomPart10AsArrayBuffer /* , xhr*/) {
         const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
 
         // Reject the promise if parsing the dicom file fails
@@ -129,6 +129,7 @@ export function getInfo() {
 function purge() {
   loadedDataSets = {};
   promises = {};
+  cacheSizeInBytes = 0;
 }
 
 export default {

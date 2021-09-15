@@ -1,4 +1,4 @@
-function decodeRLE(imageFrame, pixelData) {
+async function decodeRLE(imageFrame, pixelData) {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
       return decode8Planar(imageFrame, pixelData);

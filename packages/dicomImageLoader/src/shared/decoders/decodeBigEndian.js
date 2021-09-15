@@ -3,7 +3,7 @@ function swap16(val) {
   return ((val & 0xff) << 8) | ((val >> 8) & 0xff);
 }
 
-function decodeBigEndian(imageFrame, pixelData) {
+async function decodeBigEndian(imageFrame, pixelData) {
   if (imageFrame.bitsAllocated === 16) {
     let arrayBuffer = pixelData.buffer;
 

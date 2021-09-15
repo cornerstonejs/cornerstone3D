@@ -1,11 +1,31 @@
-import jpeg from '../../../codecs/jpegLossless.js';
+const local = {
+  jpeg: undefined,
+  decodeConfig: {},
+};
 
-function decodeJPEGLossless(imageFrame, pixelData) {
+export function initialize(decodeConfig) {
+  local.decodeConfig = decodeConfig;
+
+  if (local.jpeg) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    import('../../../codecs/jpegLossless.js').then((jpeg) => {
+      local.jpeg = jpeg;
+      resolve();
+    }, reject);
+  });
+}
+
+async function decodeJPEGLossless(imageFrame, pixelData) {
+  await initialize();
+
   // check to make sure codec is loaded
   if (
-    typeof jpeg === 'undefined' ||
-    typeof jpeg.lossless === 'undefined' ||
-    typeof jpeg.lossless.Decoder === 'undefined'
+    typeof local.jpeg === 'undefined' ||
+    typeof local.jpeg.lossless === 'undefined' ||
+    typeof local.jpeg.lossless.Decoder === 'undefined'
   ) {
     throw new Error('No JPEG Lossless decoder loaded');
   }
@@ -13,7 +33,7 @@ function decodeJPEGLossless(imageFrame, pixelData) {
   const byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
   // console.time('jpeglossless');
   const buffer = pixelData.buffer;
-  const decoder = new jpeg.lossless.Decoder();
+  const decoder = new local.jpeg.lossless.Decoder();
   const decompressedData = decoder.decode(
     buffer,
     pixelData.byteOffset,

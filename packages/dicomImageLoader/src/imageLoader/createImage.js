@@ -89,7 +89,7 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
 
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line complexity
-    decodePromise.then(function(imageFrame) {
+    decodePromise.then(function (imageFrame) {
       // If we have a target buffer that was written to in the
       // Decode task, point the image to it here.
       // We can't have done it within the thread incase it was a SharedArrayBuffer.
@@ -241,7 +241,7 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
       }
 
       if (image.color) {
-        image.getCanvas = function() {
+        image.getCanvas = function () {
           if (lastImageIdDrawn === imageId) {
             return canvas;
           }

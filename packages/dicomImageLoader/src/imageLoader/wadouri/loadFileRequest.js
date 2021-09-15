@@ -9,7 +9,7 @@ function loadFileRequest(uri) {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
 
-    fileReader.onload = e => {
+    fileReader.onload = (e) => {
       const dicomPart10AsArrayBuffer = e.target.result;
 
       resolve(dicomPart10AsArrayBuffer);

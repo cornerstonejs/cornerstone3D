@@ -1,144 +1,148 @@
-import CharLS from '../../../codecs/charLS-FixedMemory-browser.js';
+import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode.js';
+// import charlsFactory from '@cornerstonejs/codec-charls/dist/debug/charlswasm.js';
 
-let charLS;
+// Webpack asset/resource copies this to our output folder
+import charlsWasm from '@cornerstonejs/codec-charls/dist/charlswasm_decode.wasm';
+// import charlsWasm from '@cornerstonejs/codec-charls/dist/debug/charlswasm.wasm';
 
-function jpegLSDecode(data, isSigned) {
-  // prepare input parameters
-  const dataPtr = charLS._malloc(data.length);
+const local = {
+  codec: undefined,
+  decoder: undefined,
+  decodeConfig: {},
+};
 
-  charLS.writeArrayToMemory(data, dataPtr);
-
-  // prepare output parameters
-  const imagePtrPtr = charLS._malloc(4);
-  const imageSizePtr = charLS._malloc(4);
-  const widthPtr = charLS._malloc(4);
-  const heightPtr = charLS._malloc(4);
-  const bitsPerSamplePtr = charLS._malloc(4);
-  const stridePtr = charLS._malloc(4);
-  const allowedLossyErrorPtr = charLS._malloc(4);
-  const componentsPtr = charLS._malloc(4);
-  const interleaveModePtr = charLS._malloc(4);
-
-  // Decode the image
-  const result = charLS.ccall(
-    'jpegls_decode',
-    'number',
-    [
-      'number',
-      'number',
-      'number',
-      'number',
-      'number',
-      'number',
-      'number',
-      'number',
-      'number',
-      'number',
-      'number',
-    ],
-    [
-      dataPtr,
-      data.length,
-      imagePtrPtr,
-      imageSizePtr,
-      widthPtr,
-      heightPtr,
-      bitsPerSamplePtr,
-      stridePtr,
-      componentsPtr,
-      allowedLossyErrorPtr,
-      interleaveModePtr,
-    ]
-  );
-
-  // Extract result values into object
-  const image = {
-    result,
-    width: charLS.getValue(widthPtr, 'i32'),
-    height: charLS.getValue(heightPtr, 'i32'),
-    bitsPerSample: charLS.getValue(bitsPerSamplePtr, 'i32'),
-    stride: charLS.getValue(stridePtr, 'i32'),
-    components: charLS.getValue(componentsPtr, 'i32'),
-    allowedLossyError: charLS.getValue(allowedLossyErrorPtr, 'i32'),
-    interleaveMode: charLS.getValue(interleaveModePtr, 'i32'),
-    pixelData: undefined,
-  };
-
-  // Copy image from emscripten heap into appropriate array buffer type
-  const imagePtr = charLS.getValue(imagePtrPtr, '*');
-
-  if (image.bitsPerSample <= 8) {
-    image.pixelData = new Uint8Array(
-      image.width * image.height * image.components
-    );
-    image.pixelData.set(
-      new Uint8Array(charLS.HEAP8.buffer, imagePtr, image.pixelData.length)
-    );
-  } else if (isSigned) {
-    image.pixelData = new Int16Array(
-      image.width * image.height * image.components
-    );
-    image.pixelData.set(
-      new Int16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length)
-    );
-  } else {
-    image.pixelData = new Uint16Array(
-      image.width * image.height * image.components
-    );
-    image.pixelData.set(
-      new Uint16Array(charLS.HEAP16.buffer, imagePtr, image.pixelData.length)
-    );
-  }
-
-  // free memory and return image object
-  charLS._free(dataPtr);
-  charLS._free(imagePtr);
-  charLS._free(imagePtrPtr);
-  charLS._free(imageSizePtr);
-  charLS._free(widthPtr);
-  charLS._free(heightPtr);
-  charLS._free(bitsPerSamplePtr);
-  charLS._free(stridePtr);
-  charLS._free(componentsPtr);
-  charLS._free(interleaveModePtr);
-
-  return image;
+function getExceptionMessage(exception) {
+  return typeof exception === 'number'
+    ? local.codec.getExceptionMessage(exception)
+    : exception;
 }
 
-function initializeJPEGLS() {
-  // check to make sure codec is loaded
-  if (typeof CharLS === 'undefined') {
-    throw new Error('No JPEG-LS decoder loaded');
+export function initialize(decodeConfig) {
+  local.decodeConfig = decodeConfig;
+
+  if (local.codec) {
+    return Promise.resolve();
   }
 
-  // Try to initialize CharLS
-  // CharLS https://github.com/cornerstonejs/charls
-  if (!charLS) {
-    charLS = CharLS();
-    if (!charLS || !charLS._jpegls_decode) {
-      throw new Error('JPEG-LS failed to initialize');
+  const charlsModule = charlsFactory({
+    locateFile: (f) => {
+      if (f.endsWith('.wasm')) {
+        return charlsWasm;
+      }
+
+      return f;
+    },
+  });
+
+  return new Promise((resolve, reject) => {
+    charlsModule.then((instance) => {
+      local.codec = instance;
+      local.decoder = new instance.JpegLSDecoder();
+      resolve();
+    }, reject);
+  });
+}
+
+/**
+ *
+ * @param {*} compressedImageFrame
+ * @param {object}  imageInfo
+ * @param {boolean} imageInfo.signed - (pixelRepresentation === 1)
+ */
+async function decodeAsync(compressedImageFrame, imageInfo) {
+  try {
+    await initialize();
+    const decoder = local.decoder;
+
+    // get pointer to the source/encoded bit stream buffer in WASM memory
+    // that can hold the encoded bitstream
+    const encodedBufferInWASM = decoder.getEncodedBuffer(
+      compressedImageFrame.length
+    );
+
+    // copy the encoded bitstream into WASM memory buffer
+    encodedBufferInWASM.set(compressedImageFrame);
+
+    // decode it
+    decoder.decode();
+
+    // get information about the decoded image
+    const frameInfo = decoder.getFrameInfo();
+    const interleaveMode = decoder.getInterleaveMode();
+    const nearLossless = decoder.getNearLossless();
+
+    // get the decoded pixels
+    const decodedPixelsInWASM = decoder.getDecodedBuffer();
+
+    const encodedImageInfo = {
+      columns: frameInfo.width,
+      rows: frameInfo.height,
+      bitsPerPixel: frameInfo.bitsPerSample,
+      signed: imageInfo.signed,
+      bytesPerPixel: imageInfo.bytesPerPixel,
+      componentsPerPixel: frameInfo.componentCount,
+    };
+
+    const pixelData = getPixelData(
+      frameInfo,
+      decodedPixelsInWASM,
+      imageInfo.signed
+    );
+
+    const encodeOptions = {
+      nearLossless,
+      interleaveMode,
+      frameInfo,
+    };
+
+    // local.codec.doLeakCheck();
+
+    return {
+      ...imageInfo,
+      pixelData,
+      imageInfo: encodedImageInfo,
+      encodeOptions,
+      ...encodeOptions,
+      ...encodedImageInfo,
+    };
+  } catch (error) {
+    // Handle cases where WASM throws an error internally, and it only gives JS a number
+    // See https://emscripten.org/docs/porting/Debugging.html#handling-c-exceptions-from-javascript
+    // TODO: Copy to other codecs as well
+    throw getExceptionMessage(error);
+  }
+}
+
+function getPixelData(frameInfo, decodedBuffer, signed) {
+  if (frameInfo.bitsPerSample > 8) {
+    if (signed) {
+      return new Int16Array(
+        decodedBuffer.buffer,
+        decodedBuffer.byteOffset,
+        decodedBuffer.byteLength / 2
+      );
     }
-  }
-}
 
-function decodeJPEGLS(imageFrame, pixelData) {
-  initializeJPEGLS();
-
-  const image = jpegLSDecode(pixelData, imageFrame.pixelRepresentation === 1);
-
-  // throw error if not success or too much data
-  if (image.result !== 0 && image.result !== 6) {
-    throw new Error(
-      `JPEG-LS decoder failed to decode frame (error code ${image.result})`
+    return new Uint16Array(
+      decodedBuffer.buffer,
+      decodedBuffer.byteOffset,
+      decodedBuffer.byteLength / 2
     );
   }
 
-  imageFrame.columns = image.width;
-  imageFrame.rows = image.height;
-  imageFrame.pixelData = image.pixelData;
+  if (signed) {
+    return new Int8Array(
+      decodedBuffer.buffer,
+      decodedBuffer.byteOffset,
+      decodedBuffer.byteLength
+    );
+  }
 
-  return imageFrame;
+  return new Uint8Array(
+    decodedBuffer.buffer,
+    decodedBuffer.byteOffset,
+    decodedBuffer.byteLength
+  );
 }
 
-export default decodeJPEGLS;
-export { initializeJPEGLS };
+export default decodeAsync;

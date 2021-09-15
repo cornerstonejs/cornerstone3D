@@ -1,172 +1,161 @@
-import OpenJPEG from '../../../codecs/openJPEG-FixedMemory.js';
-import JpxImage from '../../../codecs/jpx.min.js';
+// https://emscripten.org/docs/api_reference/module.html
+import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.js';
 
-function decodeJpx(imageFrame, pixelData) {
-  const jpxImage = new JpxImage();
+// Webpack asset/resource copies this to our output folder
 
-  jpxImage.parse(pixelData);
+// TODO: At some point maybe we can use this instead.
+// This is closer to what Webpack 5 wants but it doesn't seem to work now
+// const wasm = new URL('./blah.wasm', import.meta.url)
+import openjpegWasm from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.wasm';
 
-  const tileCount = jpxImage.tiles.length;
+const local = {
+  codec: undefined,
+  decoder: undefined,
+  decodeConfig: {},
+};
 
-  if (tileCount !== 1) {
-    throw new Error(
-      `JPEG2000 decoder returned a tileCount of ${tileCount}, when 1 is expected`
+export function initialize(decodeConfig) {
+  local.decodeConfig = decodeConfig;
+
+  if (local.codec) {
+    return Promise.resolve();
+  }
+
+  const openJpegModule = openJpegFactory({
+    locateFile: (f) => {
+      if (f.endsWith('.wasm')) {
+        return openjpegWasm;
+      }
+
+      return f;
+    },
+  });
+
+  return new Promise((resolve, reject) => {
+    openJpegModule.then((instance) => {
+      local.codec = instance;
+      local.decoder = new instance.J2KDecoder();
+      resolve();
+    }, reject);
+  });
+}
+
+// https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
+async function decodeAsync(compressedImageFrame, imageInfo) {
+  await initialize();
+  const decoder = local.decoder;
+
+  // get pointer to the source/encoded bit stream buffer in WASM memory
+  // that can hold the encoded bitstream
+  const encodedBufferInWASM = decoder.getEncodedBuffer(
+    compressedImageFrame.length
+  );
+
+  // copy the encoded bitstream into WASM memory buffer
+  encodedBufferInWASM.set(compressedImageFrame);
+
+  // decode it
+  decoder.decode();
+  // decoder.decodeSubResolution(decodeLevel, decodeLayer);
+  // const resolutionAtLevel = decoder.calculateSizeAtDecompositionLevel(decodeLevel);
+
+  // get information about the decoded image
+  const frameInfo = decoder.getFrameInfo();
+  // get the decoded pixels
+  const decodedBufferInWASM = decoder.getDecodedBuffer();
+  const imageFrame = new Uint8Array(decodedBufferInWASM.length);
+
+  imageFrame.set(decodedBufferInWASM);
+
+  const imageOffset = `x: ${decoder.getImageOffset().x}, y: ${
+    decoder.getImageOffset().y
+  }`;
+  const numDecompositions = decoder.getNumDecompositions();
+  const numLayers = decoder.getNumLayers();
+  const progessionOrder = ['unknown', 'LRCP', 'RLCP', 'RPCL', 'PCRL', 'CPRL'][
+    decoder.getProgressionOrder() + 1
+  ];
+  const reversible = decoder.getIsReversible();
+  const blockDimensions = `${decoder.getBlockDimensions().width} x ${
+    decoder.getBlockDimensions().height
+  }`;
+  const tileSize = `${decoder.getTileSize().width} x ${
+    decoder.getTileSize().height
+  }`;
+  const tileOffset = `${decoder.getTileOffset().x}, ${
+    decoder.getTileOffset().y
+  }`;
+  const colorTransform = decoder.getColorSpace();
+
+  const decodedSize = `${decodedBufferInWASM.length.toLocaleString()} bytes`;
+  const compressionRatio = `${(
+    decodedBufferInWASM.length / encodedBufferInWASM.length
+  ).toFixed(2)}:1`;
+
+  const encodedImageInfo = {
+    columns: frameInfo.width,
+    rows: frameInfo.height,
+    bitsPerPixel: frameInfo.bitsPerSample,
+    signed: frameInfo.isSigned,
+    bytesPerPixel: imageInfo.bytesPerPixel,
+    componentsPerPixel: frameInfo.componentCount,
+  };
+  const pixelData = getPixelData(frameInfo, decodedBufferInWASM);
+
+  const encodeOptions = {
+    imageOffset,
+    numDecompositions,
+    numLayers,
+    progessionOrder,
+    reversible,
+    blockDimensions,
+    tileSize,
+    tileOffset,
+    colorTransform,
+    decodedSize,
+    compressionRatio,
+  };
+
+  return {
+    ...imageInfo,
+    pixelData,
+    imageInfo: encodedImageInfo,
+    encodeOptions,
+    ...encodeOptions,
+    ...encodedImageInfo,
+  };
+}
+
+function getPixelData(frameInfo, decodedBuffer) {
+  if (frameInfo.bitsPerSample > 8) {
+    if (frameInfo.isSigned) {
+      return new Int16Array(
+        decodedBuffer.buffer,
+        decodedBuffer.byteOffset,
+        decodedBuffer.byteLength / 2
+      );
+    }
+
+    return new Uint16Array(
+      decodedBuffer.buffer,
+      decodedBuffer.byteOffset,
+      decodedBuffer.byteLength / 2
     );
   }
 
-  imageFrame.columns = jpxImage.width;
-  imageFrame.rows = jpxImage.height;
-  imageFrame.pixelData = jpxImage.tiles[0].items;
+  if (frameInfo.isSigned) {
+    return new Int8Array(
+      decodedBuffer.buffer,
+      decodedBuffer.byteOffset,
+      decodedBuffer.byteLength
+    );
+  }
 
-  return imageFrame;
-}
-
-let openJPEG;
-
-function decodeOpenJPEG(data, bytesPerPixel, signed) {
-  const dataPtr = openJPEG._malloc(data.length);
-
-  openJPEG.writeArrayToMemory(data, dataPtr);
-
-  // create param outpout
-  const imagePtrPtr = openJPEG._malloc(4);
-  const imageSizePtr = openJPEG._malloc(4);
-  const imageSizeXPtr = openJPEG._malloc(4);
-  const imageSizeYPtr = openJPEG._malloc(4);
-  const imageSizeCompPtr = openJPEG._malloc(4);
-
-  const t0 = new Date().getTime();
-  const ret = openJPEG.ccall(
-    'jp2_decode',
-    'number',
-    ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
-    [
-      dataPtr,
-      data.length,
-      imagePtrPtr,
-      imageSizePtr,
-      imageSizeXPtr,
-      imageSizeYPtr,
-      imageSizeCompPtr,
-    ]
+  return new Uint8Array(
+    decodedBuffer.buffer,
+    decodedBuffer.byteOffset,
+    decodedBuffer.byteLength
   );
-  // add num vomp..etc
-
-  if (ret !== 0) {
-    console.log('[opj_decode] decoding failed!');
-    openJPEG._free(dataPtr);
-    openJPEG._free(openJPEG.getValue(imagePtrPtr, '*'));
-    openJPEG._free(imageSizeXPtr);
-    openJPEG._free(imageSizeYPtr);
-    openJPEG._free(imageSizePtr);
-    openJPEG._free(imageSizeCompPtr);
-
-    return;
-  }
-
-  const imagePtr = openJPEG.getValue(imagePtrPtr, '*');
-
-  const image = {
-    length: openJPEG.getValue(imageSizePtr, 'i32'),
-    sx: openJPEG.getValue(imageSizeXPtr, 'i32'),
-    sy: openJPEG.getValue(imageSizeYPtr, 'i32'),
-    nbChannels: openJPEG.getValue(imageSizeCompPtr, 'i32'), // hard coded for now
-    perf_timetodecode: undefined,
-    pixelData: undefined,
-  };
-
-  // Copy the data from the EMSCRIPTEN heap into the correct type array
-  const length = image.sx * image.sy * image.nbChannels;
-  const src32 = new Int32Array(openJPEG.HEAP32.buffer, imagePtr, length);
-
-  if (bytesPerPixel === 1) {
-    if (Uint8Array.from) {
-      image.pixelData = Uint8Array.from(src32);
-    } else {
-      image.pixelData = new Uint8Array(length);
-      for (let i = 0; i < length; i++) {
-        image.pixelData[i] = src32[i];
-      }
-    }
-  } else if (signed) {
-    if (Int16Array.from) {
-      image.pixelData = Int16Array.from(src32);
-    } else {
-      image.pixelData = new Int16Array(length);
-      for (let i = 0; i < length; i++) {
-        image.pixelData[i] = src32[i];
-      }
-    }
-  } else if (Uint16Array.from) {
-    image.pixelData = Uint16Array.from(src32);
-  } else {
-    image.pixelData = new Uint16Array(length);
-    for (let i = 0; i < length; i++) {
-      image.pixelData[i] = src32[i];
-    }
-  }
-
-  const t1 = new Date().getTime();
-
-  image.perf_timetodecode = t1 - t0;
-
-  // free
-  openJPEG._free(dataPtr);
-  openJPEG._free(imagePtrPtr);
-  openJPEG._free(imagePtr);
-  openJPEG._free(imageSizePtr);
-  openJPEG._free(imageSizeXPtr);
-  openJPEG._free(imageSizeYPtr);
-  openJPEG._free(imageSizeCompPtr);
-
-  return image;
 }
 
-function decodeOpenJpeg2000(imageFrame, pixelData) {
-  const bytesPerPixel = imageFrame.bitsAllocated <= 8 ? 1 : 2;
-  const signed = imageFrame.pixelRepresentation === 1;
-
-  const image = decodeOpenJPEG(pixelData, bytesPerPixel, signed);
-
-  imageFrame.columns = image.sx;
-  imageFrame.rows = image.sy;
-  imageFrame.pixelData = image.pixelData;
-  if (image.nbChannels > 1) {
-    imageFrame.photometricInterpretation = 'RGB';
-  }
-
-  return imageFrame;
-}
-
-function initializeJPEG2000(decodeConfig) {
-  // check to make sure codec is loaded
-  if (!decodeConfig.usePDFJS) {
-    if (typeof OpenJPEG === 'undefined') {
-      throw new Error('OpenJPEG decoder not loaded');
-    }
-  }
-
-  if (!openJPEG) {
-    openJPEG = OpenJPEG();
-    if (!openJPEG || !openJPEG._jp2_decode) {
-      throw new Error('OpenJPEG failed to initialize');
-    }
-  }
-}
-
-function decodeJPEG2000(imageFrame, pixelData, decodeConfig, options = {}) {
-  initializeJPEG2000(decodeConfig);
-
-  if (options.usePDFJS || decodeConfig.usePDFJS) {
-    // OHIF image-JPEG2000 https://github.com/OHIF/image-JPEG2000
-    // console.log('PDFJS')
-    return decodeJpx(imageFrame, pixelData);
-  }
-
-  // OpenJPEG2000 https://github.com/jpambrun/openjpeg
-  // console.log('OpenJPEG')
-  return decodeOpenJpeg2000(imageFrame, pixelData);
-}
-
-export default decodeJPEG2000;
-export { initializeJPEG2000 };
+export default decodeAsync;

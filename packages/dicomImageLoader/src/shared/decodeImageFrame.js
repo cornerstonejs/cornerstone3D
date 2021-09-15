@@ -2,7 +2,9 @@
 import decodeLittleEndian from './decoders/decodeLittleEndian.js';
 import decodeBigEndian from './decoders/decodeBigEndian.js';
 import decodeRLE from './decoders/decodeRLE.js';
-import decodeJPEGBaseline from './decoders/decodeJPEGBaseline.js';
+import decodeJPEGBaseline8Bit from './decoders/decodeJPEGBaseline8Bit.js';
+// import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit.js';
+import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit-js.js';
 import decodeJPEGLossless from './decoders/decodeJPEGLossless.js';
 import decodeJPEGLS from './decoders/decodeJPEGLS.js';
 import decodeJPEG2000 from './decoders/decodeJPEG2000.js';
@@ -13,62 +15,101 @@ function decodeImageFrame(
   transferSyntax,
   pixelData,
   decodeConfig,
-  options
+  options,
+  callbackFn
 ) {
   const start = new Date().getTime();
+
+  let decodePromise = null;
+
+  let opts;
 
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
       // Implicit VR Little Endian
-      imageFrame = decodeLittleEndian(imageFrame, pixelData);
+      decodePromise = decodeLittleEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.1':
       // Explicit VR Little Endian
-      imageFrame = decodeLittleEndian(imageFrame, pixelData);
+      decodePromise = decodeLittleEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.2':
       // Explicit VR Big Endian (retired)
-      imageFrame = decodeBigEndian(imageFrame, pixelData);
+      decodePromise = decodeBigEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.1.99':
       // Deflate transfer syntax (deflated by dicomParser)
-      imageFrame = decodeLittleEndian(imageFrame, pixelData);
+      decodePromise = decodeLittleEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.5':
       // RLE Lossless
-      imageFrame = decodeRLE(imageFrame, pixelData);
+      decodePromise = decodeRLE(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.4.50':
       // JPEG Baseline lossy process 1 (8 bit)
-      imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
+      opts = {
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.51':
       // JPEG Baseline lossy process 2 & 4 (12 bit)
-      imageFrame = decodeJPEGBaseline(imageFrame, pixelData);
+      // opts = {
+      //   ...imageFrame,
+      // };
+      // decodePromise = decodeJPEGBaseline12Bit(pixelData, opts);
+      //throw new Error('Currently unsupported: 1.2.840.10008.1.2.4.51');
+      decodePromise = decodeJPEGBaseline12Bit(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.4.57':
       // JPEG Lossless, Nonhierarchical (Processes 14)
-      imageFrame = decodeJPEGLossless(imageFrame, pixelData);
+      decodePromise = decodeJPEGLossless(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.4.70':
       // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-      imageFrame = decodeJPEGLossless(imageFrame, pixelData);
+      decodePromise = decodeJPEGLossless(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.4.80':
       // JPEG-LS Lossless Image Compression
-      imageFrame = decodeJPEGLS(imageFrame, pixelData);
+      opts = {
+        signed: imageFrame.pixelRepresentation === 1, // imageFrame.signed,
+        // shouldn't need...
+        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGLS(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.81':
       // JPEG-LS Lossy (Near-Lossless) Image Compression
-      imageFrame = decodeJPEGLS(imageFrame, pixelData);
+      opts = {
+        signed: false, // imageFrame.signed,
+        // shouldn't need...
+        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGLS(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.90':
+      opts = {
+        ...imageFrame,
+      };
+
       // JPEG 2000 Lossless
-      imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
+      // imageFrame, pixelData, decodeConfig, options
+      decodePromise = decodeJPEG2000(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.91':
       // JPEG 2000 Lossy
-      imageFrame = decodeJPEG2000(imageFrame, pixelData, decodeConfig, options);
+      opts = {
+        ...imageFrame,
+      };
+
+      // JPEG 2000 Lossy
+      // imageFrame, pixelData, decodeConfig, options
+      decodePromise = decodeJPEG2000(pixelData, opts);
       break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
@@ -87,6 +128,20 @@ function decodeImageFrame(
    }
    */
 
+  if (!decodePromise) {
+    throw new Error('decodePromise not defined');
+  }
+
+  decodePromise
+    .then((imageFrame) => {
+      callbackFn(postProcessDecodedPixels(imageFrame, options, start));
+    })
+    .catch((err) => {
+      throw err;
+    });
+}
+
+function postProcessDecodedPixels(imageFrame, options, start) {
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;

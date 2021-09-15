@@ -1,50 +1,18 @@
-import { getOptions } from './internal/options.js';
 import webWorkerManager from './webWorkerManager.js';
 import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
 
-// TODO: Find a way to allow useWebWorkers: false that doesn't make the main bundle huge
-import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame.js';
-import calculateMinMax from '../shared/calculateMinMax.js';
-import { initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000.js';
-import { initializeJPEGLS } from '../shared/decoders/decodeJPEGLS.js';
+// dicomParser requires pako for browser-side decoding of deflate transfer syntax
+// We only need one function though, so lets import that so we don't make our bundle
+// too large.
+import { inflateRaw } from 'pako/lib/inflate.js';
 
-let codecsInitialized = false;
+window.pako = { inflateRaw };
 
 function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]
     : undefined;
-  const loaderOptions = getOptions();
-  const { strict, decodeConfig, useWebWorkers } = loaderOptions;
-
-  if (useWebWorkers === false) {
-    if (codecsInitialized === false) {
-      initializeJPEG2000(decodeConfig);
-      initializeJPEGLS(decodeConfig);
-
-      codecsInitialized = true;
-    }
-
-    return new Promise((resolve, reject) => {
-      try {
-        const decodeArguments = [
-          imageFrame,
-          transferSyntax,
-          pixelData,
-          decodeConfig,
-          options,
-        ];
-        const decodedImageFrame = decodeImageFrameHandler(...decodeArguments);
-
-        calculateMinMax(decodedImageFrame, strict);
-
-        resolve(decodedImageFrame);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
 
   return webWorkerManager.addTask(
     'decodeTask',
@@ -131,9 +99,9 @@ function decodeImageFrame(
    }
    */
 
-  return new Promise((resolve, reject) => {
-    reject(new Error(`No decoder for transfer syntax ${transferSyntax}`));
-  });
+  return Promise.reject(
+    new Error(`No decoder for transfer syntax ${transferSyntax}`)
+  );
 }
 
 export default decodeImageFrame;

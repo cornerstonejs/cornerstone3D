@@ -32,7 +32,7 @@ function initialize(data) {
   }
 
   // initialize each task handler
-  Object.keys(taskHandlers).forEach(function(key) {
+  Object.keys(taskHandlers).forEach(function (key) {
     taskHandlers[key].initialize(config.taskConfiguration);
   });
 
@@ -80,7 +80,13 @@ function loadWebWorkerTask(data) {
  * Web worker message handler - dispatches messages to the registered task handlers
  * @param msg
  */
-self.onmessage = function(msg) {
+self.onmessage = function (msg) {
+  if (!msg.data.taskType) {
+    console.log(msg.data);
+
+    return;
+  }
+
   // console.log('web worker onmessage', msg.data);
 
   // handle initialize message
@@ -100,20 +106,20 @@ self.onmessage = function(msg) {
   // dispatch the message if there is a handler registered for it
   if (taskHandlers[msg.data.taskType]) {
     try {
-      taskHandlers[msg.data.taskType].handler(msg.data, function(
-        result,
-        transferList
-      ) {
-        self.postMessage(
-          {
-            taskType: msg.data.taskType,
-            status: 'success',
-            result,
-            workerIndex: msg.data.workerIndex,
-          },
-          transferList
-        );
-      });
+      taskHandlers[msg.data.taskType].handler(
+        msg.data,
+        function (result, transferList) {
+          self.postMessage(
+            {
+              taskType: msg.data.taskType,
+              status: 'success',
+              result,
+              workerIndex: msg.data.workerIndex,
+            },
+            transferList
+          );
+        }
+      );
     } catch (error) {
       console.log(`task ${msg.data.taskType} failed - ${error.message}`);
       self.postMessage({
@@ -130,6 +136,7 @@ self.onmessage = function(msg) {
   // not task handler registered - send a failure message back to ui thread
   console.log('no task handler for ', msg.data.taskType);
   console.log(taskHandlers);
+
   self.postMessage({
     taskType: msg.data.taskType,
     status: 'failed - no task handler registered',
