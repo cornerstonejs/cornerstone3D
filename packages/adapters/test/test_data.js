@@ -40,6 +40,7 @@ const metadata = {
 };
 
 const sequenceMetadata = {
+    "00080081": { "vr": "ST", "Value": [null] },
     "00081032": {
         vr: "SQ",
         Value: [
@@ -58,7 +59,26 @@ const sequenceMetadata = {
                 }
             }
         ]
-    }
+    },
+
+    "52009229": {
+        vr: "SQ",
+        Value: [
+            {
+                "00289110": {
+                    vr: "SQ",
+                    Value: [
+                        {
+                            "00180088": {
+                                vr: "DS",
+                                Value: [0.12],
+                            }
+                        }
+                    ],
+                },
+            },
+        ],
+    },
 };
 
 function downloadToFile(url, filePath) {
@@ -138,6 +158,14 @@ const tests = {
             "CodeValue",
             "IMG1332"
         );
+
+        const spacing = naturalSequence.SharedFunctionalGroupsSequence
+            .PixelMeasuresSequence.SpacingBetweenSlices;
+        const spacingIndexed = naturalSequence.SharedFunctionalGroupsSequence[0]
+            .PixelMeasuresSequence[0].SpacingBetweenSlices;
+        expect(spacing).to.equal(spacingIndexed);
+        expect(spacing).to.equal(0.12);
+
         expect(naturalSequence.ProcedureCodeSequence).to.have.property(
             "CodingSchemeDesignator",
             "L"
