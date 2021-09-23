@@ -31,7 +31,7 @@ function setCTWWWC({ volumeActor, volumeUID }) {
     .setMappingRange(lower, upper)
 }
 
-function setSegmentationTransferFunction({ volumeActor }) {
+function setSegmentationTransferFunction({ volumeActor, Settings }) {
   const cfun = vtkColorTransferFunction.newInstance()
   const ofun = vtkPiecewiseFunction.newInstance()
 
@@ -46,8 +46,15 @@ function setSegmentationTransferFunction({ volumeActor }) {
   volumeActor.getProperty().setRGBTransferFunction(0, cfun)
   volumeActor.getProperty().setScalarOpacity(0, ofun)
   volumeActor.getProperty().setInterpolationTypeToNearest()
-  volumeActor.getProperty().setUseLabelOutline(true)
-  volumeActor.getProperty().setLabelOutlineThickness(3)
+
+  const useOutline = Settings.getDefaultSettings().get(
+    'segmentation.renderOutline'
+  )
+  const outlineThickness = Settings.getDefaultSettings().get(
+    'segmentation.outlineWidth'
+  )
+  volumeActor.getProperty().setUseLabelOutline(useOutline)
+  volumeActor.getProperty().setLabelOutlineThickness(outlineThickness)
 }
 
 function setPetTransferFunction({ volumeActor, volumeUID }) {

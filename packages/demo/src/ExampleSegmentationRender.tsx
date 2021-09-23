@@ -6,8 +6,13 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   createAndCacheDerivedVolume,
+  Settings,
 } from '@ohif/cornerstone-render'
-import { ToolBindings } from '@ohif/cornerstone-tools'
+import {
+  ToolBindings,
+  SegmentationManager,
+  setSegmentationConfig,
+} from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
@@ -45,6 +50,8 @@ class SegmentationRender extends Component {
     petColorMapIndex: 0,
     layoutIndex: 0,
     destroyed: false,
+    // segmentation state
+    renderOutline: false,
     //
     viewportGrid: {
       numCols: 3,
@@ -328,13 +335,13 @@ class SegmentationRender extends Component {
 
     const segUID1 = 'sampleSeg1'
     const segUID2 = 'sampleSeg2'
+
     const segmentation1 = await createAndCacheDerivedVolume(volumeUID, {
       uid: segUID1,
       targetBuffer: {
         type: 'Float32Array',
       },
     })
-
     const segmentation2 = await createAndCacheDerivedVolume(volumeUID, {
       uid: segUID2,
       targetBuffer: {
@@ -342,22 +349,30 @@ class SegmentationRender extends Component {
       },
     })
 
-    // this.fillBlobForThreshold(segmentation1.vtkImageData, backgroundImageData, ["bone", "softTissue"])
-    // this.fillBlobForThreshold(segmentation2.vtkImageData, backgroundImageData, ["fatTissue"])
-    this.fillBlobForThreshold(segmentation1.vtkImageData, backgroundImageData)
+    this.fillBlobForThreshold(segmentation1.vtkImageData, backgroundImageData, ["bone", "softTissue"])
+    this.fillBlobForThreshold(segmentation2.vtkImageData, backgroundImageData, ["fatTissue"])
 
-    const immediateRender = true
-    const volumeInput = [
-      {
-        volumeUID: segUID1,
-        callback: setSegmentationTransferFunction,
-      },
-      // {
-      //   volumeUID: segUID2,
-      //   callback: setSegmentationTransferFunction,
-      // },
-    ]
-    await ctScene.setSegmentations(volumeInput, immediateRender)
+    setSegmentationConfig({renderOutline: this.state.renderOutline})
+
+    SegmentationManager.setLabelmap3DForElement({
+      canvas: viewport.canvas,
+      labelmap3D: segmentation1,
+      callback: ({volumeActor}) => setSegmentationTransferFunction({
+        volumeActor, Settings
+      }),
+      labelmapIndex: 0,
+      immediateRender: true,
+    })
+
+    SegmentationManager.setLabelmap3DForElement({
+      canvas: viewport.canvas,
+      labelmap3D: segmentation2,
+      callback: ({volumeActor}) => setSegmentationTransferFunction({
+        volumeActor, Settings
+      }),
+      labelmapIndex: 1,
+      immediateRender: true,
+    })
   }
 
   showOffScreenCanvas = () => {
@@ -406,6 +421,19 @@ class SegmentationRender extends Component {
           Load Segmentation
         </button>
 
+        <input
+          type="checkbox"
+          style={{ marginLeft: '10px' }}
+          name="toggle"
+          onClick={() =>
+            this.setState({
+              renderOutline: !this.state.renderOutline,
+            })
+          }
+        />
+        <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
+          Render Outline
+        </label>
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}
