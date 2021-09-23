@@ -537,7 +537,9 @@ class Cache implements ICache {
       )
     }
     if (this._volumeCache.has(volumeId)) {
-      throw new Error('putVolumeLoadObject: volumeId already in cache')
+      throw new Error(
+        `putVolumeLoadObject: volumeId:${volumeId} already in cache`
+      )
     }
     if (
       volumeLoadObject.cancel &&

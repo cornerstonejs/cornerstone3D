@@ -6,7 +6,6 @@ import getStyle from './getStyle'
 import setGlobalStyle from './setGlobalStyle'
 import setToolStyle from './setToolStyle'
 import setToolDataStyle from './setToolDataStyle'
-import setSegmentationConfig from './setSegmentationConfig'
 import * as toolDataLocking from './toolDataLocking'
 import * as toolDataSelection from './toolDataSelection'
 import {
@@ -28,7 +27,6 @@ export {
   setGlobalStyle,
   setToolStyle,
   setToolDataStyle,
-  setSegmentationConfig,
   removeToolState,
   removeToolStateByToolDataUID,
 }

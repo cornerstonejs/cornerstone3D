@@ -10,7 +10,6 @@ import {
   setGlobalStyle,
   setToolStyle,
   setToolDataStyle,
-  setSegmentationConfig,
   removeToolState,
   removeToolStateByToolDataUID,
 } from './stateManagement'
@@ -22,10 +21,10 @@ import {
   getToolDataNearPoint,
   getToolDataNearPointOnEnabledElement,
   ToolGroupManager,
-  SegmentationManager,
   SynchronizerManager,
   Synchronizer,
   cancelActiveManipulations,
+  SegmentationModule,
 } from './store'
 import drawing from './drawing'
 import synchronizers from './synchronizers'
@@ -84,7 +83,8 @@ export {
   // Managers
   ToolGroupManager,
   SynchronizerManager,
-  SegmentationManager,
+  // Modules
+  SegmentationModule,
   // Enums
   ToolBindings,
   CornerstoneTools3DEvents,
@@ -105,7 +105,6 @@ export {
   setGlobalStyle,
   setToolStyle,
   setToolDataStyle,
-  setSegmentationConfig,
   getToolDataNearPoint,
   getToolDataNearPointOnEnabledElement,
   // Utilities

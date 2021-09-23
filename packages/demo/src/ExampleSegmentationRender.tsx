@@ -8,11 +8,7 @@ import {
   createAndCacheDerivedVolume,
   Settings,
 } from '@ohif/cornerstone-render'
-import {
-  ToolBindings,
-  SegmentationManager,
-  setSegmentationConfig,
-} from '@ohif/cornerstone-tools'
+import { ToolBindings, SegmentationModule } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
@@ -52,6 +48,7 @@ class SegmentationRender extends Component {
     destroyed: false,
     // segmentation state
     renderOutline: false,
+    renderInactiveLabelmaps: true,
     //
     viewportGrid: {
       numCols: 3,
@@ -275,7 +272,6 @@ class SegmentationRender extends Component {
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
-
   fillBlobForThreshold = (
     imageData,
     backgroundImageData,
@@ -324,55 +320,30 @@ class SegmentationRender extends Component {
     imageData.getPointData().getScalars().setData(values)
   }
 
-  loadSegmentation = async () => {
+  loadSegmentation = async (labelmapNumber) => {
     // faking a segmentation data by thresholding
     const viewport = this.renderingEngine.getViewport('ctAxial')
-    const ctScene = this.renderingEngine.getScene('ctScene')
+
+    const anatomies = [['bone', 'softTissue'], ['fatTissue']]
+
+    SegmentationModule.setSegmentationConfig({
+      renderOutline: this.state.renderOutline,
+      renderInactiveLabelmaps: this.state.renderInactiveLabelmaps,
+    })
+
+    const labelmapIndex = labelmapNumber
+    const labelmapUID = await SegmentationModule.setActiveLabelmapIndex(
+      viewport.canvas,
+      labelmapIndex
+    )
+    const labelmap = cache.getVolume(labelmapUID)
 
     const { vtkImageData: backgroundImageData } = viewport.getImageData()
-
-    const volumeUID = viewport.getDefaultActor().uid
-
-    const segUID1 = 'sampleSeg1'
-    const segUID2 = 'sampleSeg2'
-
-    const segmentation1 = await createAndCacheDerivedVolume(volumeUID, {
-      uid: segUID1,
-      targetBuffer: {
-        type: 'Float32Array',
-      },
-    })
-    const segmentation2 = await createAndCacheDerivedVolume(volumeUID, {
-      uid: segUID2,
-      targetBuffer: {
-        type: 'Float32Array',
-      },
-    })
-
-    this.fillBlobForThreshold(segmentation1.vtkImageData, backgroundImageData, ["bone", "softTissue"])
-    this.fillBlobForThreshold(segmentation2.vtkImageData, backgroundImageData, ["fatTissue"])
-
-    setSegmentationConfig({renderOutline: this.state.renderOutline})
-
-    SegmentationManager.setLabelmap3DForElement({
-      canvas: viewport.canvas,
-      labelmap3D: segmentation1,
-      callback: ({volumeActor}) => setSegmentationTransferFunction({
-        volumeActor, Settings
-      }),
-      labelmapIndex: 0,
-      immediateRender: true,
-    })
-
-    SegmentationManager.setLabelmap3DForElement({
-      canvas: viewport.canvas,
-      labelmap3D: segmentation2,
-      callback: ({volumeActor}) => setSegmentationTransferFunction({
-        volumeActor, Settings
-      }),
-      labelmapIndex: 1,
-      immediateRender: true,
-    })
+    this.fillBlobForThreshold(
+      labelmap.vtkImageData,
+      backgroundImageData,
+      anatomies[labelmapNumber]
+    )
   }
 
   showOffScreenCanvas = () => {
@@ -414,11 +385,18 @@ class SegmentationRender extends Component {
           ))}
         </select>
         <button
-          onClick={this.loadSegmentation}
+          onClick={() => this.loadSegmentation(0)}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Load Segmentation
+          Load Bone & Soft Tissue Labelmap
+        </button>
+        <button
+          onClick={() => this.loadSegmentation(1)}
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Load Fat Tissue Labelmap
         </button>
 
         <input
@@ -433,6 +411,20 @@ class SegmentationRender extends Component {
         />
         <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
           Render Outline
+        </label>
+        <input
+          type="checkbox"
+          style={{ marginLeft: '10px' }}
+          name="toggle"
+          defaultChecked={this.state.renderInactiveLabelmaps}
+          onClick={() =>
+            this.setState({
+              renderInactiveLabelmaps: !this.state.renderInactiveLabelmaps,
+            })
+          }
+        />
+        <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
+          Render inactive Labelmaps
         </label>
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}

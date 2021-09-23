@@ -5,7 +5,7 @@ import cancelActiveManipulations from './cancelActiveManipulations'
 //
 import ToolGroupManager from './ToolGroupManager'
 import SynchronizerManager from './SynchronizerManager'
-import SegmentationManager from './SegmentationManager'
+import SegmentationModule from './SegmentationModule'
 import Synchronizer from './SynchronizerManager/Synchronizer'
 
 import svgNodeCache from './svgNodeCache'
@@ -34,7 +34,7 @@ export {
   // Managers
   ToolGroupManager,
   SynchronizerManager,
-  SegmentationManager,
+  SegmentationModule,
   // Classes
   Synchronizer,
 }

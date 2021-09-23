@@ -8,7 +8,8 @@ import { VolumeActor, ActorEntry } from '../types'
 
 type VolumeInput = {
   volumeUID: string
-  callback?: () => any
+  visibility?: boolean
+  callback?: ({ volumeActor: vtkVolume, volumeUID: string }) => void
   blendMode?: string
   slabThickness?: number
 }
@@ -158,63 +159,46 @@ class Scene {
     }
   }
 
-  // Todo: add remove segmentations
-  public async removeSegmentations(
-    volumeUIDs: Array<string>,
-    immediate = false
-  ) {}
-
   /**
-   * @method setSegmentations Creates volume actors for all segmentations defined in the `volumeInputArray`.
-   * For each entry, if a `callback` is supplied, it will be called with the new segmentation volume actor as input.
+   * @method addVolumes Creates volume actors for all volumes defined in the `volumeInputArray`.
+   * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
    *
-   * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the segmentation volumes to add.
+   * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the volumes to add.
    * @param {boolean} [immediate=false] Whether the `Scene` should be rendered as soon as volumes are added.
    */
-  // Todo: not sure if we need an extra method for this. Problems with using setVolumes to pass
-  // segmentations include:
-  // - it will recreate the image volume actors - how we remove and add segmentations?
-  // - it
-  //
-  public async setSegmentations(
+  public async addVolumes(
     volumeInputArray: Array<VolumeInput>,
     immediate = false
   ): Promise<void> {
     const volumeActors = []
 
-    const firstSegVolume = await loadVolume(volumeInputArray[0].volumeUID)
-
-    if (!firstSegVolume) {
-      throw new Error(
-        `imageVolume with uid: ${firstSegVolume.uid} does not exist`
-      )
-    }
-
-    const FrameOfReferenceUID = firstSegVolume.metadata.FrameOfReferenceUID
-
-    const numSegs = volumeInputArray.length
-    for (let i = 1; i < numSegs; i++) {
+    const numVols = volumeInputArray.length
+    for (let i = 1; i < numVols; i++) {
       const volumeInput = volumeInputArray[i]
 
-      const segVolume = await loadVolume(volumeInput.volumeUID)
+      const volume = await loadVolume(volumeInput.volumeUID)
 
-      if (!segVolume) {
-        throw new Error(`segVolume with uid: ${segVolume.uid} does not exist`)
+      if (!volume) {
+        throw new Error(`Volume with uid: ${volume.uid} does not exist`)
       }
 
-      if (FrameOfReferenceUID !== segVolume.metadata.FrameOfReferenceUID) {
+      if (volume.metadata.FrameOfReferenceUID !== this._FrameOfReferenceUID) {
         throw new Error(
-          `Segmentations being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
+          `Volumes being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
         )
       }
     }
 
-    this._FrameOfReferenceUID = FrameOfReferenceUID
-
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeUID } = volumeInputArray[i]
-      const volumeActor = await createVolumeActor(volumeInputArray[i])
+      const { volumeUID, visibility } = volumeInputArray[i]
+      const volumeActor: VolumeActor = await createVolumeActor(
+        volumeInputArray[i]
+      )
+
+      if (visibility === false) {
+        volumeActor.setVisibility(false)
+      }
 
       volumeActors.push({ uid: volumeUID, volumeActor })
     }
@@ -258,6 +242,7 @@ class Scene {
   public addVolumeActors(viewportUID: string): void {
     const volumeActor = this.getVolumeActors()
     const viewport = this.getViewport(viewportUID)
+    // Todo: why this is setting instead of adding?
     viewport._setVolumeActors(volumeActor)
   }
 

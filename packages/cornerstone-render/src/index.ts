@@ -35,6 +35,7 @@ import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps
 import {
   createAndCacheVolume,
   createAndCacheDerivedVolume,
+  createAndCacheLocalVolume,
   registerVolumeLoader,
   registerUnknownVolumeLoader,
 } from './volumeLoader'
@@ -110,6 +111,7 @@ export {
   //
   createAndCacheVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
   createAndCacheDerivedVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
+  createAndCacheLocalVolume,
   registerVolumeLoader,
   registerUnknownVolumeLoader,
   //
