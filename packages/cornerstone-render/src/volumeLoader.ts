@@ -3,7 +3,7 @@ import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import cloneDeep from 'lodash.clonedeep'
 
 import { ImageVolume } from './cache/classes/ImageVolume'
-import { ERROR_CODES } from '..'
+import ERROR_CODES from './enums/errorCodes'
 import * as Types from './types'
 import cache from './cache/cache'
 import EVENTS from './enums/events'
@@ -17,7 +17,6 @@ interface VolumeLoaderOptions {
 
 interface DerivedVolumeOptions {
   uid: string
-  scalarData?: Float32Array | Uint8Array
   targetBuffer?: {
     type: 'Float32Array' | 'Uint8Array'
   }
@@ -206,20 +205,8 @@ export function createAndCacheDerivedVolume(
     )
   }
 
-  let { uid, scalarData: volumeScalarData } = options
+  let { uid } = options
   const { targetBuffer } = options
-
-  if (
-    volumeScalarData &&
-    !(
-      volumeScalarData instanceof Uint8Array ||
-      volumeScalarData instanceof Float32Array
-    )
-  ) {
-    throw new Error(
-      `volumeScalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
-    )
-  }
 
   if (uid === undefined) {
     uid = uuidv4()
@@ -231,26 +218,22 @@ export function createAndCacheDerivedVolume(
 
   let numBytes, TypedArray
 
-  // If the volumeScalarData is provided
-  if (volumeScalarData) {
-    numBytes = volumeScalarData.buffer.byteLength
-  } else {
-    // If target buffer is provided
-    if (targetBuffer) {
-      if (targetBuffer.type === 'Float32Array') {
-        numBytes = scalarLength * 4
-        TypedArray = Float32Array
-      } else if (targetBuffer.type === 'Uint8Array') {
-        numBytes = scalarLength
-        TypedArray = Uint8Array
-      } else {
-        throw new Error('TargetBuffer should be Float32Array or Uint8Array')
-      }
-    } else {
-      // Use float32 if no targetBuffer is provided
+  // If target buffer is provided
+  // Todo: default target Buffer should be inferred from the referenceVolume
+  if (targetBuffer) {
+    if (targetBuffer.type === 'Float32Array') {
       numBytes = scalarLength * 4
       TypedArray = Float32Array
+    } else if (targetBuffer.type === 'Uint8Array') {
+      numBytes = scalarLength
+      TypedArray = Uint8Array
+    } else {
+      throw new Error('TargetBuffer should be Float32Array or Uint8Array')
     }
+  } else {
+    // Use float32 if no targetBuffer is provided
+    numBytes = scalarLength * 4
+    TypedArray = Float32Array
   }
 
   // check if there is enough space in unallocated + image Cache
@@ -259,10 +242,7 @@ export function createAndCacheDerivedVolume(
     throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
   }
 
-  // Create the volumeScalarData if not provided
-  if (!volumeScalarData) {
-    volumeScalarData = new TypedArray(scalarLength)
-  }
+  const volumeScalarData = new TypedArray(scalarLength)
 
   // Todo: handle more than one component for segmentation (RGB)
   const scalarArray = vtkDataArray.newInstance({
@@ -288,6 +268,79 @@ export function createAndCacheDerivedVolume(
     direction,
     vtkImageData: derivedImageData,
     scalarData: volumeScalarData,
+    sizeInBytes: numBytes,
+  })
+
+  const volumeLoadObject = {
+    promise: Promise.resolve(derivedVolume),
+  }
+  cache.putVolumeLoadObject(uid, volumeLoadObject)
+
+  return derivedVolume
+}
+
+// Creates a volume from a set of properties
+export function createAndCacheLocalVolume(
+  properties: any,
+  uid: string
+): ImageVolume {
+  const { scalarData, metadata, dimensions, spacing, origin, direction } =
+    properties
+
+  if (
+    !scalarData ||
+    !(scalarData instanceof Uint8Array || scalarData instanceof Float32Array)
+  ) {
+    throw new Error(
+      'To use createAnadCacheLocalVolume you should pass scalarData of type Uint8Array or Float32Array'
+    )
+  }
+
+  // Todo: handle default values for spacing, origin, direction if not provided
+
+  if (uid === undefined) {
+    uid = uuidv4()
+  }
+
+  const cachedVolume = cache.getVolume(uid)
+
+  if (cachedVolume) {
+    return cachedVolume
+  }
+
+  const scalarLength = dimensions[0] * dimensions[1] * dimensions[2]
+
+  const numBytes = scalarData ? scalarData.buffer.byteLength : scalarLength * 4
+
+  // check if there is enough space in unallocated + image Cache
+  const isCacheable = cache.isCacheable(numBytes)
+  if (!isCacheable) {
+    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+  }
+
+  const scalarArray = vtkDataArray.newInstance({
+    name: 'Pixels',
+    numberOfComponents: 1,
+    values: scalarData,
+  })
+
+  const imageData = vtkImageData.newInstance()
+
+  imageData.setDimensions(dimensions)
+  imageData.setSpacing(spacing)
+  imageData.setDirection(direction)
+  imageData.setOrigin(origin)
+  imageData.getPointData().setScalars(scalarArray)
+
+  const derivedVolume = new ImageVolume({
+    uid,
+    metadata: cloneDeep(metadata),
+    dimensions: [dimensions[0], dimensions[1], dimensions[2]],
+    spacing,
+    origin,
+    direction,
+    vtkImageData: imageData,
+    scalarData,
     sizeInBytes: numBytes,
   })
 

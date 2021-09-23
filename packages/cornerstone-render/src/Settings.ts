@@ -85,12 +85,26 @@ export default class Settings {
     return subject instanceof Settings ? subject : Settings.getRuntimeSettings()
   }
 
-  static getDefaultSettings(): Settings {
+  static getDefaultSettings(subfield = null): Settings | any {
     let defaultSettings = Settings[DEFAULT_SETTINGS]
     if (!(defaultSettings instanceof Settings)) {
       defaultSettings = new Settings()
       Settings[DEFAULT_SETTINGS] = defaultSettings
     }
+
+    // Given subfield of 'segmentation' it will return all settings
+    // that starts with segmentation.*
+    if (subfield) {
+      const settingObj = {}
+      defaultSettings.forEach((name: string) => {
+        if (name.startsWith(subfield)) {
+          const setting = name.split(`${subfield}.`)[1]
+          settingObj[setting] = defaultSettings.get(name)
+        }
+      })
+      return settingObj
+    }
+
     return defaultSettings
   }
 
