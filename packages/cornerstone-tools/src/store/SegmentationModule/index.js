@@ -7,7 +7,7 @@ import {
   getSegmentationConfig,
   setSegmentationConfig,
 } from './segmentationConfig'
-import { addNewLabelmap } from './addNewLabelmap'
+import { addNewLabelmap, getNextLabelmapIndex } from './addNewLabelmap'
 
 export default {
   setLabelmapForElement,
@@ -16,4 +16,5 @@ export default {
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
   addNewLabelmap,
+  getNextLabelmapIndex,
 }
