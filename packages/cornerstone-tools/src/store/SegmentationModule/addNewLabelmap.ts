@@ -132,7 +132,6 @@ async function addNewLabelmap({
     canvas: viewport.canvas,
     labelmap: labelmap,
     labelmapIndex,
-    immediateRender: true,
   })
 
   return labelmapUID

@@ -17,6 +17,11 @@
  */
 enum CornerstoneTools3DEvents {
   //
+  // Labelmaps
+  //
+  LABELMAP_MODIFIED = 'cornerstonetoolslabelmapmodified',
+
+  //
   // MOUSE
   //
   ANNOTATION_RENDERED = 'cornerstonetools3dannotationrendered',
