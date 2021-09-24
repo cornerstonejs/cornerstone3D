@@ -7,7 +7,11 @@ import {
   EVENTS as RENDERING_EVENTS,
   createAndCacheDerivedVolume,
 } from '@ohif/cornerstone-render'
-import { SegmentationModule, synchronizers } from '@ohif/cornerstone-tools'
+import {
+  SegmentationModule,
+  synchronizers,
+  ToolBindings,
+} from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
@@ -26,6 +30,7 @@ import {
   colormaps,
   SCENE_IDS,
   ANNOTATION_TOOLS,
+  SEGMENTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
 import config from './config/default'
@@ -85,6 +90,7 @@ class MPRExample extends Component {
       ],
     },
     ptCtLeftClickTool: 'Levels',
+    segmentationTool: 'Brush',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     selectedViewportForSeg: 'ctAxial',
@@ -97,7 +103,7 @@ class MPRExample extends Component {
     csTools3d.init()
     this._offScreenRef = React.createRef()
 
-    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
+    ptCtLayoutTools = ['Levels'].concat(toolsToUse)
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -303,47 +309,46 @@ class MPRExample extends Component {
     this.renderingEngine.destroy()
   }
 
-  swapLayout = (layoutId) => {
-    if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
-    }
+  // swapTools = (evt) => {
+  //   const toolName = evt.target.value
 
-    const viewportGrid = JSON.parse(JSON.stringify(this.state.viewportGrid))
-    const layoutIndex = LAYOUTS.findIndex((id) => id === layoutId)
+  //   this.resetToolModes(ctSceneToolGroup)
 
-    viewportGrid.viewports = []
+  //   const tools = Object.entries(ctSceneToolGroup.tools)
 
-    const layout = LAYOUTS[layoutIndex]
+  //   // Disabling any tool that is active on mouse primary
+  //   const [activeTool] = tools.find(
+  //     ([tool, { bindings, mode }]) =>
+  //       mode === 'Active' &&
+  //       bindings.length &&
+  //       bindings.some(
+  //         (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+  //       )
+  //   )
 
-    if (layout === 'FusionMIP') {
-      viewportGrid.numCols = 4
-      viewportGrid.numRows = 3
-      ;[0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((x) =>
-        viewportGrid.viewports.push({})
-      )
-      viewportGrid.viewports.push({
-        cellStyle: {
-          gridRow: '1 / span 3',
-          gridColumn: '4',
-        },
-      })
-    } else if (layout === 'ObliqueCT') {
-      viewportGrid.numCols = 1
-      viewportGrid.numRows = 1
-      viewportGrid.viewports.push({})
-    } else if (layout === 'CTVR') {
-      viewportGrid.numCols = 2
-      viewportGrid.numRows = 2
-      ;[0, 1, 2, 3].forEach((x) => viewportGrid.viewports.push({}))
-    } else if (layout === 'PetTypes') {
-      viewportGrid.numRows = 1
-      viewportGrid.numCols = 3
-      ;[0, 1, 2].forEach((x) => viewportGrid.viewports.push({}))
-    }
+  //   ctSceneToolGroup.setToolPassive(activeTool)
 
-    this.setState({
-      layoutIndex,
-      viewportGrid,
+  //   // Using mouse primary for the selected tool
+  //   const currentBindings = ctSceneToolGroup.tools[toolName].bindings
+
+  //   ctSceneToolGroup.setToolActive(toolName, {
+  //     bindings: [
+  //       ...currentBindings,
+  //       { mouseButton: ToolBindings.Mouse.Primary },
+  //     ],
+  //   })
+
+  //   this.renderingEngine.render()
+  //   this.setState({ ptCtLeftClickTool: toolName })
+  // }
+
+  activateSegmentationTool = () => {
+    const toolName = this.state.segmentationTool
+    ;[...toolsToUse].forEach((toolName) => {
+      ctSceneToolGroup.setToolPassive(toolName)
+    })
+    ctSceneToolGroup.setToolActive(toolName, {
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
   }
 
@@ -579,15 +584,37 @@ class MPRExample extends Component {
           </div>
         </div>
         <h4>Segmentation</h4>
+
+        <select
+          value={this.state.segmentationTool}
+          onChange={(evt) =>
+            this.setState({ segmentationTool: evt.target.value })
+          }
+        >
+          {SEGMENTATION_TOOLS.map((toolName) => (
+            <option key={toolName} value={toolName}>
+              {toolName}
+            </option>
+          ))}
+        </select>
         <button
-          onClick={() => this.preLoadSegmentations()}
+          onClick={this.activateSegmentationTool}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Pre-compute bone & softTissue and fatTissue labelmaps
+          Activate Segmentation Tool
         </button>
-        {this.state.segmentationStatus !== '' ? this.state.segmentationStatus : null}
         <div>
+          <button
+            onClick={() => this.preLoadSegmentations()}
+            className="btn btn-primary"
+            style={{ margin: '2px 4px' }}
+          >
+            Pre-compute bone & softTissue and fatTissue labelmaps
+          </button>
+          {this.state.segmentationStatus !== ''
+            ? this.state.segmentationStatus
+            : null}
           <span>Viewport Selector</span>
           <select
             value={this.state.selectedViewportForSeg}
@@ -626,34 +653,35 @@ class MPRExample extends Component {
           >
             Load Fat Tissue Labelmap
           </button>
-
-          <input
-            type="checkbox"
-            style={{ marginLeft: '10px' }}
-            name="toggle"
-            onClick={() =>
-              this.setState({
-                renderOutline: !this.state.renderOutline,
-              })
-            }
-          />
-          <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
-            Render Outline
-          </label>
-          <input
-            type="checkbox"
-            style={{ marginLeft: '10px' }}
-            name="toggle"
-            defaultChecked={this.state.renderInactiveLabelmaps}
-            onClick={() =>
-              this.setState({
-                renderInactiveLabelmaps: !this.state.renderInactiveLabelmaps,
-              })
-            }
-          />
-          <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
-            Render inactive Labelmaps
-          </label>
+          <div>
+            <input
+              type="checkbox"
+              style={{ marginLeft: '10px' }}
+              name="toggle"
+              onClick={() =>
+                this.setState({
+                  renderOutline: !this.state.renderOutline,
+                })
+              }
+            />
+            <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
+              Render Outline
+            </label>
+            <input
+              type="checkbox"
+              style={{ marginLeft: '10px' }}
+              name="toggle"
+              defaultChecked={this.state.renderInactiveLabelmaps}
+              onClick={() =>
+                this.setState({
+                  renderInactiveLabelmaps: !this.state.renderInactiveLabelmaps,
+                })
+              }
+            />
+            <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
+              Render inactive Labelmaps
+            </label>
+          </div>
         </div>
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}

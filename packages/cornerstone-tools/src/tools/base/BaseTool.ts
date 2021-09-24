@@ -43,6 +43,9 @@ abstract class BaseTool {
     this.mode = ToolModes.Disabled
   }
 
+  // Create to have new measurement or segment
+  abstract createNewState(evt: CustomEvent, interactionType: string)
+
   /**
    *
    * @param evt

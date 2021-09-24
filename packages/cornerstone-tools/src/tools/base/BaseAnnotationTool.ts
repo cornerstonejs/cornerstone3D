@@ -31,6 +31,10 @@ abstract class BaseAnnotationTool extends BaseTool {
   // Abstract Methods - Must be implemented.
   // ===================================================================
 
+  createNewState(evt: CustomEvent, interactionType: string) {
+    this.addNewMeasurement(evt, interactionType)
+  }
+
   /**
    * @abstract @method addNewMeasurement Creates a new annotation.
    *
