@@ -9,6 +9,7 @@ import {
   mouseToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
+  labelmapModifiedEventDispatcher,
 } from '../eventDispatchers'
 import { state } from './state'
 
@@ -43,6 +44,9 @@ export default function addEnabledElement(evt: CustomEvent): void {
   mouseToolEventDispatcher.enable(canvas)
   keyboardToolEventDispatcher.enable(canvas)
   // touchToolEventDispatcher.enable(enabledElement);
+
+  // labelmap
+  labelmapModifiedEventDispatcher.enable(canvas)
 
   // State
   state.enabledElements.push(canvas)
