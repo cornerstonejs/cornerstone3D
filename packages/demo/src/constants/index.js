@@ -92,6 +92,11 @@ const ANNOTATION_TOOLS = [
   'EllipticalRoi',
 ]
 
+// A string helper for the drop down.
+const SEGMENTATION_TOOLS = [
+  'Brush',
+]
+
 // A small simple list of in-built vtk-colormaps, to demonstrate switching transfer function on a volume.
 const colormaps = ['hsv', 'Inferno (matplotlib)']
 
@@ -108,4 +113,5 @@ export {
   TOOL_GROUP_UIDS,
   colormaps,
   ANNOTATION_TOOLS,
+  SEGMENTATION_TOOLS
 }
