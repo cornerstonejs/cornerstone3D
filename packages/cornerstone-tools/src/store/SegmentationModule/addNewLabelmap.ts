@@ -47,7 +47,8 @@ function getNextLabelmapIndex(canvas) {
     (labelmapUID) => !!labelmapUID
   ).length
 
-  return numLabelmaps + 1
+  // next labelmap index = current length of labelmaps
+  return numLabelmaps
 }
 
 /**
