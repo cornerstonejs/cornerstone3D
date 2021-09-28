@@ -62,10 +62,10 @@ function createCanvas(renderingEngine, viewportType, width, height) {
   DOMElements.push(canvas)
   DOMElements.push(viewportPane)
 
-  renderingEngine.setViewports([
+  renderingEngine.enableElement(
     {
       sceneUID: scene1UID,
-      viewportUID: viewportUID,
+      viewportUID,
       type: viewportType,
       canvas: canvas,
       defaultOptions: {
@@ -73,7 +73,8 @@ function createCanvas(renderingEngine, viewportType, width, height) {
         orientation: ORIENTATION[AXIAL],
       },
     },
-  ])
+  )
+
   return canvas
 }
 
@@ -99,6 +100,8 @@ describe('Cornerstone Tools: ', () => {
   })
 
   afterEach(function () {
+    this.renderingEngine.disableElement(viewportUID)
+
     csTools3d.destroy()
     eventTarget.reset()
     cache.purgeCache()
