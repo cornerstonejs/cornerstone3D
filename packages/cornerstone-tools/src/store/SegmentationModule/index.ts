@@ -4,7 +4,9 @@ import setLabelmapForElement, {
 } from './setLabelmapForElement'
 import {
   setActiveLabelmapIndex,
+  setActiveLabelmapIndexByLabelmapUID,
   getActiveLabelmapIndex,
+  getNextLabelmapIndex,
 } from './activeLabelmapIndex'
 import {
   setActiveSegmentIndex,
@@ -14,7 +16,11 @@ import {
   getSegmentationConfig,
   setSegmentationConfig,
 } from './segmentationConfig'
-import { addNewLabelmap, getNextLabelmapIndex } from './addNewLabelmap'
+import { addNewLabelmap } from './addNewLabelmap'
+import {
+  getLabelmapUIDsForElement,
+  getLabelmapUIDsForViewportUID,
+} from './getLabelmapUIDsForElement'
 
 export {
   setLabelmapForElement,
@@ -23,8 +29,10 @@ export {
   getSegmentationConfig,
   setSegmentationConfig,
   setActiveLabelmapIndex,
+  setActiveLabelmapIndexByLabelmapUID,
   getActiveLabelmapIndex,
   addNewLabelmap,
+  getActiveSegmentIndex,
   getNextLabelmapIndex,
 }
 
@@ -35,9 +43,12 @@ export default {
 
   // Set/Get Labelmap
   getLabelmapForElement,
+  getLabelmapUIDsForElement,
+  getLabelmapUIDsForViewportUID,
 
   // Set/Get Active labelmap/Index
   getActiveLabelmapForElement,
+  setActiveLabelmapIndexByLabelmapUID,
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
 

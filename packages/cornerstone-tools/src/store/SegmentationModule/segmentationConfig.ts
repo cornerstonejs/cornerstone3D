@@ -9,7 +9,7 @@ interface ISegmentationConfig {
 
 const defaultSegmentationConfig: ISegmentationConfig = {
   renderOutline: true,
-  outlineWidth: 3,
+  outlineWidth: 2,
   renderFill: true,
   renderInactiveLabelmaps: false,
   // radius: 10,

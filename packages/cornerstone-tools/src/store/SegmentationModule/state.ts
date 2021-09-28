@@ -31,7 +31,7 @@ const state: SegmentationState = {
   //     labelmaps: [
   //       {
   //         volumeUID: 'seg1',
-  //         activeSegmentIndex: 0,
+  //         activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -44,7 +44,7 @@ const state: SegmentationState = {
   //     labelmaps: [
   //       {
   //         volumeUID: 'seg1',
-  //         activeSegmentIndex: 0,
+  //         activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -52,7 +52,7 @@ const state: SegmentationState = {
   //       },
   //       {
   //         volumeUID: 'seg2',
-  //         activeSegmentIndex: 0,
+  //         activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -65,7 +65,7 @@ const state: SegmentationState = {
   //     labelmaps: [
   //       {
   //         volumeUID: 'seg1',
-  //         activeSegmentIndex: 0,
+  //         activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -73,7 +73,7 @@ const state: SegmentationState = {
   //       },
   //       {
   //         volumeUID: 'seg2',
-  //         activeSegmentIndex: 0,
+  //         activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -89,7 +89,7 @@ const state: SegmentationState = {
   //       labelmaps: [
   //         {
   //           volumeUID: 'seg1',
-  //           activeSegmentIndex: 0,
+  //           activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -97,7 +97,7 @@ const state: SegmentationState = {
   //         },
   //         {
   //           volumeUID: 'seg2',
-  //           activeSegmentIndex: 0,
+  //           activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -110,7 +110,7 @@ const state: SegmentationState = {
   //       labelmaps: [
   //         {
   //           volumeUID: 'seg1',
-  //           activeSegmentIndex: 0,
+  //           activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
@@ -118,7 +118,7 @@ const state: SegmentationState = {
   //         },
   //         {
   //           volumeUID: 'seg2',
-  //           activeSegmentIndex: 0,
+  //           activeSegmentIndex: 1,
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun

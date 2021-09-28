@@ -12,11 +12,7 @@ import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
 
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
-import {
-  drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
-  drawRect as drawRectSvg,
-} from '../../drawingSvg'
+import { drawRect as drawRectSvg } from '../../drawingSvg'
 import {
   resetElementCursor,
   hideElementCursor,
@@ -26,7 +22,7 @@ import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotation
 import {
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
-  setLabelmapForElement,
+  getActiveSegmentIndex,
 } from '../../store/SegmentationModule'
 
 // import {
@@ -91,6 +87,8 @@ export default class RectangleScissorsTool extends BaseTool {
       )
     }
     const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
+    const segmentIndex = getActiveSegmentIndex(element)
+
     const labelmap = cache.getVolume(labelmapUID)
 
     const toolData = {
@@ -130,6 +128,7 @@ export default class RectangleScissorsTool extends BaseTool {
     this.editData = {
       toolData,
       labelmap,
+      segmentIndex,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,

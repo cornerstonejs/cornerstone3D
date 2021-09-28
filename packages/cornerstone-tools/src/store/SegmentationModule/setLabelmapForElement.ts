@@ -131,7 +131,7 @@ function updateStateForVolumeViewports(
     // Overwriting the new labelmap state
     viewportState.labelmaps[labelmapIndex] = {
       volumeUID: labelmapUID,
-      activeSegmentIndex: 0,
+      activeSegmentIndex: 1,
       segmentsHidden: [],
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),

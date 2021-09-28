@@ -1,7 +1,31 @@
 import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state from './state'
-import { addNewLabelmap, getNextLabelmapIndex } from './addNewLabelmap'
+import { addNewLabelmap } from './addNewLabelmap'
+
+function getNextLabelmapIndex(canvas) {
+  const enabledElement = getEnabledElement(canvas)
+
+  if (!enabledElement) {
+    return
+  }
+
+  const { viewportUID } = enabledElement
+
+  // VolumeViewport Implementation
+  const viewportSegState = state.volumeViewports[viewportUID]
+
+  if (!viewportSegState) {
+    return 0
+  }
+
+  const numLabelmaps = viewportSegState.labelmaps.filter(
+    (labelmapUID) => !!labelmapUID
+  ).length
+
+  // next labelmap index = current length of labelmaps
+  return numLabelmaps
+}
 
 /**
  * Returns the index of the active `Labelmap3D`.
@@ -69,13 +93,13 @@ async function setActiveLabelmapIndex(
   }
 
   // Todo: do we need this? it should be set to the value of the labelmapIndex
-  let index = labelmapIndex
-  if (!labelmapIndex) {
-    index = getNextLabelmapIndex(canvas)
-  }
+  const index = labelmapIndex
+  // if (!labelmapIndex) {
+  //   index = getNextLabelmapIndex(canvas)
+  // }
 
   const options = {
-    volumeUID: `labelmap-${index}`,
+    volumeUID: `${scene.uid}-labelmap-${index}`,
   }
   // Put the current volume as a reference for the labelmap
   const labelmapUID = await addNewLabelmap({
@@ -87,4 +111,45 @@ async function setActiveLabelmapIndex(
   return labelmapUID
 }
 
-export { getActiveLabelmapIndex, setActiveLabelmapIndex }
+// this method SHOULD not be used to create a new labelmap
+function setActiveLabelmapIndexByLabelmapUID(
+  canvas: HTMLCanvasElement,
+  labelmapUID: string
+): void {
+  const enabledElement = getEnabledElement(canvas)
+
+  if (!enabledElement) {
+    return
+  }
+
+  const { scene, viewportUID } = enabledElement
+
+  // stackViewport
+  if (!scene) {
+    throw new Error('Segmentation for StackViewport is not supported yet')
+  }
+
+  // volumeViewport
+  const viewportSegState = state.volumeViewports[viewportUID]
+
+  if (!viewportSegState || viewportSegState.labelmaps.length === 0) {
+    throw new Error(`No labelmap found for ${viewportUID}`)
+  }
+
+  const labelmapIndex = viewportSegState.labelmaps.findIndex(
+    ({ volumeUID }) => labelmapUID === volumeUID
+  )
+
+  if (labelmapIndex === undefined) {
+    throw new Error(`No labelmap found with name of ${labelmapUID}`)
+  }
+
+  setActiveLabelmapIndex(canvas, labelmapIndex)
+}
+
+export {
+  getActiveLabelmapIndex,
+  setActiveLabelmapIndex,
+  getNextLabelmapIndex,
+  setActiveLabelmapIndexByLabelmapUID,
+}

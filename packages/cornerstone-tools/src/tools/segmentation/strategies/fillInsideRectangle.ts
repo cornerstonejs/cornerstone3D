@@ -30,7 +30,7 @@ function fillRectangle(
   const { labelmap, points, segmentIndex } = operationData
 
   const { enabledElement } = evt
-  const { viewport } = enabledElement
+  const { renderingEngine } = enabledElement
 
   const { vtkImageData, dimensions } = labelmap
 
@@ -51,7 +51,7 @@ function fillRectangle(
     for (let y = yMin; y <= yMax; y++) {
       for (let z = zMin; z <= zMax; z++) {
         const offset = vtkImageData.computeOffsetIndex([x, y, z])
-        values[offset] = 1
+        values[offset] = segmentIndex
       }
     }
   }
@@ -62,7 +62,7 @@ function fillRectangle(
 
   vtkImageData.getPointData().getScalars().setData(values)
   vtkImageData.modified()
-  viewport.getScene().render()
+  renderingEngine.render()
 
   // inside
   //   ? fillInsideShape(evt, operationData, () => true, topLeft, bottomRight)
