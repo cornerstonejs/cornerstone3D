@@ -5,10 +5,7 @@ import {
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
 import {
-  SynchronizerManager,
-  ToolGroupManager,
   ToolBindings,
-  resetToolsState,
   Utilities,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'

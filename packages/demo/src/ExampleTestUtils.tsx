@@ -8,10 +8,7 @@ import {
   Utilities,
 } from '@ohif/cornerstone-render'
 import {
-  SynchronizerManager,
-  ToolGroupManager,
   ToolBindings,
-  resetToolsState,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 

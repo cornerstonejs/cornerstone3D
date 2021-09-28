@@ -2,15 +2,10 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  eventTarget,
   createAndCacheVolume,
-  EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import {
-  SynchronizerManager,
   synchronizers,
-  ToolGroupManager,
-  resetToolsState,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 

@@ -8,10 +8,7 @@ import {
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
 import {
-  SynchronizerManager,
-  ToolGroupManager,
   ToolBindings,
-  resetToolsState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeToolStateByToolDataUID,
