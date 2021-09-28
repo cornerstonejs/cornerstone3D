@@ -5,10 +5,9 @@ export default function keyDown(evt) {
   // get the active tool for the primary mouse button
   const activeTool = getActiveToolForMouseEvent(evt)
 
-  // Todo
-  // if (!activeTool) {
-  //   return
-  // }
+  if (!activeTool) {
+    return
+  }
 
   const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
 

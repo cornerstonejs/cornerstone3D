@@ -11,7 +11,6 @@ import {
   Utilities as cornerstoneUtils,
 } from '@ohif/cornerstone-render'
 
-import getInterleavedFrames from './helpers/getInterleavedFrames'
 import autoLoad from './helpers/autoLoad'
 
 const requestType = 'prefetch'

@@ -1,6 +1,6 @@
-const path = require('path');
+const path = require('path')
 
-process.env.CHROME_BIN = require('puppeteer').executablePath();
+process.env.CHROME_BIN = require('puppeteer').executablePath()
 const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 
 // Need to add this if you want to yarn link locally.
@@ -23,38 +23,65 @@ module.exports = function (config) {
       'karma-chrome-launcher',
       // Reports / Output
       'karma-junit-reporter',
-      'karma-coverage'
+      'karma-coverage',
     ],
     frameworks: ['jasmine', 'webpack'],
-    customHeaders: [{
-      match: '.*.html',
-      name: 'Cross-Origin-Opener-Policy',
-      value: 'same-origin'
-    }, {
-      match: '.*.html',
-      name: 'Cross-Origin-Embedder-Policy',
-      value: 'require-corp'
-    }],
-    files: [{ // NOTE: This is super ugly, but I couldn't get the !(node_modules) approach to work properly
-      pattern: 'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js', watched: false
-    },{
-      pattern: 'packages/cornerstone-image-loader-streaming-volume/src/**/*_test.js', watched: false
-    },{
-      pattern: 'packages/cornerstone-render/test/**/*_test.js', watched: false
-    },{
-      pattern: 'packages/cornerstone-render/src/**/*_test.js', watched: false
-    },{
-      pattern: 'packages/cornerstone-tools/test/**/*_test.js', watched: false
-    },{
-      pattern: 'packages/cornerstone-tools/src/**/*_test.js', watched: false
-    },{
-      pattern: 'packages/demo/test/**/*_test.js', watched: false
-    },{
-      pattern: 'packages/demo/src/**/*_test.js', watched: false
-    }],
+    customHeaders: [
+      {
+        match: '.*.html',
+        name: 'Cross-Origin-Opener-Policy',
+        value: 'same-origin',
+      },
+      {
+        match: '.*.html',
+        name: 'Cross-Origin-Embedder-Policy',
+        value: 'require-corp',
+      },
+    ],
+    files: [
+      {
+        // NOTE: This is super ugly, but I couldn't get the !(node_modules) approach to work properly
+        pattern:
+          'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js',
+        watched: false,
+      },
+      {
+        pattern:
+          'packages/cornerstone-image-loader-streaming-volume/src/**/*_test.js',
+        watched: false,
+      },
+      {
+        pattern: 'packages/cornerstone-render/test/**/*_test.js',
+        watched: false,
+      },
+      {
+        pattern: 'packages/cornerstone-render/src/**/*_test.js',
+        watched: false,
+      },
+      {
+        pattern: 'packages/cornerstone-tools/test/**/*_test.js',
+        watched: false,
+      },
+      {
+        pattern: 'packages/cornerstone-tools/src/**/*_test.js',
+        watched: false,
+      },
+      {
+        pattern: 'packages/demo/test/**/*_test.js',
+        watched: false,
+      },
+      {
+        pattern: 'packages/demo/src/**/*_test.js',
+        watched: false,
+      },
+    ],
     preprocessors: {
-      'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js': ['webpack'],
-      'packages/cornerstone-image-loader-streaming-volume/src/**/*_test.js': ['webpack'],
+      'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js': [
+        'webpack',
+      ],
+      'packages/cornerstone-image-loader-streaming-volume/src/**/*_test.js': [
+        'webpack',
+      ],
       'packages/cornerstone-render/test/**/*_test.js': ['webpack'],
       'packages/cornerstone-render/src/**/*_test.js': ['webpack'],
       'packages/cornerstone-tools/test/**/*_test.js': ['webpack'],
@@ -63,13 +90,13 @@ module.exports = function (config) {
       'packages/demo/src/**/*_test.js': ['webpack'],
     },
     coverageIstanbulReporter: {
-      reports: [ 'html', 'text-summary', 'lcovonly' ],
+      reports: ['html', 'text-summary', 'lcovonly'],
       dir: path.join(__dirname, 'coverage'),
       fixWebpackSourcePaths: true,
       'report-config': {
         html: { outdir: 'html' },
-        linkMapper: '/'
-      }
+        linkMapper: '/',
+      },
     },
     /*webpackMiddleware: {
       noInfo: true
@@ -110,13 +137,13 @@ module.exports = function (config) {
           },
           {
             test: /\.ts$/,
-            exclude: [ path.resolve(__dirname, "test") ],
+            exclude: [path.resolve(__dirname, 'test')],
             enforce: 'post',
             use: {
               loader: 'istanbul-instrumenter-loader',
-              options: { esModules: true }
-            }
-          }
+              options: { esModules: true },
+            },
+          },
         ].concat(vtkRules),
       },
       resolve: {

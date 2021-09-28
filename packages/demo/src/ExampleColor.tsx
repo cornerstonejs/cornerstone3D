@@ -14,7 +14,9 @@ import * as csTools3d from '@ohif/cornerstone-tools'
 import { registerWebImageLoader } from "@ohif/cornerstone-image-loader-streaming-volume";
 import config from "./config/default";
 import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 
+let colorSceneToolGroup
 class ColorExample extends Component {
   state = {
     viewportSizes: [
@@ -41,34 +43,36 @@ class ColorExample extends Component {
   }
 
   async componentDidMount() {
-    registerWebImageLoader(cs);
-    const renderingEngineUID = "ExampleRenderingEngineID";
-    const {imageIds} = config.colorImages;
+    registerWebImageLoader(cs)
+    const renderingEngineUID = 'ExampleRenderingEngineID'
+    const { imageIds } = config.colorImages
+
+    ;({ colorSceneToolGroup } = initToolGroups())
 
     metaData.addProvider(
       (type, imageId) => hardcodedMetaDataProvider(type, imageId, imageIds),
       10000
-    );
+    )
 
-    const volumeUID = "VOLUME";
+    const volumeUID = 'VOLUME'
 
-    const volume = await createAndCacheVolume(volumeUID, { imageIds });
+    const volume = await createAndCacheVolume(volumeUID, { imageIds })
 
-    volume.load();
+    volume.load()
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID);
+    const renderingEngine = new RenderingEngine(renderingEngineUID)
 
-    this.renderingEngine = renderingEngine;
+    this.renderingEngine = renderingEngine
 
-    const axialViewportID = "AXIAL";
-    const sagittalViewportID = "SAGITTAL";
-    const coronalViewportID = "CORONAL";
+    const axialViewportID = 'AXIAL'
+    const sagittalViewportID = 'SAGITTAL'
+    const coronalViewportID = 'CORONAL'
 
-    this.axialViewportID = axialViewportID;
-    this.sagittalViewportID = sagittalViewportID;
-    this.coronalViewportID = coronalViewportID;
+    this.axialViewportID = axialViewportID
+    this.sagittalViewportID = sagittalViewportID
+    this.coronalViewportID = coronalViewportID
 
-    const ctSceneID = "SCENE";
+    const ctSceneID = 'SCENE'
 
     renderingEngine.setViewports([
       {
@@ -98,54 +102,53 @@ class ColorExample extends Component {
           orientation: ORIENTATION.CORONAL,
         },
       },
-    ]);
+    ])
 
-    const ctScene = renderingEngine.getScene(ctSceneID);
+    const ctScene = renderingEngine.getScene(ctSceneID)
 
-    const ctSceneToolGroup = ToolGroupManager.createToolGroup("TOOLS");
-    ctSceneToolGroup.addTool("WindowLevel", {});
-    ctSceneToolGroup.addTool("Pan", {});
-    ctSceneToolGroup.addTool("Zoom", {});
-    ctSceneToolGroup.addTool("StackScrollMouseWheel", {});
+    colorSceneToolGroup.addTool('WindowLevel', {})
+    colorSceneToolGroup.addTool('Pan', {})
+    colorSceneToolGroup.addTool('Zoom', {})
+    colorSceneToolGroup.addTool('StackScrollMouseWheel', {})
 
-    ctSceneToolGroup.setToolActive("StackScrollMouseWheel");
-    ctSceneToolGroup.setToolActive("WindowLevel", {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
-    });
-    ctSceneToolGroup.setToolActive("Pan", {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
-    });
-    ctSceneToolGroup.setToolActive("Zoom", {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
-    });
+    colorSceneToolGroup.setToolActive('StackScrollMouseWheel')
+    colorSceneToolGroup.setToolActive('WindowLevel', {
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+    })
+    colorSceneToolGroup.setToolActive('Pan', {
+      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+    })
+    colorSceneToolGroup.setToolActive('Zoom', {
+      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+    })
 
     ctScene.setVolumes([
       {
         volumeUID: volumeUID,
         callback: ({ volumeActor, volumeUID }) => {
-          volumeActor.getProperty().setIndependentComponents(false);
-          volumeActor.getProperty().setInterpolationTypeToNearest();
+          volumeActor.getProperty().setIndependentComponents(false)
+          volumeActor.getProperty().setInterpolationTypeToNearest()
         },
       },
-    ]);
+    ])
 
-    ctSceneToolGroup.addViewports(
+    colorSceneToolGroup.addViewports(
       renderingEngineUID,
       ctSceneID,
       axialViewportID
-    );
-    ctSceneToolGroup.addViewports(
+    )
+    colorSceneToolGroup.addViewports(
       renderingEngineUID,
       ctSceneID,
       sagittalViewportID
-    );
-    ctSceneToolGroup.addViewports(
+    )
+    colorSceneToolGroup.addViewports(
       renderingEngineUID,
       ctSceneID,
       coronalViewportID
-    );
+    )
 
-    renderingEngine.render();
+    renderingEngine.render()
   }
 
   render() {

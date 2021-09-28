@@ -16,7 +16,7 @@ import {
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import _ from 'lodash'
-import { getInterleavedFrames } from '@ohif/cornerstone-image-loader-streaming-volume'
+import getInterleavedFrames from './helpers/getInterleavedFrames'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
