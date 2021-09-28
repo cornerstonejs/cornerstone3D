@@ -550,6 +550,10 @@ function addToolsToToolGroups({
 
   if (ptSceneToolGroup) {
     // Set up PT Scene tools
+    ptSceneToolGroup.addTool('RectangleScissors', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+
     ptSceneToolGroup.addTool('Bidirectional', {
       configuration: { volumeUID: ptVolumeUID },
     })

@@ -1,7 +1,6 @@
 import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state from './state'
-import { addNewLabelmap, getNextLabelmapIndex } from './addNewLabelmap'
 import { getActiveLabelmapIndex } from '.'
 
 /**

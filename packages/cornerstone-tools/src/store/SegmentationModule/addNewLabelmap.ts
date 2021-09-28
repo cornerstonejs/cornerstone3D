@@ -27,30 +27,6 @@ type LabelmapOptions = {
   }
 }
 
-function getNextLabelmapIndex(canvas) {
-  const enabledElement = getEnabledElement(canvas)
-
-  if (!enabledElement) {
-    return
-  }
-
-  const { viewportUID } = enabledElement
-
-  // VolumeViewport Implementation
-  const viewportSegState = state.volumeViewports[viewportUID]
-
-  if (!viewportSegState) {
-    return 0
-  }
-
-  const numLabelmaps = viewportSegState.labelmaps.filter(
-    (labelmapUID) => !!labelmapUID
-  ).length
-
-  // next labelmap index = current length of labelmaps
-  return numLabelmaps
-}
-
 /**
  * addNewLabelmap - Adds a `Labelmap3D` object to the `BrushStackState` object.
  *
@@ -117,7 +93,7 @@ async function addNewLabelmap({
   if (!labelmapState) {
     labelmapState = {
       volumeUID: labelmapUID,
-      activeSegmentIndex: 0,
+      activeSegmentIndex: 1,
       segmentsHidden: [],
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),
@@ -138,4 +114,4 @@ async function addNewLabelmap({
   return labelmapUID
 }
 
-export { addNewLabelmap, getNextLabelmapIndex }
+export { addNewLabelmap }
