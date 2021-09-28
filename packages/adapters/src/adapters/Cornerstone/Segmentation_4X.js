@@ -1166,7 +1166,7 @@ function checkOrientation(
     if (
         checkIfPerpendicular(iop, validOrientations[0], tolerance) &&
         sourceDataDimensions.includes(multiframe.Rows) &&
-        sourceDataDimensions.includes(multiframe.Rows)
+        sourceDataDimensions.includes(multiframe.Columns)
     ) {
         // Perpendicular and fits on same grid.
         return "Perpendicular";
