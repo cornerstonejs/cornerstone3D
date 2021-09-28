@@ -18,7 +18,6 @@ import { init, destroy } from './init'
 import {
   addTool,
   removeTool,
-  resetToolsState,
   getToolDataNearPoint,
   getToolDataNearPointOnEnabledElement,
   ToolGroupManager,
@@ -57,7 +56,6 @@ export {
   addTool,
   removeTool,
   cancelActiveManipulations,
-  resetToolsState,
   init,
   destroy,
   BaseTool,

@@ -8,13 +8,13 @@ import {
   metaData,
   createAndCacheVolume,
 } from "@ohif/cornerstone-render";
-import { ToolGroupManager, ToolBindings, resetToolsState } from "@ohif/cornerstone-tools";
+import { ToolBindings } from "@ohif/cornerstone-tools";
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import { registerWebImageLoader } from "@ohif/cornerstone-image-loader-streaming-volume";
 import config from "./config/default";
 import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
+import { initToolGroups } from './initToolGroups'
 
 let colorSceneToolGroup
 class ColorExample extends Component {

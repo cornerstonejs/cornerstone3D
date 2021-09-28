@@ -1,7 +1,7 @@
 import { api } from 'dicomweb-client'
 import dcmjs from 'dcmjs';
 import { calculateSUVScalingFactors } from 'calculate-suv'
-import { getPTImageIdInstanceMetadata } from '@ohif/cornerstone-image-loader-streaming-volume'
+import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata'
 import { Utilities } from '@ohif/cornerstone-render'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'

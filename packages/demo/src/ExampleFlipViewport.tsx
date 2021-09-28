@@ -3,20 +3,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  eventTarget,
   createAndCacheVolume,
-  metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
   FLIP_DIRECTION,
-  EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import {
-  SynchronizerManager,
   synchronizers,
-  ToolGroupManager,
   ToolBindings,
-  resetToolsState,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 

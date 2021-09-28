@@ -247,7 +247,7 @@ function _loadImageIntoBuffer(
           resolve(true)
         },
         (error) => {
-          console.warn('something??')
+          reject(error)
         }
       )
       .catch((error) => {

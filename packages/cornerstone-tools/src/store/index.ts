@@ -1,5 +1,4 @@
 import { addTool, removeTool } from './addTool'
-import resetToolsState from './resetToolsState'
 import addEnabledElement from './addEnabledElement'
 import removeEnabledElement from './removeEnabledElement'
 import cancelActiveManipulations from './cancelActiveManipulations'
@@ -25,7 +24,6 @@ export {
   state,
   addTool,
   removeTool,
-  resetToolsState,
   addEnabledElement,
   removeEnabledElement,
   cancelActiveManipulations,

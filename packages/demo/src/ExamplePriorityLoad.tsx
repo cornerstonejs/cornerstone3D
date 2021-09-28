@@ -2,16 +2,11 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  eventTarget,
   createAndCacheVolume,
   requestPoolManager,
-  EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
 import {
-  SynchronizerManager,
   synchronizers,
-  ToolGroupManager,
-  resetToolsState,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
@@ -23,9 +18,8 @@ import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunct
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 
 import getImageIds from './helpers/getImageIds'
-import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, destroyToolGroups } from './initToolGroups'
+import { initToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,

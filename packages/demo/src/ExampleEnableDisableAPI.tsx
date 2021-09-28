@@ -7,7 +7,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
 } from '@ohif/cornerstone-render'
-import { ToolGroupManager, resetToolsState, ToolBindings } from '@ohif/cornerstone-tools'
+import { ToolBindings } from '@ohif/cornerstone-tools'
 import * as cs from '@ohif/cornerstone-render'
 
 import * as csTools3d from '@ohif/cornerstone-tools'
