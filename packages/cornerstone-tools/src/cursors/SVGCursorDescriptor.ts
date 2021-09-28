@@ -388,18 +388,24 @@ const DefinedDescriptorsMap = {
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationRectangleFillInside: extend(BASE, {
+  // Default Rectangle Scissors
+  RectangleScissors: extend(BASE, {
+    iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
+    viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
+  }),
+
+  'RectangleScissors.FILL_INSIDE': extend(BASE, {
+    iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
+    viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
+  }),
+
+  'RectangleScissors.FILL_OUTSIDE': extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   segmentationRectangleEraseOutside: extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
-    viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
-  }),
-
-  segmentationRectangleFillOutside: extend(BASE, {
-    iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
@@ -443,12 +449,16 @@ function extend(
  * @param {string} iconContent The SVG icon content of the cursor.
  * @param {{x: number, y: number}} viewBox The viewBox of the cursor object.
  */
-function registerCursor(toolName: string, iconContent: string, viewBox: {x: number, y: number}) {
+function registerCursor(
+  toolName: string,
+  iconContent: string,
+  viewBox: { x: number; y: number }
+) {
   DefinedDescriptorsMap[toolName] = extend(BASE, {
     iconContent,
-    viewBox
+    viewBox,
   })
-};
+}
 
 function getDefinedSVGCursorDescriptor(
   name: string
@@ -462,4 +472,8 @@ function getDefinedSVGCursorDescriptor(
  * Exports
  */
 
-export { SVGCursorDescriptor as default, getDefinedSVGCursorDescriptor, registerCursor }
+export {
+  SVGCursorDescriptor as default,
+  getDefinedSVGCursorDescriptor,
+  registerCursor,
+}

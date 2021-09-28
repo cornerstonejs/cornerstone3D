@@ -63,7 +63,7 @@ abstract class BaseTool {
    * @param strategyName
    * @public
    */
-  public setActiveStrategyName(strategyName): void {
+  public setActiveStrategyName(strategyName: string): void {
     this.activeStrategy = strategyName
   }
 }

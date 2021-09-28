@@ -122,6 +122,18 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         }
       }
     },
+    setActiveStrategyName(toolName: string, strategyName: string) {
+      if (this._tools[toolName] === undefined) {
+        console.warn(
+          `Tool ${toolName} not added to toolgroup, can't set tool mode.`
+        )
+      }
+
+      this._tools[toolName].mode = Active
+      this._tools[toolName].setActiveStrategyName(strategyName)
+      this.tools[toolName].strategy = strategyName
+      this.resetViewportsCursor(this._tools[toolName], strategyName)
+    },
     // ~ setToolMode
     setToolActive: function (
       toolName: string,
@@ -220,7 +232,6 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
         )
-
         return
       }
 
@@ -251,8 +262,12 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         getRenderingEngine(renderingEngineUID).renderViewport(viewportUID)
       })
     },
-    resetViewportsCursor(tool: { name: string }): void {
-      let cursor = SVGMouseCursor.getDefinedCursor(tool.name, true)
+    resetViewportsCursor(
+      tool: { name: string },
+      strategyName = undefined
+    ): void {
+      const toolName = strategyName ? `${tool.name}.${strategyName}` : tool.name
+      let cursor = SVGMouseCursor.getDefinedCursor(toolName, true)
       if (!cursor) {
         cursor = MouseCursor.getDefinedCursor('default')
       }

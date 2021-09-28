@@ -685,6 +685,18 @@ class MPRExample extends Component {
             >
               Activate Segmentation Tool
             </button>
+            <button
+              onClick={() =>
+                ctSceneToolGroup.setActiveStrategyName(
+                  'RectangleScissors',
+                  'FILL_OUTSIDE'
+                )
+              }
+              className="btn btn-primary"
+              style={{ margin: '2px 4px' }}
+            >
+              Change strategy
+            </button>
           </div>
           {this.state.segmentationToolActive && (
             <div style={{ display: 'flex', alignItems: 'center' }}>
