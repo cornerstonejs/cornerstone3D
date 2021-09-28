@@ -1,3 +1,4 @@
+import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener'
 import { ToolGroupManager } from '../../store'
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
 
@@ -12,6 +13,9 @@ export default function keyUp(evt) {
     sceneUID,
     viewportUID
   )
+
+  // Reset the modifier key
+  resetModifierKey()
 
   toolGroups.forEach((toolGroup) => {
     if (Object.keys(toolGroup.tools).includes(activeTool.name)) {

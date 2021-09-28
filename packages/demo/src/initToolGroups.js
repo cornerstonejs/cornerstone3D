@@ -231,6 +231,7 @@ function initToolGroups(toolConfiguration = {}) {
   )
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT)
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT)
+  const colorSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.COLOR)
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.FUSION
   )
@@ -267,6 +268,7 @@ function initToolGroups(toolConfiguration = {}) {
     ctVRSceneToolGroup,
     ctObliqueToolGroup,
     ptTypesSceneToolGroup,
+    colorSceneToolGroup,
     ctTestSceneToolGroup,
     ptTestSceneToolGroup
   }

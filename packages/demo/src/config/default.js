@@ -62,14 +62,14 @@ export default {
   },
   colorImages: {
     imageIds: [
-      'web:http://localhost:3000/examples/head/avf1240c.png',
-      'web:http://localhost:3000/examples/head/avf1241a.png',
-      'web:http://localhost:3000/examples/head/avf1241b.png',
-      'web:http://localhost:3000/examples/head/avf1241c.png',
-      'web:http://localhost:3000/examples/head/avf1242a.png',
-      'web:http://localhost:3000/examples/head/avf1242b.png',
-      'web:http://localhost:3000/examples/head/avf1242c.png',
-      'web:http://localhost:3000/examples/head/avf1243a.png',
+      'web:/examples/head/avf1240c.png',
+      'web:/examples/head/avf1241a.png',
+      'web:/examples/head/avf1241b.png',
+      'web:/examples/head/avf1241c.png',
+      'web:/examples/head/avf1242a.png',
+      'web:/examples/head/avf1242b.png',
+      'web:/examples/head/avf1242c.png',
+      'web:/examples/head/avf1243a.png',
     ],
   },
 }

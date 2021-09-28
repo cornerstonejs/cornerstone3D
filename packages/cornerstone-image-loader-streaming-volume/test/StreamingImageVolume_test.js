@@ -1,70 +1,77 @@
 import * as cornerstoneStreamingImageVolumeLoader from '../src'
 import * as cornerstone from '@ohif/cornerstone-render'
 
-const { cache, requestPoolManager } = cornerstone
-// import { User } from ... doesn't work right now since we don't have named exports set up
+const {
+  cache,
+  metaData,
+  Utilities,
+  registerVolumeLoader,
+  unregisterAllImageLoaders,
+} = cornerstone
+
+const { testUtils } = Utilities
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
+const imageIds = [
+  'fakeSharedBufferImageLoader:imageId1',
+  'fakeSharedBufferImageLoader:imageId2',
+  'fakeSharedBufferImageLoader:imageId3',
+  'fakeSharedBufferImageLoader:imageId4',
+  'fakeSharedBufferImageLoader:imageId5',
+]
+
+const fakeSharedBufferImageLoader = (imageId, options) => {
+  // imageId1 => all voxels = 1
+  // imageId2 => all voxels = 2
+  // etc.
+  const imageIdNumber = imageId.split('imageId')[1]
+
+  const pixelData = new Uint8Array(100 * 100)
+
+  for (let i = 0; i < pixelData.length; i++) {
+    pixelData[i] = Number(imageIdNumber)
+  }
+
+  // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+  const { arrayBuffer, offset, length } = options.targetBuffer
+
+  const typedArray = new Uint8Array(arrayBuffer, offset, length)
+
+  // TypedArray.Set is api level and ~50x faster than copying elements even for
+  // Arrays of different types, which aren't simply memcpy ops.
+  typedArray.set(pixelData, 0)
+
+  return {
+    promise: Promise.resolve(undefined),
+  }
+}
+
+// regular imageLoader
+const imageLoader = (imageId) => {
+  // imageId1 => all voxels = 1
+  // imageId2 => all voxels = 2
+  // etc.
+  const imageIdNumber = imageId.split('imageId')[1]
+
+  const pixelData = new Uint8Array(100 * 100)
+
+  for (let i = 0; i < pixelData.length; i++) {
+    pixelData[i] = Number(imageIdNumber)
+  }
+
+  const image = {
+    rows: 100,
+    columns: 100,
+    getPixelData: () => pixelData,
+    sizeInBytes: 10000, // 100 * 100 * 1
+  }
+
+  return {
+    promise: Promise.resolve(image),
+  }
+}
+
 function setupLoaders() {
-  const imageIds = [
-    'fakeSharedBufferImageLoader:imageId1',
-    'fakeSharedBufferImageLoader:imageId2',
-    'fakeSharedBufferImageLoader:imageId3',
-    'fakeSharedBufferImageLoader:imageId4',
-    'fakeSharedBufferImageLoader:imageId5',
-  ]
-
-  const fakeSharedBufferImageLoader = (imageId, options) => {
-    // imageId1 => all voxels = 1
-    // imageId2 => all voxels = 2
-    // etc.
-    const imageIdNumber = imageId.split('imageId')[1]
-
-    const pixelData = new Uint8Array(100 * 100)
-
-    for (let i = 0; i < pixelData.length; i++) {
-      pixelData[i] = Number(imageIdNumber)
-    }
-
-    // If we have a target buffer, write to that instead. This helps reduce memory duplication.
-    const { arrayBuffer, offset, length } = options.targetBuffer
-
-    const typedArray = new Uint8Array(arrayBuffer, offset, length)
-
-    // TypedArray.Set is api level and ~50x faster than copying elements even for
-    // Arrays of different types, which aren't simply memcpy ops.
-    typedArray.set(pixelData, 0)
-
-    return {
-      promise: Promise.resolve(undefined),
-    }
-  }
-
-  // regular imageLoader
-  const imageLoader = (imageId) => {
-    // imageId1 => all voxels = 1
-    // imageId2 => all voxels = 2
-    // etc.
-    const imageIdNumber = imageId.split('imageId')[1]
-
-    const pixelData = new Uint8Array(100 * 100)
-
-    for (let i = 0; i < pixelData.length; i++) {
-      pixelData[i] = Number(imageIdNumber)
-    }
-
-    const image = {
-      rows: 100,
-      columns: 100,
-      getPixelData: () => pixelData,
-      sizeInBytes: 10000, // 100 * 100 * 1
-    }
-
-    return {
-      promise: Promise.resolve(image),
-    }
-  }
-
   cornerstone.registerImageLoader('fakeImageLoader', imageLoader)
   cornerstone.registerImageLoader(
     'fakeSharedBufferImageLoader',
@@ -370,5 +377,59 @@ describe('StreamingImageVolume', function () {
 
   afterEach(function () {
     cache.purgeCache()
+  })
+})
+
+describe('CornerstoneVolumeStreaming Streaming --- ', function () {
+  beforeEach(function () {
+    cache.purgeCache()
+    metaData.addProvider(testUtils.fakeMetaDataProvider, 10000)
+    cornerstone.registerImageLoader(
+      'fakeSharedBufferImageLoader',
+      fakeSharedBufferImageLoader
+    )
+    registerVolumeLoader(
+      'fakeSharedBufferImageLoader',
+      testUtils.fakeImageLoader
+    )
+  })
+
+  afterEach(function () {
+    cache.purgeCache()
+    metaData.removeProvider(testUtils.fakeMetaDataProvider)
+    unregisterAllImageLoaders()
+  })
+
+  it('should successfully use metadata for streaming image volume', async function (done) {
+    const imageIds = [
+      'fakeSharedBufferImageLoader:myImag1_256_256_0_20_1_1_0',
+      'fakeSharedBufferImageLoader:myImage2_256_256_0_20_1_1_0',
+      'fakeSharedBufferImageLoader:myImage3_256_256_0_20_1_1_0',
+      'fakeSharedBufferImageLoader:myImage4_256_256_0_20_1_1_0',
+      'fakeSharedBufferImageLoader:myImage5_256_256_0_20_1_1_0',
+    ]
+
+    // fake volume generator follows the pattern of
+    // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
+    const volumeId = 'cornerstoneStreamingImageVolume:volume'
+
+    try {
+      await cornerstone.createAndCacheVolume(volumeId, {
+        imageIds: imageIds,
+      })
+      const volume = cornerstone.getVolume(volumeId)
+
+      let framesLoaded = 0
+      const callback = (evt) => {
+        framesLoaded++
+        if (framesLoaded === imageIds.length) {
+          // Getting the volume to check for voxel intensities
+          done()
+        }
+      }
+      volume.load(callback)
+    } catch (e) {
+      done.fail(e)
+    }
   })
 })

@@ -79,6 +79,7 @@ const TOOL_GROUP_UIDS = {
   CTVR: 'ctVRSceneToolGroup',
   CTOBLIQUE: 'ctObliqueToolGroup',
   PT_TYPES: 'ptTypesToolGroup',
+  COLOR: 'colorToolGroup',
 }
 
 // A string helper for the drop down.

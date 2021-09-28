@@ -97,4 +97,8 @@ export function getModifierKey(): number | undefined {
   return state.keyCode
 }
 
+export function resetModifierKey(): void {
+  state.keyCode = undefined
+}
+
 export default keyListener

@@ -1,7 +1,7 @@
 import cornerstoneStreamingImageVolumeLoader from './cornerstoneStreamingImageVolumeLoader'
 import sharedArrayBufferImageLoader from './sharedArrayBufferImageLoader'
 import StreamingImageVolume from './StreamingImageVolume'
-import { getPTImageIdInstanceMetadata, getInterleavedFrames } from './helpers'
+import { getPTImageIdInstanceMetadata } from './helpers'
 import { registerWebImageLoader } from './registerWebImageLoader'
 
 export {
@@ -10,5 +10,4 @@ export {
   StreamingImageVolume,
   registerWebImageLoader,
   getPTImageIdInstanceMetadata,
-  getInterleavedFrames,
 }

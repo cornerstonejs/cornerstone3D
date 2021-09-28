@@ -1,4 +1,5 @@
 import * as cornerstone3D from '../src/index'
+import * as csTools3d from '../../cornerstone-tools/src/index'
 
 // nearest neighbor interpolation
 import * as imageURI_64_33_20_5_1_1_0_nearest from './groundTruth/imageURI_64_33_20_5_1_1_0_nearest.png'
@@ -15,9 +16,13 @@ import * as imageURI_11_11_4_1_1_1_0_nearest_invert_90deg from './groundTruth/im
 import * as imageURI_11_11_4_1_1_1_0 from './groundTruth/imageURI_11_11_4_1_1_1_0.png'
 import * as imageURI_256_256_50_10_1_1_0 from './groundTruth/imageURI_256_256_50_10_1_1_0.png'
 import * as imageURI_100_100_0_10_1_1_1_linear_color from './groundTruth/imageURI_100_100_0_10_1_1_1_linear_color.png'
+import * as calibrated_1_5_imageURI_11_11_4_1_1_1_0_1 from './groundTruth/calibrated_1_5_imageURI_11_11_4_1_1_1_0_1.png'
 
 import { setCTWWWC } from '../../demo/src/helpers/transferFunctionHelpers'
 // import { User } from ... doesn't work right now since we don't have named exports set up
+const {
+  Utilities: { calibrateImageSpacing },
+} = csTools3d
 
 const {
   cache,
@@ -626,4 +631,99 @@ describe('Stack Viewport Calibration and Scaling --- ', () => {
   //     done.fail(e)
   //   }
   // })
+})
+
+describe('Calibration ', () => {
+  beforeEach(function () {
+    cache.purgeCache()
+
+    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    registerImageLoader('fakeImageLoader', fakeImageLoader)
+    metaData.addProvider(fakeMetaDataProvider, 10000)
+    metaData.addProvider(
+      calibratedPixelSpacingMetadataProvider.get.bind(
+        calibratedPixelSpacingMetadataProvider
+      ),
+      11000
+    )
+  })
+
+  afterEach(function () {
+    cache.purgeCache()
+    this.renderingEngine.destroy()
+    metaData.removeProvider(fakeMetaDataProvider)
+    unregisterAllImageLoaders()
+    DOMElements.forEach((el) => {
+      if (el.parentNode) {
+        el.parentNode.removeChild(el)
+      }
+    })
+  })
+
+  it('Should be able to calibrate an image', function (done) {
+    const canvas = createCanvas(this.renderingEngine, AXIAL, 256, 256)
+
+    const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0_1'
+
+    const vp = this.renderingEngine.getViewport(viewportUID)
+
+    const firstCallback = () => {
+      console.debug('Render Callback')
+      canvas.removeEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
+      canvas.addEventListener(EVENTS.IMAGE_RENDERED, secondCallback)
+      const imageId = this.renderingEngine
+        .getViewport(viewportUID)
+        .getCurrentImageId()
+
+      calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
+    }
+    const secondCallback = () => {
+      const image = canvas.toDataURL('image/png')
+      console.debug('Calibrate Image callback')
+      compareImages(
+        image,
+        calibrated_1_5_imageURI_11_11_4_1_1_1_0_1,
+        'calibrated_1_5_imageURI_11_11_4_1_1_1_0_1'
+      ).then(done, done.fail)
+    }
+
+    canvas.addEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
+
+    try {
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
+    } catch (e) {
+      done.fail(e)
+    }
+  })
+
+  it('Should be able to fire imageCalibrated event with expected data', function (done) {
+    const canvas = createCanvas(this.renderingEngine, AXIAL, 256, 256)
+
+    const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0_1'
+
+    const vp = this.renderingEngine.getViewport(viewportUID)
+
+    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const imageId = this.renderingEngine
+        .getViewport(viewportUID)
+        .getCurrentImageId()
+
+      calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
+    })
+    canvas.addEventListener(EVENTS.IMAGE_SPACING_CALIBRATED, (evt) => {
+      expect(evt.detail).toBeDefined()
+      expect(evt.detail.rowScale).toBe(1)
+      expect(evt.detail.columnScale).toBe(5)
+      expect(evt.detail.viewportUID).toBe(viewportUID)
+      done()
+    })
+
+    try {
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
+    } catch (e) {
+      done.fail(e)
+    }
+  })
 })
