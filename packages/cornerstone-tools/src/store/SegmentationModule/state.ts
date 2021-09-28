@@ -5,6 +5,7 @@ type LabelmapState = {
   volumeUID: string
   activeSegmentIndex: number
   segmentsHidden: number[]
+  colorLUTIndex: number
   cfun: vtkColorTransferFunction
   ofun: vtkPiecewiseFunction
 }
@@ -15,16 +16,25 @@ export type ViewportSegmentationState = {
 }
 
 // [[0,0,0,0], [200,200,200,200], ....]
-type colorLUT = number[][]
+type ColorLUT = Array<[number, number, number, number]>
 
 export interface SegmentationState {
   volumeViewports: { [key: string]: ViewportSegmentationState }
-  colorLutTables: Array<colorLUT>
+  colorLutTables: Array<ColorLUT>
 }
 
 const state: SegmentationState = {
+  colorLutTables: [
+    //[
+    // ColorLUTTable-0
+    // [0, 0, 0, 0],
+    // [255, 0, 0, 255],
+    // [0, 255, 0, 255],
+    // [0, 0, 255, 255],
+    // ...... ,
+    //],
+  ],
   volumeViewports: {},
-  colorLutTables: [],
   // volumeViewports: {
   //   axialCT: {
   //     activeLabelmapIndex: 0,

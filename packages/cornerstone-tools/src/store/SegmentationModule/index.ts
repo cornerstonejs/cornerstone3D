@@ -17,6 +17,7 @@ import {
   setSegmentationConfig,
 } from './segmentationConfig'
 import { addNewLabelmap } from './addNewLabelmap'
+import { setColorLUT, getColorForSegmentIndexColorLUT } from './colorLUT'
 import {
   getLabelmapUIDsForElement,
   getLabelmapUIDsForViewportUID,
@@ -34,6 +35,8 @@ export {
   addNewLabelmap,
   getActiveSegmentIndex,
   getNextLabelmapIndex,
+  setColorLUT,
+  getColorForSegmentIndexColorLUT,
 }
 
 export default {
@@ -59,6 +62,10 @@ export default {
   // Config
   getSegmentationConfig,
   setSegmentationConfig,
+
+  // ColorLUT
+  setColorLUT,
+  getColorForSegmentIndexColorLUT,
 
   // Utils
   getNextLabelmapIndex,

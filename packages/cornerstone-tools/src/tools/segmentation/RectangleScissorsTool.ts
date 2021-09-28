@@ -23,6 +23,7 @@ import {
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
   getActiveSegmentIndex,
+  getColorForSegmentIndexColorLUT,
 } from '../../store/SegmentationModule'
 
 // import {
@@ -45,6 +46,7 @@ export default class RectangleScissorsTool extends BaseTool {
     toolData: any
     labelmap: any
     segmentIndex: number
+    segmentColor: [number, number, number, number]
     viewportUIDsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
@@ -88,9 +90,15 @@ export default class RectangleScissorsTool extends BaseTool {
     }
     const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
     const segmentIndex = getActiveSegmentIndex(element)
+    const segmentColor = getColorForSegmentIndexColorLUT(
+      element,
+      labelmapUID,
+      segmentIndex
+    )
 
     const labelmap = cache.getVolume(labelmapUID)
 
+    // Todo: Used for drawing the svg only, we might not need it at all
     const toolData = {
       metadata: {
         viewPlaneNormal: <Point3>[...viewPlaneNormal],
@@ -98,6 +106,7 @@ export default class RectangleScissorsTool extends BaseTool {
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
         toolName: this.name,
+        segmentColor,
       },
       data: {
         invalidated: true,
@@ -115,10 +124,7 @@ export default class RectangleScissorsTool extends BaseTool {
     }
 
     // Ensure settings are initialized after tool data instantiation
-    // Todo: color the rectangle accordingly to the segment index
     Settings.getObjectSettings(toolData, RectangleRoiTool)
-
-    // addToolState(element, toolData)
 
     const viewportUIDsToRender = getViewportUIDsWithLabelmapToRender(
       element,
@@ -129,6 +135,7 @@ export default class RectangleScissorsTool extends BaseTool {
       toolData,
       labelmap,
       segmentIndex,
+      segmentColor,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -321,7 +328,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const data = toolData.data
     const { points } = data.handles
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-    const color = 'red'
+    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
