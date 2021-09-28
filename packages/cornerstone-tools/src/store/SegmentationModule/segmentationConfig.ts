@@ -5,6 +5,7 @@ interface ISegmentationConfig {
   outlineWidth: number
   renderFill: boolean
   renderInactiveLabelmaps: boolean
+  segmentsPerLabelmap: number
 }
 
 const defaultSegmentationConfig: ISegmentationConfig = {
@@ -12,6 +13,7 @@ const defaultSegmentationConfig: ISegmentationConfig = {
   outlineWidth: 2,
   renderFill: true,
   renderInactiveLabelmaps: false,
+  segmentsPerLabelmap: 65535, // Todo: Out max is bigger, but it seems cfun can go upto 255 anyway
   // radius: 10,
   // minRadius: 1,
   // maxRadius: 50,
@@ -20,7 +22,6 @@ const defaultSegmentationConfig: ISegmentationConfig = {
   // outlineAlpha: 0.7,
   // outlineAlphaInactive: 0.35,
   // storeHistory: true,
-  // segmentsPerLabelmap: 65535, // Max is 65535 due to using 16-bit Unsigned ints.
 }
 
 // Initialize the segmentation config

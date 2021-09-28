@@ -132,6 +132,7 @@ function updateStateForVolumeViewports(
     viewportState.labelmaps[labelmapIndex] = {
       volumeUID: labelmapUID,
       activeSegmentIndex: 1,
+      colorLUTIndex: 0,
       segmentsHidden: [],
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),

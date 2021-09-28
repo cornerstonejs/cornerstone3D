@@ -1,44 +1,40 @@
 import { getSegmentationConfig } from './segmentationConfig'
+import state from './state'
 
-// Todo: this should be settable in state
-// https://www.slicer.org/w/index.php/Slicer3:2010_GenericAnatomyColors#Lookup_table
-const colors = [
-  {
-    integerLabel: 0,
-    textLabel: 'background',
-    color: [0, 0, 0, 0],
-  },
-  {
-    integerLabel: 1,
-    textLabel: 'tissue',
-    // color: [255, 174, 128, 255],
-    color: [255, 0, 0, 255],
-  },
-  {
-    integerLabel: 2,
-    textLabel: 'bone',
-    // color: [241, 214, 145, 255],
-    color: [0, 255, 0, 255],
-  },
-  {
-    integerLabel: 3,
-    textLabel: 'skin',
-    // color: [177, 122, 101, 255],
-    color: [0, 0, 255, 255],
-  },
-  // ....
-]
+const MAX_NUMBER_COLORS = 255
 
-function setLabelmapColorAndOpacity(volumeActor, cfun, ofun, colorLUTIndex) {
+function setLabelmapColorAndOpacity(
+  volumeActor,
+  cfun,
+  ofun,
+  colorLUTIndex = 0
+) {
   ofun.addPoint(0, 0)
 
-  // Todo: Get the colors from colorLUTTables by colorLUTIndex
-  // Todo: change this
   // Todo: get segment opacity from Settings
-  colors.forEach(({ integerLabel, color }) => {
-    cfun.addRGBPoint(integerLabel, ...color.slice(0, 3).map((c) => c / 255.0)) // label "1" will be red
-    ofun.addPoint(integerLabel, 0.9) // Red will have an opacity of 0.2.
-  })
+  // Note: MAX_NUMBER_COLORS = 256 is needed because the current method to generate
+  // the default color table uses RGB.
+  const colorLUT = state.colorLutTables[colorLUTIndex]
+  const numColors = Math.min(256, colorLUT.length)
+
+  for (let i = 0; i < numColors; i++) {
+    const color = colorLUT[i]
+    cfun.addRGBPoint(
+      i,
+      color[0] / MAX_NUMBER_COLORS,
+      color[1] / MAX_NUMBER_COLORS,
+      color[2] / MAX_NUMBER_COLORS
+    )
+
+    // Set the opacity per label.
+    const segmentOpacity = (color[3] / 255) * 0.9
+    ofun.addPointLong(i, segmentOpacity, 0.5, 1.0)
+  }
+
+  // colorLUT.forEach((color, index) => {
+  //   cfun.addRGBPoint(index, ...color.slice(0, 3).map((c) => c / 255.0)) // label "1" will be red
+  //   ofun.addPoint(index, 0.9) // Red will have an opacity of 0.2.
+  // })
 
   ofun.setClamping(false)
 

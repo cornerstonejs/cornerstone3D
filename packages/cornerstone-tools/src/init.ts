@@ -5,6 +5,7 @@ import {
 import { getDefaultToolStateManager } from './stateManagement/toolState'
 import { addEnabledElement, removeEnabledElement } from './store'
 import { resetCornerstoneToolsState } from './store/state'
+import { setColorLUT } from './store/SegmentationModule'
 
 let csToolsInitialized = false
 
@@ -14,6 +15,8 @@ export function init(defaultConfiguration = {}) {
   }
 
   _addCornerstoneEventListeners()
+  // Creating the default color LUT
+  setColorLUT(0)
   csToolsInitialized = true
 }
 
