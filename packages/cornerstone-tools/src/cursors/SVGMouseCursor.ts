@@ -2,10 +2,8 @@ import { ToolModes, ToolDataStates } from '../enums'
 import { getDefaultStyleProperty } from '../stateManagement/toolStyle'
 import MouseCursor from './MouseCursor'
 import ImageMouseCursor from './ImageMouseCursor'
-import {
-  getDefinedSVGCursorDescriptor,
-} from './SVGCursorDescriptor'
-import type {SVGCursorDescriptor} from './SVGCursorDescriptor'
+import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor'
+import type { SVGCursorDescriptor } from './SVGCursorDescriptor'
 
 const PROPERTY = 'color'
 const STATE = ToolDataStates.Highlighted

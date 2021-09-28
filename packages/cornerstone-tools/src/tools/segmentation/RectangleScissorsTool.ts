@@ -7,7 +7,10 @@ import {
 } from '@ohif/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
-import { fillInsideRectangle } from './strategies/fillInsideRectangle'
+import {
+  fillInsideRectangle,
+  fillOutsideRectangle,
+} from './strategies/fillInsideRectangle'
 import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
 
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -25,13 +28,6 @@ import {
   getActiveSegmentIndex,
   getColorForSegmentIndexColorLUT,
 } from '../../store/SegmentationModule'
-
-// import {
-//   segRectangleFillInsideCursor,
-//   segRectangleFillOutsideCursor,
-//   segRectangleEraseInsideCursor,
-//   segRectangleEraseOutsideCursor,
-// } from '../cursors'
 
 /**
  * @public
@@ -64,6 +60,7 @@ export default class RectangleScissorsTool extends BaseTool {
       configuration: {},
       strategies: {
         FILL_INSIDE: fillInsideRectangle,
+        FILL_OUTSIDE: fillOutsideRectangle,
       },
       defaultStrategy: 'FILL_INSIDE',
     })
