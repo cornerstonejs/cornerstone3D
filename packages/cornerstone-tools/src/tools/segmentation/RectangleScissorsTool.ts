@@ -48,6 +48,7 @@ export default class RectangleScissorsTool extends BaseTool {
   editData: {
     toolData: any
     labelmap: any
+    segmentIndex: number
     viewportUIDsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
@@ -70,7 +71,7 @@ export default class RectangleScissorsTool extends BaseTool {
     })
   }
 
-  addNewState = (evt) => {
+  addNewState = async (evt) => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -83,12 +84,15 @@ export default class RectangleScissorsTool extends BaseTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    // const labelmapIndex = getActiveLabelmapIndex(element)
-    // const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
-    const labelmapUID = 'temp'
+    const labelmapIndex = getActiveLabelmapIndex(element)
+    if (labelmapIndex === undefined) {
+      throw new Error(
+        'No active labelmap detected, create one before using scissors tool'
+      )
+    }
+    const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
+    const labelmap = cache.getVolume(labelmapUID)
 
-    // const labelmapIndex = getActiveLabelmapIndex(element)
-    // setActiveLabelmapIndex(element, labelmapIndex).then((labelmapUID) => {
     const toolData = {
       metadata: {
         viewPlaneNormal: <Point3>[...viewPlaneNormal],
@@ -98,7 +102,6 @@ export default class RectangleScissorsTool extends BaseTool {
         toolName: this.name,
       },
       data: {
-        labelmapUID,
         invalidated: true,
         handles: {
           points: [
@@ -114,7 +117,8 @@ export default class RectangleScissorsTool extends BaseTool {
     }
 
     // Ensure settings are initialized after tool data instantiation
-    // Settings.getObjectSettings(toolData, RectangleRoiTool)
+    // Todo: color the rectangle accordingly to the segment index
+    Settings.getObjectSettings(toolData, RectangleRoiTool)
 
     // addToolState(element, toolData)
 
@@ -125,7 +129,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     this.editData = {
       toolData,
-      labelmapUID,
+      labelmap,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -135,7 +139,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     this._activateDraw(element)
 
-    // hideElementCursor(element)
+    hideElementCursor(element)
 
     evt.preventDefault()
 
@@ -143,9 +147,6 @@ export default class RectangleScissorsTool extends BaseTool {
       renderingEngine,
       viewportUIDsToRender
     )
-
-    // return toolData
-    // })
   }
 
   _mouseDragCallback = (evt) => {
@@ -215,11 +216,7 @@ export default class RectangleScissorsTool extends BaseTool {
     }
     data.invalidated = true
 
-    // const labelmapIndex = getActiveLabelmapIndex(element)
-    // const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
-
     this.editData.hasMoved = true
-    // this.editData.labelmapUID = labelmapUID
 
     const { renderingEngine } = enabledElement
 
@@ -229,12 +226,12 @@ export default class RectangleScissorsTool extends BaseTool {
     )
   }
 
-  _mouseUpCallback = async (evt) => {
+  _mouseUpCallback = (evt) => {
     const eventData = evt.detail
     const { element } = eventData
 
-    // const { toolData, newAnnotation, hasMoved, labelmapUID } = this.editData
-    const { toolData, newAnnotation, hasMoved } = this.editData
+    const { toolData, newAnnotation, hasMoved, labelmap, segmentIndex } =
+      this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
@@ -258,46 +255,23 @@ export default class RectangleScissorsTool extends BaseTool {
       throw new Error('Not implemented yet')
     }
 
-    const labelmapIndex = getActiveLabelmapIndex(element)
-    const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
-
     const operationData = {
       points: data.handles.points,
-      labelmapUID,
-      referenceVolume: viewport.getImageData(),
+      labelmap,
+      segmentIndex,
     }
 
-    this.applyActiveStrategy(
-      { detail: { canvas: element, enabledElement, renderingEngine } },
-      operationData
-    )
-    // // console.log('🚀 ~ labelmapUID1 ', labelmapUID)
+    const eventDetail = {
+      canvas: element,
+      enabledElement,
+      renderingEngine,
+    }
 
-    // console.debug('alireza', labelmapIndex, labelmapUID)
-    // const labelmap = cache.getVolume(labelmapUID)
-
-    // const values = labelmap.vtkImageData.getPointData().getScalars().getData()
-    // const dims = labelmap.vtkImageData.getDimensions()
-    // const size = dims[0] * dims[1] * dims[2]
-    // for (let i = 0; i < size; i++) {
-    //   values[i] = 3
-    // }
-
-    // labelmap.vtkImageData.modified()
-    // viewport.getActors().forEach(({ volumeActor }) => {
-    //   volumeActor.modified()
-    //   volumeActor.getMapper().modified()
-    // })
-    // viewport.render()
-    // return
-
-    // const labelmapIndex = getActiveLabelmapIndex(element)
-    // const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
-    // console.dir(cache.getVolume(labelmapUID))
+    this.applyActiveStrategy(eventDetail, operationData)
   }
 
   /**
-   * Add event handlers for the modify event loop, and prevent default event prapogation.
+   * Add event handlers for the modify event loop, and prevent default event propagation.
    */
   _activateDraw = (element) => {
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
@@ -321,9 +295,6 @@ export default class RectangleScissorsTool extends BaseTool {
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { canvas: canvasElement } = eventData
-
     if (!this.editData) {
       return
     }
@@ -331,26 +302,25 @@ export default class RectangleScissorsTool extends BaseTool {
     const { enabledElement } = svgDrawingHelper
     const { viewport } = enabledElement
 
-    let targetUID
-    if (viewport instanceof StackViewport) {
-      // targetUID = this._getTargetStackUID(viewport)
-      throw new Error('Stack viewport segmentation not implemented yet')
-    } else if (viewport instanceof VolumeViewport) {
-      const scene = viewport.getScene()
-      targetUID = this._getTargetVolumeUID(scene)
-    } else {
-      throw new Error(`Viewport Type not supported: ${viewport.type}`)
-    }
-
-    const renderingEngine = viewport.getRenderingEngine()
+    // if (viewport instanceof StackViewport) {
+    //   // targetUID = this._getTargetStackUID(viewport)
+    //   throw new Error('Stack viewport segmentation not implemented yet')
+    // } else if (viewport instanceof VolumeViewport) {
+    //   const scene = viewport.getScene()
+    //   targetUID = this._getTargetVolumeUID(scene)
+    // } else {
+    //   throw new Error(`Viewport Type not supported: ${viewport.type}`)
+    // }
 
     const { toolData } = this.editData
+
+    // Todo: rectangle colro based on segment index
     const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
     const toolMetadata = toolData.metadata
     const annotationUID = toolMetadata.toolDataUID
 
     const data = toolData.data
-    const { points, activeHandleIndex } = data.handles
+    const { points } = data.handles
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
     const color = 'red'
 

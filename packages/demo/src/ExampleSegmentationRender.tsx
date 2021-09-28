@@ -357,8 +357,17 @@ class MPRExample extends Component {
     })
   }
 
-  activateTool = (evt) => {
+  activateTool = async (evt) => {
     const toolName = evt.target.value
+
+    const {canvas: element} = this.renderingEngine.getViewport("ctAxial")
+    if (toolName === "RectangleScissors"){
+      const labelmapIndex = SegmentationModule.getActiveLabelmapIndex(element)
+      await SegmentationModule.setActiveLabelmapIndex(
+        element,
+        labelmapIndex
+      )
+    }
 
     this.resetToolModes(ctSceneToolGroup)
 
@@ -386,10 +395,6 @@ class MPRExample extends Component {
       ],
     })
     this.renderingEngine.render()
-
-
-
-
     // const toolName = this.state.segmentationTool
     // ;[...toolsToUse].forEach((toolName) => {
     //   ctSceneToolGroup.setToolPassive(toolName)
@@ -514,7 +519,7 @@ class MPRExample extends Component {
       'fatTissue',
     ])
 
-    this.setState({ segmentationStatus: 'ready' })
+    this.setState({ segmentationStatus: '(ready!)' })
   }
 
   loadSegmentation = async (viewportUID, labelmapUID) => {
@@ -630,85 +635,92 @@ class MPRExample extends Component {
             className="col-xs-12"
             style={{ margin: '8px 0', marginLeft: '-4px' }}
           >
-            {/* LAYOUT BUTTONS */}
-            {/* TOGGLES */}
             {fusionButtons}
-            {/* Hide until we update react in a better way  {fusionWLDisplay} */}
           </div>
         </div>
-        <h4>Segmentation</h4>
 
-        <select
-          value={this.state.segmentationTool}
-          onChange={(evt) =>
-            this.setState({ segmentationTool: evt.target.value })
-          }
-        >
-          {SEGMENTATION_TOOLS.map((toolName) => (
-            <option key={toolName} value={toolName}>
-              {toolName}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={() => this.activateTool({
-            target: {value:'RectangleScissors'},
-          })}
-          className="btn btn-primary"
-          style={{ margin: '2px 4px' }}
-        >
-          Activate Segmentation Tool
-        </button>
         <div>
-          <button
-            onClick={() => this.preLoadSegmentations()}
-            className="btn btn-primary"
-            style={{ margin: '2px 4px' }}
-          >
-            Pre-compute bone & softTissue and fatTissue labelmaps
-          </button>
-          {this.state.segmentationStatus !== ''
-            ? this.state.segmentationStatus
-            : null}
-          <span>Viewport Selector</span>
+          <h4>Segmentation Tools</h4>
           <select
-            value={this.state.selectedViewportForSeg}
+            value={this.state.segmentationTool}
             onChange={(evt) =>
-              this.setState({ selectedViewportForSeg: evt.target.value })
+              this.setState({ segmentationTool: evt.target.value })
             }
-            style={{ marginLeft: '2px' }}
           >
-            {['ctAxial', 'ptAxial'].map((uid) => (
-              <option key={uid} value={uid}>
-                {uid}
+            {SEGMENTATION_TOOLS.map((toolName) => (
+              <option key={toolName} value={toolName}>
+                {toolName}
               </option>
             ))}
           </select>
           <button
             onClick={() =>
-              this.loadSegmentation(
-                this.state.selectedViewportForSeg,
-                labelmap1UID
-              )
+              this.activateTool({
+                target: { value: 'RectangleScissors' },
+              })
             }
             className="btn btn-primary"
             style={{ margin: '2px 4px' }}
           >
-            Load Bone & Soft Tissue Labelmap
+            Activate Segmentation Tool
           </button>
-          <button
-            onClick={() =>
-              this.loadSegmentation(
-                this.state.selectedViewportForSeg,
-                labelmap2UID
-              )
-            }
-            className="btn btn-primary"
-            style={{ margin: '2px 4px' }}
-          >
-            Load Fat Tissue Labelmap
-          </button>
+        </div>
+        <div>
+          <h4>Segmentation Render</h4>
+
           <div>
+            <button
+              onClick={() => this.preLoadSegmentations()}
+              className="btn btn-primary"
+              style={{ margin: '2px 4px' }}
+            >
+              Pre-compute bone & softTissue and fatTissue labelmaps
+            </button>
+            {this.state.segmentationStatus !== ''
+              ? this.state.segmentationStatus
+              : null}
+            <span>Viewport Selector</span>
+            <select
+              value={this.state.selectedViewportForSeg}
+              onChange={(evt) =>
+                this.setState({ selectedViewportForSeg: evt.target.value })
+              }
+              style={{ marginLeft: '2px' }}
+            >
+              {['ctAxial', 'ptAxial'].map((uid) => (
+                <option key={uid} value={uid}>
+                  {uid}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() =>
+                this.loadSegmentation(
+                  this.state.selectedViewportForSeg,
+                  labelmap1UID
+                )
+              }
+              className="btn btn-primary"
+              style={{ margin: '2px 4px' }}
+            >
+              Load Bone & Soft Tissue Labelmap
+            </button>
+            <button
+              onClick={() =>
+                this.loadSegmentation(
+                  this.state.selectedViewportForSeg,
+                  labelmap2UID
+                )
+              }
+              className="btn btn-primary"
+              style={{ margin: '2px 4px' }}
+            >
+              Load Fat Tissue Labelmap
+            </button>
+          </div>
+
+          <div>
+            <h4>Segmentation Rendering Config</h4>
             <input
               type="checkbox"
               style={{ marginLeft: '10px' }}

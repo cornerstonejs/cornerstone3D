@@ -1,5 +1,18 @@
-import { Viewport, cache } from '@ohif/cornerstone-render'
+import { Viewport, cache, ImageVolume } from '@ohif/cornerstone-render'
+import { IEnabledElement } from 'cornerstone-render/src/types'
+import { vec3 } from 'gl-matrix'
 import vtkPaintFilter from 'vtk.js/Sources/Filters/General/PaintFilter'
+import { Point3 } from '../../../types'
+
+type OperationData = {
+  points: [Point3, Point3, Point3, Point3]
+  labelmap: ImageVolume
+  segmentIndex: number
+}
+
+type FillRectangleEvent = {
+  enabledElement: IEnabledElement
+}
 
 /**
  * FillInsideRectangle - Fill all pixels inside/outside the region defined
@@ -9,58 +22,90 @@ import vtkPaintFilter from 'vtk.js/Sources/Filters/General/PaintFilter'
  *                          modify, the `segmentIndex` and the `points` array.
  * @returns {null}
  */
-function fillRectangle(evt, operationData, inside = true) {
-  const { labelmapUID, points } = operationData
+function fillRectangle(
+  evt: FillRectangleEvent,
+  operationData: OperationData,
+  inside = true
+): void {
+  const { labelmap, points, segmentIndex } = operationData
 
-  const {
-    enabledElement: { viewport },
-  } = evt.detail
+  const { enabledElement } = evt
+  const { viewport } = enabledElement
 
-  const labelmap = cache.getVolume(labelmapUID)
+  const { vtkImageData, dimensions } = labelmap
 
-  const values = labelmap.vtkImageData.getPointData().getScalars().getData()
+  // Values to modify
+  const values = vtkImageData.getPointData().getScalars().getData()
+  // const spacingToUse = Math.min(...spacing)
 
-  const { spacing, vtkImageData } = labelmap
-  const spacingToUse = Math.min(...spacing)
+  const rectangleCornersIJK: Point3[] = points.map((world) => {
+    return vtkImageData.worldToIndex(world)
+  })
 
-  const [xMin, yMin, zMin] = points[0]
-  const [xMax, yMax, zMax] = points[3]
-  const z = zMin
+  const [[xMin, yMin], [xMax, yMax], [zMin, zMax]] =
+    getBoundingBoxAroundPolygon(rectangleCornersIJK, vtkImageData)
+
   // Todo: this doesn't support oblique or sagittal or coronal for now or rectangles that are not drawn from top left to bottom right
-
-  for (let x = xMin; x < xMax; x = x + spacingToUse) {
-    for (let y = yMin; y < yMax; y = y + spacingToUse) {
-      const offset = vtkImageData.getOffsetIndexFromWorld([x, y, z])
-      values[offset] = 1
+  // Todo: only handle ijk , and throw for oblique
+  for (let x = xMin; x <= xMax; x++) {
+    for (let y = yMin; y <= yMax; y++) {
+      for (let z = zMin; z <= zMax; z++) {
+        const offset = vtkImageData.computeOffsetIndex([x, y, z])
+        values[offset] = 1
+      }
     }
   }
 
-  // counts = {}
-  // for (const num of values) {
-  //   counts[num] = counts[num] ? counts[num] + 1 : 1
-  // }
-  // console.debug('counts after: ', counts)
+  for (let i = 0; i < dimensions[2]; i++) {
+    labelmap.vtkOpenGLTexture.setUpdatedFrame(i)
+  }
 
-  // console.debug('before', vtkImageData.getMTime())
   vtkImageData.getPointData().getScalars().setData(values)
   vtkImageData.modified()
-
-  const actors = viewport.getActors()
-  actors.forEach(({ volumeActor }) => {
-    volumeActor.modified()
-    volumeActor.getMapper().modified()
-    // volumeActor.getMapper().getScalarTexture().modified()
-  })
-  labelmap.vtkImageData.modified()
-  labelmap.vtkImageData.getPointData().modified()
-  labelmap.vtkImageData.getPointData().getScalars().modified()
-  labelmap.vtkOpenGLTexture.modified()
-  // console.debug('after', vtkImageData.getMTime())
-  viewport.render()
+  viewport.getScene().render()
 
   // inside
   //   ? fillInsideShape(evt, operationData, () => true, topLeft, bottomRight)
   //   : fillOutsideBoundingBox(evt, operationData, topLeft, bottomRight)
+}
+
+export default function getBoundingBoxAroundPolygon(vertices, vtkImageData) {
+  let xMin = Infinity
+  let xMax = 0
+  let yMin = Infinity
+  let yMax = 0
+  let zMin = Infinity
+  let zMax = 0
+  const [width, height, depth] = vtkImageData.getDimensions()
+
+  vertices.forEach((v) => {
+    xMin = Math.min(v[0], xMin)
+    xMax = Math.max(v[0], xMax)
+    yMin = Math.min(v[1], yMin)
+    yMax = Math.max(v[1], yMax)
+    zMin = Math.min(v[2], zMin)
+    zMax = Math.max(v[2], zMax)
+  })
+
+  xMin = Math.floor(xMin)
+  xMax = Math.floor(xMax)
+  yMin = Math.floor(yMin)
+  yMax = Math.floor(yMax)
+  zMin = Math.floor(zMin)
+  zMax = Math.floor(zMax)
+
+  xMin = Math.max(0, xMin)
+  xMax = Math.min(width, xMax)
+  yMin = Math.max(0, yMin)
+  yMax = Math.min(height, yMax)
+  zMin = Math.max(0, zMin)
+  zMax = Math.min(depth, zMax)
+
+  return [
+    [xMin, yMin],
+    [xMax, yMax],
+    [zMin, zMax],
+  ]
 }
 
 /**
@@ -70,7 +115,10 @@ function fillRectangle(evt, operationData, inside = true) {
  *                          modify, the `segmentIndex` and the `points` array.
  * @returns {null}
  */
-export function fillInsideRectangle(evt, operationData) {
+export function fillInsideRectangle(
+  evt: FillRectangleEvent,
+  operationData: OperationData
+): void {
   fillRectangle(evt, operationData, true)
 }
 
@@ -81,6 +129,9 @@ export function fillInsideRectangle(evt, operationData) {
  *                          modify, the `segmentIndex` and the `points` array.
  * @returns {null}
  */
-export function fillOutsideRectangle(evt, operationData) {
+export function fillOutsideRectangle(
+  evt: FillRectangleEvent,
+  operationData: OperationData
+): void {
   fillRectangle(evt, operationData, false)
 }

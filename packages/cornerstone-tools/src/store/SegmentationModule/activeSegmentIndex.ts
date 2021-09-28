@@ -2,17 +2,24 @@ import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state from './state'
 import { addNewLabelmap, getNextLabelmapIndex } from './addNewLabelmap'
+import { getActiveLabelmapIndex } from '.'
 
 /**
- * Returns the index of the active `Labelmap3D`.
+ * Returns the index of the active Segment for the current active labelmap
  *
  * @param  {HTMLElement} canvas HTML canvas
- * @returns {number} The index of the active `Labelmap3D`.
+ * @returns {number} The active segment index
  */
-function getActiveLabelmapIndex(canvas: HTMLCanvasElement): number {
+function getActiveSegmentIndex(canvas: HTMLCanvasElement): number {
   const enabledElement = getEnabledElement(canvas)
 
   if (!enabledElement) {
+    return
+  }
+
+  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
+  if (activeLabelmapIndex === undefined) {
+    console.warn('No active labelmap detected')
     return
   }
 
@@ -30,21 +37,21 @@ function getActiveLabelmapIndex(canvas: HTMLCanvasElement): number {
     return
   }
 
-  return viewportSegState.activeLabelmapIndex
+  return viewportSegState.labelmaps[activeLabelmapIndex].activeSegmentIndex
 }
 
 /**
- * Sets the active `labelmapIndex` for the `BrushStackState` displayed on this
- * element. Creates the corresponding `Labelmap3D` if it doesn't exist.
+ * Sets the active `segmentIndex` for the labelmap on the element.
+ *
  *
  * @param  {HTMLElement|string} elementOrEnabledElementUID   The cornerstone enabled
  *                                                    element or its UUID.
  * @param  {number} labelmapIndex = 0 The index of the labelmap.
  * @returns {string} labelmap UID which is the volumeUID of the labelmap which is active now
  */
-async function setActiveLabelmapIndex(
+function setActiveSegmentIndex(
   canvas: HTMLCanvasElement,
-  labelmapIndex = 0
+  segmentIndex = 0
 ): Promise<string> {
   const enabledElement = getEnabledElement(canvas)
 
@@ -62,29 +69,21 @@ async function setActiveLabelmapIndex(
   // volumeViewport
   const viewportSegState = state.volumeViewports[viewportUID]
 
-  // If we have already a labelmap in the state for the provided labelmapIndex
-  if (viewportSegState?.labelmaps[labelmapIndex]) {
-    viewportSegState.activeLabelmapIndex = labelmapIndex
-    return viewportSegState.labelmaps[labelmapIndex].volumeUID
+  // Todo: should this initialize the state when no labelmaps? I don't think so
+  if (!viewportSegState) {
+    throw new Error(
+      'Canvas does not contain an active labelmap, create one first before setting the segment Index'
+    )
   }
 
-  // Todo: do we need this? it should be set to the value of the labelmapIndex
-  let index = labelmapIndex
-  if (!labelmapIndex) {
-    index = getNextLabelmapIndex(canvas)
+  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
+  const activeLabelmap = viewportSegState.labelmaps[activeLabelmapIndex]
+  if (!activeLabelmap) {
+    throw new Error(
+      'Canvas does not contain an active labelmap, create one first before setting the segment Index'
+    )
   }
-
-  const options = {
-    volumeUID: `labelmap-${index}`,
-  }
-  // Put the current volume as a reference for the labelmap
-  const labelmapUID = await addNewLabelmap({
-    canvas,
-    labelmapIndex,
-    options,
-  })
-
-  return labelmapUID
+  activeLabelmap.activeSegmentIndex = segmentIndex
 }
 
-export { getActiveLabelmapIndex, setActiveLabelmapIndex }
+export { getActiveSegmentIndex, setActiveSegmentIndex }

@@ -7,6 +7,10 @@ import {
   getActiveLabelmapIndex,
 } from './activeLabelmapIndex'
 import {
+  setActiveSegmentIndex,
+  getActiveSegmentIndex,
+} from './activeSegmentIndex'
+import {
   getSegmentationConfig,
   setSegmentationConfig,
 } from './segmentationConfig'
@@ -25,13 +29,26 @@ export {
 }
 
 export default {
+  // Set labelmap for element
   setLabelmapForElement,
-  getActiveLabelmapForElement,
+  addNewLabelmap,
+
+  // Set/Get Labelmap
   getLabelmapForElement,
-  getSegmentationConfig,
-  setSegmentationConfig,
+
+  // Set/Get Active labelmap/Index
+  getActiveLabelmapForElement,
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
-  addNewLabelmap,
+
+  // Set/Get Active Segment index
+  setActiveSegmentIndex,
+  getActiveSegmentIndex,
+
+  // Config
+  getSegmentationConfig,
+  setSegmentationConfig,
+
+  // Utils
   getNextLabelmapIndex,
 }
