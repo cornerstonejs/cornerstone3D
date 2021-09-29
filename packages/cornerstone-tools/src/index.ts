@@ -51,6 +51,7 @@ import {
   CrosshairsTool,
   BrushTool,
   RectangleScissorsTool,
+  CircleScissorsTool,
 } from './tools'
 import { ToolBindings, CornerstoneTools3DEvents } from './enums'
 
@@ -82,6 +83,7 @@ export {
   // Segmentation Tools
   BrushTool,
   RectangleScissorsTool,
+  CircleScissorsTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

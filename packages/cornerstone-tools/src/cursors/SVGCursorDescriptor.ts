@@ -414,7 +414,12 @@ const DefinedDescriptorsMap = {
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationCircleFillInside: extend(BASE, {
+  CircleScissors: extend(BASE, {
+    iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
+    viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
+  }),
+
+  'CircleScissors.FILL_INSIDE': extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
