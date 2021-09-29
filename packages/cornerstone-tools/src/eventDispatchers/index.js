@@ -3,7 +3,7 @@ import mouseToolEventDispatcher from './mouseToolEventDispatcher'
 import keyboardToolEventDispatcher from './keyboardToolEventDispatcher'
 import cameraModifiedEventDispatcher from './cameraModifiedEventDispatcher'
 import imageSpacingCalibratedEventDispatcher from './imageSpacingCalibratedEventDispatcher'
-import labelmapModifiedEventDispatcher from './labelmapModifiedEventDispatcher'
+import labelmapUpdatedEventDispatcher from './labelmapUpdatedEventDispatcher'
 // import touchToolEventDispatcher from './touchToolEventDispatcher';
 
 export {
@@ -12,6 +12,6 @@ export {
   keyboardToolEventDispatcher,
   cameraModifiedEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
-  labelmapModifiedEventDispatcher,
+  labelmapUpdatedEventDispatcher,
   // touchToolEventDispatcher,
 }

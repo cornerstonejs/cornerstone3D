@@ -3,7 +3,6 @@ import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunct
 
 import {
   getEnabledElement,
-  Scene,
   StackViewport,
   triggerEvent,
   cache,
@@ -22,7 +21,6 @@ type LabelmapEvent = {
   renderingEngineUID: string
   sceneUID: string
   viewportUID: string
-  scene: Scene
 }
 
 function getActiveLabelmapForElement(canvas) {
@@ -68,7 +66,7 @@ async function setLabelmapForElement({
 
   const labelmapState =
     state.volumeViewports[viewportUID].labelmaps[labelmapIndex]
-  const { cfun, ofun } = labelmapState
+  const { cfun, ofun, labelmapConfig } = labelmapState
 
   // Default to true since we are setting a new labelmap, however,
   // in the event listener, we will make other segmentations visible/invisible
@@ -80,7 +78,14 @@ async function setLabelmapForElement({
     {
       volumeUID: labelmapUID,
       callback: ({ volumeActor }) => {
-        setLabelmapColorAndOpacity(volumeActor, cfun, ofun, colorLUTIndex)
+        setLabelmapColorAndOpacity(
+          volumeActor,
+          cfun,
+          ofun,
+          colorLUTIndex,
+          labelmapConfig,
+          true // isActiveLabelmap
+        )
       },
       visibility,
     },
@@ -93,10 +98,9 @@ async function setLabelmapForElement({
     renderingEngineUID,
     sceneUID,
     viewportUID,
-    scene,
   }
 
-  triggerEvent(canvas, EVENTS.LABELMAP_MODIFIED, eventData)
+  triggerEvent(canvas, EVENTS.LABELMAP_UPDATED, eventData)
 }
 
 /**
@@ -136,6 +140,7 @@ function updateStateForVolumeViewports(
       segmentsHidden: [],
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),
+      labelmapConfig: {},
     }
   })
 }

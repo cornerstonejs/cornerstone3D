@@ -51,6 +51,9 @@ function fillRectangle(
     for (let y = yMin; y <= yMax; y++) {
       for (let z = zMin; z <= zMax; z++) {
         const offset = vtkImageData.computeOffsetIndex([x, y, z])
+        if (values[offset] === 1) {
+          continue
+        }
         values[offset] = segmentIndex
       }
     }
@@ -62,6 +65,9 @@ function fillRectangle(
 
   vtkImageData.getPointData().getScalars().setData(values)
   vtkImageData.modified()
+
+  // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
+  // right now this is needed to update the labelmap on other viewports that have it (pt)
   renderingEngine.render()
 
   // inside

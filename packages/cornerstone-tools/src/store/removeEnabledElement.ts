@@ -10,7 +10,7 @@ import {
   mouseToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
-  labelmapModifiedEventDispatcher,
+  labelmapUpdatedEventDispatcher,
   //   touchToolEventDispatcher,
 } from '../eventDispatchers'
 // ~~
@@ -53,7 +53,7 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   // touchToolEventDispatcher.disable(canvas);
 
   // labelmap
-  labelmapModifiedEventDispatcher.disable(canvas)
+  labelmapUpdatedEventDispatcher.disable(canvas)
 
   // State
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?

@@ -1,6 +1,6 @@
 import { getEnabledElement } from '@ohif/cornerstone-render'
 import state from './state'
-import { getSegmentationConfig } from './segmentationConfig'
+import config from './segmentationConfig'
 
 type Color = [number, number, number, number]
 
@@ -12,7 +12,7 @@ type Color = [number, number, number, number]
  * @returns {null}
  */
 export function setColorLUT(colorLUTIndex: number, colorLUT = []): void {
-  const { segmentsPerLabelmap } = getSegmentationConfig()
+  const { segmentsPerLabelmap } = config
 
   if (colorLUT) {
     _checkColorLUTLength(colorLUT, segmentsPerLabelmap)
