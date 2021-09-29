@@ -4,39 +4,42 @@ import setLabelmapForElement, {
 } from './setLabelmapForElement'
 import {
   setActiveLabelmapIndex,
-  setActiveLabelmapIndexByLabelmapUID,
+  setActiveLabelmapByLabelmapUID,
   getActiveLabelmapIndex,
-  getNextLabelmapIndex,
+  getActiveLabelmapUID,
 } from './activeLabelmapIndex'
+import {
+  getNextLabelmapIndex,
+  getLabelmapUIDsForElement,
+  getLabelmapUIDsForViewportUID,
+  getActiveSegmentIndexForLabelmapUID,
+  triggerLabelmapsUpdated,
+} from './utils'
 import {
   setActiveSegmentIndex,
   getActiveSegmentIndex,
 } from './activeSegmentIndex'
-import {
-  getSegmentationConfig,
-  setSegmentationConfig,
-} from './segmentationConfig'
+// import * as segmentationConfig from './segmentationConfig'
+import config, { setGlobalConfig } from './segmentationConfig'
 import { addNewLabelmap } from './addNewLabelmap'
 import { setColorLUT, getColorForSegmentIndexColorLUT } from './colorLUT'
-import {
-  getLabelmapUIDsForElement,
-  getLabelmapUIDsForViewportUID,
-} from './getLabelmapUIDsForElement'
 
 export {
   setLabelmapForElement,
   getActiveLabelmapForElement,
   getLabelmapForElement,
-  getSegmentationConfig,
-  setSegmentationConfig,
   setActiveLabelmapIndex,
-  setActiveLabelmapIndexByLabelmapUID,
+  setActiveLabelmapByLabelmapUID,
   getActiveLabelmapIndex,
+  getActiveLabelmapUID,
   addNewLabelmap,
   getActiveSegmentIndex,
   getNextLabelmapIndex,
   setColorLUT,
   getColorForSegmentIndexColorLUT,
+  getActiveSegmentIndexForLabelmapUID,
+  config,
+  setGlobalConfig,
 }
 
 export default {
@@ -51,17 +54,18 @@ export default {
 
   // Set/Get Active labelmap/Index
   getActiveLabelmapForElement,
-  setActiveLabelmapIndexByLabelmapUID,
+  setActiveLabelmapByLabelmapUID,
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
+  getActiveLabelmapUID,
 
   // Set/Get Active Segment index
   setActiveSegmentIndex,
   getActiveSegmentIndex,
 
   // Config
-  getSegmentationConfig,
-  setSegmentationConfig,
+  config,
+  setGlobalConfig,
 
   // ColorLUT
   setColorLUT,
@@ -69,4 +73,6 @@ export default {
 
   // Utils
   getNextLabelmapIndex,
+  getActiveSegmentIndexForLabelmapUID,
+  triggerLabelmapsUpdated,
 }

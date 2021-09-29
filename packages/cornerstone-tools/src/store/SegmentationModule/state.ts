@@ -1,5 +1,6 @@
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
+import { ISegmentationConfig } from './segmentationConfig'
 
 type LabelmapState = {
   volumeUID: string
@@ -8,6 +9,7 @@ type LabelmapState = {
   colorLUTIndex: number
   cfun: vtkColorTransferFunction
   ofun: vtkPiecewiseFunction
+  labelmapConfig: Partial<ISegmentationConfig>
 }
 
 export type ViewportSegmentationState = {
@@ -46,6 +48,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //         segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //       },
   //     ],
   //   },
@@ -59,6 +62,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //         segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //       },
   //       {
   //         volumeUID: 'seg2',
@@ -67,6 +71,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //         segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //       },
   //     ],
   //   },
@@ -80,6 +85,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //         segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //       },
   //       {
   //         volumeUID: 'seg2',
@@ -88,6 +94,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //         segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //       },
   //     ],
   //   },
@@ -104,6 +111,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //           segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //         },
   //         {
   //           volumeUID: 'seg2',
@@ -112,6 +120,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //           segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //         },
   //       ],
   //     },
@@ -125,6 +134,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //           segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //         },
   //         {
   //           volumeUID: 'seg2',
@@ -133,6 +143,7 @@ const state: SegmentationState = {
   //         cfun: new cfun
   //         ofun: new ofun
   //           segmentsHidden: [],
+  //         labelmapConfig: ISegmentationConfig
   //         },
   //       ],
   //     },

@@ -509,10 +509,6 @@ class MPRExample extends Component {
     const { uid } = scene.getViewports()[0]
     const { canvas } = this.renderingEngine.getViewport(uid)
 
-    SegmentationModule.setSegmentationConfig({
-      renderOutline: this.state.renderOutline,
-      renderInactiveLabelmaps: this.state.renderInactiveLabelmaps,
-    })
 
     const labelmapIndex = SegmentationModule.getNextLabelmapIndex(canvas)
     const labelmap = cache.getVolume(labelmapUID)
@@ -525,6 +521,8 @@ class MPRExample extends Component {
 
     this.setState((prevState) => ({
       segmentationToolActive: true,
+      selectedLabelmapUID: SegmentationModule.getActiveLabelmapUID(canvas),
+      activeSegmentIndex: SegmentationModule.getActiveSegmentIndex(canvas),
       availableLabelmaps: [...prevState.availableLabelmaps, labelmapUID],
     }))
   }
@@ -667,11 +665,13 @@ class MPRExample extends Component {
                 }))
               }}
             >
-              {[SCENE_IDS.CT, SCENE_IDS.PT].map((groupName) => (
-                <option key={groupName} value={groupName}>
-                  {groupName}
-                </option>
-              ))}
+              {[SCENE_IDS.CT, SCENE_IDS.PT, SCENE_IDS.PTMIP].map(
+                (groupName) => (
+                  <option key={groupName} value={groupName}>
+                    {groupName}
+                  </option>
+                )
+              )}
             </select>
 
             <button
@@ -711,8 +711,11 @@ class MPRExample extends Component {
                   )
                   const { canvas } = scene.getViewports()[0]
                   const activeSegmentIndex =
-                    SegmentationModule.getActiveSegmentIndex(canvas)
-                  SegmentationModule.setActiveLabelmapIndexByLabelmapUID(
+                    SegmentationModule.getActiveSegmentIndexForLabelmapUID(
+                      canvas,
+                      selectedLabelmapUID
+                    )
+                  SegmentationModule.setActiveLabelmapByLabelmapUID(
                     canvas,
                     selectedLabelmapUID
                   )
@@ -761,33 +764,35 @@ class MPRExample extends Component {
             >
               1) Pre-compute bone & softTissue and fatTissue labelmaps
             </button>
-            {this.state.segmentationStatus !== ''
-              ? this.state.segmentationStatus
-              : null}
-            <button
-              onClick={() =>
-                this.loadSegmentation(
-                  this.state.sceneForSegmentation,
-                  labelmap1UID
-                )
-              }
-              className="btn btn-secondary"
-              style={{ margin: '2px 4px' }}
-            >
-              2.a) Load Bone & Soft Tissue Labelmap
-            </button>
-            <button
-              onClick={() =>
-                this.loadSegmentation(
-                  this.state.sceneForSegmentation,
-                  labelmap2UID
-                )
-              }
-              className="btn btn-secondary"
-              style={{ margin: '2px 4px' }}
-            >
-              2.b) Load Fat Tissue Labelmap
-            </button>
+            {this.state.segmentationStatus === '' ? null : (
+              <>
+                <span>{this.state.segmentationStatus}</span>
+                <button
+                  onClick={() =>
+                    this.loadSegmentation(
+                      this.state.sceneForSegmentation,
+                      labelmap1UID
+                    )
+                  }
+                  className="btn btn-secondary"
+                  style={{ margin: '2px 4px' }}
+                >
+                  2.a) Load Bone & Soft Tissue Labelmap
+                </button>
+                <button
+                  onClick={() =>
+                    this.loadSegmentation(
+                      this.state.sceneForSegmentation,
+                      labelmap2UID
+                    )
+                  }
+                  className="btn btn-secondary"
+                  style={{ margin: '2px 4px' }}
+                >
+                  2.b) Load Fat Tissue Labelmap
+                </button>
+              </>
+            )}
           </div>
 
           <div>
@@ -797,11 +802,13 @@ class MPRExample extends Component {
               style={{ marginLeft: '10px' }}
               name="toggle"
               defaultChecked={this.state.renderOutline}
-              onClick={() =>
+              onClick={() => {
+                const renderOutline = !this.state.renderOutline
+                SegmentationModule.setGlobalConfig({ renderOutline })
                 this.setState({
-                  renderOutline: !this.state.renderOutline,
+                  renderOutline,
                 })
-              }
+              }}
             />
             <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
               Render Outline
@@ -811,11 +818,14 @@ class MPRExample extends Component {
               style={{ marginLeft: '10px' }}
               name="toggle"
               defaultChecked={this.state.renderInactiveLabelmaps}
-              onClick={() =>
+              onClick={() => {
+                const renderInactiveLabelmaps =
+                  !this.state.renderInactiveLabelmaps
+                SegmentationModule.setGlobalConfig({ renderInactiveLabelmaps })
                 this.setState({
-                  renderInactiveLabelmaps: !this.state.renderInactiveLabelmaps,
+                  renderInactiveLabelmaps,
                 })
-              }
+              }}
             />
             <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
               Render inactive Labelmaps

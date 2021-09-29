@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state from './state'
-import { getActiveLabelmapIndex } from '.'
+import { getActiveLabelmapIndex } from './activeLabelmapIndex'
 
 /**
  * Returns the index of the active Segment for the current active labelmap
@@ -66,23 +66,28 @@ function setActiveSegmentIndex(
   }
 
   // volumeViewport
-  const viewportSegState = state.volumeViewports[viewportUID]
-
   // Todo: should this initialize the state when no labelmaps? I don't think so
-  if (!viewportSegState) {
+  if (!state.volumeViewports[viewportUID]) {
     throw new Error(
       'Canvas does not contain an active labelmap, create one first before setting the segment Index'
     )
   }
 
+  // active labelmap Index is the same for all viewports in the scene
   const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
-  const activeLabelmap = viewportSegState.labelmaps[activeLabelmapIndex]
-  if (!activeLabelmap) {
-    throw new Error(
-      'Canvas does not contain an active labelmap, create one first before setting the segment Index'
-    )
-  }
-  activeLabelmap.activeSegmentIndex = segmentIndex
+
+  // Update other viewports in the scene
+  const viewportUIDs = scene.getViewportUIDs()
+  viewportUIDs.forEach((viewportUID) => {
+    const viewportState = state.volumeViewports[viewportUID]
+    const activeLabelmap = viewportState.labelmaps[activeLabelmapIndex]
+    if (!activeLabelmap) {
+      throw new Error(
+        'Canvas does not contain an active labelmap, create one first before setting the segment Index'
+      )
+    }
+    activeLabelmap.activeSegmentIndex = segmentIndex
+  })
 }
 
 export { getActiveSegmentIndex, setActiveSegmentIndex }

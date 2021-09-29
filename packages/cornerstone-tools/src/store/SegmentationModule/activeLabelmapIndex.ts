@@ -2,30 +2,7 @@ import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state from './state'
 import { addNewLabelmap } from './addNewLabelmap'
-
-function getNextLabelmapIndex(canvas) {
-  const enabledElement = getEnabledElement(canvas)
-
-  if (!enabledElement) {
-    return
-  }
-
-  const { viewportUID } = enabledElement
-
-  // VolumeViewport Implementation
-  const viewportSegState = state.volumeViewports[viewportUID]
-
-  if (!viewportSegState) {
-    return 0
-  }
-
-  const numLabelmaps = viewportSegState.labelmaps.filter(
-    (labelmapUID) => !!labelmapUID
-  ).length
-
-  // next labelmap index = current length of labelmaps
-  return numLabelmaps
-}
+import { triggerLabelmapsUpdated } from './utils'
 
 /**
  * Returns the index of the active `Labelmap3D`.
@@ -58,6 +35,38 @@ function getActiveLabelmapIndex(canvas: HTMLCanvasElement): number {
 }
 
 /**
+ * Returns the VolumeUID of the active `Labelmap`.
+ *
+ * @param  {HTMLElement} canvas HTML canvas
+ * @returns {number} The index of the active `Labelmap3D`.
+ */
+function getActiveLabelmapUID(canvas: HTMLCanvasElement): string {
+  const enabledElement = getEnabledElement(canvas)
+
+  if (!enabledElement) {
+    return
+  }
+
+  const { scene, viewportUID } = enabledElement
+
+  // stackViewport
+  if (!scene) {
+    throw new Error('Segmentation for StackViewport is not supported yet')
+  }
+
+  // volumeViewport
+  const viewportSegState = state.volumeViewports[viewportUID]
+
+  if (!viewportSegState) {
+    return
+  }
+
+  const { activeLabelmapIndex } = viewportSegState
+
+  return viewportSegState.labelmaps[activeLabelmapIndex].volumeUID
+}
+
+/**
  * Sets the active `labelmapIndex` for the `BrushStackState` displayed on this
  * element. Creates the corresponding `Labelmap3D` if it doesn't exist.
  *
@@ -85,10 +94,16 @@ async function setActiveLabelmapIndex(
 
   // volumeViewport
   const viewportSegState = state.volumeViewports[viewportUID]
+  const viewportUIDs = scene.getViewportUIDs()
 
   // If we have already a labelmap in the state for the provided labelmapIndex
   if (viewportSegState?.labelmaps[labelmapIndex]) {
-    viewportSegState.activeLabelmapIndex = labelmapIndex
+    // Update active viewportUID on all scene's viewports
+    viewportUIDs.forEach((viewportUID) => {
+      state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
+    })
+    // Todo: only for the viewports changed
+    triggerLabelmapsUpdated()
     return viewportSegState.labelmaps[labelmapIndex].volumeUID
   }
 
@@ -112,7 +127,7 @@ async function setActiveLabelmapIndex(
 }
 
 // this method SHOULD not be used to create a new labelmap
-function setActiveLabelmapIndexByLabelmapUID(
+function setActiveLabelmapByLabelmapUID(
   canvas: HTMLCanvasElement,
   labelmapUID: string
 ): void {
@@ -148,8 +163,10 @@ function setActiveLabelmapIndexByLabelmapUID(
 }
 
 export {
+  // get
   getActiveLabelmapIndex,
+  getActiveLabelmapUID,
+  // set
   setActiveLabelmapIndex,
-  getNextLabelmapIndex,
-  setActiveLabelmapIndexByLabelmapUID,
+  setActiveLabelmapByLabelmapUID,
 }

@@ -1,4 +1,3 @@
-import renderInactiveLabelmaps from './renderInactiveLabelmaps'
-import renderActiveLabelmaps from './renderActiveLabelmaps'
+import renderLabelmaps from './renderLabelmaps'
 
-export { renderActiveLabelmaps, renderInactiveLabelmaps }
+export { renderLabelmaps }

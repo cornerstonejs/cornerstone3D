@@ -26,7 +26,6 @@ const {
   BidirectionalTool,
   CrosshairsTool,
   RectangleScissorsTool,
-  CircleScissorsToolctangleScissorsTool,
   CircleScissorsTool,
 } = csTools3d
 
