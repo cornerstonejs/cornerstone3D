@@ -26,6 +26,8 @@ const {
   BidirectionalTool,
   CrosshairsTool,
   RectangleScissorsTool,
+  CircleScissorsToolctangleScissorsTool,
+  CircleScissorsTool,
 } = csTools3d
 
 /* Configuration arrays and get/set functions for setting the crosshair interactions:
@@ -222,6 +224,7 @@ function initToolGroups(toolConfiguration = {}) {
   csTools3d.addTool(CrosshairsTool, toolConfiguration)
   // Segmentation
   csTools3d.addTool(RectangleScissorsTool, toolConfiguration)
+  csTools3d.addTool(CircleScissorsTool, toolConfiguration)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.STACK_CT
@@ -486,6 +489,9 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool('RectangleScissors', {
       configuration: { volumeUID: ctVolumeUID },
     })
+    ctSceneToolGroup.addTool('CircleScissors', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
     ctSceneToolGroup.addTool('WindowLevel', {
       configuration: { volumeUID: ctVolumeUID },
     })
@@ -552,6 +558,9 @@ function addToolsToToolGroups({
     // Set up PT Scene tools
     ptSceneToolGroup.addTool('RectangleScissors', {
       configuration: { volumeUID: ptVolumeUID },
+    })
+     ptSceneToolGroup.addTool('CircleScissors', {
+      configuration: { volumeUID: ctVolumeUID },
     })
 
     ptSceneToolGroup.addTool('Bidirectional', {

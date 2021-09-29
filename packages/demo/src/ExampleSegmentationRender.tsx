@@ -346,7 +346,7 @@ class MPRExample extends Component {
 
     const { canvas: element } = this.renderingEngine.getViewport(viewportUID)
 
-    if (toolName === 'RectangleScissors') {
+    if (SEGMENTATION_TOOLS.includes(toolName)) {
       const labelmapIndex = SegmentationModule.getActiveLabelmapIndex(element)
       await SegmentationModule.setActiveLabelmapIndex(element, labelmapIndex)
       const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
@@ -677,7 +677,7 @@ class MPRExample extends Component {
             <button
               onClick={() =>
                 this.activateTool({
-                  target: { value: 'RectangleScissors' },
+                  target: { value: this.state.segmentationTool },
                 })
               }
               className="btn btn-primary"
@@ -685,7 +685,7 @@ class MPRExample extends Component {
             >
               Activate Segmentation Tool
             </button>
-            <button
+            {/* <button
               onClick={() =>
                 ctSceneToolGroup.setActiveStrategyName(
                   'RectangleScissors',
@@ -696,7 +696,7 @@ class MPRExample extends Component {
               style={{ margin: '2px 4px' }}
             >
               Change strategy
-            </button>
+            </button> */}
           </div>
           {this.state.segmentationToolActive && (
             <div style={{ display: 'flex', alignItems: 'center' }}>
