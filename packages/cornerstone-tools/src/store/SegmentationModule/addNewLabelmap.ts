@@ -94,8 +94,10 @@ async function addNewLabelmap({
     labelmapState = {
       volumeUID: labelmapUID,
       activeSegmentIndex: 1,
-      segmentsHidden: [],
+      segmentsHidden: new Set(),
+      segmentsLocked: new Set(),
       colorLUTIndex: 0,
+      labelmapConfig: {},
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),
     }

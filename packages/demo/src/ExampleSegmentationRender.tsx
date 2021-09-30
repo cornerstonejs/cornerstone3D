@@ -102,6 +102,9 @@ class MPRExample extends Component {
     selectedLabelmapUID: '',
     availableLabelmaps: [],
     activeSegmentIndex: 1,
+    fillAlpha: 0.9,
+    fillAlphaInactive: 0.8,
+    segmentLocked: false,
   }
 
   constructor(props) {
@@ -479,6 +482,8 @@ class MPRExample extends Component {
   }
 
   preLoadSegmentations = async () => {
+    this.setState({ segmentationStatus: '(Calculating...)' })
+
     // Use ct as background for segmentation threshold
     const ctViewport = this.renderingEngine.getViewport('ctAxial')
     const { vtkImageData: backgroundImageData } = ctViewport.getImageData()
@@ -501,14 +506,13 @@ class MPRExample extends Component {
       'fatTissue',
     ])
 
-    this.setState({ segmentationStatus: '(ready!)' })
+    this.setState({ segmentationStatus: 'done' })
   }
 
   loadSegmentation = async (sceneUID, labelmapUID) => {
     const scene = this.renderingEngine.getScene(sceneUID)
     const { uid } = scene.getViewports()[0]
     const { canvas } = this.renderingEngine.getViewport(uid)
-
 
     const labelmapIndex = SegmentationModule.getNextLabelmapIndex(canvas)
     const labelmap = cache.getVolume(labelmapUID)
@@ -519,12 +523,35 @@ class MPRExample extends Component {
       labelmapIndex,
     })
 
+    const activeSegmentIndex = SegmentationModule.getActiveSegmentIndex(canvas)
+    const segmentLocked =
+      SegmentationModule.getSegmentIndexLockedStatusForElement(
+        canvas,
+        activeSegmentIndex
+      )
+
     this.setState((prevState) => ({
       segmentationToolActive: true,
       selectedLabelmapUID: SegmentationModule.getActiveLabelmapUID(canvas),
-      activeSegmentIndex: SegmentationModule.getActiveSegmentIndex(canvas),
+      activeSegmentIndex,
+      segmentLocked,
       availableLabelmaps: [...prevState.availableLabelmaps, labelmapUID],
     }))
+  }
+
+  toggleLockedSegmentIndex = (evt) => {
+    const checked = evt.target.checked
+    console.debug('checked', checked)
+    // Todo: Don't have active viewport concept
+    const sceneUID = this.state.sceneForSegmentation
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const { canvas } = scene.getViewports()[0]
+    const activeLabelmapUID = SegmentationModule.getActiveLabelmapUID(canvas)
+    SegmentationModule.toggleSegmentIndexLockedForLabelmapUID(
+      activeLabelmapUID,
+      this.state.activeSegmentIndex
+    )
+    this.setState({ segmentLocked: checked })
   }
 
   changeActiveSegmentIndex = (direction) => {
@@ -540,7 +567,10 @@ class MPRExample extends Component {
     }
 
     SegmentationModule.setActiveSegmentIndex(canvas, newIndex)
-    this.setState({ activeSegmentIndex: newIndex })
+    const segmentLocked =
+      SegmentationModule.getSegmentIndexLockedStatusForElement(canvas, newIndex)
+    console.debug('segmentLocked', segmentLocked)
+    this.setState({ activeSegmentIndex: newIndex, segmentLocked })
   }
 
   swapPtCtTool = (evt) => {
@@ -655,14 +685,22 @@ class MPRExample extends Component {
               onChange={(evt) => {
                 const sceneUID = evt.target.value
                 const scene = this.renderingEngine.getScene(sceneUID)
-                const { uid } = scene.getViewports()[0]
+                const { uid, canvas } = scene.getViewports()[0]
                 const labelmapUIDs =
                   SegmentationModule.getLabelmapUIDsForViewportUID(uid)
-                console.debug(labelmapUIDs)
-                this.setState((prevState) => ({
+                const index = SegmentationModule.getActiveSegmentIndex(canvas)
+                const segmentLocked =
+                  SegmentationModule.getSegmentIndexLockedStatusForElement(
+                    canvas,
+                    index
+                  )
+
+                this.setState({
                   sceneForSegmentation: sceneUID,
                   availableLabelmaps: labelmapUIDs,
-                }))
+                  activeSegmentIndex: index,
+                  segmentLocked,
+                })
               }}
             >
               {[SCENE_IDS.CT, SCENE_IDS.PT, SCENE_IDS.PTMIP].map(
@@ -710,15 +748,14 @@ class MPRExample extends Component {
                     this.state.sceneForSegmentation
                   )
                   const { canvas } = scene.getViewports()[0]
-                  const activeSegmentIndex =
-                    SegmentationModule.getActiveSegmentIndexForLabelmapUID(
-                      canvas,
-                      selectedLabelmapUID
-                    )
+
                   SegmentationModule.setActiveLabelmapByLabelmapUID(
                     canvas,
                     selectedLabelmapUID
                   )
+
+                  const activeSegmentIndex =
+                    SegmentationModule.getActiveSegmentIndex(canvas)
 
                   this.setState({
                     selectedLabelmapUID,
@@ -741,8 +778,20 @@ class MPRExample extends Component {
               >
                 Previous Segment
               </button>
-              <span>
+              <span style={{ display: 'flex', flexDirection: 'column' }}>
                 {`Active Segment Index ${this.state.activeSegmentIndex}`}
+                <div>
+                  <input
+                    type="checkbox"
+                    style={{ marginLeft: '0px' }}
+                    name="lockToggle"
+                    checked={this.state.segmentLocked}
+                    onClick={(evt) => this.toggleLockedSegmentIndex(evt)}
+                  />
+                  <label htmlFor="lockToggle" style={{ marginLeft: '5px' }}>
+                    Locked?
+                  </label>
+                </div>
               </span>
               <button
                 onClick={() => this.changeActiveSegmentIndex(1)}
@@ -758,15 +807,20 @@ class MPRExample extends Component {
           <h5>Use Synthetic Segmentation</h5>
           <div>
             <button
-              onClick={() => this.preLoadSegmentations()}
+              onClick={() => {
+                this.setState(
+                  { segmentationStatus: 'Calculating...' },
+                  this.preLoadSegmentations
+                )
+              }}
               className="btn btn-primary"
               style={{ margin: '2px 4px' }}
             >
               1) Pre-compute bone & softTissue and fatTissue labelmaps
             </button>
-            {this.state.segmentationStatus === '' ? null : (
+            <span>{this.state.segmentationStatus}</span>
+            {this.state.segmentationStatus !== 'done' ? null : (
               <>
-                <span>{this.state.segmentationStatus}</span>
                 <button
                   onClick={() =>
                     this.loadSegmentation(
@@ -799,7 +853,7 @@ class MPRExample extends Component {
             <h4>Segmentation Rendering Config</h4>
             <input
               type="checkbox"
-              style={{ marginLeft: '10px' }}
+              style={{ marginLeft: '0px' }}
               name="toggle"
               defaultChecked={this.state.renderOutline}
               onClick={() => {
@@ -830,6 +884,44 @@ class MPRExample extends Component {
             <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
               Render inactive Labelmaps
             </label>
+            <div style={{ display: 'flex' }}>
+              <div style={{ display: 'flex' }}>
+                <label htmlFor="fillAlpha">fillAlpha</label>
+                <input
+                  style={{ maxWidth: '60%', marginLeft: '5px' }}
+                  type="range"
+                  id="fillAlpha"
+                  name="fillAlpha"
+                  value={this.state.fillAlpha}
+                  min="0.8"
+                  max="0.999"
+                  step="0.001"
+                  onChange={(evt) => {
+                    const fillAlpha = evt.target.value
+                    this.setState({ fillAlpha })
+                    SegmentationModule.setGlobalConfig({ fillAlpha })
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex' }}>
+                <label htmlFor="fillAlphaInactive">fillAlphaInactive</label>
+                <input
+                  style={{ maxWidth: '60%', marginLeft: '5px' }}
+                  type="range"
+                  id="fillAlphaInactive"
+                  name="fillAlphaInactive"
+                  value={this.state.fillAlphaInactive}
+                  min="0.8"
+                  max="0.999"
+                  step="0.001"
+                  onChange={(evt) => {
+                    const fillAlphaInactive = evt.target.value
+                    this.setState({ fillAlphaInactive })
+                    SegmentationModule.setGlobalConfig({ fillAlphaInactive })
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
         <ViewportGrid

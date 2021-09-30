@@ -1,13 +1,12 @@
-import { Viewport, cache, ImageVolume } from '@ohif/cornerstone-render'
+import { ImageVolume } from '@ohif/cornerstone-render'
 import { IEnabledElement } from 'cornerstone-render/src/types'
-import { vec3 } from 'gl-matrix'
-import vtkPaintFilter from 'vtk.js/Sources/Filters/General/PaintFilter'
 import { Point3 } from '../../../types'
 
 type OperationData = {
   points: [Point3, Point3, Point3, Point3]
   labelmap: ImageVolume
   segmentIndex: number
+  segmentsLocked: number[]
 }
 
 type FillRectangleEvent = {
@@ -27,7 +26,7 @@ function fillRectangle(
   operationData: OperationData,
   inside = true
 ): void {
-  const { labelmap, points, segmentIndex } = operationData
+  const { labelmap, points, segmentIndex, segmentsLocked } = operationData
 
   const { enabledElement } = evt
   const { renderingEngine } = enabledElement
@@ -45,13 +44,13 @@ function fillRectangle(
   const [[xMin, yMin], [xMax, yMax], [zMin, zMax]] =
     getBoundingBoxAroundPolygon(rectangleCornersIJK, vtkImageData)
 
-  // Todo: this doesn't support oblique or sagittal or coronal for now or rectangles that are not drawn from top left to bottom right
   // Todo: only handle ijk , and throw for oblique
+  // Todo: Coronal seems to have some error!!!!!
   for (let x = xMin; x <= xMax; x++) {
     for (let y = yMin; y <= yMax; y++) {
       for (let z = zMin; z <= zMax; z++) {
         const offset = vtkImageData.computeOffsetIndex([x, y, z])
-        if (values[offset] === 1) {
+        if (segmentsLocked.includes(values[offset])) {
           continue
         }
         values[offset] = segmentIndex

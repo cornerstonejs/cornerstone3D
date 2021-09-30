@@ -27,6 +27,7 @@ import {
   getActiveLabelmapIndex,
   getActiveSegmentIndex,
   getColorForSegmentIndexColorLUT,
+  getSegmentsLockedForElement,
 } from '../../store/SegmentationModule'
 
 /**
@@ -42,6 +43,7 @@ export default class RectangleScissorsTool extends BaseTool {
     toolData: any
     labelmap: any
     segmentIndex: number
+    segmentsLocked: number[]
     segmentColor: [number, number, number, number]
     viewportUIDsToRender: string[]
     handleIndex?: number
@@ -87,6 +89,7 @@ export default class RectangleScissorsTool extends BaseTool {
     }
     const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
     const segmentIndex = getActiveSegmentIndex(element)
+    const segmentsLocked = getSegmentsLockedForElement(element)
     const segmentColor = getColorForSegmentIndexColorLUT(
       element,
       labelmapUID,
@@ -132,6 +135,7 @@ export default class RectangleScissorsTool extends BaseTool {
       toolData,
       labelmap,
       segmentIndex,
+      segmentsLocked,
       segmentColor,
       viewportUIDsToRender,
       handleIndex: 3,
@@ -233,8 +237,14 @@ export default class RectangleScissorsTool extends BaseTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const { toolData, newAnnotation, hasMoved, labelmap, segmentIndex } =
-      this.editData
+    const {
+      toolData,
+      newAnnotation,
+      hasMoved,
+      labelmap,
+      segmentIndex,
+      segmentsLocked,
+    } = this.editData
     const { data } = toolData
 
     if (newAnnotation && !hasMoved) {
@@ -262,6 +272,7 @@ export default class RectangleScissorsTool extends BaseTool {
       points: data.handles.points,
       labelmap,
       segmentIndex,
+      segmentsLocked,
     }
 
     const eventDetail = {
