@@ -5,7 +5,8 @@ import { ISegmentationConfig } from './segmentationConfig'
 type LabelmapState = {
   volumeUID: string
   activeSegmentIndex: number
-  segmentsHidden: number[]
+  segmentsHidden: Set<number>
+  segmentsLocked: Set<number>
   colorLUTIndex: number
   cfun: vtkColorTransferFunction
   ofun: vtkPiecewiseFunction
@@ -47,7 +48,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //         segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //       },
   //     ],
@@ -61,7 +63,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //         segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //       },
   //       {
@@ -70,7 +73,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //         segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //       },
   //     ],
@@ -84,7 +88,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //         segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //       },
   //       {
@@ -93,7 +98,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //         segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //       },
   //     ],
@@ -110,7 +116,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //           segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //         },
   //         {
@@ -119,7 +126,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //           segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //         },
   //       ],
@@ -133,7 +141,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //           segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //         },
   //         {
@@ -142,7 +151,8 @@ const state: SegmentationState = {
   //         colorLUTIndex: 0,
   //         cfun: new cfun
   //         ofun: new ofun
-  //           segmentsHidden: [],
+  //         segmentsHidden: Set(),
+  //         segmentsLocked: Set(),
   //         labelmapConfig: ISegmentationConfig
   //         },
   //       ],

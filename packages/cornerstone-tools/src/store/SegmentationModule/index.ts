@@ -19,7 +19,14 @@ import {
   setActiveSegmentIndex,
   getActiveSegmentIndex,
 } from './activeSegmentIndex'
-// import * as segmentationConfig from './segmentationConfig'
+import {
+  setSegmentIndexLockedForElement,
+  setSegmentIndexUnlockedForElement,
+  getSegmentIndexLockedStatusForElement,
+  getSegmentsLockedForElement,
+  toggleSegmentIndexLockedForElement,
+  toggleSegmentIndexLockedForLabelmapUID,
+} from './lockSegmentIndex'
 import config, { setGlobalConfig } from './segmentationConfig'
 import { addNewLabelmap } from './addNewLabelmap'
 import { setColorLUT, getColorForSegmentIndexColorLUT } from './colorLUT'
@@ -40,6 +47,12 @@ export {
   getActiveSegmentIndexForLabelmapUID,
   config,
   setGlobalConfig,
+  setSegmentIndexLockedForElement,
+  setSegmentIndexUnlockedForElement,
+  getSegmentIndexLockedStatusForElement,
+  getSegmentsLockedForElement,
+  toggleSegmentIndexLockedForElement,
+  toggleSegmentIndexLockedForLabelmapUID,
 }
 
 export default {
@@ -75,4 +88,12 @@ export default {
   getNextLabelmapIndex,
   getActiveSegmentIndexForLabelmapUID,
   triggerLabelmapsUpdated,
+
+  // Locked segment index
+  setSegmentIndexLockedForElement,
+  setSegmentIndexUnlockedForElement,
+  getSegmentIndexLockedStatusForElement,
+  getSegmentsLockedForElement,
+  toggleSegmentIndexLockedForElement,
+  toggleSegmentIndexLockedForLabelmapUID,
 }

@@ -19,6 +19,7 @@ function setLabelmapColorAndOpacity(
 ): void {
   ofun.addPoint(0, 0)
 
+  // Todo: this should be moved a level up
   let config = _cloneDeep(defaultConfig)
 
   // if custom config per labelmap
@@ -49,7 +50,7 @@ function setLabelmapColorAndOpacity(
 
     // Set the opacity per label.
     const segmentOpacity = (color[3] / 255) * fillAlpha
-    ofun.addPointLong(i, segmentOpacity, 0.5, 1.0)
+    ofun.addPoint(i, segmentOpacity)
   }
 
   ofun.setClamping(false)

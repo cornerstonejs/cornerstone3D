@@ -13,6 +13,7 @@ import setLabelmapColorAndOpacity from './setLabelmapColorAndOpacity'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 
 import { getActiveLabelmapIndex } from './activeLabelmapIndex'
+import { getLockedSegmentsForLabelmapUID } from './utils'
 
 type LabelmapEvent = {
   canvas: HTMLCanvasElement
@@ -115,6 +116,9 @@ function updateStateForVolumeViewports(
   labelmapIndex,
   labelmapUID
 ) {
+  // Set the locked segments if labelmap already exists in another viewport
+  const lockedSegments = getLockedSegmentsForLabelmapUID(labelmapUID)
+
   viewportsUIDs.forEach((viewportUID) => {
     let viewportState = state.volumeViewports[viewportUID]
 
@@ -137,7 +141,8 @@ function updateStateForVolumeViewports(
       volumeUID: labelmapUID,
       activeSegmentIndex: 1,
       colorLUTIndex: 0,
-      segmentsHidden: [],
+      segmentsHidden: new Set(),
+      segmentsLocked: new Set(lockedSegments),
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),
       labelmapConfig: {},
