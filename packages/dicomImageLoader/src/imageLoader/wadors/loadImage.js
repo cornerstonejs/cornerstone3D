@@ -108,13 +108,15 @@ function loadImage(imageId, options = {}) {
     const requestType = options.requestType || 'interaction';
     const additionalDetails = options.additionalDetails || { imageId };
     const priority = options.priority === undefined ? 5 : options.priority;
+    const addToBeginning = options.addToBeginning || false;
     const uri = imageId.substring(7);
 
     imageRetrievalPool.addRequest(
       sendXHR.bind(this, uri, imageId, mediaType),
       requestType,
       additionalDetails,
-      priority
+      priority,
+      addToBeginning
     );
   });
 

@@ -49,7 +49,7 @@
     "prepublishOnly": "npm run build && npm run test:ci && npm run doc:generate"
   },
   "peerDependencies": {
-    "cornerstone-core": "^2.5.0"
+    "cornerstone-core": "^2.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.15.4",
