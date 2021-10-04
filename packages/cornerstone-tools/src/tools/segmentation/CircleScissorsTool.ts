@@ -7,12 +7,9 @@ import {
 } from '@ohif/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
-import {
-  fillInsideRectangle,
-  fillOutsideRectangle,
-} from './strategies/fillInsideRectangle'
-import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
 
+import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
+import { fillInsideCircle, fillOutsideCircle } from './strategies/fillCircle'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 import { drawCircle as drawCircleSvg } from '../../drawingSvg'
@@ -27,7 +24,11 @@ import {
   getActiveLabelmapIndex,
   getActiveSegmentIndex,
   getColorForSegmentIndexColorLUT,
+  getSegmentsLockedForElement,
 } from '../../store/SegmentationModule'
+
+// Todo
+// Define type for toolData
 
 /**
  * @public
@@ -42,10 +43,9 @@ export default class CircleScissorsTool extends BaseTool {
     toolData: any
     labelmap: any
     segmentIndex: number
+    segmentsLocked: number[]
     segmentColor: [number, number, number, number]
     viewportUIDsToRender: string[]
-    centerCanvas: Point3
-    centerWorld: Point3
     handleIndex?: number
     movingTextBox: boolean
     newAnnotation?: boolean
@@ -61,8 +61,8 @@ export default class CircleScissorsTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {},
       strategies: {
-        FILL_INSIDE: fillInsideRectangle,
-        FILL_OUTSIDE: fillOutsideRectangle,
+        FILL_INSIDE: fillInsideCircle,
+        FILL_OUTSIDE: fillOutsideCircle,
       },
       defaultStrategy: 'FILL_INSIDE',
     })
@@ -95,6 +95,7 @@ export default class CircleScissorsTool extends BaseTool {
       labelmapUID,
       segmentIndex
     )
+    const segmentsLocked = getSegmentsLockedForElement(element)
 
     const labelmap = cache.getVolume(labelmapUID)
 
@@ -111,10 +112,29 @@ export default class CircleScissorsTool extends BaseTool {
       data: {
         invalidated: true,
         handles: {
-          points: [
-            <Point3>[...worldPos], // Center
-            1, // Radius
-          ],
+          points: {
+            radius: 1,
+            center: {
+              world: worldPos,
+              canvas: canvasPos,
+            },
+            bottom: {
+              world: [0, 0, 0],
+              canvas: [0, 0, 0],
+            },
+            top: {
+              world: [0, 0, 0],
+              canvas: [0, 0, 0],
+            },
+            left: {
+              world: [0, 0, 0],
+              canvas: [0, 0, 0],
+            },
+            right: {
+              world: [0, 0, 0],
+              canvas: [0, 0, 0],
+            },
+          },
           activeHandleIndex: null,
         },
         isDrawing: true,
@@ -135,9 +155,8 @@ export default class CircleScissorsTool extends BaseTool {
       toolData,
       labelmap,
       segmentIndex,
+      segmentsLocked,
       segmentColor,
-      centerCanvas: canvasPos,
-      centerWorld: worldPos,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -163,23 +182,46 @@ export default class CircleScissorsTool extends BaseTool {
     const { element } = eventData
     const { currentPoints } = eventData
     const currentCanvasPoints = currentPoints.canvas
-    const currentWorldPoints = currentPoints.world
     const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewport } = enabledElement
     const { canvasToWorld } = viewport
 
     //////
-    const { toolData, viewportUIDsToRender, centerCanvas, centerWorld } =
-      this.editData
+    const { toolData, viewportUIDsToRender } = this.editData
     const { data } = toolData
+    const { center } = data.handles.points
+
+    // Center of circle in canvas Coordinates
+    const { canvas: centerCanvas } = center
 
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
+    const radius = Math.sqrt(dX * dX + dY * dY)
 
-    data.handles.points = [
-      canvasToWorld(centerCanvas),
-      Math.sqrt(dX * dX + dY * dY),
-    ]
+    const bottomCanvas = [centerCanvas[0], centerCanvas[1] + radius]
+    const topCanvas = [centerCanvas[0], centerCanvas[1] - radius]
+    const leftCanvas = [centerCanvas[0] - radius, centerCanvas[1]]
+    const rightCanvas = [centerCanvas[0] + radius, centerCanvas[1]]
+
+    data.handles.points = Object.assign(data.handles.points, {
+      radius,
+      bottom: {
+        world: canvasToWorld(bottomCanvas),
+        canvas: bottomCanvas,
+      },
+      top: {
+        world: canvasToWorld(topCanvas),
+        canvas: topCanvas,
+      },
+      left: {
+        world: canvasToWorld(leftCanvas),
+        canvas: leftCanvas,
+      },
+      right: {
+        world: canvasToWorld(rightCanvas),
+        canvas: rightCanvas,
+      },
+    })
 
     data.invalidated = true
 
@@ -195,9 +237,16 @@ export default class CircleScissorsTool extends BaseTool {
     const eventData = evt.detail
     const { element } = eventData
 
-    const { toolData, newAnnotation, hasMoved, labelmap, segmentIndex } =
-      this.editData
+    const {
+      toolData,
+      newAnnotation,
+      hasMoved,
+      labelmap,
+      segmentIndex,
+      segmentsLocked,
+    } = this.editData
     const { data } = toolData
+    const { viewPlaneNormal, viewUp } = toolData.metadata
 
     if (newAnnotation && !hasMoved) {
       return
@@ -224,6 +273,9 @@ export default class CircleScissorsTool extends BaseTool {
       points: data.handles.points,
       labelmap,
       segmentIndex,
+      segmentsLocked,
+      viewPlaneNormal,
+      viewUp,
     }
 
     const eventDetail = {
@@ -277,7 +329,7 @@ export default class CircleScissorsTool extends BaseTool {
     //   throw new Error(`Viewport Type not supported: ${viewport.type}`)
     // }
 
-    const { toolData, centerCanvas } = this.editData
+    const { toolData } = this.editData
 
     // Todo: rectangle colro based on segment index
     const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
@@ -286,8 +338,10 @@ export default class CircleScissorsTool extends BaseTool {
 
     const data = toolData.data
     const { points } = data.handles
-    const [circleCenterWorld, radius] = points
-    const circleCenterCanvas = viewport.worldToCanvas(circleCenterWorld)
+    const { center, radius } = points
+    const { canvas: circleCenterCanvas } = center
+
+    // const circleCenterCanvas = viewport.worldToCanvas(circleCenterWorld)
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`
 
     // If rendering engine has been destroyed while rendering

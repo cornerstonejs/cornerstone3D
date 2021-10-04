@@ -786,7 +786,7 @@ class MPRExample extends Component {
                     style={{ marginLeft: '0px' }}
                     name="lockToggle"
                     checked={this.state.segmentLocked}
-                    onClick={(evt) => this.toggleLockedSegmentIndex(evt)}
+                    onChange={(evt) => this.toggleLockedSegmentIndex(evt)}
                   />
                   <label htmlFor="lockToggle" style={{ marginLeft: '5px' }}>
                     Locked?
@@ -856,7 +856,7 @@ class MPRExample extends Component {
               style={{ marginLeft: '0px' }}
               name="toggle"
               defaultChecked={this.state.renderOutline}
-              onClick={() => {
+              onChange={() => {
                 const renderOutline = !this.state.renderOutline
                 SegmentationModule.setGlobalConfig({ renderOutline })
                 this.setState({
@@ -872,7 +872,7 @@ class MPRExample extends Component {
               style={{ marginLeft: '10px' }}
               name="toggle"
               defaultChecked={this.state.renderInactiveLabelmaps}
-              onClick={() => {
+              onChange={() => {
                 const renderInactiveLabelmaps =
                   !this.state.renderInactiveLabelmaps
                 SegmentationModule.setGlobalConfig({ renderInactiveLabelmaps })
