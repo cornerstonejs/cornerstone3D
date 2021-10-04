@@ -154,3 +154,5 @@ function convertInterfaceDateToString(date): string {
   const dateString = `${date.year}${month}${day}`
   return dateString
 }
+
+export { getPTImageIdInstanceMetadata }
