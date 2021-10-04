@@ -1,3 +1,9 @@
-import { fillInsideRectangle } from './fillInsideRectangle'
+import { fillInsideRectangle, fillOutsideRectangle } from './fillRectangle'
+import { fillInsideCircle, fillOutsideCircle } from './fillCircle'
 
-export { fillInsideRectangle }
+export {
+  fillInsideRectangle,
+  fillOutsideRectangle,
+  fillInsideCircle,
+  fillOutsideCircle,
+}

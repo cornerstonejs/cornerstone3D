@@ -10,7 +10,7 @@ import { Point3, Point2 } from '../../types'
 import {
   fillInsideRectangle,
   fillOutsideRectangle,
-} from './strategies/fillInsideRectangle'
+} from './strategies/fillRectangle'
 import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
 
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'

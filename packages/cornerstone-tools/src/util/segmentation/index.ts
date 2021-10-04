@@ -1,10 +1,10 @@
-import fillOutsideBoundingBox from './fillOutsideBoundingBox'
+// import fillOutsideBoundingBox from './fillOutsideBoundingBox'
 import { fillInsideShape, fillOutsideShape } from './fillShape'
-import getBoundingBoxAroundPolygon from './getBoundingBoxAroundPolygon'
+import getBoundingBoxAroundShape from './getBoundingBoxAroundShape'
 
 export {
-  getBoundingBoxAroundPolygon,
-  fillOutsideBoundingBox,
+  getBoundingBoxAroundShape,
+  // fillOutsideBoundingBox,
   fillInsideShape,
   fillOutsideShape,
 }

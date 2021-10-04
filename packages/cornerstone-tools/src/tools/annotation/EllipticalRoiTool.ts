@@ -438,6 +438,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
 
+    // Todo: why bottom is -dY, it should be +dY
     const bottomCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] - dY]
     const topCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] + dY]
     const leftCanvas = <Types.Point2>[centerCanvas[0] - dX, centerCanvas[1]]
