@@ -250,6 +250,15 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       this._tools[toolName].mode = Disabled
       this.refreshViewports()
     },
+    getActivePrimaryButtonTools() {
+      return Object.keys(this.tools).find((toolName) => {
+        const toolModeOptions = this.tools[toolName]
+        return (
+          toolModeOptions.mode === Active &&
+          this.isPrimaryButtonBinding(toolModeOptions)
+        )
+      })
+    },
     isPrimaryButtonBinding(toolModeOptions) {
       return toolModeOptions?.bindings?.some(
         (binding) =>

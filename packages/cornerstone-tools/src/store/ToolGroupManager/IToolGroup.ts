@@ -40,6 +40,9 @@ export default interface IToolGroup {
   refreshViewports: {
     (): void
   }
+  getActivePrimaryButtonTools: {
+    (): undefined | string
+  }
   resetViewportsCursor: {
     ({ name: string }): void
   }
