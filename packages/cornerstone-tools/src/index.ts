@@ -54,7 +54,7 @@ import {
   CircleScissorsTool,
   RectangleRoiThreshold,
 } from './tools'
-import { ToolBindings, CornerstoneTools3DEvents } from './enums'
+import { ToolBindings, ToolModes, CornerstoneTools3DEvents } from './enums'
 
 export {
   // LifeCycle
@@ -96,6 +96,7 @@ export {
   SegmentationModule,
   // Enums
   ToolBindings,
+  ToolModes,
   CornerstoneTools3DEvents,
   // ToolState Managers
   FrameOfReferenceSpecificToolStateManager,
