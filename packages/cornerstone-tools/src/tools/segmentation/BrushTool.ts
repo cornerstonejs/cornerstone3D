@@ -176,7 +176,7 @@ class BrushTool extends BaseBrushTool {
     )
 
     this.editData = {
-      // toolData,
+      toolData: {},
       viewportUIDsToRender,
       // handleIndex: 1,
       // movingTextBox: false,

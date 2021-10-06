@@ -590,7 +590,6 @@ class MPRExample extends Component {
           value={this.state.ptCtLeftClickTool}
           onChange={(evt) => {
             const toolName = evt.target.value
-            debugger
             if (SEGMENTATION_TOOLS.includes(toolName)){
               this.setState({ segmentationToolActive : true})
             }
