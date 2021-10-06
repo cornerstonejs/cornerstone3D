@@ -40,6 +40,7 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point2, Point3 } from '../../types'
+import { deepMerge } from 'cornerstone-tools/src/util'
 
 interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -47,7 +48,7 @@ interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
     handles: {
       points: Point3[]
       activeHandleIndex: number | null
-      textBox: {
+      textBox?: {
         hasMoved: boolean
         worldPosition: Point3
         worldBoundingBox: {
@@ -58,7 +59,7 @@ interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
         }
       }
     }
-    cachedStats: any
+    cachedStats?: any
     active: boolean
   }
 }
@@ -69,7 +70,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     toolData: any
     viewportUIDsToRender: string[]
     handleIndex?: number
-    movingTextBox: boolean
+    movingTextBox?: boolean
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
@@ -77,12 +78,20 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolConfiguration: Record<string, any>,
+    defaultToolConfiguration = {
       name: 'RectangleRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true, preventHandleOutsideImage: false },
-    })
+      configuration: {
+        shadow: true,
+        preventHandleOutsideImage: false,
+      },
+      strategies: {},
+      defaultStrategy: '',
+    }
+  ) {
+    super(defaultToolConfiguration, toolConfiguration)
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,

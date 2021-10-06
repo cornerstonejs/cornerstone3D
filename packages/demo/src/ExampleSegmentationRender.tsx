@@ -11,8 +11,9 @@ import {
   SegmentationModule,
   synchronizers,
   ToolBindings,
+  ToolModes,
   ToolGroupManager,
-  CornerstoneTools3DEvents
+  CornerstoneTools3DEvents,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
@@ -56,8 +57,13 @@ let ctSceneToolGroup,
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
-const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS]
-
+const toolsToUse = [
+  'WindowLevel',
+  'Pan',
+  'Zoom',
+  ...ANNOTATION_TOOLS,
+  ...SEGMENTATION_TOOLS,
+]
 const labelmap1UID = 'boneAndSoftTissue'
 const labelmap2UID = 'fatTissue'
 const RECTANGLE_ROI_THRESHOLD = 'RectangleRoiThreshold'
@@ -95,10 +101,11 @@ class MPRExample extends Component {
       ],
     },
     ptCtLeftClickTool: 'Levels',
+    toolGroupName: 'ctScene',
+    toolGroups: {},
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     // Segmentation
-    segmentationTool: 'RectangleScissors',
     segmentationStatus: '',
     segmentationToolActive: false,
     sceneForSegmentation: SCENE_IDS.CT,
@@ -122,8 +129,6 @@ class MPRExample extends Component {
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
-    this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this)
-
     const { limitFrames } = config
 
     const callback = (imageIds) => {
@@ -205,6 +210,13 @@ class MPRExample extends Component {
       ctVRSceneToolGroup,
       ctObliqueToolGroup,
       ptTypesSceneToolGroup,
+    })
+
+    this.setState({
+      toolGroups: {
+        ctScene: ctSceneToolGroup,
+        ptScene: ptSceneToolGroup,
+      },
     })
 
     // Create volumes
@@ -312,21 +324,6 @@ class MPRExample extends Component {
     this.renderingEngine.destroy()
   }
 
-  resetToolModes = (toolGroup) => {
-    ;[...ANNOTATION_TOOLS, ...SEGMENTATION_TOOLS].forEach((toolName) => {
-      toolGroup.setToolPassive(toolName)
-    })
-    toolGroup.setToolActive('WindowLevel', {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
-    })
-    toolGroup.setToolActive('Pan', {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
-    })
-    toolGroup.setToolActive('Zoom', {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
-    })
-  }
-
   onLabelmapUpdated = (evt) => {
     const { canvas } = evt.detail
     const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
@@ -335,107 +332,37 @@ class MPRExample extends Component {
     })
   }
 
-  createNewLabelmapForScissors = async (element) => {
-    const labelmapIndex = SegmentationModule.getActiveLabelmapIndex(element)
+  createNewLabelmapForScissors = async (evt) => {
+    const sceneUID = evt.target.value
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const { uid: viewportUID } = scene.getViewports()[0]
+    const { canvas: element } = this.renderingEngine.getViewport(viewportUID)
+    const labelmapIndex = SegmentationModule.getNextLabelmapIndex(element)
     await SegmentationModule.setActiveLabelmapIndex(element, labelmapIndex)
   }
 
-  activateTool = async (evt) => {
-    const toolName = evt.target.value
-
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { uid: viewportUID } = scene.getViewports()[0]
-
-    const toolGroup = ToolGroupManager.getToolGroups(
-      renderingEngineUID,
-      sceneUID,
-      viewportUID
-    )[0]
-
+  setToolMode = (toolMode) => {
+    const toolName = this.state.ptCtLeftClickTool
     if (SEGMENTATION_TOOLS.includes(toolName)) {
-      if (toolName !== 'RectangleRoiThreshold') {
-        const { canvas: element } =
-          this.renderingEngine.getViewport(viewportUID)
-        this.createNewLabelmapForScissors(element)
+      this.setState({ segmentationToolActive: true })
+    }
+    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    if (toolMode === ToolModes.Active) {
+      const activeTool = toolGroup.getActivePrimaryButtonTools()
+      if (activeTool) {
+        toolGroup.setToolPassive(activeTool)
       }
-      this.setState({
-        segmentationTool: toolName,
-        segmentationToolActive: true,
+
+      toolGroup.setToolActive(toolName, {
+        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
       })
+    } else if (toolMode === ToolModes.Passive) {
+      toolGroup.setToolPassive(toolName)
+    } else if (toolMode === ToolModes.Enabled) {
+      toolGroup.setToolEnabled(toolName)
+    } else if (toolMode === ToolModes.Disabled) {
+      toolGroup.setToolDisabled(toolName)
     }
-
-    this.resetToolModes(toolGroup)
-
-    const tools = Object.entries(toolGroup.tools)
-
-    // Disabling any tool that is active on mouse primary
-    const [activeTool] = tools.find(
-      ([tool, { bindings, mode }]) =>
-        mode === 'Active' &&
-        bindings.length &&
-        bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
-        )
-    )
-
-    toolGroup.setToolPassive(activeTool)
-
-    // Using mouse primary for the selected tool
-    const currentBindings = toolGroup.tools[toolName]
-      ? toolGroup.tools[toolName].bindings
-      : []
-
-    toolGroup.setToolActive(toolName, {
-      bindings: [
-        ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
-      ],
-    })
-    this.renderingEngine.render()
-  }
-
-  swapPetTransferFunction() {
-    const renderingEngine = this.renderingEngine
-    const petCTScene = renderingEngine.getScene(SCENE_IDS.FUSION)
-
-    if (!petCTScene) {
-      // We have likely changed view and the scene no longer exists.
-      return
-    }
-
-    const volumeActor = petCTScene.getVolumeActor(ptVolumeUID)
-
-    let petColorMapIndex = this.state.petColorMapIndex
-
-    petColorMapIndex = petColorMapIndex === 0 ? 1 : 0
-
-    const mapper = volumeActor.getMapper()
-    mapper.setSampleDistance(1.0)
-
-    const range = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getMappingRange()
-
-    const cfun = vtkColorTransferFunction.newInstance()
-    const preset = vtkColorMaps.getPresetByName(colormaps[petColorMapIndex])
-    cfun.applyColorMap(preset)
-    cfun.setMappingRange(range[0], range[1])
-
-    volumeActor.getProperty().setRGBTransferFunction(0, cfun)
-
-    // Create scalar opacity function
-    const ofun = vtkPiecewiseFunction.newInstance()
-    ofun.addPoint(0, 0.0)
-    ofun.addPoint(0.1, 0.9)
-    ofun.addPoint(5, 1.0)
-
-    volumeActor.getProperty().setScalarOpacity(0, ofun)
-
-    petCTScene.render()
-
-    this.setState({ petColorMapIndex })
   }
 
   fillBlobForThreshold = (
@@ -536,13 +463,12 @@ class MPRExample extends Component {
         activeSegmentIndex
       )
 
-    this.setState((prevState) => ({
+    this.setState({
       segmentationToolActive: true,
       selectedLabelmapUID: SegmentationModule.getActiveLabelmapUID(canvas),
       activeSegmentIndex,
       segmentLocked,
-      availableLabelmaps: [...prevState.availableLabelmaps, labelmapUID],
-    }))
+    })
   }
 
   toggleLockedSegmentIndex = (evt) => {
@@ -577,23 +503,6 @@ class MPRExample extends Component {
       SegmentationModule.getSegmentIndexLockedStatusForElement(canvas, newIndex)
     console.debug('segmentLocked', segmentLocked)
     this.setState({ activeSegmentIndex: newIndex, segmentLocked })
-  }
-
-  swapPtCtTool = (evt) => {
-    const toolName = evt.target.value
-
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
-
-    ptCtToggleAnnotationTool(
-      isAnnotationToolOn,
-      ctSceneToolGroup,
-      ptSceneToolGroup,
-      fusionSceneToolGroup,
-      toolName
-    )
-
-    this.renderingEngine.render()
-    this.setState({ ptCtLeftClickTool: toolName })
   }
 
   executeThresholding = () => {
@@ -656,44 +565,109 @@ class MPRExample extends Component {
   }
 
   getScissorsUI = () => {
-    return null
+    return (
+      <>
+        <button
+          onClick={() =>
+            this.createNewLabelmapForScissors({
+              target: { value: this.state.sceneForSegmentation },
+            })
+          }
+          className="btn btn-primary"
+          style={{ margin: '2px 4px' }}
+        >
+          Create New Labelmap
+        </button>
+      </>
+    )
+  }
+
+  getSetToolModes = () => {
+    return (
+      <>
+        <span>Set this tool </span>
+        <select
+          value={this.state.ptCtLeftClickTool}
+          onChange={(evt) => {
+            const toolName = evt.target.value
+            debugger
+            if (SEGMENTATION_TOOLS.includes(toolName)){
+              this.setState({ segmentationToolActive : true})
+            }
+            this.setState({ ptCtLeftClickTool: toolName })
+          }}
+        >
+          {toolsToUse.map((toolName) => (
+            <option key={toolName} value={toolName}>
+              {toolName}
+            </option>
+          ))}
+        </select>
+        <span style={{ marginLeft: '4px' }}>for this toolGroup </span>
+        <select
+          value={this.state.toolGroupName}
+          onChange={(evt) => {
+            const sceneUID = evt.target.value
+            const scene = this.renderingEngine.getScene(sceneUID)
+            const { uid, canvas } = scene.getViewports()[0]
+            const labelmapUIDs =
+              SegmentationModule.getLabelmapUIDsForViewportUID(uid)
+            const index = SegmentationModule.getActiveSegmentIndex(canvas)
+            const segmentLocked =
+              SegmentationModule.getSegmentIndexLockedStatusForElement(
+                canvas,
+                index
+              )
+
+            this.setState({
+              sceneForSegmentation: sceneUID,
+              availableLabelmaps: labelmapUIDs,
+              activeSegmentIndex: index,
+              segmentLocked,
+              toolGroupName: evt.target.value,
+            })
+          }}
+        >
+          {Object.keys(this.state.toolGroups).map((toolGroupName) => (
+            <option key={toolGroupName} value={toolGroupName}>
+              {toolGroupName}
+            </option>
+          ))}
+        </select>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Active)}
+        >
+          Active
+        </button>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Passive)}
+        >
+          Passive
+        </button>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Enabled)}
+        >
+          Enabled
+        </button>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Disabled)}
+        >
+          Disabled
+        </button>
+      </>
+    )
   }
 
   render() {
-    const { layoutIndex, metadataLoaded, destroyed } = this.state
-
-    const layoutID = LAYOUTS[layoutIndex]
-
-    const fusionButtons =
-      layoutID === 'FusionMIP' ? (
-        <React.Fragment>
-          <button
-            onClick={() =>
-              metadataLoaded && !destroyed && this.swapPetTransferFunction()
-            }
-            className="btn btn-primary"
-            style={{ margin: '2px 4px' }}
-          >
-            SwapPetTransferFunction
-          </button>
-          <select
-            value={this.state.ptCtLeftClickTool}
-            onChange={this.activateTool}
-          >
-            {ptCtLayoutTools.map((toolName) => (
-              <option key={toolName} value={toolName}>
-                {toolName}
-              </option>
-            ))}
-          </select>
-        </React.Fragment>
-      ) : null
-
     return (
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>MPR Example ({this.state.progressText})</h2>
+            <h2>Segmentation Example ({this.state.progressText})</h2>
             {!window.crossOriginIsolated ? (
               <h1 style={{ color: 'red' }}>
                 This Demo requires SharedArrayBuffer but your browser does not
@@ -701,81 +675,15 @@ class MPRExample extends Component {
               </h1>
             ) : null}
           </div>
-          <div
-            className="col-xs-12"
-            style={{ margin: '8px 0', marginLeft: '-4px' }}
-          >
-            {fusionButtons}
-          </div>
         </div>
 
-        <div>
-          <h4>Segmentation Tools</h4>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ marginRight: '5px' }}> Tool</span>
-            <select
-              value={this.state.segmentationTool}
-              onChange={(evt) =>
-                this.setState({ segmentationTool: evt.target.value })
-              }
-            >
-              {SEGMENTATION_TOOLS.map((toolName) => (
-                <option key={toolName} value={toolName}>
-                  {toolName}
-                </option>
-              ))}
-            </select>
-
-            <span style={{ margin: '5px 5px' }}>Target Scene</span>
-            <select
-              value={this.state.sceneForSegmentation}
-              onChange={(evt) => {
-                const sceneUID = evt.target.value
-                const scene = this.renderingEngine.getScene(sceneUID)
-                const { uid, canvas } = scene.getViewports()[0]
-                const labelmapUIDs =
-                  SegmentationModule.getLabelmapUIDsForViewportUID(uid)
-                const index = SegmentationModule.getActiveSegmentIndex(canvas)
-                const segmentLocked =
-                  SegmentationModule.getSegmentIndexLockedStatusForElement(
-                    canvas,
-                    index
-                  )
-
-                this.setState({
-                  sceneForSegmentation: sceneUID,
-                  availableLabelmaps: labelmapUIDs,
-                  activeSegmentIndex: index,
-                  segmentLocked,
-                })
-              }}
-            >
-              {[SCENE_IDS.CT, SCENE_IDS.PT, SCENE_IDS.PTMIP].map(
-                (groupName) => (
-                  <option key={groupName} value={groupName}>
-                    {groupName}
-                  </option>
-                )
-              )}
-            </select>
-
-            <button
-              onClick={() =>
-                this.activateTool({
-                  target: { value: this.state.segmentationTool },
-                })
-              }
-              className="btn btn-primary"
-              style={{ margin: '2px 4px' }}
-            >
-              Activate Segmentation Tool
-            </button>
-            {this.state.segmentationToolActive &&
-              (this.state.segmentationTool === RECTANGLE_ROI_THRESHOLD
-                ? this.getThresholdUID()
-                : this.getScissorsUI())}
-          </div>
-          {this.state.segmentationToolActive && (
+        <div>{this.getSetToolModes()}</div>
+        {this.state.segmentationToolActive && (
+          <div>
+            <h4>Segmentation</h4>
+            {this.state.ptCtLeftClickTool === RECTANGLE_ROI_THRESHOLD
+              ? this.getThresholdUID()
+              : this.getScissorsUI()}
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <span> Labelmaps (active is selected) </span>
               <select
@@ -840,8 +748,9 @@ class MPRExample extends Component {
                 Next Segment
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
         <div>
           <h5>Use Synthetic Segmentation</h5>
           <div>
