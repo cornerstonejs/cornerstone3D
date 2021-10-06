@@ -146,10 +146,7 @@ export default class CircleScissorsTool extends BaseTool {
     // Ensure settings are initialized after tool data instantiation
     // Settings.getObjectSettings(toolData, RectangleRoiTool)
 
-    const viewportUIDsToRender = getViewportUIDsWithLabelmapToRender(
-      element,
-      this.name
-    )
+    const viewportUIDsToRender = [viewport.uid]
 
     this.editData = {
       toolData,
@@ -318,6 +315,11 @@ export default class CircleScissorsTool extends BaseTool {
 
     const { enabledElement } = svgDrawingHelper
     const { viewport } = enabledElement
+    const { viewportUIDsToRender } = this.editData
+
+    if (!viewportUIDsToRender.includes(viewport.uid)) {
+      return
+    }
 
     // if (viewport instanceof StackViewport) {
     //   // targetUID = this._getTargetStackUID(viewport)
@@ -362,49 +364,6 @@ export default class CircleScissorsTool extends BaseTool {
         color,
       }
     )
-  }
-
-  _getCanvasEllipseCorners = (canvasCoordinates): Array<Point2> => {
-    const [bottom, top, left, right] = canvasCoordinates
-
-    const topLeft = <Point2>[left[0], top[1]]
-    const bottomRight = <Point2>[right[0], bottom[1]]
-
-    return [topLeft, bottomRight]
-  }
-
-  _getTextLines = (data, targetUID) => {
-    const cachedVolumeStats = data.cachedStats[targetUID]
-    const { area, mean, stdDev, isEmptyArea, Modality } = cachedVolumeStats
-
-    if (mean === undefined) {
-      return
-    }
-
-    const textLines = []
-
-    const areaLine = isEmptyArea
-      ? `Area: Oblique not supported`
-      : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
-    let meanLine = `Mean: ${mean.toFixed(2)}`
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`
-
-    if (Modality === 'PT') {
-      meanLine += ' SUV'
-      stdDevLine += ' SUV'
-    } else if (Modality === 'CT') {
-      meanLine += ' HU'
-      stdDevLine += ' HU'
-    } else {
-      meanLine += ' MO'
-      stdDevLine += ' MO'
-    }
-
-    textLines.push(areaLine)
-    textLines.push(meanLine)
-    textLines.push(stdDevLine)
-
-    return textLines
   }
 
   _getTargetVolumeUID = (scene) => {
