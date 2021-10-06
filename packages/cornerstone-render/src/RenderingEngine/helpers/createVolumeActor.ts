@@ -31,7 +31,7 @@ async function createVolumeActor(
   }
 
   const volumeActor = vtkVolume.newInstance()
-  volumeActor.getProperty().setInterpolationTypeToNearest()
+  // volumeActor.getProperty().setInterpolationTypeToNearest()
   volumeActor.setMapper(volumeMapper)
 
   if (callback) {

@@ -171,7 +171,6 @@ module.exports = function (config) {
     },
     browsers: ['ChromeHeadlessNoSandbox'],
     // browsers: ['Chrome'],
-    // browsers: ['Chrome'],
     // singleRun: true,
     // colors: true,
     // autoWatch: true,
