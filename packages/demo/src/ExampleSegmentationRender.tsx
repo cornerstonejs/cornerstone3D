@@ -12,6 +12,7 @@ import {
   synchronizers,
   ToolBindings,
   ToolGroupManager,
+  CornerstoneTools3DEvents
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
@@ -59,6 +60,8 @@ const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS]
 
 const labelmap1UID = 'boneAndSoftTissue'
 const labelmap2UID = 'fatTissue'
+const RECTANGLE_ROI_THRESHOLD = 'RectangleRoiThreshold'
+
 class MPRExample extends Component {
   state = {
     progressText: 'fetching metadata...',
@@ -92,10 +95,10 @@ class MPRExample extends Component {
       ],
     },
     ptCtLeftClickTool: 'Levels',
-    segmentationTool: 'RectangleScissors',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     // Segmentation
+    segmentationTool: 'RectangleScissors',
     segmentationStatus: '',
     segmentationToolActive: false,
     sceneForSegmentation: SCENE_IDS.CT,
@@ -105,6 +108,8 @@ class MPRExample extends Component {
     fillAlpha: 0.9,
     fillAlphaInactive: 0.8,
     segmentLocked: false,
+    thresholdMin: 0,
+    thresholdMax: 100,
   }
 
   constructor(props) {
@@ -252,9 +257,15 @@ class MPRExample extends Component {
   componentDidUpdate(prevProps, prevState) {
     const { layoutIndex } = this.state
     const { renderingEngine } = this
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
 
     const layout = LAYOUTS[layoutIndex]
+
+    this._canvasNodes.forEach((canvas) => {
+      canvas.addEventListener(
+        CornerstoneTools3DEvents.LABELMAP_UPDATED,
+        this.onLabelmapUpdated
+      )
+    })
 
     if (prevState.layoutIndex !== layoutIndex) {
       if (layout === 'FusionMIP') {
@@ -284,24 +295,6 @@ class MPRExample extends Component {
           ptVolumeUID,
           colormaps[this.state.petColorMapIndex]
         )
-      } else if (layout === 'ObliqueCT') {
-        obliqueCT.setLayout(renderingEngine, this._canvasNodes, {
-          ctObliqueToolGroup,
-        })
-        obliqueCT.setVolumes(renderingEngine, ctVolumeUID)
-      } else if (layout === 'CTVR') {
-        // CTVR
-        fourUpCT.setLayout(renderingEngine, this._canvasNodes, {
-          ctSceneToolGroup,
-          ctVRSceneToolGroup,
-        })
-        fourUpCT.setVolumes(renderingEngine, ctVolumeUID)
-      } else if (layout === 'PetTypes') {
-        // petTypes
-        petTypes.setLayout(renderingEngine, this._canvasNodes, {
-          ptTypesSceneToolGroup,
-        })
-        petTypes.setVolumes(renderingEngine, ptVolumeUID)
       } else {
         throw new Error('Unrecognised layout index')
       }
@@ -320,7 +313,7 @@ class MPRExample extends Component {
   }
 
   resetToolModes = (toolGroup) => {
-    ANNOTATION_TOOLS.forEach((toolName) => {
+    ;[...ANNOTATION_TOOLS, ...SEGMENTATION_TOOLS].forEach((toolName) => {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive('WindowLevel', {
@@ -332,6 +325,19 @@ class MPRExample extends Component {
     toolGroup.setToolActive('Zoom', {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
+  }
+
+  onLabelmapUpdated = (evt) => {
+    const { canvas } = evt.detail
+    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
+    this.setState({
+      availableLabelmaps: labelmapUIDs,
+    })
+  }
+
+  createNewLabelmapForScissors = async (element) => {
+    const labelmapIndex = SegmentationModule.getActiveLabelmapIndex(element)
+    await SegmentationModule.setActiveLabelmapIndex(element, labelmapIndex)
   }
 
   activateTool = async (evt) => {
@@ -347,15 +353,15 @@ class MPRExample extends Component {
       viewportUID
     )[0]
 
-    const { canvas: element } = this.renderingEngine.getViewport(viewportUID)
-
     if (SEGMENTATION_TOOLS.includes(toolName)) {
-      const labelmapIndex = SegmentationModule.getActiveLabelmapIndex(element)
-      await SegmentationModule.setActiveLabelmapIndex(element, labelmapIndex)
-      const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
+      if (toolName !== 'RectangleRoiThreshold') {
+        const { canvas: element } =
+          this.renderingEngine.getViewport(viewportUID)
+        this.createNewLabelmapForScissors(element)
+      }
       this.setState({
+        segmentationTool: toolName,
         segmentationToolActive: true,
-        availableLabelmaps: labelmapUIDs,
       })
     }
 
@@ -590,6 +596,12 @@ class MPRExample extends Component {
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
+  executeThresholding = () => {
+    const tool = ctSceneToolGroup.getToolInstance(RECTANGLE_ROI_THRESHOLD)
+    const options = [this.state.thresholdMin, this.state.thresholdMax]
+    tool.execute(options)
+  }
+
   showOffScreenCanvas = () => {
     // remove all children
     this._offScreenRef.current.innerHTML = ''
@@ -606,14 +618,49 @@ class MPRExample extends Component {
     this._offScreenRef.current.innerHTML = ''
   }
 
+  getThresholdUID = () => {
+    return (
+      <>
+        <label htmlFor="thresholdMin" style={{ marginLeft: '5px' }}>
+          Min value
+        </label>
+        <input
+          type="number"
+          style={{ marginLeft: '0px' }}
+          name="thresholdMin"
+          value={this.state.thresholdMin}
+          onChange={(evt) => {
+            this.setState({ thresholdMin: evt.target.value })
+          }}
+        />
+        <label htmlFor="thresholdMax" style={{ marginLeft: '5px' }}>
+          Max value
+        </label>
+        <input
+          type="number"
+          style={{ marginLeft: '0px' }}
+          name="thresholdMax"
+          value={this.state.thresholdMax}
+          onChange={(evt) => {
+            this.setState({ thresholdMax: evt.target.value })
+          }}
+        />
+        <button
+          style={{ marginLeft: '5px' }}
+          onClick={() => this.executeThresholding()}
+        >
+          Execute Thresholding on Selected Annotation
+        </button>
+      </>
+    )
+  }
+
+  getScissorsUI = () => {
+    return null
+  }
+
   render() {
-    const {
-      layoutIndex,
-      metadataLoaded,
-      destroyed,
-      ctWindowLevelDisplay,
-      ptThresholdDisplay,
-    } = this.state
+    const { layoutIndex, metadataLoaded, destroyed } = this.state
 
     const layoutID = LAYOUTS[layoutIndex]
 
@@ -723,18 +770,10 @@ class MPRExample extends Component {
             >
               Activate Segmentation Tool
             </button>
-            {/* <button
-              onClick={() =>
-                ctSceneToolGroup.setActiveStrategyName(
-                  'RectangleScissors',
-                  'FILL_OUTSIDE'
-                )
-              }
-              className="btn btn-primary"
-              style={{ margin: '2px 4px' }}
-            >
-              Change strategy
-            </button> */}
+            {this.state.segmentationToolActive &&
+              (this.state.segmentationTool === RECTANGLE_ROI_THRESHOLD
+                ? this.getThresholdUID()
+                : this.getScissorsUI())}
           </div>
           {this.state.segmentationToolActive && (
             <div style={{ display: 'flex', alignItems: 'center' }}>

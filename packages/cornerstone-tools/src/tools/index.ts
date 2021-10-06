@@ -17,6 +17,7 @@ import EllipticalRoiTool from './annotation/EllipticalRoiTool'
 import BrushTool from './segmentation/BrushTool'
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 import CircleScissorsTool from './segmentation/CircleScissorsTool'
+import RectangleRoiThreshold from './segmentation/RectangleRoiThreshold'
 
 export {
   // ~~ BASE
@@ -42,4 +43,5 @@ export {
   BrushTool,
   RectangleScissorsTool,
   CircleScissorsTool,
+  RectangleRoiThreshold,
 }

@@ -15,6 +15,7 @@ function fillShape(
   evt,
   operationData,
   pointInShape,
+  constraintFn,
   topLeftFront,
   bottomRightBack,
   insideOrOutside = 'inside'
@@ -37,21 +38,43 @@ function fillShape(
   //   fillOutsideBoundingBox(evt, operationData, topLeftFront, bottomRightBack)
   // }
 
-  for (let x = xMin; x <= xMax; x++) {
-    for (let y = yMin; y <= yMax; y++) {
-      for (let z = zMin; z <= zMax; z++) {
-        const offset = vtkImageData.computeOffsetIndex([x, y, z])
+  if (constraintFn) {
+    for (let x = xMin; x <= xMax; x++) {
+      for (let y = yMin; y <= yMax; y++) {
+        for (let z = zMin; z <= zMax; z++) {
+          const offset = vtkImageData.computeOffsetIndex([x, y, z])
 
-        if (segmentsLocked.includes(values[offset])) {
-          continue
+          if (segmentsLocked.includes(values[offset])) {
+            continue
+          }
+
+          // If the pixel is the same segmentIndex and is inside the
+          // Region defined by the array of points, set their value to segmentIndex.
+          const pointIJK = [x, y, z]
+          const pointLPS = vtkImageData.indexToWorld([x, y, z])
+          if (pointInShape(pointIJK, pointLPS) && constraintFn(pointIJK)) {
+            values[offset] = segmentIndex
+          }
         }
+      }
+    }
+  } else {
+    for (let x = xMin; x <= xMax; x++) {
+      for (let y = yMin; y <= yMax; y++) {
+        for (let z = zMin; z <= zMax; z++) {
+          const offset = vtkImageData.computeOffsetIndex([x, y, z])
 
-        // If the pixel is the same segmentIndex and is inside the
-        // Region defined by the array of points, set their value to segmentIndex.
-        const pointIJK = [x, y, z]
-        const pointLPS = vtkImageData.indexToWorld([x, y, z])
-        if (pointInShape(pointIJK, pointLPS)) {
-          values[offset] = segmentIndex
+          if (segmentsLocked.includes(values[offset])) {
+            continue
+          }
+
+          // If the pixel is the same segmentIndex and is inside the
+          // Region defined by the array of points, set their value to segmentIndex.
+          const pointIJK = [x, y, z]
+          const pointLPS = vtkImageData.indexToWorld([x, y, z])
+          if (pointInShape(pointIJK, pointLPS)) {
+            values[offset] = segmentIndex
+          }
         }
       }
     }
@@ -85,6 +108,7 @@ export function fillInsideShape(
   evt,
   operationData,
   pointInShape,
+  constraintFn,
   topLeftFront,
   bottomRightBack
 ) {
@@ -92,6 +116,7 @@ export function fillInsideShape(
     evt,
     operationData,
     pointInShape,
+    constraintFn,
     topLeftFront,
     bottomRightBack,
     'inside'
@@ -113,6 +138,7 @@ export function fillOutsideShape(
   evt,
   operationData,
   pointInShape,
+  constraintFn,
   topLeftFront,
   bottomRightBack
 ) {
@@ -120,6 +146,7 @@ export function fillOutsideShape(
     evt,
     operationData,
     (point) => !pointInShape(point),
+    constraintFn,
     topLeftFront,
     bottomRightBack,
     'outside'

@@ -78,6 +78,14 @@ function getSelectedToolDataByUID(toolDataUID: string): ToolSpecificToolData {
   })
 }
 
+function getSelectedToolDataByToolName(
+  toolName: string
+): Array<ToolSpecificToolData> {
+  return getSelectedToolData().filter((toolData) => {
+    return toolData.metadata.toolName === toolName
+  })
+}
+
 function isToolDataSelected(toolData: ToolSpecificToolData): boolean {
   return selectedToolData.has(toolData)
 }
@@ -133,6 +141,7 @@ export {
   deselectToolData,
   getSelectedToolData,
   getSelectedToolDataByUID,
+  getSelectedToolDataByToolName,
   isToolDataSelected,
   getSelectionSize,
 }

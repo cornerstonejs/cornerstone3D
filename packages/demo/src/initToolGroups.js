@@ -27,6 +27,7 @@ const {
   CrosshairsTool,
   RectangleScissorsTool,
   CircleScissorsTool,
+  RectangleRoiThreshold,
 } = csTools3d
 
 /* Configuration arrays and get/set functions for setting the crosshair interactions:
@@ -224,6 +225,7 @@ function initToolGroups(toolConfiguration = {}) {
   // Segmentation
   csTools3d.addTool(RectangleScissorsTool, toolConfiguration)
   csTools3d.addTool(CircleScissorsTool, toolConfiguration)
+  csTools3d.addTool(RectangleRoiThreshold, toolConfiguration)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.STACK_CT
@@ -488,6 +490,9 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool('RectangleScissors', {
       configuration: { volumeUID: ctVolumeUID },
     })
+    ctSceneToolGroup.addTool('RectangleRoiThreshold', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
     ctSceneToolGroup.addTool('CircleScissors', {
       configuration: { volumeUID: ctVolumeUID },
     })
@@ -556,6 +561,9 @@ function addToolsToToolGroups({
   if (ptSceneToolGroup) {
     // Set up PT Scene tools
     ptSceneToolGroup.addTool('RectangleScissors', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('RectangleRoiThreshold', {
       configuration: { volumeUID: ptVolumeUID },
     })
      ptSceneToolGroup.addTool('CircleScissors', {
