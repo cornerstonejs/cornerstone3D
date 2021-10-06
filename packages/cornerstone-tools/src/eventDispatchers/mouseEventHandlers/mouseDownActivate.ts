@@ -25,7 +25,7 @@ export default function mouseDownActivate(evt) {
     return
   }
 
-  if (activeTool.addNewState) {
-    selectToolData(activeTool.addNewState(evt, 'mouse'))
+  if (activeTool.addNewMeasurement) {
+    selectToolData(activeTool.addNewMeasurement(evt, 'mouse'))
   }
 }

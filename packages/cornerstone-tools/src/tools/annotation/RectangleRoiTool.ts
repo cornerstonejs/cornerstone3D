@@ -40,7 +40,6 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point2, Point3 } from '../../types'
-import { deepMerge } from 'cornerstone-tools/src/util'
 
 interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
   data: {

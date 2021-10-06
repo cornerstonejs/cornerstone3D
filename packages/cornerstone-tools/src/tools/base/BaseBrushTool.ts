@@ -23,7 +23,7 @@ abstract class BaseBrushTool extends BaseTool {
   // Abstract Methods - Must be implemented.
   // ===================================================================
 
-  addNewState(evt: CustomEvent, interactionType: string) {
+  addNewMeasurement(evt: CustomEvent, interactionType: string) {
     this.addPaint(evt, interactionType)
   }
 
@@ -198,8 +198,8 @@ abstract class BaseBrushTool extends BaseTool {
     this._endPainting(evt)
 
     this._drawing = false
-    this._mouseUpRender = true
-    this._stopListeningForMouseUp(element)
+    // this._mouseUpRender = true
+    // this._stopListeningForMouseUp(element)
   }
 
   newImageCallback(evt) {
