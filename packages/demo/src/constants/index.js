@@ -96,6 +96,7 @@ const ANNOTATION_TOOLS = [
 const SEGMENTATION_TOOLS = [
   'RectangleScissors',
   'CircleScissors',
+  'RectangleRoiThreshold',
 ]
 
 // A small simple list of in-built vtk-colormaps, to demonstrate switching transfer function on a volume.

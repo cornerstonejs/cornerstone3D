@@ -52,6 +52,7 @@ import {
   BrushTool,
   RectangleScissorsTool,
   CircleScissorsTool,
+  RectangleRoiThreshold,
 } from './tools'
 import { ToolBindings, CornerstoneTools3DEvents } from './enums'
 
@@ -84,6 +85,7 @@ export {
   BrushTool,
   RectangleScissorsTool,
   CircleScissorsTool,
+  RectangleRoiThreshold,
   // Synchronizers
   synchronizers,
   Synchronizer,

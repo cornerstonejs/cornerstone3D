@@ -23,10 +23,10 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
   // Create
   const toolGroup: IToolGroup = {
-    _tools: {},
+    _tools: {}, // tool instances
     id: toolGroupId,
     viewports: [],
-    tools: {},
+    tools: {}, // tools modes etc.
     //
     getToolInstance: function (toolName) {
       const toolInstance = this._tools[toolName]

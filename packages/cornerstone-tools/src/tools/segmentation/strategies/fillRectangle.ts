@@ -8,6 +8,7 @@ import { ImageVolume, Types } from '@ohif/cornerstone-render'
 type OperationData = {
   points: [Point3, Point3, Point3, Point3]
   labelmap: ImageVolume
+  constraintFn: (x: [number, number, number]) => boolean
   segmentIndex: number
   segmentsLocked: number[]
 }
@@ -29,7 +30,7 @@ function fillRectangle(
   operationData: OperationData,
   inside = true
 ): void {
-  const { labelmap, points } = operationData
+  const { labelmap, points, constraintFn } = operationData
   const { vtkImageData } = labelmap
 
   const rectangleCornersIJK = points.map((world) => {
@@ -49,6 +50,7 @@ function fillRectangle(
         evt,
         operationData,
         () => true,
+        constraintFn ? constraintFn : undefined,
         topLeftFront,
         bottomRightBack
       )
