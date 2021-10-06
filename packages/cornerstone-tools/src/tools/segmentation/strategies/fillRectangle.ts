@@ -37,13 +37,16 @@ function fillRectangle(
     return vtkImageData.worldToIndex(world)
   })
 
-  const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = getBoundingBoxAroundShape(
-    rectangleCornersIJK,
-    vtkImageData
-  )
+  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, vtkImageData)
 
-  const topLeftFront = [xMin, yMin, zMin]
-  const bottomRightBack = [xMax, yMax, zMax]
+  if (boundsIJK.every(([min, max]) => min !== max)) {
+    throw new Error('Oblique segmentation tools are not supported yet')
+  }
+
+  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
+
+  const topLeftFront = [iMin, jMin, kMin]
+  const bottomRightBack = [iMax, jMax, kMax]
 
   inside
     ? fillInsideShape(
