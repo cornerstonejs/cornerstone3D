@@ -2,9 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  eventTarget,
   createAndCacheVolume,
-  EVENTS as RENDERING_EVENTS,
   createAndCacheDerivedVolume,
 } from '@ohif/cornerstone-render'
 import {
@@ -12,17 +10,11 @@ import {
   synchronizers,
   ToolBindings,
   ToolModes,
-  ToolGroupManager,
   CornerstoneTools3DEvents,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
-
 import getImageIds from './helpers/getImageIds'
-import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
@@ -34,16 +26,14 @@ import {
   SCENE_IDS,
   ANNOTATION_TOOLS,
   SEGMENTATION_TOOLS,
-  TOOL_GROUP_UIDS,
 } from './constants'
-import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
+import LAYOUTS, { ptCtFusion } from './layouts'
 import config from './config/default'
 
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import limitImageIds from './helpers/limitImageIds'
 
 const VOLUME = 'volume'
-const STACK = 'stack'
 
 let ctSceneToolGroup,
   ptSceneToolGroup,
@@ -68,7 +58,22 @@ const labelmap1UID = 'boneAndSoftTissue'
 const labelmap2UID = 'fatTissue'
 const RECTANGLE_ROI_THRESHOLD = 'RectangleRoiThreshold'
 
-class MPRExample extends Component {
+class SegmentationExample extends Component {
+  _canvasNodes = null
+  _viewportGridRef = null
+  _offScreenRef = null
+  ctVolumeImageIds = null
+  petVolumeImageIds = null
+  ptThresholdSync = null
+  axialSync = null
+  sagittalSync = null
+  coronalSync = null
+  ctWLSync = null
+  renderingEngine = null
+  viewportGridResizeObserver = null
+  ctVolumeUID = null
+  ptVolumeUID = null
+
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
@@ -117,6 +122,7 @@ class MPRExample extends Component {
     segmentLocked: false,
     thresholdMin: 0,
     thresholdMax: 100,
+    numSlicesForThreshold: 1,
   }
 
   constructor(props) {
@@ -327,8 +333,10 @@ class MPRExample extends Component {
   onLabelmapUpdated = (evt) => {
     const { canvas } = evt.detail
     const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
+    const activeLabelmapUID = SegmentationModule.getActiveLabelmapUID(canvas)
     this.setState({
       availableLabelmaps: labelmapUIDs,
+      selectedLabelmapUID: activeLabelmapUID,
     })
   }
 
@@ -506,8 +514,11 @@ class MPRExample extends Component {
   }
 
   executeThresholding = () => {
-    const tool = ctSceneToolGroup.getToolInstance(RECTANGLE_ROI_THRESHOLD)
-    const options = [this.state.thresholdMin, this.state.thresholdMax]
+    const numSlices = this.state.numSlicesForThreshold
+    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    const tool = toolGroup.getToolInstance(RECTANGLE_ROI_THRESHOLD)
+    const options = {
+      lowerThreshold: this.state.thresholdMin, higherThreshold: this.state.thresholdMax, numSlices}
     tool.execute(options)
   }
 
@@ -530,12 +541,24 @@ class MPRExample extends Component {
   getThresholdUID = () => {
     return (
       <>
+        <label htmlFor="numSlices" style={{ marginLeft: '5px' }}>
+          Number of Slices (+/-)
+        </label>
+        <input
+          type="number"
+          style={{ marginLeft: '5px' }}
+          name="numSlices"
+          value={this.state.numSlicesForThreshold}
+          onChange={(evt) => {
+            this.setState({ numSlicesForThreshold: Number(evt.target.value) })
+          }}
+        />
         <label htmlFor="thresholdMin" style={{ marginLeft: '5px' }}>
           Min value
         </label>
         <input
           type="number"
-          style={{ marginLeft: '0px' }}
+          style={{ marginLeft: '5px' }}
           name="thresholdMin"
           value={this.state.thresholdMin}
           onChange={(evt) => {
@@ -547,7 +570,7 @@ class MPRExample extends Component {
         </label>
         <input
           type="number"
-          style={{ marginLeft: '0px' }}
+          style={{ marginLeft: '5px' }}
           name="thresholdMax"
           value={this.state.thresholdMax}
           onChange={(evt) => {
@@ -590,8 +613,8 @@ class MPRExample extends Component {
           value={this.state.ptCtLeftClickTool}
           onChange={(evt) => {
             const toolName = evt.target.value
-            if (SEGMENTATION_TOOLS.includes(toolName)){
-              this.setState({ segmentationToolActive : true})
+            if (SEGMENTATION_TOOLS.includes(toolName)) {
+              this.setState({ segmentationToolActive: true })
             }
             this.setState({ ptCtLeftClickTool: toolName })
           }}
@@ -618,6 +641,7 @@ class MPRExample extends Component {
                 index
               )
 
+            console.debug('setting tool group name of ', sceneUID)
             this.setState({
               sceneForSegmentation: sceneUID,
               availableLabelmaps: labelmapUIDs,
@@ -678,12 +702,17 @@ class MPRExample extends Component {
 
         <div>{this.getSetToolModes()}</div>
         {this.state.segmentationToolActive && (
-          <div>
-            <h4>Segmentation</h4>
+          <div style={{ marginTop: '15px' }}>
             {this.state.ptCtLeftClickTool === RECTANGLE_ROI_THRESHOLD
               ? this.getThresholdUID()
               : this.getScissorsUI()}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginTop: '5px',
+              }}
+            >
               <span> Labelmaps (active is selected) </span>
               <select
                 value={this.state.selectedLabelmapUID}
@@ -844,7 +873,7 @@ class MPRExample extends Component {
                   max="0.999"
                   step="0.001"
                   onChange={(evt) => {
-                    const fillAlpha = evt.target.value
+                    const fillAlpha = Number(evt.target.value)
                     this.setState({ fillAlpha })
                     SegmentationModule.setGlobalConfig({ fillAlpha })
                   }}
@@ -862,7 +891,7 @@ class MPRExample extends Component {
                   max="0.999"
                   step="0.001"
                   onChange={(evt) => {
-                    const fillAlphaInactive = evt.target.value
+                    const fillAlphaInactive = Number(evt.target.value)
                     this.setState({ fillAlphaInactive })
                     SegmentationModule.setGlobalConfig({ fillAlphaInactive })
                   }}
@@ -915,4 +944,4 @@ class MPRExample extends Component {
   }
 }
 
-export default MPRExample
+export default SegmentationExample

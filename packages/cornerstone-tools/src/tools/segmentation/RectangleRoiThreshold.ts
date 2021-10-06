@@ -36,6 +36,12 @@ import {
   getNextLabelmapIndex,
 } from '../../store/SegmentationModule'
 
+type ThresholdExecutionOptions = {
+  lowerThreshold: number
+  higherThreshold: number
+  numSlices: number
+}
+
 interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
   metadata: {
     cameraPosition?: Point3
@@ -76,7 +82,10 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     super(toolConfiguration, {
       name: 'RectangleRoiThreshold',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true, preventHandleOutsideImage: false },
+      configuration: {
+        shadow: true,
+        preventHandleOutsideImage: false,
+      },
       strategies: {
         THRESHOLD_VOLUME: thresholdVolume,
       },
@@ -186,7 +195,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
    * @param options LowerThreshold and HigherThreshold values
    * @returns
    */
-  public execute(options: [number, number]) {
+  public execute(options: ThresholdExecutionOptions) {
     const selectedToolState = toolDataSelection.getSelectedToolDataByToolName(
       this.name
     )
@@ -203,6 +212,14 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     const { canvas: element } = viewport
 
     const labelmap = cache.getVolume(labelmapUID)
+
+    // Todo: Resetting the labelmap imageData value so that the same tool can
+    // execute threshold execution more than once, but this is super slow
+    // const values = labelmap.vtkImageData.getPointData().getScalars().getData()
+    // const length = values.length
+    // for (let i = 0; i <= length; i++) {
+    //   values[i] = 0
+    // }
 
     const segmentIndex = getActiveSegmentIndex(element)
     const segmentColor = getColorForSegmentIndexColorLUT(

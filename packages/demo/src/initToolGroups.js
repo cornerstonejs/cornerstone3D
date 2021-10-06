@@ -567,7 +567,7 @@ function addToolsToToolGroups({
       configuration: { volumeUID: ptVolumeUID },
     })
      ptSceneToolGroup.addTool('CircleScissors', {
-      configuration: { volumeUID: ctVolumeUID },
+      configuration: { volumeUID: ptVolumeUID },
     })
 
     ptSceneToolGroup.addTool('Bidirectional', {
