@@ -1,5 +1,16 @@
+import { vec3 } from 'gl-matrix'
 import { cache } from '@ohif/cornerstone-render'
-import { fillInsideRectangle } from './fillRectangle'
+import {
+  getBoundingBoxAroundShape,
+  fillInsideShape,
+} from '../../../util/segmentation'
+
+function worldToIndex(imageData, ain) {
+  const vout = vec3.fromValues(0, 0, 0)
+  imageData.worldToIndex(ain, vout)
+  return vout
+}
+
 /**
  *
  * Todo: make it work for more than one volume
@@ -23,7 +34,7 @@ function thresholdVolume(evt: any, operationData: any): void {
   }
 
   const volumeUID = volumeUIDs[0]
-  const [minThreshold, maxThreshold] = options
+  const { lowerThreshold, higherThreshold, numSlices } = options
   const referenceVolume = cache.getVolume(volumeUID)
   const { vtkImageData } = referenceVolume
 
@@ -31,10 +42,34 @@ function thresholdVolume(evt: any, operationData: any): void {
 
   operationData.constraintFn = ([x, y, z]) => {
     const offset = vtkImageData.computeOffsetIndex([x, y, z])
-    return minThreshold <= values[offset] && values[offset] <= maxThreshold
+    return lowerThreshold <= values[offset] && values[offset] <= higherThreshold
   }
 
-  fillInsideRectangle(evt, operationData)
+  const { points, constraintFn } = operationData
+
+  const rectangleCornersIJK = points.map((world) =>
+    worldToIndex(vtkImageData, world)
+  )
+
+  const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = getBoundingBoxAroundShape(
+    rectangleCornersIJK,
+    vtkImageData
+  )
+
+  const zMinToUse = zMin - numSlices
+  const zMaxToUse = zMax + numSlices
+
+  const topLeftFront = [xMin, yMin, zMinToUse]
+  const bottomRightBack = [xMax, yMax, zMaxToUse]
+
+  fillInsideShape(
+    evt,
+    operationData,
+    () => true,
+    constraintFn ? constraintFn : undefined,
+    topLeftFront,
+    bottomRightBack
+  )
 }
 
 export default thresholdVolume
