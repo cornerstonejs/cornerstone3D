@@ -37,6 +37,17 @@ import {
 } from '../../store/SegmentationModule'
 
 interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
+  metadata: {
+    cameraPosition?: Point3
+    cameraFocalPoint?: Point3
+    viewPlaneNormal?: Point3
+    viewUp?: Point3
+    toolDataUID?: string
+    FrameOfReferenceUID: string
+    referencedImageId?: string
+    toolName: string
+    enabledElement: any // Todo: how to remove this from the tooldata??
+  }
   data: {
     invalidated: boolean
     handles: {

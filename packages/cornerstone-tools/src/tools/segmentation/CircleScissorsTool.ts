@@ -68,7 +68,7 @@ export default class CircleScissorsTool extends BaseTool {
     })
   }
 
-  addNewState = async (evt) => {
+  addNewMeasurement = async (evt) => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
