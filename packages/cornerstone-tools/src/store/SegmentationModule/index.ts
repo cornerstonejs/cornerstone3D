@@ -1,29 +1,24 @@
-import setLabelmapForElement, {
-  getActiveLabelmapForElement,
-  getLabelmapForElement,
-} from './setLabelmapForElement'
+import setLabelmapForElement from './setLabelmapForElement'
 import {
   setActiveLabelmapIndex,
   setActiveLabelmapByLabelmapUID,
   getActiveLabelmapIndex,
   getActiveLabelmapUID,
+  getNextLabelmapIndex,
 } from './activeLabelmapIndex'
 import {
-  getNextLabelmapIndex,
-  getLabelmapUIDsForElement,
-  getLabelmapUIDsForViewportUID,
-  getActiveSegmentIndexForLabelmapUID,
   triggerLabelmapsUpdated,
+  getLabelmapUIDsForElement,
+  getLabelmapUIDForElement,
 } from './utils'
 import {
   setActiveSegmentIndex,
   getActiveSegmentIndex,
+  getActiveSegmentIndexForLabelmapUID,
 } from './activeSegmentIndex'
 import {
-  setSegmentIndexLockedForElement,
-  setSegmentIndexUnlockedForElement,
   getSegmentIndexLockedStatusForElement,
-  getSegmentsLockedForElement,
+  getLockedSegmentsForElement,
   toggleSegmentIndexLockedForElement,
   toggleSegmentIndexLockedForLabelmapUID,
 } from './lockSegmentIndex'
@@ -33,24 +28,21 @@ import { setColorLUT, getColorForSegmentIndexColorLUT } from './colorLUT'
 
 export {
   setLabelmapForElement,
-  getActiveLabelmapForElement,
-  getLabelmapForElement,
   setActiveLabelmapIndex,
   setActiveLabelmapByLabelmapUID,
   getActiveLabelmapIndex,
   getActiveLabelmapUID,
   addNewLabelmap,
   getActiveSegmentIndex,
+  getLabelmapUIDForElement,
   getNextLabelmapIndex,
   setColorLUT,
   getColorForSegmentIndexColorLUT,
   getActiveSegmentIndexForLabelmapUID,
   config,
   setGlobalConfig,
-  setSegmentIndexLockedForElement,
-  setSegmentIndexUnlockedForElement,
   getSegmentIndexLockedStatusForElement,
-  getSegmentsLockedForElement,
+  getLockedSegmentsForElement,
   toggleSegmentIndexLockedForElement,
   toggleSegmentIndexLockedForLabelmapUID,
 }
@@ -61,12 +53,9 @@ export default {
   addNewLabelmap,
 
   // Set/Get Labelmap
-  getLabelmapForElement,
   getLabelmapUIDsForElement,
-  getLabelmapUIDsForViewportUID,
 
   // Set/Get Active labelmap/Index
-  getActiveLabelmapForElement,
   setActiveLabelmapByLabelmapUID,
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
@@ -88,12 +77,11 @@ export default {
   getNextLabelmapIndex,
   getActiveSegmentIndexForLabelmapUID,
   triggerLabelmapsUpdated,
+  getLabelmapUIDForElement,
 
   // Locked segment index
-  setSegmentIndexLockedForElement,
-  setSegmentIndexUnlockedForElement,
   getSegmentIndexLockedStatusForElement,
-  getSegmentsLockedForElement,
+  getLockedSegmentsForElement,
   toggleSegmentIndexLockedForElement,
   toggleSegmentIndexLockedForLabelmapUID,
 }

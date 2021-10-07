@@ -1,19 +1,17 @@
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
-
 import {
   getEnabledElement,
   StackViewport,
   triggerEvent,
-  cache,
 } from '@ohif/cornerstone-render'
 
-import state from './state'
+import state, {
+  getGlobalStateForLabelmapUID,
+  setLabelmapGlobalState,
+  setLabelmapViewportSpecificState,
+  ViewportLabelmapState,
+} from './state'
 import setLabelmapColorAndOpacity from './setLabelmapColorAndOpacity'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-
-import { getActiveLabelmapIndex } from './activeLabelmapIndex'
-import { getLockedSegmentsForLabelmapUID } from './utils'
 
 type LabelmapEvent = {
   canvas: HTMLCanvasElement
@@ -24,18 +22,18 @@ type LabelmapEvent = {
   viewportUID: string
 }
 
-function getActiveLabelmapForElement(canvas) {
-  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
-  return getLabelmapForElement(canvas, activeLabelmapIndex)
-}
+// function getActiveLabelmapForElement(canvas) {
+//   const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
+//   return getLabelmapForElement(canvas, activeLabelmapIndex)
+// }
 
-function getLabelmapForElement(canvas, labelmapIndex) {
-  const { viewportUID } = getEnabledElement(canvas)
+// function getLabelmapForElement(canvas, labelmapIndex) {
+//   const { viewportUID } = getEnabledElement(canvas)
 
-  const { volumeUID } =
-    state.volumeViewports[viewportUID].labelmaps[labelmapIndex]
-  return cache.getVolume(volumeUID)
-}
+//   const { volumeUID } =
+//     state.volumeViewports[viewportUID].labelmaps[labelmapIndex]
+//   return cache.getVolume(volumeUID)
+// }
 
 /**
  * It renders a labelmap 3D volume into the scene the canvas is associated with.
@@ -46,6 +44,7 @@ async function setLabelmapForElement({
   labelmap,
   labelmapIndex = 0,
   colorLUTIndex = 0,
+  labelmapViewportState,
 }) {
   const enabledElement = getEnabledElement(canvas)
   const { scene, viewportUID, viewport, renderingEngineUID, sceneUID } =
@@ -59,15 +58,46 @@ async function setLabelmapForElement({
     throw new Error('Segmentation for StackViewport is not supported yet')
   }
 
-  // VolumeViewport Implementation
-  const viewportUIDs = scene.getViewportUIDs()
-
   // Updating segmentation state for viewports
-  updateStateForVolumeViewports(viewportUIDs, labelmapIndex, labelmapUID)
+  // Creating a global state for labelmap if not found
+  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
+  if (!labelmapGlobalState) {
+    setLabelmapGlobalState(labelmapUID)
+  }
 
-  const labelmapState =
-    state.volumeViewports[viewportUID].labelmaps[labelmapIndex]
-  const { cfun, ofun, labelmapConfig } = labelmapState
+  // Updating viewport-specific labelmap states
+  scene.getViewportUIDs().forEach((viewportUID) => {
+    // VolumeViewport Implementation
+    let viewportLabelmapsState = state.volumeViewports[viewportUID]
+
+    // If first time with this state
+    if (!viewportLabelmapsState) {
+      // If no state is assigned for the viewport for segmentation: create an empty
+      // segState for the viewport and assign the requested labelmapIndex as the active one.
+      viewportLabelmapsState = {
+        activeLabelmapIndex: labelmapIndex,
+        labelmaps: [],
+      }
+      state.volumeViewports[viewportUID] = viewportLabelmapsState
+    }
+
+    // Updating the active labelmapIndex
+    state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
+
+    const overwrite = true
+    setLabelmapViewportSpecificState(
+      viewportUID,
+      labelmapUID,
+      labelmapIndex,
+      labelmapViewportState,
+      overwrite
+    )
+  })
+
+  const viewportLabelmapsState = state.volumeViewports[viewportUID]
+  const viewportLabelmapState = viewportLabelmapsState.labelmaps[labelmapIndex]
+
+  const { cfun, ofun, labelmapConfig } = viewportLabelmapState
 
   // Default to true since we are setting a new labelmap, however,
   // in the event listener, we will make other segmentations visible/invisible
@@ -104,56 +134,10 @@ async function setLabelmapForElement({
   triggerEvent(canvas, EVENTS.LABELMAP_UPDATED, eventData)
 }
 
-/**
- * Updates the segmentation state with the new labelmapIndex, and labelmapUID
- * for the scene's volume viewports. It will initialize states if empty.
- * @param viewportsUIDs scene's volumeViewport UIDs
- * @param labelmapIndex labelmapIndex
- * @param labelmapUID labelmapUID
- */
-function updateStateForVolumeViewports(
-  viewportsUIDs,
-  labelmapIndex,
-  labelmapUID
-) {
-  // Set the locked segments if labelmap already exists in another viewport
-  const lockedSegments = getLockedSegmentsForLabelmapUID(labelmapUID)
-
-  viewportsUIDs.forEach((viewportUID) => {
-    let viewportState = state.volumeViewports[viewportUID]
-
-    // If first time with this state
-    if (!viewportState) {
-      // If no state is assigned for the viewport for segmentation: create an empty
-      // segState for the viewport and assign the requested labelmapIndex as the active one.
-      viewportState = {
-        activeLabelmapIndex: labelmapIndex,
-        labelmaps: [],
-      }
-      state.volumeViewports[viewportUID] = viewportState
-    }
-
-    // Updating the active labelmapIndex
-    state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
-
-    // Overwriting the new labelmap state
-    viewportState.labelmaps[labelmapIndex] = {
-      volumeUID: labelmapUID,
-      activeSegmentIndex: 1,
-      colorLUTIndex: 0,
-      segmentsHidden: new Set(),
-      segmentsLocked: new Set(lockedSegments),
-      cfun: vtkColorTransferFunction.newInstance(),
-      ofun: vtkPiecewiseFunction.newInstance(),
-      labelmapConfig: {},
-    }
-  })
-}
-
 export default setLabelmapForElement
 
 export {
-  getActiveLabelmapForElement,
-  getLabelmapForElement,
+  // getActiveLabelmapForElement,
+  // getLabelmapForElement,
   setLabelmapForElement,
 }

@@ -8,7 +8,11 @@ import {
   createAndCacheLocalVolume,
 } from '@ohif/cornerstone-render'
 
-import state from './state'
+import state, {
+  setLabelmapGlobalState,
+  setLabelmapViewportSpecificState,
+  ViewportLabelmapsState,
+} from './state'
 import { Point3 } from '../../types'
 import setLabelmapForElement from './setLabelmapForElement'
 
@@ -39,10 +43,12 @@ async function addNewLabelmap({
   canvas,
   labelmapIndex,
   options,
+  labelmapViewportState,
 }: {
   canvas: HTMLCanvasElement
   labelmapIndex: number
   options: LabelmapOptions
+  labelmapViewportState: ViewportLabelmapsState
 }): Promise<string> {
   const enabledElement = getEnabledElement(canvas)
 
@@ -56,6 +62,10 @@ async function addNewLabelmap({
   if (!scene) {
     throw new Error('Segmentation not ready for stackViewport')
   }
+
+  // Todo
+  // let referenceVolumeUID
+  // let referenceImageUID
 
   let labelmap
   if (customOptions) {
@@ -71,47 +81,35 @@ async function addNewLabelmap({
     })
   }
 
-  // VolumeViewport Implementation
-  let viewportSegState = state.volumeViewports[viewportUID]
+  // Creating a global state for the new labelmap
+  setLabelmapGlobalState(labelmapUID)
 
-  // If first time with this state
-  if (!viewportSegState) {
-    // If no state is assigned for the viewport for segmentation: create an empty
-    // segState for the viewport and assign the requested labelmapIndex as the active one.
-    viewportSegState = {
-      activeLabelmapIndex: labelmapIndex,
-      labelmaps: [],
+  scene.getViewportUIDs().forEach((viewportUID) => {
+    // VolumeViewport Implementation
+    let viewportLabelmapsState = state.volumeViewports[viewportUID]
+
+    // If first time with this state
+    if (!viewportLabelmapsState) {
+      // If no state is assigned for the viewport for segmentation: create an empty
+      // segState for the viewport and assign the requested labelmapIndex as the active one.
+      viewportLabelmapsState = {
+        activeLabelmapIndex: labelmapIndex,
+        labelmaps: [],
+      }
+      state.volumeViewports[viewportUID] = viewportLabelmapsState
     }
-    state.volumeViewports[viewportUID] = viewportSegState
-  }
 
-  // Updating the active labelmapIndex
-  state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
+    // Updating the active labelmapIndex
+    state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
 
-  // Adding the new labelmap state
-  let labelmapState = viewportSegState.labelmaps[labelmapIndex]
-  if (!labelmapState) {
-    labelmapState = {
-      volumeUID: labelmapUID,
-      activeSegmentIndex: 1,
-      segmentsHidden: new Set(),
-      segmentsLocked: new Set(),
-      colorLUTIndex: 0,
-      labelmapConfig: {},
-      cfun: vtkColorTransferFunction.newInstance(),
-      ofun: vtkPiecewiseFunction.newInstance(),
-    }
-    viewportSegState.labelmaps[labelmapIndex] = labelmapState
-  } else {
-    throw new Error(
-      `You are overriding the labelmap at labelmapIndex${labelmapIndex}`
-    )
-  }
+    setLabelmapViewportSpecificState(viewportUID, labelmapUID, labelmapIndex)
+  })
 
   await setLabelmapForElement({
     canvas: viewport.canvas,
     labelmap: labelmap,
     labelmapIndex,
+    labelmapViewportState,
   })
 
   return labelmapUID

@@ -632,8 +632,7 @@ class SegmentationExample extends Component {
             const sceneUID = evt.target.value
             const scene = this.renderingEngine.getScene(sceneUID)
             const { uid, canvas } = scene.getViewports()[0]
-            const labelmapUIDs =
-              SegmentationModule.getLabelmapUIDsForViewportUID(uid)
+            const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
             const index = SegmentationModule.getActiveSegmentIndex(canvas)
             const segmentLocked =
               SegmentationModule.getSegmentIndexLockedStatusForElement(

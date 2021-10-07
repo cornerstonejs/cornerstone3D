@@ -1,86 +1,18 @@
 import { getEnabledElement } from '@ohif/cornerstone-render'
-import { getActiveLabelmapIndex } from './activeLabelmapIndex'
-import state from './state'
 
-/**
- * Update the locked status of the segmentIndex for the viewportUID based
- * on the provided lockedStatus
- * @param viewportUIDs viewportUID
- * @param labelmapIndex labelmapIndex in the viewport state
- * @param segmentIndex segment index
- * @param lockedStatus is locked or not
- */
-function updateSegmentIndexLockStatus(
-  viewportUIDs,
-  labelmapIndex,
-  segmentIndex,
-  lockedStatus
-) {
-  viewportUIDs.forEach((viewportUID) => {
-    const viewportLabelmaps = state.volumeViewports[viewportUID].labelmaps
-    if (lockedStatus === true) {
-      viewportLabelmaps[labelmapIndex].segmentsLocked.add(segmentIndex)
-    } else {
-      viewportLabelmaps[labelmapIndex].segmentsLocked.delete(segmentIndex)
-    }
-  })
-}
+import {
+  getActiveLabelmapIndex,
+  getActiveLabelmapUID,
+  getNextLabelmapIndex,
+} from './activeLabelmapIndex'
 
-/**
- * Set the segmentIndex to be locked of the canvas's labelmap based on its index
- * If no labelmapIndex is provided it uses the active labelmap
- *
- * @param canvas HTML Canvas
- * @param segmentIndex segment index
- * @param labelmapIndex labelmapIndex in the viewport state
- */
-function setSegmentIndexLockedForElement(
-  canvas: HTMLCanvasElement,
-  segmentIndex: number,
-  labelmapIndex?: number
-): void {
-  let index = labelmapIndex
-  if (!labelmapIndex) {
-    index = getActiveLabelmapIndex(canvas)
-  }
+import state, {
+  getActiveLabelmapStateForElement,
+  getGlobalStateForLabelmapUID,
+  getLabelmapsStateForElement,
+} from './state'
 
-  const { sceneUID, scene } = getEnabledElement(canvas)
-  if (!sceneUID) {
-    throw new Error('Segmentation not implemented for stack viewport yet')
-  }
-
-  const viewportUIDs = scene.getViewportUIDs()
-  const lockedStatus = true
-  updateSegmentIndexLockStatus(viewportUIDs, index, segmentIndex, lockedStatus)
-}
-
-/**
- * Set the segmentIndex to be unlocked of the canvas's labelmap based on its index
- * If no labelmapIndex is provided it uses the active labelmap
- *
- * @param canvas HTML Canvas
- * @param segmentIndex segment index
- * @param labelmapIndex labelmapIndex in the viewport state
- */
-function setSegmentIndexUnlockedForElement(
-  canvas: HTMLCanvasElement,
-  segmentIndex: number,
-  labelmapIndex?: number
-): void {
-  let index = labelmapIndex
-  if (!labelmapIndex) {
-    index = getActiveLabelmapIndex(canvas)
-  }
-
-  const { sceneUID, scene } = getEnabledElement(canvas)
-  if (!sceneUID) {
-    throw new Error('Segmentation not implemented for stack viewport yet')
-  }
-
-  const viewportUIDs = scene.getViewportUIDs()
-  const lockedStatus = false
-  updateSegmentIndexLockStatus(viewportUIDs, index, segmentIndex, lockedStatus)
-}
+import { getLabelmapUIDForElement } from './utils'
 
 /**
  * Returns the lock status of the segment index for the canvas's labelmapIndex-th labelmap.
@@ -95,24 +27,14 @@ function getSegmentIndexLockedStatusForElement(
   segmentIndex: number,
   labelmapIndex?: number
 ): boolean {
-  let index = labelmapIndex
-  if (!labelmapIndex) {
-    index = getActiveLabelmapIndex(canvas)
-  }
+  const labelmapUID = getLabelmapUIDForElement(canvas, labelmapIndex)
+  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
 
-  const { sceneUID, viewportUID } = getEnabledElement(canvas)
-  if (!sceneUID) {
-    throw new Error('Segmentation not implemented for stack viewport yet')
-  }
-
-  const viewportState = state.volumeViewports[viewportUID]
-
-  if (!viewportState) {
+  if (!labelmapGlobalState) {
     return false
   }
 
-  const viewportLabelmaps = viewportState.labelmaps
-  return viewportLabelmaps[index].segmentsLocked.has(segmentIndex)
+  return labelmapGlobalState.segmentsLocked.has(segmentIndex)
 }
 
 /**
@@ -123,22 +45,13 @@ function getSegmentIndexLockedStatusForElement(
  * @param labelmapIndex labelmap Index
  * @returns
  */
-function getSegmentsLockedForElement(
+function getLockedSegmentsForElement(
   canvas: HTMLCanvasElement,
   labelmapIndex?: number
 ): number[] {
-  let index = labelmapIndex
-  if (!labelmapIndex) {
-    index = getActiveLabelmapIndex(canvas)
-  }
-
-  const { sceneUID, viewportUID } = getEnabledElement(canvas)
-  if (!sceneUID) {
-    throw new Error('Segmentation not implemented for stack viewport yet')
-  }
-
-  const viewportLabelmaps = state.volumeViewports[viewportUID].labelmaps
-  return Array.from(viewportLabelmaps[index].segmentsLocked)
+  const labelmapUID = getLabelmapUIDForElement(canvas, labelmapIndex)
+  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
+  return Array.from(labelmapGlobalState.segmentsLocked)
 }
 
 /**
@@ -154,20 +67,23 @@ function toggleSegmentIndexLockedForElement(
   segmentIndex: number,
   labelmapIndex?: number
 ): void {
+  const labelmapUID = getLabelmapUIDForElement(canvas, labelmapIndex)
   const lockedStatus = getSegmentIndexLockedStatusForElement(
     canvas,
     segmentIndex,
     labelmapIndex
   )
 
+  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
+
   const toggledStatus = !lockedStatus
 
   if (toggledStatus === true) {
-    setSegmentIndexLockedForElement(canvas, segmentIndex, labelmapIndex)
+    labelmapGlobalState.segmentsLocked.add(segmentIndex)
     return
   }
 
-  setSegmentIndexUnlockedForElement(canvas, segmentIndex, labelmapIndex)
+  labelmapGlobalState.segmentsLocked.delete(segmentIndex)
 }
 
 /**
@@ -183,30 +99,32 @@ function toggleSegmentIndexLockedForLabelmapUID(
   if (!labelmapUID) {
     throw new Error('LabelmapUID should be provided')
   }
-  // todo: stack viewport
 
-  Object.keys(state.volumeViewports).forEach((viewportUID) => {
-    const viewportLabelmaps = state.volumeViewports[viewportUID].labelmaps
-    viewportLabelmaps.forEach(({ volumeUID, segmentsLocked }) => {
-      if (volumeUID === labelmapUID) {
-        if (segmentsLocked.has(segmentIndex)) {
-          segmentsLocked.delete(segmentIndex)
-        } else {
-          segmentsLocked.add(segmentIndex)
-        }
-      }
-    })
-  })
+  const { segmentsLocked } = getGlobalStateForLabelmapUID(labelmapUID)
+  if (segmentsLocked.has(segmentIndex)) {
+    segmentsLocked.delete(segmentIndex)
+  } else {
+    segmentsLocked.add(segmentIndex)
+  }
+}
+
+/**
+ * Returns an array of locked segment indices for the provided labelmapUID
+ * @param labelmapUID Labelmap volumeUID
+ * @returns
+ */
+function getLockedSegmentsForLabelmapUID(labelmapUID: string): number[] {
+  const { segmentsLocked } = getGlobalStateForLabelmapUID(labelmapUID)
+  return Array.from(segmentsLocked)
 }
 
 export {
-  // Element-wise locking
-  setSegmentIndexLockedForElement,
-  setSegmentIndexUnlockedForElement,
-  getSegmentsLockedForElement,
-  // labelmap-wise locking
+  // get
+  getLockedSegmentsForLabelmapUID,
+  getLockedSegmentsForElement,
+  // toggling lock
   toggleSegmentIndexLockedForLabelmapUID,
+  toggleSegmentIndexLockedForElement,
   //
   getSegmentIndexLockedStatusForElement,
-  toggleSegmentIndexLockedForElement,
 }
