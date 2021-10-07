@@ -27,13 +27,17 @@ export default function cameraSyncCallback(
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineUID)
   if (!renderingEngine) {
-    throw new Error(`No RenderingEngine for UID: ${targetViewport.renderingEngineUID}`)
+    throw new Error(
+      `No RenderingEngine for UID: ${targetViewport.renderingEngineUID}`
+    )
   }
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportUID)
 
   // TODO: only sync in-plane movements if one viewport is a stack viewport
 
+  // Todo: we shouldn't set camera, we should set the focalPoint
+  // to the nearest slice center world position
   tViewport.setCamera(camera)
   tViewport.render()
 }
