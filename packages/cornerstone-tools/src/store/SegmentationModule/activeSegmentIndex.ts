@@ -1,7 +1,10 @@
 import { getEnabledElement } from '@ohif/cornerstone-render'
 
-import state from './state'
-import { getActiveLabelmapIndex } from './activeLabelmapIndex'
+import state, {
+  getActiveLabelmapStateForElement,
+  getGlobalStateForLabelmapUID,
+} from './state'
+import { getActiveLabelmapUID } from './activeLabelmapIndex'
 
 /**
  * Returns the index of the active Segment for the current active labelmap
@@ -9,34 +12,32 @@ import { getActiveLabelmapIndex } from './activeLabelmapIndex'
  * @param  {HTMLElement} canvas HTML canvas
  * @returns {number} The active segment index
  */
-function getActiveSegmentIndex(canvas: HTMLCanvasElement): number {
-  const enabledElement = getEnabledElement(canvas)
+function getActiveSegmentIndex(canvas: HTMLCanvasElement): number | undefined {
+  const viewportLabelmapState = getActiveLabelmapStateForElement(canvas)
 
-  if (!enabledElement) {
-    return
+  if (!viewportLabelmapState) {
+    // Todo: check this
+    return 1
   }
 
-  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
-  if (activeLabelmapIndex === undefined) {
-    console.warn('No active labelmap detected')
-    return
+  const activeLabelmapGlobalState = getGlobalStateForLabelmapUID(
+    viewportLabelmapState.volumeUID
+  )
+
+  if (activeLabelmapGlobalState) {
+    return activeLabelmapGlobalState.activeSegmentIndex
   }
+}
 
-  const { scene, viewportUID } = enabledElement
-
-  // stackViewport
-  if (!scene) {
-    throw new Error('Segmentation for StackViewport is not supported yet')
-  }
-
-  // volumeViewport
-  const viewportSegState = state.volumeViewports[viewportUID]
-
-  if (!viewportSegState) {
-    return
-  }
-
-  return viewportSegState.labelmaps[activeLabelmapIndex].activeSegmentIndex
+/**
+ * Returns the active segment index for the canvas based on the labelmapUID it renders
+ * @param canvas HTML Canvas
+ * @param labelmapUID volumeUID of the labelmap
+ * @returns
+ */
+function getActiveSegmentIndexForLabelmapUID(labelmapUID: string): number {
+  const activeLabelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
+  return activeLabelmapGlobalState.activeSegmentIndex
 }
 
 /**
@@ -74,20 +75,19 @@ function setActiveSegmentIndex(
   }
 
   // active labelmap Index is the same for all viewports in the scene
-  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
+  const activeLabelmapUID = getActiveLabelmapUID(canvas)
 
-  // Update other viewports in the scene
-  const viewportUIDs = scene.getViewportUIDs()
-  viewportUIDs.forEach((viewportUID) => {
-    const viewportState = state.volumeViewports[viewportUID]
-    const activeLabelmap = viewportState.labelmaps[activeLabelmapIndex]
-    if (!activeLabelmap) {
-      throw new Error(
-        'Canvas does not contain an active labelmap, create one first before setting the segment Index'
-      )
-    }
-    activeLabelmap.activeSegmentIndex = segmentIndex
-  })
+  const labelmapGlobalState = getGlobalStateForLabelmapUID(activeLabelmapUID)
+
+  if (labelmapGlobalState) {
+    labelmapGlobalState.activeSegmentIndex = segmentIndex
+  }
 }
 
-export { getActiveSegmentIndex, setActiveSegmentIndex }
+export {
+  // get
+  getActiveSegmentIndex,
+  getActiveSegmentIndexForLabelmapUID,
+  // set
+  setActiveSegmentIndex,
+}
