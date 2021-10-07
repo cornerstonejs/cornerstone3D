@@ -43,12 +43,10 @@ async function addNewLabelmap({
   canvas,
   labelmapIndex,
   options,
-  labelmapViewportState,
 }: {
   canvas: HTMLCanvasElement
   labelmapIndex: number
   options: LabelmapOptions
-  labelmapViewportState: ViewportLabelmapsState
 }): Promise<string> {
   const enabledElement = getEnabledElement(canvas)
 
@@ -81,35 +79,35 @@ async function addNewLabelmap({
     })
   }
 
-  // Creating a global state for the new labelmap
-  setLabelmapGlobalState(labelmapUID)
+  // // Creating a global state for the new labelmap
+  // setLabelmapGlobalState(labelmapUID)
 
-  scene.getViewportUIDs().forEach((viewportUID) => {
-    // VolumeViewport Implementation
-    let viewportLabelmapsState = state.volumeViewports[viewportUID]
+  // scene.getViewportUIDs().forEach((viewportUID) => {
+  //   // VolumeViewport Implementation
+  //   let viewportLabelmapsState = state.volumeViewports[viewportUID]
 
-    // If first time with this state
-    if (!viewportLabelmapsState) {
-      // If no state is assigned for the viewport for segmentation: create an empty
-      // segState for the viewport and assign the requested labelmapIndex as the active one.
-      viewportLabelmapsState = {
-        activeLabelmapIndex: labelmapIndex,
-        labelmaps: [],
-      }
-      state.volumeViewports[viewportUID] = viewportLabelmapsState
-    }
+  //   // If first time with this state
+  //   if (!viewportLabelmapsState) {
+  //     // If no state is assigned for the viewport for segmentation: create an empty
+  //     // segState for the viewport and assign the requested labelmapIndex as the active one.
+  //     viewportLabelmapsState = {
+  //       activeLabelmapIndex: labelmapIndex,
+  //       labelmaps: [],
+  //     }
+  //     state.volumeViewports[viewportUID] = viewportLabelmapsState
+  //   }
 
-    // Updating the active labelmapIndex
-    state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
+  //   // Updating the active labelmapIndex
+  //   state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
 
-    setLabelmapViewportSpecificState(viewportUID, labelmapUID, labelmapIndex)
-  })
+  //   setLabelmapViewportSpecificState(viewportUID, labelmapUID, labelmapIndex)
+  // })
 
   await setLabelmapForElement({
     canvas: viewport.canvas,
     labelmap: labelmap,
     labelmapIndex,
-    labelmapViewportState,
+    labelmapViewportState: undefined,
   })
 
   return labelmapUID
