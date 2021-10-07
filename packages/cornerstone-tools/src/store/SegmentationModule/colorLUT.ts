@@ -1,7 +1,7 @@
-import { getEnabledElement } from '@ohif/cornerstone-render'
-import state from './state'
+import state, { getLabelmapStateForElement } from './state'
 import config from './segmentationConfig'
 
+// RGBA as 0-255
 type Color = [number, number, number, number]
 
 /**
@@ -39,13 +39,12 @@ export function setColorLUTIndexForLabelmap(labelmap, colorLUTIndex) {
   // labelmap3D.colorLUTIndex = colorLUTIndex
 }
 
-export function getColorForSegmentIndexColorLUT(
+export function getColorForSegmentIndex(
   element: HTMLCanvasElement,
-  labelmapOrColorLUTIndex: string | number,
-  segmentIndex: number
+  segmentIndex: number,
+  labelmapIndex?: number
 ): Color {
-  const { viewportUID } = getEnabledElement(element)
-  const colorLUT = getColorLUT(viewportUID, labelmapOrColorLUTIndex)
+  const colorLUT = getColorLUT(element, labelmapIndex)
   return colorLUT[segmentIndex]
 }
 
@@ -67,20 +66,14 @@ export function setColorForSegmentIndexOfColorLUT(
 }
 
 export function getColorLUT(
-  viewportUID: string,
-  labelmapOrColorLUTIndex: string | number
+  element: HTMLCanvasElement,
+  labelmapIndex?: number
 ): Array<Color> {
-  // If ColorLUTIndex is provided
-  if (typeof labelmapOrColorLUTIndex === 'number') {
-    return state.colorLutTables[labelmapOrColorLUTIndex]
-  }
-
-  // If volumeUID for labelmap is provided
-  const labelmapState = state.volumeViewports[viewportUID].labelmaps.find(
-    ({ volumeUID }) => volumeUID === labelmapOrColorLUTIndex
+  const viewportLabelmapState = getLabelmapStateForElement(
+    element,
+    labelmapIndex
   )
-
-  return state.colorLutTables[labelmapState.colorLUTIndex]
+  return state.colorLutTables[viewportLabelmapState.colorLUTIndex]
 }
 
 /**

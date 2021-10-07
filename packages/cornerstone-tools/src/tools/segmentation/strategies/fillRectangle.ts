@@ -30,14 +30,16 @@ function fillRectangle(
   operationData: OperationData,
   inside = true
 ): void {
+  const { enabledElement } = evt
+  const { renderingEngine } = enabledElement
   const { labelmap, points, constraintFn } = operationData
-  const { vtkImageData } = labelmap
+  const { vtkImageData, dimensions } = labelmap
 
   const rectangleCornersIJK = points.map((world) => {
     return vtkImageData.worldToIndex(world)
   })
 
-  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, vtkImageData)
+  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
   if (boundsIJK.every(([min, max]) => min !== max)) {
     throw new Error('Oblique segmentation tools are not supported yet')
@@ -48,16 +50,23 @@ function fillRectangle(
   const topLeftFront = [iMin, jMin, kMin]
   const bottomRightBack = [iMax, jMax, kMax]
 
+  // Since always all points inside the boundsIJK is inside the rectangle...
+  const pointInShape = () => true
+
   inside
     ? fillInsideShape(
         evt,
         operationData,
-        () => true,
-        constraintFn ? constraintFn : undefined,
+        pointInShape,
+        constraintFn,
         topLeftFront,
         bottomRightBack
       )
     : null //fillOutsideBoundingBox(evt, operationData, topLeftFront, bottomRightBack)
+
+  // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
+  // right now this is needed to update the labelmap on other viewports that have it (pt)
+  renderingEngine.render()
 }
 
 /**

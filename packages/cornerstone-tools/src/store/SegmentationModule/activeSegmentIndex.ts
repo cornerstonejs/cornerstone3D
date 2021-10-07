@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state, {
-  getActiveLabelmapStateForElement,
+  getActiveLabelmapState,
   getGlobalStateForLabelmapUID,
 } from './state'
 import { getActiveLabelmapUID } from './activeLabelmapIndex'
@@ -13,7 +13,7 @@ import { getActiveLabelmapUID } from './activeLabelmapIndex'
  * @returns {number} The active segment index
  */
 function getActiveSegmentIndex(canvas: HTMLCanvasElement): number | undefined {
-  const viewportLabelmapState = getActiveLabelmapStateForElement(canvas)
+  const viewportLabelmapState = getActiveLabelmapState(canvas)
 
   if (!viewportLabelmapState) {
     // Todo: check this
@@ -41,17 +41,16 @@ function getActiveSegmentIndexForLabelmapUID(labelmapUID: string): number {
 }
 
 /**
- * Sets the active `segmentIndex` for the labelmap on the element.
+ * Sets the active `segmentIndex` for the active labelmap of the canvas element
  *
  *
- * @param  {HTMLElement|string} elementOrEnabledElementUID   The cornerstone enabled
- *                                                    element or its UUID.
- * @param  {number} labelmapIndex = 0 The index of the labelmap.
- * @returns {string} labelmap UID which is the volumeUID of the labelmap which is active now
+ * @param  {HTMLElement} canvas  HTML Element
+ * @param  {number} segmentIndex = 1 SegmentIndex
+ * @returns {string}
  */
 function setActiveSegmentIndex(
   canvas: HTMLCanvasElement,
-  segmentIndex = 0
+  segmentIndex = 1
 ): Promise<string> {
   const enabledElement = getEnabledElement(canvas)
 

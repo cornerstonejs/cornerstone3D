@@ -13,7 +13,7 @@ type OperationData = {
   segmentsLocked: number[]
   viewPlaneNormal: number[]
   viewUp: number[]
-  constraintFn: any
+  constraintFn: () => void
 }
 
 type fillCircleEvent = {
@@ -33,10 +33,10 @@ function fillCircle(
   operationData: OperationData,
   inside = true
 ): void {
-  const { labelmap, points, constraintFn } = operationData
-  const { vtkImageData } = labelmap
   const { enabledElement } = evt
-  const { viewport } = enabledElement
+  const { labelmap, points, constraintFn } = operationData
+  const { vtkImageData, dimensions } = labelmap
+  const { viewport, renderingEngine } = enabledElement
 
   const { bottom, top, left, right } = points
 
@@ -64,7 +64,7 @@ function fillCircle(
     vtkImageData.worldToIndex(bottomRightWorld),
   ]
 
-  const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, vtkImageData)
+  const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions)
   const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
 
   const topLeftFrontIJK = [iMin, jMin, kMin]
@@ -79,11 +79,15 @@ function fillCircle(
         evt,
         operationData,
         (pointIJK, canvasCoords) => pointInEllipse(ellipse, canvasCoords), // Todo: we should call pointInEllipsoidWithConstraint for oblique planes
-        constraintFn ? constraintFn : undefined,
+        constraintFn,
         topLeftFrontIJK,
         bottomRightBackIJK
       )
     : null // fillOutsideBoundingBox(evt, operationData, topLeftFrontIJK, bottomRightBackIJK)
+
+  // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
+  // right now this is needed to update the labelmap on other viewports that have it (pt)
+  renderingEngine.render()
 }
 
 /**

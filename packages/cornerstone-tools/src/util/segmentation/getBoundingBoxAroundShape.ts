@@ -1,16 +1,23 @@
-import { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
-
+import { Point3, Point2 } from '../../types'
+/**
+ * With a given vertices coordinates in IJK, it calculates the minimum and maximum
+ * coordinate in each axis, and returns them. If dimensions are provided it also
+ * clip the min, max to the provided width, height and depth
+ *
+ * @param vertices shape vertices coordinates
+ * @param [dimensions] dimensions of the image
+ * @returns [[xMin,xMax],[yMin,yMax], [zMin,zMax]]
+ */
 export default function getBoundingBoxAroundShape(
-  vertices: number[],
-  vtkImageData: vtkImageData
-): [number, number][] {
+  vertices: Point3[],
+  dimensions?: Point3
+): Point2[] {
   let xMin = Infinity
   let xMax = 0
   let yMin = Infinity
   let yMax = 0
   let zMin = Infinity
   let zMax = 0
-  const [width, height, depth] = vtkImageData.getDimensions()
 
   vertices.forEach((v) => {
     xMin = Math.min(v[0], xMin)
@@ -28,12 +35,15 @@ export default function getBoundingBoxAroundShape(
   zMin = Math.floor(zMin)
   zMax = Math.floor(zMax)
 
-  xMin = Math.max(0, xMin)
-  xMax = Math.min(width, xMax)
-  yMin = Math.max(0, yMin)
-  yMax = Math.min(height, yMax)
-  zMin = Math.max(0, zMin)
-  zMax = Math.min(depth, zMax)
+  if (dimensions) {
+    const [width, height, depth] = dimensions
+    xMin = Math.max(0, xMin)
+    xMax = Math.min(width, xMax)
+    yMin = Math.max(0, yMin)
+    yMax = Math.min(height, yMax)
+    zMin = Math.max(0, zMin)
+    zMax = Math.min(depth, zMax)
+  }
 
   return [
     [xMin, xMax],

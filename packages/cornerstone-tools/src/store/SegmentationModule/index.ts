@@ -24,7 +24,7 @@ import {
 } from './lockSegmentIndex'
 import config, { setGlobalConfig } from './segmentationConfig'
 import { addNewLabelmap } from './addNewLabelmap'
-import { setColorLUT, getColorForSegmentIndexColorLUT } from './colorLUT'
+import { setColorLUT, getColorForSegmentIndex } from './colorLUT'
 
 export {
   setLabelmapForElement,
@@ -37,7 +37,7 @@ export {
   getLabelmapUIDForElement,
   getNextLabelmapIndex,
   setColorLUT,
-  getColorForSegmentIndexColorLUT,
+  getColorForSegmentIndex,
   getActiveSegmentIndexForLabelmapUID,
   config,
   setGlobalConfig,
@@ -71,7 +71,7 @@ export default {
 
   // ColorLUT
   setColorLUT,
-  getColorForSegmentIndexColorLUT,
+  getColorForSegmentIndex,
 
   // Utils
   getNextLabelmapIndex,

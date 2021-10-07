@@ -1,16 +1,4 @@
-import { getEnabledElement } from '@ohif/cornerstone-render'
-
-import {
-  getActiveLabelmapIndex,
-  getActiveLabelmapUID,
-  getNextLabelmapIndex,
-} from './activeLabelmapIndex'
-
-import state, {
-  getActiveLabelmapStateForElement,
-  getGlobalStateForLabelmapUID,
-  getLabelmapsStateForElement,
-} from './state'
+import { getGlobalStateForLabelmapUID } from './state'
 
 import { getLabelmapUIDForElement } from './utils'
 

@@ -404,12 +404,12 @@ const DefinedDescriptorsMap = {
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationRectangleEraseOutside: extend(BASE, {
+  'RectangleScissors.ERASE_OUTSIDE': extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationCircleEraseInside: extend(BASE, {
+  'RectangleScissors.ERASE_INSIDE': extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
@@ -424,12 +424,12 @@ const DefinedDescriptorsMap = {
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationCircleEraseOutside: extend(BASE, {
+  'CircleScissors.ERASE_OUTSIDE': extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationCircleFillOutside: extend(BASE, {
+  'CircleScissors.FILL_OUTSIDE': extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
