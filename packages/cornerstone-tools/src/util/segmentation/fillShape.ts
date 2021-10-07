@@ -24,7 +24,7 @@ function fillShape(
   const { labelmap, segmentIndex, segmentsLocked } = operationData
 
   const { enabledElement } = evt
-  const { renderingEngine, viewport } = enabledElement
+  const { viewport } = enabledElement
 
   const { vtkImageData, dimensions } = labelmap
 
@@ -152,10 +152,6 @@ function fillShape(
 
   vtkImageData.getPointData().getScalars().setData(values)
   vtkImageData.modified()
-
-  // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
-  // right now this is needed to update the labelmap on other viewports that have it (pt)
-  renderingEngine.render()
 }
 
 /**

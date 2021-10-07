@@ -27,6 +27,8 @@ function worldToIndex(imageData, ain) {
  * @param thresholdInfo
  */
 function thresholdVolume(evt: any, operationData: any): void {
+  const { enabledElement } = evt
+  const { renderingEngine } = enabledElement
   const { volumeUIDs, options } = operationData
 
   if (volumeUIDs.length > 1) {
@@ -36,16 +38,11 @@ function thresholdVolume(evt: any, operationData: any): void {
   const volumeUID = volumeUIDs[0]
   const { lowerThreshold, higherThreshold, numSlices } = options
   const referenceVolume = cache.getVolume(volumeUID)
-  const { vtkImageData } = referenceVolume
+  const { vtkImageData, dimensions } = referenceVolume
 
   const values = vtkImageData.getPointData().getScalars().getData()
 
-  operationData.constraintFn = ([x, y, z]) => {
-    const offset = vtkImageData.computeOffsetIndex([x, y, z])
-    return lowerThreshold <= values[offset] && values[offset] <= higherThreshold
-  }
-
-  const { points, constraintFn } = operationData
+  const { points } = operationData
 
   const rectangleCornersIJK = points.map((world) =>
     worldToIndex(vtkImageData, world)
@@ -53,7 +50,7 @@ function thresholdVolume(evt: any, operationData: any): void {
 
   const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = getBoundingBoxAroundShape(
     rectangleCornersIJK,
-    vtkImageData
+    dimensions
   )
 
   const zMinToUse = zMin - numSlices
@@ -62,14 +59,23 @@ function thresholdVolume(evt: any, operationData: any): void {
   const topLeftFront = [xMin, yMin, zMinToUse]
   const bottomRightBack = [xMax, yMax, zMaxToUse]
 
+  const constraintFn = ([x, y, z]) => {
+    const offset = vtkImageData.computeOffsetIndex([x, y, z])
+    return lowerThreshold <= values[offset] && values[offset] <= higherThreshold
+  }
+
   fillInsideShape(
     evt,
     operationData,
     () => true,
-    constraintFn ? constraintFn : undefined,
+    constraintFn,
     topLeftFront,
     bottomRightBack
   )
+
+  // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
+  // right now this is needed to update the labelmap on other viewports that have it (pt)
+  renderingEngine.render()
 }
 
 export default thresholdVolume

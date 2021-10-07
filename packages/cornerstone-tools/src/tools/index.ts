@@ -14,7 +14,6 @@ import LengthTool from './annotation/LengthTool'
 import ProbeTool from './annotation/ProbeTool'
 import RectangleRoiTool from './annotation/RectangleRoiTool'
 import EllipticalRoiTool from './annotation/EllipticalRoiTool'
-import BrushTool from './segmentation/BrushTool'
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 import CircleScissorsTool from './segmentation/CircleScissorsTool'
 import RectangleRoiThreshold from './segmentation/RectangleRoiThreshold'
@@ -40,7 +39,6 @@ export {
   RectangleRoiTool,
   EllipticalRoiTool,
   // Segmentations
-  BrushTool,
   RectangleScissorsTool,
   CircleScissorsTool,
   RectangleRoiThreshold,

@@ -90,7 +90,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       defaultStrategy: '',
     }
   ) {
-    super(defaultToolConfiguration, toolConfiguration)
+    super(toolConfiguration, defaultToolConfiguration)
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,

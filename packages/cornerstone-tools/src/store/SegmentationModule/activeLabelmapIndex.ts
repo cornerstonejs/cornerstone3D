@@ -107,7 +107,6 @@ async function setActiveLabelmapIndex(
     canvas,
     labelmapIndex,
     options,
-    labelmapViewportState: null,
   })
 
   return labelmapUID

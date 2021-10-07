@@ -8,7 +8,6 @@ import state, {
   getGlobalStateForLabelmapUID,
   setLabelmapGlobalState,
   setLabelmapViewportSpecificState,
-  ViewportLabelmapState,
 } from './state'
 import setLabelmapColorAndOpacity from './setLabelmapColorAndOpacity'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -84,13 +83,11 @@ async function setLabelmapForElement({
     // Updating the active labelmapIndex
     state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
 
-    const overwrite = true
     setLabelmapViewportSpecificState(
       viewportUID,
       labelmapUID,
       labelmapIndex,
-      labelmapViewportState,
-      overwrite
+      labelmapViewportState
     )
   })
 

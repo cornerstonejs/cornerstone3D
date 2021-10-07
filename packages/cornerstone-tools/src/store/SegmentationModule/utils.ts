@@ -54,21 +54,6 @@ function triggerLabelmapsUpdated(labelmapUID?: string): void {
   })
 }
 
-// /**
-//  * Returns the labelmapUIDs that the viewport with the provided viewportUID contains
-//  * @param viewportUID Viewport UID
-//  * @returns
-//  */
-// function getLabelmapUIDsForViewportUID(viewportUID: string): string[] {
-//   const viewportState = state.volumeViewports[viewportUID]
-
-//   if (!viewportState) {
-//     return []
-//   }
-
-//   return viewportState.labelmaps.map(({ volumeUID }) => volumeUID)
-// }
-
 /**
  * Returns all the labelmapUIDs of the HTML element (active and inactive)
  * @param canvas HTML canvas
@@ -85,9 +70,11 @@ function getLabelmapUIDsForElement(canvas: HTMLCanvasElement): string[] {
 }
 
 /**
- * Returns the labelmapUIDs that the viewport with the provided viewportUID contains
- * @param viewportUID Viewport UID
- * @returns
+ * Returns the labelmapUID that the element is rendering, if no labelmapIndex is
+ * provided it uses the active labelmapIndex
+ * @param canvas HTMLCanvasElement
+ * @param labelmapIndex labelmap index in the viewportLabelmapsState
+ * @returns labelmapUID
  */
 function getLabelmapUIDForElement(
   canvas: HTMLCanvasElement,
@@ -99,7 +86,8 @@ function getLabelmapUIDForElement(
     return
   }
 
-  const index = labelmapIndex ? labelmapIndex : getActiveLabelmapIndex(canvas)
+  const index =
+    labelmapIndex === undefined ? getActiveLabelmapIndex(canvas) : labelmapIndex
 
   return viewportLabelmapsState.labelmaps[index].volumeUID
 }
@@ -108,8 +96,4 @@ export {
   triggerLabelmapsUpdated,
   getLabelmapUIDsForElement,
   getLabelmapUIDForElement,
-  // getNextLabelmapIndex,
-  // getLabelmapUIDsForViewportUID,
-  // getActiveSegmentIndexForLabelmapUID,
-  // getLockedSegmentsForLabelmapUID,
 }
