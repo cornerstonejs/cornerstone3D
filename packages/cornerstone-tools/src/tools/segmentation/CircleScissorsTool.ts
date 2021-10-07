@@ -24,7 +24,7 @@ import {
   getActiveLabelmapIndex,
   getActiveSegmentIndex,
   getColorForSegmentIndexColorLUT,
-  getSegmentsLockedForElement,
+  getLockedSegmentsForElement,
 } from '../../store/SegmentationModule'
 
 // Todo
@@ -95,7 +95,7 @@ export default class CircleScissorsTool extends BaseTool {
       labelmapUID,
       segmentIndex
     )
-    const segmentsLocked = getSegmentsLockedForElement(element)
+    const segmentsLocked = getLockedSegmentsForElement(element)
 
     const labelmap = cache.getVolume(labelmapUID)
 

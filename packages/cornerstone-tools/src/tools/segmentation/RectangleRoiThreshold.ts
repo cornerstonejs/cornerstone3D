@@ -32,7 +32,7 @@ import {
   setActiveLabelmapIndex,
   getActiveSegmentIndex,
   getColorForSegmentIndexColorLUT,
-  getSegmentsLockedForElement,
+  getLockedSegmentsForElement,
   getNextLabelmapIndex,
 } from '../../store/SegmentationModule'
 
@@ -227,7 +227,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       labelmapUID,
       segmentIndex
     )
-    const segmentsLocked = getSegmentsLockedForElement(element)
+    const segmentsLocked = getLockedSegmentsForElement(element)
 
     const eventDetail = {
       canvas: element,

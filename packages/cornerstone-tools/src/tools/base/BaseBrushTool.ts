@@ -1,5 +1,5 @@
 import BaseTool from './BaseTool'
-import { getActiveLabelmapForElement } from '../../store/SegmentationModule'
+import { getLabelmapUIDForElement } from '../../store/SegmentationModule'
 
 // export interface BaseAnnotationToolSpecificToolData
 //   extends ToolSpecificToolData {
@@ -105,7 +105,7 @@ abstract class BaseBrushTool extends BaseTool {
     const { viewportUID, sceneUID, currentPoints, event } = evt.detail
 
     const canvas = event.currentTarget
-    const labelmap = getActiveLabelmapForElement(canvas)
+    const labelmap = getLabelmapUIDForElement(canvas)
 
     return {
       canvas,
