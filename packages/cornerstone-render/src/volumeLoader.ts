@@ -219,7 +219,6 @@ export function createAndCacheDerivedVolume(
   let numBytes, TypedArray
 
   // If target buffer is provided
-  // Todo: default target Buffer should be inferred from the referenceVolume
   if (targetBuffer) {
     if (targetBuffer.type === 'Float32Array') {
       numBytes = scalarLength * 4

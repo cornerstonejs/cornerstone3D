@@ -23,7 +23,7 @@ import {
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
   getActiveSegmentIndex,
-  getColorForSegmentIndexColorLUT,
+  getColorForSegmentIndex,
   getLockedSegmentsForElement,
 } from '../../store/SegmentationModule'
 
@@ -90,10 +90,10 @@ export default class CircleScissorsTool extends BaseTool {
     }
     const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
     const segmentIndex = getActiveSegmentIndex(element)
-    const segmentColor = getColorForSegmentIndexColorLUT(
+    const segmentColor = getColorForSegmentIndex(
       element,
-      labelmapUID,
-      segmentIndex
+      segmentIndex,
+      labelmapIndex
     )
     const segmentsLocked = getLockedSegmentsForElement(element)
 

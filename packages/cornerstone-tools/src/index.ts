@@ -49,7 +49,6 @@ import {
   EllipticalRoiTool,
   BidirectionalTool,
   CrosshairsTool,
-  BrushTool,
   RectangleScissorsTool,
   CircleScissorsTool,
   RectangleRoiThreshold,
@@ -82,7 +81,6 @@ export {
   EllipticalRoiTool,
   BidirectionalTool,
   // Segmentation Tools
-  BrushTool,
   RectangleScissorsTool,
   CircleScissorsTool,
   RectangleRoiThreshold,

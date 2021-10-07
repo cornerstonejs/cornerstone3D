@@ -4,15 +4,6 @@ import { ISegmentationConfig } from './segmentationConfig'
 import { getEnabledElement } from '@ohif/cornerstone-render'
 import { getActiveLabelmapIndex } from '.'
 
-export type ViewportLabelmapState = {
-  volumeUID: string
-  segmentsHidden: Set<number>
-  colorLUTIndex: number
-  cfun: vtkColorTransferFunction
-  ofun: vtkPiecewiseFunction
-  labelmapConfig: Partial<ISegmentationConfig>
-}
-
 type LabelmapGlobalState = {
   volumeUID: string
   referenceVolumeUID?: string
@@ -24,6 +15,15 @@ type LabelmapGlobalState = {
 export type ViewportLabelmapsState = {
   activeLabelmapIndex: number
   labelmaps: ViewportLabelmapState[]
+}
+
+export type ViewportLabelmapState = {
+  volumeUID: string
+  segmentsHidden: Set<number>
+  colorLUTIndex: number
+  cfun: vtkColorTransferFunction
+  ofun: vtkPiecewiseFunction
+  labelmapConfig: Partial<ISegmentationConfig>
 }
 
 // [[0,0,0,0], [200,200,200,200], ....]
@@ -111,65 +111,12 @@ const state: SegmentationState = {
  * @param canvas HTML Canvas
  * @returns ViewportLabelmapsState
  */
-function getLabelmapsStateForElement(
-  canvas: HTMLCanvasElement
-): ViewportLabelmapsState {
-  const enabledElement = getEnabledElement(canvas)
-
-  if (!enabledElement) {
-    return
-  }
-
-  const { sceneUID, viewportUID } = enabledElement
-
-  // Todo: stack Viewport
-  if (!sceneUID) {
-    throw new Error('Stack Viewport segmentation not supported yet')
-  }
-
-  return getLabelmapsStateForViewportUID(viewportUID)
-}
-
-/**
- * Returns the viewport specific labelmapsState for a viewportUID
- * @param viewportUID viewportUID
- * @returns ViewportLabelmapsState
- */
-function getLabelmapsStateForViewportUID(
-  viewportUID: string
-): ViewportLabelmapsState {
-  return state.volumeViewports[viewportUID]
-}
-
-/**
- * Returns the viewport specific labelmapsState for HTML element
- * @param canvas HTML Canvas
- * @returns ViewportLabelmapsState
- */
 function getGlobalStateForLabelmapUID(
   labelmapUID: string
 ): LabelmapGlobalState {
   return state.labelmaps.find(
     (labelmapState) => labelmapState.volumeUID === labelmapUID
   )
-}
-
-/**
- * Returns the viewport specific labelmapsState for HTML element
- * @param canvas HTML Canvas
- * @returns ViewportLabelmapsState
- */
-function getActiveLabelmapStateForElement(
-  canvas: HTMLCanvasElement
-): ViewportLabelmapState | undefined {
-  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
-  const labelmapsState = getLabelmapsStateForElement(canvas)
-
-  if (!labelmapsState) {
-    return
-  }
-
-  return labelmapsState.labelmaps[activeLabelmapIndex]
 }
 
 /**
@@ -188,16 +135,8 @@ function setLabelmapGlobalState(
     referenceImageId: null,
     activeSegmentIndex: 1,
     segmentsLocked: new Set(),
-  },
-  overwrite = false
-): void {
-  const labelmapGLobalState = getGlobalStateForLabelmapUID(labelmapUID)
-  if (labelmapGLobalState && !overwrite) {
-    throw new Error(
-      "Cannot overwrite already existing global state for labelmap, use 'overwrite' flag if necessary"
-    )
   }
-
+): void {
   const {
     referenceImageId,
     referenceVolumeUID,
@@ -234,22 +173,10 @@ function setLabelmapViewportSpecificState(
     cfun: vtkColorTransferFunction.newInstance(),
     ofun: vtkPiecewiseFunction.newInstance(),
     labelmapConfig: {},
-  },
-  overwrite = false
+  }
 ): void {
   // Todo: check if there is a labelmapGlobalState
-  const viewportLabelmapsState = getLabelmapsStateForViewportUID(viewportUID)
-
-  const labelmapState = viewportLabelmapsState.labelmaps.find(
-    (state) => state.volumeUID === labelmapUID
-  )
-
-  if (labelmapState && !overwrite) {
-    throw new Error(
-      "Cannot overwrite already existing viewport-specific state for labelmap, use 'overwrite' flag if necessary"
-    )
-  }
-
+  const viewportLabelmapsState = _getLabelmapsStateForViewportUID(viewportUID)
   const { segmentsHidden, colorLUTIndex, cfun, ofun, labelmapConfig } = newState
 
   viewportLabelmapsState.labelmaps[labelmapIndex] = {
@@ -262,12 +189,99 @@ function setLabelmapViewportSpecificState(
   }
 }
 
+/**
+ * Returns the viewport specific labelmapsState for HTML element
+ * @param canvas HTML Canvas
+ * @returns ViewportLabelmapsState
+ */
+function getLabelmapsStateForElement(
+  canvas: HTMLCanvasElement
+): ViewportLabelmapsState {
+  const enabledElement = getEnabledElement(canvas)
+
+  if (!enabledElement) {
+    return
+  }
+
+  const { sceneUID, viewportUID } = enabledElement
+
+  // Todo: stack Viewport
+  if (!sceneUID) {
+    throw new Error('Stack Viewport segmentation not supported yet')
+  }
+
+  return _getLabelmapsStateForViewportUID(viewportUID)
+}
+
+/**
+ * Returns the viewport specific labelmapState for a viewportUID and the provided
+ * labelmapIndex, or if index not provided, for the activeLabelmap
+ * @param viewportUID viewportUID
+ * @param [labelmapIndexOrUID] labelmapIndex
+ * @returns ViewportLabelmapState
+ */
+function getLabelmapStateForElement(
+  element: HTMLCanvasElement,
+  labelmapIndex?: number
+): ViewportLabelmapState {
+  const { viewportUID } = getEnabledElement(element)
+  return _getLabelmapStateForViewportUID(viewportUID, labelmapIndex)
+}
+
+/**
+ * Returns the viewport specific labelmapS State for HTML element
+ * @param canvas HTML Canvas
+ * @returns ViewportLabelmapsState
+ */
+function getActiveLabelmapState(
+  canvas: HTMLCanvasElement
+): ViewportLabelmapState | undefined {
+  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
+  const labelmapsState = getLabelmapsStateForElement(canvas)
+
+  if (!labelmapsState) {
+    return
+  }
+
+  return labelmapsState.labelmaps[activeLabelmapIndex]
+}
+
+/**
+ * Returns the viewport specific labelmapsState for a viewportUID
+ * @param viewportUID viewportUID
+ * @returns ViewportLabelmapsState
+ */
+function _getLabelmapsStateForViewportUID(
+  viewportUID: string
+): ViewportLabelmapsState {
+  return state.volumeViewports[viewportUID]
+}
+
+/**
+ * Returns the viewport specific labelmapsState for a viewportUID
+ * @param viewportUID viewportUID
+ * @returns ViewportLabelmapsState
+ */
+function _getLabelmapStateForViewportUID(
+  viewportUID: string,
+  labelmapIndex?: number
+): ViewportLabelmapState {
+  const viewportLabelmapsState = state.volumeViewports[viewportUID]
+
+  const index =
+    labelmapIndex === undefined
+      ? viewportLabelmapsState.activeLabelmapIndex
+      : labelmapIndex
+
+  return viewportLabelmapsState.labelmaps[index]
+}
+
 export default state
 export {
   // get
   getLabelmapsStateForElement,
-  getLabelmapsStateForViewportUID,
-  getActiveLabelmapStateForElement,
+  getLabelmapStateForElement,
+  getActiveLabelmapState,
   getGlobalStateForLabelmapUID,
   // set
   setLabelmapGlobalState,
