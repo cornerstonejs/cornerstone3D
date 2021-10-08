@@ -2,7 +2,7 @@ import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state, { getLabelmapsStateForElement } from './state'
 import { addNewLabelmap } from './addNewLabelmap'
-import { triggerLabelmapsUpdated } from './utils'
+import { triggerLabelmapUpdated } from './utils'
 
 /**
  * Returns the index of the active `Labelmap3D`.
@@ -92,8 +92,9 @@ async function setActiveLabelmapIndex(
       state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
     })
 
-    // Todo: only for the viewports changed
-    triggerLabelmapsUpdated()
+    const { volumeUID: labelmapUID } =
+      viewportLabelmapsState?.labelmaps[labelmapIndex]
+    triggerLabelmapUpdated(labelmapUID)
     return viewportLabelmapsState.labelmaps[labelmapIndex].volumeUID
   }
 

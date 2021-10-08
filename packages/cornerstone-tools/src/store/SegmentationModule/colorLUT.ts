@@ -1,8 +1,5 @@
-import state, { getLabelmapStateForElement } from './state'
+import state, { Color, ColorLUT, getLabelmapStateForElement } from './state'
 import config from './segmentationConfig'
-
-// RGBA as 0-255
-type Color = [number, number, number, number]
 
 /**
  * SetColorLUT - Sets the labelmap to a specific LUT, or generates a new LUT.
@@ -11,7 +8,10 @@ type Color = [number, number, number, number]
  * @param  {number[][]} [colorLUT]    An array of The colorLUT to set.
  * @returns {null}
  */
-export function setColorLUT(colorLUTIndex: number, colorLUT = []): void {
+export function setColorLUT(
+  colorLUTIndex: number,
+  colorLUT: ColorLUT = []
+): void {
   const { segmentsPerLabelmap } = config
 
   if (colorLUT) {
@@ -24,7 +24,7 @@ export function setColorLUT(colorLUTIndex: number, colorLUT = []): void {
       ]
     }
   } else {
-    // Autogenerate colorLUT.
+    // Auto-generates colorLUT.
     colorLUT = colorLUT || _generateNewColorLUT(segmentsPerLabelmap)
   }
 
@@ -68,7 +68,7 @@ export function setColorForSegmentIndexOfColorLUT(
 export function getColorLUT(
   element: HTMLCanvasElement,
   labelmapIndex?: number
-): Array<Color> {
+): ColorLUT {
   const viewportLabelmapState = getLabelmapStateForElement(
     element,
     labelmapIndex
@@ -82,7 +82,7 @@ export function getColorLUT(
  * @param  {number} segmentsPerLabelmap
  * @returns {boolean} Whether the length is valid.
  */
-function _checkColorLUTLength(colorLUT, segmentsPerLabelmap) {
+function _checkColorLUTLength(colorLUT: ColorLUT, segmentsPerLabelmap: number) {
   if (colorLUT.length < segmentsPerLabelmap) {
     console.warn(
       `The provided colorLUT only provides ${colorLUT.length} labels, whereas segmentsPerLabelmap is set to ${segmentsPerLabelmap}. Autogenerating the rest.`
