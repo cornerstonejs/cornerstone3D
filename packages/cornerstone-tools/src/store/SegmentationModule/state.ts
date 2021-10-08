@@ -26,8 +26,11 @@ export type ViewportLabelmapState = {
   labelmapConfig: Partial<ISegmentationConfig>
 }
 
+// RGBA as 0-255
+export type Color = [number, number, number, number]
+
 // [[0,0,0,0], [200,200,200,200], ....]
-type ColorLUT = Array<[number, number, number, number]>
+export type ColorLUT = Array<Color>
 
 export interface SegmentationState {
   labelmaps: Array<LabelmapGlobalState>
