@@ -5,12 +5,6 @@ import {
   fillInsideShape,
 } from '../../../util/segmentation'
 
-function worldToIndex(imageData, ain) {
-  const vout = vec3.fromValues(0, 0, 0)
-  imageData.worldToIndex(ain, vout)
-  return vout
-}
-
 /**
  *
  * Todo: make it work for more than one volume
@@ -48,16 +42,13 @@ function thresholdVolumeByRange(evt: any, operationData: any): void {
     worldToIndex(vtkImageData, world)
   )
 
-  const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = getBoundingBoxAroundShape(
-    rectangleCornersIJK,
-    dimensions
-  )
+  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
+  const extendedBoundsIJK = _extendBoundingBoxInViewAxis(boundsIJK, numSlices)
 
-  const zMinToUse = zMin - numSlices
-  const zMaxToUse = zMax + numSlices
+  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = extendedBoundsIJK
 
-  const topLeftFront = [xMin, yMin, zMinToUse]
-  const bottomRightBack = [xMax, yMax, zMaxToUse]
+  const topLeftFront = [iMin, jMin, kMin]
+  const bottomRightBack = [iMax, jMax, kMax]
 
   const constraintFn = ([x, y, z]) => {
     const offset = vtkImageData.computeOffsetIndex([x, y, z])
@@ -76,6 +67,45 @@ function thresholdVolumeByRange(evt: any, operationData: any): void {
   // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
   // right now this is needed to update the labelmap on other viewports that have it (pt)
   renderingEngine.render()
+}
+
+function worldToIndex(imageData, ain) {
+  const vout = vec3.fromValues(0, 0, 0)
+  imageData.worldToIndex(ain, vout)
+  return vout
+}
+
+/**
+ * Used the current bounds of the 2D rectangle and extends it in the view axis by numSlices
+ * It compares min and max of each IJK to find the view axis (for axial, zMin === zMax) and
+ * then calculates the extended range.
+ * @param boundsIJK  [[iMin, iMax], [jMin, jMax], [kMin, kMax]]
+ * @param numSlices number of slices to extend
+ * @returns extended bounds
+ */
+function _extendBoundingBoxInViewAxis(boundsIJK, numSlices) {
+  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
+  if (iMin === iMax) {
+    return [
+      [iMin - numSlices, iMax + numSlices],
+      [jMin, jMax],
+      [kMin, kMax],
+    ]
+  } else if (jMin === jMax) {
+    return [
+      [iMin, iMax],
+      [jMin - numSlices, jMax + numSlices],
+      [kMin, kMax],
+    ]
+  } else if (kMin === kMax) {
+    return [
+      [iMin, iMax],
+      [jMin, jMax],
+      [kMin - numSlices, kMax + numSlices],
+    ]
+  } else {
+    throw new Error('3D bounding boxes not supported in an oblique plane')
+  }
 }
 
 export default thresholdVolumeByRange
