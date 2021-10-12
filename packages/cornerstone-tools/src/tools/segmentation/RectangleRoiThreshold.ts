@@ -26,7 +26,8 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point2, Point3 } from '../../types'
-import thresholdVolume from './strategies/thresholdVolume'
+import thresholdVolumeByRange from './strategies/thresholdVolumeByRange'
+import thresholdVolumeByRoiStats from './strategies/thresholdVolumeByRoiStats'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 import {
   setActiveLabelmapIndex,
@@ -87,9 +88,10 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         preventHandleOutsideImage: false,
       },
       strategies: {
-        THRESHOLD_VOLUME: thresholdVolume,
+        THRESHOLD_RANGE: thresholdVolumeByRange,
+        THRESHOLD_BY_ROI_STATS: thresholdVolumeByRoiStats,
       },
-      defaultStrategy: 'THRESHOLD_VOLUME',
+      defaultStrategy: 'THRESHOLD_BY_ROI_STATS',
     })
   }
 

@@ -26,23 +26,23 @@ function worldToIndex(imageData, ain) {
  * @param boundingBoxInfo
  * @param thresholdInfo
  */
-function thresholdVolume(evt: any, operationData: any): void {
+function thresholdVolumeByRange(evt: any, operationData: any): void {
   const { enabledElement } = evt
   const { renderingEngine } = enabledElement
-  const { volumeUIDs, options } = operationData
+  const { volumeUIDs, points, options } = operationData
+
+  // Threshold Options
+  const { lowerThreshold, higherThreshold, numSlices } = options
 
   if (volumeUIDs.length > 1) {
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
   const volumeUID = volumeUIDs[0]
-  const { lowerThreshold, higherThreshold, numSlices } = options
   const referenceVolume = cache.getVolume(volumeUID)
   const { vtkImageData, dimensions } = referenceVolume
 
   const values = vtkImageData.getPointData().getScalars().getData()
-
-  const { points } = operationData
 
   const rectangleCornersIJK = points.map((world) =>
     worldToIndex(vtkImageData, world)
@@ -78,4 +78,4 @@ function thresholdVolume(evt: any, operationData: any): void {
   renderingEngine.render()
 }
 
-export default thresholdVolume
+export default thresholdVolumeByRange
