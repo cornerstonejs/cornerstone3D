@@ -5,11 +5,19 @@ import { loadVolume } from '../volumeLoader'
 import { uuidv4 } from '../utilities'
 import VolumeViewport from './VolumeViewport'
 import { VolumeActor, ActorEntry } from '../types'
+import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
+
+type VolumeInputCallbackProps = {
+  volumeActor: vtkVolume
+  volumeUID: string
+}
+
+type VolumeInputCallback = (params: VolumeInputCallbackProps) => void
 
 type VolumeInput = {
   volumeUID: string
   visibility?: boolean
-  callback?: ({ volumeActor: vtkVolume, volumeUID: string }) => void
+  callback?: VolumeInputCallback
   blendMode?: string
   slabThickness?: number
 }
@@ -78,6 +86,34 @@ class Scene {
     )
   }
 
+  private async _isValidVolumeInputArray(
+    volumeInputArray: Array<VolumeInput>,
+    FrameOfReferenceUID: string
+  ): Promise<boolean> {
+    const numVolumes = volumeInputArray.length
+
+    // Check all other volumes exist and have the same FrameOfReference
+    for (let i = 1; i < numVolumes; i++) {
+      const volumeInput = volumeInputArray[i]
+
+      const imageVolume = await loadVolume(volumeInput.volumeUID)
+
+      if (!imageVolume) {
+        throw new Error(
+          `imageVolume with uid: ${imageVolume.uid} does not exist`
+        )
+      }
+
+      if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
+        throw new Error(
+          `Volumes being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
+        )
+      }
+    }
+
+    return true
+  }
+
   /**
    * @method setVolumes Creates volume actors for all volumes defined in the `volumeInputArray`.
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
@@ -102,26 +138,7 @@ class Scene {
 
     const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID
 
-    const numVolumes = volumeInputArray.length
-
-    // Check all other volumes exist and have the same FrameOfReference
-    for (let i = 1; i < numVolumes; i++) {
-      const volumeInput = volumeInputArray[i]
-
-      const imageVolume = await loadVolume(volumeInput.volumeUID)
-
-      if (!imageVolume) {
-        throw new Error(
-          `imageVolume with uid: ${imageVolume.uid} does not exist`
-        )
-      }
-
-      if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
-        throw new Error(
-          `Volumes being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
-        )
-      }
-    }
+    await this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID)
 
     this._FrameOfReferenceUID = FrameOfReferenceUID
 
@@ -172,22 +189,10 @@ class Scene {
   ): Promise<void> {
     const volumeActors = []
 
-    const numVols = volumeInputArray.length
-    for (let i = 1; i < numVols; i++) {
-      const volumeInput = volumeInputArray[i]
-
-      const volume = await loadVolume(volumeInput.volumeUID)
-
-      if (!volume) {
-        throw new Error(`Volume with uid: ${volume.uid} does not exist`)
-      }
-
-      if (volume.metadata.FrameOfReferenceUID !== this._FrameOfReferenceUID) {
-        throw new Error(
-          `Volumes being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
-        )
-      }
-    }
+    await this._isValidVolumeInputArray(
+      volumeInputArray,
+      this._FrameOfReferenceUID
+    )
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
