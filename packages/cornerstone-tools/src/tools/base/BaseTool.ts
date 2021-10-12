@@ -13,6 +13,7 @@ abstract class BaseTool {
   public strategies: Record<string, any>
   public defaultStrategy: string
   public activeStrategy: string
+  public strategyOptions: any
   public configuration: Record<string, any>
   public mode: ToolModes
 
@@ -49,7 +50,12 @@ abstract class BaseTool {
    * @param operationData
    */
   public applyActiveStrategy(evt: any, operationData: any): any {
-    return this.strategies[this.activeStrategy].call(this, evt, operationData)
+    return this.strategies[this.activeStrategy].call(
+      this,
+      evt,
+      operationData,
+      this.strategyOptions
+    )
   }
 
   /**
@@ -60,8 +66,12 @@ abstract class BaseTool {
    * @param strategyName
    * @public
    */
-  public setActiveStrategyName(strategyName: string): void {
+  public setActiveStrategyName(
+    strategyName: string,
+    strategyOptions: any
+  ): void {
     this.activeStrategy = strategyName
+    this.strategyOptions = strategyOptions
   }
 }
 
