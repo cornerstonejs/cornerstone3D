@@ -32,7 +32,7 @@ function getToolDataNearPointOnEnabledElement(
     viewportUID
   )
   for (let i = 0; i < toolGroups.length; ++i) {
-    const { _tools: tools } = toolGroups[i]
+    const { _toolInstances: tools } = toolGroups[i]
     for (const name in tools) {
       if (Object.prototype.hasOwnProperty.call(tools, name)) {
         const found = findToolDataNearPointByTool(

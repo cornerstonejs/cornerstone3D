@@ -91,7 +91,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         THRESHOLD_RANGE: thresholdVolumeByRange,
         THRESHOLD_BY_ROI_STATS: thresholdVolumeByRoiStats,
       },
-      defaultStrategy: 'THRESHOLD_BY_ROI_STATS',
+      defaultStrategy: 'THRESHOLD_RANGE',
     })
   }
 

@@ -47,7 +47,7 @@ interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
     handles: {
       points: Point3[]
       activeHandleIndex: number | null
-      textBox?: {
+      textBox: {
         hasMoved: boolean
         worldPosition: Point3
         worldBoundingBox: {

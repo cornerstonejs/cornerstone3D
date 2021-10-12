@@ -37,7 +37,6 @@ import {
  * @extends Tools.Base.BaseTool
  */
 export default class CircleScissorsTool extends BaseTool {
-  _throttledCalculateCachedStats: any
   editData: {
     toolData: any
     labelmap: any
