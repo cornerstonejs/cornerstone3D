@@ -3,6 +3,7 @@ import {
   mouseEventListeners,
   wheelEventListener,
   keyEventListener,
+  labelmapStateEventListener,
 } from '../eventListeners'
 import {
   imageRenderedEventDispatcher,
@@ -10,7 +11,6 @@ import {
   mouseToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
-  labelmapUpdatedEventDispatcher,
   //   touchToolEventDispatcher,
 } from '../eventDispatchers'
 // ~~
@@ -43,6 +43,9 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   mouseEventListeners.disable(canvas)
   wheelEventListener.disable(canvas)
   keyEventListener.disable(canvas)
+  // labelmap
+  labelmapStateEventListener.disable(canvas)
+
   // Dispatchers: renderer
   imageRenderedEventDispatcher.disable(canvas)
   cameraModifiedEventDispatcher.disable(canvas)
@@ -51,9 +54,6 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   mouseToolEventDispatcher.disable(canvas)
   keyboardToolEventDispatcher.disable(canvas)
   // touchToolEventDispatcher.disable(canvas);
-
-  // labelmap
-  labelmapUpdatedEventDispatcher.disable(canvas)
 
   // State
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?

@@ -285,8 +285,8 @@ class SegmentationExample extends Component {
 
     this._canvasNodes.forEach((canvas) => {
       canvas.addEventListener(
-        CornerstoneTools3DEvents.LABELMAP_UPDATED,
-        this.onLabelmapUpdated
+        CornerstoneTools3DEvents.LABELMAP_STATE_UPDATED,
+        this.onLabelmapStateUpdated
       )
     })
 
@@ -335,7 +335,7 @@ class SegmentationExample extends Component {
     this.renderingEngine.destroy()
   }
 
-  onLabelmapUpdated = (evt) => {
+  onLabelmapStateUpdated = (evt) => {
     const { canvas } = evt.detail
     const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
     const activeLabelmapUID = SegmentationModule.getActiveLabelmapUID(canvas)

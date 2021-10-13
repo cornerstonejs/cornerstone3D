@@ -1,8 +1,4 @@
-import {
-  getEnabledElement,
-  StackViewport,
-  triggerEvent,
-} from '@ohif/cornerstone-render'
+import { getEnabledElement, StackViewport } from '@ohif/cornerstone-render'
 
 import state, {
   getGlobalStateForLabelmapUID,
@@ -10,16 +6,7 @@ import state, {
   setLabelmapViewportSpecificState,
 } from './state'
 import setLabelmapColorAndOpacity from './setLabelmapColorAndOpacity'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-
-type LabelmapEvent = {
-  canvas: HTMLCanvasElement
-  labelmapUID: string
-  labelmapIndex: number
-  renderingEngineUID: string
-  sceneUID: string
-  viewportUID: string
-}
+import { triggerLabelmapStateUpdated } from './triggerLabelmapsStateUpdated'
 
 // function getActiveLabelmapForElement(canvas) {
 //   const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
@@ -46,8 +33,7 @@ async function setLabelmapForElement({
   labelmapViewportState,
 }) {
   const enabledElement = getEnabledElement(canvas)
-  const { scene, viewportUID, viewport, renderingEngineUID, sceneUID } =
-    enabledElement
+  const { scene, viewportUID, viewport } = enabledElement
 
   // Segmentation VolumeUID
   const { uid: labelmapUID } = labelmap
@@ -64,8 +50,10 @@ async function setLabelmapForElement({
     setLabelmapGlobalState(labelmapUID)
   }
 
+  const viewportUIDs = scene.getViewportUIDs()
+
   // Updating viewport-specific labelmap states
-  scene.getViewportUIDs().forEach((viewportUID) => {
+  viewportUIDs.forEach((viewportUID) => {
     // VolumeViewport Implementation
     let viewportLabelmapsState = state.volumeViewports[viewportUID]
 
@@ -119,16 +107,9 @@ async function setLabelmapForElement({
     },
   ])
 
-  const eventData: LabelmapEvent = {
-    canvas,
-    labelmapUID,
-    labelmapIndex,
-    renderingEngineUID,
-    sceneUID,
-    viewportUID,
-  }
-
-  triggerEvent(canvas, EVENTS.LABELMAP_UPDATED, eventData)
+  scene.getViewports().forEach(({ canvas }) => {
+    triggerLabelmapStateUpdated(labelmapUID, canvas)
+  })
 }
 
 export default setLabelmapForElement
