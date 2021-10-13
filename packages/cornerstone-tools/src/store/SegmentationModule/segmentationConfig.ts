@@ -1,4 +1,4 @@
-import { triggerLabelmapsUpdated } from './triggerLabelmapsUpdated'
+import { triggerLabelmapsStateUpdated } from './triggerLabelmapsStateUpdated'
 
 export interface ISegmentationConfig {
   enabled: boolean
@@ -50,7 +50,7 @@ function setGlobalConfig(
   Object.assign(defaultSegmentationConfig, config)
   if (immediate) {
     // re-render all labelmaps so that the changed config gets applied
-    triggerLabelmapsUpdated()
+    triggerLabelmapsStateUpdated()
   }
 }
 
