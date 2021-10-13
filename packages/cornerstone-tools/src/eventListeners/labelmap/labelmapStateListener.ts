@@ -1,8 +1,9 @@
 import { getRenderingEngine } from '@ohif/cornerstone-render'
 import state from '../../store/SegmentationModule/state'
 import setLabelmapColorAndOpacity from '../../store/SegmentationModule/setLabelmapColorAndOpacity'
+import csToolsEvents from '../../enums/CornerstoneTools3DEvents'
 
-export default function renderLabelmaps(
+function updateLabelmapProperties(
   viewportUID: string,
   sceneUID: string,
   renderingEngineUID: string,
@@ -41,6 +42,43 @@ export default function renderLabelmaps(
       isActiveLabelmap
     )
   })
+}
 
-  scene.render()
+const onLabelmapStateUpdated = function (evt) {
+  const { sceneUID, viewportUID, renderingEngineUID } = evt.detail
+  const renderingEngine = getRenderingEngine(renderingEngineUID)
+
+  if (!sceneUID) {
+    throw new Error('Segmentation for stack viewports not implemented yet')
+  }
+
+  const { activeLabelmapIndex } = state.volumeViewports[viewportUID]
+
+  updateLabelmapProperties(
+    viewportUID,
+    sceneUID,
+    renderingEngineUID,
+    activeLabelmapIndex
+  )
+
+  renderingEngine.renderScene(sceneUID)
+}
+
+const enable = function (element) {
+  element.addEventListener(
+    csToolsEvents.LABELMAP_STATE_UPDATED,
+    onLabelmapStateUpdated
+  )
+}
+
+const disable = function (element) {
+  element.removeEventListener(
+    csToolsEvents.LABELMAP_STATE_UPDATED,
+    onLabelmapStateUpdated
+  )
+}
+
+export default {
+  enable,
+  disable,
 }

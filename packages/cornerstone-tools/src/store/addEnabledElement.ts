@@ -2,6 +2,7 @@ import {
   mouseEventListeners,
   wheelEventListener,
   keyEventListener,
+  labelmapStateEventListener,
 } from '../eventListeners'
 import {
   imageRenderedEventDispatcher,
@@ -9,7 +10,6 @@ import {
   mouseToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
-  labelmapUpdatedEventDispatcher,
 } from '../eventDispatchers'
 import { state } from './state'
 
@@ -36,6 +36,8 @@ export default function addEnabledElement(evt: CustomEvent): void {
   mouseEventListeners.enable(canvas)
   wheelEventListener.enable(canvas)
   keyEventListener.enable(canvas)
+  labelmapStateEventListener.enable(canvas)
+
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(canvas)
   cameraModifiedEventDispatcher.enable(canvas)
@@ -46,8 +48,6 @@ export default function addEnabledElement(evt: CustomEvent): void {
   // touchToolEventDispatcher.enable(enabledElement);
 
   // labelmap
-  labelmapUpdatedEventDispatcher.enable(canvas)
-
   // State
   state.enabledElements.push(canvas)
 }
