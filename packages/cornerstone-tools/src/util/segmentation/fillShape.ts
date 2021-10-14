@@ -1,30 +1,44 @@
+import {
+  IEnabledElement,
+  IImageVolume,
+} from '@ohif/cornerstone-render/src/types'
 import { vec3, vec2 } from 'gl-matrix'
-// import fillOutsideBoundingBox from './fillOutsideBoundingBox'
+
+import { Point3, Point2 } from '../../types'
+
+type FillShapeOperationData = {
+  volume: IImageVolume
+  segmentIndex: number
+  segmentsLocked: number[]
+}
+
+type PointInShapeFn = (pointIJK: Point3, canvasCoords?: Point2) => boolean
+type ConstraintFn = (pointIJK: Point3) => boolean
 
 /**
  * Fill all pixels labeled with the activeSegmentIndex,
  * inside/outside the region defined by the shape.
- * @param  {Object} evt The Cornerstone event.
- * @param {Object}  operationData An object containing the `pixelData` to
+ * @param  {IEnabledElement} element Cornerstone enabled element.
+ * @param {FillShapeOperationData}  operationData An object containing the `pixelData` to
  *                          modify, the `segmentIndex` and the `points` array.
- * @param {Object} pointInShape - A function that checks if a point, x,y is within a shape.
- * @param {number[]} topLeftFront The top left of the bounding box.
- * @param {number[]} bottomRightBack The bottom right of the bounding box.
- * @returns {null}
+ * @param {PointInShapeFn} pointInShape - A function that checks if a point, x,y is within a shape.
+ * @param {ConstraintFn} constraintFn - A function that applies a constraint for each pointIJK,
+ * this can be used to apply intensity threshold
+ * @param {Point3} topLeftFront The top left of the bounding box.
+ * @param {Point3} bottomRightBack The bottom right of the bounding box.
+ * @returns void
  */
 function fillShape(
-  evt,
-  operationData,
-  pointInShape,
-  constraintFn,
-  topLeftFront,
-  bottomRightBack,
+  enabledElement: IEnabledElement,
+  operationData: FillShapeOperationData,
+  pointInShape: PointInShapeFn,
+  constraintFn: ConstraintFn,
+  topLeftFront: Point3,
+  bottomRightBack: Point3,
   insideOrOutside = 'inside'
 ) {
-  const { labelmap, segmentIndex, segmentsLocked } = operationData
-
-  const { enabledElement } = evt
   const { viewport } = enabledElement
+  const { volume: labelmap, segmentIndex, segmentsLocked } = operationData
 
   const { vtkImageData, dimensions } = labelmap
 
@@ -44,7 +58,7 @@ function fillShape(
 
   const worldPosStart = vec3.create()
   vtkImageData.indexToWorldVec3(start, worldPosStart)
-  const canvasPosStart = viewport.worldToCanvas(worldPosStart)
+  const canvasPosStart = <vec2>viewport.worldToCanvas(<Point3>worldPosStart)
 
   const startPlusI = vec3.fromValues(iMin + 1, jMin, kMin)
   const startPlusJ = vec3.fromValues(iMin, jMin + 1, kMin)
@@ -54,19 +68,25 @@ function fillShape(
   const worldPosStartPlusI = vec3.create()
   const plusICanvasDelta = vec2.create()
   vtkImageData.indexToWorldVec3(startPlusI, worldPosStartPlusI)
-  const canvasPosStartPlusI = viewport.worldToCanvas(worldPosStartPlusI)
+  const canvasPosStartPlusI = <vec2>(
+    viewport.worldToCanvas(<Point3>worldPosStartPlusI)
+  )
   vec2.sub(plusICanvasDelta, canvasPosStartPlusI, canvasPosStart)
 
   const worldPosStartPlusJ = vec3.create()
   const plusJCanvasDelta = vec2.create()
   vtkImageData.indexToWorldVec3(startPlusJ, worldPosStartPlusJ)
-  const canvasPosStartPlusJ = viewport.worldToCanvas(worldPosStartPlusJ)
+  const canvasPosStartPlusJ = <vec2>(
+    viewport.worldToCanvas(<Point3>worldPosStartPlusJ)
+  )
   vec2.sub(plusJCanvasDelta, canvasPosStartPlusJ, canvasPosStart)
 
   const worldPosStartPlusK = vec3.create()
   const plusKCanvasDelta = vec2.create()
   vtkImageData.indexToWorldVec3(startPlusK, worldPosStartPlusK)
-  const canvasPosStartPlusK = viewport.worldToCanvas(worldPosStartPlusK)
+  const canvasPosStartPlusK = <vec2>(
+    viewport.worldToCanvas(<Point3>worldPosStartPlusK)
+  )
   vec2.sub(plusKCanvasDelta, canvasPosStartPlusK, canvasPosStart)
 
   // Todo: implement fill outside
@@ -78,13 +98,13 @@ function fillShape(
     for (let i = iMin; i <= iMax; i++) {
       for (let j = jMin; j <= jMax; j++) {
         for (let k = kMin; k <= kMax; k++) {
-          const pointIJK = [i, j, k]
+          const pointIJK = <Point3>[i, j, k]
 
           // Todo: canvasCoords is not necessary to be known for rectangle-based tools
           const dI = i - iMin
           const dJ = j - jMin
           const dK = k - kMin
-          let canvasCoords = [canvasPosStart[0], canvasPosStart[1]]
+          let canvasCoords = <Point2>[canvasPosStart[0], canvasPosStart[1]]
 
           canvasCoords = [
             canvasCoords[0] +
@@ -113,7 +133,7 @@ function fillShape(
     for (let i = iMin; i <= iMax; i++) {
       for (let j = jMin; j <= jMax; j++) {
         for (let k = kMin; k <= kMax; k++) {
-          const pointIJK = [i, j, k]
+          const pointIJK = <Point3>[i, j, k]
           const dI = i - iMin
           const dJ = j - jMin
           const dK = k - kMin
@@ -157,24 +177,26 @@ function fillShape(
 /**
  * Fill all pixels labeled with the activeSegmentIndex,
  * inside the region defined by the shape.
- * @param  {Object} evt The Cornerstone event.
- * @param {Object}  operationData An object containing the `pixelData` to
+ * @param  {IEnabledElement} element Cornerstone enabled element.
+ * @param {FillShapeOperationData}  operationData An object containing the `pixelData` to
  *                          modify, the `segmentIndex` and the `points` array.
- * @param {Object} pointInShape - A function that checks if a point, x,y is within a shape.
- * @param {number[]} topLeftFront The top left of the bounding box.
- * @param {number[]} bottomRightBack The bottom right of the bounding box.
- * @returns {null}
+ * @param {PointInShapeFn} pointInShape - A function that checks if a point, x,y is within a shape.
+ * @param {ConstraintFn} constraintFn - A function that applies a constraint for each pointIJK,
+ * this can be used to apply intensity threshold
+ * @param {Point3} topLeftFront The top left of the bounding box.
+ * @param {Point3} bottomRightBack The bottom right of the bounding box.
+ * @returns void
  */
 export function fillInsideShape(
-  evt,
-  operationData,
-  pointInShape,
-  constraintFn,
-  topLeftFront,
-  bottomRightBack
-) {
+  enabledElement: IEnabledElement,
+  operationData: FillShapeOperationData,
+  pointInShape: PointInShapeFn,
+  constraintFn: ConstraintFn,
+  topLeftFront: Point3,
+  bottomRightBack: Point3
+):void {
   fillShape(
-    evt,
+    enabledElement,
     operationData,
     pointInShape,
     constraintFn,
@@ -187,24 +209,26 @@ export function fillInsideShape(
 /**
  * Fill all pixels labeled with the activeSegmentIndex,
  * outside the region defined by the shape.
- * @param  {Object} evt The Cornerstone event.
- * @param {Object}  operationData An object containing the `pixelData` to
+ * @param  {IEnabledElement} element Cornerstone enabled element.
+ * @param {FillShapeOperationData}  operationData An object containing the `pixelData` to
  *                          modify, the `segmentIndex` and the `points` array.
- * @param {Object} pointInShape - A function that checks if a point, x,y is within a shape.
- * @param {number[]} topLeftFront The top left of the bounding box.
- * @param {number[]} bottomRightBack The bottom right of the bounding box.
- * @returns {null}
+ * @param {PointInShapeFn} pointInShape - A function that checks if a point, x,y is within a shape.
+ * @param {ConstraintFn} constraintFn - A function that applies a constraint for each pointIJK,
+ * this can be used to apply intensity threshold
+ * @param {Point3} topLeftFront The top left of the bounding box.
+ * @param {Point3} bottomRightBack The bottom right of the bounding box.
+ * @returns void
  */
 export function fillOutsideShape(
-  evt,
-  operationData,
-  pointInShape,
-  constraintFn,
-  topLeftFront,
-  bottomRightBack
-) {
+  enabledElement: IEnabledElement,
+  operationData: FillShapeOperationData,
+  pointInShape: PointInShapeFn,
+  constraintFn: ConstraintFn,
+  topLeftFront: Point3,
+  bottomRightBack: Point3
+):void {
   fillShape(
-    evt,
+    enabledElement,
     operationData,
     (point) => !pointInShape(point),
     constraintFn,

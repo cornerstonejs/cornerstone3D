@@ -15,6 +15,8 @@ import {
   ToolBindings,
   ToolModes,
   CornerstoneTools3DEvents,
+  toolDataSelection,
+  Utilities as csToolsUtils,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
@@ -251,9 +253,10 @@ class SegmentationExample extends Component {
     }
 
     const onLoadCT = (evt) => {
-      if (evt.framesProcessed === evt.numFrames){
-        this.setState({ progressText: 'Loaded.' })}
+      if (evt.framesProcessed === evt.numFrames) {
+        this.setState({ progressText: 'Loaded.' })
       }
+    }
 
     ptVolume.load()
     ctVolume.load(onLoadCT)
@@ -473,6 +476,7 @@ class SegmentationExample extends Component {
       canvas,
       labelmap,
       labelmapIndex,
+      labelmapViewportState: {},
     })
 
     const activeSegmentIndex =
@@ -521,21 +525,51 @@ class SegmentationExample extends Component {
     }
 
     segmentIndexController.setActiveSegmentIndex(canvas, newIndex)
-    const segmentLocked = lockedSegmentController.getSegmentIndexLockedStatusForElement(
-      canvas,
-      newIndex
-    )
+    const segmentLocked =
+      lockedSegmentController.getSegmentIndexLockedStatusForElement(
+        canvas,
+        newIndex
+      )
     console.debug('segmentLocked', segmentLocked)
     this.setState({ activeSegmentIndex: newIndex, segmentLocked })
   }
 
-  executeThresholding = () => {
+  executeThresholding = (mode) => {
+    const ptVolume = cache.getVolume(ptVolumeUID)
+    const labelmapVolume = cache.getVolume(this.state.selectedLabelmapUID)
     const numSlices = this.state.numSlicesForThreshold
-    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    const selectedToolDataList =
+      toolDataSelection.getSelectedToolDataByToolName(RECTANGLE_ROI_THRESHOLD)
+
+    if (mode === 'max') {
+      csToolsUtils.segmentation.thresholdVolumeByRoiStats(
+        selectedToolDataList,
+        [ptVolume],
+        labelmapVolume,
+        {
+          statistic: 'max',
+          weight: 0.41,
+          numSlices,
+        }
+      )
+
+      return
+    }
+
+    csToolsUtils.segmentation.thresholdVolumeByRange(
+      selectedToolDataList,
+      [ptVolume],
+      labelmapVolume,
+      {
+        lowerThreshold: this.state.thresholdMin,
+        higherThreshold: this.state.thresholdMax,
+        numSlices,
+      }
+    )
+
+    /* const toolGroup = this.state.toolGroups[this.state.toolGroupName]
     const tool = toolGroup.getToolInstance(RECTANGLE_ROI_THRESHOLD)
-    const options = {
-      lowerThreshold: this.state.thresholdMin, higherThreshold: this.state.thresholdMax, numSlices}
-    tool.execute(options)
+    tool.execute(options) */
   }
 
   showOffScreenCanvas = () => {
@@ -557,6 +591,7 @@ class SegmentationExample extends Component {
   getThresholdUID = () => {
     return (
       <>
+        {this.getScissorsUI()}
         <label htmlFor="numSlices" style={{ marginLeft: '5px' }}>
           Number of Slices (+/-)
         </label>
@@ -597,7 +632,13 @@ class SegmentationExample extends Component {
           style={{ marginLeft: '5px' }}
           onClick={() => this.executeThresholding()}
         >
-          Execute Thresholding on Selected Annotation
+          Execute Range Thresholding on Selected Annotation
+        </button>
+        <button
+          style={{ marginLeft: '5px' }}
+          onClick={() => this.executeThresholding('max')}
+        >
+          Execute Max Thresholding on Selected Annotation
         </button>
       </>
     )
@@ -648,10 +689,14 @@ class SegmentationExample extends Component {
             const sceneUID = evt.target.value
             const scene = this.renderingEngine.getScene(sceneUID)
             const { uid, canvas } = scene.getViewports()[0]
-            const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
+            const labelmapUIDs =
+              SegmentationModule.getLabelmapUIDsForElement(canvas)
             const index = segmentIndexController.getActiveSegmentIndex(canvas)
             const segmentLocked =
-              lockedSegmentController.getSegmentIndexLockedStatusForElement(canvas, index)
+              lockedSegmentController.getSegmentIndexLockedStatusForElement(
+                canvas,
+                index
+              )
 
             console.debug('setting tool group name of ', sceneUID)
             this.setState({
@@ -801,7 +846,7 @@ class SegmentationExample extends Component {
                   this.preLoadSegmentations
                 )
               }}
-              disabled={ this.state.progressText !== 'Loaded.'}
+              disabled={this.state.progressText !== 'Loaded.'}
               className="btn btn-primary"
               style={{ margin: '2px 4px' }}
             >
