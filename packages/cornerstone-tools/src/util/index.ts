@@ -14,6 +14,7 @@ import getDefault from './getDefault'
 import isObject from './isObject'
 import getToolDataStyle from './getToolDataStyle'
 import calibrateImageSpacing from './calibrateImageSpacing'
+import * as segmentation from './segmentation'
 
 // UUID Generation
 import uuidv4 from './uuidv4'
@@ -37,6 +38,7 @@ export {
   triggerEvent,
   getToolDataStyle,
   calibrateImageSpacing,
+  segmentation,
 }
 
 export default {
@@ -55,4 +57,5 @@ export default {
   triggerEvent,
   getToolDataStyle,
   calibrateImageSpacing,
+  segmentation,
 }
