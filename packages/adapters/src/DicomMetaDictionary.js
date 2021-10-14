@@ -142,11 +142,8 @@ class DicomMetaDictionary {
                 }
 
                 if (naturalDataset[naturalName].length === 1) {
-                    const sqZero = naturalDataset[naturalName][0];
-                    naturalDataset[naturalName] = sqZero;
-                    if (sqZero && typeof sqZero === "object") {
-                        Object.assign(sqZero, [sqZero]);
-                    }
+                    naturalDataset[naturalName] =
+                        naturalDataset[naturalName][0];
                 }
             }
         });

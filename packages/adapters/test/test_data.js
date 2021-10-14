@@ -159,11 +159,11 @@ const tests = {
             "IMG1332"
         );
 
+        // tests that single element sequences have been converted
+        // from arrays to values.
+        // See discussion here for more details: https://github.com/dcmjs-org/dcmjs/commit/74571a4bd6c793af2a679a31cec7e197f93e28cc
         const spacing = naturalSequence.SharedFunctionalGroupsSequence
             .PixelMeasuresSequence.SpacingBetweenSlices;
-        const spacingIndexed = naturalSequence.SharedFunctionalGroupsSequence[0]
-            .PixelMeasuresSequence[0].SpacingBetweenSlices;
-        expect(spacing).to.equal(spacingIndexed);
         expect(spacing).to.equal(0.12);
 
         expect(naturalSequence.ProcedureCodeSequence).to.have.property(
