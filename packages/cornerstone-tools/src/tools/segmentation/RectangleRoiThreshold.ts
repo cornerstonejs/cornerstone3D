@@ -68,8 +68,6 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         shadow: true,
         preventHandleOutsideImage: false,
       },
-      strategies: {},
-      defaultStrategy: '',
     })
   }
 

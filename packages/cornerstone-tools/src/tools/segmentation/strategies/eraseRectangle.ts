@@ -3,7 +3,8 @@ import {
   getBoundingBoxAroundShape,
 } from '../../../util/segmentation'
 import { Point3 } from '../../../types'
-import { ImageVolume, Types } from '@ohif/cornerstone-render'
+import { ImageVolume } from '@ohif/cornerstone-render'
+import { IEnabledElement } from '@ohif/cornerstone-render/src/types'
 
 type EraseOperationData = {
   points: [Point3, Point3, Point3, Point3]
@@ -13,7 +14,7 @@ type EraseOperationData = {
 }
 
 type FillRectangleEvent = {
-  enabledElement: Types.IEnabledElement
+  enabledElement: IEnabledElement
 }
 
 /**
@@ -78,7 +79,7 @@ function eraseRectangle(
  */
 export function eraseInsideRectangle(
   evt: FillRectangleEvent,
-  operationData: OperationData
+  operationData: EraseOperationData
 ): void {
   eraseRectangle(evt, operationData, true)
 }
@@ -92,7 +93,7 @@ export function eraseInsideRectangle(
  */
 export function eraseOutsideRectangle(
   evt: FillRectangleEvent,
-  operationData: OperationData
+  operationData: EraseOperationData
 ): void {
   eraseRectangle(evt, operationData, false)
 }

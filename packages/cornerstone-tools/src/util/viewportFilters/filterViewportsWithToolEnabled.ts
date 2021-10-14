@@ -49,8 +49,8 @@ export default function filterViewportsWithToolEnabled(viewports, toolName) {
  * @returns {boolean} True if the tool is enabled, passive or active in the `toolGroup`.
  */
 function _toolGroupHasActiveEnabledOrPassiveTool(toolGroup, toolName) {
-  const { tools } = toolGroup
-  const tool = tools[toolName]
+  const { toolOptions } = toolGroup
+  const tool = toolOptions[toolName]
 
   if (!tool) {
     return false

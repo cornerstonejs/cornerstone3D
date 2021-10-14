@@ -28,11 +28,11 @@ export default function getToolsWithModesForMouseEvent(
 
   for (let i = 0; i < toolGroups.length; i++) {
     const toolGroup = toolGroups[i]
-    const toolGroupToolNames = Object.keys(toolGroup.tools)
+    const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
 
     for (let j = 0; j < toolGroupToolNames.length; j++) {
       const toolName = toolGroupToolNames[j]
-      const tool = toolGroup.tools[toolName]
+      const tool = toolGroup.toolOptions[toolName]
 
       // tool has binding that matches the mouse button
       const correctBinding =
