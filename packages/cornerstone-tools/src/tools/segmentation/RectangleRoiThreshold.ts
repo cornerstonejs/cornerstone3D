@@ -4,14 +4,9 @@ import {
   Settings,
   StackViewport,
   VolumeViewport,
-  cache,
 } from '@ohif/cornerstone-render'
 import { getImageIdForTool } from '../../util/planar'
-import {
-  addToolState,
-  getToolState,
-  toolDataSelection,
-} from '../../stateManagement'
+import { addToolState, getToolState } from '../../stateManagement'
 import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
 
 import {
@@ -25,24 +20,10 @@ import {
 } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import { ToolSpecificToolData, Point2, Point3 } from '../../types'
-import thresholdVolumeByRange from './strategies/thresholdVolumeByRange'
-import thresholdVolumeByRoiStats from './strategies/thresholdVolumeByRoiStats'
+import { ToolSpecificToolData, Point3 } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
-import {
-  getColorForSegmentIndex,
-  lockedSegmentController,
-  segmentIndexController,
-  activeLabelmapController
-} from '../../store/SegmentationModule'
 
-type ThresholdExecutionOptions = {
-  lowerThreshold: number
-  higherThreshold: number
-  numSlices: number
-}
-
-interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
+export interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
   metadata: {
     cameraPosition?: Point3
     cameraFocalPoint?: Point3
@@ -53,6 +34,7 @@ interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
     referencedImageId?: string
     toolName: string
     enabledElement: any // Todo: how to remove this from the tooldata??
+    volumeUID: string
   }
   data: {
     invalidated: boolean
@@ -60,7 +42,7 @@ interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
       points: Point3[]
       activeHandleIndex: number | null
     }
-    labelmapUID: string
+    // labelmapUID: string
     active: boolean
   }
 }
@@ -86,11 +68,8 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         shadow: true,
         preventHandleOutsideImage: false,
       },
-      strategies: {
-        THRESHOLD_RANGE: thresholdVolumeByRange,
-        THRESHOLD_BY_ROI_STATS: thresholdVolumeByRoiStats,
-      },
-      defaultStrategy: 'THRESHOLD_RANGE',
+      strategies: {},
+      defaultStrategy: '',
     })
   }
 
@@ -137,6 +116,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
+        volumeUID: this.configuration.volumeUID,
       },
       data: {
         invalidated: true,
@@ -189,107 +169,6 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     )
 
     return toolData
-  }
-
-  /**
-   * Executes the active strategy on the selected annotation
-   * @param options LowerThreshold and HigherThreshold values
-   * @returns
-   */
-  public execute(options: ThresholdExecutionOptions) {
-    const selectedToolState = toolDataSelection.getSelectedToolDataByToolName(
-      this.name
-    )
-
-    if (selectedToolState.length !== 1) {
-      console.warn('Annotation should be selected to execute a strategy')
-      return
-    }
-
-    const toolData = selectedToolState[0] as RectangleRoiThresholdToolData
-    const { viewUp, viewPlaneNormal, enabledElement } = toolData.metadata
-    const { labelmapUID } = toolData.data
-    const { viewport, renderingEngine } = enabledElement
-    const { canvas: element } = viewport
-
-    const labelmap = cache.getVolume(labelmapUID)
-
-    // Todo: Resetting the labelmap imageData value so that the same tool can
-    // execute threshold execution more than once, but this is super slow
-    // const values = labelmap.vtkImageData.getPointData().getScalars().getData()
-    // const length = values.length
-    // for (let i = 0; i <= length; i++) {
-    //   values[i] = 0
-    // }
-
-    const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
-    const segmentColor = getColorForSegmentIndex(element, segmentIndex)
-    const segmentsLocked = lockedSegmentController.getLockedSegmentsForElement(element)
-
-    const eventDetail = {
-      canvas: element,
-      enabledElement,
-      renderingEngine,
-    }
-
-    const operationData = {
-      points: toolData.data.handles.points,
-      options,
-      volumeUIDs: [this.configuration.volumeUID],
-      labelmap,
-      segmentIndex,
-      segmentColor,
-      segmentsLocked,
-      viewPlaneNormal,
-      viewUp,
-    }
-
-    return this.applyActiveStrategy(eventDetail, operationData)
-  }
-
-  _mouseUpCallback = async (evt) => {
-    const eventData = evt.detail
-    const { element } = eventData
-
-    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } =
-      this.editData
-    const { data } = toolData
-
-    if (newAnnotation && !hasMoved) {
-      return
-    }
-
-    data.active = false
-    data.handles.activeHandleIndex = null
-
-    this._deactivateModify(element)
-    this._deactivateDraw(element)
-
-    resetElementCursor(element)
-
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine } = enabledElement
-
-    this.editData = null
-    this.isDrawing = false
-
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
-
-    // If already created the labelmap for this toolData return
-    if (!toolData.data.labelmapUID) {
-      // Otherwise Create Labelmap for the new rectangle measurement
-      const labelmapIndex =
-        activeLabelmapController.getNextLabelmapIndex(element)
-      const labelmapUID = await activeLabelmapController.setActiveLabelmapIndex(
-        element,
-        labelmapIndex
-      )
-
-      toolData.data.labelmapUID = labelmapUID
-    }
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
@@ -387,24 +266,5 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         }
       )
     }
-  }
-
-  _getTargetStackUID(viewport) {
-    return `stackTarget:${viewport.uid}`
-  }
-
-  _getTargetVolumeUID = (scene) => {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const volumeActors = scene.getVolumeActors()
-
-    if (!volumeActors && !volumeActors.length) {
-      // No stack to scroll through
-      return
-    }
-
-    return volumeActors[0].uid
   }
 }

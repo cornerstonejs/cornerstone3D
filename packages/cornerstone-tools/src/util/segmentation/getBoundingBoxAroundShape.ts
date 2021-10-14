@@ -11,7 +11,7 @@ import { Point3, Point2 } from '../../types'
 export default function getBoundingBoxAroundShape(
   vertices: Point3[],
   dimensions?: Point3
-): Point2[] {
+): [Point2, Point2, Point2] {
   let xMin = Infinity
   let xMax = 0
   let yMin = Infinity
