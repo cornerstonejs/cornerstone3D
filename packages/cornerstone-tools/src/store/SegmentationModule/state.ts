@@ -172,25 +172,30 @@ function setLabelmapGlobalState(
  *
  * @param viewportUID labelmapUID
  * @param labelmapUID labelmapUID
- * @param newState Global state of the labelmap
+ * @param viewportLabelmapState viewport-specific state of the labelmap
  * @param overwrite force overwriting already existing labelmapState
  */
 function setLabelmapViewportSpecificState(
   viewportUID: string,
   labelmapUID: string,
   labelmapIndex = 0,
-  newState: ViewportLabelmapState = {
-    volumeUID: labelmapUID,
-    segmentsHidden: new Set(),
-    colorLUTIndex: 0,
-    cfun: vtkColorTransferFunction.newInstance(),
-    ofun: vtkPiecewiseFunction.newInstance(),
-    labelmapConfig: {},
-  }
+  viewportLabelmapState?: ViewportLabelmapState
 ): void {
+  let labelmapState = viewportLabelmapState
+  if (!labelmapState) {
+    labelmapState = {
+      volumeUID: labelmapUID,
+      segmentsHidden: new Set(),
+      colorLUTIndex: 0,
+      cfun: vtkColorTransferFunction.newInstance(),
+      ofun: vtkPiecewiseFunction.newInstance(),
+      labelmapConfig: {},
+    }
+  }
   // Todo: check if there is a labelmapGlobalState
   const viewportLabelmapsState = _getLabelmapsStateForViewportUID(viewportUID)
-  const { segmentsHidden, colorLUTIndex, cfun, ofun, labelmapConfig } = newState
+  const { segmentsHidden, colorLUTIndex, cfun, ofun, labelmapConfig } =
+    labelmapState
 
   viewportLabelmapsState.labelmaps[labelmapIndex] = {
     volumeUID: labelmapUID,
@@ -249,8 +254,7 @@ function getLabelmapStateForElement(
 function getActiveLabelmapState(
   canvas: HTMLCanvasElement
 ): ViewportLabelmapState | undefined {
-  const activeLabelmapIndex =
-    getActiveLabelmapIndex(canvas)
+  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
   const labelmapsState = getLabelmapsStateForElement(canvas)
 
   if (!labelmapsState) {
