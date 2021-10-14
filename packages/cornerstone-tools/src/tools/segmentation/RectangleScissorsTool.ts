@@ -3,14 +3,11 @@ import {
   getEnabledElement,
   Settings,
   StackViewport,
-  VolumeViewport,
 } from '@ohif/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
-import {
-  fillInsideRectangle,
-  fillOutsideRectangle,
-} from './strategies/fillRectangle'
+import { fillInsideRectangle } from './strategies/fillRectangle'
+import { eraseInsideRectangle } from './strategies/eraseRectangle'
 import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
 
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -58,12 +55,14 @@ export default class RectangleScissorsTool extends BaseTool {
     super(toolConfiguration, {
       name: 'RectangleScissors',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {},
-      strategies: {
-        FILL_INSIDE: fillInsideRectangle,
-        FILL_OUTSIDE: fillOutsideRectangle,
+      configuration: {
+        strategies: {
+          FILL_INSIDE: fillInsideRectangle,
+          ERASE_INSIDE: eraseInsideRectangle,
+        },
+        defaultStrategy: 'FILL_INSIDE',
+        activeStrategy: 'FILL_INSIDE',
       },
-      defaultStrategy: 'FILL_INSIDE',
     })
   }
 
@@ -92,7 +91,8 @@ export default class RectangleScissorsTool extends BaseTool {
       labelmapIndex
     )
     const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
-    const segmentsLocked = lockedSegmentController.getLockedSegmentsForElement(element)
+    const segmentsLocked =
+      lockedSegmentController.getLockedSegmentsForElement(element)
     const segmentColor = getColorForSegmentIndex(
       element,
       segmentIndex,
@@ -273,7 +273,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const operationData = {
       points: data.handles.points,
-      labelmap,
+      volume: labelmap,
       segmentIndex,
       segmentsLocked,
     }

@@ -10,10 +10,6 @@ abstract class BaseTool {
   public initialConfiguration: Record<string, any>
   public name: string
   public supportedInteractionTypes: Array<string>
-  public strategies: Record<string, any>
-  public defaultStrategy: string
-  public activeStrategy: string
-  public strategyOptions: any
   public configuration: Record<string, any>
   public mode: ToolModes
 
@@ -28,18 +24,19 @@ abstract class BaseTool {
 
     const {
       name,
-      strategies,
-      defaultStrategy,
       configuration = {},
       supportedInteractionTypes,
     } = this.initialConfiguration
 
+    // If strategies are not initialized in the tool config
+    if (!configuration.strategies) {
+      configuration.strategies = {}
+      configuration.defaultStrategy = undefined
+      configuration.activeStrategy = undefined
+    }
+
     this.name = name
     this.supportedInteractionTypes = supportedInteractionTypes || []
-    this.strategies = strategies || {}
-    this.defaultStrategy =
-      defaultStrategy || Object.keys(this.strategies)[0] || undefined
-    this.activeStrategy = this.defaultStrategy
     this.configuration = Object.assign({}, configuration)
     this.mode = ToolModes.Disabled
   }
@@ -50,28 +47,28 @@ abstract class BaseTool {
    * @param operationData
    */
   public applyActiveStrategy(evt: any, operationData: any): any {
-    return this.strategies[this.activeStrategy].call(
-      this,
-      evt,
-      operationData,
-      this.strategyOptions
-    )
+    const { strategies, activeStrategy } = this.configuration
+    return strategies[activeStrategy].call(this, evt, operationData)
   }
 
   /**
-   * Sets the active strategy for a tool if using strategies. Strategies are
+   * merges the new configuration with the tool configuration
+   * @param configuration toolConfiguration
+   */
+  public setConfiguration(newConfiguration: Record<string, any>): void {
+    this.configuration = deepMerge(this.configuration, newConfiguration)
+  }
+
+  /**
+   * Sets the active strategy for a tool. Strategies are
    * multiple implementations of tool behavior that can be switched by tool
    * configuration.
    *
    * @param strategyName
    * @public
    */
-  public setActiveStrategyName(
-    strategyName: string,
-    strategyOptions: any
-  ): void {
-    this.activeStrategy = strategyName
-    this.strategyOptions = strategyOptions
+  public setActiveStrategy(strategyName: string): void {
+    this.setConfiguration({ activeStrategy: strategyName })
   }
 }
 
