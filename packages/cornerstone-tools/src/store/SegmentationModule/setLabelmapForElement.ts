@@ -62,14 +62,8 @@ async function setLabelmapForElement({
       viewportUID,
       labelmapUID,
       labelmapIndex,
-      labelmapViewportState
     )
   })
-
-  const viewportLabelmapsState = state.volumeViewports[viewportUID]
-  const viewportLabelmapState = viewportLabelmapsState.labelmaps[labelmapIndex]
-
-  const { cfun, ofun, labelmapConfig } = viewportLabelmapState
 
   // Default to true since we are setting a new labelmap, however,
   // in the event listener, we will make other segmentations visible/invisible
