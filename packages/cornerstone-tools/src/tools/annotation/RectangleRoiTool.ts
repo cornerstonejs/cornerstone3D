@@ -86,8 +86,6 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
       },
-      strategies: {},
-      defaultStrategy: '',
     }
   ) {
     super(toolConfiguration, defaultToolConfiguration)

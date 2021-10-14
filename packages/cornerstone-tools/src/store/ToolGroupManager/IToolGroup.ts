@@ -18,9 +18,6 @@ export default interface IToolGroup {
     (renderingEngineUID: string, sceneUID?: string, viewportUID?: string): void
   }
   // ~ setToolMode
-  setActiveStrategyName: {
-    (toolName: string, strategyName: string): void
-  }
   setToolActive: {
     (toolName: string, toolModeOptions: ISetToolModeOptions): void
   }
