@@ -30,11 +30,11 @@ export default function getToolsWithModesForElement(
 
   for (let i = 0; i < toolGroups.length; i++) {
     const toolGroup = toolGroups[i]
-    const toolGroupToolNames = Object.keys(toolGroup.tools)
+    const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
 
     for (let j = 0; j < toolGroupToolNames.length; j++) {
       const toolName = toolGroupToolNames[j]
-      const tool = toolGroup.tools[toolName]
+      const tool = toolGroup.toolOptions[toolName]
 
       if (modesFilter.includes(tool.mode)) {
         const toolInstance = toolGroup._toolInstances[toolName]

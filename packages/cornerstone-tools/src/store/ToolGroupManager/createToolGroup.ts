@@ -26,7 +26,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     _toolInstances: {}, // tool instances
     id: toolGroupId,
     viewports: [],
-    tools: {}, // tools modes etc.
+    toolOptions: {}, // tools modes etc.
     //
     getToolInstance: function (toolName) {
       const toolInstance = this._toolInstances[toolName]
@@ -39,7 +39,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     addTool: function (toolName, toolConfiguration = {}) {
       const toolDefinition = state.tools[toolName]
       const hasToolName = typeof toolName !== 'undefined' && toolName !== ''
-      const localToolInstance = this.tools[toolName]
+      const localToolInstance = this.toolOptions[toolName]
 
       if (!hasToolName) {
         console.warn(
@@ -136,7 +136,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
-      // const tool = this.tools[toolName];
+      // const tool = this.toolOptions[toolName];
       const toolModeOptionsWithMode = Object.assign(
         {
           bindings: [],
@@ -147,7 +147,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         }
       )
 
-      this.tools[toolName] = toolModeOptionsWithMode
+      this.toolOptions[toolName] = toolModeOptionsWithMode
       this._toolInstances[toolName].mode = Active
 
       // reset the mouse cursor if tool has left click binding
@@ -169,7 +169,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
-      // const tool = this.tools[toolName];
+      // const tool = this.toolOptions[toolName];
       const toolModeOptionsWithMode = Object.assign(
         {
           bindings: [],
@@ -180,7 +180,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         }
       )
 
-      this.tools[toolName] = toolModeOptionsWithMode
+      this.toolOptions[toolName] = toolModeOptionsWithMode
       this._toolInstances[toolName].mode = Passive
       this.refreshViewports()
     },
@@ -197,7 +197,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
-      // const tool = this.tools[toolName];
+      // const tool = this.toolOptions[toolName];
       const toolModeOptionsWithMode = Object.assign(
         {
           bindings: [],
@@ -208,7 +208,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         }
       )
 
-      this.tools[toolName] = toolModeOptionsWithMode
+      this.toolOptions[toolName] = toolModeOptionsWithMode
       this._toolInstances[toolName].mode = Enabled
       this.refreshViewports()
     },
@@ -224,7 +224,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       }
 
       // Would only need this for sanity check if not instantiating/hydrating
-      // const tool = this.tools[toolName];
+      // const tool = this.toolOptions[toolName];
       const toolModeOptionsWithMode = Object.assign(
         {
           bindings: [],
@@ -234,13 +234,13 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
           mode: Disabled,
         }
       )
-      this.tools[toolName] = toolModeOptionsWithMode
+      this.toolOptions[toolName] = toolModeOptionsWithMode
       this._toolInstances[toolName].mode = Disabled
       this.refreshViewports()
     },
     getActivePrimaryButtonTools() {
-      return Object.keys(this.tools).find((toolName) => {
-        const toolModeOptions = this.tools[toolName]
+      return Object.keys(this.toolOptions).find((toolName) => {
+        const toolModeOptions = this.toolOptions[toolName]
         return (
           toolModeOptions.mode === Active &&
           this.isPrimaryButtonBinding(toolModeOptions)

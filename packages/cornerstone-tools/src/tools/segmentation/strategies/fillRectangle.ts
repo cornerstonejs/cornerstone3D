@@ -1,9 +1,12 @@
 import {
+  IEnabledElement,
+} from '@ohif/cornerstone-render/src/types'
+import {
   fillInsideShape,
   getBoundingBoxAroundShape,
 } from '../../../util/segmentation'
 import { Point3 } from '../../../types'
-import { ImageVolume, Types } from '@ohif/cornerstone-render'
+import { ImageVolume } from '@ohif/cornerstone-render'
 
 type OperationData = {
   points: [Point3, Point3, Point3, Point3]
@@ -14,7 +17,7 @@ type OperationData = {
 }
 
 type FillRectangleEvent = {
-  enabledElement: Types.IEnabledElement
+  enabledElement: IEnabledElement
 }
 
 /**

@@ -18,7 +18,7 @@ export default function keyUp(evt) {
   resetModifierKey()
 
   toolGroups.forEach((toolGroup) => {
-    if (Object.keys(toolGroup.tools).includes(activeTool.name)) {
+    if (Object.keys(toolGroup.toolOptions).includes(activeTool.name)) {
       toolGroup.resetViewportsCursor({ name: activeTool.name })
     }
   })
