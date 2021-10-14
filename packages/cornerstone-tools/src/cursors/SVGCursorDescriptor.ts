@@ -410,7 +410,7 @@ const DefinedDescriptorsMap = {
   }),
 
   'RectangleScissors.ERASE_INSIDE': extend(BASE, {
-    iconContent: `${CIRCLE_ICON} ${MINUS_RECT}`,
+    iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 

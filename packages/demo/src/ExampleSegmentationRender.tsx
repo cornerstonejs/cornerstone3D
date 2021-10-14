@@ -111,7 +111,7 @@ class SegmentationExample extends Component {
         },
       ],
     },
-    ptCtLeftClickTool: 'Levels',
+    ptCtLeftClickTool: 'WindowLevel',
     toolGroupName: 'ctScene',
     toolGroups: {},
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
@@ -129,6 +129,7 @@ class SegmentationExample extends Component {
     thresholdMin: 0,
     thresholdMax: 100,
     numSlicesForThreshold: 1,
+    selectedStrategy: '',
   }
 
   constructor(props) {
@@ -630,7 +631,7 @@ class SegmentationExample extends Component {
         />
         <button
           style={{ marginLeft: '5px' }}
-          onClick={() => this.executeThresholding()}
+          onClick={() => this.executeThresholding('')}
         >
           Execute Range Thresholding on Selected Annotation
         </button>
@@ -662,6 +663,24 @@ class SegmentationExample extends Component {
     )
   }
 
+  getToolStrategyUI = () => {
+    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    if (!toolGroup) {
+      return null
+    }
+    const toolInstance = toolGroup._toolInstances[this.state.ptCtLeftClickTool]
+    const strategies = Object.keys(toolInstance.configuration.strategies)
+    return (
+      <>
+        {strategies.map((strategyName) => (
+          <option key={strategyName} value={strategyName}>
+            {strategyName}
+          </option>
+        ))}
+      </>
+    )
+  }
+
   getSetToolModes = () => {
     return (
       <>
@@ -681,6 +700,27 @@ class SegmentationExample extends Component {
               {toolName}
             </option>
           ))}
+        </select>
+        <span> Strategies </span>
+        <select
+          value={this.state.selectedStrategy}
+          style={{ minWidth: '50px', margin: '0px 4px' }}
+          onChange={(evt) => {
+            const activeStrategy = evt.target.value
+            const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+
+            toolGroup._toolInstances[
+              this.state.ptCtLeftClickTool
+            ].setActiveStrategy(activeStrategy)
+
+            toolGroup.resetViewportsCursor(
+              { name: this.state.ptCtLeftClickTool },
+              activeStrategy
+            )
+            this.setState({ selectedStrategy: activeStrategy })
+          }}
+        >
+          {this.getToolStrategyUI()}
         </select>
         <span style={{ marginLeft: '4px' }}>for this toolGroup </span>
         <select
@@ -748,6 +788,10 @@ class SegmentationExample extends Component {
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
             <h2>Segmentation Example ({this.state.progressText})</h2>
+            <h4>
+              For Segmentation tools, you need to click on "Create New Labelmap"
+              button (when the options appear)
+            </h4>
             {!window.crossOriginIsolated ? (
               <h1 style={{ color: 'red' }}>
                 This Demo requires SharedArrayBuffer but your browser does not

@@ -122,18 +122,6 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         }
       }
     },
-    setActiveStrategyName(toolName: string, strategyName: string) {
-      if (this._toolInstances[toolName] === undefined) {
-        console.warn(
-          `Tool ${toolName} not added to toolgroup, can't set tool mode.`
-        )
-      }
-
-      this._toolInstances[toolName].mode = Active
-      this._toolInstances[toolName].setActiveStrategyName(strategyName)
-      this.tools[toolName].strategy = strategyName
-      this.resetViewportsCursor(this._toolInstances[toolName], strategyName)
-    },
     // ~ setToolMode
     setToolActive: function (
       toolName: string,

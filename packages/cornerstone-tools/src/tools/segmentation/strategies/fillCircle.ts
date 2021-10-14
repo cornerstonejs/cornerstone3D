@@ -1,23 +1,35 @@
 import {
+  Point3,
+  IImageVolume,
+  IEnabledElement,
+} from '@ohif/cornerstone-render/src/types'
+
+import { vec3 } from 'gl-matrix'
+import {
   fillInsideShape,
   getBoundingBoxAroundShape,
 } from '../../../util/segmentation'
 import { pointInEllipse } from '../../../util/math/ellipse'
-import { ImageVolume, Types } from '@ohif/cornerstone-render'
 import { getCanvasEllipseCorners } from '../../../util/math/ellipse'
 
 type OperationData = {
   points: any // Todo:fix
-  labelmap: ImageVolume
+  volume: IImageVolume
   segmentIndex: number
   segmentsLocked: number[]
   viewPlaneNormal: number[]
   viewUp: number[]
-  constraintFn: () => void
+  constraintFn: () => boolean
 }
 
 type fillCircleEvent = {
-  enabledElement: Types.IEnabledElement
+  enabledElement: IEnabledElement
+}
+
+function worldToIndex(imageData, ain) {
+  const vout = vec3.fromValues(0, 0, 0)
+  imageData.worldToIndex(ain, vout)
+  return vout
 }
 
 /**
@@ -34,8 +46,8 @@ function fillCircle(
   inside = true
 ): void {
   const { enabledElement } = evt
-  const { labelmap, points, constraintFn } = operationData
-  const { vtkImageData, dimensions } = labelmap
+  const { volume: labelmapVolume, points, constraintFn } = operationData
+  const { vtkImageData, dimensions } = labelmapVolume
   const { viewport, renderingEngine } = enabledElement
 
   const { bottom, top, left, right } = points
@@ -60,15 +72,15 @@ function fillCircle(
   const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
 
   const ellipsoidCornersIJK = [
-    vtkImageData.worldToIndex(topLeftWorld),
-    vtkImageData.worldToIndex(bottomRightWorld),
+    <Point3>worldToIndex(vtkImageData, topLeftWorld),
+    <Point3>worldToIndex(vtkImageData, bottomRightWorld),
   ]
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions)
   const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
 
-  const topLeftFrontIJK = [iMin, jMin, kMin]
-  const bottomRightBackIJK = [iMax, jMax, kMax]
+  const topLeftFrontIJK = <Point3>[iMin, jMin, kMin]
+  const bottomRightBackIJK = <Point3>[iMax, jMax, kMax]
 
   if (boundsIJK.every(([min, max]) => min !== max)) {
     throw new Error('Oblique segmentation tools are not supported yet')
@@ -76,7 +88,7 @@ function fillCircle(
 
   inside
     ? fillInsideShape(
-        evt,
+        enabledElement,
         operationData,
         (pointIJK, canvasCoords) => pointInEllipse(ellipse, canvasCoords), // Todo: we should call pointInEllipsoidWithConstraint for oblique planes
         constraintFn,

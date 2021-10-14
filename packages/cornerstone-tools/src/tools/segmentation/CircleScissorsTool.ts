@@ -1,16 +1,13 @@
 import {
   cache,
   getEnabledElement,
-  Settings,
   StackViewport,
-  VolumeViewport,
 } from '@ohif/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
 
-import { fillInsideCircle, fillOutsideCircle } from './strategies/fillCircle'
+import { fillInsideCircle } from './strategies/fillCircle'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-import RectangleRoiTool from '../annotation/RectangleRoiTool'
 import { drawCircle as drawCircleSvg } from '../../drawingSvg'
 import {
   resetElementCursor,
@@ -56,12 +53,14 @@ export default class CircleScissorsTool extends BaseTool {
     super(toolConfiguration, {
       name: 'CircleScissors',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {},
-      strategies: {
-        FILL_INSIDE: fillInsideCircle,
-        FILL_OUTSIDE: fillOutsideCircle,
+      configuration: {
+        strategies: {
+          FILL_INSIDE: fillInsideCircle,
+          // ERASE_INSIDE: eraseInsideCircle,
+        },
+        defaultStrategy: 'FILL_INSIDE',
+        activeStrategy: 'FILL_INSIDE',
       },
-      defaultStrategy: 'FILL_INSIDE',
     })
   }
 
@@ -266,7 +265,7 @@ export default class CircleScissorsTool extends BaseTool {
 
     const operationData = {
       points: data.handles.points,
-      labelmap,
+      volume: labelmap,
       segmentIndex,
       segmentsLocked,
       viewPlaneNormal,

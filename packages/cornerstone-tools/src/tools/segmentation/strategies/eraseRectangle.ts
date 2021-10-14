@@ -5,11 +5,10 @@ import {
 import { Point3 } from '../../../types'
 import { ImageVolume, Types } from '@ohif/cornerstone-render'
 
-type OperationData = {
+type EraseOperationData = {
   points: [Point3, Point3, Point3, Point3]
   volume: ImageVolume
   constraintFn: (x: [number, number, number]) => boolean
-  segmentIndex: number
   segmentsLocked: number[]
 }
 
@@ -18,16 +17,16 @@ type FillRectangleEvent = {
 }
 
 /**
- * FillInsideRectangle - Fill all pixels inside/outside the region defined
+ * eraseRectangle - Erases all pixels inside/outside the region defined
  * by the rectangle.
  * @param  {} evt The Cornerstone event.
  * @param {}  operationData An object containing the `pixelData` to
  *                          modify, the `segmentIndex` and the `points` array.
  * @returns {null}
  */
-function fillRectangle(
+function eraseRectangle(
   evt: FillRectangleEvent,
-  operationData: OperationData,
+  operationData: EraseOperationData,
   inside = true
 ): void {
   const { enabledElement } = evt
@@ -52,11 +51,12 @@ function fillRectangle(
 
   // Since always all points inside the boundsIJK is inside the rectangle...
   const pointInShape = () => true
+  const options = Object.assign({}, operationData, { segmentIndex: 0 })
 
   inside
     ? fillInsideShape(
         enabledElement,
-        operationData,
+        options,
         pointInShape,
         constraintFn,
         topLeftFront,
@@ -70,29 +70,29 @@ function fillRectangle(
 }
 
 /**
- * Fill all pixels inside the region defined by the rectangle.
+ * Erases all pixels inside the region defined by the rectangle.
  * @param  {} evt The Cornerstone event.
  * @param {}  operationData An object containing the `pixelData` to
  *                          modify, the `segmentIndex` and the `points` array.
  * @returns {null}
  */
-export function fillInsideRectangle(
+export function eraseInsideRectangle(
   evt: FillRectangleEvent,
   operationData: OperationData
 ): void {
-  fillRectangle(evt, operationData, true)
+  eraseRectangle(evt, operationData, true)
 }
 
 /**
- * Fill all pixels outside the region defined by the rectangle.
+ * Erases all pixels outside the region defined by the rectangle.
  * @param  {} evt The Cornerstone event.
  * @param  {} operationData An object containing the `pixelData` to
  *                          modify, the `segmentIndex` and the `points` array.
  * @returns {null}
  */
-export function fillOutsideRectangle(
+export function eraseOutsideRectangle(
   evt: FillRectangleEvent,
   operationData: OperationData
 ): void {
-  fillRectangle(evt, operationData, false)
+  eraseRectangle(evt, operationData, false)
 }
