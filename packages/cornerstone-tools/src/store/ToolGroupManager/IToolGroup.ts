@@ -7,7 +7,7 @@ export default interface IToolGroup {
   _toolInstances: Record<string, any>
   id: string
   viewports: Array<Types.IViewportUID>
-  tools: Record<string, any>
+  toolOptions: Record<string, any>
   //
   getToolInstance: { (toolName: string): any }
   addTool: { (toolName: string, toolConfiguration?: any): void }

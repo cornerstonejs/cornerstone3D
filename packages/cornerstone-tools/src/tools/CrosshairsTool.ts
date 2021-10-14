@@ -178,7 +178,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       sceneUID,
       viewportUID
     )
-    const groupTools = toolGroups[0]?.tools
+    const groupTools = toolGroups[0]?.toolOptions
     const mode = groupTools[this.name]?.mode
 
     // We don't want this annotation tool to render or be interactive unless its
@@ -258,7 +258,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       sceneUID,
       viewportUID
     )
-    const groupTools = toolGroups[0]?.tools
+    const groupTools = toolGroups[0]?.toolOptions
     const mode = groupTools[this.name]?.mode
 
     // We don't want this annotation tool to render or be interactive unless its
@@ -272,7 +272,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     let isCrosshairsActive = false
     for (let i = 0; i < toolGroups.length; ++i) {
       const toolGroup = toolGroups[i]
-      const tool = toolGroup.tools['Crosshairs']
+      const tool = toolGroup.toolOptions['Crosshairs']
 
       if (tool.mode === 'Active') {
         isCrosshairsActive = true
@@ -348,7 +348,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     let isCrosshairsActive = false
     for (let i = 0; i < toolGroups.length; ++i) {
       const toolGroup = toolGroups[i]
-      const tool = toolGroup.tools['Crosshairs']
+      const tool = toolGroup.toolOptions['Crosshairs']
 
       if (tool.mode === 'Active') {
         isCrosshairsActive = true
