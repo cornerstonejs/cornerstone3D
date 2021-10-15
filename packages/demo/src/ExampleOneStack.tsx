@@ -209,7 +209,7 @@ class OneStackExample extends Component {
 
     this.resetToolModes(stackCTViewportToolGroup)
 
-    const tools = Object.entries(stackCTViewportToolGroup.tools)
+    const tools = Object.entries(stackCTViewportToolGroup.toolOptions)
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -224,7 +224,8 @@ class OneStackExample extends Component {
     stackCTViewportToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
-    const currentBindings = stackCTViewportToolGroup.tools[toolName].bindings
+    const currentBindings =
+      stackCTViewportToolGroup.toolOptions[toolName].bindings
 
     stackCTViewportToolGroup.setToolActive(toolName, {
       bindings: [

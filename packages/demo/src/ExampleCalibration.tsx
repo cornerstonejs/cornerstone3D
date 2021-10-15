@@ -169,7 +169,7 @@ class CalibrationExample extends Component {
 
     this.resetToolModes(stackDXViewportToolGroup)
 
-    const tools = Object.entries(stackDXViewportToolGroup.tools)
+    const tools = Object.entries(stackDXViewportToolGroup.toolOptions)
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -184,7 +184,7 @@ class CalibrationExample extends Component {
     stackDXViewportToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
-    const currentBindings = stackDXViewportToolGroup.tools[toolName].bindings
+    const currentBindings = stackDXViewportToolGroup.toolOptions[toolName].bindings
 
     stackDXViewportToolGroup.setToolActive(toolName, {
       bindings: [
