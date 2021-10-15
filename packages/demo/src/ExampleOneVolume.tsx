@@ -238,7 +238,7 @@ class OneVolumeExample extends Component {
 
     this.resetToolModes(ctSceneToolGroup)
 
-    const tools = Object.entries(ctSceneToolGroup.tools)
+    const tools = Object.entries(ctSceneToolGroup.toolOptions)
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -253,7 +253,7 @@ class OneVolumeExample extends Component {
     ctSceneToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
-    const currentBindings = ctSceneToolGroup.tools[toolName].bindings
+    const currentBindings = ctSceneToolGroup.toolOptions[toolName].bindings
 
     ctSceneToolGroup.setToolActive(toolName, {
       bindings: [
