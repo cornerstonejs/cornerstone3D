@@ -352,7 +352,7 @@ class ToolDisplayConfigurationExample extends Component {
           this.listOfTools[
             (this.listOfTools.indexOf(newTool) + 1) % this.listOfTools.length
           ]
-      } while (!toolGroup.tools.hasOwnProperty(newTool))
+      } while (!toolGroup.toolOptions.hasOwnProperty(newTool))
       if (activeTool !== newTool) {
         toolGroup.setToolPassive(activeTool)
         toolGroup.setToolActive(newTool, options)

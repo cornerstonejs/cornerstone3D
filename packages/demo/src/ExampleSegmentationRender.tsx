@@ -669,6 +669,11 @@ class SegmentationExample extends Component {
       return null
     }
     const toolInstance = toolGroup._toolInstances[this.state.ptCtLeftClickTool]
+
+    if(!toolInstance){
+      return
+    }
+
     const strategies = Object.keys(toolInstance.configuration.strategies)
     return (
       <>
