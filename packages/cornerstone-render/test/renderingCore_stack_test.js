@@ -564,6 +564,22 @@ describe('Stack Viewport Calibration and Scaling --- ', () => {
       done.fail(e)
     }
   })
+})
+
+describe('Stack Viewport setProperties API --- ', () => {
+  beforeEach(function () {
+    cache.purgeCache()
+
+    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    registerImageLoader('fakeImageLoader', fakeImageLoader)
+    metaData.addProvider(fakeMetaDataProvider, 10000)
+    metaData.addProvider(
+      calibratedPixelSpacingMetadataProvider.get.bind(
+        calibratedPixelSpacingMetadataProvider
+      ),
+      11000
+    )
+  })
 
   it('Should be able to use setPropertise API', function (done) {
     const canvas = createCanvas(this.renderingEngine, AXIAL, 256, 256)
@@ -571,22 +587,27 @@ describe('Stack Viewport Calibration and Scaling --- ', () => {
     const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
 
     const vp = this.renderingEngine.getViewport(viewportUID)
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, (evt) => {
-      const image = canvas.toDataURL('image/png')
 
-      let props = vp.getProperties()
-      expect(props.rotation).toBe(90)
-      expect(props.interpolationType).toBe(INTERPOLATION_TYPE.NEAREST)
-      expect(props.invert).toBe(true)
+    const subscribeToImageRendered = () => {
+      canvas.addEventListener(EVENTS.IMAGE_RENDERED, (evt) => {
+        const image = canvas.toDataURL('image/png')
 
-      compareImages(
-        image,
-        imageURI_11_11_4_1_1_1_0_nearest_invert_90deg,
-        'imageURI_11_11_4_1_1_1_0_nearest_invert_90deg'
-      ).then(done, done.fail)
-    })
+        let props = vp.getProperties()
+        expect(props.rotation).toBe(90)
+        expect(props.interpolationType).toBe(INTERPOLATION_TYPE.NEAREST)
+        expect(props.invert).toBe(true)
+
+        compareImages(
+          image,
+          imageURI_11_11_4_1_1_1_0_nearest_invert_90deg,
+          'imageURI_11_11_4_1_1_1_0_nearest_invert_90deg'
+        ).then(done, done.fail)
+      })
+    }
+
     try {
       vp.setStack([imageId1], 0)
+      subscribeToImageRendered()
       vp.setProperties({
         interpolationType: INTERPOLATION_TYPE.NEAREST,
         invert: true,
@@ -598,7 +619,6 @@ describe('Stack Viewport Calibration and Scaling --- ', () => {
       done.fail(e)
     }
   })
-
   // it('Should be able to resetProperties API', function (done) {
   //   const canvas = createCanvas(this.renderingEngine, AXIAL, 256, 256)
 
