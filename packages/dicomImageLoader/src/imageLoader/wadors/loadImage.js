@@ -35,9 +35,11 @@ export function getTransferSyntaxForContentType(contentType) {
   // in the content type.
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part18/chapter_6.html#table_6.1.1.8-3b
   const defaultTransferSyntaxByType = {
-    'image/jpeg': '1.2.840.10008.1.2.4.70',
+    'image/jpeg': '1.2.840.10008.1.2.4.50',
     'image/x-dicom-rle': '1.2.840.10008.1.2.5',
     'image/x-jls': '1.2.840.10008.1.2.4.80',
+    'image/jls': '1.2.840.10008.1.2.4.80',
+    'image/jll': '1.2.840.10008.1.2.4.70',
     'image/jp2': '1.2.840.10008.1.2.4.90',
     'image/jpx': '1.2.840.10008.1.2.4.92',
   };
@@ -72,10 +74,11 @@ function loadImage(imageId, options = {}) {
 
     // Uncomment this on to test jpegls codec in OHIF
     // const mediaType = 'multipart/related; type="image/x-jls"';
-    /* const mediaType =
-      'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"'; // 'image/dicom+jp2';*/
+    // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
     const mediaType =
       'multipart/related; type="application/octet-stream"; transfer-syntax=*';
+    // const mediaType =
+    //   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
 
     function sendXHR(imageURI, imageId, mediaType) {
       // get the pixel data from the server

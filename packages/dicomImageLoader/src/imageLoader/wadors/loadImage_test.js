@@ -25,7 +25,7 @@ const cases = [
     '1.2.840.10008.1.2.4.100',
   ],
   // Test case where transfer-syntax is not explicitly provided
-  ['multipart/related; type="image/jpeg"', '1.2.840.10008.1.2.4.70'],
+  ['multipart/related; type="image/jpeg"', '1.2.840.10008.1.2.4.50'],
   ['multipart/related; type="image/x-jls"', '1.2.840.10008.1.2.4.80'],
   ['multipart/related; type="image/x-dicom-rle"', '1.2.840.10008.1.2.5'],
   ['multipart/related; type="image/jp2"', '1.2.840.10008.1.2.4.90'],

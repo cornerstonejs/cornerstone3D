@@ -21,16 +21,20 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
     const xhr = new XMLHttpRequest();
 
     xhr.open('get', url, true);
-    xhr.responseType = 'arraybuffer';
     const beforeSendHeaders = options.beforeSend(
       xhr,
       imageId,
       defaultHeaders,
       params
     );
+
+    xhr.responseType = 'arraybuffer';
+
     const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
     Object.keys(headers).forEach(function (key) {
+      if (headers[key] === null) return;
+      if (key === 'Accept' && url.indexOf('accept=') !== -1) return;
       xhr.setRequestHeader(key, headers[key]);
     });
 
@@ -91,7 +95,8 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
       }
 
       // Default action
-      // TODO: consider sending out progress messages here as we receive the pixel data
+      // TODO: consider sending out progress messages here as we receive
+      // the pixel data
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
           options

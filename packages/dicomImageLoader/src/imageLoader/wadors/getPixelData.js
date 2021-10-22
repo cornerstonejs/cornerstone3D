@@ -31,7 +31,7 @@ function uint8ArrayToString(data, offset, length) {
 
 function getPixelData(uri, imageId, mediaType = 'application/octet-stream') {
   const headers = {
-    accept: mediaType,
+    Accept: mediaType,
   };
 
   return new Promise((resolve, reject) => {
