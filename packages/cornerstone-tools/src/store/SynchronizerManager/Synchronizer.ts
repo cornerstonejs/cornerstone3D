@@ -68,7 +68,7 @@ class Synchronizer {
       .getCanvas()
 
     // @ts-ignore
-    canvas.addEventListener(this._eventName, this._onEvent.bind(this))
+    canvas.addEventListener(this._eventName, this._onEvent)
     this._updateDisableHandlers()
 
     this._sourceViewports.push(viewport)
@@ -109,7 +109,7 @@ class Synchronizer {
 
     this._sourceViewports.splice(index, 1)
     // @ts-ignore
-    canvas.removeEventListener(this._eventName, this._eventHandler)
+    canvas.removeEventListener(this._eventName, this._onEvent)
     this._updateDisableHandlers()
   }
 
@@ -153,7 +153,7 @@ class Synchronizer {
     }
   }
 
-  private _onEvent(evt: any): void {
+  private _onEvent = (evt: any): void => {
     if (this._ignoreFiredEvents === true) {
       return
     }
