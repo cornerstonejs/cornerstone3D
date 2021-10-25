@@ -22,9 +22,9 @@ dcmcrle $1 $1_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm
 
 dcmcjpls $1 $1_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80.dcm --encode-lossless
 
-gdcmconv --j2k -i $1 -o $1_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm
+gdcmconv --j2k -U -i $1 -o $1_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm
 
 dcmcrle $1 $1_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm
 
-gdcmconv --lossy --jpegls -e 1  -i $1 -o $1_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm
-gdcmconv --lossy -q 100 --j2k -i $1 -o $1_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm
+gdcmconv --lossy -U --jpegls -e 1  -i $1 -o $1_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm
+gdcmconv --lossy -U -q 100 --j2k -i $1 -o $1_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm
