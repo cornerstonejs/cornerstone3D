@@ -165,7 +165,8 @@ const tests = {
         const spacing = naturalSequence.SharedFunctionalGroupsSequence
             .PixelMeasuresSequence.SpacingBetweenSlices;
         expect(spacing).to.equal(0.12);
-
+        expect(Array.isArray(naturalSequence.SharedFunctionalGroupsSequence)).to.equal(true);
+    
         expect(naturalSequence.ProcedureCodeSequence).to.have.property(
             "CodingSchemeDesignator",
             "L"
