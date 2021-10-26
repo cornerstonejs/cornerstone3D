@@ -1,48 +1,26 @@
 import MeasurementReport from "./MeasurementReport.js";
 import TID300Point from "../../utilities/TID300/Point.js";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
-import { toArray } from "../helpers.js";
 
 const ARROW_ANNOTATE = "ArrowAnnotate";
-const FINDING = "121071";
-const FINDING_SITE = "G-C0E3";
 const CORNERSTONEFREETEXT = "CORNERSTONEFREETEXT";
 
 class ArrowAnnotate {
     constructor() {}
 
-    // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
-        const { ContentSequence } = MeasurementGroup;
-
-        const NUMGroup = toArray(ContentSequence).find(
-            group => group.ValueType === "NUM"
-        );
-
-        const SCOORDGroup = toArray(NUMGroup.ContentSequence).find(
-            group => group.ValueType === "SCOORD"
-        );
-
-        const findingGroup = toArray(ContentSequence).find(
-            group => group.ConceptNameCodeSequence.CodeValue === FINDING
-        );
-
-        const findingSiteGroups = toArray(ContentSequence).filter(
-            group => group.ConceptNameCodeSequence.CodeValue === FINDING_SITE
-        );
+        const {
+            defaultState,
+            SCOORDGroup,
+            findingGroup
+        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const text = findingGroup.ConceptCodeSequence.CodeMeaning;
 
         const { GraphicData } = SCOORDGroup;
 
-        const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
-        const {
-            ReferencedSOPInstanceUID,
-            ReferencedFrameNumber
-        } = ReferencedSOPSequence;
         const state = {
-            sopInstanceUid: ReferencedSOPInstanceUID,
-            frameIndex: ReferencedFrameNumber || 0,
+            ...defaultState,
             toolType: ArrowAnnotate.toolType,
             active: false,
             handles: {
@@ -52,11 +30,17 @@ class ArrowAnnotate {
                     highlight: true,
                     active: false
                 },
-                // TODO: How do we choose where the end goes?
-                // Just put it pointing from the bottom right for now?
+                // Use a generic offset if the stored data doesn't have the endpoint, otherwise
+                // use the actual endpoint.
                 end: {
-                    x: GraphicData[0] + 20,
-                    y: GraphicData[1] + 20,
+                    x:
+                        GraphicData.length == 4
+                            ? GraphicData[2]
+                            : GraphicData[0] + 20,
+                    y:
+                        GraphicData.length == 4
+                            ? GraphicData[3]
+                            : GraphicData[1] + 20,
                     highlight: true,
                     active: false
                 },
@@ -70,20 +54,14 @@ class ArrowAnnotate {
             },
             invalidated: true,
             text,
-            visible: true,
-            finding: findingGroup
-                ? findingGroup.ConceptCodeSequence
-                : undefined,
-            findingSites: findingSiteGroups.map(fsg => {
-                return { ...fsg.ConceptCodeSequence };
-            })
+            visible: true
         };
 
         return state;
     }
 
     static getTID300RepresentationArguments(tool) {
-        const points = [tool.handles.start];
+        const points = [tool.handles.start, tool.handles.end];
 
         let { finding, findingSites } = tool;
 

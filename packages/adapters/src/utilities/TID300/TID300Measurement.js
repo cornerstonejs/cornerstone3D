@@ -82,8 +82,8 @@ export default class TID300Measurement {
                 RelationshipType: "CONTAINS",
                 ValueType: "CODE",
                 ConceptNameCodeSequence: {
-                    CodeValue: "G-C0E3",
-                    CodingSchemeDesignator: "SRT",
+                    CodeValue: "363698007",
+                    CodingSchemeDesignator: "SCT",
                     CodeMeaning: "Finding Site"
                 },
                 ConceptCodeSequence: {

@@ -6,6 +6,23 @@ import TID1501MeasurementGroup from "../../utilities/TID1500/TID1501MeasurementG
 
 import { toArray, codeMeaningEquals } from "../helpers.js";
 
+const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
+const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
+const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
+
+const codeValueMatch = (group, code, oldCode) => {
+    const { ConceptNameCodeSequence } = group;
+    if (!ConceptNameCodeSequence) return;
+    const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
+    return (
+        (CodingSchemeDesignator == code.CodingSchemeDesignator &&
+            CodeValue == code.CodeValue) ||
+        (oldCode &&
+            CodingSchemeDesignator == oldCode.CodingSchemeDesignator &&
+            CodeValue == oldCode.CodeValue)
+    );
+};
+
 function getTID300ContentItem(
     tool,
     toolType,
@@ -49,6 +66,62 @@ function getMeasurementGroup(toolType, toolData, ReferencedSOPSequence) {
 
 export default class MeasurementReport {
     constructor() {}
+
+    static getSetupMeasurementData(MeasurementGroup) {
+        const { ContentSequence } = MeasurementGroup;
+
+        const contentSequenceArr = toArray(ContentSequence);
+        const findingGroup = contentSequenceArr.find(group =>
+            codeValueMatch(group, FINDING)
+        );
+        const findingSiteGroups =
+            contentSequenceArr.filter(group =>
+                codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
+            ) || [];
+        const NUMGroup = contentSequenceArr.find(
+            group => group.ValueType === "NUM"
+        );
+        const SCOORDGroup = toArray(NUMGroup.ContentSequence).find(
+            group => group.ValueType === "SCOORD"
+        );
+        const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
+        const {
+            ReferencedSOPInstanceUID,
+            ReferencedFrameNumber
+        } = ReferencedSOPSequence;
+
+        const defaultState = {
+            sopInstanceUid: ReferencedSOPInstanceUID,
+            frameIndex: ReferencedFrameNumber || 1,
+            complete: true,
+            finding: findingGroup
+                ? findingGroup.ConceptCodeSequence
+                : undefined,
+            findingSites: findingSiteGroups.map(fsg => {
+                return { ...fsg.ConceptCodeSequence };
+            })
+        };
+        if (defaultState.finding) {
+            defaultState.description = defaultState.finding.CodeMeaning;
+        }
+        const findingSite =
+            defaultState.findingSites && defaultState.findingSites[0];
+        if (findingSite) {
+            defaultState.location =
+                (findingSite[0] && findingSite[0].CodeMeaning) ||
+                findingSite.CodeMeaning;
+        }
+        return {
+            defaultState,
+            findingGroup,
+            findingSiteGroups,
+            NUMGroup,
+            SCOORDGroup,
+            ReferencedSOPSequence,
+            ReferencedSOPInstanceUID,
+            ReferencedFrameNumber
+        };
+    }
 
     static generateReport(toolState, metadataProvider, options) {
         // ToolState for array of imageIDs to a Report

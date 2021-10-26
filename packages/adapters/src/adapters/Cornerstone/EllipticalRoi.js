@@ -12,23 +12,11 @@ class EllipticalRoi {
 
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
-        const { ContentSequence } = MeasurementGroup;
-
-        const findingGroup = toArray(ContentSequence).find(
-            group => group.ConceptNameCodeSequence.CodeValue === FINDING
-        );
-
-        const findingSiteGroups = toArray(ContentSequence).filter(
-            group => group.ConceptNameCodeSequence.CodeValue === FINDING_SITE
-        );
-
-        const NUMGroup = toArray(ContentSequence).find(
-            group => group.ValueType === "NUM"
-        );
-
-        const SCOORDGroup = toArray(NUMGroup.ContentSequence).find(
-            group => group.ValueType === "SCOORD"
-        );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup
+        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const { GraphicData } = SCOORDGroup;
 
@@ -66,14 +54,8 @@ class EllipticalRoi {
             x: majorAxis[1].x - minorAxisDirection.x * halfMinorAxisLength,
             y: majorAxis[1].y - minorAxisDirection.y * halfMinorAxisLength
         };
-        const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
-        const {
-            ReferencedSOPInstanceUID,
-            ReferencedFrameNumber
-        } = ReferencedSOPSequence;
         const state = {
-            sopInstanceUid: ReferencedSOPInstanceUID,
-            frameIndex: ReferencedFrameNumber || 0,
+            ...defaultState,
             toolType: EllipticalRoi.toolType,
             active: false,
             cachedStats: {
@@ -102,13 +84,7 @@ class EllipticalRoi {
                 }
             },
             invalidated: true,
-            visible: true,
-            finding: findingGroup
-                ? findingGroup.ConceptCodeSequence
-                : undefined,
-            findingSites: findingSiteGroups.map(fsg => {
-                return { ...fsg.ConceptCodeSequence };
-            })
+            visible: true
         };
 
         return state;

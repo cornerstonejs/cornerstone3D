@@ -12,10 +12,10 @@ function expandPoints(points) {
     const allPoints = [];
 
     points.forEach(point => {
-        allPoints.push(point[0]);
-        allPoints.push(point[1]);
-        if (point[2] !== undefined) {
-            allPoints.push(point[2]);
+        allPoints.push(point[0] || point.x);
+        allPoints.push(point[1] || point.y);
+        if (point[2] !== undefined || point.z !== undefined) {
+            allPoints.push(point[2] || point.z);
         }
     });
 
@@ -26,27 +26,23 @@ export default class Polyline extends TID300Measurement {
     contentItem() {
         const {
             points,
+            area,
             ReferencedSOPSequence,
-            use3DSpatialCoordinates = false
+            use3DSpatialCoordinates = false,
+            perimeter
         } = this.props;
 
-        // Combine all lengths to save the perimeter
-        // @ToDO The permiter has to be implemented
-        // const reducer = (accumulator, currentValue) => accumulator + currentValue;
-        // const perimeter = lengths.reduce(reducer);
-        const perimeter = {};
         const GraphicData = expandPoints(points);
 
         // TODO: Add Mean and STDev value of (modality?) pixels
-
         return this.getMeasurement([
             {
                 RelationshipType: "CONTAINS",
                 ValueType: "NUM",
                 ConceptNameCodeSequence: {
-                    CodeValue: "G-A197",
-                    CodingSchemeDesignator: "SRT",
-                    CodeMeaning: "Perimeter" // TODO: Look this up from a Code Meaning dictionary
+                    CodeValue: "131191004",
+                    CodingSchemeDesignator: "SCT",
+                    CodeMeaning: "Perimeter"
                 },
                 MeasuredValueSequence: {
                     MeasurementUnitsCodeSequence: {
@@ -87,7 +83,7 @@ export default class Polyline extends TID300Measurement {
                         CodingSchemeVersion: "1.4",
                         CodeMeaning: "SquareMilliMeter"
                     },
-                    NumericValue: perimeter
+                    NumericValue: area
                 },
                 ContentSequence: {
                     RelationshipType: "INFERRED FROM",
