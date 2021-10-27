@@ -36,8 +36,8 @@ _Parts of DICOM that dcmjs will focus on:_
 
 _Parts of DICOM that dcmjs *will not* focus on:_
 
-- DIMSE (legacy networking like C-FIND, C-MOVE, etc)
-- Physical Media (optical disks)
+- DIMSE (legacy networking like C-FIND, C-MOVE, etc).  See the [dicom-dimse project](https://github.com/PantelisGeorgiadis/dcmjs-dimse) for that.
+- Physical Media (optical disks).  See [this FAQ](https://www.dclunie.com/medical-image-faq/html/index.html) if you need to work with those.
 
 # Usage
 
