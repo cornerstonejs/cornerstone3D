@@ -361,6 +361,18 @@ const tests = {
         console.log("Finished test_null_number_vrs");
     },
 
+    test_exponential_notation: () => {
+        const file = fs.readFileSync(path.join(__dirname, 'sample-dicom.dcm'));
+        const data = dcmjs.data.DicomMessage.readFile(file.buffer, {
+            // ignoreErrors: true,
+        });
+        const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(data.dict);
+        dataset.ImagePositionPatient[2] = 7.1945578383e-05;
+        const buffer = data.write();
+        const copy = dcmjs.data.DicomMessage.readFile(buffer);
+        expect(JSON.stringify(data)).to.equal(JSON.stringify(copy));
+    },
+
     test_output_equality: () => {
         const file = fs.readFileSync(path.join(__dirname, "cine-test.dcm"));
         const dicomData1 = dcmjs.data.DicomMessage.readFile(file.buffer, {
