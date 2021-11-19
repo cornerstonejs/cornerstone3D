@@ -227,7 +227,12 @@ function postProcessDecodedPixels(imageFrame, options, start) {
       typeof rescaleSlope === 'number' &&
       typeof rescaleIntercept === 'number'
     ) {
-      scaleArray(pixelDataArray, scalingParameters);
+      if (scaleArray(pixelDataArray, scalingParameters)) {
+        imageFrame.preScale = {
+          scaled: true,
+          scalingParameters,
+        };
+      }
     }
   }
 

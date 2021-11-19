@@ -15,4 +15,6 @@ export default function scaleArray(array, scalingParameters) {
       array[i] = array[i] * rescaleSlope + rescaleIntercept;
     }
   }
+
+  return true;
 }

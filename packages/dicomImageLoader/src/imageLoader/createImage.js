@@ -196,18 +196,19 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
         columns: imageFrame.columns,
         height: imageFrame.rows,
+        preScale: imageFrame.preScale,
         intercept: modalityLutModule.rescaleIntercept
           ? modalityLutModule.rescaleIntercept
           : 0,
+        slope: modalityLutModule.rescaleSlope
+          ? modalityLutModule.rescaleSlope
+          : 1,
         invert: imageFrame.photometricInterpretation === 'MONOCHROME1',
         minPixelValue: imageFrame.smallestPixelValue,
         maxPixelValue: imageFrame.largestPixelValue,
         rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
         rows: imageFrame.rows,
         sizeInBytes: imageFrame.pixelData.byteLength,
-        slope: modalityLutModule.rescaleSlope
-          ? modalityLutModule.rescaleSlope
-          : 1,
         width: imageFrame.columns,
         windowCenter: voiLutModule.windowCenter
           ? voiLutModule.windowCenter[0]
