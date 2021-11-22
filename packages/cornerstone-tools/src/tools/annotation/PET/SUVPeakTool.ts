@@ -6,6 +6,8 @@ import {
   getEnabledElement,
   getVolume,
   StackViewport,
+  eventTarget,
+  triggerEvent,
 } from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as EVENTS } from '../../../enums'
 import { Point3, Point2 } from '../../../types'
@@ -29,7 +31,7 @@ import {
   drawHandles as drawHandlesSvg,
 } from '../../../drawingSvg'
 import triggerAnnotationRenderForViewportUIDs from '../../../util/triggerAnnotationRenderForViewportUIDs'
-import { getToolStateForDisplay } from '../../../util/planar'
+import { getToolStateForDisplay, getImageIdForTool } from '../../../util/planar'
 
 import { addToolState, getToolState } from '../../../stateManagement/toolState'
 import suvPeakStrategy from './suvPeakStrategy'
@@ -71,7 +73,7 @@ interface SUVPeakSpecificToolData extends EllipticalRoiSpecificToolData {
       }
     }
     cachedStats: {
-      suvPeakValue: number
+      suvPeak: number
       suvMax: number
     }
   }
@@ -137,12 +139,33 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
+    // TODO: what do we do here? this feels wrong
+    let referencedImageId
+    if (viewport instanceof StackViewport) {
+      referencedImageId =
+        viewport.getCurrentImageId && viewport.getCurrentImageId()
+    } else {
+      const { volumeUID } = this.configuration
+      const imageVolume = getVolume(volumeUID)
+      referencedImageId = getImageIdForTool(
+        worldPos,
+        viewPlaneNormal,
+        viewUp,
+        imageVolume
+      )
+    }
+
+    if (referencedImageId) {
+      const colonIndex = referencedImageId.indexOf(':')
+      referencedImageId = referencedImageId.substring(colonIndex + 1)
+    }
+
     const toolData = {
       metadata: {
         viewPlaneNormal: <Point3>[...viewPlaneNormal],
         viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: '',
+        referencedImageId,
         toolName: this.name,
       },
       data: {
@@ -186,7 +209,7 @@ export default class SUVPeakTool extends EllipticalRoiTool {
           activeHandleIndex: null,
         },
         cachedStats: {
-          suvPeakValue: 0,
+          suvPeak: 0,
           suvMax: 0,
         },
       },
@@ -574,7 +597,13 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     resetElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const {
+      viewport,
+      renderingEngine,
+      viewportUID,
+      renderingEngineUID,
+      sceneUID,
+    } = enabledElement
 
     this.editData = null
     this.isDrawing = false
@@ -598,12 +627,21 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       renderingEngine,
     }
 
-    const [bottomWorld, topWorld, suvPeakValue, suvMax] =
-      this.applyActiveStrategy(eventDetail, operationData)
+    const [bottomWorld, topWorld, suvPeak, suvMax] = this.applyActiveStrategy(
+      eventDetail,
+      operationData
+    )
 
     toolData.secondaryData.handles.points = [bottomWorld, topWorld]
-    toolData.secondaryData.cachedStats.suvPeakValue = suvPeakValue
+    toolData.secondaryData.cachedStats.suvPeak = suvPeak
     toolData.secondaryData.cachedStats.suvMax = suvMax
+
+    triggerEvent(eventTarget, EVENTS.MEASUREMENT_MODIFIED, {
+      toolData,
+      viewportUID,
+      renderingEngineUID,
+      sceneUID,
+    })
 
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
@@ -797,7 +835,7 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       const annotationUID = toolMetadata.toolDataUID
 
       const data = toolData.data
-      const { suvPeakValue, suvMax } = data.cachedStats
+      const { suvPeak, suvMax } = data.cachedStats
       const { points } = data.handles
       // console.debug(points)
       // const { canvas, world } = center
@@ -838,7 +876,7 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       )
 
       const textLines = [
-        `SUV Peak: ${suvPeakValue.toFixed(2)}`,
+        `SUV Peak: ${suvPeak.toFixed(2)}`,
         `SUV Max: ${suvMax.toFixed(2)}`,
       ]
       if (!textLines || textLines.length === 0) {
