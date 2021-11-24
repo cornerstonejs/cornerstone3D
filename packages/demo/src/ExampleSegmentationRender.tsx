@@ -551,6 +551,7 @@ class SegmentationExample extends Component {
           statistic: 'max',
           weight: 0.41,
           numSlices,
+          overwrite: true,
         }
       )
 
@@ -565,6 +566,7 @@ class SegmentationExample extends Component {
         lowerThreshold: Number(this.state.thresholdMin),
         higherThreshold: Number(this.state.thresholdMax),
         numSlices,
+        overwrite: true,
       }
     )
 
