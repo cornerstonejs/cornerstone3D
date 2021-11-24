@@ -21,6 +21,7 @@ export type ViewportLabelmapsState = {
 export type ViewportLabelmapState = {
   volumeUID: string
   segmentsHidden: Set<number>
+  visibility: boolean
   colorLUTIndex: number
   cfun: vtkColorTransferFunction
   ofun: vtkPiecewiseFunction
@@ -74,6 +75,7 @@ const state: SegmentationState = {
     //     {
     //       volumeUID: 'labelmapUID1',
     //       colorLUTIndex: 0,
+    //       visibility: true,
     //       cfun: cfun,
     //       ofun: ofun,
     //       segmentsHidden: Set(),
@@ -85,10 +87,12 @@ const state: SegmentationState = {
     //         renderFill: true,
     //         fillAlpha: 0.9,
     //         fillAlphaInactive: 0.85,
+    //       },
     //     },
     //     {
     //       volumeUID: 'labelmapUID2',
     //       colorLUTIndex: 0,
+    //       visibility: true,
     //       cfun: cfun,
     //       ofun: ofun,
     //       segmentsHidden: Set(),
@@ -100,7 +104,7 @@ const state: SegmentationState = {
     //         renderFill: true,
     //         fillAlpha: 0.9,
     //         fillAlphaInactive: 0.85,
-    //     },
+    //        },
     //     },
     //   ],
     // },
@@ -186,6 +190,7 @@ function setLabelmapViewportSpecificState(
     labelmapState = {
       volumeUID: labelmapUID,
       segmentsHidden: new Set(),
+      visibility: true,
       colorLUTIndex: 0,
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),
@@ -194,12 +199,19 @@ function setLabelmapViewportSpecificState(
   }
   // Todo: check if there is a labelmapGlobalState
   const viewportLabelmapsState = _getLabelmapsStateForViewportUID(viewportUID)
-  const { segmentsHidden, colorLUTIndex, cfun, ofun, labelmapConfig } =
-    labelmapState
+  const {
+    segmentsHidden,
+    visibility,
+    colorLUTIndex,
+    cfun,
+    ofun,
+    labelmapConfig,
+  } = labelmapState
 
   viewportLabelmapsState.labelmaps[labelmapIndex] = {
     volumeUID: labelmapUID,
     segmentsHidden,
+    visibility,
     colorLUTIndex,
     cfun,
     ofun,

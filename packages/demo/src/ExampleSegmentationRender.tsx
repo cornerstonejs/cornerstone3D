@@ -11,6 +11,7 @@ import {
   lockedSegmentController,
   segmentIndexController,
   activeLabelmapController,
+  hideSegmentController,
   synchronizers,
   ToolBindings,
   ToolModes,
@@ -665,6 +666,13 @@ class SegmentationExample extends Component {
     )
   }
 
+  hideSegmentation = (segmentUID) => {
+    const sceneUID = this.state.sceneForSegmentation
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const { element } = scene.getViewports()[0]
+    hideSegmentController.toggleSegmentationVisibility(element, segmentUID)
+  }
+
   getToolStrategyUI = () => {
     const toolGroup = this.state.toolGroups[this.state.toolGroupName]
     if (!toolGroup) {
@@ -1005,6 +1013,24 @@ class SegmentationExample extends Component {
                     SegmentationModule.setGlobalConfig({ fillAlphaInactive })
                   }}
                 />
+              </div>
+              <div>
+                <button
+                  onClick={() =>
+                    this.hideSegmentation(this.state.selectedLabelmapUID)
+                  }
+                  className="btn btn-secondary"
+                  style={{ margin: '2px 4px' }}
+                >
+                  Hide Segment
+                </button>
+                <button
+                  onClick={() => this.hideSegmentation()}
+                  className="btn btn-secondary"
+                  style={{ margin: '2px 4px' }}
+                >
+                  Hide All Segments
+                </button>
               </div>
             </div>
           </div>

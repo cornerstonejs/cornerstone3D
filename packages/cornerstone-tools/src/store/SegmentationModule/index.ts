@@ -4,6 +4,7 @@ import { getLabelmapUIDsForElement, getLabelmapUIDForElement } from './utils'
 import * as lockedSegmentController from './lockedSegmentController'
 import * as segmentIndexController from './segmentIndexController'
 import * as activeLabelmapController from './activeLabelmapController'
+import * as hideSegmentController from './hideSegmentController'
 import config, { setGlobalConfig } from './segmentationConfig'
 import { addNewLabelmap } from './addNewLabelmap'
 import { setColorLUT, getColorForSegmentIndex } from './colorLUT'
@@ -19,6 +20,7 @@ export {
   lockedSegmentController,
   segmentIndexController,
   activeLabelmapController,
+  hideSegmentController,
 }
 
 export default {
@@ -31,6 +33,9 @@ export default {
 
   // active labelmap utils
   activeLabelmapController,
+
+  //
+  hideSegmentController,
 
   // Segment index utils
   segmentIndexController,

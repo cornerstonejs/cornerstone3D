@@ -62,6 +62,7 @@ import { ToolBindings, ToolModes, CornerstoneTools3DEvents } from './enums'
 const lockedSegmentController = SegmentationModule.lockedSegmentController
 const activeLabelmapController = SegmentationModule.activeLabelmapController
 const segmentIndexController = SegmentationModule.segmentIndexController
+const hideSegmentController = SegmentationModule.hideSegmentController
 
 export {
   // LifeCycle
@@ -106,6 +107,7 @@ export {
   lockedSegmentController,
   activeLabelmapController,
   segmentIndexController,
+  hideSegmentController,
   // Enums
   ToolBindings,
   ToolModes,
