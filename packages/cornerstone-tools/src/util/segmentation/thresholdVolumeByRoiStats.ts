@@ -10,6 +10,7 @@ export type ThresholdRoiStatsOptions = {
   statistic: 'max' | 'min'
   weight: number
   numSlices: number
+  overwrite: boolean
 }
 
 /**
@@ -38,7 +39,14 @@ function thresholdVolumeByRoiStats(
     throw new Error('labelmap is required')
   }
 
-  const { numSlices } = options
+  const { numSlices, overwrite } = options
+
+  const { scalarData } = labelmap
+  if (overwrite) {
+    for (let i = 0; i < scalarData.length; i++) {
+      scalarData[i] = 0
+    }
+  }
 
   const referenceVolume = referenceVolumes[0]
   const { vtkImageData, dimensions } = referenceVolume
@@ -76,6 +84,7 @@ function thresholdVolumeByRoiStats(
     lowerThreshold: options.weight * value,
     higherThreshold: +Infinity,
     numSlices,
+    overwrite,
   }
 
   // Run threshold volume by the new range

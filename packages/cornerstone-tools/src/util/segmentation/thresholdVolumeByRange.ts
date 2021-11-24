@@ -11,6 +11,7 @@ export type ThresholdRangeOptions = {
   higherThreshold: number
   lowerThreshold: number
   numSlices: number
+  overwrite: boolean
 }
 
 /**
@@ -36,9 +37,16 @@ function thresholdVolumeByRange(
     throw new Error('labelmap is required')
   }
 
-  const { dimensions, scalarData, vtkImageData: labelmapImageData } = labelmap
+  const { scalarData, vtkImageData: labelmapImageData } = labelmap
+  const { lowerThreshold, higherThreshold, numSlices, overwrite } = options
 
-  const { lowerThreshold, higherThreshold, numSlices } = options
+  // set the labelmap to all zeros
+  if (overwrite) {
+    for (let i = 0; i < scalarData.length; i++) {
+      scalarData[i] = 0
+    }
+  }
+
   let renderingEngine
 
   toolDataList.forEach((toolData) => {

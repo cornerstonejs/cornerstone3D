@@ -15,6 +15,7 @@ export type LabelmapStateUpdatedEvent = {
   renderingEngineUID: string
   sceneUID: string
   viewportUID: string
+  id: string
 }
 
 /**
@@ -80,6 +81,7 @@ function triggerLabelmapStateUpdated(
         renderingEngineUID,
         sceneUID,
         viewportUID,
+        id: labelmapUID,
       }
 
       triggerEvent(element, EVENTS.LABELMAP_STATE_UPDATED, eventData)
