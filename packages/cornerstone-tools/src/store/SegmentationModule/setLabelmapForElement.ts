@@ -1,4 +1,7 @@
-import { getEnabledElement, StackViewport } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  StackViewport,
+} from '@precisionmetrics/cornerstone-render'
 
 import state, {
   getGlobalStateForLabelmapUID,
@@ -73,9 +76,9 @@ async function setLabelmapForElement({
     },
   ])
 
-  scene.getViewports().forEach(({ element }) => {
-    triggerLabelmapStateUpdated(labelmapUID, element)
-  })
+  // Trigger the labelmap state updated event which
+  // will trigger the event for all the viewports that have the labelmap
+  triggerLabelmapStateUpdated(labelmapUID, element)
 }
 
 export default setLabelmapForElement
