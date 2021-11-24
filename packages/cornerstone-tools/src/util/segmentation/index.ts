@@ -2,12 +2,14 @@
 import getBoundingBoxAroundShape from './getBoundingBoxAroundShape'
 import thresholdVolumeByRange from './thresholdVolumeByRange'
 import thresholdVolumeByRoiStats from './thresholdVolumeByRoiStats'
+import calculateTMTV from './calculateTMTV'
 
 export {
   getBoundingBoxAroundShape,
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
+  calculateTMTV,
 }
 
 export default {
@@ -15,4 +17,5 @@ export default {
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
+  calculateTMTV,
 }

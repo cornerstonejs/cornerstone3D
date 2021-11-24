@@ -131,6 +131,7 @@ class SegmentationExample extends Component {
     thresholdMax: 100,
     numSlicesForThreshold: 1,
     selectedStrategy: '',
+    tmtv: null,
   }
 
   constructor(props) {
@@ -536,6 +537,24 @@ class SegmentationExample extends Component {
     this.setState({ activeSegmentIndex: newIndex, segmentLocked })
   }
 
+  calculateTMTV = () => {
+    const sceneUID = this.state.sceneForSegmentation
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const { element } = scene.getViewports()[0]
+    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
+
+    const labelmaps = labelmapUIDs.map((uid) => cache.getVolume(uid))
+    const segmentationIndex = 1
+    const tmtv = csToolsUtils.segmentation.calculateTMTV(
+      labelmaps,
+      segmentationIndex
+    )
+    this.setState((prevState) => ({
+      ...prevState,
+      tmtv,
+    }))
+  }
+
   executeThresholding = (mode) => {
     const ptVolume = cache.getVolume(ptVolumeUID)
     const labelmapVolume = cache.getVolume(this.state.selectedLabelmapUID)
@@ -644,6 +663,15 @@ class SegmentationExample extends Component {
         >
           Execute Max Thresholding on Selected Annotation
         </button>
+        <button
+          style={{ marginLeft: '5px' }}
+          onClick={() => this.calculateTMTV()}
+        >
+          Calculate TMTV
+        </button>
+        {this.state.tmtv !== null && (
+          <span>{`    TMTV: ${this.state.tmtv} voxels`}</span>
+        )}
       </>
     )
   }
