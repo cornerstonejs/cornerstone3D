@@ -8,19 +8,8 @@ import {
 import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
 import pointInSurroundingSphereCallback from '../../../util/planar/pointInSurroundingSphereCallback'
 
-type CircleCanvasPoints = {
-  bottom: {
-    world: Point3
-    canvas: Point2
-  }
-  top: {
-    world: Point3
-    canvas: Point2
-  }
-}
-
 type OperationData = {
-  points: CircleCanvasPoints
+  points: [Point3, Point3, Point3, Point3]
   volume: IImageVolume
   segmentIndex: number
   segmentsLocked: number[]
@@ -39,13 +28,11 @@ function fillSphere(
   _inside = true
 ): void {
   const { enabledElement } = evt
-  const { renderingEngine } = enabledElement
+  const { renderingEngine, viewport } = enabledElement
   const {
     volume: labelmapVolume,
     segmentsLocked,
     segmentIndex,
-    viewUp,
-    viewPlaneNormal,
     points,
   } = operationData
 
@@ -59,9 +46,9 @@ function fillSphere(
   }
 
   pointInSurroundingSphereCallback(
+    viewport,
     labelmapVolume,
-    { viewUp, viewPlaneNormal },
-    points,
+    [points[0], points[1]],
     callback
   )
 

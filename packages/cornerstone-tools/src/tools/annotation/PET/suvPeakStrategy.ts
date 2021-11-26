@@ -8,7 +8,7 @@ import { vec3 } from 'gl-matrix'
 import pointInSurroundingSphereCallback from '../../../util/planar/pointInSurroundingSphereCallback'
 
 type OperationData = {
-  points: [Point3, Point3]
+  points: [Point3, Point3, Point3, Point3]
   volume: IImageVolume
   viewPlaneNormal: Point3
   viewUp: Point3
@@ -36,6 +36,7 @@ export default function suvPeakStrategy(
   operationData: OperationData
 ): any {
   const { enabledElement } = evt
+  const { viewport } = enabledElement
   const {
     volume: ptVolume,
     points: circlePoints,
@@ -60,9 +61,9 @@ export default function suvPeakStrategy(
   }
 
   pointInSurroundingSphereCallback(
+    viewport,
     ptVolume,
-    { viewUp, viewPlaneNormal },
-    circlePoints,
+    [circlePoints[0], circlePoints[1]],
     callback
   )
 
@@ -77,7 +78,7 @@ export default function suvPeakStrategy(
   vtkImageData.indexToWorld(<vec3>maxIntensityIJK, secondaryCircleWorld)
   vec3.scaleAndAdd(bottomWorld, secondaryCircleWorld, viewUp, -diameter / 2)
   vec3.scaleAndAdd(topWorld, secondaryCircleWorld, viewUp, diameter / 2)
-  const suvPeakCirclePoints = [bottomWorld, topWorld]
+  const suvPeakCirclePoints = [bottomWorld, topWorld] as [Point3, Point3]
 
   /**
    * 3. Find the Mean and Max of the 1cc sphere centered on the suv Max of the previous
@@ -95,8 +96,8 @@ export default function suvPeakStrategy(
   }
 
   pointInSurroundingSphereCallback(
+    viewport,
     ptVolume,
-    { viewUp, viewPlaneNormal },
     suvPeakCirclePoints,
     suvPeakMeanCallback
   )

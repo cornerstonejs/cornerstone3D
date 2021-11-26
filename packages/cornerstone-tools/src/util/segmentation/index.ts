@@ -3,6 +3,8 @@ import getBoundingBoxAroundShape from './getBoundingBoxAroundShape'
 import thresholdVolumeByRange from './thresholdVolumeByRange'
 import thresholdVolumeByRoiStats from './thresholdVolumeByRoiStats'
 import triggerLabelmapRender from './triggerLabelmapRender'
+import calculateSuvPeak from './calculateSuvPeak'
+import calculateTMTV from './calculateTMTV'
 
 export {
   getBoundingBoxAroundShape,
@@ -10,6 +12,8 @@ export {
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
   triggerLabelmapRender,
+  calculateSuvPeak,
+  calculateTMTV,
 }
 
 export default {
@@ -18,4 +22,6 @@ export default {
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
   triggerLabelmapRender,
+  calculateSuvPeak,
+  calculateTMTV,
 }

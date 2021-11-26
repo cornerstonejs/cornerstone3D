@@ -1,14 +1,13 @@
 import { vec3 } from 'gl-matrix'
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 
-import { getBoundingBoxAroundShape } from '../segmentation'
-import { RectangleRoiThresholdToolData } from '../../tools/segmentation/RectangleRoiThreshold'
-import { Point3, Point2 } from '../../types'
+import { Point3 } from '../../types'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
-import triggerLabelmapRender from './triggerLabelmapRender'
+import pointInSurroundingSphereCallback from '../../util/planar/pointInSurroundingSphereCallback'
 
 /** */
 function calculateSuvPeak(
+  viewport,
   labelmap: IImageVolume,
   referenceVolume: IImageVolume,
   segmentIndex: number
@@ -34,28 +33,6 @@ function calculateSuvPeak(
     vtkImageData: referenceVolumeImageData,
   } = referenceVolume
 
-  const yMultiple = dimensions[0]
-  const zMultiple = dimensions[0] * dimensions[1]
-
-  // loop inside the scalardata
-  // if the labelmap pixel is the same as the segmentIndex
-  // add the reference pixel to the sum
-
-  // let max = 0
-  // let index = 0
-  // for (let i = 0; i < labelmapData.length; i++) {
-  //   if (labelmapData[i] !== segmentIndex) {
-  //     continue
-  //   }
-
-  //   const referenceValue = referenceData[i]
-
-  //   if (referenceValue > max) {
-  //     max = referenceValue
-  //     index = i
-  //   }
-  // }
-
   let max = 0
   let maxIJK = [0, 0, 0]
 
@@ -77,17 +54,54 @@ function calculateSuvPeak(
 
   pointInShapeCallback(
     undefined,
-    scalarData,
+    labelmapData,
     labelmapImageData,
     dimensions,
     () => true,
     callback
   )
 
-  // Get the bounds of the segmentIndex?
-  // inShapeCallback to get the maximum
-  // on the maximum draw 1cc
-  // in shapeCallback to calculate mean
+  const camera = viewport.getCamera()
+  const { viewUp } = camera
+
+  /**
+   * 2. Find the bottom and top of the great circle for the second sphere (1cc sphere)
+   * diameter of 12mm = 1.2cm ~ = 1cc sphere
+   */
+  const diameter = 12
+  const secondaryCircleWorld = vec3.create()
+  const bottomWorld = vec3.create()
+  const topWorld = vec3.create()
+  referenceVolumeImageData.indexToWorld(<vec3>maxIJK, secondaryCircleWorld)
+  vec3.scaleAndAdd(bottomWorld, secondaryCircleWorld, viewUp, -diameter / 2)
+  vec3.scaleAndAdd(topWorld, secondaryCircleWorld, viewUp, diameter / 2)
+  const suvPeakCirclePoints = [bottomWorld, topWorld] as [Point3, Point3]
+
+  /**
+   * 3. Find the Mean and Max of the 1cc sphere centered on the suv Max of the previous
+   * sphere
+   */
+  let count = 0
+  let acc = 0
+  const suvPeakMeanCallback = ({ value }) => {
+    acc += value
+    count += 1
+  }
+
+  pointInSurroundingSphereCallback(
+    viewport,
+    referenceVolume,
+    suvPeakCirclePoints,
+    suvPeakMeanCallback
+  )
+
+  const mean = acc / count
+
+  return {
+    max,
+    maxIJK,
+    mean,
+  }
 }
 
 export default calculateSuvPeak
