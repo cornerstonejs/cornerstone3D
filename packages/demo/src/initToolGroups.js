@@ -30,6 +30,7 @@ const {
   CircleScissorsTool,
   SphereScissorsTool,
   RectangleRoiThreshold,
+  RectangleRoiThresholdManual,
   SUVPeakTool,
 } = csTools3d
 
@@ -243,6 +244,7 @@ function initToolGroups(toolConfiguration = {}) {
   csTools3d.addTool(CircleScissorsTool, toolConfiguration)
   csTools3d.addTool(SphereScissorsTool, toolConfiguration)
   csTools3d.addTool(RectangleRoiThreshold, toolConfiguration)
+  csTools3d.addTool(RectangleRoiThresholdManual, toolConfiguration)
   csTools3d.addTool(SUVPeakTool, toolConfiguration)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
@@ -259,7 +261,9 @@ function initToolGroups(toolConfiguration = {}) {
   const colorSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.COLOR
   )
-  const prostateSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PROSTATE)
+  const prostateSceneToolGroup = ToolGroupManager.createToolGroup(
+    TOOL_GROUP_UIDS.PROSTATE
+  )
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.FUSION
   )
@@ -512,6 +516,9 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool('RectangleRoiThreshold', {
       configuration: { volumeUID: ctVolumeUID },
     })
+    ctSceneToolGroup.addTool('RectangleRoiThresholdManual', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
     ctSceneToolGroup.addTool('CircleScissors', {
       configuration: { volumeUID: ctVolumeUID },
     })
@@ -653,6 +660,9 @@ function addToolsToToolGroups({
       configuration: { volumeUID: ptVolumeUID },
     })
     ptSceneToolGroup.addTool('RectangleRoiThreshold', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('RectangleRoiThresholdManual', {
       configuration: { volumeUID: ptVolumeUID },
     })
     ptSceneToolGroup.addTool('CircleScissors', {
