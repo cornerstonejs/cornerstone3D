@@ -568,6 +568,7 @@ class SegmentationExample extends Component {
     const labelmaps = labelmapUIDs.map((uid) => cache.getVolume(uid))
     const segmentationIndex = 1
     const suvPeak = csToolsUtils.segmentation.calculateSuvPeak(
+      viewport,
       labelmaps[0],
       referenceVolume,
       segmentationIndex
@@ -696,7 +697,7 @@ class SegmentationExample extends Component {
           Calculate SUV Peak
         </button>
         {this.state.tmtv !== null && (
-          <span>{`    TMTV: ${this.state.tmtv} voxels`}</span>
+          <span>{`    TMTV: ${this.state.tmtv.toFixed(2)} ml`}</span>
         )}
       </>
     )

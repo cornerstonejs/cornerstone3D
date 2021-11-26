@@ -1,4 +1,8 @@
 import {
+  VolumeViewport,
+  StackViewport,
+} from '@precisionmetrics/cornerstone-render'
+import {
   Point3,
   IImageVolume,
 } from '@precisionmetrics/cornerstone-render/src/types'
@@ -16,18 +20,17 @@ function worldToIndex(imageData, ain) {
   return vout
 }
 
-type PartialCamera = {
-  viewUp: Point3
-  viewPlaneNormal: Point3
-}
-
+// Todo: I *think* this can be done without the need to access viewport's camera
+// since sphere's center circle can be in any plane as long as its center
+// is the center of the sphere ...
 export default function pointInSurroundingSphereCallback(
+  viewport: VolumeViewport | StackViewport,
   volume: IImageVolume,
-  camera: PartialCamera,
-  circlePoints: [Point3, Point3, Point3, Point3],
+  circlePoints: [Point3, Point3],
   callback: PointInShapeCallback
 ): void {
   const { vtkImageData, scalarData, dimensions } = volume
+  const camera = viewport.getCamera()
 
   // Calculate viewRight from the camera, this will get used in order to
   // calculate circles topLeft and bottomRight on different planes of intersection

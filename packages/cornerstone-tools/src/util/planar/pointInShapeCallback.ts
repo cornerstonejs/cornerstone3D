@@ -1,4 +1,4 @@
-import { Point3, Point2 } from '@ohif/cornerstone-render/src/types'
+import { Point3, Point2 } from '@precisionmetrics/cornerstone-render/src/types'
 import { vec3 } from 'gl-matrix'
 
 export type PointInShapeCallback = ({
@@ -16,7 +16,18 @@ export default function pointInShapeCallback(
   pointInShapeFn,
   callback: PointInShapeCallback
 ): void {
-  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
+  let iMin, iMax, jMin, jMax, kMin, kMax
+
+  if (!boundsIJK) {
+    iMin = 0
+    iMax = dimensions[0]
+    jMin = 0
+    jMax = dimensions[1]
+    kMin = 0
+    kMax = dimensions[2]
+  } else {
+    ;[[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
+  }
 
   const start = vec3.fromValues(iMin, jMin, kMin)
 

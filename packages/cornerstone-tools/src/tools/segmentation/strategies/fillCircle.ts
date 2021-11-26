@@ -3,7 +3,7 @@ import {
   Point3,
   IImageVolume,
   IEnabledElement,
-} from '@ohif/cornerstone-render/src/types'
+} from '@precisionmetrics/cornerstone-render/src/types'
 
 import {
   getCanvasEllipseCorners,
