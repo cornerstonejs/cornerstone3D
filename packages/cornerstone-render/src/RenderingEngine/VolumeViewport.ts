@@ -1,11 +1,13 @@
+import { vec3 } from 'gl-matrix'
 import VIEWPORT_TYPE from '../constants/viewportType'
 import Scene from './Scene'
 import Viewport from './Viewport'
-
 import { ViewportInput, Point2, Point3, IImageData } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import { ActorEntry, FlipDirection } from '../types'
 import { getShouldUseCPURendering } from '../init'
+
+const EPSILON = 1e-3
 
 /**
  * An object representing a single viewport, which is a camera
@@ -309,6 +311,48 @@ class VolumeViewport extends Viewport {
     vtkCamera.setSlabThicknessActive(slabThicknessActive)
 
     return canvasCoord
+  }
+
+  /**
+   * Uses viewport camera and volume actor to decide if the viewport
+   * is looking at the volume in the direction of acquisition (imageIds).
+   * If so, it uses the origin and focalPoint to calculate the slice index
+   *
+   * @returns {number|null} The slice index
+   */
+  public getCurrentImageIdIndex = (): number => {
+    const { viewPlaneNormal, focalPoint } = this.getCamera()
+
+    // Todo: handle scenario of fusion of multiple volumes
+    // we cannot only check number of actors, because we might have
+    // segmentations ...
+    const { direction, origin, spacing } = this.getImageData()
+
+    // get the last 3 components of the direction - axis normal
+    const dir = direction.slice(direction.length - 3)
+
+    const dot = Math.abs(
+      dir[0] * viewPlaneNormal[0] +
+        dir[1] * viewPlaneNormal[1] +
+        dir[2] * viewPlaneNormal[2]
+    )
+
+    // if dot is not 1 or -1 return null since it means
+    // viewport is not looking at the image acquisition plane
+    if (dot - 1 > EPSILON) {
+      return null
+    }
+
+    // how many steps are from the origin to the focal point in the
+    // normal direction
+    const spacingInNormal = spacing[2]
+    const sub = vec3.create()
+    vec3.sub(sub, focalPoint, origin)
+    const distance = vec3.dot(sub, viewPlaneNormal)
+
+    // divide by the spacing in the normal direction to get the
+    // number of steps, and subtract 1 to get the index
+    return Math.round(Math.abs(distance) / spacingInNormal)
   }
 
   //public getCurrentImageId() : string | undefined => {

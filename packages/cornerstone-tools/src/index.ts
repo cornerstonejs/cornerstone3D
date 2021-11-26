@@ -55,6 +55,7 @@ import {
   CircleScissorsTool,
   SphereScissorsTool,
   RectangleRoiThreshold,
+  RectangleRoiThresholdManual,
   SUVPeakTool,
 } from './tools'
 import { ToolBindings, ToolModes, CornerstoneTools3DEvents } from './enums'
@@ -94,6 +95,7 @@ export {
   CircleScissorsTool,
   SphereScissorsTool,
   RectangleRoiThreshold,
+  RectangleRoiThresholdManual,
   // PET annotation
   SUVPeakTool,
   // Synchronizers

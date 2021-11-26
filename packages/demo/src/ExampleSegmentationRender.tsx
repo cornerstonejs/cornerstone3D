@@ -560,10 +560,12 @@ class SegmentationExample extends Component {
     const scene = this.renderingEngine.getScene(sceneUID)
     const viewport = scene.getViewports()[0]
 
-    const {uid} = viewport.getDefaultActor()
+    const { uid } = viewport.getDefaultActor()
     const referenceVolume = cache.getVolume(uid)
 
-    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(viewport.element)
+    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(
+      viewport.element
+    )
 
     const labelmaps = labelmapUIDs.map((uid) => cache.getVolume(uid))
     const segmentationIndex = 1
@@ -636,18 +638,28 @@ class SegmentationExample extends Component {
     return (
       <>
         {this.getScissorsUI()}
-        <label htmlFor="numSlices" style={{ marginLeft: '5px' }}>
-          Number of Slices (+/-)
-        </label>
-        <input
-          type="number"
-          style={{ marginLeft: '5px' }}
-          name="numSlices"
-          value={this.state.numSlicesForThreshold}
-          onChange={(evt) => {
-            this.setState({ numSlicesForThreshold: Number(evt.target.value) })
-          }}
-        />
+
+        {this.state.ptCtLeftClickTool === RECTANGLE_ROI_THRESHOLD ? (
+          <>
+            <label htmlFor="numSlices" style={{ marginLeft: '5px' }}>
+            Number of Slices (+/-)
+                    </label>
+            <input
+              type="number"
+              style={{ marginLeft: '5px' }}
+              name="numSlices"
+              value={this.state.numSlicesForThreshold}
+              onChange={(evt) => {
+                this.setState({ numSlicesForThreshold: Number(evt.target.value) })
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <button onClick={()=>this.setStartSlice()}>Set Start Slice</button>
+            <button onClick={()=>this.setEndSlice()}>Set End Slice</button>
+          </>
+        )}
         <label htmlFor="thresholdMin" style={{ marginLeft: '5px' }}>
           Min value
         </label>
@@ -874,7 +886,7 @@ class SegmentationExample extends Component {
         <div>{this.getSetToolModes()}</div>
         {this.state.segmentationToolActive && (
           <div style={{ marginTop: '15px' }}>
-            {this.state.ptCtLeftClickTool === RECTANGLE_ROI_THRESHOLD
+            {this.state.ptCtLeftClickTool.includes(RECTANGLE_ROI_THRESHOLD)
               ? this.getThresholdUID()
               : this.getScissorsUI()}
             <div
