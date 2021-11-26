@@ -49,9 +49,9 @@ function fillSphere(
     points,
   } = operationData
 
-  const { scalarData, vtkImageData, dimensions } = labelmapVolume
+  const { scalarData, vtkImageData } = labelmapVolume
 
-  const callback = (_canvasCoords, _pointIJK, index, value) => {
+  const callback = ({ index, value }) => {
     if (segmentsLocked.includes(value)) {
       return
     }
@@ -59,7 +59,6 @@ function fillSphere(
   }
 
   pointInSurroundingSphereCallback(
-    enabledElement,
     labelmapVolume,
     { viewUp, viewPlaneNormal },
     points,

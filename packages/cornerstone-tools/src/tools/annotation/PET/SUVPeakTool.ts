@@ -19,10 +19,7 @@ import {
 import { state } from '../../../store'
 
 import { isToolDataLocked } from '../../../stateManagement/toolDataLocking'
-import {
-  pointInEllipse,
-  getCanvasEllipseCorners,
-} from '../../../util/math/ellipse'
+import { getCanvasEllipseCorners } from '../../../util/math/ellipse'
 import { getViewportUIDsWithToolToRender } from '../../../util/viewportFilters'
 
 import { getTextBoxCoordsCanvas } from '../../../util/drawing'
@@ -431,8 +428,14 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
     }
 
-    const pointInMinorEllipse = pointInEllipse(minorEllipse, canvasCoords)
-    const pointInMajorEllipse = pointInEllipse(majorEllipse, canvasCoords)
+    const pointInMinorEllipse = this._pointInEllipseCanvas(
+      minorEllipse,
+      canvasCoords
+    )
+    const pointInMajorEllipse = this._pointInEllipseCanvas(
+      majorEllipse,
+      canvasCoords
+    )
 
     if (pointInMajorEllipse && !pointInMinorEllipse) {
       return true

@@ -59,7 +59,7 @@ function calculateSuvPeak(
   let max = 0
   let maxIJK = [0, 0, 0]
 
-  const callback = (canvasCoords, pointIJK, index, newValue) => {
+  const callback = ({ pointIJK }) => {
     const offset = referenceVolumeImageData.computeOffsetIndex(pointIJK)
     const value = labelmapData[offset]
 
@@ -77,7 +77,6 @@ function calculateSuvPeak(
 
   pointInShapeCallback(
     undefined,
-    viewport.worldToCanvas,
     scalarData,
     labelmapImageData,
     dimensions,
