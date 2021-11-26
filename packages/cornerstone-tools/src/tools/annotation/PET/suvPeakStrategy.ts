@@ -52,7 +52,7 @@ export default function suvPeakStrategy(
   let maxIntensity = -Infinity
   let maxIntensityIJK = [0, 0, 0]
 
-  const callback = (canvasCoords, pointIJK, index, value) => {
+  const callback = ({ pointIJK, value }) => {
     if (value > maxIntensity) {
       maxIntensity = value
       maxIntensityIJK = pointIJK
@@ -60,7 +60,6 @@ export default function suvPeakStrategy(
   }
 
   pointInSurroundingSphereCallback(
-    enabledElement,
     ptVolume,
     { viewUp, viewPlaneNormal },
     circlePoints,
@@ -87,7 +86,7 @@ export default function suvPeakStrategy(
   let count = 0
   let acc = 0
   let max = -Infinity
-  const suvPeakMeanCallback = (canvasCoords, pointIJK, index, value) => {
+  const suvPeakMeanCallback = ({ value }) => {
     if (value > max) {
       max = value
     }
@@ -96,7 +95,6 @@ export default function suvPeakStrategy(
   }
 
   pointInSurroundingSphereCallback(
-    enabledElement,
     ptVolume,
     { viewUp, viewPlaneNormal },
     suvPeakCirclePoints,
