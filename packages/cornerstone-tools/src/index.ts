@@ -14,6 +14,7 @@ import {
   removeToolStateByToolDataUID,
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
+  getToolDataByToolDataUID,
 } from './stateManagement'
 
 import { init, destroy } from './init'
@@ -139,4 +140,5 @@ export {
   Cursors,
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
+  getToolDataByToolDataUID,
 }

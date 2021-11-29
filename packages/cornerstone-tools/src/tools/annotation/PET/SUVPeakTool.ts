@@ -163,6 +163,7 @@ export default class SUVPeakTool extends EllipticalRoiTool {
         viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
+        label: '',
         toolName: this.name,
       },
       data: {

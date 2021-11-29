@@ -32,6 +32,10 @@ type ToolSpecificToolData = {
      */
     FrameOfReferenceUID: string
     /**
+     * The registered name of the tool
+     */
+    toolName: string
+    /**
      * An optional property used when annotating on a slice in a StackViewport,
      * or when annotating in a VolumeViewport on a viewPlane that corresponds to
      * original slice-based image data.
@@ -40,7 +44,11 @@ type ToolSpecificToolData = {
     /**
      * The registered name of the tool
      */
-    toolName: string
+    label?: string
+    /**
+     * The registered name of the tool
+     */
+    text?: string
     /**
      * VolumeUID of the volume that the tool was configured to work on.
      */
