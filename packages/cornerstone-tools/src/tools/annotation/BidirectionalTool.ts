@@ -132,6 +132,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         toolName: this.name,
+        label: '',
         referencedImageId,
       },
       data: {

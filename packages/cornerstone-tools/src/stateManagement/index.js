@@ -15,6 +15,7 @@ import {
   removeToolStateByToolDataUID,
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
+  getToolDataByToolDataUID,
 } from './toolState'
 
 export {
@@ -33,4 +34,5 @@ export {
   removeToolStateByToolDataUID,
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
+  getToolDataByToolDataUID,
 }
