@@ -1,4 +1,7 @@
 import React, { Component } from 'react'
+
+import { vec3 } from 'gl-matrix'
+
 import {
   cache,
   RenderingEngine,
@@ -64,6 +67,7 @@ const toolsToUse = [
 const labelmap1UID = 'boneAndSoftTissue'
 const labelmap2UID = 'fatTissue'
 const RECTANGLE_ROI_THRESHOLD = 'RectangleRoiThreshold'
+const RECTANGLE_ROI_THRESHOLD_MANUAL = 'RectangleRoiThresholdManual'
 
 class SegmentationExample extends Component {
   _elementNodes = null
@@ -578,12 +582,81 @@ class SegmentationExample extends Component {
     console.debug('suvPeak', suvPeak)
   }
 
-  executeThresholding = (mode) => {
+  setEndSlice = () => {
+    const sceneUID = this.state.sceneForSegmentation
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const viewport = scene.getViewports()[0]
+
+    const selectedToolDataList =
+      toolDataSelection.getSelectedToolDataByToolName(
+        RECTANGLE_ROI_THRESHOLD_MANUAL
+      )
+
+    const toolData = selectedToolDataList[0]
+
+    // get the current slice Index
+    const sliceIndex = viewport.getCurrentImageIdIndex()
+    toolData.data.endSlice = sliceIndex
+
+    viewport.render()
+  }
+
+  setStartSlice = () => {
+    const sceneUID = this.state.sceneForSegmentation
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const viewport = scene.getViewports()[0]
+
+    const { focalPoint, viewPlaneNormal } = viewport.getCamera()
+
+    const selectedToolDataList =
+      toolDataSelection.getSelectedToolDataByToolName(
+        RECTANGLE_ROI_THRESHOLD_MANUAL
+      )
+
+    const toolData = selectedToolDataList[0]
+    const { handles } = toolData.data
+    const { points } = handles
+
+    // get the current slice Index
+    const sliceIndex = viewport.getCurrentImageIdIndex()
+    toolData.data.startSlice = sliceIndex
+
+    // distance between camera focal point and each point on the rectangle
+    const newPoints = points.map((point) => {
+      const distance = vec3.create()
+      vec3.subtract(distance, focalPoint, point)
+      // distance in the direction of the viewPlaneNormal
+      const distanceInViewPlane = vec3.dot(distance, viewPlaneNormal)
+      // new point is current point minus distanceInViewPlane
+      const newPoint = vec3.create()
+      vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, -distanceInViewPlane)
+
+      return newPoint
+      //
+    })
+
+    handles.points = newPoints
+    viewport.render()
+  }
+
+  executeThresholding = (mode, activeTool) => {
     const ptVolume = cache.getVolume(ptVolumeUID)
     const labelmapVolume = cache.getVolume(this.state.selectedLabelmapUID)
     const numSlices = this.state.numSlicesForThreshold
     const selectedToolDataList =
-      toolDataSelection.getSelectedToolDataByToolName(RECTANGLE_ROI_THRESHOLD)
+      toolDataSelection.getSelectedToolDataByToolName(activeTool)
+
+    let slices
+    if (activeTool === RECTANGLE_ROI_THRESHOLD_MANUAL) {
+      const data = selectedToolDataList[0].data
+      slices = {
+        sliceNumbers: [data.startSlice, data.endSlice],
+      }
+    } else {
+      slices = {
+        numSlices,
+      }
+    }
 
     if (mode === 'max') {
       csToolsUtils.segmentation.thresholdVolumeByRoiStats(
@@ -593,7 +666,7 @@ class SegmentationExample extends Component {
         {
           statistic: 'max',
           weight: 0.41,
-          numSlices,
+          slices,
           overwrite: true,
         }
       )
@@ -608,7 +681,7 @@ class SegmentationExample extends Component {
       {
         lowerThreshold: Number(this.state.thresholdMin),
         higherThreshold: Number(this.state.thresholdMax),
-        numSlices,
+        slices,
         overwrite: true,
       }
     )
@@ -642,22 +715,26 @@ class SegmentationExample extends Component {
         {this.state.ptCtLeftClickTool === RECTANGLE_ROI_THRESHOLD ? (
           <>
             <label htmlFor="numSlices" style={{ marginLeft: '5px' }}>
-            Number of Slices (+/-)
-                    </label>
+              Number of Slices (+/-)
+            </label>
             <input
               type="number"
               style={{ marginLeft: '5px' }}
               name="numSlices"
               value={this.state.numSlicesForThreshold}
               onChange={(evt) => {
-                this.setState({ numSlicesForThreshold: Number(evt.target.value) })
+                this.setState({
+                  numSlicesForThreshold: Number(evt.target.value),
+                })
               }}
             />
           </>
         ) : (
           <>
-            <button onClick={()=>this.setStartSlice()}>Set Start Slice</button>
-            <button onClick={()=>this.setEndSlice()}>Set End Slice</button>
+            <button onClick={() => this.setStartSlice()}>
+              Set Start Slice
+            </button>
+            <button onClick={() => this.setEndSlice()}>Set End Slice</button>
           </>
         )}
         <label htmlFor="thresholdMin" style={{ marginLeft: '5px' }}>
@@ -686,13 +763,17 @@ class SegmentationExample extends Component {
         />
         <button
           style={{ marginLeft: '5px' }}
-          onClick={() => this.executeThresholding('')}
+          onClick={() =>
+            this.executeThresholding('', this.state.ptCtLeftClickTool)
+          }
         >
           Execute Range Thresholding on Selected Annotation
         </button>
         <button
           style={{ marginLeft: '5px' }}
-          onClick={() => this.executeThresholding('max')}
+          onClick={() =>
+            this.executeThresholding('max', this.state.ptCtLeftClickTool)
+          }
         >
           Execute Max Thresholding on Selected Annotation
         </button>
