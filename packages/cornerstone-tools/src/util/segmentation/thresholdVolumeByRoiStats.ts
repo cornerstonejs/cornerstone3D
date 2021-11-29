@@ -5,11 +5,18 @@ import { getBoundingBoxAroundShape } from '../segmentation'
 import { RectangleRoiThresholdToolData } from '../../tools/segmentation/RectangleRoiThreshold'
 import { Point3 } from '../../types'
 import thresholdVolumeByRange from './thresholdVolumeByRange'
+import {
+  extendBoundingBoxInViewAxis,
+  getBoundIJKFromSliceNumbers,
+} from './thresholdVolumeByRange'
 
 export type ThresholdRoiStatsOptions = {
   statistic: 'max' | 'min'
   weight: number
-  numSlices: number
+  slices: {
+    numSlices?: number // put numSlices before and after the current slice
+    sliceNumbers?: number[] // absolute slice numbers
+  }
   overwrite: boolean
 }
 
@@ -39,7 +46,7 @@ function thresholdVolumeByRoiStats(
     throw new Error('labelmap is required')
   }
 
-  const { numSlices, overwrite } = options
+  const { slices, overwrite } = options
 
   const { scalarData } = labelmap
   if (overwrite) {
@@ -59,20 +66,36 @@ function thresholdVolumeByRoiStats(
 
   toolDataList.forEach((toolData) => {
     const { points } = toolData.data.handles
+    const { enabledElement } = toolData.metadata
+    const { viewport } = enabledElement
+    const { viewPlaneNormal } = viewport.getCamera()
 
     const rectangleCornersIJK = points.map(
       (world) => _worldToIndex(vtkImageData, world) as Point3
     )
 
-    const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] =
-      getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
+    const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
-    const kMinToUse = kMin - numSlices
-    const kMaxToUse = kMax + numSlices
+    let extendedBoundsIJK
+    if (slices.numSlices) {
+      extendedBoundsIJK = extendBoundingBoxInViewAxis(
+        boundsIJK,
+        slices.numSlices
+      )
+    } else if (slices.sliceNumbers) {
+      extendedBoundsIJK = getBoundIJKFromSliceNumbers(
+        boundsIJK,
+        slices.sliceNumbers,
+        vtkImageData,
+        viewPlaneNormal
+      )
+    }
+
+    const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = extendedBoundsIJK
 
     for (let i = iMin; i <= iMax; i++) {
       for (let j = jMin; j <= jMax; j++) {
-        for (let k = kMinToUse; k <= kMaxToUse; k++) {
+        for (let k = kMin; k <= kMax; k++) {
           const offset = vtkImageData.computeOffsetIndex([i, j, k])
           value = fn(values[offset], value)
         }
@@ -83,7 +106,10 @@ function thresholdVolumeByRoiStats(
   const rangeOptions = {
     lowerThreshold: options.weight * value,
     higherThreshold: +Infinity,
-    numSlices,
+    slices: {
+      numSlices: slices.numSlices,
+      sliceNumbers: slices.sliceNumbers,
+    },
     overwrite,
   }
 
