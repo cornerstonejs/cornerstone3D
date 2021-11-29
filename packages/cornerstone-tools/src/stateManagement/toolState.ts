@@ -17,7 +17,7 @@ function getDefaultToolStateManager() {
 }
 
 function getViewportSpecificStateManager(
-  element: Types.IEnabledElement | HTMLElement
+  element?: Types.IEnabledElement | HTMLElement
 ) {
   // TODO:
   // We may want multiple FrameOfReferenceSpecificStateManagers.
@@ -145,9 +145,20 @@ function removeToolStateByToolDataUID(
   triggerEvent(eventTarget, eventType, eventDetail)
 }
 
+function getToolDataByToolDataUID(
+  toolDataUID: string,
+  element?: HTMLElement
+): ToolSpecificToolData {
+  const toolStateManager = getViewportSpecificStateManager(element)
+  const toolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
+
+  return toolData
+}
+
 export {
   getToolState,
   addToolState,
+  getToolDataByToolDataUID,
   removeToolState,
   removeToolStateByToolDataUID,
   getViewportSpecificStateManager,

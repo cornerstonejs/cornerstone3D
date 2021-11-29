@@ -148,6 +148,7 @@ class LengthTool extends BaseAnnotationTool {
         viewUp: <Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
+        label: '',
         toolName: this.name,
       },
       data: {
