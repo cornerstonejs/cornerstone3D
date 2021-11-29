@@ -10,7 +10,10 @@ import triggerLabelmapRender from './triggerLabelmapRender'
 export type ThresholdRangeOptions = {
   higherThreshold: number
   lowerThreshold: number
-  numSlices: number
+  slices: {
+    numSlices?: number // put numSlices before and after the current slice
+    sliceNumbers?: number[] // absolute slice numbers
+  }
   overwrite: boolean
 }
 
@@ -38,7 +41,7 @@ function thresholdVolumeByRange(
   }
 
   const { scalarData, vtkImageData: labelmapImageData } = labelmap
-  const { lowerThreshold, higherThreshold, numSlices, overwrite } = options
+  const { lowerThreshold, higherThreshold, slices, overwrite } = options
 
   // set the labelmap to all zeros
   if (overwrite) {
@@ -47,23 +50,16 @@ function thresholdVolumeByRange(
     }
   }
 
-  let renderingEngine
+  let renderingEngine, viewport
 
   toolDataList.forEach((toolData) => {
     // Threshold Options
     const { enabledElement } = toolData.metadata
     const { points } = toolData.data.handles
 
-    const { viewport } = enabledElement
-    ;({ renderingEngine } = enabledElement)
+    ;({ renderingEngine, viewport } = enabledElement)
 
-    // Todo: Resetting the labelmap imageData value so that the same tool can
-    // execute threshold execution more than once, but this is super slow
-    // const values = labelmap.vtkImageData.getPointData().getScalars().getData()
-    // const length = values.length
-    // for (let i = 0; i <= length; i++) {
-    //   values[i] = 0
-    // }
+    const { viewPlaneNormal } = viewport.getCamera()
 
     const referenceVolume = referenceVolumes[0]
     const { vtkImageData, dimensions } = referenceVolume
@@ -76,7 +72,21 @@ function thresholdVolumeByRange(
     )
 
     const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
-    const extendedBoundsIJK = _extendBoundingBoxInViewAxis(boundsIJK, numSlices)
+
+    let extendedBoundsIJK
+    if (slices.numSlices) {
+      extendedBoundsIJK = extendBoundingBoxInViewAxis(
+        boundsIJK,
+        slices.numSlices
+      )
+    } else if (slices.sliceNumbers) {
+      extendedBoundsIJK = getBoundIJKFromSliceNumbers(
+        boundsIJK,
+        slices.sliceNumbers,
+        vtkImageData,
+        viewPlaneNormal
+      )
+    }
 
     const callback = ({ index, pointIJK }) => {
       const offset = vtkImageData.computeOffsetIndex(pointIJK)
@@ -107,6 +117,37 @@ function worldToIndex(imageData, ain) {
   return vout
 }
 
+export function getBoundIJKFromSliceNumbers(
+  boundsIJK: [Point2, Point2, Point2],
+  sliceNumbers: number[],
+  vtkImageData: any,
+  viewPlaneNormal: Point3
+): [Point2, Point2, Point2] {
+  const direction = vtkImageData.getDirection()
+
+  // Calculate size of spacing vector in normal direction
+  const iVector = direction.slice(0, 3)
+  const jVector = direction.slice(3, 6)
+  const kVector = direction.slice(6, 9)
+
+  const dotProducts = [
+    vec3.dot(iVector, <vec3>viewPlaneNormal),
+    vec3.dot(jVector, <vec3>viewPlaneNormal),
+    vec3.dot(kVector, <vec3>viewPlaneNormal),
+  ]
+
+  // absolute value of dot products
+  const absDotProducts = dotProducts.map((dotProduct) => Math.abs(dotProduct))
+
+  // the dot product will be one for the slice normal
+  const sliceNormalIndex = absDotProducts.indexOf(1)
+
+  boundsIJK[sliceNormalIndex][0] = sliceNumbers[0]
+  boundsIJK[sliceNormalIndex][1] = sliceNumbers[1]
+
+  return boundsIJK
+}
+
 /**
  * Used the current bounds of the 2D rectangle and extends it in the view axis by numSlices
  * It compares min and max of each IJK to find the view axis (for axial, zMin === zMax) and
@@ -115,7 +156,7 @@ function worldToIndex(imageData, ain) {
  * @param numSlices number of slices to extend
  * @returns extended bounds
  */
-function _extendBoundingBoxInViewAxis(
+export function extendBoundingBoxInViewAxis(
   boundsIJK: [Point2, Point2, Point2],
   numSlices: number
 ): [Point2, Point2, Point2] {
