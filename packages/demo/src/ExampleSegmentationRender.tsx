@@ -629,7 +629,7 @@ class SegmentationExample extends Component {
       const distanceInViewPlane = vec3.dot(distance, viewPlaneNormal)
       // new point is current point minus distanceInViewPlane
       const newPoint = vec3.create()
-      vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, -distanceInViewPlane)
+      vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, distanceInViewPlane)
 
       return newPoint
       //
