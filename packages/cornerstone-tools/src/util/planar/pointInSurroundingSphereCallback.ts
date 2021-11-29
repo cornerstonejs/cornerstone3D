@@ -1,8 +1,4 @@
 import {
-  VolumeViewport,
-  StackViewport,
-} from '@precisionmetrics/cornerstone-render'
-import {
   Point3,
   IImageVolume,
 } from '@precisionmetrics/cornerstone-render/src/types'
@@ -24,7 +20,7 @@ function worldToIndex(imageData, ain) {
 // since sphere's center circle can be in any plane as long as its center
 // is the center of the sphere ...
 export default function pointInSurroundingSphereCallback(
-  viewport: VolumeViewport | StackViewport,
+  viewport: any, // Todo: typescript complains about VolumeViewport | StackViewport type
   volume: IImageVolume,
   circlePoints: [Point3, Point3],
   callback: PointInShapeCallback
