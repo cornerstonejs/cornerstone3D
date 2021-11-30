@@ -1,14 +1,13 @@
 import { vec3 } from 'gl-matrix'
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 
-import { getBoundingBoxAroundShape } from '../segmentation'
+import {
+  getBoundingBoxAroundShape,
+  extend2DBoundingBoxInViewAxis,
+} from '../segmentation'
 import { RectangleRoiThresholdToolData } from '../../tools/segmentation/RectangleRoiThreshold'
 import { Point3 } from '../../types'
 import thresholdVolumeByRange from './thresholdVolumeByRange'
-import {
-  extendBoundingBoxInViewAxis,
-  getBoundIJKFromSliceNumbers,
-} from './thresholdVolumeByRange'
 
 export type ThresholdRoiStatsOptions = {
   statistic: 'max' | 'min'
@@ -66,9 +65,6 @@ function thresholdVolumeByRoiStats(
 
   toolDataList.forEach((toolData) => {
     const { points } = toolData.data.handles
-    const { enabledElement } = toolData.metadata
-    const { viewport } = enabledElement
-    const { viewPlaneNormal } = viewport.getCamera()
 
     const rectangleCornersIJK = points.map(
       (world) => _worldToIndex(vtkImageData, world) as Point3
@@ -76,20 +72,14 @@ function thresholdVolumeByRoiStats(
 
     const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
-    let extendedBoundsIJK
-    if (slices.numSlices) {
-      extendedBoundsIJK = extendBoundingBoxInViewAxis(
-        boundsIJK,
-        slices.numSlices
-      )
-    } else if (slices.sliceNumbers) {
-      extendedBoundsIJK = getBoundIJKFromSliceNumbers(
-        boundsIJK,
-        slices.sliceNumbers,
-        vtkImageData,
-        viewPlaneNormal
-      )
-    }
+    const slicesToUse = slices.numSlices
+      ? slices.numSlices
+      : slices.sliceNumbers
+
+    const extendedBoundsIJK = extend2DBoundingBoxInViewAxis(
+      boundsIJK,
+      slicesToUse
+    )
 
     const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = extendedBoundsIJK
 

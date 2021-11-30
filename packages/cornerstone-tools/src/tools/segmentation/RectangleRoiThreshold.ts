@@ -4,10 +4,13 @@ import {
   Settings,
   StackViewport,
   VolumeViewport,
+  triggerEvent,
+  eventTarget,
 } from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement'
 import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
+import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 
 import {
   drawHandles as drawHandlesSvg,
@@ -186,7 +189,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       return
     }
 
-    const { viewport } = enabledElement
+    const { viewport, sceneUID, renderingEngineUID } = enabledElement
 
     let targetUID
     if (viewport instanceof StackViewport) {
@@ -219,6 +222,19 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         console.warn('Rendering Engine has been destroyed')
         return
       }
+
+      // Todo: This is not correct way to add the event trigger,
+      // this will trigger on all mouse hover too. Problem is that we don't
+      // have a cached stats mechanism for this tool yet?
+      const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+      const eventDetail = {
+        toolData,
+        viewportUID: viewport.uid,
+        sceneUID: sceneUID,
+        renderingEngineUID,
+      }
+      triggerEvent(eventTarget, eventType, eventDetail)
 
       let activeHandleCanvasCoords
 

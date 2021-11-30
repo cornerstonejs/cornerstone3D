@@ -4,13 +4,26 @@ import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 import { Point3 } from '../../types'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
 import pointInSurroundingSphereCallback from '../../util/planar/pointInSurroundingSphereCallback'
+import { getBoundingBoxAroundShape } from '../segmentation'
 
-/** */
+/**
+ * This method calculates the SUV peak on a segmented ROI from a reference PET
+ * volume. If a rectangle is provided, the peak is calculated within that
+ * rectangle. Otherwise, the calculation is performed on the entire volume which
+ * will be slower but same result.
+ * @param viewport Viewport to use for the calculation
+ * @param labelmap Labelmap from which the mask is taken
+ * @param referenceVolume PET volume to use for SUV calculation
+ * @param RectangleRoiToolData [Optional] Rectangle ROI to use for limiting the bounding box
+ * @param segmentIndex The index of the segment to use for masking
+ * @returns
+ */
 function calculateSuvPeak(
   viewport,
   labelmap: IImageVolume,
   referenceVolume: IImageVolume,
-  segmentIndex: number
+  RectangleRoiToolData?: any,
+  segmentIndex = 1
 ): any {
   if (referenceVolume.metadata.Modality !== 'PT') {
     return
@@ -33,6 +46,18 @@ function calculateSuvPeak(
     vtkImageData: referenceVolumeImageData,
   } = referenceVolume
 
+  let boundsIJK
+  if (RectangleRoiToolData) {
+    const { points } = RectangleRoiToolData.data.handles
+    const rectangleCornersIJK = points.map((world) => {
+      const ijk = vec3.fromValues(0, 0, 0)
+      referenceVolumeImageData.worldToIndex(world, ijk)
+      return ijk
+    })
+
+    boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
+  }
+
   let max = 0
   let maxIJK = [0, 0, 0]
 
@@ -53,7 +78,7 @@ function calculateSuvPeak(
   }
 
   pointInShapeCallback(
-    undefined,
+    boundsIJK, // if boundsIJK is not provided then it calculates on the imageData extents
     labelmapData,
     labelmapImageData,
     dimensions,
