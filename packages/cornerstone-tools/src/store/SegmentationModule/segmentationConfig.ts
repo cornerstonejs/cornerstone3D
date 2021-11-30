@@ -1,4 +1,4 @@
-import { triggerLabelmapsStateUpdated } from './triggerLabelmapsStateUpdated'
+import { triggerLabelmapsStateUpdated } from './triggerLabelmapStateUpdated'
 
 export interface ISegmentationConfig {
   enabled: boolean
