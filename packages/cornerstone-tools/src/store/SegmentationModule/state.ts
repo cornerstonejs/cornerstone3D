@@ -9,6 +9,7 @@ type LabelmapGlobalState = {
   volumeUID: string
   label: string
   referenceVolumeUID?: string
+  cachedStats: { [key: string]: number }
   referenceImageId?: string
   activeSegmentIndex: number
   segmentsLocked: Set<number>
@@ -61,6 +62,7 @@ const state: SegmentationState = {
     //  referenceImageId: "referenceImageId", // stack viewport
     // 	activeSegmentIndex: 1,
     //  segmentsLocked: Set(),
+    //  cacheStats: {} // storing labelmap specific statistics
     // }
     // {
     // 	volumeUID: "labelmapUID2",
@@ -69,6 +71,7 @@ const state: SegmentationState = {
     //  referenceImageId: "referenceImageId", // stack viewport
     // 	activeSegmentIndex: 1,
     //  segmentsLocked: Set(),
+    //  cacheStats: {} // storing labelmap specific statistics
     // }
   ],
   volumeViewports: {
@@ -150,6 +153,7 @@ function setLabelmapGlobalState(
     volumeUID: labelmapUID,
     label: labelmapUID,
     referenceVolumeUID: null,
+    cachedStats: {},
     referenceImageId: null,
     activeSegmentIndex: 1,
     segmentsLocked: new Set(),
@@ -183,6 +187,7 @@ function setLabelmapGlobalState(
       volumeUID: labelmapUID,
       label: updatedState.label,
       referenceVolumeUID: updatedState.referenceVolumeUID,
+      cachedStats: updatedState.cachedStats,
       referenceImageId: updatedState.referenceImageId,
       activeSegmentIndex: updatedState.activeSegmentIndex,
       segmentsLocked: updatedState.segmentsLocked,
