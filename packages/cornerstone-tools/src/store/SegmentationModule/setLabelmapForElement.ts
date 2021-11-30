@@ -8,7 +8,7 @@ import state, {
   setLabelmapGlobalState,
   setLabelmapViewportSpecificState,
 } from './state'
-import { triggerLabelmapStateUpdated } from './triggerLabelmapsStateUpdated'
+import { triggerLabelmapStateUpdated } from './triggerLabelmapStateUpdated'
 
 /**
  * It renders a labelmap 3D volume into the scene that the element belongs to

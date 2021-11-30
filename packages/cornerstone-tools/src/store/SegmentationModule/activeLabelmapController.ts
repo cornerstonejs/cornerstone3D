@@ -2,7 +2,7 @@ import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 
 import state, { getLabelmapsStateForElement } from './state'
 import { addNewLabelmap } from './addNewLabelmap'
-import { triggerLabelmapStateUpdated } from './triggerLabelmapsStateUpdated'
+import { triggerLabelmapStateUpdated } from './triggerLabelmapStateUpdated'
 
 /**
  * Returns the index of the active `Labelmap3D`.

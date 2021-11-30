@@ -16,6 +16,7 @@ export type LabelmapStateUpdatedEvent = {
   sceneUID: string
   viewportUID: string
   id: string
+  cachedStats: any
 }
 
 /**
@@ -73,15 +74,24 @@ function triggerLabelmapStateUpdated(
         return
       }
 
+      // get the global state of the labelmap
+      const labelmapGlobalState = state.labelmaps.find(
+        (labelmap) => labelmap.volumeUID === labelmapUID
+      )
+
+      // get cached stats
+      const { cachedStats } = labelmapGlobalState
+
       const eventData: LabelmapStateUpdatedEvent = {
-        element,
+        id: labelmapUID,
         labelmapUID,
+        element,
         labelmapIndex,
         activeLabelmapIndex,
         renderingEngineUID,
         sceneUID,
         viewportUID,
-        id: labelmapUID,
+        cachedStats,
       }
 
       triggerEvent(element, EVENTS.LABELMAP_STATE_UPDATED, eventData)

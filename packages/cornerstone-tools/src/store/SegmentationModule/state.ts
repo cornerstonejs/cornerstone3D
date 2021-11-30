@@ -4,6 +4,7 @@ import { ISegmentationConfig } from './segmentationConfig'
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import { getActiveLabelmapIndex } from './activeLabelmapController'
 import { setColorLUT } from './colorLUT'
+import { triggerLabelmapStateUpdated } from './triggerLabelmapStateUpdated'
 
 type LabelmapGlobalState = {
   volumeUID: string
@@ -192,14 +193,15 @@ function setLabelmapGlobalState(
       activeSegmentIndex: updatedState.activeSegmentIndex,
       segmentsLocked: updatedState.segmentsLocked,
     })
-    return
+  } else {
+    // If there is an existing state, replace it
+    const index = state.labelmaps.findIndex(
+      (labelmapState) => labelmapState.volumeUID === labelmapUID
+    )
+    state.labelmaps[index] = updatedState
   }
 
-  // If there is an existing state, replace it
-  const index = state.labelmaps.findIndex(
-    (labelmapState) => labelmapState.volumeUID === labelmapUID
-  )
-  state.labelmaps[index] = updatedState
+  triggerLabelmapStateUpdated(labelmapUID)
 }
 
 /**
