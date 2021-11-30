@@ -7,6 +7,7 @@ import { setColorLUT } from './colorLUT'
 
 type LabelmapGlobalState = {
   volumeUID: string
+  label: string
   referenceVolumeUID?: string
   referenceImageId?: string
   activeSegmentIndex: number
@@ -55,6 +56,7 @@ const state: SegmentationState = {
   labelmaps: [
     // {
     // 	volumeUID: "labelmapUID1",
+    //  label: "label1",
     //  referenceVolumeUID: "referenceVolumeName", // volume viewport
     //  referenceImageId: "referenceImageId", // stack viewport
     // 	activeSegmentIndex: 1,
@@ -62,6 +64,7 @@ const state: SegmentationState = {
     // }
     // {
     // 	volumeUID: "labelmapUID2",
+    //  label: "label1",
     //  referenceVolumeUID: "referenceVolumeName", // volume viewport
     //  referenceImageId: "referenceImageId", // stack viewport
     // 	activeSegmentIndex: 1,
@@ -145,6 +148,7 @@ function setLabelmapGlobalState(
   labelmapUID: string,
   newState: LabelmapGlobalState = {
     volumeUID: labelmapUID,
+    label: labelmapUID,
     referenceVolumeUID: null,
     referenceImageId: null,
     activeSegmentIndex: 1,
@@ -160,27 +164,37 @@ function setLabelmapGlobalState(
   )
 
   if (existingState) {
-    if (newState.volumeUID !== labelmapUID) {
+    if (newState.volumeUID && newState.volumeUID !== labelmapUID) {
       throw new Error(
         `Labelmap state with volumeUID ${newState.volumeUID} already exists`
       )
     }
   }
 
-  const {
-    referenceImageId,
-    referenceVolumeUID,
-    activeSegmentIndex,
-    segmentsLocked,
-  } = newState
+  // merge the new state with the existing state
+  const updatedState = {
+    ...existingState,
+    ...newState,
+  }
 
-  state.labelmaps.push({
-    volumeUID: labelmapUID,
-    referenceVolumeUID,
-    referenceImageId,
-    activeSegmentIndex,
-    segmentsLocked,
-  })
+  // Is there any existing state?
+  if (!existingState) {
+    state.labelmaps.push({
+      volumeUID: labelmapUID,
+      label: updatedState.label,
+      referenceVolumeUID: updatedState.referenceVolumeUID,
+      referenceImageId: updatedState.referenceImageId,
+      activeSegmentIndex: updatedState.activeSegmentIndex,
+      segmentsLocked: updatedState.segmentsLocked,
+    })
+    return
+  }
+
+  // If there is an existing state, replace it
+  const index = state.labelmaps.findIndex(
+    (labelmapState) => labelmapState.volumeUID === labelmapUID
+  )
+  state.labelmaps[index] = updatedState
 }
 
 /**
