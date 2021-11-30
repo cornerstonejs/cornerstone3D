@@ -4,6 +4,8 @@ import {
   removeLabelmapForAllElements,
 } from './removeLabelmapForElement'
 
+import { getGlobalStateForLabelmapUID, setLabelmapGlobalState } from './state'
+
 import { getLabelmapUIDsForElement, getLabelmapUIDForElement } from './utils'
 import * as lockedSegmentController from './lockedSegmentController'
 import * as segmentIndexController from './segmentIndexController'
@@ -27,6 +29,8 @@ export {
   segmentIndexController,
   activeLabelmapController,
   hideSegmentController,
+  getGlobalStateForLabelmapUID,
+  setLabelmapGlobalState,
 }
 
 export default {
@@ -61,4 +65,8 @@ export default {
 
   // Locked segment index
   lockedSegmentController,
+
+  // state
+  getGlobalStateForLabelmapUID,
+  setLabelmapGlobalState,
 }
