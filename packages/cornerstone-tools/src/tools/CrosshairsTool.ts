@@ -91,6 +91,8 @@ const OPERATION = {
   SLAB: 3,
 }
 
+const EPSILON = 1e-3
+
 export default class CrosshairsTool extends BaseAnnotationTool {
   toolCenter: Point3 = [0, 0, 0] // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
@@ -102,12 +104,27 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     toolData: any
   } | null
 
-  constructor(toolConfiguration: ToolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolConfiguration: Record<string, any>,
+    defaultToolConfiguration = {
       name: 'Crosshairs',
-      supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true },
-    })
+      supportedInteractionTypes: ['Mouse'],
+      configuration: {
+        shadow: true,
+        // Auto pan is a configuration which will update pan
+        // other viewports in the same scene if the center of the crosshairs
+        // is outside of the viewport. This might be useful for the case
+        // when the user is scrolling through an image (usually in the zoomed view)
+        // and the crosshairs will eventually get outisde of the viewport for
+        // the other viewports.
+        autoPan: {
+          enabled: false,
+          panSize: 10,
+        },
+      },
+    }
+  ) {
+    super(toolConfiguration, defaultToolConfiguration)
 
     // todo this is weird? why do we have this nested? What is the diff between toolOptions and toolConfiguration in addTool?
     this._getReferenceLineColor =
@@ -526,6 +543,16 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         this.toolCenter[1] += deltaCameraPosition[1]
         this.toolCenter[2] += deltaCameraPosition[2]
       }
+    }
+
+    // AutoPan modification
+    if (this.configuration.autoPan.enabled) {
+      viewportUIDsToRender.forEach((viewportUID) => {
+        // other viewports in the scene
+        if (viewportUID !== viewport.uid) {
+          this._autoPanViewportIfNecessary(viewportUID, renderingEngine)
+        }
+      })
     }
 
     triggerAnnotationRenderForViewportUIDs(
@@ -1262,6 +1289,104 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       circleRadius,
       { color, fill: color }
     )
+  }
+
+  _autoPanViewportIfNecessary(
+    viewportUID: string,
+    renderingEngine: RenderingEngine
+  ): void {
+    // 1. Compute the current world bounding box of the viewport from corner to corner
+    // 2. Check if the toolCenter is outside of the world bounding box
+    // 3. If it is outside, pan the viewport to fit in the toolCenter
+
+    const viewport = renderingEngine.getViewport(viewportUID)
+    const { sWidth, sHeight } = viewport
+
+    const topLefWorld = viewport.canvasToWorld([0, 0])
+    const bottomRightWorld = viewport.canvasToWorld([sWidth, sHeight])
+    const topRightWorld = viewport.canvasToWorld([sWidth, 0])
+    const bottomLeftWorld = viewport.canvasToWorld([0, sHeight])
+
+    // find the minimum and maximum world coordinates in each x,y,z
+    const minX = Math.min(
+      topLefWorld[0],
+      bottomRightWorld[0],
+      topRightWorld[0],
+      bottomLeftWorld[0]
+    )
+    const maxX = Math.max(
+      topLefWorld[0],
+      bottomRightWorld[0],
+      topRightWorld[0],
+      bottomLeftWorld[0]
+    )
+    const minY = Math.min(
+      topLefWorld[1],
+      bottomRightWorld[1],
+      topRightWorld[1],
+      bottomLeftWorld[1]
+    )
+    const maxY = Math.max(
+      topLefWorld[1],
+      bottomRightWorld[1],
+      topRightWorld[1],
+      bottomLeftWorld[1]
+    )
+    const minZ = Math.min(
+      topLefWorld[2],
+      bottomRightWorld[2],
+      topRightWorld[2],
+      bottomLeftWorld[2]
+    )
+    const maxZ = Math.max(
+      topLefWorld[2],
+      bottomRightWorld[2],
+      topRightWorld[2],
+      bottomLeftWorld[2]
+    )
+
+    // pan the viewport to fit the toolCenter in the direction
+    // that is out of bounds
+    let deltaPointsWorld
+    const pan = this.configuration.autoPan.panSize
+
+    if (this.toolCenter[0] < minX - EPSILON) {
+      deltaPointsWorld = [minX - this.toolCenter[0] + pan, 0, 0]
+    } else if (this.toolCenter[0] > maxX + EPSILON) {
+      deltaPointsWorld = [maxX - this.toolCenter[0] - pan, 0, 0]
+    } else if (this.toolCenter[1] < minY - EPSILON) {
+      deltaPointsWorld = [0, minY - this.toolCenter[1] + pan, 0]
+    } else if (this.toolCenter[1] > maxY + EPSILON) {
+      deltaPointsWorld = [0, maxY - this.toolCenter[1] - pan, 0]
+    } else if (this.toolCenter[2] < minZ - EPSILON) {
+      deltaPointsWorld = [0, 0, minZ - this.toolCenter[2] + pan]
+    } else if (this.toolCenter[2] > maxZ + EPSILON) {
+      deltaPointsWorld = [0, 0, maxZ - this.toolCenter[2] - pan]
+    } else {
+      return
+    }
+
+    const camera = viewport.getCamera()
+    const { focalPoint, position } = camera
+
+    const updatedPosition = <Point3>[
+      position[0] - deltaPointsWorld[0],
+      position[1] - deltaPointsWorld[1],
+      position[2] - deltaPointsWorld[2],
+    ]
+
+    const updatedFocalPoint = <Point3>[
+      focalPoint[0] - deltaPointsWorld[0],
+      focalPoint[1] - deltaPointsWorld[1],
+      focalPoint[2] - deltaPointsWorld[2],
+    ]
+
+    viewport.setCamera({
+      focalPoint: updatedFocalPoint,
+      position: updatedPosition,
+    })
+
+    viewport.render()
   }
 
   _areViewportUIDArraysEqual = (viewportUIDArrayOne, viewportUIDArrayTwo) => {
