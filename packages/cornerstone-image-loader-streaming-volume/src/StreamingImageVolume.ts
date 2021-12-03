@@ -404,7 +404,15 @@ export default class StreamingImageVolume extends ImageVolume {
         )
       }
 
-      return { callLoadImage, imageId, imageIdIndex, options }
+      return {
+        callLoadImage,
+        imageId,
+        imageIdIndex,
+        options,
+        additionalDetails: {
+          volumeUID: this.uid,
+        },
+      }
     })
 
     return requests
@@ -418,11 +426,13 @@ export default class StreamingImageVolume extends ImageVolume {
         return
       }
 
-      const { callLoadImage, imageId, imageIdIndex, options } = request
-
-      const additionalDetails = {
-        volumeUID: this.uid,
-      }
+      const {
+        callLoadImage,
+        imageId,
+        imageIdIndex,
+        options,
+        additionalDetails,
+      } = request
 
       imageLoadPoolManager.addRequest(
         callLoadImage.bind(this, imageId, imageIdIndex, options),
