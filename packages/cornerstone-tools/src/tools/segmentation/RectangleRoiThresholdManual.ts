@@ -3,8 +3,14 @@ import {
   getVolume,
   Settings,
   StackViewport,
+  metaData,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
-import { getImageIdForTool } from '../../util/planar'
+import { vec3 } from 'gl-matrix'
+import {
+  getImageIdForTool,
+  getSpacingInNormalDirection,
+} from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement'
 import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
 import {
@@ -120,27 +126,22 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
       throw new Error('This tool does not work on non-acquisition planes')
     }
 
-    const { imageIds } = imageVolume
+    const startIndex = viewport.getCurrentImageIdIndex()
+    const spacingInNormal = getSpacingInNormalDirection(
+      imageVolume,
+      viewPlaneNormal
+    )
 
-    // find inside imageIds the index of the referencedImageId, by breaking
-    // imageIds are like ['csiv:imageId1', 'csiv:imageId2', ...] and we
-    // want to find the index of 'imageId2'
-    const imageIdIndex = imageIds.findIndex((imageId) => {
-      const colonIndex = imageId.indexOf(':')
-      const imageIdSubstring = imageId.substring(colonIndex + 1)
-      return imageIdSubstring === referencedImageId
-    })
-
-    const sliceIndex = viewport.getCurrentImageIdIndex()
-
-    if (sliceIndex !== imageIdIndex) {
-      throw new Error(
-        'This tool does not work on non-acquisition planes, or the referenced image is not the current image'
-      )
-    }
-
-    const startSlice = imageIdIndex
-    const endSlice = imageIdIndex + this.configuration.numSlicesToPropagate
+    // We cannot simply add numSlicesToPropagate to startIndex because
+    // the order of imageIds can be from top to bottom or bottom to top and
+    // we want to make sure it is always propagated in the direction of the
+    // view and also to make sure we don't go out of bounds.
+    const endIndex = this._getEndSliceIndex(
+      imageVolume,
+      worldPos,
+      spacingInNormal,
+      viewPlaneNormal
+    )
 
     const toolData = {
       metadata: {
@@ -154,8 +155,8 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
       },
       data: {
         invalidated: true,
-        startSlice,
-        endSlice,
+        startSlice: startIndex,
+        endSlice: endIndex,
         handles: {
           // No need a textBox
           textBox: {
@@ -244,8 +245,14 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
       const lineDash = this.getStyle(settings, 'lineDash', toolData)
       const color = this.getStyle(settings, 'color', toolData)
 
+      // range of slices to render based on the start and end slice, like
+      // np arange
+
       // if indexIJK is outside the start/end slice, we don't render
-      if (sliceIndex < startSlice || sliceIndex > endSlice) {
+      if (
+        sliceIndex < Math.min(startSlice, endSlice) ||
+        sliceIndex > Math.max(startSlice, endSlice)
+      ) {
         continue
       }
 
@@ -310,5 +317,45 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
         }
       )
     }
+  }
+
+  _getEndSliceIndex(
+    imageVolume: Types.IImageVolume,
+    worldPos: Point3,
+    spacingInNormal: number,
+    viewPlaneNormal: Point3
+  ): number | undefined {
+    const numSlicesToPropagate = this.configuration.numSlicesToPropagate
+
+    // get end position by moving from worldPos in the direction of viewplaneNormal
+    // with amount of numSlicesToPropagate * spacingInNormal
+    const endPos = vec3.create()
+    vec3.scaleAndAdd(
+      endPos,
+      worldPos,
+      viewPlaneNormal,
+      numSlicesToPropagate * spacingInNormal
+    )
+
+    const halfSpacingInNormalDirection = spacingInNormal / 2
+    // Loop through imageIds of the imageVolume and find the one that is closest to endPos
+    const { imageIds } = imageVolume
+    let imageIdIndex
+    for (let i = 0; i < imageIds.length; i++) {
+      const imageId = imageIds[i]
+
+      const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId)
+
+      const dir = vec3.create()
+      vec3.sub(dir, endPos, imagePositionPatient)
+
+      const dot = vec3.dot(dir, viewPlaneNormal)
+
+      if (Math.abs(dot) < halfSpacingInNormalDirection) {
+        imageIdIndex = i
+      }
+    }
+
+    return imageIdIndex
   }
 }
