@@ -5,8 +5,11 @@ import {
   StackViewport,
   metaData,
   Types,
+  triggerEvent,
+  eventTarget,
 } from '@precisionmetrics/cornerstone-render'
 import { vec3 } from 'gl-matrix'
+import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import {
   getImageIdForTool,
   getSpacingInNormalDirection,
@@ -225,7 +228,7 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
     //   return
     // }
 
-    const { viewport } = enabledElement
+    const { viewport, sceneUID, renderingEngineUID } = enabledElement
     const sliceIndex = viewport.getCurrentImageIdIndex()
 
     for (let i = 0; i < toolState.length; i++) {
@@ -255,6 +258,16 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
       ) {
         continue
       }
+
+      const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+      const eventDetail = {
+        toolData,
+        viewportUID: viewport.uid,
+        sceneUID: sceneUID,
+        renderingEngineUID,
+      }
+      triggerEvent(eventTarget, eventType, eventDetail)
 
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
