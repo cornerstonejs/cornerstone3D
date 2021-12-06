@@ -15,7 +15,7 @@ export type ThresholdRangeOptions = {
   lowerThreshold: number
   slices: {
     numSlices?: number // put numSlices before and after the current slice
-    sliceNumbers?: number[] // absolute slice numbers
+    sliceNumbers?: number[] // absolute first and last slice
   }
   overwrite: boolean
 }

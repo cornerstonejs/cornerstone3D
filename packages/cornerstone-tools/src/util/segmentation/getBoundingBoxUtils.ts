@@ -76,8 +76,8 @@ function extend2DBoundingBoxInViewAxis(
   }
 
   if (slices instanceof Array) {
-    boundsIJK[sliceNormalIndex][0] = slices[0]
-    boundsIJK[sliceNormalIndex][1] = slices[1]
+    boundsIJK[sliceNormalIndex][0] = Math.min(...slices)
+    boundsIJK[sliceNormalIndex][1] = Math.max(...slices)
     return boundsIJK
   }
 
