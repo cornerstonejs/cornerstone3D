@@ -1,4 +1,7 @@
-import { registerImageLoader, REQUEST_TYPE } from '@precisionmetrics/cornerstone-render'
+import {
+  registerImageLoader,
+  REQUEST_TYPE,
+} from '@precisionmetrics/cornerstone-render'
 import {
   getPixelData,
   decodeImageFrame,
@@ -28,7 +31,7 @@ function sharedArrayBufferImageLoader(
 
   const promise = new Promise((resolve, reject) => {
     // TODO: load bulk data items that we might need
-    const mediaType = 'multipart/related; type="application/octet-stream"' // 'image/dicom+jp2';
+    const mediaType = 'multipart/related; type=application/octet-stream' // 'image/dicom+jp2';
 
     // get the pixel data from the server
     function sendXHR(imageURI, imageId, mediaType) {
