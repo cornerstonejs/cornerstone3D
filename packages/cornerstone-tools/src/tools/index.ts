@@ -18,7 +18,7 @@ import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 import CircleScissorsTool from './segmentation/CircleScissorsTool'
 import SphereScissorsTool from './segmentation/SphereScissorsTool'
 import RectangleRoiThreshold from './segmentation/RectangleRoiThreshold'
-import RectangleRoiThresholdManual from './segmentation/RectangleRoiThresholdManual'
+import RectangleRoiStartEndThreshold from './segmentation/RectangleRoiStartEndThreshold'
 
 // PET annotation tool
 import SUVPeakTool from './annotation/PET/SUVPeakTool'
@@ -48,7 +48,7 @@ export {
   CircleScissorsTool,
   SphereScissorsTool,
   RectangleRoiThreshold,
-  RectangleRoiThresholdManual,
+  RectangleRoiStartEndThreshold,
   // PET annotation
   SUVPeakTool,
 }

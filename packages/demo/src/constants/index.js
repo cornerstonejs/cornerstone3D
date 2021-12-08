@@ -107,7 +107,7 @@ const SEGMENTATION_TOOLS = [
   'CircleScissors',
   'SphereScissors',
   'RectangleRoiThreshold',
-  'RectangleRoiThresholdManual',
+  'RectangleRoiStartEndThreshold',
 ]
 
 // A small simple list of in-built vtk-colormaps, to demonstrate switching transfer function on a volume.
