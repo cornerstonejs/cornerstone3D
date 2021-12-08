@@ -30,7 +30,7 @@ const {
   CircleScissorsTool,
   SphereScissorsTool,
   RectangleRoiThreshold,
-  RectangleRoiThresholdManual,
+  RectangleRoiStartEndThreshold,
   SUVPeakTool,
 } = csTools3d
 
@@ -244,7 +244,7 @@ function initToolGroups(toolConfiguration = {}) {
   csTools3d.addTool(CircleScissorsTool, toolConfiguration)
   csTools3d.addTool(SphereScissorsTool, toolConfiguration)
   csTools3d.addTool(RectangleRoiThreshold, toolConfiguration)
-  csTools3d.addTool(RectangleRoiThresholdManual, toolConfiguration)
+  csTools3d.addTool(RectangleRoiStartEndThreshold, toolConfiguration)
   csTools3d.addTool(SUVPeakTool, toolConfiguration)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
@@ -516,7 +516,7 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool('RectangleRoiThreshold', {
       configuration: { volumeUID: ctVolumeUID },
     })
-    ctSceneToolGroup.addTool('RectangleRoiThresholdManual', {
+    ctSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {
       configuration: { volumeUID: ctVolumeUID },
     })
     ctSceneToolGroup.addTool('CircleScissors', {
@@ -662,7 +662,7 @@ function addToolsToToolGroups({
     ptSceneToolGroup.addTool('RectangleRoiThreshold', {
       configuration: { volumeUID: ptVolumeUID },
     })
-    ptSceneToolGroup.addTool('RectangleRoiThresholdManual', {
+    ptSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {
       configuration: { volumeUID: ptVolumeUID },
     })
     ptSceneToolGroup.addTool('CircleScissors', {

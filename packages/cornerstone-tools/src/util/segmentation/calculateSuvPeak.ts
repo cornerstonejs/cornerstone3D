@@ -22,7 +22,7 @@ function calculateSuvPeak(
   viewport,
   labelmap: IImageVolume,
   referenceVolume: IImageVolume,
-  RectangleRoiToolData?: any,
+  RectangleRoiToolData?: any, // Todo: change to boundsIJK instead of a toolData
   segmentIndex = 1
 ): any {
   if (referenceVolume.metadata.Modality !== 'PT') {
