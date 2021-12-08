@@ -26,8 +26,9 @@ import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotation
 
 import { ToolSpecificToolData, Point3 } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
+import { IImageVolume } from 'cornerstone-render/src/types'
 
-export interface RectangleRoiThresholdManualToolData
+export interface RectangleRoiStartEndThresholdToolData
   extends ToolSpecificToolData {
   metadata: {
     cameraPosition?: Point3
@@ -40,11 +41,14 @@ export interface RectangleRoiThresholdManualToolData
     toolName: string
     enabledElement: any // Todo: how to remove this from the tooldata??
     volumeUID: string
+    spacingInNormal: number
+    projectionPointsImageIds: string[]
   }
   data: {
     invalidated: boolean
     startSlice: number
     endSlice: number
+    projectionPoints: Point3[][] // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
     handles: {
       points: Point3[]
       activeHandleIndex: number | null
@@ -61,9 +65,12 @@ export interface RectangleRoiThresholdManualToolData
  * create a segmentation. The only difference is that it only acts on the
  * acquisition plane and not the 3D volume, and accepts a start and end
  * slice, and renders a dashed rectangle on the image between the start and end
- * but a solid rectangle on start and end slice.
+ * but a solid rectangle on start and end slice. Utility functions should be used
+ * to modify the start and end slice.
+ * // Todo: right now only the first slice has grabbable handles, need to make
+ * // it so that the handles are grabbable on all slices.
  */
-export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
+export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
   _throttledCalculateCachedStats: any
   editData: {
     toolData: any
@@ -79,7 +86,7 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
   constructor(
     toolConfiguration: Record<string, any>,
     defaultToolConfiguration = {
-      name: 'RectangleRoiThresholdManual',
+      name: 'RectangleRoiStartEndThreshold',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {},
@@ -109,8 +116,7 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
 
     let referencedImageId, imageVolume
     if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId()
+      throw new Error('Stack Viewport Not implemented')
     } else {
       const { volumeUID } = this.configuration
       imageVolume = getVolume(volumeUID)
@@ -155,11 +161,19 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
         referencedImageId,
         toolName: this.name,
         volumeUID: this.configuration.volumeUID,
+        spacingInNormal,
+        projectionPointsImageIds: [referencedImageId],
       },
       data: {
         invalidated: true,
         startSlice: startIndex,
         endSlice: endIndex,
+        projectionPoints: [
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+        ],
         handles: {
           // No need a textBox
           textBox: {
@@ -180,8 +194,13 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
       },
     }
 
+    // update the projection points in 3D space, since we are projecting
+    // the points to the slice plane, we need to make sure the points are
+    // computed for later export
+    this._computeProjectionPoints(toolData, imageVolume)
+
     // Ensure settings are initialized after tool data instantiation
-    Settings.getObjectSettings(toolData, RectangleRoiThresholdManualTool)
+    Settings.getObjectSettings(toolData, RectangleRoiStartEndThresholdTool)
 
     addToolState(element, toolData)
 
@@ -211,6 +230,68 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
     return toolData
   }
 
+  // Todo: make it work for other acquisition planes
+  _computeProjectionPoints(
+    toolData: RectangleRoiStartEndThresholdToolData,
+    imageVolume: IImageVolume
+  ): void {
+    const { data, metadata } = toolData
+    const { viewPlaneNormal, spacingInNormal } = metadata
+
+    const { vtkImageData: imageData } = imageVolume
+
+    const { startSlice, endSlice } = data
+    const { points } = data.handles
+
+    const startIJK = vec3.create()
+    imageData.worldToIndexVec3(points[0], startIJK)
+
+    if (startIJK[2] !== startSlice) {
+      throw new Error('Start slice does not match')
+    }
+
+    // subtitute the end slice index 2 with startIJK index 2
+    const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice)
+
+    const startWorld = vec3.create()
+    imageData.indexToWorldVec3(startIJK, startWorld)
+
+    const endWorld = vec3.create()
+    imageData.indexToWorldVec3(endIJK, endWorld)
+
+    // distance between start and end slice in the world coordinate
+    const distance = vec3.distance(startWorld, endWorld)
+
+    // for each point inside points, navigate in the direction of the viewPlaneNormal
+    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
+    const projectionPoints = []
+    for (let dist = 0; dist < distance; dist += spacingInNormal) {
+      projectionPoints.push(
+        points.map((point) => {
+          const newPoint = vec3.create()
+          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist)
+          return newPoint
+        })
+      )
+    }
+
+    data.projectionPoints = projectionPoints
+
+    // Find the imageIds for the projection points
+    const projectionPointsImageIds = []
+    for (const RectanglePoints of projectionPoints) {
+      const imageId = getImageIdForTool(
+        RectanglePoints[0],
+        viewPlaneNormal,
+        metadata.viewUp,
+        imageVolume
+      )
+      projectionPointsImageIds.push(imageId)
+    }
+
+    metadata.projectionPointsImageIds = projectionPointsImageIds
+  }
+
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
     const { element } = eventData
@@ -231,11 +312,14 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
     const { viewport, sceneUID, renderingEngineUID } = enabledElement
     const sliceIndex = viewport.getCurrentImageIdIndex()
 
+    const { volumeUID } = this.configuration
+    const imageVolume = getVolume(volumeUID)
+
     for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i] as RectangleRoiThresholdManualToolData
+      const toolData = toolState[i] as RectangleRoiStartEndThresholdToolData
       const settings = Settings.getObjectSettings(
         toolData,
-        RectangleRoiThresholdManualTool
+        RectangleRoiStartEndThresholdTool
       )
       const toolMetadata = toolData.metadata
       const annotationUID = toolMetadata.toolDataUID
@@ -243,6 +327,7 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
       const data = toolData.data
       const { startSlice, endSlice } = data
       const { points, activeHandleIndex } = data.handles
+
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
       const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
       const lineDash = this.getStyle(settings, 'lineDash', toolData)
@@ -258,6 +343,9 @@ export default class RectangleRoiThresholdManualTool extends RectangleRoiTool {
       ) {
         continue
       }
+
+      // Todo: this shouldn't be here
+      this._computeProjectionPoints(toolData, imageVolume)
 
       const eventType = EVENTS.MEASUREMENT_MODIFIED
 

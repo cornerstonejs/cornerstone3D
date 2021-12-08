@@ -67,7 +67,7 @@ const toolsToUse = [
 const labelmap1UID = 'boneAndSoftTissue'
 const labelmap2UID = 'fatTissue'
 const RECTANGLE_ROI_THRESHOLD = 'RectangleRoiThreshold'
-const RECTANGLE_ROI_THRESHOLD_MANUAL = 'RectangleRoiThresholdManual'
+const RECTANGLE_ROI_THRESHOLD_MANUAL = 'RectangleRoiStartEndThreshold'
 
 class SegmentationExample extends Component {
   _elementNodes = null
@@ -601,7 +601,6 @@ class SegmentationExample extends Component {
       viewport,
       labelmaps[0],
       referenceVolume,
-      segmentationIndex
     )
     console.debug('suvPeak', suvPeak)
   }
