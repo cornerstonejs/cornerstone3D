@@ -21,6 +21,8 @@ import {
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
+import throttle from '../../util/throttle'
+
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
@@ -42,13 +44,15 @@ export interface RectangleRoiStartEndThresholdToolData
     enabledElement: any // Todo: how to remove this from the tooldata??
     volumeUID: string
     spacingInNormal: number
-    projectionPointsImageIds: string[]
   }
   data: {
     invalidated: boolean
     startSlice: number
     endSlice: number
-    projectionPoints: Point3[][] // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
+    cachedStats: {
+      projectionPoints: Point3[][] // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
+      projectionPointsImageIds: string[]
+    }
     handles: {
       points: Point3[]
       activeHandleIndex: number | null
@@ -99,6 +103,11 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     }
   ) {
     super(toolConfiguration, defaultToolConfiguration)
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStatsTool,
+      100,
+      { trailing: true }
+    )
   }
 
   addNewMeasurement = (evt: CustomEvent) => {
@@ -162,18 +171,15 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         toolName: this.name,
         volumeUID: this.configuration.volumeUID,
         spacingInNormal,
-        projectionPointsImageIds: [referencedImageId],
       },
       data: {
         invalidated: true,
         startSlice: startIndex,
         endSlice: endIndex,
-        projectionPoints: [
-          [0, 0, 0],
-          [0, 0, 0],
-          [0, 0, 0],
-          [0, 0, 0],
-        ],
+        cachedStats: {
+          projectionPoints: [],
+          projectionPointsImageIds: [referencedImageId],
+        },
         handles: {
           // No need a textBox
           textBox: {
@@ -237,10 +243,9 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   ): void {
     const { data, metadata } = toolData
     const { viewPlaneNormal, spacingInNormal } = metadata
-
     const { vtkImageData: imageData } = imageVolume
-
     const { startSlice, endSlice } = data
+    const { projectionPoints } = data.cachedStats
     const { points } = data.handles
 
     const startIJK = vec3.create()
@@ -264,9 +269,9 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     // for each point inside points, navigate in the direction of the viewPlaneNormal
     // with amount of spacingInNormal, and calculate the next slice until we reach the distance
-    const projectionPoints = []
+    const newProjectionPoints = []
     for (let dist = 0; dist < distance; dist += spacingInNormal) {
-      projectionPoints.push(
+      newProjectionPoints.push(
         points.map((point) => {
           const newPoint = vec3.create()
           vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist)
@@ -275,7 +280,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       )
     }
 
-    data.projectionPoints = projectionPoints
+    data.cachedStats.projectionPoints = newProjectionPoints
 
     // Find the imageIds for the projection points
     const projectionPointsImageIds = []
@@ -289,7 +294,35 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       projectionPointsImageIds.push(imageId)
     }
 
-    metadata.projectionPointsImageIds = projectionPointsImageIds
+    data.cachedStats.projectionPointsImageIds = projectionPointsImageIds
+  }
+
+  _calculateCachedStatsTool(toolData, enabledElement) {
+    const data = toolData.data
+    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+
+    const { cachedStats } = data
+    const imageVolume = getVolume(this.configuration.volumeUID)
+
+    // Todo: this shouldn't be here, this is a performance issue
+    // Since we are extending the RectangleRoi class, we need to
+    // bring the logic for handle to some cachedStats calculation
+    this._computeProjectionPoints(toolData, imageVolume)
+
+    data.invalidated = false
+
+    // Dispatching measurement modified
+    const eventType = EVENTS.MEASUREMENT_MODIFIED
+
+    const eventDetail = {
+      toolData,
+      viewportUID,
+      renderingEngineUID,
+      sceneUID,
+    }
+    triggerEvent(eventTarget, eventType, eventDetail)
+
+    return cachedStats
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
@@ -309,7 +342,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     //   return
     // }
 
-    const { viewport, sceneUID, renderingEngineUID } = enabledElement
+    const { viewport, renderingEngine } = enabledElement
     const sliceIndex = viewport.getCurrentImageIdIndex()
 
     const { volumeUID } = this.configuration
@@ -344,18 +377,11 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         continue
       }
 
-      // Todo: this shouldn't be here
-      this._computeProjectionPoints(toolData, imageVolume)
+      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
 
-      const eventType = EVENTS.MEASUREMENT_MODIFIED
-
-      const eventDetail = {
-        toolData,
-        viewportUID: viewport.uid,
-        sceneUID: sceneUID,
-        renderingEngineUID,
+      if (data.invalidated) {
+        this._throttledCalculateCachedStats(toolData, enabledElement)
       }
-      triggerEvent(eventTarget, eventType, eventDetail)
 
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
