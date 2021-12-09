@@ -5,6 +5,7 @@ import {
   RenderingEngine,
   getRenderingEngine,
   Utilities as csUtils,
+  VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
 import {
   addToolState,
@@ -118,7 +119,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         // and the crosshairs will eventually get outisde of the viewport for
         // the other viewports.
         autoPan: {
-          enabled: false,
+          enabled: true,
           panSize: 10,
         },
       },
@@ -428,7 +429,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const eventData = evt.detail
     const { element } = eventData
     const enabledElement = getEnabledElement(element)
-    const { renderingEngine, viewport } = enabledElement
+    const { renderingEngine } = enabledElement
+    const viewport = enabledElement.viewport as VolumeViewport
 
     const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
@@ -547,7 +549,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     // AutoPan modification
     if (this.configuration.autoPan.enabled) {
-      viewportUIDsToRender.forEach((viewportUID) => {
+      const viewportUIDs = viewport.getScene().getViewportUIDs()
+      viewportUIDs.forEach((viewportUID) => {
         // other viewports in the scene
         if (viewportUID !== viewport.uid) {
           this._autoPanViewportIfNecessary(viewportUID, renderingEngine)
