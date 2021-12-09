@@ -28,7 +28,6 @@ import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotation
 
 import { ToolSpecificToolData, Point3 } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
-import { IImageVolume } from 'cornerstone-render/src/types'
 
 export interface RectangleRoiStartEndThresholdToolData
   extends ToolSpecificToolData {
@@ -239,7 +238,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   // Todo: make it work for other acquisition planes
   _computeProjectionPoints(
     toolData: RectangleRoiStartEndThresholdToolData,
-    imageVolume: IImageVolume
+    imageVolume: Types.IImageVolume
   ): void {
     const { data, metadata } = toolData
     const { viewPlaneNormal, spacingInNormal } = metadata
