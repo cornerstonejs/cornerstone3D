@@ -299,7 +299,8 @@ export function createAndCacheDerivedVolume(
  */
 export function createAndCacheLocalVolume(
   options: LocalVolumeOptions,
-  uid: string
+  uid: string,
+  preventCache = false
 ): ImageVolume {
   const { scalarData, metadata, dimensions, spacing, origin, direction } =
     options
@@ -359,6 +360,10 @@ export function createAndCacheLocalVolume(
     scalarData,
     sizeInBytes: numBytes,
   })
+
+  if (preventCache) {
+    return derivedVolume
+  }
 
   const volumeLoadObject = {
     promise: Promise.resolve(derivedVolume),

@@ -8,6 +8,7 @@ import thresholdVolumeByRoiStats from './thresholdVolumeByRoiStats'
 import triggerLabelmapRender from './triggerLabelmapRender'
 import calculateSuvPeak from './calculateSuvPeak'
 import calculateTMTV from './calculateTMTV'
+import createMergedLabelmap from './createMergedLabelmap'
 
 export {
   getBoundingBoxAroundShape,
@@ -18,6 +19,7 @@ export {
   triggerLabelmapRender,
   calculateSuvPeak,
   calculateTMTV,
+  createMergedLabelmap,
 }
 
 export default {
@@ -29,4 +31,5 @@ export default {
   triggerLabelmapRender,
   calculateSuvPeak,
   calculateTMTV,
+  createMergedLabelmap,
 }
