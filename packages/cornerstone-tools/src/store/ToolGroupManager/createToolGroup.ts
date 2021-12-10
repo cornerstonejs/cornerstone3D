@@ -28,6 +28,9 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     viewports: [],
     toolOptions: {}, // tools modes etc.
     //
+    getViewportUIDs: function () {
+      return this.viewports.map(({ viewportUID }) => viewportUID)
+    },
     getToolInstance: function (toolName) {
       const toolInstance = this._toolInstances[toolName]
       if (!toolInstance) {
