@@ -3,6 +3,7 @@ import destroyToolGroupById from './destroyToolGroupById'
 import destroy from './destroy'
 import getToolGroupById from './getToolGroupById'
 import getToolGroups from './getToolGroups'
+import getAllToolGroups from './getAllToolGroups'
 
 export default {
   createToolGroup,
@@ -10,4 +11,5 @@ export default {
   destroyToolGroupById,
   getToolGroupById,
   getToolGroups,
+  getAllToolGroups,
 }
