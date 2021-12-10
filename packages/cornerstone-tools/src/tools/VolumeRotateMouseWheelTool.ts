@@ -28,7 +28,7 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         direction: DIRECTIONS.Z,
-        rotateIncrementDegrees: 20,
+        rotateIncrementDegrees: 0.5, // radian?
       },
     }
 

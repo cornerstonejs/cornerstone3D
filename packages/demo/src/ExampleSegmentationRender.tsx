@@ -620,6 +620,7 @@ class SegmentationExample extends Component {
     // get the current slice Index
     const sliceIndex = viewport.getCurrentImageIdIndex()
     toolData.data.endSlice = sliceIndex
+    toolData.data.invalidated = true // IMPORTANT: invalidate the toolData for the cached stat to get updated
 
     viewport.render()
   }
@@ -659,6 +660,7 @@ class SegmentationExample extends Component {
     })
 
     handles.points = newPoints
+    toolData.data.invalidated = true // IMPORTANT: invalidate the toolData for the cached stat to get updated
     viewport.render()
   }
 
