@@ -36,7 +36,7 @@ function thresholdVolumeByRoiStats(
   referenceVolumes: IImageVolume[],
   labelmap: IImageVolume,
   options: ThresholdRoiStatsOptions
-): void {
+): IImageVolume {
   if (referenceVolumes.length > 1) {
     throw new Error('thresholding more than one volumes is not supported yet')
   }
@@ -105,6 +105,7 @@ function thresholdVolumeByRoiStats(
 
   // Run threshold volume by the new range
   thresholdVolumeByRange(toolDataList, referenceVolumes, labelmap, rangeOptions)
+  return labelmap
 }
 
 function _worldToIndex(imageData, ain) {

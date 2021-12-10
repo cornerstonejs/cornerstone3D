@@ -34,7 +34,7 @@ function thresholdVolumeByRange(
   referenceVolumes: IImageVolume[],
   labelmap: IImageVolume,
   options: ThresholdRangeOptions
-): void {
+): IImageVolume {
   if (referenceVolumes.length > 1) {
     throw new Error('thresholding more than one volumes is not supported yet')
   }
@@ -104,6 +104,7 @@ function thresholdVolumeByRange(
   })
 
   triggerLabelmapRender(renderingEngine, labelmap, labelmapImageData)
+  return labelmap
 }
 
 function worldToIndex(imageData, ain) {
