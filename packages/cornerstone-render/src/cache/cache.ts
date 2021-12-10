@@ -481,11 +481,15 @@ class Cache implements ICache {
         return
       }
 
-      let volumeImageIds = cachedVolume.volume.imageIds
+      let { imageIds } = cachedVolume.volume
 
-      volumeImageIds = volumeImageIds.map((id) => imageIdToURI(id))
+      if (!imageIds || imageIds.length === 0) {
+        continue
+      }
 
-      const imageIdIndex = volumeImageIds.indexOf(imageIdToUse)
+      imageIds = imageIds.map((id) => imageIdToURI(id))
+
+      const imageIdIndex = imageIds.indexOf(imageIdToUse)
       if (imageIdIndex > -1) {
         return { volume: cachedVolume.volume, imageIdIndex }
       }
