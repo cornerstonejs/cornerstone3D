@@ -274,7 +274,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         points.map((point) => {
           const newPoint = vec3.create()
           vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist)
-          return newPoint
+          return Array.from(newPoint)
         })
       )
     }
