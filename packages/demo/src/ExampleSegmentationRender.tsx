@@ -600,7 +600,7 @@ class SegmentationExample extends Component {
     const suvPeak = csToolsUtils.segmentation.calculateSuvPeak(
       viewport,
       labelmaps[0],
-      referenceVolume,
+      referenceVolume
     )
     console.debug('suvPeak', suvPeak)
   }
@@ -671,18 +671,6 @@ class SegmentationExample extends Component {
     const selectedToolDataList =
       toolDataSelection.getSelectedToolDataByToolName(activeTool)
 
-    let slices
-    if (activeTool === RECTANGLE_ROI_THRESHOLD_MANUAL) {
-      const data = selectedToolDataList[0].data
-      slices = {
-        sliceNumbers: [data.startSlice, data.endSlice],
-      }
-    } else {
-      slices = {
-        numSlices,
-      }
-    }
-
     if (mode === 'max') {
       csToolsUtils.segmentation.thresholdVolumeByRoiStats(
         selectedToolDataList,
@@ -691,7 +679,7 @@ class SegmentationExample extends Component {
         {
           statistic: 'max',
           weight: 0.41,
-          slices,
+          numSlicesToProject: numSlices,
           overwrite: true,
         }
       )
@@ -706,7 +694,7 @@ class SegmentationExample extends Component {
       {
         lowerThreshold: Number(this.state.thresholdMin),
         higherThreshold: Number(this.state.thresholdMax),
-        slices,
+        numSlicesToProject: numSlices,
         overwrite: true,
       }
     )
@@ -1008,7 +996,9 @@ class SegmentationExample extends Component {
         <div>{this.getSetToolModes()}</div>
         {this.state.segmentationToolActive && (
           <div style={{ marginTop: '15px' }}>
-            {this.state.ptCtLeftClickTool.includes(RECTANGLE_ROI_THRESHOLD)
+            {this.state.ptCtLeftClickTool.includes(
+              "RectangleRoi"
+            )
               ? this.getThresholdUID()
               : this.getScissorsUI()}
             <div

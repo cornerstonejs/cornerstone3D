@@ -6,6 +6,17 @@ import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
 import pointInSurroundingSphereCallback from '../../util/planar/pointInSurroundingSphereCallback'
 import { getBoundingBoxAroundShape } from '../segmentation'
 
+export type ToolDataForThresholding = {
+  data: {
+    handles: {
+      points: Point3[]
+    }
+    cachedStats: {
+      projectionPoints: Point3[][]
+    }
+  }
+}
+
 /**
  * This method calculates the SUV peak on a segmented ROI from a reference PET
  * volume. If a rectangle is provided, the peak is calculated within that
@@ -14,7 +25,7 @@ import { getBoundingBoxAroundShape } from '../segmentation'
  * @param viewport Viewport to use for the calculation
  * @param labelmap Labelmap from which the mask is taken
  * @param referenceVolume PET volume to use for SUV calculation
- * @param RectangleRoiToolData [Optional] Rectangle ROI to use for limiting the bounding box
+ * @param toolData [Optional] list of toolData to use for SUV calculation
  * @param segmentIndex The index of the segment to use for masking
  * @returns
  */
@@ -22,7 +33,7 @@ function calculateSuvPeak(
   viewport,
   labelmap: IImageVolume,
   referenceVolume: IImageVolume,
-  RectangleRoiToolData?: any, // Todo: change to boundsIJK instead of a toolData
+  toolData?: ToolDataForThresholding[],
   segmentIndex = 1
 ): any {
   if (referenceVolume.metadata.Modality !== 'PT') {
@@ -47,12 +58,15 @@ function calculateSuvPeak(
   } = referenceVolume
 
   let boundsIJK
-  if (RectangleRoiToolData) {
-    const { points } = RectangleRoiToolData.data.handles
-    const rectangleCornersIJK = points.map((world) => {
+  // Todo: using the first tooldata for now
+  if (toolData && toolData[0].data?.cachedStats) {
+    const { projectionPoints } = toolData[0].data.cachedStats
+    const pointsToUse = [].concat(...projectionPoints) // cannot use flat() because of typescript compiler right now
+
+    const rectangleCornersIJK = pointsToUse.map((world) => {
       const ijk = vec3.fromValues(0, 0, 0)
       referenceVolumeImageData.worldToIndex(world, ijk)
-      return ijk
+      return ijk as Point3
     })
 
     boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)

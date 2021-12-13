@@ -1,23 +1,37 @@
 import { vec3 } from 'gl-matrix'
-import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
+import {
+  IImageVolume,
+  IEnabledElement,
+  Point3,
+  Point2,
+} from '@precisionmetrics/cornerstone-render/src/types'
 
 import {
   getBoundingBoxAroundShape,
   extend2DBoundingBoxInViewAxis,
 } from '../segmentation'
-import { RectangleRoiThresholdToolData } from '../../tools/segmentation/RectangleRoiThreshold'
-import { Point3 } from '../../types'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
 import triggerLabelmapRender from './triggerLabelmapRender'
 
 export type ThresholdRangeOptions = {
   higherThreshold: number
   lowerThreshold: number
-  slices: {
-    numSlices?: number // put numSlices before and after the current slice
-    sliceNumbers?: number[] // absolute first and last slice
-  }
+  numSlicesToProject?: number // number of slices to project before and after current slice
   overwrite: boolean
+}
+
+export type ToolDataForThresholding = {
+  metadata: {
+    enabledElement: IEnabledElement
+  }
+  data: {
+    handles: {
+      points: Point3[]
+    }
+    cachedStats: {
+      projectionPoints: Point3[][]
+    }
+  }
 }
 
 /**
@@ -30,7 +44,7 @@ export type ThresholdRangeOptions = {
  * @param {ThresholdRangeOptions} options Options for thresholding
  */
 function thresholdVolumeByRange(
-  toolDataList: RectangleRoiThresholdToolData[],
+  toolDataList: ToolDataForThresholding[],
   referenceVolumes: IImageVolume[],
   labelmap: IImageVolume,
   options: ThresholdRangeOptions
@@ -44,7 +58,8 @@ function thresholdVolumeByRange(
   }
 
   const { scalarData, vtkImageData: labelmapImageData } = labelmap
-  const { lowerThreshold, higherThreshold, slices, overwrite } = options
+  const { lowerThreshold, higherThreshold, numSlicesToProject, overwrite } =
+    options
 
   // set the labelmap to all zeros
   if (overwrite) {
@@ -58,7 +73,8 @@ function thresholdVolumeByRange(
   toolDataList.forEach((toolData) => {
     // Threshold Options
     const { enabledElement } = toolData.metadata
-    const { points } = toolData.data.handles
+    const { data } = toolData
+    const { points } = data.handles
 
     ;({ renderingEngine } = enabledElement)
 
@@ -68,20 +84,26 @@ function thresholdVolumeByRange(
     // Todo: get directly from scalarData?
     const values = vtkImageData.getPointData().getScalars().getData()
 
-    const rectangleCornersIJK = points.map(
-      (world) => worldToIndex(vtkImageData, world) as Point3
+    let pointsToUse = points
+    // If the tool is a 2D tool but has projection points, use them
+    if (data.cachedStats?.projectionPoints) {
+      const { projectionPoints } = data.cachedStats
+      pointsToUse = [].concat(...projectionPoints) // cannot use flat() because of typescript compiler right now
+    }
+
+    const rectangleCornersIJK = pointsToUse.map(
+      (world) => _worldToIndex(vtkImageData, world) as Point3
     )
+    let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
-    const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
-
-    const slicesToUse = slices.numSlices
-      ? slices.numSlices
-      : slices.sliceNumbers
-
-    const extendedBoundsIJK = extend2DBoundingBoxInViewAxis(
-      boundsIJK,
-      slicesToUse
-    )
+    // If the tool is 2D but it is configed to project to X amount of slices
+    // Don't project the slices if projectionPoints have been used to define the extents
+    if (numSlicesToProject && !data.cachedStats?.projectionPoints) {
+      boundsIJK = extendBoundingBoxInSliceAxisIfNecessary(
+        boundsIJK,
+        numSlicesToProject
+      )
+    }
 
     const callback = ({ index, pointIJK }) => {
       const offset = vtkImageData.computeOffsetIndex(pointIJK)
@@ -94,7 +116,7 @@ function thresholdVolumeByRange(
     }
 
     pointInShapeCallback(
-      extendedBoundsIJK,
+      boundsIJK,
       scalarData,
       labelmapImageData,
       dimensions,
@@ -107,7 +129,18 @@ function thresholdVolumeByRange(
   return labelmap
 }
 
-function worldToIndex(imageData, ain) {
+export function extendBoundingBoxInSliceAxisIfNecessary(
+  boundsIJK: [Point2, Point2, Point2],
+  numSlicesToProject: number
+): [Point2, Point2, Point2] {
+  const extendedBoundsIJK = extend2DBoundingBoxInViewAxis(
+    boundsIJK,
+    numSlicesToProject
+  )
+  return extendedBoundsIJK
+}
+
+function _worldToIndex(imageData, ain) {
   const vout = vec3.fromValues(0, 0, 0)
   imageData.worldToIndex(ain, vout)
   return vout

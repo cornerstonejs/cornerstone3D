@@ -1,21 +1,17 @@
 import { vec3 } from 'gl-matrix'
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 
-import {
-  getBoundingBoxAroundShape,
-  extend2DBoundingBoxInViewAxis,
-} from '../segmentation'
-import { RectangleRoiThresholdToolData } from '../../tools/segmentation/RectangleRoiThreshold'
+import { getBoundingBoxAroundShape } from '../segmentation'
 import { Point3 } from '../../types'
-import thresholdVolumeByRange from './thresholdVolumeByRange'
+import thresholdVolumeByRange, {
+  ToolDataForThresholding,
+  extendBoundingBoxInSliceAxisIfNecessary,
+} from './thresholdVolumeByRange'
 
 export type ThresholdRoiStatsOptions = {
   statistic: 'max' | 'min'
   weight: number
-  slices: {
-    numSlices?: number // put numSlices before and after the current slice
-    sliceNumbers?: number[] // absolute slice numbers
-  }
+  numSlicesToProject?: number
   overwrite: boolean
 }
 
@@ -32,7 +28,7 @@ export type ThresholdRoiStatsOptions = {
  * @param {ThresholdRoiStatsOptions} options Options for thresholding
  */
 function thresholdVolumeByRoiStats(
-  toolDataList: RectangleRoiThresholdToolData[],
+  toolDataList: ToolDataForThresholding[],
   referenceVolumes: IImageVolume[],
   labelmap: IImageVolume,
   options: ThresholdRoiStatsOptions
@@ -45,7 +41,7 @@ function thresholdVolumeByRoiStats(
     throw new Error('labelmap is required')
   }
 
-  const { slices, overwrite } = options
+  const { numSlicesToProject, overwrite } = options
 
   const { scalarData } = labelmap
   if (overwrite) {
@@ -64,24 +60,30 @@ function thresholdVolumeByRoiStats(
   let value = baseValue
 
   toolDataList.forEach((toolData) => {
-    const { points } = toolData.data.handles
+    const { data } = toolData
+    const { points } = data.handles
 
-    const rectangleCornersIJK = points.map(
+    let pointsToUse = points
+    // If the tool is a 2D tool but has projection points, use them
+    if (data.cachedStats?.projectionPoints) {
+      const { projectionPoints } = data.cachedStats
+      pointsToUse = [].concat(...projectionPoints) // cannot use flat() because of typescript compiler right now
+    }
+
+    const rectangleCornersIJK = pointsToUse.map(
       (world) => _worldToIndex(vtkImageData, world) as Point3
     )
+    let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
-    const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
+    // Don't project the slices if projectionPoints have been used to define the extents
+    if (numSlicesToProject && !data.cachedStats?.projectionPoints) {
+      boundsIJK = extendBoundingBoxInSliceAxisIfNecessary(
+        boundsIJK,
+        numSlicesToProject
+      )
+    }
 
-    const slicesToUse = slices.numSlices
-      ? slices.numSlices
-      : slices.sliceNumbers
-
-    const extendedBoundsIJK = extend2DBoundingBoxInViewAxis(
-      boundsIJK,
-      slicesToUse
-    )
-
-    const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = extendedBoundsIJK
+    const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
 
     for (let i = iMin; i <= iMax; i++) {
       for (let j = jMin; j <= jMax; j++) {
@@ -96,10 +98,7 @@ function thresholdVolumeByRoiStats(
   const rangeOptions = {
     lowerThreshold: options.weight * value,
     higherThreshold: +Infinity,
-    slices: {
-      numSlices: slices.numSlices,
-      sliceNumbers: slices.sliceNumbers,
-    },
+    numSlicesToProject,
     overwrite,
   }
 
