@@ -56,17 +56,15 @@ function getBoundingBoxAroundShape(
 /**
  * Used the current bounds of the 2D rectangle and extends it in the view axis by numSlices
  * It compares min and max of each IJK to find the view axis (for axial, zMin === zMax) and
- * then calculates the extended range. If the slices given is an array, it will assume
- * the absolute position of slices is given and override the range for the view axis inside
- * the bounding box. If the slices is a number, it will assume the slice is relative to the
- * current slice and will add and subtract the given slices to the current min and max.
+ * then calculates the extended range. It will assume the slice is relative to the
+ * current slice and will add the given slices to the current max of the boundingBox.
  * @param boundsIJK  [[iMin, iMax], [jMin, jMax], [kMin, kMax]]
- * @param slices absolute range of slices [sliceMin, sliceMax] or relative to current slice [numberOfSlices]
+ * @param slices number of slices to project before and after
  * @returns extended bounds
  */
 function extend2DBoundingBoxInViewAxis(
   boundsIJK: [Point2, Point2, Point2],
-  slices: number | number[]
+  numSlicesToProject: number
 ): [Point2, Point2, Point2] {
   // find which index in boundsIJK has the same first and last value
   const sliceNormalIndex = boundsIJK.findIndex(([min, max]) => min === max)
@@ -75,15 +73,15 @@ function extend2DBoundingBoxInViewAxis(
     throw new Error('3D bounding boxes not supported in an oblique plane')
   }
 
-  if (slices instanceof Array) {
-    boundsIJK[sliceNormalIndex][0] = Math.min(...slices)
-    boundsIJK[sliceNormalIndex][1] = Math.max(...slices)
-    return boundsIJK
-  }
+  // if (slices instanceof Array) {
+  //   boundsIJK[sliceNormalIndex][0] = Math.min(...slices)
+  //   boundsIJK[sliceNormalIndex][1] = Math.max(...slices)
+  //   return boundsIJK
+  // }
 
   // get the index and subtract slices from the min and add to the max
-  boundsIJK[sliceNormalIndex][0] -= slices
-  boundsIJK[sliceNormalIndex][1] += slices
+  boundsIJK[sliceNormalIndex][0] -= numSlicesToProject
+  boundsIJK[sliceNormalIndex][1] += numSlicesToProject
   return boundsIJK
 }
 
