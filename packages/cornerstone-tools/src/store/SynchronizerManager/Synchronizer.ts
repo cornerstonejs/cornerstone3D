@@ -82,6 +82,14 @@ class Synchronizer {
     this._updateDisableHandlers()
   }
 
+  public getSourceViewports(): Array<Types.IViewportUID> {
+    return this._sourceViewports
+  }
+
+  public getTargetViewports(): Array<Types.IViewportUID> {
+    return this._targetViewports
+  }
+
   /**
    * REMOVE
    * ========================

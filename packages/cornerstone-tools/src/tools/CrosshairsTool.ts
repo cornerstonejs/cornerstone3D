@@ -119,7 +119,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         // and the crosshairs will eventually get outisde of the viewport for
         // the other viewports.
         autoPan: {
-          enabled: true,
+          enabled: false,
           panSize: 10,
         },
       },
