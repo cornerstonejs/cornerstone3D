@@ -297,7 +297,7 @@ export function createAndCacheDerivedVolume(
  * @param uid UID of the generated volume
  * @returns ImageVolume
  */
-export function createAndCacheLocalVolume(
+export function createLocalVolume(
   options: LocalVolumeOptions,
   uid: string,
   preventCache = false
@@ -310,7 +310,7 @@ export function createAndCacheLocalVolume(
     !(scalarData instanceof Uint8Array || scalarData instanceof Float32Array)
   ) {
     throw new Error(
-      'To use createAndCacheLocalVolume you should pass scalarData of type Uint8Array or Float32Array'
+      'To use createLocalVolume you should pass scalarData of type Uint8Array or Float32Array'
     )
   }
 
