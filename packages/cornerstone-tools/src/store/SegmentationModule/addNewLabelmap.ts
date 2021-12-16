@@ -2,7 +2,7 @@ import { _cloneDeep } from 'lodash.clonedeep'
 import {
   getEnabledElement,
   createAndCacheDerivedVolume,
-  createAndCacheLocalVolume,
+  createLocalVolume,
 } from '@precisionmetrics/cornerstone-render'
 
 import { Point3 } from '../../types'
@@ -66,7 +66,7 @@ async function addNewLabelmap({
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
     const properties = _cloneDeep(options)
-    labelmap = await createAndCacheLocalVolume(properties, labelmapUID)
+    labelmap = await createLocalVolume(properties, labelmapUID)
   } else {
     // create a labelmap from a reference volume
     const { uid: volumeUID } = viewport.getDefaultActor()
