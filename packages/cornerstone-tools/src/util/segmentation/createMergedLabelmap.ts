@@ -1,5 +1,5 @@
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
-import { createAndCacheLocalVolume } from '@precisionmetrics/cornerstone-render'
+import { createLocalVolume } from '@precisionmetrics/cornerstone-render'
 import isEqual from '../math/vec3/isEqual'
 
 /**
@@ -52,7 +52,7 @@ function createMergedLabelmap(
   }
 
   const preventCache = true
-  const mergedVolume = createAndCacheLocalVolume(options, uid, preventCache)
+  const mergedVolume = createLocalVolume(options, uid, preventCache)
 
   return mergedVolume
 }
