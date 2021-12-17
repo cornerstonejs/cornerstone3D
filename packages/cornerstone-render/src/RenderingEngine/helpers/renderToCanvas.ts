@@ -15,15 +15,16 @@ import Events from '../../enums/events'
  * of renders to a thumbnail image).
  * @param {string}imageId - The imageId to render
  * @param {HTMLCanvasElement} canvas - Canvas element to render to
- * @param {string} renderingEngineUID - The rendering engine UID to use
- * @param {boolean} suppressEvents - [Default = true] boolean to suppress events during render,
+ * @param {string} [renderingEngineUID] - [Default=null] The rendering engine UID
+ * to use, if not provided, will create a new rendering engine with a random UID (this is preferred)
+ * @param {boolean} [suppressEvents] - [Default = true] boolean to suppress events during render,
  * if undefined, events will be suppressed
  * @returns {Promise} - A promise that resolves when the image has been rendered with the imageId
  */
 export default function renderToCanvas(
   imageId: string,
   canvas: HTMLCanvasElement,
-  renderingEngineUID: string,
+  renderingEngineUID = null,
   suppressEvents = true
 ): Promise<string> {
   return new Promise((resolve, reject) => {
