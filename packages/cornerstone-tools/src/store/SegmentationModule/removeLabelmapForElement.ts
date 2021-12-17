@@ -40,6 +40,8 @@ function removeLabelmapForElement(
 
   // remove the labelmap actor from the scene
   // Add labelmap volumes to the scene to be be rendered, but not force the render
+  // Todo: the first time we are removing from Scene, so for the other viewports
+  // also it is removed ...
   scene.removeVolumes([labelmapUID])
 
   // updating the states
@@ -59,9 +61,14 @@ function removeLabelmapForElement(
       (labelmap) => labelmap.volumeUID === labelmapUID
     )
 
+    if (labelmapIndex === -1) {
+      return
+    }
+
     // if viewport's current activeLabelmapIndex is the same as the labelmapIndex
     // then we need to update the activeLabelmapIndex to index 0, after
     // we remove the labelmap from viewport's state.
+    // Todo: this should move somewehere else
     const removingActiveLabelmap =
       viewportLabelmapsState.activeLabelmapIndex === labelmapIndex
 
