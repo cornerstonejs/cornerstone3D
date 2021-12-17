@@ -237,7 +237,53 @@ export default class StreamingImageVolume extends ImageVolume {
       }
     }
 
-    function successCallback(
+    const successCallback = (
+      volume: StreamingImageVolume,
+      imageIdIndex: number,
+      imageId: string,
+      scalingParameters
+    ) => {
+      // Check if there is a cached image for the same imageURI (different
+      // data loader scheme)
+      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId)
+
+      if (!cachedImage || !cachedImage.image) {
+        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId)
+      }
+      const imageScalarData = this._scaleIfNecessary(
+        cachedImage.image,
+        scalingParameters
+      )
+      // todo add scaling and slope
+      const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData
+      const TypedArray = this.scalarData.constructor
+      let byteOffset = bytesPerImage * imageIdIndex
+
+      //    create a view on the volume arraybuffer
+      const bytePerPixel = bytesPerImage / pixelsPerImage
+
+      if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
+        byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel
+      }
+
+      // @ts-ignore
+      const volumeBufferView = new TypedArray(
+        arrayBuffer,
+        byteOffset,
+        pixelsPerImage
+      )
+      cachedImage.imageLoadObject.promise
+        .then((image) => {
+          volumeBufferView.set(imageScalarData)
+          updateTextureAndTriggerEvents(this, imageIdIndex, imageId)
+        })
+        .catch((err) => {
+          errorCallback(err, imageIdIndex, imageId)
+        })
+      return
+    }
+
+    function updateTextureAndTriggerEvents(
       volume: StreamingImageVolume,
       imageIdIndex,
       imageId
@@ -340,44 +386,6 @@ export default class StreamingImageVolume extends ImageVolume {
         }
       }
 
-      // Check if there is a cached image for the same imageURI (different
-      // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId)
-
-      if (cachedImage && cachedImage.image) {
-        const imageScalarData = this._scaleIfNecessary(
-          cachedImage.image,
-          scalingParameters
-        )
-        // todo add scaling and slope
-        const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData
-        const TypedArray = this.scalarData.constructor
-        let byteOffset = bytesPerImage * imageIdIndex
-
-        //    create a view on the volume arraybuffer
-        const bytePerPixel = bytesPerImage / pixelsPerImage
-
-        if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-          byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel
-        }
-
-        // @ts-ignore
-        const volumeBufferView = new TypedArray(
-          arrayBuffer,
-          byteOffset,
-          pixelsPerImage
-        )
-        cachedImage.imageLoadObject.promise
-          .then((image) => {
-            volumeBufferView.set(imageScalarData)
-            successCallback(this, imageIdIndex, imageId)
-          })
-          .catch((err) => {
-            errorCallback(err, imageIdIndex, imageId)
-          })
-        return
-      }
-
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -396,7 +404,7 @@ export default class StreamingImageVolume extends ImageVolume {
       function callLoadImage(imageId, imageIdIndex, options) {
         return loadImage(imageId, options).then(
           () => {
-            successCallback(this, imageIdIndex, imageId)
+            successCallback(this, imageIdIndex, imageId, scalingParameters)
           },
           (error) => {
             errorCallback(error, imageIdIndex, imageId)
