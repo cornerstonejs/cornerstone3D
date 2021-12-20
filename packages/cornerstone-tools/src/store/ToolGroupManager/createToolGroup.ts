@@ -144,9 +144,11 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         ? this.toolOptions[toolName].bindings
         : []
 
+      const newBindings = toolModeOptions ? toolModeOptions.bindings : []
+
       // We should not override the bindings if they are already set
       const toolModeOptionsWithMode = {
-        bindings: [...prevBindings, ...toolModeOptions.bindings],
+        bindings: [...prevBindings, ...newBindings],
         mode: Active,
       }
 
