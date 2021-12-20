@@ -140,17 +140,15 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         return
       }
 
-      // Would only need this for sanity check if not instantiating/hydrating
-      // const tool = this.toolOptions[toolName];
-      const toolModeOptionsWithMode = Object.assign(
-        {
-          bindings: [],
-        },
-        toolModeOptions,
-        {
-          mode: Active,
-        }
-      )
+      const prevBindings = this.toolOptions[toolName]
+        ? this.toolOptions[toolName].bindings
+        : []
+
+      // We should not override the bindings if they are already set
+      const toolModeOptionsWithMode = {
+        bindings: [...prevBindings, ...toolModeOptions.bindings],
+        mode: Active,
+      }
 
       this.toolOptions[toolName] = toolModeOptionsWithMode
       this._toolInstances[toolName].mode = Active
@@ -177,11 +175,13 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         return
       }
 
-      // Would only need this for sanity check if not instantiating/hydrating
-      // const tool = this.toolOptions[toolName];
-      const toolModeOptionsWithMode = Object.assign(
+      // Wwe should only remove the primary button bindings and keep
+      // the other ones (Zoom on right click)
+      const toolOptions = Object.assign(
         {
-          bindings: [],
+          bindings: this.toolOptions[toolName]
+            ? this.toolOptions[toolName].bindings
+            : [],
         },
         toolModeOptions,
         {
@@ -189,8 +189,20 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         }
       )
 
-      this.toolOptions[toolName] = toolModeOptionsWithMode
-      this._toolInstances[toolName].mode = Passive
+      // Remove the primary button bindings if they exist
+      toolOptions.bindings = toolOptions.bindings.filter(
+        (binding) => binding.mouseButton !== ToolBindings.Mouse.Primary
+      )
+
+      // If there are other bindings, set the tool to be active
+      let mode = Passive
+      if (toolOptions.bindings.length !== 0) {
+        mode = Active
+        toolOptions.mode = mode
+      }
+
+      this.toolOptions[toolName] = toolOptions
+      this._toolInstances[toolName].mode = mode
       this.refreshViewports()
     },
     setToolEnabled: function (
