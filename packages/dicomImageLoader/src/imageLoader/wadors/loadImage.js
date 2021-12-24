@@ -76,7 +76,7 @@ function loadImage(imageId, options = {}) {
     // const mediaType = 'multipart/related; type="image/x-jls"';
     // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
     const mediaType =
-      'multipart/related; type="application/octet-stream"; transfer-syntax=*';
+      'multipart/related; type=application/octet-stream; transfer-syntax=*';
     // const mediaType =
     //   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
 
