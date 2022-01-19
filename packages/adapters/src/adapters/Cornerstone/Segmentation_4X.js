@@ -1209,11 +1209,22 @@ function checkIfPerpendicular(iop1, iop2, tolerance) {
 function unpackPixelData(multiframe) {
     const segType = multiframe.SegmentationType;
 
-    if (segType === "BINARY") {
-        return BitArray.unpack(multiframe.PixelData);
+    let data;
+    if (Array.isArray(multiframe.PixelData)) {
+        data = multiframe.PixelData[0];
+    } else {
+        data = multiframe.PixelData;
     }
 
-    const pixelData = new Uint8Array(multiframe.PixelData);
+    if (data === undefined) {
+        log.error("This segmentation pixeldata is undefined.");
+    }
+
+    if (segType === "BINARY") {
+        return BitArray.unpack(data);
+    }
+
+    const pixelData = new Uint8Array(data);
 
     const max = multiframe.MaximumFractionalValue;
     const onlyMaxAndZero =
