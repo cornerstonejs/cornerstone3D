@@ -623,7 +623,7 @@ function findReferenceSourceImageId(
 
     if (!imageId) {
         /** not found, we can do a check with the PlanePositionSequence.
-         * (WARNING) However, if more than a source series is present,
+         * (WARNING!) However, if more than a source series is present,
          * this logic can find the wrong frame
          * (i.e. two source series, with the same frameOfReferenceUID,
          * that have each a frame with the same ImagePositionPatient of PlanePositionSequence).
