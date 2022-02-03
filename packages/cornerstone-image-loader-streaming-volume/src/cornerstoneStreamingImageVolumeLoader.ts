@@ -73,8 +73,9 @@ function cornerstoneStreamingImageVolumeLoader(
 
   // Check if it fits in the cache before we allocate data
   // TODO Improve this when we have support for more types
-  const bytesPerVoxel = BitsAllocated === 16 ? 2 : 1
-  const sizeInBytes =
+  // NOTE: We use 4 bytes per voxel as we are using Float32.
+  const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1
+  const sizeInBytesPerComponent =
     bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2]
 
   let numComponents = 1
@@ -82,15 +83,15 @@ function cornerstoneStreamingImageVolumeLoader(
     numComponents = 3
   }
 
-  const numBytes = sizeInBytes * numComponents
+  const sizeInBytes = sizeInBytesPerComponent * numComponents
 
   // check if there is enough space in unallocated + image Cache
-  const isCacheable = cache.isCacheable(numBytes)
+  const isCacheable = cache.isCacheable(sizeInBytes)
   if (!isCacheable) {
     throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
   }
 
-  cache.decacheIfNecessaryUntilBytesAvailable(numBytes)
+  cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes)
 
   let scalarData
 
