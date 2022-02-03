@@ -262,7 +262,8 @@ function _createSegFromImages(images, isMultiframe, options) {
  * @param  {string[]} imageIds - An array of the imageIds.
  * @param  {ArrayBuffer} arrayBuffer - The SEG arrayBuffer.
  * @param  {*} metadataProvider.
- * @param  {number} tolerance - checks tolerance, default value 1.e-3.
+ * @param  {bool} skipOverlapping - skip checks for overlapping segs, default value false.
+ * @param  {number} tolerance - default value 1.e-3.
  *
  * @return {[]ArrayBuffer}a list of array buffer for each labelMap
  * @return {Object} an object from which the segment metadata can be derived
