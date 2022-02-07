@@ -16,7 +16,11 @@ import RectangleRoiTool from './annotation/RectangleRoiTool'
 import EllipticalRoiTool from './annotation/EllipticalRoiTool'
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 import CircleScissorsTool from './segmentation/CircleScissorsTool'
+import SphereScissorsTool from './segmentation/SphereScissorsTool'
 import RectangleRoiThreshold from './segmentation/RectangleRoiThreshold'
+
+// PET annotation tool
+import SUVPeakTool from './annotation/PET/SUVPeakTool'
 
 export {
   // ~~ BASE
@@ -41,5 +45,8 @@ export {
   // Segmentations
   RectangleScissorsTool,
   CircleScissorsTool,
+  SphereScissorsTool,
   RectangleRoiThreshold,
+  // PET annotation
+  SUVPeakTool,
 }

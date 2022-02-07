@@ -6,7 +6,7 @@ import {
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
 
-import { fillInsideCircle } from './strategies/fillCircle'
+import { fillInsideSphere } from './strategies/fillSphere'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { drawCircle as drawCircleSvg } from '../../drawingSvg'
 import {
@@ -27,12 +27,12 @@ import {
 
 /**
  * @public
- * @class CircleScissorsTool
+ * @class SphereScissorsTool
  * @memberof Tools
  * @classdesc Tool for manipulating labelmap data by drawing a rectangle.
  * @extends Tools.Base.BaseTool
  */
-export default class CircleScissorsTool extends BaseTool {
+export default class SphereScissorsTool extends BaseTool {
   editData: {
     toolData: any
     labelmap: any
@@ -52,11 +52,11 @@ export default class CircleScissorsTool extends BaseTool {
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
-      name: 'CircleScissors',
+      name: 'SphereScissors',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
-          FILL_INSIDE: fillInsideCircle,
+          FILL_INSIDE: fillInsideSphere,
           // ERASE_INSIDE: eraseInsideCircle,
         },
         defaultStrategy: 'FILL_INSIDE',
@@ -101,7 +101,7 @@ export default class CircleScissorsTool extends BaseTool {
 
     const labelmap = cache.getVolume(labelmapUID)
 
-    // Todo: Used for drawing the svg only, we might not need it at all
+    // Used for drawing the svg only, we might not need it at all
     const toolData = {
       metadata: {
         viewPlaneNormal: <Point3>[...viewPlaneNormal],
@@ -164,8 +164,6 @@ export default class CircleScissorsTool extends BaseTool {
     //////
     const { toolData, viewportUIDsToRender, centerCanvas } = this.editData
     const { data } = toolData
-
-    // Center of circle in canvas Coordinates
 
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
@@ -239,7 +237,7 @@ export default class CircleScissorsTool extends BaseTool {
     }
 
     const eventDetail = {
-      element,
+      canvas: element,
       enabledElement,
       renderingEngine,
     }

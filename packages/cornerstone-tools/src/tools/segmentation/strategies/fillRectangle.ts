@@ -1,12 +1,9 @@
-import {
-  IEnabledElement,
-} from '@ohif/cornerstone-render/src/types'
-import {
-  fillInsideShape,
-  getBoundingBoxAroundShape,
-} from '../../../util/segmentation'
+import { IEnabledElement } from '@ohif/cornerstone-render/src/types'
+import { getBoundingBoxAroundShape } from '../../../util/segmentation'
 import { Point3 } from '../../../types'
 import { ImageVolume } from '@ohif/cornerstone-render'
+import pointInShapeCallback from '../../../util/planar/pointInShapeCallback'
+import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
 
 type OperationData = {
   points: [Point3, Point3, Point3, Point3]
@@ -31,12 +28,18 @@ type FillRectangleEvent = {
 function fillRectangle(
   evt: FillRectangleEvent,
   operationData: OperationData,
+  constraintFn?: any,
   inside = true
 ): void {
   const { enabledElement } = evt
-  const { renderingEngine } = enabledElement
-  const { volume: labelmapVolume, points, constraintFn } = operationData
-  const { vtkImageData, dimensions } = labelmapVolume
+  const { renderingEngine, viewport } = enabledElement
+  const {
+    volume: labelmapVolume,
+    points,
+    segmentsLocked,
+    segmentIndex,
+  } = operationData
+  const { vtkImageData, dimensions, scalarData } = labelmapVolume
 
   const rectangleCornersIJK = points.map((world) => {
     return vtkImageData.worldToIndex(world)
@@ -48,28 +51,35 @@ function fillRectangle(
     throw new Error('Oblique segmentation tools are not supported yet')
   }
 
-  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
-
-  const topLeftFront = <Point3>[iMin, jMin, kMin]
-  const bottomRightBack = <Point3>[iMax, jMax, kMax]
-
   // Since always all points inside the boundsIJK is inside the rectangle...
-  const pointInShape = () => true
+  const pointInRectangle = () => true
 
-  inside
-    ? fillInsideShape(
-        enabledElement,
-        operationData,
-        pointInShape,
-        constraintFn,
-        topLeftFront,
-        bottomRightBack
-      )
-    : null //fillOutsideBoundingBox(evt, operationData, topLeftFront, bottomRightBack)
+  const callback = (canvasCoords, pointIJK, index, value) => {
+    if (segmentsLocked.includes(value)) {
+      return
+    }
 
-  // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
-  // right now this is needed to update the labelmap on other viewports that have it (pt)
-  renderingEngine.render()
+    if (!constraintFn) {
+      scalarData[index] = segmentIndex
+      return
+    }
+
+    if (constraintFn(pointIJK)) {
+      scalarData[index] = segmentIndex
+    }
+  }
+
+  pointInShapeCallback(
+    boundsIJK,
+    viewport.worldToCanvas,
+    scalarData,
+    vtkImageData,
+    dimensions,
+    pointInRectangle,
+    callback
+  )
+
+  triggerLabelmapRender(renderingEngine, labelmapVolume, vtkImageData)
 }
 
 /**
@@ -81,9 +91,10 @@ function fillRectangle(
  */
 export function fillInsideRectangle(
   evt: FillRectangleEvent,
-  operationData: OperationData
+  operationData: OperationData,
+  constraintFn?: any
 ): void {
-  fillRectangle(evt, operationData, true)
+  fillRectangle(evt, operationData, constraintFn, true)
 }
 
 /**
@@ -95,7 +106,8 @@ export function fillInsideRectangle(
  */
 export function fillOutsideRectangle(
   evt: FillRectangleEvent,
-  operationData: OperationData
+  operationData: OperationData,
+  constraintFn?: any
 ): void {
-  fillRectangle(evt, operationData, false)
+  fillRectangle(evt, operationData, constraintFn, false)
 }

@@ -41,14 +41,15 @@ import {
 import getWorldWidthAndHeightFromTwoPoints from '../../util/planar/getWorldWidthAndHeightFromTwoPoints'
 import { ToolSpecificToolData, Point3, Point2 } from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
 
-interface EllipticalRoiSpecificToolData extends ToolSpecificToolData {
+export interface EllipticalRoiSpecificToolData extends ToolSpecificToolData {
   data: {
     invalidated: boolean
     handles: {
       points: [Point3, Point3, Point3, Point3] // [bottom, top, left, right]
       activeHandleIndex: number | null
-      textBox: {
+      textBox?: {
         hasMoved: boolean
         worldPosition: Point3
         worldBoundingBox: {
@@ -85,12 +86,21 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolConfiguration: Record<string, any>,
+    defaultToolConfiguration = {
       name: 'EllipticalRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true, preventHandleOutsideImage: false },
-    })
+      configuration: {
+        strategies: {},
+        defaultStrategy: undefined,
+        activeStrategy: undefined,
+        shadow: true,
+        preventHandleOutsideImage: false,
+      },
+    }
+  ) {
+    super(toolConfiguration, defaultToolConfiguration)
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,
@@ -1052,19 +1062,41 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           }
         }
 
+        pointInShapeCallback(
+          [
+            [iMin, iMax],
+            [jMin, jMax],
+            [kMin, kMax],
+          ],
+          viewport.worldToCanvas,
+          scalarData,
+          imageData,
+          dimensions,
+          (canvasCoords) => pointInEllipse(ellipse, canvasCoords),
+          meanCalculator
+        )
+
         mean /= count
 
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i]
+        const stdCalculator = (canvasCoords, ijkCoords, index, value) => {
+          const valueMinusMean = value - mean
 
-              const valueMinusMean = value - mean
-
-              stdDev += valueMinusMean * valueMinusMean
-            }
-          }
+          stdDev += valueMinusMean * valueMinusMean
         }
+
+        pointInShapeCallback(
+          [
+            [iMin, iMax],
+            [jMin, jMax],
+            [kMin, kMax],
+          ],
+          viewport.worldToCanvas,
+          scalarData,
+          imageData,
+          dimensions,
+          (canvasCoords) => pointInEllipse(ellipse, canvasCoords),
+          stdCalculator
+        )
 
         stdDev /= count
         stdDev = Math.sqrt(stdDev)

@@ -33,6 +33,7 @@ abstract class BaseTool {
       configuration.strategies = {}
       configuration.defaultStrategy = undefined
       configuration.activeStrategy = undefined
+      configuration.strategyOptions = {}
     }
 
     this.name = name
