@@ -51,7 +51,9 @@ import {
   CrosshairsTool,
   RectangleScissorsTool,
   CircleScissorsTool,
+  SphereScissorsTool,
   RectangleRoiThreshold,
+  SUVPeakTool,
 } from './tools'
 import { ToolBindings, ToolModes, CornerstoneTools3DEvents } from './enums'
 
@@ -87,7 +89,10 @@ export {
   // Segmentation Tools
   RectangleScissorsTool,
   CircleScissorsTool,
+  SphereScissorsTool,
   RectangleRoiThreshold,
+  // PET annotation
+  SUVPeakTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

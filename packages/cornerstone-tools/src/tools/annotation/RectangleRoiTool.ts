@@ -966,6 +966,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         const yMultiple = dimensions[0]
         const zMultiple = dimensions[0] * dimensions[1]
 
+        //Todo: this can be replaced by pointInShapeCallback....
         // This is a triple loop, but one of these 3 values will be constant
         // In the planar view.
         for (let k = kMin; k <= kMax; k++) {

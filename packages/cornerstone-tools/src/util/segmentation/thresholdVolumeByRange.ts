@@ -1,14 +1,11 @@
 import { vec3 } from 'gl-matrix'
 import { IImageVolume } from '@ohif/cornerstone-render/src/types'
 
-import {
-  segmentIndexController,
-  lockedSegmentController,
-} from '../../store/SegmentationModule'
 import { getBoundingBoxAroundShape } from '../segmentation'
-import { fillInsideShape } from './fillShape'
 import { RectangleRoiThresholdToolData } from '../../tools/segmentation/RectangleRoiThreshold'
 import { Point3, Point2 } from '../../types'
+import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
+import triggerLabelmapRender from './triggerLabelmapRender'
 
 export type ThresholdRangeOptions = {
   higherThreshold: number
@@ -35,6 +32,8 @@ function thresholdVolumeByRange(
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
+  const { dimensions, scalarData, vtkImageData: labelmapImageData } = labelmap
+
   const { lowerThreshold, higherThreshold, numSlices } = options
   let renderingEngine
 
@@ -45,8 +44,6 @@ function thresholdVolumeByRange(
 
     const { viewport } = enabledElement
     ;({ renderingEngine } = enabledElement)
-
-    const { element } = viewport
 
     // Todo: Resetting the labelmap imageData value so that the same tool can
     // execute threshold execution more than once, but this is super slow
@@ -68,41 +65,28 @@ function thresholdVolumeByRange(
     const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
     const extendedBoundsIJK = _extendBoundingBoxInViewAxis(boundsIJK, numSlices)
 
-    const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = extendedBoundsIJK
+    const callback = (canvasCoords, pointIJK, index, newValue) => {
+      const offset = vtkImageData.computeOffsetIndex(pointIJK)
+      const value = values[offset]
+      if (value <= lowerThreshold || value >= higherThreshold) {
+        return
+      }
 
-    const topLeftFront = <Point3>[iMin, jMin, kMin]
-    const bottomRightBack = <Point3>[iMax, jMax, kMax]
-
-    const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
-    const segmentsLocked =
-      lockedSegmentController.getLockedSegmentsForElement(element)
-
-    const operationData = {
-      volume: labelmap,
-      segmentIndex,
-      segmentsLocked,
+      scalarData[index] = 1
     }
 
-    const constraintFn = ([x, y, z]) => {
-      const offset = vtkImageData.computeOffsetIndex([x, y, z])
-      return (
-        lowerThreshold <= values[offset] && values[offset] <= higherThreshold
-      )
-    }
-
-    fillInsideShape(
-      enabledElement,
-      operationData,
+    pointInShapeCallback(
+      extendedBoundsIJK,
+      viewport.worldToCanvas,
+      scalarData,
+      labelmapImageData,
+      dimensions,
       () => true,
-      constraintFn,
-      topLeftFront,
-      bottomRightBack
+      callback
     )
   })
 
-  // Todo: this renders all viewports, only renders viewports that have the modified labelmap actor
-  // right now this is needed to update the labelmap on other viewports that have it (pt)
-  renderingEngine.render()
+  triggerLabelmapRender(renderingEngine, labelmap, labelmapImageData)
 }
 
 function worldToIndex(imageData, ain) {

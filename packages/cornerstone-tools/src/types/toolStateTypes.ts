@@ -41,6 +41,10 @@ type ToolSpecificToolData = {
      * The registered name of the tool
      */
     toolName: string
+    /**
+     * VolumeUID of the volume that the tool was configured to work on.
+     */
+    volumeUID?: string
   }
   data: {
     handles: {
@@ -66,7 +70,7 @@ type ToolSpecificToolData = {
     activeViewportUIDs?: string[]
     viewportUID?: string
     sceneUID?: string
-  } // Data specific to the toolType
+  }
 }
 
 type ToolSpecificToolState = Array<ToolSpecificToolData>

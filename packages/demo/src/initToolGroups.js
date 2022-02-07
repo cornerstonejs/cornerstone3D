@@ -27,7 +27,9 @@ const {
   CrosshairsTool,
   RectangleScissorsTool,
   CircleScissorsTool,
+  SphereScissorsTool,
   RectangleRoiThreshold,
+  SUVPeakTool,
 } = csTools3d
 
 /* Configuration arrays and get/set functions for setting the crosshair interactions:
@@ -225,7 +227,9 @@ function initToolGroups(toolConfiguration = {}) {
   // Segmentation
   csTools3d.addTool(RectangleScissorsTool, toolConfiguration)
   csTools3d.addTool(CircleScissorsTool, toolConfiguration)
+  csTools3d.addTool(SphereScissorsTool, toolConfiguration)
   csTools3d.addTool(RectangleRoiThreshold, toolConfiguration)
+  csTools3d.addTool(SUVPeakTool, toolConfiguration)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.STACK_CT
@@ -238,7 +242,9 @@ function initToolGroups(toolConfiguration = {}) {
   )
   const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT)
   const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT)
-  const colorSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.COLOR)
+  const colorSceneToolGroup = ToolGroupManager.createToolGroup(
+    TOOL_GROUP_UIDS.COLOR
+  )
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.FUSION
   )
@@ -256,13 +262,9 @@ function initToolGroups(toolConfiguration = {}) {
     TOOL_GROUP_UIDS.PT_TYPES
   )
 
-  const ctTestSceneToolGroup = ToolGroupManager.createToolGroup(
-    'ctTestVolume'
-  )
+  const ctTestSceneToolGroup = ToolGroupManager.createToolGroup('ctTestVolume')
 
-  const ptTestSceneToolGroup = ToolGroupManager.createToolGroup(
-    'ptTestVolume'
-  )
+  const ptTestSceneToolGroup = ToolGroupManager.createToolGroup('ptTestVolume')
 
   return {
     stackCTViewportToolGroup,
@@ -277,7 +279,7 @@ function initToolGroups(toolConfiguration = {}) {
     ptTypesSceneToolGroup,
     colorSceneToolGroup,
     ctTestSceneToolGroup,
-    ptTestSceneToolGroup
+    ptTestSceneToolGroup,
   }
 }
 
@@ -496,9 +498,13 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool('CircleScissors', {
       configuration: { volumeUID: ctVolumeUID },
     })
+    ctSceneToolGroup.addTool('SphereScissors', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
     ctSceneToolGroup.addTool('WindowLevel', {
       configuration: { volumeUID: ctVolumeUID },
     })
+
     ctSceneToolGroup.addTool('Length', {})
     ctSceneToolGroup.addTool('Pan', {})
     ctSceneToolGroup.addTool('Zoom', {})
@@ -566,10 +572,15 @@ function addToolsToToolGroups({
     ptSceneToolGroup.addTool('RectangleRoiThreshold', {
       configuration: { volumeUID: ptVolumeUID },
     })
-     ptSceneToolGroup.addTool('CircleScissors', {
+    ptSceneToolGroup.addTool('CircleScissors', {
       configuration: { volumeUID: ptVolumeUID },
     })
-
+    ptSceneToolGroup.addTool('SphereScissors', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
+    ptSceneToolGroup.addTool('ptSUVPeak', {
+      configuration: { volumeUID: ptVolumeUID },
+    })
     ptSceneToolGroup.addTool('Bidirectional', {
       configuration: { volumeUID: ptVolumeUID },
     })
@@ -749,8 +760,7 @@ function addToolsToToolGroups({
   if (ctTestSceneToolGroup) {
     // Set up CTOBLIQUE Scene tools
     ctTestSceneToolGroup.addTool('Crosshairs', {
-      configuration: {
-      },
+      configuration: {},
     })
     ctTestSceneToolGroup.addTool('WindowLevel')
     ctTestSceneToolGroup.setToolActive('WindowLevel', {
