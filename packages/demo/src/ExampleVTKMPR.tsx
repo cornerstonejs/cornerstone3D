@@ -132,11 +132,12 @@ class MPRExample extends Component {
     this.coronalSync = createCameraPositionSynchronizer('coronalSync')
     this.ctWLSync = createVOISynchronizer('ctWLSync')
     this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
-    ;({
+    ;;({
       ctSceneToolGroup,
       ptSceneToolGroup,
       fusionSceneToolGroup,
       ptMipSceneToolGroup,
+      ptTypesSceneToolGroup,
     } = initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID
@@ -414,7 +415,7 @@ class MPRExample extends Component {
 
     const layoutID = LAYOUTS[layoutIndex]
     const layoutButtons = [
-      { id: 'ObliqueCT', text: 'Oblique Layout' },
+      // { id: 'ObliqueCT', text: 'Oblique Layout' },
       { id: 'FusionMIP', text: 'Fusion Layout' },
       { id: 'PetTypes', text: 'SUV Types Layout' },
     ]
@@ -487,7 +488,7 @@ class MPRExample extends Component {
             style={{ margin: '8px 0', marginLeft: '-4px' }}
           >
             {/* LAYOUT BUTTONS */}
-            {/* {filteredLayoutButtons.map((layout) => (
+            {filteredLayoutButtons.map((layout) => (
               <button
                 key={layout.id}
                 onClick={() => this.swapLayout(layout.id)}
@@ -496,7 +497,7 @@ class MPRExample extends Component {
               >
                 {layout.text}
               </button>
-            ))} */}
+            ))}
             {/* TOGGLES */}
             {fusionButtons}
             {/* Hide until we update react in a better way  {fusionWLDisplay} */}

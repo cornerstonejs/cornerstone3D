@@ -13,6 +13,8 @@ import {
   addToolState,
   removeToolState,
   removeToolStateByToolDataUID,
+  getDefaultToolStateManager,
+  getViewportSpecificStateManager,
 } from './toolState'
 
 export {
@@ -29,4 +31,6 @@ export {
   setToolDataStyle,
   removeToolState,
   removeToolStateByToolDataUID,
+  getDefaultToolStateManager,
+  getViewportSpecificStateManager,
 }

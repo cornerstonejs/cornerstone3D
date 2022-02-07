@@ -163,9 +163,22 @@ class Synchronizer {
       return
     }
 
-    const { renderingEngineUID, sceneUID, viewportUID } = getEnabledElement(
-      evt.currentTarget
-    )
+    // If no target viewports, then return immediately, this is useful
+    // when switching between layouts, when previous layout has disabled
+    // its viewports, and the new layout has not yet enabled them.
+    // Right now we don't "delete" the synchronizer if all source and targets
+    // are removed, but we may want to do that in the future.
+    if (!this._targetViewports.length) {
+      return
+    }
+
+    const enabledElement = getEnabledElement(evt.detail.element)
+
+    if (!enabledElement) {
+      return
+    }
+
+    const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
 
     this.fireEvent(
       {

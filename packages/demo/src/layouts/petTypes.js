@@ -1,14 +1,14 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
 import { ORIENTATION, VIEWPORT_TYPE, getVolume, Utilities } from '@precisionmetrics/cornerstone-render';
 
-function setLayout(renderingEngine, canvasContainers, { ptTypesSceneToolGroup }) {
+function setLayout(renderingEngine, elementContainers, { ptTypesSceneToolGroup }) {
   const viewportInput = [
     // PT Coronal SUV BW
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BW,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(0),
+      element: elementContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
         background: [1, 1, 1],
@@ -19,7 +19,7 @@ function setLayout(renderingEngine, canvasContainers, { ptTypesSceneToolGroup })
       sceneUID: SCENE_IDS.PT_TYPES_SUV_LBM,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(1),
+      element: elementContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
         background: [1, 1, 1],
@@ -30,7 +30,7 @@ function setLayout(renderingEngine, canvasContainers, { ptTypesSceneToolGroup })
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BSA,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(2),
+      element: elementContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
         background: [1, 1, 1],

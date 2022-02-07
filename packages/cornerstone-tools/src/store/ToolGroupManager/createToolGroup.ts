@@ -55,7 +55,9 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       }
 
       if (localToolInstance) {
-        console.warn(`'${toolName}' is already registered for this ToolGroup.`)
+        console.warn(
+          `'${toolName}' is already registered for ToolGroup ${this.id}.`
+        )
         return
       }
 

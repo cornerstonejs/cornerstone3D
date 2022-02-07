@@ -1,3 +1,4 @@
+import RenderingEngine from '../RenderingEngine'
 import { getRenderingEngine } from '../getRenderingEngine'
 import getOrCreateCanvas from './getOrCreateCanvas'
 import VIEWPORT_TYPE from '../../constants/viewportType'
@@ -25,7 +26,11 @@ export default function renderToCanvas(
   suppressEvents = true
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const renderingEngine = getRenderingEngine(renderingEngineUID)
+    let renderingEngine = getRenderingEngine(renderingEngineUID)
+
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      renderingEngine = new RenderingEngine(renderingEngineUID)
+    }
 
     if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
       throw new Error('canvas element is required')
@@ -34,12 +39,6 @@ export default function renderToCanvas(
     if (!renderingEngine) {
       throw new Error(
         `No rendering engine with UID of ${renderingEngineUID} found`
-      )
-    }
-
-    if (renderingEngine.hasBeenDestroyed) {
-      throw new Error(
-        `Rendering engine with UID of ${renderingEngineUID} has been destroyed`
       )
     }
 

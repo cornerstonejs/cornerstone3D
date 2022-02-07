@@ -23,8 +23,8 @@ import CalibrationExample from './ExampleCalibration'
 import { resetCPURenderingOnlyForDebugOrTests } from '@ohif/cornerstone-render'
 import SegmentationRender from './ExampleSegmentationRender'
 import RenderToCanvasExample from './ExampleRenderToCanvas'
-
 import CrosshairsExample from './ExampleCrosshairs'
+import ApplyPresetsExample from './ExampleApplyPreset'
 
 function LinkOut({ href, text }) {
   return (
@@ -76,6 +76,11 @@ function Index() {
       title: 'One Volume',
       url: '/oneVolume',
       text: 'Example one volume',
+    },
+    {
+      title: 'Different Presets',
+      url: '/applyPresets',
+      text: 'Example for rendering with different presets',
     },
     {
       title: 'One Stack',
@@ -290,6 +295,11 @@ function AppRouter() {
       children: <CrosshairsExample />,
     })
 
+  const applyPresets = () =>
+    Example({
+      children: <ApplyPresetsExample />,
+    })
+
   const cacheDecache = () =>
     Example({
       children: <CacheDecacheExample />,
@@ -371,6 +381,7 @@ function AppRouter() {
         <Route exact path="/calibratedImages/" render={calibratedImages} />
         <Route exact path="/segmentationRender/" render={segmentationRender} />
         <Route exact path="/crosshairs/" render={crosshairs} />
+        <Route exact path="/applyPresets/" render={applyPresets} />
         <Route
           exact
           path="/toolDisplayConfiguration/"

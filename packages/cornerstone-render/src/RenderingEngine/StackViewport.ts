@@ -308,15 +308,19 @@ class StackViewport extends Viewport {
       samplesPerPixel,
     } = metaData.get('imagePixelModule', imageId)
 
-    let { windowWidth, windowCenter } = metaData.get('voiLutModule', imageId)
+    const voiLutModule = metaData.get('voiLutModule', imageId)
 
-    // TODO maybe expose voi lut lists?
-    if (Array.isArray(windowWidth)) {
-      windowWidth = windowWidth[0]
-    }
+    let windowWidth, windowCenter
+    if (voiLutModule) {
+      ;({ windowWidth, windowCenter } = voiLutModule)
 
-    if (Array.isArray(windowCenter)) {
-      windowCenter = windowCenter[0]
+      if (Array.isArray(windowWidth)) {
+        windowWidth = windowWidth[0]
+      }
+
+      if (Array.isArray(windowCenter)) {
+        windowCenter = windowCenter[0]
+      }
     }
 
     const { modality } = metaData.get('generalSeriesModule', imageId)
