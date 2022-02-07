@@ -1618,31 +1618,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return true
   }
 
-  jumpToWorld = (enabledElement, jumpWorld) => {
-    state.isInteractingWithTool = true
-
-    const toolState = getToolState(enabledElement, this.name)
-    const { renderingEngine, viewport } = enabledElement
-
-    const delta: Point3 = [0, 0, 0]
-    vtkMath.subtract(jumpWorld, this.toolCenter, delta)
-
-    const viewportToolData = toolState.find(
-      (toolData: CrosshairsSpecificToolData) =>
-        toolData.data.viewportUID === viewport.uid
-    )
-
-    this._applyDeltaShiftToViewportCamera(
-      renderingEngine,
-      viewportToolData,
-      delta
-    )
-
-    state.isInteractingWithTool = false
-
-    return true
-  }
-
   _activateModify(element) {
     state.isInteractingWithTool = true
 
