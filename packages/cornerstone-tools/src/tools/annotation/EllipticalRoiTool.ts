@@ -873,7 +873,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
   _getTextLines = (data, targetUID) => {
     const cachedVolumeStats = data.cachedStats[targetUID]
-    const { area, mean, stdDev, isEmptyArea, Modality } = cachedVolumeStats
+    const { area, mean, stdDev, max, isEmptyArea, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
       return
@@ -885,20 +885,25 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       ? `Area: Oblique not supported`
       : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
     let meanLine = `Mean: ${mean.toFixed(2)}`
+    let maxLine = `Max: ${max.toFixed(2)}`
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`
 
     if (Modality === 'PT') {
       meanLine += ' SUV'
+      maxLine += ' SUV'
       stdDevLine += ' SUV'
     } else if (Modality === 'CT') {
       meanLine += ' HU'
+      maxLine += ' HU'
       stdDevLine += ' HU'
     } else {
       meanLine += ' MO'
+      maxLine += ' MO'
       stdDevLine += ' MO'
     }
 
     textLines.push(areaLine)
+    textLines.push(maxLine)
     textLines.push(meanLine)
     textLines.push(stdDevLine)
 
@@ -1000,6 +1005,17 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         let count = 0
         let mean = 0
         let stdDev = 0
+        let max = -Infinity
+
+        const meanMaxCalculator = (
+          canvasCoords,
+          ijkCoords,
+          index,
+          newValue
+        ) => {
+          if (newValue > max) {
+            max = newValue
+          }
 
         const yMultiple = dimensions[0]
         const zMultiple = dimensions[0] * dimensions[1]
@@ -1073,7 +1089,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           imageData,
           dimensions,
           (canvasCoords) => pointInEllipse(ellipse, canvasCoords),
-          meanCalculator
+          meanMaxCalculator
         )
 
         mean /= count
@@ -1105,6 +1121,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           Modality: metadata.Modality,
           area,
           mean,
+          max,
           stdDev,
           isEmptyArea,
         }
