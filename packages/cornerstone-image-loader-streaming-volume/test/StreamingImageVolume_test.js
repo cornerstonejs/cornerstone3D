@@ -143,45 +143,33 @@ describe('renderingCore -- volume', () => {
     beforeAll(function () {
       const { imageIds, imageLoader } = setupLoaders()
 
-      this.imageIds = imageIds
-      this.imageLoader = imageLoader
+    await cornerstone.createAndCacheVolume(volumeId, {
+      imageIds: this.imageIds,
     })
-
-    it('load: correctly streams pixel data from Images into Volume via a SharedArrayBuffer', async function () {
-      const volumeId = 'fakeVolumeLoader:VOLUME'
-
-    // loading the volume
     const volume = cornerstone.getVolume(volumeId)
-    const prefetch = false
-    const callback = undefined
-    // adding requests to the pool manager
-    volume.load(callback, prefetch)
 
-    // awaiting all promises for images after requested to be copied over
-    for (let imageId of imageIds) {
-      const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
-      const image = await cachedImage.promise
+    let framesLoaded = 0
+    const callback = (evt) => {
+      framesLoaded++
+
+      if (framesLoaded === this.imageIds.length) {
+        // Getting the volume to check for voxel intensities
+        const volumeLoadObject = cache.getVolumeLoadObject(volumeId)
+        volumeLoadObject.promise.then((volume) => {
+          const volumeImage = volume.vtkImageData
+          // first slice (z=0) voxels to be all 1
+          let worldPos = volumeImage.indexToWorld([0, 0, 0])
+          let intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
+          expect(intensity).toBe(1)
+          // 4th slice (z=3) voxels to be all 4
+          worldPos = volumeImage.indexToWorld([0, 0, 3])
+          intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
+          expect(intensity).toBe(4)
+        })
+      }
     }
-    const pool = cornerstone.imageLoadPoolManager.getRequestPool()
 
-    // expect no requests to be added to the request manager, since images
-    // were already cached in the image cache
-    let requests = Object.values(pool['prefetch']).flat()
-    expect(requests.length).toBe(0)
-
-    // Getting the volume to check for voxel intensities
-    const volumeImage = volume.vtkImageData
-
-    // first slice (z=0) voxels to be all 1
-    let worldPos = volumeImage.indexToWorld([0, 0, 0])
-    let intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
-    expect(intensity).toBe(1)
-
-    // 5th slice (z=4) voxels to be all 5
-    worldPos = volumeImage.indexToWorld([0, 0, 4])
-    intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
-
-    expect(intensity).toBe(5)
+    volume.load(callback)
   })
 
   it('load: leverages volume that are in the cache already for the image loading', async function () {
@@ -330,6 +318,78 @@ describe('renderingCore -- volume', () => {
 
   afterEach(function () {
     cache.purgeCache()
+  })
+})
+
+describe('StreamingImageVolume Cached Image', function () {
+  beforeAll(function () {
+    const { imageIds, imageLoader } = setupLoaders()
+
+    this.imageIds = imageIds
+    this.imageLoader = imageLoader
+  })
+
+  afterEach(function () {
+    cache.purgeCache()
+  })
+
+  it('load: leverages images already in the cache for loading a volume', async function () {
+    const volumeId = 'fakeVolumeLoader:VOLUME'
+
+    const imageIds = [
+      'fakeImageLoader:imageId1',
+      'fakeImageLoader:imageId2',
+      'fakeImageLoader:imageId3',
+      'fakeImageLoader:imageId4',
+      'fakeImageLoader:imageId5',
+    ]
+
+    // loading the images first
+    await cornerstone.loadAndCacheImages(imageIds)
+
+    // only cached images so far
+    expect(cache.getCacheSize()).toBe(50000)
+    expect(cache.getImageLoadObject(imageIds[0])).toBeDefined()
+
+    // caching volume
+    await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      imageIds: this.imageIds,
+    })
+
+    expect(cache.getCacheSize()).toBe(100000)
+
+    // loading the volume
+    const volume = cornerstone.getVolume(volumeId)
+    const priority = 5
+    const callback = undefined
+    // adding requests to the pool manager
+    volume.load(callback, priority)
+
+    // awaiting all promises for images after requested to be copied over
+    for (let imageId of imageIds) {
+      const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
+      const image = await cachedImage.promise
+    }
+    const pool = cornerstone.imageLoadPoolManager.getRequestPool()
+
+    // expect no requests to be added to the request manager, since images
+    // were already cached in the image cache
+    let requests = Object.values(pool['prefetch']).flat()
+    expect(requests.length).toBe(0)
+
+    // Getting the volume to check for voxel intensities
+    const volumeImage = volume.vtkImageData
+
+    // first slice (z=0) voxels to be all 1
+    let worldPos = volumeImage.indexToWorld([0, 0, 0])
+    let intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
+    expect(intensity).toBe(1)
+
+    // 5th slice (z=4) voxels to be all 5
+    worldPos = volumeImage.indexToWorld([0, 0, 4])
+    intensity = volume.vtkImageData.getScalarValueFromWorld(worldPos)
+
+    expect(intensity).toBe(5)
   })
 })
 
