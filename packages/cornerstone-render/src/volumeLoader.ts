@@ -1,14 +1,26 @@
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
+import cloneDeep from 'lodash.clonedeep'
 
+import { ImageVolume } from './cache/classes/ImageVolume'
+import { ERROR_CODES } from '..'
 import * as Types from './types'
 import cache from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
+import { uuidv4 } from './utilities'
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>
+}
+
+interface DerivedVolumeOptions {
+  uid: string
+  scalarData?: Float32Array | Uint8Array
+  targetBuffer?: {
+    type: 'Float32Array' | 'Uint8Array'
+  }
 }
 
 function createInternalVTKRepresentation({
@@ -170,6 +182,121 @@ export function createAndCacheVolume(
   })
 
   return volumeLoadObject.promise
+}
+
+/**
+ * Based on a referencedVolumeUID, it will build and cache a new volume. If
+ * no scalarData is specified in the options, an empty derived volume will be
+ * created that matches the image metadata of the referenceVolume. If scalarData
+ * is given, it will be used to generate the intensity values for the derivedVolume.
+ * Finally, it will save the volume in the cache.
+ * @param referencedVolumeUID the volumeUID from which the new volume will get its metadata
+ * @param options DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
+ * @returns ImageVolume
+ */
+export function createAndCacheDerivedVolume(
+  referencedVolumeUID: string,
+  options: DerivedVolumeOptions
+): ImageVolume {
+  const referencedVolume = cache.getVolume(referencedVolumeUID)
+
+  if (!referencedVolume) {
+    throw new Error(
+      `Cannot created derived volume: Referenced volume with UID ${referencedVolumeUID} does not exist.`
+    )
+  }
+
+  let { uid, scalarData: volumeScalarData } = options
+  const { targetBuffer } = options
+
+  if (
+    volumeScalarData &&
+    !(
+      volumeScalarData instanceof Uint8Array ||
+      volumeScalarData instanceof Float32Array
+    )
+  ) {
+    throw new Error(
+      `volumeScalarData is not a Uint8Array or Float32Array, other array types currently unsupported.`
+    )
+  }
+
+  if (uid === undefined) {
+    uid = uuidv4()
+  }
+
+  const { metadata, dimensions, spacing, origin, direction, scalarData } =
+    referencedVolume
+  const scalarLength = scalarData.length
+
+  let numBytes, TypedArray
+
+  // If the volumeScalarData is provided
+  if (volumeScalarData) {
+    numBytes = volumeScalarData.buffer.byteLength
+  } else {
+    // If target buffer is provided
+    if (targetBuffer) {
+      if (targetBuffer.type === 'Float32Array') {
+        numBytes = scalarLength * 4
+        TypedArray = Float32Array
+      } else if (targetBuffer.type === 'Uint8Array') {
+        numBytes = scalarLength
+        TypedArray = Uint8Array
+      } else {
+        throw new Error('TargetBuffer should be Float32Array or Uint8Array')
+      }
+    } else {
+      // Use float32 if no targetBuffer is provided
+      numBytes = scalarLength * 4
+      TypedArray = Float32Array
+    }
+  }
+
+  // check if there is enough space in unallocated + image Cache
+  const isCacheable = cache.isCacheable(numBytes)
+  if (!isCacheable) {
+    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+  }
+
+  // Create the volumeScalarData if not provided
+  if (!volumeScalarData) {
+    volumeScalarData = new TypedArray(scalarLength)
+  }
+
+  // Todo: handle more than one component for segmentation (RGB)
+  const scalarArray = vtkDataArray.newInstance({
+    name: 'Pixels',
+    numberOfComponents: 1,
+    values: volumeScalarData,
+  })
+
+  const derivedImageData = vtkImageData.newInstance()
+
+  derivedImageData.setDimensions(dimensions)
+  derivedImageData.setSpacing(spacing)
+  derivedImageData.setDirection(direction)
+  derivedImageData.setOrigin(origin)
+  derivedImageData.getPointData().setScalars(scalarArray)
+
+  const derivedVolume = new ImageVolume({
+    uid,
+    metadata: cloneDeep(metadata),
+    dimensions: [dimensions[0], dimensions[1], dimensions[2]],
+    spacing,
+    origin,
+    direction,
+    vtkImageData: derivedImageData,
+    scalarData: volumeScalarData,
+    sizeInBytes: numBytes,
+  })
+
+  const volumeLoadObject = {
+    promise: Promise.resolve(derivedVolume),
+  }
+  cache.putVolumeLoadObject(uid, volumeLoadObject)
+
+  return derivedVolume
 }
 
 /**

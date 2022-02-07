@@ -19,14 +19,14 @@
   },
   "peerDependencies": {
     "gl-matrix": "^3.4.3",
-    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev",
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#fix/labelMapOutline",
     "detect-gpu": "^4.0.7"
   },
   "devDependencies": {
     "gl-matrix": "^3.4.3",
     "resemblejs": "^3.2.5",
     "detect-gpu": "^4.0.7",
-    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev"
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#fix/labelMapOutline"
   },
   "author": "",
   "license": "ISC"

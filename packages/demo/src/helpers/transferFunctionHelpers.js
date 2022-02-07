@@ -1,5 +1,6 @@
 import { getVolume, Utilities } from '@ohif/cornerstone-render'
 import applyPreset from './applyPreset'
+import colors from './colors'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
@@ -28,6 +29,25 @@ function setCTWWWC({ volumeActor, volumeUID }) {
     .getProperty()
     .getRGBTransferFunction(0)
     .setMappingRange(lower, upper)
+}
+
+function setSegmentationTransferFunction({ volumeActor }) {
+  const cfun = vtkColorTransferFunction.newInstance()
+  const ofun = vtkPiecewiseFunction.newInstance()
+
+  ofun.addPoint(0, 0)
+  colors.forEach(({ integerLabel, color }) => {
+    cfun.addRGBPoint(integerLabel, ...color.slice(0, 3).map((c) => c / 255.0)) // label "1" will be red
+    ofun.addPoint(integerLabel, 0.9) // Red will have an opacity of 0.2.
+  })
+
+  ofun.setClamping(false)
+
+  volumeActor.getProperty().setRGBTransferFunction(0, cfun)
+  volumeActor.getProperty().setScalarOpacity(0, ofun)
+  volumeActor.getProperty().setInterpolationTypeToNearest()
+  volumeActor.getProperty().setUseLabelOutline(true)
+  volumeActor.getProperty().setLabelOutlineThickness(3)
 }
 
 function setPetTransferFunction({ volumeActor, volumeUID }) {
@@ -102,4 +122,5 @@ export {
   setPetTransferFunction,
   setCTVRTransferFunction,
   getSetPetColorMapTransferFunction,
+  setSegmentationTransferFunction,
 }

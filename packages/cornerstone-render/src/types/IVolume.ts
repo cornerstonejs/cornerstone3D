@@ -8,7 +8,7 @@ interface IVolume {
   dimensions: Point3
   spacing: Point3
   origin: Point3
-  direction: Array<number>
+  direction: Float32Array
   scalarData: Float32Array | Uint8Array
   sizeInBytes?: number
   imageData?: vtkImageData

@@ -5,26 +5,17 @@ import {
   createAndCacheVolume,
   ORIENTATION,
   VIEWPORT_TYPE,
-  vtkSharedVolumeMapper,
-  vtkStreamingOpenGLTexture
+  createAndCacheDerivedVolume,
 } from '@ohif/cornerstone-render'
-import {
-  SynchronizerManager,
-  ToolGroupManager,
-  ToolBindings,
-  resetToolsState,
-} from '@ohif/cornerstone-tools'
+import { ToolBindings } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
-import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
-import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 
-import { setCTWWWC } from './helpers/transferFunctionHelpers'
+import {
+  setCTWWWC,
+  setSegmentationTransferFunction,
+} from './helpers/transferFunctionHelpers'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -183,7 +174,7 @@ class SegmentationRender extends Component {
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
-        blendMode: BlendMode.COMPOSITE_BLEND,
+        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
       },
     ])
 
@@ -277,57 +268,12 @@ class SegmentationRender extends Component {
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
-  createLabelPipeline = (backgroundImageData) => {
-    // Create a labelmap image the same dimensions as our background volume.
-    const labelMapData = vtkImageData.newInstance(
-    )
 
-    const values = new Uint8Array(backgroundImageData.getNumberOfPoints())
-    const dataArray = vtkDataArray.newInstance({
-      numberOfComponents: 1, // labelmap with single component
-      values,
-    })
-    labelMapData.getPointData().setScalars(dataArray)
-
-    labelMapData.setDimensions(...backgroundImageData.getDimensions())
-    labelMapData.setSpacing(...backgroundImageData.getSpacing())
-    labelMapData.setOrigin(...backgroundImageData.getOrigin())
-    labelMapData.setDirection(...backgroundImageData.getDirection())
-
-    labelMapData.computeTransforms()
-
-    const labelMap = {
-      actor: vtkVolume.newInstance(),
-      mapper: vtkSharedVolumeMapper.newInstance(),
-      texture: vtkStreamingOpenGLTexture.newInstance(),
-      imageData: labelMapData,
-      cfun: vtkColorTransferFunction.newInstance(),
-      ofun: vtkPiecewiseFunction.newInstance(),
-    }
-
-    // Labelmap pipeline
-    labelMap.mapper.setInputData(labelMapData)
-    labelMap.mapper.setScalarTexture(labelMap.texture)
-    labelMap.actor.setMapper(labelMap.mapper)
-
-    // Set up labelMap color and opacity mapping
-    labelMap.cfun.addRGBPoint(1, 1, 0, 0) // label "1" will be red
-    labelMap.cfun.addRGBPoint(2, 0, 1, 0) // label "2" will be green
-    labelMap.ofun.addPoint(0, 0)
-    labelMap.ofun.addPoint(1, 0.9) // Red will have an opacity of 0.2.
-    labelMap.ofun.addPoint(2, 0.9) // Green will have an opacity of 0.2.
-    labelMap.ofun.setClamping(false)
-
-    labelMap.actor.getProperty().setRGBTransferFunction(0, labelMap.cfun)
-    labelMap.actor.getProperty().setScalarOpacity(0, labelMap.ofun)
-    labelMap.actor.getProperty().setInterpolationTypeToNearest()
-    labelMap.actor.getProperty().setUseLabelOutline(true)
-    labelMap.actor.getProperty().setLabelOutlineThickness(3)
-
-    return labelMap
-  }
-
-  fillBlobForThreshold = (imageData, backgroundImageData) => {
+  fillBlobForThreshold = (
+    imageData,
+    backgroundImageData,
+    segments = ['bone', 'softTissue', 'fatTissue']
+  ) => {
     const dims = imageData.getDimensions()
     const values = imageData.getPointData().getScalars().getData()
 
@@ -337,25 +283,34 @@ class SegmentationRender extends Component {
       .getData()
     const size = dims[0] * dims[1] * dims[2]
 
-    // Head
-    const headThreshold = [324, 1524]
-    for (let i = 0; i < size; i++) {
-      if (
-        backgroundValues[i] >= headThreshold[0] &&
-        backgroundValues[i] < headThreshold[1]
-      ) {
-        values[i] = 1
-      }
-    }
-
     // Bone
-    const boneThreshold = [1200, 2324]
+    const boneThreshold = [226, 3071]
+    const softTissueThreshold = [-700, 255]
+    const fatTissueThreshold = [-205, -51]
+
     for (let i = 0; i < size; i++) {
       if (
+        segments.includes('bone') &&
         backgroundValues[i] >= boneThreshold[0] &&
         backgroundValues[i] < boneThreshold[1]
       ) {
+        values[i] = 1
+      }
+
+      if (
+        segments.includes('softTissue') &&
+        backgroundValues[i] >= softTissueThreshold[0] &&
+        backgroundValues[i] < softTissueThreshold[1]
+      ) {
         values[i] = 2
+      }
+
+      if (
+        segments.includes('fatTissue') &&
+        backgroundValues[i] >= fatTissueThreshold[0] &&
+        backgroundValues[i] < fatTissueThreshold[1]
+      ) {
+        values[i] = 3
       }
     }
 
@@ -367,12 +322,42 @@ class SegmentationRender extends Component {
     const viewport = this.renderingEngine.getViewport('ctAxial')
     const ctScene = this.renderingEngine.getScene('ctScene')
 
-    const { vtkImageData } = viewport.getImageData()
-    const labelMap = this.createLabelPipeline(vtkImageData)
+    const { vtkImageData: backgroundImageData } = viewport.getImageData()
 
-    this.fillBlobForThreshold(labelMap.imageData, vtkImageData)
+    const volumeUID = viewport.getDefaultActor().uid
 
-    await ctScene.setSegmentations(labelMap, true)
+    const segUID1 = 'sampleSeg1'
+    const segUID2 = 'sampleSeg2'
+    const segmentation1 = await createAndCacheDerivedVolume(volumeUID, {
+      uid: segUID1,
+      targetBuffer: {
+        type: 'Float32Array',
+      },
+    })
+
+    const segmentation2 = await createAndCacheDerivedVolume(volumeUID, {
+      uid: segUID2,
+      targetBuffer: {
+        type: 'Float32Array',
+      },
+    })
+
+    // this.fillBlobForThreshold(segmentation1.vtkImageData, backgroundImageData, ["bone", "softTissue"])
+    // this.fillBlobForThreshold(segmentation2.vtkImageData, backgroundImageData, ["fatTissue"])
+    this.fillBlobForThreshold(segmentation1.vtkImageData, backgroundImageData)
+
+    const immediateRender = true
+    const volumeInput = [
+      {
+        volumeUID: segUID1,
+        callback: setSegmentationTransferFunction,
+      },
+      // {
+      //   volumeUID: segUID2,
+      //   callback: setSegmentationTransferFunction,
+      // },
+    ]
+    await ctScene.setSegmentations(volumeInput, immediateRender)
   }
 
   showOffScreenCanvas = () => {
