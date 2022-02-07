@@ -2,8 +2,8 @@ import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 import isEqual from '../math/vec3/isEqual'
 
 /**
- * Given a list of labelmaps (with the possitibility of overlapping regions),
- * and a referenceVolume, it calculates the total metabolic turnover volume (TMTV)
+ * Given a list of labelmaps (with the possibility of overlapping regions),
+ * and a referenceVolume, it calculates the total metabolic tumor volume (TMTV)
  * by flattening and rasterizing each segment into a single labelmap and summing
  * the total number of volume voxels. It should be noted that for this calculation
  * we do not double count voxels that are part of multiple labelmaps.
