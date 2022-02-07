@@ -1,4 +1,4 @@
-import { getEnabledElement, triggerEvent } from '@ohif/cornerstone-render'
+import { getEnabledElement, triggerEvent } from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import mouseMoveListener from './mouseMoveListener'
 import {

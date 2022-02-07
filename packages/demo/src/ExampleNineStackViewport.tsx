@@ -5,7 +5,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
 import getImageIds from './helpers/getImageIds'
@@ -13,7 +13,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import { ctStackUID, VIEWPORT_IDS } from './constants'
-import * as csTools3d from '@ohif/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 const renderingEngineUID = 'renderingEngineUID'
 

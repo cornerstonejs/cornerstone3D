@@ -1,4 +1,4 @@
-import { Point3, Point2 } from '@ohif/cornerstone-render/src/types'
+import { Point3, Point2 } from '@precisionmetrics/cornerstone-render/src/types'
 import { vec2, vec3 } from 'gl-matrix'
 
 export type PointInShapeCallback = (

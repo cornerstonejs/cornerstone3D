@@ -3,7 +3,7 @@ import {
   getEnabledElement,
   Scene,
   VolumeViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { getVoxelPositionBasedOnIntensity } from '../util/planar'
 import { ToolGroupManager } from '../store'
 import CrosshairsTool from './CrosshairsTool'

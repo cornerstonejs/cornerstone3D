@@ -1,5 +1,5 @@
 import * as cornerstoneStreamingImageVolumeLoader from '../src'
-import * as cornerstone from '@ohif/cornerstone-render'
+import * as cornerstone from '@precisionmetrics/cornerstone-render'
 
 const {
   cache,

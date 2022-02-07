@@ -2,7 +2,7 @@ import {
   getEnabledElement,
   StackViewport,
   VolumeViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import clip from '../clip'
 import getTargetVolume from '../planar/getTargetVolume'
 import getSliceRange from './getSliceRange'

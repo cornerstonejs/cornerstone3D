@@ -1,4 +1,4 @@
-import { eventTarget, triggerEvent } from '@ohif/cornerstone-render'
+import { eventTarget, triggerEvent } from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents } from '../enums'
 import { ToolSpecificToolData } from '../types'
 

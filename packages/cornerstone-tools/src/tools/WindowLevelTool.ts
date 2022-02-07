@@ -7,7 +7,7 @@ import {
   VolumeViewport,
   StackViewport,
   Utilities,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 // Todo: should move to configuration
 const DEFAULT_MULTIPLIER = 4

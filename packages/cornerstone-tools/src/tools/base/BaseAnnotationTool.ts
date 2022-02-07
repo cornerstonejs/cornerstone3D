@@ -1,4 +1,4 @@
-import { Settings, Utilities, Types } from '@ohif/cornerstone-render'
+import { Settings, Utilities, Types } from '@precisionmetrics/cornerstone-render'
 import { vec4 } from 'gl-matrix'
 
 import BaseTool from './BaseTool'

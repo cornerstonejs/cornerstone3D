@@ -3,7 +3,7 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 /**
  * @function cameraSyncCallback - Synchronizer callback to synchronize the voi of volumeActors of identical volumes

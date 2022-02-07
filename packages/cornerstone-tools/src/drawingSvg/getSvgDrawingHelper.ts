@@ -1,5 +1,5 @@
 import { state } from '../store'
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 
 /**
  *

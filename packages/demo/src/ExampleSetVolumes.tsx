@@ -4,9 +4,9 @@ import {
   RenderingEngine,
   createAndCacheVolume,
   init as csRenderInit,
-} from '@ohif/cornerstone-render'
-import { synchronizers } from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-render'
+import { synchronizers } from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
@@ -139,8 +139,6 @@ class VTKSetVolumesExample extends Component {
       ptTypesSceneToolGroup,
     } = initToolGroups())
 
-
-
     this.ctVolumeUID = ctVolumeUID
     this.ptVolumeUID = ptVolumeUID
 
@@ -167,7 +165,6 @@ class VTKSetVolumesExample extends Component {
         ctWLSynchronizer: this.ctWLSync,
       }
     )
-
 
     addToolsToToolGroups({
       ctSceneToolGroup,

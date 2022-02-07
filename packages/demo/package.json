@@ -1,5 +1,5 @@
 {
-  "name": "@ohif/cornerstone-demo",
+  "name": "@precisionmetrics/cornerstone-demo",
   "version": "1.0.0",
   "description": "",
   "main": "index.tsx",
@@ -13,13 +13,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ohif/cornerstone-image-loader-streaming-volume": "^0.0.2",
-    "@ohif/cornerstone-render": "^0.0.2",
-    "@ohif/cornerstone-tools": "^0.0.1",
     "dcmjs": "0.19.2",
     "dicom-parser": "^1.8.11",
     "dicomweb-client": "^0.8.4",
     "gl-matrix": "^3.4.3",
+    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc2",
+    "@precisionmetrics/cornerstone-render": "^0.0.4-rc2",
+    "@precisionmetrics/cornerstone-tools": "^0.0.4-rc2",
     "cornerstone-wado-image-loader": "^4.0.0",
     "hammerjs": "^2.0.8",
     "react": "17.0.2",

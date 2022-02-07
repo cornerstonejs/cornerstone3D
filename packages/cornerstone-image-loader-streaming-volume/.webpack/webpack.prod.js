@@ -35,7 +35,7 @@ module.exports = (env, argv) => {
     externals: [
       /\b(vtk.js)/,
       {
-        '@ohif/cornerstone-render': {
+        '@precisionmetrics/cornerstone-render': {
           root: 'window',
           commonjs: 'cornerstoneRender',
           commonjs2: 'cornerstoneRender',

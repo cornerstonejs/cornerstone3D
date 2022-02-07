@@ -1,5 +1,5 @@
-import RenderingEngine from '@ohif/cornerstone-render/src/RenderingEngine'
-import { IImageVolume } from '@ohif/cornerstone-render/src/types'
+import RenderingEngine from '@precisionmetrics/cornerstone-render/src/RenderingEngine'
+import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 
 /**

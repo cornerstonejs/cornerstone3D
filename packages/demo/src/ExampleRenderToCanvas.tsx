@@ -3,8 +3,8 @@ import {
   cache,
   RenderingEngine,
   renderToCanvas,
-} from '@ohif/cornerstone-render'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-render'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import getImageIds from './helpers/getImageIds'
 import { renderingEngineUID } from './constants'
 

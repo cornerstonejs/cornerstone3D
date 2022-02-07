@@ -1,4 +1,4 @@
-import { getEnabledElement, StackViewport } from '@ohif/cornerstone-render'
+import { getEnabledElement, StackViewport } from '@precisionmetrics/cornerstone-render'
 
 import state, {
   getGlobalStateForLabelmapUID,

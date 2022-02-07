@@ -20,7 +20,7 @@ import * as segmentation from './segmentation'
 import uuidv4 from './uuidv4'
 
 // Events
-import { triggerEvent } from '@ohif/cornerstone-render'
+import { triggerEvent } from '@precisionmetrics/cornerstone-render'
 
 export {
   math,

@@ -1,4 +1,4 @@
-import { EVENTS as RenderingEngineEvents } from '@ohif/cornerstone-render'
+import { EVENTS as RenderingEngineEvents } from '@precisionmetrics/cornerstone-render'
 import { ToolModes } from '../enums'
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 

@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import {
   mouseEventListeners,
   wheelEventListener,
@@ -23,7 +23,7 @@ import { removeToolState } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'
 import getToolGroups from './ToolGroupManager/getToolGroups'
 import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
-import { IEnabledElement } from '@ohif/cornerstone-render/src/types'
+import { IEnabledElement } from '@precisionmetrics/cornerstone-render/src/types'
 
 const VIEWPORT_ELEMENT = 'viewport-element'
 

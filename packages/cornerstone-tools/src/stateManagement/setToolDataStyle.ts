@@ -1,4 +1,4 @@
-import { Settings } from '@ohif/cornerstone-render'
+import { Settings } from '@precisionmetrics/cornerstone-render'
 import state from '../store/state'
 
 export default function setToolDataStyle(
