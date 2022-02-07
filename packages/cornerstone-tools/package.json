@@ -1,7 +1,7 @@
 {
   "name": "@precisionmetrics/cornerstone-tools",
-  "version": "0.0.4-rc3",
-  "description": "The goal is for this to eventually be a separate package. Try to only use API\r exposed by `vtkjs-viewport` in it's top level `index.ts`.",
+  "version": "0.0.4-rc6",
+  "description": "Cornerstone-3D tools",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "module": "src/index.ts",
@@ -21,11 +21,11 @@
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
-    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc3"
+    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc6"
   },
   "devDependencies": {
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
-    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc3"
+    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc6"
   },
   "author": "",
   "license": "ISC"
