@@ -6,7 +6,9 @@ import {
   createAndCacheDerivedVolume,
 } from '@ohif/cornerstone-render'
 import {
+  // Segmentation
   SegmentationModule,
+  segmentLocker,
   synchronizers,
   ToolBindings,
   ToolModes,
@@ -246,10 +248,13 @@ class SegmentationExample extends Component {
       scalarData[i] = -1024
     }
 
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const onLoadCT = (evt) => {
+      if (evt.framesProcessed === evt.numFrames){
+        this.setState({ progressText: 'Loaded.' })}
+      }
 
-    ptVolume.load(onLoad)
-    ctVolume.load(onLoad)
+    ptVolume.load()
+    ctVolume.load(onLoadCT)
 
     ptCtFusion.setVolumes(
       renderingEngine,
@@ -466,7 +471,7 @@ class SegmentationExample extends Component {
 
     const activeSegmentIndex = SegmentationModule.getActiveSegmentIndex(canvas)
     const segmentLocked =
-      SegmentationModule.getSegmentIndexLockedStatusForElement(
+      segmentLocker.getSegmentIndexLockedStatusForElement(
         canvas,
         activeSegmentIndex
       )
@@ -487,7 +492,7 @@ class SegmentationExample extends Component {
     const scene = this.renderingEngine.getScene(sceneUID)
     const { canvas } = scene.getViewports()[0]
     const activeLabelmapUID = SegmentationModule.getActiveLabelmapUID(canvas)
-    SegmentationModule.toggleSegmentIndexLockedForLabelmapUID(
+    segmentLocker.toggleSegmentIndexLockedForLabelmapUID(
       activeLabelmapUID,
       this.state.activeSegmentIndex
     )
@@ -507,8 +512,10 @@ class SegmentationExample extends Component {
     }
 
     SegmentationModule.setActiveSegmentIndex(canvas, newIndex)
-    const segmentLocked =
-      SegmentationModule.getSegmentIndexLockedStatusForElement(canvas, newIndex)
+    const segmentLocked = segmentLocker.getSegmentIndexLockedStatusForElement(
+      canvas,
+      newIndex
+    )
     console.debug('segmentLocked', segmentLocked)
     this.setState({ activeSegmentIndex: newIndex, segmentLocked })
   }
@@ -635,10 +642,7 @@ class SegmentationExample extends Component {
             const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
             const index = SegmentationModule.getActiveSegmentIndex(canvas)
             const segmentLocked =
-              SegmentationModule.getSegmentIndexLockedStatusForElement(
-                canvas,
-                index
-              )
+              segmentLocker.getSegmentIndexLockedStatusForElement(canvas, index)
 
             console.debug('setting tool group name of ', sceneUID)
             this.setState({
@@ -788,6 +792,7 @@ class SegmentationExample extends Component {
                   this.preLoadSegmentations
                 )
               }}
+              disabled={ this.state.progressText !== 'Loaded.'}
               className="btn btn-primary"
               style={{ margin: '2px 4px' }}
             >

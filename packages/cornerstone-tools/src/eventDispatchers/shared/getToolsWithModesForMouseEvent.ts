@@ -50,7 +50,7 @@ export default function getToolsWithModesForMouseEvent(
         // or should, and the tool binding includes the event's button
         (!evtButton || correctBinding)
       ) {
-        const toolInstance = toolGroup._tools[toolName]
+        const toolInstance = toolGroup._toolInstances[toolName]
         enabledTools.push(toolInstance)
       }
     }

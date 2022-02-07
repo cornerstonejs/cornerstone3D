@@ -2,7 +2,7 @@ import { getEnabledElement } from '@ohif/cornerstone-render'
 
 import state, { getLabelmapsStateForElement } from './state'
 import { addNewLabelmap } from './addNewLabelmap'
-import { triggerLabelmapUpdated } from './utils'
+import { triggerLabelmapUpdated } from './triggerLabelmapsUpdated'
 
 /**
  * Returns the index of the active `Labelmap3D`.
@@ -56,7 +56,7 @@ function getActiveLabelmapUID(canvas: HTMLCanvasElement): string {
 }
 
 /**
- * Sets the active `labelmapIndex` for the `BrushStackState` displayed on this
+ * Sets the active `labelmapIndex` for the labelmaps displayed on this
  * element. Creates the corresponding `Labelmap3D` if it doesn't exist.
  *
  * @param  {HTMLElement|string} elementOrEnabledElementUID   The cornerstone enabled

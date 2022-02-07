@@ -10,6 +10,7 @@ import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
 import { uuidv4 } from './utilities'
+import { Point3, Metadata } from './types'
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>
@@ -20,6 +21,14 @@ interface DerivedVolumeOptions {
   targetBuffer?: {
     type: 'Float32Array' | 'Uint8Array'
   }
+}
+interface LocalVolumeOptions {
+  scalarData: Float32Array | Uint8Array
+  metadata: Metadata
+  dimensions: Point3
+  spacing: Point3
+  origin: Point3
+  direction: Float32Array
 }
 
 function createInternalVTKRepresentation({
@@ -278,13 +287,21 @@ export function createAndCacheDerivedVolume(
   return derivedVolume
 }
 
-// Creates a volume from a set of properties
+/**
+ * Creates and cache a volume based on a set of provided properties including
+ * dimensions, spacing, origin, direction, metadata, scalarData. It should be noted that
+ * scalarData should be provided for this function to work. If a volume with the same
+ * UID exists in the cache it returns it immediately.
+ * @param options { scalarData, metadata, dimensions, spacing, origin, direction }
+ * @param uid UID of the generated volume
+ * @returns ImageVolume
+ */
 export function createAndCacheLocalVolume(
-  properties: any,
+  options: LocalVolumeOptions,
   uid: string
 ): ImageVolume {
   const { scalarData, metadata, dimensions, spacing, origin, direction } =
-    properties
+    options
 
   if (
     !scalarData ||
@@ -296,7 +313,6 @@ export function createAndCacheLocalVolume(
   }
 
   // Todo: handle default values for spacing, origin, direction if not provided
-
   if (uid === undefined) {
     uid = uuidv4()
   }

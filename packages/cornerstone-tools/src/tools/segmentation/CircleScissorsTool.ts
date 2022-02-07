@@ -8,7 +8,6 @@ import {
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
 
-import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
 import { fillInsideCircle, fillOutsideCircle } from './strategies/fillCircle'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -24,7 +23,7 @@ import {
   getActiveLabelmapIndex,
   getActiveSegmentIndex,
   getColorForSegmentIndex,
-  getLockedSegmentsForElement,
+  segmentLocker,
 } from '../../store/SegmentationModule'
 
 // Todo
@@ -95,7 +94,7 @@ export default class CircleScissorsTool extends BaseTool {
       segmentIndex,
       labelmapIndex
     )
-    const segmentsLocked = getLockedSegmentsForElement(element)
+    const segmentsLocked = segmentLocker.getLockedSegmentsForElement(element)
 
     const labelmap = cache.getVolume(labelmapUID)
 

@@ -11,8 +11,7 @@ interface createVolumeActorInterface {
 }
 
 async function createVolumeActor(
-  props: createVolumeActorInterface,
-  useSharedMapper = true
+  props: createVolumeActorInterface
 ): Promise<VolumeActor> {
   const { volumeUID, callback, blendMode } = props
 
