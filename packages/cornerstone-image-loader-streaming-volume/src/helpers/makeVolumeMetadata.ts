@@ -14,22 +14,32 @@ export default function makeVolumeMetadata(
     samplesPerPixel,
   } = metaData.get('imagePixelModule', imageId0)
 
-  const { windowWidth, windowCenter } = metaData.get('voiLutModule', imageId0)
-
   // Add list of VOIs stored on the DICOM.
   const voiLut = []
 
-  if (Array.isArray(windowWidth)) {
-    for (let i = 0; i < windowWidth.length; i++) {
+  const voiLutModule = metaData.get('voiLutModule', imageId0)
+
+  // voiLutModule is not always present
+  if (voiLutModule) {
+    const { windowWidth, windowCenter } = voiLutModule
+
+    if (Array.isArray(windowWidth)) {
+      for (let i = 0; i < windowWidth.length; i++) {
+        voiLut.push({
+          windowWidth: windowWidth[i],
+          windowCenter: windowCenter[i],
+        })
+      }
+    } else {
       voiLut.push({
-        windowWidth: windowWidth[i],
-        windowCenter: windowCenter[i],
+        windowWidth: windowWidth,
+        windowCenter: windowCenter,
       })
     }
   } else {
     voiLut.push({
-      windowWidth: windowWidth,
-      windowCenter: windowCenter,
+      windowWidth: undefined,
+      windowCenter: undefined,
     })
   }
 
