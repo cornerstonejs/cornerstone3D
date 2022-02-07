@@ -12,6 +12,8 @@ import {
   setToolDataStyle,
   removeToolState,
   removeToolStateByToolDataUID,
+  getDefaultToolStateManager,
+  getViewportSpecificStateManager,
 } from './stateManagement'
 
 import { init, destroy } from './init'
@@ -131,4 +133,6 @@ export {
   Utilities,
   Types,
   Cursors,
+  getDefaultToolStateManager,
+  getViewportSpecificStateManager,
 }

@@ -333,8 +333,10 @@ export default class StreamingImageVolume extends ImageVolume {
       if (scalingParameters.modality === 'PT') {
         const suvFactor = metaData.get('scalingModule', imageId)
 
-        this._addScalingToVolume(suvFactor)
-        scalingParameters.suvbw = suvFactor.suvbw
+        if (suvFactor) {
+          this._addScalingToVolume(suvFactor)
+          scalingParameters.suvbw = suvFactor.suvbw
+        }
       }
 
       // Check if there is a cached image for the same imageURI (different
