@@ -21,6 +21,9 @@ enum CornerstoneTools3DEvents {
   //
   LABELMAP_STATE_UPDATED = 'cornerstonetoolslabelmapstateupdated',
 
+  // SEGMENTATION
+  LABELMAP_REMOVED = 'cornerstonetoolslabelmapremoved',
+
   //
   // MOUSE
   //

@@ -1,4 +1,8 @@
 import setLabelmapForElement from './setLabelmapForElement'
+import {
+  removeLabelmapForElement,
+  removeLabelmapForAllElements,
+} from './removeLabelmapForElement'
 
 import { getLabelmapUIDsForElement, getLabelmapUIDForElement } from './utils'
 import * as lockedSegmentController from './lockedSegmentController'
@@ -11,6 +15,8 @@ import { setColorLUT, getColorForSegmentIndex } from './colorLUT'
 
 export {
   setLabelmapForElement,
+  removeLabelmapForElement,
+  removeLabelmapForAllElements,
   addNewLabelmap,
   getLabelmapUIDForElement,
   setColorLUT,
@@ -26,6 +32,8 @@ export {
 export default {
   // Set labelmap for element
   setLabelmapForElement,
+  removeLabelmapForElement,
+  removeLabelmapForAllElements,
   addNewLabelmap,
 
   // Set/Get Labelmap

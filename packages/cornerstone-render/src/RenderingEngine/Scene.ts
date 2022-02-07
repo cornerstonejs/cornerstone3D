@@ -219,6 +219,23 @@ class Scene {
   }
 
   /**
+   * It removes the volume actor from the scene. If the volume actor is not in
+   * the scene, it does nothing.
+   * @param volumeUIDs Array of volume UIDs to remove
+   * @param immediate If true, the scene will be rendered immediately
+   */
+  public removeVolumes(volumeUIDs: Array<string>, immediate = false): void {
+    this._sceneViewports.forEach((uid) => {
+      const viewport = this.getViewport(uid)
+      viewport.removeActors(volumeUIDs)
+    })
+
+    if (immediate) {
+      this.render()
+    }
+  }
+
+  /**
    * @method render Renders all `Viewport`s in the `Scene` using the `Scene`'s `RenderingEngine`.
    */
   public render(): void {
