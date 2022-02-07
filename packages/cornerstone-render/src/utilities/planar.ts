@@ -1,18 +1,15 @@
-import { Point3 } from '../types'
+import { Point3, Plane } from '../types'
+import { vec3, mat3 } from 'gl-matrix'
 
 /**
  * It calculates the intersection of a line and a plane.
  * Plane equation is Ax+By+Cz=D
  * @param p0 [x,y,z] of the first point of the line
  * @param p1 [x,y,z] of the second point of the line
- * @param plane [A, B, C, D] Plane parameter
+ * @param plane [A, B, C, D] Plane parameter: Ax+By+Cz=D
  * @returns [X,Y,Z] coordinates of the intersection
  */
-function linePlaneIntersection(
-  p0: Point3,
-  p1: Point3,
-  plane: [number, number, number, number]
-): Point3 {
+function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3 {
   const [x0, y0, z0] = p0
   const [x1, y1, z1] = p1
   const [A, B, C, D] = plane
@@ -27,8 +24,49 @@ function linePlaneIntersection(
   return [X, Y, Z]
 }
 
+/**
+ *
+ * @param normal normal vector
+ * @param point a point on the plane
+ * @returns [A, B,C, D] of plane equation A*X + B*Y + C*Z = D
+ */
+function planeEquation(normal: Point3, point: Point3 | vec3): Plane {
+  const [A, B, C] = normal
+  const D = A * point[0] + B * point[1] + C * point[2]
+  return [A, B, C, D]
+}
+
+/**
+ * Computes the intersection of three planes in 3D space with equations:
+ * A1*X + B1*Y + C1*Z = D1
+ * A2*X + B2*Y + C2*Z = D2
+ * A3*X + B3*Y + C3*Z = D3
+ * @returns {x, y, z} the intersection in the world coordinate
+ */
+function threePlaneIntersection(
+  firstPlane: Plane,
+  secondPlane: Plane,
+  thirdPlane: Plane
+): Point3 {
+  const [A1, B1, C1, D1] = firstPlane
+  const [A2, B2, C2, D2] = secondPlane
+  const [A3, B3, C3, D3] = thirdPlane
+  const m0 = mat3.fromValues(A1, A2, A3, B1, B2, B3, C1, C2, C3)
+  const m1 = mat3.fromValues(D1, D2, D3, B1, B2, B3, C1, C2, C3)
+  const m2 = mat3.fromValues(A1, A2, A3, D1, D2, D3, C1, C2, C3)
+  const m3 = mat3.fromValues(A1, A2, A3, B1, B2, B3, D1, D2, D3)
+
+  // TODO: handle no intersection scenario
+  const x = mat3.determinant(m1) / mat3.determinant(m0)
+  const y = mat3.determinant(m2) / mat3.determinant(m0)
+  const z = mat3.determinant(m3) / mat3.determinant(m0)
+  return [x, y, z]
+}
+
 const planar = {
   linePlaneIntersection,
+  planeEquation,
+  threePlaneIntersection,
 }
 
 export default planar

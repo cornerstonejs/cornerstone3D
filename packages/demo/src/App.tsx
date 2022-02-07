@@ -24,6 +24,7 @@ import { resetCPURenderingOnlyForDebugOrTests } from '@ohif/cornerstone-render'
 import SegmentationRender from './ExampleSegmentationRender'
 import RenderToCanvasExample from './ExampleRenderToCanvas'
 
+import CrosshairsExample from './ExampleCrosshairs'
 
 function LinkOut({ href, text }) {
   return (
@@ -90,6 +91,11 @@ function Index() {
       title: 'Segmentation Render',
       url: '/segmentationRender',
       text: 'Example for demonstrating the rendering of Segmentation',
+    },
+    {
+      title: 'Crosshairs',
+      url: '/crosshairs',
+      text: 'Example for Crosshairs',
     },
     {
       title: 'Canvas Resize',
@@ -279,6 +285,11 @@ function AppRouter() {
       children: <VTKSetVolumesExample />,
     })
 
+  const crosshairs = () =>
+    Example({
+      children: <CrosshairsExample />,
+    })
+
   const cacheDecache = () =>
     Example({
       children: <CacheDecacheExample />,
@@ -359,6 +370,7 @@ function AppRouter() {
         <Route exact path="/testUtilsVolume/" render={TestVolume} />
         <Route exact path="/calibratedImages/" render={calibratedImages} />
         <Route exact path="/segmentationRender/" render={segmentationRender} />
+        <Route exact path="/crosshairs/" render={crosshairs} />
         <Route
           exact
           path="/toolDisplayConfiguration/"

@@ -5,14 +5,16 @@ import {
   createAndCacheVolume,
   ORIENTATION,
   VIEWPORT_TYPE,
-  init as csRenderInit,
 } from '@ohif/cornerstone-render'
-import { ToolBindings } from '@ohif/cornerstone-tools'
+import { ToolBindings, ToolModes } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
-import { setCTWWWC } from './helpers/transferFunctionHelpers'
+import {
+  setCTWWWC,
+  setPetTransferFunction,
+} from './helpers/transferFunctionHelpers'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -21,21 +23,24 @@ import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
   ctVolumeUID,
+  ptVolumeUID,
   SCENE_IDS,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
+  prostateVolumeUID,
 } from './constants'
 
 const VOLUME = 'volume'
 
 window.cache = cache
 
-let ctSceneToolGroup
+let ctSceneToolGroup, prostateSceneToolGroup
+
 const { BlendMode } = vtkConstants
 
 const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS]
 
-class OneVolumeExample extends Component {
+class CrosshairsExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
@@ -45,10 +50,12 @@ class OneVolumeExample extends Component {
     //
     viewportGrid: {
       numCols: 3,
-      numRows: 1,
-      viewports: [{}, {}, {}],
+      numRows: 2,
+      viewports: [{}, {}, {}, {}, {}],
     },
-    ptCtLeftClickTool: 'WindowLevel',
+    leftClickTool: 'WindowLevel',
+    toolGroupName: 'FirstRow',
+    toolGroups: {},
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
   }
@@ -62,9 +69,10 @@ class OneVolumeExample extends Component {
 
     this._viewportGridRef = React.createRef()
 
-    this.volumeImageIds = getImageIds('ct1', VOLUME)
+    this.ctImageIds = getImageIds('ct1', VOLUME)
+    this.prostateImageIds = getImageIds('prostateX', VOLUME)
 
-    Promise.all([this.volumeImageIds]).then(() =>
+    Promise.all([this.ctImageIds, this.prostateImageIds]).then(() =>
       this.setState({ progressText: 'Loading data...' })
     )
 
@@ -82,11 +90,10 @@ class OneVolumeExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    ;({ ctSceneToolGroup } = initToolGroups())
+    ;({ ctSceneToolGroup, prostateSceneToolGroup } = initToolGroups())
 
-    const volumeImageIds = await this.volumeImageIds
+    const ctImageIds = await this.ctImageIds
+    const prostateImageIds = await this.prostateImageIds
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -102,7 +109,7 @@ class OneVolumeExample extends Component {
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
-          background: [1, 0, 1],
+          background: [0, 0, 0],
         },
       },
       {
@@ -112,7 +119,7 @@ class OneVolumeExample extends Component {
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
-          background: [1, 0, 1],
+          background: [0, 0, 0],
         },
       },
       {
@@ -122,7 +129,27 @@ class OneVolumeExample extends Component {
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
-          background: [1, 0, 1],
+          background: [0, 0, 0],
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.PROSTATE,
+        viewportUID: VIEWPORT_IDS.PROSTATE.AXIAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: this._elementNodes.get(3),
+        defaultOptions: {
+          orientation: ORIENTATION.AXIAL,
+          background: [0, 0, 0],
+        },
+      },
+      {
+        sceneUID: SCENE_IDS.PROSTATE,
+        viewportUID: VIEWPORT_IDS.PROSTATE.SAGITTAL,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: this._elementNodes.get(4),
+        defaultOptions: {
+          orientation: ORIENTATION.SAGITTAL,
+          background: [0, 0, 0],
         },
       },
     ]
@@ -145,30 +172,46 @@ class OneVolumeExample extends Component {
       SCENE_IDS.CT,
       VIEWPORT_IDS.CT.CORONAL
     )
+    prostateSceneToolGroup.addViewports(
+      renderingEngineUID,
+      SCENE_IDS.PROSTATE,
+      VIEWPORT_IDS.PROSTATE.AXIAL
+    )
+    prostateSceneToolGroup.addViewports(
+      renderingEngineUID,
+      SCENE_IDS.PROSTATE,
+      VIEWPORT_IDS.PROSTATE.SAGITTAL
+    )
 
-    addToolsToToolGroups({ ctSceneToolGroup })
+    addToolsToToolGroups({
+      ctSceneToolGroup,
+      prostateSceneToolGroup,
+    })
+
+    window.ctSceneToolGroup = ctSceneToolGroup
+    this.setState({
+      toolGroups: {
+        FirstRow: ctSceneToolGroup,
+        SecondRow: prostateSceneToolGroup,
+      },
+    })
 
     renderingEngine.render()
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ctVolume = await createAndCacheVolume(ctVolumeUID, {
-      imageIds: volumeImageIds,
+      imageIds: ctImageIds,
+    })
+    const prostateVolume = await createAndCacheVolume(prostateVolumeUID, {
+      imageIds: prostateImageIds,
     })
 
-    // Initialize all CT values to -1024 so we don't get a grey box?
-    // const { scalarData } = ctVolume
-    // const ctLength = scalarData.length
-
-    // for (let i = 0; i < ctLength; i++) {
-    //   scalarData[i] = -1024
-    // }
-
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
-
-    ctVolume.load(onLoad)
+    ctVolume.load()
+    prostateVolume.load()
 
     const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
+    const prostateScene = renderingEngine.getScene(SCENE_IDS.PROSTATE)
     await ctScene.setVolumes([
       {
         volumeUID: ctVolumeUID,
@@ -176,14 +219,12 @@ class OneVolumeExample extends Component {
         blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
       },
     ])
-
-    // Set initial CT levels in UI
-    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
-
-    this.setState({
-      metadataLoaded: true,
-      ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-    })
+    await prostateScene.setVolumes([
+      {
+        volumeUID: prostateVolumeUID,
+        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+      },
+    ])
 
     // This will initialise volumes in GPU memory
     renderingEngine.render()
@@ -210,61 +251,24 @@ class OneVolumeExample extends Component {
     this.renderingEngine.destroy()
   }
 
-  destroyAndDecacheAllVolumes = () => {
-    if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
+  setToolMode = (toolMode) => {
+    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    if (toolMode === ToolModes.Active) {
+      const activeTool = toolGroup.getActivePrimaryButtonTools()
+      if (activeTool) {
+        toolGroup.setToolPassive(activeTool)
+      }
+
+      toolGroup.setToolActive(this.state.leftClickTool, {
+        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      })
+    } else if (toolMode === ToolModes.Passive) {
+      toolGroup.setToolPassive(this.state.leftClickTool)
+    } else if (toolMode === ToolModes.Enabled) {
+      toolGroup.setToolEnabled(this.state.leftClickTool)
+    } else if (toolMode === ToolModes.Disabled) {
+      toolGroup.setToolDisabled(this.state.leftClickTool)
     }
-    this.renderingEngine.destroy()
-
-    cache.purgeCache()
-  }
-
-  resetToolModes = (toolGroup) => {
-    ANNOTATION_TOOLS.forEach((toolName) => {
-      toolGroup.setToolPassive(toolName)
-    })
-    toolGroup.setToolActive('WindowLevel', {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
-    })
-    toolGroup.setToolActive('Pan', {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
-    })
-    toolGroup.setToolActive('Zoom', {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
-    })
-  }
-
-  swapTools = (evt) => {
-    const toolName = evt.target.value
-
-    this.resetToolModes(ctSceneToolGroup)
-
-    const tools = Object.entries(ctSceneToolGroup.toolOptions)
-
-    // Disabling any tool that is active on mouse primary
-    const [activeTool] = tools.find(
-      ([tool, { bindings, mode }]) =>
-        mode === 'Active' &&
-        bindings.length &&
-        bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
-        )
-    )
-
-    ctSceneToolGroup.setToolPassive(activeTool)
-
-    // Using mouse primary for the selected tool
-    const currentBindings = ctSceneToolGroup.toolOptions[toolName].bindings
-
-    ctSceneToolGroup.setToolActive(toolName, {
-      bindings: [
-        ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
-      ],
-    })
-
-    this.renderingEngine.render()
-    this.setState({ ptCtLeftClickTool: toolName })
   }
 
   showOffScreenCanvas = () => {
@@ -288,13 +292,15 @@ class OneVolumeExample extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>One Volume MPR Example ({this.state.progressText})</h2>
-            {!window.crossOriginIsolated ? (
-              <h1 style={{ color: 'red' }}>
-                This Demo requires SharedArrayBuffer but your browser does not
-                support it
-              </h1>
-            ) : null}
+            <h2>Crosshairs example ({this.state.progressText})</h2>
+            <p>
+              This demo demonstrates the use of crosshairs on two studies that
+              don't share the same frameOfReference.
+            </p>
+            <p>
+              Top row: CT scene from patient 1 and Bottom row: PET scene from
+              patient2
+            </p>
           </div>
           <div
             className="col-xs-12"
@@ -303,13 +309,56 @@ class OneVolumeExample extends Component {
             {/* Hide until we update react in a better way  {fusionWLDisplay} */}
           </div>
         </div>
-        <select value={this.state.ptCtLeftClickTool} onChange={this.swapTools}>
+        <span>Set this tool </span>
+        <select
+          value={this.state.leftClickTool}
+          onChange={(evt) => {
+            this.setState({ leftClickTool: evt.target.value })
+          }}
+        >
           {toolsToUse.map((toolName) => (
             <option key={toolName} value={toolName}>
               {toolName}
             </option>
           ))}
         </select>
+        <span style={{ marginLeft: '4px' }}>for this toolGroup </span>
+        <select
+          value={this.state.toolGroupName}
+          onChange={(evt) => {
+            this.setState({ toolGroupName: evt.target.value })
+          }}
+        >
+          {Object.keys(this.state.toolGroups).map((toolGroupName) => (
+            <option key={toolGroupName} value={toolGroupName}>
+              {toolGroupName}
+            </option>
+          ))}
+        </select>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Active)}
+        >
+          Active
+        </button>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Passive)}
+        >
+          Passive
+        </button>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Enabled)}
+        >
+          Enabled
+        </button>
+        <button
+          style={{ marginLeft: '4px' }}
+          onClick={() => this.setToolMode(ToolModes.Disabled)}
+        >
+          Disabled
+        </button>
 
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
@@ -355,4 +404,4 @@ class OneVolumeExample extends Component {
   }
 }
 
-export default OneVolumeExample
+export default CrosshairsExample
