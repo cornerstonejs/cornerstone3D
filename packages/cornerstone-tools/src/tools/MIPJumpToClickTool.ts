@@ -5,10 +5,7 @@ import {
   VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
 import { getVoxelPositionBasedOnIntensity } from '../util/planar'
-import { ToolGroupManager } from '../store'
-import CrosshairsTool from './CrosshairsTool'
-
-const CROSSHAIRS = 'Crosshairs'
+import jumpToWorld from '../util/viewport/jumpToWorld'
 
 export default class MIPJumpToClickTool extends BaseTool {
   _configuration: any
@@ -25,14 +22,14 @@ export default class MIPJumpToClickTool extends BaseTool {
   /**
    * Handles the click event, and move the camera's focal point the brightest
    * point that is in the line of sight of camera. This function 1) search for the
-   * brightest point in the line of sight, 2) move the crosshairs to that point,
+   * brightest point in the line of sight, 2) move the camera to that point,
    * this triggers a cameraModified event which then 4) moves all other synced
    * viewports and their crosshairs.
    *
    * @param evt click event
    */
   mouseClickCallback(evt): void {
-    const { element, currentPoints, renderingEngineUID, sceneUID } = evt.detail
+    const { element, currentPoints, sceneUID } = evt.detail
 
     // 1. Getting the enabled element
     const enabledElement = getEnabledElement(element)
@@ -66,9 +63,9 @@ export default class MIPJumpToClickTool extends BaseTool {
     // 5. Get all the scenes containing the volume
     const scenes = renderingEngine.getScenesContainingVolume(targetVolumeUID)
 
-    // 6. Update all the scenes and its viewports, to jump their crosshairs
-    // to the clicked point
+    // 6. Update all the scenes and its viewports
     scenes.forEach((scene) => {
+      // Don't want to jump for the viewport that was clicked on
       if (scene.uid === sceneUID) {
         return
       }
@@ -76,29 +73,7 @@ export default class MIPJumpToClickTool extends BaseTool {
       const viewports = scene.getViewports()
 
       viewports.forEach((viewport) => {
-        const toolGroups = ToolGroupManager.getToolGroups(
-          renderingEngineUID,
-          scene.uid,
-          viewport.uid
-        )
-
-        toolGroups.forEach((toolGroup) => {
-          const crosshairs = toolGroup.getToolInstance(CROSSHAIRS)
-
-          if (crosshairs && crosshairs instanceof CrosshairsTool) {
-            const enabledElement = {
-              viewport,
-              scene,
-              renderingEngine,
-              viewportUID: viewport.uid,
-              sceneUID,
-              renderingEngineUID: renderingEngine.uid,
-              FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-            }
-
-            crosshairs.jumpToWorld(enabledElement, brightestPoint)
-          }
-        })
+        jumpToWorld(viewport, brightestPoint)
       })
     })
   }
