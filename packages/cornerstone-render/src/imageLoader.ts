@@ -3,7 +3,7 @@ import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import { triggerEvent } from './utilities'
 import { IImage, ImageLoaderFn, ImageLoadObject } from './types'
-import requestPoolManager from './requestPool/requestPoolManager'
+import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 
 export interface ImageLoaderOptions {
   priority: number
@@ -210,7 +210,9 @@ export function cancelLoadImage(imageId: string): void {
   // Instruct the request pool manager to filter queued
   // requests to ensure requests we no longer need are
   // no longer sent.
-  requestPoolManager.filterRequests(filterFunction)
+  imageLoadPoolManager.filterRequests(filterFunction)
+
+  // TODO: Cancel decoding and retrieval as well (somehow?)
 
   // cancel image loading if in progress
   const imageLoadObject = cache.getImageLoadObject(imageId)
@@ -241,7 +243,7 @@ export function cancelLoadImages(imageIds: Array<string>): void {
  * @category ImageLoader
  */
 export function cancelLoadAll(): void {
-  const requestPool = requestPoolManager.getRequestPool()
+  const requestPool = imageLoadPoolManager.getRequestPool()
 
   Object.keys(requestPool).forEach((type: string) => {
     const requests = requestPool[type]
@@ -262,7 +264,9 @@ export function cancelLoadAll(): void {
       }
     })
     // reseting the pool types to be empty
-    requestPoolManager.clearRequestStack(type)
+    imageLoadPoolManager.clearRequestStack(type)
+
+    // TODO: Clear retrieval and decoding queues as well
   })
 }
 

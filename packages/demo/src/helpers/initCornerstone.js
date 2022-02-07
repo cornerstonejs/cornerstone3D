@@ -1,7 +1,7 @@
 import dicomParser from 'dicom-parser'
 import * as cornerstone from '@ohif/cornerstone-render'
 import * as csTools3d from '@ohif/cornerstone-tools'
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
@@ -26,6 +26,14 @@ cornerstone.metaData.addProvider(
   11000
 )
 
+const beforeSend = (xhr, imageId,
+  defaultHeaders,
+  params) => {
+
+  return { 'accept': undefined };
+}
+
+
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser
 cornerstoneWADOImageLoader.configure({
@@ -33,6 +41,7 @@ cornerstoneWADOImageLoader.configure({
   decodeConfig: {
     convertFloatPixelDataToInt: false
   },
+  // beforeSend
 })
 
 var config = {
@@ -40,8 +49,7 @@ var config = {
   startWebWorkersOnDemand: false,
   taskConfiguration: {
     decodeTask: {
-      initializeCodecsOnStartup: false,
-      usePDFJS: false,
+      initializeCodecsOnStartup: true,
       strict: false,
     },
   },

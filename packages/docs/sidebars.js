@@ -29,6 +29,7 @@ module.exports = {
             'concepts/scenes',
             'concepts/viewports',
             'concepts/renderingEngine',
+            'concepts/requestPoolManager',
           ],
         },
         'core-usage',
