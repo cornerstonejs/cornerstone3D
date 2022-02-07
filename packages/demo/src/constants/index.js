@@ -90,12 +90,14 @@ const ANNOTATION_TOOLS = [
   'Bidirectional',
   'RectangleRoi',
   'EllipticalRoi',
+  'ptSUVPeak',
 ]
 
 // A string helper for the drop down.
 const SEGMENTATION_TOOLS = [
   'RectangleScissors',
   'CircleScissors',
+  'SphereScissors',
   'RectangleRoiThreshold',
 ]
 

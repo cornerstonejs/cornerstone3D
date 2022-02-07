@@ -5,12 +5,11 @@ import {
 } from '@ohif/cornerstone-render/src/types'
 
 import { vec3 } from 'gl-matrix'
-import {
-  fillInsideShape,
-  getBoundingBoxAroundShape,
-} from '../../../util/segmentation'
+import { getBoundingBoxAroundShape } from '../../../util/segmentation'
 import { pointInEllipse } from '../../../util/math/ellipse'
 import { getCanvasEllipseCorners } from '../../../util/math/ellipse'
+import pointInShapeCallback from '../../../util/planar/pointInShapeCallback'
+import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
 
 type OperationData = {
   points: any // Todo:fix
@@ -46,19 +45,20 @@ function fillCircle(
   inside = true
 ): void {
   const { enabledElement } = evt
-  const { volume: labelmapVolume, points, constraintFn } = operationData
-  const { vtkImageData, dimensions } = labelmapVolume
+  const {
+    volume: labelmapVolume,
+    points,
+    segmentsLocked,
+    segmentIndex,
+  } = operationData
+  const { vtkImageData, dimensions, scalarData } = labelmapVolume
   const { viewport, renderingEngine } = enabledElement
 
-  const { bottom, top, left, right } = points
+  const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
 
   // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight corners in canvas coordinates
-  const [topLeftCanvas, bottomRightCanvas] = getCanvasEllipseCorners([
-    bottom.canvas,
-    top.canvas,
-    left.canvas,
-    right.canvas,
-  ])
+  const [topLeftCanvas, bottomRightCanvas] =
+    getCanvasEllipseCorners(canvasCoordinates)
 
   const ellipse = {
     left: Math.min(topLeftCanvas[0], bottomRightCanvas[0]),
@@ -77,29 +77,30 @@ function fillCircle(
   ]
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions)
-  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
-
-  const topLeftFrontIJK = <Point3>[iMin, jMin, kMin]
-  const bottomRightBackIJK = <Point3>[iMax, jMax, kMax]
 
   if (boundsIJK.every(([min, max]) => min !== max)) {
     throw new Error('Oblique segmentation tools are not supported yet')
   }
 
-  inside
-    ? fillInsideShape(
-        enabledElement,
-        operationData,
-        (pointIJK, canvasCoords) => pointInEllipse(ellipse, canvasCoords), // Todo: we should call pointInEllipsoidWithConstraint for oblique planes
-        constraintFn,
-        topLeftFrontIJK,
-        bottomRightBackIJK
-      )
-    : null // fillOutsideBoundingBox(evt, operationData, topLeftFrontIJK, bottomRightBackIJK)
+  const callback = (canvasCoords, pointIJK, index, value) => {
+    if (segmentsLocked.includes(value)) {
+      return
+    }
+    scalarData[index] = segmentIndex
+  }
 
-  // todo: this renders all viewports, only renders viewports that have the modified labelmap actor
-  // right now this is needed to update the labelmap on other viewports that have it (pt)
-  renderingEngine.render()
+  pointInShapeCallback(
+    boundsIJK,
+    viewport.worldToCanvas,
+    scalarData,
+    vtkImageData,
+    dimensions,
+    (canvasCoords) => pointInEllipse(ellipse, canvasCoords),
+    callback
+  )
+
+  // Todo: optimize modified slices for all orthogonal views
+  triggerLabelmapRender(renderingEngine, labelmapVolume, vtkImageData)
 }
 
 /**

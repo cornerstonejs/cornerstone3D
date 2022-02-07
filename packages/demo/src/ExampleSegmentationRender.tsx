@@ -562,8 +562,8 @@ class SegmentationExample extends Component {
       [ptVolume],
       labelmapVolume,
       {
-        lowerThreshold: this.state.thresholdMin,
-        higherThreshold: this.state.thresholdMax,
+        lowerThreshold: Number(this.state.thresholdMin),
+        higherThreshold: Number(this.state.thresholdMax),
         numSlices,
       }
     )
