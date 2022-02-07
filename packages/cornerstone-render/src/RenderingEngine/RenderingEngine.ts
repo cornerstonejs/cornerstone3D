@@ -79,7 +79,7 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @param uid - Unique identifier for RenderingEngine
    */
-  constructor(uid: string) {
+  constructor(uid?: string) {
     this.uid = uid ? uid : uuidv4()
     this.useCPURendering = getShouldUseCPURendering()
 

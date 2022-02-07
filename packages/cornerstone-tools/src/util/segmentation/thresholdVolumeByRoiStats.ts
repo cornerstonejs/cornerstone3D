@@ -34,6 +34,10 @@ function thresholdVolumeByRoiStats(
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
+  if (!labelmap) {
+    throw new Error('labelmap is required')
+  }
+
   const { numSlices } = options
 
   const referenceVolume = referenceVolumes[0]
