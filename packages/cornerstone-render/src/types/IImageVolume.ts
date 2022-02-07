@@ -6,7 +6,7 @@ import { Metadata, Point3, ImageLoadObject } from '../types'
 interface IImageVolume {
   readonly uid: string
   dimensions: Point3
-  direction: Array<number>
+  direction: Float32Array
   metadata: Metadata
   origin: Point3
   scalarData: any

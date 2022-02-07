@@ -1,4 +1,3 @@
-import { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { createVolumeActor } from './helpers'
@@ -6,8 +5,6 @@ import { loadVolume } from '../volumeLoader'
 import { uuidv4 } from '../utilities'
 import VolumeViewport from './VolumeViewport'
 import { VolumeActor, ActorEntry } from '../types'
-import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
-import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 
 type VolumeInput = {
   volumeUID: string
@@ -161,33 +158,66 @@ class Scene {
     }
   }
 
-  // todo: should add segmentationUID similar to volumeUID
+  // Todo: add remove segmentations
+  public async removeSegmentations(
+    volumeUIDs: Array<string>,
+    immediate = false
+  ) {}
+
+  /**
+   * @method setSegmentations Creates volume actors for all segmentations defined in the `volumeInputArray`.
+   * For each entry, if a `callback` is supplied, it will be called with the new segmentation volume actor as input.
+   *
+   * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the segmentation volumes to add.
+   * @param {boolean} [immediate=false] Whether the `Scene` should be rendered as soon as volumes are added.
+   */
+  // Todo: not sure if we need an extra method for this. Problems with using setVolumes to pass
+  // segmentations include:
+  // - it will recreate the image volume actors - how we remove and add segmentations?
+  // - it
+  //
   public async setSegmentations(
-    labelMap: any,
+    volumeInputArray: Array<VolumeInput>,
     immediate = false
   ): Promise<void> {
     const volumeActors = []
 
-    // todo: use shared volume mapper for seg too
-    const { imageData: vtkImageData, actor, mapper } = labelMap
-    // const volumeMapper = vtkVolumeMapper.newInstance()
-    // volumeMapper.setInputData(vtkImageData)
+    const firstSegVolume = await loadVolume(volumeInputArray[0].volumeUID)
 
-    // const spacing = vtkImageData.getSpacing()
-    // // Set the sample distance to half the mean length of one side. This is where the divide by 6 comes from.
-    // // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
-    // const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6
+    if (!firstSegVolume) {
+      throw new Error(
+        `imageVolume with uid: ${firstSegVolume.uid} does not exist`
+      )
+    }
 
-    // // This is to allow for good pixel level image quality.
-    // volumeMapper.setMaximumSamplesPerRay(4000)
+    const FrameOfReferenceUID = firstSegVolume.metadata.FrameOfReferenceUID
 
-    // volumeMapper.setSampleDistance(sampleDistance)
+    const numSegs = volumeInputArray.length
+    for (let i = 1; i < numSegs; i++) {
+      const volumeInput = volumeInputArray[i]
 
-    // const volumeActor = vtkVolume.newInstance()
-    // // volumeActor.getProperty().setInterpolationTypeToNearest()
-    // volumeActor.setMapper(volumeMapper)
+      const segVolume = await loadVolume(volumeInput.volumeUID)
 
-    volumeActors.push({ uid: 'Seg', volumeActor: actor })
+      if (!segVolume) {
+        throw new Error(`segVolume with uid: ${segVolume.uid} does not exist`)
+      }
+
+      if (FrameOfReferenceUID !== segVolume.metadata.FrameOfReferenceUID) {
+        throw new Error(
+          `Segmentations being added to scene ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
+        )
+      }
+    }
+
+    this._FrameOfReferenceUID = FrameOfReferenceUID
+
+    // One actor per volume
+    for (let i = 0; i < volumeInputArray.length; i++) {
+      const { volumeUID } = volumeInputArray[i]
+      const volumeActor = await createVolumeActor(volumeInputArray[i])
+
+      volumeActors.push({ uid: volumeUID, volumeActor })
+    }
 
     this._sceneViewports.forEach((uid) => {
       const viewport = this.getViewport(uid)

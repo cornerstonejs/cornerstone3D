@@ -68,7 +68,11 @@ function cornerstoneStreamingImageVolumeLoader(
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
   const spacing = <Types.Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing]
   const dimensions = <Types.Point3>[Columns, Rows, numFrames]
-  const direction = [...rowCosineVec, ...colCosineVec, ...scanAxisNormal]
+  const direction = new Float32Array([
+    ...rowCosineVec,
+    ...colCosineVec,
+    ...scanAxisNormal,
+  ])
   const signed = PixelRepresentation === 1
 
   // Check if it fits in the cache before we allocate data

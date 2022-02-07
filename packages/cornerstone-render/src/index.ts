@@ -34,6 +34,7 @@ import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequ
 import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 import {
   createAndCacheVolume,
+  createAndCacheDerivedVolume,
   registerVolumeLoader,
   registerUnknownVolumeLoader,
 } from './volumeLoader'
@@ -108,6 +109,7 @@ export {
   unregisterAllImageLoaders,
   //
   createAndCacheVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
+  createAndCacheDerivedVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
   registerVolumeLoader,
   registerUnknownVolumeLoader,
   //
