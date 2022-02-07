@@ -1,38 +1,24 @@
 import setLabelmapForElement from './setLabelmapForElement'
-import {
-  setActiveLabelmapIndex,
-  setActiveLabelmapByLabelmapUID,
-  getActiveLabelmapIndex,
-  getActiveLabelmapUID,
-  getNextLabelmapIndex,
-} from './activeLabelmapIndex'
+
 import { getLabelmapUIDsForElement, getLabelmapUIDForElement } from './utils'
-import {
-  setActiveSegmentIndex,
-  getActiveSegmentIndex,
-  getActiveSegmentIndexForLabelmapUID,
-} from './activeSegmentIndex'
-import * as segmentLocker from './segmentLocker'
+import * as lockedSegmentController from './lockedSegmentController'
+import * as segmentIndexController from './segmentIndexController'
+import * as activeLabelmapController from './activeLabelmapController'
 import config, { setGlobalConfig } from './segmentationConfig'
 import { addNewLabelmap } from './addNewLabelmap'
 import { setColorLUT, getColorForSegmentIndex } from './colorLUT'
 
 export {
   setLabelmapForElement,
-  setActiveLabelmapIndex,
-  setActiveLabelmapByLabelmapUID,
-  getActiveLabelmapIndex,
-  getActiveLabelmapUID,
   addNewLabelmap,
-  getActiveSegmentIndex,
   getLabelmapUIDForElement,
-  getNextLabelmapIndex,
   setColorLUT,
   getColorForSegmentIndex,
-  getActiveSegmentIndexForLabelmapUID,
   config,
   setGlobalConfig,
-  segmentLocker,
+  lockedSegmentController,
+  segmentIndexController,
+  activeLabelmapController,
 }
 
 export default {
@@ -43,15 +29,11 @@ export default {
   // Set/Get Labelmap
   getLabelmapUIDsForElement,
 
-  // Set/Get Active labelmap/Index
-  setActiveLabelmapByLabelmapUID,
-  setActiveLabelmapIndex,
-  getActiveLabelmapIndex,
-  getActiveLabelmapUID,
+  // active labelmap utils
+  activeLabelmapController,
 
-  // Set/Get Active Segment index
-  setActiveSegmentIndex,
-  getActiveSegmentIndex,
+  // Segment index utils
+  segmentIndexController,
 
   // Config
   config,
@@ -62,10 +44,8 @@ export default {
   getColorForSegmentIndex,
 
   // Utils
-  getNextLabelmapIndex,
-  getActiveSegmentIndexForLabelmapUID,
   getLabelmapUIDForElement,
 
   // Locked segment index
-  segmentLocker,
+  lockedSegmentController,
 }

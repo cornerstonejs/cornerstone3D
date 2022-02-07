@@ -27,9 +27,7 @@ export default function getTargetVolume(
   }
   const numVolumeActors = volumeActors.length
 
-  // TODO: add hacky filter to remove 'undefined' values such as the seg labelmap
-  // which currently isn't in the cache. This is just for testing and should be removed.
-  const imageVolumes = volumeActors.filter((va) => !!va).map((va) => cache.getVolume(va.uid))
+  const imageVolumes = volumeActors.map((va) => cache.getVolume(va.uid))
 
   if (targetVolumeUID) {
     // If a volumeUID is defined, set that volume as the target

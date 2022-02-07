@@ -30,11 +30,10 @@ import thresholdVolumeByRange from './strategies/thresholdVolumeByRange'
 import thresholdVolumeByRoiStats from './strategies/thresholdVolumeByRoiStats'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 import {
-  setActiveLabelmapIndex,
-  getActiveSegmentIndex,
   getColorForSegmentIndex,
-  getNextLabelmapIndex,
-  segmentLocker,
+  lockedSegmentController,
+  segmentIndexController,
+  activeLabelmapController
 } from '../../store/SegmentationModule'
 
 type ThresholdExecutionOptions = {
@@ -95,7 +94,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     })
   }
 
-  addNewMeasurement = (evt: CustomEvent): RectangleRoiThresholdToolData => {
+  addNewMeasurement = (evt: CustomEvent) => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -223,9 +222,9 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     //   values[i] = 0
     // }
 
-    const segmentIndex = getActiveSegmentIndex(element)
+    const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
     const segmentColor = getColorForSegmentIndex(element, segmentIndex)
-    const segmentsLocked = segmentLocker.getLockedSegmentsForElement(element)
+    const segmentsLocked = lockedSegmentController.getLockedSegmentsForElement(element)
 
     const eventDetail = {
       canvas: element,
@@ -282,8 +281,12 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     // If already created the labelmap for this toolData return
     if (!toolData.data.labelmapUID) {
       // Otherwise Create Labelmap for the new rectangle measurement
-      const labelmapIndex = getNextLabelmapIndex(element)
-      const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
+      const labelmapIndex =
+        activeLabelmapController.getNextLabelmapIndex(element)
+      const labelmapUID = await activeLabelmapController.setActiveLabelmapIndex(
+        element,
+        labelmapIndex
+      )
 
       toolData.data.labelmapUID = labelmapUID
     }
