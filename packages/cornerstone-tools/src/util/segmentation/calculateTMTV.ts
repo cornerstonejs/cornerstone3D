@@ -9,16 +9,17 @@ import isEqual from '../math/vec3/isEqual'
  * we do not double count voxels that are part of multiple labelmaps.
  * @param {} labelmaps
  * @param {number} segmentIndex
- * @returns {number} TMTV
+ * @returns {number} TMTV in ml
  */
 function calculateTMTV(
   labelmaps: Array<IImageVolume>,
   segmentIndex = 1
 ): number {
-  labelmaps.forEach(({ direction, dimensions, origin }) => {
+  labelmaps.forEach(({ direction, dimensions, origin, spacing }) => {
     if (
       !isEqual(dimensions, labelmaps[0].dimensions) ||
       !isEqual(direction, labelmaps[0].direction) ||
+      !isEqual(spacing, labelmaps[0].spacing) ||
       !isEqual(origin, labelmaps[0].origin)
     ) {
       throw new Error('labelmaps must have the same size and shape')
@@ -26,6 +27,7 @@ function calculateTMTV(
   })
 
   const labelmap = labelmaps[0]
+  const [xSpacing, ySpacing, zSpacing] = labelmap.spacing
 
   const arrayType = labelmap.scalarData.constructor
   const outputData = new arrayType(labelmap.scalarData.length)
@@ -41,14 +43,14 @@ function calculateTMTV(
 
   // count non-zero values inside the outputData, this would
   // consider the overlapping regions to be only counted once
-  const tmtv = outputData.reduce((acc, curr) => {
+  const numVoxels = outputData.reduce((acc, curr) => {
     if (curr > 0) {
       return acc + 1
     }
     return acc
   }, 0)
 
-  return tmtv
+  return numVoxels * xSpacing * ySpacing * zSpacing
 }
 
 export default calculateTMTV
