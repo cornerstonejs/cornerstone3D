@@ -4,11 +4,13 @@ import VIEWPORT_TYPE from '../constants/viewportType'
 import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from '../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
-import { IViewport, PublicViewportInput, ViewportInput } from '../types'
+import { PublicViewportInput, ViewportInput } from '../types'
 import VolumeViewport from './VolumeViewport'
 import StackViewport from './StackViewport'
 import Scene from './Scene'
 import isEqual from 'lodash.isequal'
+import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline'
+import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init'
 
 interface IRenderingEngine {
   uid: string
@@ -70,6 +72,7 @@ class RenderingEngine implements IRenderingEngine {
   private _needsRender: Set<string> = new Set()
   private _animationFrameSet = false
   private _animationFrameHandle: number | null = null
+  private useCPURendering: boolean
 
   /**
    *
@@ -77,12 +80,23 @@ class RenderingEngine implements IRenderingEngine {
    */
   constructor(uid: string) {
     this.uid = uid ? uid : uuidv4()
+    this.useCPURendering = getShouldUseCPURendering()
+
     renderingEngineCache.set(this)
 
-    this.offscreenMultiRenderWindow =
-      vtkOffscreenMultiRenderWindow.newInstance()
-    this.offScreenCanvasContainer = document.createElement('div')
-    this.offscreenMultiRenderWindow.setContainer(this.offScreenCanvasContainer)
+    if (!isCornerstoneInitialized()) {
+      throw new Error('Cornerstone-render is not initialized, run init() first')
+    }
+
+    if (!this.useCPURendering) {
+      this.offscreenMultiRenderWindow =
+        vtkOffscreenMultiRenderWindow.newInstance()
+      this.offScreenCanvasContainer = document.createElement('div')
+      this.offscreenMultiRenderWindow.setContainer(
+        this.offScreenCanvasContainer
+      )
+    }
+
     this._scenes = new Map()
     this._viewports = new Map()
     this.hasBeenDestroyed = false
@@ -109,7 +123,7 @@ class RenderingEngine implements IRenderingEngine {
    */
   public enableElement(viewportInputEntry: PublicViewportInput): void {
     this._throwIfDestroyed()
-    const { canvas, viewportUID, sceneUID } = viewportInputEntry
+    const { canvas, viewportUID } = viewportInputEntry
 
     // Throw error if no canvas
     if (!canvas) {
@@ -117,7 +131,7 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     // 1. Get the viewport from the list of available viewports.
-    let viewport = this.getViewport(viewportUID)
+    const viewport = this.getViewport(viewportUID)
 
     // 1.a) If there is a found viewport, and the scene Id has changed, we
     // remove the viewport and create a new viewport
@@ -127,45 +141,22 @@ class RenderingEngine implements IRenderingEngine {
       // this._removeViewport(viewportUID)
     }
 
-    // 2. Retrieving the list of viewports for calculation of the new size for
+    // 2.a) See if viewport uses a custom rendering pipeline.
+    const { type } = viewportInputEntry
+
+    const viewportUsesCustomRenderingPipeline =
+      viewportTypeUsesCustomRenderingPipeline(type)
+
+    // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
-    const viewports = this._getViewportsAsArray()
-    const canvases = viewports.map((vp) => vp.canvas)
-    canvases.push(viewportInputEntry.canvas)
 
-    // 2.a Calculating the new size for offScreen Canvas
-    const { offScreenCanvasWidth, offScreenCanvasHeight } =
-      this._resizeOffScreenCanvas(canvases)
-
-    // 2.b Re-position previous viewports on the offScreen Canvas based on the new
-    // offScreen canvas size
-    const _xOffset = this._resize(
-      viewports,
-      offScreenCanvasWidth,
-      offScreenCanvasHeight
-    )
-
-    // 3 Add the requested viewport to rendering Engine
-    this._addViewport(
-      viewportInputEntry,
-      offScreenCanvasWidth,
-      offScreenCanvasHeight,
-      _xOffset
-    )
-
-    // 4. Check if the viewport is part of a scene, if yes, add the available
-    // volume Actors to the viewport too
-    viewport = this.getViewport(viewportUID)
-
-    // 4.a Only volumeViewports have scenes
-    if (viewport instanceof VolumeViewport) {
-      const scene = viewport.getScene()
-      const volActors = scene.getVolumeActors()
-      const viewportActors = viewport.getActors()
-      // add the volume actor if not the same as the viewport actor
-      if (!isEqual(volActors, viewportActors)) {
-        scene.addVolumeActors(viewportUID)
-      }
+    // If the viewport being added uses a custom pipeline, or we aren't using
+    // GPU rendering, we don't need to resize the offscreen canvas.
+    if (!this.useCPURendering && !viewportUsesCustomRenderingPipeline) {
+      this.enableVTKjsDrivenViewport(viewportInputEntry)
+    } else {
+      // 3 Add the requested viewport to rendering Engine
+      this.addCustomViewport(viewportInputEntry)
     }
 
     // 5. Add the new viewport to the queue to be rendered
@@ -199,7 +190,12 @@ class RenderingEngine implements IRenderingEngine {
     this._resetViewport(viewport)
 
     // 4. Remove the related renderer from the offScreenMultiRenderWindow
-    this.offscreenMultiRenderWindow.removeRenderer(viewportUID)
+    if (
+      !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
+      !this.useCPURendering
+    ) {
+      this.offscreenMultiRenderWindow.removeRenderer(viewportUID)
+    }
 
     // 5. Remove the requested viewport from the rendering engine
     this._removeViewport(viewportUID)
@@ -215,6 +211,377 @@ class RenderingEngine implements IRenderingEngine {
 
     // 8. Resize the offScreen canvas to accommodate for the new size (after removal)
     this.resize()
+  }
+
+  /**
+   * Creates `Scene`s containing `Viewport`s and sets up the offscreen render
+   * window to allow offscreen rendering and transmission back to the target
+   * canvas in each viewport.
+   *
+   * @param viewportInputEntries An array of viewport definitions to construct the rendering engine
+   * /todo: if don't want scene don't' give uid
+   */
+  public setViewports(viewportInputEntries: Array<PublicViewportInput>): void {
+    this._throwIfDestroyed()
+    this._reset()
+
+    // 1. Split viewports based on whether they use vtk.js or a custom pipeline.
+
+    const vtkDrivenViewportInputEntries: PublicViewportInput[] = []
+    const customRenderingViewportInputEntries: PublicViewportInput[] = []
+
+    viewportInputEntries.forEach((vpie) => {
+      if (
+        !this.useCPURendering &&
+        !viewportTypeUsesCustomRenderingPipeline(vpie.type)
+      ) {
+        vtkDrivenViewportInputEntries.push(vpie)
+      } else {
+        customRenderingViewportInputEntries.push(vpie)
+      }
+    })
+
+    this.setVtkjsDrivenViewports(vtkDrivenViewportInputEntries)
+    this.setCustomViewports(customRenderingViewportInputEntries)
+  }
+
+  /**
+   * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
+   * It is up to the parent app to call the size of the on-screen canvas changes.
+   * This is left as an app level concern as one might want to debounce the changes, or the like.
+   *
+   * @param {boolean} [immediate=true] Whether all of the viewports should be rendered immediately.
+   * @param {boolean} [resetPanZoomForViewPlane=true] Whether each viewport gets centered (reset pan) and
+   * its zoom gets reset upon resize.
+   *
+   */
+  public resize(immediate = true, resetPanZoomForViewPlane = true): void {
+    this._throwIfDestroyed()
+
+    // 1. Get the viewports' canvases
+    const viewports = this._getViewportsAsArray()
+
+    const vtkDrivenViewports = []
+    const customRenderingViewports = []
+
+    viewports.forEach((vpie) => {
+      if (!viewportTypeUsesCustomRenderingPipeline(vpie.type)) {
+        vtkDrivenViewports.push(vpie)
+      } else {
+        customRenderingViewports.push(vpie)
+      }
+    })
+
+    this._resizeVTKViewports(
+      vtkDrivenViewports,
+      immediate,
+      resetPanZoomForViewPlane
+    )
+
+    this._resizeUsingCustomResizeHandler(
+      customRenderingViewports,
+      immediate,
+      resetPanZoomForViewPlane
+    )
+  }
+
+  /**
+   * @method getScene Returns the scene, only scenes with SceneUID (not internal)
+   * are returned
+   * @param {string} sceneUID The UID of the scene to fetch.
+   *
+   * @returns {Scene} The scene object.
+   */
+  public getScene(sceneUID: string): Scene {
+    this._throwIfDestroyed()
+
+    // Todo: should the volume be decached?
+    return this._scenes.get(sceneUID)
+  }
+
+  /**
+   * @method getScenes Returns an array of all `Scene`s on the `RenderingEngine` instance.
+   *
+   * @returns {Scene} The scene object.
+   */
+  public getScenes(): Array<Scene> {
+    this._throwIfDestroyed()
+
+    return Array.from(this._scenes.values()).filter((s) => {
+      // Do not return Scenes not explicitly created by the user
+      return s.getIsInternalScene() === false
+    })
+  }
+
+  /**
+   * @method getScenes Returns an array of all `Scene`s on the `RenderingEngine` instance.
+   *
+   * @returns {Scene} The scene object.
+   */
+  public removeScene(sceneUID: string): void {
+    this._throwIfDestroyed()
+
+    this._scenes.delete(sceneUID)
+  }
+
+  /**
+   * @method getViewport Returns the viewport by UID
+   *
+   * @returns {StackViewport | VolumeViewport} viewport
+   */
+  public getViewport(uid: string): StackViewport | VolumeViewport {
+    return this._viewports.get(uid)
+  }
+
+  /**
+   * @method getViewportsContainingVolumeUID Returns the viewport containing the volumeUID
+   *
+   * @returns {VolumeViewport} viewports
+   */
+  public getViewportsContainingVolumeUID(uid: string): Array<VolumeViewport> {
+    const viewports = this._getViewportsAsArray() as Array<VolumeViewport>
+    return viewports.filter((vp) => {
+      const volActors = vp.getDefaultActor()
+      return volActors.volumeActor && volActors.uid === uid
+    })
+  }
+
+  /**
+   * @method getScenesContainingVolume Returns the scenes containing the volumeUID
+   *
+   * @returns {Scene} scenes
+   */
+  public getScenesContainingVolume(uid: string): Array<Scene> {
+    const scenes = this.getScenes()
+    return scenes.filter((scene) => {
+      const volumeActors = scene.getVolumeActors()
+      const firstActor = volumeActors[0]
+      return firstActor.volumeActor && firstActor.uid === uid
+    })
+  }
+
+  /**
+   * @method getViewports Returns an array of all `Viewport`s on the `RenderingEngine` instance.
+   *
+   * @returns {Viewport} The scene object.
+   */
+  public getViewports(): Array<StackViewport | VolumeViewport> {
+    this._throwIfDestroyed()
+
+    return this._getViewportsAsArray()
+  }
+
+  /**
+   * Filters all the available viewports and return the stack viewports
+   * @returns stack viewports registered on the rendering Engine
+   */
+  public getStackViewports(): Array<StackViewport> {
+    this._throwIfDestroyed()
+
+    const viewports = this.getViewports()
+
+    const isStackViewport = (
+      viewport: StackViewport | VolumeViewport
+    ): viewport is StackViewport => {
+      return viewport instanceof StackViewport
+    }
+
+    return viewports.filter(isStackViewport)
+  }
+
+  /**
+   * @method render Renders all viewports on the next animation frame.
+   */
+  public render(): void {
+    const viewports = this.getViewports()
+    const viewportUIDs = viewports.map((vp) => vp.uid)
+
+    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
+  }
+
+  /**
+   * @method renderScene Renders only a specific `Scene` on the next animation frame.
+   *
+   * @param {string} sceneUID The UID of the scene to render.
+   */
+  public renderScene(sceneUID: string): void {
+    const scene = this.getScene(sceneUID)
+    const viewportUIDs = scene.getViewportUIDs()
+
+    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
+  }
+
+  /**
+   * @method renderFrameOfReference Renders any viewports viewing the
+   * given Frame Of Reference.
+   *
+   * @param {string} FrameOfReferenceUID The unique identifier of the
+   * Frame Of Reference.
+   */
+  public renderFrameOfReference = (FrameOfReferenceUID: string): void => {
+    const viewports = this._getViewportsAsArray()
+    const viewportUidsWithSameFrameOfReferenceUID = viewports.map((vp) => {
+      if (vp.getFrameOfReferenceUID() === FrameOfReferenceUID) {
+        return vp.uid
+      }
+    })
+
+    return this.renderViewports(viewportUidsWithSameFrameOfReferenceUID)
+  }
+
+  /**
+   * @method renderScenes Renders the provided Scene UIDs.
+   *
+   * @returns{void}
+   */
+  public renderScenes(sceneUIDs: Array<string>): void {
+    const scenes = sceneUIDs.map((sUid) => this.getScene(sUid))
+    this._renderScenes(scenes)
+  }
+
+  /**
+   * @method renderViewports Renders the provided Viewport UIDs.
+   *
+   * @returns{void}
+   */
+  public renderViewports(viewportUIDs: Array<string>): void {
+    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
+  }
+
+  /**
+   * @method renderViewport Renders only a specific `Viewport` on the next animation frame.
+   *
+   * @param {string} viewportUID The UID of the viewport.
+   */
+  public renderViewport(viewportUID: string): void {
+    this._setViewportsToBeRenderedNextFrame([viewportUID])
+  }
+
+  /**
+   * @method destroy the rendering engine
+   */
+  public destroy(): void {
+    if (this.hasBeenDestroyed) {
+      return
+    }
+
+    this._reset()
+    renderingEngineCache.delete(this.uid)
+
+    if (!this.useCPURendering) {
+      // Free up WebGL resources
+      this.offscreenMultiRenderWindow.delete()
+
+      // Make sure all references go stale and are garbage collected.
+      delete this.offscreenMultiRenderWindow
+    }
+
+    this.hasBeenDestroyed = true
+  }
+
+  private _resizeUsingCustomResizeHandler(
+    customRenderingViewports: StackViewport[],
+    immediate = true,
+    resetPanZoomForViewPlane = true
+  ) {
+    // 1. If viewport has a custom resize method, call it here.
+    customRenderingViewports.forEach((vp) => {
+      if (typeof vp.resize === 'function') vp.resize()
+    })
+
+    // 3. Reset viewport cameras
+    customRenderingViewports.forEach((vp) => {
+      vp.resetCamera(resetPanZoomForViewPlane)
+    })
+
+    // 2. If render is immediate: Render all
+    if (immediate === true) {
+      this.render()
+    }
+  }
+
+  private _resizeVTKViewports(
+    vtkDrivenViewports: (StackViewport | VolumeViewport)[],
+    resetPanZoomForViewPlane = true,
+    immediate = true
+  ) {
+    const canvasesDrivenByVtkJs = vtkDrivenViewports.map((vp) => vp.canvas)
+
+    if (canvasesDrivenByVtkJs.length) {
+      // 1. Recalculate and resize the offscreen canvas size
+      const { offScreenCanvasWidth, offScreenCanvasHeight } =
+        this._resizeOffScreenCanvas(canvasesDrivenByVtkJs)
+
+      // 2. Recalculate the viewports location on the off screen canvas
+      this._resize(
+        vtkDrivenViewports,
+        offScreenCanvasWidth,
+        offScreenCanvasHeight
+      )
+    }
+
+    // 3. Reset viewport cameras
+    vtkDrivenViewports.forEach((vp) => {
+      vp.resetCamera(resetPanZoomForViewPlane)
+    })
+
+    // 4. If render is immediate: Render all
+    if (immediate === true) {
+      this.render()
+    }
+  }
+
+  /**
+   * @method enableVTKjsDrivenViewport Enables a viewport to be driven by the
+   * offscreen vtk.js rendering engine.
+   *
+   * @param {PublicViewportInput} viewportInputEntry Information object used to
+   * construct and enable the viewport.
+   */
+  private enableVTKjsDrivenViewport(viewportInputEntry: PublicViewportInput) {
+    const viewports = this._getViewportsAsArray()
+    const viewportsDrivenByVtkJs = viewports.filter(
+      (vp) => viewportTypeUsesCustomRenderingPipeline(vp.type) === false
+    )
+
+    const canvasesDrivenByVtkJs = viewportsDrivenByVtkJs.map((vp) => vp.canvas)
+
+    canvasesDrivenByVtkJs.push(viewportInputEntry.canvas)
+
+    // 2.c Calculating the new size for offScreen Canvas
+    const { offScreenCanvasWidth, offScreenCanvasHeight } =
+      this._resizeOffScreenCanvas(canvasesDrivenByVtkJs)
+
+    // 2.d Re-position previous viewports on the offScreen Canvas based on the new
+    // offScreen canvas size
+    const xOffset = this._resize(
+      viewportsDrivenByVtkJs,
+      offScreenCanvasWidth,
+      offScreenCanvasHeight
+    )
+
+    // 3 Add the requested viewport to rendering Engine
+    this.addVtkjsDrivenViewport(viewportInputEntry, {
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+      xOffset,
+    })
+
+    // 4. Check if the viewport is part of a scene, if yes, add the available
+    // volume Actors to the viewport too
+    const viewportUID = viewportInputEntry.viewportUID
+    const viewport = this.getViewport(viewportUID)
+
+    // 4.a Only volumeViewports have scenes
+    if (viewport instanceof VolumeViewport) {
+      const scene = viewport.getScene()
+      const volActors = scene.getVolumeActors()
+      const viewportActors = viewport.getActors()
+      // add the volume actor if not the same as the viewport actor
+      if (!isEqual(volActors, viewportActors)) {
+        scene.addVolumeActors(viewportUID)
+      }
+    }
   }
 
   /**
@@ -255,24 +622,31 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Add viewport at the correct position on the offScreenCanvas
+   * @method addVtkjsDrivenViewport Adds a viewport driven by vtk.js to the
+   * `RenderingEngine`.
    *
-   * @param {Object} viewportInputEntry viewport definition to construct the viewport
-   * @param {number} offScreenCanvasWidth offScreen width
-   * @param {number} offScreenCanvasHeight offScreen height
-   * @param {number} _xOffset offset from left of offScreen canvas to place the viewport
-   *
-   * @returns {void}
-   * @memberof RenderingEngine
+   * @param {PublicViewportInput} viewportInputEntry Information object used to
+   * construct and enable the viewport.
+   * @param {{
+   *       offScreenCanvasWidth: number;
+   *       offScreenCanvasHeight: number;
+   *       xOffset: number;
+   *     }} [offscreenCanvasProperties] How the viewport relates to the
+   * offscreen canvas.
    */
-  private _addViewport(
+  private addVtkjsDrivenViewport(
     viewportInputEntry: PublicViewportInput,
-    offScreenCanvasWidth: number,
-    offScreenCanvasHeight: number,
-    _xOffset: number
+    offscreenCanvasProperties?: {
+      offScreenCanvasWidth: number
+      offScreenCanvasHeight: number
+      xOffset: number
+    }
   ): void {
     const { canvas, sceneUID, viewportUID, type, defaultOptions } =
       viewportInputEntry
+
+    const { offScreenCanvasWidth, offScreenCanvasHeight, xOffset } =
+      offscreenCanvasProperties
 
     // 1. Calculate the size of location of the viewport on the offScreen canvas
     const {
@@ -288,7 +662,7 @@ class RenderingEngine implements IRenderingEngine {
       viewportInputEntry,
       offScreenCanvasWidth,
       offScreenCanvasHeight,
-      _xOffset
+      xOffset
     )
 
     // 2. Add a renderer to the offScreenMultiRenderWindow
@@ -363,68 +737,136 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Creates `Scene`s containing `Viewport`s and sets up the offscreen render
-   * window to allow offscreen rendering and transmission back to the target
-   * canvas in each viewport.
+   * @method addCustomViewport Adds a viewport using a custom rendering pipeline
+   * to the `RenderingEngine`.
    *
-   * @param viewportInputEntries An array of viewport definitions to construct the rendering engine
-   * /todo: if don't want scene don't' give uid
+   * @param {PublicViewportInput} viewportInputEntry Information object used to
+   * construct and enable the viewport.
    */
-  public setViewports(viewportInputEntries: Array<PublicViewportInput>): void {
-    this._throwIfDestroyed()
-    this._reset()
+  private addCustomViewport(viewportInputEntry: PublicViewportInput): void {
+    const { canvas, sceneUID, viewportUID, type, defaultOptions } =
+      viewportInputEntry
 
-    // 1. Getting all the canvases from viewports calculation of the new offScreen size
-    const canvases = viewportInputEntries.map((vp) => vp.canvas)
+    // Add a viewport with no offset
+    const { clientWidth, clientHeight } = canvas
 
-    // 2. Set canvas size based on height and sum of widths
-    const { offScreenCanvasWidth, offScreenCanvasHeight } =
-      this._resizeOffScreenCanvas(canvases)
+    // Set the canvas to be same resolution as the client.
+    if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
+      canvas.width = clientWidth
+      canvas.height = clientHeight
+    }
 
-    /*
-    TODO: Commenting this out until we can mock the Canvas usage in the tests (or use jsdom?)
-    if (!offScreenCanvasWidth || !offScreenCanvasHeight) {
-      throw new Error('Invalid offscreen canvas width or height')
-    }*/
+    const viewportInput = <ViewportInput>{
+      uid: viewportUID,
+      renderingEngineUID: this.uid,
+      type,
+      canvas,
+      sx: 0, // No offset, uses own renderer
+      sy: 0,
+      sWidth: clientWidth,
+      sHeight: clientHeight,
+      defaultOptions: defaultOptions || {},
+    }
 
-    // 3. Adding the viewports based on the viewportInputEntry definition to the
-    // rendering engine.
-    let _xOffset = 0
-    for (let i = 0; i < viewportInputEntries.length; i++) {
-      const viewportInputEntry = viewportInputEntries[i]
+    // 4. Create a proper viewport based on the type of the viewport
 
-      const { canvas } = viewportInputEntry
-      this._addViewport(
-        viewportInputEntry,
-        offScreenCanvasWidth,
-        offScreenCanvasHeight,
-        _xOffset
-      )
+    if (type !== VIEWPORT_TYPE.STACK) {
+      // In the future these will need to be pluggable, but we aren't there yet
+      // and these are just Stacks for now.
+      throw new Error('Support for fully custom viewports not yet implemented')
+    }
 
-      // Incrementing the xOffset which provides the horizontal location of each
-      // viewport on the offScreen canvas
-      _xOffset += canvas.clientWidth
+    // 4.a Create stack viewport
+    const viewport = new StackViewport(viewportInput)
+
+    // 5. Storing the viewports
+    this._viewports.set(viewportUID, viewport)
+
+    const eventData = {
+      canvas,
+      viewportUID,
+      sceneUID,
+      renderingEngineUID: this.uid,
+    }
+
+    triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+  }
+
+  /**
+   * @method setCustomViewports Sets multiple viewports using custom rendering
+   * pipelines to the `RenderingEngine`.
+   *
+   * @param {PublicViewportInput[]} viewportInputEntries An array of information
+   * objects used to construct and enable the viewports.
+   */
+  private setCustomViewports(viewportInputEntries: PublicViewportInput[]) {
+    viewportInputEntries.forEach((vpie) => this.addCustomViewport(vpie))
+  }
+
+  /**
+   * @method setCustomViewports Sets multiple vtk.js driven viewports to
+   * the `RenderingEngine`.
+   *
+   * @param {PublicViewportInput[]} viewportInputEntries An array of information
+   * objects used to construct and enable the viewports.
+   */
+  private setVtkjsDrivenViewports(viewportInputEntries: PublicViewportInput[]) {
+    // Deal with vtkjs driven viewports
+    if (viewportInputEntries.length) {
+      // 1. Getting all the canvases from viewports calculation of the new offScreen size
+
+      const vtkDrivenCanvases = viewportInputEntries.map((vp) => vp.canvas)
+
+      // 2. Set canvas size based on height and sum of widths
+      const { offScreenCanvasWidth, offScreenCanvasHeight } =
+        this._resizeOffScreenCanvas(vtkDrivenCanvases)
+
+      /*
+          TODO: Commenting this out until we can mock the Canvas usage in the tests (or use jsdom?)
+          if (!offScreenCanvasWidth || !offScreenCanvasHeight) {
+            throw new Error('Invalid offscreen canvas width or height')
+          }*/
+
+      // 3. Adding the viewports based on the viewportInputEntry definition to the
+      // rendering engine.
+      let xOffset = 0
+      for (let i = 0; i < viewportInputEntries.length; i++) {
+        const vtkDrivenViewportInputEntry = viewportInputEntries[i]
+
+        const { canvas } = vtkDrivenViewportInputEntry
+        this.addVtkjsDrivenViewport(vtkDrivenViewportInputEntry, {
+          offScreenCanvasWidth,
+          offScreenCanvasHeight,
+          xOffset,
+        })
+
+        // Incrementing the xOffset which provides the horizontal location of each
+        // viewport on the offScreen canvas
+        xOffset += canvas.clientWidth
+      }
     }
   }
 
   /**
-   * Resizes the offscreen canvas based on the provided canvases
+   * Resizes the offscreen canvas based on the provided vtk.js driven canvases.
    *
    * @param canvases An array of HTML Canvas
    */
-  private _resizeOffScreenCanvas(canvases: Array<HTMLCanvasElement>) {
+  private _resizeOffScreenCanvas(
+    canvasesDrivenByVtkJs: Array<HTMLCanvasElement>
+  ): { offScreenCanvasWidth: number; offScreenCanvasHeight: number } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this
 
     // 1. Calculated the height of the offScreen canvas to be the maximum height
     // between canvases
     const offScreenCanvasHeight = Math.max(
-      ...canvases.map((canvas) => canvas.clientHeight)
+      ...canvasesDrivenByVtkJs.map((canvas) => canvas.clientHeight)
     )
 
     // 2. Calculating the width of the offScreen canvas to be the sum of all
     let offScreenCanvasWidth = 0
 
-    canvases.forEach((canvas) => {
+    canvasesDrivenByVtkJs.forEach((canvas) => {
       offScreenCanvasWidth += canvas.clientWidth
     })
 
@@ -447,15 +889,15 @@ class RenderingEngine implements IRenderingEngine {
    * @returns {number} _xOffset the final offset which will be used for the next viewport
    */
   private _resize(
-    viewports: Array<StackViewport | VolumeViewport>,
+    viewportsDrivenByVtkJs: Array<StackViewport | VolumeViewport>,
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number
   ): number {
     // Redefine viewport properties
     let _xOffset = 0
 
-    for (let i = 0; i < viewports.length; i++) {
-      const viewport = viewports[i]
+    for (let i = 0; i < viewportsDrivenByVtkJs.length; i++) {
+      const viewport = viewportsDrivenByVtkJs[i]
       const {
         sxStartDisplayCoords,
         syStartDisplayCoords,
@@ -491,41 +933,6 @@ class RenderingEngine implements IRenderingEngine {
 
     // Returns the final xOffset
     return _xOffset
-  }
-
-  /**
-   * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
-   * It is up to the parent app to call the size of the on-screen canvas changes.
-   * This is left as an app level concern as one might want to debounce the changes, or the like.
-   *
-   * @param {boolean} [immediate=true] Whether all of the viewports should be rendered immediately.
-   * @param {boolean} [resetPanZoomForViewPlane=true] Whether each viewport gets centered (reset pan) and
-   * its zoom gets reset upon resize.
-   *
-   */
-  public resize(immediate = true, resetPanZoomForViewPlane = true): void {
-    this._throwIfDestroyed()
-
-    // 1. Get the viewports' canvases
-    const viewports = this._getViewportsAsArray()
-    const canvases = viewports.map((vp) => vp.canvas)
-
-    // 2. Recalculate and resize the offscreen canvas size
-    const { offScreenCanvasWidth, offScreenCanvasHeight } =
-      this._resizeOffScreenCanvas(canvases)
-
-    // 3. Recalculate the viewports location on the off screen canvas
-    this._resize(viewports, offScreenCanvasWidth, offScreenCanvasHeight)
-
-    // 4. Reset viewport cameras
-    viewports.forEach((vp) => {
-      vp.resetCamera(resetPanZoomForViewPlane)
-    })
-
-    // 5. If render is immediate: Render all
-    if (immediate === true) {
-      this.render()
-    }
   }
 
   /**
@@ -579,116 +986,12 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method getScene Returns the scene, only scenes with SceneUID (not internal)
-   * are returned
-   * @param {string} sceneUID The UID of the scene to fetch.
-   *
-   * @returns {Scene} The scene object.
-   */
-  public getScene(sceneUID: string): Scene {
-    this._throwIfDestroyed()
-
-    // Todo: should the volume be decached?
-    return this._scenes.get(sceneUID)
-  }
-
-  /**
-   * @method getScenes Returns an array of all `Scene`s on the `RenderingEngine` instance.
-   *
-   * @returns {Scene} The scene object.
-   */
-  public getScenes(): Array<Scene> {
-    this._throwIfDestroyed()
-
-    return Array.from(this._scenes.values()).filter((s) => {
-      // Do not return Scenes not explicitly created by the user
-      return s.getIsInternalScene() === false
-    })
-  }
-
-  /**
-   * @method getScenes Returns an array of all `Scene`s on the `RenderingEngine` instance.
-   *
-   * @returns {Scene} The scene object.
-   */
-  public removeScene(sceneUID: string): void {
-    this._throwIfDestroyed()
-
-    this._scenes.delete(sceneUID)
-  }
-
-  /**
    * @method _getViewportsAsArray Returns an array of all viewports
    *
    * @returns {Array} Array of viewports.
    */
   private _getViewportsAsArray() {
     return Array.from(this._viewports.values())
-  }
-
-  /**
-   * @method getViewport Returns the viewport by UID
-   *
-   * @returns {StackViewport | VolumeViewport} viewport
-   */
-  public getViewport(uid: string): StackViewport | VolumeViewport {
-    return this._viewports.get(uid)
-  }
-
-  /**
-   * @method getViewportsContainingVolumeUID Returns the viewport containing the volumeUID
-   *
-   * @returns {VolumeViewport} viewports
-   */
-  public getViewportsContainingVolumeUID(uid: string): Array<VolumeViewport> {
-    const viewports = this._getViewportsAsArray() as Array<VolumeViewport>
-    return viewports.filter((vp) => {
-      const volActors = vp.getDefaultActor()
-      return volActors.volumeActor && volActors.uid === uid
-    })
-  }
-
-  /**
-   * @method getScenesContainingVolume Returns the scenes containing the volumeUID
-   *
-   * @returns {Scene} scenes
-   */
-  public getScenesContainingVolume(uid: string): Array<Scene> {
-    const scenes = this.getScenes()
-    return scenes.filter((scene) => {
-      const volumeActors = scene.getVolumeActors()
-      const firstActor = volumeActors[0]
-      return firstActor.volumeActor && firstActor.uid === uid
-    })
-  }
-
-  /**
-   * @method getViewports Returns an array of all `Viewport`s on the `RenderingEngine` instance.
-   *
-   * @returns {Viewport} The scene object.
-   */
-  public getViewports(): Array<StackViewport | VolumeViewport> {
-    this._throwIfDestroyed()
-
-    return this._getViewportsAsArray()
-  }
-
-  /**
-   * Filters all the available viewports and return the stack viewports
-   * @returns stack viewports registered on the rendering Engine
-   */
-  public getStackViewports(): Array<StackViewport> {
-    this._throwIfDestroyed()
-
-    const viewports = this.getViewports()
-
-    const isStackViewport = (
-      viewport: StackViewport | VolumeViewport
-    ): viewport is StackViewport => {
-      return viewport instanceof StackViewport
-    }
-
-    return viewports.filter(isStackViewport)
   }
 
   private _setViewportsToBeRenderedNextFrame(viewportUIDs: string[]) {
@@ -699,16 +1002,6 @@ class RenderingEngine implements IRenderingEngine {
 
     // Render any flagged viewports
     this._render()
-  }
-
-  /**
-   * @method render Renders all viewports on the next animation frame.
-   */
-  public render(): void {
-    const viewports = this.getViewports()
-    const viewportUIDs = viewports.map((vp) => vp.uid)
-
-    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
   }
 
   /**
@@ -733,45 +1026,17 @@ class RenderingEngine implements IRenderingEngine {
   private _renderFlaggedViewports = () => {
     this._throwIfDestroyed()
 
-    const { offscreenMultiRenderWindow } = this
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow()
-
-    const renderers = offscreenMultiRenderWindow.getRenderers()
-
-    for (let i = 0; i < renderers.length; i++) {
-      const { renderer, uid } = renderers[i]
-
-      // Requesting viewports that need rendering to be rendered only
-      if (this._needsRender.has(uid)) {
-        renderer.setDraw(true)
-      } else {
-        renderer.setDraw(false)
-      }
+    if (!this.useCPURendering) {
+      this.performVtkDrawCall()
     }
-
-    renderWindow.render()
-
-    // After redraw we set all renderers to not render until necessary
-    for (let i = 0; i < renderers.length; i++) {
-      renderers[i].renderer.setDraw(false)
-    }
-
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow()
-    const context = openGLRenderWindow.get3DContext()
-
-    const offScreenCanvas = context.canvas
 
     const viewports = this._getViewportsAsArray()
-
     const eventDataArray = []
+
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i]
       if (this._needsRender.has(viewport.uid)) {
-        const eventData = this._renderViewportToCanvas(
-          viewport,
-          offScreenCanvas
-        )
+        const eventData = this.renderViewportUsingCustomOrVtkPipeline(viewport)
         eventDataArray.push(eventData)
 
         // This viewport has been rendered, we can remove it from the set
@@ -794,45 +1059,73 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method renderScene Renders only a specific `Scene` on the next animation frame.
-   *
-   * @param {string} sceneUID The UID of the scene to render.
+   * Performs the single `vtk.js` draw call which is used to render the offscreen
+   * canvas for vtk.js. This is a bulk rendering step for all Volume and Stack
+   * viewports when GPU rendering is available.
    */
-  public renderScene(sceneUID: string): void {
-    const scene = this.getScene(sceneUID)
-    const viewportUIDs = scene.getViewportUIDs()
+  private performVtkDrawCall() {
+    // Render all viewports under vtk.js' control.
+    const { offscreenMultiRenderWindow } = this
+    const renderWindow = offscreenMultiRenderWindow.getRenderWindow()
 
-    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
-  }
+    const renderers = offscreenMultiRenderWindow.getRenderers()
 
-  public renderFrameOfReference = (FrameOfReferenceUID: string): void => {
-    const viewports = this._getViewportsAsArray()
-    const viewportUidsWithSameFrameOfReferenceUID = viewports.map((vp) => {
-      if (vp.getFrameOfReferenceUID() === FrameOfReferenceUID) {
-        return vp.uid
+    if (!renderers.length) {
+      return
+    }
+
+    for (let i = 0; i < renderers.length; i++) {
+      const { renderer, uid } = renderers[i]
+
+      // Requesting viewports that need rendering to be rendered only
+      if (this._needsRender.has(uid)) {
+        renderer.setDraw(true)
+      } else {
+        renderer.setDraw(false)
       }
-    })
+    }
 
-    return this.renderViewports(viewportUidsWithSameFrameOfReferenceUID)
+    renderWindow.render()
+
+    // After redraw we set all renderers to not render until necessary
+    for (let i = 0; i < renderers.length; i++) {
+      renderers[i].renderer.setDraw(false)
+    }
   }
 
   /**
-   * @method renderScenes Renders the provided Scene UIDs.
+   * @method renderViewportUsingCustomOrVtkPipeline Renders the given viewport
+   * using its preffered method.
    *
-   * @returns{void}
+   * @param {(StackViewport | VolumeViewport)} viewport The viewport to render
    */
-  public renderScenes(sceneUIDs: Array<string>): void {
-    const scenes = sceneUIDs.map((sUid) => this.getScene(sUid))
-    this._renderScenes(scenes)
-  }
+  private renderViewportUsingCustomOrVtkPipeline(
+    viewport: StackViewport | VolumeViewport
+  ): unknown {
+    let eventData
 
-  /**
-   * @method renderViewports Renders the provided Viewport UIDs.
-   *
-   * @returns{void}
-   */
-  public renderViewports(viewportUIDs: Array<string>): void {
-    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
+    if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
+      eventData = viewport.customRenderViewportToCanvas()
+    } else {
+      if (this.useCPURendering) {
+        throw new Error(
+          'GPU not available, and using a viewport with no custom render pipeline.'
+        )
+      }
+
+      const { offscreenMultiRenderWindow } = this
+      const openGLRenderWindow =
+        offscreenMultiRenderWindow.getOpenGLRenderWindow()
+      const context = openGLRenderWindow.get3DContext()
+      const offScreenCanvas = context.canvas
+
+      eventData = this._renderViewportFromVtkCanvasToOnscreenCanvas(
+        viewport,
+        offScreenCanvas
+      )
+    }
+
+    return eventData
   }
 
   /**
@@ -856,20 +1149,11 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method renderViewport Renders only a specific `Viewport` on the next animation frame.
-   *
-   * @param {string} viewportUID The UID of the viewport.
-   */
-  public renderViewport(viewportUID: string): void {
-    this._setViewportsToBeRenderedNextFrame([viewportUID])
-  }
-
-  /**
-   * @method _renderViewportToCanvas Renders a particular `Viewport`'s on screen canvas.
+   * @method _renderViewportFromVtkCanvasToOnscreenCanvas Renders a particular `Viewport`'s on screen canvas.
    * @param {Viewport} viewport The `Viewport` to render.
    * @param {object} offScreenCanvas The offscreen canvas to render from.
    */
-  private _renderViewportToCanvas(
+  private _renderViewportFromVtkCanvasToOnscreenCanvas(
     viewport: StackViewport | VolumeViewport,
     offScreenCanvas
   ): {
@@ -960,27 +1244,6 @@ class RenderingEngine implements IRenderingEngine {
 
     this._viewports = new Map()
     this._scenes = new Map()
-  }
-
-  /**
-   * @method destroy the rendering engine
-   */
-  public destroy(): void {
-    if (this.hasBeenDestroyed) {
-      return
-    }
-
-    this._reset()
-
-    // Free up WebGL resources
-    this.offscreenMultiRenderWindow.delete()
-
-    renderingEngineCache.delete(this.uid)
-
-    // Make sure all references go stale and are garbage collected.
-    delete this.offscreenMultiRenderWindow
-
-    this.hasBeenDestroyed = true
   }
 
   /**

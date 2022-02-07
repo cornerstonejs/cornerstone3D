@@ -3,11 +3,9 @@ import {
   cache,
   RenderingEngine,
   VIEWPORT_TYPE,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
-import {
-  ToolBindings,
-  Utilities,
-} from '@ohif/cornerstone-tools'
+import { ToolBindings, Utilities } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
@@ -16,11 +14,7 @@ import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import {
-  renderingEngineUID,
-  VIEWPORT_IDS,
-  ANNOTATION_TOOLS,
-} from './constants'
+import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
 const STACK = 'stack'
 
@@ -56,7 +50,6 @@ class CalibrationExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
 
@@ -82,6 +75,8 @@ class CalibrationExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     ;({ stackDXViewportToolGroup } = initToolGroups())
 
     const DXStackImageIds = await this.DXStackImageIdsPromise
@@ -168,7 +163,6 @@ class CalibrationExample extends Component {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
   }
-
 
   swapTools = (evt) => {
     const toolName = evt.target.value

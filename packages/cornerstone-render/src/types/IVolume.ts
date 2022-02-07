@@ -11,7 +11,7 @@ interface IVolume {
   direction: Array<number>
   scalarData: Float32Array | Uint8Array
   sizeInBytes?: number
-  vtkImageData?: vtkImageData
+  imageData?: vtkImageData
   scaling?: {
     PET?: {
       // @TODO: Do these values exist?

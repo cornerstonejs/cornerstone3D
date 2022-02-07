@@ -6,9 +6,9 @@ import {
   loadAndCacheImages,
   ORIENTATION,
   VIEWPORT_TYPE,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
 import * as csTools3d from '@ohif/cornerstone-tools'
-
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -58,7 +58,6 @@ class CacheDecacheExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -82,6 +81,9 @@ class CacheDecacheExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
+
     ;({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID

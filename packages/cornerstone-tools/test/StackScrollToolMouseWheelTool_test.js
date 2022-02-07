@@ -19,11 +19,7 @@ const {
   registerVolumeLoader,
 } = cornerstone3D
 
-const {
-  StackScrollMouseWheelTool,
-  ToolGroupManager,
-  CornerstoneTools3DEvents,
-} = csTools3d
+const { StackScrollMouseWheelTool, ToolGroupManager } = csTools3d
 
 const {
   fakeImageLoader,
@@ -78,6 +74,10 @@ function createCanvas(renderingEngine, viewportType, width, height) {
 }
 
 describe('Cornerstone Tools Scroll Wheel: ', () => {
+  beforeAll(() => {
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+  })
+
   beforeEach(function () {
     csTools3d.init()
     csTools3d.addTool(StackScrollMouseWheelTool, {})
@@ -120,10 +120,10 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     const renderEventHandler = () => {
       const index1 = [50, 50, 4]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const { pageX: pageX1, pageY: pageY1 } = createNormalizedMouseEvent(
-        vtkImageData,
+        imageData,
         index1,
         canvas,
         vp
@@ -194,10 +194,10 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       // First render is the actual image render
       const index1 = [50, 50, 4]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const { pageX: pageX1, pageY: pageY1 } = createNormalizedMouseEvent(
-        vtkImageData,
+        imageData,
         index1,
         canvas,
         vp
@@ -241,9 +241,10 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     )
 
     try {
-      vp.setStack([imageId1, imageId2], 0)
-      vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
-      this.renderingEngine.render()
+      vp.setStack([imageId1, imageId2], 0).then(() => {
+        vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+        vp.render()
+      })
     } catch (e) {
       done.fail(e)
     }

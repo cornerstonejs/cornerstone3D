@@ -9,6 +9,7 @@ import {
   VIEWPORT_TYPE,
   INTERPOLATION_TYPE,
   EVENTS as RENDERING_EVENTS,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
 import {
   SynchronizerManager,
@@ -57,9 +58,7 @@ let ctSceneToolGroup,
   stackDXViewportToolGroup,
   ptSceneToolGroup
 
-const toolsToUse = ANNOTATION_TOOLS.filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = ANNOTATION_TOOLS.filter((tool) => tool !== 'Crosshairs')
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
 class StackViewportExample extends Component {
@@ -89,7 +88,6 @@ class StackViewportExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -134,6 +132,8 @@ class StackViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     ;({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
@@ -303,7 +303,10 @@ class StackViewportExample extends Component {
       ptMiddleSlice
     )
 
-    ptStackViewport.setProperties({ invert: true, voiRange: { lower: 0, upper: 5 } })
+    ptStackViewport.setProperties({
+      invert: true,
+      voiRange: { lower: 0, upper: 5 },
+    })
 
     // ct + dx + color
     // const dxColorViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
@@ -487,7 +490,7 @@ class StackViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

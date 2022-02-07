@@ -1,3 +1,7 @@
+import CPUFallbackLUT from './CPUFallbackLUT'
+import CPUFallbackColormap from './CPUFallbackColormap'
+import CPUFallbackEnabledElement from './CPUFallbackEnabledElement'
+
 interface IImage {
   imageId: string
   sharedCacheKey?: string
@@ -5,8 +9,8 @@ interface IImage {
   maxPixelValue: number
   slope: number
   intercept: number
-  windowCenter: number[]
-  windowWidth: number[]
+  windowCenter: number[] | number
+  windowWidth: number[] | number
   getPixelData: () => Array<number>
   getCanvas: () => HTMLCanvasElement
   rows: number
@@ -16,11 +20,18 @@ interface IImage {
   color: boolean
   rgba: boolean
   numComps: number
+  render?: (
+    enabledElement: CPUFallbackEnabledElement,
+    invalidated: boolean
+  ) => unknown
   columnPixelSpacing: number
   rowPixelSpacing: number
   sliceThickness?: number
   invert: boolean
   sizeInBytes: number
+  modalityLUT?: CPUFallbackLUT
+  voiLUT?: CPUFallbackLUT
+  colormap?: CPUFallbackColormap
   scaling?: {
     PET?: {
       // @TODO: Do these values exist?
@@ -30,6 +41,22 @@ interface IImage {
       suvbwToSuvlbm?: number
       suvbwToSuvbsa?: number
     }
+  }
+  stats?: {
+    lastStoredPixelDataToCanvasImageDataTime?: number
+    lastGetPixelDataTime?: number
+    lastPutImageDataTime?: number
+    lastLutGenerateTime?: number
+    lastRenderedViewport?: unknown
+    lastRenderTime?: number
+  }
+  cachedLut?: {
+    windowWidth?: number | number[]
+    windowCenter?: number | number[]
+    invert?: boolean
+    lutArray?: Uint8ClampedArray
+    modalityLUT?: unknown
+    voiLUT?: CPUFallbackLUT
   }
 }
 

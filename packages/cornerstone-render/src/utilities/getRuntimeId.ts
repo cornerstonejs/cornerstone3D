@@ -18,6 +18,7 @@ export default function getRuntimeId(
   max?: number
 ): string {
   return getNextRuntimeId(
+    // @ts-ignore
     context !== null && typeof context === 'object' ? context : GLOBAL_CONTEXT,
     LAST_RUNTIME_ID,
     (typeof max === 'number' && max > 0 ? max : DEFAULT_MAX) >>> 0

@@ -128,7 +128,7 @@ export function loadVolume(
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options)
 
   return volumeLoadObject.promise.then((volume: Types.IImageVolume) => {
-    volume.vtkImageData = createInternalVTKRepresentation(volume)
+    volume.imageData = createInternalVTKRepresentation(volume)
     return volume
   })
 }
@@ -161,8 +161,8 @@ export function createAndCacheVolume(
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options)
 
-  volumeLoadObject.promise.then((volume) => {
-    volume.vtkImageData = createInternalVTKRepresentation(volume)
+  volumeLoadObject.promise.then((volume: Types.IImageVolume) => {
+    volume.imageData = createInternalVTKRepresentation(volume)
   })
 
   cache.putVolumeLoadObject(volumeId, volumeLoadObject).catch((err) => {

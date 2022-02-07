@@ -6,10 +6,9 @@ import {
   metaData,
   VIEWPORT_TYPE,
   Utilities,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
-import {
-  ToolBindings,
-} from '@ohif/cornerstone-tools'
+import { ToolBindings } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import {
@@ -34,14 +33,11 @@ const STACK = 'stack'
 
 window.cache = cache
 
-
 const { fakeImageLoader, fakeMetaDataProvider } = Utilities.testUtils
 
 let stackCTViewportToolGroup
 
-const toolsToUse = ANNOTATION_TOOLS.filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = ANNOTATION_TOOLS.filter((tool) => tool !== 'Crosshairs')
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
 class testUtil extends Component {
@@ -65,14 +61,12 @@ class testUtil extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
     this._viewportGridRef = React.createRef()
 
     registerImageLoader('fakeImageLoader', fakeImageLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
-
 
     this.ctStackImageIdsPromise = ['fakeImageLoader:imageURI_64_64_10_5_1_1_0']
 
@@ -90,8 +84,9 @@ class testUtil extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
-
-    ({ stackCTViewportToolGroup } = initToolGroups())
+    await csRenderInit()
+    csTools3d.init()
+    ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise
 
@@ -128,14 +123,14 @@ class testUtil extends Component {
     const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
     await ctStackViewport.setStack(
       sortImageIdsByIPP(ctStackImageIds),
-      ctMiddleSlice,
+      ctMiddleSlice
     )
 
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
   }
 
-    componentWillUnmount() {
+  componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
       this.viewportGridResizeObserver.disconnect()
@@ -161,7 +156,7 @@ class testUtil extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active
@@ -210,13 +205,15 @@ class testUtil extends Component {
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
             <h2>Test Stack Render ({this.state.progressText})</h2>
-            <p>The purpose of this demo is to render the stack test data that we utilize in testing</p>
+            <p>
+              The purpose of this demo is to render the stack test data that we
+              utilize in testing
+            </p>
           </div>
           <div
             className="col-xs-12"
             style={{ margin: '8px 0', marginLeft: '-4px' }}
-          >
-          </div>
+          ></div>
         </div>
         <select value={this.state.ptCtLeftClickTool} onChange={this.swapTools}>
           {ctLayoutTools.map((toolName) => (

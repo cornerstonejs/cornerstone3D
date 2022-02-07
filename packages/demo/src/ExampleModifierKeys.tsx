@@ -6,6 +6,7 @@ import {
   ORIENTATION,
   eventTarget,
   VIEWPORT_TYPE,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
 import {
   ToolBindings,
@@ -64,7 +65,6 @@ class ModifierKeysExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
 
@@ -92,6 +92,8 @@ class ModifierKeysExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise

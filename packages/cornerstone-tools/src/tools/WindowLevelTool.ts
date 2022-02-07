@@ -5,8 +5,13 @@ import {
   EVENTS,
   triggerEvent,
   VolumeViewport,
+  StackViewport,
+  Utilities,
 } from '@ohif/cornerstone-render'
-import { StreamingImageVolume } from '@ohif/cornerstone-image-loader-streaming-volume'
+
+// Todo: should move to configuration
+const DEFAULT_MULTIPLIER = 4
+const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024
 
 export default class WindowLevelTool extends BaseTool {
   touchDragCallback: () => void
@@ -22,74 +27,40 @@ export default class WindowLevelTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this)
   }
 
-  private _toWindowLevel(low, high) {
-    const windowWidth = Math.abs(low - high)
-    const windowCenter = low + windowWidth / 2
-
-    return { windowWidth, windowCenter }
-  }
-
-  private _toLowHighRange(windowWidth, windowCenter) {
-    const lower = windowCenter - windowWidth / 2.0
-    const upper = windowCenter + windowWidth / 2.0
-
-    return { lower, upper }
-  }
-
   _dragCallback(evt) {
     const { element: canvas, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(canvas)
     const { scene, sceneUID, viewportUID, viewport } = enabledElement
 
-    let volumeUID
-    if (this.configuration && this.configuration.volumeUID) {
+    let volumeUID, volumeActor, lower, upper, rgbTransferFunction
+    let useDynamicRange = false
+
+    if (viewport instanceof VolumeViewport) {
       volumeUID = this.configuration.volumeUID
-    } else {
-      const defaultActor = viewport.getDefaultActor()
-      volumeUID = defaultActor.uid
-    }
-
-    let volumeActor
-
-    if (viewport instanceof VolumeViewport && volumeUID) {
       volumeActor = scene.getVolumeActor(volumeUID)
+      rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+      ;[lower, upper] = rgbTransferFunction.getRange()
+      useDynamicRange = true
     } else {
-      const volumeActors = viewport.getActors()
-      if (volumeActors && volumeActors.length) {
-        volumeActor = volumeActors[0].volumeActor
-      }
+      const properties = viewport.getProperties()
+      ;({ lower, upper } = properties.voiRange)
     }
-
-    if (!volumeActor) {
-      // No volume actor available.
-      return
-    }
-
-    const rgbTransferFunction = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
 
     const deltaPointsCanvas = deltaPoints.canvas
 
     // Todo: enabling a viewport twice in a row sets the imageDynamicRange to be zero for some reason
     // 1 was too little
-    let multiplier = 4
-    if (viewport instanceof VolumeViewport && volumeUID) {
-      const imageDynamicRange = this._getImageDynamicRange(volumeUID)
-
-      const ratio = imageDynamicRange / 1024
-
-      if (ratio > 1) {
-        multiplier = Math.round(ratio)
-      }
-    }
+    const multiplier = useDynamicRange
+      ? this._getMultiplyerFromDynamicRange(volumeUID)
+      : DEFAULT_MULTIPLIER
 
     const wwDelta = deltaPointsCanvas[0] * multiplier
     const wcDelta = deltaPointsCanvas[1] * multiplier
 
-    const [lower, upper] = rgbTransferFunction.getRange()
-
-    let { windowWidth, windowCenter } = this._toWindowLevel(lower, upper)
+    let { windowWidth, windowCenter } = Utilities.windowLevel.toWindowLevel(
+      lower,
+      upper
+    )
 
     windowWidth += wwDelta
     windowCenter += wcDelta
@@ -97,9 +68,10 @@ export default class WindowLevelTool extends BaseTool {
     windowWidth = Math.max(windowWidth, 1)
 
     // Convert back to range
-    const newRange = this._toLowHighRange(windowWidth, windowCenter)
-
-    rgbTransferFunction.setMappingRange(newRange.lower, newRange.upper)
+    const newRange = Utilities.windowLevel.toLowHighRange(
+      windowWidth,
+      windowCenter
+    )
 
     const eventDetail = {
       volumeUID,
@@ -110,17 +82,34 @@ export default class WindowLevelTool extends BaseTool {
 
     triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
 
-    if (scene || viewport instanceof VolumeViewport) {
-      scene.render()
+    if (viewport instanceof StackViewport) {
+      viewport.setProperties({
+        voiRange: newRange,
+      })
+
+      viewport.render()
       return
     }
 
-    // store the new range for viewport to preserve it during scrolling
-    viewport.setProperties({
-      voiRange: newRange,
-    })
+    rgbTransferFunction.setRange(newRange.lower, newRange.upper)
+    scene.render()
+  }
 
-    viewport.render()
+  _getMultiplyerFromDynamicRange(volumeUID) {
+    if (!volumeUID) {
+      throw new Error('No volumeUID provided for the volume Viewport')
+    }
+
+    let multiplier = DEFAULT_MULTIPLIER
+    const imageDynamicRange = this._getImageDynamicRange(volumeUID)
+
+    const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE
+
+    if (ratio > 1) {
+      multiplier = Math.round(ratio)
+    }
+
+    return multiplier
   }
 
   _getImageDynamicRange = (volumeUID: string) => {
@@ -173,5 +162,3 @@ export default class WindowLevelTool extends BaseTool {
     return max - min
   }
 }
-
-const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024

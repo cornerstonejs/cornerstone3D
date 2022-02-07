@@ -2,42 +2,35 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  ORIENTATION,
   VIEWPORT_TYPE,
+  init as csRenderInit,
+  getShouldUseCPURendering,
+  metaData,
+  cpuColormaps,
 } from '@ohif/cornerstone-render'
-import {
-  ToolBindings,
-} from '@ohif/cornerstone-tools'
+import * as cs from '@ohif/cornerstone-render'
+import { ToolBindings } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
-
-import {
-  setCTWWWC,
-  setPetTransferFunction,
-} from './helpers/transferFunctionHelpers'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
+import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
+import config from './config/default'
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import {
-  renderingEngineUID,
-  ctVolumeUID,
-  SCENE_IDS,
-  VIEWPORT_IDS,
-  ANNOTATION_TOOLS,
-} from './constants'
+import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
-const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
 
 let stackCTViewportToolGroup
 
-const toolsToUse = [ 'WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
+const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
   (tool) => tool !== 'Crosshairs'
 )
+
+const availableStacks = ['ct', 'dx', 'color']
 
 class OneStackExample extends Component {
   state = {
@@ -55,12 +48,13 @@ class OneStackExample extends Component {
     ptCtLeftClickTool: 'WindowLevel',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
+    currentStack: 'ct',
+    cpuFallback: false,
   }
 
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
 
@@ -88,12 +82,23 @@ class OneStackExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
+    registerWebImageLoader(cs)
     ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise
     const dxStackImageIds = await this.dxStackImageIdsPromise
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
+
+    const colorImageIds = config.colorImages.imageIds
+
+    metaData.addProvider(
+      (type, imageId) =>
+        hardcodedMetaDataProvider(type, imageId, colorImageIds),
+      10000
+    )
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -126,23 +131,35 @@ class OneStackExample extends Component {
     this.ctStackViewport = ctStackViewport
 
     const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
+    const colorMiddleSlice = Math.floor(colorImageIds.length / 2)
 
     this.dxStackImageIds = dxStackImageIds
     this.ctStackImageIds = ctStackImageIds
 
-    let fakeStack = [
-      dxStackImageIds[0],
-      ctStackImageIds[ctMiddleSlice],
-      dxStackImageIds[1],
-      ctStackImageIds[ctMiddleSlice + 1],
-      ctStackImageIds[ctMiddleSlice + 2],
-    ]
+    const stacks = {
+      ct: [
+        ctStackImageIds[ctMiddleSlice],
+        ctStackImageIds[ctMiddleSlice + 1],
+        ctStackImageIds[ctMiddleSlice + 2],
+      ],
+      dx: [dxStackImageIds[0], dxStackImageIds[1]],
+      color: [
+        colorImageIds[colorMiddleSlice],
+        colorImageIds[colorMiddleSlice + 1],
+      ],
+    }
 
-    ctStackViewport.setStack(fakeStack, 0)
-    ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
+    this.stacks = stacks
+
+    await ctStackViewport.setStack(stacks.ct, 0)
+    ctStackViewport.setProperties({
+      voiRange: { lower: -1000, upper: 240 },
+    })
 
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+
+    this.setState({ cpuFallback: getShouldUseCPURendering() })
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -159,7 +176,6 @@ class OneStackExample extends Component {
 
     cache.purgeCache()
     csTools3d.destroy()
-
 
     this.renderingEngine.destroy()
   }
@@ -221,6 +237,21 @@ class OneStackExample extends Component {
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
+  flipViewportHorizontal = () => {
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+
+    const { flipHorizontal } = vp.getProperties()
+    vp.setProperties({ flipHorizontal: !flipHorizontal })
+    vp.render()
+  }
+
+  flipViewportVertical = () => {
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const { flipVertical } = vp.getProperties()
+    vp.setProperties({ flipVertical: !flipVertical })
+    vp.render()
+  }
+
   showOffScreenCanvas = () => {
     // remove all children
     this._offScreenRef.current.innerHTML = ''
@@ -235,7 +266,8 @@ class OneStackExample extends Component {
   rotateViewport = (rotateDeg) => {
     // remove all children
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.setProperties({ rotation: rotateDeg })
+    const { rotation } = vp.getProperties()
+    vp.setProperties({ rotation: rotation + rotateDeg })
     vp.render()
   }
 
@@ -254,18 +286,16 @@ class OneStackExample extends Component {
     vp.render()
   }
 
-  switchStack = () => {
-    // switch to a random new stack
-    let fakeStack = [...this.dxStackImageIds, ...this.ctStackImageIds]
-      .map((a) => ({ sort: Math.random(), value: a }))
-      .sort((a, b) => a.sort - b.sort)
-      .map((a) => a.value)
-      .slice(0, 8)
+  switchStack = (evt) => {
+    const stackName = evt.target.value
 
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
-    vp.setStack(fakeStack, 0)
-    vp.resetProperties()
+    vp.setStack(this.stacks[stackName], 0).then(() => {
+      vp.resetProperties()
+    })
+
+    this.setState({ currentStack: stackName })
   }
 
   resetViewportProperties = () => {
@@ -280,7 +310,13 @@ class OneStackExample extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>One Stack Viewport Example ({this.state.progressText})</h2>
+            <h2>
+              One Stack Viewport Example{' '}
+              {this.state.cpuFallback === true
+                ? '(using CPU Fallback)'
+                : '(using GPU)'}{' '}
+              ({this.state.progressText})
+            </h2>
           </div>
           <div
             className="col-xs-12"
@@ -297,14 +333,13 @@ class OneStackExample extends Component {
           ))}
         </select>
 
-        <button
-          onClick={() => this.switchStack()}
-          className="btn btn-primary"
-          style={{ margin: '2px 4px' }}
-        >
-          Switch Stack
-        </button>
-
+        <select value={this.state.currentStack} onChange={this.switchStack}>
+          {availableStacks.map((stackName) => (
+            <option key={stackName} value={stackName}>
+              {stackName}
+            </option>
+          ))}
+        </select>
         <button
           onClick={() => this.resetViewportProperties()}
           className="btn btn-primary"
@@ -331,28 +366,28 @@ class OneStackExample extends Component {
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Rotate = 90
+          Rotate CW
         </button>
         <button
-          onClick={() => this.rotateViewport(180)}
+          onClick={() => this.rotateViewport(-90)}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Rotate = 180
+          Rotate CCW
         </button>
         <button
-          onClick={() => this.rotateViewport(270)}
+          onClick={() => this.flipViewportHorizontal()}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Rotate = 270
+          Horizontal Flip
         </button>
         <button
-          onClick={() => this.rotateViewport(360)}
+          onClick={() => this.flipViewportVertical()}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Rotate = 360 OR 0
+          Vertical Flip
         </button>
 
         <ViewportGrid

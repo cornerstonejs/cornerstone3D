@@ -4,10 +4,10 @@ import { Point3, Scaling } from '../types'
 type IImageData = {
   dimensions: Point3
   direction: Float32Array
-  spacing: Float32Array
-  origin: Float32Array
+  spacing: Point3
+  origin: Point3
   scalarData: Float32Array
-  vtkImageData: vtkImageData
+  imageData: vtkImageData
   metadata: { Modality: string }
   scaling?: Scaling
 }

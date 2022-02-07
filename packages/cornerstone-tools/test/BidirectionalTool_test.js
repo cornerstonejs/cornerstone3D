@@ -88,6 +88,11 @@ function createCanvas(renderingEngine, viewportType, width, height) {
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 describe('Cornerstone Tools: ', () => {
+  beforeAll(() => {
+    // initialize the library
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+  })
+
   beforeEach(function () {
     csTools3d.init()
     csTools3d.addTool(BidirectionalTool, {})
@@ -168,7 +173,7 @@ describe('Cornerstone Tools: ', () => {
       const index1 = [32, 32, 0]
       const index2 = [10, 1, 0]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -176,7 +181,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
       p1 = worldCoord1
 
       const {
@@ -185,7 +190,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
       p2 = worldCoord2
 
       // Mouse Down
@@ -276,7 +281,7 @@ describe('Cornerstone Tools: ', () => {
       const index1 = [32, 32, 4]
       const index2 = [10, 1, 4]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -284,7 +289,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
       p1 = worldCoord1
 
       const {
@@ -293,7 +298,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
       p2 = worldCoord2
 
       // Mouse Down
@@ -393,7 +398,7 @@ describe('Cornerstone Tools: ', () => {
       const index2 = [5, 5, 0]
       const index3 = [52, 47, 0]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -401,7 +406,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
 
       const {
         pageX: pageX2,
@@ -409,7 +414,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
       p2 = worldCoord2
       const {
         pageX: pageX3,
@@ -417,7 +422,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(vtkImageData, index3, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index3, canvas, vp)
       p3 = worldCoord3
 
       // Mouse Down
@@ -541,7 +546,7 @@ describe('Cornerstone Tools: ', () => {
       // grab the tool in its middle (just to make it easy)
       const index3 = [20, 25, 0]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -549,7 +554,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
       p1 = worldCoord1
       const {
         pageX: pageX2,
@@ -557,7 +562,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
       p2 = worldCoord2
 
       const {
@@ -566,7 +571,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(vtkImageData, index3, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index3, canvas, vp)
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
@@ -721,7 +726,7 @@ describe('Cornerstone Tools: ', () => {
       // Where to move the center of the tool
       const index4 = [40, 40, 0]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -729,7 +734,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
       p1 = worldCoord1
       const {
         pageX: pageX2,
@@ -737,7 +742,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
       p2 = worldCoord2
 
       const {
@@ -746,7 +751,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(vtkImageData, index3, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index3, canvas, vp)
       p3 = worldCoord3
 
       const {
@@ -755,7 +760,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX4,
         clientY: clientY4,
         worldCoord: worldCoord4,
-      } = createNormalizedMouseEvent(vtkImageData, index4, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index4, canvas, vp)
       p4 = worldCoord4
 
       // Mouse Down
@@ -843,7 +848,7 @@ describe('Cornerstone Tools: ', () => {
       const index1 = [32, 32, 4]
       const index2 = [10, 1, 4]
 
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -851,7 +856,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
       p1 = worldCoord1
 
       const {
@@ -860,7 +865,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
       p2 = worldCoord2
 
       // Mouse Down

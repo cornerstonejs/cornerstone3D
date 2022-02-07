@@ -1,6 +1,11 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 // ~~
-import { RenderingEngine, ORIENTATION, VIEWPORT_TYPE } from '@ohif/cornerstone-render';
+import {
+  RenderingEngine,
+  ORIENTATION,
+  VIEWPORT_TYPE,
+  init as csRenderInit,
+} from '@ohif/cornerstone-render'
 
 class CanvasResizeExample extends Component {
   state = {
@@ -9,20 +14,20 @@ class CanvasResizeExample extends Component {
       [128, 128],
       [128, 256],
     ],
-  };
+  }
 
   constructor(props) {
-    super(props);
+    super(props)
 
-    this.axialCTContainer = React.createRef();
-    this.sagittalCTContainer = React.createRef();
-    this.coronalCTContainer = React.createRef();
+    this.axialCTContainer = React.createRef()
+    this.sagittalCTContainer = React.createRef()
+    this.coronalCTContainer = React.createRef()
 
-    this.resize = this.resize.bind(this);
+    this.resize = this.resize.bind(this)
   }
 
   componentWillUnmount() {
-    this.renderingEngine.destroy();
+    this.renderingEngine.destroy()
   }
 
   resize() {
@@ -30,40 +35,41 @@ class CanvasResizeExample extends Component {
       [Math.floor(Math.random() * 512), Math.floor(Math.random() * 512)],
       [Math.floor(Math.random() * 512), Math.floor(Math.random() * 512)],
       [Math.floor(Math.random() * 512), Math.floor(Math.random() * 512)],
-    ];
+    ]
 
-    this.setState({ viewportSizes });
+    this.setState({ viewportSizes })
   }
 
   componentDidUpdate() {
-    const t0 = new Date().getTime();
-    this.renderingEngine.resize();
+    const t0 = new Date().getTime()
+    this.renderingEngine.resize()
 
-    const t1 = new Date().getTime();
+    const t1 = new Date().getTime()
 
-    this.renderingEngine.render();
+    this.renderingEngine.render()
 
-    const t2 = new Date().getTime();
+    const t2 = new Date().getTime()
 
-    console.log(`Resize time: ${t1 - t0}, Re-render time: ${t2 - t1} ms`);
+    console.log(`Resize time: ${t1 - t0}, Re-render time: ${t2 - t1} ms`)
   }
 
-  componentDidMount() {
-    const renderingEngineUID = 'ExampleRenderingEngineID';
+  async componentDidMount() {
+    await csRenderInit()
+    const renderingEngineUID = 'ExampleRenderingEngineID'
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID);
+    const renderingEngine = new RenderingEngine(renderingEngineUID)
 
-    this.renderingEngine = renderingEngine;
+    this.renderingEngine = renderingEngine
 
-    const axialCTViewportID = 'AXIAL_CT';
-    const sagittalCTViewportID = 'SAGITTAL_CT';
-    const coronalCTViewportID = 'CORONAL_CT';
+    const axialCTViewportID = 'AXIAL_CT'
+    const sagittalCTViewportID = 'SAGITTAL_CT'
+    const coronalCTViewportID = 'CORONAL_CT'
 
-    this.axialCTViewportID = axialCTViewportID;
-    this.sagittalCTViewportID = sagittalCTViewportID;
-    this.coronalCTViewportID = coronalCTViewportID;
+    this.axialCTViewportID = axialCTViewportID
+    this.sagittalCTViewportID = sagittalCTViewportID
+    this.coronalCTViewportID = coronalCTViewportID
 
-    const ctSceneID = 'SCENE_CT';
+    const ctSceneID = 'SCENE_CT'
 
     renderingEngine.setViewports([
       {
@@ -96,28 +102,28 @@ class CanvasResizeExample extends Component {
           background: [0, 0, 1],
         },
       },
-    ]);
+    ])
 
-    renderingEngine.render();
+    renderingEngine.render()
   }
 
   render() {
-    const { viewportSizes } = this.state;
+    const { viewportSizes } = this.state
 
     const style0 = {
       width: `${viewportSizes[0][0]}px`,
       height: `${viewportSizes[0][1]}px`,
-    };
+    }
 
     const style1 = {
       width: `${viewportSizes[1][0]}px`,
       height: `${viewportSizes[1][1]}px`,
-    };
+    }
 
     const style2 = {
       width: `${viewportSizes[2][0]}px`,
       height: `${viewportSizes[2][1]}px`,
-    };
+    }
 
     return (
       <div>
@@ -166,8 +172,8 @@ class CanvasResizeExample extends Component {
           </div>
         </div>
       </div>
-    );
+    )
   }
 }
 
-export default CanvasResizeExample;
+export default CanvasResizeExample

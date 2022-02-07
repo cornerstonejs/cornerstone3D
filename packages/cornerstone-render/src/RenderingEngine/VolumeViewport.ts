@@ -4,15 +4,26 @@ import Viewport from './Viewport'
 
 import { ViewportInput, Point2, Point3, IImageData } from '../types'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
-import { ActorEntry } from '../types'
+import { ActorEntry, FlipDirection } from '../types'
+import { getShouldUseCPURendering } from '../init'
 
 /**
  * An object representing a single viewport, which is a camera
  * looking into a scene, and an associated target output `canvas`.
  */
 class VolumeViewport extends Viewport {
+  useCPURendering = false
+
   constructor(props: ViewportInput) {
     super(props)
+
+    this.useCPURendering = getShouldUseCPURendering()
+
+    if (this.useCPURendering) {
+      throw new Error(
+        'VolumeViewports cannot be used whilst CPU Fallback Rendering is enabled.'
+      )
+    }
 
     const renderer = this.getRenderer()
 
@@ -42,6 +53,51 @@ class VolumeViewport extends Viewport {
 
     this.resetCamera()
   }
+
+  static get useCustomRenderingPipeline() {
+    return false
+  }
+
+  public getIntensityFromWorld(point: Point3): number {
+    const volumeActor = this.getDefaultActor().volumeActor
+    const imageData = volumeActor.getMapper().getInputData()
+
+    return imageData.getScalarValueFromWorld(point)
+  }
+
+  /**
+   * @method getBounds gets the visible bounds of the viewport
+   *
+   * @param {any} bounds of the viewport
+   */
+  public getBounds() {
+    const renderer = this.getRenderer()
+    return renderer.computeVisiblePropBounds()
+  }
+
+  public flip(flipDirection: FlipDirection): void {
+    super.flip(flipDirection)
+  }
+
+  /*
+  Todo: remove actor and remove actors does not work for some reason
+  public removeActor(actorUID: string): void {
+    const actor = this.getActor(actorUID)
+    if (!actor) {
+      console.warn(`Actor ${actorUID} does not exist for this viewport`)
+      return
+    }
+    const renderer = this.getRenderer()
+    renderer.removeViewProp(actor) // removeActor not implemented in vtk?
+    this._actors.delete(actorUID)
+  }
+
+  public removeActors(actorUIDs: Array<string>): void {
+    actorUIDs.forEach((actorUID) => {
+      this.removeActor(actorUID)
+    })
+  }
+  */
 
   /**
    * Reset the camera for the volume viewport
@@ -111,9 +167,17 @@ class VolumeViewport extends Viewport {
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
       scalarData: vtkImageData.getPointData().getScalars().getData(),
-      vtkImageData: volumeActor.getMapper().getInputData(),
+      imageData: volumeActor.getMapper().getInputData(),
       metadata: undefined,
       scaling: undefined,
+    }
+  }
+
+  // Todo: expand this to include all properties for volume viewport
+  public getProperties = (): FlipDirection => {
+    return {
+      flipHorizontal: this.flipHorizontal,
+      flipVertical: this.flipVertical,
     }
   }
 

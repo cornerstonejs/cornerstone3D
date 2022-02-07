@@ -18,12 +18,14 @@
     "start": "yarn run dev"
   },
   "peerDependencies": {
-    "gl-matrix": "^3.3.0",
-    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev"
+    "gl-matrix": "^3.4.3",
+    "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev",
+    "detect-gpu": "^4.0.7"
   },
   "devDependencies": {
-    "gl-matrix": "^3.3.0",
+    "gl-matrix": "^3.4.3",
     "resemblejs": "^3.2.5",
+    "detect-gpu": "^4.0.7",
     "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#dev"
   },
   "author": "",

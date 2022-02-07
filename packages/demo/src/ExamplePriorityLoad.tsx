@@ -4,10 +4,9 @@ import {
   RenderingEngine,
   createAndCacheVolume,
   requestPoolManager,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
-import {
-  synchronizers,
-} from '@ohif/cornerstone-tools'
+import { synchronizers } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import _ from 'lodash'
@@ -87,7 +86,6 @@ class PriorityLoadExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
@@ -125,6 +123,8 @@ class PriorityLoadExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     this.axialSync = createCameraPositionSynchronizer('axialSync')
     this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
     this.coronalSync = createCameraPositionSynchronizer('coronalSync')

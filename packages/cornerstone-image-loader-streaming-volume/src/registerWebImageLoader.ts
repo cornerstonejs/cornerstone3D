@@ -73,8 +73,8 @@ function createImage(image, imageId) {
     width: columns,
     color: true,
     rgba: false,
-    columnPixelSpacing: undefined,
-    rowPixelSpacing: undefined,
+    columnPixelSpacing: 1, // for web it's always 1
+    rowPixelSpacing: 1, // for web it's always 1
     invert: false,
     sizeInBytes: rows * columns * 4,
   }
@@ -218,7 +218,12 @@ function _loadImageIntoBuffer(
     loadImage(uri, imageId)
       .promise.then(
         (image: cornerstone.Types.IImage) => {
-          if (!options || !options.targetBuffer) {
+          if (
+            !options ||
+            !options.targetBuffer ||
+            !options.targetBuffer.length ||
+            !options.targetBuffer.offset
+          ) {
             resolve(image)
             return
           }

@@ -4,7 +4,6 @@ import Point2 from './Point2'
 import Point3 from './Point3'
 import ViewportInputOptions from './ViewportInputOptions'
 import { ActorEntry } from './IActor'
-import { vtkSlabCamera } from '../RenderingEngine/vtkClasses'
 
 interface IViewport {
   uid: string
@@ -35,7 +34,6 @@ interface IViewport {
   reset(immediate: boolean): void
   resetCamera(): void
   getCanvas(): HTMLCanvasElement
-  getVtkActiveCamera(): vtkCamera | vtkSlabCamera
   getCamera(): ICamera
   setCamera(cameraInterface: ICamera): void
   _getCorners(bounds: Array<number>): Array<number>[]

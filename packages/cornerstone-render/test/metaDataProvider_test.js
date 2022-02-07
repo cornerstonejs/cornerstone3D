@@ -64,6 +64,11 @@ const metadataProvider2 = (type, imageId) => {
 }
 
 describe('metaData Provider', function () {
+  beforeAll(() => {
+    // initialize the library
+    cornerstone3D.init();
+  });
+
   beforeEach(() => {
     metaData.removeAllProviders()
   })

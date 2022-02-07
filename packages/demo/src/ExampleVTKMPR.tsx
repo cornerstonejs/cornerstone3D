@@ -5,11 +5,9 @@ import {
   eventTarget,
   createAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
-import {
-  SynchronizerManager,
-  synchronizers,
-} from '@ohif/cornerstone-tools'
+import { SynchronizerManager, synchronizers } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
@@ -87,8 +85,6 @@ class MPRExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
-
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
@@ -126,6 +122,8 @@ class MPRExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     this.axialSync = createCameraPositionSynchronizer('axialSync')
     this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
     this.coronalSync = createCameraPositionSynchronizer('coronalSync')

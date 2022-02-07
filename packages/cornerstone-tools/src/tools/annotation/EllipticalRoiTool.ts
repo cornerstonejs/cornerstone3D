@@ -968,23 +968,15 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         renderingEngine
       )
 
-      const {
-        dimensions,
-        scalarData,
-        vtkImageData: imageData,
-        direction,
-        metadata,
-      } = imageVolume
-      const worldPos1Index = vec3.fromValues(0, 0, 0)
-      const worldPos2Index = vec3.fromValues(0, 0, 0)
+      const { dimensions, scalarData, imageData, metadata } = imageVolume
 
-      imageData.worldToIndexVec3(worldPos1, worldPos1Index)
+      const worldPos1Index = imageData.worldToIndex(worldPos1)
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0])
       worldPos1Index[1] = Math.floor(worldPos1Index[1])
       worldPos1Index[2] = Math.floor(worldPos1Index[2])
 
-      imageData.worldToIndexVec3(worldPos2, worldPos2Index)
+      const worldPos2Index = imageData.worldToIndex(worldPos2)
 
       worldPos2Index[0] = Math.floor(worldPos2Index[0])
       worldPos2Index[1] = Math.floor(worldPos2Index[1])
@@ -1024,29 +1016,25 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         // So we instead work out the change in canvas position incrementing each index causes.
         const start = vec3.fromValues(iMin, jMin, kMin)
 
-        const worldPosStart = vec3.create()
-        imageData.indexToWorldVec3(start, worldPosStart)
+        const worldPosStart = imageData.indexToWorld(start)
         const canvasPosStart = viewport.worldToCanvas(worldPosStart)
 
         const startPlusI = vec3.fromValues(iMin + 1, jMin, kMin)
         const startPlusJ = vec3.fromValues(iMin, jMin + 1, kMin)
         const startPlusK = vec3.fromValues(iMin, jMin, kMin + 1)
 
-        const worldPosStartPlusI = vec3.create()
         const plusICanvasDelta = vec2.create()
-        imageData.indexToWorldVec3(startPlusI, worldPosStartPlusI)
+        const worldPosStartPlusI = imageData.indexToWorld(startPlusI)
         const canvasPosStartPlusI = viewport.worldToCanvas(worldPosStartPlusI)
         vec2.sub(plusICanvasDelta, canvasPosStartPlusI, canvasPosStart)
 
-        const worldPosStartPlusJ = vec3.create()
         const plusJCanvasDelta = vec2.create()
-        imageData.indexToWorldVec3(startPlusJ, worldPosStartPlusJ)
+        const worldPosStartPlusJ = imageData.indexToWorld(startPlusJ)
         const canvasPosStartPlusJ = viewport.worldToCanvas(worldPosStartPlusJ)
         vec2.sub(plusJCanvasDelta, canvasPosStartPlusJ, canvasPosStart)
 
-        const worldPosStartPlusK = vec3.create()
         const plusKCanvasDelta = vec2.create()
-        imageData.indexToWorldVec3(startPlusK, worldPosStartPlusK)
+        const worldPosStartPlusK = imageData.indexToWorld(startPlusK)
         const canvasPosStartPlusK = viewport.worldToCanvas(worldPosStartPlusK)
         vec2.sub(plusKCanvasDelta, canvasPosStartPlusK, canvasPosStart)
 

@@ -1,6 +1,5 @@
 import EVENTS from './enums/events'
 import ERROR_CODES from './enums/errorCodes'
-import FLIP_DIRECTION from './enums/flipDirection'
 //
 import ORIENTATION from './constants/orientation'
 import VIEWPORT_TYPE from './constants/viewportType'
@@ -31,6 +30,7 @@ import {
 } from './imageLoader'
 import requestPoolManager from './requestPool/requestPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
+import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 import {
   createAndCacheVolume,
   registerVolumeLoader,
@@ -39,6 +39,13 @@ import {
 import getEnabledElement from './getEnabledElement'
 import configuration from './configuration'
 import metaData from './metaData'
+import {
+  init,
+  getShouldUseCPURendering,
+  isCornerstoneInitialized,
+  setUseCPURenderingOnlyForDebugOrTests,
+  resetCPURenderingOnlyForDebugOrTests,
+} from './init'
 
 // Classes
 import Settings from './Settings'
@@ -58,7 +65,6 @@ export {
   // enums
   ERROR_CODES,
   EVENTS,
-  FLIP_DIRECTION,
   // constants
   ORIENTATION,
   VIEWPORT_TYPE,
@@ -106,4 +112,11 @@ export {
   requestPoolManager,
   setMaxSimultaneousRequests,
   ImageVolume,
+  // CPU Rendering
+  init,
+  isCornerstoneInitialized,
+  getShouldUseCPURendering,
+  setUseCPURenderingOnlyForDebugOrTests,
+  resetCPURenderingOnlyForDebugOrTests,
+  cpuColormaps,
 }

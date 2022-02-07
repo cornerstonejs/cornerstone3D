@@ -7,7 +7,7 @@ module.exports = {
   tagline: 'Medical Imaging, Simplified',
   url: 'https://cornerstonejs.org',
   baseUrl: '/',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'log',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'CornerstoneJS', // Usually your GitHub org/user name.

@@ -6,6 +6,7 @@ import {
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
 import { ToolBindings } from '@ohif/cornerstone-tools'
 import * as cs from '@ohif/cornerstone-render'
@@ -32,7 +33,6 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
 const VOLUME = 'volume'
 
-
 window.cache = cache
 
 let ctSceneToolGroup,
@@ -43,7 +43,6 @@ let ctSceneToolGroup,
 
 const toolsToUse = ANNOTATION_TOOLS
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
-
 
 class EnableDisableViewportExample extends Component {
   state = {
@@ -69,7 +68,6 @@ class EnableDisableViewportExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
@@ -123,6 +121,9 @@ class EnableDisableViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
+
     ;({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
@@ -361,14 +362,9 @@ class EnableDisableViewportExample extends Component {
 
     this.renderingEngine.enableElement(viewportInput)
 
+    const { toolGroup, sceneUID, viewportUID, type, canvas } = viewportInput
 
-    const { toolGroup, sceneUID, viewportUID, type, canvas} = viewportInput
-
-    toolGroup.addViewports(
-      renderingEngineUID,
-      sceneUID,
-      viewportUID
-    )
+    toolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID)
 
     // load
     if (viewportUID === VIEWPORT_IDS.STACK.CT) {
@@ -390,13 +386,12 @@ class EnableDisableViewportExample extends Component {
     }))
   }
 
-
   swapTools = (evt) => {
     const toolName = evt.target.value
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active
@@ -438,7 +433,6 @@ class EnableDisableViewportExample extends Component {
     this.renderingEngine.render()
     this.setState({ leftClickTool: toolName })
   }
-
 
   showOffScreenCanvas = () => {
     // remove all children

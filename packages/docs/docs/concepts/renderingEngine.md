@@ -47,8 +47,9 @@ type PublicViewportInput = {
 }
 ```
 
-Each viewport entry can accept a [`viewportinputoptions`](/docs/cornerstone-render/modules/Types#viewportinputoptions) by which you can set the `background` color (black by default), and
-`orientation` (Axial, Sagittal, Coronal) of the viewport.
+Each viewport entry can accept a `viewportinputoptions` by which you can set the
+`background` color (black by default), and `orientation` (Axial, Sagittal,
+Coronal) of the viewport.
 
 
 Now that you learned the properties of viewports, we explain how to use the
