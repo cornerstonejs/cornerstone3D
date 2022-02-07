@@ -5,7 +5,7 @@ import Scene from '../RenderingEngine/Scene'
 import RenderingEngine from '../RenderingEngine/RenderingEngine'
 
 interface IEnabledElement {
-  viewport: StackViewport | VolumeViewport
+  viewport: VolumeViewport | StackViewport
   scene: Scene
   renderingEngine: RenderingEngine
   viewportUID: string

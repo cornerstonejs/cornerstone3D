@@ -10,7 +10,12 @@ import type IImageVolume from './IImageVolume'
 import type VolumeLoaderFn from './VolumeLoaderFn'
 import type IRegisterImageLoader from './IRegisterImageLoader'
 import type IStreamingVolume from './IStreamingVolume'
-import type { IViewport, ViewportInput, PublicViewportInput } from './IViewport'
+import type {
+  IViewport,
+  ViewportInput,
+  PublicViewportInput,
+  InternalViewportInput,
+} from './IViewport'
 import type { VolumeActor, ActorEntry } from './IActor'
 import type { ImageLoadObject, VolumeLoadObject } from './ILoadObject'
 import type LibraryConfiguration from './LibraryConfiguration'
@@ -68,6 +73,7 @@ export type {
   ViewportInput,
   StackProperties,
   PublicViewportInput,
+  InternalViewportInput,
   VolumeActor,
   ActorEntry,
   ImageLoadObject,

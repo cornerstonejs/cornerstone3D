@@ -32,15 +32,10 @@ export default class MIPJumpToClickTool extends BaseTool {
    * @param evt click event
    */
   mouseClickCallback(evt): void {
-    const {
-      element: canvas,
-      currentPoints,
-      renderingEngineUID,
-      sceneUID,
-    } = evt.detail
+    const { element, currentPoints, renderingEngineUID, sceneUID } = evt.detail
 
     // 1. Getting the enabled element
-    const enabledElement = getEnabledElement(canvas)
+    const enabledElement = getEnabledElement(element)
     const { viewport, scene, renderingEngine } = enabledElement
 
     // 2. Getting the target volume that is clicked on

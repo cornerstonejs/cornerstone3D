@@ -86,7 +86,7 @@ let state: IMouseDownListenerState = {
  * @param {MouseEvent} evt The mouse event.
  */
 function mouseDownListener(evt: MouseEvent) {
-  state.element = <HTMLElement>evt.target
+  state.element = <HTMLElement>evt.currentTarget
 
   const enabledElement = getEnabledElement(state.element)
   const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
@@ -257,8 +257,7 @@ function _updateMouseEventsLastPoints(
   element: HTMLElement,
   lastPoints: IPoints
 ): IPoints {
-  const canvas = element
-  const enabledElement = getEnabledElement(canvas)
+  const enabledElement = getEnabledElement(element)
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
   const world = enabledElement.viewport.canvasToWorld(lastPoints.canvas)

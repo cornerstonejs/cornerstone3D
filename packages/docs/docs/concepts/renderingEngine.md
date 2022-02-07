@@ -39,7 +39,7 @@ Viewports (both stack and volume) are defined using their properties.  Viewport'
 
 ```js
 type PublicViewportInput = {
-  canvas: HTMLCanvasElement // Canvas element to render
+  element: HTMLElement // Div element to render
   sceneUID?: string // Unique scene UID (optional for stackViewports)
   viewportUID: string // Unique viewport UID
   type: string // Stack or Volume

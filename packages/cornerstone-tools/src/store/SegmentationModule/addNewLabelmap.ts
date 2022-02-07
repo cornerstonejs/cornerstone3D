@@ -30,21 +30,21 @@ type LabelmapOptions = {
  * If no customOptions is provided, it creates an empty labelmap using the default Actor (volume)
  * of the element (viewport)
  *
- * @param  {HTMLCanvasElement} canvas element
+ * @param  {HTMLElement} element HTML div element
  * @param  {number} labelmapIndex   The labelmapIndex to set.
  * @param  {LabelmapOptions} options  Options for creating the labelmap
  * @returns {Promise} string volumeUID of the created labelmap
  */
 async function addNewLabelmap({
-  canvas,
+  element,
   labelmapIndex,
   options,
 }: {
-  canvas: HTMLCanvasElement
+  element: HTMLElement
   labelmapIndex: number
   options: LabelmapOptions
 }): Promise<string> {
-  const enabledElement = getEnabledElement(canvas)
+  const enabledElement = getEnabledElement(element)
 
   if (!enabledElement) {
     throw new Error('element disabled')
@@ -76,7 +76,7 @@ async function addNewLabelmap({
   }
 
   await setLabelmapForElement({
-    canvas: viewport.canvas,
+    element: viewport.element,
     labelmap: labelmap,
     labelmapIndex,
     labelmapViewportState: undefined,

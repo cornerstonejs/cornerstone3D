@@ -38,7 +38,9 @@ class NineStackViewportExample extends Component {
   constructor(props) {
     super(props)
 
-    this._canvasNodes = new Map()
+    csTools3d.init()
+
+    this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
     this.ctImageIdsPromise = getImageIds('ctStack', 'STACK')
@@ -92,7 +94,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--0',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(0),
+        element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -100,7 +102,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--1',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(1),
+        element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -108,7 +110,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--2',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(2),
+        element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -116,7 +118,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--3',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(3),
+        element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -124,7 +126,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--4',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(4),
+        element: this._elementNodes.get(4),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -132,7 +134,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--5',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(5),
+        element: this._elementNodes.get(5),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -140,7 +142,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--6',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(6),
+        element: this._elementNodes.get(6),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -148,7 +150,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--7',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(7),
+        element: this._elementNodes.get(7),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -156,7 +158,7 @@ class NineStackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--8',
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(8),
+        element: this._elementNodes.get(8),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -245,16 +247,17 @@ class NineStackViewportExample extends Component {
           >
             {this.state.viewportGrid.viewports.map((vp, i) => (
               <div
-                className="viewport-pane"
                 style={{
-                  ...(vp.cellStyle || {}),
+                  width: '100%',
+                  height: '100%',
                   border: '2px solid grey',
                   background: 'black',
+                  ...(vp.cellStyle || {}),
                 }}
+                ref={(c) => this._elementNodes.set(i, c)}
+                onContextMenu={(e) => e.preventDefault()}
                 key={i}
-              >
-                <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-              </div>
+              />
             ))}
           </ViewportGrid>
         </div>

@@ -8,6 +8,7 @@ import { PublicViewportInput, ViewportInput } from '../types'
 import VolumeViewport from './VolumeViewport'
 import StackViewport from './StackViewport'
 import Scene from './Scene'
+import getOrCreateCanvas from './helpers/getOrCreateCanvas'
 import isEqual from 'lodash.isequal'
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline'
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init'
@@ -123,11 +124,11 @@ class RenderingEngine implements IRenderingEngine {
    */
   public enableElement(viewportInputEntry: PublicViewportInput): void {
     this._throwIfDestroyed()
-    const { canvas, viewportUID } = viewportInputEntry
+    const { element, viewportUID } = viewportInputEntry
 
-    // Throw error if no canvas
-    if (!canvas) {
-      throw new Error('No canvases provided')
+    // Throw error if no element provided
+    if (!element) {
+      throw new Error('No HTML div element provided')
     }
 
     // 1. Get the viewport from the list of available viewports.
@@ -634,15 +635,13 @@ class RenderingEngine implements IRenderingEngine {
    *     }} [offscreenCanvasProperties] How the viewport relates to the
    * offscreen canvas.
    */
-  private addVtkjsDrivenViewport(
-    viewportInputEntry: PublicViewportInput,
-    offscreenCanvasProperties?: {
-      offScreenCanvasWidth: number
-      offScreenCanvasHeight: number
-      xOffset: number
-    }
+  private _addViewport(
+    viewportInputEntry: InternalViewportInput,
+    offScreenCanvasWidth: number,
+    offScreenCanvasHeight: number,
+    _xOffset: number
   ): void {
-    const { canvas, sceneUID, viewportUID, type, defaultOptions } =
+    const { element, canvas, sceneUID, viewportUID, type, defaultOptions } =
       viewportInputEntry
 
     const { offScreenCanvasWidth, offScreenCanvasHeight, xOffset } =
@@ -681,6 +680,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. ViewportInput to be passed to a stack/volume viewport
     const viewportInput = <ViewportInput>{
+      element, // div
       uid: viewportUID,
       renderingEngineUID: this.uid,
       type,
@@ -727,7 +727,7 @@ class RenderingEngine implements IRenderingEngine {
     this._viewports.set(viewportUID, viewport)
 
     const eventData = {
-      canvas,
+      element, // div
       viewportUID,
       sceneUID,
       renderingEngineUID: this.uid,
@@ -914,7 +914,9 @@ class RenderingEngine implements IRenderingEngine {
         _xOffset
       )
 
-      _xOffset += viewport.canvas.clientWidth
+      // Todo: Since element and canvas are the same thing the following can
+      // be both on element and canvas, I guess ...?
+      _xOffset += viewport.element.clientWidth
 
       viewport.sx = sx
       viewport.sy = sy
@@ -944,7 +946,7 @@ class RenderingEngine implements IRenderingEngine {
    * @param _xOffset xOffSet to draw
    */
   private _getViewportCoordsOnOffScreenCanvas(
-    viewport: PublicViewportInput | StackViewport | VolumeViewport,
+    viewport: InternalViewportInput | StackViewport | VolumeViewport,
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number,
     _xOffset: number
@@ -1054,7 +1056,7 @@ class RenderingEngine implements IRenderingEngine {
     this._animationFrameHandle = null
 
     eventDataArray.forEach((eventData) => {
-      triggerEvent(eventData.canvas, EVENTS.IMAGE_RENDERED, eventData)
+      triggerEvent(eventData.element, EVENTS.IMAGE_RENDERED, eventData)
     })
   }
 
@@ -1157,15 +1159,24 @@ class RenderingEngine implements IRenderingEngine {
     viewport: StackViewport | VolumeViewport,
     offScreenCanvas
   ): {
+    element: HTMLElement
     canvas: HTMLCanvasElement
     viewportUID: string
     sceneUID: string
     renderingEngineUID: string
   } {
-    const { sx, sy, sWidth, sHeight, uid, sceneUID, renderingEngineUID } =
-      viewport
+    const {
+      element,
+      canvas,
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+      uid,
+      sceneUID,
+      renderingEngineUID,
+    } = viewport
 
-    const canvas = <HTMLCanvasElement>viewport.canvas
     const { width: dWidth, height: dHeight } = canvas
 
     const onScreenContext = canvas.getContext('2d')
@@ -1183,6 +1194,7 @@ class RenderingEngine implements IRenderingEngine {
     )
 
     return {
+      element,
       canvas,
       viewportUID: uid,
       sceneUID,
@@ -1200,10 +1212,10 @@ class RenderingEngine implements IRenderingEngine {
   private _resetViewport(viewport) {
     const renderingEngineUID = this.uid
 
-    const { canvas, uid: viewportUID } = viewport
+    const { element, canvas, uid: viewportUID } = viewport
 
     const eventData = {
-      canvas,
+      element,
       viewportUID,
       //sceneUID, // todo: where to get this now?
       renderingEngineUID,
@@ -1213,9 +1225,9 @@ class RenderingEngine implements IRenderingEngine {
     // element to remove tools associated with the viewport
     triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
 
-    canvas.removeAttribute('data-viewport-uid')
-    canvas.removeAttribute('data-scene-uid')
-    canvas.removeAttribute('data-rendering-engine-uid')
+    element.removeAttribute('data-viewport-uid')
+    element.removeAttribute('data-scene-uid')
+    element.removeAttribute('data-rendering-engine-uid')
 
     // clear drawing
     const context = canvas.getContext('2d')

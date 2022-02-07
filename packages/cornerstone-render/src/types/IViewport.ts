@@ -44,6 +44,15 @@ interface IViewport {
  * This type defines the shape of input, so we can throw when it is incorrect.
  */
 type PublicViewportInput = {
+  element: HTMLDivElement
+  sceneUID?: string
+  viewportUID: string
+  type: string
+  defaultOptions: ViewportInputOptions
+}
+
+type InternalViewportInput = {
+  element: HTMLElement
   canvas: HTMLCanvasElement
   sceneUID?: string
   viewportUID: string
@@ -53,10 +62,11 @@ type PublicViewportInput = {
 
 type ViewportInput = {
   uid: string
+  element: HTMLElement
+  canvas: HTMLCanvasElement
   sceneUID?: string
   renderingEngineUID: string
   type: string
-  canvas: HTMLCanvasElement
   sx: number
   sy: number
   sWidth: number
@@ -64,4 +74,9 @@ type ViewportInput = {
   defaultOptions: any
 }
 
-export type { IViewport, ViewportInput, PublicViewportInput }
+export type {
+  IViewport,
+  ViewportInput,
+  PublicViewportInput,
+  InternalViewportInput,
+}

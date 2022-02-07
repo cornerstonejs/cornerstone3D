@@ -148,7 +148,7 @@ abstract class BaseAnnotationTool extends BaseTool {
 
   public onImageSpacingCalibrated = (evt) => {
     const eventData = evt.detail
-    const { canvas } = eventData
+    const { element } = eventData
     const {
       rowScale,
       columnScale,
@@ -162,7 +162,6 @@ abstract class BaseAnnotationTool extends BaseTool {
     const imageURI = Utilities.imageIdToURI(imageId)
 
     // Todo: handle other specific state managers that we might add in future
-    let element
     const stateManager = getViewportSpecificStateManager(element)
 
     const framesOfReferenece = stateManager.getFramesOfReference()
@@ -218,7 +217,7 @@ abstract class BaseAnnotationTool extends BaseTool {
         }
       })
 
-      triggerAnnotationRender(canvas)
+      triggerAnnotationRender(element)
     })
   }
 

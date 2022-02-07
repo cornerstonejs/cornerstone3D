@@ -362,7 +362,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   _initCrosshairs = (evt, toolState) => {
     const eventData = evt.detail
-    const { canvas: element } = eventData
+    const { element } = eventData
     const enabledElement = getEnabledElement(element)
     const { viewport, FrameOfReferenceUID, viewportUID, sceneUID } =
       enabledElement
@@ -407,7 +407,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   onCameraModified = (evt) => {
     const eventData = evt.detail
-    const { canvas: element } = eventData
+    const { element } = eventData
     const enabledElement = getEnabledElement(element)
     const { FrameOfReferenceUID, renderingEngine, viewport } = enabledElement
 
@@ -640,7 +640,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     }
 
     const eventData = evt.detail
-    const { canvas: element } = eventData
+    const { element } = eventData
     const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
     const { renderingEngine, viewport } = svgDrawingHelper.enabledElement
     const camera = viewport.getCamera()
@@ -1692,12 +1692,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       return
     }
 
-    const { element: canvas } = eventData
-    const enabledElement = getEnabledElement(canvas)
+    const { element } = eventData
+    const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewport } = enabledElement
     const toolState = getToolState(enabledElement, this.name)
     const filteredToolState = this.filterInteractableToolStateForElement(
-      canvas,
+      element,
       toolState
     )
 

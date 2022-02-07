@@ -50,39 +50,28 @@ function calculateLength(pos1, pos2) {
   return Math.sqrt(dx * dx + dy * dy + dz * dz)
 }
 
-function createCanvas(renderingEngine, viewportType, width, height) {
-  // TODO: currently we need to have a parent div on the canvas with
-  // position of relative for the svg layer to be set correctly
-  const viewportPane = document.createElement('div')
-  viewportPane.style.position = 'relative'
-  viewportPane.style.width = `${width}px`
-  viewportPane.style.height = `${height}px`
+function createViewport(renderingEngine, viewportType, width, height) {
+  const element = document.createElement('div')
 
-  document.body.appendChild(viewportPane)
+  element.style.width = `${width}px`
+  element.style.height = `${height}px`
+  document.body.appendChild(element)
 
-  const canvas = document.createElement('canvas')
-
-  canvas.style.position = 'absolute'
-  canvas.style.width = '100%'
-  canvas.style.height = '100%'
-  viewportPane.appendChild(canvas)
-
-  DOMElements.push(canvas)
-  DOMElements.push(viewportPane)
+  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
       sceneUID: scene1UID,
       viewportUID: viewportUID,
       type: viewportType,
-      canvas: canvas,
+      element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
         orientation: ORIENTATION[AXIAL],
       },
     },
   ])
-  return canvas
+  return element
 }
 
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
@@ -128,7 +117,7 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully create a Bidirectional tool on a canvas with mouse drag - 512 x 128', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       512,
@@ -141,10 +130,10 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas)
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
@@ -163,13 +152,13 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeToolState(canvas, bidirectionalToolData)
+          removeToolState(element, bidirectionalToolData)
           done()
         }
       )
     }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 0]
       const index2 = [10, 1, 0]
 
@@ -181,7 +170,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
       p1 = worldCoord1
 
       const {
@@ -190,23 +179,23 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
       p2 = worldCoord2
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
@@ -237,7 +226,7 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully create a bidirectional tool on a canvas with mouse drag Volume viewport - 512 x 128', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.ORTHOGRAPHIC,
       512,
@@ -249,10 +238,10 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas)
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
@@ -271,13 +260,13 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeToolState(canvas, bidirectionalToolData)
+          removeToolState(element, bidirectionalToolData)
           done()
         }
       )
     }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 4]
       const index2 = [10, 1, 4]
 
@@ -289,7 +278,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
       p1 = worldCoord1
 
       const {
@@ -298,23 +287,23 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
       p2 = worldCoord2
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
@@ -348,7 +337,7 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully create a bidirectional tool and modify its handle', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
@@ -361,10 +350,10 @@ describe('Cornerstone Tools: ', () => {
     let p2, p3
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas)
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
@@ -386,13 +375,13 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          removeToolState(canvas, bidirectionalToolData)
+          removeToolState(element, bidirectionalToolData)
           done()
         }
       )
     }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       // Not not to move the handle too much since the length become width and it would fail
       const index1 = [50, 50, 0]
       const index2 = [5, 5, 0]
@@ -406,7 +395,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
 
       const {
         pageX: pageX2,
@@ -414,7 +403,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
       p2 = worldCoord2
       const {
         pageX: pageX3,
@@ -422,23 +411,23 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(imageData, index3, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index3, element, vp)
       p3 = worldCoord3
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
@@ -453,18 +442,18 @@ describe('Cornerstone Tools: ', () => {
 
       // Select the first handle
       evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Drag it somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX3,
         clientY: clientY3,
@@ -495,7 +484,7 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully create a bidirectional tool and select but not move it', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
@@ -508,10 +497,10 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas)
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
@@ -533,13 +522,13 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeToolState(canvas, bidirectionalToolData)
+          removeToolState(element, bidirectionalToolData)
           done()
         }
       )
     }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 
@@ -554,7 +543,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
       p1 = worldCoord1
       const {
         pageX: pageX2,
@@ -562,7 +551,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
       p2 = worldCoord2
 
       const {
@@ -571,22 +560,22 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(imageData, index3, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index3, element, vp)
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
@@ -601,14 +590,14 @@ describe('Cornerstone Tools: ', () => {
 
       // Mouse down on the middle of the length tool, just to select
       evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX3,
         clientY: clientY3,
         pageX: pageX3,
         pageY: pageY3,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Just grab and don't really move it
       evt = new MouseEvent('mouseup')
@@ -632,7 +621,7 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully create a bidirectional tool and select AND move it', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
@@ -645,10 +634,10 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2, p3, p4
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas)
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
@@ -710,13 +699,13 @@ describe('Cornerstone Tools: ', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle)
           expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          removeToolState(canvas, bidirectionalToolData)
+          removeToolState(element, bidirectionalToolData)
           done()
         }
       )
     }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 
@@ -734,7 +723,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
       p1 = worldCoord1
       const {
         pageX: pageX2,
@@ -742,7 +731,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
       p2 = worldCoord2
 
       const {
@@ -751,7 +740,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(imageData, index3, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index3, element, vp)
       p3 = worldCoord3
 
       const {
@@ -760,23 +749,23 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX4,
         clientY: clientY4,
         worldCoord: worldCoord4,
-      } = createNormalizedMouseEvent(imageData, index4, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index4, element, vp)
       p4 = worldCoord4
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
@@ -791,18 +780,18 @@ describe('Cornerstone Tools: ', () => {
 
       // Drag the middle of the tool
       evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX3,
         clientY: clientY3,
         pageX: pageX3,
         pageY: pageY3,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Move the middle of the tool to point4
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX4,
         clientY: clientY4,
@@ -832,7 +821,7 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully cancel drawing of a BidirectionalTool', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
@@ -844,7 +833,7 @@ describe('Cornerstone Tools: ', () => {
 
     let p1, p2
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 4]
       const index2 = [10, 1, 4]
 
@@ -856,7 +845,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
       p1 = worldCoord1
 
       const {
@@ -865,23 +854,23 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp)
+      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
       p2 = worldCoord2
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
       })
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
@@ -897,21 +886,21 @@ describe('Cornerstone Tools: ', () => {
         key: 'Esc',
         char: 'Esc',
       })
-      canvas.dispatchEvent(e)
+      element.dispatchEvent(e)
 
       e = new KeyboardEvent('keyup', {
         bubbles: true,
         cancelable: true,
       })
-      canvas.dispatchEvent(e)
+      element.dispatchEvent(e)
     })
 
     const cancelToolDrawing = () => {
-      const canceledDataUID = cancelActiveManipulations(canvas)
+      const canceledDataUID = cancelActiveManipulations(element)
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const enabledElement = getEnabledElement(canvas)
+        const enabledElement = getEnabledElement(element)
         const bidirectionalToolState = getToolState(
           enabledElement,
           'Bidirectional'
@@ -934,7 +923,7 @@ describe('Cornerstone Tools: ', () => {
 
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-        removeToolState(canvas, bidirectionalToolData)
+        removeToolState(element, bidirectionalToolData)
         done()
       }, 100)
     }
@@ -944,7 +933,7 @@ describe('Cornerstone Tools: ', () => {
       undefined,
       vp.uid
     )
-    canvas.addEventListener(
+    element.addEventListener(
       CornerstoneTools3DEvents.KEY_DOWN,
       cancelToolDrawing
     )

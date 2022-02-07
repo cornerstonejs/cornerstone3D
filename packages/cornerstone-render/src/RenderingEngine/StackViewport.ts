@@ -378,6 +378,16 @@ class StackViewport extends Viewport {
     const [calibratedRowSpacing, calibratedColumnSpacing] =
       calibratedPixelSpacing
 
+    // Todo: This is necessary in general, but breaks an edge case when an image
+    // is calibrated to some other spacing, and it gets calibrated BACK to the
+    // original spacing.
+    if (
+      imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
+      imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
+    ) {
+      return imagePlaneModule
+    }
+
     // Check if there is already an actor
     const imageDataMetadata = this.getImageData()
 
@@ -1641,13 +1651,14 @@ class StackViewport extends Viewport {
       previousCamera,
       camera,
       canvas: this.canvas,
+      element: this.element,
       viewportUID: this.uid,
       sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,
     }
 
     // For crosshairs to adapt to new viewport size
-    triggerEvent(this.canvas, EVENTS.CAMERA_MODIFIED, eventDetail)
+    triggerEvent(this.element, EVENTS.CAMERA_MODIFIED, eventDetail)
   }
 
   private triggerCalibrationEvent() {
@@ -1656,6 +1667,7 @@ class StackViewport extends Viewport {
     // Finally emit event for the full camera change cause during load image.
     const eventDetail = {
       canvas: this.canvas,
+      element: this.element,
       viewportUID: this.uid,
       sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,
@@ -1667,7 +1679,7 @@ class StackViewport extends Viewport {
     }
 
     // Let the tools know the image spacing has been calibrated
-    triggerEvent(this.canvas, EVENTS.IMAGE_SPACING_CALIBRATED, eventDetail)
+    triggerEvent(this.element, EVENTS.IMAGE_SPACING_CALIBRATED, eventDetail)
 
     this._publishCalibratedEvent = false
   }

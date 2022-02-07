@@ -20,11 +20,11 @@ import { vtkSlabCamera } from './vtkClasses'
  */
 class Viewport {
   readonly uid: string
+  readonly element: HTMLElement
+  readonly canvas: HTMLCanvasElement
   readonly sceneUID?: string = undefined
   readonly renderingEngineUID: string
   readonly type: string
-  readonly canvas: HTMLCanvasElement
-
   protected flipHorizontal = false
   protected flipVertical = false
 
@@ -41,6 +41,7 @@ class Viewport {
     this.uid = props.uid
     this.renderingEngineUID = props.renderingEngineUID
     this.type = props.type
+    this.element = props.element
     this.canvas = props.canvas
     this.sx = props.sx
     this.sy = props.sy
@@ -48,15 +49,15 @@ class Viewport {
     this.sHeight = props.sHeight
     this._actors = new Map()
     // Set data attributes for render events
-    this.canvas.setAttribute('data-viewport-uid', this.uid)
-    this.canvas.setAttribute(
+    this.element.setAttribute('data-viewport-uid', this.uid)
+    this.element.setAttribute(
       'data-rendering-engine-uid',
       this.renderingEngineUID
     )
 
     if (props.sceneUID) {
       this.sceneUID = props.sceneUID
-      this.canvas.setAttribute('data-scene-uid', this.sceneUID)
+      this.element.setAttribute('data-scene-uid', this.sceneUID)
     }
 
     this.defaultOptions = _cloneDeep(props.defaultOptions)
@@ -525,13 +526,14 @@ class Viewport {
         previousCamera: previousCamera,
         camera: this.getCamera(),
         canvas: this.canvas,
+        element: this.element,
         viewportUID: this.uid,
         sceneUID: this.sceneUID,
         renderingEngineUID: this.renderingEngineUID,
       }
 
       // For crosshairs to adapt to new viewport size
-      triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
+      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
     }
 
     return true
@@ -683,12 +685,13 @@ class Viewport {
         previousCamera,
         camera: updatedCamera,
         canvas: this.canvas,
+        element: this.element,
         viewportUID: this.uid,
         sceneUID: this.sceneUID,
         renderingEngineUID: this.renderingEngineUID,
       }
 
-      triggerEvent(this.canvas, Events.CAMERA_MODIFIED, eventDetail)
+      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
     }
 
     if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {

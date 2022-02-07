@@ -28,8 +28,8 @@ export default class WindowLevelTool extends BaseTool {
   }
 
   _dragCallback(evt) {
-    const { element: canvas, deltaPoints } = evt.detail
-    const enabledElement = getEnabledElement(canvas)
+    const { element, deltaPoints } = evt.detail
+    const enabledElement = getEnabledElement(element)
     const { scene, sceneUID, viewportUID, viewport } = enabledElement
 
     let volumeUID, volumeActor, lower, upper, rgbTransferFunction
@@ -80,7 +80,7 @@ export default class WindowLevelTool extends BaseTool {
       range: newRange,
     }
 
-    triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
+    triggerEvent(element, EVENTS.VOI_MODIFIED, eventDetail)
 
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
