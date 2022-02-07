@@ -19,11 +19,10 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import {
-  setActiveLabelmapIndex,
-  getActiveLabelmapIndex,
-  getActiveSegmentIndex,
   getColorForSegmentIndex,
-  segmentLocker,
+  lockedSegmentController,
+  segmentIndexController,
+  activeLabelmapController,
 } from '../../store/SegmentationModule'
 
 // Todo
@@ -80,20 +79,24 @@ export default class CircleScissorsTool extends BaseTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    const labelmapIndex = getActiveLabelmapIndex(element)
+    const labelmapIndex =
+      activeLabelmapController.getActiveLabelmapIndex(element)
     if (labelmapIndex === undefined) {
       throw new Error(
         'No active labelmap detected, create one before using scissors tool'
       )
     }
-    const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
-    const segmentIndex = getActiveSegmentIndex(element)
+    const labelmapUID = await activeLabelmapController.setActiveLabelmapIndex(
+      element,
+      labelmapIndex
+    )
+    const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
     const segmentColor = getColorForSegmentIndex(
       element,
       segmentIndex,
       labelmapIndex
     )
-    const segmentsLocked = segmentLocker.getLockedSegmentsForElement(element)
+    const segmentsLocked = lockedSegmentController.getLockedSegmentsForElement(element)
 
     const labelmap = cache.getVolume(labelmapUID)
 
@@ -140,9 +143,6 @@ export default class CircleScissorsTool extends BaseTool {
         active: true,
       },
     }
-
-    // Ensure settings are initialized after tool data instantiation
-    // Settings.getObjectSettings(toolData, RectangleRoiTool)
 
     const viewportUIDsToRender = [viewport.uid]
 
@@ -332,7 +332,6 @@ export default class CircleScissorsTool extends BaseTool {
     const { toolData } = this.editData
 
     // Todo: rectangle colro based on segment index
-    const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
     const toolMetadata = toolData.metadata
     const annotationUID = toolMetadata.toolDataUID
 

@@ -244,7 +244,7 @@ class Scene {
     return this._sceneViewports
   }
 
-  public addVolumeActors(viewportUID: string): void {
+  public setSceneVolumeActorsForViewport(viewportUID: string): void {
     const volumeActor = this.getVolumeActors()
     const viewport = this.getViewport(viewportUID)
     // Todo: why this is setting instead of adding?

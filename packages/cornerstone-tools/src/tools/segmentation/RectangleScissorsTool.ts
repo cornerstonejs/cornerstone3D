@@ -23,11 +23,10 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import {
-  setActiveLabelmapIndex,
-  getActiveLabelmapIndex,
-  getActiveSegmentIndex,
   getColorForSegmentIndex,
-  segmentLocker,
+  lockedSegmentController,
+  segmentIndexController,
+  activeLabelmapController,
 } from '../../store/SegmentationModule'
 
 /**
@@ -81,15 +80,19 @@ export default class RectangleScissorsTool extends BaseTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    const labelmapIndex = getActiveLabelmapIndex(element)
+    const labelmapIndex =
+      activeLabelmapController.getActiveLabelmapIndex(element)
     if (labelmapIndex === undefined) {
       throw new Error(
         'No active labelmap detected, create one before using scissors tool'
       )
     }
-    const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
-    const segmentIndex = getActiveSegmentIndex(element)
-    const segmentsLocked = segmentLocker.getLockedSegmentsForElement(element)
+    const labelmapUID = await activeLabelmapController.setActiveLabelmapIndex(
+      element,
+      labelmapIndex
+    )
+    const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
+    const segmentsLocked = lockedSegmentController.getLockedSegmentsForElement(element)
     const segmentColor = getColorForSegmentIndex(
       element,
       segmentIndex,
