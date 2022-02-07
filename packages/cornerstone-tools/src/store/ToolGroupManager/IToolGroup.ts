@@ -4,7 +4,7 @@ import ISetToolModeOptions from '../../types/ISetToolModeOptions'
 
 export default interface IToolGroup {
   // Unserializable instantiated tool classes, keyed by name
-  _tools: Record<string, any>
+  _toolInstances: Record<string, any>
   id: string
   viewports: Array<Types.IViewportUID>
   tools: Record<string, any>

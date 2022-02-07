@@ -50,7 +50,7 @@ export default function customCallbackHandler(
       const toolName = toolGroupToolNames[j]
       const tool = toolGroup.tools[toolName]
       // TODO: Should be getter
-      const toolInstance = toolGroup._tools[toolName]
+      const toolInstance = toolGroup._toolInstances[toolName]
 
       if (
         // TODO: Should be enum?
@@ -61,7 +61,7 @@ export default function customCallbackHandler(
       ) {
         // This should be behind some API. Too much knowledge of ToolGroup
         // inner workings leaking out
-        activeTool = toolGroup._tools[toolName]
+        activeTool = toolGroup._toolInstances[toolName]
         break
       }
     }

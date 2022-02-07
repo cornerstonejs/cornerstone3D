@@ -24,12 +24,16 @@ type LabelmapOptions = {
 }
 
 /**
- * addNewLabelmap - Adds a `Labelmap3D` object to the `BrushStackState` object.
+ * Adds a new labelmap to the element based on the options provided.
+ * Options include a UID for the labelmap, a custom options object that might include
+ * scalarData, metadata, dimensions, spacing, origin, direction, and a targetBuffer type.
+ * If no customOptions is provided, it creates an empty labelmap using the default Actor (volume)
+ * of the element (viewport)
  *
- * @param  {BrushStackState} brushStackState The labelmap state for a particular stack.
+ * @param  {HTMLCanvasElement} canvas element
  * @param  {number} labelmapIndex   The labelmapIndex to set.
- * @param  {object} options  Options for creating the labelmap
- * @returns {null}
+ * @param  {LabelmapOptions} options  Options for creating the labelmap
+ * @returns {Promise} string volumeUID of the created labelmap
  */
 async function addNewLabelmap({
   canvas,

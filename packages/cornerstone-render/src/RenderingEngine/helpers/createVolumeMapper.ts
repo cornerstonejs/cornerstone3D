@@ -6,13 +6,7 @@ export default function createVolumeMapper(
   imageData: any,
   vtkOpenGLTexture: any
 ): any {
-  let volumeMapper
-  if (useSharedMapper) {
-    volumeMapper = vtkSharedVolumeMapper.newInstance()
-  } else {
-    console.debug('not using shared mapper')
-    volumeMapper = vtkVolumeMapper.newInstance()
-  }
+  const volumeMapper = vtkSharedVolumeMapper.newInstance()
 
   volumeMapper.setInputData(imageData)
 
@@ -26,9 +20,7 @@ export default function createVolumeMapper(
 
   volumeMapper.setSampleDistance(sampleDistance)
 
-  if (useSharedMapper) {
-    volumeMapper.setScalarTexture(vtkOpenGLTexture)
-  }
+  volumeMapper.setScalarTexture(vtkOpenGLTexture)
 
   return volumeMapper
 }

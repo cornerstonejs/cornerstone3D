@@ -27,7 +27,7 @@ import {
   getActiveLabelmapIndex,
   getActiveSegmentIndex,
   getColorForSegmentIndex,
-  getLockedSegmentsForElement,
+  segmentLocker,
 } from '../../store/SegmentationModule'
 
 /**
@@ -89,7 +89,7 @@ export default class RectangleScissorsTool extends BaseTool {
     }
     const labelmapUID = await setActiveLabelmapIndex(element, labelmapIndex)
     const segmentIndex = getActiveSegmentIndex(element)
-    const segmentsLocked = getLockedSegmentsForElement(element)
+    const segmentsLocked = segmentLocker.getLockedSegmentsForElement(element)
     const segmentColor = getColorForSegmentIndex(
       element,
       segmentIndex,

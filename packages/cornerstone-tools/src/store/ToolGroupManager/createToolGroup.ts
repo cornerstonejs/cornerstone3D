@@ -23,13 +23,13 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
   // Create
   const toolGroup: IToolGroup = {
-    _tools: {}, // tool instances
+    _toolInstances: {}, // tool instances
     id: toolGroupId,
     viewports: [],
     tools: {}, // tools modes etc.
     //
     getToolInstance: function (toolName) {
-      const toolInstance = this._tools[toolName]
+      const toolInstance = this._toolInstances[toolName]
       if (!toolInstance) {
         console.warn(`'${toolName}' is not registered with this toolGroup.`)
         return
@@ -73,7 +73,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       // API instead of directly exposing schema?
       // Maybe not here, but feels like a "must" for any method outside of the ToolGroup itself
-      this._tools[toolName] = instantiatedTool
+      this._toolInstances[toolName] = instantiatedTool
     },
     addViewports: function (
       renderingEngineUID: string,
@@ -123,23 +123,23 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       }
     },
     setActiveStrategyName(toolName: string, strategyName: string) {
-      if (this._tools[toolName] === undefined) {
+      if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
         )
       }
 
-      this._tools[toolName].mode = Active
-      this._tools[toolName].setActiveStrategyName(strategyName)
+      this._toolInstances[toolName].mode = Active
+      this._toolInstances[toolName].setActiveStrategyName(strategyName)
       this.tools[toolName].strategy = strategyName
-      this.resetViewportsCursor(this._tools[toolName], strategyName)
+      this.resetViewportsCursor(this._toolInstances[toolName], strategyName)
     },
     // ~ setToolMode
     setToolActive: function (
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
-      if (this._tools[toolName] === undefined) {
+      if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
         )
@@ -160,11 +160,11 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       )
 
       this.tools[toolName] = toolModeOptionsWithMode
-      this._tools[toolName].mode = Active
+      this._toolInstances[toolName].mode = Active
 
       // reset the mouse cursor if tool has left click binding
       if (this.isPrimaryButtonBinding(toolModeOptions)) {
-        this.resetViewportsCursor(this._tools[toolName])
+        this.resetViewportsCursor(this._toolInstances[toolName])
       }
       this.refreshViewports()
     },
@@ -172,7 +172,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
-      if (this._tools[toolName] === undefined) {
+      if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
         )
@@ -193,14 +193,14 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       )
 
       this.tools[toolName] = toolModeOptionsWithMode
-      this._tools[toolName].mode = Passive
+      this._toolInstances[toolName].mode = Passive
       this.refreshViewports()
     },
     setToolEnabled: function (
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
-      if (this._tools[toolName] === undefined) {
+      if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
         )
@@ -221,14 +221,14 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       )
 
       this.tools[toolName] = toolModeOptionsWithMode
-      this._tools[toolName].mode = Enabled
+      this._toolInstances[toolName].mode = Enabled
       this.refreshViewports()
     },
     setToolDisabled: function (
       toolName: string,
       toolModeOptions: ISetToolModeOptions
     ): void {
-      if (this._tools[toolName] === undefined) {
+      if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
         )
@@ -247,7 +247,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         }
       )
       this.tools[toolName] = toolModeOptionsWithMode
-      this._tools[toolName].mode = Disabled
+      this._toolInstances[toolName].mode = Disabled
       this.refreshViewports()
     },
     getActivePrimaryButtonTools() {
