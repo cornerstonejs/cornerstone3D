@@ -24,6 +24,7 @@ package-lock.json
 
 # Docs output
 packages/docs/dist/
+packages/docs/static/
 packages/demo/dist
 dist/
 tsDist/

@@ -4,18 +4,23 @@ const webpack = require('webpack')
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
   .BundleAnalyzerPlugin
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin');
 //
 const PROJECT_ROOT = path.join(__dirname, '../')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const NODE_ENV = process.env.NODE_ENV;
 const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
     .rules;
+const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js');
+
+const exclude = excludeNodeModulesExcept([]);
+
 /**
  * `argv` are options from the CLI. They will override our config here if set.
  * `-d` - Development shorthand, sets `debug`, `devtool`, and `mode`
  * `-p` - Production shorthand, sets `minimize`, `NODE_ENV`, and `mode`
  */
-module.exports = (env, argv) => {
+module.exports = (env, argv, { DIST_DIR }) => {
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
   const isProdBuild = argv.mode !== 'development'
   const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js'
@@ -35,8 +40,8 @@ module.exports = (env, argv) => {
         // },
         // babel-loader: converts javascript (es6) to javascript (es5)
         {
-          test: /\.(js|ts)$/,
-          exclude: /node_modules/,
+          test: /\.(mjs|js|ts)$/,
+          exclude,
           loader: 'babel-loader',
           options: {
             // Find babel.config.js in monorepo root
@@ -82,6 +87,14 @@ module.exports = (env, argv) => {
       new webpack.ProgressPlugin(),
       // Clear dist between builds
       new CleanWebpackPlugin(),
+      new CopyPlugin({
+        patterns: [
+          {
+            from: '../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import/',
+            to: DIST_DIR,
+          },
+        ],
+      }),
     ],
   };
 

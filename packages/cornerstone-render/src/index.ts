@@ -1,5 +1,7 @@
 import EVENTS from './enums/events'
 import ERROR_CODES from './enums/errorCodes'
+import FLIP_DIRECTION from './enums/flipDirection'
+import REQUEST_TYPE from './enums/requestType'
 //
 import ORIENTATION from './constants/orientation'
 import VIEWPORT_TYPE from './constants/viewportType'
@@ -29,7 +31,9 @@ import {
   cancelLoadImage,
   cancelLoadImages,
 } from './imageLoader'
-import requestPoolManager from './requestPool/requestPoolManager'
+import { RequestPoolManager } from './requestPool/requestPoolManager'
+import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager'
+import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
 import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 import {
@@ -73,6 +77,8 @@ export {
   // enums
   ERROR_CODES,
   EVENTS,
+  FLIP_DIRECTION,
+  REQUEST_TYPE,
   // constants
   ORIENTATION,
   VIEWPORT_TYPE,
@@ -121,7 +127,10 @@ export {
   //
   Utilities,
   //
-  requestPoolManager,
+  imageLoadPoolManager as requestPoolManager,
+  imageRetrievalPoolManager,
+  imageLoadPoolManager,
+  RequestPoolManager,
   setMaxSimultaneousRequests,
   ImageVolume,
   // CPU Rendering

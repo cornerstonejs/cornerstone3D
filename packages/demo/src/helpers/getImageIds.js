@@ -7,11 +7,20 @@ import config from './../config/default'
  *
  * @returns {Array} Array of imageIds
  */
-export default async function getImageIds(studyId, type, callback) {
+export default async function getImageIds(studyId, type, callback, codec) {
+  const study = config[studyId]
+  let wadoRsRoot = study.wadoRsRoot
+
+  if (codec){
+    wadoRsRoot = wadoRsRoot + '/' + codec
+  }
+
+  debugger
+
   let imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: config[studyId].StudyInstanceUID,
-    SeriesInstanceUID: config[studyId].SeriesInstanceUID,
-    wadoRsRoot: config[studyId].wadoRsRoot,
+    StudyInstanceUID: study.StudyInstanceUID,
+    SeriesInstanceUID: study.SeriesInstanceUID,
+    wadoRsRoot,
     type,
   })
 

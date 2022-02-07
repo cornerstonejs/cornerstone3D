@@ -1,9 +1,14 @@
-import { registerImageLoader } from '@ohif/cornerstone-render'
+import { registerImageLoader, REQUEST_TYPE } from '@ohif/cornerstone-render'
 import {
   getPixelData,
   decodeImageFrame,
   getImageFrame,
-} from 'cornerstone-wado-image-loader'
+  external,
+} from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js'
+
+function getImageRetrievalPool() {
+  return external.cornerstone.imageRetrievalPoolManager
+}
 
 /**
  * Small stripped down loader from cornerstoneWADOImageLoader
@@ -18,6 +23,7 @@ function sharedArrayBufferImageLoader(
   promise: Promise<Record<string, any>>
   cancelFn: () => void
 } {
+  const imageRetrievalPool = getImageRetrievalPool()
   const uri = imageId.slice(imageId.indexOf(':') + 1)
 
   const promise = new Promise((resolve, reject) => {
@@ -25,64 +31,55 @@ function sharedArrayBufferImageLoader(
     const mediaType = 'multipart/related; type="application/octet-stream"' // 'image/dicom+jp2';
 
     // get the pixel data from the server
-    getPixelData(uri, imageId, mediaType)
-      .then((result) => {
-        const transferSyntax = getTransferSyntaxForContentType(
-          result.contentType
-        )
+    function sendXHR(imageURI, imageId, mediaType) {
+      return getPixelData(imageURI, imageId, mediaType)
+        .then((result) => {
+          const transferSyntax = getTransferSyntaxForContentType(
+            result.contentType
+          )
 
-        const pixelData = result.imageFrame.pixelData
+          const pixelData = result.imageFrame.pixelData
 
-        if (!pixelData || !pixelData.length) {
-          reject(new Error('The file does not contain image data.'))
-          return
-        }
+          if (!pixelData || !pixelData.length) {
+            reject(new Error('The file does not contain image data.'))
+            return
+          }
 
-        const canvas = document.createElement('canvas')
-        const imageFrame = getImageFrame(imageId)
-        const decodePromise = decodeImageFrame(
-          imageFrame,
-          transferSyntax,
-          pixelData,
-          canvas,
-          options
-        )
+          const canvas = document.createElement('canvas')
+          const imageFrame = getImageFrame(imageId)
+          const decodePromise = decodeImageFrame(
+            imageFrame,
+            transferSyntax,
+            pixelData,
+            canvas,
+            options
+          )
 
-        decodePromise.then(() => {
-          resolve(undefined)
-        }, reject)
-      })
-      .catch((error) => {
-        reject(error)
-      })
+          decodePromise.then(() => {
+            resolve(undefined)
+          }, reject)
+        })
+        .catch((error) => {
+          reject(error)
+        })
+    }
+
+    // TODO: These probably need to be pulled from somewhere?
+    // TODO: Make sure volume ID is also included?
+    // TODO: Use ENUM for requestType? Or nuke the types entirely
+    const requestType = options.requestType || REQUEST_TYPE.Interaction
+    const additionalDetails = options.additionalDetails || { imageId }
+    const priority = options.priority === undefined ? 5 : options.priority
+
+    imageRetrievalPool.addRequest(
+      sendXHR.bind(this, uri, imageId, mediaType),
+      requestType,
+      additionalDetails,
+      priority
+    )
+
+    // console.warn(imageRetrievalPool.numRequests.interaction)
   })
-
-  // const imagePromise = new Promise((resolve, reject) => {
-  //   requestPromise.then((result) => {
-  //     const transferSyntax = getTransferSyntaxForContentType(result.contentType)
-
-  //     const pixelData = result.imageFrame.pixelData
-
-  //     if (!pixelData || !pixelData.length) {
-  //       reject(new Error('The file does not contain image data.'))
-  //       return
-  //     }
-
-  //     const canvas = document.createElement('canvas')
-  //     const imageFrame = getImageFrame(imageId)
-  //     const decodePromise = decodeImageFrame(
-  //       imageFrame,
-  //       transferSyntax,
-  //       pixelData,
-  //       canvas,
-  //       options
-  //     )
-
-  //     decodePromise.then(() => {
-  //       resolve(undefined)
-  //     }, reject)
-  //   })
-  // })
 
   return {
     promise,

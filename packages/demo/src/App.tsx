@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom'
 import VTKMPRExample from './ExampleVTKMPR'
+import MPRCodecExample from './ExampleVTKMPRCodec'
 import CanvasResizeExample from './ExampleCanvasResize'
 import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas'
 import ColorExample from './ExampleColor'
@@ -62,6 +63,11 @@ function Index() {
       title: 'MPR',
       url: '/mpr',
       text: 'Example MPR playground.',
+    },
+    {
+      title: 'MPR Codec',
+      url: '/codec',
+      text: 'Example loading data with different codecs.',
     },
     {
       title: 'One Volume',
@@ -218,6 +224,10 @@ function AppRouter() {
     Example({
       children: <VTKMPRExample />,
     })
+  const mprCodec = () =>
+    Example({
+      children: <MPRCodecExample />,
+    })
   const canvasResize = () =>
     Example({
       children: <CanvasResizeExample />,
@@ -317,6 +327,7 @@ function AppRouter() {
       <Switch>
         <Route exact path="/" component={Index} />
         <Route exact path="/mpr/" render={mpr} />
+        <Route exact path="/codec/" render={mprCodec} />
         <Route exact path="/canvasResize/" render={canvasResize} />
         <Route exact path="/twentyFiveCanvas/" render={twentyFiveCanvas} />
         <Route exact path="/color/" render={color} />
