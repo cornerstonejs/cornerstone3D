@@ -12,10 +12,10 @@ export default function getMouseEventPoints(
   evt: MouseEvent,
   element?: HTMLElement
 ): IPoints {
-  const canvas = element || (evt.target as HTMLElement)
-  const enabledElement = getEnabledElement(canvas)
+  const elementToUse = element || (evt.currentTarget as HTMLElement)
+  const enabledElement = getEnabledElement(elementToUse)
   const pagePoint = _pageToPoint(evt)
-  const canvasPoint = _pagePointsToCanvasPoints(<HTMLElement>canvas, pagePoint)
+  const canvasPoint = _pagePointsToCanvasPoints(elementToUse, pagePoint)
   const worldPoint = enabledElement.viewport.canvasToWorld(canvasPoint)
 
   return {

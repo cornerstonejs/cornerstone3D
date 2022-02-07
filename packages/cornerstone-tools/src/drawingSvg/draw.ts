@@ -1,10 +1,7 @@
 import getSvgDrawingHelper from './getSvgDrawingHelper'
 
-function draw(
-  canvasElement: HTMLCanvasElement,
-  fn: (svgDrawingElement: any) => any
-): void {
-  const svgDrawingHelper = getSvgDrawingHelper(canvasElement)
+function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void {
+  const svgDrawingHelper = getSvgDrawingHelper(element)
 
   // Save...
   fn(svgDrawingHelper)

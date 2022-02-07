@@ -38,7 +38,7 @@ let state: IKeyDownListenerState = {
  * @param evt keyboard event
  */
 function keyListener(evt: KeyboardEvent): void {
-  state.element = <HTMLElement>evt.target
+  state.element = <HTMLElement>evt.currentTarget
 
   const enabledElement = getEnabledElement(state.element)
   const { renderingEngineUID, sceneUID, viewportUID } = enabledElement

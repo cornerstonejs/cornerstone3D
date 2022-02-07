@@ -7,19 +7,18 @@ import state, {
 } from './state'
 import { triggerLabelmapStateUpdated } from './triggerLabelmapsStateUpdated'
 
-
 /**
- * It renders a labelmap 3D volume into the scene the canvas is associated with.
- * @param {canvas, labelmap, callback, labelmapIndex, immediateRender}
+ * It renders a labelmap 3D volume into the scene that the element belongs to
+ * @param {element, labelmap, callback, labelmapIndex, immediateRender}
  */
 async function setLabelmapForElement({
-  canvas,
+  element,
   labelmap,
   labelmapIndex = 0,
   colorLUTIndex = 0,
   labelmapViewportState,
 }) {
-  const enabledElement = getEnabledElement(canvas)
+  const enabledElement = getEnabledElement(element)
   const { scene, viewportUID, viewport } = enabledElement
 
   // Segmentation VolumeUID
@@ -58,11 +57,7 @@ async function setLabelmapForElement({
     // Updating the active labelmapIndex
     state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
 
-    setLabelmapViewportSpecificState(
-      viewportUID,
-      labelmapUID,
-      labelmapIndex,
-    )
+    setLabelmapViewportSpecificState(viewportUID, labelmapUID, labelmapIndex)
   })
 
   // Default to true since we are setting a new labelmap, however,
@@ -78,8 +73,8 @@ async function setLabelmapForElement({
     },
   ])
 
-  scene.getViewports().forEach(({ canvas }) => {
-    triggerLabelmapStateUpdated(labelmapUID, canvas)
+  scene.getViewports().forEach(({ element }) => {
+    triggerLabelmapStateUpdated(labelmapUID, element)
   })
 }
 

@@ -46,7 +46,7 @@ function thresholdVolumeByRange(
     const { viewport } = enabledElement
     ;({ renderingEngine } = enabledElement)
 
-    const { canvas: element } = viewport
+    const { element } = viewport
 
     // Todo: Resetting the labelmap imageData value so that the same tool can
     // execute threshold execution more than once, but this is super slow

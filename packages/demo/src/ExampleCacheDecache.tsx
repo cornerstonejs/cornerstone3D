@@ -12,7 +12,7 @@ import * as csTools3d from '@ohif/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -59,7 +59,7 @@ class CacheDecacheExample extends Component {
     super(props)
 
     registerWebImageLoader(cs)
-    this._canvasNodes = new Map()
+    this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
 
@@ -105,7 +105,7 @@ class CacheDecacheExample extends Component {
         sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(0),
+        element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -114,7 +114,7 @@ class CacheDecacheExample extends Component {
         sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(1),
+        element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
         },
@@ -123,7 +123,7 @@ class CacheDecacheExample extends Component {
         sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(2),
+        element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
         },
@@ -132,7 +132,7 @@ class CacheDecacheExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(3),
+        element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -164,6 +164,8 @@ class CacheDecacheExample extends Component {
       undefined,
       VIEWPORT_IDS.STACK.CT
     )
+
+    addToolsToToolGroups({ ctSceneToolGroup, stackCTViewportToolGroup })
 
     renderingEngine.render()
 
@@ -361,16 +363,17 @@ class CacheDecacheExample extends Component {
           >
             {this.state.viewportGrid.viewports.map((vp, i) => (
               <div
-                className="viewport-pane"
                 style={{
-                  ...(vp.cellStyle || {}),
+                  width: '100%',
+                  height: '100%',
                   border: '2px solid grey',
                   background: 'black',
+                  ...(vp.cellStyle || {}),
                 }}
+                ref={(c) => this._elementNodes.set(i, c)}
+                onContextMenu={(e) => e.preventDefault()}
                 key={i}
-              >
-                <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-              </div>
+              />
             ))}
           </ViewportGrid>
         </div>

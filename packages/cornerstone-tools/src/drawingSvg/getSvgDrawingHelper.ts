@@ -6,11 +6,11 @@ import { getEnabledElement } from '@ohif/cornerstone-render'
  * @param canvasElement
  * @private
  */
-function getSvgDrawingHelper(canvasElement: HTMLCanvasElement) {
-  const enabledElement = getEnabledElement(canvasElement)
+function getSvgDrawingHelper(element: HTMLElement) {
+  const enabledElement = getEnabledElement(element)
   const { viewportUID, sceneUID, renderingEngineUID } = enabledElement
   const canvasHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
-  const svgLayerElement = _getSvgLayer(canvasElement)
+  const svgLayerElement = _getSvgLayer(element)
 
   // Reset touched
   Object.keys(state.svgNodeCache[canvasHash]).forEach((cacheKey) => {
@@ -19,7 +19,7 @@ function getSvgDrawingHelper(canvasElement: HTMLCanvasElement) {
 
   return {
     enabledElement: enabledElement,
-    _canvasElement: canvasElement,
+    _element: element,
     _svgLayerElement: svgLayerElement,
     _svgNodeCacheForCanvas: state.svgNodeCache,
     _getSvgNode: getSvgNode.bind(this, canvasHash),
@@ -35,9 +35,9 @@ function getSvgDrawingHelper(canvasElement: HTMLCanvasElement) {
  * @param canvasElement
  * @private
  */
-function _getSvgLayer(canvasElement) {
-  const parentElement = canvasElement.parentNode
-  const svgLayer = parentElement.querySelector('.svg-layer')
+function _getSvgLayer(element) {
+  const internalDivElement = element.firstChild
+  const svgLayer = internalDivElement.querySelector('.svg-layer')
 
   return svgLayer
 }

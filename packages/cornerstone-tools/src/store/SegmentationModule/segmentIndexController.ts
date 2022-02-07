@@ -9,11 +9,11 @@ import { getActiveLabelmapUID } from './activeLabelmapController'
 /**
  * Returns the index of the active Segment for the current active labelmap
  *
- * @param  {HTMLElement} canvas HTML canvas
+ * @param  {HTMLElement} element HTML element
  * @returns {number} The active segment index
  */
-function getActiveSegmentIndex(canvas: HTMLCanvasElement): number | undefined {
-  const viewportLabelmapState = getActiveLabelmapState(canvas)
+function getActiveSegmentIndex(element: HTMLElement): number | undefined {
+  const viewportLabelmapState = getActiveLabelmapState(element)
 
   if (!viewportLabelmapState) {
     // Todo: check this
@@ -30,8 +30,8 @@ function getActiveSegmentIndex(canvas: HTMLCanvasElement): number | undefined {
 }
 
 /**
- * Returns the active segment index for the canvas based on the labelmapUID it renders
- * @param canvas HTML Canvas
+ * Returns the active segment index for the element based on the labelmapUID it renders
+ * @param element HTML element
  * @param labelmapUID volumeUID of the labelmap
  * @returns
  */
@@ -41,18 +41,18 @@ function getActiveSegmentIndexForLabelmapUID(labelmapUID: string): number {
 }
 
 /**
- * Sets the active `segmentIndex` for the active labelmap of the canvas element
+ * Sets the active `segmentIndex` for the active labelmap of the HTML element
  *
  *
- * @param  {HTMLElement} canvas  HTML Element
+ * @param  {HTMLElement} element  HTML Element
  * @param  {number} segmentIndex = 1 SegmentIndex
  * @returns {string}
  */
 function setActiveSegmentIndex(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   segmentIndex = 1
 ): Promise<string> {
-  const enabledElement = getEnabledElement(canvas)
+  const enabledElement = getEnabledElement(element)
 
   if (!enabledElement) {
     return
@@ -74,7 +74,7 @@ function setActiveSegmentIndex(
   }
 
   // active labelmap Index is the same for all viewports in the scene
-  const activeLabelmapUID = getActiveLabelmapUID(canvas)
+  const activeLabelmapUID = getActiveLabelmapUID(element)
 
   const labelmapGlobalState = getGlobalStateForLabelmapUID(activeLabelmapUID)
 

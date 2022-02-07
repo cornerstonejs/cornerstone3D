@@ -22,34 +22,34 @@ import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
  * @param evt The ELEMENT_ENABLED event
  */
 export default function addEnabledElement(evt: CustomEvent): void {
-  const { canvas, viewportUID } = evt.detail
+  const { element, viewportUID } = evt.detail
   const svgLayer = _createSvgAnnotationLayer()
 
   // Reset/Create svgNodeCache for element
-  _setSvgNodeCacheForCanvas(canvas)
-  _insertAfter(svgLayer, canvas)
+  _setSvgNodeCache(element)
+  _appnedChild(svgLayer, element)
 
   // Add this element to the annotation rendering engine
-  annotationRenderingEngine.addViewportElement(viewportUID, canvas)
+  annotationRenderingEngine.addViewportElement(viewportUID, element)
 
   // Listeners
-  mouseEventListeners.enable(canvas)
-  wheelEventListener.enable(canvas)
-  keyEventListener.enable(canvas)
-  labelmapStateEventListener.enable(canvas)
+  mouseEventListeners.enable(element)
+  wheelEventListener.enable(element)
+  keyEventListener.enable(element)
+  labelmapStateEventListener.enable(element)
 
   // Dispatchers: renderer
-  imageRenderedEventDispatcher.enable(canvas)
-  cameraModifiedEventDispatcher.enable(canvas)
-  imageSpacingCalibratedEventDispatcher.enable(canvas)
+  imageRenderedEventDispatcher.enable(element)
+  cameraModifiedEventDispatcher.enable(element)
+  imageSpacingCalibratedEventDispatcher.enable(element)
   // Dispatchers: interaction
-  mouseToolEventDispatcher.enable(canvas)
-  keyboardToolEventDispatcher.enable(canvas)
+  mouseToolEventDispatcher.enable(element)
+  keyboardToolEventDispatcher.enable(element)
   // touchToolEventDispatcher.enable(enabledElement);
 
   // labelmap
   // State
-  state.enabledElements.push(canvas)
+  state.enabledElements.push(element)
 }
 
 /**
@@ -117,17 +117,17 @@ function _createSvgAnnotationLayer(): SVGElement {
   return svgLayer
 }
 
-function _setSvgNodeCacheForCanvas(canvas) {
+function _setSvgNodeCache(element) {
   const {
     viewportUid: viewportUID,
     sceneUid: sceneUID,
     renderingEngineUid: renderingEngineUID,
-  } = canvas.dataset
-  const canvasHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
+  } = element.dataset
+  const elementHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
 
   // Create or reset
   // TODO: If... Reset, we should blow out any nodes in DOM
-  state.svgNodeCache[canvasHash] = {}
+  state.svgNodeCache[elementHash] = {}
 }
 
 /**
@@ -135,6 +135,6 @@ function _setSvgNodeCacheForCanvas(canvas) {
  * @param newNode
  * @param referenceNode
  */
-function _insertAfter(newNode: SVGElement, referenceNode: HTMLElement): void {
-  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling)
+function _appnedChild(newNode: SVGElement, referenceNode: HTMLElement): void {
+  referenceNode.querySelector('div.viewport-element').appendChild(newNode)
 }

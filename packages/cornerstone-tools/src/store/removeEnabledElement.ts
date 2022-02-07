@@ -23,58 +23,66 @@ import { removeToolState } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'
 import getToolGroups from './ToolGroupManager/getToolGroups'
 import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
+import { IEnabledElement } from '@ohif/cornerstone-render/src/types'
+
+const VIEWPORT_ELEMENT = 'viewport-element'
 
 function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   // Is DOM element
-  const { canvas, viewportUID } = elementDisabledEvt.detail
+  const { element, viewportUID } = elementDisabledEvt.detail
 
-  _resetSvgNodeCacheForCanvas(canvas)
-  // Remove svg layer
-  const viewportNode = canvas.parentNode
+  _resetSvgNodeCache(element)
+
+  // Todo: shouldn't this also remove the canvas?
+  const viewportNode = element
   const svgLayer = viewportNode.querySelector('svg')
+  const internalViewportNode = element.querySelector(`div.${VIEWPORT_ELEMENT}`)
+  // element.removeChild(internalViewportNode)
   if (svgLayer) {
-    viewportNode.removeChild(svgLayer)
+    internalViewportNode.removeChild(svgLayer)
   }
 
   // Remove this element from the annotation rendering engine
   annotationRenderingEngine.removeViewportElement(viewportUID)
 
   // Listeners
-  mouseEventListeners.disable(canvas)
-  wheelEventListener.disable(canvas)
-  keyEventListener.disable(canvas)
+  mouseEventListeners.disable(element)
+  wheelEventListener.disable(element)
+  keyEventListener.disable(element)
   // labelmap
-  labelmapStateEventListener.disable(canvas)
+  labelmapStateEventListener.disable(element)
 
   // Dispatchers: renderer
-  imageRenderedEventDispatcher.disable(canvas)
-  cameraModifiedEventDispatcher.disable(canvas)
-  imageSpacingCalibratedEventDispatcher.disable(canvas)
+  imageRenderedEventDispatcher.disable(element)
+  cameraModifiedEventDispatcher.disable(element)
+  imageSpacingCalibratedEventDispatcher.disable(element)
   // Dispatchers: interaction
-  mouseToolEventDispatcher.disable(canvas)
-  keyboardToolEventDispatcher.disable(canvas)
+  mouseToolEventDispatcher.disable(element)
+  keyboardToolEventDispatcher.disable(element)
   // touchToolEventDispatcher.disable(canvas);
 
   // State
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?
-  _removeViewportFromSynchronizers(canvas)
-  _removeViewportFromToolGroups(canvas)
+  _removeViewportFromSynchronizers(element)
+  _removeViewportFromToolGroups(element)
 
   // _removeAllToolsForElement(canvas)
-  _removeEnabledElement(canvas)
+  _removeEnabledElement(element)
 }
 
-const _removeViewportFromSynchronizers = (canvas) => {
-  const enabledElement = getEnabledElement(canvas)
+const _removeViewportFromSynchronizers = (element: HTMLElement) => {
+  const enabledElement = getEnabledElement(element)
+
   const synchronizers = getSynchronizers(enabledElement)
   synchronizers.forEach((sync) => {
     sync.remove(enabledElement)
   })
 }
 
-const _removeViewportFromToolGroups = (canvas) => {
+const _removeViewportFromToolGroups = (element: HTMLElement) => {
   const { renderingEngineUID, sceneUID, viewportUID } =
-    getEnabledElement(canvas)
+    getEnabledElement(element)
+
   const toolGroups = getToolGroups(renderingEngineUID, sceneUID, viewportUID)
   toolGroups.forEach((toolGroup) => {
     toolGroup.removeViewports(renderingEngineUID, sceneUID, viewportUID)
@@ -95,24 +103,24 @@ const _removeAllToolsForElement = function (element) {
   })
 }
 
-function _resetSvgNodeCacheForCanvas(canvas) {
+function _resetSvgNodeCache(element: HTMLElement) {
   const {
     viewportUid: viewportUID,
     sceneUid: sceneUID,
     renderingEngineUid: renderingEngineUID,
-  } = canvas.dataset
-  const canvasHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
+  } = element.dataset
+  const elementHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
 
-  delete state.svgNodeCache[canvasHash]
+  delete state.svgNodeCache[elementHash]
 }
 
 /**
  * @private
  * @param enabledElement
  */
-const _removeEnabledElement = function (enabledElement: HTMLElement) {
+const _removeEnabledElement = function (element: HTMLElement) {
   const foundElementIndex = state.enabledElements.findIndex(
-    (element) => element === enabledElement
+    (el) => el === element
   )
 
   if (foundElementIndex > -1) {

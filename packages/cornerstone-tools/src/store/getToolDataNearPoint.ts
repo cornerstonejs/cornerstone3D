@@ -58,12 +58,12 @@ function findToolDataNearPointByTool(
 ): ToolSpecificToolData | null {
   const toolState = getToolState(enabledElement, tool.name)
   if (Array.isArray(toolState) && toolState.length > 0) {
-    const { canvas } = enabledElement.viewport
+    const { element } = enabledElement.viewport
     for (let i = 0; i < toolState.length; ++i) {
       const toolData = toolState[i] as ToolSpecificToolData
       if (
-        tool.pointNearTool(canvas, toolData, point, proximity, '') ||
-        tool.getHandleNearImagePoint(canvas, toolData, point, proximity)
+        tool.pointNearTool(element, toolData, point, proximity, '') ||
+        tool.getHandleNearImagePoint(element, toolData, point, proximity)
       ) {
         return toolData
       }

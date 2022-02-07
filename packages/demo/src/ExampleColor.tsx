@@ -79,7 +79,7 @@ class ColorExample extends Component {
         sceneUID: ctSceneID,
         viewportUID: axialViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.axialContainer.current,
+        element: this.axialContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -88,7 +88,7 @@ class ColorExample extends Component {
         sceneUID: ctSceneID,
         viewportUID: sagittalViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.sagittalContainer.current,
+        element: this.sagittalContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
         },
@@ -97,7 +97,7 @@ class ColorExample extends Component {
         sceneUID: ctSceneID,
         viewportUID: coronalViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.coronalContainer.current,
+        element: this.coronalContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
         },
@@ -184,25 +184,32 @@ class ColorExample extends Component {
         </div>
         <div className="row">
           <div>
-            <canvas
+            <div
+              style={{
+                ...style0,
+                width: viewportSizes[0][0],
+                height: viewportSizes[0][1],
+              }}
               ref={this.axialContainer}
-              width={viewportSizes[0][0]}
-              height={viewportSizes[0][1]}
-              style={style0}
+              onContextMenu={(e) => e.preventDefault()}
             />
-
-            <canvas
-              width={viewportSizes[1][0]}
-              height={viewportSizes[1][1]}
+            <div
+              style={{
+                ...style0,
+                width: viewportSizes[1][0],
+                height: viewportSizes[1][1],
+              }}
               ref={this.sagittalContainer}
-              style={style1}
+              onContextMenu={(e) => e.preventDefault()}
             />
-
-            <canvas
-              width={viewportSizes[2][0]}
-              height={viewportSizes[2][1]}
+            <div
+              style={{
+                ...style0,
+                width: viewportSizes[2][0],
+                height: viewportSizes[2][1],
+              }}
               ref={this.coronalContainer}
-              style={style2}
+              onContextMenu={(e) => e.preventDefault()}
             />
           </div>
         </div>

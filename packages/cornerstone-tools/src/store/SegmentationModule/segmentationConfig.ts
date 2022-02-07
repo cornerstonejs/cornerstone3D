@@ -56,7 +56,7 @@ function setGlobalConfig(
 
 // todo: setting configuration per labelmap (not globally)
 function setLabelmapConfig(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   labelmapUID: string,
   config: Partial<ISegmentationConfig>,
   immediate = true
@@ -64,9 +64,9 @@ function setLabelmapConfig(
   // Look into the state for all the viewports that have the same labelmap in their labelmaps and apply the config
 }
 
-// todo: setting configuration per element (canvas) for the active labelmap (not globally)
+// todo: setting configuration per element (element) for the active labelmap (not globally)
 function setElementActiveLabelmapConfig(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   config: Partial<ISegmentationConfig>,
   immediate = true
 ): void {}

@@ -25,93 +25,35 @@ const viewportUID2 = 'VIEWPORT2'
 
 const DOMElements = []
 
-function createCanvas(width, height) {
-  // TODO: currently we need to have a parent div on the canvas with
-  // position of relative for the svg layer to be set correctly
-  const viewportPane1 = document.createElement('div')
-  viewportPane1.style.position = 'relative'
-  viewportPane1.style.display = 'block'
-  viewportPane1.style.width = `${width}px`
-  viewportPane1.style.height = `${height}px`
+function createViewports(width, height) {
+  const element1 = document.createElement('div')
 
-  document.body.appendChild(viewportPane1)
+  element1.style.width = `${width}px`
+  element1.style.height = `${height}px`
+  document.body.appendChild(element1)
 
-  const canvas1 = document.createElement('canvas')
+  DOMElements.push(element1)
 
-  canvas1.style.position = 'absolute'
-  canvas1.style.width = '100%'
-  canvas1.style.height = '100%'
-  viewportPane1.appendChild(canvas1)
+  const element2 = document.createElement('div')
 
-  DOMElements.push(canvas1)
-  DOMElements.push(viewportPane1)
+  element2.style.width = `${width}px`
+  element2.style.height = `${height}px`
+  document.body.appendChild(element2)
 
-  // Second viewport
-  const viewportPane2 = document.createElement('div')
-  viewportPane2.style.position = 'relative'
-  viewportPane2.style.display = 'block'
-  viewportPane2.style.width = `${width}px`
-  viewportPane2.style.height = `${height}px`
+  DOMElements.push(element2)
 
-  document.body.appendChild(viewportPane2)
-
-  const canvas2 = document.createElement('canvas')
-
-  canvas2.style.position = 'absolute'
-  canvas2.style.width = '100%'
-  canvas2.style.height = '100%'
-  viewportPane2.appendChild(canvas2)
-
-  DOMElements.push(canvas2)
-  DOMElements.push(viewportPane2)
-
-  return [canvas1, canvas2]
+  return [element1, element2]
 }
 
-describe('ToolGroupManager', () => {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
-  })
-
-  describe('Synchronizer Manager1: ', () => {
-    beforeEach(function () {
-      csTools3d.init()
-      csTools3d.addTool(ProbeTool, {})
-      cache.purgeCache()
-      this.toolGroup = ToolGroupManager.createToolGroup('volume1')
-      this.toolGroup.addTool('Probe')
-      this.toolGroup.setToolActive('Probe', {
-        bindings: [
-          {
-            mouseButton: ToolBindings.Mouse.Primary,
-          },
-        ],
-      })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-      metaData.addProvider(fakeMetaDataProvider, 10000)
-    })
-
-    afterEach(function () {
-      // Destroy synchronizer manager to test it first since csTools3D also destroy
-      // synchronizers
-      ToolGroupManager.destroy()
-      csTools3d.destroy()
-      cache.purgeCache()
-      this.renderingEngine.destroy()
-      metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el)
-        }
-      })
-    })
-
-    it('Should successfully creates tool groups', function () {
-      const [canvas1, canvas2] = createCanvas(512, 128)
-
-      this.renderingEngine.setViewports([
+describe('ToolGroup Manager: ', () => {
+  beforeEach(function () {
+    csTools3d.init()
+    csTools3d.addTool(ProbeTool, {})
+    cache.purgeCache()
+    this.toolGroup = ToolGroupManager.createToolGroup('volume1')
+    this.toolGroup.addTool('Probe')
+    this.toolGroup.setToolActive('Probe', {
+      bindings: [
         {
           sceneUID: scene1UID,
           viewportUID: viewportUID1,
@@ -145,40 +87,31 @@ describe('ToolGroupManager', () => {
     })
   })
 
-  describe('Synchronizer Manager2: ', () => {
-    beforeEach(function () {
-      csTools3d.init()
-      csTools3d.addTool(ProbeTool, {})
-      cache.purgeCache()
-      this.toolGroup = ToolGroupManager.createToolGroup('volume1')
-      this.toolGroup.addTool('Probe')
-      this.toolGroup.setToolActive('Probe', {
-        bindings: [
-          {
-            mouseButton: ToolBindings.Mouse.Primary,
-          },
-        ],
-      })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-      metaData.addProvider(fakeMetaDataProvider, 10000)
-    })
+  it('Should successfully creates tool groups', function () {
+    const [element1, element2] = createViewports(512, 128)
 
-    afterEach(function () {
-      // Destroy synchronizer manager to test it first since csTools3D also destroy
-      // synchronizers
-      ToolGroupManager.destroyToolGroupById('volume1')
-      csTools3d.destroy()
-      cache.purgeCache()
-      this.renderingEngine.destroy()
-      metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el)
-        }
-      })
-    })
+    this.renderingEngine.setViewports([
+      {
+        sceneUID: scene1UID,
+        viewportUID: viewportUID1,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: element1,
+        defaultOptions: {
+          background: [1, 0, 1], // pinkish background
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        sceneUID: scene2UID,
+        viewportUID: viewportUID2,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: element2,
+        defaultOptions: {
+          background: [1, 0, 1], // pinkish background
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+    ])
 
     it('Should successfully create toolGroup and get tool instances', function () {
       const [canvas1, canvas2] = createCanvas(512, 128)
@@ -253,14 +186,14 @@ describe('Synchronizer Manager: ', () => {
   })
 
   it('Should successfully create toolGroup and get tool instances', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+    const [element1, element2] = createViewports(512, 128)
 
     this.renderingEngine.setViewports([
       {
         sceneUID: scene1UID,
         viewportUID: viewportUID1,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
+        element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,
@@ -270,7 +203,7 @@ describe('Synchronizer Manager: ', () => {
         sceneUID: scene2UID,
         viewportUID: viewportUID2,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
+        element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,
@@ -307,14 +240,14 @@ describe('Synchronizer Manager: ', () => {
   })
 
   it('Should successfully Use toolGroup manager API', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+    const [element1, element2] = createViewports(512, 128)
 
     this.renderingEngine.setViewports([
       {
         sceneUID: scene1UID,
         viewportUID: viewportUID1,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
+        element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,
@@ -324,7 +257,7 @@ describe('Synchronizer Manager: ', () => {
         sceneUID: scene2UID,
         viewportUID: viewportUID2,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
+        element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,
@@ -353,14 +286,14 @@ describe('Synchronizer Manager: ', () => {
   })
 
   it('Should successfully make a tool enabled/disabled/active/passive', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+    const [element1, element2] = createViewports(512, 128)
 
     this.renderingEngine.setViewports([
       {
         sceneUID: scene1UID,
         viewportUID: viewportUID1,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
+        element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,
@@ -370,7 +303,7 @@ describe('Synchronizer Manager: ', () => {
         sceneUID: scene2UID,
         viewportUID: viewportUID2,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
+        element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,
@@ -394,14 +327,14 @@ describe('Synchronizer Manager: ', () => {
   })
 
   it('Should successfully setTool status', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+    const [element1, element2] = createViewports(512, 128)
 
     this.renderingEngine.setViewports([
       {
         sceneUID: scene1UID,
         viewportUID: viewportUID1,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
+        element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,
@@ -411,7 +344,7 @@ describe('Synchronizer Manager: ', () => {
         sceneUID: scene2UID,
         viewportUID: viewportUID2,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
+        element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
           orientation: ORIENTATION.AXIAL,

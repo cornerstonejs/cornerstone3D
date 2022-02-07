@@ -7,11 +7,11 @@ import { triggerLabelmapStateUpdated } from './triggerLabelmapsStateUpdated'
 /**
  * Returns the index of the active `Labelmap3D`.
  *
- * @param  {HTMLElement} canvas HTML canvas
+ * @param  {HTMLElement} HTML Div element
  * @returns {number} The index of the active `Labelmap3D`.
  */
-function getActiveLabelmapIndex(canvas: HTMLCanvasElement): number {
-  const viewportLabelmapsState = getLabelmapsStateForElement(canvas)
+function getActiveLabelmapIndex(element: HTMLElement): number {
+  const viewportLabelmapsState = getLabelmapsStateForElement(element)
 
   if (!viewportLabelmapsState) {
     return
@@ -21,14 +21,14 @@ function getActiveLabelmapIndex(canvas: HTMLCanvasElement): number {
 }
 
 /**
- * Returns the next labelmap Index that can be set on the canvas. It checks
+ * Returns the next labelmap Index that can be set on the element. It checks
  * all the available labelmaps for the element, and increases that number by 1
  * or return 0 if no labelmap is provided
- * @param canvas HTMLCanvasElement
+ * @param element HTMLElement
  * @returns next LabelmapIndex
  */
-function getNextLabelmapIndex(canvas: HTMLCanvasElement): number {
-  const viewportLabelmapsState = getLabelmapsStateForElement(canvas)
+function getNextLabelmapIndex(element: HTMLElement): number {
+  const viewportLabelmapsState = getLabelmapsStateForElement(element)
 
   if (!viewportLabelmapsState) {
     return 0
@@ -41,11 +41,11 @@ function getNextLabelmapIndex(canvas: HTMLCanvasElement): number {
 /**
  * Returns the VolumeUID of the active `Labelmap`.
  *
- * @param  {HTMLElement} canvas HTML canvas
+ * @param  {HTMLElement} HTML element
  * @returns {number} The index of the active `Labelmap3D`.
  */
-function getActiveLabelmapUID(canvas: HTMLCanvasElement): string {
-  const viewportLabelmapsState = getLabelmapsStateForElement(canvas)
+function getActiveLabelmapUID(element: HTMLElement): string {
+  const viewportLabelmapsState = getLabelmapsStateForElement(element)
 
   if (!viewportLabelmapsState) {
     return
@@ -59,16 +59,15 @@ function getActiveLabelmapUID(canvas: HTMLCanvasElement): string {
  * Sets the active `labelmapIndex` for the labelmaps displayed on this
  * element. Creates the corresponding `Labelmap3D` if it doesn't exist.
  *
- * @param  {HTMLElement|string} elementOrEnabledElementUID   The cornerstone enabled
- *                                                    element or its UUID.
+ * @param  {HTMLElement} element   HTML Element
  * @param  {number} labelmapIndex = 0 The index of the labelmap.
  * @returns {string} labelmap UID which is the volumeUID of the labelmap which is active now
  */
 async function setActiveLabelmapIndex(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   labelmapIndex = 0
 ): Promise<string> {
-  const enabledElement = getEnabledElement(canvas)
+  const enabledElement = getEnabledElement(element)
 
   if (!enabledElement) {
     return
@@ -94,7 +93,7 @@ async function setActiveLabelmapIndex(
 
     const { volumeUID: labelmapUID } =
       viewportLabelmapsState?.labelmaps[labelmapIndex]
-    triggerLabelmapStateUpdated(labelmapUID, canvas)
+    triggerLabelmapStateUpdated(labelmapUID, element)
     return viewportLabelmapsState.labelmaps[labelmapIndex].volumeUID
   }
 
@@ -105,7 +104,7 @@ async function setActiveLabelmapIndex(
   }
   // Put the current volume as a reference for the labelmap
   const labelmapUID = await addNewLabelmap({
-    canvas,
+    element,
     labelmapIndex,
     options,
   })
@@ -115,17 +114,17 @@ async function setActiveLabelmapIndex(
 
 // this method SHOULD not be used to create a new labelmap
 function setActiveLabelmapByLabelmapUID(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   labelmapUID: string
 ): void {
   // volumeViewport
-  const viewportLabelmapsState = getLabelmapsStateForElement(canvas)
+  const viewportLabelmapsState = getLabelmapsStateForElement(element)
 
   if (
     !viewportLabelmapsState ||
     viewportLabelmapsState.labelmaps.length === 0
   ) {
-    throw new Error(`No labelmap found for ${canvas}`)
+    throw new Error(`No labelmap found for ${element}`)
   }
 
   const labelmapIndex = viewportLabelmapsState.labelmaps.findIndex(
@@ -136,7 +135,7 @@ function setActiveLabelmapByLabelmapUID(
     throw new Error(`No labelmap found with name of ${labelmapUID}`)
   }
 
-  setActiveLabelmapIndex(canvas, labelmapIndex)
+  setActiveLabelmapIndex(element, labelmapIndex)
 }
 
 // activeLabelmapController

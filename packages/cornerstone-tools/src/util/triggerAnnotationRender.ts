@@ -83,7 +83,7 @@ class AnnotationRenderingEngine {
 
     const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
     const eventData = {
-      canvas: element,
+      element,
       renderingEngineUID,
       sceneUID,
       viewportUID,
@@ -94,7 +94,7 @@ class AnnotationRenderingEngine {
     //   return toolState && toolState.length
     // })
 
-    drawSvg(eventData.canvas, (svgDrawingHelper) => {
+    drawSvg(element, (svgDrawingHelper) => {
       const handleDrawSvg = (tool) => {
         // Are there situations where that would be bad (Canvas Overlay Tool?)
         if (tool.renderToolData) {
@@ -173,7 +173,7 @@ class AnnotationRenderingEngine {
 
 const annotationRenderingEngine = new AnnotationRenderingEngine()
 
-export function triggerAnnotationRender(element: HTMLCanvasElement): void {
+export function triggerAnnotationRender(element: HTMLElement): void {
   annotationRenderingEngine.renderViewport(element)
 }
 

@@ -64,14 +64,14 @@ const onLabelmapStateUpdated = function (evt) {
   renderingEngine.renderScene(sceneUID)
 }
 
-const enable = function (element) {
+const enable = function (element: HTMLElement) {
   element.addEventListener(
     csToolsEvents.LABELMAP_STATE_UPDATED,
     onLabelmapStateUpdated
   )
 }
 
-const disable = function (element) {
+const disable = function (element: HTMLElement) {
   element.removeEventListener(
     csToolsEvents.LABELMAP_STATE_UPDATED,
     onLabelmapStateUpdated

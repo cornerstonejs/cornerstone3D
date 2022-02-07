@@ -14,17 +14,17 @@ import triggerAnnotationRender from '../util/triggerAnnotationRender'
 const onImageRendered = function (evt) {
   // TODO: should we do this on camera modified instead of image rendered?
   // e.g. no need to re-render annotations if only the VOI has changed
-  triggerAnnotationRender(evt.detail.canvas)
+  triggerAnnotationRender(evt.detail.element)
 }
 
-const enable = function (element) {
+const enable = function (element: HTMLElement) {
   element.addEventListener(
     RenderingEngineEvents.IMAGE_RENDERED,
     onImageRendered
   )
 }
 
-const disable = function (element) {
+const disable = function (element: HTMLElement) {
   element.removeEventListener(
     RenderingEngineEvents.IMAGE_RENDERED,
     onImageRendered

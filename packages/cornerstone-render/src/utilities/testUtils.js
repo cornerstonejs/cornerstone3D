@@ -2,6 +2,7 @@ import resemble from 'resemblejs'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import { ImageVolume } from '../index'
+import { getOrCreateCanvas } from '../RenderingEngine'
 
 // 10 slice, 10 colors
 const colors = [
@@ -321,7 +322,8 @@ function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
  * @param {StackViewport|VolumeViewport} viewport
  * @returns pageX, pageY, clientX, clientY, worldCoordinate
  */
-function createNormalizedMouseEvent(imageData, index, canvas, viewport) {
+function createNormalizedMouseEvent(imageData, index, element, viewport) {
+  const canvas = getOrCreateCanvas(element)
   const tempWorld1 = imageData.indexToWorld(index)
   const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1)
   const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p))

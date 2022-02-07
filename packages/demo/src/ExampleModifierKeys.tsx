@@ -65,7 +65,8 @@ class ModifierKeysExample extends Component {
   constructor(props) {
     super(props)
 
-    this._canvasNodes = new Map()
+    csTools3d.init()
+    this._elementNodes = new Map()
     this._offScreenRef = React.createRef()
 
     this._viewportGridRef = React.createRef()
@@ -108,7 +109,7 @@ class ModifierKeysExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(0),
+        element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
         },
@@ -136,7 +137,8 @@ class ModifierKeysExample extends Component {
     })
 
     // To enable the modifier keys cursor on viewport before first interaction
-    document.querySelectorAll('div.viewport-pane > canvas')[0].focus()
+    const internalDiv = document.querySelectorAll('div.viewport-element')[0]
+    internalDiv.parentNode.focus()
 
     // This will initialise volumes in GPU memory
     renderingEngine.render()
@@ -253,7 +255,8 @@ class ModifierKeysExample extends Component {
     })
 
     // Using mouse primary for the selected tool
-    const currentBindings = stackCTViewportToolGroup.toolOptions[toolName].bindings
+    const currentBindings =
+      stackCTViewportToolGroup.toolOptions[toolName].bindings
 
     stackCTViewportToolGroup.setToolActive(toolName, {
       bindings: [
@@ -269,7 +272,8 @@ class ModifierKeysExample extends Component {
     // To enable modifier key cursor before tool interaction
     // Should be changed after canvas is wrapped in a div and keyboard event
     // listener is added to the div instead of canvas
-    document.querySelectorAll('div.viewport-pane > canvas')[0].focus()
+    const internalDiv = document.querySelectorAll('div.viewport-element')[0]
+    internalDiv.parentNode.focus()
 
     this.setState({ ptCtLeftClickTool: toolName })
   }
@@ -424,16 +428,18 @@ class ModifierKeysExample extends Component {
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
             <div
-              className="viewport-pane"
               style={{
-                ...(vp.cellStyle || {}),
+                width: '100%',
+                height: '100%',
                 border: '2px solid grey',
                 background: 'black',
+                ...(vp.cellStyle || {}),
               }}
+              ref={(c) => this._elementNodes.set(i, c)}
+              onContextMenu={(e) => e.preventDefault()}
               key={i}
-            >
-              <canvas tabIndex={-1} ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
+              tabIndex={-1}
+            />
           ))}
         </ViewportGrid>
         <div>

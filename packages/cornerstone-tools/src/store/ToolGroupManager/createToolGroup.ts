@@ -271,8 +271,8 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       this.viewports.forEach(({ renderingEngineUID, viewportUID }) => {
         const viewport =
           getRenderingEngine(renderingEngineUID).getViewport(viewportUID)
-        if (viewport && viewport.canvas) {
-          initElementCursor(viewport.canvas, cursor)
+        if (viewport && viewport.element) {
+          initElementCursor(viewport.element, cursor)
         }
       })
     },

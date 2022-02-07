@@ -112,7 +112,7 @@ const state: SegmentationState = {
 
 /**
  * Returns the viewport specific labelmapsState for HTML element
- * @param canvas HTML Canvas
+ * @param element HTML element
  * @returns ViewportLabelmapsState
  */
 function getGlobalStateForLabelmapUID(
@@ -209,13 +209,13 @@ function setLabelmapViewportSpecificState(
 
 /**
  * Returns the viewport specific labelmapsState for HTML element
- * @param canvas HTML Canvas
+ * @param element HTML element
  * @returns ViewportLabelmapsState
  */
 function getLabelmapsStateForElement(
-  canvas: HTMLCanvasElement
+  element: HTMLElement
 ): ViewportLabelmapsState {
-  const enabledElement = getEnabledElement(canvas)
+  const enabledElement = getEnabledElement(element)
 
   if (!enabledElement) {
     return
@@ -239,7 +239,7 @@ function getLabelmapsStateForElement(
  * @returns ViewportLabelmapState
  */
 function getLabelmapStateForElement(
-  element: HTMLCanvasElement,
+  element: HTMLElement,
   labelmapIndex?: number
 ): ViewportLabelmapState {
   const { viewportUID } = getEnabledElement(element)
@@ -248,14 +248,14 @@ function getLabelmapStateForElement(
 
 /**
  * Returns the viewport specific labelmapS State for HTML element
- * @param canvas HTML Canvas
+ * @param element HTML element
  * @returns ViewportLabelmapsState
  */
 function getActiveLabelmapState(
-  canvas: HTMLCanvasElement
+  element: HTMLElement
 ): ViewportLabelmapState | undefined {
-  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
-  const labelmapsState = getLabelmapsStateForElement(canvas)
+  const activeLabelmapIndex = getActiveLabelmapIndex(element)
+  const labelmapsState = getLabelmapsStateForElement(element)
 
   if (!labelmapsState) {
     return

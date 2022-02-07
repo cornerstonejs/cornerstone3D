@@ -40,37 +40,28 @@ const DOMElements = []
 
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
-function createCanvas(renderingEngine, viewportType, width, height) {
-  // TODO: currently we need to have a parent div on the canvas with
-  // position of relative for the svg layer to be set correctly
-  const viewportPane = document.createElement('div')
-  viewportPane.style.width = `${width}px`
-  viewportPane.style.height = `${height}px`
+function createViewport(renderingEngine, viewportType, width, height) {
+  const element = document.createElement('div')
 
-  document.body.appendChild(viewportPane)
+  element.style.width = `${width}px`
+  element.style.height = `${height}px`
+  document.body.appendChild(element)
 
-  const canvas = document.createElement('canvas')
-
-  canvas.style.width = '100%'
-  canvas.style.height = '100%'
-  viewportPane.appendChild(canvas)
-
-  DOMElements.push(canvas)
-  DOMElements.push(viewportPane)
+  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
       sceneUID: scene1UID,
       viewportUID: viewportUID,
       type: viewportType,
-      canvas: canvas,
+      element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
         orientation: ORIENTATION[AXIAL],
       },
     },
   ])
-  return canvas
+  return element
 }
 
 describe('Cornerstone Tools Scroll Wheel: ', () => {
@@ -108,7 +99,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   })
 
   it('Should successfully scroll through a volume', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.ORTHOGRAPHIC,
       512,
@@ -125,12 +116,12 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       const { pageX: pageX1, pageY: pageY1 } = createNormalizedMouseEvent(
         imageData,
         index1,
-        canvas,
+        element,
         vp
       )
 
       let evt = new WheelEvent('wheel', {
-        target: canvas,
+        target: element,
         pageX: pageX1,
         pageY: pageY1,
         deltaX: 0,
@@ -144,12 +135,14 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       attachEventHandler()
 
       // Note: I don't know why I need this setTimeOut here
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
     }
 
     const attachEventHandler = () => {
-      canvas.removeEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const canvas = vp.getCanvas()
+
+      element.removeEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -159,7 +152,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       })
     }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
     this.stackToolGroup.addViewports(
       this.renderingEngine.uid,
@@ -179,7 +172,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   })
 
   it('Should successfully scroll through stack of images', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
@@ -199,12 +192,12 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       const { pageX: pageX1, pageY: pageY1 } = createNormalizedMouseEvent(
         imageData,
         index1,
-        canvas,
+        element,
         vp
       )
 
       let evt = new WheelEvent('wheel', {
-        target: canvas,
+        target: element,
         pageX: pageX1,
         pageY: pageY1,
         deltaX: 0,
@@ -216,12 +209,14 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       })
 
       attachEventHandler()
-      canvas.dispatchEvent(evt)
+      element.dispatchEvent(evt)
     }
 
     const attachEventHandler = () => {
-      canvas.removeEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const canvas = vp.getCanvas()
+
+      element.removeEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         // Second render is as a result of scrolling
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -232,7 +227,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       })
     }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
     this.stackToolGroup.addViewports(
       this.renderingEngine.uid,

@@ -24,8 +24,8 @@ export default class PanTool extends BaseTool {
   }
 
   _dragCallback(evt) {
-    const { element: canvas, deltaPoints } = evt.detail
-    const enabledElement = getEnabledElement(canvas)
+    const { element, deltaPoints } = evt.detail
+    const enabledElement = getEnabledElement(element)
 
     const deltaPointsWorld = deltaPoints.world
     const camera = enabledElement.viewport.getCamera()
