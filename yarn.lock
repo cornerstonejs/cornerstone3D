@@ -5463,10 +5463,10 @@ core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.3.tgz#a6042d3634c2b27e9328f837b965fac83808db85"
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
-cornerstone-wado-image-loader@^4.0.0:
-  version "4.0.4"
-  resolved "https://registry.yarnpkg.com/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.0.4.tgz#4f7f3e3a2e123ab59effe28045394ec24101dc59"
-  integrity sha512-AdroSRMPPEZLCOeXIrv2kQ0Bz+dr2BQbUR1QN0zOOlsaO2TQQBD+YdgXVqFs5XIAtZSs9+9fSCXlnGc71qLFlA==
+cornerstone-wado-image-loader@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.1.0.tgz#a85c206eb23e188181ed3f1dcf3ec715e65efcb4"
+  integrity sha512-QRoMqBE5xEc1Jttg3eH6RB4jFY2aIEjd9rcbvJszefl0isow+JwcLv2kh1xkSvqGfHGozcz+F4mrORyTNNLuFQ==
   dependencies:
     "@cornerstonejs/codec-charls" "^0.1.1"
     "@cornerstonejs/codec-libjpeg-turbo-8bit" "^0.0.7"
@@ -16161,9 +16161,9 @@ webpack@5.67.0:
     webpack-sources "^3.2.0"
 
 webpack@^5.40.0:
-  version "5.64.0"
-  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.64.0.tgz#db3e12546f755930ccc9e0e21ba660871940c615"
-  integrity sha512-UclnN24m054HaPC45nmDEosX6yXWD+UGC12YtUs5i356DleAUGMDC9LBAw37xRRfgPKYIdCYjGA7RZ1AA+ZnGg==
+  version "5.64.1"
+  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.64.1.tgz#fd59840c16f04fe315f2b2598a85026f12dfa1bb"
+  integrity sha512-b4FHmRgaaAjP+aVOVz41a9Qa5SmkUPQ+u8FntTQ1roPHahSComB6rXnLwc976VhUY4CqTaLu5mCswuHiNhOfVw==
   dependencies:
     "@types/eslint-scope" "^3.7.0"
     "@types/estree" "^0.0.50"
