@@ -1,6 +1,6 @@
 import { ToolGroupManager } from '../store'
 import { ToolModes } from '../enums'
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 
 type ModesFilter = Array<ToolModes>
 

@@ -1,7 +1,7 @@
 import getTargetVolume from './getTargetVolume'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { Point3 } from './../../types'
-import { Scene, VolumeViewport } from '@ohif/cornerstone-render'
+import { Scene, Viewport } from '@precisionmetrics/cornerstone-render'
 
 /**
  * Returns a point on the line between the passed canvasPoint (clicked point often)

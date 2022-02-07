@@ -10,7 +10,7 @@ import {
   eventTarget,
   triggerEvent,
   metaData,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
 import {

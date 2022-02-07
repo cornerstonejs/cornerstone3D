@@ -4,9 +4,9 @@ import {
   RenderingEngine,
   VIEWPORT_TYPE,
   init as csRenderInit,
-} from '@ohif/cornerstone-render'
-import { ToolBindings, Utilities } from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-render'
+import { ToolBindings, Utilities } from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'

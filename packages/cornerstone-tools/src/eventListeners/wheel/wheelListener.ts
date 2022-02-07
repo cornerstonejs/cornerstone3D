@@ -1,4 +1,4 @@
-import { getEnabledElement, triggerEvent } from '@ohif/cornerstone-render'
+import { getEnabledElement, triggerEvent } from '@precisionmetrics/cornerstone-render'
 import normalizeWheel from './normalizeWheel'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 // ~~ VIEWPORT LIBRARY

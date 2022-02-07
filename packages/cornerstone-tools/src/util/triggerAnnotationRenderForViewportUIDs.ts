@@ -1,4 +1,4 @@
-import { RenderingEngine } from '@ohif/cornerstone-render'
+import { RenderingEngine } from '@precisionmetrics/cornerstone-render'
 import triggerAnnotationRender from './triggerAnnotationRender'
 
 export function triggerAnnotationRenderForViewportUIDs(

@@ -1,6 +1,6 @@
 {
-  "name": "@ohif/cornerstone-render",
-  "version": "0.0.2",
+  "name": "@precisionmetrics/cornerstone-render",
+  "version": "0.0.4-rc2",
   "description": "",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -20,6 +20,9 @@
   "peerDependencies": {
     "gl-matrix": "^3.4.3",
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
+  },
+  "dependencies": {
+    "resemblejs": "^3.2.5"
   },
   "devDependencies": {
     "gl-matrix": "^3.4.3",

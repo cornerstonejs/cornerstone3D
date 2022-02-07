@@ -4,7 +4,7 @@ import {
   getEnabledElement,
   EVENTS as RENDERING_EVENTS,
   Types,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 export interface ISynchronizerEventHandler {
   (

@@ -35,13 +35,13 @@ module.exports = (env, argv) => {
     externals: [
       /\b(vtk.js)/,
       {
-        '@ohif/cornerstone-render': {
+        '@precisionmetrics/cornerstone-render': {
           root: 'window',
           commonjs: 'cornerstoneRender',
           commonjs2: 'cornerstoneRender',
           amd: 'cornerstoneRender'
         },
-        '@ohif/cornerstone-image-loader-streaming-volume': {
+        '@precisionmetrics/cornerstone-image-loader-streaming-volume': {
           root: 'window',
           commonjs: 'cornerstoneImageLoaderStreamingVolume',
           commonjs2: 'cornerstoneImageLoaderStreamingVolume',

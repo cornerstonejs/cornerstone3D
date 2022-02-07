@@ -1,7 +1,7 @@
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import { ISegmentationConfig } from './segmentationConfig'
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import { getActiveLabelmapIndex } from './activeLabelmapController'
 import { setColorLUT } from './colorLUT'
 

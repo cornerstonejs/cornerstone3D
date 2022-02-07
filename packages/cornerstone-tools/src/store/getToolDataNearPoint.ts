@@ -1,4 +1,4 @@
-import { getEnabledElement, Types } from '@ohif/cornerstone-render'
+import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
 import { BaseAnnotationTool } from '../tools'
 import { Point2, ToolSpecificToolData } from '../types'
 import { getToolState } from '../stateManagement/toolState'

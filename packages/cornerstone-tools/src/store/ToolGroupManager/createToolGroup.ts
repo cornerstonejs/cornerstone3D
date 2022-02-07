@@ -1,5 +1,5 @@
 import { ToolBindings, ToolModes } from '../../enums'
-import { getRenderingEngine } from '@ohif/cornerstone-render'
+import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
 import { state } from '../index'
 import IToolGroup from './IToolGroup'
 import ISetToolModeOptions from '../../types/ISetToolModeOptions'

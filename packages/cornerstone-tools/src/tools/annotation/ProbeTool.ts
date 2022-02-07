@@ -10,7 +10,7 @@ import {
   VolumeViewport,
   triggerEvent,
   eventTarget,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import {
   addToolState,

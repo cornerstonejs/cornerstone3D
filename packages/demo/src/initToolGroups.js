@@ -1,4 +1,4 @@
-import * as csTools3d from '@ohif/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import {
   TOOL_GROUP_UIDS,
   ptVolumeUID,

@@ -2,7 +2,7 @@ import {
   getEnabledElement,
   VolumeViewport,
   StackViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID'
 import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled'
 import filterViewportsWithSameOrientation from './filterViewportsWithSameOrientation'

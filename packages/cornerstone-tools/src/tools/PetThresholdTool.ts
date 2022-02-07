@@ -4,7 +4,7 @@ import {
   triggerEvent,
   VolumeViewport,
   StackViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from './base'
 
 export default class PetThresholdTool extends BaseTool {

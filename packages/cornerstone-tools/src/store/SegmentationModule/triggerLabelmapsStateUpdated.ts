@@ -2,7 +2,7 @@ import {
   getRenderingEngines,
   VolumeViewport,
   triggerEvent,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 import state from './state'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'

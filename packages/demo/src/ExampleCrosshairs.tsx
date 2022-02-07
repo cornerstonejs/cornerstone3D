@@ -5,9 +5,9 @@ import {
   createAndCacheVolume,
   ORIENTATION,
   VIEWPORT_TYPE,
-} from '@ohif/cornerstone-render'
-import { ToolBindings, ToolModes } from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-render'
+import { ToolBindings, ToolModes } from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 

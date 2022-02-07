@@ -1,5 +1,5 @@
 import lineSegment from '../line'
-import { Types } from '@ohif/cornerstone-render'
+import { Types } from '@precisionmetrics/cornerstone-render'
 
 type rectLineSegmentas = {
   top: number[][]

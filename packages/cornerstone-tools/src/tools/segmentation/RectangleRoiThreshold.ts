@@ -4,7 +4,7 @@ import {
   Settings,
   StackViewport,
   VolumeViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement'
 import { isToolDataLocked } from '../../stateManagement/toolDataLocking'

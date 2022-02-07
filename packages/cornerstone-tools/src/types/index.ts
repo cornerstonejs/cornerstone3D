@@ -15,6 +15,7 @@ import type PlanarBoundingBox from './PlanarBoundingBox'
 import type Point2 from './Point2'
 import type Point3 from './Point3'
 import type { IToolBinding } from './ISetToolModeOptions'
+import type IToolGroup from '../store/ToolGroupManager/IToolGroup'
 
 export type {
   // ToolState
@@ -34,4 +35,6 @@ export type {
   IPoints,
   // ToolBindings
   IToolBinding,
+  //
+  IToolGroup,
 }

@@ -6,9 +6,12 @@ import {
   createAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
   init as csRenderInit,
-} from '@ohif/cornerstone-render'
-import { SynchronizerManager, synchronizers } from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-render'
+import {
+  SynchronizerManager,
+  synchronizers,
+} from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'

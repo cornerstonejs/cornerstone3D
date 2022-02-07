@@ -6,7 +6,7 @@ import {
   getEnabledElement,
   getVolume,
   StackViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as EVENTS } from '../../../enums'
 import { Point3, Point2 } from '../../../types'
 import { drawCircle as drawCircleSvg } from '../../../drawingSvg'

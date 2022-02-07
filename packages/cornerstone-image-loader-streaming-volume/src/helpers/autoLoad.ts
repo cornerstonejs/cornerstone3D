@@ -1,4 +1,4 @@
-import { getRenderingEngines } from '@ohif/cornerstone-render'
+import { getRenderingEngines } from '@precisionmetrics/cornerstone-render'
 
 const autoLoad = (volumeUID) => {
   const { renderingEngine, sceneUIDs } = getRenderingEngineContainingVolume(

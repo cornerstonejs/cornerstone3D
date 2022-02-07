@@ -5,7 +5,7 @@ import {
   VIEWPORT_TYPE,
   VolumeViewport,
   Types,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 // const { ICamera } = Types
 

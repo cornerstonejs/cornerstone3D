@@ -10,7 +10,7 @@ import cloneDeep from 'lodash.clonedeep'
 import {
   EVENTS as RENDERING_EVENTS,
   eventTarget,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 import {
   setToolDataLocked,

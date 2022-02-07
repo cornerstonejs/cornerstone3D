@@ -1,4 +1,4 @@
-import { ToolBindings } from '@ohif/cornerstone-tools'
+import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import { ANNOTATION_TOOLS } from '../constants'
 
 export default function ptCtToggleAnnotationTool(

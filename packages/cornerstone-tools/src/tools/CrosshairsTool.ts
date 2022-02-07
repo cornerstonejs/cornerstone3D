@@ -5,7 +5,7 @@ import {
   RenderingEngine,
   getRenderingEngine,
   Utilities as csUtils,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import {
   addToolState,
   getToolState,

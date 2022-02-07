@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix'
-import { IImageVolume } from '@ohif/cornerstone-render/src/types'
+import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 
 import { getBoundingBoxAroundShape } from '../segmentation'
 import { RectangleRoiThresholdToolData } from '../../tools/segmentation/RectangleRoiThreshold'

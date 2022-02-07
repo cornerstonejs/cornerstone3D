@@ -3,7 +3,7 @@ import {
   Point2,
   IImageVolume,
   IEnabledElement,
-} from '@ohif/cornerstone-render/src/types'
+} from '@precisionmetrics/cornerstone-render/src/types'
 
 import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
 import pointInSurroundingSphereCallback from '../../../util/planar/pointInSurroundingSphereCallback'

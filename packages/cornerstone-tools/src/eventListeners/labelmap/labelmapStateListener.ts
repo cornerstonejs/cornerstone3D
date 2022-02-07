@@ -1,4 +1,4 @@
-import { getRenderingEngine } from '@ohif/cornerstone-render'
+import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
 import state from '../../store/SegmentationModule/state'
 import setLabelmapColorAndOpacity from '../../store/SegmentationModule/setLabelmapColorAndOpacity'
 import csToolsEvents from '../../enums/CornerstoneTools3DEvents'

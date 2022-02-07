@@ -1,6 +1,6 @@
 import { BaseTool } from './base'
 // ~~ VTK Viewport
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 
 export default class ZoomTool extends BaseTool {
   touchDragCallback: () => void
