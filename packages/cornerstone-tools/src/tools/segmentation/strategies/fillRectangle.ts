@@ -54,7 +54,7 @@ function fillRectangle(
   // Since always all points inside the boundsIJK is inside the rectangle...
   const pointInRectangle = () => true
 
-  const callback = (canvasCoords, pointIJK, index, value) => {
+  const callback = ({ value, index, pointIJK }) => {
     if (segmentsLocked.includes(value)) {
       return
     }
@@ -71,7 +71,6 @@ function fillRectangle(
 
   pointInShapeCallback(
     boundsIJK,
-    viewport.worldToCanvas,
     scalarData,
     vtkImageData,
     dimensions,

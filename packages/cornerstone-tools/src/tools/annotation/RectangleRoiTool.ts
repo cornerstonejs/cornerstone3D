@@ -31,7 +31,7 @@ import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import rectangle from '../../util/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
-import getWorldWidthAndHeightFromTwoPoints from '../../util/planar/getWorldWidthAndHeightFromTwoPoints'
+import getWorldWidthAndHeightFromCorners from '../../util/planar/getWorldWidthAndHeightFromCorners'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import {
   resetElementCursor,
@@ -955,7 +955,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2])
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2])
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
+        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
           viewPlaneNormal,
           viewUp,
           worldPos1,
