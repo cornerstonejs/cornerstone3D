@@ -25,6 +25,7 @@ interface IImageVolume {
   vtkOpenGLTexture: any
   loadStatus?: Record<string, any>
   imageIds?: Array<string>
+  referenceVolumeUID?: string // if voluem is derived from another volume
   convertToCornerstoneImage?: (
     imageId: string,
     imageIdIndex: number

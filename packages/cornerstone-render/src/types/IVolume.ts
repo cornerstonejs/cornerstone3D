@@ -12,6 +12,7 @@ interface IVolume {
   scalarData: Float32Array | Uint8Array
   sizeInBytes?: number
   imageData?: vtkImageData
+  referenceVolumeUID?: string // if volume is derived
   scaling?: {
     PET?: {
       // @TODO: Do these values exist?

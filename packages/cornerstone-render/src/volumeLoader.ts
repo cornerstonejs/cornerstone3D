@@ -277,6 +277,7 @@ export function createAndCacheDerivedVolume(
     vtkImageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
+    referenceVolumeUID: referencedVolumeUID,
   })
 
   const volumeLoadObject = {

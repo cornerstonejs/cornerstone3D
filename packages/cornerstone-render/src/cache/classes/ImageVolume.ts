@@ -26,6 +26,7 @@ export class ImageVolume implements IImageVolume {
   vtkOpenGLTexture: any // No good way of referencing vtk classes as they aren't classes.
   loadStatus?: Record<string, any>
   imageIds?: Array<string>
+  referenceVolumeUID?: string
 
   constructor(props: IVolume) {
     this.uid = props.uid
@@ -43,6 +44,10 @@ export class ImageVolume implements IImageVolume {
 
     if (props.scaling) {
       this.scaling = props.scaling
+    }
+
+    if (props.referenceVolumeUID) {
+      this.referenceVolumeUID = props.referenceVolumeUID
     }
   }
 }
