@@ -116,3 +116,14 @@ export {
   //
   getSegmentIndexLockedStatusForElement,
 }
+
+export default {
+  // get
+  getLockedSegmentsForLabelmapUID,
+  getLockedSegmentsForElement,
+  // toggling lock
+  toggleSegmentIndexLockedForLabelmapUID,
+  toggleSegmentIndexLockedForElement,
+  //
+  getSegmentIndexLockedStatusForElement,
+}

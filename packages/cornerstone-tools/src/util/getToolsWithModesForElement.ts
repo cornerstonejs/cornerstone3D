@@ -37,7 +37,7 @@ export default function getToolsWithModesForElement(
       const tool = toolGroup.tools[toolName]
 
       if (modesFilter.includes(tool.mode)) {
-        const toolInstance = toolGroup._tools[toolName]
+        const toolInstance = toolGroup._toolInstances[toolName]
         enabledTools.push(toolInstance)
       }
     }

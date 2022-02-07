@@ -1,4 +1,4 @@
-import { triggerLabelmapsUpdated } from './utils'
+import { triggerLabelmapsUpdated } from './triggerLabelmapsUpdated'
 
 export interface ISegmentationConfig {
   enabled: boolean
@@ -30,7 +30,7 @@ const defaultSegmentationConfig: ISegmentationConfig = {
   fillAlpha: 0.9,
   fillAlphaInactive: 0.85,
   // ColorLUT
-  segmentsPerLabelmap: 65535, // Todo: Out max is bigger, but it seems cfun can go upto 255 anyway
+  segmentsPerLabelmap: 65535, // Todo: max is bigger, but it seems cfun can go upto 255 anyway
   // Brush
   // radius: 10,
   // minRadius: 1,
@@ -56,6 +56,7 @@ function setGlobalConfig(
 
 // todo: setting configuration per labelmap (not globally)
 function setLabelmapConfig(
+  canvas: HTMLCanvasElement,
   labelmapUID: string,
   config: Partial<ISegmentationConfig>,
   immediate = true

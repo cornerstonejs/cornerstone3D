@@ -44,7 +44,7 @@ export default function getActiveToolForMouseEvent(evt) {
       if (tool.mode === Active && correctBinding) {
         // This should be behind some API. Too much knowledge of ToolGroup
         // inner workings leaking out
-        return toolGroup._tools[toolName]
+        return toolGroup._toolInstances[toolName]
       }
     }
   }
