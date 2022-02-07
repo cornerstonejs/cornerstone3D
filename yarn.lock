@@ -11028,12 +11028,12 @@ object.hasown@^1.1.0:
     es-abstract "^1.19.1"
 
 object.hasown@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/object.hasown/-/object.hasown-1.0.0.tgz#bdbade33cfacfb25d7f26ae2b6cb870bf99905c2"
-  integrity sha512-qYMF2CLIjxxLGleeM0jrcB4kiv3loGVAjKQKvH8pSU/i2VcRRvUNmxbD+nEMmrXRfORhuVJuH8OtSYCZoue3zA==
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/object.hasown/-/object.hasown-1.1.0.tgz#7232ed266f34d197d15cac5880232f7a4790afe5"
+  integrity sha512-MhjYRfj3GBlhSkDHo6QmvgjRLXQ2zndabdf3nX0yTyZK9rPfxb6uRpAac8HXNLy1GpqWtZ81Qh4v3uOls2sRAg==
   dependencies:
     define-properties "^1.1.3"
-    es-abstract "^1.18.1"
+    es-abstract "^1.19.1"
 
 object.pick@^1.3.0:
   version "1.3.0"
@@ -15828,7 +15828,7 @@ vscode-textmate@5.2.0:
 
 "vtk.js@git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#fix/labelMapOutline":
   version "0.0.0-semantically-release"
-  resolved "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#66c31b6fb6b5a03b5bb695453ced41deeb8bb6c5"
+  resolved "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#d26c3799458227ae6f7c017cd1c2ef0c1347e66f"
   dependencies:
     "@babel/runtime" "7.13.10"
     blueimp-md5 "2.18.0"

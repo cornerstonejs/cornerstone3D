@@ -1,5 +1,6 @@
 import pointInEllipse from './pointInEllipse'
-import pointInEllipse3D from './pointInEllipse3D'
+import pointInEllipsoid from './pointInEllipsoidWithConstraint'
+import getCanvasEllipseCorners from './getCanvasEllipseCorners'
 
-export { pointInEllipse, pointInEllipse3D }
-export default { pointInEllipse, pointInEllipse3D }
+export { pointInEllipse, pointInEllipsoid, getCanvasEllipseCorners }
+export default { pointInEllipse, pointInEllipsoid, getCanvasEllipseCorners }

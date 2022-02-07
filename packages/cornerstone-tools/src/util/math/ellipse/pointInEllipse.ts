@@ -1,5 +1,12 @@
 import { Point2 } from '../../../types'
 
+type ellipse = {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
 /**
  * @function pointInEllipse Returns true if the `location ` is within the ellipse.
  *
@@ -10,7 +17,10 @@ import { Point2 } from '../../../types'
  * @param  {Point2} location The location of the point.
  * @returns {boolean} True if the point is within the ellipse.
  */
-export default function pointInEllipse(ellipse, location: Point2): boolean {
+export default function pointInEllipse(
+  ellipse: ellipse,
+  location: Point2
+): boolean {
   const xRadius = ellipse.width / 2
   const yRadius = ellipse.height / 2
 
