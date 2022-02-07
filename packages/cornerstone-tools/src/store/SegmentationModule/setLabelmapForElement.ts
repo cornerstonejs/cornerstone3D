@@ -5,21 +5,8 @@ import state, {
   setLabelmapGlobalState,
   setLabelmapViewportSpecificState,
 } from './state'
-import setLabelmapColorAndOpacity from './setLabelmapColorAndOpacity'
 import { triggerLabelmapStateUpdated } from './triggerLabelmapsStateUpdated'
 
-// function getActiveLabelmapForElement(canvas) {
-//   const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
-//   return getLabelmapForElement(canvas, activeLabelmapIndex)
-// }
-
-// function getLabelmapForElement(canvas, labelmapIndex) {
-//   const { viewportUID } = getEnabledElement(canvas)
-
-//   const { volumeUID } =
-//     state.volumeViewports[viewportUID].labelmaps[labelmapIndex]
-//   return cache.getVolume(volumeUID)
-// }
 
 /**
  * It renders a labelmap 3D volume into the scene the canvas is associated with.
@@ -93,16 +80,6 @@ async function setLabelmapForElement({
   await scene.addVolumes([
     {
       volumeUID: labelmapUID,
-      callback: ({ volumeActor }) => {
-        setLabelmapColorAndOpacity(
-          volumeActor,
-          cfun,
-          ofun,
-          colorLUTIndex,
-          labelmapConfig,
-          true // isActiveLabelmap
-        )
-      },
       visibility,
     },
   ])

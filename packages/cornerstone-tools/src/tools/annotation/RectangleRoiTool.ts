@@ -41,7 +41,7 @@ import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotation
 
 import { ToolSpecificToolData, Point2, Point3 } from '../../types'
 
-interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
+export interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
   data: {
     invalidated: boolean
     handles: {

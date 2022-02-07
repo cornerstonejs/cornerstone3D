@@ -4,7 +4,7 @@ import state, {
   getActiveLabelmapState,
   getGlobalStateForLabelmapUID,
 } from './state'
-import { getActiveLabelmapUID } from './activeLabelmapIndex'
+import { getActiveLabelmapUID } from './activeLabelmapController'
 
 /**
  * Returns the index of the active Segment for the current active labelmap
@@ -83,7 +83,16 @@ function setActiveSegmentIndex(
   }
 }
 
+// segmentIndexController
 export {
+  // get
+  getActiveSegmentIndex,
+  getActiveSegmentIndexForLabelmapUID,
+  // set
+  setActiveSegmentIndex,
+}
+
+export default {
   // get
   getActiveSegmentIndex,
   getActiveSegmentIndexForLabelmapUID,

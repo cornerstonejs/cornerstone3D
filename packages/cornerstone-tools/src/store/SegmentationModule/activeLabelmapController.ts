@@ -139,7 +139,19 @@ function setActiveLabelmapByLabelmapUID(
   setActiveLabelmapIndex(canvas, labelmapIndex)
 }
 
+// activeLabelmapController
 export {
+  // get
+  getActiveLabelmapIndex,
+  getActiveLabelmapUID,
+  // set
+  setActiveLabelmapIndex,
+  setActiveLabelmapByLabelmapUID,
+  // utils
+  getNextLabelmapIndex,
+}
+
+export default {
   // get
   getActiveLabelmapIndex,
   getActiveLabelmapUID,

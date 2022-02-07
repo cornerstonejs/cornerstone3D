@@ -2,7 +2,8 @@ import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransfe
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import { ISegmentationConfig } from './segmentationConfig'
 import { getEnabledElement } from '@ohif/cornerstone-render'
-import { getActiveLabelmapIndex } from '.'
+import { getActiveLabelmapIndex } from './activeLabelmapController'
+import { setColorLUT } from './colorLUT'
 
 type LabelmapGlobalState = {
   volumeUID: string
@@ -122,6 +123,12 @@ function getGlobalStateForLabelmapUID(
   )
 }
 
+function _initDefaultColorLUT() {
+  if (state.colorLutTables.length === 0) {
+    setColorLUT(0)
+  }
+}
+
 /**
  * Sets the labelmap globalState, including {volumeUID, referenceVolumeUID,
  * referenceImageId, activeSegmentIndex, segmentsLocked}, if no state is given
@@ -140,6 +147,9 @@ function setLabelmapGlobalState(
     segmentsLocked: new Set(),
   }
 ): void {
+  // Creating the default color LUT if not created yet
+  _initDefaultColorLUT()
+
   const {
     referenceImageId,
     referenceVolumeUID,
@@ -239,7 +249,8 @@ function getLabelmapStateForElement(
 function getActiveLabelmapState(
   canvas: HTMLCanvasElement
 ): ViewportLabelmapState | undefined {
-  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
+  const activeLabelmapIndex =
+    getActiveLabelmapIndex(canvas)
   const labelmapsState = getLabelmapsStateForElement(canvas)
 
   if (!labelmapsState) {

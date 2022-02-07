@@ -55,7 +55,9 @@ import {
 } from './tools'
 import { ToolBindings, ToolModes, CornerstoneTools3DEvents } from './enums'
 
-const segmentLocker = SegmentationModule.segmentLocker
+const lockedSegmentController = SegmentationModule.lockedSegmentController
+const activeLabelmapController = SegmentationModule.activeLabelmapController
+const segmentIndexController = SegmentationModule.segmentIndexController
 
 export {
   // LifeCycle
@@ -94,7 +96,9 @@ export {
   SynchronizerManager,
   // Modules
   SegmentationModule,
-  segmentLocker,
+  lockedSegmentController,
+  activeLabelmapController,
+  segmentIndexController,
   // Enums
   ToolBindings,
   ToolModes,

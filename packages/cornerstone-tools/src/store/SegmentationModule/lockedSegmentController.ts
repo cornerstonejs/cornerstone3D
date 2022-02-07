@@ -106,6 +106,7 @@ function getLockedSegmentsForLabelmapUID(labelmapUID: string): number[] {
   return Array.from(segmentsLocked)
 }
 
+// lockedSegmentController
 export {
   // get
   getLockedSegmentsForLabelmapUID,

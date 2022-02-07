@@ -1,5 +1,5 @@
 import { getLabelmapsStateForElement } from './state'
-import { getActiveLabelmapIndex } from '.'
+import { getActiveLabelmapIndex } from './activeLabelmapController'
 
 /**
  * Returns all the labelmapUIDs of the HTML element (active and inactive)
