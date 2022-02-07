@@ -7,6 +7,7 @@ import Orientation from './Orientation'
 type ViewportInputOptions = {
   background?: Array<number>
   orientation?: Orientation
+  suppressEvents: boolean
 }
 
 export default ViewportInputOptions

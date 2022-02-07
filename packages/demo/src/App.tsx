@@ -22,6 +22,8 @@ import TestUtilsVolume from './ExampleTestUtilsVolume'
 import CalibrationExample from './ExampleCalibration'
 import { resetCPURenderingOnlyForDebugOrTests } from '@ohif/cornerstone-render'
 import SegmentationRender from './ExampleSegmentationRender'
+import RenderToCanvasExample from './ExampleRenderToCanvas'
+
 
 function LinkOut({ href, text }) {
   return (
@@ -143,6 +145,11 @@ function Index() {
       title: 'Modifier Keys',
       url: '/modifierKeys',
       text: 'Example of using modifier keys',
+    },
+    {
+      title: 'Render To Canvas',
+      url: '/renderToCanvas',
+      text: 'Example of rendering an imageId to canvas',
     },
     {
       title: 'Test Utils',
@@ -311,6 +318,10 @@ function AppRouter() {
     Example({
       children: <ModifierKeysExample />,
     })
+  const RenderToCanvas = () =>
+    Example({
+      children: <RenderToCanvasExample />,
+    })
 
   const Test = () =>
     Example({
@@ -335,6 +346,7 @@ function AppRouter() {
         <Route exact path="/priorityLoad/" render={PriorityLoad} />
         <Route exact path="/flip/" render={Flip} />
         <Route exact path="/modifierKeys/" render={ModifierKeys} />
+        <Route exact path="/renderToCanvas/" render={RenderToCanvas} />
         <Route exact path="/stackViewport/" render={stackViewport} />
         <Route exact path="/enableDisableAPI/" render={enableDisableViewport} />
         <Route exact path="/manyStackViewports/" render={manyStackViewport} />

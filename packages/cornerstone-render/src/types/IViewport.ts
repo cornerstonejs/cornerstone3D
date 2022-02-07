@@ -44,7 +44,7 @@ interface IViewport {
  * This type defines the shape of input, so we can throw when it is incorrect.
  */
 type PublicViewportInput = {
-  element: HTMLDivElement
+  element: HTMLElement
   sceneUID?: string
   viewportUID: string
   type: string
@@ -71,7 +71,7 @@ type ViewportInput = {
   sy: number
   sWidth: number
   sHeight: number
-  defaultOptions: any
+  defaultOptions: ViewportInputOptions
 }
 
 export type {
