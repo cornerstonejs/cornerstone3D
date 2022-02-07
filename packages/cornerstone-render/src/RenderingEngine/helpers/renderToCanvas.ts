@@ -16,7 +16,8 @@ import Events from '../../enums/events'
  * @param {string}imageId - The imageId to render
  * @param {HTMLCanvasElement} canvas - Canvas element to render to
  * @param {string} renderingEngineUID - The rendering engine UID to use
- * @param {boolean} suppressEvents - boolean to suppress events during render
+ * @param {boolean} suppressEvents - [Default = true] boolean to suppress events during render,
+ * if undefined, events will be suppressed
  * @returns {Promise} - A promise that resolves when the image has been rendered with the imageId
  */
 export default function renderToCanvas(
@@ -26,10 +27,21 @@ export default function renderToCanvas(
   suppressEvents = true
 ): Promise<string> {
   return new Promise((resolve, reject) => {
+    // If specific rendering engine is specified use that, otherwise create a
+    // new one with random uid and use that.
+    //
+    // !!!!!IMPORTANT NOTE!!!!
+    // using the same rendering engine for multiple renders
+    // is tricky since here we are listening to IMAGE_RENDERED event to copy
+    // the canvas contents to the given canvas element. This is not ideal since
+    // many things can trigger IMAGE_RENDERED including: disabling of another
+    // element (which would cause a resize event and consequently a render), or
+    // a resize event by itself (which would cause a render).
     let renderingEngine = getRenderingEngine(renderingEngineUID)
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      renderingEngine = new RenderingEngine(renderingEngineUID)
+      // Use a new renderingEngine with random uid
+      renderingEngine = new RenderingEngine()
     }
 
     if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
@@ -79,6 +91,7 @@ export default function renderToCanvas(
       context.drawImage(temporaryCanvas, 0, 0)
       renderingEngine.disableElement(viewportUID)
       document.body.removeChild(element)
+      renderingEngine.destroy()
       resolve(imageId)
     })
 

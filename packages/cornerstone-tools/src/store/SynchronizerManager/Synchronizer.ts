@@ -172,7 +172,7 @@ class Synchronizer {
       return
     }
 
-    const enabledElement = getEnabledElement(evt.detail.element)
+    const enabledElement = getEnabledElement(evt.currentTarget)
 
     if (!enabledElement) {
       return

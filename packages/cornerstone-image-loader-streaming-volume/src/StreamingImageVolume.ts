@@ -12,7 +12,8 @@ import {
   REQUEST_TYPE,
 } from '@precisionmetrics/cornerstone-render'
 
-import autoLoad from './helpers/autoLoad'
+import { scaleArray, autoLoad } from './helpers'
+import isEqual from 'lodash.isequal'
 
 const requestType = REQUEST_TYPE.Prefetch
 const { getMinMax } = cornerstoneUtils
@@ -343,7 +344,11 @@ export default class StreamingImageVolume extends ImageVolume {
       // data loader scheme)
       const cachedImage = cache.getCachedImageBasedOnImageURI(imageId)
 
-      if (cachedImage) {
+      if (cachedImage && cachedImage.image) {
+        const imageScalarData = this._scaleIfNecessary(
+          cachedImage.image,
+          scalingParameters
+        )
         // todo add scaling and slope
         const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData
         const TypedArray = this.scalarData.constructor
@@ -364,7 +369,6 @@ export default class StreamingImageVolume extends ImageVolume {
         )
         cachedImage.imageLoadObject.promise
           .then((image) => {
-            const imageScalarData = image.getPixelData()
             volumeBufferView.set(imageScalarData)
             successCallback(this, imageIdIndex, imageId)
           })
@@ -429,27 +433,64 @@ export default class StreamingImageVolume extends ImageVolume {
     })
   }
 
+  private _scaleIfNecessary(image, scalingParametersToUse) {
+    // check if keys inside scalingParameters are defined (they can be zero)
+    if (
+      scalingParametersToUse.rescaleSlope == null ||
+      scalingParametersToUse.rescaleIntercept == null ||
+      scalingParametersToUse.modality == null
+    ) {
+      return image.getPixelData()
+    }
+
+    let scalingParameters = scalingParametersToUse
+
+    // if the image is already scaled, we should take that into account
+    if (image.preScale && image.preScale.scalingParameters) {
+      const { suvbw } = image.preScale.scalingParameters
+      const { suvbw: suvbwToUse } = scalingParametersToUse
+
+      // Todo: handle if the intercept or slope are different
+      // check if suvbw is undefined OR null
+      if (suvbw == null || suvbwToUse == null || suvbw === suvbwToUse) {
+        // don't modify the pixel data, just return it as is
+        return image.getPixelData()
+      }
+
+      // scale accordingly if they exist and are different
+      scalingParameters = {
+        modality: scalingParametersToUse.modality,
+        rescaleSlope: 1,
+        rescaleIntercept: 0,
+        suvbw: suvbwToUse / suvbw,
+      }
+    }
+
+    // copy so that it doesn't get modified
+    const pixelDataCopy = image.getPixelData().slice(0)
+    const scaledArray = scaleArray(pixelDataCopy, scalingParameters)
+    return scaledArray
+  }
+
   private _addScalingToVolume(suvFactor) {
-    if (!this.scaling) {
-      this.scaling = {}
+    // Todo: handle case where suvFactors are not the same for all frames
+    if (this.scaling) {
+      return
     }
 
-    if (!this.scaling.PET) {
-      // These ratios are constant across all frames, so only need one.
-      const { suvbw, suvlbm, suvbsa } = suvFactor
+    const { suvbw, suvlbm, suvbsa } = suvFactor
 
-      const petScaling = <PetScaling>{}
+    const petScaling = <PetScaling>{}
 
-      if (suvlbm) {
-        petScaling.suvbwToSuvlbm = suvlbm / suvbw
-      }
-
-      if (suvbsa) {
-        petScaling.suvbwToSuvbsa = suvbsa / suvbw
-      }
-
-      this.scaling.PET = petScaling
+    if (suvlbm) {
+      petScaling.suvbwToSuvlbm = suvlbm / suvbw
     }
+
+    if (suvbsa) {
+      petScaling.suvbwToSuvbsa = suvbsa / suvbw
+    }
+
+    this.scaling = { PET: petScaling }
   }
 
   private _removeFromCache() {

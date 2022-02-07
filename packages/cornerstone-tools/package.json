@@ -1,6 +1,6 @@
 {
   "name": "@precisionmetrics/cornerstone-tools",
-  "version": "0.0.4-rc6",
+  "version": "0.0.4-rc7",
   "description": "Cornerstone-3D tools",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -21,11 +21,11 @@
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
     "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#fix/labelMapOutline",
-    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc6"
+    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc7"
   },
   "devDependencies": {
     "vtk.js": "git+ssh://git@github.com/PrecisionMetrics/MGH-BC-vtk-js.git#fix/labelMapOutline",
-    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc6"
+    "@precisionmetrics/cornerstone-image-loader-streaming-volume": "^0.0.4-rc7"
   },
   "author": "",
   "license": "ISC"
