@@ -448,9 +448,15 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         program.setUniformMatrix('PCWCMatrix', model.projectionToWorld)
 
         const size = publicAPI.getRenderTargetSize()
+        const offset = publicAPI.getRenderTargetOffset()
 
         program.setUniformf('vpWidth', size[0])
         program.setUniformf('vpHeight', size[1])
+
+        // TODO: You need to use the fix/labelMapOutline branch or these
+        // won't be consumed by the shader
+        program.setUniformf('vpOffsetX', offset[0] / size[0]);
+        program.setUniformf('vpOffsetY', offset[1] / size[1]);
       }
     }
 
@@ -502,6 +508,27 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       }
     }
   }
+
+  publicAPI.getRenderTargetSize = () => {
+    if (model.lastXYF > 1.43) {
+      const sz = model.framebuffer.getSize();
+      return [model.fvp[0] * sz[0], model.fvp[1] * sz[1]];
+    }
+
+    // This seems wrong, it assumes the renderWindow only has one renderer
+    // but I don't know if this stuff is correct...
+    // return model.openGLRenderWindow.getFramebufferSize();
+
+    const { usize, vsize } = model.openGLRenderer.getTiledSizeAndOrigin()
+
+    return [usize, vsize];
+  };
+
+  publicAPI.getRenderTargetOffset = () => {
+    const { lowerLeftU, lowerLeftV } = model.openGLRenderer.getTiledSizeAndOrigin()
+
+    return [lowerLeftU, lowerLeftV];
+  };
 }
 
 // ----------------------------------------------------------------------------
