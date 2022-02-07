@@ -20,7 +20,7 @@ import ModifierKeysExample from './ExampleModifierKeys'
 import TestUtils from './ExampleTestUtils'
 import TestUtilsVolume from './ExampleTestUtilsVolume'
 import CalibrationExample from './ExampleCalibration'
-import { resetCPURenderingOnlyForDebugOrTests } from '@ohif/cornerstone-render'
+import { resetCPURenderingOnlyForDebugOrTests } from '@precisionmetrics/cornerstone-render'
 import SegmentationRender from './ExampleSegmentationRender'
 import RenderToCanvasExample from './ExampleRenderToCanvas'
 import CrosshairsExample from './ExampleCrosshairs'
@@ -353,7 +353,6 @@ function AppRouter() {
     Example({
       children: <TestUtilsVolume />,
     })
-
 
   return (
     <Router>

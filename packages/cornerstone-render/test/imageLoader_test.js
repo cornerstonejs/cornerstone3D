@@ -1,5 +1,5 @@
 import * as cornerstone3D from '../src/index'
-import * as cornerstone from '@ohif/cornerstone-render'
+import * as cornerstone from '@precisionmetrics/cornerstone-render'
 
 const {
   registerImageLoader,

@@ -962,15 +962,22 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         renderingEngine
       )
 
-      const { dimensions, scalarData, imageData, metadata } = imageVolume
+      const {
+        dimensions,
+        scalarData,
+        vtkImageData: imageData,
+        metadata,
+      } = imageVolume
+      const worldPos1Index = vec3.fromValues(0, 0, 0)
+      const worldPos2Index = vec3.fromValues(0, 0, 0)
 
-      const worldPos1Index = imageData.worldToIndex(worldPos1)
+      imageData.worldToIndexVec3(topLeftWorld, worldPos1Index)
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0])
       worldPos1Index[1] = Math.floor(worldPos1Index[1])
       worldPos1Index[2] = Math.floor(worldPos1Index[2])
 
-      const worldPos2Index = imageData.worldToIndex(worldPos2)
+      imageData.worldToIndexVec3(bottomRightWorld, worldPos2Index)
 
       worldPos2Index[0] = Math.floor(worldPos2Index[0])
       worldPos2Index[1] = Math.floor(worldPos2Index[1])
@@ -1026,65 +1033,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
             max = newValue
           }
 
-        const yMultiple = dimensions[0]
-        const zMultiple = dimensions[0] * dimensions[1]
-
-        // Calling worldToCanvas on voxels all the time is super slow,
-        // So we instead work out the change in canvas position incrementing each index causes.
-        const start = vec3.fromValues(iMin, jMin, kMin)
-
-        const worldPosStart = imageData.indexToWorld(start)
-        const canvasPosStart = viewport.worldToCanvas(worldPosStart)
-
-        const startPlusI = vec3.fromValues(iMin + 1, jMin, kMin)
-        const startPlusJ = vec3.fromValues(iMin, jMin + 1, kMin)
-        const startPlusK = vec3.fromValues(iMin, jMin, kMin + 1)
-
-        const plusICanvasDelta = vec2.create()
-        const worldPosStartPlusI = imageData.indexToWorld(startPlusI)
-        const canvasPosStartPlusI = viewport.worldToCanvas(worldPosStartPlusI)
-        vec2.sub(plusICanvasDelta, canvasPosStartPlusI, canvasPosStart)
-
-        const plusJCanvasDelta = vec2.create()
-        const worldPosStartPlusJ = imageData.indexToWorld(startPlusJ)
-        const canvasPosStartPlusJ = viewport.worldToCanvas(worldPosStartPlusJ)
-        vec2.sub(plusJCanvasDelta, canvasPosStartPlusJ, canvasPosStart)
-
-        const plusKCanvasDelta = vec2.create()
-        const worldPosStartPlusK = imageData.indexToWorld(startPlusK)
-        const canvasPosStartPlusK = viewport.worldToCanvas(worldPosStartPlusK)
-        vec2.sub(plusKCanvasDelta, canvasPosStartPlusK, canvasPosStart)
-
-        // This is a triple loop, but one of these 3 values will be constant
-        // In the planar view.
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const dI = i - iMin
-              const dJ = j - jMin
-              const dK = k - kMin
-
-              let canvasCoords = <Point2>[canvasPosStart[0], canvasPosStart[1]]
-
-              canvasCoords = [
-                canvasCoords[0] +
-                  plusICanvasDelta[0] * dI +
-                  plusJCanvasDelta[0] * dJ +
-                  plusKCanvasDelta[0] * dK,
-                canvasCoords[1] +
-                  plusICanvasDelta[1] * dI +
-                  plusJCanvasDelta[1] * dJ +
-                  plusKCanvasDelta[1] * dK,
-              ]
-
-              if (pointInEllipse(ellipse, canvasCoords)) {
-                const value = scalarData[k * zMultiple + j * yMultiple + i]
-
-                count++
-                mean += value
-              }
-            }
-          }
+          mean += newValue
+          count += 1
         }
 
         pointInShapeCallback(
