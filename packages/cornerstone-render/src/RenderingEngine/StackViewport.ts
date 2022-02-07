@@ -38,7 +38,7 @@ import drawImageSync from './helpers/cpuFallback/drawImageSync'
 import { getColormap } from './helpers/cpuFallback/colors/index'
 
 import { loadAndCacheImage } from '../imageLoader'
-import requestPoolManager from '../requestPool/requestPoolManager'
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager'
 import ERROR_CODES from '../enums/errorCodes'
 import INTERPOLATION_TYPE from '../constants/interpolationType'
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel'
@@ -50,6 +50,7 @@ import resize from './helpers/cpuFallback/rendering/resize'
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera'
 import { Transform } from './helpers/cpuFallback/rendering/transform'
 import { getShouldUseCPURendering } from '../init'
+import REQUEST_TYPE from '../enums/requestType'
 
 const EPSILON = 1 // Slice Thickness
 
@@ -1139,7 +1140,7 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * It uses requestPoolManager to add request for the imageId. It loadsAndCache
+   * It uses imageLoadPoolManager to add request for the imageId. It loadsAndCache
    * the image and triggers the STACK_NEW_IMAGE when the request successfully retrieves
    * the image. Next, the volume actor gets updated with the new new retrieved image.
    *
@@ -1368,7 +1369,7 @@ class StackViewport extends Viewport {
       const type = 'Float32Array'
 
       const priority = -5
-      const requestType = 'interaction'
+      const requestType = REQUEST_TYPE.Interaction
       const additionalDetails = { imageId }
       const options = {
         targetBuffer: {
@@ -1381,7 +1382,7 @@ class StackViewport extends Viewport {
         },
       }
 
-      requestPoolManager.addRequest(
+      imageLoadPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),
         requestType,
         additionalDetails,

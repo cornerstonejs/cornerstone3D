@@ -2,23 +2,21 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
+  eventTarget,
   createAndCacheVolume,
-  init as csRenderInit,
-  imageLoadPoolManager,
+  EVENTS as RENDERING_EVENTS,
 } from '@ohif/cornerstone-render'
-import { synchronizers } from '@ohif/cornerstone-tools'
+import { SynchronizerManager, synchronizers } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
-
-import _ from 'lodash'
-import getInterleavedFrames from './helpers/getInterleavedFrames'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
 
 import getImageIds from './helpers/getImageIds'
+import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -49,13 +47,16 @@ let ctSceneToolGroup,
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
-class PriorityLoadExample extends Component {
+class MPRExample extends Component {
   state = {
-    progressText: 'fetching metadata...',
+    progressText: 'Waiting ...',
     metadataLoaded: false,
     petColorMapIndex: 0,
     layoutIndex: 0,
     destroyed: false,
+    dataLoadTime: 'loading',
+    metadataLoadTime: 'loading',
+    codec: 'lei',
     //
     viewportGrid: {
       numCols: 4,
@@ -86,28 +87,13 @@ class PriorityLoadExample extends Component {
   constructor(props) {
     super(props)
 
+    csTools3d.init()
+
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
     this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this)
-
-    const { limitFrames } = config
-
-    const callback = (imageIds) => {
-      if (limitFrames !== undefined && typeof limitFrames === 'number') {
-        const NewImageIds = sortImageIdsByIPP(imageIds)
-        return limitImageIds(NewImageIds, limitFrames)
-      }
-      return imageIds
-    }
-
-    this.petVolumeImageIds = getImageIds('pt1', VOLUME, callback)
-    this.ctVolumeImageIds = getImageIds('ct1', VOLUME, callback)
-
-    Promise.all([this.petVolumeImageIds, this.ctVolumeImageIds]).then(() =>
-      this.setState({ progressText: 'Loading data...' })
-    )
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
@@ -119,12 +105,30 @@ class PriorityLoadExample extends Component {
     })
   }
 
-  /**
-   * LIFECYCLE
-   */
-  async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
+  loadMetadata = async () => {
+    const { limitFrames } = config
+
+    const callback = (imageIds) => {
+      if (limitFrames !== undefined && typeof limitFrames === 'number') {
+        const NewImageIds = sortImageIdsByIPP(imageIds)
+        return limitImageIds(NewImageIds, limitFrames)
+      }
+      return imageIds
+    }
+
+    const codec = this.state.codec
+    const t0 = performance.now()
+    this.petVolumeImageIds = await getImageIds('pt3', VOLUME, callback, codec)
+    this.ctVolumeImageIds = await getImageIds('ct3', VOLUME, callback, codec)
+
+    Promise.all([this.petVolumeImageIds, this.ctVolumeImageIds]).then(() =>
+      this.setState({
+        progressText: 'Metadata fetched, waiting for data load ...',
+      })
+    )
+
+    this.setState({ metadataLoadTime: performance.now() - t0 })
+
     this.axialSync = createCameraPositionSynchronizer('axialSync')
     this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
     this.coronalSync = createCameraPositionSynchronizer('coronalSync')
@@ -167,10 +171,21 @@ class PriorityLoadExample extends Component {
       }
     )
 
+    addToolsToToolGroups({
+      ctSceneToolGroup,
+      ptSceneToolGroup,
+      fusionSceneToolGroup,
+      ptMipSceneToolGroup,
+      ctVRSceneToolGroup,
+      ctObliqueToolGroup,
+      ptTypesSceneToolGroup,
+    })
+  }
+
+  loadData = async () => {
     // Create volumes
     const ptImageIds = await this.petVolumeImageIds
     const ctVolumeImageIds = await this.ctVolumeImageIds
-
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ptVolume = await createAndCacheVolume(ptVolumeUID, {
@@ -188,82 +203,21 @@ class PriorityLoadExample extends Component {
       scalarData[i] = -1024
     }
 
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const t0 = performance.now()
+    let count = 0
 
-    // ptVolume.load(onLoad)
-    // ctVolume.load(onLoad)
-    // We manually interleave CT and PET volume instead of relying on
-    // default load above which will load pet first and ct second
-    const ctRequests = ctVolume.getImageLoadRequests()
-    const ptRequests = ptVolume.getImageLoadRequests()
-
-    // Getting interleaved slices for ct and pet (starting from middle slice
-    // and moving towards the end and start interchangeably)
-    // [Middle slice CT, middle slice +1 CT, middle Slice -1 CT, middle Slice +2 CT,  middle Slice -2 CT ....]
-    const ctInterleaved = getInterleavedFrames(
-      ctRequests.map((req) => req.imageId)
-    )
-    const ptInterleaved = getInterleavedFrames(
-      ptRequests.map((req) => req.imageId)
-    )
-
-    // creating interleaved of CT and PET: one CT one PET
-    // [Middle slice CT, middle Slice Pet, middle slice +1 CT, middle Slice +1 PET,
-    // middle Slice -1 CT, middle Slice -1 PET, middle Slice +2 CT, middle Slice +2 PET ....]
-    const ctPetInterleaved = _.flatten(
-      _.zip(ctInterleaved, ptInterleaved)
-    ).filter((el) => el)
-
-    const requests = []
-    const requestType = 'prefetch'
-    const priority = 0
-
-    for (let i = 0; i < ctPetInterleaved.length; i++) {
-      const { imageId } = ctPetInterleaved[i]
-      const additionalDetails = { volumeUID: '' }
-
-      const ctRequest = ctRequests.filter((req) => req.imageId === imageId)
-
-      // if ct request
-      if (ctRequest.length) {
-        additionalDetails.volumeUID = ctVolumeUID
-        const { callLoadImage, imageId, imageIdIndex, options } = ctRequest[0]
-        requests.push({
-          callLoadImage: callLoadImage.bind(this, imageId, imageIdIndex, options),
-          requestType,
-          additionalDetails,
-          priority,
-        })
-      }
-
-      const ptRequest = ptRequests.filter((req) => req.imageId === imageId)
-
-      // if pet request
-      if (ptRequest.length) {
-        additionalDetails.volumeUID = ptVolumeUID
-        const { callLoadImage, imageId, imageIdIndex, options } = ptRequest[0]
-        requests.push({
-          callLoadImage: callLoadImage.bind(this, imageId, imageIdIndex, options),
-          requestType,
-          additionalDetails,
-          priority,
-        })
+    const onLoad = () => {
+      count += 1
+      if (count === 2) {
+        this.setState({ dataLoadTime: performance.now() - t0 })
       }
     }
 
-    // adding requests to the imageLoadPoolManager
-    requests.forEach((request) => {
-      const { callLoadImage, requestType, additionalDetails, priority } = request
-      imageLoadPoolManager.addRequest(
-        callLoadImage,
-        requestType,
-        additionalDetails,
-        priority
-      )
-    })
+    ptVolume.load(onLoad)
+    ctVolume.load(onLoad)
 
     ptCtFusion.setVolumes(
-      renderingEngine,
+      this.renderingEngine,
       ctVolumeUID,
       ptVolumeUID,
       colormaps[this.state.petColorMapIndex]
@@ -275,72 +229,18 @@ class PriorityLoadExample extends Component {
     this.setState({
       metadataLoaded: true,
       ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
+      progressText: 'Loaded',
     })
 
     // This will initialize volumes in GPU memory
-    renderingEngine.render()
-    // Start listening for resiz
+    this.renderingEngine.render()
+    // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state
-    const { renderingEngine } = this
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+  // async componentDidUpdate(prevProps, prevState) {
 
-    const layout = LAYOUTS[layoutIndex]
-
-    if (prevState.layoutIndex !== layoutIndex) {
-      if (layout === 'FusionMIP') {
-        // FusionMIP
-
-        ptCtFusion.setLayout(
-          renderingEngine,
-          this._canvasNodes,
-          {
-            ctSceneToolGroup,
-            ptSceneToolGroup,
-            fusionSceneToolGroup,
-            ptMipSceneToolGroup,
-          },
-          {
-            axialSynchronizers: [this.axialSync],
-            sagittalSynchronizers: [this.sagittalSync],
-            coronalSynchronizers: [this.coronalSync],
-            ptThresholdSynchronizer: this.ptThresholdSync,
-            ctWLSynchronizer: this.ctWLSync,
-          }
-        )
-
-        ptCtFusion.setVolumes(
-          renderingEngine,
-          ctVolumeUID,
-          ptVolumeUID,
-          colormaps[this.state.petColorMapIndex]
-        )
-      } else if (layout === 'ObliqueCT') {
-        obliqueCT.setLayout(renderingEngine, this._canvasNodes, {
-          ctObliqueToolGroup,
-        })
-        obliqueCT.setVolumes(renderingEngine, ctVolumeUID)
-      } else if (layout === 'CTVR') {
-        // CTVR
-        fourUpCT.setLayout(renderingEngine, this._canvasNodes, {
-          ctSceneToolGroup,
-          ctVRSceneToolGroup,
-        })
-        fourUpCT.setVolumes(renderingEngine, ctVolumeUID)
-      } else if (layout === 'PetTypes') {
-        // petTypes
-        petTypes.setLayout(renderingEngine, this._canvasNodes, {
-          ptTypesSceneToolGroup,
-        })
-        petTypes.setVolumes(renderingEngine, ptVolumeUID)
-      } else {
-        throw new Error('Unrecognised layout index')
-      }
-    }
-  }
+  // }
 
   componentWillUnmount() {
     // Stop listening for resize
@@ -350,7 +250,6 @@ class PriorityLoadExample extends Component {
 
     cache.purgeCache()
     csTools3d.destroy()
-
     this.renderingEngine.destroy()
   }
 
@@ -450,6 +349,23 @@ class PriorityLoadExample extends Component {
     cache.purgeCache()
   }
 
+  swapPtCtTool = (evt) => {
+    const toolName = evt.target.value
+
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
+
+    ptCtToggleAnnotationTool(
+      isAnnotationToolOn,
+      ctSceneToolGroup,
+      ptSceneToolGroup,
+      fusionSceneToolGroup,
+      toolName
+    )
+
+    this.renderingEngine.render()
+    this.setState({ ptCtLeftClickTool: toolName })
+  }
+
   render() {
     const {
       layoutIndex,
@@ -467,9 +383,7 @@ class PriorityLoadExample extends Component {
     ]
 
     // TODO -> Move layout switching to a different example to reduce bloat.
-    // TODO -> Move destroy to a seperate example
-
-    const filteredLayoutButtons = layoutButtons.filter((l) => l.id !== layoutID)
+    // TODO -> Move destroy to a separate example
 
     const SUVTypesList =
       layoutID === 'PetTypes' ? (
@@ -487,23 +401,21 @@ class PriorityLoadExample extends Component {
             onClick={() =>
               metadataLoaded && !destroyed && this.swapPetTransferFunction()
             }
-            className="btn btn-primary"
+            className="btn btn-primary "
             style={{ margin: '2px 4px' }}
           >
             SwapPetTransferFunction
           </button>
-        </React.Fragment>
-      ) : null
-
-    const fusionWLDisplay =
-      layoutID === 'FusionMIP' ? (
-        <React.Fragment>
-          <div className="col-xs-12">
-            <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
-          </div>
-          <div className="col-xs-12">
-            <p>{`PT: Upper Threshold: ${ptThresholdDisplay.toFixed(2)}`}</p>
-          </div>
+          <select
+            value={this.state.ptCtLeftClickTool}
+            onChange={this.swapPtCtTool}
+          >
+            {ptCtLayoutTools.map((toolName) => (
+              <option key={toolName} value={toolName}>
+                {toolName}
+              </option>
+            ))}
+          </select>
         </React.Fragment>
       ) : null
 
@@ -511,7 +423,7 @@ class PriorityLoadExample extends Component {
       <div style={{ paddingBottom: '55px' }}>
         <div className="row">
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
-            <h2>Priority Loading</h2>
+            <h2>MPR Example ({this.state.progressText})</h2>
             {!window.crossOriginIsolated ? (
               <h1 style={{ color: 'red' }}>
                 This Demo requires SharedArrayBuffer but your browser does not
@@ -519,26 +431,55 @@ class PriorityLoadExample extends Component {
               </h1>
             ) : null}
           </div>
+          <div className="col-xs-12" style={{ margin: '8px 0' }}>
+            Codec
+            <select
+              value={this.state.codec}
+              onChange={(evt) => this.setState({ codec: evt.target.value })}
+              style={{ marginLeft: '3px' }}
+            >
+              {['lei', 'jp2', 'jls'].map((codec) => (
+                <option key={codec} value={codec}>
+                  {codec}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={this.loadMetadata}
+              className="btn btn-secondary"
+              style={{ margin: '2px 4px' }}
+            >
+              Load Metadata
+            </button>
+            {this.state.metadataLoadTime !== 'loading' && (
+              <span>
+                Metadata fetched in{' '}
+                {Math.round(this.state.metadataLoadTime) / 1000} seconds
+              </span>
+            )}
+            <button
+              onClick={this.loadData}
+              className="btn btn-secondary"
+              style={{ margin: '2px 4px' }}
+            >
+              Load Data
+            </button>
+            {this.state.dataLoadTime !== 'loading' && (
+              <span>
+                Data fetched and decoded in{' '}
+                {Math.round(this.state.dataLoadTime) / 1000} seconds
+              </span>
+            )}
+          </div>
           <div
             className="col-xs-12"
             style={{ margin: '8px 0', marginLeft: '-4px' }}
           >
-            {/* LAYOUT BUTTONS */}
-            {filteredLayoutButtons.map((layout) => (
-              <button
-                key={layout.id}
-                onClick={() => this.swapLayout(layout.id)}
-                className="btn btn-primary"
-                style={{ margin: '2px 4px' }}
-              >
-                {layout.text}
-              </button>
-            ))}
             {/* TOGGLES */}
             {fusionButtons}
-            {/* Hide until we update react in a better way  {fusionWLDisplay} */}
           </div>
         </div>
+
         {SUVTypesList}
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
@@ -566,4 +507,4 @@ class PriorityLoadExample extends Component {
   }
 }
 
-export default PriorityLoadExample
+export default MPRExample

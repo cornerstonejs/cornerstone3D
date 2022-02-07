@@ -2,18 +2,19 @@ import {
   EVENTS,
   eventTarget,
   metaData,
-  requestPoolManager,
+  imageLoadPoolManager,
   triggerEvent,
   ImageVolume,
   cache,
   Types,
   loadImage,
   Utilities as cornerstoneUtils,
+  REQUEST_TYPE,
 } from '@ohif/cornerstone-render'
 
 import autoLoad from './helpers/autoLoad'
 
-const requestType = 'prefetch'
+const requestType = REQUEST_TYPE.Prefetch
 const { getMinMax } = cornerstoneUtils
 
 // TODO James wants another layer in between ImageVolume and SliceStreamingImageVolume
@@ -124,7 +125,7 @@ export default class StreamingImageVolume extends ImageVolume {
     // Instruct the request pool manager to filter queued
     // requests to ensure requests we no longer need are
     // no longer sent.
-    requestPoolManager.filterRequests(filterFunction)
+    imageLoadPoolManager.filterRequests(filterFunction)
   }
 
   public clearLoadCallbacks(): void {
@@ -230,7 +231,9 @@ export default class StreamingImageVolume extends ImageVolume {
         }
       }
 
-      loadStatus.callbacks.forEach((callback) => callback(evt))
+      if (evt.framesProcessed === evt.numFrames) {
+        loadStatus.callbacks.forEach((callback) => callback(evt))
+      }
     }
 
     function successCallback(
@@ -384,7 +387,7 @@ export default class StreamingImageVolume extends ImageVolume {
 
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
-      function sendRequest(imageId, imageIdIndex, options) {
+      function callLoadImage(imageId, imageIdIndex, options) {
         return loadImage(imageId, options).then(
           () => {
             successCallback(this, imageIdIndex, imageId)
@@ -395,7 +398,7 @@ export default class StreamingImageVolume extends ImageVolume {
         )
       }
 
-      return { sendRequest, imageId, imageIdIndex, options }
+      return { callLoadImage, imageId, imageIdIndex, options }
     })
 
     return requests
@@ -409,14 +412,14 @@ export default class StreamingImageVolume extends ImageVolume {
         return
       }
 
-      const { sendRequest, imageId, imageIdIndex, options } = request
+      const { callLoadImage, imageId, imageIdIndex, options } = request
 
       const additionalDetails = {
         volumeUID: this.uid,
       }
 
-      requestPoolManager.addRequest(
-        sendRequest.bind(this, imageId, imageIdIndex, options),
+      imageLoadPoolManager.addRequest(
+        callLoadImage.bind(this, imageId, imageIdIndex, options),
         requestType,
         additionalDetails,
         priority

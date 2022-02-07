@@ -4,8 +4,10 @@ const autoprefixer = require('autoprefixer')
 const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
   .rules
 // Plugins
-const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin');
+const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js');
+
 const NODE_ENV = process.NODE_ENV;
 
 // PATHS
@@ -19,6 +21,9 @@ const shaderLoader = {
   test: /\.glsl$/i,
   loader: 'shader-loader',
 };
+
+const exclude = excludeNodeModulesExcept([]);
+
 
 module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
@@ -38,16 +43,26 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
     mode: mode,
     output: {
       path: OUT_PATH,
-      filename: '[name].bundle.[contenthash].js',
-      library: 'Cornerstone3DAlpha',
-      libraryTarget: 'umd',
+      clean: true,
+      //filename: '[name].bundle.[contenthash].js',
+      //library: 'Cornerstone3DAlphaDEMO',
+      // libraryTarget: 'umd',
       globalObject: 'this',
+    },
+    optimization: {
+      splitChunks: {
+        // include all types of chunks
+        chunks: 'all',
+      },
+      //runtimeChunk: 'single',
+      minimize: mode === "production",
+      // sideEffects: true,
     },
     module: {
       rules: [
         {
-          test: /\.(ts|tsx|js|jsx)$/,
-          exclude: /node_modules/,
+          test: /\.(mjs|ts|tsx|js|jsx)?$/,
+          exclude,
           loader: 'babel-loader',
           options: {
             // Find babel.config.js in monorepo root
@@ -95,12 +110,18 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
     plugins: [
       // Show build progress
       new webpack.ProgressPlugin(),
-      // Clear dist between builds
-      new CleanWebpackPlugin(),
       // Generate `index.html` with injected build assets
       new HtmlWebpackPlugin({
         filename: 'index.html',
         template: path.resolve(__dirname, './../packages/demo', 'public', 'index.html'),
+      }),
+      new CopyPlugin({
+        patterns: [
+          {
+            from: '../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import/',
+            to: DIST_DIR,
+          },
+        ],
       }),
     ],
     devServer: {

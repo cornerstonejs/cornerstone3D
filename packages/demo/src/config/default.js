@@ -13,6 +13,22 @@ export default {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
   },
+  pt3: {
+    wadoRsRoot: 'https://d1jjp7d53qmguz.cloudfront.net/dicomweb',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
+    // StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.459769504433903221904322299373',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
+  },
+  ct3: {
+    wadoRsRoot: 'https://d1jjp7d53qmguz.cloudfront.net/dicomweb',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
+    // StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.459769504433903221904322299373',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
+  },
   ct2: {
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     StudyInstanceUID:
@@ -62,14 +78,14 @@ export default {
   },
   colorImages: {
     imageIds: [
-      'web:/examples/head/avf1240c.png',
-      'web:/examples/head/avf1241a.png',
-      'web:/examples/head/avf1241b.png',
-      'web:/examples/head/avf1241c.png',
-      'web:/examples/head/avf1242a.png',
-      'web:/examples/head/avf1242b.png',
-      'web:/examples/head/avf1242c.png',
-      'web:/examples/head/avf1243a.png',
+      'web:http://localhost:3000/examples/head/avf1240c.png',
+      'web:http://localhost:3000/examples/head/avf1241a.png',
+      'web:http://localhost:3000/examples/head/avf1241b.png',
+      'web:http://localhost:3000/examples/head/avf1241c.png',
+      'web:http://localhost:3000/examples/head/avf1242a.png',
+      'web:http://localhost:3000/examples/head/avf1242b.png',
+      'web:http://localhost:3000/examples/head/avf1242c.png',
+      'web:http://localhost:3000/examples/head/avf1243a.png',
     ],
   },
 }
