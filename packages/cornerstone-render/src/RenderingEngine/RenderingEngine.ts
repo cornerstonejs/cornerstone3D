@@ -4,13 +4,17 @@ import VIEWPORT_TYPE from '../constants/viewportType'
 import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from '../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
-import { PublicViewportInput, ViewportInput } from '../types'
+import {
+  PublicViewportInput,
+  ViewportInput,
+  InternalViewportInput,
+} from '../types'
 import VolumeViewport from './VolumeViewport'
 import StackViewport from './StackViewport'
 import Scene from './Scene'
-import getOrCreateCanvas from './helpers/getOrCreateCanvas'
 import isEqual from 'lodash.isequal'
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline'
+import getOrCreateCanvas from './helpers/getOrCreateCanvas'
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init'
 
 interface IRenderingEngine {
@@ -126,9 +130,9 @@ class RenderingEngine implements IRenderingEngine {
     this._throwIfDestroyed()
     const { element, viewportUID } = viewportInputEntry
 
-    // Throw error if no element provided
+    // Throw error if no canvas
     if (!element) {
-      throw new Error('No HTML div element provided')
+      throw new Error('No element provided')
     }
 
     // 1. Get the viewport from the list of available viewports.
@@ -159,6 +163,9 @@ class RenderingEngine implements IRenderingEngine {
       // 3 Add the requested viewport to rendering Engine
       this.addCustomViewport(viewportInputEntry)
     }
+
+    // 5. Add the new viewport to the queue to be rendered
+    this._setViewportsToBeRenderedNextFrame([viewportInputEntry.viewportUID])
   }
 
   /**
@@ -544,7 +551,8 @@ class RenderingEngine implements IRenderingEngine {
 
     const canvasesDrivenByVtkJs = viewportsDrivenByVtkJs.map((vp) => vp.canvas)
 
-    canvasesDrivenByVtkJs.push(viewportInputEntry.canvas)
+    const canvas = getOrCreateCanvas(viewportInputEntry.element)
+    canvasesDrivenByVtkJs.push(canvas)
 
     // 2.c Calculating the new size for offScreen Canvas
     const { offScreenCanvasWidth, offScreenCanvasHeight } =
@@ -558,8 +566,10 @@ class RenderingEngine implements IRenderingEngine {
       offScreenCanvasHeight
     )
 
+    const internalViewportEntry = { ...viewportInputEntry, canvas }
+
     // 3 Add the requested viewport to rendering Engine
-    this.addVtkjsDrivenViewport(viewportInputEntry, {
+    this.addVtkjsDrivenViewport(internalViewportEntry, {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
       xOffset,
@@ -577,7 +587,7 @@ class RenderingEngine implements IRenderingEngine {
       const viewportActors = viewport.getActors()
       // add the volume actor if not the same as the viewport actor
       if (!isEqual(volActors, viewportActors)) {
-        scene.addVolumeActors(viewportUID)
+        scene.setSceneVolumeActorsForViewport(viewportUID)
       }
     }
   }
@@ -632,11 +642,13 @@ class RenderingEngine implements IRenderingEngine {
    *     }} [offscreenCanvasProperties] How the viewport relates to the
    * offscreen canvas.
    */
-  private _addViewport(
+  private addVtkjsDrivenViewport(
     viewportInputEntry: InternalViewportInput,
-    offScreenCanvasWidth: number,
-    offScreenCanvasHeight: number,
-    _xOffset: number
+    offscreenCanvasProperties?: {
+      offScreenCanvasWidth: number
+      offScreenCanvasHeight: number
+      xOffset: number
+    }
   ): void {
     const { element, canvas, sceneUID, viewportUID, type, defaultOptions } =
       viewportInputEntry
@@ -677,8 +689,8 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. ViewportInput to be passed to a stack/volume viewport
     const viewportInput = <ViewportInput>{
-      element, // div
       uid: viewportUID,
+      element, // div
       renderingEngineUID: this.uid,
       type,
       canvas,
@@ -724,7 +736,7 @@ class RenderingEngine implements IRenderingEngine {
     this._viewports.set(viewportUID, viewport)
 
     const eventData = {
-      element, // div
+      element,
       viewportUID,
       sceneUID,
       renderingEngineUID: this.uid,
@@ -743,8 +755,10 @@ class RenderingEngine implements IRenderingEngine {
    * construct and enable the viewport.
    */
   private addCustomViewport(viewportInputEntry: PublicViewportInput): void {
-    const { canvas, sceneUID, viewportUID, type, defaultOptions } =
+    const { element, sceneUID, viewportUID, type, defaultOptions } =
       viewportInputEntry
+
+    const canvas = getOrCreateCanvas(element)
 
     // Add a viewport with no offset
     const { clientWidth, clientHeight } = canvas
@@ -814,7 +828,9 @@ class RenderingEngine implements IRenderingEngine {
     if (viewportInputEntries.length) {
       // 1. Getting all the canvases from viewports calculation of the new offScreen size
 
-      const vtkDrivenCanvases = viewportInputEntries.map((vp) => vp.canvas)
+      const vtkDrivenCanvases = viewportInputEntries.map((vp) =>
+        getOrCreateCanvas(vp.element)
+      )
 
       // 2. Set canvas size based on height and sum of widths
       const { offScreenCanvasWidth, offScreenCanvasHeight } =
@@ -831,9 +847,13 @@ class RenderingEngine implements IRenderingEngine {
       let xOffset = 0
       for (let i = 0; i < viewportInputEntries.length; i++) {
         const vtkDrivenViewportInputEntry = viewportInputEntries[i]
+        const canvas = vtkDrivenCanvases[i]
+        const internalViewportEntry = {
+          ...vtkDrivenViewportInputEntry,
+          canvas,
+        }
 
-        const { canvas } = vtkDrivenViewportInputEntry
-        this.addVtkjsDrivenViewport(vtkDrivenViewportInputEntry, {
+        this.addVtkjsDrivenViewport(internalViewportEntry, {
           offScreenCanvasWidth,
           offScreenCanvasHeight,
           xOffset,
@@ -913,8 +933,6 @@ class RenderingEngine implements IRenderingEngine {
         _xOffset
       )
 
-      // Todo: Since element and canvas are the same thing the following can
-      // be both on element and canvas, I guess ...?
       _xOffset += viewport.element.clientWidth
 
       viewport.sx = sx
@@ -1159,7 +1177,6 @@ class RenderingEngine implements IRenderingEngine {
     offScreenCanvas
   ): {
     element: HTMLElement
-    canvas: HTMLCanvasElement
     viewportUID: string
     sceneUID: string
     renderingEngineUID: string
@@ -1196,9 +1213,8 @@ class RenderingEngine implements IRenderingEngine {
 
     return {
       element,
-      canvas,
-      viewportUID: uid,
       suppressEvents,
+      viewportUID: uid,
       sceneUID,
       renderingEngineUID,
     }
@@ -1214,7 +1230,7 @@ class RenderingEngine implements IRenderingEngine {
   private _resetViewport(viewport) {
     const renderingEngineUID = this.uid
 
-    const { element, canvas, uid: viewportUID, suppressEvents } = viewport
+    const { element, canvas, uid: viewportUID } = viewport
 
     const eventData = {
       element,
@@ -1225,9 +1241,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
-    if (!suppressEvents) {
-      triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
-    }
+    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
 
     element.removeAttribute('data-viewport-uid')
     element.removeAttribute('data-scene-uid')
