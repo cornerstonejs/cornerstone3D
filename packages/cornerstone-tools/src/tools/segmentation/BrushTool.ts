@@ -101,12 +101,6 @@ class BrushTool extends BaseBrushTool {
     this._deactivateModify = this._deactivateModify.bind(this)
     this._mouseUpCallback = this._mouseUpCallback.bind(this)
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
-
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStats,
-      100,
-      { trailing: true }
-    )
   }
 
   addPaint(evt: CustomEvent) {
@@ -202,6 +196,8 @@ class BrushTool extends BaseBrushTool {
   }
 
   _mouseUpCallback(evt) {
+    console.debug('mouse up')
+
     const eventData = evt.detail
     const { element } = eventData
 
@@ -243,6 +239,7 @@ class BrushTool extends BaseBrushTool {
 
   _mouseDragCallback(evt) {
     this.isDrawing = true
+    console.debug('mouse drag')
     const eventData = evt.detail
     const { element } = eventData
 
@@ -341,210 +338,9 @@ class BrushTool extends BaseBrushTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { canvas: canvasElement } = eventData
-    const { enabledElement } = svgDrawingHelper
-
-    let toolState = getToolState(enabledElement, this.name)
-
-    // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
-    if (!toolState?.length) {
-      return
-    }
-
-    toolState = this.filterInteractableToolStateForElement(
-      canvasElement,
-      toolState
-    )
-
-    if (!toolState?.length) {
-      return
-    }
-
-    const { viewport } = enabledElement
-    let targetUID
-    if (viewport.type === VIEWPORT_TYPE.STACK) {
-      targetUID = this._getTargetStackUID(viewport)
-    } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
-      const scene = viewport.getScene()
-      targetUID = this._getTargetVolumeUID(scene)
-    } else {
-      throw new Error(`Viewport Type not supported: ${viewport.type}`)
-    }
-
-    const renderingEngine = viewport.getRenderingEngine()
-
-    // Draw SVG
-    for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i] as LengthSpecificToolData
-      const settings = Settings.getObjectSettings(toolData, LengthTool)
-      const annotationUID = toolData.metadata.toolDataUID
-      const data = toolData.data
-      const { points, activeHandleIndex } = data.handles
-      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
-      const lineDash = this.getStyle(settings, 'lineDash', toolData)
-      const color = this.getStyle(settings, 'color', toolData)
-
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-
-      let activeHandleCanvasCoords
-
-      if (
-        !isToolDataLocked(toolData) &&
-        !this.editData &&
-        activeHandleIndex !== null
-      ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
-      }
-
-      if (activeHandleCanvasCoords) {
-        const handleGroupUID = '0'
-
-        drawHandlesSvg(
-          svgDrawingHelper,
-          this.name,
-          annotationUID,
-          handleGroupUID,
-          canvasCoordinates,
-          {
-            color,
-            lineDash,
-            lineWidth,
-          }
-        )
-      }
-
-      const lineUID = '1'
-      drawLineSvg(
-        svgDrawingHelper,
-        this.name,
-        annotationUID,
-        lineUID,
-        canvasCoordinates[0],
-        canvasCoordinates[1],
-        {
-          color,
-          width: lineWidth,
-        }
-      )
-
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {}
-
-        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
-      } else if (data.invalidated) {
-        this._throttledCalculateCachedStats(
-          toolData,
-          renderingEngine,
-          enabledElement
-        )
-      }
-
-      // If rendering engine has been destroyed while rendering
-      if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed')
-        return
-      }
-
-      const textLines = this._getTextLines(data, targetUID)
-
-      // Need to update to sync w/ annotation while unlinked/not moved
-      if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords)
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      )
-
-      const textBoxUID = '1'
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        this.name,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        this.getLinkedTextBoxStyle(settings, toolData)
-      )
-
-      const { x: left, y: top, width, height } = boundingBox
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      }
-    }
-  }
-
-  _calculateCachedStats(toolData, renderingEngine, enabledElement) {
-    const data = toolData.data
-    const { referencedImageId } = toolData.metadata
-    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
-
-    const worldPos1 = data.handles.points[0]
-    const worldPos2 = data.handles.points[1]
-    const { cachedStats } = data
-    const targetUIDs = Object.keys(cachedStats)
-
-    // TODO clean up, this doesn't need a length per volume, it has no stats derived from volumes.
-
-    for (let i = 0; i < targetUIDs.length; i++) {
-      const targetUID = targetUIDs[i]
-
-      const { imageVolume } = this._getImageVolumeFromTargetUID(
-        targetUID,
-        renderingEngine
-      )
-
-      const { vtkImageData: imageData, dimensions } = imageVolume
-
-      const length = this._calculateLength(worldPos1, worldPos2)
-
-      const index1 = <Types.Point3>[0, 0, 0]
-      const index2 = <Types.Point3>[0, 0, 0]
-
-      imageData.worldToIndexVec3(worldPos1, index1)
-      imageData.worldToIndexVec3(worldPos2, index2)
-
-      this._isInsideVolume(index1, index2, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true)
-
-      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
-      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
-      // corner is off the canvas.
-
-      // todo: add insideVolume calculation, for removing tool if outside
-      cachedStats[targetUID] = {
-        length,
-      }
-    }
-
-    data.invalidated = false
-
-    // Dispatching measurement modified
-    const eventType = EVENTS.MEASUREMENT_MODIFIED
-
-    const eventDetail = {
-      toolData,
-      viewportUID,
-      renderingEngineUID,
-      sceneUID,
-    }
-    triggerEvent(eventTarget, eventType, eventDetail)
-
-    return cachedStats
+  _paint(paintData) {
+    const { canvas, labelmap, viewportUID, sceneUID, currentPoints } = paintData
+    debugger
   }
 }
 

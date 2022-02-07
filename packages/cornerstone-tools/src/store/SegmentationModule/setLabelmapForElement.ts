@@ -6,11 +6,14 @@ import {
   Scene,
   StackViewport,
   triggerEvent,
+  cache,
 } from '@ohif/cornerstone-render'
 
 import state from './state'
 import setLabelmapColorAndOpacity from './setLabelmapColorAndOpacity'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+
+import { getActiveLabelmapIndex } from './activeLabelmapIndex'
 
 type LabelmapEvent = {
   canvas: HTMLCanvasElement
@@ -21,6 +24,20 @@ type LabelmapEvent = {
   viewportUID: string
   scene: Scene
 }
+
+function getActiveLabelmapForElement(canvas) {
+  const activeLabelmapIndex = getActiveLabelmapIndex(canvas)
+  return getLabelmapForElement(canvas, activeLabelmapIndex)
+}
+
+function getLabelmapForElement(canvas, labelmapIndex) {
+  const { viewportUID } = getEnabledElement(canvas)
+
+  const { volumeUID } =
+    state.volumeViewports[viewportUID].labelmaps[labelmapIndex]
+  return cache.getVolume(volumeUID)
+}
+
 /**
  * It renders a labelmap 3D volume into the scene the canvas is associated with.
  * @param {canvas, labelmap, callback, labelmapIndex, immediateRender}
@@ -123,3 +140,9 @@ function updateStateForVolumeViewports(
 }
 
 export default setLabelmapForElement
+
+export {
+  getActiveLabelmapForElement,
+  getLabelmapForElement,
+  setLabelmapForElement,
+}

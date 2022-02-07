@@ -1,17 +1,5 @@
-import { Settings, Utilities, Types } from '@ohif/cornerstone-render'
-import { vec4 } from 'gl-matrix'
-
 import BaseTool from './BaseTool'
-import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
-import { getStyleProperty } from '../../stateManagement/toolStyle'
-import { getViewportSpecificStateManager } from '../../stateManagement/toolState'
-import {
-  ToolSpecificToolData,
-  ToolSpecificToolState,
-  Point2,
-} from '../../types'
-import getToolDataStyle from '../../util/getToolDataStyle'
-import triggerAnnotationRender from '../../util/triggerAnnotationRender'
+import { getActiveLabelmapForElement } from '../../store/SegmentationModule'
 
 // export interface BaseAnnotationToolSpecificToolData
 //   extends ToolSpecificToolData {
@@ -35,7 +23,7 @@ abstract class BaseBrushTool extends BaseTool {
   // Abstract Methods - Must be implemented.
   // ===================================================================
 
-  createNewState(evt: CustomEvent, interactionType: string) {
+  addNewState(evt: CustomEvent, interactionType: string) {
     this.addPaint(evt, interactionType)
   }
 
@@ -97,17 +85,16 @@ abstract class BaseBrushTool extends BaseTool {
    * @param {Object} evt - The event.
    */
   preMouseDownCallback(evt) {
-    const eventData = evt.detail
-    this._startPainting(evt)
+    const paintData = this._startPainting(evt)
 
     this._drawing = true
-    this._paint(evt)
+    this._paint(paintData)
 
     return true
   }
 
   /**
-   * Initialise painting with BaseBrushTool.
+   * Initialize painting with BaseBrushTool.
    *
    * @abstract
    * @event
@@ -115,29 +102,18 @@ abstract class BaseBrushTool extends BaseTool {
    * @returns {void}
    */
   _startPainting(evt) {
-    const eventData = evt.detail
-    const element = eventData.element
-    // const { configuration, getters } = segmentationModule
+    const { viewportUID, sceneUID, currentPoints, event } = evt.detail
 
-    // const { labelmap2D, labelmap3D, currentImageIdIndex, activeLabelmapIndex } =
-    //   getters.labelmap2D(element)
+    const canvas = event.currentTarget
+    const labelmap = getActiveLabelmapForElement(canvas)
 
-    // const shouldErase =
-    //   this._isCtrlDown(eventData) || this.configuration.alwaysEraseOnClick
-
-    // this.paintEventData = {
-    //   labelmap2D,
-    //   labelmap3D,
-    //   currentImageIdIndex,
-    //   activeLabelmapIndex,
-    //   shouldErase,
-    // }
-
-    // if (configuration.storeHistory) {
-    //   const previousPixelData = labelmap2D.pixelData.slice()
-
-    //   this.paintEventData.previousPixelData = previousPixelData
-    // }
+    return {
+      canvas,
+      labelmap,
+      viewportUID,
+      sceneUID,
+      currentPoints,
+    }
   }
 
   /**
@@ -188,11 +164,7 @@ abstract class BaseBrushTool extends BaseTool {
    * @event
    * @param {Object} evt - The event.
    */
-  mouseMoveCallback(evt) {
-    const { currentPoints } = evt.detail
-
-    // this._lastImageCoords = currentPoints.image
-  }
+  mouseMoveCallback(evt) {}
 
   /**
    * Used to redraw the tool's cursor per render.
@@ -207,26 +179,8 @@ abstract class BaseBrushTool extends BaseTool {
     // Only brush needs to render.
     // if (isToolActiveForElement(element, this.name)) {
     // Call the hover event for the brush
-    this.renderBrush(evt)
+    // this.renderBrush(evt)
     // }
-  }
-
-  /**
-   * Event handler for switching mode to passive.
-   *
-   * @override
-   * @event
-   * @param {Object} evt - The event.
-   */
-  // eslint-disable-next-line no-unused-vars
-  passiveCallback(evt) {
-    try {
-      external.cornerstone.updateImage(this.element)
-    } catch (error) {
-      // It is possible that the image has not been loaded
-      // when this is called.
-      return
-    }
   }
 
   /**

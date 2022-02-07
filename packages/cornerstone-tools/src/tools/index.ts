@@ -15,6 +15,7 @@ import ProbeTool from './annotation/ProbeTool'
 import RectangleRoiTool from './annotation/RectangleRoiTool'
 import EllipticalRoiTool from './annotation/EllipticalRoiTool'
 import BrushTool from './segmentation/BrushTool'
+import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 
 export {
   // ~~ BASE
@@ -38,4 +39,5 @@ export {
   EllipticalRoiTool,
   // Segmentations
   BrushTool,
+  RectangleScissorsTool,
 }

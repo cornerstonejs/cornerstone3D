@@ -25,7 +25,7 @@ const {
   EllipticalRoiTool,
   BidirectionalTool,
   CrosshairsTool,
-  BrushTool,
+  RectangleScissorsTool,
 } = csTools3d
 
 /* Configuration arrays and get/set functions for setting the crosshair interactions:
@@ -221,7 +221,7 @@ function initToolGroups(toolConfiguration = {}) {
   csTools3d.addTool(BidirectionalTool, toolConfiguration)
   csTools3d.addTool(CrosshairsTool, toolConfiguration)
   // Segmentation
-  csTools3d.addTool(BrushTool, toolConfiguration)
+  csTools3d.addTool(RectangleScissorsTool, toolConfiguration)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.STACK_CT
@@ -483,7 +483,7 @@ function addToolsToToolGroups({
     // Set up CT Scene tools
 
     // @TODO: This kills the volumeUID and tool configuration
-    ctSceneToolGroup.addTool('Brush', {
+    ctSceneToolGroup.addTool('RectangleScissors', {
       configuration: { volumeUID: ctVolumeUID },
     })
     ctSceneToolGroup.addTool('WindowLevel', {

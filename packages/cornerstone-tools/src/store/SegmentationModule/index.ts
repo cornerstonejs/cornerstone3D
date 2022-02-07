@@ -1,4 +1,7 @@
-import setLabelmapForElement from './setLabelmapForElement'
+import setLabelmapForElement, {
+  getActiveLabelmapForElement,
+  getLabelmapForElement,
+} from './setLabelmapForElement'
 import {
   setActiveLabelmapIndex,
   getActiveLabelmapIndex,
@@ -9,8 +12,22 @@ import {
 } from './segmentationConfig'
 import { addNewLabelmap, getNextLabelmapIndex } from './addNewLabelmap'
 
+export {
+  setLabelmapForElement,
+  getActiveLabelmapForElement,
+  getLabelmapForElement,
+  getSegmentationConfig,
+  setSegmentationConfig,
+  setActiveLabelmapIndex,
+  getActiveLabelmapIndex,
+  addNewLabelmap,
+  getNextLabelmapIndex,
+}
+
 export default {
   setLabelmapForElement,
+  getActiveLabelmapForElement,
+  getLabelmapForElement,
   getSegmentationConfig,
   setSegmentationConfig,
   setActiveLabelmapIndex,

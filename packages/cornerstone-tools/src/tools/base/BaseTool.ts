@@ -44,7 +44,7 @@ abstract class BaseTool {
   }
 
   // Create to have new measurement or segment
-  abstract createNewState(evt: CustomEvent, interactionType: string)
+  abstract addNewState(evt: CustomEvent, interactionType: string)
 
   /**
    *
