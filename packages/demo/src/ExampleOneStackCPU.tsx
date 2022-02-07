@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
@@ -8,34 +8,30 @@ import {
   metaData,
   cpuColormaps,
   INTERPOLATION_TYPE,
-} from '@ohif/cornerstone-render';
-import * as cs from '@ohif/cornerstone-render';
-import { ToolBindings } from '@ohif/cornerstone-tools';
-import * as csTools3d from '@ohif/cornerstone-tools';
-import { hardcodedMetaDataProvider } from './helpers/initCornerstone';
-import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume';
-import config from './config/default';
-import getImageIds from './helpers/getImageIds';
-import ViewportGrid from './components/ViewportGrid';
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
-import './ExampleVTKMPR.css';
-import {
-  renderingEngineUID,
-  VIEWPORT_IDS,
-  ANNOTATION_TOOLS,
-} from './constants';
+} from '@precisionmetrics/cornerstone-render'
+import * as cs from '@precisionmetrics/cornerstone-render'
+import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
+import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+import config from './config/default'
+import getImageIds from './helpers/getImageIds'
+import ViewportGrid from './components/ViewportGrid'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
+import './ExampleVTKMPR.css'
+import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
-const STACK = 'stack';
+const STACK = 'stack'
 
-window.cache = cache;
+window.cache = cache
 
-let stackCTViewportToolGroup, stackPTViewportToolGroup;
+let stackCTViewportToolGroup, stackPTViewportToolGroup
 
 const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
   (tool) => tool !== 'Crosshairs'
-);
+)
 
-const availableStacks = ['ct', 'pt', 'dx', 'color'];
+const availableStacks = ['ct', 'pt', 'dx', 'color']
 
 class OneStackExampleCPU extends Component {
   state = {
@@ -54,62 +50,62 @@ class OneStackExampleCPU extends Component {
     currentStack: 'ct',
     falseColor: false,
     activeToolGroup: null,
-  };
+  }
 
   constructor(props) {
-    super(props);
+    super(props)
 
-    setUseCPURenderingOnlyForDebugOrTests(true);
-    this._canvasNodes = new Map();
-    this._offScreenRef = React.createRef();
+    setUseCPURenderingOnlyForDebugOrTests(true)
+    this._canvasNodes = new Map()
+    this._offScreenRef = React.createRef()
 
-    this._viewportGridRef = React.createRef();
+    this._viewportGridRef = React.createRef()
 
-    this.ctStackImageIdsPromise = getImageIds('ct1', STACK);
-    this.ptStackImageIdsPromise = getImageIds('pt1', STACK);
-    this.dxStackImageIdsPromise = getImageIds('dx', STACK);
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
+    this.ptStackImageIdsPromise = getImageIds('pt1', STACK)
+    this.dxStackImageIdsPromise = getImageIds('dx', STACK)
 
     Promise.all([
       this.ctStackImageIdsPromise,
       this.ptStackImageIdsPromise,
       this.dxStackImageIdsPromise,
-    ]).then(() => this.setState({ progressText: 'Loading data...' }));
+    ]).then(() => this.setState({ progressText: 'Loading data...' }))
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize();
-        this.renderingEngine.render();
+        this.renderingEngine.resize()
+        this.renderingEngine.render()
       }
-    });
+    })
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit();
-    csTools3d.init();
-    registerWebImageLoader(cs);
-    ({ stackCTViewportToolGroup, stackPTViewportToolGroup } = initToolGroups());
+    await csRenderInit()
+    csTools3d.init()
+    registerWebImageLoader(cs)
+    ;({ stackCTViewportToolGroup, stackPTViewportToolGroup } = initToolGroups())
 
-    const ctStackImageIds = await this.ctStackImageIdsPromise;
-    const ptStackImageIds = await this.ptStackImageIdsPromise;
-    const dxStackImageIds = await this.dxStackImageIdsPromise;
+    const ctStackImageIds = await this.ctStackImageIdsPromise
+    const ptStackImageIds = await this.ptStackImageIdsPromise
+    const dxStackImageIds = await this.dxStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID);
+    const renderingEngine = new RenderingEngine(renderingEngineUID)
 
-    const colorImageIds = config.colorImages.imageIds;
+    const colorImageIds = config.colorImages.imageIds
 
     metaData.addProvider(
       (type, imageId) =>
         hardcodedMetaDataProvider(type, imageId, colorImageIds),
       10000
-    );
+    )
 
-    this.renderingEngine = renderingEngine;
-    window.renderingEngine = renderingEngine;
+    this.renderingEngine = renderingEngine
+    window.renderingEngine = renderingEngine
 
     const viewportInput = [
       {
@@ -120,34 +116,34 @@ class OneStackExampleCPU extends Component {
           background: [0.2, 0, 0.2],
         },
       },
-    ];
+    ]
 
-    renderingEngine.setViewports(viewportInput);
+    renderingEngine.setViewports(viewportInput)
 
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
       undefined,
       VIEWPORT_IDS.STACK.CT
-    );
+    )
 
     addToolsToToolGroups({
       stackCTViewportToolGroup,
       stackPTViewportToolGroup,
-    });
+    })
 
     // This will initialise volumes in GPU memory
-    renderingEngine.render();
+    renderingEngine.render()
 
-    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
-    this.ctStackViewport = ctStackViewport;
+    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    this.ctStackViewport = ctStackViewport
 
-    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2);
-    const ptMiddleSlice = Math.floor(ptStackImageIds.length / 2);
-    const colorMiddleSlice = Math.floor(colorImageIds.length / 2);
+    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
+    const ptMiddleSlice = Math.floor(ptStackImageIds.length / 2)
+    const colorMiddleSlice = Math.floor(colorImageIds.length / 2)
 
-    this.dxStackImageIds = dxStackImageIds;
-    this.ctStackImageIds = ctStackImageIds;
-    this.ptStackImageIds = ptStackImageIds;
+    this.dxStackImageIds = dxStackImageIds
+    this.ctStackImageIds = ctStackImageIds
+    this.ptStackImageIds = ptStackImageIds
 
     const stacks = {
       ct: [
@@ -165,77 +161,77 @@ class OneStackExampleCPU extends Component {
         colorImageIds[colorMiddleSlice],
         colorImageIds[colorMiddleSlice + 1],
       ],
-    };
+    }
 
-    this.stacks = stacks;
+    this.stacks = stacks
 
-    await ctStackViewport.setStack(stacks.ct, 0);
+    await ctStackViewport.setStack(stacks.ct, 0)
     ctStackViewport.setProperties({
       voiRange: { lower: -160, upper: 240 },
       // interpolationType: INTERPOLATION_TYPE.NEAREST,
-    });
+    })
 
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
-    this.setState({ activeToolGroup: stackCTViewportToolGroup });
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.setState({ activeToolGroup: stackCTViewportToolGroup })
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state;
-    const { renderingEngine } = this;
-    const onLoad = () => this.setState({ progressText: 'Loaded.' });
+    const { layoutIndex } = this.state
+    const { renderingEngine } = this
+    const onLoad = () => this.setState({ progressText: 'Loaded.' })
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect();
+      this.viewportGridResizeObserver.disconnect()
     }
 
-    cache.purgeCache();
-    csTools3d.destroy();
+    cache.purgeCache()
+    csTools3d.destroy()
 
-    this.renderingEngine.destroy();
+    this.renderingEngine.destroy()
   }
 
   destroyAndDecacheAllVolumes = () => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
-      return;
+      return
     }
-    this.renderingEngine.destroy();
+    this.renderingEngine.destroy()
 
-    cache.purgeCache();
-  };
+    cache.purgeCache()
+  }
 
   resetToolModes = (toolGroup, stackName) => {
     ANNOTATION_TOOLS.forEach((toolName) => {
-      toolGroup.setToolPassive(toolName);
-    });
+      toolGroup.setToolPassive(toolName)
+    })
 
-    const levelTool = stackName === 'pt' ? 'PetThreshold' : 'WindowLevel';
+    const levelTool = stackName === 'pt' ? 'PetThreshold' : 'WindowLevel'
 
     toolGroup.setToolActive(levelTool, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
-    });
+    })
     toolGroup.setToolActive('Pan', {
       bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
-    });
+    })
     toolGroup.setToolActive('Zoom', {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
-    });
-  };
+    })
+  }
 
   swapTools = (evt) => {
-    let toolName = evt.target.value;
-    const { activeToolGroup, currentStack } = this.state;
+    let toolName = evt.target.value
+    const { activeToolGroup, currentStack } = this.state
 
     if (currentStack === 'pt' && toolName === 'WindowLevel') {
-      toolName = 'PetThreshold';
+      toolName = 'PetThreshold'
     }
 
-    this.resetToolModes(activeToolGroup, this.state.currentStack);
+    this.resetToolModes(activeToolGroup, this.state.currentStack)
 
-    const tools = Object.entries(activeToolGroup.tools);
+    const tools = Object.entries(activeToolGroup.tools)
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -245,139 +241,139 @@ class OneStackExampleCPU extends Component {
         bindings.some(
           (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
         )
-    );
+    )
 
-    activeToolGroup.setToolPassive(activeTool);
+    activeToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
-    const currentBindings = activeToolGroup.tools[toolName].bindings;
+    const currentBindings = activeToolGroup.tools[toolName].bindings
 
     activeToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
         { mouseButton: ToolBindings.Mouse.Primary },
       ],
-    });
+    })
 
-    this.renderingEngine.render();
-    this.setState({ ptCtLeftClickTool: toolName });
-  };
+    this.renderingEngine.render()
+    this.setState({ ptCtLeftClickTool: toolName })
+  }
 
   rotateViewport = (rotateDeg) => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
-    const { rotation } = vp.getProperties();
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const { rotation } = vp.getProperties()
 
-    vp.setProperties({ rotation: rotation + rotateDeg });
-    vp.render();
-  };
+    vp.setProperties({ rotation: rotation + rotateDeg })
+    vp.render()
+  }
 
   flipViewportHorizontal = () => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
-    const { flipHorizontal } = vp.getProperties();
-    vp.setProperties({ flipHorizontal: !flipHorizontal });
-    vp.render();
-  };
+    const { flipHorizontal } = vp.getProperties()
+    vp.setProperties({ flipHorizontal: !flipHorizontal })
+    vp.render()
+  }
 
   flipViewportVertical = () => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
-    const { flipVertical } = vp.getProperties();
-    vp.setProperties({ flipVertical: !flipVertical });
-    vp.render();
-  };
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const { flipVertical } = vp.getProperties()
+    vp.setProperties({ flipVertical: !flipVertical })
+    vp.render()
+  }
 
   resetCamera = () => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
-    vp.resetCamera();
-    vp.render();
-  };
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    vp.resetCamera()
+    vp.render()
+  }
 
   invertColors = () => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
-    const invert = vp.invert;
-    vp.setProperties({ invert: !invert });
-    vp.render();
-  };
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const invert = vp.invert
+    vp.setProperties({ invert: !invert })
+    vp.render()
+  }
 
   applyPreset = () => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
     if (this.currentStack === 'pt') {
-      vp.setProperties({ voiRange: { lower: 0, upper: 5 } });
+      vp.setProperties({ voiRange: { lower: 0, upper: 5 } })
     } else {
-      vp.setProperties({ voiRange: { lower: 100, upper: 500 } });
+      vp.setProperties({ voiRange: { lower: 100, upper: 500 } })
     }
 
-    vp.render();
-  };
+    vp.render()
+  }
 
   switchStack = (evt) => {
-    const stackName = evt.target.value;
+    const stackName = evt.target.value
 
-    stackCTViewportToolGroup.removeViewports(renderingEngineUID);
-    stackPTViewportToolGroup.removeViewports(renderingEngineUID);
+    stackCTViewportToolGroup.removeViewports(renderingEngineUID)
+    stackPTViewportToolGroup.removeViewports(renderingEngineUID)
 
-    let activeToolGroup;
+    let activeToolGroup
     if (stackName === 'pt') {
-      activeToolGroup = stackPTViewportToolGroup;
+      activeToolGroup = stackPTViewportToolGroup
       activeToolGroup.addViewports(
         renderingEngineUID,
         undefined,
         VIEWPORT_IDS.STACK.CT
-      );
+      )
     } else {
-      activeToolGroup = stackCTViewportToolGroup;
+      activeToolGroup = stackCTViewportToolGroup
       activeToolGroup.addViewports(
         renderingEngineUID,
         undefined,
         VIEWPORT_IDS.STACK.CT
-      );
+      )
     }
 
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
     vp.setStack(this.stacks[stackName], 0).then(() => {
-      vp.resetProperties();
+      vp.resetProperties()
       if (stackName === 'pt') {
         vp.setProperties({
           voiRange: { lower: 0, upper: 5 },
           invert: true,
-        });
+        })
       }
-    });
+    })
 
-    this.resetToolModes(activeToolGroup, stackName);
+    this.resetToolModes(activeToolGroup, stackName)
 
     this.setState({
       currentStack: stackName,
       falseColor: false,
       activeToolGroup,
       ptCtLeftClickTool: 'WindowLevel', // reset ui
-    });
-  };
+    })
+  }
 
   resetViewportProperties = () => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
-    vp.resetProperties();
-    vp.resetCamera();
-    vp.render();
-  };
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    vp.resetProperties()
+    vp.resetCamera()
+    vp.render()
+  }
 
   toggleFalseColor = () => {
-    const falseColor = !this.state.falseColor;
+    const falseColor = !this.state.falseColor
 
     // TODO toggle vp state
 
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
     if (falseColor) {
-      vp.setColormap(cpuColormaps.hotIron);
+      vp.setColormap(cpuColormaps.hotIron)
     } else {
-      vp.unsetColormap();
+      vp.unsetColormap()
     }
 
-    this.setState({ falseColor });
-  };
+    this.setState({ falseColor })
+  }
 
   render() {
     return (
@@ -501,8 +497,8 @@ class OneStackExampleCPU extends Component {
           ))}
         </ViewportGrid>
       </div>
-    );
+    )
   }
 }
 
-export default OneStackExampleCPU;
+export default OneStackExampleCPU
