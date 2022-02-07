@@ -839,7 +839,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
    */
   _getTextLines = (data, targetUID: string) => {
     const cachedVolumeStats = data.cachedStats[targetUID]
-    const { area, mean, stdDev, Modality } = cachedVolumeStats
+    const { area, mean, max, stdDev, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
       return
@@ -849,21 +849,26 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     const areaLine = `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
     let meanLine = `Mean: ${mean.toFixed(2)}`
+    let maxLine = `Max: ${max.toFixed(2)}`
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`
 
     // Give appropriate units for the modality.
     if (Modality === 'PT') {
       meanLine += ' SUV'
+      maxLine += ' SUV'
       stdDevLine += ' SUV'
     } else if (Modality === 'CT') {
       meanLine += ' HU'
+      maxLine += ' HU'
       stdDevLine += ' HU'
     } else {
       meanLine += ' MO'
+      maxLine += ' MO'
       stdDevLine += ' MO'
     }
 
     textLines.push(areaLine)
+    textLines.push(maxLine)
     textLines.push(meanLine)
     textLines.push(stdDevLine)
 
@@ -962,6 +967,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         let count = 0
         let mean = 0
         let stdDev = 0
+        let max = -Infinity
 
         const yMultiple = dimensions[0]
         const zMultiple = dimensions[0] * dimensions[1]
@@ -973,6 +979,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           for (let j = jMin; j <= jMax; j++) {
             for (let i = iMin; i <= iMax; i++) {
               const value = scalarData[k * zMultiple + j * yMultiple + i]
+
+              if (value > max) {
+                max = value
+              }
 
               count++
               mean += value
@@ -1002,6 +1012,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           area,
           mean,
           stdDev,
+          max,
         }
       } else {
         this.isHandleOutsideImage = true
