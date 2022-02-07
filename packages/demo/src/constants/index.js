@@ -1,6 +1,7 @@
 const renderingEngineUID = 'PETCTRenderingEngine'
 const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME'
 const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME'
+const prostateVolumeUID = 'cornerstoneStreamingImageVolume:PROSTATE_VOLUME'
 const ctVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 const ptVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0'
 const ctStackUID = 'CT_Stack'
@@ -15,6 +16,7 @@ const SCENE_IDS = {
   STACK: 'stackScene',
   CT: 'ctScene',
   PT: 'ptScene',
+  PROSTATE: 'prostateScene',
   FUSION: 'fusionScene',
   PTMIP: 'ptMipScene',
   CTVR: 'ctVRScene',
@@ -35,6 +37,11 @@ const VIEWPORT_IDS = {
     AXIAL: 'ctAxial',
     SAGITTAL: 'ctSagittal',
     CORONAL: 'ctCoronal',
+  },
+  PROSTATE: {
+    AXIAL: 'prostateAxial',
+    SAGITTAL: 'prostateSagittal',
+    CORONAL: 'prostateCoronal',
   },
   PT: {
     AXIAL: 'ptAxial',
@@ -74,6 +81,7 @@ const TOOL_GROUP_UIDS = {
   STACK_DX: 'stackDXToolGroup',
   CT: 'ctSceneToolGroup',
   PT: 'ptSceneToolGroup',
+  PROSTATE: 'prostateSceneToolGroup',
   FUSION: 'fusionSceneToolGroup',
   PTMIP: 'ptMipSceneToolGroup',
   CTVR: 'ctVRSceneToolGroup',
@@ -108,6 +116,7 @@ export {
   renderingEngineUID,
   ptVolumeUID,
   ctVolumeUID,
+  prostateVolumeUID,
   ctStackUID,
   ctVolumeTestUID,
   ptVolumeTestUID,

@@ -129,6 +129,29 @@ ctSceneToolGroup.addTool('Zoom', {})
 ctSceneToolGroup.addTool('Probe', {})
 ```
 
+### Annotation sharing
+The annotations in StackViewport and VolumeViewport are immediately shared.
+You can activate both a Stack and a Volume viewport and draw annotations on
+one while editing (modifying or moving) the other. This is accomplished by
+providing the toolGroup of the VolumeViewports with the `VolumeUID`.
+
+When drawing a measurement:
+-The tool gets the volume using volumeUID
+- It checks which imageId of the volume the tool has been drawn on
+- If in a stack viewport, we are at the same imageId, we render the tool
+
+```js
+ctSceneToolGroup.addTool('Length', {
+  configuration: { volumeUID: ctVolumeUID },
+})
+ctStackToolGroup.addTool('Length')
+```
+
+<div style={{padding:"56.25% 0 0 0", position:"relative"}}>
+    <iframe src="https://player.vimeo.com/video/601943316?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;h=a6f3ee6e3d" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style= {{ position:"absolute",top:0,left:0,width:"100%",height:"100%"}} title="measurement-report"></iframe>
+</div>
+
+
 #### Dynamic tool statistics
 Cornerstone3D-Tools is capable of calculating dynamic statistics based on the modality of the volume being rendered. For instance, for CT volumes a `ProbeTool` will give Hounsfield Units and for PET it will calculate SUV stats.
 

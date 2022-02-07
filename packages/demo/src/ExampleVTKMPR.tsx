@@ -134,9 +134,6 @@ class MPRExample extends Component {
       ptSceneToolGroup,
       fusionSceneToolGroup,
       ptMipSceneToolGroup,
-      ctVRSceneToolGroup,
-      ctObliqueToolGroup,
-      ptTypesSceneToolGroup,
     } = initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID
@@ -171,8 +168,6 @@ class MPRExample extends Component {
       ptSceneToolGroup,
       fusionSceneToolGroup,
       ptMipSceneToolGroup,
-      ctVRSceneToolGroup,
-      ctObliqueToolGroup,
       ptTypesSceneToolGroup,
     })
 
@@ -402,7 +397,6 @@ class MPRExample extends Component {
       toolName
     )
 
-    this.renderingEngine.render()
     this.setState({ ptCtLeftClickTool: toolName })
   }
 
@@ -490,7 +484,7 @@ class MPRExample extends Component {
             style={{ margin: '8px 0', marginLeft: '-4px' }}
           >
             {/* LAYOUT BUTTONS */}
-            {filteredLayoutButtons.map((layout) => (
+            {/* {filteredLayoutButtons.map((layout) => (
               <button
                 key={layout.id}
                 onClick={() => this.swapLayout(layout.id)}
@@ -499,7 +493,7 @@ class MPRExample extends Component {
               >
                 {layout.text}
               </button>
-            ))}
+            ))} */}
             {/* TOGGLES */}
             {fusionButtons}
             {/* Hide until we update react in a better way  {fusionWLDisplay} */}

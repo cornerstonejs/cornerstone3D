@@ -40,10 +40,7 @@ const { BlendMode } = vtkConstants
 window.cache = cache
 
 let ctSceneToolGroup,
-  stackCTViewportToolGroup,
-  stackPTViewportToolGroup,
-  stackDXViewportToolGroup,
-  ptSceneToolGroup
+  stackCTViewportToolGroup
 
 const toolsToUse = ANNOTATION_TOOLS
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
@@ -112,9 +109,6 @@ class FlipViewportExample extends Component {
     ;({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
-      stackPTViewportToolGroup,
-      stackDXViewportToolGroup,
-      ptSceneToolGroup,
     } = initToolGroups({
       configuration: { preventHandleOutsideImage: true },
     }))
@@ -196,9 +190,6 @@ class FlipViewportExample extends Component {
     addToolsToToolGroups({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
-      stackPTViewportToolGroup,
-      stackDXViewportToolGroup,
-      ptSceneToolGroup,
     })
 
     this.axialSync.add({
@@ -303,7 +294,7 @@ class FlipViewportExample extends Component {
     this._offScreenRef.current.appendChild(image)
   }
 
-  hidOffScreenCanvas = () => {
+  hideOffScreenCanvas = () => {
     // remove children
     this._offScreenRef.current.innerHTML = ''
   }
@@ -452,7 +443,7 @@ class FlipViewportExample extends Component {
             Show OffScreenCanvas
           </button>
           <button
-            onClick={this.hidOffScreenCanvas}
+            onClick={this.hideOffScreenCanvas}
             className="btn btn-primary"
             style={{ margin: '2px 4px' }}
           >

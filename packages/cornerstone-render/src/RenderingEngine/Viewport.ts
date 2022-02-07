@@ -346,7 +346,7 @@ class Viewport {
     this._suppressCameraModifiedEvents = false
   }
 
-  protected setCameraNoEvent(camera: ICamera) {
+  protected setCameraNoEvent(camera: ICamera): void {
     this._suppressCameraModifiedEvents = true
     this.setCamera(camera)
     this._suppressCameraModifiedEvents = false
@@ -621,7 +621,7 @@ class Viewport {
       //
       // Compensating for the flipped viewport. Since our method for flipping is
       // flipping the actor matrix itself, the focal point won't change; therefore,
-      // we need to accomodate for this required change elsewhere
+      // we need to accommodate for this required change elsewhere
       // vec3.sub(dir, viewport.applyFlipTx(focalPoint), point)
       position: <Point3>this.applyFlipTx(vtkCamera.getPosition() as Point3),
       focalPoint: <Point3>this.applyFlipTx(vtkCamera.getFocalPoint() as Point3),

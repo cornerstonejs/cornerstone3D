@@ -58,3 +58,58 @@ stackToolGroup.setToolActive('Probe', {
   bindings: [{ mouseButton:  ToolBindings.Mouse.Primary }],
 })
 ```
+
+
+## Crosshairs
+Crosshairs enables cross-locating a point in 2 or 3 viewports. They can be
+Active, Passive, Enabled, Disabled similar to other tools.
+
+```js
+ctSceneToolGroup.addTool('Crosshairs', {
+  configuration: {
+    getReferenceLineColor,
+    getReferenceLineControllable,
+    getReferenceLineDraggableRotatable,
+    getReferenceLineSlabThicknessControlsOn,
+  },
+})
+```
+
+
+### Rotation
+By clicking and dragging a rotation handle, you may change the view of the other viewports in the scene.
+
+### Slab Thickness
+You can reformat a thick slab through the data. This feature computes a 2D thick view along the direction of the view from a 3D image.
+
+
+In order to use the slab thickness you need to set the `blendMode` on the `Scene` to be `BlendMode.MAXIMUM_INTENSITY_BLEND`.
+
+
+```js
+await ctScene.setVolumes([
+  {
+    volumeUID: ctVolumeUID,
+    blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+  },
+])
+```
+### Configuration
+Customization options include changing the colour of the crosshairs and determining whether or not to display the slabThickness and rotation handles.
+
+To familiarize yourself with these options, go to `initiToolGroups` in the demo folder.
+
+```js
+ctSceneToolGroup.addTool('Crosshairs', {
+  configuration: {
+    getReferenceLineColor,
+    getReferenceLineControllable,
+    getReferenceLineDraggableRotatable,
+    getReferenceLineSlabThicknessControlsOn,
+  },
+})
+```
+
+<div style={{padding:"56.25% 0 0 0", position:"relative"}}>
+    <iframe src="https://player.vimeo.com/video/601952835?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;h=abc1591622" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style= {{ position:"absolute",top:0,left:0,width:"100%",height:"100%"}} title="measurement-report"></iframe>
+</div>
