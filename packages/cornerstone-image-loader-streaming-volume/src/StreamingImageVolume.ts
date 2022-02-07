@@ -238,7 +238,6 @@ export default class StreamingImageVolume extends ImageVolume {
     }
 
     const successCallback = (
-      volume: StreamingImageVolume,
       imageIdIndex: number,
       imageId: string,
       scalingParameters
@@ -404,7 +403,7 @@ export default class StreamingImageVolume extends ImageVolume {
       function callLoadImage(imageId, imageIdIndex, options) {
         return loadImage(imageId, options).then(
           () => {
-            successCallback(this, imageIdIndex, imageId, scalingParameters)
+            successCallback(imageIdIndex, imageId, scalingParameters)
           },
           (error) => {
             errorCallback(error, imageIdIndex, imageId)
