@@ -154,6 +154,19 @@ function setLabelmapGlobalState(
   // Creating the default color LUT if not created yet
   _initDefaultColorLUT()
 
+  // Don't allow overwriting existing labelmapState with the same labelmapUID
+  const existingState = state.labelmaps.find(
+    (labelmapState) => labelmapState.volumeUID === labelmapUID
+  )
+
+  if (existingState) {
+    if (newState.volumeUID !== labelmapUID) {
+      throw new Error(
+        `Labelmap state with volumeUID ${newState.volumeUID} already exists`
+      )
+    }
+  }
+
   const {
     referenceImageId,
     referenceVolumeUID,
@@ -161,7 +174,6 @@ function setLabelmapGlobalState(
     segmentsLocked,
   } = newState
 
-  // Todo: I don't think the order in the global state of the labemaps matter, so just push, but double check
   state.labelmaps.push({
     volumeUID: labelmapUID,
     referenceVolumeUID,
@@ -199,23 +211,22 @@ function setLabelmapViewportSpecificState(
   }
   // Todo: check if there is a labelmapGlobalState
   const viewportLabelmapsState = _getLabelmapsStateForViewportUID(viewportUID)
-  const {
-    segmentsHidden,
-    visibility,
-    colorLUTIndex,
-    cfun,
-    ofun,
-    labelmapConfig,
-  } = labelmapState
 
-  viewportLabelmapsState.labelmaps[labelmapIndex] = {
+  if (!viewportLabelmapsState) {
+    state.volumeViewports[viewportUID] = {
+      activeLabelmapIndex: 0,
+      labelmaps: [],
+    }
+  }
+
+  state.volumeViewports[viewportUID].labelmaps[labelmapIndex] = {
     volumeUID: labelmapUID,
-    segmentsHidden,
-    visibility,
-    colorLUTIndex,
-    cfun,
-    ofun,
-    labelmapConfig,
+    segmentsHidden: labelmapState.segmentsHidden,
+    visibility: labelmapState.visibility,
+    colorLUTIndex: labelmapState.colorLUTIndex,
+    cfun: labelmapState.cfun,
+    ofun: labelmapState.ofun,
+    labelmapConfig: labelmapState.labelmapConfig,
   }
 }
 
@@ -242,6 +253,38 @@ function getLabelmapsStateForElement(
 
   return _getLabelmapsStateForViewportUID(viewportUID)
 }
+
+function removeLabelmapFromGlobalState(labelmapUID: string): void {
+  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
+
+  if (labelmapGlobalState) {
+    const labelmapGlobalIndex = state.labelmaps.findIndex(
+      (labelmap) => labelmap.volumeUID === labelmapUID
+    )
+
+    state.labelmaps.splice(labelmapGlobalIndex, 1)
+  }
+}
+
+// function removeLabelmapFromContainingViewports(labelmapUID: string): void {
+//   // get viewportUIDs in the state
+//   const viewportUIDs = Object.keys(state.volumeViewports)
+
+//   // remove the labelmap from all viewports
+//   viewportUIDs.forEach((viewportUID) => {
+//     const viewportLabelmapsState = state.volumeViewports[viewportUID]
+
+//     if (viewportLabelmapsState) {
+//       const labelmapIndex = viewportLabelmapsState.labelmaps.findIndex(
+//         (labelmap) => labelmap.volumeUID === labelmapUID
+//       )
+
+//       if (labelmapIndex !== -1) {
+//         viewportLabelmapsState.labelmaps.splice(labelmapIndex, 1)
+//       }
+//     }
+//   })
+// }
 
 /**
  * Returns the viewport specific labelmapState for a viewportUID and the provided
@@ -316,4 +359,6 @@ export {
   // set
   setLabelmapGlobalState,
   setLabelmapViewportSpecificState,
+  // remove
+  removeLabelmapFromGlobalState,
 }
