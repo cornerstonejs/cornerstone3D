@@ -60,8 +60,9 @@ function calculateSuvPeak(
 
   let max = 0
   let maxIJK = [0, 0, 0]
+  let maxLPS = [0, 0, 0]
 
-  const callback = ({ pointIJK }) => {
+  const callback = ({ pointIJK, pointLPS }) => {
     const offset = referenceVolumeImageData.computeOffsetIndex(pointIJK)
     const value = labelmapData[offset]
 
@@ -74,6 +75,7 @@ function calculateSuvPeak(
     if (referenceValue > max) {
       max = referenceValue
       maxIJK = pointIJK
+      maxLPS = pointLPS
     }
   }
 
@@ -125,6 +127,7 @@ function calculateSuvPeak(
   return {
     max,
     maxIJK,
+    maxLPS,
     mean,
   }
 }
