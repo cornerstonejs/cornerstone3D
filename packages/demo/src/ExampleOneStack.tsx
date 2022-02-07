@@ -251,6 +251,11 @@ class OneStackExample extends Component {
     this._offScreenRef.current.appendChild(image)
   }
 
+  hideOffScreenCanvas = () => {
+    // remove all children
+    this._offScreenRef.current.innerHTML = ''
+  }
+
   rotateViewport = (rotateDeg) => {
     // remove all children
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
@@ -399,7 +404,7 @@ class OneStackExample extends Component {
             Show OffScreenCanvas
           </button>
           <button
-            onClick={this.hidOffScreenCanvas}
+            onClick={this.hideOffScreenCanvas}
             className="btn btn-primary"
             style={{ margin: '2px 4px' }}
           >

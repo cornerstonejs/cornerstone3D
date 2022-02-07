@@ -1,7 +1,16 @@
 import { BaseAnnotationTool } from './base'
 // ~~ VTK Viewport
-import { getEnabledElement, RenderingEngine } from '@ohif/cornerstone-render'
-import { addToolState, getToolState } from '../stateManagement/toolState'
+import {
+  getEnabledElement,
+  RenderingEngine,
+  getRenderingEngine,
+  Utilities as csUtils,
+} from '@ohif/cornerstone-render'
+import {
+  addToolState,
+  getToolState,
+  removeToolStateByToolDataUID,
+} from '../stateManagement/toolState'
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
@@ -22,7 +31,6 @@ import {
   Point2,
   Point3,
 } from '../types'
-import { ToolGroupManager } from '../store'
 import { isToolDataLocked } from '../stateManagement/toolDataLocking'
 import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
 
@@ -39,6 +47,12 @@ interface ToolConfiguration {
     shadow?: boolean
   }
 }
+
+type ViewportInput = {
+  renderingEngineUID: string
+  viewportUID: string
+}
+type ViewportInputs = Array<ViewportInput>
 
 interface CrosshairsSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -128,38 +142,182 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
-  addNewMeasurement(
-    evt: CustomEvent,
-    interactionType: string
-  ): CrosshairsSpecificToolData {
-    // not used, but is necessary if BaseAnnotationTool.
-    // NOTE: this is a BaseAnnotationTool and not a BaseTool, because in future
-    // we will likely pre-filter all tools using typeof / instanceof
-    // in the mouse down dispatchers where we check for methods like pointNearTool.
-    const toolSpecificToolData = {
+  /**
+   * Gets the camera from the viewport, and adds crosshairs toolData for the viewport
+   * to the toolStateManager. If any toolData is found in the toolStateManager, it
+   * overwrites it.
+   * @param {renderingEngineUID, viewportUID}
+   * @returns {normal, point} viewPlaneNormal and center of viewport canvas in world space
+   */
+  initializeViewport = ({
+    renderingEngineUID,
+    viewportUID,
+  }: ViewportInput): {
+    normal: Point3
+    point: Point3
+  } => {
+    const renderingEngine = getRenderingEngine(renderingEngineUID)
+    const viewport = renderingEngine.getViewport(viewportUID)
+    const { element } = viewport
+    const enabledElement = getEnabledElement(element)
+    const { FrameOfReferenceUID, sceneUID } = enabledElement
+    const { position, focalPoint, viewPlaneNormal } = viewport.getCamera()
+
+    // Check if there is already toolData for this viewport
+    let toolState = getToolState(enabledElement, this.name)
+    toolState = this.filterInteractableToolStateForElement(element, toolState)
+
+    if (toolState.length) {
+      // If found, it will override it by removing the toolData and adding it later
+      removeToolStateByToolDataUID(element, toolState[0].metadata.toolDataUID)
+    }
+
+    const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[0, 0, 0],
-        viewUp: <Point3>[0, 0, 0],
-        toolDataUID: '1',
-        FrameOfReferenceUID: '1',
-        referencedImageId: '1',
+        cameraPosition: <Point3>[...position],
+        cameraFocalPoint: <Point3>[...focalPoint],
+        FrameOfReferenceUID,
         toolName: this.name,
       },
       data: {
         handles: {
           rotationPoints: [], // rotation handles, used for rotation interactions
           slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
-          activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
-          toolCenter: <Point3>[0, 0, 0], // Used in testings
+          toolCenter: this.toolCenter,
         },
         active: false,
+        // Todo: add enum for active Operations
+        activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
         activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
-        viewportUID: '1',
-        sceneUID: '1',
+        viewportUID,
+        sceneUID,
       },
     }
 
-    return toolSpecificToolData
+    resetElementCursor(element)
+
+    addToolState(element, toolData)
+
+    return {
+      normal: viewPlaneNormal,
+      point: viewport.canvasToWorld([
+        viewport.sWidth / 2,
+        viewport.sHeight / 2,
+      ]),
+    }
+  }
+
+  /**
+   * When activated, it initializes the crosshairs. It begins by computing
+   * the intersection of viewports associated with the crosshairs instance.
+   * When all three views are accessible, the intersection (e.g., crosshairs tool centre)
+   * will be an exact point in space; however, with two viewports, because the
+   * intersection of two planes is a line, it assumes the last view is between the centre
+   * of the two rendering viewports.
+   * @param viewports Array of viewportInputs which each item containing {viewportUID, renderingEngineUID}
+   */
+  init = (viewports: ViewportInputs): void => {
+    if (!viewports.length || viewports.length === 1) {
+      throw new Error(
+        'For crosshairs to operate, at least two viewports must be given.'
+      )
+    }
+
+    // Todo: handle two same view viewport, or more than 3 viewports
+    const [firstViewport, secondViewport, thirdViewport] = viewports
+
+    // Initialize first viewport
+    const { normal: normal1, point: point1 } =
+      this.initializeViewport(firstViewport)
+
+    // Initialize second viewport
+    const { normal: normal2, point: point2 } =
+      this.initializeViewport(secondViewport)
+
+    let normal3 = <Point3>[0, 0, 0]
+    let point3 = vec3.create()
+
+    // If there are three viewports
+    if (thirdViewport) {
+      ;({ normal: normal3, point: point3 } =
+        this.initializeViewport(thirdViewport))
+    } else {
+      // If there are only two views (viewport) associated with the crosshairs:
+      // In this situation, we don't have a third information to find the
+      // exact intersection, and we "assume" the third view is looking at
+      // a location in between the first and second view centers
+      vec3.add(point3, point1, point2)
+      vec3.scale(point3, point3, 0.5)
+      vec3.cross(normal3, normal1, normal2)
+    }
+
+    // Planes of each viewport
+    const firstPlane = csUtils.planar.planeEquation(normal1, point1)
+    const secondPlane = csUtils.planar.planeEquation(normal2, point2)
+    const thirdPlane = csUtils.planar.planeEquation(normal3, point3)
+
+    // Calculating the intersection of 3 planes
+    // prettier-ignore
+    this.toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane)
+  }
+
+  /**
+   * For Crosshairs it handle the click event.
+   * @param evt
+   * @param interactionType
+   * @returns
+   */
+  addNewMeasurement(
+    evt: CustomEvent,
+    interactionType: string
+  ): CrosshairsSpecificToolData {
+    const eventData = evt.detail
+    const { element } = eventData
+
+    const { currentPoints } = eventData
+    const jumpWorld = currentPoints.world
+
+    const enabledElement = getEnabledElement(element)
+    const { viewport } = enabledElement
+    this._jump(enabledElement, jumpWorld)
+
+    const toolState = getToolState(enabledElement, this.name)
+    const filteredToolState = this.filterInteractableToolStateForElement(
+      viewport.element,
+      toolState
+    )
+
+    // viewport ToolData
+    const { data } = filteredToolState[0]
+
+    const { rotationPoints } = data.handles
+    const viewportUIDArray = []
+    // put all the draggable reference lines in the viewportUIDArray
+    for (let i = 0; i < rotationPoints.length - 1; ++i) {
+      const otherViewport = rotationPoints[i][1]
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.uid
+      )
+      const viewportDraggableRotatable =
+        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+      if (!viewportControllable || !viewportDraggableRotatable) {
+        continue
+      }
+      viewportUIDArray.push(otherViewport.uid)
+      // rotation handles are two per viewport
+      i++
+    }
+
+    data.activeViewportUIDs = [...viewportUIDArray]
+    // set translation operation
+    data.handles.activeOperation = OPERATION.DRAG
+
+    evt.preventDefault()
+
+    hideElementCursor(element)
+
+    this._activateModify(element)
+    return filteredToolState[0]
   }
 
   cancel = () => {
@@ -167,26 +325,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
-    // We need a better way of surfacing this...
-    const {
-      viewportUid: viewportUID,
-      sceneUid: sceneUID,
-      renderingEngineUid: renderingEngineUID,
-    } = element.dataset
-    const toolGroups = ToolGroupManager.getToolGroups(
-      renderingEngineUID,
-      sceneUID,
-      viewportUID
-    )
-    const groupTools = toolGroups[0]?.toolOptions
-    const mode = groupTools[this.name]?.mode
-
-    // We don't want this annotation tool to render or be interactive unless its
-    // active
-    if (mode !== 'Active') {
-      return undefined
-    }
-
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
@@ -247,74 +385,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     proximity,
     interactionType
   ) => {
-    // We need a better way of surfacing this...
-    const {
-      viewportUid: viewportUID,
-      sceneUid: sceneUID,
-      renderingEngineUid: renderingEngineUID,
-    } = element.dataset
-    const toolGroups = ToolGroupManager.getToolGroups(
-      renderingEngineUID,
-      sceneUID,
-      viewportUID
-    )
-    const groupTools = toolGroups[0]?.toolOptions
-    const mode = groupTools[this.name]?.mode
-
-    // We don't want this annotation tool to render or be interactive unless its
-    // active
-    if (mode !== 'Active') {
-      return false
-    }
-
-    // This iterates all instances of Crosshairs across all toolGroups
-    // And updates `isCrosshairsActive` if ANY are active?
-    let isCrosshairsActive = false
-    for (let i = 0; i < toolGroups.length; ++i) {
-      const toolGroup = toolGroups[i]
-      const tool = toolGroup.toolOptions['Crosshairs']
-
-      if (tool.mode === 'Active') {
-        isCrosshairsActive = true
-        break
-      }
-    }
-
-    const { data } = toolData
     if (this._pointNearTool(element, toolData, canvasCoords, 6)) {
-      return true
-    } else if (data.activeViewportUIDs.length === 0) {
-      const enabledElement = getEnabledElement(element)
-      const { viewport } = enabledElement
-      const jumpWorld = viewport.canvasToWorld(canvasCoords)
-
-      this._jump(enabledElement, jumpWorld)
-
-      const { rotationPoints } = data.handles
-      const viewportUIDArray = []
-      // put all the draggable reference lines in the viewportUIDArray
-      for (let i = 0; i < rotationPoints.length - 1; ++i) {
-        const otherViewport = rotationPoints[i][1]
-        const viewportControllable = this._getReferenceLineControllable(
-          otherViewport.uid
-        )
-        const viewportDraggableRotatable =
-          this._getReferenceLineDraggableRotatable(otherViewport.uid)
-
-        if (!viewportControllable || !viewportDraggableRotatable) {
-          continue
-        }
-
-        viewportUIDArray.push(otherViewport.uid)
-
-        // rotation handles are two for viewport
-        i++
-      }
-
-      data.activeViewportUIDs = [...viewportUIDArray]
-      // set translation operation
-      data.handles.activeOperation = OPERATION.DRAG
-
       return true
     }
 
@@ -336,80 +407,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  _isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID }) {
-    const toolGroups = ToolGroupManager.getToolGroups(
-      renderingEngineUID,
-      sceneUID,
-      viewportUID
-    )
-
-    // This iterates all instances of Crosshairs across all toolGroups
-    // And updates `isCrosshairsActive` if ANY are active?
-    let isCrosshairsActive = false
-    for (let i = 0; i < toolGroups.length; ++i) {
-      const toolGroup = toolGroups[i]
-      const tool = toolGroup.toolOptions['Crosshairs']
-
-      if (tool.mode === 'Active') {
-        isCrosshairsActive = true
-        break
-      }
-    }
-
-    // So if none are active, we have nothing to render, and we peace out
-    return isCrosshairsActive
-  }
-
-  _initCrosshairs = (evt, toolState) => {
-    const eventData = evt.detail
-    const { element } = eventData
-    const enabledElement = getEnabledElement(element)
-    const { viewport, FrameOfReferenceUID, viewportUID, sceneUID } =
-      enabledElement
-    const { sHeight, sWidth, canvasToWorld } = viewport
-    const centerCanvas: Point2 = [sWidth * 0.5, sHeight * 0.5]
-
-    // Calculate the crosshair center
-    // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
-    // This because the rotation operations rotates also all the other active/intersecting reference lines of the same angle
-    this.toolCenter = canvasToWorld(centerCanvas)
-
-    const camera = viewport.getCamera()
-    const { position, focalPoint } = camera
-
-    const toolData = {
-      metadata: {
-        cameraPosition: <Point3>[...position],
-        cameraFocalPoint: <Point3>[...focalPoint],
-        FrameOfReferenceUID,
-        toolName: this.name,
-      },
-      data: {
-        handles: {
-          rotationPoints: [], // rotation handles, used for rotation interactions
-          slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
-          toolCenter: this.toolCenter,
-        },
-        active: false,
-        activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
-        activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
-        viewportUID,
-        sceneUID,
-      },
-    }
-
-    // NOTE: rotation handles are initialized in renderTool when drawing.
-
-    addToolState(element, toolData)
-
-    resetElementCursor(element)
-  }
-
   onCameraModified = (evt) => {
     const eventData = evt.detail
     const { element } = eventData
     const enabledElement = getEnabledElement(element)
-    const { FrameOfReferenceUID, renderingEngine, viewport } = enabledElement
+    const { renderingEngine, viewport } = enabledElement
 
     const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
@@ -418,22 +420,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       requireSameOrientation
     )
 
-    let toolState = getToolState(enabledElement, this.name)
-    let filteredToolState = this.filterInteractableToolStateForElement(
+    const toolState = getToolState(enabledElement, this.name)
+    const filteredToolState = this.filterInteractableToolStateForElement(
       element,
       toolState
     )
-
-    if (!filteredToolState.length && FrameOfReferenceUID) {
-      this._initCrosshairs(evt, toolState)
-
-      toolState = getToolState(enabledElement, this.name)
-
-      filteredToolState = this.filterInteractableToolStateForElement(
-        element,
-        toolState
-      )
-    }
 
     // viewport ToolData
     const viewportToolData = filteredToolState[0] as CrosshairsSpecificToolData
@@ -441,12 +432,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     if (!viewportToolData) {
       return
     }
-
-    // if (
-    //   !this._isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID })
-    // ) {
-    //   return
-    // }
 
     // -- Update the camera of other linked viewports in the same scene that
     //    have the same camera in case of translation
@@ -507,34 +492,34 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       ) {
         // update linked view in the same scene that have the same camera
         // this goes here, because the parent viewport translation may happen in another tool
-        const otherLinkedViewportsToolDataWithSameCameraDirection =
-          this._filterLinkedViewportWithSameOrientationAndScene(
-            enabledElement,
-            toolState
-          )
+        // const otherLinkedViewportsToolDataWithSameCameraDirection =
+        //   this._filterLinkedViewportWithSameOrientationAndScene(
+        //     enabledElement,
+        //     toolState
+        //   )
 
-        for (
-          let i = 0;
-          i < otherLinkedViewportsToolDataWithSameCameraDirection.length;
-          ++i
-        ) {
-          const toolData =
-            otherLinkedViewportsToolDataWithSameCameraDirection[i]
-          const { data } = toolData
-          const scene = renderingEngine.getScene(data.sceneUID)
-          const otherViewport = scene.getViewport(data.viewportUID)
-          const camera = otherViewport.getCamera()
+        // for (
+        //   let i = 0;
+        //   i < otherLinkedViewportsToolDataWithSameCameraDirection.length;
+        //   ++i
+        // ) {
+        //   const toolData =
+        //     otherLinkedViewportsToolDataWithSameCameraDirection[i]
+        //   const { data } = toolData
+        //   const scene = renderingEngine.getScene(data.sceneUID)
+        //   const otherViewport = scene.getViewport(data.viewportUID)
+        //   const camera = otherViewport.getCamera()
 
-          const newFocalPoint = [0, 0, 0]
-          const newPosition = [0, 0, 0]
+        //   const newFocalPoint = [0, 0, 0]
+        //   const newPosition = [0, 0, 0]
 
-          vtkMath.add(camera.focalPoint, deltaCameraPosition, newFocalPoint)
-          vtkMath.add(camera.position, deltaCameraPosition, newPosition)
+        //   vtkMath.add(camera.focalPoint, deltaCameraPosition, newFocalPoint)
+        //   vtkMath.add(camera.position, deltaCameraPosition, newPosition)
 
-          // updated cached "previous" camera position and focal point
-          toolData.metadata.cameraPosition = [...currentCamera.position]
-          toolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
-        }
+        //   // updated cached "previous" camera position and focal point
+        //   toolData.metadata.cameraPosition = [...currentCamera.position]
+        //   toolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
+        // }
 
         // update center of the crosshair
         this.toolCenter[0] += deltaCameraPosition[0]
@@ -628,17 +613,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
-
-    // This iterates all instances of Crosshairs across all toolGroups
-    // And updates `isCrosshairsActive` if ANY are active?
-    // So if none are active, we have nothing to render, and we peace out
-    if (
-      !this._isCrosshairsActive({ renderingEngineUID, sceneUID, viewportUID })
-    ) {
-      return
-    }
-
     const eventData = evt.detail
     const { element } = eventData
     const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
@@ -724,6 +698,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       const { focalPoint } = camera
       const focalPointCanvas = viewport.worldToCanvas(focalPoint)
+      // Todo: focalpointCanvas is a lot, how is it doing arithmetics on it??
       const canvasBox = [
         focalPointCanvas - sWidth * 0.5,
         focalPointCanvas + sWidth * 0.5,
@@ -743,7 +718,37 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       )
       vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter)
 
+      // Graphic:
+      // Mid -> SlabThickness handle
+      // Short -> Rotation handle
+      //                           Long
+      //                            |
+      //                            |
+      //                            |
+      //                           Mid
+      //                            |
+      //                            |
+      //                            |
+      //                          Short
+      //                            |
+      //                            |
+      //                            |
+      // Long --- Mid--- Short--- Center --- Short --- Mid --- Long
+      //                            |
+      //                            |
+      //                            |
+      //                          Short
+      //                            |
+      //                            |
+      //                            |
+      //                           Mid
+      //                            |
+      //                            |
+      //                            |
+      //                           Long
       const canvasVectorFromCenterLong = vec2.create()
+
+      // Todo: configuration should provide constants below (100, 0.25, 0.15, 0.04)
       vec2.scale(
         canvasVectorFromCenterLong,
         canvasUnitVectorFromCenter,
@@ -765,10 +770,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vec2.scale(
         canvasVectorFromCenterStart,
         canvasUnitVectorFromCenter,
-        canvasDiagonalLength * 0.05
+        // Don't put a gap if the the third view is missing
+        otherViewportToolData.length === 2 ? canvasDiagonalLength * 0.04 : 0
       )
 
-      // points for reference lines
+      // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
       const refLinePointOne = vec2.create()
       const refLinePointTwo = vec2.create()
       const refLinePointThree = vec2.create()
@@ -792,10 +798,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         canvasVectorFromCenterLong
       )
 
+      // Clipping lines to be only included in a box (canvas), we don't want
+      // the lines goes beyond canvas
       liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox)
       liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox)
 
-      // points for rotation handles
+      // Computing rotation handle positions
       const rotHandleOne = vec2.create()
       vec2.subtract(
         rotHandleOne,
@@ -806,21 +814,24 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const rotHandleTwo = vec2.create()
       vec2.add(rotHandleTwo, crosshairCenterCanvas, canvasVectorFromCenterMid)
 
-      // get world information for lines and points (vertical world distances)
-      let stHanlesCenterCanvas = vec2.clone(crosshairCenterCanvas)
+      // Computing SlabThickness (st below) position
+
+      // SlabThickness center in canvas
+      let stHandlesCenterCanvas = vec2.clone(crosshairCenterCanvas)
       if (
         !otherViewportDraggableRotatable &&
         otherViewportSlabThicknessControlsOn
       ) {
-        stHanlesCenterCanvas = vec2.clone(otherViewportCenterCanvas)
+        stHandlesCenterCanvas = vec2.clone(otherViewportCenterCanvas)
       }
 
-      let stHanlesCenterWorld = [...this.toolCenter]
+      // SlabThickness center in world
+      let stHandlesCenterWorld = [...this.toolCenter]
       if (
         !otherViewportDraggableRotatable &&
         otherViewportSlabThicknessControlsOn
       ) {
-        stHanlesCenterWorld = [...otherViewportCenterWorld]
+        stHandlesCenterWorld = [...otherViewportCenterWorld]
       }
 
       const worldUnitVectorFromCenter: Point3 = [0, 0, 0]
@@ -848,7 +859,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       const worldVerticalRefPoint: Point3 = [0, 0, 0]
       vtkMath.add(
-        stHanlesCenterWorld,
+        stHandlesCenterWorld,
         worldOrthoVectorFromCenter,
         worldVerticalRefPoint
       )
@@ -862,20 +873,24 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const canvasOrthoVectorFromCenter = vec2.create()
       vec2.subtract(
         canvasOrthoVectorFromCenter,
-        stHanlesCenterCanvas,
+        stHandlesCenterCanvas,
         canvasVerticalRefPoint
       )
 
       const stLinePointOne = vec2.create()
       vec2.subtract(
         stLinePointOne,
-        stHanlesCenterCanvas,
+        stHandlesCenterCanvas,
         canvasVectorFromCenterLong
       )
       vec2.add(stLinePointOne, stLinePointOne, canvasOrthoVectorFromCenter)
 
       const stLinePointTwo = vec2.create()
-      vec2.add(stLinePointTwo, stHanlesCenterCanvas, canvasVectorFromCenterLong)
+      vec2.add(
+        stLinePointTwo,
+        stHandlesCenterCanvas,
+        canvasVectorFromCenterLong
+      )
       vec2.add(stLinePointTwo, stLinePointTwo, canvasOrthoVectorFromCenter)
 
       liangBarksyClip(stLinePointOne, stLinePointTwo, canvasBox)
@@ -883,7 +898,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const stLinePointThree = vec2.create()
       vec2.add(
         stLinePointThree,
-        stHanlesCenterCanvas,
+        stHandlesCenterCanvas,
         canvasVectorFromCenterLong
       )
       vec2.subtract(
@@ -895,7 +910,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const stLinePointFour = vec2.create()
       vec2.subtract(
         stLinePointFour,
-        stHanlesCenterCanvas,
+        stHandlesCenterCanvas,
         canvasVectorFromCenterLong
       )
       vec2.subtract(
@@ -914,19 +929,19 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       vec2.subtract(
         stHandleOne,
-        stHanlesCenterCanvas,
+        stHandlesCenterCanvas,
         canvasVectorFromCenterShort
       )
       vec2.add(stHandleOne, stHandleOne, canvasOrthoVectorFromCenter)
-      vec2.add(stHandleTwo, stHanlesCenterCanvas, canvasVectorFromCenterShort)
+      vec2.add(stHandleTwo, stHandlesCenterCanvas, canvasVectorFromCenterShort)
       vec2.add(stHandleTwo, stHandleTwo, canvasOrthoVectorFromCenter)
       vec2.subtract(
         stHandleThree,
-        stHanlesCenterCanvas,
+        stHandlesCenterCanvas,
         canvasVectorFromCenterShort
       )
       vec2.subtract(stHandleThree, stHandleThree, canvasOrthoVectorFromCenter)
-      vec2.add(stHandleFour, stHanlesCenterCanvas, canvasVectorFromCenterShort)
+      vec2.add(stHandleFour, stHandlesCenterCanvas, canvasVectorFromCenterShort)
       vec2.subtract(stHandleFour, stHandleFour, canvasOrthoVectorFromCenter)
 
       referenceLines.push([
@@ -1794,6 +1809,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         angle *= -1
       }
 
+      // Rounding the angle to allow rotated handles to be undone
+      // If we don't round and rotate handles clockwise by 0.0131233 radians,
+      // there's no assurance that the counter-clockwise rotation occurs at
+      // precisely -0.0131233, resulting in the drawn annotations being lost.
+      angle = Math.round(angle * 100) / 100
+
       const rotationAxis = viewport.getCamera().viewPlaneNormal
       // @ts-ignore : vtkjs incorrect typing
       const { matrix } = vtkMatrixBuilder
@@ -1950,8 +1971,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
               otherViewport.setSlabThickness(null)
             } else {
               otherViewport.setSlabThickness(slabThicknessValue)
-              otherViewport.render()
             }
+            otherViewport.render()
           }
         }
       )

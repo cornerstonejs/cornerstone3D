@@ -7,6 +7,7 @@ import {
   ctVolumeTestUID,
   ptVolumeTestUID,
   VIEWPORT_IDS,
+  prostateVolumeUID,
 } from './constants'
 const {
   PanTool,
@@ -54,6 +55,9 @@ let viewportReferenceLineControllable = [
   VIEWPORT_IDS.PT.AXIAL,
   VIEWPORT_IDS.PT.SAGITTAL,
   VIEWPORT_IDS.PT.CORONAL,
+  VIEWPORT_IDS.PROSTATE.AXIAL,
+  VIEWPORT_IDS.PROSTATE.SAGITTAL,
+  VIEWPORT_IDS.PROSTATE.CORONAL,
   VIEWPORT_IDS.FUSION.AXIAL,
   VIEWPORT_IDS.FUSION.SAGITTAL,
   VIEWPORT_IDS.FUSION.CORONAL,
@@ -94,6 +98,9 @@ let viewportReferenceLineDraggableRotatable = [
   VIEWPORT_IDS.PT.AXIAL,
   VIEWPORT_IDS.PT.SAGITTAL,
   VIEWPORT_IDS.PT.CORONAL,
+  VIEWPORT_IDS.PROSTATE.AXIAL,
+  VIEWPORT_IDS.PROSTATE.SAGITTAL,
+  VIEWPORT_IDS.PROSTATE.CORONAL,
   VIEWPORT_IDS.FUSION.AXIAL,
   VIEWPORT_IDS.FUSION.SAGITTAL,
   VIEWPORT_IDS.FUSION.CORONAL,
@@ -131,6 +138,9 @@ let viewportReferenceLineSlabThicknessControlsOn = [
   VIEWPORT_IDS.CT.AXIAL,
   VIEWPORT_IDS.CT.SAGITTAL,
   VIEWPORT_IDS.CT.CORONAL,
+  VIEWPORT_IDS.PROSTATE.AXIAL,
+  VIEWPORT_IDS.PROSTATE.SAGITTAL,
+  VIEWPORT_IDS.PROSTATE.CORONAL,
   /*VIEWPORT_IDS.PT.AXIAL,
   VIEWPORT_IDS.PT.SAGITTAL,
   VIEWPORT_IDS.PT.CORONAL,*/
@@ -179,6 +189,10 @@ viewportColors[VIEWPORT_IDS.CT.CORONAL] = 'rgb(0, 200, 0)'
 viewportColors[VIEWPORT_IDS.PT.AXIAL] = 'rgb(200, 0, 0)'
 viewportColors[VIEWPORT_IDS.PT.SAGITTAL] = 'rgb(200, 200, 0)'
 viewportColors[VIEWPORT_IDS.PT.CORONAL] = 'rgb(0, 200, 0)'
+
+viewportColors[VIEWPORT_IDS.PROSTATE.AXIAL] = 'rgb(200, 0, 0)'
+viewportColors[VIEWPORT_IDS.PROSTATE.SAGITTAL] = 'rgb(200, 200, 0)'
+viewportColors[VIEWPORT_IDS.PROSTATE.CORONAL] = 'rgb(0, 200, 0)'
 
 viewportColors[VIEWPORT_IDS.FUSION.AXIAL] = 'rgb(200, 0, 0)'
 viewportColors[VIEWPORT_IDS.FUSION.SAGITTAL] = 'rgb(200, 200, 0)'
@@ -245,6 +259,7 @@ function initToolGroups(toolConfiguration = {}) {
   const colorSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.COLOR
   )
+  const prostateSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PROSTATE)
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.FUSION
   )
@@ -271,6 +286,7 @@ function initToolGroups(toolConfiguration = {}) {
     stackPTViewportToolGroup,
     stackDXViewportToolGroup,
     ctSceneToolGroup,
+    prostateSceneToolGroup,
     ptSceneToolGroup,
     fusionSceneToolGroup,
     ptMipSceneToolGroup,
@@ -287,6 +303,7 @@ function addToolsToToolGroups({
   stackCTViewportToolGroup,
   stackPTViewportToolGroup,
   stackDXViewportToolGroup,
+  prostateSceneToolGroup,
   ctSceneToolGroup,
   ptSceneToolGroup,
   fusionSceneToolGroup,
@@ -335,7 +352,7 @@ function addToolsToToolGroups({
     stackPTViewportToolGroup.setToolPassive('Probe')
     stackPTViewportToolGroup.setToolPassive('RectangleRoi')
     stackPTViewportToolGroup.setToolPassive('EllipticalRoi')
-    stackPTViewportToolGroup.setToolPassive('Crosshairs')
+    stackPTViewportToolGroup.setToolDisabled('Crosshairs')
 
     stackPTViewportToolGroup.setToolActive('StackScrollMouseWheel')
     stackPTViewportToolGroup.setToolActive('WindowLevel', {
@@ -396,7 +413,7 @@ function addToolsToToolGroups({
     stackCTViewportToolGroup.setToolPassive('Probe')
     stackCTViewportToolGroup.setToolPassive('RectangleRoi')
     stackCTViewportToolGroup.setToolPassive('EllipticalRoi')
-    stackCTViewportToolGroup.setToolPassive('Crosshairs')
+    stackCTViewportToolGroup.setToolDisabled('Crosshairs')
 
     stackCTViewportToolGroup.setToolPassive('Length')
     stackCTViewportToolGroup.setToolActive('StackScrollMouseWheel')
@@ -459,7 +476,7 @@ function addToolsToToolGroups({
     stackDXViewportToolGroup.setToolPassive('Probe')
     stackDXViewportToolGroup.setToolPassive('RectangleRoi')
     stackDXViewportToolGroup.setToolPassive('EllipticalRoi')
-    stackDXViewportToolGroup.setToolPassive('Crosshairs')
+    stackDXViewportToolGroup.setToolDisabled('Crosshairs')
 
     stackDXViewportToolGroup.setToolActive('StackScrollMouseWheel')
     stackDXViewportToolGroup.setToolActive('WindowLevel', {
@@ -538,7 +555,7 @@ function addToolsToToolGroups({
     ctSceneToolGroup.setToolPassive('Probe')
     ctSceneToolGroup.setToolPassive('RectangleRoi')
     ctSceneToolGroup.setToolPassive('EllipticalRoi')
-    ctSceneToolGroup.setToolPassive('Crosshairs')
+    ctSceneToolGroup.setToolDisabled('Crosshairs')
 
     ctSceneToolGroup.setToolActive('StackScrollMouseWheel')
     ctSceneToolGroup.setToolActive('WindowLevel', {
@@ -556,6 +573,72 @@ function addToolsToToolGroups({
       ],
     })
     ctSceneToolGroup.setToolActive('Zoom', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Secondary,
+        },
+      ],
+    })
+  }
+
+  if (prostateSceneToolGroup) {
+    // Set up CT Scene tools
+
+    // @TODO: This kills the volumeUID and tool configuration
+    prostateSceneToolGroup.addTool('WindowLevel', {
+      configuration: { volumeUID: prostateVolumeUID },
+    })
+    prostateSceneToolGroup.addTool('Length', {})
+    prostateSceneToolGroup.addTool('Pan', {})
+    prostateSceneToolGroup.addTool('Zoom', {})
+    prostateSceneToolGroup.addTool('StackScrollMouseWheel', {})
+    prostateSceneToolGroup.addTool('Bidirectional', {
+      configuration: { volumeUID: prostateVolumeUID },
+    })
+    prostateSceneToolGroup.addTool('Length', {
+      configuration: { volumeUID: prostateVolumeUID },
+    })
+    prostateSceneToolGroup.addTool('Probe', {
+      configuration: { volumeUID: prostateVolumeUID },
+    })
+    prostateSceneToolGroup.addTool('RectangleRoi', {
+      configuration: { volumeUID: prostateVolumeUID },
+    })
+    prostateSceneToolGroup.addTool('EllipticalRoi', {
+      configuration: { volumeUID: ctVolumeUID },
+    })
+    prostateSceneToolGroup.addTool('Crosshairs', {
+      configuration: {
+        getReferenceLineColor,
+        getReferenceLineControllable,
+        getReferenceLineDraggableRotatable,
+        getReferenceLineSlabThicknessControlsOn,
+      },
+    })
+
+    prostateSceneToolGroup.setToolPassive('Bidirectional')
+    prostateSceneToolGroup.setToolPassive('Length')
+    prostateSceneToolGroup.setToolPassive('Probe')
+    prostateSceneToolGroup.setToolPassive('RectangleRoi')
+    prostateSceneToolGroup.setToolPassive('EllipticalRoi')
+    prostateSceneToolGroup.setToolDisabled('Crosshairs')
+
+    prostateSceneToolGroup.setToolActive('StackScrollMouseWheel')
+    prostateSceneToolGroup.setToolActive('WindowLevel', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary,
+        },
+      ],
+    })
+    prostateSceneToolGroup.setToolActive('Pan', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Auxiliary,
+        },
+      ],
+    })
+    prostateSceneToolGroup.setToolActive('Zoom', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Secondary,
@@ -616,7 +699,7 @@ function addToolsToToolGroups({
     ptSceneToolGroup.setToolPassive('RectangleRoi')
     ptSceneToolGroup.setToolPassive('EllipticalRoi')
     ptSceneToolGroup.setToolPassive('Bidirectional')
-    ptSceneToolGroup.setToolPassive('Crosshairs')
+    ptSceneToolGroup.setToolDisabled('Crosshairs')
 
     ptSceneToolGroup.setToolActive('StackScrollMouseWheel')
     ptSceneToolGroup.setToolActive('PetThreshold', {
@@ -680,7 +763,7 @@ function addToolsToToolGroups({
     fusionSceneToolGroup.setToolPassive('Probe')
     fusionSceneToolGroup.setToolPassive('RectangleRoi')
     fusionSceneToolGroup.setToolPassive('EllipticalRoi')
-    fusionSceneToolGroup.setToolPassive('Crosshairs')
+    fusionSceneToolGroup.setToolDisabled('Crosshairs')
 
     fusionSceneToolGroup.setToolActive('StackScrollMouseWheel')
     fusionSceneToolGroup.setToolActive('PetThreshold', {

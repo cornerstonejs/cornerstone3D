@@ -445,7 +445,7 @@ class EnableDisableViewportExample extends Component {
     this._offScreenRef.current.appendChild(image)
   }
 
-  hidOffScreenCanvas = () => {
+  hideOffScreenCanvas = () => {
     // remove all children
     this._offScreenRef.current.innerHTML = ''
   }
@@ -552,7 +552,7 @@ class EnableDisableViewportExample extends Component {
             Show OffScreenCanvas
           </button>
           <button
-            onClick={this.hidOffScreenCanvas}
+            onClick={this.hideOffScreenCanvas}
             className="btn btn-primary"
             style={{ margin: '2px 4px' }}
           >

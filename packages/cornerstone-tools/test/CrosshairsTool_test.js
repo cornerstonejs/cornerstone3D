@@ -109,9 +109,6 @@ describe('Cornerstone Tools: ', () => {
     this.testToolGroup.addTool('Crosshairs', {
       configuration: {},
     })
-    this.testToolGroup.setToolActive('Crosshairs', {
-      bindings: [{ mouseButton: 1 }],
-    })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -206,6 +203,10 @@ describe('Cornerstone Tools: ', () => {
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
+
+      this.testToolGroup.setToolActive('Crosshairs', {
+        bindings: [{ mouseButton: 1 }],
+      })
     }
 
     element1.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
@@ -298,6 +299,10 @@ describe('Cornerstone Tools: ', () => {
       if (canvasesRendered !== 3) {
         return
       }
+
+      this.testToolGroup.setToolActive('Crosshairs', {
+        bindings: [{ mouseButton: 1 }],
+      })
 
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
       const { imageData } = vp1.getImageData()
@@ -394,6 +399,10 @@ describe('Cornerstone Tools: ', () => {
       if (canvasesRendered !== 3) {
         return
       }
+
+      this.testToolGroup.setToolActive('Crosshairs', {
+        bindings: [{ mouseButton: 1 }],
+      })
 
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
       const { imageData } = vp1.getImageData()

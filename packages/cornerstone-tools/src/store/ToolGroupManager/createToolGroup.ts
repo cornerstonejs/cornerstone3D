@@ -1,10 +1,10 @@
-import { ToolBindings } from '../../enums'
+import { ToolBindings, ToolModes } from '../../enums'
 import { getRenderingEngine } from '@ohif/cornerstone-render'
 import { state } from '../index'
 import IToolGroup from './IToolGroup'
 import ISetToolModeOptions from '../../types/ISetToolModeOptions'
-import ToolModes from '../../enums/ToolModes'
 import deepmerge from '../../util/deepMerge'
+
 import { MouseCursor, SVGMouseCursor } from '../../cursors'
 import { initElementCursor } from '../../cursors/elementCursor'
 
@@ -153,6 +153,10 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       // reset the mouse cursor if tool has left click binding
       if (this.isPrimaryButtonBinding(toolModeOptions)) {
         this.resetViewportsCursor(this._toolInstances[toolName])
+      }
+
+      if (typeof this._toolInstances[toolName].init === 'function') {
+        this._toolInstances[toolName].init(this.viewports)
       }
       this.refreshViewports()
     },

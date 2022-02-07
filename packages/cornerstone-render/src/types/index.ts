@@ -24,6 +24,7 @@ import type Orientation from './Orientation'
 import type Point2 from './Point2'
 import type Point3 from './Point3'
 import type Point4 from './Point4'
+import type Plane from './Plane'
 import type IStreamingImageVolume from './IStreamingImageVolume'
 import type ViewportInputOptions from './ViewportInputOptions'
 import type IImageData from './IImageData'
@@ -85,6 +86,7 @@ export type {
   Point2,
   Point3,
   Point4,
+  Plane,
   ViewportInputOptions,
   VOIRange,
   VOI,
