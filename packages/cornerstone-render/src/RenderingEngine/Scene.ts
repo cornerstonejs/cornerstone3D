@@ -1,3 +1,4 @@
+import { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { createVolumeActor } from './helpers'
@@ -5,6 +6,8 @@ import { loadVolume } from '../volumeLoader'
 import { uuidv4 } from '../utilities'
 import VolumeViewport from './VolumeViewport'
 import { VolumeActor, ActorEntry } from '../types'
+import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
+import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 
 type VolumeInput = {
   volumeUID: string
@@ -151,6 +154,45 @@ class Scene {
     this._sceneViewports.forEach((uid) => {
       const viewport = this.getViewport(uid)
       viewport._setVolumeActors(volumeActors)
+    })
+
+    if (immediate) {
+      this.render()
+    }
+  }
+
+  // todo: should add segmentationUID similar to volumeUID
+  public async setSegmentations(
+    labelMap: any,
+    immediate = false
+  ): Promise<void> {
+    debugger
+    const volumeActors = []
+
+    // todo: use shared volume mapper for seg too
+    const { imageData: vtkImageData, actor, mapper } = labelMap
+    // const volumeMapper = vtkVolumeMapper.newInstance()
+    // volumeMapper.setInputData(vtkImageData)
+
+    // const spacing = vtkImageData.getSpacing()
+    // // Set the sample distance to half the mean length of one side. This is where the divide by 6 comes from.
+    // // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
+    // const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6
+
+    // // This is to allow for good pixel level image quality.
+    // volumeMapper.setMaximumSamplesPerRay(4000)
+
+    // volumeMapper.setSampleDistance(sampleDistance)
+
+    // const volumeActor = vtkVolume.newInstance()
+    // // volumeActor.getProperty().setInterpolationTypeToNearest()
+    // volumeActor.setMapper(volumeMapper)
+
+    volumeActors.push({ uid: 'Seg', volumeActor: actor })
+
+    this._sceneViewports.forEach((uid) => {
+      const viewport = this.getViewport(uid)
+      viewport.addActors(volumeActors)
     })
 
     if (immediate) {

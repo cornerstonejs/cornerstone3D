@@ -5,6 +5,7 @@ import ORIENTATION from './constants/orientation'
 import VIEWPORT_TYPE from './constants/viewportType'
 import INTERPOLATION_TYPE from './constants/interpolationType'
 //
+import { createVolumeActor, createVolumeMapper } from './RenderingEngine'
 import RenderingEngine from './RenderingEngine'
 import VolumeViewport from './RenderingEngine/VolumeViewport'
 import StackViewport from './RenderingEngine/StackViewport'
@@ -81,6 +82,8 @@ export {
   RenderingEngine,
   getRenderingEngine,
   getRenderingEngines,
+  createVolumeActor,
+  createVolumeMapper,
   //
   cache,
   Cache,
