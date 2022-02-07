@@ -77,11 +77,13 @@ async function setActiveLabelmapIndex(
     volumeUID: `labelmap-${index}`,
   }
   // Put the current volume as a reference for the labelmap
-  return addNewLabelmap({
+  const labelmapUID = await addNewLabelmap({
     canvas,
     labelmapIndex,
     options,
   })
+
+  return labelmapUID
 }
 
 export { getActiveLabelmapIndex, setActiveLabelmapIndex }

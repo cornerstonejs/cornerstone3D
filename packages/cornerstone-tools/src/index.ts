@@ -50,6 +50,7 @@ import {
   BidirectionalTool,
   CrosshairsTool,
   BrushTool,
+  RectangleScissorsTool,
 } from './tools'
 import { ToolBindings, CornerstoneTools3DEvents } from './enums'
 
@@ -78,8 +79,9 @@ export {
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
-  // Brush Tools
+  // Segmentation Tools
   BrushTool,
+  RectangleScissorsTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

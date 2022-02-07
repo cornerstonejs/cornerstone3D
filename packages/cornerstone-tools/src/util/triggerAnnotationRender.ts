@@ -89,10 +89,10 @@ class AnnotationRenderingEngine {
       viewportUID,
     }
 
-    const enabledToolsWithToolState = enabledTools.filter((tool) => {
-      const toolState = getToolState(enabledElement, tool.name)
-      return toolState && toolState.length
-    })
+    // const enabledToolsWithToolState = enabledTools.filter((tool) => {
+    //   const toolState = getToolState(enabledElement, tool.name)
+    //   return toolState && toolState.length
+    // })
 
     drawSvg(eventData.canvas, (svgDrawingHelper) => {
       const handleDrawSvg = (tool) => {
@@ -103,7 +103,7 @@ class AnnotationRenderingEngine {
         }
       }
 
-      enabledToolsWithToolState.forEach(handleDrawSvg)
+      enabledTools.forEach(handleDrawSvg)
     })
   }
 

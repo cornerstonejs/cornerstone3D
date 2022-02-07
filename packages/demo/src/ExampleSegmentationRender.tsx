@@ -90,7 +90,7 @@ class MPRExample extends Component {
       ],
     },
     ptCtLeftClickTool: 'Levels',
-    segmentationTool: 'Brush',
+    segmentationTool: 'RectangleScissors',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     selectedViewportForSeg: 'ctAxial',
@@ -342,14 +342,61 @@ class MPRExample extends Component {
   //   this.setState({ ptCtLeftClickTool: toolName })
   // }
 
-  activateSegmentationTool = () => {
-    const toolName = this.state.segmentationTool
-    ;[...toolsToUse].forEach((toolName) => {
-      ctSceneToolGroup.setToolPassive(toolName)
+  resetToolModes = (toolGroup) => {
+    ANNOTATION_TOOLS.forEach((toolName) => {
+      toolGroup.setToolPassive(toolName)
     })
+    toolGroup.setToolActive('WindowLevel', {
+      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+    })
+    toolGroup.setToolActive('Pan', {
+      bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
+    })
+    toolGroup.setToolActive('Zoom', {
+      bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
+    })
+  }
+
+  activateTool = (evt) => {
+    const toolName = evt.target.value
+
+    this.resetToolModes(ctSceneToolGroup)
+
+    const tools = Object.entries(ctSceneToolGroup.tools)
+
+    // Disabling any tool that is active on mouse primary
+    const [activeTool] = tools.find(
+      ([tool, { bindings, mode }]) =>
+        mode === 'Active' &&
+        bindings.length &&
+        bindings.some(
+          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+        )
+    )
+
+    ctSceneToolGroup.setToolPassive(activeTool)
+
+    // Using mouse primary for the selected tool
+    const currentBindings = ctSceneToolGroup.tools[toolName] ? ctSceneToolGroup.tools[toolName].bindings: []
+
     ctSceneToolGroup.setToolActive(toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [
+        ...currentBindings,
+        { mouseButton: ToolBindings.Mouse.Primary },
+      ],
     })
+    this.renderingEngine.render()
+
+
+
+
+    // const toolName = this.state.segmentationTool
+    // ;[...toolsToUse].forEach((toolName) => {
+    //   ctSceneToolGroup.setToolPassive(toolName)
+    // })
+    // ctSceneToolGroup.setToolActive(toolName, {
+    //   bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+    // })
   }
 
   swapPetTransferFunction() {
@@ -438,6 +485,7 @@ class MPRExample extends Component {
       ) {
         values[i] = 3
       }
+      //  values[i] = 1
     }
 
     imageData.getPointData().getScalars().setData(values)
@@ -478,18 +526,23 @@ class MPRExample extends Component {
       renderInactiveLabelmaps: this.state.renderInactiveLabelmaps,
     })
 
-    const labelmapIndex = SegmentationModule.getNextLabelmapIndex(canvas)
-    // await SegmentationModule.setActiveLabelmapIndex(
-    //   viewport.canvas,
-    //   labelmapIndex
-    // )
+    const labelmapIndex = SegmentationModule.getActiveLabelmapIndex(canvas)
     const labelmap = cache.getVolume(labelmapUID)
-    console.debug(`labelmapIndex: ${labelmapIndex}`)
+
     await SegmentationModule.setLabelmapForElement({
       canvas,
       labelmap,
       labelmapIndex,
     })
+
+
+    // NEW
+    // const labelmap = cache.getVolume('labelmap-0')
+    // await SegmentationModule.setLabelmapForElement({
+    //   canvas,
+    //   labelmap,
+    //   labelmapIndex,
+    // })
   }
 
   swapPtCtTool = (evt) => {
@@ -550,7 +603,7 @@ class MPRExample extends Component {
           </button>
           <select
             value={this.state.ptCtLeftClickTool}
-            onChange={this.swapPtCtTool}
+            onChange={this.activateTool}
           >
             {ptCtLayoutTools.map((toolName) => (
               <option key={toolName} value={toolName}>
@@ -598,7 +651,9 @@ class MPRExample extends Component {
           ))}
         </select>
         <button
-          onClick={this.activateSegmentationTool}
+          onClick={() => this.activateTool({
+            target: {value:'RectangleScissors'},
+          })}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >

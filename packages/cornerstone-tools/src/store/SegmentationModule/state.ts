@@ -130,4 +130,5 @@ const state: SegmentationState = {
   // },
 }
 
+window.state = state
 export default state

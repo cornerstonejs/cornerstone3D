@@ -193,7 +193,8 @@ class Scene {
     for (let i = 0; i < volumeInputArray.length; i++) {
       const { volumeUID, visibility } = volumeInputArray[i]
       const volumeActor: VolumeActor = await createVolumeActor(
-        volumeInputArray[i]
+        volumeInputArray[i],
+        true
       )
 
       if (visibility === false) {

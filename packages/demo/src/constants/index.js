@@ -94,7 +94,7 @@ const ANNOTATION_TOOLS = [
 
 // A string helper for the drop down.
 const SEGMENTATION_TOOLS = [
-  'Brush',
+  'RectangleScissors',
 ]
 
 // A small simple list of in-built vtk-colormaps, to demonstrate switching transfer function on a volume.

@@ -129,7 +129,7 @@ async function addNewLabelmap({
     )
   }
 
-  setLabelmapForElement({
+  await setLabelmapForElement({
     canvas: viewport.canvas,
     labelmap: labelmap,
     labelmapIndex,
