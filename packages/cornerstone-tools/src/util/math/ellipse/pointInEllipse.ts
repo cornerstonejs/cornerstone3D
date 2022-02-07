@@ -1,40 +1,33 @@
-import { Point2 } from '../../../types'
+import { vec3 } from 'gl-matrix'
+import { Point3 } from '../../../types'
 
-type ellipse = {
-  left: number
-  top: number
-  width: number
-  height: number
+type Ellipse = {
+  center: Point3 | vec3
+  xRadius: number
+  yRadius: number
+  zRadius: number
 }
 
-/**
- * @function pointInEllipse Returns true if the `location ` is within the ellipse.
- *
- * A point is inside the ellipse if x^2/a^2 + y^2/b^2 <= 1,
- * Where [x,y] is the coordinate and a and b are the x and y axes of the ellipse.
- *
- * @param  {Object} ellipse  Object defining the ellipse.
- * @param  {Point2} location The location of the point.
- * @returns {boolean} True if the point is within the ellipse.
- */
 export default function pointInEllipse(
-  ellipse: ellipse,
-  location: Point2
+  ellipse: Ellipse,
+  pointLPS: Point3
 ): boolean {
-  const xRadius = ellipse.width / 2
-  const yRadius = ellipse.height / 2
+  const { center: circleCenterWorld, xRadius, yRadius, zRadius } = ellipse
+  const [x, y, z] = pointLPS
+  const [x0, y0, z0] = circleCenterWorld
 
-  if (xRadius <= 0.0 || yRadius <= 0.0) {
-    return false
+  let inside = 0
+  if (xRadius !== 0) {
+    inside += ((x - x0) * (x - x0)) / (xRadius * xRadius)
   }
 
-  const center = [ellipse.left + xRadius, ellipse.top + yRadius]
-  const normalized = [location[0] - center[0], location[1] - center[1]]
+  if (yRadius !== 0) {
+    inside += ((y - y0) * (y - y0)) / (yRadius * yRadius)
+  }
 
-  const inEllipse =
-    (normalized[0] * normalized[0]) / (xRadius * xRadius) +
-      (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
-    1.0
+  if (zRadius !== 0) {
+    inside += ((z - z0) * (z - z0)) / (zRadius * zRadius)
+  }
 
-  return inEllipse
+  return inside <= 1
 }

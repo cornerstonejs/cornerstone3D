@@ -50,7 +50,7 @@ function calculateTMTV(
     return acc
   }, 0)
 
-  return numVoxels * xSpacing * ySpacing * zSpacing
+  return numVoxels * xSpacing * ySpacing * zSpacing * 1e-3
 }
 
 export default calculateTMTV

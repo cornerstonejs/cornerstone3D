@@ -2,14 +2,14 @@
 import getBoundingBoxAroundShape from './getBoundingBoxAroundShape'
 import thresholdVolumeByRange from './thresholdVolumeByRange'
 import thresholdVolumeByRoiStats from './thresholdVolumeByRoiStats'
-import calculateTMTV from './calculateTMTV'
+import triggerLabelmapRender from './triggerLabelmapRender'
 
 export {
   getBoundingBoxAroundShape,
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
-  calculateTMTV,
+  triggerLabelmapRender,
 }
 
 export default {
@@ -17,5 +17,5 @@ export default {
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
-  calculateTMTV,
+  triggerLabelmapRender,
 }

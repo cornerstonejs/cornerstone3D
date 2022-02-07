@@ -38,7 +38,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import getWorldWidthAndHeightFromTwoPoints from '../../util/planar/getWorldWidthAndHeightFromTwoPoints'
+import getWorldWidthAndHeightFromCorners from '../../util/planar/getWorldWidthAndHeightFromCorners'
 import { ToolSpecificToolData, Point3, Point2 } from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
@@ -278,8 +278,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
     }
 
-    const pointInMinorEllipse = pointInEllipse(minorEllipse, canvasCoords)
-    const pointInMajorEllipse = pointInEllipse(majorEllipse, canvasCoords)
+    const pointInMinorEllipse = this._pointInEllipseCanvas(
+      minorEllipse,
+      canvasCoords
+    )
+    const pointInMajorEllipse = this._pointInEllipseCanvas(
+      majorEllipse,
+      canvasCoords
+    )
 
     if (pointInMajorEllipse && !pointInMinorEllipse) {
       return true
@@ -934,25 +940,15 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
 
     const { points } = data.handles
-    const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
 
-    const canvasCorners = <Array<Point2>>(
+    const [topLeftCanvas, bottomRightCanvas] = <Array<Point2>>(
       getCanvasEllipseCorners(canvasCoordinates)
     )
-    const [canvasPoint1, canvasPoint2] = canvasCorners
 
-    const ellipse = {
-      left: Math.min(canvasPoint1[0], canvasPoint2[0]),
-      // todo: which top is minimum of y for points?
-      top: Math.min(canvasPoint1[1], canvasPoint2[1]),
-      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]),
-      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]),
-    }
-
-    const worldPos1 = viewport.canvasToWorld(canvasPoint1)
-    const worldPos2 = viewport.canvasToWorld(canvasPoint2)
+    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas)
+    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
     const { cachedStats } = data
 
     const targetUIDs = Object.keys(cachedStats)
@@ -993,26 +989,38 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2])
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2])
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
-          viewPlaneNormal,
-          viewUp,
-          worldPos1,
-          worldPos2
-        )
-        const isEmptyArea = worldWidth === 0 && worldHeight === 0
-        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2)
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Point2, Point2, Point2]
+
+        let isEmptyArea = false
+        if (boundsIJK.every(([min, max]) => min !== max)) {
+          isEmptyArea = true
+        }
+
+        const center = [
+          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
+          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
+          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
+        ] as Point3
+
+        const ellipseObj = {
+          center,
+          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+        }
+
+        const area = Math.PI * ellipseObj.xRadius * ellipseObj.yRadius
 
         let count = 0
         let mean = 0
         let stdDev = 0
         let max = -Infinity
 
-        const meanMaxCalculator = (
-          canvasCoords,
-          ijkCoords,
-          index,
-          newValue
-        ) => {
+        const meanMaxCalculator = ({ value: newValue }) => {
           if (newValue > max) {
             max = newValue
           }
@@ -1079,38 +1087,28 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         }
 
         pointInShapeCallback(
-          [
-            [iMin, iMax],
-            [jMin, jMax],
-            [kMin, kMax],
-          ],
-          viewport.worldToCanvas,
+          boundsIJK,
           scalarData,
           imageData,
           dimensions,
-          (canvasCoords) => pointInEllipse(ellipse, canvasCoords),
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
           meanMaxCalculator
         )
 
         mean /= count
 
-        const stdCalculator = (canvasCoords, ijkCoords, index, value) => {
+        const stdCalculator = ({ value }) => {
           const valueMinusMean = value - mean
 
           stdDev += valueMinusMean * valueMinusMean
         }
 
         pointInShapeCallback(
-          [
-            [iMin, iMax],
-            [jMin, jMax],
-            [kMin, kMax],
-          ],
-          viewport.worldToCanvas,
+          boundsIJK,
           scalarData,
           imageData,
           dimensions,
-          (canvasCoords) => pointInEllipse(ellipse, canvasCoords),
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
           stdCalculator
         )
 
@@ -1160,6 +1158,34 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
   _getTargetStackUID(viewport) {
     return `stackTarget:${viewport.uid}`
+  }
+
+  /**
+   * This is a temporary function to use the old ellipse's canvas-based
+   * calculation for pointNearTool, we should move the the world-based
+   * calculation to the tool's pointNearTool function.
+   *
+   * @param {Object} ellipse
+   * @param {Array} location
+   * @returns {Boolean}
+   */
+  _pointInEllipseCanvas(ellipse, location: Point2): boolean {
+    const xRadius = ellipse.width / 2
+    const yRadius = ellipse.height / 2
+
+    if (xRadius <= 0.0 || yRadius <= 0.0) {
+      return false
+    }
+
+    const center = [ellipse.left + xRadius, ellipse.top + yRadius]
+    const normalized = [location[0] - center[0], location[1] - center[1]]
+
+    const inEllipse =
+      (normalized[0] * normalized[0]) / (xRadius * xRadius) +
+        (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
+      1.0
+
+    return inEllipse
   }
 
   _getTargetVolumeUID = (scene) => {

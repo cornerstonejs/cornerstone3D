@@ -47,7 +47,7 @@ function eraseRectangle(
   // Since always all points inside the boundsIJK is inside the rectangle...
   const pointInShape = () => true
 
-  const callback = (canvasCoords, pointIJK, index, value) => {
+  const callback = ({ value, index }) => {
     if (segmentsLocked.includes(value)) {
       return
     }
@@ -56,7 +56,6 @@ function eraseRectangle(
 
   pointInShapeCallback(
     boundsIJK,
-    viewport.worldToCanvas,
     scalarData,
     vtkImageData,
     dimensions,

@@ -1,15 +1,19 @@
+import { vec3 } from 'gl-matrix'
 import {
   Point3,
   IImageVolume,
   IEnabledElement,
-} from '@precisionmetrics/cornerstone-render/src/types'
+} from '@ohif/cornerstone-render/src/types'
 
-import { vec3 } from 'gl-matrix'
-import { getBoundingBoxAroundShape } from '../../../util/segmentation'
-import { pointInEllipse } from '../../../util/math/ellipse'
-import { getCanvasEllipseCorners } from '../../../util/math/ellipse'
-import pointInShapeCallback from '../../../util/planar/pointInShapeCallback'
-import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
+import {
+  getCanvasEllipseCorners,
+  pointInEllipse,
+} from '../../../util/math/ellipse'
+import {
+  getBoundingBoxAroundShape,
+  triggerLabelmapRender,
+} from '../../../util/segmentation'
+import { pointInShapeCallback } from '../../../util/planar'
 
 type OperationData = {
   points: any // Todo:fix
@@ -54,18 +58,19 @@ function fillCircle(
   const { vtkImageData, dimensions, scalarData } = labelmapVolume
   const { viewport, renderingEngine } = enabledElement
 
+  // Average the points to get the center of the ellipse
+  const center = vec3.fromValues(0, 0, 0)
+  points.forEach((point) => {
+    vec3.add(center, center, point)
+  })
+  vec3.scale(center, center, 1 / points.length)
+
   const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
 
-  // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight corners in canvas coordinates
+  // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
+  // corners in canvas coordinates
   const [topLeftCanvas, bottomRightCanvas] =
     getCanvasEllipseCorners(canvasCoordinates)
-
-  const ellipse = {
-    left: Math.min(topLeftCanvas[0], bottomRightCanvas[0]),
-    top: Math.min(topLeftCanvas[1], bottomRightCanvas[1]),
-    width: Math.abs(topLeftCanvas[0] - bottomRightCanvas[0]),
-    height: Math.abs(topLeftCanvas[1] - bottomRightCanvas[1]),
-  }
 
   // 2. Find the extent of the ellipse (circle) in IJK index space of the image
   const topLeftWorld = viewport.canvasToWorld(topLeftCanvas)
@@ -82,7 +87,15 @@ function fillCircle(
     throw new Error('Oblique segmentation tools are not supported yet')
   }
 
-  const callback = (canvasCoords, pointIJK, index, value) => {
+  // using circle as a form of ellipse
+  const ellipseObj = {
+    center: center,
+    xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+    yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+    zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+  }
+
+  const callback = ({ value, index }) => {
     if (segmentsLocked.includes(value)) {
       return
     }
@@ -91,11 +104,10 @@ function fillCircle(
 
   pointInShapeCallback(
     boundsIJK,
-    viewport.worldToCanvas,
     scalarData,
     vtkImageData,
     dimensions,
-    (canvasCoords) => pointInEllipse(ellipse, canvasCoords),
+    (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
     callback
   )
 
