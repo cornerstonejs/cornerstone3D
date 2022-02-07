@@ -20,6 +20,7 @@ import TestUtils from './ExampleTestUtils'
 import TestUtilsVolume from './ExampleTestUtilsVolume'
 import CalibrationExample from './ExampleCalibration'
 import { resetCPURenderingOnlyForDebugOrTests } from '@ohif/cornerstone-render'
+import SegmentationRender from './ExampleSegmentationRender'
 
 function LinkOut({ href, text }) {
   return (
@@ -76,6 +77,11 @@ function Index() {
       title: 'One Stack CPU',
       url: '/oneStackCPU',
       text: 'Example one Stack with CPU fallback (even if your environment supports GPU)',
+    },
+    {
+      title: 'Segmentation Render',
+      url: '/segmentationRender',
+      text: 'Example for demonstrating the rendering of Segmentation',
     },
     {
       title: 'Canvas Resize',
@@ -231,6 +237,11 @@ function AppRouter() {
       children: <CalibrationExample />,
     })
 
+  const segmentationRender = () =>
+    Example({
+      children: <SegmentationRender />,
+    })
+
   const stackViewport = () =>
     Example({
       children: <StackViewportExample />,
@@ -323,6 +334,7 @@ function AppRouter() {
         <Route exact path="/testUtils/" render={Test} />
         <Route exact path="/testUtilsVolume/" render={TestVolume} />
         <Route exact path="/calibratedImages/" render={calibratedImages} />
+        <Route exact path="/segmentationRender/" render={segmentationRender} />
         <Route
           exact
           path="/toolDisplayConfiguration/"
