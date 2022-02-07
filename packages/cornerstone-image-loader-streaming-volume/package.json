@@ -1,6 +1,6 @@
 {
   "name": "@precisionmetrics/cornerstone-image-loader-streaming-volume",
-  "version": "0.0.4-rc11",
+  "version": "0.0.4-rc12",
   "description": "",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -9,12 +9,12 @@
     "test": "test"
   },
   "peerDependencies": {
-    "@precisionmetrics/cornerstone-render": "^0.0.4-rc11",
+    "@precisionmetrics/cornerstone-render": "^0.0.4-rc12",
     "cornerstone-wado-image-loader": "^4.1.0",
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
   },
   "devDependencies": {
-    "@precisionmetrics/cornerstone-render": "^0.0.4-rc11",
+    "@precisionmetrics/cornerstone-render": "^0.0.4-rc12",
     "cornerstone-wado-image-loader": "^4.1.0",
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
   },

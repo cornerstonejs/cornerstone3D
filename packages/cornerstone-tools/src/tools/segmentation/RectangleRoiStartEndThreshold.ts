@@ -283,7 +283,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     // Find the imageIds for the projection points
     const projectionPointsImageIds = []
-    for (const RectanglePoints of projectionPoints) {
+    for (const RectanglePoints of newProjectionPoints) {
       const imageId = getImageIdForTool(
         RectanglePoints[0],
         viewPlaneNormal,
