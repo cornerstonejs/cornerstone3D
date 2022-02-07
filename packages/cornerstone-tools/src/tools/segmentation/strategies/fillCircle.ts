@@ -2,10 +2,9 @@ import {
   fillInsideShape,
   getBoundingBoxAroundShape,
 } from '../../../util/segmentation'
-import { pointInEllipse3D } from '../../../util/math/ellipse'
-import { Point3 } from '../../../types'
+import { pointInEllipse } from '../../../util/math/ellipse'
 import { ImageVolume, Types } from '@ohif/cornerstone-render'
-import { getWorldWidthAndHeightFromTwoPoints } from '../../../util/planar'
+import { getCanvasEllipseCorners } from '../../../util/math/ellipse'
 
 type OperationData = {
   points: any // Todo:fix
@@ -14,19 +13,11 @@ type OperationData = {
   segmentsLocked: number[]
   viewPlaneNormal: number[]
   viewUp: number[]
+  constraintFn: any
 }
 
 type fillCircleEvent = {
   enabledElement: Types.IEnabledElement
-}
-
-function getCanvasEllipseCorners(canvasCoordinates): Array<Types.Point2> {
-  const [bottom, top, left, right] = canvasCoordinates
-
-  const topLeft = <Types.Point2>[left[0], top[1]]
-  const bottomRight = <Types.Point2>[right[0], bottom[1]]
-
-  return [topLeft, bottomRight]
 }
 
 /**
@@ -42,13 +33,14 @@ function fillCircle(
   operationData: OperationData,
   inside = true
 ): void {
-  const { labelmap, points, viewPlaneNormal, viewUp } = operationData
+  const { labelmap, points, constraintFn } = operationData
   const { vtkImageData } = labelmap
   const { enabledElement } = evt
   const { viewport } = enabledElement
 
-  const { center, bottom, top, left, right } = points
+  const { bottom, top, left, right } = points
 
+  // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight corners in canvas coordinates
   const [topLeftCanvas, bottomRightCanvas] = getCanvasEllipseCorners([
     bottom.canvas,
     top.canvas,
@@ -56,51 +48,42 @@ function fillCircle(
     right.canvas,
   ])
 
+  const ellipse = {
+    left: Math.min(topLeftCanvas[0], bottomRightCanvas[0]),
+    top: Math.min(topLeftCanvas[1], bottomRightCanvas[1]),
+    width: Math.abs(topLeftCanvas[0] - bottomRightCanvas[0]),
+    height: Math.abs(topLeftCanvas[1] - bottomRightCanvas[1]),
+  }
+
+  // 2. Find the extent of the ellipse (circle) in IJK index space of the image
   const topLeftWorld = viewport.canvasToWorld(topLeftCanvas)
   const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
 
-  const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
-    viewPlaneNormal as Point3,
-    viewUp as Point3,
-    topLeftWorld,
-    bottomRightWorld
-  )
-
-  const circleCornersIJK = [
+  const ellipsoidCornersIJK = [
     vtkImageData.worldToIndex(topLeftWorld),
     vtkImageData.worldToIndex(bottomRightWorld),
   ]
 
-  const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = getBoundingBoxAroundShape(
-    circleCornersIJK,
-    vtkImageData
-  )
+  const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, vtkImageData)
+  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
 
-  const topLeftFront = [xMin, yMin, zMin]
-  const bottomRightBack = [xMax, yMax, zMax]
+  const topLeftFrontIJK = [iMin, jMin, kMin]
+  const bottomRightBackIJK = [iMax, jMax, kMax]
 
-  // using circle as a form of ellipse
-  const ellipse = {
-    center: center.world,
-    xRadius: worldWidth / 2,
-    yRadius: worldHeight / 2,
+  if (boundsIJK.every(([min, max]) => min !== max)) {
+    throw new Error('Oblique segmentation tools are not supported yet')
   }
 
   inside
     ? fillInsideShape(
         evt,
         operationData,
-        (pointIJK, pointLPS) =>
-          pointInEllipse3D(
-            ellipse,
-            pointIJK,
-            pointLPS,
-            viewPlaneNormal as Point3
-          ),
-        topLeftFront,
-        bottomRightBack
+        (pointIJK, canvasCoords) => pointInEllipse(ellipse, canvasCoords), // Todo: we should call pointInEllipsoidWithConstraint for oblique planes
+        constraintFn ? constraintFn : undefined,
+        topLeftFrontIJK,
+        bottomRightBackIJK
       )
-    : null // fillOutsideBoundingBox(evt, operationData, topLeftFront, bottomRightBack)
+    : null // fillOutsideBoundingBox(evt, operationData, topLeftFrontIJK, bottomRightBackIJK)
 }
 
 /**

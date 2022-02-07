@@ -1,3 +1,4 @@
+import { vec3, vec2 } from 'gl-matrix'
 // import fillOutsideBoundingBox from './fillOutsideBoundingBox'
 
 /**
@@ -23,15 +24,50 @@ function fillShape(
   const { labelmap, segmentIndex, segmentsLocked } = operationData
 
   const { enabledElement } = evt
-  const { renderingEngine } = enabledElement
+  const { renderingEngine, viewport } = enabledElement
 
   const { vtkImageData, dimensions } = labelmap
 
   // Values to modify
   const values = vtkImageData.getPointData().getScalars().getData()
 
-  const [xMin, yMin, zMin] = topLeftFront
-  const [xMax, yMax, zMax] = bottomRightBack
+  const [iMin, jMin, kMin] = topLeftFront
+  const [iMax, jMax, kMax] = bottomRightBack
+
+  // Note: the following conversions from ijk to canvas are implemented to avoid any
+  // conversion from index to world in the for loop. The same implementation is done
+  // in the ellipticalRoiTool. I 'believe' canvas space would be the proper space
+  // for oblique brush tools and not the indexIJK space. So I'm keeping this here
+  // for now, although for orthogonal planes, indexIJK space is sufficient for checking
+  // if the points are inside a tool shape (circle, or ellipse).
+  const start = vec3.fromValues(iMin, jMin, kMin)
+
+  const worldPosStart = vec3.create()
+  vtkImageData.indexToWorldVec3(start, worldPosStart)
+  const canvasPosStart = viewport.worldToCanvas(worldPosStart)
+
+  const startPlusI = vec3.fromValues(iMin + 1, jMin, kMin)
+  const startPlusJ = vec3.fromValues(iMin, jMin + 1, kMin)
+  const startPlusK = vec3.fromValues(iMin, jMin, kMin + 1)
+
+  // Estimate amount of 1 unit (index) change in I, J, K directions in canvas space
+  const worldPosStartPlusI = vec3.create()
+  const plusICanvasDelta = vec2.create()
+  vtkImageData.indexToWorldVec3(startPlusI, worldPosStartPlusI)
+  const canvasPosStartPlusI = viewport.worldToCanvas(worldPosStartPlusI)
+  vec2.sub(plusICanvasDelta, canvasPosStartPlusI, canvasPosStart)
+
+  const worldPosStartPlusJ = vec3.create()
+  const plusJCanvasDelta = vec2.create()
+  vtkImageData.indexToWorldVec3(startPlusJ, worldPosStartPlusJ)
+  const canvasPosStartPlusJ = viewport.worldToCanvas(worldPosStartPlusJ)
+  vec2.sub(plusJCanvasDelta, canvasPosStartPlusJ, canvasPosStart)
+
+  const worldPosStartPlusK = vec3.create()
+  const plusKCanvasDelta = vec2.create()
+  vtkImageData.indexToWorldVec3(startPlusK, worldPosStartPlusK)
+  const canvasPosStartPlusK = viewport.worldToCanvas(worldPosStartPlusK)
+  vec2.sub(plusKCanvasDelta, canvasPosStartPlusK, canvasPosStart)
 
   // Todo: implement fill outside
   // if (insideOrOutside === 'outside') {
@@ -39,40 +75,69 @@ function fillShape(
   // }
 
   if (constraintFn) {
-    for (let x = xMin; x <= xMax; x++) {
-      for (let y = yMin; y <= yMax; y++) {
-        for (let z = zMin; z <= zMax; z++) {
-          const offset = vtkImageData.computeOffsetIndex([x, y, z])
+    for (let i = iMin; i <= iMax; i++) {
+      for (let j = jMin; j <= jMax; j++) {
+        for (let k = kMin; k <= kMax; k++) {
+          const pointIJK = [i, j, k]
+
+          // Todo: canvasCoords is not necessary to be known for rectangle-based tools
+          const dI = i - iMin
+          const dJ = j - jMin
+          const dK = k - kMin
+          let canvasCoords = [canvasPosStart[0], canvasPosStart[1]]
+
+          canvasCoords = [
+            canvasCoords[0] +
+              plusICanvasDelta[0] * dI +
+              plusJCanvasDelta[0] * dJ +
+              plusKCanvasDelta[0] * dK,
+            canvasCoords[1] +
+              plusICanvasDelta[1] * dI +
+              plusJCanvasDelta[1] * dJ +
+              plusKCanvasDelta[1] * dK,
+          ]
+
+          const offset = vtkImageData.computeOffsetIndex(pointIJK)
 
           if (segmentsLocked.includes(values[offset])) {
             continue
           }
 
-          // If the pixel is the same segmentIndex and is inside the
-          // Region defined by the array of points, set their value to segmentIndex.
-          const pointIJK = [x, y, z]
-          const pointLPS = vtkImageData.indexToWorld([x, y, z])
-          if (pointInShape(pointIJK, pointLPS) && constraintFn(pointIJK)) {
+          if (pointInShape(pointIJK, canvasCoords) && constraintFn(pointIJK)) {
             values[offset] = segmentIndex
           }
         }
       }
     }
   } else {
-    for (let x = xMin; x <= xMax; x++) {
-      for (let y = yMin; y <= yMax; y++) {
-        for (let z = zMin; z <= zMax; z++) {
-          const offset = vtkImageData.computeOffsetIndex([x, y, z])
+    for (let i = iMin; i <= iMax; i++) {
+      for (let j = jMin; j <= jMax; j++) {
+        for (let k = kMin; k <= kMax; k++) {
+          const pointIJK = [i, j, k]
+          const dI = i - iMin
+          const dJ = j - jMin
+          const dK = k - kMin
+          // Todo: canvasCoords is not necessary to be known for rectangle-based tools
+          let canvasCoords = [canvasPosStart[0], canvasPosStart[1]]
+
+          canvasCoords = [
+            canvasCoords[0] +
+              plusICanvasDelta[0] * dI +
+              plusJCanvasDelta[0] * dJ +
+              plusKCanvasDelta[0] * dK,
+            canvasCoords[1] +
+              plusICanvasDelta[1] * dI +
+              plusJCanvasDelta[1] * dJ +
+              plusKCanvasDelta[1] * dK,
+          ]
+
+          const offset = vtkImageData.computeOffsetIndex(pointIJK)
 
           if (segmentsLocked.includes(values[offset])) {
             continue
           }
 
-          // If the pixel is the same segmentIndex and is inside the
-          // Region defined by the array of points, set their value to segmentIndex.
-          const pointIJK = [x, y, z]
-          const pointLPS = vtkImageData.indexToWorld([x, y, z])
-          if (pointInShape(pointIJK, pointLPS)) {
+          if (pointInShape(pointIJK, canvasCoords)) {
             values[offset] = segmentIndex
           }
         }
