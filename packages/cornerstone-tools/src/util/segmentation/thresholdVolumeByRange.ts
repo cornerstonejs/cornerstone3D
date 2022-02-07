@@ -68,6 +68,7 @@ function thresholdVolumeByRange(
     const referenceVolume = referenceVolumes[0]
     const { vtkImageData, dimensions } = referenceVolume
 
+    // Todo: get directly from scalarData?
     const values = vtkImageData.getPointData().getScalars().getData()
 
     const rectangleCornersIJK = points.map(
@@ -77,7 +78,7 @@ function thresholdVolumeByRange(
     const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
     const extendedBoundsIJK = _extendBoundingBoxInViewAxis(boundsIJK, numSlices)
 
-    const callback = (canvasCoords, pointIJK, index, newValue) => {
+    const callback = ({ index, pointIJK }) => {
       const offset = vtkImageData.computeOffsetIndex(pointIJK)
       const value = values[offset]
       if (value <= lowerThreshold || value >= higherThreshold) {
@@ -89,7 +90,6 @@ function thresholdVolumeByRange(
 
     pointInShapeCallback(
       extendedBoundsIJK,
-      viewport.worldToCanvas,
       scalarData,
       labelmapImageData,
       dimensions,

@@ -555,6 +555,26 @@ class SegmentationExample extends Component {
     }))
   }
 
+  calculateSuvPeak = () => {
+    const sceneUID = this.state.sceneForSegmentation
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const viewport = scene.getViewports()[0]
+
+    const {uid} = viewport.getDefaultActor()
+    const referenceVolume = cache.getVolume(uid)
+
+    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(viewport.element)
+
+    const labelmaps = labelmapUIDs.map((uid) => cache.getVolume(uid))
+    const segmentationIndex = 1
+    const suvPeak = csToolsUtils.segmentation.calculateSuvPeak(
+      labelmaps[0],
+      referenceVolume,
+      segmentationIndex
+    )
+    console.debug('suvPeak', suvPeak)
+  }
+
   executeThresholding = (mode) => {
     const ptVolume = cache.getVolume(ptVolumeUID)
     const labelmapVolume = cache.getVolume(this.state.selectedLabelmapUID)
@@ -668,6 +688,12 @@ class SegmentationExample extends Component {
           onClick={() => this.calculateTMTV()}
         >
           Calculate TMTV
+        </button>
+        <button
+          style={{ marginLeft: '5px' }}
+          onClick={() => this.calculateSuvPeak()}
+        >
+          Calculate SUV Peak
         </button>
         {this.state.tmtv !== null && (
           <span>{`    TMTV: ${this.state.tmtv} voxels`}</span>
