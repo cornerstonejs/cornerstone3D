@@ -11,6 +11,7 @@ import isEqual from './isEqual'
 import testUtils from './testUtils'
 import createUint8SharedArray from './createUint8SharedArray'
 import createFloat32SharedArray from './createFloat32SharedArray'
+import windowLevel from './windowLevel'
 
 export {
   invertRgbTransferFunction,
@@ -26,4 +27,5 @@ export {
   createFloat32SharedArray,
   createUint8SharedArray,
   testUtils,
+  windowLevel,
 }

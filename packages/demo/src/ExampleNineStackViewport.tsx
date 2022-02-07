@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   ORIENTATION,
   VIEWPORT_TYPE,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
@@ -36,8 +37,6 @@ class NineStackViewportExample extends Component {
 
   constructor(props) {
     super(props)
-
-    csTools3d.init()
 
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -73,6 +72,8 @@ class NineStackViewportExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     const { stackCTViewportToolGroup } = initToolGroups()
 
     this.ctStackUID = ctStackUID
@@ -164,7 +165,7 @@ class NineStackViewportExample extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    addToolsToToolGroups({stackCTViewportToolGroup})
+    addToolsToToolGroups({ stackCTViewportToolGroup })
     // volume ct
 
     // stack ct
@@ -204,7 +205,6 @@ class NineStackViewportExample extends Component {
 
     cache.purgeCache()
     csTools3d.destroy()
-
 
     this.renderingEngine.destroy()
   }

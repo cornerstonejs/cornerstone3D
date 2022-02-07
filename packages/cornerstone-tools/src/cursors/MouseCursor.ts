@@ -65,6 +65,7 @@ export default class MouseCursor {
 
   static getDefinedCursor(name: string): MouseCursor | undefined {
     const definedCursors = getDefinedCursors(
+      // @ts-ignore
       MouseCursor as Record<symbol, Map<string, MouseCursor>>,
       DEFINED_CURSORS
     )
@@ -82,6 +83,7 @@ export default class MouseCursor {
   static setDefinedCursor(name: string, cursor: MouseCursor): boolean {
     if (cursor instanceof MouseCursor) {
       const definedCursors = getDefinedCursors(
+        // @ts-ignore
         MouseCursor as Record<symbol, Map<string, MouseCursor>>,
         DEFINED_CURSORS
       )

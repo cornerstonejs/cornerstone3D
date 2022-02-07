@@ -1,5 +1,9 @@
 import { BaseTool } from './base'
-import { getEnabledElement, Scene } from '@ohif/cornerstone-render'
+import {
+  getEnabledElement,
+  Scene,
+  VolumeViewport,
+} from '@ohif/cornerstone-render'
 import { getVoxelPositionBasedOnIntensity } from '../util/planar'
 import { ToolGroupManager } from '../store'
 import CrosshairsTool from './CrosshairsTool'
@@ -54,7 +58,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     // 4. Search for the brightest point location in the line of sight
     const brightestPoint = getVoxelPositionBasedOnIntensity(
       scene,
-      viewport,
+      viewport as VolumeViewport,
       targetVolumeUID,
       maxFn,
       currentPoints.world

@@ -21,7 +21,7 @@ interface IImageVolume {
   sizeInBytes?: number
   spacing: Point3
   numVoxels: number
-  vtkImageData?: vtkImageData
+  imageData?: vtkImageData
   vtkOpenGLTexture: any
   loadStatus?: Record<string, any>
   imageIds?: Array<string>

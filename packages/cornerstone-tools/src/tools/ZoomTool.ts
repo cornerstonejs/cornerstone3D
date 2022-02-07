@@ -54,7 +54,10 @@ export default class ZoomTool extends BaseTool {
 
     const k = deltaY * zoomScale
 
-    viewport.setCamera({ parallelScale: (1.0 - k) * camera.parallelScale })
+    const newParallelScale = (1.0 - k) * camera.parallelScale
+
+    // viewport.setCamera({ parallelScale: newParallelScale, deltaPoints });
+    viewport.setCamera({ parallelScale: newParallelScale })
   }
 
   _dragPerspectiveProjection = (evt, camera) => {

@@ -9,11 +9,9 @@ import {
   ORIENTATION,
   createAndCacheVolume,
   Utilities,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
-import {
-  ToolBindings,
-  synchronizers,
-} from '@ohif/cornerstone-tools'
+import { ToolBindings, synchronizers } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import {
@@ -40,8 +38,8 @@ const STACK = 'stack'
 
 window.cache = cache
 
-
-const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } = Utilities.testUtils
+const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } =
+  Utilities.testUtils
 
 let ctTestSceneToolGroup, ptTestSceneToolGroup
 
@@ -69,7 +67,6 @@ class testUtilVolume extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
     this._viewportGridRef = React.createRef()
@@ -94,8 +91,9 @@ class testUtilVolume extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     ;({ ctTestSceneToolGroup, ptTestSceneToolGroup } = initToolGroups())
-
 
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -164,12 +162,10 @@ class testUtilVolume extends Component {
 
     const axialSync = createVOISynchronizer('axialSync')
 
-
-
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     await createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
-    await createAndCacheVolume(this.ptVolumeId, {imageIds: []})
+    await createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
 
     const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
     const ptScene = renderingEngine.getScene(SCENE_IDS.PT)
@@ -191,16 +187,11 @@ class testUtilVolume extends Component {
       },
     ])
 
-
-
     await ptScene.setVolumes([
       {
         volumeUID: this.ptVolumeId,
       },
     ])
-
-
-
 
     renderingEngine.render()
 
@@ -285,7 +276,8 @@ class testUtilVolume extends Component {
             <h2>Fake Volume Testings</h2>
             <h4>
               This demo uses ImageVolume instead of StreamingImageVolume and
-              renders two volumes; however, it does not use the SharedArrayBuffer
+              renders two volumes; however, it does not use the
+              SharedArrayBuffer
             </h4>
           </div>
           <div

@@ -1,4 +1,5 @@
 import * as csTools from '../src/index'
+import * as cornerstone3D from '../../cornerstone-render/src/index'
 
 const toolStateManager = csTools.defaultFrameOfReferenceSpecificToolStateManager
 
@@ -58,6 +59,7 @@ function addAndReturnToolName1ToolData() {
 
 describe('FrameOfReferenceSpecificToolStateManager:', () => {
   beforeAll(function () {
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
     csTools.init()
   })
 

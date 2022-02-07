@@ -21,9 +21,9 @@ async function createVolumeActor(
     throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`)
   }
 
-  const { vtkImageData, vtkOpenGLTexture } = imageVolume
+  const { imageData, vtkOpenGLTexture } = imageVolume
 
-  const volumeMapper = createVolumeMapper(vtkImageData, vtkOpenGLTexture)
+  const volumeMapper = createVolumeMapper(imageData, vtkOpenGLTexture)
 
   if (blendMode) {
     volumeMapper.setBlendMode(blendMode)

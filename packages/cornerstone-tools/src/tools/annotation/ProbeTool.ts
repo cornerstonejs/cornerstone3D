@@ -555,18 +555,10 @@ export default class ProbeTool extends BaseAnnotationTool {
         renderingEngine
       )
 
-      const {
-        dimensions,
-        scalarData,
-        vtkImageData: imageData,
-        metadata,
-      } = imageVolume
+      const { dimensions, scalarData, imageData, metadata } = imageVolume
 
       const modality = metadata.Modality
-
-      const index = <Types.Point3>[0, 0, 0]
-
-      imageData.worldToIndexVec3(worldPos, index)
+      const index = imageData.worldToIndex(worldPos)
 
       index[0] = Math.floor(index[0])
       index[1] = Math.floor(index[1])

@@ -5,19 +5,14 @@ import {
   createAndCacheVolume,
   ORIENTATION,
   VIEWPORT_TYPE,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
-import {
-  ToolBindings,
-} from '@ohif/cornerstone-tools'
+import { ToolBindings } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
-
-import {
-  setCTWWWC,
-} from './helpers/transferFunctionHelpers'
-
+import { setCTWWWC } from './helpers/transferFunctionHelpers'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -61,7 +56,6 @@ class OneVolumeExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     this._canvasNodes = new Map()
     this._offScreenRef = React.createRef()
 
@@ -87,6 +81,8 @@ class OneVolumeExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     ;({ ctSceneToolGroup } = initToolGroups())
 
     const volumeImageIds = await this.volumeImageIds
@@ -149,7 +145,7 @@ class OneVolumeExample extends Component {
       VIEWPORT_IDS.CT.CORONAL
     )
 
-    addToolsToToolGroups({ctSceneToolGroup})
+    addToolsToToolGroups({ ctSceneToolGroup })
 
     renderingEngine.render()
 
@@ -227,13 +223,13 @@ class OneVolumeExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive('WindowLevel', {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
     toolGroup.setToolActive('Pan', {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
     })
     toolGroup.setToolActive('Zoom', {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
   }
 
@@ -249,7 +245,9 @@ class OneVolumeExample extends Component {
       ([tool, { bindings, mode }]) =>
         mode === 'Active' &&
         bindings.length &&
-        bindings.some(binding => binding.mouseButton === ToolBindings.Mouse.Primary)
+        bindings.some(
+          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+        )
     )
 
     ctSceneToolGroup.setToolPassive(activeTool)
@@ -258,14 +256,15 @@ class OneVolumeExample extends Component {
     const currentBindings = ctSceneToolGroup.tools[toolName].bindings
 
     ctSceneToolGroup.setToolActive(toolName, {
-      bindings: [...currentBindings, { mouseButton: ToolBindings.Mouse.Primary } ],
+      bindings: [
+        ...currentBindings,
+        { mouseButton: ToolBindings.Mouse.Primary },
+      ],
     })
 
     this.renderingEngine.render()
     this.setState({ ptCtLeftClickTool: toolName })
   }
-
-
 
   showOffScreenCanvas = () => {
     // remove all children

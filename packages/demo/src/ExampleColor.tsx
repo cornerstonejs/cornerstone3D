@@ -1,19 +1,20 @@
-import React, { Component } from "react";
+import React, { Component } from 'react'
 // ~~
-import * as cs from "@ohif/cornerstone-render";
+import * as cs from '@ohif/cornerstone-render'
 import {
   RenderingEngine,
   ORIENTATION,
   VIEWPORT_TYPE,
   metaData,
   createAndCacheVolume,
-} from "@ohif/cornerstone-render";
-import { ToolBindings } from "@ohif/cornerstone-tools";
+  init as csRenderInit,
+} from '@ohif/cornerstone-render'
+import { ToolBindings } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
 
-import { registerWebImageLoader } from "@ohif/cornerstone-image-loader-streaming-volume";
-import config from "./config/default";
-import { hardcodedMetaDataProvider } from "./helpers/initCornerstone";
+import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
+import config from './config/default'
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { initToolGroups } from './initToolGroups'
 
 let colorSceneToolGroup
@@ -24,25 +25,24 @@ class ColorExample extends Component {
       [512, 512],
       [512, 512],
     ],
-  };
+  }
 
   constructor(props) {
-    super(props);
+    super(props)
 
-    csTools3d.init()
-    this.axialContainer = React.createRef();
-    this.sagittalContainer = React.createRef();
-    this.coronalContainer = React.createRef();
+    this.axialContainer = React.createRef()
+    this.sagittalContainer = React.createRef()
+    this.coronalContainer = React.createRef()
   }
 
   componentWillUnmount() {
-
     csTools3d.destroy()
-    this.renderingEngine.destroy();
-
+    this.renderingEngine.destroy()
   }
 
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     registerWebImageLoader(cs)
     const renderingEngineUID = 'ExampleRenderingEngineID'
     const { imageIds } = config.colorImages
@@ -152,22 +152,22 @@ class ColorExample extends Component {
   }
 
   render() {
-    const { viewportSizes } = this.state;
+    const { viewportSizes } = this.state
 
     const style0 = {
       width: `${viewportSizes[0][0]}px`,
       height: `${viewportSizes[0][1]}px`,
-    };
+    }
 
     const style1 = {
       width: `${viewportSizes[1][0]}px`,
       height: `${viewportSizes[1][1]}px`,
-    };
+    }
 
     const style2 = {
       width: `${viewportSizes[2][0]}px`,
       height: `${viewportSizes[2][1]}px`,
-    };
+    }
 
     return (
       <div>
@@ -211,4 +211,4 @@ class ColorExample extends Component {
   }
 }
 
-export default ColorExample;
+export default ColorExample

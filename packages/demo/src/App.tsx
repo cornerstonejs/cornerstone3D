@@ -13,11 +13,13 @@ import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration'
 import OneVolumeExample from './ExampleOneVolume'
 import PriorityLoadExample from './ExamplePriorityLoad'
 import OneStackExample from './ExampleOneStack'
+import OneStackExampleCPU from './ExampleOneStackCPU'
 import FlipViewportExample from './ExampleFlipViewport'
 import ModifierKeysExample from './ExampleModifierKeys'
 import TestUtils from './ExampleTestUtils'
 import TestUtilsVolume from './ExampleTestUtilsVolume'
 import CalibrationExample from './ExampleCalibration'
+import { resetCPURenderingOnlyForDebugOrTests } from '@ohif/cornerstone-render'
 
 function LinkOut({ href, text }) {
   return (
@@ -50,6 +52,10 @@ function Index() {
     height: '512px',
   }
 
+  // Reset the CPU rendering to whatever it should be (might've navigated from
+  // A CPU demo).
+  resetCPURenderingOnlyForDebugOrTests()
+
   const examples = [
     {
       title: 'MPR',
@@ -67,9 +73,9 @@ function Index() {
       text: 'Example one Stack',
     },
     {
-      title: 'Flip Viewport',
-      url: '/flip',
-      text: 'Example for flipping viewport horizontally or vertically volume',
+      title: 'One Stack CPU',
+      url: '/oneStackCPU',
+      text: 'Example one Stack with CPU fallback (even if your environment supports GPU)',
     },
     {
       title: 'Canvas Resize',
@@ -141,9 +147,12 @@ function Index() {
       url: '/calibratedImages',
       text: 'Example that shows support for calibrated images',
     },
+    {
+      title: 'Flip Volume Viewport',
+      url: '/flip',
+      text: 'Example for flipping viewport horizontally or vertically volume',
+    },
   ]
-
-
 
   const exampleComponents = examples.map((e) => {
     return <ExampleEntry key={e.title} {...e} />
@@ -267,6 +276,11 @@ function AppRouter() {
       children: <OneStackExample />,
     })
 
+  const OneStackCPU = () =>
+    Example({
+      children: <OneStackExampleCPU />,
+    })
+
   const Flip = () =>
     Example({
       children: <FlipViewportExample />,
@@ -305,6 +319,7 @@ function AppRouter() {
         <Route exact path="/cacheDecache/" render={cacheDecache} />
         <Route exact path="/oneVolume/" render={OneVolume} />
         <Route exact path="/oneStack/" render={OneStack} />
+        <Route exact path="/oneStackCPU/" render={OneStackCPU} />
         <Route exact path="/testUtils/" render={Test} />
         <Route exact path="/testUtilsVolume/" render={TestVolume} />
         <Route exact path="/calibratedImages/" render={calibratedImages} />

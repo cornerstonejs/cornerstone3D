@@ -746,15 +746,12 @@ class LengthTool extends BaseAnnotationTool {
         renderingEngine
       )
 
-      const { vtkImageData: imageData, dimensions } = imageVolume
+      const { imageData, dimensions } = imageVolume
 
       const length = this._calculateLength(worldPos1, worldPos2)
 
-      const index1 = <Types.Point3>[0, 0, 0]
-      const index2 = <Types.Point3>[0, 0, 0]
-
-      imageData.worldToIndexVec3(worldPos1, index1)
-      imageData.worldToIndexVec3(worldPos2, index2)
+      const index1 = imageData.worldToIndex(worldPos1)
+      const index2 = imageData.worldToIndex(worldPos2)
 
       this._isInsideVolume(index1, index2, dimensions)
         ? (this.isHandleOutsideImage = false)

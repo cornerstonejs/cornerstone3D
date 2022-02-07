@@ -1,5 +1,5 @@
 import { api } from 'dicomweb-client'
-import dcmjs from 'dcmjs';
+import dcmjs from 'dcmjs'
 import { calculateSUVScalingFactors } from 'calculate-suv'
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata'
 import { Utilities } from '@ohif/cornerstone-render'
@@ -8,9 +8,8 @@ import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 import getPixelSpacingInformation from './getPixelSpacingInformation'
 
-const { DicomMetaDictionary } = dcmjs.data;
-const { calibratedPixelSpacingMetadataProvider } = Utilities;
-
+const { DicomMetaDictionary } = dcmjs.data
+const { calibratedPixelSpacingMetadataProvider } = Utilities
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -65,7 +64,6 @@ export default async function createImageIdsAndCacheMetaData({
         imageId,
         instanceMetaData
       )
-
     } else {
       imageId =
         `wadors:` +
@@ -86,10 +84,14 @@ export default async function createImageIdsAndCacheMetaData({
     WADORSHeaderProvider.addInstance(imageId, instanceMetaData)
 
     // Add calibrated pixel spacing
-    const instance = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
+    const m = JSON.parse(JSON.stringify(instanceMetaData))
+    const instance = DicomMetaDictionary.naturalizeDataset(m)
     const pixelSpacing = getPixelSpacingInformation(instance)
 
-    calibratedPixelSpacingMetadataProvider.add(imageId, pixelSpacing.map(s => parseFloat(s)))
+    calibratedPixelSpacingMetadataProvider.add(
+      imageId,
+      pixelSpacing.map((s) => parseFloat(s))
+    )
 
     return imageId
   })

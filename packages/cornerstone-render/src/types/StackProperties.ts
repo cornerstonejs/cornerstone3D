@@ -5,6 +5,8 @@ type StackProperties = {
   invert?: boolean
   interpolationType?: number
   rotation?: number
+  flipHorizontal?: boolean
+  flipVertical?: boolean
 }
 
 export default StackProperties

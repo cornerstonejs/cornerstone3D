@@ -18,11 +18,13 @@
     "start": "yarn run dev"
   },
   "peerDependencies": {
-    "gl-matrix": "^3.3.0",
+    "gl-matrix": "^3.4.3",
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "devDependencies": {
-    "gl-matrix": "^3.3.0",
+    "gl-matrix": "^3.4.3",
+    "resemblejs": "^3.2.5",
+    "detect-gpu": "^4.0.7",
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "author": "",

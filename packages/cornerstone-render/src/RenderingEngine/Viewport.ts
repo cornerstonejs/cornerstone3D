@@ -6,13 +6,12 @@ import _cloneDeep from 'lodash.clonedeep'
 
 import Events from '../enums/events'
 import VIEWPORT_TYPE from '../constants/viewportType'
-import FlipDirection from '../enums/flipDirection'
 import { ICamera, ViewportInput, ActorEntry } from '../types'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
-import { triggerEvent, isEqual, planar } from '../utilities'
+import { triggerEvent, planar } from '../utilities'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
-import { ViewportInputOptions, Point2, Point3 } from '../types'
+import { ViewportInputOptions, Point2, Point3, FlipDirection } from '../types'
 import { vtkSlabCamera } from './vtkClasses'
 
 /**
@@ -25,6 +24,10 @@ class Viewport {
   readonly renderingEngineUID: string
   readonly type: string
   readonly canvas: HTMLCanvasElement
+
+  protected flipHorizontal = false
+  protected flipVertical = false
+
   sx: number
   sy: number
   sWidth: number
@@ -62,76 +65,12 @@ class Viewport {
   getFrameOfReferenceUID: () => string
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
+  customRenderViewportToCanvas: () => unknown
+  resize: () => void
+  getProperties: () => void
 
-  public getIntensityFromWorld(point: Point3): number {
-    const volumeActor = this.getDefaultActor().volumeActor
-    const imageData = volumeActor.getMapper().getInputData()
-
-    return imageData.getScalarValueFromWorld(point)
-  }
-
-  public getDefaultActor(): ActorEntry {
-    return this.getActors()[0]
-  }
-
-  public getActors(): Array<ActorEntry> {
-    return Array.from(this._actors.values())
-  }
-
-  public getActor(actorUID: string): ActorEntry {
-    return this._actors.get(actorUID)
-  }
-
-  public setActors(actors: Array<ActorEntry>): void {
-    this.removeAllActors()
-    this.addActors(actors)
-  }
-
-  public addActors(actors: Array<ActorEntry>): void {
-    actors.forEach((actor) => this.addActor(actor))
-  }
-
-  public addActor(actorEntry: ActorEntry): void {
-    const { uid: actorUID, volumeActor } = actorEntry
-    if (!actorUID || !volumeActor) {
-      throw new Error('Actors should have uid and vtk volumeActor properties')
-    }
-
-    const actor = this.getActor(actorUID)
-    if (actor) {
-      console.warn(`Actor ${actorUID} already exists for this viewport`)
-      return
-    }
-
-    const renderer = this.getRenderer()
-    renderer.addActor(volumeActor)
-    this._actors.set(actorUID, Object.assign({}, actorEntry))
-  }
-
-  /*
-  Todo: remove actor and remove actors does not work for some reason
-  public removeActor(actorUID: string): void {
-    const actor = this.getActor(actorUID)
-    if (!actor) {
-      console.warn(`Actor ${actorUID} does not exist for this viewport`)
-      return
-    }
-    const renderer = this.getRenderer()
-    renderer.removeViewProp(actor) // removeActor not implemented in vtk?
-    this._actors.delete(actorUID)
-  }
-
-  public removeActors(actorUIDs: Array<string>): void {
-    actorUIDs.forEach((actorUID) => {
-      this.removeActor(actorUID)
-    })
-  }
-  */
-
-  public removeAllActors(): void {
-    this.getRenderer().removeAllViewProps()
-    this._actors = new Map()
-    return
+  static get useCustomRenderingPipeline() {
+    return false
   }
 
   /**
@@ -181,16 +120,6 @@ class Viewport {
   }
 
   /**
-   * @method getBounds gets the visible bounds of the viewport
-   *
-   * @param {any} bounds of the viewport
-   */
-  public getBounds() {
-    const renderer = this.getRenderer()
-    return renderer.computeVisiblePropBounds()
-  }
-
-  /**
    * @method reset Resets the options the `Viewport`'s `defaultOptions`.`
    *
    * @param {boolean} [immediate=false] If `true`, renders the viewport after the options are reset.
@@ -207,66 +136,141 @@ class Viewport {
   }
 
   protected applyFlipTx = (worldPos: Point3): Point3 => {
-    // One vol actor is enough to get the flip direction. If not flipped
-    // the transformation is identity
     const actor = this.getDefaultActor()
 
     if (!actor) {
-      // Until viewports set up their actors
       return worldPos
     }
 
     const volumeActor = actor.volumeActor as vtkVolume
     const mat = volumeActor.getMatrix()
 
-    const p1 = worldPos[0]
-    const p2 = worldPos[1]
-    const p3 = worldPos[2]
-    const p4 = 1
-
-    // Apply flip tx
-    const newPos = [0, 0, 0, 1]
-    newPos[0] = p1 * mat[0] + p2 * mat[4] + p3 * mat[8] + p4 * mat[12]
-    newPos[1] = p1 * mat[1] + p2 * mat[5] + p3 * mat[9] + p4 * mat[13]
-    newPos[2] = p1 * mat[2] + p2 * mat[6] + p3 * mat[10] + p4 * mat[14]
-    newPos[3] = p1 * mat[3] + p2 * mat[7] + p3 * mat[11] + p4 * mat[15]
+    const newPos = vec3.create()
+    const matT = mat4.create()
+    mat4.transpose(matT, mat)
+    vec3.transformMat4(newPos, worldPos, matT)
 
     return [newPos[0], newPos[1], newPos[2]]
   }
 
   /**
-   * Flip the viewport on horizontal or vertical axis
+   * Flip the viewport on horizontal or vertical axis, this method
+   * works with vtk-js backed rendering pipeline.
    *
-   * @param direction 0 for horizontal, 1 for vertical
+   * @param flipHorizontal: boolean
+   * @param flipVertical: boolean
    */
-  public flip = (direction: FlipDirection): void => {
+  protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
     const scene = this.getRenderingEngine().getScene(this.sceneUID)
 
-    const scale = [1, 1]
-    scale[direction] *= -1
+    const imageData = this.getDefaultImageData()
+
+    if (!imageData) {
+      return
+    }
+
+    // In Cornerstone gpu rendering piepline, the images are positioned
+    // in the space according to their origin, and direction (even StackViewport
+    // with one slice only). In order to flip the images, we need to flip them
+    // around their center axis (either horizontal or vertical). Since the images
+    // are positioned in the space according to their origin and direction, for a
+    // proper scaling (flipping), they should be transformed to the origin and
+    // then flipped. The following code does this transformation.
+
+    const origin = imageData.getOrigin()
+    const direction = imageData.getDirection()
+    const spacing = imageData.getSpacing()
+    const size = imageData.getDimensions()
+
+    const iVector = direction.slice(0, 3)
+    const jVector = direction.slice(3, 6)
+    const kVector = direction.slice(6, 9)
+
+    // finding the center of the image
+    const center = vec3.create()
+    vec3.scaleAndAdd(center, origin, iVector, (size[0] / 2.0) * spacing[0])
+    vec3.scaleAndAdd(center, center, jVector, (size[1] / 2.0) * spacing[1])
+    vec3.scaleAndAdd(center, center, kVector, (size[2] / 2.0) * spacing[2])
+
+    let flipHTx, flipVTx
+
+    const transformToOriginTx = vtkMatrixBuilder
+      .buildFromRadian()
+      .identity()
+      .translate(center[0], center[1], center[2])
+      .rotateFromDirections(jVector, [0, 1, 0])
+      .rotateFromDirections(iVector, [1, 0, 0])
+
+    const transformBackFromOriginTx = vtkMatrixBuilder
+      .buildFromRadian()
+      .identity()
+      .rotateFromDirections([1, 0, 0], iVector)
+      .rotateFromDirections([0, 1, 0], jVector)
+      .translate(-center[0], -center[1], -center[2])
+
+    if (
+      typeof flipHorizontal !== 'undefined' &&
+      ((flipHorizontal && !this.flipHorizontal) ||
+        (!flipHorizontal && this.flipHorizontal))
+    ) {
+      this.flipHorizontal = flipHorizontal
+      flipHTx = vtkMatrixBuilder
+        .buildFromRadian()
+        .multiply(transformToOriginTx.getMatrix())
+        .scale(-1, 1, 1)
+        .multiply(transformBackFromOriginTx.getMatrix())
+    }
+
+    if (
+      typeof flipVertical !== 'undefined' &&
+      ((flipVertical && !this.flipVertical) ||
+        (!flipVertical && this.flipVertical))
+    ) {
+      this.flipVertical = flipVertical
+      flipVTx = vtkMatrixBuilder
+        .buildFromRadian()
+        .multiply(transformToOriginTx.getMatrix())
+        .scale(1, -1, 1)
+        .multiply(transformBackFromOriginTx.getMatrix())
+    }
+
+    if (!flipVTx && !flipHTx) {
+      return
+    }
 
     const actors = this.getActors()
+
     actors.forEach((actor) => {
       const volumeActor = actor.volumeActor as vtkVolume
 
-      const tx = vtkMatrixBuilder
-        .buildFromRadian()
-        .identity()
-        .scale(scale[0], scale[1], 1)
+      const mat = volumeActor.getUserMatrix()
 
-      const mat = mat4.create()
-      mat4.multiply(mat, volumeActor.getUserMatrix(), tx.getMatrix())
+      if (flipHTx) {
+        mat4.multiply(mat, mat, flipHTx.getMatrix())
+      }
+
+      if (flipVTx) {
+        mat4.multiply(mat, mat, flipVTx.getMatrix())
+      }
+
       volumeActor.setUserMatrix(mat)
 
       this.getRenderingEngine().render()
 
       if (scene) {
-        // If volume viewport
         const viewports = scene.getViewports()
         viewports.forEach((vp) => {
           const { focalPoint, position } = vp.getCamera()
-          tx.apply(focalPoint)
-          tx.apply(position)
+          if (flipVTx) {
+            flipVTx.apply(focalPoint)
+            flipVTx.apply(position)
+          }
+
+          if (flipHTx) {
+            flipHTx.apply(focalPoint)
+            flipHTx.apply(position)
+          }
+
           vp.setCamera({
             focalPoint,
             position,
@@ -284,6 +288,50 @@ class Viewport {
     if (actor) {
       return actor.volumeActor.getMapper().getInputData()
     }
+  }
+
+  public getDefaultActor(): ActorEntry {
+    return this.getActors()[0]
+  }
+
+  public getActors(): Array<ActorEntry> {
+    return Array.from(this._actors.values())
+  }
+
+  public getActor(actorUID: string): ActorEntry {
+    return this._actors.get(actorUID)
+  }
+
+  public setActors(actors: Array<ActorEntry>): void {
+    this.removeAllActors()
+    this.addActors(actors)
+  }
+
+  public addActors(actors: Array<ActorEntry>): void {
+    actors.forEach((actor) => this.addActor(actor))
+  }
+
+  public addActor(actorEntry: ActorEntry): void {
+    const { uid: actorUID, volumeActor } = actorEntry
+    if (!actorUID || !volumeActor) {
+      throw new Error('Actors should have uid and vtk volumeActor properties')
+    }
+
+    const actor = this.getActor(actorUID)
+    if (actor) {
+      console.warn(`Actor ${actorUID} already exists for this viewport`)
+      return
+    }
+
+    const renderer = this.getRenderer()
+    renderer.addActor(volumeActor)
+    this._actors.set(actorUID, Object.assign({}, actorEntry))
+  }
+
+  public removeAllActors(): void {
+    this.getRenderer().removeAllViewProps()
+    this._actors = new Map()
+    return
   }
 
   protected resetCameraNoEvent() {
@@ -538,7 +586,7 @@ class Viewport {
    *
    * @returns {object} the vtkCamera.
    */
-  public getVtkActiveCamera(): vtkCamera | vtkSlabCamera {
+  protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera {
     const renderer = this.getRenderer()
 
     return renderer.getActiveCamera()

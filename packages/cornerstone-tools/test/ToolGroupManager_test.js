@@ -68,301 +68,307 @@ function createCanvas(width, height) {
   return [canvas1, canvas2]
 }
 
-describe('Synchronizer Manager: ', () => {
-  beforeEach(function () {
-    csTools3d.init()
-    csTools3d.addTool(ProbeTool, {})
-    cache.purgeCache()
-    this.toolGroup = ToolGroupManager.createToolGroup('volume1')
-    this.toolGroup.addTool('Probe')
-    this.toolGroup.setToolActive('Probe', {
-      bindings: [
+describe('ToolGroupManager', () => {
+  beforeAll(() => {
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+  })
+
+  describe('Synchronizer Manager1: ', () => {
+    beforeEach(function () {
+      csTools3d.init()
+      csTools3d.addTool(ProbeTool, {})
+      cache.purgeCache()
+      this.toolGroup = ToolGroupManager.createToolGroup('volume1')
+      this.toolGroup.addTool('Probe')
+      this.toolGroup.setToolActive('Probe', {
+        bindings: [
+          {
+            mouseButton: ToolBindings.Mouse.Primary,
+          },
+        ],
+      })
+      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      metaData.addProvider(fakeMetaDataProvider, 10000)
+    })
+
+    afterEach(function () {
+      // Destroy synchronizer manager to test it first since csTools3D also destroy
+      // synchronizers
+      ToolGroupManager.destroy()
+      csTools3d.destroy()
+      cache.purgeCache()
+      this.renderingEngine.destroy()
+      metaData.removeProvider(fakeMetaDataProvider)
+      unregisterAllImageLoaders()
+      DOMElements.forEach((el) => {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el)
+        }
+      })
+    })
+
+    it('Should successfully creates tool groups', function () {
+      const [canvas1, canvas2] = createCanvas(512, 128)
+
+      this.renderingEngine.setViewports([
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          sceneUID: scene1UID,
+          viewportUID: viewportUID1,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas1,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      ],
-    })
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-    metaData.addProvider(fakeMetaDataProvider, 10000)
-  })
-
-  afterEach(function () {
-    // Destroy synchronizer manager to test it first since csTools3D also destroy
-    // synchronizers
-    ToolGroupManager.destroy()
-    csTools3d.destroy()
-    cache.purgeCache()
-    this.renderingEngine.destroy()
-    metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
-    DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el)
-      }
-    })
-  })
-
-  it('Should successfully creates tool groups', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
-
-    this.renderingEngine.setViewports([
-      {
-        sceneUID: scene1UID,
-        viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-      {
-        sceneUID: scene2UID,
-        viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
-        },
-      },
-    ])
-
-    this.toolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
-
-    const tg = ToolGroupManager.getToolGroupById('volume1')
-    expect(tg).toBeDefined()
-  })
-})
-
-describe('Synchronizer Manager: ', () => {
-  beforeEach(function () {
-    csTools3d.init()
-    csTools3d.addTool(ProbeTool, {})
-    cache.purgeCache()
-    this.toolGroup = ToolGroupManager.createToolGroup('volume1')
-    this.toolGroup.addTool('Probe')
-    this.toolGroup.setToolActive('Probe', {
-      bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          sceneUID: scene2UID,
+          viewportUID: viewportUID2,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas2,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      ],
-    })
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-    metaData.addProvider(fakeMetaDataProvider, 10000)
-  })
+      ])
 
-  afterEach(function () {
-    // Destroy synchronizer manager to test it first since csTools3D also destroy
-    // synchronizers
-    ToolGroupManager.destroyToolGroupById('volume1')
-    csTools3d.destroy()
-    cache.purgeCache()
-    this.renderingEngine.destroy()
-    metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
-    DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el)
-      }
+      this.toolGroup.addViewports(
+        this.renderingEngine.uid,
+        scene1UID,
+        viewportUID1
+      )
+
+      const tg = ToolGroupManager.getToolGroupById('volume1')
+      expect(tg).toBeDefined()
     })
   })
 
-  it('Should successfully create toolGroup and get tool instances', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+  describe('Synchronizer Manager2: ', () => {
+    beforeEach(function () {
+      csTools3d.init()
+      csTools3d.addTool(ProbeTool, {})
+      cache.purgeCache()
+      this.toolGroup = ToolGroupManager.createToolGroup('volume1')
+      this.toolGroup.addTool('Probe')
+      this.toolGroup.setToolActive('Probe', {
+        bindings: [
+          {
+            mouseButton: ToolBindings.Mouse.Primary,
+          },
+        ],
+      })
+      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      metaData.addProvider(fakeMetaDataProvider, 10000)
+    })
 
-    this.renderingEngine.setViewports([
-      {
-        sceneUID: scene1UID,
-        viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+    afterEach(function () {
+      // Destroy synchronizer manager to test it first since csTools3D also destroy
+      // synchronizers
+      ToolGroupManager.destroyToolGroupById('volume1')
+      csTools3d.destroy()
+      cache.purgeCache()
+      this.renderingEngine.destroy()
+      metaData.removeProvider(fakeMetaDataProvider)
+      unregisterAllImageLoaders()
+      DOMElements.forEach((el) => {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el)
+        }
+      })
+    })
+
+    it('Should successfully create toolGroup and get tool instances', function () {
+      const [canvas1, canvas2] = createCanvas(512, 128)
+
+      this.renderingEngine.setViewports([
+        {
+          sceneUID: scene1UID,
+          viewportUID: viewportUID1,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas1,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-      {
-        sceneUID: scene2UID,
-        viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+        {
+          sceneUID: scene2UID,
+          viewportUID: viewportUID2,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas2,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-    ])
+      ])
 
-    this.toolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
+      this.toolGroup.addViewports(
+        this.renderingEngine.uid,
+        scene1UID,
+        viewportUID1
+      )
 
-    const tg = ToolGroupManager.getToolGroupById('volume1')
-    expect(tg).toBeDefined()
+      const tg = ToolGroupManager.getToolGroupById('volume1')
+      expect(tg).toBeDefined()
 
-    const tg2 = ToolGroupManager.getToolGroups(
-      renderingEngineUID,
-      scene1UID,
-      viewportUID1
-    )
-    expect(tg2).toBeDefined()
-    expect(tg2.length).toBe(1)
-    expect(tg).toBe(tg2[0])
+      const tg2 = ToolGroupManager.getToolGroups(
+        renderingEngineUID,
+        scene1UID,
+        viewportUID1
+      )
+      expect(tg2).toBeDefined()
+      expect(tg2.length).toBe(1)
+      expect(tg).toBe(tg2[0])
 
-    const tg3 = ToolGroupManager.createToolGroup('volume1')
-    expect(tg3).toBeUndefined()
+      const tg3 = ToolGroupManager.createToolGroup('volume1')
+      expect(tg3).toBeUndefined()
 
-    const instance = tg.getToolInstance('Probe')
-    expect(instance.name).toBe('Probe')
+      const instance = tg.getToolInstance('Probe')
+      expect(instance.name).toBe('Probe')
 
-    const instance2 = tg.getToolInstance('probe')
-    expect(instance2).toBeUndefined()
-  })
+      const instance2 = tg.getToolInstance('probe')
+      expect(instance2).toBeUndefined()
+    })
 
-  it('Should successfully Use toolGroup manager API', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+    it('Should successfully Use toolGroup manager API', function () {
+      const [canvas1, canvas2] = createCanvas(512, 128)
 
-    this.renderingEngine.setViewports([
-      {
-        sceneUID: scene1UID,
-        viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+      this.renderingEngine.setViewports([
+        {
+          sceneUID: scene1UID,
+          viewportUID: viewportUID1,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas1,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-      {
-        sceneUID: scene2UID,
-        viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+        {
+          sceneUID: scene2UID,
+          viewportUID: viewportUID2,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas2,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-    ])
+      ])
 
-    // Remove viewports
-    let tg = ToolGroupManager.getToolGroupById('volume1')
+      // Remove viewports
+      let tg = ToolGroupManager.getToolGroupById('volume1')
 
-    tg.addViewports(this.renderingEngine.uid, scene1UID, viewportUID1)
-    expect(tg.viewports.length).toBe(1)
+      tg.addViewports(this.renderingEngine.uid, scene1UID, viewportUID1)
+      expect(tg.viewports.length).toBe(1)
 
-    tg.removeViewports(renderingEngineUID)
+      tg.removeViewports(renderingEngineUID)
 
-    tg = ToolGroupManager.getToolGroupById('volume1')
-    expect(tg.viewports.length).toBe(0)
+      tg = ToolGroupManager.getToolGroupById('volume1')
+      expect(tg.viewports.length).toBe(0)
 
-    //
-    tg.addViewports(this.renderingEngine.uid, scene1UID, viewportUID1)
-    tg = ToolGroupManager.getToolGroupById('volume1')
-    expect(tg.viewports.length).toBe(1)
+      //
+      tg.addViewports(this.renderingEngine.uid, scene1UID, viewportUID1)
+      tg = ToolGroupManager.getToolGroupById('volume1')
+      expect(tg.viewports.length).toBe(1)
 
-    tg.removeViewports(renderingEngineUID, scene2UID, viewportUID2)
-    expect(tg.viewports.length).toBe(1)
-  })
+      tg.removeViewports(renderingEngineUID, scene2UID, viewportUID2)
+      expect(tg.viewports.length).toBe(1)
+    })
 
-  it('Should successfully make a tool enabled/disabled/active/passive', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+    it('Should successfully make a tool enabled/disabled/active/passive', function () {
+      const [canvas1, canvas2] = createCanvas(512, 128)
 
-    this.renderingEngine.setViewports([
-      {
-        sceneUID: scene1UID,
-        viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+      this.renderingEngine.setViewports([
+        {
+          sceneUID: scene1UID,
+          viewportUID: viewportUID1,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas1,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-      {
-        sceneUID: scene2UID,
-        viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+        {
+          sceneUID: scene2UID,
+          viewportUID: viewportUID2,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas2,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-    ])
+      ])
 
-    this.toolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
+      this.toolGroup.addViewports(
+        this.renderingEngine.uid,
+        scene1UID,
+        viewportUID1
+      )
 
-    // Remove viewports
-    let tg = ToolGroupManager.getToolGroupById('volume1')
-    expect(tg._tools['Probe'].mode).toBe('Active')
-    expect(tg._tools['Length']).toBeUndefined()
+      // Remove viewports
+      let tg = ToolGroupManager.getToolGroupById('volume1')
+      expect(tg._tools['Probe'].mode).toBe('Active')
+      expect(tg._tools['Length']).toBeUndefined()
 
-    tg.setToolPassive('Probe')
-    expect(tg._tools['Probe'].mode).toBe('Passive')
-  })
+      tg.setToolPassive('Probe')
+      expect(tg._tools['Probe'].mode).toBe('Passive')
+    })
 
-  it('Should successfully setTool status', function () {
-    const [canvas1, canvas2] = createCanvas(512, 128)
+    it('Should successfully setTool status', function () {
+      const [canvas1, canvas2] = createCanvas(512, 128)
 
-    this.renderingEngine.setViewports([
-      {
-        sceneUID: scene1UID,
-        viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas1,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+      this.renderingEngine.setViewports([
+        {
+          sceneUID: scene1UID,
+          viewportUID: viewportUID1,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas1,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-      {
-        sceneUID: scene2UID,
-        viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: canvas2,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: ORIENTATION.AXIAL,
+        {
+          sceneUID: scene2UID,
+          viewportUID: viewportUID2,
+          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          canvas: canvas2,
+          defaultOptions: {
+            background: [1, 0, 1], // pinkish background
+            orientation: ORIENTATION.AXIAL,
+          },
         },
-      },
-    ])
+      ])
 
-    this.toolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
+      this.toolGroup.addViewports(
+        this.renderingEngine.uid,
+        scene1UID,
+        viewportUID1
+      )
 
-    // Remove viewports
-    let tg = ToolGroupManager.getToolGroupById('volume1')
-    tg.setToolActive()
-    tg.setToolPassive()
-    tg.setToolEnabled()
-    tg.setToolDisabled()
+      // Remove viewports
+      let tg = ToolGroupManager.getToolGroupById('volume1')
+      tg.setToolActive()
+      tg.setToolPassive()
+      tg.setToolEnabled()
+      tg.setToolDisabled()
 
-    expect(tg._tools['Probe'].mode).toBe('Active')
+      expect(tg._tools['Probe'].mode).toBe('Active')
 
-    csTools3d.addTool(LengthTool, {})
-    tg.addTool('Length')
-    tg.setToolEnabled('Length')
-    expect(tg._tools['Length'].mode).toBe('Enabled')
+      csTools3d.addTool(LengthTool, {})
+      tg.addTool('Length')
+      tg.setToolEnabled('Length')
+      expect(tg._tools['Length'].mode).toBe('Enabled')
 
-    tg.setToolDisabled('Length')
-    expect(tg._tools['Length'].mode).toBe('Disabled')
+      tg.setToolDisabled('Length')
+      expect(tg._tools['Length'].mode).toBe('Disabled')
+    })
   })
 })

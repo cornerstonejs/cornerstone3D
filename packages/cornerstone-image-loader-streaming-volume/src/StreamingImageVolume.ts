@@ -176,7 +176,7 @@ export default class StreamingImageVolume extends ImageVolume {
     const {
       imageIds,
       vtkOpenGLTexture,
-      vtkImageData,
+      imageData,
       metadata,
       uid: volumeUID,
     } = this
@@ -243,7 +243,7 @@ export default class StreamingImageVolume extends ImageVolume {
       framesProcessed++
 
       vtkOpenGLTexture.setUpdatedFrame(imageIdIndex)
-      vtkImageData.modified()
+      imageData.modified()
 
       const eventData = {
         FrameOfReferenceUID,

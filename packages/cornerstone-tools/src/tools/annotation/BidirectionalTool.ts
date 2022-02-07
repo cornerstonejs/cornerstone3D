@@ -1174,22 +1174,17 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         renderingEngine
       )
 
-      const { vtkImageData: imageData, dimensions } = imageVolume
+      const { imageData, dimensions } = imageVolume
 
       const dist1 = this._calculateLength(worldPos1, worldPos2)
       const dist2 = this._calculateLength(worldPos3, worldPos4)
       const length = dist1 > dist2 ? dist1 : dist2
       const width = dist1 > dist2 ? dist2 : dist1
 
-      const index1 = <Types.Point3>[0, 0, 0]
-      const index2 = <Types.Point3>[0, 0, 0]
-      const index3 = <Types.Point3>[0, 0, 0]
-      const index4 = <Types.Point3>[0, 0, 0]
-
-      imageData.worldToIndexVec3(worldPos1, index1)
-      imageData.worldToIndexVec3(worldPos2, index2)
-      imageData.worldToIndexVec3(worldPos3, index3)
-      imageData.worldToIndexVec3(worldPos4, index4)
+      const index1 = imageData.worldToIndex(worldPos1)
+      const index2 = imageData.worldToIndex(worldPos2)
+      const index3 = imageData.worldToIndex(worldPos3)
+      const index4 = imageData.worldToIndex(worldPos4)
 
       this._isInsideVolume(index1, index2, index3, index4, dimensions)
         ? (this.isHandleOutsideImage = false)

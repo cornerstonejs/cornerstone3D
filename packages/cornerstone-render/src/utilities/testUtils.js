@@ -63,14 +63,14 @@ function makeTestRGB(rows, columns, barStart, barWidth) {
  * It creates an image based on the imageId name. It splits the imageId
  * based on "_" and deciphers each field of rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb
  * fakeLoader: myImage_64_64_10_20_1_1_0 will create a grayscale test image of size 64 by
- * 64 and with a vertical bar which starts at 10th pixel from right and span 20 pixels
+ * 64 and with a vertical bar which starts at 10th pixel and span 20 pixels
  * width, with pixel spacing of 1 mm and 1 mm in x and y direction.
  * @param {imageId} imageId
  * @returns
  */
 const fakeImageLoader = (imageId) => {
   const imageURI = imageId.split(':')[1]
-  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb] =
+  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
     imageURI.split('_').map((v) => parseFloat(v))
 
   let pixelData
@@ -81,12 +81,25 @@ const fakeImageLoader = (imageId) => {
     pixelData = makeTestImage1(rows, columns, barStart, barWidth)
   }
 
+  // Todo: separated fakeImageLoader for cpu and gpu
   const image = {
     rows,
     columns,
+    width: columns,
+    height: rows,
     imageId,
+    intercept: 0,
+    slope: 1,
+    invert: false,
+    windowCenter: 40,
+    windowWidth: 400,
+    maxPixelValue: 255,
+    minPixelValue: 0,
+    rowPixelSpacing: 1,
+    columnPixelSpacing: 1,
     getPixelData: () => pixelData,
     sizeInBytes: rows * columns * 1, // 1 byte for now
+    FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
   }
 
   return {
@@ -130,6 +143,8 @@ function fakeMetaDataProvider(type, imageId) {
     const imagePlaneModule = {
       rows,
       columns,
+      width: rows,
+      heigth: columns,
       imageOrientationPatient: [1, 0, 0, 0, 1, 0],
       rowCosines: [1, 0, 0],
       columnCosines: [0, 1, 0],
@@ -230,7 +245,7 @@ const fakeVolumeLoader = (volumeId) => {
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     scalarData: pixelData,
     sizeInBytes: pixelData.byteLength,
-    vtkImageData: imageData,
+    imageData: imageData,
     imageIds: [],
   })
 
@@ -271,14 +286,14 @@ function compareImages(imageDataURL, baseline, outputName) {
         // If the error is greater than 1%, fail the test
         // and download the difference image
         if (mismatch > 1) {
-          console.debug(mismatch)
+          console.log(mismatch)
           const diff = data.getImageDataUrl()
 
           //downloadURI(diff, outputName)
 
           reject(new Error(`mismatch between images for ${outputName}`))
         } else {
-          console.debug(`Images match for ${outputName}`)
+          console.log(`Images match for ${outputName}`)
           resolve()
         }
       })
@@ -307,7 +322,7 @@ function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
  * @returns pageX, pageY, clientX, clientY, worldCoordinate
  */
 function createNormalizedMouseEvent(imageData, index, canvas, viewport) {
-  const tempWorld1 = imageData.indexToWorldVec3(index)
+  const tempWorld1 = imageData.indexToWorld(index)
   const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1)
   const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p))
   const [pageX, pageY] = canvasPointsToPagePoints(canvas, canvasPoint1)

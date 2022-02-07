@@ -1,7 +1,7 @@
 import getTargetVolume from './getTargetVolume'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { Point3 } from './../../types'
-import { Scene, Viewport } from '@ohif/cornerstone-render'
+import { Scene, VolumeViewport } from '@ohif/cornerstone-render'
 
 /**
  * Returns a point on the line between the passed canvasPoint (clicked point often)
@@ -21,7 +21,7 @@ import { Scene, Viewport } from '@ohif/cornerstone-render'
  */
 export default function getVoxelPositionBasedOnIntensity(
   scene: Scene,
-  viewport: Viewport,
+  viewport: VolumeViewport,
   targetVolumeUID: string,
   criteriaFunction: (intensity: number, point: Point3) => Point3,
   canvasPointInWorld: Point3

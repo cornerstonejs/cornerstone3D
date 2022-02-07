@@ -132,6 +132,11 @@ function createCanvas(renderingEngine, viewportType, width, height) {
 }
 
 describe('Cornerstone Tools: ', () => {
+  beforeAll(() => {
+    // initialize the library
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+  })
+
   beforeEach(function () {
     csTools3d.init()
     csTools3d.addTool(CrosshairsTool, {})
@@ -183,13 +188,13 @@ describe('Cornerstone Tools: ', () => {
       }
 
       const vp = this.renderingEngine.getViewport(viewportUID1)
-      const { vtkImageData } = vp.getImageData()
+      const { imageData } = vp.getImageData()
 
-      const indexMiddle = vtkImageData
+      const indexMiddle = imageData
         .getDimensions()
         .map((s) => Math.floor(s / 2))
 
-      const imageCenterWorld = vtkImageData.indexToWorldVec3(indexMiddle)
+      const imageCenterWorld = imageData.indexToWorld(indexMiddle)
 
       const { sHeight, sWidth } = vp
       const centerCanvas = [sWidth * 0.5, sHeight * 0.5]
@@ -329,15 +334,14 @@ describe('Cornerstone Tools: ', () => {
       }
 
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
-      const { vtkImageData } = vp1.getImageData()
+      const { imageData } = vp1.getImageData()
 
       const enabledElement = getEnabledElement(canvas1)
       const crosshairToolState = getToolState(enabledElement, 'Crosshairs')
 
       // First viewport is axial
       const currentWorldLocation = crosshairToolState[0].data.handles.toolCenter
-      const currentIndexLocation =
-        vtkImageData.worldToIndexVec3(currentWorldLocation)
+      const currentIndexLocation = imageData.worldToIndex(currentWorldLocation)
 
       const jumpIndexLocation = [
         currentIndexLocation[0] + 20,
@@ -351,12 +355,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(
-        vtkImageData,
-        jumpIndexLocation,
-        canvas1,
-        vp1
-      )
+      } = createNormalizedMouseEvent(imageData, jumpIndexLocation, canvas1, vp1)
       p1 = worldCoord1
 
       // Mouse Down
@@ -425,7 +424,7 @@ describe('Cornerstone Tools: ', () => {
       }
 
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
-      const { vtkImageData } = vp1.getImageData()
+      const { imageData } = vp1.getImageData()
 
       setTimeout(() => {
         const enabledElement = getEnabledElement(canvas1)
@@ -435,7 +434,7 @@ describe('Cornerstone Tools: ', () => {
         const currentWorldLocation =
           crosshairToolState[0].data.handles.toolCenter
         const currentIndexLocation =
-          vtkImageData.worldToIndexVec3(currentWorldLocation)
+          imageData.worldToIndex(currentWorldLocation)
 
         const jumpIndexLocation = [
           currentIndexLocation[0] - 20,
@@ -450,7 +449,7 @@ describe('Cornerstone Tools: ', () => {
           clientY: clientY1,
           worldCoord: worldCoord1,
         } = createNormalizedMouseEvent(
-          vtkImageData,
+          imageData,
           currentIndexLocation,
           canvas1,
           vp1
@@ -463,7 +462,7 @@ describe('Cornerstone Tools: ', () => {
           clientY: clientY2,
           worldCoord: worldCoord2,
         } = createNormalizedMouseEvent(
-          vtkImageData,
+          imageData,
           jumpIndexLocation,
           canvas1,
           vp1

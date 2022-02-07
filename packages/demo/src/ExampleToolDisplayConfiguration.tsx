@@ -9,6 +9,7 @@ import {
   eventTarget,
   ORIENTATION,
   VIEWPORT_TYPE,
+  init as csRenderInit,
 } from '@ohif/cornerstone-render'
 import {
   CornerstoneTools3DEvents,
@@ -17,7 +18,6 @@ import {
   toolDataSelection,
 } from '@ohif/cornerstone-tools'
 import * as csTools3d from '@ohif/cornerstone-tools'
-
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -85,7 +85,6 @@ class ToolDisplayConfigurationExample extends Component {
   constructor(props) {
     super(props)
 
-    csTools3d.init()
     registerWebImageLoader(cs)
     this._canvasNodes = new Map()
     this._viewportGridRef = React.createRef()
@@ -118,6 +117,8 @@ class ToolDisplayConfigurationExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await csRenderInit()
+    csTools3d.init()
     ;({ ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup } =
       initToolGroups())
 
@@ -203,10 +204,10 @@ class ToolDisplayConfigurationExample extends Component {
     )
 
     addToolsToToolGroups({
-       ctSceneToolGroup,
-       stackCTViewportToolGroup,
-       stackDXViewportToolGroup,
-     })
+      ctSceneToolGroup,
+      stackCTViewportToolGroup,
+      stackDXViewportToolGroup,
+    })
 
     renderingEngine.render()
 
@@ -286,15 +287,14 @@ class ToolDisplayConfigurationExample extends Component {
       ctSceneToolGroup,
       stackCTViewportToolGroup,
       stackDXViewportToolGroup,
-    ].forEach(toolGroup => {
+    ].forEach((toolGroup) => {
       toolGroup.setToolActive('WindowLevel', {
-        bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
       })
     })
   }
 
   componentWillUnmount() {
-
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
       this.viewportGridResizeObserver.disconnect()
@@ -304,13 +304,13 @@ class ToolDisplayConfigurationExample extends Component {
     eventTarget.removeEventListener(
       CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
       onMeasurementSelectionChange
-      )
+    )
 
-      // Remove listener for Tool Data Locking Event
+    // Remove listener for Tool Data Locking Event
     eventTarget.removeEventListener(
       CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
       onLockedToolDataChange
-      )
+    )
 
     cache.purgeCache()
     csTools3d.destroy()
@@ -337,7 +337,7 @@ class ToolDisplayConfigurationExample extends Component {
     const defaultTool = 'WindowLevel'
     const activeTools = new Set()
     const options = {
-      bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     }
 
     ;[
@@ -551,7 +551,9 @@ function onMeasurementSelectionChange(e: CustomEvent): void {
     document.querySelector(
       '.tool-style-controls button#use-selected-annotation'
     ) as HTMLElement
-  ).dataset.targetId = toolData ? `toolData:${toolData.metadata.toolDataUID}` : ''
+  ).dataset.targetId = toolData
+    ? `toolData:${toolData.metadata.toolDataUID}`
+    : ''
   getRenderingEngines().forEach((renderEngine) => renderEngine.render())
 }
 

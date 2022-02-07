@@ -916,23 +916,15 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         renderingEngine
       )
 
-      const {
-        dimensions,
-        scalarData,
-        vtkImageData: imageData,
-        metadata,
-        direction,
-      } = imageVolume
-      const worldPos1Index = vec3.fromValues(0, 0, 0)
-      const worldPos2Index = vec3.fromValues(0, 0, 0)
+      const { dimensions, scalarData, imageData, metadata } = imageVolume
 
-      imageData.worldToIndexVec3(worldPos1, worldPos1Index)
+      const worldPos1Index = imageData.worldToIndex(worldPos1)
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0])
       worldPos1Index[1] = Math.floor(worldPos1Index[1])
       worldPos1Index[2] = Math.floor(worldPos1Index[2])
 
-      imageData.worldToIndexVec3(worldPos2, worldPos2Index)
+      const worldPos2Index = imageData.worldToIndex(worldPos2)
 
       worldPos2Index[0] = Math.floor(worldPos2Index[0])
       worldPos2Index[1] = Math.floor(worldPos2Index[1])
