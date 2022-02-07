@@ -32,6 +32,10 @@ function thresholdVolumeByRange(
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
+  if (!labelmap) {
+    throw new Error('labelmap is required')
+  }
+
   const { dimensions, scalarData, vtkImageData: labelmapImageData } = labelmap
 
   const { lowerThreshold, higherThreshold, numSlices } = options
