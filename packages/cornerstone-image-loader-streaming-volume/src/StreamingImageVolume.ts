@@ -434,11 +434,15 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   private _scaleIfNecessary(image, scalingParametersToUse) {
-    // check if keys inside scalingParameters are defined (they can be zero)
+    // check if keys inside scalingParameters are defined
+    const { rescaleSlope, rescaleIntercept, modality } = scalingParametersToUse
     if (
-      scalingParametersToUse.rescaleSlope == null ||
-      scalingParametersToUse.rescaleIntercept == null ||
-      scalingParametersToUse.modality == null
+      typeof rescaleSlope === 'undefined' ||
+      typeof rescaleIntercept === 'undefined' ||
+      typeof modality === 'undefined' ||
+      rescaleSlope === null ||
+      rescaleIntercept === null ||
+      modality === null
     ) {
       return image.getPixelData()
     }
@@ -452,7 +456,13 @@ export default class StreamingImageVolume extends ImageVolume {
 
       // Todo: handle if the intercept or slope are different
       // check if suvbw is undefined OR null
-      if (suvbw == null || suvbwToUse == null || suvbw === suvbwToUse) {
+      if (
+        typeof suvbw === 'undefined' ||
+        typeof suvbwToUse === 'undefined' ||
+        suvbw === null ||
+        suvbwToUse === null ||
+        suvbw === suvbwToUse
+      ) {
         // don't modify the pixel data, just return it as is
         return image.getPixelData()
       }

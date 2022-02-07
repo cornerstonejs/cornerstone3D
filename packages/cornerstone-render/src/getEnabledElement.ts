@@ -55,6 +55,11 @@ export default function getEnabledElement(
 
   const scene = renderingEngine.getScene(sceneUID)
   const viewport = renderingEngine.getViewport(viewportUID)
+
+  if (!scene || !viewport) {
+    return
+  }
+
   const FrameOfReferenceUID = viewport.getFrameOfReferenceUID()
 
   return {

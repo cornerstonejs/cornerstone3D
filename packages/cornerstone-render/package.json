@@ -1,6 +1,6 @@
 {
   "name": "@precisionmetrics/cornerstone-render",
-  "version": "0.0.4-rc7",
+  "version": "0.0.4-rc8",
   "description": "",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
