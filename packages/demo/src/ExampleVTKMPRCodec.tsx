@@ -91,7 +91,7 @@ class MPRExample extends Component {
 
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
-    this._canvasNodes = new Map()
+    this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this)
 
@@ -155,7 +155,7 @@ class MPRExample extends Component {
 
     ptCtFusion.setLayout(
       renderingEngine,
-      this._canvasNodes,
+      this._elementNodes,
       {
         ctSceneToolGroup,
         ptSceneToolGroup,
@@ -490,16 +490,17 @@ class MPRExample extends Component {
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
             <div
-              className="viewport-pane"
               style={{
-                ...(vp.cellStyle || {}),
+                width: '100%',
+                height: '100%',
                 border: '2px solid grey',
                 background: 'black',
+                ...(vp.cellStyle || {}),
               }}
+              ref={(c) => this._elementNodes.set(i, c)}
+              onContextMenu={(e) => e.preventDefault()}
               key={i}
-            >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
+            />
           ))}
         </ViewportGrid>
       </div>

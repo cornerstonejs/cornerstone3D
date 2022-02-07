@@ -26,8 +26,8 @@ export default function scrollThroughStack(
   volumeUID: string,
   invert = false
 ) {
-  const { element: canvas, wheel } = evt.detail
-  const { scene, viewport } = getEnabledElement(canvas)
+  const { element, wheel } = evt.detail
+  const { scene, viewport } = getEnabledElement(element)
   const { type: viewportType } = viewport
   const camera = viewport.getCamera()
   const { focalPoint, viewPlaneNormal, position } = camera

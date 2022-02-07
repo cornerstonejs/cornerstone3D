@@ -15,8 +15,6 @@ export default async function getImageIds(studyId, type, callback, codec) {
     wadoRsRoot = wadoRsRoot + '/' + codec
   }
 
-  debugger
-
   let imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: study.StudyInstanceUID,
     SeriesInstanceUID: study.SeriesInstanceUID,

@@ -50,7 +50,8 @@ class CalibrationExample extends Component {
   constructor(props) {
     super(props)
 
-    this._canvasNodes = new Map()
+    csTools3d.init()
+    this._elementNodes = new Map()
     this._offScreenRef = React.createRef()
 
     this._viewportGridRef = React.createRef()
@@ -90,7 +91,7 @@ class CalibrationExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.DX,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(0),
+        element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0, 0, 0],
         },
@@ -184,7 +185,8 @@ class CalibrationExample extends Component {
     stackDXViewportToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
-    const currentBindings = stackDXViewportToolGroup.toolOptions[toolName].bindings
+    const currentBindings =
+      stackDXViewportToolGroup.toolOptions[toolName].bindings
 
     stackDXViewportToolGroup.setToolActive(toolName, {
       bindings: [
@@ -200,7 +202,6 @@ class CalibrationExample extends Component {
     // To enable modifier key cursor before tool interaction
     // Should be changed after canvas is wrapped in a div and keyboard event
     // listener is added to the div instead of canvas
-    document.querySelectorAll('div.viewport-pane > canvas')[0].focus()
 
     this.setState({ ptCtLeftClickTool: toolName })
   }
@@ -294,16 +295,17 @@ class CalibrationExample extends Component {
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
             <div
-              className="viewport-pane"
               style={{
-                ...(vp.cellStyle || {}),
+                width: '100%',
+                height: '100%',
                 border: '2px solid grey',
                 background: 'black',
+                ...(vp.cellStyle || {}),
               }}
+              ref={(c) => this._elementNodes.set(i, c)}
+              onContextMenu={(e) => e.preventDefault()}
               key={i}
-            >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
+            />
           ))}
         </ViewportGrid>
       </div>

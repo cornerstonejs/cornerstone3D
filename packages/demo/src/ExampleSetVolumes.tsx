@@ -11,7 +11,7 @@ import * as csTools3d from '@ohif/cornerstone-tools'
 import getImageIds from './helpers/getImageIds'
 import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
 import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups } from './initToolGroups'
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
@@ -84,7 +84,7 @@ class VTKSetVolumesExample extends Component {
 
     ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
 
-    this._canvasNodes = new Map()
+    this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
 
     const { limitFrames } = config
@@ -139,6 +139,8 @@ class VTKSetVolumesExample extends Component {
       ptTypesSceneToolGroup,
     } = initToolGroups())
 
+
+
     this.ctVolumeUID = ctVolumeUID
     this.ptVolumeUID = ptVolumeUID
 
@@ -150,7 +152,7 @@ class VTKSetVolumesExample extends Component {
 
     ptCtFusion.setLayout(
       renderingEngine,
-      this._canvasNodes,
+      this._elementNodes,
       {
         ctSceneToolGroup,
         ptSceneToolGroup,
@@ -165,6 +167,17 @@ class VTKSetVolumesExample extends Component {
         ctWLSynchronizer: this.ctWLSync,
       }
     )
+
+
+    addToolsToToolGroups({
+      ctSceneToolGroup,
+      ptSceneToolGroup,
+      fusionSceneToolGroup,
+      ptMipSceneToolGroup,
+      ctVRSceneToolGroup,
+      ctObliqueToolGroup,
+      ptTypesSceneToolGroup,
+    })
 
     // Create volumes
     const ptVolumeImageIds1 = await this.petVolumeImageIds1
@@ -310,16 +323,17 @@ class VTKSetVolumesExample extends Component {
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
             <div
-              className="viewport-pane"
               style={{
-                ...(vp.cellStyle || {}),
+                width: '100%',
+                height: '100%',
                 border: '2px solid grey',
                 background: 'black',
+                ...(vp.cellStyle || {}),
               }}
+              ref={(c) => this._elementNodes.set(i, c)}
+              onContextMenu={(e) => e.preventDefault()}
               key={i}
-            >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
+            />
           ))}
         </ViewportGrid>
       </div>

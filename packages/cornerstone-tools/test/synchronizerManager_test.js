@@ -45,47 +45,24 @@ const ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_15_1_1_1_0`
 
 let synchronizerId
 
-function createCanvas(width, height) {
-  // TODO: currently we need to have a parent div on the canvas with
-  // position of relative for the svg layer to be set correctly
-  const viewportPane1 = document.createElement('div')
-  viewportPane1.style.position = 'relative'
-  viewportPane1.style.display = 'block'
-  viewportPane1.style.width = `${width}px`
-  viewportPane1.style.height = `${height}px`
+function createViewports(width, height) {
+  const element1 = document.createElement('div')
 
-  document.body.appendChild(viewportPane1)
+  element1.style.width = `${width}px`
+  element1.style.height = `${height}px`
+  document.body.appendChild(element1)
 
-  const canvas1 = document.createElement('canvas')
+  DOMElements.push(element1)
 
-  canvas1.style.position = 'absolute'
-  canvas1.style.width = '100%'
-  canvas1.style.height = '100%'
-  viewportPane1.appendChild(canvas1)
+  const element2 = document.createElement('div')
 
-  DOMElements.push(canvas1)
-  DOMElements.push(viewportPane1)
+  element2.style.width = `${width}px`
+  element2.style.height = `${height}px`
+  document.body.appendChild(element2)
 
-  // Second viewport
-  const viewportPane2 = document.createElement('div')
-  viewportPane2.style.position = 'relative'
-  viewportPane2.style.display = 'block'
-  viewportPane2.style.width = `${width}px`
-  viewportPane2.style.height = `${height}px`
+  DOMElements.push(element2)
 
-  document.body.appendChild(viewportPane2)
-
-  const canvas2 = document.createElement('canvas')
-
-  canvas2.style.position = 'absolute'
-  canvas2.style.width = '100%'
-  canvas2.style.height = '100%'
-  viewportPane2.appendChild(canvas2)
-
-  DOMElements.push(canvas2)
-  DOMElements.push(viewportPane2)
-
-  return [canvas1, canvas2]
+  return [element1, element2]
 }
 
 describe('SynchronizerManager: ', () => {
@@ -106,22 +83,118 @@ describe('SynchronizerManager: ', () => {
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
-    afterEach(function () {
-      // Destroy synchronizer manager to test it first since csTools3D also destroy
-      // synchronizers
-      SynchronizerManager.destroySynchronizerById(synchronizerId)
-      csTools3d.destroy()
-      cache.purgeCache()
-      this.renderingEngine.destroy()
-      metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById('volume1')
+  it('Should successfully synchronizes viewports for Camera sync', function (done) {
+    const [element1, element2] = createViewports(512, 128)
 
-      DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el)
-        }
+    this.renderingEngine.setViewports([
+      {
+        sceneUID: scene1UID,
+        viewportUID: viewportUID1,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: element1,
+        defaultOptions: {
+          background: [1, 0, 1], // pinkish background
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        sceneUID: scene2UID,
+        viewportUID: viewportUID2,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: element2,
+        defaultOptions: {
+          background: [1, 0, 1], // pinkish background
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+    ])
+
+    let canvasesRendered = 0
+
+    const eventHandler = () => {
+      canvasesRendered += 1
+
+      if (canvasesRendered !== 2) {
+        return
+      }
+
+      const synchronizers = SynchronizerManager.getSynchronizers({
+        renderingEngineUID,
+        viewportUID: viewportUID1,
       })
+
+      expect(synchronizers.length).toBe(1)
+
+      const synchronizerById =
+        SynchronizerManager.getSynchronizerById(synchronizerId)
+
+      expect(synchronizerById).toBe(synchronizers[0])
+
+      const allSynchronizers = SynchronizerManager.getAllSynchronizers()
+
+      expect(allSynchronizers.length).toBe(1)
+      expect(allSynchronizers[0]).toBe(synchronizerById)
+
+      const createAnotherSynchronizer = () => {
+        createCameraPositionSynchronizer('axialSync')
+      }
+
+      expect(createAnotherSynchronizer).toThrow()
+      done()
+    }
+
+    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+
+    this.firstToolGroup.addViewports(
+      this.renderingEngine.uid,
+      scene1UID,
+      viewportUID1
+    )
+    this.firstToolGroup.addViewports(
+      this.renderingEngine.uid,
+      scene2UID,
+      viewportUID2
+    )
+
+    try {
+      const axialSync = createCameraPositionSynchronizer('axialSync')
+      synchronizerId = axialSync.id
+      const ctScene = this.renderingEngine.getScene(scene1UID)
+      const ptScene = this.renderingEngine.getScene(scene2UID)
+
+      axialSync.add({
+        renderingEngineUID: ctScene.renderingEngineUID,
+        sceneUID: ctScene.uid,
+        viewportUID: ctScene.getViewport(viewportUID1).uid,
+      })
+      axialSync.add({
+        renderingEngineUID: ptScene.renderingEngineUID,
+        sceneUID: ptScene.uid,
+        viewportUID: ptScene.getViewport(viewportUID2).uid,
+      })
+
+      const immediateRender = true
+      createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
+        ctScene.setVolumes([{ volumeUID: ctVolumeId }], immediateRender)
+      })
+      createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
+        ptScene.setVolumes([{ volumeUID: ptVolumeId }], immediateRender)
+      })
+    } catch (e) {
+      done.fail(e)
+    }
+  })
+})
+
+describe('Synchronizer Manager: ', () => {
+  beforeEach(function () {
+    csTools3d.init()
+    csTools3d.addTool(WindowLevelTool, {})
+    cache.purgeCache()
+    this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
+    this.firstToolGroup.addTool('WindowLevel', {
+      configuration: { volumeUID: ctVolumeId },
     })
 
     it('Should successfully synchronizes viewports for Camera', function (done) {
@@ -228,14 +301,46 @@ describe('SynchronizerManager: ', () => {
     })
   })
 
-  describe('Synchronizer Manager2: ', () => {
-    beforeEach(function () {
-      csTools3d.init()
-      csTools3d.addTool(WindowLevelTool, {})
-      cache.purgeCache()
-      this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
-      this.firstToolGroup.addTool('WindowLevel', {
-        configuration: { volumeUID: ctVolumeId },
+  it('Should successfully synchronizes viewports for VOI Synchronizer', function (done) {
+    const [element1, element2] = createViewports(512, 128)
+
+    this.renderingEngine.setViewports([
+      {
+        sceneUID: scene1UID,
+        viewportUID: viewportUID1,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: element1,
+        defaultOptions: {
+          background: [1, 0, 1], // pinkish background
+          orientation: ORIENTATION.AXIAL,
+        },
+      },
+      {
+        sceneUID: scene1UID,
+        viewportUID: viewportUID2,
+        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        element: element2,
+        defaultOptions: {
+          background: [1, 0, 1], // pinkish background
+          orientation: ORIENTATION.CORONAL,
+        },
+      },
+    ])
+
+    let canvasesRendered = 0
+    const [pageX1, pageY1] = [316, 125]
+    const [pageX2, pageY2] = [211, 20]
+
+    const addEventListenerForVOI = () => {
+      element2.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const vp2 = this.renderingEngine.getViewport(viewportUID2)
+        const canvas2 = vp2.getCanvas()
+        const image2 = canvas2.toDataURL('image/png')
+
+        compareImages(image2, windowLevel_canvas2, 'windowLevel_canvas2').then(
+          done,
+          done.fail
+        )
       })
       this.firstToolGroup.setToolActive('WindowLevel', {
         bindings: [
@@ -308,22 +413,27 @@ describe('SynchronizerManager: ', () => {
         })
       }
 
-      const eventHandler = () => {
-        canvasesRendered += 1
+      // Mouse Down
+      let evt = new MouseEvent('mousedown', {
+        target: element1,
+        buttons: 1,
+        clientX: pageX1,
+        clientY: pageY1,
+        pageX: pageX1,
+        pageY: pageY1,
+      })
 
-        if (canvasesRendered !== 2) {
-          return
-        }
+      element1.dispatchEvent(evt)
 
-        // Mouse Down
-        let evt = new MouseEvent('mousedown', {
-          target: canvas1,
-          buttons: 1,
-          clientX: pageX1,
-          clientY: pageY1,
-          pageX: pageX1,
-          pageY: pageY1,
-        })
+      // Mouse move to put the end somewhere else
+      const evt1 = new MouseEvent('mousemove', {
+        target: element1,
+        buttons: 1,
+        clientX: pageX2,
+        clientY: pageY2,
+        pageX: pageX2,
+        pageY: pageY2,
+      })
 
         canvas1.dispatchEvent(evt)
 
@@ -340,10 +450,8 @@ describe('SynchronizerManager: ', () => {
         addEventListenerForVOI()
         document.dispatchEvent(evt1)
 
-        const evt3 = new MouseEvent('mouseup', {
-          bubbles: true,
-          cancelable: true,
-        })
+    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
         document.dispatchEvent(evt3)
       }

@@ -8,7 +8,7 @@ import state from './state'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 
 export type LabelmapStateUpdatedEvent = {
-  canvas: HTMLCanvasElement
+  element: HTMLElement
   labelmapUID: string // volumeUID of the labelmap whose state has been updated
   labelmapIndex: number // index of the modified labelmap in viewport's array of labelmaps state
   activeLabelmapIndex: number // active labelmapIndex for the viewport
@@ -43,7 +43,7 @@ function _getViewportUIDsForLabelmapUID(labelmapUID: string): string[] {
  */
 function triggerLabelmapStateUpdated(
   labelmapUID: string,
-  element?: HTMLCanvasElement
+  element?: HTMLElement
 ): void {
   const viewportUIDs = _getViewportUIDsForLabelmapUID(labelmapUID)
 
@@ -53,11 +53,11 @@ function triggerLabelmapStateUpdated(
   viewportUIDs.forEach((viewportUID) => {
     const viewportLabelmapsState = state.volumeViewports[viewportUID]
     const viewport = renderingEngine.getViewport(viewportUID) as VolumeViewport
-    const { canvas } = viewport
+    const { element } = viewport
 
     // If the viewport displays the labelmap (either active or inactive), but
     // its state with regard to labelmap has not changed, bail out
-    if (element && element !== canvas) {
+    if (element && element !== viewport.element) {
       return
     }
 
@@ -73,7 +73,7 @@ function triggerLabelmapStateUpdated(
       }
 
       const eventData: LabelmapStateUpdatedEvent = {
-        canvas,
+        element,
         labelmapUID,
         labelmapIndex,
         activeLabelmapIndex,
@@ -82,7 +82,7 @@ function triggerLabelmapStateUpdated(
         viewportUID,
       }
 
-      triggerEvent(canvas, EVENTS.LABELMAP_STATE_UPDATED, eventData)
+      triggerEvent(element, EVENTS.LABELMAP_STATE_UPDATED, eventData)
     })
   })
 }

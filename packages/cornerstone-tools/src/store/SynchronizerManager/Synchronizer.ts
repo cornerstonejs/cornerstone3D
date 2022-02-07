@@ -63,12 +63,11 @@ class Synchronizer {
 
     const { renderingEngineUID, viewportUID } = viewport
 
-    const canvas = getRenderingEngine(renderingEngineUID)
-      .getViewport(viewportUID)
-      .getCanvas()
+    const { element } =
+      getRenderingEngine(renderingEngineUID).getViewport(viewportUID)
 
     // @ts-ignore
-    canvas.addEventListener(this._eventName, this._onEvent)
+    element.addEventListener(this._eventName, this._onEvent.bind(this))
     this._updateDisableHandlers()
 
     this._sourceViewports.push(viewport)
@@ -105,11 +104,11 @@ class Synchronizer {
       return
     }
 
-    const canvas = _getViewportCanvas(viewport)
+    const element = _getViewportElement(viewport)
 
     this._sourceViewports.splice(index, 1)
     // @ts-ignore
-    canvas.removeEventListener(this._eventName, this._onEvent)
+    element.removeEventListener(this._eventName, this._eventHandler)
     this._updateDisableHandlers()
   }
 
@@ -124,8 +123,14 @@ class Synchronizer {
     this._updateDisableHandlers()
   }
 
-  public hasSourceViewport(renderingEngineUID: string, viewportUID: string): boolean {
-    return _containsViewport(this._sourceViewports, { renderingEngineUID, viewportUID})
+  public hasSourceViewport(
+    renderingEngineUID: string,
+    viewportUID: string
+  ): boolean {
+    return _containsViewport(this._sourceViewports, {
+      renderingEngineUID,
+      viewportUID,
+    })
   }
 
   public fireEvent(sourceViewport: Types.IViewportUID, sourceEvent: any): void {
@@ -187,15 +192,18 @@ class Synchronizer {
     }
 
     viewports.forEach(function (vUid) {
-      const canvas = getRenderingEngine(vUid.renderingEngineUID)
-        .getViewport(vUid.viewportUID)
-        .getCanvas()
+      const { element } = getRenderingEngine(
+        vUid.renderingEngineUID
+      ).getViewport(vUid.viewportUID)
 
-      canvas.removeEventListener(
+      element.removeEventListener(
         RENDERING_EVENTS.ELEMENT_DISABLED,
         disableHandler
       )
-      canvas.addEventListener(RENDERING_EVENTS.ELEMENT_DISABLED, disableHandler)
+      element.addEventListener(
+        RENDERING_EVENTS.ELEMENT_DISABLED,
+        disableHandler
+      )
     })
   }
 }
@@ -235,7 +243,10 @@ function _getViewportIndex(
   )
 }
 
-function _containsViewport(arr: Array<Types.IViewportUID>, vp: Types.IViewportUID) {
+function _containsViewport(
+  arr: Array<Types.IViewportUID>,
+  vp: Types.IViewportUID
+) {
   return arr.some(
     (ar) =>
       ar.renderingEngineUID === vp.renderingEngineUID &&
@@ -243,13 +254,13 @@ function _containsViewport(arr: Array<Types.IViewportUID>, vp: Types.IViewportUI
   )
 }
 
-function _getViewportCanvas(vp: Types.IViewportUID): HTMLCanvasElement  {
-  const renderingEngine = getRenderingEngine(vp.renderingEngineUID);
+function _getViewportElement(vp: Types.IViewportUID): HTMLElement {
+  const renderingEngine = getRenderingEngine(vp.renderingEngineUID)
   if (!renderingEngine) {
     throw new Error(`No RenderingEngine for UID: ${vp.renderingEngineUID}`)
   }
 
-  return renderingEngine.getViewport(vp.viewportUID).getCanvas()
+  return renderingEngine.getViewport(vp.viewportUID).element
 }
 
 export default Synchronizer

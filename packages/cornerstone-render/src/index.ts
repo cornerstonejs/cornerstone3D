@@ -7,7 +7,11 @@ import ORIENTATION from './constants/orientation'
 import VIEWPORT_TYPE from './constants/viewportType'
 import INTERPOLATION_TYPE from './constants/interpolationType'
 //
-import { createVolumeActor, createVolumeMapper } from './RenderingEngine'
+import {
+  createVolumeActor,
+  createVolumeMapper,
+  getOrCreateCanvas,
+} from './RenderingEngine'
 import RenderingEngine from './RenderingEngine'
 import VolumeViewport from './RenderingEngine/VolumeViewport'
 import StackViewport from './RenderingEngine/StackViewport'
@@ -78,11 +82,11 @@ export {
   ERROR_CODES,
   EVENTS,
   FLIP_DIRECTION,
-  REQUEST_TYPE,
   // constants
   ORIENTATION,
   VIEWPORT_TYPE,
   INTERPOLATION_TYPE,
+  REQUEST_TYPE,
   //
   configuration,
   Types,
@@ -96,6 +100,7 @@ export {
   getRenderingEngine,
   getRenderingEngines,
   createVolumeActor,
+  getOrCreateCanvas,
   createVolumeMapper,
   //
   cache,

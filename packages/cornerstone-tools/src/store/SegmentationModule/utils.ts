@@ -3,11 +3,11 @@ import { getActiveLabelmapIndex } from './activeLabelmapController'
 
 /**
  * Returns all the labelmapUIDs of the HTML element (active and inactive)
- * @param canvas HTML canvas
+ * @param element HTML element
  * @returns
  */
-function getLabelmapUIDsForElement(canvas: HTMLCanvasElement): string[] {
-  const viewportLabelmapsState = getLabelmapsStateForElement(canvas)
+function getLabelmapUIDsForElement(element: HTMLElement): string[] {
+  const viewportLabelmapsState = getLabelmapsStateForElement(element)
 
   if (!viewportLabelmapsState) {
     return []
@@ -19,22 +19,24 @@ function getLabelmapUIDsForElement(canvas: HTMLCanvasElement): string[] {
 /**
  * Returns the labelmapUID that the element is rendering, if no labelmapIndex is
  * provided it uses the active labelmapIndex
- * @param canvas HTMLCanvasElement
+ * @param element HTML Element
  * @param labelmapIndex labelmap index in the viewportLabelmapsState
  * @returns labelmapUID
  */
 function getLabelmapUIDForElement(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   labelmapIndex?: number
 ): string | undefined {
-  const viewportLabelmapsState = getLabelmapsStateForElement(canvas)
+  const viewportLabelmapsState = getLabelmapsStateForElement(element)
 
   if (!viewportLabelmapsState) {
     return
   }
 
   const index =
-    labelmapIndex === undefined ? getActiveLabelmapIndex(canvas) : labelmapIndex
+    labelmapIndex === undefined
+      ? getActiveLabelmapIndex(element)
+      : labelmapIndex
 
   return viewportLabelmapsState.labelmaps[index].volumeUID
 }

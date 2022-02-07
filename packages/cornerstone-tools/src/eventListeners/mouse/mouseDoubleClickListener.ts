@@ -10,7 +10,7 @@ import { IPoints } from '../../types/cornerstoneToolsEventDetailTypes'
  * @param {MouseEvent} evt The mouse event.
  */
 function mouseDoubleClickListener(evt: MouseEvent): void {
-  const element = <HTMLElement>evt.target
+  const element = <HTMLElement>evt.currentTarget
 
   const startPoints = getMouseEventPoints(evt, element)
   const deltaPoints: IPoints = {

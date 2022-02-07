@@ -95,7 +95,8 @@ export default class CircleScissorsTool extends BaseTool {
       segmentIndex,
       labelmapIndex
     )
-    const segmentsLocked = lockedSegmentController.getLockedSegmentsForElement(element)
+    const segmentsLocked =
+      lockedSegmentController.getLockedSegmentsForElement(element)
 
     const labelmap = cache.getVolume(labelmapUID)
 
@@ -273,7 +274,7 @@ export default class CircleScissorsTool extends BaseTool {
     }
 
     const eventDetail = {
-      canvas: element,
+      element,
       enabledElement,
       renderingEngine,
     }

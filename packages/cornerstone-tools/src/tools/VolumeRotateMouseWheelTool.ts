@@ -37,8 +37,8 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
 
   // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js#L73
   mouseWheelCallback(evt) {
-    const { element: canvas, wheel } = evt.detail
-    const enabledElement = getEnabledElement(canvas)
+    const { element, wheel } = evt.detail
+    const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
     const { direction, rotateIncrementDegrees } = this.configuration
 

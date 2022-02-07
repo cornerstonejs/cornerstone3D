@@ -37,71 +37,35 @@ const DOMElements = []
 
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
-function createCanvas(renderingEngine, viewportType, width, height) {
-  // TODO: currently we need to have a parent div on the canvas with
-  // position of relative for the svg layer to be set correctly
-  const viewportPane1 = document.createElement('div')
-  viewportPane1.style.position = 'relative'
-  viewportPane1.style.display = 'block'
-  viewportPane1.style.width = `${width}px`
-  viewportPane1.style.height = `${height}px`
+function createViewports(renderingEngine, viewportType, width, height) {
+  const element1 = document.createElement('div')
 
-  document.body.appendChild(viewportPane1)
+  element1.style.width = `${width}px`
+  element1.style.height = `${height}px`
+  document.body.appendChild(element1)
 
-  const canvas1 = document.createElement('canvas')
+  const element2 = document.createElement('div')
 
-  canvas1.style.position = 'absolute'
-  canvas1.style.width = '100%'
-  canvas1.style.height = '100%'
-  viewportPane1.appendChild(canvas1)
+  element2.style.width = `${width}px`
+  element2.style.height = `${height}px`
+  document.body.appendChild(element2)
 
-  DOMElements.push(canvas1)
-  DOMElements.push(viewportPane1)
+  const element3 = document.createElement('div')
 
-  // Second viewport
-  const viewportPane2 = document.createElement('div')
-  viewportPane2.style.position = 'relative'
-  viewportPane2.style.display = 'block'
-  viewportPane2.style.width = `${width}px`
-  viewportPane2.style.height = `${height}px`
+  element3.style.width = `${width}px`
+  element3.style.height = `${height}px`
+  document.body.appendChild(element3)
 
-  document.body.appendChild(viewportPane2)
-
-  const canvas2 = document.createElement('canvas')
-
-  canvas2.style.position = 'absolute'
-  canvas2.style.width = '100%'
-  canvas2.style.height = '100%'
-  viewportPane2.appendChild(canvas2)
-
-  DOMElements.push(canvas2)
-  DOMElements.push(viewportPane2)
-
-  // Third viewport
-  const viewportPane3 = document.createElement('div')
-  viewportPane3.style.position = 'relative'
-  viewportPane3.style.display = 'block'
-  viewportPane3.style.width = `${width}px`
-  viewportPane3.style.height = `${height}px`
-
-  document.body.appendChild(viewportPane3)
-
-  const canvas3 = document.createElement('canvas')
-
-  canvas3.style.position = 'absolute'
-  canvas3.style.width = '100%'
-  canvas3.style.height = '100%'
-  viewportPane3.appendChild(canvas3)
-
-  DOMElements.push(canvas3)
-  DOMElements.push(viewportPane3)
+  DOMElements.push(element1)
+  DOMElements.push(element2)
+  DOMElements.push(element3)
 
   renderingEngine.setViewports([
     {
       sceneUID: scene1UID,
       viewportUID: viewportUID1,
       type: viewportType,
-      canvas: canvas1,
+      element: element1,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
         orientation: ORIENTATION.AXIAL,
@@ -111,7 +75,7 @@ function createCanvas(renderingEngine, viewportType, width, height) {
       sceneUID: scene1UID,
       viewportUID: viewportUID2,
       type: viewportType,
-      canvas: canvas2,
+      element: element2,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
         orientation: ORIENTATION.SAGITTAL,
@@ -121,14 +85,14 @@ function createCanvas(renderingEngine, viewportType, width, height) {
       sceneUID: scene1UID,
       viewportUID: viewportUID3,
       type: viewportType,
-      canvas: canvas3,
+      element: element3,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
         orientation: ORIENTATION.CORONAL,
       },
     },
   ])
-  return [canvas1, canvas2, canvas3]
+  return [element1, element2, element3]
 }
 
 describe('Cornerstone Tools: ', () => {
@@ -171,12 +135,13 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully initialize the crosshairs to the middle of the image and canvas', function (done) {
-    const [canvas1, canvas2, canvas3] = createCanvas(
+    const [element1, element2, element3] = createViewports(
       this.renderingEngine,
       VIEWPORT_TYPE.ORTHOGRAPHIC,
       512,
       128
     )
+
     let canvasesRendered = 0
     let annotationRendered = 0
 
@@ -200,7 +165,7 @@ describe('Cornerstone Tools: ', () => {
       const centerCanvas = [sWidth * 0.5, sHeight * 0.5]
       const canvasCenterWorld = vp.canvasToWorld(centerCanvas)
 
-      const enabledElement = getEnabledElement(canvas1)
+      const enabledElement = getEnabledElement(element1)
       const crosshairToolState = getToolState(enabledElement, 'Crosshairs')
 
       // Can successfully add add crosshairs initial state
@@ -216,7 +181,7 @@ describe('Cornerstone Tools: ', () => {
           expect(p).toBeCloseTo(canvasCenterWorld[i], 3)
           expect(p).toBeCloseTo(imageCenterWorld[i], 3)
         })
-        removeToolState(canvas1, crosshairToolData)
+        removeToolState(element1, crosshairToolData)
       })
 
       done()
@@ -229,23 +194,23 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      canvas1.addEventListener(
+      element1.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
-      canvas2.addEventListener(
+      element2.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
-      canvas3.addEventListener(
+      element3.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
     }
 
-    canvas1.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-    canvas2.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-    canvas3.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element1.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element2.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element3.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
     this.testToolGroup.addViewports(
       this.renderingEngine.uid,
@@ -275,12 +240,13 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully jump to move the crosshairs', function (done) {
-    const [canvas1, canvas2, canvas3] = createCanvas(
+    const [element1, element2, element3] = createViewports(
       this.renderingEngine,
       VIEWPORT_TYPE.ORTHOGRAPHIC,
       512,
       128
     )
+
     let canvasesRendered = 0
     let annotationRendered = 0
 
@@ -293,7 +259,7 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      const enabledElement = getEnabledElement(canvas1)
+      const enabledElement = getEnabledElement(element1)
 
       const crosshairToolStateAfter = getToolState(enabledElement, 'Crosshairs')
       const axialCanvasToolCenter =
@@ -305,22 +271,22 @@ describe('Cornerstone Tools: ', () => {
           // Can succesfully move the tool center in all viewports
           expect(p).toBeCloseTo(p1[i], 3)
           expect(p).toBeCloseTo(axialCanvasToolCenter[i], 3)
-          removeToolState(canvas1, crosshairToolData)
+          removeToolState(element1, crosshairToolData)
         })
       })
       done()
     }
 
     const attachCrosshairsHandler = () => {
-      canvas1.addEventListener(
+      element1.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
-      canvas2.addEventListener(
+      element2.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
-      canvas3.addEventListener(
+      element3.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
@@ -336,7 +302,7 @@ describe('Cornerstone Tools: ', () => {
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
       const { imageData } = vp1.getImageData()
 
-      const enabledElement = getEnabledElement(canvas1)
+      const enabledElement = getEnabledElement(element1)
       const crosshairToolState = getToolState(enabledElement, 'Crosshairs')
 
       // First viewport is axial
@@ -355,19 +321,24 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, jumpIndexLocation, canvas1, vp1)
+      } = createNormalizedMouseEvent(
+        vtkImageData,
+        jumpIndexLocation,
+        element1,
+        vp1
+      )
       p1 = worldCoord1
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas1,
+        target: element1,
         buttons: 1,
         pageX: pageX1,
         pageY: pageY1,
         clientX: clientX1,
         clientY: clientY1,
       })
-      canvas1.dispatchEvent(evt)
+      element1.dispatchEvent(evt)
 
       // Mouse Up instantly after
       evt = new MouseEvent('mouseup')
@@ -376,9 +347,9 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     }
 
-    canvas1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    canvas2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    canvas3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
     this.testToolGroup.addViewports(
       this.renderingEngine.uid,
@@ -408,12 +379,13 @@ describe('Cornerstone Tools: ', () => {
   })
 
   it('Should successfully drag and move the crosshairs', function (done) {
-    const [canvas1, canvas2, canvas3] = createCanvas(
+    const [element1, element2, element3] = createViewports(
       this.renderingEngine,
       VIEWPORT_TYPE.ORTHOGRAPHIC,
       512,
       128
     )
+
     let canvasesRendered = 0
 
     const eventHandler = () => {
@@ -427,7 +399,7 @@ describe('Cornerstone Tools: ', () => {
       const { imageData } = vp1.getImageData()
 
       setTimeout(() => {
-        const enabledElement = getEnabledElement(canvas1)
+        const enabledElement = getEnabledElement(element1)
         const crosshairToolState = getToolState(enabledElement, 'Crosshairs')
 
         // First viewport is axial
@@ -451,7 +423,7 @@ describe('Cornerstone Tools: ', () => {
         } = createNormalizedMouseEvent(
           imageData,
           currentIndexLocation,
-          canvas1,
+          element1,
           vp1
         )
 
@@ -464,24 +436,24 @@ describe('Cornerstone Tools: ', () => {
         } = createNormalizedMouseEvent(
           imageData,
           jumpIndexLocation,
-          canvas1,
+          element1,
           vp1
         )
 
         // Mouse Down
         let evt = new MouseEvent('mousedown', {
-          target: canvas1,
+          target: element1,
           buttons: 1,
           pageX: pageX1,
           pageY: pageY1,
           clientX: clientX1,
           clientY: clientY1,
         })
-        canvas1.dispatchEvent(evt)
+        element1.dispatchEvent(evt)
 
         // Mouse move to put the end somewhere else
         evt = new MouseEvent('mousemove', {
-          target: canvas1,
+          target: element1,
           buttons: 1,
           clientX: clientX2,
           clientY: clientY2,
@@ -506,17 +478,17 @@ describe('Cornerstone Tools: ', () => {
             crosshairToolData.data.handles.toolCenter.forEach((p, i) => {
               // Can succesfully move the tool center in all viewports
               expect(p).toBeCloseTo(worldCoord2[i], 3)
-              removeToolState(canvas1, crosshairToolData)
+              removeToolState(element1, crosshairToolData)
             })
           })
           done()
-        }, 500)
-      }, 500)
+        }, 50)
+      }, 50)
     }
 
-    canvas1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    canvas2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    canvas3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
     this.testToolGroup.addViewports(
       this.renderingEngine.uid,

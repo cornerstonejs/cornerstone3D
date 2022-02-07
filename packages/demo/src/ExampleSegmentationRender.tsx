@@ -65,7 +65,7 @@ const labelmap2UID = 'fatTissue'
 const RECTANGLE_ROI_THRESHOLD = 'RectangleRoiThreshold'
 
 class SegmentationExample extends Component {
-  _canvasNodes = null
+  _elementNodes = null
   _viewportGridRef = null
   _offScreenRef = null
   ctVolumeImageIds = null
@@ -140,7 +140,7 @@ class SegmentationExample extends Component {
 
     ptCtLayoutTools = ['Levels'].concat(toolsToUse)
 
-    this._canvasNodes = new Map()
+    this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     const { limitFrames } = config
 
@@ -199,7 +199,7 @@ class SegmentationExample extends Component {
 
     ptCtFusion.setLayout(
       renderingEngine,
-      this._canvasNodes,
+      this._elementNodes,
       {
         ctSceneToolGroup,
         ptSceneToolGroup,
@@ -289,8 +289,8 @@ class SegmentationExample extends Component {
 
     const layout = LAYOUTS[layoutIndex]
 
-    this._canvasNodes.forEach((canvas) => {
-      canvas.addEventListener(
+    this._elementNodes.forEach((element) => {
+      element.addEventListener(
         CornerstoneTools3DEvents.LABELMAP_STATE_UPDATED,
         this.onLabelmapStateUpdated
       )
@@ -302,7 +302,7 @@ class SegmentationExample extends Component {
 
         ptCtFusion.setLayout(
           renderingEngine,
-          this._canvasNodes,
+          this._elementNodes,
           {
             ctSceneToolGroup,
             ptSceneToolGroup,
@@ -342,10 +342,10 @@ class SegmentationExample extends Component {
   }
 
   onLabelmapStateUpdated = (evt) => {
-    const { canvas } = evt.detail
-    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(canvas)
+    const { element } = evt.detail
+    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
     const activeLabelmapUID =
-      activeLabelmapController.getActiveLabelmapUID(canvas)
+      activeLabelmapController.getActiveLabelmapUID(element)
     this.setState({
       availableLabelmaps: labelmapUIDs,
       selectedLabelmapUID: activeLabelmapUID,
@@ -356,7 +356,7 @@ class SegmentationExample extends Component {
     const sceneUID = evt.target.value
     const scene = this.renderingEngine.getScene(sceneUID)
     const { uid: viewportUID } = scene.getViewports()[0]
-    const { canvas: element } = this.renderingEngine.getViewport(viewportUID)
+    const { element } = this.renderingEngine.getViewport(viewportUID)
     const labelmapIndex = activeLabelmapController.getNextLabelmapIndex(element)
     await activeLabelmapController.setActiveLabelmapIndex(
       element,
@@ -468,30 +468,30 @@ class SegmentationExample extends Component {
   loadSegmentation = async (sceneUID, labelmapUID) => {
     const scene = this.renderingEngine.getScene(sceneUID)
     const { uid } = scene.getViewports()[0]
-    const { canvas } = this.renderingEngine.getViewport(uid)
+    const { element } = this.renderingEngine.getViewport(uid)
 
-    const labelmapIndex = activeLabelmapController.getNextLabelmapIndex(canvas)
+    const labelmapIndex = activeLabelmapController.getNextLabelmapIndex(element)
     const labelmap = cache.getVolume(labelmapUID)
 
     await SegmentationModule.setLabelmapForElement({
-      canvas,
+      element,
       labelmap,
       labelmapIndex,
       labelmapViewportState: {},
     })
 
     const activeSegmentIndex =
-      segmentIndexController.getActiveSegmentIndex(canvas)
+      segmentIndexController.getActiveSegmentIndex(element)
     const segmentLocked =
       lockedSegmentController.getSegmentIndexLockedStatusForElement(
-        canvas,
+        element,
         activeSegmentIndex
       )
 
     this.setState({
       segmentationToolActive: true,
       selectedLabelmapUID:
-        activeLabelmapController.getActiveLabelmapUID(canvas),
+        activeLabelmapController.getActiveLabelmapUID(element),
       activeSegmentIndex,
       segmentLocked,
     })
@@ -503,9 +503,9 @@ class SegmentationExample extends Component {
     // Todo: Don't have active viewport concept
     const sceneUID = this.state.sceneForSegmentation
     const scene = this.renderingEngine.getScene(sceneUID)
-    const { canvas } = scene.getViewports()[0]
+    const { element } = scene.getViewports()[0]
     const activeLabelmapUID =
-      activeLabelmapController.getActiveLabelmapUID(canvas)
+      activeLabelmapController.getActiveLabelmapUID(element)
     lockedSegmentController.toggleSegmentIndexLockedForLabelmapUID(
       activeLabelmapUID,
       this.state.activeSegmentIndex
@@ -517,18 +517,18 @@ class SegmentationExample extends Component {
     // Todo: Don't have active viewport concept
     const sceneUID = this.state.sceneForSegmentation
     const scene = this.renderingEngine.getScene(sceneUID)
-    const { canvas } = scene.getViewports()[0]
-    const currentIndex = segmentIndexController.getActiveSegmentIndex(canvas)
+    const { element } = scene.getViewports()[0]
+    const currentIndex = segmentIndexController.getActiveSegmentIndex(element)
     let newIndex = currentIndex + direction
 
     if (newIndex < 0) {
       newIndex = 0
     }
 
-    segmentIndexController.setActiveSegmentIndex(canvas, newIndex)
+    segmentIndexController.setActiveSegmentIndex(element, newIndex)
     const segmentLocked =
       lockedSegmentController.getSegmentIndexLockedStatusForElement(
-        canvas,
+        element,
         newIndex
       )
     console.debug('segmentLocked', segmentLocked)
@@ -670,7 +670,7 @@ class SegmentationExample extends Component {
     }
     const toolInstance = toolGroup._toolInstances[this.state.ptCtLeftClickTool]
 
-    if(!toolInstance){
+    if (!toolInstance) {
       return
     }
 
@@ -733,13 +733,13 @@ class SegmentationExample extends Component {
           onChange={(evt) => {
             const sceneUID = evt.target.value
             const scene = this.renderingEngine.getScene(sceneUID)
-            const { uid, canvas } = scene.getViewports()[0]
+            const { uid, element } = scene.getViewports()[0]
             const labelmapUIDs =
-              SegmentationModule.getLabelmapUIDsForElement(canvas)
-            const index = segmentIndexController.getActiveSegmentIndex(canvas)
+              SegmentationModule.getLabelmapUIDsForElement(element)
+            const index = segmentIndexController.getActiveSegmentIndex(element)
             const segmentLocked =
               lockedSegmentController.getSegmentIndexLockedStatusForElement(
-                canvas,
+                element,
                 index
               )
 
@@ -828,15 +828,15 @@ class SegmentationExample extends Component {
                   const scene = this.renderingEngine.getScene(
                     this.state.sceneForSegmentation
                   )
-                  const { canvas } = scene.getViewports()[0]
+                  const { element } = scene.getViewports()[0]
 
                   activeLabelmapController.setActiveLabelmapByLabelmapUID(
-                    canvas,
+                    element,
                     selectedLabelmapUID
                   )
 
                   const activeSegmentIndex =
-                    segmentIndexController.getActiveSegmentIndex(canvas)
+                    segmentIndexController.getActiveSegmentIndex(element)
 
                   this.setState({
                     selectedLabelmapUID,
@@ -1016,16 +1016,17 @@ class SegmentationExample extends Component {
         >
           {this.state.viewportGrid.viewports.map((vp, i) => (
             <div
-              className="viewport-pane"
               style={{
-                ...(vp.cellStyle || {}),
+                width: '100%',
+                height: '100%',
                 border: '2px solid grey',
                 background: 'black',
+                ...(vp.cellStyle || {}),
               }}
+              ref={(c) => this._elementNodes.set(i, c)}
+              onContextMenu={(e) => e.preventDefault()}
               key={i}
-            >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
+            />
           ))}
         </ViewportGrid>
         <div>

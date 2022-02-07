@@ -10,8 +10,8 @@ export function triggerAnnotationRenderForViewportUIDs(
   }
 
   viewportUIDsToRender.forEach((viewportUID) => {
-    const elem = renderingEngine.getViewport(viewportUID).canvas
-    triggerAnnotationRender(elem)
+    const { element } = renderingEngine.getViewport(viewportUID)
+    triggerAnnotationRender(element)
   })
 }
 

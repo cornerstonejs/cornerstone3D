@@ -27,8 +27,8 @@ export default class ZoomTool extends BaseTool {
 
   // Takes ICornerstoneEvent, Mouse or Touch
   _dragCallback(evt) {
-    const { element: canvas } = evt.detail
-    const enabledElement = getEnabledElement(canvas)
+    const { element } = evt.detail
+    const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
     const camera = viewport.getCamera()
@@ -43,10 +43,10 @@ export default class ZoomTool extends BaseTool {
   }
 
   _dragParallelProjection = (evt, camera) => {
-    const { element: canvas, deltaPoints } = evt.detail
-    const enabledElement = getEnabledElement(canvas)
+    const { element, deltaPoints } = evt.detail
+    const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
-    const size = [canvas.clientWidth, canvas.clientHeight]
+    const size = [element.clientWidth, element.clientHeight]
 
     const zoomScale = 1.5 / size[1]
 
@@ -61,10 +61,10 @@ export default class ZoomTool extends BaseTool {
   }
 
   _dragPerspectiveProjection = (evt, camera) => {
-    const { element: canvas, deltaPoints } = evt.detail
-    const enabledElement = getEnabledElement(canvas)
+    const { element, deltaPoints } = evt.detail
+    const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
-    const size = [canvas.clientWidth, canvas.clientHeight]
+    const size = [element.clientWidth, element.clientHeight]
 
     const range = camera.clippingRange
     const zoomScale = 1.5 * (range[1] / size[1])

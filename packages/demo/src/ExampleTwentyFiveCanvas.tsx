@@ -48,7 +48,7 @@ class TwentyFiveCanvasExample extends Component {
         sceneUID,
         viewportUID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this.containers[i].current,
+        element: this.containers[i].current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
           background: [Math.random(), Math.random(), Math.random()],
@@ -112,13 +112,18 @@ class TwentyFiveCanvasExample extends Component {
       height: '512px',
     }
 
-    const canvases = this.containers.map((reference, index) => (
-      <canvas
-        key={index}
+    const elements = this.containers.map((reference, index) => (
+      <div
+        style={{
+          width: '512px',
+          height: '512px',
+          border: '2px solid grey',
+          background: 'black',
+          ...style,
+        }}
         ref={reference}
-        width={512}
-        height={512}
-        style={style}
+        onContextMenu={(e) => e.preventDefault()}
+        key={index}
       />
     ))
 
@@ -149,7 +154,7 @@ class TwentyFiveCanvasExample extends Component {
           </div>
         </div>
         <div className="row">
-          <div>{canvases}</div>
+          <div>{elements}</div>
         </div>
       </div>
     )

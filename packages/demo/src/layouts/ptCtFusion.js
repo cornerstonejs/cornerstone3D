@@ -11,7 +11,7 @@ const { BlendMode } = vtkConstants;
 
 function setLayout(
   renderingEngine,
-  canvasContainers,
+  elementContainers,
   {
     ctSceneToolGroup,
     ptSceneToolGroup,
@@ -32,7 +32,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(0),
+      element: elementContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
       },
@@ -41,7 +41,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(1),
+      element: elementContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
       },
@@ -50,7 +50,7 @@ function setLayout(
       sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(2),
+      element: elementContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
       },
@@ -62,7 +62,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PT,
       viewportUID: VIEWPORT_IDS.PT.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(3),
+      element: elementContainers.get(3),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
         background: [1, 1, 1],
@@ -72,7 +72,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PT,
       viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(4),
+      element: elementContainers.get(4),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
         background: [1, 1, 1],
@@ -82,7 +82,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PT,
       viewportUID: VIEWPORT_IDS.PT.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(5),
+      element: elementContainers.get(5),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
         background: [1, 1, 1],
@@ -95,7 +95,7 @@ function setLayout(
       sceneUID: SCENE_IDS.FUSION,
       viewportUID: VIEWPORT_IDS.FUSION.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(6),
+      element: elementContainers.get(6),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
       },
@@ -104,7 +104,7 @@ function setLayout(
       sceneUID: SCENE_IDS.FUSION,
       viewportUID: VIEWPORT_IDS.FUSION.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(7),
+      element: elementContainers.get(7),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
       },
@@ -113,7 +113,7 @@ function setLayout(
       sceneUID: SCENE_IDS.FUSION,
       viewportUID: VIEWPORT_IDS.FUSION.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(8),
+      element: elementContainers.get(8),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
       },
@@ -124,7 +124,7 @@ function setLayout(
       sceneUID: SCENE_IDS.PTMIP,
       viewportUID: VIEWPORT_IDS.PTMIP.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasContainers.get(9),
+      element: elementContainers.get(9),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
         background: [1, 1, 1],

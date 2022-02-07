@@ -40,7 +40,7 @@ export function setColorLUTIndexForLabelmap(labelmap, colorLUTIndex) {
 }
 
 export function getColorForSegmentIndex(
-  element: HTMLCanvasElement,
+  element: HTMLElement,
   segmentIndex: number,
   labelmapIndex?: number
 ): Color {
@@ -66,7 +66,7 @@ export function setColorForSegmentIndexOfColorLUT(
 }
 
 export function getColorLUT(
-  element: HTMLCanvasElement,
+  element: HTMLElement,
   labelmapIndex?: number
 ): ColorLUT {
   const viewportLabelmapState = getLabelmapStateForElement(

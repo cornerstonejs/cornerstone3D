@@ -89,7 +89,7 @@ class StackViewportExample extends Component {
     super(props)
 
     registerWebImageLoader(cs)
-    this._canvasNodes = new Map()
+    this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
 
@@ -163,7 +163,7 @@ class StackViewportExample extends Component {
         sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(0),
+        element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -172,7 +172,7 @@ class StackViewportExample extends Component {
         sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(1),
+        element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
         },
@@ -181,7 +181,7 @@ class StackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(2),
+        element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -191,7 +191,7 @@ class StackViewportExample extends Component {
         sceneUID: SCENE_IDS.PT,
         viewportUID: VIEWPORT_IDS.PT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(3),
+        element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
           background: [1, 1, 1],
@@ -201,7 +201,7 @@ class StackViewportExample extends Component {
         sceneUID: SCENE_IDS.PT,
         viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-        canvas: this._canvasNodes.get(4),
+        element: this._elementNodes.get(4),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
           background: [1, 1, 1],
@@ -211,7 +211,7 @@ class StackViewportExample extends Component {
       // {
       //   viewportUID: VIEWPORT_IDS.STACK.DX,
       //   type: VIEWPORT_TYPE.STACK,
-      //   canvas: this._canvasNodes.get(4),
+      //   element: this._elementNodes.get(4),
       //   defaultOptions: {
       //     orientation: ORIENTATION.AXIAL,
       //   },
@@ -220,7 +220,7 @@ class StackViewportExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.PT,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(5),
+        element: this._elementNodes.get(5),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -667,20 +667,17 @@ class StackViewportExample extends Component {
           >
             {this.state.viewportGrid.viewports.map((vp, i) => (
               <div
-                className="viewport-pane"
                 style={{
-                  ...(vp.cellStyle || {}),
+                  width: '100%',
+                  height: '100%',
                   border: '2px solid grey',
                   background: 'black',
+                  ...(vp.cellStyle || {}),
                 }}
+                ref={(c) => this._elementNodes.set(i, c)}
+                onContextMenu={(e) => e.preventDefault()}
                 key={i}
-              >
-                <canvas
-                  tabIndex={-1}
-                  ref={(c) => this._canvasNodes.set(i, c)}
-                  onKeyDown={(evt) => this.cancelToolDrawing(evt)}
-                />
-              </div>
+              />
             ))}
           </ViewportGrid>
         </div>

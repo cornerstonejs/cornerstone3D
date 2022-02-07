@@ -55,7 +55,8 @@ class OneStackExample extends Component {
   constructor(props) {
     super(props)
 
-    this._canvasNodes = new Map()
+    csTools3d.init()
+    this._elementNodes = new Map()
     this._offScreenRef = React.createRef()
 
     this._viewportGridRef = React.createRef()
@@ -67,15 +68,6 @@ class OneStackExample extends Component {
       this.ctStackImageIdsPromise,
       this.dxStackImageIdsPromise,
     ]).then(() => this.setState({ progressText: 'Loading data...' }))
-
-    this.viewportGridResizeObserver = new ResizeObserver((entries) => {
-      // ThrottleFn? May not be needed. This is lightning fast.
-      // Set in mount
-      if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
-      }
-    })
   }
 
   /**
@@ -107,7 +99,7 @@ class OneStackExample extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(0),
+        element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
         },
@@ -169,11 +161,6 @@ class OneStackExample extends Component {
   }
 
   componentWillUnmount() {
-    // Stop listening for resize
-    if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
-    }
-
     cache.purgeCache()
     csTools3d.destroy()
 
@@ -391,27 +378,17 @@ class OneStackExample extends Component {
           Vertical Flip
         </button>
 
-        <ViewportGrid
-          numCols={this.state.viewportGrid.numCols}
-          numRows={this.state.viewportGrid.numRows}
-          renderingEngine={this.renderingEngine}
-          style={{ minHeight: '650px', marginTop: '35px' }}
-          ref={this._viewportGridRef}
-        >
-          {this.state.viewportGrid.viewports.map((vp, i) => (
-            <div
-              className="viewport-pane"
-              style={{
-                ...(vp.cellStyle || {}),
-                border: '2px solid grey',
-                background: 'black',
-              }}
-              key={i}
-            >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
-          ))}
-        </ViewportGrid>
+        {this.state.viewportGrid.viewports.map((vp, i) => (
+          <div
+            style={{
+              width: '512px',
+              height: '812px',
+            }}
+            ref={(c) => this._elementNodes.set(i, c)}
+            onContextMenu={(e) => e.preventDefault()}
+            key={i}
+          />
+        ))}
         <div>
           <h1>OffScreen Canvas Render</h1>
           <button

@@ -955,7 +955,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
   renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
     const eventData = evt.detail
-    const { canvas: canvasElement } = eventData
+    const { element } = eventData
     const { enabledElement } = svgDrawingHelper
 
     let toolState = getToolState(enabledElement, this.name)
@@ -964,10 +964,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       return
     }
 
-    toolState = this.filterInteractableToolStateForElement(
-      canvasElement,
-      toolState
-    )
+    toolState = this.filterInteractableToolStateForElement(element, toolState)
 
     if (!toolState?.length) {
       return

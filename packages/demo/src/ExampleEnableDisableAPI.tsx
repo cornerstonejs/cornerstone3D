@@ -68,7 +68,8 @@ class EnableDisableViewportExample extends Component {
   constructor(props) {
     super(props)
 
-    this._canvasNodes = new Map()
+    csTools3d.init()
+    this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
 
@@ -123,7 +124,6 @@ class EnableDisableViewportExample extends Component {
   async componentDidMount() {
     await csRenderInit()
     csTools3d.init()
-
     ;({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
@@ -140,7 +140,7 @@ class EnableDisableViewportExample extends Component {
           sceneUID: SCENE_IDS.CT,
           viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-          canvas: this._canvasNodes.get(0),
+          element: this._elementNodes.get(0),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.SAGITTAL,
@@ -150,7 +150,7 @@ class EnableDisableViewportExample extends Component {
           // stack CT
           viewportUID: VIEWPORT_IDS.STACK.CT,
           type: VIEWPORT_TYPE.STACK,
-          canvas: this._canvasNodes.get(1),
+          element: this._elementNodes.get(1),
           toolGroup: stackCTViewportToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
@@ -160,7 +160,7 @@ class EnableDisableViewportExample extends Component {
           // dx
           viewportUID: VIEWPORT_IDS.STACK.DX,
           type: VIEWPORT_TYPE.STACK,
-          canvas: this._canvasNodes.get(2),
+          element: this._elementNodes.get(2),
           toolGroup: stackDXViewportToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
@@ -171,7 +171,7 @@ class EnableDisableViewportExample extends Component {
           sceneUID: SCENE_IDS.CT,
           viewportUID: VIEWPORT_IDS.CT.CORONAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-          canvas: this._canvasNodes.get(3),
+          element: this._elementNodes.get(3),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.CORONAL,
@@ -181,7 +181,7 @@ class EnableDisableViewportExample extends Component {
           sceneUID: SCENE_IDS.CT,
           viewportUID: VIEWPORT_IDS.CT.AXIAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-          canvas: this._canvasNodes.get(4),
+          element: this._elementNodes.get(4),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
@@ -528,16 +528,17 @@ class EnableDisableViewportExample extends Component {
           >
             {this.state.viewportGrid.viewports.map((vp, i) => (
               <div
-                className="viewport-pane"
                 style={{
-                  ...(vp.cellStyle || {}),
+                  width: '100%',
+                  height: '100%',
                   border: '2px solid grey',
                   background: 'black',
+                  ...(vp.cellStyle || {}),
                 }}
+                ref={(c) => this._elementNodes.set(i, c)}
+                onContextMenu={(e) => e.preventDefault()}
                 key={i}
-              >
-                <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-              </div>
+              />
             ))}
           </ViewportGrid>
         </div>

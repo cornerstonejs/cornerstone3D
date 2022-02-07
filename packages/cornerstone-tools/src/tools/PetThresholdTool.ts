@@ -23,8 +23,8 @@ export default class PetThresholdTool extends BaseTool {
   }
 
   _dragCallback(evt) {
-    const { element: canvas, deltaPoints } = evt.detail
-    const enabledElement = getEnabledElement(canvas)
+    const { element, deltaPoints } = evt.detail
+    const enabledElement = getEnabledElement(element)
     const { scene, sceneUID, viewportUID, viewport } = enabledElement
 
     let volumeUID, volumeActor, lower, upper, rgbTransferFunction
@@ -40,7 +40,7 @@ export default class PetThresholdTool extends BaseTool {
     }
 
     const deltaY = deltaPoints.canvas[1]
-    const multiplier = 5 / canvas.clientHeight
+    const multiplier = 5 / element.clientHeight
     const wcDelta = deltaY * multiplier
 
     upper -= wcDelta
@@ -55,7 +55,7 @@ export default class PetThresholdTool extends BaseTool {
       range: { lower, upper },
     }
 
-    triggerEvent(canvas, EVENTS.VOI_MODIFIED, eventDetail)
+    triggerEvent(element, EVENTS.VOI_MODIFIED, eventDetail)
 
     if (viewport instanceof StackViewport) {
       viewport.setProperties({

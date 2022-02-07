@@ -3,19 +3,19 @@ import { getGlobalStateForLabelmapUID } from './state'
 import { getLabelmapUIDForElement } from './utils'
 
 /**
- * Returns the lock status of the segment index for the canvas's labelmapIndex-th labelmap.
+ * Returns the lock status of the segment index for the element's labelmapIndex-th labelmap.
  * If no labelmapIndex is provided it uses the active labelmap
- * @param canvas HTML Canvas
+ * @param element HTML element
  * @param segmentIndex segment Index
  * @param labelmapIndex? labelmap Index
  * @returns
  */
 function getSegmentIndexLockedStatusForElement(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   segmentIndex: number,
   labelmapIndex?: number
 ): boolean {
-  const labelmapUID = getLabelmapUIDForElement(canvas, labelmapIndex)
+  const labelmapUID = getLabelmapUIDForElement(element, labelmapIndex)
   const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
 
   if (!labelmapGlobalState) {
@@ -26,38 +26,38 @@ function getSegmentIndexLockedStatusForElement(
 }
 
 /**
- * Returns the locked segments for the canvas's labelmapIndex-th labelmap
+ * Returns the locked segments for the element's labelmapIndex-th labelmap
  * If no labelmapIndex is provided it uses the active labelmap
  *
- * @param canvas HTML canvas
+ * @param element HTML element
  * @param labelmapIndex labelmap Index
  * @returns
  */
 function getLockedSegmentsForElement(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   labelmapIndex?: number
 ): number[] {
-  const labelmapUID = getLabelmapUIDForElement(canvas, labelmapIndex)
+  const labelmapUID = getLabelmapUIDForElement(element, labelmapIndex)
   const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
   return Array.from(labelmapGlobalState.segmentsLocked)
 }
 
 /**
- * Toggles the locked status of segments for the canvas's labelmapIndex-th labelmap
+ * Toggles the locked status of segments for the element's labelmapIndex-th labelmap
  * If no labelmapIndex is provided it uses the active labelmap
- * @param canvas HTML Canvas
+ * @param element HTML element
  * @param segmentIndex segment index
  * @param labelmapIndex labelmap index
  * @returns
  */
 function toggleSegmentIndexLockedForElement(
-  canvas: HTMLCanvasElement,
+  element: HTMLElement,
   segmentIndex: number,
   labelmapIndex?: number
 ): void {
-  const labelmapUID = getLabelmapUIDForElement(canvas, labelmapIndex)
+  const labelmapUID = getLabelmapUIDForElement(element, labelmapIndex)
   const lockedStatus = getSegmentIndexLockedStatusForElement(
-    canvas,
+    element,
     segmentIndex,
     labelmapIndex
   )
