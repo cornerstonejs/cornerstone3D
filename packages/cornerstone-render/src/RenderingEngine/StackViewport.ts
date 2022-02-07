@@ -1058,7 +1058,13 @@ class StackViewport extends Viewport {
       delete this._cpuFallbackEnabledElement.viewport.colormap
     }
 
+    // We draw over the previous stack with the background color while we
+    // wait for the next stack to load
+    ctx.fillStyle = fillStyle
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
     const imageId = await this._setImageIdIndex(currentImageIdIndex)
+
     return imageId
   }
 
@@ -1250,7 +1256,10 @@ class StackViewport extends Viewport {
           imageId,
         }
 
-        triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventData)
+        if (!this.suppressEvents) {
+          triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventData)
+        }
+
         reject(error)
       }
 
@@ -1283,7 +1292,7 @@ class StackViewport extends Viewport {
       const type = 'Float32Array'
 
       const priority = -5
-      const requestType = 'interaction'
+      const requestType = REQUEST_TYPE.Interaction
       const additionalDetails = { imageId }
       const options = {
         targetBuffer: {
@@ -1296,7 +1305,7 @@ class StackViewport extends Viewport {
         },
       }
 
-      requestPoolManager.addRequest(
+      imageLoadPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),
         requestType,
         additionalDetails,
@@ -1531,13 +1540,11 @@ class StackViewport extends Viewport {
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex
 
-    // Get the imageId from the stack
-    const imageId = this.imageIds[imageIdIndex]
-
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
 
-    await this._loadImage(imageId, imageIdIndex)
+    const imageId = this._loadImage(this.imageIds[imageIdIndex], imageIdIndex)
+
     return imageId
   }
 
@@ -1574,14 +1581,16 @@ class StackViewport extends Viewport {
    * @param imageIdIndex number represents imageId index in the list of
    * provided imageIds in setStack
    */
-  public setImageIdIndex(imageIdIndex: number): void {
+  public async setImageIdIndex(imageIdIndex: number): Promise<string> {
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
       return
     }
 
     // Otherwise, get the imageId and attempt to display it
-    this._setImageIdIndex(imageIdIndex)
+    const imageId = this._setImageIdIndex(imageIdIndex)
+
+    return imageId
   }
 
   /**
@@ -1657,8 +1666,10 @@ class StackViewport extends Viewport {
       renderingEngineUID: this.renderingEngineUID,
     }
 
-    // For crosshairs to adapt to new viewport size
-    triggerEvent(this.element, EVENTS.CAMERA_MODIFIED, eventDetail)
+    if (!this.suppressEvents) {
+      // For crosshairs to adapt to new viewport size
+      triggerEvent(this.element, EVENTS.CAMERA_MODIFIED, eventDetail)
+    }
   }
 
   private triggerCalibrationEvent() {
@@ -1678,8 +1689,10 @@ class StackViewport extends Viewport {
       worldToIndex: imageData.getWorldToIndex(),
     }
 
-    // Let the tools know the image spacing has been calibrated
-    triggerEvent(this.element, EVENTS.IMAGE_SPACING_CALIBRATED, eventDetail)
+    if (!this.suppressEvents) {
+      // Let the tools know the image spacing has been calibrated
+      triggerEvent(this.element, EVENTS.IMAGE_SPACING_CALIBRATED, eventDetail)
+    }
 
     this._publishCalibratedEvent = false
   }

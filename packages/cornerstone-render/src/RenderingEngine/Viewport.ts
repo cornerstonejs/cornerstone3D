@@ -36,6 +36,7 @@ class Viewport {
   readonly defaultOptions: any
   options: ViewportInputOptions
   private _suppressCameraModifiedEvents = false
+  readonly suppressEvents: boolean
 
   constructor(props: ViewportInput) {
     this.uid = props.uid
@@ -61,8 +62,12 @@ class Viewport {
     }
 
     this.defaultOptions = _cloneDeep(props.defaultOptions)
+    this.suppressEvents = props.defaultOptions.suppressEvents
+      ? props.defaultOptions.suppressEvents
+      : false
     this.options = _cloneDeep(props.defaultOptions)
   }
+
   getFrameOfReferenceUID: () => string
   canvasToWorld: (canvasPos: Point2) => Point3
   worldToCanvas: (worldPos: Point3) => Point2
@@ -521,7 +526,7 @@ class Viewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT)
 
-    if (!this._suppressCameraModifiedEvents) {
+    if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
       const eventDetail = {
         previousCamera: previousCamera,
         camera: this.getCamera(),
@@ -680,7 +685,7 @@ class Viewport {
       vtkCamera.setSlabThickness(slabThickness)
     }
 
-    if (!this._suppressCameraModifiedEvents) {
+    if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
       const eventDetail = {
         previousCamera,
         camera: updatedCamera,

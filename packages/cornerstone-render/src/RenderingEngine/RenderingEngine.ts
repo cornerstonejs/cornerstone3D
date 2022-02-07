@@ -159,9 +159,6 @@ class RenderingEngine implements IRenderingEngine {
       // 3 Add the requested viewport to rendering Engine
       this.addCustomViewport(viewportInputEntry)
     }
-
-    // 5. Add the new viewport to the queue to be rendered
-    this._setViewportsToBeRenderedNextFrame([viewportInputEntry.viewportUID])
   }
 
   /**
@@ -733,7 +730,9 @@ class RenderingEngine implements IRenderingEngine {
       renderingEngineUID: this.uid,
     }
 
-    triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+    if (!viewport.suppressEvents) {
+      triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+    }
   }
 
   /**
@@ -1164,6 +1163,7 @@ class RenderingEngine implements IRenderingEngine {
     viewportUID: string
     sceneUID: string
     renderingEngineUID: string
+    suppressEvents: boolean
   } {
     const {
       element,
@@ -1175,6 +1175,7 @@ class RenderingEngine implements IRenderingEngine {
       uid,
       sceneUID,
       renderingEngineUID,
+      suppressEvents,
     } = viewport
 
     const { width: dWidth, height: dHeight } = canvas
@@ -1197,6 +1198,7 @@ class RenderingEngine implements IRenderingEngine {
       element,
       canvas,
       viewportUID: uid,
+      suppressEvents,
       sceneUID,
       renderingEngineUID,
     }
@@ -1212,7 +1214,7 @@ class RenderingEngine implements IRenderingEngine {
   private _resetViewport(viewport) {
     const renderingEngineUID = this.uid
 
-    const { element, canvas, uid: viewportUID } = viewport
+    const { element, canvas, uid: viewportUID, suppressEvents } = viewport
 
     const eventData = {
       element,
@@ -1223,7 +1225,9 @@ class RenderingEngine implements IRenderingEngine {
 
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
-    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
+    if (!suppressEvents) {
+      triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
+    }
 
     element.removeAttribute('data-viewport-uid')
     element.removeAttribute('data-scene-uid')
