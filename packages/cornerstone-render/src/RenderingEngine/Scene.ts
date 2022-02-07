@@ -166,7 +166,6 @@ class Scene {
     labelMap: any,
     immediate = false
   ): Promise<void> {
-    debugger
     const volumeActors = []
 
     // todo: use shared volume mapper for seg too

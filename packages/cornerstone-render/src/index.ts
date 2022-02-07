@@ -56,6 +56,11 @@ import * as Types from './types'
 import * as Utilities from './utilities'
 import triggerEvent from './utilities/triggerEvent'
 
+import {
+  vtkSharedVolumeMapper,
+  vtkStreamingOpenGLTexture,
+} from './RenderingEngine/vtkClasses/index'
+
 const getVolume = cache.getVolume
 
 /**
@@ -122,4 +127,7 @@ export {
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
   cpuColormaps,
+  // probably not how we want to export it
+  vtkSharedVolumeMapper,
+  vtkStreamingOpenGLTexture,
 }

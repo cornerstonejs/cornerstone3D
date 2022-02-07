@@ -5,7 +5,8 @@ import {
   createAndCacheVolume,
   ORIENTATION,
   VIEWPORT_TYPE,
-  createVolumeActor,
+  vtkSharedVolumeMapper,
+  vtkStreamingOpenGLTexture
 } from '@ohif/cornerstone-render'
 import {
   SynchronizerManager,
@@ -279,10 +280,7 @@ class SegmentationRender extends Component {
   createLabelPipeline = (backgroundImageData) => {
     // Create a labelmap image the same dimensions as our background volume.
     const labelMapData = vtkImageData.newInstance(
-      backgroundImageData.get('spacing', 'origin', 'direction')
     )
-
-    labelMapData.computeTransforms()
 
     const values = new Uint8Array(backgroundImageData.getNumberOfPoints())
     const dataArray = vtkDataArray.newInstance({
@@ -296,9 +294,12 @@ class SegmentationRender extends Component {
     labelMapData.setOrigin(...backgroundImageData.getOrigin())
     labelMapData.setDirection(...backgroundImageData.getDirection())
 
+    labelMapData.computeTransforms()
+
     const labelMap = {
       actor: vtkVolume.newInstance(),
-      mapper: vtkVolumeMapper.newInstance(),
+      mapper: vtkSharedVolumeMapper.newInstance(),
+      texture: vtkStreamingOpenGLTexture.newInstance(),
       imageData: labelMapData,
       cfun: vtkColorTransferFunction.newInstance(),
       ofun: vtkPiecewiseFunction.newInstance(),
@@ -306,14 +307,15 @@ class SegmentationRender extends Component {
 
     // Labelmap pipeline
     labelMap.mapper.setInputData(labelMapData)
+    labelMap.mapper.setScalarTexture(labelMap.texture)
     labelMap.actor.setMapper(labelMap.mapper)
 
     // Set up labelMap color and opacity mapping
     labelMap.cfun.addRGBPoint(1, 1, 0, 0) // label "1" will be red
     labelMap.cfun.addRGBPoint(2, 0, 1, 0) // label "2" will be green
     labelMap.ofun.addPoint(0, 0)
-    labelMap.ofun.addPoint(1, 0.5, 0.5, 1.0) // Red will have an opacity of 0.2.
-    labelMap.ofun.addPoint(2, 0.5, 0.5, 1.0) // Green will have an opacity of 0.2.
+    labelMap.ofun.addPoint(1, 0.9) // Red will have an opacity of 0.2.
+    labelMap.ofun.addPoint(2, 0.9) // Green will have an opacity of 0.2.
     labelMap.ofun.setClamping(false)
 
     labelMap.actor.getProperty().setRGBTransferFunction(0, labelMap.cfun)
