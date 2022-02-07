@@ -368,6 +368,30 @@ class SegmentationExample extends Component {
       element,
       labelmapIndex
     )
+
+    // set the labelmap for all other scens
+    const labelmapUID = activeLabelmapController.getActiveLabelmapUID(element)
+
+    // get labelmap
+    const labelmap = cache.getVolume(labelmapUID)
+
+    // all the scense except the we just acted on
+    const scenes = this.renderingEngine
+      .getScenes()
+      .filter(({ uid }) => uid !== sceneUID)
+
+    scenes.forEach(({ uid: sceneUID }) => {
+      const scene = this.renderingEngine.getScene(sceneUID)
+
+      const { uid } = scene.getViewports()[0]
+
+      const { element } = this.renderingEngine.getViewport(uid)
+
+      SegmentationModule.setLabelmapForElement({
+        element,
+        labelmap,
+      })
+    })
   }
 
   setToolMode = (toolMode) => {
@@ -814,6 +838,22 @@ class SegmentationExample extends Component {
     )
   }
 
+  deleteLabelmap = () => {
+    const sceneUID = this.state.sceneForSegmentation
+    const scene = this.renderingEngine.getScene(sceneUID)
+    const { element } = scene.getViewports()[0]
+    const labelmapUID = this.state.selectedLabelmapUID
+
+    const removeFromCache = true
+    // SegmentationModule.removeLabelmapForElement(element, labelmapUID, removeFromCache)
+    SegmentationModule.removeLabelmapForAllElements(
+      labelmapUID,
+      removeFromCache
+    )
+
+    this.renderingEngine.render()
+  }
+
   hideSegmentation = (segmentUID) => {
     const sceneUID = this.state.sceneForSegmentation
     const scene = this.renderingEngine.getScene(sceneUID)
@@ -1009,6 +1049,13 @@ class SegmentationExample extends Component {
                   </option>
                 ))}
               </select>
+              <button
+                onClick={() => this.deleteLabelmap()}
+                className="btn btn-primary"
+                style={{ margin: '2px 4px' }}
+              >
+                Delete Labelmap
+              </button>
 
               <button
                 onClick={() => this.changeActiveSegmentIndex(-1)}

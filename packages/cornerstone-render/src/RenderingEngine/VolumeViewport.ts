@@ -1,4 +1,6 @@
 import { vec3 } from 'gl-matrix'
+
+import cache from '../cache'
 import VIEWPORT_TYPE from '../constants/viewportType'
 import Scene from './Scene'
 import Viewport from './Viewport'
@@ -316,11 +318,43 @@ class VolumeViewport extends Viewport {
   /**
    * Uses viewport camera and volume actor to decide if the viewport
    * is looking at the volume in the direction of acquisition (imageIds).
-   * If so, it uses the origin and focalPoint to calculate the slice index
+   * If so, it uses the origin and focalPoint to calculate the slice index.
+   * Todo: This only works if the imageIds are properly sorted
    *
-   * @returns {number|null} The slice index
+   * @returns {number|undefined} The slice index
    */
-  public getCurrentImageIdIndex = (): number => {
+  public getCurrentImageIdIndex = (): number | undefined => {
+    return this._getImageIdIndex()
+  }
+
+  /**
+   * Uses viewport camera and volume actor to decide if the viewport
+   * is looking at the volume in the direction of acquisition (imageIds).
+   * If so, it uses the origin and focalPoint to find which imageId is
+   * currently being viewed.
+   *
+   * @returns {string|undefined} ImageId
+   */
+  public getCurrentImageId = (): string | undefined => {
+    const index = this._getImageIdIndex()
+
+    if (!index) {
+      return
+    }
+
+    const { uid } = this.getDefaultActor()
+    const volume = cache.getVolume(uid)
+
+    if (!volume) {
+      return
+    }
+
+    const imageIds = volume.imageIds
+
+    return imageIds[index]
+  }
+
+  private _getImageIdIndex = () => {
     const { viewPlaneNormal, focalPoint } = this.getCamera()
 
     // Todo: handle scenario of fusion of multiple volumes
@@ -340,7 +374,7 @@ class VolumeViewport extends Viewport {
     // if dot is not 1 or -1 return null since it means
     // viewport is not looking at the image acquisition plane
     if (dot - 1 > EPSILON) {
-      return null
+      return
     }
 
     // how many steps are from the origin to the focal point in the
@@ -354,19 +388,6 @@ class VolumeViewport extends Viewport {
     // number of steps, and subtract 1 to get the index
     return Math.round(Math.abs(distance) / spacingInNormal)
   }
-
-  //public getCurrentImageId() : string | undefined => {
-  // check current viewPlane and focal point from camera
-  // against stack of imageIds. If we are within some precision,
-  // return that imageId.
-  //}
-
-  // this api only exists here for developers that are displaying data
-  // and who did not create a scene explicitly beforehand
-  // (scenes are optional for the public API but internally created either way)
-  /*setVolumes(a) {
-    scene.setVolumes(a)
-  }*/
 }
 
 export default VolumeViewport
