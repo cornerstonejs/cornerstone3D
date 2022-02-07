@@ -3,7 +3,7 @@ import {
   getEnabledElement,
   createAndCacheDerivedVolume,
   createAndCacheLocalVolume,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 import { Point3 } from '../../types'
 import setLabelmapForElement from './setLabelmapForElement'

@@ -1,7 +1,7 @@
-import { IEnabledElement } from '@ohif/cornerstone-render/src/types'
+import { IEnabledElement } from '@precisionmetrics/cornerstone-render/src/types'
 import { getBoundingBoxAroundShape } from '../../../util/segmentation'
 import { Point3 } from '../../../types'
-import { ImageVolume } from '@ohif/cornerstone-render'
+import { ImageVolume } from '@precisionmetrics/cornerstone-render'
 import pointInShapeCallback from '../../../util/planar/pointInShapeCallback'
 import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
 

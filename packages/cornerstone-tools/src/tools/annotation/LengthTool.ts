@@ -9,7 +9,7 @@ import {
   triggerEvent,
   eventTarget,
   Types,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 import { getToolStateForDisplay, getImageIdForTool } from '../../util/planar'
 import { BaseAnnotationTool } from '../base'

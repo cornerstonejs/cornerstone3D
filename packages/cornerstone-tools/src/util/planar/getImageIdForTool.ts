@@ -1,4 +1,4 @@
-import { metaData } from '@ohif/cornerstone-render'
+import { metaData } from '@precisionmetrics/cornerstone-render'
 import { vec3 } from 'gl-matrix'
 import { Point3 } from './../../types'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
@@ -9,6 +9,10 @@ export default function getImageIdForTool(
   viewUp: Point3,
   imageVolume
 ): string {
+  if (!imageVolume) {
+    return
+  }
+
   const { direction, imageIds } = imageVolume
 
   if (!imageIds || !imageIds.length) {

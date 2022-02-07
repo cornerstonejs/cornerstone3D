@@ -7,14 +7,14 @@ import {
   eventTarget,
   VIEWPORT_TYPE,
   init as csRenderInit,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import {
   ToolBindings,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeToolStateByToolDataUID,
-} from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import {
   setCTWWWC,

@@ -1,5 +1,5 @@
 import { SynchronizerManager } from '../../store'
-import { EVENTS as RENDERING_EVENTS } from '@ohif/cornerstone-render'
+import { EVENTS as RENDERING_EVENTS } from '@precisionmetrics/cornerstone-render'
 import cameraSyncCallback from '../callbacks/cameraSyncCallback'
 import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
 

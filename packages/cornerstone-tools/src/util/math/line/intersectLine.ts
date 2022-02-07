@@ -1,4 +1,4 @@
-import { Types } from '@ohif/cornerstone-render'
+import { Types } from '@precisionmetrics/cornerstone-render'
 
 // Returns sign of number
 function sign(x: any) {

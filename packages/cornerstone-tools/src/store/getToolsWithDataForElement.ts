@@ -1,6 +1,6 @@
 import { getToolState } from '../stateManagement/toolState'
 import { ToolAndToolStateArray } from '../types/toolStateTypes'
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 
 /**
  * @function getToolsWithDataForElement Filters an array of tools, returning only

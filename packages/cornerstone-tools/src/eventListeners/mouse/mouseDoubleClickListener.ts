@@ -1,4 +1,4 @@
-import { triggerEvent } from '@ohif/cornerstone-render'
+import { triggerEvent } from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import getMouseEventPoints from './getMouseEventPoints'
 import { IPoints } from '../../types/cornerstoneToolsEventDetailTypes'

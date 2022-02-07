@@ -1,4 +1,4 @@
-import { cache } from '@ohif/cornerstone-render'
+import { cache } from '@precisionmetrics/cornerstone-render'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 /**

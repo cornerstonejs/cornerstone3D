@@ -1,5 +1,5 @@
 import { BaseTool } from './base'
-import { getEnabledElement, Types } from '@ohif/cornerstone-render'
+import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
 import { mat4, vec3 } from 'gl-matrix'
 
 const DIRECTIONS = {

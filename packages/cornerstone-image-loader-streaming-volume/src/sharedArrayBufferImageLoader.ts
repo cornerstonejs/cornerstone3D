@@ -1,4 +1,4 @@
-import { registerImageLoader, REQUEST_TYPE } from '@ohif/cornerstone-render'
+import { registerImageLoader, REQUEST_TYPE } from '@precisionmetrics/cornerstone-render'
 import {
   getPixelData,
   decodeImageFrame,

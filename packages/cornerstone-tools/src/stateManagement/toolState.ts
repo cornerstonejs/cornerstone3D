@@ -2,9 +2,9 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as EVENTS } from '../enums'
-import { Types } from '@ohif/cornerstone-render'
+import { Types } from '@precisionmetrics/cornerstone-render'
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
 import { uuidv4 } from '../util'
 import {

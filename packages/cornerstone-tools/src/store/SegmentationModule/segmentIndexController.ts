@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@ohif/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 
 import state, {
   getActiveLabelmapState,

@@ -1,4 +1,4 @@
-import { Utilities } from '@ohif/cornerstone-render'
+import { Utilities } from '@precisionmetrics/cornerstone-render'
 import MouseCursor from './MouseCursor'
 
 const DEFAULT_NAME = 'image-cursor'

@@ -1,4 +1,4 @@
-import { Settings } from '@ohif/cornerstone-render'
+import { Settings } from '@precisionmetrics/cornerstone-render'
 
 export default function setGlobalStyle(
   style: Record<string, unknown>

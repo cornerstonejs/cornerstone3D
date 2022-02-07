@@ -1,4 +1,4 @@
-import { metaData, Types } from '@ohif/cornerstone-render'
+import { metaData, Types } from '@precisionmetrics/cornerstone-render'
 
 export default function makeVolumeMetadata(
   imageIds: Array<string>

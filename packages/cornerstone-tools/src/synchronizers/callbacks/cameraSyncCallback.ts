@@ -1,4 +1,4 @@
-import { getRenderingEngine, Types } from '@ohif/cornerstone-render'
+import { getRenderingEngine, Types } from '@precisionmetrics/cornerstone-render'
 
 /**
  * @function cameraSyncCallback - Synchronizer callback to synchronize the camera. Synchronization

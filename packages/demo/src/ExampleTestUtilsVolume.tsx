@@ -10,9 +10,12 @@ import {
   createAndCacheVolume,
   Utilities,
   init as csRenderInit,
-} from '@ohif/cornerstone-render'
-import { ToolBindings, synchronizers } from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-render'
+import {
+  ToolBindings,
+  synchronizers,
+} from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import {
   setCTWWWC,

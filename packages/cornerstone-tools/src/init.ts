@@ -1,7 +1,7 @@
 import {
   eventTarget,
   EVENTS as RENDERING_EVENTS,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { getDefaultToolStateManager } from './stateManagement/toolState'
 import { addEnabledElement, removeEnabledElement } from './store'
 import { resetCornerstoneToolsState } from './store/state'

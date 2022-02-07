@@ -5,7 +5,7 @@ import {
   Utilities,
   ERROR_CODES,
   Types,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
 import StreamingImageVolume from './StreamingImageVolume'

@@ -5,9 +5,9 @@ import {
   createAndCacheVolume,
   init as csRenderInit,
   imageLoadPoolManager,
-} from '@ohif/cornerstone-render'
-import { synchronizers } from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-render'
+import { synchronizers } from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import _ from 'lodash'
 import getInterleavedFrames from './helpers/getInterleavedFrames'
@@ -229,7 +229,12 @@ class PriorityLoadExample extends Component {
         additionalDetails.volumeUID = ctVolumeUID
         const { callLoadImage, imageId, imageIdIndex, options } = ctRequest[0]
         requests.push({
-          callLoadImage: callLoadImage.bind(this, imageId, imageIdIndex, options),
+          callLoadImage: callLoadImage.bind(
+            this,
+            imageId,
+            imageIdIndex,
+            options
+          ),
           requestType,
           additionalDetails,
           priority,
@@ -243,7 +248,12 @@ class PriorityLoadExample extends Component {
         additionalDetails.volumeUID = ptVolumeUID
         const { callLoadImage, imageId, imageIdIndex, options } = ptRequest[0]
         requests.push({
-          callLoadImage: callLoadImage.bind(this, imageId, imageIdIndex, options),
+          callLoadImage: callLoadImage.bind(
+            this,
+            imageId,
+            imageIdIndex,
+            options
+          ),
           requestType,
           additionalDetails,
           priority,
@@ -253,7 +263,8 @@ class PriorityLoadExample extends Component {
 
     // adding requests to the imageLoadPoolManager
     requests.forEach((request) => {
-      const { callLoadImage, requestType, additionalDetails, priority } = request
+      const { callLoadImage, requestType, additionalDetails, priority } =
+        request
       imageLoadPoolManager.addRequest(
         callLoadImage,
         requestType,

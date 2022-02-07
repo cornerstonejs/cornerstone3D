@@ -2,7 +2,7 @@ import {
   cache,
   getEnabledElement,
   StackViewport,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
 

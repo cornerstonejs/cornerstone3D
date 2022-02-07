@@ -1,6 +1,6 @@
 import dicomParser from 'dicom-parser'
-import * as cornerstone from '@ohif/cornerstone-render'
-import * as csTools3d from '@ohif/cornerstone-tools'
+import * as cornerstone from '@precisionmetrics/cornerstone-render'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'

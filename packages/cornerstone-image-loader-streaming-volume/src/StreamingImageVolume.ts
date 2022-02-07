@@ -10,7 +10,7 @@ import {
   loadImage,
   Utilities as cornerstoneUtils,
   REQUEST_TYPE,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 
 import autoLoad from './helpers/autoLoad'
 

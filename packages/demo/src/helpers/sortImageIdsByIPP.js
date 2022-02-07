@@ -1,4 +1,4 @@
-import { metaData } from '@ohif/cornerstone-render';
+import { metaData } from '@precisionmetrics/cornerstone-render';
 import { vec3 } from 'gl-matrix'
 
 /**

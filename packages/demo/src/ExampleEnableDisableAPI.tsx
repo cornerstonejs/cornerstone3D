@@ -7,18 +7,18 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
-} from '@ohif/cornerstone-render'
-import { ToolBindings } from '@ohif/cornerstone-tools'
-import * as cs from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
+import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import * as cs from '@precisionmetrics/cornerstone-render'
 
-import * as csTools3d from '@ohif/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { registerWebImageLoader } from '@ohif/cornerstone-image-loader-streaming-volume'
+import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
 
 import './ExampleVTKMPR.css'
 import {

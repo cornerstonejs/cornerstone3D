@@ -4,7 +4,7 @@ import {
   RenderingEngine,
   createAndCacheVolume,
   createAndCacheDerivedVolume,
-} from '@ohif/cornerstone-render'
+} from '@precisionmetrics/cornerstone-render'
 import {
   // Segmentation
   SegmentationModule,
@@ -17,8 +17,8 @@ import {
   CornerstoneTools3DEvents,
   toolDataSelection,
   Utilities as csToolsUtils,
-} from '@ohif/cornerstone-tools'
-import * as csTools3d from '@ohif/cornerstone-tools'
+} from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
