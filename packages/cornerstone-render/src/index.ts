@@ -1,6 +1,5 @@
 import EVENTS from './enums/events'
 import ERROR_CODES from './enums/errorCodes'
-import FLIP_DIRECTION from './enums/flipDirection'
 import REQUEST_TYPE from './enums/requestType'
 //
 import ORIENTATION from './constants/orientation'
@@ -82,7 +81,6 @@ export {
   // enums
   ERROR_CODES,
   EVENTS,
-  FLIP_DIRECTION,
   // constants
   ORIENTATION,
   VIEWPORT_TYPE,
