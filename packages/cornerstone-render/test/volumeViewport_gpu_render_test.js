@@ -40,33 +40,32 @@ const CORONAL = 'CORONAL'
 
 const DOMElements = []
 
-function createCanvas(renderingEngine, orientation) {
-  const canvasAxial = document.createElement('canvas')
+function createViewport(renderingEngine, orientation) {
+  const element = document.createElement('div')
 
-  canvasAxial.style.width = '1000px'
-  canvasAxial.style.height = '1000px'
-  document.body.appendChild(canvasAxial)
-  DOMElements.push(canvasAxial)
+  element.style.width = '1000px'
+  element.style.height = '1000px'
+  document.body.appendChild(element)
+  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
       sceneUID: scene1UID,
       viewportUID: viewportUID,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
-      canvas: canvasAxial,
+      element,
       defaultOptions: {
         orientation: ORIENTATION[orientation],
         background: [1, 0, 1], // pinkish background
       },
     },
   ])
-  return canvasAxial
+  return element
 }
 
-describe('renderingCore -- volume', () => {
+describe('Volume Viewport GPU -- ', () => {
   beforeAll(() => {
-    // initialize the library
-    cornerstone3D.init()
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
   })
 
   describe('Volume Viewport Axial Nearest Neighbor and Linear Interpolation --- ', function () {
@@ -92,12 +91,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a volume: nearest', function (done) {
-      const canvas = createCanvas(this.renderingEngine, AXIAL)
+      const element = createViewport(this.renderingEngine, AXIAL)
+
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -123,11 +125,13 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a volume: linear', function (done) {
-      const canvas = createCanvas(this.renderingEngine, AXIAL)
+      const element = createViewport(this.renderingEngine, AXIAL)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -171,13 +175,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a volume: nearest', function (done) {
-      const canvas = createCanvas(this.renderingEngine, SAGITTAL)
+      const element = createViewport(this.renderingEngine, SAGITTAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -203,11 +209,13 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a volume: linear', function (done) {
-      const canvas = createCanvas(this.renderingEngine, SAGITTAL)
+      const element = createViewport(this.renderingEngine, SAGITTAL)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -253,13 +261,16 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a volume: nearest', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const vp = this.renderingEngine.getViewport(viewportUID)
+
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -287,11 +298,13 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a volume: linear', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -337,13 +350,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully use renderScenes API to load image', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -372,13 +387,13 @@ describe('renderingCore -- volume', () => {
     })
 
     it('Should be able to filter viewports based on volumeUID', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const viewport = this.renderingEngine.getViewport(viewportUID)
         const viewports =
           this.renderingEngine.getViewportsContainingVolumeUID(volumeId)
@@ -412,13 +427,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully use renderViewports API to load image', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
+      const vp = this.renderingEngine.getViewport(viewportUID)
+      const canvas = vp.getCanvas()
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -447,13 +464,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully use renderViewport API to load image', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -482,13 +501,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully debug the offscreen canvas', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         const offScreen = this.renderingEngine._debugRender()
         expect(offScreen).toEqual(image)
@@ -515,13 +536,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully render frameOfReference', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -576,13 +599,15 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a color volume: nearest', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -612,11 +637,13 @@ describe('renderingCore -- volume', () => {
     })
 
     it('should successfully load a volume: linear', function (done) {
-      const canvas = createCanvas(this.renderingEngine, CORONAL)
+      const element = createViewport(this.renderingEngine, CORONAL)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
+      const vp = this.renderingEngine.getViewport(viewportUID)
 
-      canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+        const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,

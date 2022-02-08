@@ -201,14 +201,18 @@ class StackViewport extends Viewport {
   private getImageDataCPU(): CPUIImageData | undefined {
     const { metadata } = this._cpuFallbackEnabledElement
 
+    const spacing = metadata.spacing as Point3
+
     return {
       dimensions: metadata.dimensions as Point3,
-      spacing: metadata.spacing as Point3,
+      spacing,
       origin: metadata.origin as Point3,
       direction: metadata.direction as Float32Array,
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       imageData: {
+        getDirection: () => metadata.direction,
+        getSpacing: () => spacing,
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvasCPU(point)
           const pixelCoord = canvasToPixel(
@@ -638,12 +642,12 @@ class StackViewport extends Viewport {
     const eventDetail = {
       previousCamera,
       camera: updatedCamera,
-      canvas: this.canvas,
+      element: this.element,
       viewportUID: this.uid,
       renderingEngineUID: this.renderingEngineUID,
     }
 
-    triggerEvent(this.canvas, EVENTS.CAMERA_MODIFIED, eventDetail)
+    triggerEvent(this.element, EVENTS.CAMERA_MODIFIED, eventDetail)
   }
 
   private setFlipDirection(flipDirection: FlipDirection): void {
@@ -1062,11 +1066,6 @@ class StackViewport extends Viewport {
       delete this._cpuFallbackEnabledElement.viewport.colormap
     }
 
-    // We draw over the previous stack with the background color while we
-    // wait for the next stack to load
-    ctx.fillStyle = fillStyle
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
     const imageId = await this._setImageIdIndex(currentImageIdIndex)
 
     return imageId
@@ -1194,7 +1193,7 @@ class StackViewport extends Viewport {
           renderingEngineUID: this.renderingEngineUID,
         }
 
-        triggerEvent(this.canvas, EVENTS.STACK_NEW_IMAGE, eventData)
+        triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, eventData)
 
         const metadata = this._getImageDataMetadata(image)
 
@@ -1967,6 +1966,7 @@ class StackViewport extends Viewport {
 
     return {
       canvas: this.canvas,
+      element: this.element,
       viewportUID: this.uid,
       sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,

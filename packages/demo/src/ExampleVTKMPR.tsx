@@ -132,7 +132,7 @@ class MPRExample extends Component {
     this.coronalSync = createCameraPositionSynchronizer('coronalSync')
     this.ctWLSync = createVOISynchronizer('ctWLSync')
     this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
-    ;;({
+    ;({
       ctSceneToolGroup,
       ptSceneToolGroup,
       fusionSceneToolGroup,

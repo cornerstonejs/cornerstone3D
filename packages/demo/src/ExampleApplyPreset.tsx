@@ -5,6 +5,7 @@ import {
   createAndCacheVolume,
   ORIENTATION,
   VIEWPORT_TYPE,
+  init,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -87,6 +88,7 @@ class ApplyPresetExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await init()
     ;({ ctSceneToolGroup } = initToolGroups())
 
     const volumeImageIds = await this.volumeImageIds
@@ -105,7 +107,7 @@ class ApplyPresetExample extends Component {
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
-          background: [165/255, 165/255, 215/255],
+          background: [165 / 255, 165 / 255, 215 / 255],
         },
       },
       {
@@ -115,7 +117,7 @@ class ApplyPresetExample extends Component {
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
-          background: [165/255, 165/255, 215/255],
+          background: [165 / 255, 165 / 255, 215 / 255],
         },
       },
       {
@@ -125,7 +127,7 @@ class ApplyPresetExample extends Component {
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
-          background: [165/255, 165/255, 215/255],
+          background: [165 / 255, 165 / 255, 215 / 255],
         },
       },
     ]

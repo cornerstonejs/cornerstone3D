@@ -57,7 +57,7 @@ function thresholdVolumeByRange(
     throw new Error('labelmap is required')
   }
 
-  const { scalarData, vtkImageData: labelmapImageData } = labelmap
+  const { scalarData, imageData: labelmapImageData } = labelmap
   const { lowerThreshold, higherThreshold, numSlicesToProject, overwrite } =
     options
 
@@ -79,10 +79,10 @@ function thresholdVolumeByRange(
     ;({ renderingEngine } = enabledElement)
 
     const referenceVolume = referenceVolumes[0]
-    const { vtkImageData, dimensions } = referenceVolume
+    const { imageData, dimensions } = referenceVolume
 
     // Todo: get directly from scalarData?
-    const values = vtkImageData.getPointData().getScalars().getData()
+    const values = imageData.getPointData().getScalars().getData()
 
     let pointsToUse = points
     // If the tool is a 2D tool but has projection points, use them
@@ -92,7 +92,7 @@ function thresholdVolumeByRange(
     }
 
     const rectangleCornersIJK = pointsToUse.map(
-      (world) => _worldToIndex(vtkImageData, world) as Point3
+      (world) => _worldToIndex(imageData, world) as Point3
     )
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
@@ -106,7 +106,7 @@ function thresholdVolumeByRange(
     }
 
     const callback = ({ index, pointIJK }) => {
-      const offset = vtkImageData.computeOffsetIndex(pointIJK)
+      const offset = imageData.computeOffsetIndex(pointIJK)
       const value = values[offset]
       if (value <= lowerThreshold || value >= higherThreshold) {
         return

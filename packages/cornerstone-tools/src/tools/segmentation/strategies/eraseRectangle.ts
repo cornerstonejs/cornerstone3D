@@ -32,10 +32,10 @@ function eraseRectangle(
   const { enabledElement } = evt
   const { renderingEngine, viewport } = enabledElement
   const { volume: labelmapVolume, points, segmentsLocked } = operationData
-  const { vtkImageData, dimensions, scalarData } = labelmapVolume
+  const { imageData, dimensions, scalarData } = labelmapVolume
 
   const rectangleCornersIJK = points.map((world) => {
-    return vtkImageData.worldToIndex(world)
+    return imageData.worldToIndex(world)
   })
 
   const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
@@ -57,13 +57,13 @@ function eraseRectangle(
   pointInShapeCallback(
     boundsIJK,
     scalarData,
-    vtkImageData,
+    imageData,
     dimensions,
     pointInShape,
     callback
   )
 
-  triggerLabelmapRender(renderingEngine, labelmapVolume, vtkImageData)
+  triggerLabelmapRender(renderingEngine, labelmapVolume, imageData)
 }
 
 /**

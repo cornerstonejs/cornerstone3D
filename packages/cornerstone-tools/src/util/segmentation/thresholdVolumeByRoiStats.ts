@@ -51,9 +51,9 @@ function thresholdVolumeByRoiStats(
   }
 
   const referenceVolume = referenceVolumes[0]
-  const { vtkImageData, dimensions } = referenceVolume
+  const { imageData, dimensions } = referenceVolume
 
-  const values = vtkImageData.getPointData().getScalars().getData()
+  const values = imageData.getPointData().getScalars().getData()
 
   const { statistic } = options
   const [fn, baseValue] = _getStrategyFn(statistic)
@@ -71,7 +71,7 @@ function thresholdVolumeByRoiStats(
     }
 
     const rectangleCornersIJK = pointsToUse.map(
-      (world) => _worldToIndex(vtkImageData, world) as Point3
+      (world) => _worldToIndex(imageData, world) as Point3
     )
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
@@ -88,7 +88,7 @@ function thresholdVolumeByRoiStats(
     for (let i = iMin; i <= iMax; i++) {
       for (let j = jMin; j <= jMax; j++) {
         for (let k = kMin; k <= kMax; k++) {
-          const offset = vtkImageData.computeOffsetIndex([i, j, k])
+          const offset = imageData.computeOffsetIndex([i, j, k])
           value = fn(values[offset], value)
         }
       }

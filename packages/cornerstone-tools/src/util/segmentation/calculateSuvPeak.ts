@@ -49,12 +49,12 @@ function calculateSuvPeak(
   const {
     scalarData: labelmapData,
     dimensions,
-    vtkImageData: labelmapImageData,
+    imageData: labelmapImageData,
   } = labelmap
 
   const {
     scalarData: referenceVolumeData,
-    vtkImageData: referenceVolumeImageData,
+    imageData: referenceVolumeImageData,
   } = referenceVolume
 
   let boundsIJK

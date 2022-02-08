@@ -39,10 +39,10 @@ function fillRectangle(
     segmentsLocked,
     segmentIndex,
   } = operationData
-  const { vtkImageData, dimensions, scalarData } = labelmapVolume
+  const { imageData, dimensions, scalarData } = labelmapVolume
 
   const rectangleCornersIJK = points.map((world) => {
-    return vtkImageData.worldToIndex(world)
+    return imageData.worldToIndex(world)
   })
 
   const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
@@ -72,13 +72,13 @@ function fillRectangle(
   pointInShapeCallback(
     boundsIJK,
     scalarData,
-    vtkImageData,
+    imageData,
     dimensions,
     pointInRectangle,
     callback
   )
 
-  triggerLabelmapRender(renderingEngine, labelmapVolume, vtkImageData)
+  triggerLabelmapRender(renderingEngine, labelmapVolume, imageData)
 }
 
 /**

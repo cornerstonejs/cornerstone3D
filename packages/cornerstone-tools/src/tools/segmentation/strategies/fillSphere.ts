@@ -36,7 +36,7 @@ function fillSphere(
     points,
   } = operationData
 
-  const { scalarData, vtkImageData } = labelmapVolume
+  const { scalarData, imageData } = labelmapVolume
 
   const callback = ({ index, value }) => {
     if (segmentsLocked.includes(value)) {
@@ -52,7 +52,7 @@ function fillSphere(
     callback
   )
 
-  triggerLabelmapRender(renderingEngine, labelmapVolume, vtkImageData)
+  triggerLabelmapRender(renderingEngine, labelmapVolume, imageData)
 }
 
 /**
