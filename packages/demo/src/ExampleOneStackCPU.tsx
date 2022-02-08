@@ -56,7 +56,7 @@ class OneStackExampleCPU extends Component {
     super(props)
 
     setUseCPURenderingOnlyForDebugOrTests(true)
-    this._canvasNodes = new Map()
+    this._elementNodes = new Map()
     this._offScreenRef = React.createRef()
 
     this._viewportGridRef = React.createRef()
@@ -111,7 +111,7 @@ class OneStackExampleCPU extends Component {
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
         type: VIEWPORT_TYPE.STACK,
-        canvas: this._canvasNodes.get(0),
+        element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
         },
@@ -172,7 +172,7 @@ class OneStackExampleCPU extends Component {
     })
 
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._elementNodes.get(0))
     this.setState({ activeToolGroup: stackCTViewportToolGroup })
   }
 
@@ -231,7 +231,7 @@ class OneStackExampleCPU extends Component {
 
     this.resetToolModes(activeToolGroup, this.state.currentStack)
 
-    const tools = Object.entries(activeToolGroup.tools)
+    const tools = Object.entries(activeToolGroup.toolOptions)
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -246,7 +246,7 @@ class OneStackExampleCPU extends Component {
     activeToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
-    const currentBindings = activeToolGroup.tools[toolName].bindings
+    const currentBindings = activeToolGroup.toolOptions[toolName].bindings
 
     activeToolGroup.setToolActive(toolName, {
       bindings: [
@@ -475,27 +475,19 @@ class OneStackExampleCPU extends Component {
           Reset Camera
         </button>
 
-        <ViewportGrid
-          numCols={this.state.viewportGrid.numCols}
-          numRows={this.state.viewportGrid.numRows}
-          renderingEngine={this.renderingEngine}
-          style={{ minHeight: '650px', marginTop: '35px' }}
-          ref={this._viewportGridRef}
-        >
-          {this.state.viewportGrid.viewports.map((vp, i) => (
-            <div
-              className="viewport-pane"
-              style={{
-                ...(vp.cellStyle || {}),
-                border: '2px solid grey',
-                background: 'black',
-              }}
-              key={i}
-            >
-              <canvas ref={(c) => this._canvasNodes.set(i, c)} />
-            </div>
-          ))}
-        </ViewportGrid>
+        {this.state.viewportGrid.viewports.map((vp, i) => (
+          <div
+            style={{
+              width: '512px',
+              height: '512px',
+            }}
+            ref={(c) => {
+              this._elementNodes.set(i, c)
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+            key={i}
+          />
+        ))}
       </div>
     )
   }

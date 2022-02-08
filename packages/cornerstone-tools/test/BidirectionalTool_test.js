@@ -170,7 +170,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
       p1 = worldCoord1
 
       const {
@@ -179,7 +179,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
       p2 = worldCoord2
 
       // Mouse Down
@@ -278,7 +278,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
       p1 = worldCoord1
 
       const {
@@ -287,7 +287,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
       p2 = worldCoord2
 
       // Mouse Down
@@ -395,7 +395,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
 
       const {
         pageX: pageX2,
@@ -403,7 +403,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
       p2 = worldCoord2
       const {
         pageX: pageX3,
@@ -411,7 +411,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(vtkImageData, index3, element, vp)
+      } = createNormalizedMouseEvent(imageData, index3, element, vp)
       p3 = worldCoord3
 
       // Mouse Down
@@ -543,7 +543,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
       p1 = worldCoord1
       const {
         pageX: pageX2,
@@ -551,7 +551,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
       p2 = worldCoord2
 
       const {
@@ -560,7 +560,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(vtkImageData, index3, element, vp)
+      } = createNormalizedMouseEvent(imageData, index3, element, vp)
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
@@ -723,7 +723,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
       p1 = worldCoord1
       const {
         pageX: pageX2,
@@ -731,7 +731,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
       p2 = worldCoord2
 
       const {
@@ -740,7 +740,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(vtkImageData, index3, element, vp)
+      } = createNormalizedMouseEvent(imageData, index3, element, vp)
       p3 = worldCoord3
 
       const {
@@ -749,7 +749,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX4,
         clientY: clientY4,
         worldCoord: worldCoord4,
-      } = createNormalizedMouseEvent(vtkImageData, index4, element, vp)
+      } = createNormalizedMouseEvent(imageData, index4, element, vp)
       p4 = worldCoord4
 
       // Mouse Down
@@ -845,7 +845,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(vtkImageData, index1, element, vp)
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
       p1 = worldCoord1
 
       const {
@@ -854,7 +854,7 @@ describe('Cornerstone Tools: ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(vtkImageData, index2, element, vp)
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
       p2 = worldCoord2
 
       // Mouse Down

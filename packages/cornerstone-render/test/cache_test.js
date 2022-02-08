@@ -3,7 +3,7 @@ import * as cornerstone from '@precisionmetrics/cornerstone-render'
 import { createFloat32SharedArray } from '../src/utilities'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const { cache, Utilities, ERROR_CODES } = cornerstone
+const { cache, ERROR_CODES } = cornerstone
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
 describe('Cache', () => {

@@ -44,7 +44,7 @@ export default function suvPeakStrategy(
     viewPlaneNormal,
   } = operationData
 
-  const { vtkImageData } = ptVolume
+  const { imageData } = ptVolume
 
   /**
    * 1. Find the maximum intensity point in IJK in the surrounding sphere
@@ -75,7 +75,7 @@ export default function suvPeakStrategy(
   const secondaryCircleWorld = vec3.create()
   const bottomWorld = vec3.create()
   const topWorld = vec3.create()
-  vtkImageData.indexToWorld(<vec3>maxIntensityIJK, secondaryCircleWorld)
+  imageData.indexToWorld(<vec3>maxIntensityIJK, secondaryCircleWorld)
   vec3.scaleAndAdd(bottomWorld, secondaryCircleWorld, viewUp, -diameter / 2)
   vec3.scaleAndAdd(topWorld, secondaryCircleWorld, viewUp, diameter / 2)
   const suvPeakCirclePoints = [bottomWorld, topWorld] as [Point3, Point3]

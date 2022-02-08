@@ -25,7 +25,7 @@ export default function pointInSurroundingSphereCallback(
   circlePoints: [Point3, Point3],
   callback: PointInShapeCallback
 ): void {
-  const { vtkImageData, scalarData, dimensions } = volume
+  const { imageData, scalarData, dimensions } = volume
   const camera = viewport.getCamera()
 
   // Calculate viewRight from the camera, this will get used in order to
@@ -77,8 +77,8 @@ export default function pointInSurroundingSphereCallback(
   // convert the world coordinates to index coordinates
 
   const sphereCornersIJK = [
-    <Point3>worldToIndex(vtkImageData, topLeftWorld),
-    <Point3>worldToIndex(vtkImageData, bottomRightWorld),
+    <Point3>worldToIndex(imageData, topLeftWorld),
+    <Point3>worldToIndex(imageData, bottomRightWorld),
   ]
 
   // get the bounding box of the sphere in the image
@@ -92,7 +92,7 @@ export default function pointInSurroundingSphereCallback(
   pointInShapeCallback(
     boundsIJK,
     scalarData,
-    vtkImageData,
+    imageData,
     dimensions,
     (pointLPS) => pointInSphere(sphereObj, pointLPS),
     callback

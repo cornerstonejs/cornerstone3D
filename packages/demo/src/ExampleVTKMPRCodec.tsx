@@ -5,8 +5,12 @@ import {
   eventTarget,
   createAndCacheVolume,
   EVENTS as RENDERING_EVENTS,
+  init as cs3dInit,
 } from '@precisionmetrics/cornerstone-render'
-import { SynchronizerManager, synchronizers } from '@precisionmetrics/cornerstone-tools'
+import {
+  SynchronizerManager,
+  synchronizers,
+} from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
@@ -103,6 +107,10 @@ class MPRExample extends Component {
         this.renderingEngine.render()
       }
     })
+  }
+
+  async componentDidMount() {
+    await cs3dInit()
   }
 
   loadMetadata = async () => {
@@ -237,10 +245,6 @@ class MPRExample extends Component {
     // Start listening for resize
     this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
   }
-
-  // async componentDidUpdate(prevProps, prevState) {
-
-  // }
 
   componentWillUnmount() {
     // Stop listening for resize

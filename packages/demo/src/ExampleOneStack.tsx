@@ -148,9 +148,6 @@ class OneStackExample extends Component {
       voiRange: { lower: -1000, upper: 240 },
     })
 
-    // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
-
     this.setState({ cpuFallback: getShouldUseCPURendering() })
   }
 

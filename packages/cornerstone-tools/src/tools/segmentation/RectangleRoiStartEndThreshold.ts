@@ -242,7 +242,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   ): void {
     const { data, metadata } = toolData
     const { viewPlaneNormal, spacingInNormal } = metadata
-    const { vtkImageData: imageData } = imageVolume
+    const { imageData } = imageVolume
     const { startSlice, endSlice } = data
     const { projectionPoints } = data.cachedStats
     const { points } = data.handles

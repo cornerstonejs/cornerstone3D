@@ -39,8 +39,7 @@ export default function pointInShapeCallback(
   const spacing = imageData.getSpacing()
   const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing
 
-  const worldPosStart = vec3.create()
-  imageData.indexToWorldVec3(start, worldPosStart)
+  const worldPosStart = imageData.indexToWorld(start)
 
   const rowStep = vec3.fromValues(
     rowCosines[0] * rowSpacing,

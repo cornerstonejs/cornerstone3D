@@ -274,7 +274,7 @@ export function createAndCacheDerivedVolume(
     spacing,
     origin,
     direction,
-    vtkImageData: derivedImageData,
+    imageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
     referenceVolumeUID: referencedVolumeUID,
@@ -356,7 +356,7 @@ export function createLocalVolume(
     spacing,
     origin,
     direction,
-    vtkImageData: imageData,
+    imageData: imageData,
     scalarData,
     sizeInBytes: numBytes,
   })
