@@ -1,5 +1,5 @@
-import * as cornerstone3D from '../../cornerstone-render/src/index';
-import * as csTools3d from '../src/index';
+import * as cornerstone3D from '../../cornerstone-render/src/index'
+import * as csTools3d from '../src/index'
 
 const {
   cache,
@@ -16,7 +16,7 @@ const {
   registerVolumeLoader,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
-} = cornerstone3D;
+} = cornerstone3D
 
 const {
   BidirectionalTool,
@@ -25,155 +25,144 @@ const {
   removeToolState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
-} = csTools3d;
+} = csTools3d
 
 const {
   fakeImageLoader,
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
-} = Utilities.testUtils;
+} = Utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4();
+const renderingEngineUID = Utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT';
-const AXIAL = 'AXIAL';
-const DOMElements = [];
+const viewportUID = 'VIEWPORT'
+const AXIAL = 'AXIAL'
+const DOMElements = []
 
 function calculateLength(pos1, pos2) {
-  const dx = pos1[0] - pos2[0];
-  const dy = pos1[1] - pos2[1];
-  const dz = pos1[2] - pos2[2];
+  const dx = pos1[0] - pos2[0]
+  const dy = pos1[1] - pos2[1]
+  const dz = pos1[2] - pos2[2]
 
-  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  return Math.sqrt(dx * dx + dy * dy + dz * dz)
 }
 
-function createCanvas(renderingEngine, viewportType, width, height) {
-  // TODO: currently we need to have a parent div on the canvas with
-  // position of relative for the svg layer to be set correctly
-  const viewportPane = document.createElement('div');
-  viewportPane.style.position = 'relative';
-  viewportPane.style.width = `${width}px`;
-  viewportPane.style.height = `${height}px`;
+function createViewport(renderingEngine, viewportType, width, height) {
+  const element = document.createElement('div')
 
-  document.body.appendChild(viewportPane);
+  element.style.width = `${width}px`
+  element.style.height = `${height}px`
+  document.body.appendChild(element)
 
-  const canvas = document.createElement('canvas');
-
-  canvas.style.position = 'absolute';
-  canvas.style.width = '100%';
-  canvas.style.height = '100%';
-  viewportPane.appendChild(canvas);
-
-  DOMElements.push(canvas);
-  DOMElements.push(viewportPane);
+  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
       viewportUID: viewportUID,
       type: viewportType,
-      canvas: canvas,
+      element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
         orientation: ORIENTATION[AXIAL],
       },
     },
-  ]);
-  return canvas;
+  ])
+  return element
 }
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
+const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 describe('Bidirectional Tool (CPU): ', () => {
   beforeAll(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true);
-  });
+    setUseCPURenderingOnlyForDebugOrTests(true)
+  })
 
   afterAll(() => {
-    resetCPURenderingOnlyForDebugOrTests();
-  });
+    resetCPURenderingOnlyForDebugOrTests()
+  })
 
   beforeEach(function () {
-    csTools3d.init();
-    csTools3d.addTool(BidirectionalTool, {});
-    cache.purgeCache();
-    this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
+    csTools3d.init()
+    csTools3d.addTool(BidirectionalTool, {})
+    cache.purgeCache()
+    this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool('Bidirectional', {
       configuration: { volumeUID: volumeId },
-    });
+    })
     this.stackToolGroup.setToolActive('Bidirectional', {
       bindings: [{ mouseButton: 1 }],
-    });
+    })
 
-    this.renderingEngine = new RenderingEngine(renderingEngineUID);
-    registerImageLoader('fakeImageLoader', fakeImageLoader);
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-    metaData.addProvider(fakeMetaDataProvider, 10000);
-  });
+    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    registerImageLoader('fakeImageLoader', fakeImageLoader)
+    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    metaData.addProvider(fakeMetaDataProvider, 10000)
+  })
 
   afterEach(function () {
-    csTools3d.destroy();
-    cache.purgeCache();
-    eventTarget.reset();
-    this.renderingEngine.destroy();
-    metaData.removeProvider(fakeMetaDataProvider);
-    unregisterAllImageLoaders();
-    ToolGroupManager.destroyToolGroupById('stack');
+    csTools3d.destroy()
+    cache.purgeCache()
+    eventTarget.reset()
+    this.renderingEngine.destroy()
+    metaData.removeProvider(fakeMetaDataProvider)
+    unregisterAllImageLoaders()
+    ToolGroupManager.destroyToolGroupById('stack')
 
     DOMElements.forEach((el) => {
       if (el.parentNode) {
-        el.parentNode.removeChild(el);
+        el.parentNode.removeChild(el)
       }
-    });
-  });
+    })
+  })
 
   it('Should successfully create a Bidirectional tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       512,
       128
-    );
+    )
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportUID);
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
 
-    let p1, p2;
+    let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas);
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
-          );
+          )
           // Can successfully add Length tool to toolStateManager
-          expect(bidirectionalToolState).toBeDefined();
-          expect(bidirectionalToolState.length).toBe(1);
+          expect(bidirectionalToolState).toBeDefined()
+          expect(bidirectionalToolState.length).toBe(1)
 
-          const bidirectionalToolData = bidirectionalToolState[0];
-          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional');
-          expect(bidirectionalToolData.data.invalidated).toBe(false);
+          const bidirectionalToolData = bidirectionalToolState[0]
+          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional')
+          expect(bidirectionalToolData.data.invalidated).toBe(false)
 
-          const data = bidirectionalToolData.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+          const data = bidirectionalToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeToolState(canvas, bidirectionalToolData);
-          done();
+          removeToolState(element, bidirectionalToolData)
+          done()
         }
-      );
-    };
+      )
+    }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [32, 32, 0];
-      const index2 = [10, 1, 0];
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const index1 = [32, 32, 0]
+      const index2 = [10, 1, 0]
 
-      const { imageData } = vp.getImageData();
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -181,8 +170,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp);
-      p1 = worldCoord1;
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
+      p1 = worldCoord1
 
       const {
         pageX: pageX2,
@@ -190,104 +179,104 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp);
-      p2 = worldCoord2;
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
+      p2 = worldCoord2
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
         pageX: pageX2,
         pageY: pageY2,
-      });
-      document.dispatchEvent(evt);
+      })
+      document.dispatchEvent(evt)
 
       // Mouse Up instantly after
-      evt = new MouseEvent('mouseup');
+      evt = new MouseEvent('mouseup')
 
-      addEventListenerForAnnotationRendered();
-      document.dispatchEvent(evt);
-    });
+      addEventListenerForAnnotationRendered()
+      document.dispatchEvent(evt)
+    })
 
     this.stackToolGroup.addViewports(
       this.renderingEngine.uid,
       undefined,
       vp.uid
-    );
+    )
 
     try {
-      vp.setStack([imageId1], 0);
-      vp.render();
+      vp.setStack([imageId1], 0)
+      vp.render()
     } catch (e) {
-      done.fail(e);
+      done.fail(e)
     }
-  });
+  })
 
   it('Should successfully create a bidirectional tool on a cpu stack viewoprt and modify its handle', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
       256
-    );
+    )
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportUID);
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
 
-    let p2, p3;
+    let p2, p3
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas);
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
-          );
+          )
           // Can successfully add Length tool to toolStateManager
-          expect(bidirectionalToolState).toBeDefined();
-          expect(bidirectionalToolState.length).toBe(1);
+          expect(bidirectionalToolState).toBeDefined()
+          expect(bidirectionalToolState.length).toBe(1)
 
-          const bidirectionalToolData = bidirectionalToolState[0];
+          const bidirectionalToolData = bidirectionalToolState[0]
           expect(bidirectionalToolData.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
-          );
-          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional');
-          expect(bidirectionalToolData.data.invalidated).toBe(false);
+          )
+          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional')
+          expect(bidirectionalToolData.data.invalidated).toBe(false)
 
-          const data = bidirectionalToolData.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+          const data = bidirectionalToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
+          expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          removeToolState(canvas, bidirectionalToolData);
-          done();
+          removeToolState(element, bidirectionalToolData)
+          done()
         }
-      );
-    };
+      )
+    }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
       // Not not to move the handle too much since the length become width and it would fail
-      const index1 = [50, 50, 0];
-      const index2 = [5, 5, 0];
-      const index3 = [52, 47, 0];
+      const index1 = [50, 50, 0]
+      const index2 = [5, 5, 0]
+      const index3 = [52, 47, 0]
 
-      const { imageData } = vp.getImageData();
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -295,7 +284,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp);
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
 
       const {
         pageX: pageX2,
@@ -303,139 +292,139 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp);
-      p2 = worldCoord2;
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
+      p2 = worldCoord2
       const {
         pageX: pageX3,
         pageY: pageY3,
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(imageData, index3, canvas, vp);
-      p3 = worldCoord3;
+      } = createNormalizedMouseEvent(imageData, index3, element, vp)
+      p3 = worldCoord3
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
         pageX: pageX2,
         pageY: pageY2,
-      });
-      document.dispatchEvent(evt);
+      })
+      document.dispatchEvent(evt)
 
       // Mouse Up instantly after
-      evt = new MouseEvent('mouseup');
-      document.dispatchEvent(evt);
+      evt = new MouseEvent('mouseup')
+      document.dispatchEvent(evt)
 
       // Select the first handle
       evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Drag it somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX3,
         clientY: clientY3,
         pageX: pageX3,
         pageY: pageY3,
-      });
-      document.dispatchEvent(evt);
+      })
+      document.dispatchEvent(evt)
 
       // Mouse Up instantly after
-      evt = new MouseEvent('mouseup');
+      evt = new MouseEvent('mouseup')
 
-      addEventListenerForAnnotationRendered();
-      document.dispatchEvent(evt);
-    });
+      addEventListenerForAnnotationRendered()
+      document.dispatchEvent(evt)
+    })
 
     this.stackToolGroup.addViewports(
       this.renderingEngine.uid,
       undefined,
       vp.uid
-    );
+    )
 
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
     } catch (e) {
-      done.fail(e);
+      done.fail(e)
     }
-  });
+  })
 
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select but not move it', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
       256
-    );
+    )
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportUID);
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
 
-    let p1, p2;
+    let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas);
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
-          );
+          )
           // Can successfully add Length tool to toolStateManager
-          expect(bidirectionalToolState).toBeDefined();
-          expect(bidirectionalToolState.length).toBe(1);
+          expect(bidirectionalToolState).toBeDefined()
+          expect(bidirectionalToolState.length).toBe(1)
 
-          const bidirectionalToolData = bidirectionalToolState[0];
+          const bidirectionalToolData = bidirectionalToolState[0]
           expect(bidirectionalToolData.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
-          );
-          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional');
-          expect(bidirectionalToolData.data.invalidated).toBe(false);
+          )
+          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional')
+          expect(bidirectionalToolData.data.invalidated).toBe(false)
 
-          const data = bidirectionalToolData.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+          const data = bidirectionalToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeToolState(canvas, bidirectionalToolData);
-          done();
+          removeToolState(element, bidirectionalToolData)
+          done()
         }
-      );
-    };
+      )
+    }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [20, 20, 0];
-      const index2 = [20, 30, 0];
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const index1 = [20, 20, 0]
+      const index2 = [20, 30, 0]
 
       // grab the tool in its middle (just to make it easy)
-      const index3 = [20, 25, 0];
+      const index3 = [20, 25, 0]
 
-      const { imageData } = vp.getImageData();
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -443,16 +432,16 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp);
-      p1 = worldCoord1;
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
+      p1 = worldCoord1
       const {
         pageX: pageX2,
         pageY: pageY2,
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp);
-      p2 = worldCoord2;
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
+      p2 = worldCoord2
 
       const {
         pageX: pageX3,
@@ -460,162 +449,162 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(imageData, index3, canvas, vp);
+      } = createNormalizedMouseEvent(imageData, index3, element, vp)
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
         pageX: pageX2,
         pageY: pageY2,
-      });
-      document.dispatchEvent(evt);
+      })
+      document.dispatchEvent(evt)
 
       // Mouse Up instantly after
-      evt = new MouseEvent('mouseup');
-      document.dispatchEvent(evt);
+      evt = new MouseEvent('mouseup')
+      document.dispatchEvent(evt)
 
       // Mouse down on the middle of the length tool, just to select
       evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX3,
         clientY: clientY3,
         pageX: pageX3,
         pageY: pageY3,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Just grab and don't really move it
-      evt = new MouseEvent('mouseup');
+      evt = new MouseEvent('mouseup')
 
-      addEventListenerForAnnotationRendered();
-      document.dispatchEvent(evt);
-    });
+      addEventListenerForAnnotationRendered()
+      document.dispatchEvent(evt)
+    })
 
     this.stackToolGroup.addViewports(
       this.renderingEngine.uid,
       undefined,
       vp.uid
-    );
+    )
 
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
     } catch (e) {
-      done.fail(e);
+      done.fail(e)
     }
-  });
+  })
 
   it('Should successfully create a bidirectional tool on a cpu stack viewoprt and select AND move it', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
       256
-    );
+    )
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportUID);
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
 
-    let p1, p2, p3, p4;
+    let p1, p2, p3, p4
 
     const addEventListenerForAnnotationRendered = () => {
-      canvas.addEventListener(
+      element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(canvas);
+          const enabledElement = getEnabledElement(element)
           const bidirectionalToolState = getToolState(
             enabledElement,
             'Bidirectional'
-          );
+          )
           // Can successfully add Length tool to toolStateManager
-          expect(bidirectionalToolState).toBeDefined();
-          expect(bidirectionalToolState.length).toBe(1);
+          expect(bidirectionalToolState).toBeDefined()
+          expect(bidirectionalToolState.length).toBe(1)
 
-          const bidirectionalToolData = bidirectionalToolState[0];
+          const bidirectionalToolData = bidirectionalToolState[0]
           expect(bidirectionalToolData.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
-          );
-          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional');
-          expect(bidirectionalToolData.data.invalidated).toBe(false);
+          )
+          expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional')
+          expect(bidirectionalToolData.data.invalidated).toBe(false)
 
-          const data = bidirectionalToolData.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+          const data = bidirectionalToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
           // We don't expect the length to change on tool move
           expect(data[targets[0]].length).toBeCloseTo(
             calculateLength(p1, p2),
             6
-          );
+          )
 
-          const handles = bidirectionalToolData.data.handles.points;
+          const handles = bidirectionalToolData.data.handles.points
 
-          const preMoveFirstHandle = p1;
-          const preMoveSecondHandle = p2;
-          const preMoveCenter = p3;
+          const preMoveFirstHandle = p1
+          const preMoveSecondHandle = p2
+          const preMoveCenter = p3
 
           const centerToHandle1 = [
             preMoveCenter[0] - preMoveFirstHandle[0],
             preMoveCenter[1] - preMoveFirstHandle[1],
             preMoveCenter[2] - preMoveFirstHandle[2],
-          ];
+          ]
 
           const centerToHandle2 = [
             preMoveCenter[0] - preMoveSecondHandle[0],
             preMoveCenter[1] - preMoveSecondHandle[1],
             preMoveCenter[2] - preMoveSecondHandle[2],
-          ];
+          ]
 
-          const afterMoveCenter = p4;
+          const afterMoveCenter = p4
 
           const afterMoveFirstHandle = [
             afterMoveCenter[0] - centerToHandle1[0],
             afterMoveCenter[1] - centerToHandle1[1],
             afterMoveCenter[2] - centerToHandle1[2],
-          ];
+          ]
 
           const afterMoveSecondHandle = [
             afterMoveCenter[0] - centerToHandle2[0],
             afterMoveCenter[1] - centerToHandle2[1],
             afterMoveCenter[2] - centerToHandle2[2],
-          ];
+          ]
 
           // Expect handles are moved accordingly
-          expect(handles[0]).toEqual(afterMoveFirstHandle);
-          expect(handles[1]).toEqual(afterMoveSecondHandle);
+          expect(handles[0]).toEqual(afterMoveFirstHandle)
+          expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          removeToolState(canvas, bidirectionalToolData);
-          done();
+          removeToolState(element, bidirectionalToolData)
+          done()
         }
-      );
-    };
+      )
+    }
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [20, 20, 0];
-      const index2 = [20, 30, 0];
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const index1 = [20, 20, 0]
+      const index2 = [20, 30, 0]
 
       // grab the tool in its middle (just to make it easy)
-      const index3 = [20, 25, 0];
+      const index3 = [20, 25, 0]
 
       // Where to move the center of the tool
-      const index4 = [40, 40, 0];
+      const index4 = [40, 40, 0]
 
-      const { imageData } = vp.getImageData();
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -623,16 +612,16 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp);
-      p1 = worldCoord1;
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
+      p1 = worldCoord1
       const {
         pageX: pageX2,
         pageY: pageY2,
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp);
-      p2 = worldCoord2;
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
+      p2 = worldCoord2
 
       const {
         pageX: pageX3,
@@ -640,8 +629,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX3,
         clientY: clientY3,
         worldCoord: worldCoord3,
-      } = createNormalizedMouseEvent(imageData, index3, canvas, vp);
-      p3 = worldCoord3;
+      } = createNormalizedMouseEvent(imageData, index3, element, vp)
+      p3 = worldCoord3
 
       const {
         pageX: pageX4,
@@ -649,95 +638,95 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX4,
         clientY: clientY4,
         worldCoord: worldCoord4,
-      } = createNormalizedMouseEvent(imageData, index4, canvas, vp);
-      p4 = worldCoord4;
+      } = createNormalizedMouseEvent(imageData, index4, element, vp)
+      p4 = worldCoord4
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
         pageX: pageX2,
         pageY: pageY2,
-      });
-      document.dispatchEvent(evt);
+      })
+      document.dispatchEvent(evt)
 
       // Mouse Up instantly after
-      evt = new MouseEvent('mouseup');
-      document.dispatchEvent(evt);
+      evt = new MouseEvent('mouseup')
+      document.dispatchEvent(evt)
 
       // Drag the middle of the tool
       evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX3,
         clientY: clientY3,
         pageX: pageX3,
         pageY: pageY3,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Move the middle of the tool to point4
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX4,
         clientY: clientY4,
         pageX: pageX4,
         pageY: pageY4,
-      });
-      document.dispatchEvent(evt);
+      })
+      document.dispatchEvent(evt)
 
-      evt = new MouseEvent('mouseup');
+      evt = new MouseEvent('mouseup')
 
-      addEventListenerForAnnotationRendered();
-      document.dispatchEvent(evt);
-    });
+      addEventListenerForAnnotationRendered()
+      document.dispatchEvent(evt)
+    })
 
     this.stackToolGroup.addViewports(
       this.renderingEngine.uid,
       undefined,
       vp.uid
-    );
+    )
 
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
     } catch (e) {
-      done.fail(e);
+      done.fail(e)
     }
-  });
+  })
 
   it('Should successfully cancel drawing of a bidirectional on a cpu stack viewport', function (done) {
-    const canvas = createCanvas(
+    const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
       256
-    );
+    )
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportUID);
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
+    const vp = this.renderingEngine.getViewport(viewportUID)
 
-    let p1, p2;
+    let p1, p2
 
-    canvas.addEventListener(EVENTS.IMAGE_RENDERED, () => {
-      const index1 = [32, 32, 4];
-      const index2 = [10, 1, 4];
+    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      const index1 = [32, 32, 4]
+      const index2 = [10, 1, 4]
 
-      const { imageData } = vp.getImageData();
+      const { imageData } = vp.getImageData()
 
       const {
         pageX: pageX1,
@@ -745,8 +734,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, canvas, vp);
-      p1 = worldCoord1;
+      } = createNormalizedMouseEvent(imageData, index1, element, vp)
+      p1 = worldCoord1
 
       const {
         pageX: pageX2,
@@ -754,30 +743,30 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, canvas, vp);
-      p2 = worldCoord2;
+      } = createNormalizedMouseEvent(imageData, index2, element, vp)
+      p2 = worldCoord2
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX1,
         clientY: clientY1,
         pageX: pageX1,
         pageY: pageY1,
-      });
-      canvas.dispatchEvent(evt);
+      })
+      element.dispatchEvent(evt)
 
       // Mouse move to put the end somewhere else
       evt = new MouseEvent('mousemove', {
-        target: canvas,
+        target: element,
         buttons: 1,
         clientX: clientX2,
         clientY: clientY2,
         pageX: pageX2,
         pageY: pageY2,
-      });
-      document.dispatchEvent(evt);
+      })
+      document.dispatchEvent(evt)
 
       // Cancel the drawing
       let e = new KeyboardEvent('keydown', {
@@ -785,64 +774,64 @@ describe('Bidirectional Tool (CPU): ', () => {
         cancelable: true,
         key: 'Esc',
         char: 'Esc',
-      });
-      canvas.dispatchEvent(e);
+      })
+      element.dispatchEvent(e)
 
       e = new KeyboardEvent('keyup', {
         bubbles: true,
         cancelable: true,
-      });
-      canvas.dispatchEvent(e);
-    });
+      })
+      element.dispatchEvent(e)
+    })
 
     const cancelToolDrawing = () => {
-      const canceledDataUID = cancelActiveManipulations(canvas);
-      expect(canceledDataUID).toBeDefined();
+      const canceledDataUID = cancelActiveManipulations(element)
+      expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const enabledElement = getEnabledElement(canvas);
+        const enabledElement = getEnabledElement(element)
         const bidirectionalToolState = getToolState(
           enabledElement,
           'Bidirectional'
-        );
+        )
         // Can successfully add Length tool to toolStateManager
-        expect(bidirectionalToolState).toBeDefined();
-        expect(bidirectionalToolState.length).toBe(1);
+        expect(bidirectionalToolState).toBeDefined()
+        expect(bidirectionalToolState.length).toBe(1)
 
-        const bidirectionalToolData = bidirectionalToolState[0];
+        const bidirectionalToolData = bidirectionalToolState[0]
         expect(bidirectionalToolData.metadata.referencedImageId).toBe(
           imageId1.split(':')[1]
-        );
-        expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional');
-        expect(bidirectionalToolData.data.invalidated).toBe(false);
-        expect(bidirectionalToolData.data.active).toBe(false);
+        )
+        expect(bidirectionalToolData.metadata.toolName).toBe('Bidirectional')
+        expect(bidirectionalToolData.data.invalidated).toBe(false)
+        expect(bidirectionalToolData.data.active).toBe(false)
 
-        const data = bidirectionalToolData.data.cachedStats;
-        const targets = Array.from(Object.keys(data));
-        expect(targets.length).toBe(1);
+        const data = bidirectionalToolData.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-        expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-        removeToolState(canvas, bidirectionalToolData);
-        done();
-      }, 100);
-    };
+        removeToolState(element, bidirectionalToolData)
+        done()
+      }, 100)
+    }
 
     this.stackToolGroup.addViewports(
       this.renderingEngine.uid,
       undefined,
       vp.uid
-    );
-    canvas.addEventListener(
+    )
+    element.addEventListener(
       CornerstoneTools3DEvents.KEY_DOWN,
       cancelToolDrawing
-    );
+    )
 
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId1], 0)
+      this.renderingEngine.render()
     } catch (e) {
-      done.fail(e);
+      done.fail(e)
     }
-  });
-});
+  })
+})

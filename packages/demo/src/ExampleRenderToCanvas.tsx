@@ -3,6 +3,7 @@ import {
   cache,
   RenderingEngine,
   renderToCanvas,
+  init as cs3dInit,
 } from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import getImageIds from './helpers/getImageIds'
@@ -51,6 +52,7 @@ class RenderToCanvasExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await cs3dInit()
     const renderingEngine = new RenderingEngine(renderingEngineUID)
 
     this.renderingEngine = renderingEngine
@@ -75,7 +77,6 @@ class RenderToCanvasExample extends Component {
       }
     )
   }
-
 
   render() {
     return (

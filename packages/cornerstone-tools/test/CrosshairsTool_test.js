@@ -327,7 +327,7 @@ describe('Cornerstone Tools: ', () => {
         clientY: clientY1,
         worldCoord: worldCoord1,
       } = createNormalizedMouseEvent(
-        vtkImageData,
+        imageData,
         jumpIndexLocation,
         element1,
         vp1

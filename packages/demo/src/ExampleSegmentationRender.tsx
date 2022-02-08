@@ -7,6 +7,7 @@ import {
   RenderingEngine,
   createAndCacheVolume,
   createAndCacheDerivedVolume,
+  init as cs3dInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
   // Segmentation
@@ -179,6 +180,7 @@ class SegmentationExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await cs3dInit()
     this.axialSync = createCameraPositionSynchronizer('axialSync')
     this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
     this.coronalSync = createCameraPositionSynchronizer('coronalSync')
@@ -472,7 +474,7 @@ class SegmentationExample extends Component {
 
     // Use ct as background for segmentation threshold
     const ctViewport = this.renderingEngine.getViewport('ctAxial')
-    const { vtkImageData: backgroundImageData } = ctViewport.getImageData()
+    const { imageData: backgroundImageData } = ctViewport.getImageData()
 
     await createAndCacheDerivedVolume(ctVolumeUID, { uid: labelmap1UID })
     await createAndCacheDerivedVolume(ctVolumeUID, { uid: labelmap2UID })
@@ -481,14 +483,13 @@ class SegmentationExample extends Component {
     const fatVolume = cache.getVolume(labelmap2UID)
 
     // Bone & soft tissue labelmap
-    this.fillBlobForThreshold(
-      boneSoftVolume.vtkImageData,
-      backgroundImageData,
-      ['bone', 'softTissue']
-    )
+    this.fillBlobForThreshold(boneSoftVolume.imageData, backgroundImageData, [
+      'bone',
+      'softTissue',
+    ])
 
     // fat tissue labelmap
-    this.fillBlobForThreshold(fatVolume.vtkImageData, backgroundImageData, [
+    this.fillBlobForThreshold(fatVolume.imageData, backgroundImageData, [
       'fatTissue',
     ])
 
@@ -996,9 +997,7 @@ class SegmentationExample extends Component {
         <div>{this.getSetToolModes()}</div>
         {this.state.segmentationToolActive && (
           <div style={{ marginTop: '15px' }}>
-            {this.state.ptCtLeftClickTool.includes(
-              "RectangleRoi"
-            )
+            {this.state.ptCtLeftClickTool.includes('RectangleRoi')
               ? this.getThresholdUID()
               : this.getScissorsUI()}
             <div

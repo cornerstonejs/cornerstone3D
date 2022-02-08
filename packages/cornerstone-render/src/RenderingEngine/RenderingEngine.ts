@@ -772,6 +772,7 @@ class RenderingEngine implements IRenderingEngine {
     const viewportInput = <ViewportInput>{
       uid: viewportUID,
       renderingEngineUID: this.uid,
+      element, // div
       type,
       canvas,
       sx: 0, // No offset, uses own renderer
@@ -797,6 +798,7 @@ class RenderingEngine implements IRenderingEngine {
 
     const eventData = {
       canvas,
+      element,
       viewportUID,
       sceneUID,
       renderingEngineUID: this.uid,

@@ -5,6 +5,7 @@ import {
   createAndCacheVolume,
   ORIENTATION,
   VIEWPORT_TYPE,
+  init as cs3dInit,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings, ToolModes } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -90,6 +91,7 @@ class CrosshairsExample extends Component {
    * LIFECYCLE
    */
   async componentDidMount() {
+    await cs3dInit()
     ;({ ctSceneToolGroup, prostateSceneToolGroup } = initToolGroups())
 
     const ctImageIds = await this.ctImageIds

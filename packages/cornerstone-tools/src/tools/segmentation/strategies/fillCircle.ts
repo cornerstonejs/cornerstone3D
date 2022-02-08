@@ -55,7 +55,7 @@ function fillCircle(
     segmentsLocked,
     segmentIndex,
   } = operationData
-  const { vtkImageData, dimensions, scalarData } = labelmapVolume
+  const { imageData, dimensions, scalarData } = labelmapVolume
   const { viewport, renderingEngine } = enabledElement
 
   // Average the points to get the center of the ellipse
@@ -77,8 +77,8 @@ function fillCircle(
   const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
 
   const ellipsoidCornersIJK = [
-    <Point3>worldToIndex(vtkImageData, topLeftWorld),
-    <Point3>worldToIndex(vtkImageData, bottomRightWorld),
+    <Point3>worldToIndex(imageData, topLeftWorld),
+    <Point3>worldToIndex(imageData, bottomRightWorld),
   ]
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions)
@@ -105,14 +105,14 @@ function fillCircle(
   pointInShapeCallback(
     boundsIJK,
     scalarData,
-    vtkImageData,
+    imageData,
     dimensions,
     (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
     callback
   )
 
   // Todo: optimize modified slices for all orthogonal views
-  triggerLabelmapRender(renderingEngine, labelmapVolume, vtkImageData)
+  triggerLabelmapRender(renderingEngine, labelmapVolume, imageData)
 }
 
 /**

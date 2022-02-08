@@ -313,6 +313,23 @@ class Viewport {
     this.addActors(actors)
   }
 
+  public removeActor(actorUID: string): void {
+    const actor = this.getActor(actorUID)
+    if (!actor) {
+      console.warn(`Actor ${actorUID} does not exist for this viewport`)
+      return
+    }
+    const renderer = this.getRenderer()
+    renderer.removeViewProp(actor.volumeActor) // removeActor not implemented in vtk?
+    this._actors.delete(actorUID)
+  }
+
+  public removeActors(actorUIDs: Array<string>): void {
+    actorUIDs.forEach((actorUID) => {
+      this.removeActor(actorUID)
+    })
+  }
+
   public addActors(actors: Array<ActorEntry>): void {
     actors.forEach((actor) => this.addActor(actor))
   }
