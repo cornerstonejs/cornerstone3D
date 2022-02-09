@@ -9,7 +9,7 @@ export default function ptCtToggleAnnotationTool(
   annotationToolName
 ) {
   const options = {
-    bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+    bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
   }
 
   if (enableAnnotationTool) {
@@ -30,13 +30,13 @@ export default function ptCtToggleAnnotationTool(
     })
 
     ctSceneToolGroup.setToolDisabled('WindowLevel')
-    ptSceneToolGroup.setToolDisabled('PetThreshold')
-    fusionSceneToolGroup.setToolDisabled('PetThreshold')
+    ptSceneToolGroup.setToolDisabled('WindowLevel')
+    fusionSceneToolGroup.setToolDisabled('WindowLevel')
   } else {
     // Set window level + threshold
     ctSceneToolGroup.setToolActive('WindowLevel', options)
-    ptSceneToolGroup.setToolActive('PetThreshold', options)
-    fusionSceneToolGroup.setToolActive('PetThreshold', options)
+    ptSceneToolGroup.setToolActive('WindowLevel', options)
+    fusionSceneToolGroup.setToolActive('WindowLevel', options)
 
     // Set all annotation tools passive
     ANNOTATION_TOOLS.forEach((toolName) => {

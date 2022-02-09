@@ -7,11 +7,13 @@ import {
   VolumeViewport,
   StackViewport,
   Utilities,
+  cache,
 } from '@precisionmetrics/cornerstone-render'
 
 // Todo: should move to configuration
 const DEFAULT_MULTIPLIER = 4
 const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024
+const PT = 'PT'
 
 export default class WindowLevelTool extends BaseTool {
   touchDragCallback: () => void
@@ -32,7 +34,13 @@ export default class WindowLevelTool extends BaseTool {
     const enabledElement = getEnabledElement(element)
     const { scene, sceneUID, viewportUID, viewport } = enabledElement
 
-    let volumeUID, volumeActor, lower, upper, rgbTransferFunction
+    let volumeUID,
+      volumeActor,
+      lower,
+      upper,
+      rgbTransferFunction,
+      modality,
+      newRange
     let useDynamicRange = false
 
     if (viewport instanceof VolumeViewport) {
@@ -40,38 +48,34 @@ export default class WindowLevelTool extends BaseTool {
       volumeActor = scene.getVolumeActor(volumeUID)
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
       ;[lower, upper] = rgbTransferFunction.getRange()
+      modality = cache.getVolume(volumeUID).metadata.Modality
       useDynamicRange = true
     } else {
       const properties = viewport.getProperties()
+      modality = viewport.modality
       ;({ lower, upper } = properties.voiRange)
     }
 
-    const deltaPointsCanvas = deltaPoints.canvas
-
-    // Todo: enabling a viewport twice in a row sets the imageDynamicRange to be zero for some reason
-    // 1 was too little
-    const multiplier = useDynamicRange
-      ? this._getMultiplyerFromDynamicRange(volumeUID)
-      : DEFAULT_MULTIPLIER
-
-    const wwDelta = deltaPointsCanvas[0] * multiplier
-    const wcDelta = deltaPointsCanvas[1] * multiplier
-
-    let { windowWidth, windowCenter } = Utilities.windowLevel.toWindowLevel(
-      lower,
-      upper
-    )
-
-    windowWidth += wwDelta
-    windowCenter += wcDelta
-
-    windowWidth = Math.max(windowWidth, 1)
-
-    // Convert back to range
-    const newRange = Utilities.windowLevel.toLowHighRange(
-      windowWidth,
-      windowCenter
-    )
+    // If modality is PT, treat it special to not include the canvas delta in
+    // the x direction. For other modalities, use the canvas delta in both
+    // directions, and if the viewport is a volumeViewport, the multiplier
+    // is calculate using the volume min and max.
+    if (modality === PT) {
+      newRange = this.getPTNewRange({
+        deltaPointsCanvas: deltaPoints.canvas,
+        lower,
+        upper,
+        clientHeight: element.clientHeight,
+      })
+    } else {
+      newRange = this.getNewRange({
+        deltaPointsCanvas: deltaPoints.canvas,
+        useDynamicRange,
+        volumeUID,
+        lower,
+        upper,
+      })
+    }
 
     const eventDetail = {
       volumeUID,
@@ -93,6 +97,41 @@ export default class WindowLevelTool extends BaseTool {
 
     rgbTransferFunction.setRange(newRange.lower, newRange.upper)
     scene.render()
+  }
+
+  getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }) {
+    const deltaY = deltaPointsCanvas[1]
+    const multiplier = 5 / clientHeight
+    const wcDelta = deltaY * multiplier
+
+    upper -= wcDelta
+    upper = Math.max(upper, 0.1)
+
+    return { lower, upper }
+  }
+
+  getNewRange({ deltaPointsCanvas, useDynamicRange, volumeUID, lower, upper }) {
+    // Todo: enabling a viewport twice in a row sets the imageDynamicRange to be zero for some reason
+    // 1 was too little
+    const multiplier = useDynamicRange
+      ? this._getMultiplyerFromDynamicRange(volumeUID)
+      : DEFAULT_MULTIPLIER
+
+    const wwDelta = deltaPointsCanvas[0] * multiplier
+    const wcDelta = deltaPointsCanvas[1] * multiplier
+
+    let { windowWidth, windowCenter } = Utilities.windowLevel.toWindowLevel(
+      lower,
+      upper
+    )
+
+    windowWidth += wwDelta
+    windowCenter += wcDelta
+
+    windowWidth = Math.max(windowWidth, 1)
+
+    // Convert back to range
+    return Utilities.windowLevel.toLowHighRange(windowWidth, windowCenter)
   }
 
   _getMultiplyerFromDynamicRange(volumeUID) {

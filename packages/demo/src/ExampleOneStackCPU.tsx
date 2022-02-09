@@ -208,9 +208,7 @@ class OneStackExampleCPU extends Component {
       toolGroup.setToolPassive(toolName)
     })
 
-    const levelTool = stackName === 'pt' ? 'PetThreshold' : 'WindowLevel'
-
-    toolGroup.setToolActive(levelTool, {
+    toolGroup.setToolActive('WindowLevel', {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
     toolGroup.setToolActive('Pan', {
@@ -224,10 +222,6 @@ class OneStackExampleCPU extends Component {
   swapTools = (evt) => {
     let toolName = evt.target.value
     const { activeToolGroup, currentStack } = this.state
-
-    if (currentStack === 'pt' && toolName === 'WindowLevel') {
-      toolName = 'PetThreshold'
-    }
 
     this.resetToolModes(activeToolGroup, this.state.currentStack)
 
