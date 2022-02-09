@@ -12,7 +12,6 @@ import {
 const {
   PanTool,
   WindowLevelTool,
-  PetThresholdTool,
   StackScrollTool,
   StackScrollMouseWheelTool,
   ZoomTool,
@@ -227,7 +226,6 @@ function initToolGroups(toolConfiguration = {}) {
   csTools3d.addTool(PanTool, toolConfiguration)
   // @TODO: This kills the volumeUID and tool configuration
   csTools3d.addTool(WindowLevelTool, toolConfiguration)
-  csTools3d.addTool(PetThresholdTool, toolConfiguration)
   csTools3d.addTool(StackScrollMouseWheelTool, toolConfiguration)
   csTools3d.addTool(StackScrollTool, toolConfiguration)
   csTools3d.addTool(ZoomTool, toolConfiguration)
@@ -321,10 +319,10 @@ function addToolsToToolGroups({
   // Set up stack Scene tools
 
   if (stackPTViewportToolGroup) {
-    stackPTViewportToolGroup.addTool('PetThreshold', {
+    stackPTViewportToolGroup.addTool('WindowLevel', {
       configuration: { stackUID: '' },
     })
-    stackPTViewportToolGroup.setToolActive('PetThreshold', {
+    stackPTViewportToolGroup.setToolActive('WindowLevel', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
@@ -680,7 +678,7 @@ function addToolsToToolGroups({
     ptSceneToolGroup.addTool('Length', {
       configuration: { volumeUID: ptVolumeUID },
     })
-    ptSceneToolGroup.addTool('PetThreshold', {
+    ptSceneToolGroup.addTool('WindowLevel', {
       configuration: { volumeUID: ptVolumeUID },
     })
     ptSceneToolGroup.addTool('Probe', {
@@ -712,7 +710,7 @@ function addToolsToToolGroups({
     ptSceneToolGroup.setToolDisabled('Crosshairs')
 
     ptSceneToolGroup.setToolActive('StackScrollMouseWheel')
-    ptSceneToolGroup.setToolActive('PetThreshold', {
+    ptSceneToolGroup.setToolActive('WindowLevel', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
@@ -756,7 +754,7 @@ function addToolsToToolGroups({
     })
     fusionSceneToolGroup.addTool('Zoom', {})
 
-    fusionSceneToolGroup.addTool('PetThreshold', {
+    fusionSceneToolGroup.addTool('WindowLevel', {
       configuration: { volumeUID: ptVolumeUID },
     })
     fusionSceneToolGroup.addTool('Crosshairs', {
@@ -776,7 +774,7 @@ function addToolsToToolGroups({
     fusionSceneToolGroup.setToolDisabled('Crosshairs')
 
     fusionSceneToolGroup.setToolActive('StackScrollMouseWheel')
-    fusionSceneToolGroup.setToolActive('PetThreshold', {
+    fusionSceneToolGroup.setToolActive('WindowLevel', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
@@ -802,12 +800,12 @@ function addToolsToToolGroups({
   if (ptMipSceneToolGroup) {
     ptMipSceneToolGroup.addTool('VolumeRotateMouseWheel', {})
     ptMipSceneToolGroup.addTool('MIPJumpToClickTool', {})
-    ptMipSceneToolGroup.addTool('PetThreshold', {
+    ptMipSceneToolGroup.addTool('WindowLevel', {
       configuration: { volumeUID: ptVolumeUID },
     })
     ptMipSceneToolGroup.setToolActive('VolumeRotateMouseWheel')
     ptMipSceneToolGroup.setToolActive('MIPJumpToClickTool')
-    ptMipSceneToolGroup.setToolActive('PetThreshold', {
+    ptMipSceneToolGroup.setToolActive('WindowLevel', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
@@ -900,13 +898,13 @@ function addToolsToToolGroups({
   }
 
   if (ptTypesSceneToolGroup) {
-    ptTypesSceneToolGroup.addTool('PetThreshold', {
+    ptTypesSceneToolGroup.addTool('WindowLevel', {
       configuration: { volumeUID: ptVolumeUID },
     })
     ptTypesSceneToolGroup.addTool('Pan', {})
     ptTypesSceneToolGroup.addTool('Zoom', {})
     ptTypesSceneToolGroup.addTool('StackScrollMouseWheel', {})
-    ptTypesSceneToolGroup.setToolActive('PetThreshold', {
+    ptTypesSceneToolGroup.setToolActive('WindowLevel', {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
