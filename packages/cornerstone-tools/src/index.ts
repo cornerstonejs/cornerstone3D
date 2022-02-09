@@ -40,7 +40,6 @@ import {
   BaseAnnotationTool,
   PanTool,
   WindowLevelTool,
-  PetThresholdTool,
   ZoomTool,
   StackScrollTool,
   StackScrollMouseWheelTool,
@@ -78,7 +77,6 @@ export {
   // Tools
   PanTool,
   WindowLevelTool,
-  PetThresholdTool,
   ZoomTool,
   StackScrollTool,
   StackScrollMouseWheelTool,

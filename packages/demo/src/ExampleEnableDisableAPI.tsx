@@ -411,13 +411,13 @@ class EnableDisableViewportExample extends Component {
       })
 
       ctSceneToolGroup.setToolDisabled('WindowLevel')
-      ptSceneToolGroup.setToolDisabled('PetThreshold')
+      ptSceneToolGroup.setToolDisabled('WindowLevel')
       stackCTViewportToolGroup.setToolDisabled('WindowLevel')
       stackDXViewportToolGroup.setToolDisabled('WindowLevel')
     } else {
       // Set window level + threshold
       ctSceneToolGroup.setToolActive('WindowLevel', options)
-      ptSceneToolGroup.setToolActive('PetThreshold', options)
+      ptSceneToolGroup.setToolActive('WindowLevel', options)
       stackCTViewportToolGroup.setToolActive('WindowLevel', options)
       stackDXViewportToolGroup.setToolActive('WindowLevel', options)
 

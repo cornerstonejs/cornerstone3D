@@ -512,16 +512,16 @@ class StackViewportExample extends Component {
       })
 
       ctSceneToolGroup.setToolDisabled('WindowLevel')
-      ptSceneToolGroup.setToolDisabled('PetThreshold')
+      ptSceneToolGroup.setToolDisabled('WindowLevel')
       stackCTViewportToolGroup.setToolDisabled('WindowLevel')
-      stackPTViewportToolGroup.setToolDisabled('PetThreshold')
+      stackPTViewportToolGroup.setToolDisabled('WindowLevel')
       stackDXViewportToolGroup.setToolDisabled('WindowLevel')
     } else {
       // Set window level + threshold
       ctSceneToolGroup.setToolActive('WindowLevel', options)
-      ptSceneToolGroup.setToolActive('PetThreshold', options)
+      ptSceneToolGroup.setToolActive('WindowLevel', options)
       stackCTViewportToolGroup.setToolActive('WindowLevel', options)
-      stackPTViewportToolGroup.setToolActive('PetThreshold', options)
+      stackPTViewportToolGroup.setToolActive('WindowLevel', options)
       stackDXViewportToolGroup.setToolActive('WindowLevel', options)
 
       // Set all annotation tools passive
