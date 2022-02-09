@@ -193,6 +193,8 @@ class DicomMessage {
                     vrType = "OW";
                 } else if (vrType == "xs") {
                     vrType = "US";
+                } else if (tag.isPrivateCreator()) {
+                    vrType = "LO";
                 } else {
                     vrType = "UN";
                 }

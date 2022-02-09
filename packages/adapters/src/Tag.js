@@ -64,6 +64,12 @@ class Tag {
         return this.is(0x7fe00010);
     }
 
+    isPrivateCreator() {
+        const group = this.group();
+        const element = this.element();
+        return group % 2 === 1 && element < 0x100 && element > 0x00;
+    }
+
     static fromString(str) {
         var group = parseInt(str.substring(0, 4), 16),
             element = parseInt(str.substring(4), 16);
@@ -96,7 +102,8 @@ class Tag {
                 useSyntax == EXPLICIT_LITTLE_ENDIAN
                     ? true
                     : false,
-            isEncapsulated = this.isPixelDataTag() && DicomMessage.isEncapsulated(syntax);
+            isEncapsulated =
+                this.isPixelDataTag() && DicomMessage.isEncapsulated(syntax);
 
         var oldEndian = stream.isLittleEndian;
         stream.setEndian(isLittleEndian);
