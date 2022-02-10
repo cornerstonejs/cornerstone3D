@@ -13,10 +13,8 @@ let decodeConfig;
 function loadCodecs(config) {
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
-    console.time('initializeCodecs');
     initializeJPEG2000(config.decodeTask);
     initializeJPEGLS(config.decodeTask);
-    console.timeEnd('initializeCodecs');
   }
 }
 
