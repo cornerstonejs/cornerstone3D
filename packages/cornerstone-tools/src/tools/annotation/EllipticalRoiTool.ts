@@ -3,13 +3,11 @@ import { BaseAnnotationTool } from '../base'
 import {
   getEnabledElement,
   Settings,
-  Types,
   getVolume,
   StackViewport,
   VolumeViewport,
   eventTarget,
   triggerEvent,
-  metaData,
 } from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
@@ -24,12 +22,13 @@ import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
-import { vec2, vec3 } from 'gl-matrix'
+import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
+import getWorldWidthAndHeightFromTwoPoints from '../../util/planar/getWorldWidthAndHeightFromTwoPoints'
 import {
   pointInEllipse,
   getCanvasEllipseCorners,
@@ -38,7 +37,6 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import getWorldWidthAndHeightFromCorners from '../../util/planar/getWorldWidthAndHeightFromCorners'
 import { ToolSpecificToolData, Point3, Point2 } from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
@@ -84,7 +82,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   } | null
   _configuration: any
   isDrawing: boolean
-  isHandleOutsideImage: boolean
+  isHandleOutsideImage = false
 
   constructor(
     toolConfiguration: Record<string, any>,
@@ -942,6 +940,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const { points } = data.handles
 
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+    const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
     const [topLeftCanvas, bottomRightCanvas] = <Array<Point2>>(
       getCanvasEllipseCorners(canvasCoordinates)
@@ -981,7 +980,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       // Some area to do stats over.
 
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        this.isHandleOutsideImage = false
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0])
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0])
 
@@ -997,11 +995,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           [kMin, kMax],
         ] as [Point2, Point2, Point2]
 
-        let isEmptyArea = false
-        if (boundsIJK.every(([min, max]) => min !== max)) {
-          isEmptyArea = true
-        }
-
         const center = [
           (topLeftWorld[0] + bottomRightWorld[0]) / 2,
           (topLeftWorld[1] + bottomRightWorld[1]) / 2,
@@ -1015,7 +1008,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
         }
 
-        const area = Math.PI * ellipseObj.xRadius * ellipseObj.yRadius
+        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
+          viewPlaneNormal,
+          viewUp,
+          worldPos1,
+          worldPos2
+        )
+        const isEmptyArea = worldWidth === 0 && worldHeight === 0
+        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2)
 
         let count = 0
         let mean = 0
