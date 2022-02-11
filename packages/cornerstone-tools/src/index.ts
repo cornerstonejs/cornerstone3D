@@ -29,7 +29,7 @@ import {
   cancelActiveManipulations,
   SegmentationModule,
 } from './store'
-import drawing from './drawing'
+import drawing from './drawingSvg'
 import synchronizers from './synchronizers'
 import * as Utilities from './util'
 import * as Types from './types'
