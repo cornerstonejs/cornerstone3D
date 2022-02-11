@@ -26,10 +26,9 @@ export default function getToolStateForDisplay(
       return toolData.metadata.referencedImageId === imageURI
     })
   } else if (viewport instanceof VolumeViewport) {
-    const scene = viewport.getScene()
     const camera = viewport.getCamera()
 
-    const { spacingInNormalDirection } = getTargetVolume(scene, camera)
+    const { spacingInNormalDirection } = getTargetVolume(viewport, camera)
 
     // Get data with same normal
     return getToolStateWithinSlice(toolState, camera, spacingInNormalDirection)

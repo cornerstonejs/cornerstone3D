@@ -298,7 +298,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
   _calculateCachedStatsTool(toolData, enabledElement) {
     const data = toolData.data
-    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+    const { viewportUID, renderingEngineUID } = enabledElement
 
     const { cachedStats } = data
     const imageVolume = getVolume(this.configuration.volumeUID)
@@ -317,7 +317,6 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       toolData,
       viewportUID,
       renderingEngineUID,
-      sceneUID,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
 

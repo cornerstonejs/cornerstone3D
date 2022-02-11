@@ -48,7 +48,7 @@ class Synchronizer {
 
   /**
    * ADD
-   * TODO: LISTENERS TO CATCH RenderingEngine/Scene specific adds for addSource/addTarget (and remove)
+   * TODO: LISTENERS TO CATCH RenderingEngine specific adds for addSource/addTarget (and remove)
    * ========================
    */
   public add(viewport: Types.IViewportUID): void {
@@ -186,12 +186,11 @@ class Synchronizer {
       return
     }
 
-    const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
+    const { renderingEngineUID, viewportUID } = enabledElement
 
     this.fireEvent(
       {
         renderingEngineUID,
-        sceneUID,
         viewportUID,
       },
       evt

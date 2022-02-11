@@ -12,14 +12,14 @@ import * as segmentIndexController from './segmentIndexController'
 import * as activeLabelmapController from './activeLabelmapController'
 import * as hideSegmentController from './hideSegmentController'
 import config, { setGlobalConfig } from './segmentationConfig'
-import { addNewLabelmap } from './addNewLabelmap'
+import addEmptySegmentationVolumeForViewport from './addEmptySegmentationVolumeForViewport'
 import { setColorLUT, getColorForSegmentIndex } from './colorLUT'
 
 export {
   setLabelmapForElement,
   removeLabelmapForElement,
   removeLabelmapForAllElements,
-  addNewLabelmap,
+  addEmptySegmentationVolumeForViewport,
   getLabelmapUIDForElement,
   setColorLUT,
   getColorForSegmentIndex,
@@ -38,7 +38,7 @@ export default {
   setLabelmapForElement,
   removeLabelmapForElement,
   removeLabelmapForAllElements,
-  addNewLabelmap,
+  addEmptySegmentationVolumeForViewport,
 
   // Set/Get Labelmap
   getLabelmapUIDsForElement,

@@ -2,9 +2,9 @@ import { cache } from '@precisionmetrics/cornerstone-render'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 /**
- * @function getTargetVolume Given a scene and camera, find the target volume for a tool.
+ * @function getTargetVolume Given a volume viewport and camera, find the target volume for a tool.
  *
- * @param {object} scene
+ * @param {object} viewport
  * @param {object} camera
  * @param {string} [targetVolumeUID] If a target volumeUID is given that volume
  * is forced to be used.
@@ -13,13 +13,13 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection'
  * spacing in the normal direction of the camera.
  */
 export default function getTargetVolume(
-  scene,
+  viewport,
   camera,
   targetVolumeUID?: string
 ) {
   const { viewPlaneNormal } = camera
 
-  const volumeActors = scene.getVolumeActors()
+  const volumeActors = viewport.getActors()
 
   if (!volumeActors && !volumeActors.length) {
     // No stack to scroll through

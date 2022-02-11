@@ -80,12 +80,11 @@ const _removeViewportFromSynchronizers = (element: HTMLElement) => {
 }
 
 const _removeViewportFromToolGroups = (element: HTMLElement) => {
-  const { renderingEngineUID, sceneUID, viewportUID } =
-    getEnabledElement(element)
+  const { renderingEngineUID, viewportUID } = getEnabledElement(element)
 
-  const toolGroups = getToolGroups(renderingEngineUID, sceneUID, viewportUID)
+  const toolGroups = getToolGroups(renderingEngineUID, viewportUID)
   toolGroups.forEach((toolGroup) => {
-    toolGroup.removeViewports(renderingEngineUID, sceneUID, viewportUID)
+    toolGroup.removeViewports(renderingEngineUID, viewportUID)
   })
 }
 
@@ -104,12 +103,9 @@ const _removeAllToolsForElement = function (element) {
 }
 
 function _resetSvgNodeCache(element: HTMLElement) {
-  const {
-    viewportUid: viewportUID,
-    sceneUid: sceneUID,
-    renderingEngineUid: renderingEngineUID,
-  } = element.dataset
-  const elementHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
+  const { viewportUid: viewportUID, renderingEngineUid: renderingEngineUID } =
+    element.dataset
+  const elementHash = `${viewportUID}:${renderingEngineUID}`
 
   delete state.svgNodeCache[elementHash]
 }

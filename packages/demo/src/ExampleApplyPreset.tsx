@@ -6,6 +6,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -23,7 +24,6 @@ import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
   ctVolumeUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -101,7 +101,6 @@ class ApplyPresetExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
@@ -111,7 +110,6 @@ class ApplyPresetExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
@@ -121,7 +119,6 @@ class ApplyPresetExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
@@ -135,21 +132,9 @@ class ApplyPresetExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.CORONAL
-    )
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.CORONAL)
 
     addToolsToToolGroups({ ctSceneToolGroup })
 
@@ -173,14 +158,17 @@ class ApplyPresetExample extends Component {
 
     ctVolume.load(onLoad)
 
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    await ctScene.setVolumes([
-      {
-        volumeUID: ctVolumeUID,
-        callback: setCTWWWC,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
-      },
-    ])
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: ctVolumeUID,
+          callback: setCTWWWC,
+          blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        },
+      ],
+      viewportInput.map(({ viewportUID }) => viewportUID)
+    )
 
     // Set initial CT levels in UI
     const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
@@ -331,12 +319,14 @@ class ApplyPresetExample extends Component {
             onClick={() => {
               const viewports = this.renderingEngine.getViewports()
               // first one is enough for this example
-              const viewport = viewports[0]
-              const { volumeActor } = viewport.getDefaultActor()
-              const preset = presets.find(
-                (preset) => preset.name === this.state.preset
-              )
-              applyPreset(volumeActor, preset)
+
+              viewports.forEach((viewport) => {
+                const { volumeActor } = viewport.getDefaultActor()
+                const preset = presets.find(
+                  (preset) => preset.name === this.state.preset
+                )
+                applyPreset(volumeActor, preset)
+              })
               this.renderingEngine.render()
             }}
           >

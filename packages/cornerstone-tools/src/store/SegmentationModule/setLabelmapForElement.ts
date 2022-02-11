@@ -1,6 +1,7 @@
 import {
   getEnabledElement,
   StackViewport,
+  addVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 
 import state, {
@@ -11,7 +12,7 @@ import state, {
 import { triggerLabelmapStateUpdated } from './triggerLabelmapStateUpdated'
 
 /**
- * It renders a labelmap 3D volume into the scene that the element belongs to
+ * It renders a labelmap 3D volume into the viewport that the element belongs to
  * @param {element, labelmap, callback, labelmapIndex, immediateRender}
  */
 async function setLabelmapForElement({
@@ -19,10 +20,9 @@ async function setLabelmapForElement({
   labelmap,
   labelmapIndex = 0,
   colorLUTIndex = 0,
-  labelmapViewportState,
 }) {
   const enabledElement = getEnabledElement(element)
-  const { scene, viewportUID, viewport } = enabledElement
+  const { renderingEngine, viewport } = enabledElement
 
   // Segmentation VolumeUID
   const { uid: labelmapUID } = labelmap
@@ -39,42 +39,43 @@ async function setLabelmapForElement({
     setLabelmapGlobalState(labelmapUID)
   }
 
-  const viewportUIDs = scene.getViewportUIDs()
+  const { uid: viewportUID } = viewport
 
-  // Updating viewport-specific labelmap states
-  viewportUIDs.forEach((viewportUID) => {
-    // VolumeViewport Implementation
-    let viewportLabelmapsState = state.volumeViewports[viewportUID]
+  // VolumeViewport Implementation
+  let viewportLabelmapsState = state.volumeViewports[viewportUID]
 
-    // If first time with this state
-    if (!viewportLabelmapsState) {
-      // If no state is assigned for the viewport for segmentation: create an empty
-      // segState for the viewport and assign the requested labelmapIndex as the active one.
-      viewportLabelmapsState = {
-        activeLabelmapIndex: labelmapIndex,
-        labelmaps: [],
-      }
-      state.volumeViewports[viewportUID] = viewportLabelmapsState
+  // If first time with this state
+  if (!viewportLabelmapsState) {
+    // If no state is assigned for the viewport for segmentation: create an empty
+    // segState for the viewport and assign the requested labelmapIndex as the active one.
+    viewportLabelmapsState = {
+      activeLabelmapIndex: labelmapIndex,
+      labelmaps: [],
     }
+    state.volumeViewports[viewportUID] = viewportLabelmapsState
+  }
 
-    // Updating the active labelmapIndex
-    state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
+  // Updating the active labelmapIndex
+  state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
 
-    setLabelmapViewportSpecificState(viewportUID, labelmapUID, labelmapIndex)
-  })
+  setLabelmapViewportSpecificState(viewportUID, labelmapUID, labelmapIndex)
 
   // Default to true since we are setting a new labelmap, however,
   // in the event listener, we will make other segmentations visible/invisible
   //  based on the config
   const visibility = true
 
-  // Add labelmap volumes to the scene to be be rendered, but not force the render
-  await scene.addVolumes([
-    {
-      volumeUID: labelmapUID,
-      visibility,
-    },
-  ])
+  // Add labelmap volumes to the viewports to be be rendered, but not force the render
+  await addVolumesOnViewports(
+    renderingEngine,
+    [
+      {
+        volumeUID: labelmapUID,
+        visibility,
+      },
+    ],
+    [viewportUID]
+  )
 
   // Trigger the labelmap state updated event which
   // will trigger the event for all the viewports that have the labelmap
@@ -83,8 +84,4 @@ async function setLabelmapForElement({
 
 export default setLabelmapForElement
 
-export {
-  // getActiveLabelmapForElement,
-  // getLabelmapForElement,
-  setLabelmapForElement,
-}
+export { setLabelmapForElement }

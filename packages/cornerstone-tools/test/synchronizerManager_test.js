@@ -14,6 +14,7 @@ const {
   EVENTS,
   createAndCacheVolume,
   registerVolumeLoader,
+  setVolumesOnViewports,
 } = cornerstone3D
 
 const {
@@ -33,8 +34,6 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
 
 const renderingEngineUID = Utilities.uuidv4()
 
-const scene1UID = 'SCENE_1'
-const scene2UID = 'SCENE_2'
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
 
@@ -105,7 +104,6 @@ describe('Synchronizer Manager: ', () => {
 
     this.renderingEngine.setViewports([
       {
-        sceneUID: scene1UID,
         viewportUID: viewportUID1,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: element1,
@@ -115,7 +113,6 @@ describe('Synchronizer Manager: ', () => {
         },
       },
       {
-        sceneUID: scene2UID,
         viewportUID: viewportUID2,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: element2,
@@ -163,40 +160,35 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
-    this.firstToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene2UID,
-      viewportUID2
-    )
+    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
 
     try {
       const axialSync = createCameraPositionSynchronizer('axialSync')
       synchronizerId = axialSync.id
-      const ctScene = this.renderingEngine.getScene(scene1UID)
-      const ptScene = this.renderingEngine.getScene(scene2UID)
 
       axialSync.add({
-        renderingEngineUID: ctScene.renderingEngineUID,
-        sceneUID: ctScene.uid,
-        viewportUID: ctScene.getViewport(viewportUID1).uid,
+        renderingEngineUID: this.renderingEngine.uid,
+        viewportUID: this.renderingEngine.getViewport(viewportUID1).uid,
       })
       axialSync.add({
-        renderingEngineUID: ptScene.renderingEngineUID,
-        sceneUID: ptScene.uid,
-        viewportUID: ptScene.getViewport(viewportUID2).uid,
+        renderingEngineUID: this.renderingEngine.uid,
+        viewportUID: this.renderingEngine.getViewport(viewportUID2).uid,
       })
 
-      const immediateRender = true
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        ctScene.setVolumes([{ volumeUID: ctVolumeId }], immediateRender)
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: ctVolumeId }],
+          [viewportUID1]
+        )
       })
       createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
-        ptScene.setVolumes([{ volumeUID: ptVolumeId }], immediateRender)
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: ptVolumeId }],
+          [viewportUID2]
+        )
       })
     } catch (e) {
       done.fail(e)
@@ -205,6 +197,10 @@ describe('Synchronizer Manager: ', () => {
 })
 
 describe('Synchronizer Manager: ', () => {
+  beforeAll(() => {
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+  })
+
   beforeEach(function () {
     csTools3d.init()
     csTools3d.addTool(WindowLevelTool, {})
@@ -248,7 +244,6 @@ describe('Synchronizer Manager: ', () => {
 
     this.renderingEngine.setViewports([
       {
-        sceneUID: scene1UID,
         viewportUID: viewportUID1,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: element1,
@@ -258,7 +253,6 @@ describe('Synchronizer Manager: ', () => {
         },
       },
       {
-        sceneUID: scene1UID,
         viewportUID: viewportUID2,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: element2,
@@ -329,36 +323,28 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
-    this.firstToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID2
-    )
+    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
 
     try {
       const voiSync = createVOISynchronizer('ctWLSync')
-      const ctScene = this.renderingEngine.getScene(scene1UID)
 
       voiSync.addSource({
-        renderingEngineUID: ctScene.renderingEngineUID,
-        sceneUID: ctScene.uid,
-        viewportUID: ctScene.getViewport(viewportUID1).uid,
+        renderingEngineUID: this.renderingEngine.uid,
+        viewportUID: this.renderingEngine.getViewport(viewportUID1).uid,
       })
       voiSync.addTarget({
-        renderingEngineUID: ctScene.renderingEngineUID,
-        sceneUID: ctScene.uid,
-        viewportUID: ctScene.getViewport(viewportUID2).uid,
+        renderingEngineUID: this.renderingEngine.uid,
+        viewportUID: this.renderingEngine.getViewport(viewportUID2).uid,
       })
 
-      const immediateRender = true
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        ctScene.setVolumes([{ volumeUID: ctVolumeId }], immediateRender)
-        ctScene.render()
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: ctVolumeId }],
+          [viewportUID1, viewportUID2]
+        )
+        this.renderingEngine.render()
       })
     } catch (e) {
       done.fail(e)

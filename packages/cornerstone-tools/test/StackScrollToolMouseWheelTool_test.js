@@ -17,6 +17,7 @@ const {
   metaData,
   createAndCacheVolume,
   registerVolumeLoader,
+  setVolumesOnViewports,
 } = cornerstone3D
 
 const { StackScrollMouseWheelTool, ToolGroupManager } = csTools3d
@@ -31,7 +32,6 @@ const {
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID22'
 
-const scene1UID = 'SCENE_12'
 const viewportUID = 'VIEWPORT22'
 
 const AXIAL = 'AXIAL'
@@ -51,7 +51,6 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      sceneUID: scene1UID,
       viewportUID: viewportUID,
       type: viewportType,
       element,
@@ -154,17 +153,16 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        const ctScene = this.renderingEngine.getScene(scene1UID)
-        ctScene.setVolumes([{ volumeUID: volumeId }])
-        ctScene.render()
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: volumeId }],
+          [viewportUID]
+        )
+        vp.render()
       })
     } catch (e) {
       done.fail(e)
@@ -229,11 +227,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1, imageId2], 0).then(() => {

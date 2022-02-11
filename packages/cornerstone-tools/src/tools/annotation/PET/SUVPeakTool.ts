@@ -601,13 +601,8 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     resetElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
-    const {
-      viewport,
-      renderingEngine,
-      viewportUID,
-      renderingEngineUID,
-      sceneUID,
-    } = enabledElement
+    const { viewport, renderingEngine, viewportUID, renderingEngineUID } =
+      enabledElement
 
     this.editData = null
     this.isDrawing = false
@@ -644,7 +639,6 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       toolData,
       viewportUID,
       renderingEngineUID,
-      sceneUID,
     })
 
     triggerAnnotationRenderForViewportUIDs(

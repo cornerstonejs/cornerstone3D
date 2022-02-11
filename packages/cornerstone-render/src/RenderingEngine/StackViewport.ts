@@ -74,7 +74,7 @@ type CalibrationEvent = {
 
 /**
  * An object representing a single stack viewport, which is a camera
- * looking into an internal scene, and an associated target output `canvas`.
+ * looking into an internal viewport, and an associated target output `canvas`.
  */
 class StackViewport extends Viewport {
   // Viewport Data
@@ -662,15 +662,11 @@ class StackViewport extends Viewport {
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
     const { viewport } = this._cpuFallbackEnabledElement
 
-    if (typeof flipHorizontal !== 'undefined') {
-      viewport.hflip = flipHorizontal
-      this.flipHorizontal = viewport.hflip
-    }
+    viewport.hflip = flipHorizontal
+    this.flipHorizontal = viewport.hflip
 
-    if (typeof flipVertical !== 'undefined') {
-      viewport.vflip = flipVertical
-      this.flipVertical = viewport.vflip
-    }
+    viewport.vflip = flipVertical
+    this.flipVertical = viewport.vflip
   }
 
   private setVOI(voiRange: VOIRange): void {
@@ -1328,7 +1324,7 @@ class StackViewport extends Viewport {
           renderingEngineUID: this.renderingEngineUID,
         }
 
-        triggerEvent(this.canvas, EVENTS.STACK_NEW_IMAGE, eventData)
+        triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, eventData)
 
         this._updateActorToDisplayImageId(image)
 
@@ -1665,7 +1661,6 @@ class StackViewport extends Viewport {
       canvas: this.canvas,
       element: this.element,
       viewportUID: this.uid,
-      sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,
     }
 
@@ -1683,7 +1678,6 @@ class StackViewport extends Viewport {
       canvas: this.canvas,
       element: this.element,
       viewportUID: this.uid,
-      sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,
       imageId: this.getCurrentImageId(),
       imageData,
@@ -1928,22 +1922,14 @@ class StackViewport extends Viewport {
   }
 
   private fillWithBackgroundColor() {
-    const { canvas, options } = this
-    const ctx = canvas.getContext('2d')
+    const renderingEngine = this.getRenderingEngine()
 
-    // Default to black if no background color is set
-    let fillStyle
-    if (options && options.background) {
-      const rgb = options.background.map((f) => Math.floor(255 * f))
-      fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
-    } else {
-      fillStyle = 'black'
+    if (renderingEngine) {
+      renderingEngine.fillCanvasWithBackgroundColor(
+        this.canvas,
+        this.options.background
+      )
     }
-
-    // We draw over the previous stack with the background color while we
-    // wait for the next stack to load
-    ctx.fillStyle = fillStyle
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
   }
 
   customRenderViewportToCanvas = () => {
@@ -1968,7 +1954,6 @@ class StackViewport extends Viewport {
       canvas: this.canvas,
       element: this.element,
       viewportUID: this.uid,
-      sceneUID: this.sceneUID,
       renderingEngineUID: this.renderingEngineUID,
     }
   }

@@ -51,6 +51,7 @@ import type TransformMatrix2D from './TransformMatrix2D'
 import type CPUFallbackLookupTable from './CPUFallbackLookupTable'
 import type CPUFallbackLUT from './CPUFallbackLUT'
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools'
+import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput'
 
 export type {
   ICamera,
@@ -79,6 +80,8 @@ export type {
   ActorEntry,
   ImageLoadObject,
   VolumeLoadObject,
+  IVolumeInput,
+  VolumeInputCallback,
   //
   LibraryConfiguration,
   Metadata,

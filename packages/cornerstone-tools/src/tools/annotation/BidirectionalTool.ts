@@ -976,8 +976,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     if (viewport.type === VIEWPORT_TYPE.STACK) {
       targetUID = this._getTargetStackUID(viewport)
     } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
-      const scene = viewport.getScene()
-      targetUID = this._getTargetVolumeUID(scene)
+      targetUID = this._getTargetVolumeUID(viewport)
     } else {
       throw new Error(`Viewport Type not supported: ${viewport.type}`)
     }
@@ -1153,7 +1152,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
   _calculateCachedStats = (toolData, renderingEngine, enabledElement) => {
     const { data, metadata } = toolData
-    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+    const { viewportUID, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
@@ -1203,7 +1202,6 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       toolData,
       viewportUID,
       renderingEngineUID,
-      sceneUID: sceneUID,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
   }
@@ -1225,24 +1223,5 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         index[i] = dimensions[i] - 1
       }
     }
-  }
-
-  _getTargetStackUID(viewport) {
-    return `stackTarget:${viewport.uid}`
-  }
-
-  _getTargetVolumeUID = (scene) => {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const volumeActors = scene.getVolumeActors()
-
-    if (!volumeActors && !volumeActors.length) {
-      // No stack to scroll through
-      return
-    }
-
-    return volumeActors[0].uid
   }
 }

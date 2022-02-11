@@ -10,7 +10,6 @@ import { IEnabledElement } from './types'
  * Using the renderingEngine to find the enabled element:
  * ```
  * const element = getRenderingEngine(renderingEngineUID)
- *    .getScene(sceneUID)
  *    .getViewport(viewportUID)
  *    .element
  *
@@ -37,11 +36,8 @@ export default function getEnabledElement(
     return
   }
 
-  const {
-    viewportUid: viewportUID,
-    sceneUid: sceneUID,
-    renderingEngineUid: renderingEngineUID,
-  } = element.dataset
+  const { viewportUid: viewportUID, renderingEngineUid: renderingEngineUID } =
+    element.dataset
 
   if (!renderingEngineUID || !viewportUID) {
     return
@@ -53,7 +49,6 @@ export default function getEnabledElement(
     return
   }
 
-  const scene = renderingEngine.getScene(sceneUID)
   const viewport = renderingEngine.getViewport(viewportUID)
 
   if (!viewport) {
@@ -64,10 +59,8 @@ export default function getEnabledElement(
 
   return {
     viewport,
-    scene,
     renderingEngine,
     viewportUID,
-    sceneUID,
     renderingEngineUID,
     FrameOfReferenceUID,
   }

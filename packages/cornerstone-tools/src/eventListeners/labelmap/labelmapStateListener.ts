@@ -1,23 +1,17 @@
-import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  VolumeViewport,
+} from '@precisionmetrics/cornerstone-render'
 import state from '../../store/SegmentationModule/state'
 import setLabelmapColorAndOpacity from '../../store/SegmentationModule/setLabelmapColorAndOpacity'
 import csToolsEvents from '../../enums/CornerstoneTools3DEvents'
 
 function updateLabelmapProperties(
-  viewportUID: string,
-  sceneUID: string,
-  renderingEngineUID: string,
+  viewport: VolumeViewport,
   activeLabelmapIndex: number
 ): void {
-  if (!sceneUID) {
-    throw new Error('Stack viewport segmentation not supported yet')
-  }
-
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
-  const scene = renderingEngine.getScene(sceneUID)
-
   // Render only active labelmaps from the viewport state
-  const viewportLabelmapsState = state.volumeViewports[viewportUID].labelmaps
+  const viewportLabelmapsState = state.volumeViewports[viewport.uid].labelmaps
   const { volumeUID: activeLabelmapUID } =
     viewportLabelmapsState[activeLabelmapIndex]
 
@@ -29,7 +23,7 @@ function updateLabelmapProperties(
       ofun,
       labelmapConfig,
     } = labelmapState
-    const volumeActor = scene.getVolumeActor(labelmapUID)
+    const { volumeActor } = viewport.getActor(labelmapUID)
 
     const isActiveLabelmap = activeLabelmapUID === labelmapUID
 
@@ -45,23 +39,19 @@ function updateLabelmapProperties(
 }
 
 const onLabelmapStateUpdated = function (evt) {
-  const { sceneUID, viewportUID, renderingEngineUID } = evt.detail
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const { viewport, viewportUID, renderingEngine } = getEnabledElement(
+    evt.detail.element
+  )
 
-  if (!sceneUID) {
+  if (!(viewport instanceof VolumeViewport)) {
     throw new Error('Segmentation for stack viewports not implemented yet')
   }
 
   const { activeLabelmapIndex } = state.volumeViewports[viewportUID]
 
-  updateLabelmapProperties(
-    viewportUID,
-    sceneUID,
-    renderingEngineUID,
-    activeLabelmapIndex
-  )
+  updateLabelmapProperties(viewport, activeLabelmapIndex)
 
-  renderingEngine.renderScene(sceneUID)
+  renderingEngine.renderViewport(viewportUID)
 }
 
 const enable = function (element: HTMLElement) {

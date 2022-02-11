@@ -174,7 +174,6 @@ class NineStackViewportExample extends Component {
     viewportInput.forEach((vpEntry) => {
       stackCTViewportToolGroup.addViewports(
         renderingEngineUID,
-        undefined,
         vpEntry.viewportUID
       )
     })

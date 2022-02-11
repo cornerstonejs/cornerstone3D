@@ -69,11 +69,8 @@ class CanvasResizeExample extends Component {
     this.sagittalCTViewportID = sagittalCTViewportID
     this.coronalCTViewportID = coronalCTViewportID
 
-    const ctSceneID = 'SCENE_CT'
-
     renderingEngine.setViewports([
       {
-        sceneUID: ctSceneID,
         viewportUID: axialCTViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this.axialCTContainer.current,
@@ -83,7 +80,6 @@ class CanvasResizeExample extends Component {
         },
       },
       {
-        sceneUID: ctSceneID,
         viewportUID: sagittalCTViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this.sagittalCTContainer.current,
@@ -93,7 +89,6 @@ class CanvasResizeExample extends Component {
         },
       },
       {
-        sceneUID: ctSceneID,
         viewportUID: coronalCTViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this.coronalCTContainer.current,

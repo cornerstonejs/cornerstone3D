@@ -27,7 +27,7 @@ export default function scrollThroughStack(
   invert = false
 ) {
   const { element, wheel } = evt.detail
-  const { scene, viewport } = getEnabledElement(element)
+  const { viewport } = getEnabledElement(element)
   const { type: viewportType } = viewport
   const camera = viewport.getCamera()
   const { focalPoint, viewPlaneNormal, position } = camera
@@ -45,7 +45,7 @@ export default function scrollThroughStack(
   } else if (viewport instanceof VolumeViewport) {
     // Stack scroll across highest resolution volume.
     const { spacingInNormalDirection, imageVolume } = getTargetVolume(
-      scene,
+      viewport,
       camera,
       volumeUID
     )
@@ -54,7 +54,7 @@ export default function scrollThroughStack(
       return
     }
 
-    const volumeActor = scene.getVolumeActor(imageVolume.uid)
+    const { volumeActor } = viewport.getActor(imageVolume.uid)
     const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
 
     const delta = invert ? -deltaFrames : deltaFrames

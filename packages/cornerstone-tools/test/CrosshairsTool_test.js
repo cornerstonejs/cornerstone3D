@@ -13,6 +13,7 @@ const {
   getEnabledElement,
   createAndCacheVolume,
   registerVolumeLoader,
+  setVolumesOnViewports,
 } = cornerstone3D
 
 const {
@@ -28,7 +29,6 @@ const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
 
 const renderingEngineUID = Utilities.uuidv4()
 
-const scene1UID = 'SCENE_1'
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
 const viewportUID3 = 'VIEWPORT3'
@@ -62,7 +62,6 @@ function createViewports(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      sceneUID: scene1UID,
       viewportUID: viewportUID1,
       type: viewportType,
       element: element1,
@@ -72,7 +71,6 @@ function createViewports(renderingEngine, viewportType, width, height) {
       },
     },
     {
-      sceneUID: scene1UID,
       viewportUID: viewportUID2,
       type: viewportType,
       element: element2,
@@ -82,7 +80,6 @@ function createViewports(renderingEngine, viewportType, width, height) {
       },
     },
     {
-      sceneUID: scene1UID,
       viewportUID: viewportUID3,
       type: viewportType,
       element: element3,
@@ -213,27 +210,18 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
     element3.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID2
-    )
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID3
-    )
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID3)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        const ctScene = this.renderingEngine.getScene(scene1UID)
-        ctScene.setVolumes([{ volumeUID: volumeId }])
-        ctScene.render()
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: volumeId }],
+          [viewportUID1, viewportUID2, viewportUID3]
+        )
+        this.renderingEngine.render()
       })
     } catch (e) {
       done.fail(e)
@@ -356,27 +344,18 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID2
-    )
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID3
-    )
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID3)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        const ctScene = this.renderingEngine.getScene(scene1UID)
-        ctScene.setVolumes([{ volumeUID: volumeId }])
-        ctScene.render()
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: volumeId }],
+          [viewportUID1, viewportUID2, viewportUID3]
+        )
+        this.renderingEngine.render()
       })
     } catch (e) {
       done.fail(e)
@@ -499,27 +478,18 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID1
-    )
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID2
-    )
-    this.testToolGroup.addViewports(
-      this.renderingEngine.uid,
-      scene1UID,
-      viewportUID3
-    )
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
+    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID3)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        const ctScene = this.renderingEngine.getScene(scene1UID)
-        ctScene.setVolumes([{ volumeUID: volumeId }])
-        ctScene.render()
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: volumeId }],
+          [viewportUID1, viewportUID2, viewportUID3]
+        )
+        this.renderingEngine.render()
       })
     } catch (e) {
       done.fail(e)

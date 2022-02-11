@@ -13,7 +13,7 @@ function toggleSegmentationVisibility(
   labelmapUID?: string
 ): void {
   const { labelmaps } = getLabelmapsStateForElement(element)
-  const { scene } = getEnabledElement(element)
+  const { viewport } = getEnabledElement(element)
 
   let labelmapsToUpdate = labelmaps
 
@@ -23,7 +23,7 @@ function toggleSegmentationVisibility(
 
   labelmapsToUpdate.forEach((labelmap) => {
     const { visibility, volumeUID } = labelmap
-    const volumeActor = scene.getVolumeActor(volumeUID)
+    const { volumeActor } = viewport.getActor(volumeUID)
 
     if (!volumeActor) {
       throw new Error(`Volume actor for labelmapUID ${labelmapUID} not found`)
@@ -33,7 +33,7 @@ function toggleSegmentationVisibility(
     const visibilityToSet = !visibility
     volumeActor.setVisibility(visibilityToSet)
     labelmap.visibility = visibilityToSet
-    scene.render()
+    viewport.render()
   })
 }
 

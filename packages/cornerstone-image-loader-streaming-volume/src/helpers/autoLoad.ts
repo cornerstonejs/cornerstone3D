@@ -1,50 +1,57 @@
-import { getRenderingEngines } from '@precisionmetrics/cornerstone-render'
+import {
+  getRenderingEngines,
+  RenderingEngine,
+  getVolumeViewportsContainingVolumeUID,
+} from '@precisionmetrics/cornerstone-render'
 
-const autoLoad = (volumeUID) => {
-  const { renderingEngine, sceneUIDs } = getRenderingEngineContainingVolume(
-    volumeUID
-  )
+type RenderingEngineAndViewportUIDs = {
+  renderingEngine: RenderingEngine | undefined
+  viewportUIDs: Array<string>
+}
+
+const autoLoad = (volumeUID: string): void => {
+  const renderingEngineAndViewportUIDs =
+    getRenderingEngineAndViewportsContainingVolume(volumeUID)
 
   if (
-    !renderingEngine ||
-    renderingEngine.hasBeenDestroyed ||
-    !sceneUIDs.length
+    !renderingEngineAndViewportUIDs ||
+    !renderingEngineAndViewportUIDs.length
   ) {
     return
   }
 
-  renderingEngine.renderScenes(sceneUIDs)
+  renderingEngineAndViewportUIDs.forEach(
+    ({ renderingEngine, viewportUIDs }) => {
+      if (!renderingEngine.hasBeenDestroyed) {
+        renderingEngine.renderViewports(viewportUIDs)
+      }
+    }
+  )
 }
 
-function getRenderingEngineContainingVolume(volumeUID) {
-  const renderingEngines = getRenderingEngines()
+function getRenderingEngineAndViewportsContainingVolume(
+  volumeUID: string
+): Array<RenderingEngineAndViewportUIDs> {
+  const renderingEnginesArray = getRenderingEngines()
 
-  for (let i = 0; i < renderingEngines.length; i++) {
-    const renderingEngine = renderingEngines[i]
-    // TODO: Switch to viewport search
-    const scenes = renderingEngine.getScenes()
+  const renderingEngineAndViewportUIDs = []
 
-    const sceneUIDs = []
+  for (let i = 0; i < renderingEnginesArray.length; i++) {
+    const renderingEngine = renderingEnginesArray[i]
+    const viewports = getVolumeViewportsContainingVolumeUID(
+      volumeUID,
+      renderingEngine.uid
+    )
 
-    scenes.forEach((scene) => {
-      if (!scene.getVolumeActors) return
-      const volumeActors = scene.getVolumeActors()
-
-      const hasVolume = volumeActors.some((va) => {
-        return va.uid === volumeUID
+    if (viewports.length) {
+      renderingEngineAndViewportUIDs.push({
+        renderingEngine,
+        viewportUIDs: viewports.map((viewport) => viewport.uid),
       })
-
-      if (hasVolume) {
-        sceneUIDs.push(scene.uid)
-      }
-    })
-
-    if (sceneUIDs.length) {
-      return { renderingEngine, sceneUIDs }
     }
   }
 
-  return { renderingEngine: undefined, sceneUIDs: [] }
+  return renderingEngineAndViewportUIDs
 }
 
 export default autoLoad

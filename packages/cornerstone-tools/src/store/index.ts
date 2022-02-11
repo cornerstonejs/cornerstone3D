@@ -18,7 +18,6 @@ import {
 
 // TODO:
 // - getToolGroupsForViewport?
-// - getToolGroupsForScene?
 
 export {
   // Store

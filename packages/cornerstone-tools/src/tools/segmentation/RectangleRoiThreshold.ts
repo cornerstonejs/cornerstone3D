@@ -189,17 +189,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       return
     }
 
-    const { viewport, sceneUID, renderingEngineUID } = enabledElement
-
-    let targetUID
-    if (viewport instanceof StackViewport) {
-      targetUID = this._getTargetStackUID(viewport)
-    } else if (viewport instanceof VolumeViewport) {
-      const scene = viewport.getScene()
-      targetUID = this._getTargetVolumeUID(scene)
-    } else {
-      throw new Error(`Viewport Type not supported: ${viewport.type}`)
-    }
+    const { viewport, renderingEngineUID } = enabledElement
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i] as RectangleRoiThresholdToolData
@@ -231,7 +221,6 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       const eventDetail = {
         toolData,
         viewportUID: viewport.uid,
-        sceneUID: sceneUID,
         renderingEngineUID,
       }
       triggerEvent(eventTarget, eventType, eventDetail)

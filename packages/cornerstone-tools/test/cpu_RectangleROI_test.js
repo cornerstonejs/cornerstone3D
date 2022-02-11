@@ -13,7 +13,6 @@ const {
   eventTarget,
   metaData,
   getEnabledElement,
-  createAndCacheVolume,
   registerVolumeLoader,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
@@ -37,7 +36,6 @@ const {
 
 const renderingEngineUID = Utilities.uuidv4()
 
-const scene1UID = 'SCENE_1'
 const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
@@ -208,11 +206,7 @@ describe('RectangleRoiTool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -352,11 +346,7 @@ describe('RectangleRoiTool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -487,11 +477,7 @@ describe('RectangleRoiTool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -687,11 +673,7 @@ describe('RectangleRoiTool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -894,11 +876,7 @@ describe('RectangleRoiTool (CPU):', () => {
       }, 100)
     }
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     element.addEventListener(
       CornerstoneTools3DEvents.KEY_DOWN,

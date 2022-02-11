@@ -27,7 +27,6 @@ import {
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
-  SCENE_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
@@ -338,12 +337,6 @@ class MPRExample extends Component {
 
   swapPetTransferFunction() {
     const renderingEngine = this.renderingEngine
-    const petCTScene = renderingEngine.getScene(SCENE_IDS.FUSION)
-
-    if (!petCTScene) {
-      // We have likely changed view and the scene no longer exists.
-      return
-    }
 
     const volumeActor = petCTScene.getVolumeActor(ptVolumeUID)
 
@@ -414,38 +407,12 @@ class MPRExample extends Component {
     } = this.state
 
     const layoutID = LAYOUTS[layoutIndex]
-    const layoutButtons = [
-      // { id: 'ObliqueCT', text: 'Oblique Layout' },
-      { id: 'FusionMIP', text: 'Fusion Layout' },
-      { id: 'PetTypes', text: 'SUV Types Layout' },
-    ]
-
     // TODO -> Move layout switching to a different example to reduce bloat.
     // TODO -> Move destroy to a seperate example
-
-    const filteredLayoutButtons = layoutButtons.filter((l) => l.id !== layoutID)
-
-    const SUVTypesList =
-      layoutID === 'PetTypes' ? (
-        <div style={{ display: 'flex', textAlign: 'center' }}>
-          <div style={{ flex: '1 1 0px' }}>Body Weight (BW)</div>
-          <div style={{ flex: '1 1 0px' }}>Lean Body Mass (LBM)</div>
-          <div style={{ flex: '1 1 0px' }}>Body Surface Area (BSA)</div>
-        </div>
-      ) : null
 
     const fusionButtons =
       layoutID === 'FusionMIP' ? (
         <React.Fragment>
-          <button
-            onClick={() =>
-              metadataLoaded && !destroyed && this.swapPetTransferFunction()
-            }
-            className="btn btn-primary"
-            style={{ margin: '2px 4px' }}
-          >
-            SwapPetTransferFunction
-          </button>
           <select
             value={this.state.ptCtLeftClickTool}
             onChange={this.swapPtCtTool}
@@ -456,18 +423,6 @@ class MPRExample extends Component {
               </option>
             ))}
           </select>
-        </React.Fragment>
-      ) : null
-
-    const fusionWLDisplay =
-      layoutID === 'FusionMIP' ? (
-        <React.Fragment>
-          <div className="col-xs-12">
-            <p>{`CT: W: ${ctWindowLevelDisplay.ww} L: ${ctWindowLevelDisplay.wc}`}</p>
-          </div>
-          <div className="col-xs-12">
-            <p>{`PT: Upper Threshold: ${ptThresholdDisplay.toFixed(2)}`}</p>
-          </div>
         </React.Fragment>
       ) : null
 
@@ -487,23 +442,9 @@ class MPRExample extends Component {
             className="col-xs-12"
             style={{ margin: '8px 0', marginLeft: '-4px' }}
           >
-            {/* LAYOUT BUTTONS */}
-            {filteredLayoutButtons.map((layout) => (
-              <button
-                key={layout.id}
-                onClick={() => this.swapLayout(layout.id)}
-                className="btn btn-primary"
-                style={{ margin: '2px 4px' }}
-              >
-                {layout.text}
-              </button>
-            ))}
-            {/* TOGGLES */}
             {fusionButtons}
-            {/* Hide until we update react in a better way  {fusionWLDisplay} */}
           </div>
         </div>
-        {SUVTypesList}
         <ViewportGrid
           numCols={this.state.viewportGrid.numCols}
           numRows={this.state.viewportGrid.numRows}

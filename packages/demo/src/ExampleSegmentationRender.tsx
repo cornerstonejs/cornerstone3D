@@ -8,6 +8,7 @@ import {
   createAndCacheVolume,
   createAndCacheDerivedVolume,
   init as cs3dInit,
+  getVolumeViewportsContatiningSameVolumes,
 } from '@precisionmetrics/cornerstone-render'
 import {
   // Segmentation
@@ -34,9 +35,9 @@ import {
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
-  SCENE_IDS,
   ANNOTATION_TOOLS,
   SEGMENTATION_TOOLS,
+  VIEWPORT_IDS,
 } from './constants'
 import LAYOUTS, { ptCtFusion } from './layouts'
 import config from './config/default'
@@ -118,14 +119,25 @@ class SegmentationExample extends Component {
       ],
     },
     ptCtLeftClickTool: 'WindowLevel',
-    toolGroupName: 'ctScene',
+    viewportUIDs: [
+      'ctAxial',
+      'ctSagittal',
+      'ctCoronal',
+      'ptAxial',
+      'ptSagittal',
+      'ptCoronal',
+      'fusionAxial',
+      'fusionSagittal',
+      'fusionCoronal',
+      'ptMipAxial',
+    ],
     toolGroups: {},
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     // Segmentation
     segmentationStatus: '',
     segmentationToolActive: false,
-    sceneForSegmentation: SCENE_IDS.CT,
+    activeViewportUID: VIEWPORT_IDS.CT.AXIAL,
     selectedLabelmapUID: '',
     availableLabelmaps: [],
     activeSegmentIndex: 1,
@@ -136,6 +148,8 @@ class SegmentationExample extends Component {
     thresholdMax: 100,
     numSlicesForThreshold: 1,
     selectedStrategy: '',
+    selectedSegmentationFromAll: '',
+    allSegmentations: [],
     tmtv: null,
   }
 
@@ -235,8 +249,16 @@ class SegmentationExample extends Component {
 
     this.setState({
       toolGroups: {
-        ctScene: ctSceneToolGroup,
-        ptScene: ptSceneToolGroup,
+        ctAxial: ctSceneToolGroup,
+        ctSagittal: ctSceneToolGroup,
+        ctCoronal: ctSceneToolGroup,
+        ptAxial: ptSceneToolGroup,
+        ptSagittal: ptSceneToolGroup,
+        ptCoronal: ptSceneToolGroup,
+        fusionAxial: fusionSceneToolGroup,
+        fusionSagittal: fusionSceneToolGroup,
+        fusionCoronal: fusionSceneToolGroup,
+        ptMipAxial: ptMipSceneToolGroup,
       },
     })
 
@@ -304,6 +326,13 @@ class SegmentationExample extends Component {
       )
     })
 
+    this._elementNodes.forEach((element) => {
+      element.addEventListener(
+        CornerstoneTools3DEvents.LABELMAP_REMOVED,
+        this.onLabelmapRemoved
+      )
+    })
+
     if (prevState.layoutIndex !== layoutIndex) {
       if (layout === 'FusionMIP') {
         // FusionMIP
@@ -350,7 +379,37 @@ class SegmentationExample extends Component {
   }
 
   onLabelmapStateUpdated = (evt) => {
+    const { element, viewportUID } = evt.detail
+    if (viewportUID !== this.state.activeViewportUID) {
+      return
+    }
+
+    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
+
+    console.debug(labelmapUIDs)
+    const activeLabelmapUID =
+      activeLabelmapController.getActiveLabelmapUID(element)
+    this.setState((prevState) => {
+      // merge the segmentations
+      const newSegmentations = [...prevState.allSegmentations]
+
+      let newSelectedFromAll = this.state.selectedSegmentationFromAll
+      if (!newSegmentations.includes(activeLabelmapUID)) {
+        newSegmentations.push(activeLabelmapUID)
+        newSelectedFromAll = activeLabelmapUID
+      }
+
+      return {
+        availableLabelmaps: labelmapUIDs,
+        selectedLabelmapUID: activeLabelmapUID,
+        allSegmentations: newSegmentations,
+        selectedSegmentationFromAll: newSelectedFromAll,
+      }
+    })
+  }
+  onLabelmapRemoved = (evt) => {
     const { element } = evt.detail
+
     const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
     const activeLabelmapUID =
       activeLabelmapController.getActiveLabelmapUID(element)
@@ -361,39 +420,9 @@ class SegmentationExample extends Component {
   }
 
   createNewLabelmapForScissors = async (evt) => {
-    const sceneUID = evt.target.value
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { uid: viewportUID } = scene.getViewports()[0]
-    const { element } = this.renderingEngine.getViewport(viewportUID)
-    const labelmapIndex = activeLabelmapController.getNextLabelmapIndex(element)
-    await activeLabelmapController.setActiveLabelmapIndex(
-      element,
-      labelmapIndex
-    )
-
-    // set the labelmap for all other scens
-    const labelmapUID = activeLabelmapController.getActiveLabelmapUID(element)
-
-    // get labelmap
-    const labelmap = cache.getVolume(labelmapUID)
-
-    // all the scense except the we just acted on
-    const scenes = this.renderingEngine
-      .getScenes()
-      .filter(({ uid }) => uid !== sceneUID)
-
-    scenes.forEach(({ uid: sceneUID }) => {
-      const scene = this.renderingEngine.getScene(sceneUID)
-
-      const { uid } = scene.getViewports()[0]
-
-      const { element } = this.renderingEngine.getViewport(uid)
-
-      SegmentationModule.setLabelmapForElement({
-        element,
-        labelmap,
-      })
-    })
+    const viewportUID = evt.target.value
+    const viewport = this.renderingEngine.getViewport(viewportUID)
+    await SegmentationModule.addEmptySegmentationVolumeForViewport(viewport)
   }
 
   setToolMode = (toolMode) => {
@@ -401,7 +430,7 @@ class SegmentationExample extends Component {
     if (SEGMENTATION_TOOLS.includes(toolName)) {
       this.setState({ segmentationToolActive: true })
     }
-    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    const toolGroup = this.state.toolGroups[this.state.activeViewportUID]
     if (toolMode === ToolModes.Active) {
       const activeTool = toolGroup.getActivePrimaryButtonTools()
       if (activeTool) {
@@ -496,10 +525,8 @@ class SegmentationExample extends Component {
     this.setState({ segmentationStatus: 'done' })
   }
 
-  loadSegmentation = async (sceneUID, labelmapUID) => {
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { uid } = scene.getViewports()[0]
-    const { element } = this.renderingEngine.getViewport(uid)
+  loadSegmentation = async (viewportUID, labelmapUID) => {
+    const { element } = this.renderingEngine.getViewport(viewportUID)
 
     const labelmapIndex = activeLabelmapController.getNextLabelmapIndex(element)
     const labelmap = cache.getVolume(labelmapUID)
@@ -508,7 +535,6 @@ class SegmentationExample extends Component {
       element,
       labelmap,
       labelmapIndex,
-      labelmapViewportState: {},
     })
 
     const activeSegmentIndex =
@@ -530,11 +556,9 @@ class SegmentationExample extends Component {
 
   toggleLockedSegmentIndex = (evt) => {
     const checked = evt.target.checked
-    console.debug('checked', checked)
     // Todo: Don't have active viewport concept
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { element } = scene.getViewports()[0]
+    const viewportUID = this.state.activeViewportUID
+    const { element } = this.renderingEngine.getViewport(viewportUID)
     const activeLabelmapUID =
       activeLabelmapController.getActiveLabelmapUID(element)
     lockedSegmentController.toggleSegmentIndexLockedForLabelmapUID(
@@ -546,9 +570,8 @@ class SegmentationExample extends Component {
 
   changeActiveSegmentIndex = (direction) => {
     // Todo: Don't have active viewport concept
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { element } = scene.getViewports()[0]
+    const viewportUID = this.state.activeViewportUID
+    const { element } = this.renderingEngine.getViewport(viewportUID)
     const currentIndex = segmentIndexController.getActiveSegmentIndex(element)
     let newIndex = currentIndex + direction
 
@@ -562,14 +585,12 @@ class SegmentationExample extends Component {
         element,
         newIndex
       )
-    console.debug('segmentLocked', segmentLocked)
     this.setState({ activeSegmentIndex: newIndex, segmentLocked })
   }
 
   calculateTMTV = () => {
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { element } = scene.getViewports()[0]
+    const viewportUID = this.state.activeViewportUID
+    const { element } = this.renderingEngine.getViewport(viewportUID)
     const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
 
     const labelmaps = labelmapUIDs.map((uid) => cache.getVolume(uid))
@@ -585,9 +606,8 @@ class SegmentationExample extends Component {
   }
 
   calculateSuvPeak = () => {
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const viewport = scene.getViewports()[0]
+    const viewportUID = this.state.activeViewportUID
+    const viewport = this.renderingEngine.getViewport(viewportUID)
 
     const { uid } = viewport.getDefaultActor()
     const referenceVolume = cache.getVolume(uid)
@@ -607,9 +627,8 @@ class SegmentationExample extends Component {
   }
 
   setEndSlice = () => {
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const viewport = scene.getViewports()[0]
+    const viewportUID = this.state.activeViewportUID
+    const viewport = this.renderingEngine.getViewport(viewportUID)
 
     const selectedToolDataList =
       toolDataSelection.getSelectedToolDataByToolName(
@@ -627,9 +646,8 @@ class SegmentationExample extends Component {
   }
 
   setStartSlice = () => {
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const viewport = scene.getViewports()[0]
+    const viewportUID = this.state.activeViewportUID
+    const viewport = this.renderingEngine.getViewport(viewportUID)
 
     const { focalPoint, viewPlaneNormal } = viewport.getCamera()
 
@@ -699,10 +717,6 @@ class SegmentationExample extends Component {
         overwrite: true,
       }
     )
-
-    /* const toolGroup = this.state.toolGroups[this.state.toolGroupName]
-    const tool = toolGroup.getToolInstance(RECTANGLE_ROI_THRESHOLD)
-    tool.execute(options) */
   }
 
   showOffScreenCanvas = () => {
@@ -816,7 +830,7 @@ class SegmentationExample extends Component {
         <button
           onClick={() =>
             this.createNewLabelmapForScissors({
-              target: { value: this.state.sceneForSegmentation },
+              target: { value: this.state.activeViewportUID },
             })
           }
           className="btn btn-primary"
@@ -829,30 +843,23 @@ class SegmentationExample extends Component {
   }
 
   deleteLabelmap = () => {
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { element } = scene.getViewports()[0]
     const labelmapUID = this.state.selectedLabelmapUID
-
-    const removeFromCache = true
-    // SegmentationModule.removeLabelmapForElement(element, labelmapUID, removeFromCache)
-    SegmentationModule.removeLabelmapForAllElements(
-      labelmapUID,
-      removeFromCache
+    const { element } = this.renderingEngine.getViewport(
+      this.state.activeViewportUID
     )
+    SegmentationModule.removeLabelmapForElement(element, labelmapUID)
 
     this.renderingEngine.render()
   }
 
   hideSegmentation = (segmentUID) => {
-    const sceneUID = this.state.sceneForSegmentation
-    const scene = this.renderingEngine.getScene(sceneUID)
-    const { element } = scene.getViewports()[0]
+    const viewportUID = this.state.activeViewportUID
+    const { element } = this.renderingEngine.getViewport(viewportUID)
     hideSegmentController.toggleSegmentationVisibility(element, segmentUID)
   }
 
   getToolStrategyUI = () => {
-    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    const toolGroup = this.state.toolGroups[this.state.activeViewportUID]
     if (!toolGroup) {
       return null
     }
@@ -900,7 +907,8 @@ class SegmentationExample extends Component {
           style={{ minWidth: '50px', margin: '0px 4px' }}
           onChange={(evt) => {
             const activeStrategy = evt.target.value
-            const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+            const toolGroup =
+              this.state.toolGroups[this.state.activeViewportUID]
 
             toolGroup._toolInstances[
               this.state.ptCtLeftClickTool
@@ -913,15 +921,14 @@ class SegmentationExample extends Component {
             this.setState({ selectedStrategy: activeStrategy })
           }}
         >
-          {this.getToolStrategyUI()}
+          {this.state.toolGroups && this.getToolStrategyUI()}
         </select>
-        <span style={{ marginLeft: '4px' }}>for this toolGroup </span>
+        <span style={{ marginLeft: '4px' }}>for this viewport </span>
         <select
-          value={this.state.toolGroupName}
+          value={this.state.activeViewportUID}
           onChange={(evt) => {
-            const sceneUID = evt.target.value
-            const scene = this.renderingEngine.getScene(sceneUID)
-            const { uid, element } = scene.getViewports()[0]
+            const viewportUID = evt.target.value
+            const { element } = this.renderingEngine.getViewport(viewportUID)
             const labelmapUIDs =
               SegmentationModule.getLabelmapUIDsForElement(element)
             const index = segmentIndexController.getActiveSegmentIndex(element)
@@ -931,19 +938,17 @@ class SegmentationExample extends Component {
                 index
               )
 
-            console.debug('setting tool group name of ', sceneUID)
             this.setState({
-              sceneForSegmentation: sceneUID,
+              activeViewportUID: viewportUID,
               availableLabelmaps: labelmapUIDs,
               activeSegmentIndex: index,
               segmentLocked,
-              toolGroupName: evt.target.value,
             })
           }}
         >
-          {Object.keys(this.state.toolGroups).map((toolGroupName) => (
-            <option key={toolGroupName} value={toolGroupName}>
-              {toolGroupName}
+          {this.state.viewportUIDs.map((viewportUID) => (
+            <option key={viewportUID} value={viewportUID}>
+              {viewportUID}
             </option>
           ))}
         </select>
@@ -1000,23 +1005,82 @@ class SegmentationExample extends Component {
             {this.state.ptCtLeftClickTool.includes('RectangleRoi')
               ? this.getThresholdUID()
               : this.getScissorsUI()}
+            <span> All segmentations </span>
+            <select
+              value={this.state.selectedSegmentationFromAll}
+              style={{ minWidth: '50px', margin: '0px 8px' }}
+              onChange={(evt) => {
+                const selectedLabelmapUID = evt.target.value
+                this.setState({
+                  selectedSegmentationFromAll: selectedLabelmapUID,
+                })
+              }}
+              size={3}
+            >
+              {this.state.allSegmentations.map((labelmapUID) => (
+                <option key={`${labelmapUID}-all`} value={labelmapUID}>
+                  {labelmapUID}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={async () => {
+                const selectedLabelmapUID =
+                  this.state.selectedSegmentationFromAll
+                const { element } = this.renderingEngine.getViewport(
+                  this.state.activeViewportUID
+                )
+
+                const labelmap = cache.getVolume(selectedLabelmapUID)
+
+                const labelmapIndex =
+                  activeLabelmapController.getNextLabelmapIndex(element)
+
+                await SegmentationModule.setLabelmapForElement({
+                  element,
+                  labelmap,
+                  labelmapIndex,
+                })
+
+                const labelmapUIDs =
+                  SegmentationModule.getLabelmapUIDsForElement(element)
+                const index =
+                  segmentIndexController.getActiveSegmentIndex(element)
+
+                const segmentLocked =
+                  lockedSegmentController.getSegmentIndexLockedStatusForElement(
+                    element,
+                    index
+                  )
+
+                this.setState({
+                  availableLabelmaps: labelmapUIDs,
+                  activeSegmentIndex: index,
+                  segmentLocked,
+                })
+              }}
+              className="btn btn-primary"
+              style={{ margin: '2px 4px' }}
+            >
+              Add Segmentation to selected Viewport
+            </button>
             <div
               style={{
                 display: 'flex',
+                flexWrap: 'wrap',
                 alignItems: 'center',
                 marginTop: '5px',
               }}
             >
-              <span> Labelmaps (active is selected) </span>
+              <span> Viewport Segmentations (active is selected) </span>
               <select
                 value={this.state.selectedLabelmapUID}
-                style={{ minWidth: '50px', margin: '0px 8px' }}
+                style={{ minWidth: '150px', margin: '0px 8px' }}
                 onChange={(evt) => {
                   const selectedLabelmapUID = evt.target.value
-                  const scene = this.renderingEngine.getScene(
-                    this.state.sceneForSegmentation
+                  const { element } = this.renderingEngine.getViewport(
+                    this.state.activeViewportUID
                   )
-                  const { element } = scene.getViewports()[0]
 
                   activeLabelmapController.setActiveLabelmapByLabelmapUID(
                     element,
@@ -1034,7 +1098,7 @@ class SegmentationExample extends Component {
                 size={3}
               >
                 {this.state.availableLabelmaps.map((labelmapUID) => (
-                  <option key={labelmapUID} value={labelmapUID}>
+                  <option key={`${labelmapUID}-viewport`} value={labelmapUID}>
                     {labelmapUID}
                   </option>
                 ))}
@@ -1102,7 +1166,7 @@ class SegmentationExample extends Component {
                 <button
                   onClick={() =>
                     this.loadSegmentation(
-                      this.state.sceneForSegmentation,
+                      this.state.activeViewportUID,
                       labelmap1UID
                     )
                   }
@@ -1114,7 +1178,7 @@ class SegmentationExample extends Component {
                 <button
                   onClick={() =>
                     this.loadSegmentation(
-                      this.state.sceneForSegmentation,
+                      this.state.activeViewportUID,
                       labelmap2UID
                     )
                   }
