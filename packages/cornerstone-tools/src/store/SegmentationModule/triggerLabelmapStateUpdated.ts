@@ -13,7 +13,6 @@ export type LabelmapStateUpdatedEvent = {
   labelmapIndex: number // index of the modified labelmap in viewport's array of labelmaps state
   activeLabelmapIndex: number // active labelmapIndex for the viewport
   renderingEngineUID: string
-  sceneUID: string
   viewportUID: string
   id: string
   cachedStats: any
@@ -63,9 +62,6 @@ function triggerLabelmapStateUpdated(
       return
     }
 
-    const scene = viewport.getScene()
-    const { uid: sceneUID } = scene
-
     const activeLabelmapIndex = viewportLabelmapsState.activeLabelmapIndex
 
     viewportLabelmapsState.labelmaps.forEach((labelmapState, labelmapIndex) => {
@@ -89,7 +85,6 @@ function triggerLabelmapStateUpdated(
         labelmapIndex,
         activeLabelmapIndex,
         renderingEngineUID,
-        sceneUID,
         viewportUID,
         cachedStats,
       }

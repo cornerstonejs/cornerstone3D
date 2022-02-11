@@ -49,7 +49,6 @@ export default class ProbeTool extends BaseAnnotationTool {
   _configuration: any
   eventDispatchDetail: {
     viewportUID: string
-    sceneUID: string
     renderingEngineUID: string
   }
   isDrawing: boolean
@@ -226,10 +225,9 @@ export default class ProbeTool extends BaseAnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    const { viewportUID, sceneUID } = enabledElement
+    const { viewportUID } = enabledElement
     this.eventDispatchDetail = {
       viewportUID,
-      sceneUID,
       renderingEngineUID: renderingEngine.uid,
     }
 
@@ -360,8 +358,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     if (viewport instanceof StackViewport) {
       targetUID = this._getTargetStackUID(viewport)
     } else if (viewport instanceof VolumeViewport) {
-      const scene = viewport.getScene()
-      targetUID = this._getTargetVolumeUID(scene)
+      targetUID = this._getTargetVolumeUID(viewport)
     } else {
       throw new Error(`Viewport Type not supported: ${viewport.type}`)
     }
@@ -538,7 +535,7 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   _calculateCachedStats(toolData, renderingEngine, enabledElement) {
     const data = toolData.data
-    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+    const { viewportUID, renderingEngineUID } = enabledElement
 
     const worldPos = data.handles.points[0]
     const { cachedStats } = data
@@ -600,29 +597,9 @@ export default class ProbeTool extends BaseAnnotationTool {
         toolData,
         viewportUID,
         renderingEngineUID,
-        sceneUID: sceneUID,
       }
 
       triggerEvent(eventTarget, eventType, eventDetail)
     }
-  }
-
-  _getTargetStackUID(viewport) {
-    return `stackTarget:${viewport.uid}`
-  }
-
-  _getTargetVolumeUID(scene) {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const volumeActors = scene.getVolumeActors()
-
-    if (!volumeActors && !volumeActors.length) {
-      // No stack to scroll through
-      return
-    }
-
-    return volumeActors[0].uid
   }
 }

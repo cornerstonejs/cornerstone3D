@@ -1,7 +1,10 @@
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import { ISegmentationConfig } from './segmentationConfig'
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  VolumeViewport,
+} from '@precisionmetrics/cornerstone-render'
 import { getActiveLabelmapIndex } from './activeLabelmapController'
 import { setColorLUT } from './colorLUT'
 import { triggerLabelmapStateUpdated } from './triggerLabelmapStateUpdated'
@@ -265,10 +268,10 @@ function getLabelmapsStateForElement(
     return
   }
 
-  const { sceneUID, viewportUID } = enabledElement
+  const { viewport, viewportUID } = enabledElement
 
   // Todo: stack Viewport
-  if (!sceneUID) {
+  if (!(viewport instanceof VolumeViewport)) {
     throw new Error('Stack Viewport segmentation not supported yet')
   }
 

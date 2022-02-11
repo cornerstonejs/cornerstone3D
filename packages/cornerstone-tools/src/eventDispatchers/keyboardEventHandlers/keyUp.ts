@@ -6,11 +6,10 @@ export default function keyUp(evt) {
   // get the active tool for the primary mouse button
   const activeTool = getActiveToolForMouseEvent(evt)
 
-  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
+  const { renderingEngineUID, viewportUID } = evt.detail
 
   const toolGroups = ToolGroupManager.getToolGroups(
     renderingEngineUID,
-    sceneUID,
     viewportUID
   )
 

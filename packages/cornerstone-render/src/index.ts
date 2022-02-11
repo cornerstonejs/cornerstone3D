@@ -16,7 +16,6 @@ import RenderingEngine from './RenderingEngine'
 import VolumeViewport from './RenderingEngine/VolumeViewport'
 import StackViewport from './RenderingEngine/StackViewport'
 import Viewport from './RenderingEngine/Viewport'
-import Scene from './RenderingEngine/Scene'
 import eventTarget from './eventTarget'
 import {
   getRenderingEngine,
@@ -40,6 +39,7 @@ import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager'
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
 import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
+
 import {
   createAndCacheVolume,
   createAndCacheDerivedVolume,
@@ -71,6 +71,13 @@ import {
   vtkStreamingOpenGLTexture,
 } from './RenderingEngine/vtkClasses/index'
 
+import {
+  setVolumesOnViewports,
+  addVolumesOnViewports,
+  getVolumeViewportsContatiningSameVolumes,
+  getVolumeViewportsContainingVolumeUID,
+} from './RenderingEngine/helpers'
+
 const getVolume = cache.getVolume
 
 /**
@@ -90,17 +97,19 @@ export {
   configuration,
   Types,
   Settings,
-  //
+  // Rendering Engine
   VolumeViewport,
   Viewport,
   StackViewport,
-  Scene,
   RenderingEngine,
+  // Rendering Engine Helpers
   getRenderingEngine,
   getRenderingEngines,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
+  getVolumeViewportsContatiningSameVolumes,
+  getVolumeViewportsContainingVolumeUID,
   //
   cache,
   Cache,
@@ -131,6 +140,8 @@ export {
   metaData,
   //
   Utilities,
+  setVolumesOnViewports,
+  addVolumesOnViewports,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

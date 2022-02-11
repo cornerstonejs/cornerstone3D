@@ -1,10 +1,12 @@
-import { getEnabledElement, triggerEvent } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  triggerEvent,
+} from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import _cloneDeep from 'lodash.clonedeep'
 
 interface IKeyDownListenerState {
   renderingEngineUID: string
-  sceneUID: string
   viewportUID: string
   key: string | null
   keyCode: number | null
@@ -14,7 +16,6 @@ interface IKeyDownListenerState {
 const defaultState: IKeyDownListenerState = {
   //
   renderingEngineUID: undefined,
-  sceneUID: undefined,
   viewportUID: undefined,
   //
   key: undefined,
@@ -25,7 +26,6 @@ const defaultState: IKeyDownListenerState = {
 let state: IKeyDownListenerState = {
   //
   renderingEngineUID: undefined,
-  sceneUID: undefined,
   viewportUID: undefined,
   //
   key: undefined,
@@ -41,10 +41,9 @@ function keyListener(evt: KeyboardEvent): void {
   state.element = <HTMLElement>evt.currentTarget
 
   const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportUID } = enabledElement
 
   state.renderingEngineUID = renderingEngineUID
-  state.sceneUID = sceneUID
   state.viewportUID = viewportUID
   state.key = evt.key
   state.keyCode = evt.keyCode
@@ -52,7 +51,6 @@ function keyListener(evt: KeyboardEvent): void {
   evt.preventDefault()
   const eventData = {
     renderingEngineUID: state.renderingEngineUID,
-    sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     element: state.element,
     detail: evt,
@@ -76,7 +74,6 @@ function keyListener(evt: KeyboardEvent): void {
 function _onKeyUp(evt: KeyboardEvent): void {
   const eventData = {
     renderingEngineUID: state.renderingEngineUID,
-    sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     element: state.element,
     detail: evt,

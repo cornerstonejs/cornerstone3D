@@ -1,4 +1,8 @@
-import { Settings, Utilities, Types } from '@precisionmetrics/cornerstone-render'
+import {
+  Settings,
+  Utilities,
+  Types,
+} from '@precisionmetrics/cornerstone-render'
 import { vec4 } from 'gl-matrix'
 
 import BaseTool from './BaseTool'
@@ -325,6 +329,24 @@ abstract class BaseAnnotationTool extends BaseTool {
       lineWidth: this.getStyle(settings, 'textBox.link.lineWidth', toolData),
       lineDash: this.getStyle(settings, 'textBox.link.lineDash', toolData),
     }
+  }
+
+  _getTargetStackUID(viewport) {
+    return `stackTarget:${viewport.uid}`
+  }
+
+  _getTargetVolumeUID = (viewport) => {
+    if (this.configuration.volumeUID) {
+      return this.configuration.volumeUID
+    }
+
+    const actors = viewport.getActors()
+
+    if (!actors && !actors.length) {
+      return
+    }
+
+    return actors[0].volumeActor.uid
   }
 }
 

@@ -8,6 +8,7 @@ import {
   metaData,
   createAndCacheVolume,
   init as csRenderInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -16,6 +17,10 @@ import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-load
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { initToolGroups } from './initToolGroups'
+
+const axialViewportID = 'AXIAL'
+const sagittalViewportID = 'SAGITTAL'
+const coronalViewportID = 'CORONAL'
 
 let colorSceneToolGroup
 class ColorExample extends Component {
@@ -64,19 +69,12 @@ class ColorExample extends Component {
 
     this.renderingEngine = renderingEngine
 
-    const axialViewportID = 'AXIAL'
-    const sagittalViewportID = 'SAGITTAL'
-    const coronalViewportID = 'CORONAL'
-
     this.axialViewportID = axialViewportID
     this.sagittalViewportID = sagittalViewportID
     this.coronalViewportID = coronalViewportID
 
-    const ctSceneID = 'SCENE'
-
     renderingEngine.setViewports([
       {
-        sceneUID: ctSceneID,
         viewportUID: axialViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this.axialContainer.current,
@@ -85,7 +83,6 @@ class ColorExample extends Component {
         },
       },
       {
-        sceneUID: ctSceneID,
         viewportUID: sagittalViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this.sagittalContainer.current,
@@ -94,7 +91,6 @@ class ColorExample extends Component {
         },
       },
       {
-        sceneUID: ctSceneID,
         viewportUID: coronalViewportID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this.coronalContainer.current,
@@ -104,12 +100,14 @@ class ColorExample extends Component {
       },
     ])
 
-    const ctScene = renderingEngine.getScene(ctSceneID)
-
-    colorSceneToolGroup.addTool('WindowLevel', {})
-    colorSceneToolGroup.addTool('Pan', {})
-    colorSceneToolGroup.addTool('Zoom', {})
-    colorSceneToolGroup.addTool('StackScrollMouseWheel', {})
+    colorSceneToolGroup.addTool('WindowLevel', {
+      configuration: { volumeUID },
+    })
+    colorSceneToolGroup.addTool('Pan', { configuration: { volumeUID } })
+    colorSceneToolGroup.addTool('Zoom', { configuration: { volumeUID } })
+    colorSceneToolGroup.addTool('StackScrollMouseWheel', {
+      configuration: { volumeUID },
+    })
 
     colorSceneToolGroup.setToolActive('StackScrollMouseWheel')
     colorSceneToolGroup.setToolActive('WindowLevel', {
@@ -122,31 +120,23 @@ class ColorExample extends Component {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
 
-    ctScene.setVolumes([
-      {
-        volumeUID: volumeUID,
-        callback: ({ volumeActor, volumeUID }) => {
-          volumeActor.getProperty().setIndependentComponents(false)
-          volumeActor.getProperty().setInterpolationTypeToNearest()
+    await setVolumesOnViewports(
+      this.renderingEngine,
+      [
+        {
+          volumeUID: volumeUID,
+          callback: ({ volumeActor, volumeUID }) => {
+            volumeActor.getProperty().setIndependentComponents(false)
+            volumeActor.getProperty().setInterpolationTypeToNearest()
+          },
         },
-      },
-    ])
+      ],
+      [axialViewportID, sagittalViewportID, coronalViewportID]
+    )
 
-    colorSceneToolGroup.addViewports(
-      renderingEngineUID,
-      ctSceneID,
-      axialViewportID
-    )
-    colorSceneToolGroup.addViewports(
-      renderingEngineUID,
-      ctSceneID,
-      sagittalViewportID
-    )
-    colorSceneToolGroup.addViewports(
-      renderingEngineUID,
-      ctSceneID,
-      coronalViewportID
-    )
+    colorSceneToolGroup.addViewports(renderingEngineUID, axialViewportID)
+    colorSceneToolGroup.addViewports(renderingEngineUID, sagittalViewportID)
+    colorSceneToolGroup.addViewports(renderingEngineUID, coronalViewportID)
 
     renderingEngine.render()
   }

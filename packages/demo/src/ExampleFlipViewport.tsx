@@ -6,6 +6,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   synchronizers,
@@ -22,8 +23,6 @@ import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
   ctVolumeUID,
-  ptVolumeUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -31,10 +30,7 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import * as cs from '@precisionmetrics/cornerstone-render'
 
 import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
-import {
-  setCTWWWC,
-  setPetTransferFunction,
-} from './helpers/transferFunctionHelpers'
+import { setCTWWWC } from './helpers/transferFunctionHelpers'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -60,7 +56,6 @@ class FlipViewportExample extends Component {
     measurementsModified: new Map(),
     showMeasurementEvents: false,
     deleteOnToolCancel: false,
-    selectedViewport: 0,
     //
     viewportGrid: {
       numCols: 2,
@@ -68,7 +63,8 @@ class FlipViewportExample extends Component {
       viewports: [{}, {}, {}, {}],
     },
     ptCtLeftClickTool: 'Levels',
-
+    viewportUIDs: ['ctAxial', 'ctSagittal', 'ctCoronal', 'ctStack'],
+    selectedViewportUID: 'ctAxial',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
   }
 
@@ -123,7 +119,6 @@ class FlipViewportExample extends Component {
     viewportInput = [
       // CT volume axial
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
@@ -132,7 +127,6 @@ class FlipViewportExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
@@ -141,7 +135,6 @@ class FlipViewportExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
@@ -163,26 +156,13 @@ class FlipViewportExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.CORONAL
-    )
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.CORONAL)
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.CT
     )
 
@@ -246,14 +226,17 @@ class FlipViewportExample extends Component {
 
     ctVolume.load(onLoad)
 
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    ctScene.setVolumes([
-      {
-        volumeUID: ctVolumeUID,
-        callback: setCTWWWC,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
-      },
-    ])
+    setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: ctVolumeUID,
+          callback: setCTWWWC,
+          blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        },
+      ],
+      [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
+    )
 
     // Set initial CT levels in UI
     const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
@@ -337,14 +320,14 @@ class FlipViewportExample extends Component {
   }
 
   flipHorizontal = () => {
-    const { viewportUID } = viewportInput[this.state.selectedViewport]
+    const viewportUID = this.state.selectedViewportUID
     const viewport = this.renderingEngine.getViewport(viewportUID)
     const { flipHorizontal } = viewport.getProperties()
     viewport.flip({ flipHorizontal: !flipHorizontal })
   }
 
   flipVertical = () => {
-    const { viewportUID } = viewportInput[this.state.selectedViewport]
+    const viewportUID = this.state.selectedViewportUID
     const viewport = this.renderingEngine.getViewport(viewportUID)
     const { flipVertical } = viewport.getProperties()
     viewport.flip({ flipVertical: !flipVertical })
@@ -395,14 +378,14 @@ class FlipViewportExample extends Component {
           </button>
           <select
             style={{ margin: '2px 4px', float: 'right' }}
-            value={this.state.selectedViewport}
+            value={this.state.selectedViewportUID}
             onChange={(ev) =>
-              this.setState({ selectedViewport: parseFloat(ev.target.value) })
+              this.setState({ selectedViewportUID: ev.target.value })
             }
           >
-            {[0, 1, 2, 3].map((id) => (
-              <option key={id} value={id}>
-                {`Viewport ${id}`}
+            {this.state.viewportUIDs.map((viewportUID) => (
+              <option key={viewportUID} value={viewportUID}>
+                {viewportUID}
               </option>
             ))}
           </select>

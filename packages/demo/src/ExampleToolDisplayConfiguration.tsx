@@ -10,6 +10,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   CornerstoneTools3DEvents,
@@ -27,7 +28,6 @@ import {
   renderingEngineUID,
   ctVolumeUID,
   ctStackUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
@@ -138,7 +138,6 @@ class ToolDisplayConfigurationExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
@@ -147,7 +146,6 @@ class ToolDisplayConfigurationExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
@@ -178,28 +176,18 @@ class ToolDisplayConfigurationExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
 
     // stack ct
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.CT
     )
 
     // dx and color
     stackDXViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.DX
     )
 
@@ -247,12 +235,15 @@ class ToolDisplayConfigurationExample extends Component {
 
     ctVolume.load(onLoad)
 
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    ctScene.setVolumes([
-      {
-        volumeUID: ctVolumeUID,
-      },
-    ])
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: ctVolumeUID,
+        },
+      ],
+      [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL]
+    )
 
     // Set initial CT levels in UI
     const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]

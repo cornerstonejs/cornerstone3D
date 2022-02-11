@@ -13,10 +13,10 @@ export default interface IToolGroup {
   getToolInstance: { (toolName: string): any }
   addTool: { (toolName: string, toolConfiguration?: any): void }
   addViewports: {
-    (renderingEngineUID: string, sceneUID?: string, viewportUID?: string): void
+    (renderingEngineUID: string, viewportUID?: string): void
   }
   removeViewports: {
-    (renderingEngineUID: string, sceneUID?: string, viewportUID?: string): void
+    (renderingEngineUID: string, viewportUID?: string): void
   }
   // ~ setToolMode
   setToolActive: {

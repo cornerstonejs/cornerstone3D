@@ -6,6 +6,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as cs3dInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings, ToolModes } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -25,7 +26,6 @@ import {
   renderingEngineUID,
   ctVolumeUID,
   ptVolumeUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
   prostateVolumeUID,
@@ -105,7 +105,6 @@ class CrosshairsExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
@@ -115,7 +114,6 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
@@ -125,7 +123,6 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
@@ -135,7 +132,6 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.PROSTATE,
         viewportUID: VIEWPORT_IDS.PROSTATE.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
@@ -145,7 +141,6 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.PROSTATE,
         viewportUID: VIEWPORT_IDS.PROSTATE.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
@@ -159,29 +154,15 @@ class CrosshairsExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.CORONAL
-    )
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.CORONAL)
     prostateSceneToolGroup.addViewports(
       renderingEngineUID,
-      SCENE_IDS.PROSTATE,
       VIEWPORT_IDS.PROSTATE.AXIAL
     )
     prostateSceneToolGroup.addViewports(
       renderingEngineUID,
-      SCENE_IDS.PROSTATE,
       VIEWPORT_IDS.PROSTATE.SAGITTAL
     )
 
@@ -212,21 +193,27 @@ class CrosshairsExample extends Component {
     ctVolume.load()
     prostateVolume.load()
 
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    const prostateScene = renderingEngine.getScene(SCENE_IDS.PROSTATE)
-    await ctScene.setVolumes([
-      {
-        volumeUID: ctVolumeUID,
-        callback: setCTWWWC,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
-      },
-    ])
-    await prostateScene.setVolumes([
-      {
-        volumeUID: prostateVolumeUID,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
-      },
-    ])
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: ctVolumeUID,
+          callback: setCTWWWC,
+          blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        },
+      ],
+      [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
+    )
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: prostateVolumeUID,
+          blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        },
+      ],
+      [VIEWPORT_IDS.PROSTATE.AXIAL, VIEWPORT_IDS.PROSTATE.SAGITTAL]
+    )
 
     // This will initialise volumes in GPU memory
     renderingEngine.render()

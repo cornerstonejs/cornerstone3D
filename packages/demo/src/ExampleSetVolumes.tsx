@@ -18,7 +18,6 @@ import {
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
-  SCENE_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'

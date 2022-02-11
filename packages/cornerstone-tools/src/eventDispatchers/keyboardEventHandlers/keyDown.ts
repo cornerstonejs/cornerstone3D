@@ -9,11 +9,10 @@ export default function keyDown(evt) {
     return
   }
 
-  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
+  const { renderingEngineUID, viewportUID } = evt.detail
 
   const toolGroups = ToolGroupManager.getToolGroups(
     renderingEngineUID,
-    sceneUID,
     viewportUID
   )
 

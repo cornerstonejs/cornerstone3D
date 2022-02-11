@@ -10,6 +10,7 @@ import {
   INTERPOLATION_TYPE,
   EVENTS as RENDERING_EVENTS,
   init as csRenderInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   SynchronizerManager,
@@ -31,7 +32,6 @@ import {
   renderingEngineUID,
   ctVolumeUID,
   ptVolumeUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -160,7 +160,6 @@ class StackViewportExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
@@ -169,7 +168,6 @@ class StackViewportExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
@@ -188,7 +186,6 @@ class StackViewportExample extends Component {
       },
       // pt volume
       {
-        sceneUID: SCENE_IDS.PT,
         viewportUID: VIEWPORT_IDS.PT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
@@ -198,7 +195,6 @@ class StackViewportExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.PT,
         viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
@@ -230,33 +226,16 @@ class StackViewportExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
 
     // pt volume axial
-    ptSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.PT,
-      VIEWPORT_IDS.PT.AXIAL
-    )
-    ptSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.PT,
-      VIEWPORT_IDS.PT.SAGITTAL
-    )
+    ptSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.PT.AXIAL)
+    ptSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.PT.SAGITTAL)
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.CT
     )
 
@@ -268,7 +247,6 @@ class StackViewportExample extends Component {
 
     stackPTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.PT
     )
 
@@ -345,21 +323,27 @@ class StackViewportExample extends Component {
     ctVolume.load(onLoad)
     ptVolume.load(onLoad)
 
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    ctScene.setVolumes([
-      {
-        volumeUID: ctVolumeUID,
-        callback: setCTWWWC,
-      },
-    ])
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: ctVolumeUID,
+          callback: setCTWWWC,
+        },
+      ],
+      [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL]
+    )
 
-    const ptScene = renderingEngine.getScene(SCENE_IDS.PT)
-    ptScene.setVolumes([
-      {
-        volumeUID: ptVolumeUID,
-        callback: setPetTransferFunction,
-      },
-    ])
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: ptVolumeUID,
+          callback: setPetTransferFunction,
+        },
+      ],
+      [VIEWPORT_IDS.PT.AXIAL, VIEWPORT_IDS.PT.SAGITTAL]
+    )
 
     // Set initial CT levels in UI
     const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]

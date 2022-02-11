@@ -4,6 +4,7 @@ import {
   StackViewport,
   cache,
   getRenderingEngines,
+  getVolumeViewportsContatiningSameVolumes,
 } from '@precisionmetrics/cornerstone-render'
 
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -31,26 +32,19 @@ function removeLabelmapForElement(
   removeFromCache = false
 ): void {
   const enabledElement = getEnabledElement(element)
-  const { scene, viewport } = enabledElement
+  const { viewport } = enabledElement
 
   // StackViewport Implementation
   if (viewport instanceof StackViewport) {
     throw new Error('Segmentation for StackViewport is not supported yet')
   }
 
-  // remove the labelmap actor from the scene
-  // Add labelmap volumes to the scene to be be rendered, but not force the render
-  // Todo: the first time we are removing from Scene, so for the other viewports
-  // also it is removed ...
-  scene.removeVolumes([labelmapUID])
-
-  // updating the states
-  const viewportUIDs = scene.getViewportUIDs()
+  const allViewportsWithLabelmap = [viewport]
 
   // Updating viewport-specific labelmap states
-  viewportUIDs.forEach((viewportUID) => {
-    // VolumeViewport Implementation
-    const viewportLabelmapsState = state.volumeViewports[viewportUID]
+  allViewportsWithLabelmap.forEach((viewport) => {
+    viewport.removeVolumes([labelmapUID])
+    const viewportLabelmapsState = state.volumeViewports[viewport.uid]
 
     if (!viewportLabelmapsState) {
       return
@@ -79,14 +73,13 @@ function removeLabelmapForElement(
     if (viewportLabelmapsState.labelmaps.length > 0 && removingActiveLabelmap) {
       viewportLabelmapsState.activeLabelmapIndex = 0
     } else {
-      delete state.volumeViewports[viewportUID]
+      delete state.volumeViewports[viewport.uid]
     }
   })
 
   const eventData = {
     element,
     labelmapUID,
-    sceneUID: scene.uid,
   }
 
   triggerEvent(element, EVENTS.LABELMAP_REMOVED, eventData)

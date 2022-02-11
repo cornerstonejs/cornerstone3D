@@ -27,7 +27,6 @@ import {
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
-  SCENE_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
@@ -97,7 +96,6 @@ class MPRExample extends Component {
 
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
-    this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this)
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
@@ -111,6 +109,10 @@ class MPRExample extends Component {
 
   async componentDidMount() {
     await cs3dInit()
+
+    const renderingEngine = new RenderingEngine(renderingEngineUID)
+
+    this.renderingEngine = renderingEngine
   }
 
   loadMetadata = async () => {
@@ -301,49 +303,6 @@ class MPRExample extends Component {
     })
   }
 
-  swapPetTransferFunction() {
-    const renderingEngine = this.renderingEngine
-    const petCTScene = renderingEngine.getScene(SCENE_IDS.FUSION)
-
-    if (!petCTScene) {
-      // We have likely changed view and the scene no longer exists.
-      return
-    }
-
-    const volumeActor = petCTScene.getVolumeActor(ptVolumeUID)
-
-    let petColorMapIndex = this.state.petColorMapIndex
-
-    petColorMapIndex = petColorMapIndex === 0 ? 1 : 0
-
-    const mapper = volumeActor.getMapper()
-    mapper.setSampleDistance(1.0)
-
-    const range = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getMappingRange()
-
-    const cfun = vtkColorTransferFunction.newInstance()
-    const preset = vtkColorMaps.getPresetByName(colormaps[petColorMapIndex])
-    cfun.applyColorMap(preset)
-    cfun.setMappingRange(range[0], range[1])
-
-    volumeActor.getProperty().setRGBTransferFunction(0, cfun)
-
-    // Create scalar opacity function
-    const ofun = vtkPiecewiseFunction.newInstance()
-    ofun.addPoint(0, 0.0)
-    ofun.addPoint(0.1, 0.9)
-    ofun.addPoint(5, 1.0)
-
-    volumeActor.getProperty().setScalarOpacity(0, ofun)
-
-    petCTScene.render()
-
-    this.setState({ petColorMapIndex })
-  }
-
   destroyAndDecacheAllVolumes = () => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
       return
@@ -401,15 +360,6 @@ class MPRExample extends Component {
     const fusionButtons =
       layoutID === 'FusionMIP' ? (
         <React.Fragment>
-          <button
-            onClick={() =>
-              metadataLoaded && !destroyed && this.swapPetTransferFunction()
-            }
-            className="btn btn-primary "
-            style={{ margin: '2px 4px' }}
-          >
-            SwapPetTransferFunction
-          </button>
           <select
             value={this.state.ptCtLeftClickTool}
             onChange={this.swapPtCtTool}

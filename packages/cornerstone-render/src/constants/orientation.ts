@@ -20,7 +20,6 @@ import { Orientation, Point3 } from '../types'
  * ```
  * renderingEngine.setViewports([
  *  {
- *    sceneUID: 'a-scene-uid',
  *    viewportUID: 'a-viewport-uid',
  *    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
  *    canvas: document.querySelector('div.canvas-container'),

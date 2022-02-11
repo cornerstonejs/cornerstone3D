@@ -1,8 +1,8 @@
 import { BaseTool } from './base'
 import {
   getEnabledElement,
-  Scene,
   VolumeViewport,
+  getVolumeViewportsContainingVolumeUID,
 } from '@precisionmetrics/cornerstone-render'
 import { getVoxelPositionBasedOnIntensity } from '../util/planar'
 import jumpToWorld from '../util/viewport/jumpToWorld'
@@ -29,14 +29,14 @@ export default class MIPJumpToClickTool extends BaseTool {
    * @param evt click event
    */
   mouseClickCallback(evt): void {
-    const { element, currentPoints, sceneUID } = evt.detail
+    const { element, currentPoints, viewportUID } = evt.detail
 
     // 1. Getting the enabled element
     const enabledElement = getEnabledElement(element)
-    const { viewport, scene, renderingEngine } = enabledElement
+    const { viewport, renderingEngine } = enabledElement
 
     // 2. Getting the target volume that is clicked on
-    const targetVolumeUID = this._getTargetVolumeUID(scene)
+    const targetVolumeUID = this._getTargetVolumeUID(viewport as VolumeViewport)
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity
@@ -49,7 +49,6 @@ export default class MIPJumpToClickTool extends BaseTool {
 
     // 4. Search for the brightest point location in the line of sight
     const brightestPoint = getVoxelPositionBasedOnIntensity(
-      scene,
       viewport as VolumeViewport,
       targetVolumeUID,
       maxFn,
@@ -60,41 +59,40 @@ export default class MIPJumpToClickTool extends BaseTool {
       return
     }
 
-    // 5. Get all the scenes containing the volume
-    const scenes = renderingEngine.getScenesContainingVolume(targetVolumeUID)
+    // 5. Get all the Viewports containing the volume
+    const viewports = getVolumeViewportsContainingVolumeUID(
+      targetVolumeUID,
+      renderingEngine.uid
+    )
 
-    // 6. Update all the scenes and its viewports
-    scenes.forEach((scene) => {
+    // 6. Update all the Viewports and its viewports
+    viewports.forEach((viewport) => {
       // Don't want to jump for the viewport that was clicked on
-      if (scene.uid === sceneUID) {
+      if (viewport.uid === viewportUID) {
         return
       }
 
-      const viewports = scene.getViewports()
-
-      viewports.forEach((viewport) => {
-        jumpToWorld(viewport, brightestPoint)
-      })
+      jumpToWorld(viewport, brightestPoint)
     })
   }
 
   /**
-   * Returns the volume UID in the scene. It returns the first volume.
-   * @param scene Scene
+   * Returns the volume UID in the viewport. It returns the first volume.
+   * @param viewport viewport
    * @returns volume UID
    */
-  _getTargetVolumeUID = (scene: Scene): string => {
+  _getTargetVolumeUID = (viewport: VolumeViewport): string => {
     if (this.configuration.volumeUID) {
       return this.configuration.volumeUID
     }
 
-    const volumeActors = scene.getVolumeActors()
+    const actors = viewport.getActors()
 
-    if (!volumeActors && !volumeActors.length) {
+    if (!actors && !actors.length) {
       // No stack to scroll through
       return
     }
 
-    return volumeActors[0].uid
+    return actors[0].uid
   }
 }

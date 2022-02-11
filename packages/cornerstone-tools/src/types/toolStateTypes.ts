@@ -77,7 +77,6 @@ type ToolSpecificToolData = {
     invalidated?: boolean
     activeViewportUIDs?: string[]
     viewportUID?: string
-    sceneUID?: string
   }
 }
 

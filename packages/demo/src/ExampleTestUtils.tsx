@@ -20,13 +20,7 @@ import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import {
-  renderingEngineUID,
-  ctVolumeUID,
-  SCENE_IDS,
-  VIEWPORT_IDS,
-  ANNOTATION_TOOLS,
-} from './constants'
+import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -111,7 +105,6 @@ class testUtil extends Component {
 
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.CT
     )
 

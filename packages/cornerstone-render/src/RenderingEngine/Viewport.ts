@@ -16,13 +16,12 @@ import { vtkSlabCamera } from './vtkClasses'
 
 /**
  * An object representing a single viewport, which is a camera
- * looking into a scene, and an associated target output `canvas`.
+ * looking into a viewport, and an associated target output `canvas`.
  */
 class Viewport {
   readonly uid: string
   readonly element: HTMLElement
   readonly canvas: HTMLCanvasElement
-  readonly sceneUID?: string = undefined
   readonly renderingEngineUID: string
   readonly type: string
   protected flipHorizontal = false
@@ -56,11 +55,6 @@ class Viewport {
       this.renderingEngineUID
     )
 
-    if (props.sceneUID) {
-      this.sceneUID = props.sceneUID
-      this.element.setAttribute('data-scene-uid', this.sceneUID)
-    }
-
     this.defaultOptions = _cloneDeep(props.defaultOptions)
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
@@ -80,7 +74,7 @@ class Viewport {
   }
 
   /**
-   * @method getRenderingEngine Returns the rendering engine driving the `Scene`.
+   * @method getRenderingEngine Returns the rendering engine driving the `Viewport`.
    *
    * @returns {RenderingEngine} The RenderingEngine instance.
    */
@@ -167,11 +161,32 @@ class Viewport {
    * @param flipVertical: boolean
    */
   protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
-    const scene = this.getRenderingEngine().getScene(this.sceneUID)
-
     const imageData = this.getDefaultImageData()
 
     if (!imageData) {
+      return
+    }
+
+    let flipH = false
+    let flipV = false
+
+    if (
+      typeof flipHorizontal !== 'undefined' &&
+      ((flipHorizontal && !this.flipHorizontal) ||
+        (!flipHorizontal && this.flipHorizontal))
+    ) {
+      flipH = true
+    }
+
+    if (
+      typeof flipVertical !== 'undefined' &&
+      ((flipVertical && !this.flipVertical) ||
+        (!flipVertical && this.flipVertical))
+    ) {
+      flipV = true
+    }
+
+    if (!flipH && !flipV) {
       return
     }
 
@@ -214,11 +229,7 @@ class Viewport {
       .rotateFromDirections([0, 1, 0], jVector)
       .translate(-center[0], -center[1], -center[2])
 
-    if (
-      typeof flipHorizontal !== 'undefined' &&
-      ((flipHorizontal && !this.flipHorizontal) ||
-        (!flipHorizontal && this.flipHorizontal))
-    ) {
+    if (flipH) {
       this.flipHorizontal = flipHorizontal
       flipHTx = vtkMatrixBuilder
         .buildFromRadian()
@@ -227,21 +238,13 @@ class Viewport {
         .multiply(transformBackFromOriginTx.getMatrix())
     }
 
-    if (
-      typeof flipVertical !== 'undefined' &&
-      ((flipVertical && !this.flipVertical) ||
-        (!flipVertical && this.flipVertical))
-    ) {
+    if (flipV) {
       this.flipVertical = flipVertical
       flipVTx = vtkMatrixBuilder
         .buildFromRadian()
         .multiply(transformToOriginTx.getMatrix())
         .scale(1, -1, 1)
         .multiply(transformBackFromOriginTx.getMatrix())
-    }
-
-    if (!flipVTx && !flipHTx) {
-      return
     }
 
     const actors = this.getActors()
@@ -262,27 +265,6 @@ class Viewport {
       volumeActor.setUserMatrix(mat)
 
       this.getRenderingEngine().render()
-
-      if (scene) {
-        const viewports = scene.getViewports()
-        viewports.forEach((vp) => {
-          const { focalPoint, position } = vp.getCamera()
-          if (flipVTx) {
-            flipVTx.apply(focalPoint)
-            flipVTx.apply(position)
-          }
-
-          if (flipHTx) {
-            flipHTx.apply(focalPoint)
-            flipHTx.apply(position)
-          }
-
-          vp.setCamera({
-            focalPoint,
-            position,
-          })
-        })
-      }
     })
 
     this.getRenderingEngine().render()
@@ -550,7 +532,6 @@ class Viewport {
         canvas: this.canvas,
         element: this.element,
         viewportUID: this.uid,
-        sceneUID: this.sceneUID,
         renderingEngineUID: this.renderingEngineUID,
       }
 
@@ -709,7 +690,6 @@ class Viewport {
         canvas: this.canvas,
         element: this.element,
         viewportUID: this.uid,
-        sceneUID: this.sceneUID,
         renderingEngineUID: this.renderingEngineUID,
       }
 

@@ -1,7 +1,9 @@
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  VolumeViewport,
+} from '@precisionmetrics/cornerstone-render'
 
 import state, { getLabelmapsStateForElement } from './state'
-import { addNewLabelmap } from './addNewLabelmap'
 import { triggerLabelmapStateUpdated } from './triggerLabelmapStateUpdated'
 
 /**
@@ -73,43 +75,31 @@ async function setActiveLabelmapIndex(
     return
   }
 
-  const { scene, viewportUID } = enabledElement
+  const { viewportUID, viewport } = enabledElement
 
-  // stackViewport
-  if (!scene) {
+  if (!(viewport instanceof VolumeViewport)) {
     throw new Error('Segmentation for StackViewport is not supported yet')
   }
 
   // volumeViewport
   const viewportLabelmapsState = state.volumeViewports[viewportUID]
-  const viewportUIDs = scene.getViewportUIDs()
 
-  // If we have already a labelmap in the state for the provided labelmapIndex
-  if (viewportLabelmapsState?.labelmaps[labelmapIndex]) {
-    // Update active viewportUID on all scene's viewports
-    viewportUIDs.forEach((viewportUID) => {
-      state.volumeViewports[viewportUID].activeLabelmapIndex = labelmapIndex
-    })
+  // check if the labelmapIndex is valid
+  if (!viewportLabelmapsState?.labelmaps[labelmapIndex]) {
+    console.warn(
+      `No labelmap found for index ${labelmapIndex} on element ${element}`
+    )
 
-    const { volumeUID: labelmapUID } =
-      viewportLabelmapsState?.labelmaps[labelmapIndex]
-    triggerLabelmapStateUpdated(labelmapUID, element)
-    return viewportLabelmapsState.labelmaps[labelmapIndex].volumeUID
+    return
   }
 
-  // Create a new labelmap at the labelmapIndex, If there is no labelmap at that index
+  // Update active viewportUID on all viewports with the same volume
+  state.volumeViewports[viewport.uid].activeLabelmapIndex = labelmapIndex
 
-  const options = {
-    volumeUID: `${scene.uid}-labelmap-${labelmapIndex}`,
-  }
-  // Put the current volume as a reference for the labelmap
-  const labelmapUID = await addNewLabelmap({
-    element,
-    labelmapIndex,
-    options,
-  })
-
-  return labelmapUID
+  const { volumeUID: labelmapUID } =
+    viewportLabelmapsState.labelmaps[labelmapIndex]
+  triggerLabelmapStateUpdated(labelmapUID, element)
+  return viewportLabelmapsState.labelmaps[labelmapIndex].volumeUID
 }
 
 // this method SHOULD not be used to create a new labelmap

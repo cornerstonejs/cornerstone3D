@@ -8,8 +8,8 @@ import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
  */
 function getSvgDrawingHelper(element: HTMLElement) {
   const enabledElement = getEnabledElement(element)
-  const { viewportUID, sceneUID, renderingEngineUID } = enabledElement
-  const canvasHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
+  const { viewportUID, renderingEngineUID } = enabledElement
+  const canvasHash = `${viewportUID}:${renderingEngineUID}`
   const svgLayerElement = _getSvgLayer(element)
 
   // Reset touched

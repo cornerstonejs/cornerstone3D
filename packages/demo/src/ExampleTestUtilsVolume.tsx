@@ -10,6 +10,7 @@ import {
   createAndCacheVolume,
   Utilities,
   init as csRenderInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   ToolBindings,
@@ -29,7 +30,6 @@ import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
   ctVolumeUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -106,7 +106,6 @@ class testUtilVolume extends Component {
 
     const viewportInput = [
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
@@ -116,7 +115,6 @@ class testUtilVolume extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.PT,
         viewportUID: VIEWPORT_IDS.PT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
@@ -126,7 +124,6 @@ class testUtilVolume extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
@@ -139,11 +136,7 @@ class testUtilVolume extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    ctTestSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
+    ctTestSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
     // ctTestSceneToolGroup.addViewports(
     //   renderingEngineUID,
     //   SCENE_IDS.PT,
@@ -151,15 +144,10 @@ class testUtilVolume extends Component {
     // )
     ctTestSceneToolGroup.addViewports(
       renderingEngineUID,
-      SCENE_IDS.CT,
       VIEWPORT_IDS.CT.CORONAL
     )
 
-    ptTestSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.PT,
-      VIEWPORT_IDS.PT.AXIAL
-    )
+    ptTestSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.PT.AXIAL)
 
     addToolsToToolGroups({ ctTestSceneToolGroup })
     addToolsToToolGroups({ ptTestSceneToolGroup })
@@ -171,31 +159,34 @@ class testUtilVolume extends Component {
     await createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
     await createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
 
-    const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-    const ptScene = renderingEngine.getScene(SCENE_IDS.PT)
-
     axialSync.addSource({
-      renderingEngineUID: ctScene.renderingEngineUID,
-      sceneUID: ctScene.uid,
-      viewportUID: ctScene.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
+      renderingEngineUID: renderingEngineUID,
+      viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
     })
     axialSync.addTarget({
-      renderingEngineUID: ptScene.renderingEngineUID,
-      sceneUID: ptScene.uid,
-      viewportUID: ptScene.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
+      renderingEngineUID: renderingEngineUID,
+      viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
     })
 
-    await ctScene.setVolumes([
-      {
-        volumeUID: this.ctVolumeId,
-      },
-    ])
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: this.ctVolumeId,
+        },
+      ],
+      [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.CORONAL]
+    )
 
-    await ptScene.setVolumes([
-      {
-        volumeUID: this.ptVolumeId,
-      },
-    ])
+    await setVolumesOnViewports(
+      renderingEngine,
+      [
+        {
+          volumeUID: this.ptVolumeId,
+        },
+      ],
+      [VIEWPORT_IDS.PT.AXIAL]
+    )
 
     renderingEngine.render()
 

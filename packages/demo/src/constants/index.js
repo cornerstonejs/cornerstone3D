@@ -10,23 +10,6 @@ const petStackUID = 'PET_Stack'
 // This file just stores all the IDS used within the demo. In a real application
 /// These may associated with different hanging protocols/dynamically generated, etc.
 
-// IDs that unique define each scene used in the demo. A Scene is world space with a set of objects
-// In it that could potentially be rendered by multiple viewports.
-const SCENE_IDS = {
-  STACK: 'stackScene',
-  CT: 'ctScene',
-  PT: 'ptScene',
-  PROSTATE: 'prostateScene',
-  FUSION: 'fusionScene',
-  PTMIP: 'ptMipScene',
-  CTVR: 'ctVRScene',
-  CTOBLIQUE: 'ctObliqueScene',
-  PT_TYPES_SUV_BW: 'petTypesSuvBW',
-  PT_TYPES_SUV_LBM: 'petTypesSuvLBM',
-  PT_TYPES_SUV_BSA: 'petTypesSuvBSA',
-}
-
-// IDs that define each viewport used in the demos. Here they are grouped by scene for convenience, only.
 const VIEWPORT_IDS = {
   STACK: {
     CT: 'ctStack',
@@ -122,10 +105,9 @@ export {
   ctVolumeTestUID,
   ptVolumeTestUID,
   petStackUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
   TOOL_GROUP_UIDS,
   colormaps,
   ANNOTATION_TOOLS,
-  SEGMENTATION_TOOLS
+  SEGMENTATION_TOOLS,
 }

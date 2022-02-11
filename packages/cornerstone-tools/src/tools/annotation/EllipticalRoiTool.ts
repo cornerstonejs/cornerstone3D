@@ -715,8 +715,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     if (viewport instanceof StackViewport) {
       targetUID = this._getTargetStackUID(viewport)
     } else if (viewport instanceof VolumeViewport) {
-      const scene = viewport.getScene()
-      targetUID = this._getTargetVolumeUID(scene)
+      targetUID = this._getTargetVolumeUID(viewport)
     } else {
       throw new Error(`Viewport Type not supported: ${viewport.type}`)
     }
@@ -938,7 +937,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     enabledElement
   ) => {
     const data = toolData.data
-    const { viewportUID, renderingEngineUID, sceneUID } = enabledElement
+    const { viewportUID, renderingEngineUID } = enabledElement
 
     const { points } = data.handles
 
@@ -1087,7 +1086,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       toolData,
       viewportUID,
       renderingEngineUID,
-      sceneUID: sceneUID,
     }
 
     triggerEvent(eventTarget, eventType, eventDetail)
@@ -1100,10 +1098,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       indexWithinDimensions(index1, dimensions) &&
       indexWithinDimensions(index2, dimensions)
     )
-  }
-
-  _getTargetStackUID(viewport) {
-    return `stackTarget:${viewport.uid}`
   }
 
   /**
@@ -1132,20 +1126,5 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       1.0
 
     return inEllipse
-  }
-
-  _getTargetVolumeUID = (scene) => {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const volumeActors = scene.getVolumeActors()
-
-    if (!volumeActors && !volumeActors.length) {
-      // No stack to scroll through
-      return
-    }
-
-    return volumeActors[0].uid
   }
 }

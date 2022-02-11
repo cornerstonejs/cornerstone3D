@@ -4,14 +4,13 @@ import Synchronizer from './Synchronizer'
 
 function getSynchronizers({
   renderingEngineUID,
-  sceneUID,
   viewportUID,
 }: Types.IViewportUID): Array<Synchronizer> {
   const synchronizersFilteredByUIDs = []
 
-  if (!renderingEngineUID && !sceneUID && !viewportUID) {
+  if (!renderingEngineUID && !viewportUID) {
     throw new Error(
-      'At least one of renderingEngineUID or sceneUID or viewportUID should be given'
+      'At least one of renderingEngineUID or viewportUID should be given'
     )
   }
 

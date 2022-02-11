@@ -7,6 +7,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -18,7 +19,6 @@ import {
   renderingEngineUID,
   ctVolumeUID,
   ctStackUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
@@ -101,7 +101,6 @@ class CacheDecacheExample extends Component {
     this.viewportInput = [
       // CT volume axial
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
@@ -110,7 +109,6 @@ class CacheDecacheExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
@@ -119,7 +117,6 @@ class CacheDecacheExample extends Component {
         },
       },
       {
-        sceneUID: SCENE_IDS.CT,
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
@@ -141,26 +138,13 @@ class CacheDecacheExample extends Component {
     renderingEngine.setViewports(this.viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.AXIAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.CORONAL
-    )
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.CORONAL)
 
     // stack ct
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.CT
     )
 
@@ -212,12 +196,11 @@ class CacheDecacheExample extends Component {
 
     const onLoad = () => this.setState({ progressText: 'Loaded.' })
 
-    const ctScene = this.renderingEngine.getScene(SCENE_IDS.CT)
-
-    // todo: set Volumes, set the volume actors which is required for rendering
-    // the scene, if we have already cached the images, load would be faster
-    // than setting the volume actors, resulting in a blank canvas.
-    await ctScene.setVolumes([{ volumeUID: ctVolumeUID }])
+    setVolumesOnViewports(
+      this.renderingEngine,
+      [{ volumeUID: ctVolumeUID }],
+      [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
+    )
 
     ctVolume.load(onLoad)
 

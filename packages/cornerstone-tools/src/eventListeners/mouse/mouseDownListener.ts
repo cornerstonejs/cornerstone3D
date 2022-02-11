@@ -1,4 +1,7 @@
-import { getEnabledElement, triggerEvent } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  triggerEvent,
+} from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import mouseMoveListener from './mouseMoveListener'
 import {
@@ -14,7 +17,6 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = CornerstoneTools3DEvents
 
 interface IMouseDownListenerState {
   renderingEngineUID: string
-  sceneUID: string
   viewportUID: string
   isClickEvent: boolean
   clickDelay: number
@@ -28,7 +30,6 @@ interface IMouseDownListenerState {
 const defaultState: IMouseDownListenerState = {
   //
   renderingEngineUID: undefined,
-  sceneUID: undefined,
   viewportUID: undefined,
   //
   isClickEvent: true,
@@ -52,7 +53,6 @@ const defaultState: IMouseDownListenerState = {
 let state: IMouseDownListenerState = {
   //
   renderingEngineUID: undefined,
-  sceneUID: undefined,
   viewportUID: undefined,
   //
   isClickEvent: true,
@@ -89,10 +89,9 @@ function mouseDownListener(evt: MouseEvent) {
   state.element = <HTMLElement>evt.currentTarget
 
   const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportUID } = enabledElement
 
   state.renderingEngineUID = renderingEngineUID
-  state.sceneUID = sceneUID
   state.viewportUID = viewportUID
 
   state.preventClickTimeout = setTimeout(_preventClickHandler, state.clickDelay)
@@ -105,7 +104,6 @@ function mouseDownListener(evt: MouseEvent) {
 
   const eventData: ICornerstoneToolsEventDetail = {
     renderingEngineUID: state.renderingEngineUID,
-    sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     event: evt,
     camera: {},
@@ -153,7 +151,6 @@ function _onMouseDrag(evt: MouseEvent) {
 
   const eventData: ICornerstoneToolsEventDetail = {
     renderingEngineUID: state.renderingEngineUID,
-    sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     event: evt,
     camera: {},
@@ -189,7 +186,6 @@ function _onMouseUp(evt: MouseEvent): void {
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints)
   const eventData = {
     renderingEngineUID: state.renderingEngineUID,
-    sceneUID: state.sceneUID,
     viewportUID: state.viewportUID,
     event: evt,
     camera: {},

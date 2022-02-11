@@ -2,7 +2,6 @@ import { Types } from '@precisionmetrics/cornerstone-render'
 
 interface ICornerstoneToolsEventDetail {
   renderingEngineUID: string
-  sceneUID: string
   viewportUID: string
 
   event: Record<string, unknown> | MouseEvent

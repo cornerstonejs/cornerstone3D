@@ -2,10 +2,10 @@
  * A utility that can be used to invert (in place) an RgbTransferFunction.
  *
  * @example
- * Grabbing a reference to the RGB Transfer function from the scene:
+ * Grabbing a reference to the RGB Transfer function from the viewport:
  * ```
- * const rgbTransferFunction = scene
- *   .getVolumeActor()
+ * const rgbTransferFunction = viewport
+ *   .getActor()
  *   .getProperty()
  *   .getRGBTransferFunction(0);
  *
