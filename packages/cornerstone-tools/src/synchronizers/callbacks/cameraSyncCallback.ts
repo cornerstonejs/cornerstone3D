@@ -17,7 +17,6 @@ export default function cameraSyncCallback(
   // We need a helper for this
   if (
     sourceViewport.renderingEngineUID === targetViewport.renderingEngineUID &&
-    sourceViewport.sceneUID === targetViewport.sceneUID &&
     sourceViewport.viewportUID === targetViewport.viewportUID
   ) {
     return

@@ -81,11 +81,10 @@ class AnnotationRenderingEngine {
       Enabled,
     ])
 
-    const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
+    const { renderingEngineUID, viewportUID } = enabledElement
     const eventData = {
       element,
       renderingEngineUID,
-      sceneUID,
       viewportUID,
     }
 

@@ -25,10 +25,9 @@ function getToolDataNearPointOnEnabledElement(
   point: Point2,
   proximity: number
 ): ToolSpecificToolData | null {
-  const { renderingEngineUID, sceneUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportUID } = enabledElement
   const toolGroups = ToolGroupManager.getToolGroups(
     renderingEngineUID,
-    sceneUID,
     viewportUID
   )
   for (let i = 0; i < toolGroups.length; ++i) {

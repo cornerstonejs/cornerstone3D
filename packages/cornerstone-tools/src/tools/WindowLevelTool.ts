@@ -8,6 +8,7 @@ import {
   StackViewport,
   Utilities,
   cache,
+  getVolumeViewportsContainingVolumeUID,
 } from '@precisionmetrics/cornerstone-render'
 
 // Todo: should move to configuration
@@ -32,7 +33,7 @@ export default class WindowLevelTool extends BaseTool {
   _dragCallback(evt) {
     const { element, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(element)
-    const { scene, sceneUID, viewportUID, viewport } = enabledElement
+    const { renderingEngine, viewportUID, viewport } = enabledElement
 
     let volumeUID,
       volumeActor,
@@ -40,13 +41,18 @@ export default class WindowLevelTool extends BaseTool {
       upper,
       rgbTransferFunction,
       modality,
-      newRange
+      newRange,
+      viewportsContainingVolumeUID
     let useDynamicRange = false
 
     if (viewport instanceof VolumeViewport) {
       volumeUID = this.configuration.volumeUID
-      volumeActor = scene.getVolumeActor(volumeUID)
+      ;({ volumeActor } = viewport.getActor(volumeUID))
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+      viewportsContainingVolumeUID = getVolumeViewportsContainingVolumeUID(
+        volumeUID,
+        renderingEngine.uid
+      )
       ;[lower, upper] = rgbTransferFunction.getRange()
       modality = cache.getVolume(volumeUID).metadata.Modality
       useDynamicRange = true
@@ -80,7 +86,6 @@ export default class WindowLevelTool extends BaseTool {
     const eventDetail = {
       volumeUID,
       viewportUID,
-      sceneUID,
       range: newRange,
     }
 
@@ -96,7 +101,9 @@ export default class WindowLevelTool extends BaseTool {
     }
 
     rgbTransferFunction.setRange(newRange.lower, newRange.upper)
-    scene.render()
+    viewportsContainingVolumeUID.forEach((vp) => {
+      vp.render()
+    })
   }
 
   getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }) {

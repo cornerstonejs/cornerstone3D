@@ -13,13 +13,12 @@ const { Active } = ToolModes
  * @returns {object} tool.
  */
 export default function getActiveToolForMouseEvent(evt) {
-  const { renderingEngineUID, sceneUID, viewportUID } = evt.detail
+  const { renderingEngineUID, viewportUID } = evt.detail
   const mouseEvent = evt.detail.event
   const modifierKey = keyEventListener.getModifierKey()
 
   const toolGroups = ToolGroupManager.getToolGroups(
     renderingEngineUID,
-    sceneUID,
     viewportUID
   )
 

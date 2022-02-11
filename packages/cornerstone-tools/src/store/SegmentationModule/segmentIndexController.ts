@@ -1,4 +1,7 @@
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  VolumeViewport,
+} from '@precisionmetrics/cornerstone-render'
 
 import state, {
   getActiveLabelmapState,
@@ -58,10 +61,10 @@ function setActiveSegmentIndex(
     return
   }
 
-  const { scene, viewportUID } = enabledElement
+  const { viewport, viewportUID } = enabledElement
 
   // stackViewport
-  if (!scene) {
+  if (!(viewport instanceof VolumeViewport)) {
     throw new Error('Segmentation for StackViewport is not supported yet')
   }
 
@@ -73,7 +76,6 @@ function setActiveSegmentIndex(
     )
   }
 
-  // active labelmap Index is the same for all viewports in the scene
   const activeLabelmapUID = getActiveLabelmapUID(element)
 
   const labelmapGlobalState = getGlobalStateForLabelmapUID(activeLabelmapUID)

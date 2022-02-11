@@ -4,17 +4,11 @@ import * as cornerstone3D from '../src/index'
 const { RenderingEngine, cache, Utilities, VIEWPORT_TYPE, ORIENTATION } =
   cornerstone3D
 
-//const { createFloat32SharedArray } = Utilities
-
 const renderingEngineUID = Utilities.uuidv4()
 
-const scene1UID = 'SCENE_1'
-const scene2UID = 'SCENE_2'
 const axialViewportUID = 'AXIAL_VIEWPORT'
 const sagittalViewportUID = 'SAGITTAL_VIEWPORT'
 const customOrientationViewportUID = 'OFF_AXIS_VIEWPORT'
-
-const DOMElements = []
 
 describe('RenderingEngineAPI -- ', () => {
   beforeAll(() => {
@@ -42,7 +36,6 @@ describe('RenderingEngineAPI -- ', () => {
 
       this.renderingEngine.setViewports([
         {
-          sceneUID: scene1UID,
           viewportUID: axialViewportUID,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this.elementAxial,
@@ -51,7 +44,6 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          sceneUID: scene1UID,
           viewportUID: sagittalViewportUID,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this.elementSagittal,
@@ -60,7 +52,6 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          sceneUID: scene2UID,
           viewportUID: customOrientationViewportUID,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this.elementCustom,
@@ -76,44 +67,18 @@ describe('RenderingEngineAPI -- ', () => {
       cache.purgeCache()
     })
 
-    it('Add multiple scenes to the viewport and have api access to both', function () {
-      let scene1 = this.renderingEngine.getScene(scene1UID)
+    it('should be able to access the viewports from renderingEngine', function () {
+      const AxialViewport = this.renderingEngine.getViewport(axialViewportUID)
+      const Viewports = this.renderingEngine.getViewports()
 
-      let scene2 = this.renderingEngine.getScene(scene2UID)
-
-      expect(scene1).toBeTruthy()
-      expect(scene2).toBeTruthy()
-
-      let scenes = this.renderingEngine.getScenes()
-
-      expect(scenes.length).toBe(2)
-
-      this.renderingEngine.removeScene(scene1UID)
-
-      scene1 = this.renderingEngine.getScene(scene1UID)
-      scenes = this.renderingEngine.getScenes()
-
-      expect(scene1).not.toBeTruthy()
-      expect(scenes.length).toBe(1)
-    })
-
-    it('should be able to access the viewports for a scene', function () {
-      const scene1 = this.renderingEngine.getScene(scene1UID)
-
-      const scene1AxialViewport = scene1.getViewport(axialViewportUID)
-      const scene1Viewports = scene1.getViewports()
-
-      expect(scene1AxialViewport).toBeTruthy()
-      expect(scene1Viewports).toBeTruthy()
-      expect(scene1Viewports.length).toEqual(2)
+      expect(AxialViewport).toBeTruthy()
+      expect(Viewports).toBeTruthy()
+      expect(Viewports.length).toEqual(3)
     })
 
     it('should be able to destroy the rendering engine', function () {
       this.renderingEngine.destroy()
 
-      expect(function () {
-        this.renderingEngine.getScenes()
-      }).toThrow()
       expect(function () {
         this.renderingEngine.getViewports()
       }).toThrow()
@@ -126,24 +91,20 @@ describe('RenderingEngineAPI -- ', () => {
     })
 
     it('Take an orientation given by AXIAL as well as set manually by sliceNormal and viewUp', function () {
-      const scene1 = this.renderingEngine.getScene(scene1UID)
-      const scene2 = this.renderingEngine.getScene(scene2UID)
-
-      const scene1AxialViewport = scene1.getViewport(axialViewportUID)
-      const scene2CustomOrientationViewport = scene2.getViewport(
+      const AxialViewport = this.renderingEngine.getViewport(axialViewportUID)
+      const CustomOrientationViewport = this.renderingEngine.getViewport(
         customOrientationViewportUID
       )
 
-      const scene1DefaultOptions = scene1AxialViewport.defaultOptions
-      const scene1Orientation = scene1DefaultOptions.orientation
-      const scene2DefaultOptions =
-        scene2CustomOrientationViewport.defaultOptions
-      const scene2Orientation = scene2DefaultOptions.orientation
+      const DefaultOptions1 = AxialViewport.defaultOptions
+      const Orientation1 = DefaultOptions1.orientation
+      const DefaultOptions2 = CustomOrientationViewport.defaultOptions
+      const Orientation2 = DefaultOptions2.orientation
 
-      expect(scene1Orientation.viewUp.length).toEqual(3)
-      expect(scene1Orientation.sliceNormal.length).toEqual(3)
-      expect(scene2Orientation.viewUp.length).toEqual(3)
-      expect(scene2Orientation.sliceNormal.length).toEqual(3)
+      expect(Orientation1.viewUp.length).toEqual(3)
+      expect(Orientation1.sliceNormal.length).toEqual(3)
+      expect(Orientation2.viewUp.length).toEqual(3)
+      expect(Orientation2.sliceNormal.length).toEqual(3)
     })
   })
 
@@ -174,7 +135,6 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to successfully use enable api', function () {
       const viewportInputEntries = [
         {
-          sceneUID: scene1UID,
           viewportUID: axialViewportUID,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this.elementAxial,
@@ -183,7 +143,6 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          sceneUID: scene1UID,
           viewportUID: sagittalViewportUID,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this.elementSagittal,
@@ -192,7 +151,6 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          sceneUID: scene2UID,
           viewportUID: customOrientationViewportUID,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this.elementCustomOrientation,
@@ -204,17 +162,16 @@ describe('RenderingEngineAPI -- ', () => {
 
       this.renderingEngine.enableElement(viewportInputEntries[0])
 
-      let scene1 = this.renderingEngine.getScene(scene1UID)
-      let scene2 = this.renderingEngine.getScene(scene2UID)
+      let viewport1 = this.renderingEngine.getViewport(axialViewportUID)
+      let viewport2 = this.renderingEngine.getViewport(sagittalViewportUID)
 
-      expect(scene1).toBeTruthy()
-      expect(scene1.uid).toBe(scene1UID)
-      expect(scene2).toBeUndefined()
+      expect(viewport1).toBeTruthy()
+      expect(viewport1.uid).toBe(axialViewportUID)
+      expect(viewport2).toBeUndefined()
     })
 
     it('should not enable element without an element', function () {
       const entry = {
-        sceneUID: scene1UID,
         viewportUID: axialViewportUID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         defaultOptions: {
@@ -230,7 +187,6 @@ describe('RenderingEngineAPI -- ', () => {
 
     it('should successfully use disable element API', function () {
       const entry = {
-        sceneUID: scene1UID,
         viewportUID: axialViewportUID,
         type: VIEWPORT_TYPE.ORTHOGRAPHIC,
         element: this.elementAxial,
@@ -250,7 +206,6 @@ describe('RenderingEngineAPI -- ', () => {
 
     it('should successfully get StackViewports', function () {
       const entry = {
-        sceneUID: undefined,
         viewportUID: axialViewportUID,
         type: VIEWPORT_TYPE.STACK,
         element: this.elementAxial,

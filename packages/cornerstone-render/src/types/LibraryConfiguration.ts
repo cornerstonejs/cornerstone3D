@@ -1,7 +1,7 @@
 type LibraryConfiguration = {
   /**
    * When an image is successfully loaded, automatically render it's volume's
-   * rendering engine's scenes. (Tied to autoRenderPercentage)
+   * rendering engine's volume viewports. (Tied to autoRenderPercentage)
    */
   autoRenderOnLoad?: boolean
   /**

@@ -1,4 +1,3 @@
-import { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
 import ICamera from './ICamera'
 import Point2 from './Point2'
 import Point3 from './Point3'
@@ -7,7 +6,6 @@ import { ActorEntry } from './IActor'
 
 interface IViewport {
   uid: string
-  sceneUID?: string
   renderingEngineUID: string
   type: string
   canvas: HTMLCanvasElement
@@ -45,7 +43,6 @@ interface IViewport {
  */
 type PublicViewportInput = {
   element: HTMLElement
-  sceneUID?: string
   viewportUID: string
   type: string
   defaultOptions: ViewportInputOptions
@@ -54,7 +51,6 @@ type PublicViewportInput = {
 type InternalViewportInput = {
   element: HTMLElement
   canvas: HTMLCanvasElement
-  sceneUID?: string
   viewportUID: string
   type: string
   defaultOptions: ViewportInputOptions
@@ -64,7 +60,6 @@ type ViewportInput = {
   uid: string
   element: HTMLElement
   canvas: HTMLCanvasElement
-  sceneUID?: string
   renderingEngineUID: string
   type: string
   sx: number

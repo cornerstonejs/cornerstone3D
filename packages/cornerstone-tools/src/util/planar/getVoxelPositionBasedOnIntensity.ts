@@ -1,7 +1,7 @@
 import getTargetVolume from './getTargetVolume'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { Point3 } from './../../types'
-import { Scene, VolumeViewport } from '@precisionmetrics/cornerstone-render'
+import { VolumeViewport } from '@precisionmetrics/cornerstone-render'
 
 /**
  * Returns a point on the line between the passed canvasPoint (clicked point often)
@@ -9,7 +9,6 @@ import { Scene, VolumeViewport } from '@precisionmetrics/cornerstone-render'
  * intensity of the points in the line of sight). It iterated over the points on
  * the line with a defined steps size
  *
- * @param scene Scene
  * @param viewport Viewport
  * @param targetVolumeUID Volume UID
  * @param criteriaFunction A function that returns the point if it passes a certain
@@ -20,7 +19,6 @@ import { Scene, VolumeViewport } from '@precisionmetrics/cornerstone-render'
  * @returns
  */
 export default function getVoxelPositionBasedOnIntensity(
-  scene: Scene,
   viewport: VolumeViewport,
   targetVolumeUID: string,
   criteriaFunction: (intensity: number, point: Point3) => Point3,
@@ -33,7 +31,7 @@ export default function getVoxelPositionBasedOnIntensity(
   // 2. Calculating the spacing in the normal direction, this will get
   // used as the step size for iterating over the points in the line of sight
   const { spacingInNormalDirection } = getTargetVolume(
-    scene,
+    viewport,
     camera,
     targetVolumeUID
   )

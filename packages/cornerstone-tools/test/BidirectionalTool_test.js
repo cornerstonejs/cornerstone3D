@@ -15,6 +15,7 @@ const {
   createAndCacheVolume,
   eventTarget,
   registerVolumeLoader,
+  setVolumesOnViewports,
 } = cornerstone3D
 
 const {
@@ -35,7 +36,6 @@ const {
 
 const renderingEngineUID = Utilities.uuidv4()
 
-const scene1UID = 'SCENE_1'
 const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
@@ -61,7 +61,6 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      sceneUID: scene1UID,
       viewportUID: viewportUID,
       type: viewportType,
       element,
@@ -211,11 +210,7 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -319,17 +314,16 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        const ctScene = this.renderingEngine.getScene(scene1UID)
-        ctScene.setVolumes([{ volumeUID: volumeId }])
-        ctScene.render()
+        setVolumesOnViewports(
+          this.renderingEngine,
+          [{ volumeUID: volumeId }],
+          [viewportUID]
+        )
+        vp.render()
       })
     } catch (e) {
       done.fail(e)
@@ -469,11 +463,7 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -606,11 +596,7 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -806,11 +792,7 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
     try {
       vp.setStack([imageId1], 0)
@@ -928,11 +910,7 @@ describe('Cornerstone Tools: ', () => {
       }, 100)
     }
 
-    this.stackToolGroup.addViewports(
-      this.renderingEngine.uid,
-      undefined,
-      vp.uid
-    )
+    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
     element.addEventListener(
       CornerstoneTools3DEvents.KEY_DOWN,
       cancelToolDrawing

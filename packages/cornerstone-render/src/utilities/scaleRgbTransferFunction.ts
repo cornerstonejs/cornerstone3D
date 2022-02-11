@@ -3,10 +3,10 @@
  * often use this to scale the transfer function based on a PET calculation.
  *
  * @example
- * Grabbing a reference to the RGB Transfer function from the scene:
+ * Grabbing a reference to the RGB Transfer function from the viewport:
  * ```
- * const rgbTransferFunction = scene
- *   .getVolumeActor()
+ * const rgbTransferFunction = viewport
+ *   .getActor()
  *   .getProperty()
  *   .getRGBTransferFunction(0);
  *

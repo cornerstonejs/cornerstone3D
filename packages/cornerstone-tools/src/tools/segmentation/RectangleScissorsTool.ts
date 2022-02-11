@@ -3,6 +3,7 @@ import {
   getEnabledElement,
   Settings,
   StackViewport,
+  VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
@@ -86,10 +87,9 @@ export default class RectangleScissorsTool extends BaseTool {
         'No active labelmap detected, create one before using scissors tool'
       )
     }
-    const labelmapUID = await activeLabelmapController.setActiveLabelmapIndex(
-      element,
-      labelmapIndex
-    )
+
+    const labelmapUID = activeLabelmapController.getActiveLabelmapUID(element)
+
     const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
     const segmentsLocked =
       lockedSegmentController.getLockedSegmentsForElement(element)
@@ -319,16 +319,6 @@ export default class RectangleScissorsTool extends BaseTool {
     const { enabledElement } = svgDrawingHelper
     const { viewport } = enabledElement
 
-    // if (viewport instanceof StackViewport) {
-    //   // targetUID = this._getTargetStackUID(viewport)
-    //   throw new Error('Stack viewport segmentation not implemented yet')
-    // } else if (viewport instanceof VolumeViewport) {
-    //   const scene = viewport.getScene()
-    //   targetUID = this._getTargetVolumeUID(scene)
-    // } else {
-    //   throw new Error(`Viewport Type not supported: ${viewport.type}`)
-    // }
-
     const { toolData } = this.editData
 
     // Todo: rectangle colro based on segment index
@@ -361,18 +351,18 @@ export default class RectangleScissorsTool extends BaseTool {
     )
   }
 
-  _getTargetVolumeUID = (scene) => {
+  _getTargetVolumeUID = (viewport) => {
     if (this.configuration.volumeUID) {
       return this.configuration.volumeUID
     }
 
-    const volumeActors = scene.getVolumeActors()
+    const actors = viewport.getActors()
 
-    if (!volumeActors && !volumeActors.length) {
+    if (!actors && !actors.length) {
       // No stack to scroll through
       return
     }
 
-    return volumeActors[0].uid
+    return actors[0].uid
   }
 }

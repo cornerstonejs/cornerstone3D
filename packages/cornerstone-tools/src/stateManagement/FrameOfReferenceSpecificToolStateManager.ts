@@ -26,10 +26,10 @@ interface FilterInterface {
  * @class FrameOfReferenceSpecificToolStateManager
  *
  * This class stores toolState in per FrameOfReference. Tool coordinates are
- * in the world coordinates for the scene, which is the patient coordinate system for DICOM.
+ * in the world coordinates for the viewports, which is the patient coordinate system for DICOM.
  *
  * Each FrameOfReferenceSpecificToolStateManager is separate, so it is be possible
- * to render different annotations of the same tool on different scenes that share
+ * to render different annotations of the same tool on different viewports that share
  * the same FrameOfReferenceUID, however no core tool in this library currently does this.
  * This could be useful for e.g. viewing two different reads of the same data side-by-side.
  *

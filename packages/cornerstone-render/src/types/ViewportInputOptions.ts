@@ -5,9 +5,9 @@ import Orientation from './Orientation'
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.
  */
 type ViewportInputOptions = {
-  background?: Array<number>
+  background?: [number, number, number]
   orientation?: Orientation
-  suppressEvents: boolean
+  suppressEvents?: boolean
 }
 
 export default ViewportInputOptions

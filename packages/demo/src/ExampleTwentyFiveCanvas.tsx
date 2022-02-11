@@ -63,9 +63,8 @@ class TwentyFiveCanvasExample extends Component {
       singleViewport: [],
     }
 
-    const scene = renderingEngine.getScene(sceneUID)
     // Some viewport that isn't the first one so there is an offset.
-    const viewport = scene.getViewport(viewportUIDS[4])
+    const viewport = renderingEngine.getViewport(viewportUIDS[4])
 
     for (let i = 0; i < 100; i++) {
       const t0 = performance.now()

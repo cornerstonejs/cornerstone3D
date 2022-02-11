@@ -82,22 +82,19 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     },
     addViewports: function (
       renderingEngineUID: string,
-      sceneUID?: string,
       viewportUID?: string
     ): void {
-      this.viewports.push({ renderingEngineUID, sceneUID, viewportUID })
+      this.viewports.push({ renderingEngineUID, viewportUID })
     },
     /**
      * Removes viewport from the toolGroup. If only renderingEngineUID is defined
      * it removes all the viewports with the same renderingEngineUID, if more filters
      * are provided, it uses them to search the viewport.
      * @param renderingEngineUID renderingEngine uid
-     * @param sceneUID scene uid
      * @param viewportUID viewport uid
      */
     removeViewports: function (
       renderingEngineUID: string,
-      sceneUID?: string,
       viewportUID?: string
     ): void {
       const indices = []
@@ -106,10 +103,6 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         let match = false
         if (vp.renderingEngineUID === renderingEngineUID) {
           match = true
-
-          if (sceneUID && vp.sceneUID !== sceneUID) {
-            match = false
-          }
 
           if (viewportUID && vp.viewportUID !== viewportUID) {
             match = false

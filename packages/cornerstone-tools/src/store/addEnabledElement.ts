@@ -118,12 +118,9 @@ function _createSvgAnnotationLayer(): SVGElement {
 }
 
 function _setSvgNodeCache(element) {
-  const {
-    viewportUid: viewportUID,
-    sceneUid: sceneUID,
-    renderingEngineUid: renderingEngineUID,
-  } = element.dataset
-  const elementHash = `${viewportUID}:${sceneUID}:${renderingEngineUID}`
+  const { viewportUid: viewportUID, renderingEngineUid: renderingEngineUID } =
+    element.dataset
+  const elementHash = `${viewportUID}:${renderingEngineUID}`
 
   // Create or reset
   // TODO: If... Reset, we should blow out any nodes in DOM

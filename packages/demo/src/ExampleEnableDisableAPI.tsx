@@ -7,6 +7,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
+  setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import * as cs from '@precisionmetrics/cornerstone-render'
@@ -25,7 +26,6 @@ import {
   renderingEngineUID,
   ctVolumeUID,
   ptVolumeUID,
-  SCENE_IDS,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -137,7 +137,6 @@ class EnableDisableViewportExample extends Component {
       viewportInputEntries: [
         {
           // CT volume axial
-          sceneUID: SCENE_IDS.CT,
           viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this._elementNodes.get(0),
@@ -168,7 +167,6 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // CT volume Coronal
-          sceneUID: SCENE_IDS.CT,
           viewportUID: VIEWPORT_IDS.CT.CORONAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this._elementNodes.get(3),
@@ -178,7 +176,6 @@ class EnableDisableViewportExample extends Component {
           },
         },
         {
-          sceneUID: SCENE_IDS.CT,
           viewportUID: VIEWPORT_IDS.CT.AXIAL,
           type: VIEWPORT_TYPE.ORTHOGRAPHIC,
           element: this._elementNodes.get(4),
@@ -208,16 +205,11 @@ class EnableDisableViewportExample extends Component {
     // Tools added for the first two viewports
 
     // volume ct
-    ctSceneToolGroup.addViewports(
-      renderingEngineUID,
-      SCENE_IDS.CT,
-      VIEWPORT_IDS.CT.SAGITTAL
-    )
+    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
 
     // stack ct
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.CT
     )
 
@@ -253,7 +245,6 @@ class EnableDisableViewportExample extends Component {
 
       stackDXViewportToolGroup.addViewports(
         renderingEngineUID,
-        undefined,
         VIEWPORT_IDS.STACK.DX
       )
     }
@@ -282,8 +273,15 @@ class EnableDisableViewportExample extends Component {
 
       ctVolume.load(onLoad)
 
-      const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-      ctScene.setVolumes([{ volumeUID: ctVolumeUID }])
+      await setVolumesOnViewports(
+        renderingEngine,
+        [{ volumeUID: ctVolumeUID }],
+        [
+          VIEWPORT_IDS.CT.AXIAL,
+          VIEWPORT_IDS.CT.CORONAL,
+          VIEWPORT_IDS.CT.SAGITTAL,
+        ]
+      )
 
       // Set initial CT levels in UI
       const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
@@ -302,9 +300,17 @@ class EnableDisableViewportExample extends Component {
 
       ptVolume.load()
 
-      const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-      ctScene.setVolumes([{ volumeUID: ptVolumeUID }])
-      ctScene.render()
+      await setVolumesOnViewports(
+        renderingEngine,
+        [{ volumeUID: ptVolumeUID }],
+        [
+          VIEWPORT_IDS.CT.AXIAL,
+          VIEWPORT_IDS.CT.CORONAL,
+          VIEWPORT_IDS.CT.SAGITTAL,
+        ]
+      )
+
+      renderingEngine.render()
     }
 
     ctStackLoad()
@@ -362,9 +368,9 @@ class EnableDisableViewportExample extends Component {
 
     this.renderingEngine.enableElement(viewportInput)
 
-    const { toolGroup, sceneUID, viewportUID, type, canvas } = viewportInput
+    const { toolGroup, viewportUID, type, canvas } = viewportInput
 
-    toolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID)
+    toolGroup.addViewports(renderingEngineUID, viewportUID)
 
     // load
     if (viewportUID === VIEWPORT_IDS.STACK.CT) {
@@ -374,10 +380,10 @@ class EnableDisableViewportExample extends Component {
     } else {
       // if we have removed the scene when disabling all the related viewports
       // set the volume again
-      const ctScene = this.renderingEngine.getScene(sceneUID)
-      if (!ctScene.getVolumeActors().length) {
-        this.CTVolumeLoad()
-      }
+      // const ctScene = this.renderingEngine.getScene(sceneUID)
+      // if (!ctScene.getVolumeActors().length) {
+      //   this.CTVolumeLoad()
+      // }
     }
 
     this.setState((state) => ({

@@ -1,9 +1,12 @@
-import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
-import { ORIENTATION, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render';
+import { VIEWPORT_IDS } from '../constants'
+import {
+  ORIENTATION,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
 import {
   setCTWWWC,
   setCTVRTransferFunction,
-} from '../helpers/transferFunctionHelpers';
+} from '../helpers/transferFunctionHelpers'
 
 function setLayout(
   renderingEngine,
@@ -13,7 +16,6 @@ function setLayout(
   const viewportInput = [
     // CT
     {
-      sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.AXIAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
       canvas: canvasContainers.get(0),
@@ -22,7 +24,6 @@ function setLayout(
       },
     },
     {
-      sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
       canvas: canvasContainers.get(1),
@@ -31,7 +32,6 @@ function setLayout(
       },
     },
     {
-      sceneUID: SCENE_IDS.CT,
       viewportUID: VIEWPORT_IDS.CT.CORONAL,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
       canvas: canvasContainers.get(2),
@@ -40,7 +40,6 @@ function setLayout(
       },
     },
     {
-      sceneUID: SCENE_IDS.CTVR,
       viewportUID: VIEWPORT_IDS.CTVR.VR,
       type: VIEWPORT_TYPE.PERSPECTIVE,
       canvas: canvasContainers.get(3),
@@ -52,37 +51,33 @@ function setLayout(
         },
       },
     },
-  ];
+  ]
 
-  renderingEngine.setViewports(viewportInput);
+  renderingEngine.setViewports(viewportInput)
 
-  const renderingEngineUID = renderingEngine.uid;
+  const renderingEngineUID = renderingEngine.uid
 
-  viewportInput.forEach(viewportInputEntry => {
-    const { sceneUID, viewportUID } = viewportInputEntry;
+  viewportInput.forEach((viewportInputEntry) => {
+    const { sceneUID, viewportUID } = viewportInputEntry
 
     if (sceneUID === SCENE_IDS.CT) {
-      console.log(`adding ${viewportUID} to CT toolgroup`);
-      ctSceneToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID);
+      console.log(`adding ${viewportUID} to CT toolgroup`)
+      ctSceneToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID)
     } else if (sceneUID === SCENE_IDS.CTVR) {
-      console.log(`adding ${viewportUID} to CTVR toolgroup`);
-      ctVRSceneToolGroup.addViewports(
-        renderingEngineUID,
-        sceneUID,
-        viewportUID
-      );
+      console.log(`adding ${viewportUID} to CTVR toolgroup`)
+      ctVRSceneToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID)
     }
-  });
+  })
 }
 
 function setVolumes(renderingEngine, ctVolumeUID) {
-  const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
-  const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR);
+  const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
+  const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR)
 
-  ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+  ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }])
   ctVRScene.setVolumes([
     { volumeUID: ctVolumeUID, callback: setCTVRTransferFunction },
-  ]);
+  ])
 }
 
-export default { setLayout, setVolumes };
+export default { setLayout, setVolumes }

@@ -25,7 +25,6 @@ import {
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
-  SCENE_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
@@ -411,12 +410,6 @@ class PriorityLoadExample extends Component {
 
   swapPetTransferFunction() {
     const renderingEngine = this.renderingEngine
-    const petCTScene = renderingEngine.getScene(SCENE_IDS.FUSION)
-
-    if (!petCTScene) {
-      // We have likely changed view and the scene no longer exists.
-      return
-    }
 
     const volumeActor = petCTScene.getVolumeActor(ptVolumeUID)
 
@@ -492,19 +485,7 @@ class PriorityLoadExample extends Component {
       ) : null
 
     const fusionButtons =
-      layoutID === 'FusionMIP' ? (
-        <React.Fragment>
-          <button
-            onClick={() =>
-              metadataLoaded && !destroyed && this.swapPetTransferFunction()
-            }
-            className="btn btn-primary"
-            style={{ margin: '2px 4px' }}
-          >
-            SwapPetTransferFunction
-          </button>
-        </React.Fragment>
-      ) : null
+      layoutID === 'FusionMIP' ? <React.Fragment></React.Fragment> : null
 
     const fusionWLDisplay =
       layoutID === 'FusionMIP' ? (

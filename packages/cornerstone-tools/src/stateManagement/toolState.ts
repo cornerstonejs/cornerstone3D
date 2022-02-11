@@ -30,7 +30,7 @@ function getViewportSpecificStateManager(
 
 // TODO: Why is this now using enabledElement instead of element?
 /**
- * getToolState - Returns the toolState for the `FrameOfReference` of the `Scene`
+ * getToolState - Returns the toolState for the `FrameOfReference` of the `Viewport`
  * being viewed by the cornerstone3D enabled `element`.
  *
  * @param {HTMLElement} element
@@ -69,7 +69,7 @@ function addToolState(
   // trigger measurement added
   const enabledElement = getEnabledElement(element)
   const { renderingEngine } = enabledElement
-  const { viewportUID, sceneUID } = enabledElement
+  const { viewportUID } = enabledElement
 
   const eventType = EVENTS.MEASUREMENT_ADDED
 
@@ -77,7 +77,6 @@ function addToolState(
     toolData,
     viewportUID,
     renderingEngineUID: renderingEngine.uid,
-    sceneUID: sceneUID,
   }
 
   triggerEvent(eventTarget, eventType, eventDetail)
@@ -99,7 +98,7 @@ function removeToolState(
   // trigger measurement removed
   const enabledElement = getEnabledElement(element)
   const { renderingEngine } = enabledElement
-  const { viewportUID, sceneUID } = enabledElement
+  const { viewportUID } = enabledElement
 
   const eventType = EVENTS.MEASUREMENT_REMOVED
 
@@ -107,7 +106,6 @@ function removeToolState(
     toolData,
     viewportUID,
     renderingEngineUID: renderingEngine.uid,
-    sceneUID: sceneUID,
   }
 
   triggerEvent(eventTarget, eventType, eventDetail)
@@ -131,7 +129,7 @@ function removeToolStateByToolDataUID(
   // trigger measurement removed
   const enabledElement = getEnabledElement(element)
   const { renderingEngine } = enabledElement
-  const { viewportUID, sceneUID } = enabledElement
+  const { viewportUID } = enabledElement
 
   const eventType = EVENTS.MEASUREMENT_REMOVED
 
@@ -139,7 +137,6 @@ function removeToolStateByToolDataUID(
     toolData,
     viewportUID,
     renderingEngineUID: renderingEngine.uid,
-    sceneUID: sceneUID,
   }
 
   triggerEvent(eventTarget, eventType, eventDetail)

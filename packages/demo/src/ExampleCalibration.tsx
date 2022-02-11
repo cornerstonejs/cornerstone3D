@@ -102,7 +102,6 @@ class CalibrationExample extends Component {
 
     stackDXViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.DX
     )
 

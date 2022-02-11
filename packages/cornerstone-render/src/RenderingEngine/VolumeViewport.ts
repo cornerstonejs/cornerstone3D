@@ -2,9 +2,16 @@ import { vec3 } from 'gl-matrix'
 
 import cache from '../cache'
 import VIEWPORT_TYPE from '../constants/viewportType'
-import Scene from './Scene'
 import Viewport from './Viewport'
-import { ViewportInput, Point2, Point3, IImageData } from '../types'
+import {
+  ViewportInput,
+  Point2,
+  Point3,
+  IImageData,
+  IVolumeInput,
+} from '../types'
+import { createVolumeActor } from './helpers'
+import { loadVolume } from '../volumeLoader'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import { ActorEntry, FlipDirection } from '../types'
 import { getShouldUseCPURendering } from '../init'
@@ -13,10 +20,11 @@ const EPSILON = 1e-3
 
 /**
  * An object representing a single viewport, which is a camera
- * looking into a scene, and an associated target output `canvas`.
+ * looking into a Viewport, and an associated target output `canvas`.
  */
 class VolumeViewport extends Viewport {
   useCPURendering = false
+  private _FrameOfReferenceUID: string
 
   constructor(props: ViewportInput) {
     super(props)
@@ -62,6 +70,143 @@ class VolumeViewport extends Viewport {
     return false
   }
 
+  /**
+   * @method setVolumes Creates volume actors for all volumes defined in the `volumeInputArray`.
+   * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
+   * For each entry, if a `blendMode` and/or `slabThickness` is defined, this will be set on the actor's
+   * `VolumeMapper`.
+   *
+   * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the volumes to add.
+   * @param {boolean} [immediate=false] Whether the `Viewport` should be rendered as soon as volumes are added.
+   */
+  public async setVolumes(
+    volumeInputArray: Array<IVolumeInput>,
+    immediate = false
+  ): Promise<void> {
+    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeUID)
+
+    if (!firstImageVolume) {
+      throw new Error(
+        `imageVolume with uid: ${firstImageVolume.uid} does not exist`
+      )
+    }
+
+    const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID
+
+    await this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID)
+
+    this._FrameOfReferenceUID = FrameOfReferenceUID
+
+    const slabThicknessValues = []
+    const volumeActors = []
+
+    // One actor per volume
+    for (let i = 0; i < volumeInputArray.length; i++) {
+      const { volumeUID, slabThickness } = volumeInputArray[i]
+      const volumeActor = await createVolumeActor(volumeInputArray[i])
+
+      volumeActors.push({ uid: volumeUID, volumeActor, slabThickness })
+
+      if (
+        slabThickness !== undefined &&
+        !slabThicknessValues.includes(slabThickness)
+      ) {
+        slabThicknessValues.push(slabThickness)
+      }
+    }
+
+    if (slabThicknessValues.length > 1) {
+      console.warn(
+        'Currently slab thickness for intensity projections is tied to the camera, not per volume, using the largest of the two volumes for this viewport.'
+      )
+    }
+
+    this._setVolumeActors(volumeActors)
+
+    if (immediate) {
+      this.render()
+    }
+  }
+
+  /**
+   * @method addVolumes Creates volume actors for all volumes defined in the `volumeInputArray`.
+   * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
+   *
+   * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the volumes to add.
+   * @param {boolean} [immediate=false] Whether the `Viewport` should be rendered as soon as volumes are added.
+   */
+  public async addVolumes(
+    volumeInputArray: Array<IVolumeInput>,
+    immediate = false
+  ): Promise<void> {
+    const volumeActors = []
+
+    await this._isValidVolumeInputArray(
+      volumeInputArray,
+      this._FrameOfReferenceUID
+    )
+
+    // One actor per volume
+    for (let i = 0; i < volumeInputArray.length; i++) {
+      const { volumeUID, visibility } = volumeInputArray[i]
+      const volumeActor = await createVolumeActor(volumeInputArray[i])
+
+      if (visibility === false) {
+        volumeActor.setVisibility(false)
+      }
+
+      volumeActors.push({ uid: volumeUID, volumeActor })
+    }
+
+    this.addActors(volumeActors)
+
+    if (immediate) {
+      this.render()
+    }
+  }
+
+  /**
+   * It removes the volume actor from the Viewport. If the volume actor is not in
+   * the viewport, it does nothing.
+   * @param volumeUIDs Array of volume UIDs to remove
+   * @param immediate If true, the Viewport will be rendered immediately
+   */
+  public removeVolumes(volumeUIDs: Array<string>, immediate = false): void {
+    this.removeActors(volumeUIDs)
+
+    if (immediate) {
+      this.render()
+    }
+  }
+
+  private async _isValidVolumeInputArray(
+    volumeInputArray: Array<IVolumeInput>,
+    FrameOfReferenceUID: string
+  ): Promise<boolean> {
+    const numVolumes = volumeInputArray.length
+
+    // Check all other volumes exist and have the same FrameOfReference
+    for (let i = 1; i < numVolumes; i++) {
+      const volumeInput = volumeInputArray[i]
+
+      const imageVolume = await loadVolume(volumeInput.volumeUID)
+
+      if (!imageVolume) {
+        throw new Error(
+          `imageVolume with uid: ${imageVolume.uid} does not exist`
+        )
+      }
+
+      if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
+        throw new Error(
+          `Volumes being added to viewport ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
+        )
+      }
+    }
+
+    return true
+  }
+
   public getIntensityFromWorld(point: Point3): number {
     const volumeActor = this.getDefaultActor().volumeActor
     const imageData = volumeActor.getMapper().getInputData()
@@ -83,26 +228,6 @@ class VolumeViewport extends Viewport {
     super.flip(flipDirection)
   }
 
-  /*
-  Todo: remove actor and remove actors does not work for some reason
-  public removeActor(actorUID: string): void {
-    const actor = this.getActor(actorUID)
-    if (!actor) {
-      console.warn(`Actor ${actorUID} does not exist for this viewport`)
-      return
-    }
-    const renderer = this.getRenderer()
-    renderer.removeViewProp(actor) // removeActor not implemented in vtk?
-    this._actors.delete(actorUID)
-  }
-
-  public removeActors(actorUIDs: Array<string>): void {
-    actorUIDs.forEach((actorUID) => {
-      this.removeActor(actorUID)
-    })
-  }
-  */
-
   /**
    * Reset the camera for the volume viewport
    * @param resetPanZoomForViewPlane=false only reset Pan and Zoom, if true,
@@ -114,7 +239,7 @@ class VolumeViewport extends Viewport {
   }
 
   public getFrameOfReferenceUID = (): string => {
-    return this.getScene().getFrameOfReferenceUID()
+    return this._FrameOfReferenceUID
   }
 
   /**
@@ -136,17 +261,6 @@ class VolumeViewport extends Viewport {
   public getSlabThickness(): number {
     const { slabThickness } = this.getCamera()
     return slabThickness
-  }
-
-  /**
-   * @method getScene Gets the `Scene` object that the `Viewport` is associated with.
-   *
-   * @returns {Scene} The `Scene` object.
-   */
-  public getScene(): Scene {
-    const renderingEngine = this.getRenderingEngine()
-
-    return renderingEngine.getScene(this.sceneUID)
   }
 
   /**

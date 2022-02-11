@@ -44,7 +44,6 @@ const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
 
 const renderingEngineUID = Utilities.uuidv4()
 
-const scene1UID = 'SCENE_1'
 const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
@@ -61,7 +60,6 @@ function createViewport(renderingEngine, orientation, width, height) {
 
   renderingEngine.setViewports([
     {
-      sceneUID: scene1UID,
       viewportUID: viewportUID,
       type: VIEWPORT_TYPE.STACK,
       element,
@@ -76,7 +74,7 @@ function createViewport(renderingEngine, orientation, width, height) {
 describe('renderingCore -- Stack', () => {
   beforeAll(() => {
     // initialize cornerstone
-    cornerstone3D.init()
+    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
   })
   describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
     beforeEach(function () {
@@ -192,7 +190,6 @@ describe('renderingCore -- Stack', () => {
       const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
 
       this.renderingEngine.enableElement({
-        sceneUID: scene1UID,
         viewportUID: viewportUID,
         type: VIEWPORT_TYPE.STACK,
         element: element,

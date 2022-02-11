@@ -24,6 +24,8 @@ const {
   registerVolumeLoader,
   createAndCacheVolume,
   Utilities,
+  setVolumesOnViewports,
+  getVolumeViewportsContainingVolumeUID,
 } = cornerstone3D
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
@@ -31,7 +33,6 @@ const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
 
 const renderingEngineUID = Utilities.uuidv4()
 
-const scene1UID = 'SCENE_1'
 const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
@@ -50,7 +51,6 @@ function createViewport(renderingEngine, orientation) {
 
   renderingEngine.setViewports([
     {
-      sceneUID: scene1UID,
       viewportUID: viewportUID,
       type: VIEWPORT_TYPE.ORTHOGRAPHIC,
       element,
@@ -114,9 +114,12 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            ctScene.render()
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -142,9 +145,12 @@ describe('Volume Viewport GPU -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          const ctScene = this.renderingEngine.getScene(scene1UID)
-          ctScene.setVolumes([{ volumeUID: volumeId }])
-          ctScene.render()
+          setVolumesOnViewports(
+            this.renderingEngine,
+            [{ volumeUID: volumeId }],
+            [viewportUID]
+          )
+          vp.render()
         })
       } catch (e) {
         done.fail(e)
@@ -198,9 +204,12 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            ctScene.render()
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -227,9 +236,12 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId }])
-            ctScene.render()
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -287,9 +299,12 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            ctScene.render()
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -316,9 +331,12 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId }])
-            ctScene.render()
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -327,7 +345,7 @@ describe('Volume Viewport GPU -- ', () => {
     })
   })
 
-  describe('Rendering Scenes API', function () {
+  describe('Rendering API', function () {
     beforeEach(function () {
       cache.purgeCache()
 
@@ -349,7 +367,7 @@ describe('Volume Viewport GPU -- ', () => {
       })
     })
 
-    it('should successfully use renderScenes API to load image', function (done) {
+    it('should successfully use setVolumesOnViewports API to load image', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
 
       // fake volume generator follows the pattern of
@@ -375,10 +393,12 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            // const scenes = this.renderingEngine.getScenes()
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            this.renderingEngine.renderScenes([scene1UID])
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -395,16 +415,14 @@ describe('Volume Viewport GPU -- ', () => {
 
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const viewport = this.renderingEngine.getViewport(viewportUID)
-        const viewports =
-          this.renderingEngine.getViewportsContainingVolumeUID(volumeId)
+        const viewports = getVolumeViewportsContainingVolumeUID(
+          volumeId,
+          this.renderingEngine.uid
+        )
 
         expect(viewports.length).toBe(1)
         expect(viewports[0]).toBe(viewport)
 
-        const scenes = this.renderingEngine.getScenesContainingVolume(volumeId)
-        const sceneViewport = scenes[0].getViewports()[0]
-        expect(scenes.length).toBe(1)
-        expect(sceneViewport).toBe(viewport)
         done()
       })
 
@@ -416,9 +434,12 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            this.renderingEngine.renderScenes([scene1UID])
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            this.renderingEngine.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -452,10 +473,12 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            // const scenes = this.renderingEngine.getScenes()
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            this.renderingEngine.renderViewports([viewportUID])
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -489,10 +512,12 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            // const scenes = this.renderingEngine.getScenes()
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            this.renderingEngine.renderViewport(viewportUID)
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -524,10 +549,12 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            // const scenes = this.renderingEngine.getScenes()
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            this.renderingEngine.renderViewport(viewportUID)
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -561,9 +588,11 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            // const scenes = this.renderingEngine.getScenes()
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }]).then(() => {
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            ).then(() => {
               this.renderingEngine.renderFrameOfReference(
                 'Volume_Frame_Of_Reference'
               )
@@ -626,9 +655,12 @@ describe('Volume Viewport GPU -- ', () => {
         // return the volume immediately
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            ctScene.render()
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {
@@ -660,9 +692,12 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            const ctScene = this.renderingEngine.getScene(scene1UID)
-            ctScene.setVolumes([{ volumeUID: volumeId, callback }])
-            ctScene.render()
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId, callback }],
+              [viewportUID]
+            )
+            vp.render()
           })
           .catch((e) => done(e))
       } catch (e) {

@@ -110,7 +110,6 @@ class OneStackExample extends Component {
 
     stackCTViewportToolGroup.addViewports(
       renderingEngineUID,
-      undefined,
       VIEWPORT_IDS.STACK.CT
     )
 

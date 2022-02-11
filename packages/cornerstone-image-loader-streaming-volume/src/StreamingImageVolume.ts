@@ -13,7 +13,6 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 
 import { scaleArray, autoLoad } from './helpers'
-import isEqual from 'lodash.isequal'
 
 const requestType = REQUEST_TYPE.Prefetch
 const { getMinMax } = cornerstoneUtils
