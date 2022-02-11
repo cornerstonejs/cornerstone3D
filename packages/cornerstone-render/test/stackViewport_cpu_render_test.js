@@ -21,7 +21,6 @@ const {
   unregisterAllImageLoaders,
   metaData,
   EVENTS,
-  init,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
   cpuColormaps,

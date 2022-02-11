@@ -32,7 +32,7 @@ export default class StreamingImageVolume extends ImageVolume {
     loaded: boolean
     loading: boolean
     cachedFrames: Array<boolean>
-    callbacks: Array<(LoadStatusInterface) => void>
+    callbacks: Array<(...args: unknown[]) => void>
   }
 
   constructor(
@@ -133,7 +133,7 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   public load = (
-    callback: (LoadStatusInterface) => void,
+    callback: (...args: unknown[]) => void,
     priority = 5
   ): void => {
     const { imageIds, loadStatus } = this
