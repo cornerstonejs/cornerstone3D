@@ -43,7 +43,7 @@ class CornerstoneEventTarget implements EventTarget {
       return
     }
 
-    const stack = this.listeners[event.type]
+    const stack = this.listeners[event.type].slice()
     const stackLength = stack.length
 
     for (let i = 0; i < stackLength; i++) {
