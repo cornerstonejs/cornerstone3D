@@ -11,12 +11,12 @@
   "peerDependencies": {
     "@precisionmetrics/cornerstone-render": "^0.0.4-rc13",
     "cornerstone-wado-image-loader": "^4.1.2",
-    "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
+    "@precisionmetrics/calculate-suv": "^0.1.0"
   },
   "devDependencies": {
     "@precisionmetrics/cornerstone-render": "^0.0.4-rc13",
     "cornerstone-wado-image-loader": "^4.1.2",
-    "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main"
+    "@precisionmetrics/calculate-suv": "^0.1.0"
   },
   "scripts": {
     "build": "yarn run build:webpack && yarn run build:lib && yarn run build:lib-esm",
