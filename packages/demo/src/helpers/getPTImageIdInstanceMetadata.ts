@@ -2,7 +2,7 @@ import { metaData } from '@precisionmetrics/cornerstone-render'
 import {
   InstanceMetadata,
   PhilipsPETPrivateGroup,
-} from 'calculate-suv/src/types'
+} from '@precisionmetrics/calculate-suv/src/types'
 
 export default function getPTImageIdInstanceMetadata(
   imageId: string

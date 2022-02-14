@@ -1,6 +1,6 @@
 import { api } from 'dicomweb-client'
 import dcmjs from 'dcmjs'
-import { calculateSUVScalingFactors } from 'calculate-suv'
+import { calculateSUVScalingFactors } from '@precisionmetrics/calculate-suv'
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata'
 import { Utilities } from '@precisionmetrics/cornerstone-render'
 
