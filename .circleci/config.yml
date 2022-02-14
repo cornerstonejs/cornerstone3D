@@ -9,11 +9,13 @@ defaults: &defaults
       environment:
         TERM: xterm # Enable colors in term
 
+
 jobs:
   CHECKOUT:
     <<: *defaults
     steps:
       - checkout
+      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
       - restore_cache:
           name: Restore Package Cache
           keys:
