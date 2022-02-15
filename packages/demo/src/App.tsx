@@ -25,6 +25,7 @@ import SegmentationRender from './ExampleSegmentationRender'
 import RenderToCanvasExample from './ExampleRenderToCanvas'
 import CrosshairsExample from './ExampleCrosshairs'
 import ApplyPresetsExample from './ExampleApplyPreset'
+import CursorExample from './ExampleCursor'
 
 function LinkOut({ href, text }) {
   return (
@@ -76,6 +77,11 @@ function Index() {
       title: 'One Volume',
       url: '/oneVolume',
       text: 'Example one volume',
+    },
+    {
+      title: 'Cursor',
+      url: '/cursor',
+      text: 'Example cursor',
     },
     {
       title: 'Different Presets',
@@ -275,6 +281,11 @@ function AppRouter() {
       children: <StackViewportExample />,
     })
 
+  const cursorExample = () =>
+    Example({
+      children: <CursorExample />,
+    })
+
   const enableDisableViewport = () =>
     Example({
       children: <EnableDisableViewportExample />,
@@ -381,6 +392,7 @@ function AppRouter() {
         <Route exact path="/segmentationRender/" render={segmentationRender} />
         <Route exact path="/crosshairs/" render={crosshairs} />
         <Route exact path="/applyPresets/" render={applyPresets} />
+        <Route exact path="/cursor/" render={cursorExample} />
         <Route
           exact
           path="/toolDisplayConfiguration/"

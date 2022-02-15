@@ -109,3 +109,6 @@ function getDefinedCursors(
   }
   return definedCursors
 }
+
+const standardCursorNames = STANDARD_CURSORS.values()
+export { standardCursorNames }

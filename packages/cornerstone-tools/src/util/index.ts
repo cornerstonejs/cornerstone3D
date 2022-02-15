@@ -15,6 +15,7 @@ import isObject from './isObject'
 import getToolDataStyle from './getToolDataStyle'
 import calibrateImageSpacing from './calibrateImageSpacing'
 import * as segmentation from './segmentation'
+import triggerAnnotationRenderForViewportUIDs from './triggerAnnotationRenderForViewportUIDs'
 
 // UUID Generation
 import uuidv4 from './uuidv4'
@@ -39,6 +40,7 @@ export {
   getToolDataStyle,
   calibrateImageSpacing,
   segmentation,
+  triggerAnnotationRenderForViewportUIDs,
 }
 
 export default {
@@ -58,4 +60,5 @@ export default {
   getToolDataStyle,
   calibrateImageSpacing,
   segmentation,
+  triggerAnnotationRenderForViewportUIDs,
 }
