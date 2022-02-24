@@ -115,6 +115,16 @@ function makeOverlayBitmap({ width, height }) {
 }
 
 const tests = {
+    test_array_items: () => {
+        const dicomJSON = JSON.stringify(require('./arrayItem.json'));
+        const datasets = JSON.parse(dicomJSON);
+        const natural0 = DicomMetaDictionary.naturalizeDataset(datasets[0]);
+        // Shouldn't throw an exception
+        const natural0b = DicomMetaDictionary.naturalizeDataset(datasets[0]);
+        // And should be identical to the previous version
+        expect(natural0b).deep.equal(natural0);
+    },
+
     test_json_1: () => {
         //
         // multiple results example

@@ -151,6 +151,9 @@ class DicomMetaDictionary {
                         typeof sqZero === "object" &&
                         !sqZero.length
                     ) {
+                        naturalDataset[naturalName] = [
+                            ...naturalDataset[naturalName]
+                        ];
                         addAccessors(naturalDataset[naturalName], sqZero);
                     } else {
                         naturalDataset[naturalName] = sqZero;

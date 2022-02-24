@@ -18,7 +18,8 @@ const addAccessors = (dest, src) => {
             },
             set: v => {
                 src[key] = v;
-            }
+            },
+            configurable: true
         });
     });
 };
