@@ -3,7 +3,6 @@ import {
   mouseEventListeners,
   wheelEventListener,
   keyEventListener,
-  labelmapStateEventListener,
 } from '../eventListeners'
 import {
   imageRenderedEventDispatcher,
@@ -21,9 +20,8 @@ import getToolsWithModesForElement from '../util/getToolsWithModesForElement'
 import { ToolModes } from '../enums'
 import { removeToolState } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'
-import getToolGroups from './ToolGroupManager/getToolGroups'
+import getToolGroup from './ToolGroupManager/getToolGroup'
 import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
-import { IEnabledElement } from '@precisionmetrics/cornerstone-render/src/types'
 
 const VIEWPORT_ELEMENT = 'viewport-element'
 
@@ -50,7 +48,6 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   wheelEventListener.disable(element)
   keyEventListener.disable(element)
   // labelmap
-  labelmapStateEventListener.disable(element)
 
   // Dispatchers: renderer
   imageRenderedEventDispatcher.disable(element)
@@ -64,7 +61,7 @@ function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
   // State
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?
   _removeViewportFromSynchronizers(element)
-  _removeViewportFromToolGroups(element)
+  _removeViewportFromToolGroup(element)
 
   // _removeAllToolsForElement(canvas)
   _removeEnabledElement(element)
@@ -79,13 +76,14 @@ const _removeViewportFromSynchronizers = (element: HTMLElement) => {
   })
 }
 
-const _removeViewportFromToolGroups = (element: HTMLElement) => {
+const _removeViewportFromToolGroup = (element: HTMLElement) => {
   const { renderingEngineUID, viewportUID } = getEnabledElement(element)
 
-  const toolGroups = getToolGroups(renderingEngineUID, viewportUID)
-  toolGroups.forEach((toolGroup) => {
+  const toolGroup = getToolGroup(renderingEngineUID, viewportUID)
+
+  if (toolGroup) {
     toolGroup.removeViewports(renderingEngineUID, viewportUID)
-  })
+  }
 }
 
 const _removeAllToolsForElement = function (element) {

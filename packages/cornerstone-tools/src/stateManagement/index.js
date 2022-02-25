@@ -1,13 +1,13 @@
 import FrameOfReferenceSpecificToolStateManager, {
   defaultFrameOfReferenceSpecificToolStateManager,
-} from './FrameOfReferenceSpecificToolStateManager'
-import * as toolStyle from './toolStyle'
-import getStyle from './getStyle'
-import setGlobalStyle from './setGlobalStyle'
-import setToolStyle from './setToolStyle'
-import setToolDataStyle from './setToolDataStyle'
-import * as toolDataLocking from './toolDataLocking'
-import * as toolDataSelection from './toolDataSelection'
+} from './annotation/FrameOfReferenceSpecificToolStateManager'
+import * as toolStyle from './annotation/toolStyle'
+import getStyle from './annotation/getStyle'
+import setGlobalStyle from './annotation/setGlobalStyle'
+import setToolStyle from './annotation/setToolStyle'
+import setToolDataStyle from './annotation/setToolDataStyle'
+import * as toolDataLocking from './annotation/toolDataLocking'
+import * as toolDataSelection from './annotation/toolDataSelection'
 import {
   getToolState,
   addToolState,
@@ -16,9 +16,22 @@ import {
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
   getToolDataByToolDataUID,
-} from './toolState'
+} from './annotation/toolState'
+
+import {
+  getGlobalSegmentationDataByUID,
+  getSegmentationState,
+  getColorLut,
+  addSegmentationsForToolGroup,
+  removeSegmentationsForToolGroup,
+  getGlobalSegmentationState,
+  getSegmentationDataByUID,
+  getToolGroupsWithSegmentation,
+  SegmentationState,
+} from './segmentation'
 
 export {
+  // annotations
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
   toolDataLocking,
@@ -35,4 +48,14 @@ export {
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
   getToolDataByToolDataUID,
+  // segmentations
+  addSegmentationsForToolGroup,
+  getGlobalSegmentationDataByUID,
+  getSegmentationState,
+  getColorLut,
+  removeSegmentationsForToolGroup,
+  getGlobalSegmentationState,
+  getToolGroupsWithSegmentation,
+  getSegmentationDataByUID,
+  SegmentationState,
 }

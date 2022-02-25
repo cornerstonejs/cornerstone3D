@@ -13,6 +13,11 @@ import LengthTool from './annotation/LengthTool'
 import ProbeTool from './annotation/ProbeTool'
 import RectangleRoiTool from './annotation/RectangleRoiTool'
 import EllipticalRoiTool from './annotation/EllipticalRoiTool'
+
+// Segmentation DisplayTool
+import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool'
+
+// Segmentation Tools
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 import CircleScissorsTool from './segmentation/CircleScissorsTool'
 import SphereScissorsTool from './segmentation/SphereScissorsTool'
@@ -41,7 +46,9 @@ export {
   ProbeTool,
   RectangleRoiTool,
   EllipticalRoiTool,
-  // Segmentations
+  // Segmentations Display
+  SegmentationDisplayTool,
+  // Segmentations Tools
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,

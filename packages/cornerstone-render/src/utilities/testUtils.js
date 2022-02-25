@@ -1,8 +1,8 @@
 import resemble from 'resemblejs'
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
-import { ImageVolume } from '../index'
-import { getOrCreateCanvas } from '../RenderingEngine'
+
+import { fakeImageLoader, fakeMetaDataProvider } from './testUtilsImageLoader'
+import { fakeVolumeLoader } from './testUtilsVolumeLoader'
+import { createNormalizedMouseEvent } from './testUtilsMouseEvents'
 
 // 10 slice, 10 colors
 const colors = [
@@ -19,241 +19,6 @@ const colors = [
 ]
 
 Object.freeze(colors)
-
-const imageIds = [
-  'fakeSharedBufferImageLoader:imageId1',
-  'fakeSharedBufferImageLoader:imageId2',
-  'fakeSharedBufferImageLoader:imageId3',
-  'fakeSharedBufferImageLoader:imageId4',
-  'fakeSharedBufferImageLoader:imageId5',
-]
-
-function makeTestImage1(rows, columns, barStart, barWidth) {
-  const pixelData = new Uint8Array(rows * columns)
-
-  for (let i = 0; i < rows; i++) {
-    for (let j = barStart; j < barStart + barWidth; j++) {
-      pixelData[i * columns + j] = 255
-    }
-  }
-
-  return pixelData
-}
-
-function makeTestRGB(rows, columns, barStart, barWidth) {
-  let start = barStart
-
-  const pixelData = new Uint8Array(rows * columns * 3)
-
-  colors.forEach((color) => {
-    for (let i = 0; i < rows; i++) {
-      for (let j = start; j < start + barWidth; j++) {
-        pixelData[(i * columns + j) * 3] = color[0]
-        pixelData[(i * columns + j) * 3 + 1] = color[1]
-        pixelData[(i * columns + j) * 3 + 2] = color[2]
-      }
-    }
-
-    start += barWidth
-  })
-
-  return pixelData
-}
-
-/**
- * It creates an image based on the imageId name. It splits the imageId
- * based on "_" and deciphers each field of rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb
- * fakeLoader: myImage_64_64_10_20_1_1_0 will create a grayscale test image of size 64 by
- * 64 and with a vertical bar which starts at 10th pixel and span 20 pixels
- * width, with pixel spacing of 1 mm and 1 mm in x and y direction.
- * @param {imageId} imageId
- * @returns
- */
-const fakeImageLoader = (imageId) => {
-  const imageURI = imageId.split(':')[1]
-  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
-    imageURI.split('_').map((v) => parseFloat(v))
-
-  let pixelData
-
-  if (rgb) {
-    pixelData = makeTestRGB(rows, columns, barStart, barWidth)
-  } else {
-    pixelData = makeTestImage1(rows, columns, barStart, barWidth)
-  }
-
-  // Todo: separated fakeImageLoader for cpu and gpu
-  const image = {
-    rows,
-    columns,
-    width: columns,
-    height: rows,
-    imageId,
-    intercept: 0,
-    slope: 1,
-    invert: false,
-    windowCenter: 40,
-    windowWidth: 400,
-    maxPixelValue: 255,
-    minPixelValue: 0,
-    rowPixelSpacing: 1,
-    columnPixelSpacing: 1,
-    getPixelData: () => pixelData,
-    sizeInBytes: rows * columns * 1, // 1 byte for now
-    FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
-  }
-
-  return {
-    promise: Promise.resolve(image),
-  }
-}
-
-function fakeMetaDataProvider(type, imageId) {
-  const imageURI = imageId.split(':')[1]
-  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
-    imageURI.split('_').map((v) => parseFloat(v))
-
-  const modality = PT ? 'PT' : 'MR'
-  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2'
-  if (type === 'imagePixelModule') {
-    const imagePixelModule = {
-      photometricInterpretation,
-      rows,
-      columns,
-      samplesPerPixel: rgb ? 3 : 1,
-      bitsAllocated: rgb ? 24 : 8,
-      bitsStored: rgb ? 24 : 8,
-      highBit: rgb ? 24 : 8,
-      pixelRepresentation: 0,
-    }
-
-    return imagePixelModule
-  } else if (type === 'generalSeriesModule') {
-    const generalSeriesModule = {
-      modality: modality,
-    }
-    return generalSeriesModule
-  } else if (type === 'scalingModule') {
-    const scalingModule = {
-      suvbw: 100,
-      suvlbm: 100,
-      suvbsa: 100,
-    }
-    return scalingModule
-  } else if (type === 'imagePlaneModule') {
-    const imagePlaneModule = {
-      rows,
-      columns,
-      width: rows,
-      heigth: columns,
-      imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-      rowCosines: [1, 0, 0],
-      columnCosines: [0, 1, 0],
-      imagePositionPatient: [0, 0, 0],
-      pixelSpacing: [x_spacing, y_spacing],
-      rowPixelSpacing: x_spacing,
-      columnPixelSpacing: y_spacing,
-    }
-
-    return imagePlaneModule
-  } else if (type === 'voiLutModule') {
-    return {
-      windowWidth: undefined,
-      windowCenter: undefined,
-    }
-  } else if (type === 'modalityLutModule') {
-    return {
-      rescaleSlope: undefined,
-      rescaleIntercept: undefined,
-    }
-  }
-}
-
-const fakeVolumeLoader = (volumeId) => {
-  const volumeURI = volumeId.split(':')[1]
-  const [_, rows, columns, slices, x_spacing, y_spacing, z_spacing, rgb] =
-    volumeURI.split('_').map((v) => parseFloat(v))
-
-  const dimensions = [rows, columns, slices]
-
-  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2'
-
-  const volumeMetadata = {
-    BitsAllocated: rgb ? 24 : 8,
-    BitsStored: rgb ? 24 : 8,
-    SamplesPerPixel: rgb ? 3 : 1,
-    HighBit: rgb ? 24 : 8,
-    PixelRepresentation: 0,
-    PhotometricInterpretation: photometricInterpretation,
-    FrameOfReferenceUID: 'Volume_Frame_Of_Reference',
-    ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
-    PixelSpacing: [x_spacing, y_spacing, z_spacing],
-    Columns: columns,
-    Rows: rows,
-  }
-
-  const yMultiple = rows
-  const zMultiple = rows * columns
-
-  let barStart = 0
-  const barWidth = Math.floor(rows / slices)
-  let pixelData, index
-
-  if (!rgb) {
-    pixelData = new Uint8Array(rows * columns * slices)
-    for (let z = 0; z < slices; z++) {
-      for (let i = 0; i < rows; i++) {
-        for (let j = barStart; j < barStart + barWidth; j++) {
-          pixelData[z * zMultiple + i * yMultiple + j] = 255
-        }
-      }
-      barStart += barWidth
-    }
-  } else {
-    pixelData = new Uint8Array(rows * columns * slices * 3)
-
-    for (let z = 0; z < slices; z++) {
-      for (let i = 0; i < rows; i++) {
-        for (let j = 0; j < columns; j++) {
-          index = z * zMultiple + i * yMultiple + j
-          pixelData[index * 3] = colors[z][0]
-          pixelData[index * 3 + 1] = colors[z][1]
-          pixelData[index * 3 + 2] = colors[z][2]
-        }
-      }
-    }
-  }
-
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: rgb ? 3 : 1,
-    values: pixelData,
-  })
-
-  const imageData = vtkImageData.newInstance()
-  imageData.setDimensions(dimensions)
-  imageData.setSpacing([1, 1, 1])
-  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1])
-  imageData.setOrigin([0, 0, 0])
-  imageData.getPointData().setScalars(scalarArray)
-
-  const imageVolume = new ImageVolume({
-    uid: volumeId,
-    metadata: volumeMetadata,
-    dimensions: dimensions,
-    spacing: [1, 1, 1],
-    origin: [0, 0, 0],
-    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    scalarData: pixelData,
-    sizeInBytes: pixelData.byteLength,
-    imageData: imageData,
-    imageIds: [],
-  })
-
-  return {
-    promise: Promise.resolve(imageVolume),
-  }
-}
 
 function downloadURI(uri, name) {
   const link = document.createElement('a')
@@ -287,7 +52,9 @@ function compareImages(imageDataURL, baseline, outputName) {
         // If the error is greater than 1%, fail the test
         // and download the difference image
         if (mismatch > 1) {
-          console.log(mismatch)
+          console.log(imageDataURL)
+
+          console.log('mismatch of ' + mismatch + '%')
           const diff = data.getImageDataUrl()
 
           //downloadURI(diff, outputName)
@@ -301,53 +68,16 @@ function compareImages(imageDataURL, baseline, outputName) {
   })
 }
 
-function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
-  const rect = DomCanvasElement.getBoundingClientRect()
-  return [
-    canvasPoint[0] + rect.left + window.pageXOffset,
-    canvasPoint[1] + rect.top + window.pageYOffset,
-  ]
-}
-
-/**
- * This function uses the imageData being displayed on the viewport and
- * an index (IJK) on the image to normalize the mouse event details.
- * It should be noted that the normalization is required since client and page XY
- * cannot accept a double. Therefore, for the requested index, canvas coordinate
- * will get calculated and normalized (rounded) to enable normalized client/page XY
- *
- * @param {vtkImageData} imageData
- * @param {[number, number,number]} index IJK index of the point to click
- * @param {HTMLCanvasElement} canvas the canvas to be clicked on
- * @param {StackViewport|VolumeViewport} viewport
- * @returns pageX, pageY, clientX, clientY, worldCoordinate
- */
-function createNormalizedMouseEvent(imageData, index, element, viewport) {
-  const canvas = getOrCreateCanvas(element)
-  const tempWorld1 = imageData.indexToWorld(index)
-  const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1)
-  const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p))
-  const [pageX, pageY] = canvasPointsToPagePoints(canvas, canvasPoint1)
-  const worldCoord = viewport.canvasToWorld(canvasPoint1)
-
-  return {
-    pageX,
-    pageY,
-    clientX: pageX,
-    clientY: pageY,
-    worldCoord,
-  }
-}
-
 const testUtils = {
-  makeTestImage1,
   fakeImageLoader,
-  fakeVolumeLoader,
   fakeMetaDataProvider,
+  fakeVolumeLoader,
   compareImages,
-  downloadURI,
   createNormalizedMouseEvent,
-  canvasPointsToPagePoints,
+  // utils
+  downloadURI,
+  colors,
 }
 
 export default testUtils
+export { colors }

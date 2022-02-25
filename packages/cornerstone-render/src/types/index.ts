@@ -10,6 +10,7 @@ import type IImageVolume from './IImageVolume'
 import type VolumeLoaderFn from './VolumeLoaderFn'
 import type IRegisterImageLoader from './IRegisterImageLoader'
 import type IStreamingVolume from './IStreamingVolume'
+import type CustomEventType from './CustomEventType'
 import type {
   IViewport,
   ViewportInput,
@@ -106,4 +107,6 @@ export type {
   CPUFallbackLookupTable,
   CPUFallbackLUT,
   CPUFallbackRenderingTools,
+  //
+  CustomEventType,
 }

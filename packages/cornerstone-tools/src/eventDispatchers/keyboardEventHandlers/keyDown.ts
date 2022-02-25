@@ -11,14 +11,12 @@ export default function keyDown(evt) {
 
   const { renderingEngineUID, viewportUID } = evt.detail
 
-  const toolGroups = ToolGroupManager.getToolGroups(
+  const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
     viewportUID
   )
 
-  toolGroups.forEach((toolGroup) => {
-    if (Object.keys(toolGroup.toolOptions).includes(activeTool.name)) {
-      toolGroup.resetViewportsCursor({ name: activeTool.name })
-    }
-  })
+  if (Object.keys(toolGroup.toolOptions).includes(activeTool.name)) {
+    toolGroup.resetViewportsCursor({ name: activeTool.name })
+  }
 }

@@ -18,40 +18,41 @@ export default function getToolsWithModesForMouseEvent(
   const modifierKey = keyEventListener.getModifierKey()
 
   const { renderingEngineUID, viewportUID } = evt.detail
-  const toolGroups = ToolGroupManager.getToolGroups(
+  const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
     viewportUID
   )
 
+  if (!toolGroup) {
+    return []
+  }
+
   const enabledTools = []
 
-  for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i]
-    const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
 
-    for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j]
-      const tool = toolGroup.toolOptions[toolName]
+  for (let j = 0; j < toolGroupToolNames.length; j++) {
+    const toolName = toolGroupToolNames[j]
+    const tool = toolGroup.toolOptions[toolName]
 
-      // tool has binding that matches the mouse button
-      const correctBinding =
-        evtButton != null && // not null or undefined
-        tool.bindings.length &&
-        tool.bindings.some(
-          (binding) =>
-            binding.mouseButton === evtButton &&
-            binding.modifierKey === modifierKey
-        )
+    // tool has binding that matches the mouse button
+    const correctBinding =
+      evtButton != null && // not null or undefined
+      tool.bindings.length &&
+      tool.bindings.some(
+        (binding) =>
+          binding.mouseButton === evtButton &&
+          binding.modifierKey === modifierKey
+      )
 
-      if (
-        modesFilter.includes(tool.mode) &&
-        // Should not filter by event's button
-        // or should, and the tool binding includes the event's button
-        (!evtButton || correctBinding)
-      ) {
-        const toolInstance = toolGroup._toolInstances[toolName]
-        enabledTools.push(toolInstance)
-      }
+    if (
+      modesFilter.includes(tool.mode) &&
+      // Should not filter by event's button
+      // or should, and the tool binding includes the event's button
+      (!evtButton || correctBinding)
+    ) {
+      const toolInstance = toolGroup.getToolInstance(toolName)
+      enabledTools.push(toolInstance)
     }
   }
 

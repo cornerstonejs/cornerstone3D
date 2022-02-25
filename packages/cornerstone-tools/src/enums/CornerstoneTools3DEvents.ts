@@ -15,14 +15,24 @@
  *  @enum {String}
  *  @readonly
  */
+// Todo: add documentation. I'll add it after we finalize the API.
 enum CornerstoneTools3DEvents {
   //
-  // Labelmaps
+  // segmentation display
   //
-  LABELMAP_STATE_UPDATED = 'cornerstonetoolslabelmapstateupdated',
-
-  // SEGMENTATION
-  LABELMAP_REMOVED = 'cornerstonetoolslabelmapremoved',
+  SEGMENTATION_RENDERED = 'cornerstonetoolssegmentationrendered',
+  //
+  // segmentation state
+  //
+  SEGMENTATION_STATE_MODIFIED = 'cornerstonetoolssegmentationstatemodified',
+  //
+  // segmentation global state
+  //
+  SEGMENTATION_GLOBAL_STATE_MODIFIED = 'cornerstonetoolssegmentationglobalstatemodified',
+  //
+  // segmentation data modified
+  //
+  SEGMENTATION_DATA_MODIFIED = 'cornerstonetoolssegmentationdatamodified',
 
   //
   // MOUSE

@@ -2,11 +2,18 @@ import {
   eventTarget,
   EVENTS as RENDERING_EVENTS,
 } from '@precisionmetrics/cornerstone-render'
-import { getDefaultToolStateManager } from './stateManagement/toolState'
-import { CornerstoneTools3DEvents } from './enums'
+import { getDefaultToolStateManager } from './stateManagement/annotation/toolState'
+import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState'
+import { CornerstoneTools3DEvents as TOOLS_EVENTS } from './enums'
 import { addEnabledElement, removeEnabledElement } from './store'
 import { resetCornerstoneToolsState } from './store/state'
-import { measurementSelectionListener } from './eventListeners'
+import {
+  measurementSelectionListener,
+  segmentationDataModifiedEventListener,
+  segmentationStateModifiedEventListener,
+} from './eventListeners'
+
+import ToolGroupManager from './store/ToolGroupManager'
 
 let csToolsInitialized = false
 
@@ -25,12 +32,19 @@ export function destroy() {
   _removeCornerstoneEventListeners()
   _removeCornerstoneToolsEventListeners()
 
+  // Impportant: destroy ToolGroups first, in order for cleanup to work correctly for the
+  // added tools.
+  ToolGroupManager.destroy()
+
   // Remove all tools
   resetCornerstoneToolsState()
 
   // remove all toolData
   const toolStateManager = getDefaultToolStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+
   toolStateManager.restoreToolState({})
+  segmentationStateManager.resetState()
   csToolsInitialized = false
 }
 
@@ -77,18 +91,38 @@ function _addCornerstoneToolsEventListeners() {
   // Clear any listeners that may already be set
   _removeCornerstoneToolsEventListeners()
 
-  const selectionEvent = CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE
+  const selectionEvent = TOOLS_EVENTS.MEASUREMENT_SELECTION_CHANGE
+  const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
+  const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
 
   eventTarget.addEventListener(selectionEvent, measurementSelectionListener)
+  eventTarget.addEventListener(
+    segmentationDataModified,
+    segmentationDataModifiedEventListener
+  )
+  eventTarget.addEventListener(
+    segmentationStateModified,
+    segmentationStateModifiedEventListener
+  )
 }
 
 /**
  * Remove the event listener for the selection event
  */
 function _removeCornerstoneToolsEventListeners() {
-  const selectionEvent = CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE
+  const selectionEvent = TOOLS_EVENTS.MEASUREMENT_SELECTION_CHANGE
+  const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
+  const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
 
   eventTarget.removeEventListener(selectionEvent, measurementSelectionListener)
+  eventTarget.removeEventListener(
+    segmentationDataModified,
+    segmentationDataModifiedEventListener
+  )
+  eventTarget.removeEventListener(
+    segmentationStateModified,
+    segmentationStateModifiedEventListener
+  )
 }
 
 export default init

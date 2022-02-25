@@ -10,8 +10,9 @@ type IToolBinding = {
   modifierKey?: ToolBindingKeyboardType
 }
 
-export default interface ISetToolModeOptions {
+interface ISetToolModeOptions {
   bindings: IToolBinding[]
 }
 
 export { IToolBinding }
+export default ISetToolModeOptions

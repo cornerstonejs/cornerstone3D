@@ -8,7 +8,7 @@ export default function keyUp(evt) {
 
   const { renderingEngineUID, viewportUID } = evt.detail
 
-  const toolGroups = ToolGroupManager.getToolGroups(
+  const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
     viewportUID
   )
@@ -16,9 +16,7 @@ export default function keyUp(evt) {
   // Reset the modifier key
   resetModifierKey()
 
-  toolGroups.forEach((toolGroup) => {
-    if (Object.keys(toolGroup.toolOptions).includes(activeTool.name)) {
-      toolGroup.resetViewportsCursor({ name: activeTool.name })
-    }
-  })
+  if (Object.keys(toolGroup.toolOptions).includes(activeTool.name)) {
+    toolGroup.resetViewportsCursor({ name: activeTool.name })
+  }
 }

@@ -12,6 +12,7 @@ abstract class BaseTool {
   public supportedInteractionTypes: Array<string>
   public configuration: Record<string, any>
   public mode: ToolModes
+  public toolGroupUID: string // the toolGroup this instance belongs to
 
   constructor(
     toolConfiguration: Record<string, any>,
@@ -26,6 +27,7 @@ abstract class BaseTool {
       name,
       configuration = {},
       supportedInteractionTypes,
+      toolGroupUID,
     } = this.initialConfiguration
 
     // If strategies are not initialized in the tool config
@@ -36,6 +38,7 @@ abstract class BaseTool {
       configuration.strategyOptions = {}
     }
 
+    this.toolGroupUID = toolGroupUID
     this.name = name
     this.supportedInteractionTypes = supportedInteractionTypes || []
     this.configuration = Object.assign({}, configuration)

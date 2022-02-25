@@ -88,7 +88,6 @@ function clearUntouched(svgLayerElement, canvasHash) {
     const cacheEntry = state.svgNodeCache[canvasHash][cacheKey]
 
     if (!cacheEntry.touched && cacheEntry.domRef) {
-      // console.log(`Removing: ${svgNodeHash}`)
       svgLayerElement.removeChild(cacheEntry.domRef)
       delete state.svgNodeCache[canvasHash][cacheKey]
     }
