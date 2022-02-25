@@ -1,72 +1,47 @@
-import setLabelmapForElement from './setLabelmapForElement'
+import lockedSegmentController from './lockedSegmentController'
+import segmentIndexController from './segmentIndexController'
+import activeSegmentationController from './activeSegmentationController'
+import segmentationVisibilityController from './segmentationVisibilityController'
+import segmentationColorController from './segmentationColorController'
+import segmentationConfigController from './segmentationConfigController'
+import createNewSegmentationForViewport from './createNewSegmentationForViewport'
 import {
-  removeLabelmapForElement,
-  removeLabelmapForAllElements,
-} from './removeLabelmapForElement'
-
-import { getGlobalStateForLabelmapUID, setLabelmapGlobalState } from './state'
-
-import { getLabelmapUIDsForElement, getLabelmapUIDForElement } from './utils'
-import * as lockedSegmentController from './lockedSegmentController'
-import * as segmentIndexController from './segmentIndexController'
-import * as activeLabelmapController from './activeLabelmapController'
-import * as hideSegmentController from './hideSegmentController'
-import config, { setGlobalConfig } from './segmentationConfig'
-import addEmptySegmentationVolumeForViewport from './addEmptySegmentationVolumeForViewport'
-import { setColorLUT, getColorForSegmentIndex } from './colorLUT'
+  triggerSegmentationStateModified,
+  triggerSegmentationGlobalStateModified,
+  triggerSegmentationDataModified,
+} from './triggerSegmentationEvents'
 
 export {
-  setLabelmapForElement,
-  removeLabelmapForElement,
-  removeLabelmapForAllElements,
-  addEmptySegmentationVolumeForViewport,
-  getLabelmapUIDForElement,
-  setColorLUT,
-  getColorForSegmentIndex,
-  config,
-  setGlobalConfig,
+  createNewSegmentationForViewport,
   lockedSegmentController,
   segmentIndexController,
-  activeLabelmapController,
-  hideSegmentController,
-  getGlobalStateForLabelmapUID,
-  setLabelmapGlobalState,
+  activeSegmentationController,
+  segmentationVisibilityController,
+  segmentationColorController,
+  segmentationConfigController,
+  triggerSegmentationStateModified,
+  triggerSegmentationGlobalStateModified,
+  triggerSegmentationDataModified,
 }
 
 export default {
-  // Set labelmap for element
-  setLabelmapForElement,
-  removeLabelmapForElement,
-  removeLabelmapForAllElements,
-  addEmptySegmentationVolumeForViewport,
-
-  // Set/Get Labelmap
-  getLabelmapUIDsForElement,
-
-  // active labelmap utils
-  activeLabelmapController,
-
+  createNewSegmentationForViewport,
+  activeSegmentationController,
   //
-  hideSegmentController,
+  segmentationVisibilityController,
+  segmentationColorController,
 
   // Segment index utils
   segmentIndexController,
 
-  // Config
-  config,
-  setGlobalConfig,
-
-  // ColorLUT
-  setColorLUT,
-  getColorForSegmentIndex,
-
-  // Utils
-  getLabelmapUIDForElement,
-
   // Locked segment index
   lockedSegmentController,
 
-  // state
-  getGlobalStateForLabelmapUID,
-  setLabelmapGlobalState,
+  // Configuration controller
+  segmentationConfigController,
+
+  // triggers
+  triggerSegmentationStateModified,
+  triggerSegmentationGlobalStateModified,
+  triggerSegmentationDataModified,
 }

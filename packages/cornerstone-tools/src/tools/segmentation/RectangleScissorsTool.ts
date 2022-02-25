@@ -3,13 +3,12 @@ import {
   getEnabledElement,
   Settings,
   StackViewport,
-  VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
 import { fillInsideRectangle } from './strategies/fillRectangle'
 import { eraseInsideRectangle } from './strategies/eraseRectangle'
-import { getViewportUIDsWithLabelmapToRender } from '../../util/viewportFilters'
+import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -21,24 +20,25 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import {
-  getColorForSegmentIndex,
+  segmentationColorController,
   lockedSegmentController,
   segmentIndexController,
-  activeLabelmapController,
+  activeSegmentationController,
 } from '../../store/SegmentationModule'
 
 /**
  * @public
  * @class RectangleScissorsTool
  * @memberof Tools
- * @classdesc Tool for manipulating labelmap data by drawing a rectangle.
+ * @classdesc Tool for manipulating segmentation data by drawing a rectangle.
  * @extends Tools.Base.BaseTool
  */
 export default class RectangleScissorsTool extends BaseTool {
   _throttledCalculateCachedStats: any
   editData: {
     toolData: any
-    labelmap: any
+    segmentationDataUID: string
+    segmentation: any
     segmentIndex: number
     segmentsLocked: number[]
     segmentColor: [number, number, number, number]
@@ -54,7 +54,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
-      name: 'RectangleScissors',
+      name: 'RectangleScissor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
@@ -79,27 +79,30 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
+    const toolGroupUID = this.toolGroupUID
 
-    const labelmapIndex =
-      activeLabelmapController.getActiveLabelmapIndex(element)
-    if (labelmapIndex === undefined) {
+    const activeSegmentationInfo =
+      activeSegmentationController.getActiveSegmentationInfo(toolGroupUID)
+    if (!activeSegmentationInfo) {
       throw new Error(
-        'No active labelmap detected, create one before using scissors tool'
+        'No active segmentation detected, create one before using scissors tool'
       )
     }
 
-    const labelmapUID = activeLabelmapController.getActiveLabelmapUID(element)
-
-    const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
+    // Todo: we should have representation type check if we are going to use this
+    // tool in other representations other than labelmap
+    const { segmentationDataUID, volumeUID } = activeSegmentationInfo
+    const segmentIndex =
+      segmentIndexController.getActiveSegmentIndex(toolGroupUID)
     const segmentsLocked =
-      lockedSegmentController.getLockedSegmentsForElement(element)
-    const segmentColor = getColorForSegmentIndex(
-      element,
-      segmentIndex,
-      labelmapIndex
+      lockedSegmentController.getLockedSegmentsForSegmentation(volumeUID)
+    const segmentColor = segmentationColorController.getColorForSegmentIndex(
+      toolGroupUID,
+      activeSegmentationInfo.segmentationDataUID,
+      segmentIndex
     )
 
-    const labelmap = cache.getVolume(labelmapUID)
+    const segmentation = cache.getVolume(volumeUID)
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const toolData = {
@@ -129,17 +132,18 @@ export default class RectangleScissorsTool extends BaseTool {
     // Ensure settings are initialized after tool data instantiation
     Settings.getObjectSettings(toolData, RectangleRoiTool)
 
-    const viewportUIDsToRender = getViewportUIDsWithLabelmapToRender(
+    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
       this.name
     )
 
     this.editData = {
       toolData,
-      labelmap,
+      segmentation,
       segmentIndex,
       segmentsLocked,
       segmentColor,
+      segmentationDataUID,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -244,7 +248,8 @@ export default class RectangleScissorsTool extends BaseTool {
       toolData,
       newAnnotation,
       hasMoved,
-      labelmap,
+      segmentation,
+      segmentationDataUID,
       segmentIndex,
       segmentsLocked,
     } = this.editData
@@ -262,7 +267,7 @@ export default class RectangleScissorsTool extends BaseTool {
     resetElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const { viewport } = enabledElement
 
     this.editData = null
     this.isDrawing = false
@@ -273,18 +278,14 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const operationData = {
       points: data.handles.points,
-      volume: labelmap,
+      volume: segmentation,
+      segmentationDataUID,
       segmentIndex,
       segmentsLocked,
+      toolGroupUID: this.toolGroupUID,
     }
 
-    const eventDetail = {
-      canvas: element,
-      enabledElement,
-      renderingEngine,
-    }
-
-    this.applyActiveStrategy(eventDetail, operationData)
+    this.applyActiveStrategy(enabledElement, operationData)
   }
 
   /**
@@ -349,20 +350,5 @@ export default class RectangleScissorsTool extends BaseTool {
         color,
       }
     )
-  }
-
-  _getTargetVolumeUID = (viewport) => {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const actors = viewport.getActors()
-
-    if (!actors && !actors.length) {
-      // No stack to scroll through
-      return
-    }
-
-    return actors[0].uid
   }
 }

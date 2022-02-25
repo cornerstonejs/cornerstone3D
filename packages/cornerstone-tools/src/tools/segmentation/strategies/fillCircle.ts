@@ -9,13 +9,13 @@ import {
   getCanvasEllipseCorners,
   pointInEllipse,
 } from '../../../util/math/ellipse'
-import {
-  getBoundingBoxAroundShape,
-  triggerLabelmapRender,
-} from '../../../util/segmentation'
+import { getBoundingBoxAroundShape } from '../../../util/segmentation'
+import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
 import { pointInShapeCallback } from '../../../util/planar'
 
 type OperationData = {
+  toolGroupUID: string
+  segmentationDataUID: string
   points: any // Todo:fix
   volume: IImageVolume
   segmentIndex: number
@@ -25,38 +25,28 @@ type OperationData = {
   constraintFn: () => boolean
 }
 
-type fillCircleEvent = {
-  enabledElement: IEnabledElement
-}
-
+// Todo: i don't think we need this we can use indexToWorldVec3
 function worldToIndex(imageData, ain) {
   const vout = vec3.fromValues(0, 0, 0)
   imageData.worldToIndex(ain, vout)
   return vout
 }
 
-/**
- * fillInsideCircle - Fill all pixels inside/outside the region defined
- * by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param {}  operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
- */
 function fillCircle(
-  evt: fillCircleEvent,
+  enabledElement: IEnabledElement,
   operationData: OperationData,
   inside = true
 ): void {
-  const { enabledElement } = evt
   const {
-    volume: labelmapVolume,
+    volume: segmentationVolume,
     points,
     segmentsLocked,
     segmentIndex,
+    toolGroupUID,
+    segmentationDataUID,
   } = operationData
-  const { imageData, dimensions, scalarData } = labelmapVolume
-  const { viewport, renderingEngine } = enabledElement
+  const { imageData, dimensions, scalarData } = segmentationVolume
+  const { viewport } = enabledElement
 
   // Average the points to get the center of the ellipse
   const center = vec3.fromValues(0, 0, 0)
@@ -111,34 +101,31 @@ function fillCircle(
     callback
   )
 
-  // Todo: optimize modified slices for all orthogonal views
-  triggerLabelmapRender(renderingEngine, labelmapVolume, imageData)
+  triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
 }
 
 /**
- * Fill all pixels inside/outside the region defined by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param {}  operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
+ * Fill inside the circular region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined circle.
+ * @param enabledElement - The element for which the segment is being erased.
+ * @param {EraseOperationData} operationData - EraseOperationData
  */
 export function fillInsideCircle(
-  evt: fillCircleEvent,
+  enabledElement: IEnabledElement,
   operationData: OperationData
 ): void {
-  fillCircle(evt, operationData, true)
+  fillCircle(enabledElement, operationData, true)
 }
 
 /**
- * Fill all pixels outside the region defined by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param  {} operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
+ * Fill outside the circular region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels outside the  defined circle.
+ * @param enabledElement - The element for which the segment is being erased.
+ * @param {EraseOperationData} operationData - EraseOperationData
  */
 export function fillOutsideCircle(
-  evt: fillCircleEvent,
+  enabledElement: IEnabledElement,
   operationData: OperationData
 ): void {
-  fillCircle(evt, operationData, false)
+  fillCircle(enabledElement, operationData, false)
 }

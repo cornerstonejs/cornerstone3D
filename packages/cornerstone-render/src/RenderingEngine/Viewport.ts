@@ -90,6 +90,10 @@ class Viewport {
   public getRenderer() {
     const renderingEngine = this.getRenderingEngine()
 
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      throw new Error('Rendering engine has been destroyed')
+    }
+
     return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.uid)
   }
 
@@ -318,6 +322,15 @@ class Viewport {
 
   public addActor(actorEntry: ActorEntry): void {
     const { uid: actorUID, volumeActor } = actorEntry
+    const renderingEngine = this.getRenderingEngine()
+
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      console.warn(
+        `Cannot add actor UID of ${actorUID} Rendering Engine has been destroyed`
+      )
+      return
+    }
+
     if (!actorUID || !volumeActor) {
       throw new Error('Actors should have uid and vtk volumeActor properties')
     }

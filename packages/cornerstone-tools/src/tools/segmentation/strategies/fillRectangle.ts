@@ -1,11 +1,12 @@
-import { IEnabledElement } from '@precisionmetrics/cornerstone-render/src/types'
 import { getBoundingBoxAroundShape } from '../../../util/segmentation'
 import { Point3 } from '../../../types'
-import { ImageVolume } from '@precisionmetrics/cornerstone-render'
+import { ImageVolume, Types } from '@precisionmetrics/cornerstone-render'
 import pointInShapeCallback from '../../../util/planar/pointInShapeCallback'
-import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
+import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
 
 type OperationData = {
+  toolGroupUID: string
+  segmentationDataUID: string
   points: [Point3, Point3, Point3, Point3]
   volume: ImageVolume
   constraintFn: (x: [number, number, number]) => boolean
@@ -13,33 +14,30 @@ type OperationData = {
   segmentsLocked: number[]
 }
 
-type FillRectangleEvent = {
-  enabledElement: IEnabledElement
-}
-
 /**
- * FillInsideRectangle - Fill all pixels inside/outside the region defined
- * by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param {}  operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
+ * For each point in the bounding box around the rectangle, if the point is inside
+ * the rectangle, set the scalar value to the segmentIndex
+ * @param {string} toolGroupUID - string
+ * @param {OperationData} operationData - OperationData
+ * @param {any} [constraintFn]
+ * @param [inside=true] - boolean
  */
+// Todo: why we have another constraintFn? in addition to the one in the operationData?
 function fillRectangle(
-  evt: FillRectangleEvent,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   constraintFn?: any,
   inside = true
 ): void {
-  const { enabledElement } = evt
-  const { renderingEngine, viewport } = enabledElement
   const {
-    volume: labelmapVolume,
+    volume: segmentation,
     points,
     segmentsLocked,
     segmentIndex,
+    segmentationDataUID,
+    toolGroupUID,
   } = operationData
-  const { imageData, dimensions, scalarData } = labelmapVolume
+  const { imageData, dimensions, scalarData } = segmentation
 
   const rectangleCornersIJK = points.map((world) => {
     return imageData.worldToIndex(world)
@@ -78,35 +76,35 @@ function fillRectangle(
     callback
   )
 
-  triggerLabelmapRender(renderingEngine, labelmapVolume, imageData)
+  triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
 }
 
 /**
- * Fill all pixels inside the region defined by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param {}  operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
+ * Fill the inside of a rectangle
+ * @param {string} toolGroupUID - The unique identifier of the tool group.
+ * @param {OperationData} operationData - The data that will be used to create the
+ * new rectangle.
+ * @param {any} [constraintFn]
  */
 export function fillInsideRectangle(
-  evt: FillRectangleEvent,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   constraintFn?: any
 ): void {
-  fillRectangle(evt, operationData, constraintFn, true)
+  fillRectangle(enabledElement, operationData, constraintFn, true)
 }
 
 /**
- * Fill all pixels outside the region defined by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param  {} operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
+ * Fill the area outside of a rectangle for the toolGroupUID and segmentationDataUID.
+ * @param {string} toolGroupUID - The unique identifier of the tool group.
+ * @param {OperationData} operationData - The data that will be used to create the
+ * new rectangle.
+ * @param {any} [constraintFn]
  */
 export function fillOutsideRectangle(
-  evt: FillRectangleEvent,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   constraintFn?: any
 ): void {
-  fillRectangle(evt, operationData, constraintFn, false)
+  fillRectangle(enabledElement, operationData, constraintFn, false)
 }

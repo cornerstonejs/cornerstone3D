@@ -3,13 +3,12 @@ import {
   getVolume,
   Settings,
   StackViewport,
-  VolumeViewport,
   triggerEvent,
   eventTarget,
 } from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement'
-import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
+import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 
 import {
@@ -17,10 +16,7 @@ import {
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import {
-  resetElementCursor,
-  hideElementCursor,
-} from '../../cursors/elementCursor'
+import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import { ToolSpecificToolData, Point3 } from '../../types'
@@ -45,7 +41,7 @@ export interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
       points: Point3[]
       activeHandleIndex: number | null
     }
-    // labelmapUID: string
+    // segmentationUID: string
     active: boolean
   }
 }
@@ -108,7 +104,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     }
 
     // Todo: how not to store enabledElement on the toolData, segmentationModule needs the element to
-    // decide on the active segmentIndex, active labelmapIndex etc.
+    // decide on the active segmentIndex, active segmentationIndex etc.
     const toolData = {
       metadata: {
         viewPlaneNormal: <Point3>[...viewPlaneNormal],
@@ -136,7 +132,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
           ],
           activeHandleIndex: null,
         },
-        labelmapUID: null,
+        segmentationUID: null,
         active: true,
       },
     }

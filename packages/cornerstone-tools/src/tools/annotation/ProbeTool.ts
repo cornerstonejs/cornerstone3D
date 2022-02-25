@@ -16,7 +16,7 @@ import {
   addToolState,
   getToolState,
   removeToolState,
-} from '../../stateManagement/toolState'
+} from '../../stateManagement/annotation/toolState'
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,

@@ -15,7 +15,7 @@ import {
   getSpacingInNormalDirection,
 } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement'
-import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
+import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,

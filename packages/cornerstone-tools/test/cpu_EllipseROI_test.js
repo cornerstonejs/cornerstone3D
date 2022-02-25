@@ -104,7 +104,7 @@ describe('EllipticalRoiTool (CPU):', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupById('stack')
+    ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
     DOMElements.forEach((el) => {
       if (el.parentNode) {

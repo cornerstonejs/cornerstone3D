@@ -1,5 +1,5 @@
 import { state } from '../index'
-import IToolGroup from './IToolGroup'
+import { IToolGroup } from '../../types'
 
 function getAllToolGroups(): Array<IToolGroup> {
   return state.toolGroups

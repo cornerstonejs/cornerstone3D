@@ -18,7 +18,7 @@ import {
   getToolState,
   removeToolState,
 } from '../../stateManagement'
-import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
+import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
 
 import {
   drawHandles as drawHandlesSvg,

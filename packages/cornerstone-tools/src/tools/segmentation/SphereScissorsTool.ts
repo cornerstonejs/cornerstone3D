@@ -2,10 +2,9 @@ import {
   cache,
   getEnabledElement,
   StackViewport,
-  VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
-import { Point3, Point2 } from '../../types'
+import { Point3 } from '../../types'
 
 import { fillInsideSphere } from './strategies/fillSphere'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -17,10 +16,10 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import {
-  getColorForSegmentIndex,
+  segmentationColorController,
   lockedSegmentController,
   segmentIndexController,
-  activeLabelmapController,
+  activeSegmentationController,
 } from '../../store/SegmentationModule'
 
 // Todo
@@ -30,15 +29,17 @@ import {
  * @public
  * @class SphereScissorsTool
  * @memberof Tools
- * @classdesc Tool for manipulating labelmap data by drawing a rectangle.
+ * @classdesc Tool for manipulating segmentation data by drawing a rectangle.
  * @extends Tools.Base.BaseTool
  */
 export default class SphereScissorsTool extends BaseTool {
   editData: {
     toolData: any
-    labelmap: any
+    segmentation: any
     segmentIndex: number
     segmentsLocked: number[]
+    segmentationDataUID: string
+    toolGroupUID: string
     segmentColor: [number, number, number, number]
     viewportUIDsToRender: string[]
     handleIndex?: number
@@ -53,7 +54,7 @@ export default class SphereScissorsTool extends BaseTool {
 
   constructor(toolConfiguration = {}) {
     super(toolConfiguration, {
-      name: 'SphereScissors',
+      name: 'SphereScissor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
@@ -79,29 +80,28 @@ export default class SphereScissorsTool extends BaseTool {
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
+    const toolGroupUID = this.toolGroupUID
 
-    const labelmapIndex =
-      activeLabelmapController.getActiveLabelmapIndex(element)
-    if (labelmapIndex === undefined) {
+    const activeSegmentationInfo =
+      activeSegmentationController.getActiveSegmentationInfo(toolGroupUID)
+    if (!activeSegmentationInfo) {
       throw new Error(
-        'No active labelmap detected, create one before using scissors tool'
+        'No active segmentation detected, create one before using scissors tool'
       )
     }
 
-    const labelmapUID = await activeLabelmapController.getActiveLabelmapUID(
-      element
-    )
-
-    const segmentIndex = segmentIndexController.getActiveSegmentIndex(element)
-    const segmentColor = getColorForSegmentIndex(
-      element,
-      segmentIndex,
-      labelmapIndex
-    )
+    const { volumeUID, segmentationDataUID } = activeSegmentationInfo
+    const segmentIndex =
+      segmentIndexController.getActiveSegmentIndex(toolGroupUID)
     const segmentsLocked =
-      lockedSegmentController.getLockedSegmentsForElement(element)
+      lockedSegmentController.getLockedSegmentsForSegmentation(volumeUID)
+    const segmentColor = segmentationColorController.getColorForSegmentIndex(
+      toolGroupUID,
+      activeSegmentationInfo.segmentationDataUID,
+      segmentIndex
+    )
 
-    const labelmap = cache.getVolume(labelmapUID)
+    const segmentation = cache.getVolume(volumeUID)
 
     // Used for drawing the svg only, we might not need it at all
     const toolData = {
@@ -129,11 +129,13 @@ export default class SphereScissorsTool extends BaseTool {
 
     this.editData = {
       toolData,
-      labelmap,
+      segmentation,
       centerCanvas: canvasPos,
       segmentIndex,
       segmentsLocked,
       segmentColor,
+      segmentationDataUID,
+      toolGroupUID,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -201,9 +203,10 @@ export default class SphereScissorsTool extends BaseTool {
       toolData,
       newAnnotation,
       hasMoved,
-      labelmap,
+      segmentation,
       segmentIndex,
       segmentsLocked,
+      segmentationDataUID,
     } = this.editData
     const { data } = toolData
     const { viewPlaneNormal, viewUp } = toolData.metadata
@@ -220,7 +223,7 @@ export default class SphereScissorsTool extends BaseTool {
     resetElementCursor(element)
 
     const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const { viewport } = enabledElement
 
     this.editData = null
     this.isDrawing = false
@@ -231,20 +234,16 @@ export default class SphereScissorsTool extends BaseTool {
 
     const operationData = {
       points: data.handles.points,
-      volume: labelmap,
+      volume: segmentation,
       segmentIndex,
       segmentsLocked,
+      segmentationDataUID,
+      toolGroupUID: this.toolGroupUID,
       viewPlaneNormal,
       viewUp,
     }
 
-    const eventDetail = {
-      canvas: element,
-      enabledElement,
-      renderingEngine,
-    }
-
-    this.applyActiveStrategy(eventDetail, operationData)
+    this.applyActiveStrategy(enabledElement, operationData)
   }
 
   /**

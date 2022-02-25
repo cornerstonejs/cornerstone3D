@@ -148,14 +148,20 @@ class VolumeViewport extends Viewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeUID, visibility } = volumeInputArray[i]
+      const { volumeUID, visibility, actorUID } = volumeInputArray[i]
       const volumeActor = await createVolumeActor(volumeInputArray[i])
 
       if (visibility === false) {
         volumeActor.setVisibility(false)
       }
 
-      volumeActors.push({ uid: volumeUID, volumeActor })
+      // We cannot use only volumeUID since then we cannot have for instance more
+      // than one representation of the same volume (since actors would have the
+      // same name, and we don't allow that) AND We cannot use only any uid, since
+      // we rely on the volume in the cache for mapper. So we prefer actorUID if
+      // it is defined, otherwise we use volumeUID for the actor name.
+      const uid = actorUID || volumeUID
+      volumeActors.push({ uid, volumeActor })
     }
 
     this.addActors(volumeActors)
@@ -168,11 +174,13 @@ class VolumeViewport extends Viewport {
   /**
    * It removes the volume actor from the Viewport. If the volume actor is not in
    * the viewport, it does nothing.
-   * @param volumeUIDs Array of volume UIDs to remove
+   * @param actorUIDs Array of actor UIDs to remove. In case of simple volume it will
+   * be the volume UID, but in caase of Segmentation it will be `{volumeUID}-{representationType}`
+   * since the same volume can be rendered in multiple representations.
    * @param immediate If true, the Viewport will be rendered immediately
    */
-  public removeVolumes(volumeUIDs: Array<string>, immediate = false): void {
-    this.removeActors(volumeUIDs)
+  public removeVolumeActors(actorUIDs: Array<string>, immediate = false): void {
+    this.removeActors(actorUIDs)
 
     if (immediate) {
       this.render()

@@ -8,21 +8,30 @@ import {
   createAndCacheVolume,
   createAndCacheDerivedVolume,
   init as cs3dInit,
-  getVolumeViewportsContatiningSameVolumes,
+  eventTarget,
 } from '@precisionmetrics/cornerstone-render'
 import {
   // Segmentation
   SegmentationModule,
   lockedSegmentController,
   segmentIndexController,
-  activeLabelmapController,
-  hideSegmentController,
+  activeSegmentationController,
+  segmentationVisibilityController,
   synchronizers,
   ToolBindings,
   ToolModes,
   CornerstoneTools3DEvents,
   toolDataSelection,
   Utilities as csToolsUtils,
+  SegmentationRepresentations,
+  getSegmentationState,
+  getGlobalSegmentationDataByUID,
+  getSegmentationDataByUID,
+  addSegmentationsForToolGroup,
+  removeSegmentationsForToolGroup,
+  getSegmentationsForToolGroup,
+  getGlobalSegmentationState,
+  segmentationConfigController,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -54,7 +63,10 @@ let ctSceneToolGroup,
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
   ptTypesSceneToolGroup,
-  ptCtLayoutTools
+  ptCtLayoutTools,
+  ctAxialSagittalSegmentationToolGroup,
+  ptCoronalSegmentationToolGroup,
+  axialPTCTSegmentationToolGroup
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
@@ -94,8 +106,10 @@ class SegmentationExample extends Component {
     layoutIndex: 0,
     destroyed: false,
     // segmentation state
-    renderOutline: true,
-    renderInactiveLabelmaps: true,
+    renderOutlineGlobal: true,
+    renderOutlineToolGroup: true,
+    renderInactiveSegmentationsGlobal: true,
+    renderInactiveSegmentationsToolGroup: true,
     //
     viewportGrid: {
       numCols: 4,
@@ -119,37 +133,29 @@ class SegmentationExample extends Component {
       ],
     },
     ptCtLeftClickTool: 'WindowLevel',
-    viewportUIDs: [
-      'ctAxial',
-      'ctSagittal',
-      'ctCoronal',
-      'ptAxial',
-      'ptSagittal',
-      'ptCoronal',
-      'fusionAxial',
-      'fusionSagittal',
-      'fusionCoronal',
-      'ptMipAxial',
-    ],
-    toolGroups: {},
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     // Segmentation
     segmentationStatus: '',
     segmentationToolActive: false,
-    activeViewportUID: VIEWPORT_IDS.CT.AXIAL,
-    selectedLabelmapUID: '',
-    availableLabelmaps: [],
-    activeSegmentIndex: 1,
-    fillAlpha: 0.9,
-    fillAlphaInactive: 0.8,
+    selectedsegmentationUID: '',
+    availableSegmentations: [],
+    fillAlphaGlobal: 0.9,
+    fillAlphaToolGroup: 0.9,
+    fillAlphaInactiveGlobal: 0.8,
+    fillAlphaInactiveToolGroup: 0.8,
     segmentLocked: false,
     thresholdMin: 0,
     thresholdMax: 100,
     numSlicesForThreshold: 1,
-    selectedStrategy: '',
-    selectedSegmentationFromAll: '',
-    allSegmentations: [],
+    chosenToolStrategy: '',
+    // toolGroup
+    toolGroups: {},
+    selectedToolGroupName: '',
+    selectedToolGroupSegmentationDataUIDs: [],
+    // all segmentations
+    allSegmentationUIDs: [],
+    selectedSegmentationUIDFromAll: '',
     tmtv: null,
   }
 
@@ -205,9 +211,6 @@ class SegmentationExample extends Component {
       ptSceneToolGroup,
       fusionSceneToolGroup,
       ptMipSceneToolGroup,
-      ctVRSceneToolGroup,
-      ctObliqueToolGroup,
-      ptTypesSceneToolGroup,
     } = initToolGroups())
 
     this.ctVolumeUID = ctVolumeUID
@@ -242,24 +245,6 @@ class SegmentationExample extends Component {
       ptSceneToolGroup,
       fusionSceneToolGroup,
       ptMipSceneToolGroup,
-      ctVRSceneToolGroup,
-      ctObliqueToolGroup,
-      ptTypesSceneToolGroup,
-    })
-
-    this.setState({
-      toolGroups: {
-        ctAxial: ctSceneToolGroup,
-        ctSagittal: ctSceneToolGroup,
-        ctCoronal: ctSceneToolGroup,
-        ptAxial: ptSceneToolGroup,
-        ptSagittal: ptSceneToolGroup,
-        ptCoronal: ptSceneToolGroup,
-        fusionAxial: fusionSceneToolGroup,
-        fusionSagittal: fusionSceneToolGroup,
-        fusionCoronal: fusionSceneToolGroup,
-        ptMipAxial: ptMipSceneToolGroup,
-      },
     })
 
     // Create volumes
@@ -305,6 +290,11 @@ class SegmentationExample extends Component {
     this.setState({
       metadataLoaded: true,
       ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
+      toolGroups: {
+        ctSceneToolGroup,
+        ptSceneToolGroup,
+      },
+      selectedToolGroupName: 'ctSceneToolGroup',
     })
 
     // This will initialize volumes in GPU memory
@@ -315,56 +305,42 @@ class SegmentationExample extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     const { layoutIndex } = this.state
-    const { renderingEngine } = this
+    this._removeEventListeners()
+    this._addEventListeners()
+  }
 
-    const layout = LAYOUTS[layoutIndex]
+  _removeEventListeners() {
+    eventTarget.removeEventListener(
+      CornerstoneTools3DEvents.SEGMENTATION_STATE_MODIFIED,
+      this.onSegmentationStateModified
+    )
 
-    this._elementNodes.forEach((element) => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.LABELMAP_STATE_UPDATED,
-        this.onLabelmapStateUpdated
-      )
-    })
+    eventTarget.removeEventListener(
+      CornerstoneTools3DEvents.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+      this.onGlobalSegmentationStateUpdated
+    )
 
-    this._elementNodes.forEach((element) => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.LABELMAP_REMOVED,
-        this.onLabelmapRemoved
-      )
-    })
+    eventTarget.removeEventListener(
+      CornerstoneTools3DEvents.SEGMENTATION_REMOVED,
+      this.onSegmentationRemoved
+    )
+  }
 
-    if (prevState.layoutIndex !== layoutIndex) {
-      if (layout === 'FusionMIP') {
-        // FusionMIP
+  _addEventListeners() {
+    eventTarget.addEventListener(
+      CornerstoneTools3DEvents.SEGMENTATION_STATE_MODIFIED,
+      this.onSegmentationStateModified
+    )
 
-        ptCtFusion.setLayout(
-          renderingEngine,
-          this._elementNodes,
-          {
-            ctSceneToolGroup,
-            ptSceneToolGroup,
-            fusionSceneToolGroup,
-            ptMipSceneToolGroup,
-          },
-          {
-            axialSynchronizers: [],
-            sagittalSynchronizers: [],
-            coronalSynchronizers: [],
-            ptThresholdSynchronizer: this.ptThresholdSync,
-            ctWLSynchronizer: this.ctWLSync,
-          }
-        )
+    eventTarget.addEventListener(
+      CornerstoneTools3DEvents.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+      this.onGlobalSegmentationStateUpdated
+    )
 
-        ptCtFusion.setVolumes(
-          renderingEngine,
-          ctVolumeUID,
-          ptVolumeUID,
-          colormaps[this.state.petColorMapIndex]
-        )
-      } else {
-        throw new Error('Unrecognised layout index')
-      }
-    }
+    eventTarget.addEventListener(
+      CornerstoneTools3DEvents.SEGMENTATION_REMOVED,
+      this.onSegmentationRemoved
+    )
   }
 
   componentWillUnmount() {
@@ -378,59 +354,105 @@ class SegmentationExample extends Component {
     this.renderingEngine.destroy()
   }
 
-  onLabelmapStateUpdated = (evt) => {
-    const { element, viewportUID } = evt.detail
-    if (viewportUID !== this.state.activeViewportUID) {
+  onGlobalSegmentationStateUpdated = (evt) => {
+    const { segmentationUIDs } = evt.detail
+    const allSegmentationUIDs = getGlobalSegmentationState().map(
+      ({ volumeUID }) => volumeUID
+    )
+
+    let newSelectedSegmentationUID = this.state.selectedSegmentationUIDFromAll
+    if (newSelectedSegmentationUID === '') {
+      newSelectedSegmentationUID = allSegmentationUIDs[0]
+    }
+
+    this.setState({
+      allSegmentationUIDs: allSegmentationUIDs,
+      selectedSegmentationUIDFromAll: newSelectedSegmentationUID,
+    })
+  }
+
+  onSegmentationStateModified = (evt) => {
+    const { toolGroupUID } = evt.detail
+
+    if (toolGroupUID !== this.state.selectedToolGroupName) {
       return
     }
 
-    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
+    const activeSegmentationInfo =
+      activeSegmentationController.getActiveSegmentationInfo(toolGroupUID)
 
-    console.debug(labelmapUIDs)
-    const activeLabelmapUID =
-      activeLabelmapController.getActiveLabelmapUID(element)
-    this.setState((prevState) => {
-      // merge the segmentations
-      const newSegmentations = [...prevState.allSegmentations]
+    let selectedsegmentationUID, segmentLocked, activeSegmentIndex
 
-      let newSelectedFromAll = this.state.selectedSegmentationFromAll
-      if (!newSegmentations.includes(activeLabelmapUID)) {
-        newSegmentations.push(activeLabelmapUID)
-        newSelectedFromAll = activeLabelmapUID
-      }
+    if (activeSegmentationInfo) {
+      activeSegmentIndex = activeSegmentationInfo.activeSegmentIndex
+      selectedsegmentationUID = activeSegmentationInfo.segmentationDataUID
 
-      return {
-        availableLabelmaps: labelmapUIDs,
-        selectedLabelmapUID: activeLabelmapUID,
-        allSegmentations: newSegmentations,
-        selectedSegmentationFromAll: newSelectedFromAll,
-      }
+      segmentLocked =
+        lockedSegmentController.getSegmentIndexLockedStatusForSegmentation(
+          activeSegmentationInfo.volumeUID,
+          activeSegmentIndex
+        )
+    }
+
+    const toolGroupSegmentations = getSegmentationState(toolGroupUID)
+
+    let segmentationDataUIDs
+
+    if (toolGroupSegmentations) {
+      segmentationDataUIDs = toolGroupSegmentations.map(
+        (segData) => segData.segmentationDataUID
+      )
+    }
+
+    this.setState({
+      selectedToolGroupSegmentationDataUIDs: segmentationDataUIDs,
+      selectedsegmentationUID: selectedsegmentationUID,
+      selectedViewportActiveSegmentIndex: activeSegmentIndex ?? 1,
+      segmentLocked: segmentLocked ?? false,
     })
   }
-  onLabelmapRemoved = (evt) => {
+
+  onSegmentationRemoved = (evt) => {
     const { element } = evt.detail
 
-    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
-    const activeLabelmapUID =
-      activeLabelmapController.getActiveLabelmapUID(element)
+    const segmentationUIDs =
+      SegmentationModule.getsegmentationUIDsForElement(element)
+    const activesegmentationUID =
+      activeSegmentationController.getActivesegmentationUID(element)
     this.setState({
-      availableLabelmaps: labelmapUIDs,
-      selectedLabelmapUID: activeLabelmapUID,
+      availableSegmentations: segmentationUIDs,
+      selectedsegmentationUID: activesegmentationUID,
     })
   }
 
-  createNewLabelmapForScissors = async (evt) => {
-    const viewportUID = evt.target.value
+  createNewLabelmapForScissors = async () => {
+    const toolGroup = this.state.toolGroups[this.state.selectedToolGroupName]
+
+    const { viewportsInfo } = toolGroup
+    const { viewportUID, renderingEngineUID } = viewportsInfo[0]
     const viewport = this.renderingEngine.getViewport(viewportUID)
-    await SegmentationModule.addEmptySegmentationVolumeForViewport(viewport)
+
+    SegmentationModule.createNewSegmentationForViewport(viewport).then(
+      (segmentationUID) => {
+        addSegmentationsForToolGroup(this.state.selectedToolGroupName, [
+          {
+            volumeUID: segmentationUID,
+            // default representation which is labelmap
+          },
+        ])
+      }
+    )
   }
 
   setToolMode = (toolMode) => {
     const toolName = this.state.ptCtLeftClickTool
+
+    const toolGroups = this.state.toolGroups
+
     if (SEGMENTATION_TOOLS.includes(toolName)) {
       this.setState({ segmentationToolActive: true })
     }
-    const toolGroup = this.state.toolGroups[this.state.activeViewportUID]
+    const toolGroup = toolGroups[this.state.selectedToolGroupName]
     if (toolMode === ToolModes.Active) {
       const activeTool = toolGroup.getActivePrimaryButtonTools()
       if (activeTool) {
@@ -525,75 +547,103 @@ class SegmentationExample extends Component {
     this.setState({ segmentationStatus: 'done' })
   }
 
-  loadSegmentation = async (viewportUID, labelmapUID) => {
-    const { element } = this.renderingEngine.getViewport(viewportUID)
+  loadSegmentation = async (segmentationUID, initialConfig) => {
+    const toolGroupUID = this.state.selectedToolGroupName
 
-    const labelmapIndex = activeLabelmapController.getNextLabelmapIndex(element)
-    const labelmap = cache.getVolume(labelmapUID)
-
-    await SegmentationModule.setLabelmapForElement({
-      element,
-      labelmap,
-      labelmapIndex,
-    })
-
-    const activeSegmentIndex =
-      segmentIndexController.getActiveSegmentIndex(element)
-    const segmentLocked =
-      lockedSegmentController.getSegmentIndexLockedStatusForElement(
-        element,
-        activeSegmentIndex
+    if (!initialConfig) {
+      await addSegmentationsForToolGroup(toolGroupUID, [
+        {
+          volumeUID: segmentationUID,
+          active: true,
+          representation: {
+            type: SegmentationRepresentations.Labelmap,
+          },
+        },
+      ])
+    } else {
+      await addSegmentationsForToolGroup(
+        toolGroupUID,
+        [
+          {
+            volumeUID: segmentationUID,
+            active: true,
+            representation: {
+              type: SegmentationRepresentations.Labelmap,
+            },
+          },
+        ],
+        {
+          representations: {
+            [SegmentationRepresentations.Labelmap]: {
+              renderOutline: false,
+            },
+          },
+        }
       )
+    }
 
     this.setState({
       segmentationToolActive: true,
-      selectedLabelmapUID:
-        activeLabelmapController.getActiveLabelmapUID(element),
-      activeSegmentIndex,
-      segmentLocked,
     })
   }
 
   toggleLockedSegmentIndex = (evt) => {
     const checked = evt.target.checked
-    // Todo: Don't have active viewport concept
-    const viewportUID = this.state.activeViewportUID
-    const { element } = this.renderingEngine.getViewport(viewportUID)
-    const activeLabelmapUID =
-      activeLabelmapController.getActiveLabelmapUID(element)
-    lockedSegmentController.toggleSegmentIndexLockedForLabelmapUID(
-      activeLabelmapUID,
-      this.state.activeSegmentIndex
+
+    const activesegmentationInfo =
+      activeSegmentationController.getActiveSegmentationInfo(
+        this.state.selectedToolGroupName
+      )
+
+    const { volumeUID, activeSegmentIndex } = activesegmentationInfo
+
+    const activeSegmentLockedStatus =
+      lockedSegmentController.getSegmentIndexLockedStatusForSegmentation(
+        volumeUID,
+        activeSegmentIndex
+      )
+
+    lockedSegmentController.setSegmentIndexLockedStatusForSegmentation(
+      volumeUID,
+      activeSegmentIndex,
+      !activeSegmentLockedStatus
     )
-    this.setState({ segmentLocked: checked })
+
+    this.setState({ segmentLocked: !activeSegmentLockedStatus })
   }
 
   changeActiveSegmentIndex = (direction) => {
-    // Todo: Don't have active viewport concept
-    const viewportUID = this.state.activeViewportUID
-    const { element } = this.renderingEngine.getViewport(viewportUID)
-    const currentIndex = segmentIndexController.getActiveSegmentIndex(element)
-    let newIndex = currentIndex + direction
+    const toolGroupUID = this.state.selectedToolGroupName
+    const activeSegmentationInfo =
+      activeSegmentationController.getActiveSegmentationInfo(toolGroupUID)
+
+    const { activeSegmentIndex } = activeSegmentationInfo
+    let newIndex = activeSegmentIndex + direction
 
     if (newIndex < 0) {
       newIndex = 0
     }
 
-    segmentIndexController.setActiveSegmentIndex(element, newIndex)
-    const segmentLocked =
-      lockedSegmentController.getSegmentIndexLockedStatusForElement(
-        element,
-        newIndex
-      )
-    this.setState({ activeSegmentIndex: newIndex, segmentLocked })
+    segmentIndexController.setActiveSegmentIndex(toolGroupUID, newIndex)
+
+    const segmentIsLocked = lockedSegmentController.getSegmentIndexLockedStatus(
+      toolGroupUID,
+      newIndex
+    )
+
+    this.setState({
+      selectedViewportActiveSegmentIndex: newIndex,
+      segmentLocked: segmentIsLocked,
+    })
   }
 
   calculateTMTV = () => {
-    const viewportUID = this.state.activeViewportUID
+    const viewportUID = this.state.selectedToolGroupName
     const { element } = this.renderingEngine.getViewport(viewportUID)
-    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(element)
+    const segmentationUIDs =
+      SegmentationModule.getsegmentationUIDsForElement(element)
 
-    const labelmaps = labelmapUIDs.map((uid) => cache.getVolume(uid))
+    const labelmaps = segmentationUIDs.map((uid) => cache.getVolume(uid))
     const segmentationIndex = 1
     const tmtv = csToolsUtils.segmentation.calculateTMTV(
       labelmaps,
@@ -606,17 +656,17 @@ class SegmentationExample extends Component {
   }
 
   calculateSuvPeak = () => {
-    const viewportUID = this.state.activeViewportUID
+    const viewportUID = this.state.selectedToolGroupName
     const viewport = this.renderingEngine.getViewport(viewportUID)
 
     const { uid } = viewport.getDefaultActor()
     const referenceVolume = cache.getVolume(uid)
 
-    const labelmapUIDs = SegmentationModule.getLabelmapUIDsForElement(
+    const segmentationUIDs = SegmentationModule.getsegmentationUIDsForElement(
       viewport.element
     )
 
-    const labelmaps = labelmapUIDs.map((uid) => cache.getVolume(uid))
+    const labelmaps = segmentationUIDs.map((uid) => cache.getVolume(uid))
     const segmentationIndex = 1
     const suvPeak = csToolsUtils.segmentation.calculateSuvPeak(
       viewport,
@@ -627,15 +677,42 @@ class SegmentationExample extends Component {
   }
 
   setEndSlice = () => {
-    const viewportUID = this.state.activeViewportUID
-    const viewport = this.renderingEngine.getViewport(viewportUID)
+    if (this.state.ptCtLeftClickTool !== RECTANGLE_ROI_THRESHOLD_MANUAL) {
+      throw new Error('cannot apply start slice')
+    }
 
-    const selectedToolDataList =
-      toolDataSelection.getSelectedToolDataByToolName(
-        RECTANGLE_ROI_THRESHOLD_MANUAL
-      )
+    let toolData = toolDataSelection.getSelectedToolDataByToolName(
+      this.state.ptCtLeftClickTool
+    )
 
-    const toolData = selectedToolDataList[0]
+    if (!toolData) {
+      throw new Error('No annotation selected ')
+    }
+
+    toolData = toolData[0]
+
+    const {
+      metadata: {
+        enabledElement: { viewport },
+      },
+    } = toolData // assuming they are all overlayed on the same toolGroup
+
+    const volumeActorInfo = viewport.getDefaultActor()
+
+    // Todo: this only works for volumeViewport
+    const { uid } = volumeActorInfo
+
+    const segmentationData = getSegmentationDataByUID(
+      this.state.selectedToolGroupName,
+      this.state.selectedsegmentationUID
+    )
+    const globalState = getGlobalSegmentationDataByUID(
+      segmentationData.volumeUID
+    )
+
+    if (!globalState) {
+      throw new Error('No Segmentation Found')
+    }
 
     // get the current slice Index
     const sliceIndex = viewport.getCurrentImageIdIndex()
@@ -646,17 +723,33 @@ class SegmentationExample extends Component {
   }
 
   setStartSlice = () => {
-    const viewportUID = this.state.activeViewportUID
-    const viewport = this.renderingEngine.getViewport(viewportUID)
+    if (this.state.ptCtLeftClickTool !== RECTANGLE_ROI_THRESHOLD_MANUAL) {
+      throw new Error('cannot apply start slice')
+    }
+
+    let toolData = toolDataSelection.getSelectedToolDataByToolName(
+      this.state.ptCtLeftClickTool
+    )
+
+    if (!toolData) {
+      throw new Error('No annotation selected ')
+    }
+
+    toolData = toolData[0]
+
+    const {
+      metadata: {
+        enabledElement: { viewport },
+      },
+    } = toolData // assuming they are all overlayed on the same toolGroup
 
     const { focalPoint, viewPlaneNormal } = viewport.getCamera()
 
     const selectedToolDataList =
       toolDataSelection.getSelectedToolDataByToolName(
-        RECTANGLE_ROI_THRESHOLD_MANUAL
+        this.state.ptCtLeftClickTool
       )
 
-    const toolData = selectedToolDataList[0]
     const { handles } = toolData.data
     const { points } = handles
 
@@ -683,23 +776,51 @@ class SegmentationExample extends Component {
     viewport.render()
   }
 
-  executeThresholding = (mode, activeTool) => {
-    const ptVolume = cache.getVolume(ptVolumeUID)
-    const labelmapVolume = cache.getVolume(this.state.selectedLabelmapUID)
+  executeThresholding = (mode) => {
+    let toolData = toolDataSelection.getSelectedToolDataByToolName(
+      this.state.ptCtLeftClickTool
+    )
+
+    if (!toolData) {
+      throw new Error('No annotation selected ')
+    }
+
+    toolData = toolData[0]
+
+    const {
+      metadata: {
+        enabledElement: { viewport },
+      },
+    } = toolData // assuming they are all overlayed on the same toolGroup
+
+    const volumeActorInfo = viewport.getDefaultActor()
+
+    // Todo: this only works for volumeViewport
+    const { uid } = volumeActorInfo
+    const referenceVolume = cache.getVolume(uid)
+
+    const segmentationData = getSegmentationDataByUID(
+      this.state.selectedToolGroupName,
+      this.state.selectedsegmentationUID
+    )
+
     const numSlices = this.state.numSlicesForThreshold
     const selectedToolDataList =
-      toolDataSelection.getSelectedToolDataByToolName(activeTool)
+      toolDataSelection.getSelectedToolDataByToolName(
+        this.state.ptCtLeftClickTool
+      )
 
     if (mode === 'max') {
       csToolsUtils.segmentation.thresholdVolumeByRoiStats(
+        this.state.selectedToolGroupName,
         selectedToolDataList,
-        [ptVolume],
-        labelmapVolume,
+        [referenceVolume],
+        segmentationData,
         {
           statistic: 'max',
           weight: 0.41,
           numSlicesToProject: numSlices,
-          overwrite: true,
+          overwrite: false,
         }
       )
 
@@ -707,14 +828,15 @@ class SegmentationExample extends Component {
     }
 
     csToolsUtils.segmentation.thresholdVolumeByRange(
+      this.state.selectedToolGroupName,
       selectedToolDataList,
-      [ptVolume],
-      labelmapVolume,
+      [referenceVolume],
+      segmentationData,
       {
         lowerThreshold: Number(this.state.thresholdMin),
         higherThreshold: Number(this.state.thresholdMax),
         numSlicesToProject: numSlices,
-        overwrite: true,
+        overwrite: false,
       }
     )
   }
@@ -791,17 +913,13 @@ class SegmentationExample extends Component {
         />
         <button
           style={{ marginLeft: '5px' }}
-          onClick={() =>
-            this.executeThresholding('', this.state.ptCtLeftClickTool)
-          }
+          onClick={() => this.executeThresholding('')}
         >
           Execute Range Thresholding on Selected Annotation
         </button>
         <button
           style={{ marginLeft: '5px' }}
-          onClick={() =>
-            this.executeThresholding('max', this.state.ptCtLeftClickTool)
-          }
+          onClick={() => this.executeThresholding('max')}
         >
           Execute Max Thresholding on Selected Annotation
         </button>
@@ -828,42 +946,55 @@ class SegmentationExample extends Component {
     return (
       <>
         <button
-          onClick={() =>
-            this.createNewLabelmapForScissors({
-              target: { value: this.state.activeViewportUID },
-            })
-          }
+          onClick={() => this.createNewLabelmapForScissors()}
           className="btn btn-primary"
           style={{ margin: '2px 4px' }}
         >
-          Create New Labelmap
+          Create New Segmentation
         </button>
       </>
     )
   }
 
-  deleteLabelmap = () => {
-    const labelmapUID = this.state.selectedLabelmapUID
-    const { element } = this.renderingEngine.getViewport(
-      this.state.activeViewportUID
-    )
-    SegmentationModule.removeLabelmapForElement(element, labelmapUID)
-
-    this.renderingEngine.render()
+  deleteSegmentation = () => {
+    const segmentationDataUID = this.state.selectedsegmentationUID
+    removeSegmentationsForToolGroup(this.state.selectedToolGroupName, [
+      segmentationDataUID,
+    ])
   }
 
-  hideSegmentation = (segmentUID) => {
-    const viewportUID = this.state.activeViewportUID
-    const { element } = this.renderingEngine.getViewport(viewportUID)
-    hideSegmentController.toggleSegmentationVisibility(element, segmentUID)
+  toggleSegmentationVisibility = (segmentDataUID) => {
+    const visibilityStatus =
+      segmentationVisibilityController.getSegmentationVisibility(
+        this.state.selectedToolGroupName,
+        segmentDataUID
+      )
+
+    segmentationVisibilityController.setSegmentationVisibility(
+      this.state.selectedToolGroupName,
+      segmentDataUID,
+      !visibilityStatus
+    )
+  }
+
+  hideAllSegmentations = () => {
+    this.state.toolGroups[this.state.selectedToolGroupName].setToolDisabled(
+      'SegmentationDisplay'
+    )
+  }
+
+  showAllSegmentations = () => {
+    this.state.toolGroups[this.state.selectedToolGroupName].setToolEnabled(
+      'SegmentationDisplay'
+    )
   }
 
   getToolStrategyUI = () => {
-    const toolGroup = this.state.toolGroups[this.state.activeViewportUID]
+    const toolGroup = this.state.toolGroups[this.state.selectedToolGroupName]
     if (!toolGroup) {
       return null
     }
-    const toolInstance = toolGroup._toolInstances[this.state.ptCtLeftClickTool]
+    const toolInstance = toolGroup.getToolInstance(this.state.ptCtLeftClickTool)
 
     if (!toolInstance) {
       return
@@ -903,52 +1034,62 @@ class SegmentationExample extends Component {
         </select>
         <span> Strategies </span>
         <select
-          value={this.state.selectedStrategy}
+          value={this.state.chosenToolStrategy}
           style={{ minWidth: '50px', margin: '0px 4px' }}
           onChange={(evt) => {
             const activeStrategy = evt.target.value
             const toolGroup =
-              this.state.toolGroups[this.state.activeViewportUID]
+              this.state.toolGroups[this.state.selectedToolGroupName]
 
-            toolGroup._toolInstances[
-              this.state.ptCtLeftClickTool
-            ].setActiveStrategy(activeStrategy)
+            toolGroup
+              .getToolInstance(this.state.ptCtLeftClickTool)
+              .setActiveStrategy(activeStrategy)
 
             toolGroup.resetViewportsCursor(
               { name: this.state.ptCtLeftClickTool },
               activeStrategy
             )
-            this.setState({ selectedStrategy: activeStrategy })
+            this.setState({ chosenToolStrategy: activeStrategy })
           }}
         >
           {this.state.toolGroups && this.getToolStrategyUI()}
         </select>
-        <span style={{ marginLeft: '4px' }}>for this viewport </span>
+        <span style={{ marginLeft: '4px' }}>for this toolGroup </span>
         <select
-          value={this.state.activeViewportUID}
+          value={this.state.selectedToolGroupName}
           onChange={(evt) => {
-            const viewportUID = evt.target.value
-            const { element } = this.renderingEngine.getViewport(viewportUID)
-            const labelmapUIDs =
-              SegmentationModule.getLabelmapUIDsForElement(element)
-            const index = segmentIndexController.getActiveSegmentIndex(element)
-            const segmentLocked =
-              lockedSegmentController.getSegmentIndexLockedStatusForElement(
-                element,
-                index
+            const toolGroupName = evt.target.value
+            const toolGroupSegmentations = getSegmentationState(toolGroupName)
+
+            const activeSegmentationData =
+              activeSegmentationController.getActiveSegmentationInfo(
+                toolGroupName
               )
 
+            const toolGroupSegmentationConfig =
+              segmentationConfigController.getSegmentationConfig(toolGroupName)
+
             this.setState({
-              activeViewportUID: viewportUID,
-              availableLabelmaps: labelmapUIDs,
-              activeSegmentIndex: index,
-              segmentLocked,
+              selectedToolGroupName: toolGroupName,
+              selectedToolGroupSegmentationDataUIDs: toolGroupSegmentations.map(
+                (segData) => segData.segmentationDataUID
+              ),
+              selectedsegmentationUID:
+                activeSegmentationData?.segmentationDataUID,
+              renderOutlineToolGroup:
+                toolGroupSegmentationConfig?.renderOutline || true,
+              renderInactiveSegmentationsToolGroup:
+                toolGroupSegmentationConfig?.renderInactiveSegmentations ||
+                true,
+              fillAlphaToolGroup: toolGroupSegmentationConfig?.fillAlpha || 0.9,
+              fillAlphaInactiveToolGroup:
+                toolGroupSegmentationConfig?.fillAlphaInactive || true,
             })
           }}
         >
-          {this.state.viewportUIDs.map((viewportUID) => (
-            <option key={viewportUID} value={viewportUID}>
-              {viewportUID}
+          {Object.keys(this.state.toolGroups).map((toolGroupName) => (
+            <option key={toolGroupName} value={toolGroupName}>
+              {toolGroupName}
             </option>
           ))}
         </select>
@@ -987,8 +1128,8 @@ class SegmentationExample extends Component {
           <div className="col-xs-12" style={{ margin: '8px 0' }}>
             <h2>Segmentation Example ({this.state.progressText})</h2>
             <h4>
-              For Segmentation tools, you need to click on "Create New Labelmap"
-              button (when the options appear)
+              For Segmentation tools, you need to click on "Create New
+              Segmentation" button (when the options appear)
             </h4>
             {!window.crossOriginIsolated ? (
               <h1 style={{ color: 'red' }}>
@@ -1005,64 +1146,53 @@ class SegmentationExample extends Component {
             {this.state.ptCtLeftClickTool.includes('RectangleRoi')
               ? this.getThresholdUID()
               : this.getScissorsUI()}
-            <span> All segmentations </span>
+            <span> All global segmentations </span>
             <select
-              value={this.state.selectedSegmentationFromAll}
+              value={this.state.selectedSegmentationUIDFromAll}
               style={{ minWidth: '50px', margin: '0px 8px' }}
               onChange={(evt) => {
-                const selectedLabelmapUID = evt.target.value
                 this.setState({
-                  selectedSegmentationFromAll: selectedLabelmapUID,
+                  selectedSegmentationUIDFromAll: evt.target.value,
                 })
               }}
               size={3}
             >
-              {this.state.allSegmentations.map((labelmapUID) => (
-                <option key={`${labelmapUID}-all`} value={labelmapUID}>
-                  {labelmapUID}
+              {this.state.allSegmentationUIDs.map((segmentationUID) => (
+                <option key={`${segmentationUID}-all`} value={segmentationUID}>
+                  {segmentationUID}
                 </option>
               ))}
             </select>
             <button
               onClick={async () => {
-                const selectedLabelmapUID =
-                  this.state.selectedSegmentationFromAll
-                const { element } = this.renderingEngine.getViewport(
-                  this.state.activeViewportUID
-                )
+                const toolGroupUID = this.state.selectedToolGroupName
+                addSegmentationsForToolGroup(toolGroupUID, [
+                  {
+                    volumeUID: this.state.selectedSegmentationUIDFromAll,
+                    // no representation -> labelmap
+                  },
+                ]).then(() => {
+                  const { volumeUID, activeSegmentIndex } =
+                    activeSegmentationController.getActiveSegmentationInfo(
+                      toolGroupUID
+                    )
 
-                const labelmap = cache.getVolume(selectedLabelmapUID)
+                  const activeSegmentIndexLocked =
+                    lockedSegmentController.getSegmentIndexLockedStatusForSegmentation(
+                      volumeUID,
+                      activeSegmentIndex
+                    )
 
-                const labelmapIndex =
-                  activeLabelmapController.getNextLabelmapIndex(element)
-
-                await SegmentationModule.setLabelmapForElement({
-                  element,
-                  labelmap,
-                  labelmapIndex,
-                })
-
-                const labelmapUIDs =
-                  SegmentationModule.getLabelmapUIDsForElement(element)
-                const index =
-                  segmentIndexController.getActiveSegmentIndex(element)
-
-                const segmentLocked =
-                  lockedSegmentController.getSegmentIndexLockedStatusForElement(
-                    element,
-                    index
-                  )
-
-                this.setState({
-                  availableLabelmaps: labelmapUIDs,
-                  activeSegmentIndex: index,
-                  segmentLocked,
+                  this.setState({
+                    selectedViewportActiveSegmentIndex: activeSegmentIndex,
+                    segmentLocked: activeSegmentIndexLocked,
+                  })
                 })
               }}
               className="btn btn-primary"
               style={{ margin: '2px 4px' }}
             >
-              Add Segmentation to selected Viewport
+              Add Segmentation to selected toolGroup
             </button>
             <div
               style={{
@@ -1072,43 +1202,44 @@ class SegmentationExample extends Component {
                 marginTop: '5px',
               }}
             >
-              <span> Viewport Segmentations (active is selected) </span>
+              <span>
+                {' '}
+                ToolGroup Segmentations (selected is active Segmentation){' '}
+              </span>
               <select
-                value={this.state.selectedLabelmapUID}
+                value={this.state.selectedsegmentationUID}
                 style={{ minWidth: '150px', margin: '0px 8px' }}
                 onChange={(evt) => {
-                  const selectedLabelmapUID = evt.target.value
-                  const { element } = this.renderingEngine.getViewport(
-                    this.state.activeViewportUID
-                  )
+                  const selectedsegmentationUID = evt.target.value
 
-                  activeLabelmapController.setActiveLabelmapByLabelmapUID(
-                    element,
-                    selectedLabelmapUID
+                  activeSegmentationController.setActiveSegmentation(
+                    this.state.selectedToolGroupName,
+                    selectedsegmentationUID
                   )
-
-                  const activeSegmentIndex =
-                    segmentIndexController.getActiveSegmentIndex(element)
 
                   this.setState({
-                    selectedLabelmapUID,
-                    activeSegmentIndex: activeSegmentIndex,
+                    selectedsegmentationUID,
                   })
                 }}
                 size={3}
               >
-                {this.state.availableLabelmaps.map((labelmapUID) => (
-                  <option key={`${labelmapUID}-viewport`} value={labelmapUID}>
-                    {labelmapUID}
-                  </option>
-                ))}
+                {this.state.selectedToolGroupSegmentationDataUIDs.map(
+                  (segmentationUID) => (
+                    <option
+                      key={`${segmentationUID}-viewport`}
+                      value={segmentationUID}
+                    >
+                      {segmentationUID}
+                    </option>
+                  )
+                )}
               </select>
               <button
-                onClick={() => this.deleteLabelmap()}
+                onClick={() => this.deleteSegmentation()}
                 className="btn btn-primary"
                 style={{ margin: '2px 4px' }}
               >
-                Delete Labelmap
+                Delete From ToolGroup
               </button>
 
               <button
@@ -1119,7 +1250,7 @@ class SegmentationExample extends Component {
                 Previous Segment
               </button>
               <span style={{ display: 'flex', flexDirection: 'column' }}>
-                {`Active Segment Index ${this.state.activeSegmentIndex}`}
+                {`Active Segment Index ${this.state.selectedViewportActiveSegmentIndex}`}
                 <div>
                   <input
                     type="checkbox"
@@ -1164,45 +1295,42 @@ class SegmentationExample extends Component {
             {this.state.segmentationStatus !== 'done' ? null : (
               <>
                 <button
-                  onClick={() =>
-                    this.loadSegmentation(
-                      this.state.activeViewportUID,
-                      labelmap1UID
-                    )
-                  }
+                  onClick={() => this.loadSegmentation(labelmap1UID)}
                   className="btn btn-secondary"
                   style={{ margin: '2px 4px' }}
                 >
                   2.a) Load Bone & Soft Tissue Labelmap
                 </button>
                 <button
-                  onClick={() =>
-                    this.loadSegmentation(
-                      this.state.activeViewportUID,
-                      labelmap2UID
-                    )
-                  }
+                  onClick={() => this.loadSegmentation(labelmap2UID)}
                   className="btn btn-secondary"
                   style={{ margin: '2px 4px' }}
                 >
                   2.b) Load Fat Tissue Labelmap
+                </button>
+                <button
+                  onClick={() => this.loadSegmentation(labelmap2UID, true)}
+                  className="btn btn-secondary"
+                  style={{ margin: '2px 4px' }}
+                >
+                  2.b) Load Fat Tissue Labelmap With Initial Config
                 </button>
               </>
             )}
           </div>
 
           <div>
-            <h4>Segmentation Rendering Config</h4>
+            <h4>ToolGroup-specific Labelmap Config</h4>
             <input
               type="checkbox"
               style={{ marginLeft: '0px' }}
               name="toggle"
-              defaultChecked={this.state.renderOutline}
+              defaultChecked={this.state.renderOutlineToolGroup}
               onChange={() => {
-                const renderOutline = !this.state.renderOutline
-                SegmentationModule.setGlobalConfig({ renderOutline })
+                const renderOutline = !this.state.renderOutlineToolGroup
+
                 this.setState({
-                  renderOutline,
+                  renderOutlineToolGroup: renderOutline,
                 })
               }}
             />
@@ -1213,13 +1341,14 @@ class SegmentationExample extends Component {
               type="checkbox"
               style={{ marginLeft: '10px' }}
               name="toggle"
-              defaultChecked={this.state.renderInactiveLabelmaps}
+              defaultChecked={this.state.renderInactiveSegmentationsToolGroup}
               onChange={() => {
-                const renderInactiveLabelmaps =
-                  !this.state.renderInactiveLabelmaps
-                SegmentationModule.setGlobalConfig({ renderInactiveLabelmaps })
+                const renderInactiveSegmentations =
+                  !this.state.renderInactiveSegmentationsToolGroup
+
                 this.setState({
-                  renderInactiveLabelmaps,
+                  renderInactiveSegmentationsToolGroup:
+                    renderInactiveSegmentations,
                 })
               }}
             />
@@ -1234,14 +1363,16 @@ class SegmentationExample extends Component {
                   type="range"
                   id="fillAlpha"
                   name="fillAlpha"
-                  value={this.state.fillAlpha}
+                  value={this.state.fillAlphaToolGroup}
                   min="0.8"
                   max="0.999"
                   step="0.001"
                   onChange={(evt) => {
                     const fillAlpha = Number(evt.target.value)
-                    this.setState({ fillAlpha })
-                    SegmentationModule.setGlobalConfig({ fillAlpha })
+                    const representationType =
+                      SegmentationRepresentations.Labelmap
+
+                    this.setState({ fillAlphaToolGroup: fillAlpha })
                   }}
                 />
               </div>
@@ -1252,36 +1383,170 @@ class SegmentationExample extends Component {
                   type="range"
                   id="fillAlphaInactive"
                   name="fillAlphaInactive"
-                  value={this.state.fillAlphaInactive}
+                  value={this.state.fillAlphaInactiveToolGroup}
                   min="0.8"
                   max="0.999"
                   step="0.001"
                   onChange={(evt) => {
                     const fillAlphaInactive = Number(evt.target.value)
-                    this.setState({ fillAlphaInactive })
-                    SegmentationModule.setGlobalConfig({ fillAlphaInactive })
+                    this.setState({
+                      fillAlphaInactiveToolGroup: fillAlphaInactive,
+                    })
                   }}
                 />
               </div>
-              <div>
-                <button
-                  onClick={() =>
-                    this.hideSegmentation(this.state.selectedLabelmapUID)
-                  }
-                  className="btn btn-secondary"
-                  style={{ margin: '2px 4px' }}
-                >
-                  Hide Segment
-                </button>
-                <button
-                  onClick={() => this.hideSegmentation()}
-                  className="btn btn-secondary"
-                  style={{ margin: '2px 4px' }}
-                >
-                  Hide All Segments
-                </button>
+              <button
+                onClick={() => {
+                  segmentationConfigController.setSegmentationConfig(
+                    this.state.selectedToolGroupName,
+                    {
+                      renderInactiveSegmentations:
+                        this.state.renderInactiveSegmentationsToolGroup,
+                      representations: {
+                        [SegmentationRepresentations.Labelmap]: {
+                          renderOutline: this.state.renderOutlineToolGroup,
+                          fillAlpha: this.state.fillAlphaToolGroup,
+                          fillAlphaInactive:
+                            this.state.fillAlphaInactiveToolGroup,
+                        },
+                      },
+                    }
+                  )
+                }}
+              >
+                Set Representation Config
+              </button>
+            </div>
+          </div>
+          <div>
+            <h4>Global Labelmap Config</h4>
+            <input
+              type="checkbox"
+              style={{ marginLeft: '0px' }}
+              name="toggle"
+              defaultChecked={this.state.renderOutlineGlobal}
+              onChange={() => {
+                const renderOutline = !this.state.renderOutlineGlobal
+
+                const representationType = SegmentationRepresentations.Labelmap
+                segmentationConfigController.updateGlobalRepresentationConfig(
+                  representationType,
+                  { renderOutline }
+                )
+
+                this.setState({
+                  renderOutlineGlobal: renderOutline,
+                })
+              }}
+            />
+            <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
+              Render Outline
+            </label>
+            <input
+              type="checkbox"
+              style={{ marginLeft: '10px' }}
+              name="toggle"
+              defaultChecked={this.state.renderInactiveSegmentationsGlobal}
+              onChange={() => {
+                const renderInactiveSegmentations =
+                  !this.state.renderInactiveSegmentationsGlobal
+
+                segmentationConfigController.updateGlobalSegmentationConfig({
+                  renderInactiveSegmentations,
+                })
+
+                this.setState({
+                  renderInactiveSegmentationsGlobal:
+                    renderInactiveSegmentations,
+                })
+              }}
+            />
+            <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
+              Render inactive Labelmaps
+            </label>
+            <div style={{ display: 'flex' }}>
+              <div style={{ display: 'flex' }}>
+                <label htmlFor="fillAlpha">fillAlpha</label>
+                <input
+                  style={{ maxWidth: '60%', marginLeft: '5px' }}
+                  type="range"
+                  id="fillAlpha"
+                  name="fillAlpha"
+                  value={this.state.fillAlphaGlobal}
+                  min="0.8"
+                  max="0.999"
+                  step="0.001"
+                  onChange={(evt) => {
+                    const fillAlpha = Number(evt.target.value)
+                    const representationType =
+                      SegmentationRepresentations.Labelmap
+
+                    segmentationConfigController.updateGlobalRepresentationConfig(
+                      representationType,
+                      {
+                        fillAlpha,
+                      }
+                    )
+                    this.setState({ fillAlphaGlobal: fillAlpha })
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex' }}>
+                <label htmlFor="fillAlphaInactive">fillAlphaInactive</label>
+                <input
+                  style={{ maxWidth: '60%', marginLeft: '5px' }}
+                  type="range"
+                  id="fillAlphaInactive"
+                  name="fillAlphaInactive"
+                  value={this.state.fillAlphaInactiveGlobal}
+                  min="0.8"
+                  max="0.999"
+                  step="0.001"
+                  onChange={(evt) => {
+                    const fillAlphaInactive = Number(evt.target.value)
+                    const representationType =
+                      SegmentationRepresentations.Labelmap
+
+                    segmentationConfigController.updateGlobalRepresentationConfig(
+                      representationType,
+                      {
+                        fillAlphaInactive,
+                      }
+                    )
+                    this.setState({
+                      fillAlphaInactiveGlobal: fillAlphaInactive,
+                    })
+                  }}
+                />
               </div>
             </div>
+          </div>
+          <div>
+            <button
+              onClick={() =>
+                this.toggleSegmentationVisibility(
+                  this.state.selectedsegmentationUID
+                )
+              }
+              className="btn btn-secondary"
+              style={{ margin: '2px 4px' }}
+            >
+              Toggle Hide Segmentation For ToolGroup
+            </button>
+            <button
+              onClick={() => this.hideAllSegmentations()}
+              className="btn btn-secondary"
+              style={{ margin: '2px 4px' }}
+            >
+              Hide All Segmentations For ToolGroup
+            </button>
+            <button
+              onClick={() => this.showAllSegmentations()}
+              className="btn btn-secondary"
+              style={{ margin: '2px 4px' }}
+            >
+              Show All Segmentations For ToolGroup
+            </button>
           </div>
         </div>
         <ViewportGrid

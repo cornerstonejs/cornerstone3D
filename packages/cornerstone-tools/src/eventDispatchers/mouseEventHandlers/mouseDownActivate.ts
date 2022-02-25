@@ -1,6 +1,6 @@
 import { state } from '../../store'
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
-import { selectToolData } from '../../stateManagement/toolDataSelection'
+import { selectToolData } from '../../stateManagement/annotation/toolDataSelection'
 
 /**
  * @function mouseDownActivate - If the `mouseDown` handler does not consume an event,

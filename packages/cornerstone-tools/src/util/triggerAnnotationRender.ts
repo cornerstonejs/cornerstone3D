@@ -6,7 +6,7 @@ import {
 import { CornerstoneTools3DEvents as EVENTS, ToolModes } from '../enums'
 import { draw as drawSvg } from '../drawingSvg'
 import getToolsWithModesForElement from './getToolsWithModesForElement'
-import { getToolState } from '../stateManagement'
+import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
 
 const { Active, Passive, Enabled } = ToolModes
 
@@ -95,8 +95,11 @@ class AnnotationRenderingEngine {
 
     drawSvg(element, (svgDrawingHelper) => {
       const handleDrawSvg = (tool) => {
-        // Are there situations where that would be bad (Canvas Overlay Tool?)
-        if (tool.renderToolData) {
+        // Todo: we should not have the need to check tool if it is instance
+        // of SegmentationDisplayTool, but right now SegmentationScissors
+        // are instance of BaseTool and we cannot simply check if tool is
+        // instance of BaseAnnotationTool
+        if (!(tool instanceof SegmentationDisplayTool) && tool.renderToolData) {
           tool.renderToolData({ detail: eventData }, svgDrawingHelper)
           triggerEvent(element, EVENTS.ANNOTATION_RENDERED, { ...eventData })
         }

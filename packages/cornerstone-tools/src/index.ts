@@ -15,6 +15,15 @@ import {
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
   getToolDataByToolDataUID,
+  // segmentations
+  addSegmentationsForToolGroup,
+  removeSegmentationsForToolGroup,
+  getGlobalSegmentationState,
+  getGlobalSegmentationDataByUID,
+  getSegmentationState,
+  getColorLut,
+  getSegmentationDataByUID,
+  SegmentationState,
 } from './stateManagement'
 
 import { init, destroy } from './init'
@@ -57,13 +66,22 @@ import {
   RectangleRoiThreshold,
   RectangleRoiStartEndThreshold,
   SUVPeakTool,
+  SegmentationDisplayTool,
 } from './tools'
-import { ToolBindings, ToolModes, CornerstoneTools3DEvents } from './enums'
+import {
+  ToolBindings,
+  ToolModes,
+  CornerstoneTools3DEvents,
+  SegmentationRepresentations,
+} from './enums'
 
-const lockedSegmentController = SegmentationModule.lockedSegmentController
-const activeLabelmapController = SegmentationModule.activeLabelmapController
-const segmentIndexController = SegmentationModule.segmentIndexController
-const hideSegmentController = SegmentationModule.hideSegmentController
+const {
+  lockedSegmentController,
+  activeSegmentationController,
+  segmentationConfigController,
+  segmentIndexController,
+  segmentationVisibilityController,
+} = SegmentationModule
 
 export {
   // LifeCycle
@@ -97,6 +115,7 @@ export {
   RectangleRoiStartEndThreshold,
   // PET annotation
   SUVPeakTool,
+  SegmentationDisplayTool,
   // Synchronizers
   synchronizers,
   Synchronizer,
@@ -105,14 +124,17 @@ export {
   SynchronizerManager,
   // Modules
   SegmentationModule,
+  // Segmentation Controllers
   lockedSegmentController,
-  activeLabelmapController,
+  activeSegmentationController,
   segmentIndexController,
-  hideSegmentController,
+  segmentationVisibilityController,
+  segmentationConfigController,
   // Enums
   ToolBindings,
   ToolModes,
   CornerstoneTools3DEvents,
+  SegmentationRepresentations,
   // ToolState Managers
   FrameOfReferenceSpecificToolStateManager,
   defaultFrameOfReferenceSpecificToolStateManager,
@@ -139,4 +161,13 @@ export {
   getDefaultToolStateManager,
   getViewportSpecificStateManager,
   getToolDataByToolDataUID,
+  // Segmentations
+  addSegmentationsForToolGroup,
+  SegmentationState,
+  getGlobalSegmentationDataByUID,
+  getSegmentationState,
+  getColorLut,
+  getSegmentationDataByUID,
+  removeSegmentationsForToolGroup,
+  getGlobalSegmentationState,
 }

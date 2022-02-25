@@ -1,6 +1,7 @@
 import { BaseAnnotationTool } from './base'
 // ~~ VTK Viewport
 import {
+  getEnabledElementByUIDs,
   getEnabledElement,
   RenderingEngine,
   getRenderingEngine,
@@ -12,7 +13,7 @@ import {
   addToolState,
   getToolState,
   removeToolStateByToolDataUID,
-} from '../stateManagement/toolState'
+} from '../stateManagement/annotation/toolState'
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
@@ -33,7 +34,7 @@ import {
   Point2,
   Point3,
 } from '../types'
-import { isToolDataLocked } from '../stateManagement/toolDataLocking'
+import { isToolDataLocked } from '../stateManagement/annotation/toolDataLocking'
 import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
 
 const { liangBarksyClip } = math.vec2
@@ -170,11 +171,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     normal: Point3
     point: Point3
   } => {
-    const renderingEngine = getRenderingEngine(renderingEngineUID)
-    const viewport = renderingEngine.getViewport(viewportUID)
+    const enabledElement = getEnabledElementByUIDs(
+      renderingEngineUID,
+      viewportUID
+    )
+    const { FrameOfReferenceUID, viewport } = enabledElement
     const { element } = viewport
-    const enabledElement = getEnabledElement(element)
-    const { FrameOfReferenceUID } = enabledElement
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera()
 
     // Check if there is already toolData for this viewport

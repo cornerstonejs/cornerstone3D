@@ -1,0 +1,115 @@
+import {
+  getVerticalBarImage,
+  getVerticalBarRGBImage,
+} from './testUtilsPixelData'
+
+/**
+ * It creates an image based on the imageId name. It splits the imageId
+ * based on "_" and deciphers each field of rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb
+ * fakeLoader: myImage_64_64_10_20_1_1_0 will create a grayscale test image of size 64 by
+ * 64 and with a vertical bar which starts at 10th pixel and span 20 pixels
+ * width, with pixel spacing of 1 mm and 1 mm in x and y direction.
+ * @param {imageId} imageId
+ * @returns
+ */
+const fakeImageLoader = (imageId) => {
+  const imageURI = imageId.split(':')[1]
+  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
+    imageURI.split('_').map((v) => parseFloat(v))
+
+  let pixelData
+
+  if (rgb) {
+    pixelData = getVerticalBarRGBImage(rows, columns, barStart, barWidth)
+  } else {
+    pixelData = getVerticalBarImage(rows, columns, barStart, barWidth)
+  }
+
+  // Todo: separated fakeImageLoader for cpu and gpu
+  const image = {
+    rows,
+    columns,
+    width: columns,
+    height: rows,
+    imageId,
+    intercept: 0,
+    slope: 1,
+    invert: false,
+    windowCenter: 40,
+    windowWidth: 400,
+    maxPixelValue: 255,
+    minPixelValue: 0,
+    rowPixelSpacing: 1,
+    columnPixelSpacing: 1,
+    getPixelData: () => pixelData,
+    sizeInBytes: rows * columns * 1, // 1 byte for now
+    FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
+  }
+
+  return {
+    promise: Promise.resolve(image),
+  }
+}
+
+function fakeMetaDataProvider(type, imageId) {
+  const imageURI = imageId.split(':')[1]
+  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
+    imageURI.split('_').map((v) => parseFloat(v))
+
+  const modality = PT ? 'PT' : 'MR'
+  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2'
+  if (type === 'imagePixelModule') {
+    const imagePixelModule = {
+      photometricInterpretation,
+      rows,
+      columns,
+      samplesPerPixel: rgb ? 3 : 1,
+      bitsAllocated: rgb ? 24 : 8,
+      bitsStored: rgb ? 24 : 8,
+      highBit: rgb ? 24 : 8,
+      pixelRepresentation: 0,
+    }
+
+    return imagePixelModule
+  } else if (type === 'generalSeriesModule') {
+    const generalSeriesModule = {
+      modality: modality,
+    }
+    return generalSeriesModule
+  } else if (type === 'scalingModule') {
+    const scalingModule = {
+      suvbw: 100,
+      suvlbm: 100,
+      suvbsa: 100,
+    }
+    return scalingModule
+  } else if (type === 'imagePlaneModule') {
+    const imagePlaneModule = {
+      rows,
+      columns,
+      width: rows,
+      height: columns,
+      imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+      rowCosines: [1, 0, 0],
+      columnCosines: [0, 1, 0],
+      imagePositionPatient: [0, 0, 0],
+      pixelSpacing: [x_spacing, y_spacing],
+      rowPixelSpacing: x_spacing,
+      columnPixelSpacing: y_spacing,
+    }
+
+    return imagePlaneModule
+  } else if (type === 'voiLutModule') {
+    return {
+      windowWidth: undefined,
+      windowCenter: undefined,
+    }
+  } else if (type === 'modalityLutModule') {
+    return {
+      rescaleSlope: undefined,
+      rescaleIntercept: undefined,
+    }
+  }
+}
+
+export { fakeImageLoader, fakeMetaDataProvider }

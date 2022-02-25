@@ -11,9 +11,9 @@ import {
   selectToolData,
   deselectToolData,
   isToolDataSelected,
-} from '../../stateManagement/toolDataSelection'
+} from '../../stateManagement/annotation/toolDataSelection'
 
-import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
+import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
 
 // // Util
 import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles'

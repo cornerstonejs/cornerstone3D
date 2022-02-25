@@ -17,34 +17,33 @@ export default function getActiveToolForMouseEvent(evt) {
   const mouseEvent = evt.detail.event
   const modifierKey = keyEventListener.getModifierKey()
 
-  const toolGroups = ToolGroupManager.getToolGroups(
+  const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
     viewportUID
   )
 
-  for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i]
-    const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  if (!toolGroup) {
+    return null
+  }
 
-    for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j]
-      const tool = toolGroup.toolOptions[toolName]
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
 
-      // tool has binding that matches the mouse button, if mouseEvent is undefined
-      // it uses the primary button
-      const correctBinding =
-        tool.bindings.length &&
-        tool.bindings.some(
-          (binding) =>
-            binding.mouseButton === (mouseEvent ? mouseEvent.buttons : 1) &&
-            binding.modifierKey === modifierKey
-        )
+  for (let j = 0; j < toolGroupToolNames.length; j++) {
+    const toolName = toolGroupToolNames[j]
+    const tool = toolGroup.toolOptions[toolName]
 
-      if (tool.mode === Active && correctBinding) {
-        // This should be behind some API. Too much knowledge of ToolGroup
-        // inner workings leaking out
-        return toolGroup._toolInstances[toolName]
-      }
+    // tool has binding that matches the mouse button, if mouseEvent is undefined
+    // it uses the primary button
+    const correctBinding =
+      tool.bindings.length &&
+      tool.bindings.some(
+        (binding) =>
+          binding.mouseButton === (mouseEvent ? mouseEvent.buttons : 1) &&
+          binding.modifierKey === modifierKey
+      )
+
+    if (tool.mode === Active && correctBinding) {
+      return toolGroup.getToolInstance(toolName)
     }
   }
 }

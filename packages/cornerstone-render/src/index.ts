@@ -47,7 +47,7 @@ import {
   registerVolumeLoader,
   registerUnknownVolumeLoader,
 } from './volumeLoader'
-import getEnabledElement from './getEnabledElement'
+import getEnabledElement, { getEnabledElementByUIDs } from './getEnabledElement'
 import configuration from './configuration'
 import metaData from './metaData'
 import {
@@ -114,6 +114,7 @@ export {
   cache,
   Cache,
   getEnabledElement,
+  getEnabledElementByUIDs,
   renderToCanvas,
   //
   eventTarget,

@@ -2,11 +2,13 @@ import { vec3 } from 'gl-matrix'
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 
 import { getBoundingBoxAroundShape } from '../segmentation'
-import { Point3 } from '../../types'
+import { Point3, ToolGroupSpecificSegmentationData } from '../../types'
 import thresholdVolumeByRange, {
   ToolDataForThresholding,
   extendBoundingBoxInSliceAxisIfNecessary,
 } from './thresholdVolumeByRange'
+import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
+import { cache } from '@precisionmetrics/cornerstone-render'
 
 export type ThresholdRoiStatsOptions = {
   statistic: 'max' | 'min'
@@ -22,28 +24,37 @@ export type ThresholdRoiStatsOptions = {
  * it thresholds the referenceVolumes based on a weighted value of the statistic.
  * For instance in radiation oncology, usually 41% of the maximum of the ROI is used
  * in radiation planning.
- * @param {RectangleRoiThresholdToolData[]} toolDataList Array of rectangle annotaiton toolData
- * @param {IImageVolume[]} referenceVolumes array of volumes on whom thresholding is applied
+ * @param {string} toolGroupUID - The toolGroupUID of the tool that is performing the operation
+ * @param {RectangleRoiThresholdToolData[]} toolDataList Array of rectangle annotation toolData
+ * @param {ToolGroupSpecificSegmentationData} segmentationData - The segmentation data to be modified
  * @param {IImageVolume} labelmap segmentation volume
  * @param {ThresholdRoiStatsOptions} options Options for thresholding
  */
 function thresholdVolumeByRoiStats(
+  toolGroupUID: string,
   toolDataList: ToolDataForThresholding[],
   referenceVolumes: IImageVolume[],
-  labelmap: IImageVolume,
+  segmentationData: ToolGroupSpecificSegmentationData,
   options: ThresholdRoiStatsOptions
-): IImageVolume {
+): void {
   if (referenceVolumes.length > 1) {
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
-  if (!labelmap) {
-    throw new Error('labelmap is required')
+  const globalState = SegmentationState.getGlobalSegmentationDataByUID(
+    segmentationData.volumeUID
+  )
+
+  if (!globalState) {
+    throw new Error('No Segmentation Found')
   }
+
+  const { volumeUID } = globalState
+  const segmentation = cache.getVolume(volumeUID)
 
   const { numSlicesToProject, overwrite } = options
 
-  const { scalarData } = labelmap
+  const { scalarData } = segmentation
   if (overwrite) {
     for (let i = 0; i < scalarData.length; i++) {
       scalarData[i] = 0
@@ -103,8 +114,13 @@ function thresholdVolumeByRoiStats(
   }
 
   // Run threshold volume by the new range
-  thresholdVolumeByRange(toolDataList, referenceVolumes, labelmap, rangeOptions)
-  return labelmap
+  thresholdVolumeByRange(
+    toolGroupUID,
+    toolDataList,
+    referenceVolumes,
+    segmentationData,
+    rangeOptions
+  )
 }
 
 function _worldToIndex(imageData, ain) {

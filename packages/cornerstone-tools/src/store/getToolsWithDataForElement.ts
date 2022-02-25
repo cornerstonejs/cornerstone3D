@@ -1,4 +1,4 @@
-import { getToolState } from '../stateManagement/toolState'
+import { getToolState } from '../stateManagement/annotation/toolState'
 import { ToolAndToolStateArray } from '../types/toolStateTypes'
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 

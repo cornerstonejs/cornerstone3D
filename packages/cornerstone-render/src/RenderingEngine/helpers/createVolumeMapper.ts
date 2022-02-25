@@ -1,5 +1,3 @@
-import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
-
 import { vtkSharedVolumeMapper } from '../vtkClasses'
 
 export default function createVolumeMapper(

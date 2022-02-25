@@ -380,47 +380,47 @@ const DefinedDescriptorsMap = {
   }),
 
   // Default Rectangle Scissors
-  RectangleScissors: extend(BASE, {
+  RectangleScissor: extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  'RectangleScissors.FILL_INSIDE': extend(BASE, {
+  'RectangleScissor.FILL_INSIDE': extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  'RectangleScissors.FILL_OUTSIDE': extend(BASE, {
+  'RectangleScissor.FILL_OUTSIDE': extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  'RectangleScissors.ERASE_OUTSIDE': extend(BASE, {
+  'RectangleScissor.ERASE_OUTSIDE': extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  'RectangleScissors.ERASE_INSIDE': extend(BASE, {
+  'RectangleScissor.ERASE_INSIDE': extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  CircleScissors: extend(BASE, {
+  CircleScissor: extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  'CircleScissors.FILL_INSIDE': extend(BASE, {
+  'CircleScissor.FILL_INSIDE': extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  'CircleScissors.ERASE_OUTSIDE': extend(BASE, {
+  'CircleScissor.ERASE_OUTSIDE': extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  'CircleScissors.FILL_OUTSIDE': extend(BASE, {
+  'CircleScissor.FILL_OUTSIDE': extend(BASE, {
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),

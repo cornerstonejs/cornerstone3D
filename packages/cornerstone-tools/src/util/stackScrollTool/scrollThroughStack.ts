@@ -54,7 +54,13 @@ export default function scrollThroughStack(
       return
     }
 
-    const { volumeActor } = viewport.getActor(imageVolume.uid)
+    const actor = viewport.getActor(imageVolume.uid)
+
+    if (!actor) {
+      console.warn('No actor found for with actorUID of', imageVolume.uid)
+    }
+
+    const { volumeActor } = actor
     const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
 
     const delta = invert ? -deltaFrames : deltaFrames
