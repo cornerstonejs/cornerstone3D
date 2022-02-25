@@ -163,7 +163,7 @@ export function loadVolume(
  * @returns {Types.VolumeLoadObject} Volume Loader Object
  * @category VolumeLoader
  */
-export function createAndCacheVolume(
+export async function createAndCacheVolume(
   volumeId: string,
   options: VolumeLoaderOptions
 ): Promise<Record<string, any>> {

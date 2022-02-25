@@ -6,9 +6,9 @@ import {
 import { vec4 } from 'gl-matrix'
 
 import BaseTool from './BaseTool'
-import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
-import { getStyleProperty } from '../../stateManagement/toolStyle'
-import { getViewportSpecificStateManager } from '../../stateManagement/toolState'
+import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
+import { getStyleProperty } from '../../stateManagement/annotation/toolStyle'
+import { getViewportSpecificStateManager } from '../../stateManagement/annotation/toolState'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,

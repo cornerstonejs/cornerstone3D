@@ -109,12 +109,12 @@ describe('ToolGroup Manager: ', () => {
 
       this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
 
-      const tg = ToolGroupManager.getToolGroupById('volume1')
+      const tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg).toBeDefined()
     })
   })
 
-  describe('Synchronizer Manager: ', () => {
+  describe('ToolGroup Manager: ', () => {
     beforeEach(function () {
       csTools3d.init()
       csTools3d.addTool(ProbeTool, {})
@@ -136,7 +136,7 @@ describe('ToolGroup Manager: ', () => {
     afterEach(function () {
       // Destroy synchronizer manager to test it first since csTools3D also destroy
       // synchronizers
-      ToolGroupManager.destroyToolGroupById('volume1')
+      ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
       csTools3d.destroy()
       cache.purgeCache()
       this.renderingEngine.destroy()
@@ -175,16 +175,15 @@ describe('ToolGroup Manager: ', () => {
 
       this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
 
-      const tg = ToolGroupManager.getToolGroupById('volume1')
+      const tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg).toBeDefined()
 
-      const tg2 = ToolGroupManager.getToolGroups(
+      const tg2 = ToolGroupManager.getToolGroup(
         renderingEngineUID,
         viewportUID1
       )
       expect(tg2).toBeDefined()
-      expect(tg2.length).toBe(1)
-      expect(tg).toBe(tg2[0])
+      expect(tg).toBe(tg2)
 
       const tg3 = ToolGroupManager.createToolGroup('volume1')
       expect(tg3).toBeUndefined()
@@ -221,23 +220,23 @@ describe('ToolGroup Manager: ', () => {
       ])
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupById('volume1')
+      let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
 
       tg.addViewports(this.renderingEngine.uid, viewportUID1)
-      expect(tg.viewports.length).toBe(1)
+      expect(tg.viewportsInfo.length).toBe(1)
 
       tg.removeViewports(renderingEngineUID)
 
-      tg = ToolGroupManager.getToolGroupById('volume1')
-      expect(tg.viewports.length).toBe(0)
+      tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      expect(tg.viewportsInfo.length).toBe(0)
 
       //
       tg.addViewports(this.renderingEngine.uid, viewportUID1)
-      tg = ToolGroupManager.getToolGroupById('volume1')
-      expect(tg.viewports.length).toBe(1)
+      tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      expect(tg.viewportsInfo.length).toBe(1)
 
       tg.removeViewports(renderingEngineUID, viewportUID2)
-      expect(tg.viewports.length).toBe(1)
+      expect(tg.viewportsInfo.length).toBe(1)
     })
 
     it('Should successfully make a tool enabled/disabled/active/passive', function () {
@@ -267,12 +266,12 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupById('volume1')
-      expect(tg._toolInstances['Probe'].mode).toBe('Active')
-      expect(tg._toolInstances['Length']).toBeUndefined()
+      let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      expect(tg.getToolInstance('Probe').mode).toBe('Active')
+      expect(tg.getToolInstance('Length')).toBeUndefined()
 
       tg.setToolPassive('Probe')
-      expect(tg._toolInstances['Probe'].mode).toBe('Passive')
+      expect(tg.getToolInstance('Probe').mode).toBe('Passive')
     })
 
     it('Should successfully setTool status', function () {
@@ -302,21 +301,21 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupById('volume1')
+      let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       tg.setToolActive()
       tg.setToolPassive()
       tg.setToolEnabled()
       tg.setToolDisabled()
 
-      expect(tg._toolInstances['Probe'].mode).toBe('Active')
+      expect(tg.getToolInstance('Probe').mode).toBe('Active')
 
       csTools3d.addTool(LengthTool, {})
       tg.addTool('Length')
       tg.setToolEnabled('Length')
-      expect(tg._toolInstances['Length'].mode).toBe('Enabled')
+      expect(tg.getToolInstance('Length').mode).toBe('Enabled')
 
       tg.setToolDisabled('Length')
-      expect(tg._toolInstances['Length'].mode).toBe('Disabled')
+      expect(tg.getToolInstance('Length').mode).toBe('Disabled')
     })
   })
 })

@@ -14,7 +14,9 @@ export function addTool(ToolClass, toolOptions) {
   const toolAlreadyAdded = state.tools[tool.name] !== undefined
 
   if (!hasToolName) {
-    throw new Error(`Tool with configuration did not produce a toolName: ${toolOptions}`)
+    throw new Error(
+      `Tool with configuration did not produce a toolName: ${toolOptions}`
+    )
   }
 
   if (toolAlreadyAdded) {
@@ -32,13 +34,17 @@ export function removeTool(ToolClass, toolOptions = {}) {
   const hasToolName = typeof tool.name !== 'undefined' && tool.name !== ''
 
   if (!hasToolName) {
-    throw new Error(`Tool with configuration did not produce a toolName: ${toolOptions}`)
+    throw new Error(
+      `Tool with configuration did not produce a toolName: ${toolOptions}`
+    )
   }
 
   if (!state.tools[tool.name] !== undefined) {
     delete state.tools[tool.name]
   } else {
-    throw new Error(`${tool.name} cannot be removed because it has not been added`)
+    throw new Error(
+      `${tool.name} cannot be removed because it has not been added`
+    )
   }
 }
 

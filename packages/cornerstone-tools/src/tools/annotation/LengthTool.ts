@@ -18,8 +18,8 @@ import {
   addToolState,
   getToolState,
   removeToolState,
-} from '../../stateManagement/toolState'
-import { isToolDataLocked } from '../../stateManagement/toolDataLocking'
+} from '../../stateManagement/annotation/toolState'
+import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
 import { lineSegment } from '../../util/math'
 
 import {

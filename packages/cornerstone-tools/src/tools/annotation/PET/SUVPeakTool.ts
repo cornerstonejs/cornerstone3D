@@ -18,7 +18,7 @@ import {
 } from '../../../cursors/elementCursor'
 import { state } from '../../../store'
 
-import { isToolDataLocked } from '../../../stateManagement/toolDataLocking'
+import { isToolDataLocked } from '../../../stateManagement/annotation/toolDataLocking'
 import { getCanvasEllipseCorners } from '../../../util/math/ellipse'
 import { getViewportUIDsWithToolToRender } from '../../../util/viewportFilters'
 
@@ -30,7 +30,10 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../../util/triggerAnnotationRenderForViewportUIDs'
 import { getToolStateForDisplay, getImageIdForTool } from '../../../util/planar'
 
-import { addToolState, getToolState } from '../../../stateManagement/toolState'
+import {
+  addToolState,
+  getToolState,
+} from '../../../stateManagement/annotation/toolState'
 import suvPeakStrategy from './suvPeakStrategy'
 import EllipticalRoiTool, {
   EllipticalRoiSpecificToolData,

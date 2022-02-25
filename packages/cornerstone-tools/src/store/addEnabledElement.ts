@@ -2,7 +2,6 @@ import {
   mouseEventListeners,
   wheelEventListener,
   keyEventListener,
-  labelmapStateEventListener,
 } from '../eventListeners'
 import {
   imageRenderedEventDispatcher,
@@ -36,7 +35,6 @@ export default function addEnabledElement(evt: CustomEvent): void {
   mouseEventListeners.enable(element)
   wheelEventListener.enable(element)
   keyEventListener.enable(element)
-  labelmapStateEventListener.enable(element)
 
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(element)

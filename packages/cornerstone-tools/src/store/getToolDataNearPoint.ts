@@ -1,7 +1,7 @@
 import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
 import { BaseAnnotationTool } from '../tools'
 import { Point2, ToolSpecificToolData } from '../types'
-import { getToolState } from '../stateManagement/toolState'
+import { getToolState } from '../stateManagement/annotation/toolState'
 import ToolGroupManager from './ToolGroupManager'
 
 function getToolDataNearPoint(
@@ -26,23 +26,26 @@ function getToolDataNearPointOnEnabledElement(
   proximity: number
 ): ToolSpecificToolData | null {
   const { renderingEngineUID, viewportUID } = enabledElement
-  const toolGroups = ToolGroupManager.getToolGroups(
+  const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
     viewportUID
   )
-  for (let i = 0; i < toolGroups.length; ++i) {
-    const { _toolInstances: tools } = toolGroups[i]
-    for (const name in tools) {
-      if (Object.prototype.hasOwnProperty.call(tools, name)) {
-        const found = findToolDataNearPointByTool(
-          tools[name],
-          enabledElement,
-          point,
-          proximity
-        )
-        if (found) {
-          return found
-        }
+
+  if (!toolGroup) {
+    return null
+  }
+
+  const { _toolInstances: tools } = toolGroup
+  for (const name in tools) {
+    if (Object.prototype.hasOwnProperty.call(tools, name)) {
+      const found = findToolDataNearPointByTool(
+        tools[name],
+        enabledElement,
+        point,
+        proximity
+      )
+      if (found) {
+        return found
       }
     }
   }

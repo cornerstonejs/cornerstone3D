@@ -1,103 +1,114 @@
-import {
-  getEnabledElement,
-  VolumeViewport,
-} from '@precisionmetrics/cornerstone-render'
-
-import state, {
-  getActiveLabelmapState,
-  getGlobalStateForLabelmapUID,
-} from './state'
-import { getActiveLabelmapUID } from './activeLabelmapController'
+import { getActiveSegmentationInfo } from './activeSegmentationController'
+import { getGlobalSegmentationDataByUID } from '../../stateManagement/segmentation/segmentationState'
+import { triggerSegmentationGlobalStateModified } from '.'
 
 /**
- * Returns the index of the active Segment for the current active labelmap
+ * Returns the active segment index for the active segmentation in the tool group
  *
- * @param  {HTMLElement} element HTML element
- * @returns {number} The active segment index
+ * @param {string} toolGroupUID - The UID of the tool group that contains an
+ * active segmentation.
+ * @returns The active segment index.
  */
-function getActiveSegmentIndex(element: HTMLElement): number | undefined {
-  const viewportLabelmapState = getActiveLabelmapState(element)
+function getActiveSegmentIndex(toolGroupUID: string): number | undefined {
+  const segmentationInfo = getActiveSegmentationInfo(toolGroupUID)
 
-  if (!viewportLabelmapState) {
-    // Todo: check this
-    return 1
+  if (!segmentationInfo) {
+    throw new Error('toolGroup does not contain an active segmentation')
   }
 
-  const activeLabelmapGlobalState = getGlobalStateForLabelmapUID(
-    viewportLabelmapState.volumeUID
-  )
+  const { volumeUID } = segmentationInfo
+  const activeSegmentationGlobalState =
+    getGlobalSegmentationDataByUID(volumeUID)
 
-  if (activeLabelmapGlobalState) {
-    return activeLabelmapGlobalState.activeSegmentIndex
+  if (activeSegmentationGlobalState) {
+    return activeSegmentationGlobalState.activeSegmentIndex
   }
 }
 
 /**
- * Returns the active segment index for the element based on the labelmapUID it renders
- * @param element HTML element
- * @param labelmapUID volumeUID of the labelmap
- * @returns
- */
-function getActiveSegmentIndexForLabelmapUID(labelmapUID: string): number {
-  const activeLabelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
-  return activeLabelmapGlobalState.activeSegmentIndex
-}
-
-/**
- * Sets the active `segmentIndex` for the active labelmap of the HTML element
+ * Set the active segment index for the active segmentation of the toolGroup.
+ * It fires a global state modified event.
  *
- *
- * @param  {HTMLElement} element  HTML Element
- * @param  {number} segmentIndex = 1 SegmentIndex
- * @returns {string}
+ * @event {SEGMENTATION_GLOBAL_STATE_MODIFIED}
+ * @param {string} toolGroupUID - The UID of the tool group that contains the
+ * segmentation.
+ * @param {number} segmentIndex - The index of the segment to be activated.
  */
 function setActiveSegmentIndex(
-  element: HTMLElement,
-  segmentIndex = 1
-): Promise<string> {
-  const enabledElement = getEnabledElement(element)
+  toolGroupUID: string,
+  segmentIndex: number
+): void {
+  const segmentationInfo = getActiveSegmentationInfo(toolGroupUID)
 
-  if (!enabledElement) {
-    return
+  if (!segmentationInfo) {
+    throw new Error('element does not contain an active segmentation')
   }
 
-  const { viewport, viewportUID } = enabledElement
+  const { volumeUID: segmentationUID } = segmentationInfo
+  const activeSegmentationGlobalState =
+    getGlobalSegmentationDataByUID(segmentationUID)
 
-  // stackViewport
-  if (!(viewport instanceof VolumeViewport)) {
-    throw new Error('Segmentation for StackViewport is not supported yet')
-  }
+  if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
+    activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
 
-  // volumeViewport
-  // Todo: should this initialize the state when no labelmaps? I don't think so
-  if (!state.volumeViewports[viewportUID]) {
-    throw new Error(
-      'Canvas does not contain an active labelmap, create one first before setting the segment Index'
-    )
-  }
-
-  const activeLabelmapUID = getActiveLabelmapUID(element)
-
-  const labelmapGlobalState = getGlobalStateForLabelmapUID(activeLabelmapUID)
-
-  if (labelmapGlobalState) {
-    labelmapGlobalState.activeSegmentIndex = segmentIndex
+    triggerSegmentationGlobalStateModified(segmentationUID)
   }
 }
 
-// segmentIndexController
-export {
-  // get
-  getActiveSegmentIndex,
-  getActiveSegmentIndexForLabelmapUID,
-  // set
-  setActiveSegmentIndex,
+/**
+ * Set the active segment index for a segmentation UID. It fires a global state
+ * modified event.
+ *
+ * @event {SEGMENTATION_GLOBAL_STATE_MODIFIED}
+ * @param {string} segmentationUID - The UID of the segmentation that the segment
+ * belongs to.
+ * @param {number} segmentIndex - The index of the segment to be activated.
+ */
+function setActiveSegmentIndexForSegmentation(
+  segmentationUID: string,
+  segmentIndex: number
+): void {
+  const activeSegmentationGlobalState =
+    getGlobalSegmentationDataByUID(segmentationUID)
+
+  if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
+    activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
+
+    triggerSegmentationGlobalStateModified(segmentationUID)
+  }
+}
+
+/**
+ * Get the active segment index for a segmentation in the global state
+ * @param {string} segmentationUID - The UID of the segmentation to get the active
+ * segment index from.
+ * @returns The active segment index for the given segmentation.
+ */
+function getActiveSegmentIndexForSegmentation(
+  segmentationUID: string
+): number | undefined {
+  const activeSegmentationGlobalState =
+    getGlobalSegmentationDataByUID(segmentationUID)
+
+  if (activeSegmentationGlobalState) {
+    return activeSegmentationGlobalState.activeSegmentIndex
+  }
 }
 
 export default {
-  // get
+  // toolGroup Active Segmentation
   getActiveSegmentIndex,
-  getActiveSegmentIndexForLabelmapUID,
-  // set
   setActiveSegmentIndex,
+  // global segmentation
+  getActiveSegmentIndexForSegmentation,
+  setActiveSegmentIndexForSegmentation,
+}
+
+export {
+  // toolGroup Active Segmentation
+  getActiveSegmentIndex,
+  setActiveSegmentIndex,
+  // global segmentation
+  getActiveSegmentIndexForSegmentation,
+  setActiveSegmentIndexForSegmentation,
 }

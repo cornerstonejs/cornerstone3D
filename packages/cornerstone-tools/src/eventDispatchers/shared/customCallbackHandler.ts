@@ -28,10 +28,14 @@ export default function customCallbackHandler(
   }
 
   const { renderingEngineUID, viewportUID } = evt.detail
-  const toolGroups = ToolGroupManager.getToolGroups(
+  const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
     viewportUID
   )
+
+  if (!toolGroup) {
+    return false
+  }
 
   // TODO: Filter tools by interaction type?
   /**
@@ -41,31 +45,22 @@ export default function customCallbackHandler(
    *
    */
   let activeTool
-  for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i]
-    const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
 
-    for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j]
-      const tool = toolGroup.toolOptions[toolName]
-      // TODO: Should be getter
-      const toolInstance = toolGroup._toolInstances[toolName]
+  for (let j = 0; j < toolGroupToolNames.length; j++) {
+    const toolName = toolGroupToolNames[j]
+    const tool = toolGroup.toolOptions[toolName]
+    // TODO: Should be getter
+    const toolInstance = toolGroup.getToolInstance(toolName)
 
-      if (
-        // TODO: Should be enum?
-        tool.mode === Active &&
-        // TODO: Should be implements interface?
-        // Weird that we need concrete instance. Other options to filter / get callback?
-        typeof toolInstance[customFunction] === 'function'
-      ) {
-        // This should be behind some API. Too much knowledge of ToolGroup
-        // inner workings leaking out
-        activeTool = toolGroup._toolInstances[toolName]
-        break
-      }
-    }
-
-    if (activeTool) {
+    if (
+      // TODO: Should be enum?
+      tool.mode === Active &&
+      // TODO: Should be implements interface?
+      // Weird that we need concrete instance. Other options to filter / get callback?
+      typeof toolInstance[customFunction] === 'function'
+    ) {
+      activeTool = toolGroup.getToolInstance(toolName)
       break
     }
   }

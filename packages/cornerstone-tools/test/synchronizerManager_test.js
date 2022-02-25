@@ -90,7 +90,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupById('volume1')
+    ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
 
     DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -230,7 +230,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupById('volume1')
+    ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
 
     DOMElements.forEach((el) => {
       if (el.parentNode) {

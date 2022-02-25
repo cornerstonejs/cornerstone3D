@@ -16,9 +16,6 @@ import {
   getToolDataNearPointOnEnabledElement,
 } from './getToolDataNearPoint'
 
-// TODO:
-// - getToolGroupsForViewport?
-
 export {
   // Store
   state,

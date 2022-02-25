@@ -5,10 +5,11 @@ import {
 } from './getBoundingBoxUtils'
 import thresholdVolumeByRange from './thresholdVolumeByRange'
 import thresholdVolumeByRoiStats from './thresholdVolumeByRoiStats'
-import triggerLabelmapRender from './triggerLabelmapRender'
 import calculateSuvPeak from './calculateSuvPeak'
 import calculateTMTV from './calculateTMTV'
 import createMergedLabelmap from './createMergedLabelmap'
+import isValidRepresentationConfig from './isValidRepresentationConfig'
+import getDefaultRepresentationConfig from './getDefaultRepresentationConfig'
 
 export {
   getBoundingBoxAroundShape,
@@ -16,10 +17,11 @@ export {
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
-  triggerLabelmapRender,
   calculateSuvPeak,
   calculateTMTV,
   createMergedLabelmap,
+  isValidRepresentationConfig,
+  getDefaultRepresentationConfig,
 }
 
 export default {
@@ -28,8 +30,9 @@ export default {
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
-  triggerLabelmapRender,
   calculateSuvPeak,
   calculateTMTV,
   createMergedLabelmap,
+  isValidRepresentationConfig,
+  getDefaultRepresentationConfig,
 }

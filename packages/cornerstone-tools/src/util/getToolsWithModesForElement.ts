@@ -20,25 +20,31 @@ export default function getToolsWithModesForElement(
   const enabledElement = getEnabledElement(element)
   const { renderingEngineUID, viewportUID } = enabledElement
 
-  const toolGroups = ToolGroupManager.getToolGroups(
+  const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
     viewportUID
   )
 
+  if (!toolGroup) {
+    return []
+  }
+
   const enabledTools = []
 
-  for (let i = 0; i < toolGroups.length; i++) {
-    const toolGroup = toolGroups[i]
-    const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
 
-    for (let j = 0; j < toolGroupToolNames.length; j++) {
-      const toolName = toolGroupToolNames[j]
-      const tool = toolGroup.toolOptions[toolName]
+  for (let j = 0; j < toolGroupToolNames.length; j++) {
+    const toolName = toolGroupToolNames[j]
+    const toolOptions = toolGroup.toolOptions[toolName]
 
-      if (modesFilter.includes(tool.mode)) {
-        const toolInstance = toolGroup._toolInstances[toolName]
-        enabledTools.push(toolInstance)
-      }
+    /* filter out tools that don't have options */
+    if (!toolOptions) {
+      continue
+    }
+
+    if (modesFilter.includes(toolOptions.mode)) {
+      const toolInstance = toolGroup.getToolInstance(toolName)
+      enabledTools.push(toolInstance)
     }
   }
 

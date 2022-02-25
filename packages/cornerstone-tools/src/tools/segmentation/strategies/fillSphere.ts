@@ -1,42 +1,40 @@
 import {
   Point3,
-  Point2,
   IImageVolume,
   IEnabledElement,
 } from '@precisionmetrics/cornerstone-render/src/types'
 
-import triggerLabelmapRender from '../../../util/segmentation/triggerLabelmapRender'
+import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
 import pointInSurroundingSphereCallback from '../../../util/planar/pointInSurroundingSphereCallback'
 
 type OperationData = {
   points: [Point3, Point3, Point3, Point3]
   volume: IImageVolume
+  toolGroupUID: string
   segmentIndex: number
+  segmentationDataUID: string
   segmentsLocked: number[]
   viewPlaneNormal: Point3
   viewUp: Point3
   constraintFn: () => boolean
 }
 
-type fillSphereEvent = {
-  enabledElement: IEnabledElement
-}
-
 function fillSphere(
-  evt: fillSphereEvent,
+  enabledElement: IEnabledElement,
   operationData: OperationData,
   _inside = true
 ): void {
-  const { enabledElement } = evt
-  const { renderingEngine, viewport } = enabledElement
+  const { viewport } = enabledElement
   const {
-    volume: labelmapVolume,
+    volume: segmentation,
     segmentsLocked,
     segmentIndex,
+    toolGroupUID,
+    segmentationDataUID,
     points,
   } = operationData
 
-  const { scalarData, imageData } = labelmapVolume
+  const { scalarData } = segmentation
 
   const callback = ({ index, value }) => {
     if (segmentsLocked.includes(value)) {
@@ -47,38 +45,38 @@ function fillSphere(
 
   pointInSurroundingSphereCallback(
     viewport,
-    labelmapVolume,
+    segmentation,
     [points[0], points[1]],
     callback
   )
 
-  triggerLabelmapRender(renderingEngine, labelmapVolume, imageData)
+  triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
 }
 
 /**
- * Fill all pixels inside/outside the region defined by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param {}  operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
+ * Fill inside a sphere with the given segment index in the given operation data. The
+ * operation data contains the sphere required points.
+ * @param {IEnabledElement} enabledElement - The element that is enabled and
+ * selected.
+ * @param {OperationData} operationData - OperationData
  */
 export function fillInsideSphere(
-  evt: fillSphereEvent,
+  enabledElement: IEnabledElement,
   operationData: OperationData
 ): void {
-  fillSphere(evt, operationData, true)
+  fillSphere(enabledElement, operationData, true)
 }
 
 /**
- * Fill all pixels outside the region defined by the rectangle.
- * @param  {} evt The Cornerstone event.
- * @param  {} operationData An object containing the `pixelData` to
- *                          modify, the `segmentIndex` and the `points` array.
- * @returns {null}
+ * Fill outside a sphere with the given segment index in the given operation data. The
+ * operation data contains the sphere required points.
+ * @param {IEnabledElement} enabledElement - The element that is enabled and
+ * selected.
+ * @param {OperationData} operationData - OperationData
  */
 export function fillOutsideSphere(
-  evt: fillSphereEvent,
+  enabledElement: IEnabledElement,
   operationData: OperationData
 ): void {
-  fillSphere(evt, operationData, false)
+  fillSphere(enabledElement, operationData, false)
 }

@@ -6,12 +6,16 @@ import {
   Point2,
 } from '@precisionmetrics/cornerstone-render/src/types'
 
+import { cache } from '@precisionmetrics/cornerstone-render'
+
 import {
   getBoundingBoxAroundShape,
   extend2DBoundingBoxInViewAxis,
 } from '../segmentation'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
-import triggerLabelmapRender from './triggerLabelmapRender'
+import { triggerSegmentationDataModified } from '../../store/SegmentationModule/triggerSegmentationEvents'
+import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
+import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
 
 export type ThresholdRangeOptions = {
   higherThreshold: number
@@ -35,48 +39,54 @@ export type ToolDataForThresholding = {
 }
 
 /**
- * Given an array of rectangle toolData, and a labelmap and referenceVolumes:
- * It fills the labelmap at SegmentIndex=1 based on a range of thresholds of the referenceVolumes
+ * Given an array of rectangle toolData, and a segmentation and referenceVolumes:
+ * It fills the segmentation at SegmentIndex=1 based on a range of thresholds of the referenceVolumes
  * inside the drawn annotations.
- * @param {RectangleRoiThresholdToolData[]} toolDataList Array of rectangle annotaiton toolData
- * @param {IImageVolume[]} referenceVolumes array of volumes on whom thresholding is applied
- * @param {IImageVolume} labelmap segmentation volume
+ * @param {string} toolGroupUID - The toolGroupUID of the tool that is performing the operation
+ * @param {RectangleRoiThresholdToolData[]} toolDataList Array of rectangle annotation toolData
+ * @param {ToolGroupSpecificSegmentationData} segmentationData - The segmentation data to be modified
+ * @param {IImageVolume} segmentation segmentation volume
  * @param {ThresholdRangeOptions} options Options for thresholding
  */
 function thresholdVolumeByRange(
+  toolGroupUID: string,
   toolDataList: ToolDataForThresholding[],
   referenceVolumes: IImageVolume[],
-  labelmap: IImageVolume,
+  segmentationData: ToolGroupSpecificSegmentationData,
   options: ThresholdRangeOptions
 ): IImageVolume {
   if (referenceVolumes.length > 1) {
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
-  if (!labelmap) {
-    throw new Error('labelmap is required')
+  const globalState = SegmentationState.getGlobalSegmentationDataByUID(
+    segmentationData.volumeUID
+  )
+
+  if (!globalState) {
+    throw new Error('No Segmentation Found')
   }
 
-  const { scalarData, imageData: labelmapImageData } = labelmap
+  const { volumeUID } = globalState
+  const segmentation = cache.getVolume(volumeUID)
+
+  const { segmentationDataUID } = segmentationData
+
+  const { scalarData, imageData: segmentationImageData } = segmentation
   const { lowerThreshold, higherThreshold, numSlicesToProject, overwrite } =
     options
 
-  // set the labelmap to all zeros
+  // set the segmentation to all zeros
   if (overwrite) {
     for (let i = 0; i < scalarData.length; i++) {
       scalarData[i] = 0
     }
   }
 
-  let renderingEngine
-
   toolDataList.forEach((toolData) => {
     // Threshold Options
-    const { enabledElement } = toolData.metadata
     const { data } = toolData
     const { points } = data.handles
-
-    ;({ renderingEngine } = enabledElement)
 
     const referenceVolume = referenceVolumes[0]
     const { imageData, dimensions } = referenceVolume
@@ -96,7 +106,7 @@ function thresholdVolumeByRange(
     )
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
-    // If the tool is 2D but it is configed to project to X amount of slices
+    // If the tool is 2D but it is configured to project to X amount of slices
     // Don't project the slices if projectionPoints have been used to define the extents
     if (numSlicesToProject && !data.cachedStats?.projectionPoints) {
       boundsIJK = extendBoundingBoxInSliceAxisIfNecessary(
@@ -118,15 +128,16 @@ function thresholdVolumeByRange(
     pointInShapeCallback(
       boundsIJK,
       scalarData,
-      labelmapImageData,
+      segmentationImageData,
       dimensions,
       () => true,
       callback
     )
   })
 
-  triggerLabelmapRender(renderingEngine, labelmap, labelmapImageData)
-  return labelmap
+  triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
+
+  return segmentation
 }
 
 export function extendBoundingBoxInSliceAxisIfNecessary(

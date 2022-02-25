@@ -97,7 +97,7 @@ describe('Rectangle Roi Tool: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById('stack')
+      ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -816,7 +816,7 @@ describe('Rectangle Roi Tool: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById('stack')
+      ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       DOMElements.forEach((el) => {
         if (el.parentNode) {

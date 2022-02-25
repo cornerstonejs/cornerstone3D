@@ -20,14 +20,12 @@ export default function filterViewportsWithToolEnabled(viewports, toolName) {
   for (let vp = 0; vp < numViewports; vp++) {
     const viewport = viewports[vp]
 
-    const toolGroups = ToolGroupManager.getToolGroups(
+    const toolGroup = ToolGroupManager.getToolGroup(
       viewport.renderingEngineUID,
       viewport.uid
     )
 
-    const hasTool = toolGroups.some((tg) =>
-      _toolGroupHasActiveEnabledOrPassiveTool(tg, toolName)
-    )
+    const hasTool = _toolGroupHasActiveEnabledOrPassiveTool(toolGroup, toolName)
 
     if (hasTool) {
       viewportsWithToolEnabled.push(viewport)

@@ -9,6 +9,7 @@ interface IViewport {
   renderingEngineUID: string
   type: string
   canvas: HTMLCanvasElement
+  element: HTMLElement
   sx: number
   sy: number
   sWidth: number

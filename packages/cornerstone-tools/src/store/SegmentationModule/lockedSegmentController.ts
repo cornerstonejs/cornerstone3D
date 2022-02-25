@@ -1,130 +1,159 @@
-import { getGlobalStateForLabelmapUID } from './state'
+import { getActiveSegmentationInfo } from './activeSegmentationController'
 
-import { getLabelmapUIDForElement } from './utils'
-
-/**
- * Returns the lock status of the segment index for the element's labelmapIndex-th labelmap.
- * If no labelmapIndex is provided it uses the active labelmap
- * @param element HTML element
- * @param segmentIndex segment Index
- * @param labelmapIndex? labelmap Index
- * @returns
- */
-function getSegmentIndexLockedStatusForElement(
-  element: HTMLElement,
-  segmentIndex: number,
-  labelmapIndex?: number
-): boolean {
-  const labelmapUID = getLabelmapUIDForElement(element, labelmapIndex)
-  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
-
-  if (!labelmapGlobalState) {
-    return false
-  }
-
-  return labelmapGlobalState.segmentsLocked.has(segmentIndex)
-}
+import { getGlobalSegmentationDataByUID } from '../../stateManagement/segmentation/segmentationState'
+import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'
 
 /**
- * Returns the locked segments for the element's labelmapIndex-th labelmap
- * If no labelmapIndex is provided it uses the active labelmap
+ * Get the locked status of a segment index in a segmentation
  *
- * @param element HTML element
- * @param labelmapIndex labelmap Index
- * @returns
+ * @param {string} toolGroupUID - The UID of the tool group that contains the
+ * segmentation.
+ * @param {number} segmentIndex - The index of the segment
+ * @returns A boolean value indicating whether the segment is locked or not for modification
  */
-function getLockedSegmentsForElement(
-  element: HTMLElement,
-  labelmapIndex?: number
-): number[] {
-  const labelmapUID = getLabelmapUIDForElement(element, labelmapIndex)
-  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
-  return Array.from(labelmapGlobalState.segmentsLocked)
-}
-
-/**
- * Toggles the locked status of segments for the element's labelmapIndex-th labelmap
- * If no labelmapIndex is provided it uses the active labelmap
- * @param element HTML element
- * @param segmentIndex segment index
- * @param labelmapIndex labelmap index
- * @returns
- */
-function toggleSegmentIndexLockedForElement(
-  element: HTMLElement,
-  segmentIndex: number,
-  labelmapIndex?: number
-): void {
-  const labelmapUID = getLabelmapUIDForElement(element, labelmapIndex)
-  const lockedStatus = getSegmentIndexLockedStatusForElement(
-    element,
-    segmentIndex,
-    labelmapIndex
-  )
-
-  const labelmapGlobalState = getGlobalStateForLabelmapUID(labelmapUID)
-
-  const toggledStatus = !lockedStatus
-
-  if (toggledStatus === true) {
-    labelmapGlobalState.segmentsLocked.add(segmentIndex)
-    return
-  }
-
-  labelmapGlobalState.segmentsLocked.delete(segmentIndex)
-}
-
-/**
- * Toggles the locked status of segments for labelmapUID
- * @param labelmapUID labelmap volumeUID
- * @param segmentIndex segment index
- * @returns
- */
-function toggleSegmentIndexLockedForLabelmapUID(
-  labelmapUID: string,
+// Todo: should this be based on a segmentationUID instead of a toolGroupUID?
+function getSegmentIndexLockedStatus(
+  toolGroupUID: string,
   segmentIndex: number
-): void {
-  if (!labelmapUID) {
-    throw new Error('LabelmapUID should be provided')
+): boolean {
+  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupUID)
+
+  if (!activeSegmentationInfo) {
+    throw new Error('element does not contain an active segmentation')
   }
 
-  const { segmentsLocked } = getGlobalStateForLabelmapUID(labelmapUID)
-  if (segmentsLocked.has(segmentIndex)) {
-    segmentsLocked.delete(segmentIndex)
-  } else {
-    segmentsLocked.add(segmentIndex)
-  }
+  const { volumeUID: segmentationUID } = activeSegmentationInfo
+  const segmentationGlobalState =
+    getGlobalSegmentationDataByUID(segmentationUID)
+
+  const lockedSegments = segmentationGlobalState.segmentsLocked
+
+  return lockedSegments.has(segmentIndex)
 }
 
 /**
- * Returns an array of locked segment indices for the provided labelmapUID
- * @param labelmapUID Labelmap volumeUID
- * @returns
+ * Set the locked status of a segment in a segmentation globally. It fires
+ * a global state modified event.
+ *
+ * @event {SegmentationGlobalStateModifiedEvent}
+ * @param {string} toolGroupUID - the UID of the tool group that contains the
+ * segmentation
+ * @param {number} segmentIndex - the index of the segment to lock/unlock
+ * @param {boolean} locked - boolean
  */
-function getLockedSegmentsForLabelmapUID(labelmapUID: string): number[] {
-  const { segmentsLocked } = getGlobalStateForLabelmapUID(labelmapUID)
+// Todo: shouldn't this be a based on a segmentationUID instead of a toolGroupUID?
+function setSegmentIndexLockedStatus(
+  toolGroupUID: string,
+  segmentIndex: number,
+  locked: boolean
+): void {
+  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupUID)
+
+  if (!activeSegmentationInfo) {
+    throw new Error('element does not contain an active segmentation')
+  }
+
+  const { volumeUID: segmentationUID } = activeSegmentationInfo
+
+  const segmentationGlobalState =
+    getGlobalSegmentationDataByUID(segmentationUID)
+
+  const { segmentsLocked } = segmentationGlobalState
+
+  if (locked) {
+    segmentsLocked.add(segmentIndex)
+  } else {
+    segmentsLocked.delete(segmentIndex)
+  }
+
+  triggerSegmentationGlobalStateModified(segmentationUID)
+}
+
+/**
+ * Get the locked status for a segment index in a segmentation
+ * @param {string} segmentationUID - The UID of the segmentation that the segment
+ * belongs to.
+ * @param {number} segmentIndex - The index of the segment
+ * @returns A boolean value indicating whether the segment is locked or not.
+ */
+function getSegmentIndexLockedStatusForSegmentation(
+  segmentationUID: string,
+  segmentIndex: number
+): boolean {
+  const globalState = getGlobalSegmentationDataByUID(segmentationUID)
+
+  if (!globalState) {
+    throw new Error(`No segmentation state found for ${segmentationUID}`)
+  }
+
+  const { segmentsLocked } = globalState
+  return segmentsLocked.has(segmentIndex)
+}
+
+/**
+ * Set the locked status of a segment index in a segmentation
+ * @param {string} segmentationUID - The UID of the segmentation whose segment
+ * index is being modified.
+ * @param {number} segmentIndex - The index of the segment to lock/unlock.
+ */
+function setSegmentIndexLockedStatusForSegmentation(
+  segmentationUID: string,
+  segmentIndex: number,
+  locked: boolean
+): void {
+  const segmentationGlobalState =
+    getGlobalSegmentationDataByUID(segmentationUID)
+
+  if (!segmentationGlobalState) {
+    throw new Error(`No segmentation state found for ${segmentationUID}`)
+  }
+
+  const { segmentsLocked } = segmentationGlobalState
+
+  if (locked) {
+    segmentsLocked.add(segmentIndex)
+  } else {
+    segmentsLocked.delete(segmentIndex)
+  }
+
+  triggerSegmentationGlobalStateModified(segmentationUID)
+}
+
+/**
+ * Get the locked segments for a segmentation
+ * @param {string} segmentationUID - The UID of the segmentation to get locked
+ * segments for.
+ * @returns An array of locked segment indices.
+ */
+function getLockedSegmentsForSegmentation(
+  segmentationUID: string
+): number[] | [] {
+  const globalState = getGlobalSegmentationDataByUID(segmentationUID)
+
+  if (!globalState) {
+    throw new Error(`No segmentation state found for ${segmentationUID}`)
+  }
+
+  const { segmentsLocked } = globalState
   return Array.from(segmentsLocked)
 }
 
-// lockedSegmentController
 export {
-  // get
-  getLockedSegmentsForLabelmapUID,
-  getLockedSegmentsForElement,
-  // toggling lock
-  toggleSegmentIndexLockedForLabelmapUID,
-  toggleSegmentIndexLockedForElement,
-  //
-  getSegmentIndexLockedStatusForElement,
+  // toolGroup active segmentation
+  getSegmentIndexLockedStatus,
+  setSegmentIndexLockedStatus,
+  // set
+  getSegmentIndexLockedStatusForSegmentation,
+  setSegmentIndexLockedStatusForSegmentation,
+  getLockedSegmentsForSegmentation,
 }
 
 export default {
-  // get
-  getLockedSegmentsForLabelmapUID,
-  getLockedSegmentsForElement,
-  // toggling lock
-  toggleSegmentIndexLockedForLabelmapUID,
-  toggleSegmentIndexLockedForElement,
-  //
-  getSegmentIndexLockedStatusForElement,
+  // toolGroup active segmentation
+  getSegmentIndexLockedStatus,
+  setSegmentIndexLockedStatus,
+  // set
+  getSegmentIndexLockedStatusForSegmentation,
+  setSegmentIndexLockedStatusForSegmentation,
+  getLockedSegmentsForSegmentation,
 }

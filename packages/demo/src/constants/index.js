@@ -86,9 +86,9 @@ const ANNOTATION_TOOLS = [
 
 // A string helper for the drop down.
 const SEGMENTATION_TOOLS = [
-  'RectangleScissors',
-  'CircleScissors',
-  'SphereScissors',
+  'RectangleScissor',
+  'CircleScissor',
+  'SphereScissor',
   'RectangleRoiThreshold',
   'RectangleRoiStartEndThreshold',
 ]

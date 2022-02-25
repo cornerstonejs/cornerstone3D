@@ -1,8 +1,7 @@
 import { ToolBindings, ToolModes } from '../../enums'
 import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
 import { state } from '../index'
-import IToolGroup from './IToolGroup'
-import ISetToolModeOptions from '../../types/ISetToolModeOptions'
+import { ISetToolModeOptions, IToolGroup } from '../../types'
 import deepmerge from '../../util/deepMerge'
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors'
@@ -10,26 +9,26 @@ import { initElementCursor } from '../../cursors/elementCursor'
 
 const { Active, Passive, Enabled, Disabled } = ToolModes
 
-function createToolGroup(toolGroupId: string): IToolGroup | undefined {
+function createToolGroup(toolGroupUID: string): IToolGroup | undefined {
   // Exit early if ID conflict
   const toolGroupWithIdExists = state.toolGroups.some(
-    (tg) => tg.id === toolGroupId
+    (tg) => tg.uid === toolGroupUID
   )
 
   if (toolGroupWithIdExists) {
-    console.warn(`'${toolGroupId}' already exists.`)
+    console.warn(`'${toolGroupUID}' already exists.`)
     return
   }
 
   // Create
   const toolGroup: IToolGroup = {
-    _toolInstances: {}, // tool instances
-    id: toolGroupId,
-    viewports: [],
+    uid: toolGroupUID,
+    viewportsInfo: [],
     toolOptions: {}, // tools modes etc.
+    _toolInstances: {}, // tool instances
     //
     getViewportUIDs: function () {
-      return this.viewports.map(({ viewportUID }) => viewportUID)
+      return this.viewportsInfo.map(({ viewportUID }) => viewportUID)
     },
     getToolInstance: function (toolName) {
       const toolInstance = this._toolInstances[toolName]
@@ -59,7 +58,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       if (localToolInstance) {
         console.warn(
-          `'${toolName}' is already registered for ToolGroup ${this.id}.`
+          `'${toolName}' is already registered for ToolGroup ${this.uid}.`
         )
         return
       }
@@ -74,7 +73,10 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         toolConfiguration
       )
 
-      const instantiatedTool = new ToolClass(mergedToolConfiguration)
+      const instantiatedTool = new ToolClass({
+        ...mergedToolConfiguration,
+        toolGroupUID: this.uid,
+      })
 
       // API instead of directly exposing schema?
       // Maybe not here, but feels like a "must" for any method outside of the ToolGroup itself
@@ -84,7 +86,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       renderingEngineUID: string,
       viewportUID?: string
     ): void {
-      this.viewports.push({ renderingEngineUID, viewportUID })
+      this.viewportsInfo.push({ renderingEngineUID, viewportUID })
     },
     /**
      * Removes viewport from the toolGroup. If only renderingEngineUID is defined
@@ -99,7 +101,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
     ): void {
       const indices = []
 
-      this.viewports.forEach((vp, index) => {
+      this.viewportsInfo.forEach((vp, index) => {
         let match = false
         if (vp.renderingEngineUID === renderingEngineUID) {
           match = true
@@ -116,7 +118,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       if (indices.length) {
         // going in reverse to not mess up the indexes to be removed
         for (let i = indices.length - 1; i >= 0; i--) {
-          this.viewports.splice(indices[i], 1)
+          this.viewportsInfo.splice(indices[i], 1)
         }
       }
     },
@@ -154,14 +156,11 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       }
 
       if (typeof this._toolInstances[toolName].init === 'function') {
-        this._toolInstances[toolName].init(this.viewports)
+        this._toolInstances[toolName].init(this.viewportsInfo)
       }
       this.refreshViewports()
     },
-    setToolPassive: function (
-      toolName: string,
-      toolModeOptions: ISetToolModeOptions
-    ): void {
+    setToolPassive: function (toolName: string): void {
       if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
@@ -172,11 +171,10 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       // Wwe should only remove the primary button bindings and keep
       // the other ones (Zoom on right click)
+      const toolModeOptions = this.getToolModeOptions(toolName)
       const toolOptions = Object.assign(
         {
-          bindings: this.toolOptions[toolName]
-            ? this.toolOptions[toolName].bindings
-            : [],
+          bindings: toolModeOptions ? toolModeOptions.bindings : [],
         },
         toolModeOptions,
         {
@@ -200,10 +198,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       this._toolInstances[toolName].mode = mode
       this.refreshViewports()
     },
-    setToolEnabled: function (
-      toolName: string,
-      toolModeOptions: ISetToolModeOptions
-    ): void {
+    setToolEnabled: function (toolName: string): void {
       if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
@@ -212,26 +207,21 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
         return
       }
 
-      // Would only need this for sanity check if not instantiating/hydrating
-      // const tool = this.toolOptions[toolName];
-      const toolModeOptionsWithMode = Object.assign(
-        {
-          bindings: [],
-        },
-        toolModeOptions,
-        {
-          mode: Enabled,
-        }
-      )
+      const toolModeOptionsWithMode = {
+        bindings: [],
+        mode: Enabled,
+      }
 
       this.toolOptions[toolName] = toolModeOptionsWithMode
       this._toolInstances[toolName].mode = Enabled
+
+      if (this._toolInstances[toolName].enableCallback) {
+        this._toolInstances[toolName].enableCallback(this.uid)
+      }
+
       this.refreshViewports()
     },
-    setToolDisabled: function (
-      toolName: string,
-      toolModeOptions: ISetToolModeOptions
-    ): void {
+    setToolDisabled: function (toolName: string): void {
       if (this._toolInstances[toolName] === undefined) {
         console.warn(
           `Tool ${toolName} not added to toolgroup, can't set tool mode.`
@@ -241,18 +231,23 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
 
       // Would only need this for sanity check if not instantiating/hydrating
       // const tool = this.toolOptions[toolName];
-      const toolModeOptionsWithMode = Object.assign(
-        {
-          bindings: [],
-        },
-        toolModeOptions,
-        {
-          mode: Disabled,
-        }
-      )
+      const toolModeOptionsWithMode = {
+        bindings: [],
+        mode: Disabled,
+      }
+
       this.toolOptions[toolName] = toolModeOptionsWithMode
       this._toolInstances[toolName].mode = Disabled
+
+      if (this._toolInstances[toolName].disableCallback) {
+        this._toolInstances[toolName].disableCallback(this.uid)
+      }
       this.refreshViewports()
+    },
+    // Todo:
+    // setToolConfiguration(){},
+    getToolModeOptions(toolName: string) {
+      return this.toolOptions[toolName]
     },
     getActivePrimaryButtonTools() {
       return Object.keys(this.toolOptions).find((toolName) => {
@@ -271,7 +266,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       )
     },
     refreshViewports(): void {
-      this.viewports.forEach(({ renderingEngineUID, viewportUID }) => {
+      this.viewportsInfo.forEach(({ renderingEngineUID, viewportUID }) => {
         getRenderingEngine(renderingEngineUID).renderViewport(viewportUID)
       })
     },
@@ -284,7 +279,7 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
       if (!cursor) {
         cursor = MouseCursor.getDefinedCursor('default')
       }
-      this.viewports.forEach(({ renderingEngineUID, viewportUID }) => {
+      this.viewportsInfo.forEach(({ renderingEngineUID, viewportUID }) => {
         const viewport =
           getRenderingEngine(renderingEngineUID).getViewport(viewportUID)
         if (viewport && viewport.element) {

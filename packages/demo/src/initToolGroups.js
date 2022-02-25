@@ -31,6 +31,7 @@ const {
   RectangleRoiThreshold,
   RectangleRoiStartEndThreshold,
   SUVPeakTool,
+  SegmentationDisplayTool,
 } = csTools3d
 
 /* Configuration arrays and get/set functions for setting the crosshair interactions:
@@ -244,6 +245,7 @@ function initToolGroups(toolConfiguration = {}) {
   csTools3d.addTool(RectangleRoiThreshold, toolConfiguration)
   csTools3d.addTool(RectangleRoiStartEndThreshold, toolConfiguration)
   csTools3d.addTool(SUVPeakTool, toolConfiguration)
+  csTools3d.addTool(SegmentationDisplayTool, toolConfiguration)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.STACK_CT
@@ -272,7 +274,7 @@ function initToolGroups(toolConfiguration = {}) {
     TOOL_GROUP_UIDS.CTVR
   )
   const ctObliqueToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.OBLIQUE
+    TOOL_GROUP_UIDS.CTOBLIQUE
   )
 
   const ptTypesSceneToolGroup = ToolGroupManager.createToolGroup(
@@ -508,19 +510,21 @@ function addToolsToToolGroups({
     // Set up CT Scene tools
 
     // @TODO: This kills the volumeUID and tool configuration
-    ctSceneToolGroup.addTool('RectangleScissors', {
+    ctSceneToolGroup.addTool('RectangleScissor', {
       configuration: { volumeUID: ctVolumeUID },
     })
     ctSceneToolGroup.addTool('RectangleRoiThreshold', {
       configuration: { volumeUID: ctVolumeUID },
     })
+    ctSceneToolGroup.addTool('SegmentationDisplay')
+    ctSceneToolGroup.setToolEnabled('SegmentationDisplay')
     ctSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {
       configuration: { volumeUID: ctVolumeUID },
     })
-    ctSceneToolGroup.addTool('CircleScissors', {
+    ctSceneToolGroup.addTool('CircleScissor', {
       configuration: { volumeUID: ctVolumeUID },
     })
-    ctSceneToolGroup.addTool('SphereScissors', {
+    ctSceneToolGroup.addTool('SphereScissor', {
       configuration: { volumeUID: ctVolumeUID },
     })
     ctSceneToolGroup.addTool('WindowLevel', {
@@ -595,6 +599,7 @@ function addToolsToToolGroups({
     })
     prostateSceneToolGroup.addTool('Length', {})
     prostateSceneToolGroup.addTool('Pan', {})
+
     prostateSceneToolGroup.addTool('Zoom', {})
     prostateSceneToolGroup.addTool('StackScrollMouseWheel', {})
     prostateSceneToolGroup.addTool('Bidirectional', {
@@ -654,19 +659,21 @@ function addToolsToToolGroups({
 
   if (ptSceneToolGroup) {
     // Set up PT Scene tools
-    ptSceneToolGroup.addTool('RectangleScissors', {
+    ptSceneToolGroup.addTool('RectangleScissor', {
       configuration: { volumeUID: ptVolumeUID },
     })
     ptSceneToolGroup.addTool('RectangleRoiThreshold', {
       configuration: { volumeUID: ptVolumeUID },
     })
+    ptSceneToolGroup.addTool('SegmentationDisplay')
+    ptSceneToolGroup.setToolEnabled('SegmentationDisplay')
     ptSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {
       configuration: { volumeUID: ptVolumeUID },
     })
-    ptSceneToolGroup.addTool('CircleScissors', {
+    ptSceneToolGroup.addTool('CircleScissor', {
       configuration: { volumeUID: ptVolumeUID },
     })
-    ptSceneToolGroup.addTool('SphereScissors', {
+    ptSceneToolGroup.addTool('SphereScissor', {
       configuration: { volumeUID: ptVolumeUID },
     })
     ptSceneToolGroup.addTool('ptSUVPeak', {

@@ -36,9 +36,15 @@ export default function getEnabledElement(
     return
   }
 
-  const { viewportUid: viewportUID, renderingEngineUid: renderingEngineUID } =
-    element.dataset
+  const { viewportUid, renderingEngineUid } = element.dataset
 
+  return getEnabledElementByUIDs(renderingEngineUid, viewportUid)
+}
+
+export function getEnabledElementByUIDs(
+  renderingEngineUID: string,
+  viewportUID: string
+): IEnabledElement {
   if (!renderingEngineUID || !viewportUID) {
     return
   }
