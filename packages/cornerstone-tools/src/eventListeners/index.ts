@@ -5,7 +5,10 @@ import {
   segmentationDataModifiedEventListener,
   segmentationStateModifiedEventListener,
 } from './segmentation'
-import { measurementSelectionListener } from './toolStyles'
+import {
+  measurementSelectionListener,
+  measurementModifiedListener,
+} from './annotations'
 //import touchEventListeners from './touchEventListeners';
 
 export {
@@ -15,4 +18,5 @@ export {
   segmentationStateModifiedEventListener,
   segmentationDataModifiedEventListener,
   measurementSelectionListener,
+  measurementModifiedListener,
 }

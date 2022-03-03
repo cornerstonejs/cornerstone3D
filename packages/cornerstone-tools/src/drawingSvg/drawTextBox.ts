@@ -1,6 +1,6 @@
 import _getHash from './_getHash'
 import { Point2 } from '../types'
-import _setNewAttributesIfValid from './_setNewAttributesIfValid'
+import _setAttributesIfNecessary from './_setAttributesIfNecessary'
 
 /**
  * Draws a textBox.
@@ -63,8 +63,9 @@ function _drawTextGroup(
   const svgNodeHash = _getHash(toolName, annotationUID, 'text', textUID)
   const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash)
 
+  // Todo: right now textBox gets a re-render even if the textBox has not changed
+  // and evenIf the attributes are not set again since they are the same.
   if (existingTextGroup) {
-    existingTextGroup.setAttribute('transform', `translate(${x} ${y})`)
     // TODO: Iterate each node and update color? font-size?
     // TODO: Does not support change in # of text lines
     const textElement = existingTextGroup.querySelector('text')
@@ -77,13 +78,19 @@ function _drawTextGroup(
       textSpanElement.textContent = text
     }
 
-    const attributes = {
+    const textAttributes = {
       fill: color,
       'font-size': fontSize,
       'font-family': fontFamily,
     }
 
-    _setNewAttributesIfValid(attributes, textElement)
+    const textGroupAttributes = {
+      transform: `translate(${x} ${y})`,
+    }
+
+    // Todo: for some reason this does not work to not re-render the textBox
+    _setAttributesIfNecessary(textAttributes, textElement)
+    _setAttributesIfNecessary(textGroupAttributes, existingTextGroup)
 
     textGroupBoundingBox = _drawTextBackground(existingTextGroup, background)
 
@@ -175,11 +182,16 @@ function _drawTextBackground(group: SVGGElement, color: string) {
 
   // Get the text groups's bounding box and use it to draw the background rectangle
   const bBox = group.getBBox()
-  element.setAttribute('x', `${bBox.x}`)
-  element.setAttribute('y', `${bBox.y}`)
-  element.setAttribute('width', `${bBox.width}`)
-  element.setAttribute('height', `${bBox.height}`)
-  element.setAttribute('fill', color)
+
+  const attributes = {
+    x: `${bBox.x}`,
+    y: `${bBox.y}`,
+    width: `${bBox.width}`,
+    height: `${bBox.height}`,
+    fill: color,
+  }
+
+  _setAttributesIfNecessary(attributes, element)
 
   return bBox
 }
