@@ -11,6 +11,7 @@ import {
   measurementSelectionListener,
   segmentationDataModifiedEventListener,
   segmentationStateModifiedEventListener,
+  measurementModifiedListener,
 } from './eventListeners'
 
 import ToolGroupManager from './store/ToolGroupManager'
@@ -85,7 +86,7 @@ function _removeCornerstoneEventListeners() {
 
 /**
  * It adds an event listener to the event target (the cornerstoneTools object) for
- * the selection event.
+ * the measurement selected and measurement modified events.
  */
 function _addCornerstoneToolsEventListeners() {
   // Clear any listeners that may already be set
@@ -94,6 +95,7 @@ function _addCornerstoneToolsEventListeners() {
   const selectionEvent = TOOLS_EVENTS.MEASUREMENT_SELECTION_CHANGE
   const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
   const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
+  const modifiedEvent = TOOLS_EVENTS.MEASUREMENT_MODIFIED
 
   eventTarget.addEventListener(selectionEvent, measurementSelectionListener)
   eventTarget.addEventListener(
@@ -104,13 +106,17 @@ function _addCornerstoneToolsEventListeners() {
     segmentationStateModified,
     segmentationStateModifiedEventListener
   )
+
+  eventTarget.addEventListener(selectionEvent, measurementSelectionListener)
+  eventTarget.addEventListener(modifiedEvent, measurementModifiedListener)
 }
 
 /**
- * Remove the event listener for the selection event
+ * Remove the event listener for the the measurement selected and measurement modified events.
  */
 function _removeCornerstoneToolsEventListeners() {
   const selectionEvent = TOOLS_EVENTS.MEASUREMENT_SELECTION_CHANGE
+  const modifiedEvent = TOOLS_EVENTS.MEASUREMENT_MODIFIED
   const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
   const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
 
@@ -123,6 +129,9 @@ function _removeCornerstoneToolsEventListeners() {
     segmentationStateModified,
     segmentationStateModifiedEventListener
   )
+
+  eventTarget.removeEventListener(selectionEvent, measurementSelectionListener)
+  eventTarget.removeEventListener(modifiedEvent, measurementModifiedListener)
 }
 
 export default init
