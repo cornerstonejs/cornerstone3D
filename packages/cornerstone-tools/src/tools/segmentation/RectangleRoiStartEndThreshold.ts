@@ -122,11 +122,11 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    let referencedImageId, imageVolume
+    let referencedImageId, imageVolume, volumeUID
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented')
     } else {
-      const { volumeUID } = this.configuration
+      volumeUID = this.getTargetUID(viewport)
       imageVolume = getVolume(volumeUID)
       referencedImageId = getImageIdForTool(
         worldPos,
@@ -168,7 +168,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
-        volumeUID: this.configuration.volumeUID,
+        volumeUID,
         spacingInNormal,
       },
       data: {
@@ -298,10 +298,11 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
   _calculateCachedStatsTool(toolData, enabledElement) {
     const data = toolData.data
-    const { viewportUID, renderingEngineUID } = enabledElement
+    const { viewportUID, renderingEngineUID, viewport } = enabledElement
 
     const { cachedStats } = data
-    const imageVolume = getVolume(this.configuration.volumeUID)
+    const volumeUID = this.getTargetUID(viewport)
+    const imageVolume = getVolume(volumeUID)
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleRoi class, we need to
@@ -340,11 +341,8 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     //   return
     // }
 
-    const { viewport, renderingEngine } = enabledElement
+    const { viewport } = enabledElement
     const sliceIndex = viewport.getCurrentImageIdIndex()
-
-    const { volumeUID } = this.configuration
-    const imageVolume = getVolume(volumeUID)
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i] as RectangleRoiStartEndThresholdToolData

@@ -145,7 +145,7 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const { volumeUID } = this.configuration
+      const volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
       referencedImageId = getImageIdForTool(
         worldPos,
@@ -615,7 +615,8 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     }
 
     // Todo: should this be inside the constructor?
-    const volume = getVolume(this.configuration.volumeUID)
+    const volumeUID = this.getTargetUID(viewport)
+    const volume = getVolume(volumeUID)
     const operationData = {
       points: data.handles.points,
       viewPlaneNormal,
