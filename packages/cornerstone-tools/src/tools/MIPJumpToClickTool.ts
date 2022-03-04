@@ -36,7 +36,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     const { viewport, renderingEngine } = enabledElement
 
     // 2. Getting the target volume that is clicked on
-    const targetVolumeUID = this._getTargetVolumeUID(viewport as VolumeViewport)
+    const targetVolumeUID = this.getTargetUID(viewport as VolumeViewport)
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity
@@ -74,25 +74,5 @@ export default class MIPJumpToClickTool extends BaseTool {
 
       jumpToWorld(viewport, brightestPoint)
     })
-  }
-
-  /**
-   * Returns the volume UID in the viewport. It returns the first volume.
-   * @param viewport viewport
-   * @returns volume UID
-   */
-  _getTargetVolumeUID = (viewport: VolumeViewport): string => {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const actors = viewport.getActors()
-
-    if (!actors && !actors.length) {
-      // No stack to scroll through
-      return
-    }
-
-    return actors[0].uid
   }
 }

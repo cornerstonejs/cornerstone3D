@@ -115,7 +115,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const { volumeUID } = this.configuration
+      const volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
       referencedImageId = getImageIdForTool(
         worldPos,
@@ -616,15 +616,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     }
 
     const { viewport } = enabledElement
-
-    let targetUID
-    if (viewport instanceof StackViewport) {
-      targetUID = this._getTargetStackUID(viewport)
-    } else if (viewport instanceof VolumeViewport) {
-      targetUID = this._getTargetVolumeUID(viewport)
-    } else {
-      throw new Error(`Viewport Type not supported: ${viewport.type}`)
-    }
+    const targetUID = this.getTargetUID(viewport)
 
     const renderingEngine = viewport.getRenderingEngine()
 
@@ -676,7 +668,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           // at the referencedImageId
           const viewports = renderingEngine.getViewports()
           viewports.forEach((vp) => {
-            const stackTargetUID = this._getTargetStackUID(vp)
+            const stackTargetUID = this.getTargetUID(vp)
             // only delete the cachedStats for the stackedViewports if the tool
             // is dragged inside the volume and the stackViewports are not at the
             // referencedImageId for the tool

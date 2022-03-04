@@ -102,10 +102,16 @@ class VolumeViewport extends Viewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeUID, slabThickness } = volumeInputArray[i]
+      const { volumeUID, slabThickness, actorUID } = volumeInputArray[i]
       const volumeActor = await createVolumeActor(volumeInputArray[i])
 
-      volumeActors.push({ uid: volumeUID, volumeActor, slabThickness })
+      // We cannot use only volumeUID since then we cannot have for instance more
+      // than one representation of the same volume (since actors would have the
+      // same name, and we don't allow that) AND We cannot use only any uid, since
+      // we rely on the volume in the cache for mapper. So we prefer actorUID if
+      // it is defined, otherwise we use volumeUID for the actor name.
+      const uid = actorUID || volumeUID
+      volumeActors.push({ uid, volumeActor, slabThickness })
 
       if (
         slabThickness !== undefined &&

@@ -73,7 +73,7 @@ abstract class BaseAnnotationTool extends BaseTool {
    * @param  {CustomEvent} evt The event.
    * @param  {ToolSpecificToolData} toolData - The toolData selected.
    * @param  {any} handle - The selected handle.
-   * @param  {string} interactionType - The intraction type the handle was selected with.
+   * @param  {string} interactionType - The interaction type the handle was selected with.
    */
   public abstract handleSelectedCallback(
     evt,
@@ -329,24 +329,6 @@ abstract class BaseAnnotationTool extends BaseTool {
       lineWidth: this.getStyle(settings, 'textBox.link.lineWidth', toolData),
       lineDash: this.getStyle(settings, 'textBox.link.lineDash', toolData),
     }
-  }
-
-  _getTargetStackUID(viewport) {
-    return `stackTarget:${viewport.uid}`
-  }
-
-  _getTargetVolumeUID = (viewport) => {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const actors = viewport.getActors()
-
-    if (!actors && !actors.length) {
-      return
-    }
-
-    return actors[0].volumeActor.uid
   }
 }
 
