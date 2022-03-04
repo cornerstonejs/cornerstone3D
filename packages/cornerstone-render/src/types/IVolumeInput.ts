@@ -8,7 +8,7 @@ type VolumeInputCallback = (params: {
 type IVolumeInput = {
   volumeUID: string
   // actorUID for segmentations, since two segmentations with the same volumeUID
-  // can have different represetnations
+  // can have different representations
   actorUID?: string
   visibility?: boolean
   callback?: VolumeInputCallback

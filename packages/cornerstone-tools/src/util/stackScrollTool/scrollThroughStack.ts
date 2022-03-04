@@ -43,7 +43,7 @@ export default function scrollThroughStack(
 
     viewport.setImageIdIndex(newImageIdIndex)
   } else if (viewport instanceof VolumeViewport) {
-    // Stack scroll across highest resolution volume.
+    // If volumeUID is specified, scroll through that specific volume
     const { spacingInNormalDirection, imageVolume } = getTargetVolume(
       viewport,
       camera,

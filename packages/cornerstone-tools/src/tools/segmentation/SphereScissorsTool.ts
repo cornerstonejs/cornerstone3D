@@ -324,19 +324,4 @@ export default class SphereScissorsTool extends BaseTool {
       }
     )
   }
-
-  _getTargetVolumeUID = (viewport) => {
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
-    }
-
-    const actors = viewport.getActors()
-
-    if (!actors && !actors.length) {
-      // No stack to scroll through
-      return
-    }
-
-    return actors[0].uid
-  }
 }

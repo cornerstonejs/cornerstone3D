@@ -111,7 +111,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const { volumeUID } = this.configuration
+      const volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
       referencedImageId = getImageIdForTool(
         worldPos,
@@ -972,14 +972,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     const { viewport } = enabledElement
-    let targetUID
-    if (viewport.type === VIEWPORT_TYPE.STACK) {
-      targetUID = this._getTargetStackUID(viewport)
-    } else if (viewport.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
-      targetUID = this._getTargetVolumeUID(viewport)
-    } else {
-      throw new Error(`Viewport Type not supported: ${viewport.type}`)
-    }
+    const targetUID = this.getTargetUID(viewport)
 
     const renderingEngine = viewport.getRenderingEngine()
 

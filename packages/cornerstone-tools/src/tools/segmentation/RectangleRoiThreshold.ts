@@ -83,12 +83,12 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    let referencedImageId
+    let referencedImageId, volumeUID
     if (viewport instanceof StackViewport) {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const { volumeUID } = this.configuration
+      volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
       referencedImageId = getImageIdForTool(
         worldPos,
@@ -113,7 +113,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
-        volumeUID: this.configuration.volumeUID,
+        volumeUID,
       },
       data: {
         invalidated: true,

@@ -510,46 +510,24 @@ function addToolsToToolGroups({
     // Set up CT Scene tools
 
     // @TODO: This kills the volumeUID and tool configuration
-    ctSceneToolGroup.addTool('RectangleScissor', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('RectangleRoiThreshold', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
+    ctSceneToolGroup.addTool('RectangleScissor', {})
+    ctSceneToolGroup.addTool('RectangleRoiThreshold', {})
     ctSceneToolGroup.addTool('SegmentationDisplay')
     ctSceneToolGroup.setToolEnabled('SegmentationDisplay')
-    ctSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('CircleScissor', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('SphereScissor', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('WindowLevel', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
+    ctSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {})
+    ctSceneToolGroup.addTool('CircleScissor', {})
+    ctSceneToolGroup.addTool('SphereScissor', {})
+    ctSceneToolGroup.addTool('WindowLevel', {})
 
     ctSceneToolGroup.addTool('Length', {})
     ctSceneToolGroup.addTool('Pan', {})
     ctSceneToolGroup.addTool('Zoom', {})
     ctSceneToolGroup.addTool('StackScrollMouseWheel', {})
-    ctSceneToolGroup.addTool('Bidirectional', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('Length', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('Probe', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('RectangleRoi', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
-    ctSceneToolGroup.addTool('EllipticalRoi', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
+    ctSceneToolGroup.addTool('Bidirectional', {})
+    ctSceneToolGroup.addTool('Length', {})
+    ctSceneToolGroup.addTool('Probe', {})
+    ctSceneToolGroup.addTool('RectangleRoi', {})
+    ctSceneToolGroup.addTool('EllipticalRoi', {})
     ctSceneToolGroup.addTool('Crosshairs', {
       configuration: {
         getReferenceLineColor,
@@ -594,29 +572,17 @@ function addToolsToToolGroups({
     // Set up CT Scene tools
 
     // @TODO: This kills the volumeUID and tool configuration
-    prostateSceneToolGroup.addTool('WindowLevel', {
-      configuration: { volumeUID: prostateVolumeUID },
-    })
+    prostateSceneToolGroup.addTool('WindowLevel', {})
     prostateSceneToolGroup.addTool('Length', {})
     prostateSceneToolGroup.addTool('Pan', {})
 
     prostateSceneToolGroup.addTool('Zoom', {})
     prostateSceneToolGroup.addTool('StackScrollMouseWheel', {})
-    prostateSceneToolGroup.addTool('Bidirectional', {
-      configuration: { volumeUID: prostateVolumeUID },
-    })
-    prostateSceneToolGroup.addTool('Length', {
-      configuration: { volumeUID: prostateVolumeUID },
-    })
-    prostateSceneToolGroup.addTool('Probe', {
-      configuration: { volumeUID: prostateVolumeUID },
-    })
-    prostateSceneToolGroup.addTool('RectangleRoi', {
-      configuration: { volumeUID: prostateVolumeUID },
-    })
-    prostateSceneToolGroup.addTool('EllipticalRoi', {
-      configuration: { volumeUID: ctVolumeUID },
-    })
+    prostateSceneToolGroup.addTool('Bidirectional', {})
+    prostateSceneToolGroup.addTool('Length', {})
+    prostateSceneToolGroup.addTool('Probe', {})
+    prostateSceneToolGroup.addTool('RectangleRoi', {})
+    prostateSceneToolGroup.addTool('EllipticalRoi', {})
     prostateSceneToolGroup.addTool('Crosshairs', {
       configuration: {
         getReferenceLineColor,
@@ -659,44 +625,20 @@ function addToolsToToolGroups({
 
   if (ptSceneToolGroup) {
     // Set up PT Scene tools
-    ptSceneToolGroup.addTool('RectangleScissor', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('RectangleRoiThreshold', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
+    ptSceneToolGroup.addTool('RectangleScissor', {})
+    ptSceneToolGroup.addTool('RectangleRoiThreshold', {})
     ptSceneToolGroup.addTool('SegmentationDisplay')
     ptSceneToolGroup.setToolEnabled('SegmentationDisplay')
-    ptSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('CircleScissor', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('SphereScissor', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('ptSUVPeak', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('Bidirectional', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('Length', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('WindowLevel', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('Probe', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('RectangleRoi', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    ptSceneToolGroup.addTool('EllipticalRoi', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
+    ptSceneToolGroup.addTool('RectangleRoiStartEndThreshold', {})
+    ptSceneToolGroup.addTool('CircleScissor', {})
+    ptSceneToolGroup.addTool('SphereScissor', {})
+    ptSceneToolGroup.addTool('ptSUVPeak', {})
+    ptSceneToolGroup.addTool('Bidirectional', {})
+    ptSceneToolGroup.addTool('Length', {})
+    ptSceneToolGroup.addTool('WindowLevel', {})
+    ptSceneToolGroup.addTool('Probe', {})
+    ptSceneToolGroup.addTool('RectangleRoi', {})
+    ptSceneToolGroup.addTool('EllipticalRoi', {})
     ptSceneToolGroup.addTool('Crosshairs', {
       configuration: {
         getReferenceLineColor,
