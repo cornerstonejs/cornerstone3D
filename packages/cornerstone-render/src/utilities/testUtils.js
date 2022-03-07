@@ -4,7 +4,10 @@ import { fakeImageLoader, fakeMetaDataProvider } from './testUtilsImageLoader'
 import { fakeVolumeLoader } from './testUtilsVolumeLoader'
 import { createNormalizedMouseEvent } from './testUtilsMouseEvents'
 
-// 10 slice, 10 colors
+/**
+ * TestUtils: used for colorizing the image and comparing it to a baseline,
+ * should not be used for development.
+ */
 const colors = [
   [255, 0, 0],
   [0, 255, 0],
@@ -20,16 +23,14 @@ const colors = [
 
 Object.freeze(colors)
 
-function downloadURI(uri, name) {
-  const link = document.createElement('a')
-
-  link.download = `${name}.png`
-  link.href = uri
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
-
+/**
+ * It compares the image to a baseline, and if it is different by 1% it will
+ * throw an error. Otherwise, it will return success.
+ * @param {string} imageDataURL - The rendered imageDataURL - can be grabbed by calling canvas.toDataURL()
+ * @param {string} baseline - Baseline imageDataURL - imported png in the test files
+ * @param outputName - The name of the image for logging
+ * @returns A promise.
+ */
 function compareImages(imageDataURL, baseline, outputName) {
   return new Promise((resolve, reject) => {
     resemble.outputSettings({
@@ -39,7 +40,6 @@ function compareImages(imageDataURL, baseline, outputName) {
         green: 255,
         blue: 0,
       },
-      // errorType: 'movement',
       transparency: 0.5,
       largeImageThreshold: 1200,
       outputDiff: true,
@@ -51,13 +51,13 @@ function compareImages(imageDataURL, baseline, outputName) {
         const mismatch = parseFloat(data.misMatchPercentage)
         // If the error is greater than 1%, fail the test
         // and download the difference image
+        // Todo: this should be a configurable threshold
         if (mismatch > 1) {
           console.log(imageDataURL)
 
           console.log('mismatch of ' + mismatch + '%')
           const diff = data.getImageDataUrl()
-
-          //downloadURI(diff, outputName)
+          // Todo: we should store the diff image somewhere
 
           reject(new Error(`mismatch between images for ${outputName}`))
         } else {
@@ -68,16 +68,12 @@ function compareImages(imageDataURL, baseline, outputName) {
   })
 }
 
-const testUtils = {
+export {
   fakeImageLoader,
   fakeMetaDataProvider,
   fakeVolumeLoader,
   compareImages,
   createNormalizedMouseEvent,
   // utils
-  downloadURI,
   colors,
 }
-
-export default testUtils
-export { colors }

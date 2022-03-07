@@ -68,11 +68,8 @@ function getBrowserInfo() {
 
 /**
  * Sets the maximum number of simultaneous requests.
- * @export @public @method
- * @name setMaxSimultaneousRequests
- *
- * @param  {number} newMaxSimultaneousRequests The value.
- * @returns {void}
+ * @param newMaxSimultaneousRequests - The value.
+ * @category RequestPoolManager
  */
 function setMaxSimultaneousRequests(newMaxSimultaneousRequests) {
   configMaxSimultaneousRequests = newMaxSimultaneousRequests
@@ -80,10 +77,10 @@ function setMaxSimultaneousRequests(newMaxSimultaneousRequests) {
 
 /**
  * Returns the maximum number of simultaneous requests.
- * @export @public @method
- * @name getMaxSimultaneousRequests
  *
- * @returns {number} The maximum number of simultaneous requests
+ * @returns The maximum number of simultaneous requests
+ * @category RequestPoolManager
+ *
  */
 function getMaxSimultaneousRequests() {
   if (configMaxSimultaneousRequests) {
@@ -95,10 +92,10 @@ function getMaxSimultaneousRequests() {
 
 /**
  * Returns the default number of simultaneous requests.
- * @export @public @method
- * @name getDefaultSimultaneousRequests
  *
- * @returns {number} The default number of simultaneous requests.
+ * @returns The default number of simultaneous requests.
+ * @category RequestPoolManager
+ *
  */
 function getDefaultSimultaneousRequests() {
   const infoString = getBrowserInfo()
@@ -120,10 +117,8 @@ function getDefaultSimultaneousRequests() {
 
 /**
  * Checks if cornerstoneTools is operating on a mobile device.
- * @export @public @method
- * @name isMobileDevice
  *
- * @returns {boolean} True if running on a mobile device.
+ * @returns True if running on a mobile device.
  */
 function isMobileDevice() {
   const pattern = new RegExp(

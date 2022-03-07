@@ -1,19 +1,19 @@
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import { getToolState } from '../stateManagement/annotation/toolState'
 import { ToolAndToolStateArray } from '../types/toolStateTypes'
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import type BaseAnnotationTool from '../tools/base/BaseAnnotationTool'
 
 /**
- * @function getToolsWithDataForElement Filters an array of tools, returning only
- * tools which have annotation data.
+ * Filters an array of tools, returning only tools which have annotation data.
  *
- * @param  {HTMLElement} element The cornerstone3D enabled element.
- * @param  {Object[]} tools The array of tools to check.
+ * @param element - The cornerstone3D enabled element.
+ * @param tools - The array of tools to check.
  *
- * @returns {ToolAndToolStateArray} The array of tools with their found toolState.
+ * @returns The array of tools with their found toolState.
  */
 export default function getToolsWithDataForElement(
   element: HTMLElement,
-  tools
+  tools: BaseAnnotationTool[]
 ): ToolAndToolStateArray {
   const result = []
 

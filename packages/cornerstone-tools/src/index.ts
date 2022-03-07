@@ -1,6 +1,5 @@
 import {
   FrameOfReferenceSpecificToolStateManager,
-  defaultFrameOfReferenceSpecificToolStateManager,
   toolStyle,
   getToolState,
   addToolState,
@@ -18,11 +17,6 @@ import {
   // segmentations
   addSegmentationsForToolGroup,
   removeSegmentationsForToolGroup,
-  getGlobalSegmentationState,
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
-  getSegmentationDataByUID,
   SegmentationState,
 } from './stateManagement'
 
@@ -38,11 +32,14 @@ import {
   cancelActiveManipulations,
   SegmentationModule,
 } from './store'
-import drawing from './drawingSvg'
-import synchronizers from './synchronizers'
+
+// Name spaces
+import * as synchronizers from './synchronizers'
+import * as drawing from './drawingSvg'
 import * as Utilities from './util'
 import * as Types from './types'
 import * as Cursors from './cursors'
+import ToolState from './stateManagement/annotation'
 
 import {
   BaseTool,
@@ -74,14 +71,6 @@ import {
   CornerstoneTools3DEvents,
   SegmentationRepresentations,
 } from './enums'
-
-const {
-  lockedSegmentController,
-  activeSegmentationController,
-  segmentationConfigController,
-  segmentIndexController,
-  segmentationVisibilityController,
-} = SegmentationModule
 
 export {
   // LifeCycle
@@ -122,14 +111,6 @@ export {
   // Managers
   ToolGroupManager,
   SynchronizerManager,
-  // Modules
-  SegmentationModule,
-  // Segmentation Controllers
-  lockedSegmentController,
-  activeSegmentationController,
-  segmentIndexController,
-  segmentationVisibilityController,
-  segmentationConfigController,
   // Enums
   ToolBindings,
   ToolModes,
@@ -137,7 +118,7 @@ export {
   SegmentationRepresentations,
   // ToolState Managers
   FrameOfReferenceSpecificToolStateManager,
-  defaultFrameOfReferenceSpecificToolStateManager,
+  ToolState,
   // Drawing API
   drawing,
   // State
@@ -162,12 +143,8 @@ export {
   getViewportSpecificStateManager,
   getToolDataByToolDataUID,
   // Segmentations
-  addSegmentationsForToolGroup,
   SegmentationState,
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
-  getSegmentationDataByUID,
+  SegmentationModule,
+  addSegmentationsForToolGroup,
   removeSegmentationsForToolGroup,
-  getGlobalSegmentationState,
 }

@@ -25,7 +25,7 @@ const configuration = {
   /**
    * Set one or more library configuration values
    *
-   * @param newConfiguration key/value pairs to update
+   * @param newConfiguration - key/value pairs to update
    * @example
    * Update a single configuration field's value:
    * ```

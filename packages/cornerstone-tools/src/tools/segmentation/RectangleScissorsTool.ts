@@ -3,6 +3,7 @@ import {
   getEnabledElement,
   Settings,
   StackViewport,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3, Point2 } from '../../types'
@@ -312,14 +313,15 @@ export default class RectangleScissorsTool extends BaseTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     if (!this.editData) {
       return
     }
 
-    const { enabledElement } = svgDrawingHelper
     const { viewport } = enabledElement
-
     const { toolData } = this.editData
 
     // Todo: rectangle colro based on segment index

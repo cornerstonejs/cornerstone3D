@@ -1,17 +1,19 @@
 import { ToolGroupManager } from '../../store'
 import { ToolModes } from '../../enums'
 import { keyEventListener } from '../../eventListeners'
+import { EventsTypes } from '../../types'
 
 type ModesFilter = Array<ToolModes>
 
 /**
- * @function getToolsWithModesForMouseEvent Given the event and a filter of modes,
+ * Given the normalized mouse event and a filter of modes,
  * find all the tools on the element that are in one of the specified modes.
- * @param {Event} evt The normalized mouseDown event.
+ * If the evtButton is specified, only tools with a matching binding will be returned.
+ * @param evt - The normalized mouseDown event.
  * @param modesFilter An array of entries from the `ToolModes` enum.
  */
 export default function getToolsWithModesForMouseEvent(
-  evt,
+  evt: EventsTypes.NormalizedMouseEventType,
   modesFilter: ModesFilter,
   evtButton?: any
 ) {

@@ -10,6 +10,14 @@ interface createVolumeActorInterface {
   blendMode?: string
 }
 
+/**
+ * Given a volumeUID, it creates a vtk volume actor and returns it. If
+ * callback is provided, it will be called with the volume actor and the
+ * volumeUID. If blendMode is provided, it will be set on the volume actor.
+ *
+ * @param props - createVolumeActorInterface
+ * @returns A promise that resolves to a VolumeActor.
+ */
 async function createVolumeActor(
   props: createVolumeActorInterface
 ): Promise<VolumeActor> {
@@ -30,7 +38,6 @@ async function createVolumeActor(
   }
 
   const volumeActor = vtkVolume.newInstance()
-  // volumeActor.getProperty().setInterpolationTypeToNearest()
   volumeActor.setMapper(volumeMapper)
 
   if (callback) {

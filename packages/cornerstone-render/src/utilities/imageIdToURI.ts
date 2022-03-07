@@ -1,9 +1,8 @@
 /**
  * Removes the data loader scheme from the imageId
  *
- * @param {string} imageId Image ID
- * @returns {string} imageId without the data loader scheme
- * @memberof Cache
+ * @param imageId - Image ID
+ * @returns imageId without the data loader scheme
  */
 export default function imageIdToURI(imageId: string): string {
   const colonIndex = imageId.indexOf(':')

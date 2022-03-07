@@ -2,9 +2,10 @@ import VolumeViewport from '../VolumeViewport'
 import { getRenderingEngines, getRenderingEngine } from '../getRenderingEngine'
 
 /**
- * @method getVolumeViewportsContainingVolumeUID Returns the viewport containing the volumeUID
+ * Similar to {@link getVolumeViewportsContainingSameVolumes}, but uses the volumeUID
+ * to filter viewports that contain the same volume.
  *
- * @returns {VolumeViewport} viewports
+ * @returns VolumeViewport viewports array
  */
 function getVolumeViewportsContainingVolumeUID(
   uid: string,

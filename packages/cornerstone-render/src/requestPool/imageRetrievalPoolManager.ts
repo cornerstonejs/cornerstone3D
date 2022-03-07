@@ -1,6 +1,11 @@
 import { RequestPoolManager } from './requestPoolManager'
 
-// Retrieval (usually) === XHR requests
+/**
+ * ImageRetrieval Pool Manager
+ * Retrieval (usually) === XHR requests
+ * @category RequestPoolManager
+ *
+ */
 const imageRetrievalPoolManager = new RequestPoolManager()
 
 imageRetrievalPoolManager.maxNumRequests = {

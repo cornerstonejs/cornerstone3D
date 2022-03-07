@@ -427,7 +427,6 @@ describe('renderingCore -- Stack', () => {
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
-        // downloadURI(image, 'imageURI_256_256_50_10_1_1_0')
         compareImages(
           image,
           imageURI_256_256_50_10_1_1_0,
@@ -474,7 +473,6 @@ describe('renderingCore -- Stack', () => {
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
-        // downloadURI(image, 'imageURI_100_100_0_10_1_1_1_linear_color')
         compareImages(
           image,
           imageURI_100_100_0_10_1_1_1_linear_color,
@@ -500,7 +498,6 @@ describe('renderingCore -- Stack', () => {
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
-        // downloadURI(image, 'imageURI_100_100_0_10_1_1_1_nearest_color')
         compareImages(
           image,
           imageURI_100_100_0_10_1_1_1_nearest_color,

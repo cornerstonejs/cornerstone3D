@@ -1,7 +1,7 @@
 import * as csTools from '../src/index'
 import * as cornerstone3D from '../../cornerstone-render/src/index'
 
-const toolStateManager = csTools.defaultFrameOfReferenceSpecificToolStateManager
+const toolStateManager = csTools.ToolState.getDefaultToolStateManager()
 
 const FrameOfReferenceUID = 'MY_FRAME_OF_REFERENCE_UID'
 
@@ -142,7 +142,7 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
 
     const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
 
-    // Restore tool only specific toolstate for toolstate 1 only.
+    // Restore tool only specific toolState for toolState 1 only.
     toolStateManager.restoreToolState(
       toolName1ToolSpecificToolState,
       FrameOfReferenceUID,

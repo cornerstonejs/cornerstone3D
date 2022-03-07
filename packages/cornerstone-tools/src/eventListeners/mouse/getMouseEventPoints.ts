@@ -2,62 +2,63 @@ import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import { IPoints, Point2 } from '../../types'
 
 /**
- * getMouseEventPoints - Given a native mouse event, get the associated
- * cornerstone3D enabled element and derive a set of coordinates useful for tools.
- * @param {MouseEvent }evt The Mouse event.
- * @param {HTMLElement} element
- * @returns {IPoints} The points related to the event.
+ * Given a native mouse event, get the associated cornerstone3D enabled element
+ * and derive a set of coordinates useful for tools.
+ * @param evt - The Mouse event.
+ * @param element - The DOM HTMLElement that the event was triggered on.
+ * @returns The points related to the event in the form of a `IPoints` object containing
+ * the following properties: `page`, `client`, `canvas`, and `world` details of the event.
  */
 export default function getMouseEventPoints(
   evt: MouseEvent,
   element?: HTMLElement
 ): IPoints {
   const elementToUse = element || (evt.currentTarget as HTMLElement)
-  const enabledElement = getEnabledElement(elementToUse)
+  const { viewport } = getEnabledElement(elementToUse)
+  const clientPoint = _clientToPoint(evt)
   const pagePoint = _pageToPoint(evt)
   const canvasPoint = _pagePointsToCanvasPoints(elementToUse, pagePoint)
-  const worldPoint = enabledElement.viewport.canvasToWorld(canvasPoint)
+  const worldPoint = viewport.canvasToWorld(canvasPoint)
 
   return {
     page: pagePoint,
-    client: _clientToPoint(evt),
+    client: clientPoint,
     canvas: canvasPoint,
     world: worldPoint,
   }
 }
 
 /**
- * _pagePointsToCanvasPoints - Converts point from page coordinates to canvas coordinates.
- * @param {HTMLElement} DomCanvasElement
- * @param {IPoint} pagePoint
+ * Converts point from page coordinates to canvas coordinates.
+ * @param element - HTMLElement
+ * @param pagePoint - Point in page coordinates pageX and pageY
  *
- * @returns {IPoint} The canvas coordinate points in `IPoint` format.
+ * @returns The canvas coordinate points
  */
 function _pagePointsToCanvasPoints(
-  DomCanvasElement: HTMLElement,
+  element: HTMLElement,
   pagePoint: Point2
-) {
-  const rect = DomCanvasElement.getBoundingClientRect()
-  return <Point2>[
+): Point2 {
+  const rect = element.getBoundingClientRect()
+  return [
     pagePoint[0] - rect.left - window.pageXOffset,
     pagePoint[1] - rect.top - window.pageYOffset,
   ]
 }
 
 /**
- * _pageToPoint - Converts the event's `pageX` and `pageY` properties to an `IPoint`
- * coordinate.
- * @param {MouseEvent} evt The Mouse `Event`
+ * Converts the event's `pageX` and `pageY` properties to Point2 format
+ *
+ * @param evt - The Mouse `Event`
  */
 function _pageToPoint(evt: MouseEvent): Point2 {
-  return <Point2>[evt.pageX, evt.pageY]
+  return [evt.pageX, evt.pageY]
 }
 
 /**
- * _pageToPoint - Converts the event's `clientX` and `clientY` properties to an `IPoint`
- * coordinate.
- * @param {MouseEvent} evt The Mouse `Event`
+ * Converts the event's `clientX` and `clientY` properties to Point2 format
+ * @param evt - The Mouse `Event`
  */
 function _clientToPoint(evt: MouseEvent): Point2 {
-  return <Point2>[evt.clientX, evt.clientY]
+  return [evt.clientX, evt.clientY]
 }

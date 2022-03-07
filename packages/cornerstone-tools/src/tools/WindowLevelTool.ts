@@ -8,6 +8,7 @@ import {
   StackViewport,
   Utilities,
   cache,
+  Types,
   getVolumeViewportsContainingVolumeUID,
 } from '@precisionmetrics/cornerstone-render'
 
@@ -83,7 +84,7 @@ export default class WindowLevelTool extends BaseTool {
       })
     }
 
-    const eventDetail = {
+    const eventDetail: Types.EventsTypes.VoiModifiedEventData = {
       volumeUID,
       viewportUID,
       range: newRange,

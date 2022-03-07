@@ -68,14 +68,15 @@ html[data-theme='dark'] {
   --ifm-color-warning: #f1c55a;
   --ifm-alert-color: #000000;
   --ohif-color-border: #3a3f99;
+  /* Section color for API docs and Link Active Color*/
 }
 
 .hero--primary {
-  --ifm-hero-background-color: rgb(64,173,163)
+  --ifm-hero-background-color: rgb(64, 173, 163);
 }
 
 .hero__title {
-  color:rgb(255, 255, 255)
+  color: rgb(255, 255, 255);
 }
 
 .medium-zoom-overlay {
@@ -215,7 +216,6 @@ article header h3 {
   --ifm-button-background-color: #e8f7f7;
 }
 
-
 .admonition-icon svg {
   fill: #0151d9;
 }
@@ -233,12 +233,10 @@ article header h3 {
   display: none;
 }
 
-
 /* code blcok font sizes */
-div[class^="codeBlockContent__"]{
-  font-size:16px
+div[class^='codeBlockContent__'] {
+  font-size: 16px;
 }
-
 
 /* Footer logo MGH */
 #cs-logo {
@@ -246,10 +244,43 @@ div[class^="codeBlockContent__"]{
   width: 200px;
 }
 
-
-
 @media (max-width: 480px) {
   #cs-logo {
     width: 100px;
   }
 }
+
+/* API css */
+html[data-theme='light'] .tsd-panel-header {
+  background-color: #b3c8eb !important;
+}
+html[data-theme='dark'] .tsd-panel-header {
+  background-color: #6551be !important;
+}
+
+html[data-theme='light'] .tsd-flag-optional {
+  background-color: #8e7dda !important;
+}
+
+/* hide long strings in the overview tables */
+.tsd-index-list > li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60ch;
+}
+
+.table-of-contents > li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60ch;
+}
+
+/* html[data-theme='light'] .tsd-signature {
+  font-weight: 500;
+}
+
+html[data-theme='light'] .tsd-signature > span {
+  font-weight: normal;
+} */

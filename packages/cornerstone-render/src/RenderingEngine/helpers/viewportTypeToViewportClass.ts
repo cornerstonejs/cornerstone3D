@@ -1,12 +1,12 @@
 // TODO -> Eventually we'll need to register to this list
-import StackViewport from '../StackViewport';
-import VolumeViewport from '../VolumeViewport';
-import ViewportType from '../../constants/viewportType';
+import StackViewport from '../StackViewport'
+import VolumeViewport from '../VolumeViewport'
+import VIEWPORT_TYPE from '../../enums/viewportType'
 
 const viewportTypeToViewportClass = {
-  [ViewportType.ORTHOGRAPHIC]: VolumeViewport,
-  [ViewportType.PERSPECTIVE]: VolumeViewport,
-  [ViewportType.STACK]: StackViewport,
-};
+  [VIEWPORT_TYPE.ORTHOGRAPHIC]: VolumeViewport,
+  [VIEWPORT_TYPE.PERSPECTIVE]: VolumeViewport,
+  [VIEWPORT_TYPE.STACK]: StackViewport,
+}
 
-export default viewportTypeToViewportClass;
+export default viewportTypeToViewportClass

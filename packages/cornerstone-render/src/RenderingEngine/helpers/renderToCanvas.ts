@@ -1,25 +1,33 @@
 import RenderingEngine from '../RenderingEngine'
 import { getRenderingEngine } from '../getRenderingEngine'
 import getOrCreateCanvas from './getOrCreateCanvas'
-import VIEWPORT_TYPE from '../../constants/viewportType'
+import VIEWPORT_TYPE from '../../enums/viewportType'
 import ORIENTATION from '../../constants/orientation'
 import StackViewport from '../StackViewport'
 import Events from '../../enums/events'
 
 /**
- * Renders an imageId to a Canvas Element. This method will handle creation
- * of a tempporary enabled element, setting the imageId, and rendering the image via
+ * Renders an imageId to a Canvas. This method will handle creation
+ * of a temporary enabledElement, setting the imageId, and rendering the image via
  * a StackViewport, copying the canvas drawing to the given canvas Element, and
  * disabling the created temporary element. SuppressEvents argument is used to
  * prevent events from firing during the render process (e.g. during a series
  * of renders to a thumbnail image).
- * @param {string}imageId - The imageId to render
- * @param {HTMLCanvasElement} canvas - Canvas element to render to
- * @param {string} [renderingEngineUID] - [Default=null] The rendering engine UID
+ *
+ * @example
+ * ```
+ * const canvas = document.getElementById('myCanvas')
+ * const imageId = 'myImageId'
+ *
+ * renderToCanvas(canvas, imageId)
+ * ```
+ * @param imageId - The imageId to render
+ * @param canvas - Canvas element to render to
+ * @param renderingEngineUID - [Default=null] The rendering engine UID
  * to use, if not provided, will create a new rendering engine with a random UID (this is preferred)
- * @param {boolean} [suppressEvents] - [Default = true] boolean to suppress events during render,
+ * @param suppressEvents - [Default = true] boolean to suppress events during render,
  * if undefined, events will be suppressed
- * @returns {Promise} - A promise that resolves when the image has been rendered with the imageId
+ * @returns - A promise that resolves when the image has been rendered with the imageId
  */
 export default function renderToCanvas(
   imageId: string,

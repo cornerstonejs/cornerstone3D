@@ -1,18 +1,17 @@
-import getTargetVolume from './getTargetVolume'
-import getToolStateWithinSlice from './getToolStateWithinSlice'
 import {
   StackViewport,
-  VIEWPORT_TYPE,
   VolumeViewport,
   Types,
 } from '@precisionmetrics/cornerstone-render'
 
-// const { ICamera } = Types
+import getTargetVolume from './getTargetVolume'
+import getToolStateWithinSlice from './getToolStateWithinSlice'
+import { ToolSpecificToolState } from '../../types'
 
 export default function getToolStateForDisplay(
   viewport: Types.IViewport,
-  toolState
-) {
+  toolState: ToolSpecificToolState
+): ToolSpecificToolState {
   if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport
     const imageId = viewport.getCurrentImageId()

@@ -2,12 +2,18 @@ import VolumeViewport from '../VolumeViewport'
 import { getRenderingEngines, getRenderingEngine } from '../getRenderingEngine'
 
 /**
- * Returns the viewport containing the same volume actor
- * as the provided target viewport.
- * @param viewport target viewport
- * @returns {Array<VolumeViewport>} array of viewports that have the same volume actor as the target viewport
+ * Returns the viewports containing the same volume actors (all actors) the same
+ * as the target viewport. If renderingEngineUID is provided, it will only return
+ * viewports that are associated with the renderingEngineUID; otherwise, it will
+ * return search in all rendering engines.
+ *
+ * This method is useful for finding viewports that are associated with the same
+ * volume (e.g., for tools that share state between viewports).
+ *
+ * @param viewport - target viewport
+ * @returns array of viewports that have the same volume actor as the target viewport
  */
-function getVolumeViewportsContatiningSameVolumes(
+function getVolumeViewportsContainingSameVolumes(
   targetViewport: VolumeViewport,
   renderingEngineUID?: string
 ): Array<VolumeViewport> {
@@ -46,4 +52,4 @@ function getVolumeViewportsContatiningSameVolumes(
   return sameVolumesViewports
 }
 
-export default getVolumeViewportsContatiningSameVolumes
+export default getVolumeViewportsContainingSameVolumes

@@ -1,40 +1,59 @@
-import { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
-import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
+import type { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
+import vtkMath from 'vtk.js/Sources/Common/Core/Math'
+
 import { vec3, mat4 } from 'gl-matrix'
 import _cloneDeep from 'lodash.clonedeep'
 
 import Events from '../enums/events'
-import VIEWPORT_TYPE from '../constants/viewportType'
-import { ICamera, ViewportInput, ActorEntry } from '../types'
+import VIEWPORT_TYPE from '../enums/viewportType'
+import { ICamera, ActorEntry } from '../types'
+import { ViewportInput } from '../types/IViewport'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { triggerEvent, planar } from '../utilities'
-import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { ViewportInputOptions, Point2, Point3, FlipDirection } from '../types'
 import { vtkSlabCamera } from './vtkClasses'
 
 /**
  * An object representing a single viewport, which is a camera
- * looking into a viewport, and an associated target output `canvas`.
+ * looking into a viewport, and an associated target output `HTMLElement`.
+ * Viewport is a base class that can be extended to create a specific
+ * viewport type. Both VolumeViewport and StackViewport are subclasses
+ * of Viewport. Common logic for all viewports is contained in Viewport class
+ * which is camera properties/methods, vtk.js actors, and other common
+ * logic.
  */
 class Viewport {
+  /** unique identifier for the viewport */
   readonly uid: string
+  /** HTML element in DOM that is used for rendering the viewport */
   readonly element: HTMLElement
+  /** an internal canvas that is created on the provided HTML element */
   readonly canvas: HTMLCanvasElement
+  /** RenderingEngine uid that the viewport belongs to */
   readonly renderingEngineUID: string
-  readonly type: string
+  /** Type of viewport */
+  readonly type: VIEWPORT_TYPE
   protected flipHorizontal = false
   protected flipVertical = false
 
+  /** sx of viewport on the offscreen canvas */
   sx: number
+  /** sy of viewport on the offscreen canvas */
   sy: number
+  /** sWidth of viewport on the offscreen canvas */
   sWidth: number
+  /** sHeight of viewport on the offscreen canvas */
   sHeight: number
+  /** a Map containing the actor uid and actors */
   _actors: Map<string, any>
+  /** Default options for the viewport which includes orientation, sliceNormal and backgroundColor */
   readonly defaultOptions: any
+  /** options for the viewport which includes orientation, sliceNormal and backgroundColor */
   options: ViewportInputOptions
   private _suppressCameraModifiedEvents = false
+  /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean
 
   constructor(props: ViewportInput) {
@@ -74,18 +93,18 @@ class Viewport {
   }
 
   /**
-   * @method getRenderingEngine Returns the rendering engine driving the `Viewport`.
+   * Returns the rendering engine driving the `Viewport`.
    *
-   * @returns {RenderingEngine} The RenderingEngine instance.
+   * @returns The RenderingEngine instance.
    */
   public getRenderingEngine(): RenderingEngine {
     return renderingEngineCache.get(this.renderingEngineUID)
   }
 
   /**
-   * @method getRenderer Returns the `vtkRenderer` responsible for rendering the `Viewport`.
+   * Returns the `vtkRenderer` responsible for rendering the `Viewport`.
    *
-   * @returns {object} The `vtkRenderer` for the `Viewport`.
+   * @returns The `vtkRenderer` for the `Viewport`.
    */
   public getRenderer() {
     const renderingEngine = this.getRenderingEngine()
@@ -98,7 +117,7 @@ class Viewport {
   }
 
   /**
-   * @method render Renders the `Viewport` using the `RenderingEngine`.
+   * Renders the `Viewport` using the `RenderingEngine`.
    */
   public render() {
     const renderingEngine = this.getRenderingEngine()
@@ -107,10 +126,10 @@ class Viewport {
   }
 
   /**
-   * @method setOptions Sets new options and (TODO) applies them.
+   * Sets new options and (TODO) applies them.
    *
-   * @param {ViewportInputOptions} options The viewport options to set.
-   * @param {boolean} [immediate=false] If `true`, renders the viewport after the options are set.
+   * @param options - The viewport options to set.
+   * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
     this.options = <ViewportInputOptions>_cloneDeep(options)
@@ -124,9 +143,9 @@ class Viewport {
   }
 
   /**
-   * @method reset Resets the options the `Viewport`'s `defaultOptions`.`
+   * Resets the options the `Viewport`'s `defaultOptions`
    *
-   * @param {boolean} [immediate=false] If `true`, renders the viewport after the options are reset.
+   * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
     this.options = _cloneDeep(this.defaultOptions)
@@ -146,7 +165,7 @@ class Viewport {
       return worldPos
     }
 
-    const volumeActor = actor.volumeActor as vtkVolume
+    const volumeActor = actor.volumeActor
     const mat = volumeActor.getMatrix()
 
     const newPos = vec3.create()
@@ -161,8 +180,9 @@ class Viewport {
    * Flip the viewport on horizontal or vertical axis, this method
    * works with vtk-js backed rendering pipeline.
    *
-   * @param flipHorizontal: boolean
-   * @param flipVertical: boolean
+   * @param flipOptions - Flip options specifying the axis of flip
+   * @param flipOptions.flipHorizontal - Flip the viewport on horizontal axis
+   * @param flipOptions.flipVertical - Flip the viewport on vertical axis
    */
   protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
     const imageData = this.getDefaultImageData()
@@ -194,7 +214,7 @@ class Viewport {
       return
     }
 
-    // In Cornerstone gpu rendering piepline, the images are positioned
+    // In Cornerstone gpu rendering pipeline, the images are positioned
     // in the space according to their origin, and direction (even StackViewport
     // with one slice only). In order to flip the images, we need to flip them
     // around their center axis (either horizontal or vertical). Since the images
@@ -254,7 +274,7 @@ class Viewport {
     const actors = this.getActors()
 
     actors.forEach((actor) => {
-      const volumeActor = actor.volumeActor as vtkVolume
+      const volumeActor = actor.volumeActor
 
       const mat = volumeActor.getUserMatrix()
 
@@ -282,23 +302,44 @@ class Viewport {
     }
   }
 
+  /**
+   * Get the default actor
+   * @returns An actor entry.
+   */
   public getDefaultActor(): ActorEntry {
     return this.getActors()[0]
   }
 
+  /**
+   * Get all the actors in the viewport
+   * @returns An array of ActorEntry objects.
+   */
   public getActors(): Array<ActorEntry> {
     return Array.from(this._actors.values())
   }
 
+  /**
+   * Get an actor by its UID
+   * @param actorUID - The unique ID of the actor.
+   * @returns An ActorEntry object.
+   */
   public getActor(actorUID: string): ActorEntry {
     return this._actors.get(actorUID)
   }
 
+  /**
+   * It removes all actors from the viewport and then adds the actors from the array.
+   * @param actors - An array of ActorEntry objects.
+   */
   public setActors(actors: Array<ActorEntry>): void {
     this.removeAllActors()
     this.addActors(actors)
   }
 
+  /**
+   * Remove the actor from the viewport
+   * @param actorUID - The unique identifier for the actor.
+   */
   public removeActor(actorUID: string): void {
     const actor = this.getActor(actorUID)
     if (!actor) {
@@ -310,16 +351,32 @@ class Viewport {
     this._actors.delete(actorUID)
   }
 
+  /**
+   * Remove the actors with the given UIDs from the viewport
+   * @param actorUIDs - An array of actor UIDs to remove.
+   */
   public removeActors(actorUIDs: Array<string>): void {
     actorUIDs.forEach((actorUID) => {
       this.removeActor(actorUID)
     })
   }
 
+  /**
+   * Add a list of actors (actor entries) to the viewport
+   * @param actors - An array of ActorEntry objects.
+   */
   public addActors(actors: Array<ActorEntry>): void {
     actors.forEach((actor) => this.addActor(actor))
   }
 
+  /**
+   * Add an actor to the viewport including its uid, its volumeActor and slabThickness
+   * if defined
+   * @param actorEntry - ActorEntry
+   * @param actorEntry.uid - The unique identifier for the actor.
+   * @param actorEntry.volumeActor - The volume actor.
+   * @param actorEntry.slabThickness - The slab thickness.
+   */
   public addActor(actorEntry: ActorEntry): void {
     const { uid: actorUID, volumeActor } = actorEntry
     const renderingEngine = this.getRenderingEngine()
@@ -346,18 +403,28 @@ class Viewport {
     this._actors.set(actorUID, Object.assign({}, actorEntry))
   }
 
+  /**
+   * Remove all actors from the renderer
+   */
   public removeAllActors(): void {
     this.getRenderer().removeAllViewProps()
     this._actors = new Map()
     return
   }
 
+  /**
+   * Reset the camera to the default viewport camera without firing events
+   */
   protected resetCameraNoEvent() {
     this._suppressCameraModifiedEvents = true
     this.resetViewportCamera()
     this._suppressCameraModifiedEvents = false
   }
 
+  /**
+   * Sets the camera to the default viewport camera without firing events
+   * @param camera - The camera to use for the viewport.
+   */
   protected setCameraNoEvent(camera: ICamera): void {
     this._suppressCameraModifiedEvents = true
     this.setCamera(camera)
@@ -371,11 +438,11 @@ class Viewport {
    * 3) Intersect each edge to the viewPlane and see whether the intersection point is inside the volume bounds.
    * 4) Return list of intersection points
    * It should be noted that intersection points may range from 3 to 6 points.
-   * Orthogonal views have four places of intersection.
+   * Orthogonal views have four points of intersection.
    *
-   * @param imageData vtkImageData
-   * @param focalPoint camera focal point
-   * @param normal view plane normal
+   * @param imageData - vtkImageData
+   * @param focalPoint - camera focal point
+   * @param normal - view plane normal
    * @returns intersections list
    */
   private _getViewImageDataIntersections(imageData, focalPoint, normal) {
@@ -414,11 +481,10 @@ class Viewport {
 
   /**
    * Resets the camera based on the rendering volume(s) bounds. If
-   * resetPanZoomForViewPlane is not chosen (default behaviour), it places
+   * resetPanZoomForViewPlane is false (default behavior), it places
    * the focal point at the center of the volume (or slice); otherwise,
-   * only the camera scale (zoom) and camera Pan is reset for the current view
-   * @param resetPanZoomForViewPlane=false only reset Pan and Zoom, if true,
-   * it renders the center of the volume instead
+   * only the camera zoom and camera Pan is reset for the current view.
+   * @param resetPanZoomForViewPlane - if true, it renders the center of the volume instead
    * @returns boolean
    */
   protected resetViewportCamera(resetPanZoomForViewPlane = false) {
@@ -562,10 +628,11 @@ class Viewport {
    * which results in points of intersection (minimum of 3, maximum of 6)
    * 2. Calculate average of the intersection points to get newFocalPoint
    * 3. Set the new focalPoint
-   * @param imageData vtkImageData
+   * @param imageData - imageData
    * @returns focalPoint
    */
   private _getFocalPointForViewPlaneReset(imageData) {
+    // Todo: move some where else
     const { focalPoint, viewPlaneNormal: normal } = this.getCamera()
     const intersections = this._getViewImageDataIntersections(
       imageData,
@@ -592,17 +659,17 @@ class Viewport {
   }
 
   /**
-   * @method getCanvas Gets the target output canvas for the `Viewport`.
+   * Gets the target output canvas for the `Viewport`.
    *
-   * @returns {HTMLCanvasElement}
+   * @returns an HTMLCanvasElement.
    */
   public getCanvas(): HTMLCanvasElement {
     return <HTMLCanvasElement>this.canvas
   }
   /**
-   * @method getActiveCamera Gets the active vtkCamera for the viewport.
+   * Gets the active vtkCamera for the viewport.
    *
-   * @returns {object} the vtkCamera.
+   * @returns vtk driven camera
    */
   protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera {
     const renderer = this.getRenderer()
@@ -610,6 +677,10 @@ class Viewport {
     return renderer.getActiveCamera()
   }
 
+  /**
+   * Get the camera's current state
+   * @returns The camera object.
+   */
   public getCamera(): ICamera {
     const vtkCamera = this.getVtkActiveCamera()
 
@@ -645,6 +716,10 @@ class Viewport {
     }
   }
 
+  /**
+   * Set the camera parameters
+   * @param cameraInterface - ICamera
+   */
   public setCamera(cameraInterface: ICamera): void {
     const vtkCamera = this.getVtkActiveCamera()
     const previousCamera = _cloneDeep(this.getCamera())
@@ -784,8 +859,8 @@ class Viewport {
 
   /**
    * Determines whether or not the 3D point position is inside the boundaries of the 3D imageData.
-   * @param point 3D coordinate
-   * @param bounds Bounds of the image
+   * @param point - 3D coordinate
+   * @param bounds - Bounds of the image
    * @returns boolean
    */
   _isInBounds(point: Point3, bounds: number[]): boolean {
@@ -808,7 +883,7 @@ class Viewport {
    * p6: front, top, right
    * p7: back, bottom, right
    * p8: back, top, right
-   * @param bounds Bounds of the renderer
+   * @param bounds - Bounds of the renderer
    * @returns Edges of the containing bounds
    */
   _getEdges(bounds: Array<number>): Array<[number[], number[]]> {

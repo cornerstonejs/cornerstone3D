@@ -32,7 +32,12 @@ import {
 } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import { ToolSpecificToolData, Point3 } from '../../types'
+import {
+  ToolSpecificToolData,
+  Point3,
+  EventsTypes,
+  ToolHandle,
+} from '../../types'
 
 interface ProbeSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -62,7 +67,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     })
 
     /**
-     * Will only fire fore cornerstone events:
+     * Will only fire for cornerstone events:
      * - TOUCH_DRAG
      * - MOUSE_DRAG
      *
@@ -178,7 +183,12 @@ export default class ProbeTool extends BaseAnnotationTool {
     return near
   }
 
-  handleSelectedCallback(evt, toolData, handle, interactionType = 'mouse') {
+  handleSelectedCallback(
+    evt: EventsTypes.NormalizedMouseEventType,
+    toolData: ToolSpecificToolData,
+    handle: ToolHandle,
+    interactionType = 'mouse'
+  ): void {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -320,25 +330,12 @@ export default class ProbeTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  /**
-   * getToolState = Custom getToolStateMethod with filtering.
-   * @param element
-   */
-  filterInteractableToolStateForElement(element, toolState) {
-    if (!toolState || !toolState.length) {
-      return
-    }
-
-    const enabledElement = getEnabledElement(element)
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     const { viewport } = enabledElement
-
-    return getToolStateForDisplay(viewport, toolState)
-  }
-
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-    const { enabledElement } = svgDrawingHelper
+    const { element } = viewport
 
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
@@ -352,10 +349,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       return
     }
 
-    const { viewport } = enabledElement
-
     const targetUID = this.getTargetUID(viewport)
-
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {

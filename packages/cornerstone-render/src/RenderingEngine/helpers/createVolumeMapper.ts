@@ -1,5 +1,15 @@
 import { vtkSharedVolumeMapper } from '../vtkClasses'
 
+/**
+ * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
+ * from which various volume actors can be created.
+ *
+ * @param imageData - the vtkImageData object that contains the data to
+ * render.
+ * @param vtkOpenGLTexture - The vtkOpenGLTexture that will be used to render
+ * the volume.
+ * @returns The volume mapper.
+ */
 export default function createVolumeMapper(
   imageData: any,
   vtkOpenGLTexture: any

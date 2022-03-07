@@ -1,19 +1,27 @@
-import { ImageLoadObject, VolumeLoadObject } from './ILoadObject'
+import { IImageLoadObject, IVolumeLoadObject } from './ILoadObject'
 
 interface ICache {
+  /** Set the maximum cache size  */
   setMaxCacheSize: (maxCacheSize: number) => void
+  /** Get the maximum cache size  */
   getMaxCacheSize: () => number
+  /** Get the current cache size  */
   getCacheSize: () => number
+  /** Stores the imageLoad Object inside the cache */
   putImageLoadObject: (
     imageId: string,
-    imageLoadObject: ImageLoadObject
+    imageLoadObject: IImageLoadObject
   ) => Promise<any>
-  getImageLoadObject: (imageId: string) => ImageLoadObject | void
+  /** Retrieves the imageLoad Object from the cache */
+  getImageLoadObject: (imageId: string) => IImageLoadObject | void
+  /** Stores the volumeLoad Object inside the cache */
   putVolumeLoadObject: (
     volumeId: string,
-    volumeLoadObject: VolumeLoadObject
+    volumeLoadObject: IVolumeLoadObject
   ) => Promise<any>
-  getVolumeLoadObject: (volumeId: string) => VolumeLoadObject | void
+  /** Retrieves the volumeLoad Object from the cache */
+  getVolumeLoadObject: (volumeId: string) => IVolumeLoadObject | void
+  /** Purge cache both image and volume */
   purgeCache: () => void
 }
 

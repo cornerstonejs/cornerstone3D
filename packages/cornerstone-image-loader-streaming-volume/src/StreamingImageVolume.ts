@@ -10,6 +10,7 @@ import {
   loadImage,
   Utilities as cornerstoneUtils,
   REQUEST_TYPE,
+  ERROR_CODES,
 } from '@precisionmetrics/cornerstone-render'
 
 import { scaleArray, autoLoad } from './helpers'
@@ -19,11 +20,6 @@ const { getMinMax } = cornerstoneUtils
 
 // TODO James wants another layer in between ImageVolume and SliceStreamingImageVolume
 // which adds loaded/loading as an interface?
-
-type PetScaling = {
-  suvbwToSuvlbm?: number
-  suvbwToSuvbsa?: number
-}
 
 export default class StreamingImageVolume extends ImageVolume {
   private _cornerstoneImageMetaData
@@ -37,7 +33,7 @@ export default class StreamingImageVolume extends ImageVolume {
 
   constructor(
     imageVolumeProperties: Types.IVolume,
-    streamingProperties: Types.IStreamingVolume
+    streamingProperties: Types.IStreamingVolumeProperties
   ) {
     super(imageVolumeProperties)
 
@@ -293,7 +289,7 @@ export default class StreamingImageVolume extends ImageVolume {
       vtkOpenGLTexture.setUpdatedFrame(imageIdIndex)
       imageData.modified()
 
-      const eventData = {
+      const eventData: Types.EventsTypes.ImageVolumeModifiedEventData = {
         FrameOfReferenceUID,
         imageVolume: volume,
       }
@@ -355,6 +351,14 @@ export default class StreamingImageVolume extends ImageVolume {
           numFrames,
         })
       }
+
+      const eventData = {
+        error,
+        imageIdIndex,
+        imageId,
+      }
+
+      triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventData)
     }
 
     const requests = imageIds.map((imageId, imageIdIndex) => {
@@ -506,7 +510,7 @@ export default class StreamingImageVolume extends ImageVolume {
 
     const { suvbw, suvlbm, suvbsa } = suvFactor
 
-    const petScaling = <PetScaling>{}
+    const petScaling = <Types.PTScaling>{}
 
     if (suvlbm) {
       petScaling.suvbwToSuvlbm = suvlbm / suvbw
@@ -530,15 +534,15 @@ export default class StreamingImageVolume extends ImageVolume {
    * object. It uses the typedArray set method to copy the pixelData from the
    * correct offset in the scalarData to a new array for the image
    *
-   * @params{string} imageId
-   * @params{number} imageIdIndex
-   * @returns {ImageLoadObject} imageLoadObject containing the promise that resolves
+   * @param imageId - the imageId of the image to be converted
+   * @param imageIdIndex - the index of the imageId in the imageIds array
+   * @returns imageLoadObject containing the promise that resolves
    * to the cornerstone image
    */
   public convertToCornerstoneImage(
     imageId: string,
     imageIdIndex: number
-  ): Types.ImageLoadObject {
+  ): Types.IImageLoadObject {
     const { imageIds } = this
 
     const {

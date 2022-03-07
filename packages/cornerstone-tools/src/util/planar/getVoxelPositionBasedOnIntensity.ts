@@ -9,13 +9,13 @@ import { VolumeViewport } from '@precisionmetrics/cornerstone-render'
  * intensity of the points in the line of sight). It iterated over the points on
  * the line with a defined steps size
  *
- * @param viewport Viewport
- * @param targetVolumeUID Volume UID
- * @param criteriaFunction A function that returns the point if it passes a certain
+ * @param viewport - Viewport
+ * @param targetVolumeUID - Volume UID
+ * @param criteriaFunction - A function that returns the point if it passes a certain
  * written logic, for instance, it can be a maxValue function that keeps the
  * records of all intensity values, and only return the point if its intensity
  * is greater than the maximum intensity of the points passed before.
- * @param canvasPointInWorld World coordinates of the point in the canvas.
+ * @param canvasPointInWorld - World coordinates of the point in the canvas.
  * @returns
  */
 export default function getVoxelPositionBasedOnIntensity(
