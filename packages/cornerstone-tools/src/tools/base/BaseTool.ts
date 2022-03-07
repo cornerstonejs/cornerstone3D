@@ -5,7 +5,6 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import deepMerge from '../../util/deepMerge'
 import { ToolModes } from '../../enums'
-import { Types } from '@precisionmetrics/cornerstone-render'
 
 /**
  * Abstract base class from which all tools derive.
