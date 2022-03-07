@@ -1,3 +1,4 @@
-import * as synchronizers from './synchronizers'
+import createCameraPositionSynchronizer from './synchronizers/createCameraPositionSynchronizer'
+import createVOISynchronizer from './synchronizers/createVOISynchronizer'
 
-export default synchronizers
+export { createCameraPositionSynchronizer, createVOISynchronizer }
