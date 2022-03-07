@@ -10,7 +10,6 @@ const {
   unregisterAllImageLoaders,
   metaData,
   EVENTS,
-  getEnabledElement,
   createAndCacheVolume,
   registerVolumeLoader,
   setVolumesOnViewports,
@@ -21,6 +20,7 @@ const {
   ToolGroupManager,
   AnnotationState,
   CornerstoneTools3DEvents,
+  Utilities: csTools3dTuils,
 } = csTools3d
 
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
@@ -313,7 +313,10 @@ describe('Cornerstone Tools: ', () => {
       // First viewport is axial
       const currentWorldLocation =
         crosshairAnnotations[0].data.handles.toolCenter
-      const currentIndexLocation = imageData.worldToIndex(currentWorldLocation)
+      const currentIndexLocation = csTools3dTuils.transformPhysicalToIndex(
+        imageData,
+        currentWorldLocation
+      )
 
       const jumpIndexLocation = [
         currentIndexLocation[0] + 20,
@@ -411,8 +414,10 @@ describe('Cornerstone Tools: ', () => {
         // First viewport is axial
         const currentWorldLocation =
           crosshairAnnotations[0].data.handles.toolCenter
-        const currentIndexLocation =
-          imageData.worldToIndex(currentWorldLocation)
+        const currentIndexLocation = csTools3dTuils.transformPhysicalToIndex(
+          imageData,
+          currentWorldLocation
+        )
 
         const jumpIndexLocation = [
           currentIndexLocation[0] - 20,

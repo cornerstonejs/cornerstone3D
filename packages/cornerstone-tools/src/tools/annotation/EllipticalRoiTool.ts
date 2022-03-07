@@ -13,6 +13,7 @@ import {
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import throttle from '../../utilities/throttle'
+import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import {
   addAnnotation,
   getAnnotations,
@@ -1005,15 +1006,13 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
       const { dimensions, imageData, metadata } = image
 
-      // @ts-ignore
-      const worldPos1Index = imageData.worldToIndex(worldPos1)
+      const worldPos1Index = transformPhysicalToIndex(imageData, worldPos1)
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0])
       worldPos1Index[1] = Math.floor(worldPos1Index[1])
       worldPos1Index[2] = Math.floor(worldPos1Index[2])
 
-      // @ts-ignore
-      const worldPos2Index = imageData.worldToIndex(worldPos2)
+      const worldPos2Index = transformPhysicalToIndex(imageData, worldPos2)
 
       worldPos2Index[0] = Math.floor(worldPos2Index[0])
       worldPos2Index[1] = Math.floor(worldPos2Index[1])

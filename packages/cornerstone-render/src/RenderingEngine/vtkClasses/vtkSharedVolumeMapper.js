@@ -1,8 +1,8 @@
-import macro from 'vtk.js/Sources/macro'
+import macro from 'vtk.js/Sources/macros'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 
 /**
- * vtkSharedVolumeMapper - A dervied class of the core vtkVolumeMapper class
+ * vtkSharedVolumeMapper - A derived class of the core vtkVolumeMapper class
  * the scalar texture in as an argument. This is so we can share the same texture
  * memory across different mappers/actors, so we don't duplicate memory usage.
  *

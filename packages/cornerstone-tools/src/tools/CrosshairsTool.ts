@@ -167,7 +167,7 @@ export default class CrosshairsTool extends AnnotationTool {
   } => {
     const enabledElement = getEnabledElementByUIDs(
       viewportUID,
-      renderingEngineUID,
+      renderingEngineUID
     )
     const { FrameOfReferenceUID, viewport } = enabledElement
     const { element } = viewport
@@ -748,12 +748,12 @@ export default class CrosshairsTool extends AnnotationTool {
         direction
       )
       vtkMath.normalize(direction)
-      vtkMath.multiplyScalar(<vec3>direction, otherCanvasDiagonalLength)
+      vtkMath.multiplyScalar(<Types.Point3>direction, otherCanvasDiagonalLength)
 
       const pointWorld0: Types.Point3 = [0, 0, 0]
       vtkMath.add(otherViewportCenterWorld, direction, pointWorld0)
 
-      const pointWorld1 = [0, 0, 0]
+      const pointWorld1: Types.Point3 = [0, 0, 0]
       vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1)
 
       // get canvas information for points and lines (canvas box, canvas horizontal distances)
@@ -881,7 +881,7 @@ export default class CrosshairsTool extends AnnotationTool {
       }
 
       // SlabThickness center in world
-      let stHandlesCenterWorld = [...this.toolCenter]
+      let stHandlesCenterWorld: Types.Point3 = [...this.toolCenter]
       if (
         !otherViewportDraggableRotatable &&
         otherViewportSlabThicknessControlsOn
@@ -2083,7 +2083,7 @@ export default class CrosshairsTool extends AnnotationTool {
                   otherViewportRotationPoints[1][3]
                 )
                 vtkMath.add(point1, point2, currentCenter)
-                vtkMath.multiplyScalar(<vec3>currentCenter, 0.5)
+                vtkMath.multiplyScalar(<Types.Point3>currentCenter, 0.5)
               }
             }
 

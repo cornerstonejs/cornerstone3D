@@ -1,4 +1,4 @@
-import macro from 'vtk.js/Sources/macro'
+import macro from 'vtk.js/Sources/macros'
 import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture'
 
 /**

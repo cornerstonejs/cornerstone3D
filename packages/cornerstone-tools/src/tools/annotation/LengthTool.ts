@@ -12,6 +12,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { AnnotationTool } from '../base'
 import throttle from '../../utilities/throttle'
+import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import {
   addAnnotation,
   getAnnotations,
@@ -745,10 +746,8 @@ class LengthTool extends AnnotationTool {
 
       const length = this._calculateLength(worldPos1, worldPos2)
 
-      // @ts-ignore
-      const index1 = imageData.worldToIndex(worldPos1)
-      // @ts-ignore
-      const index2 = imageData.worldToIndex(worldPos2)
+      const index1 = transformPhysicalToIndex(imageData, worldPos1)
+      const index2 = transformPhysicalToIndex(imageData, worldPos2)
 
       this._isInsideVolume(index1, index2, dimensions)
         ? (this.isHandleOutsideImage = false)

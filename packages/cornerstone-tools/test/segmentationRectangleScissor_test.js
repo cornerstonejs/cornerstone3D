@@ -376,7 +376,7 @@ describe('Segmentation Tools --', () => {
       }
 
       let compareCount = 0
-      const compareImageCallback = () => {
+      const compareImageCallback = async () => {
         compareCount++
 
         // since we are triggering segmentationRendered on each element,
@@ -391,17 +391,23 @@ describe('Segmentation Tools --', () => {
         const image1 = canvas1.toDataURL('image/png')
         const image2 = canvas2.toDataURL('image/png')
 
-        compareImages(
-          image1,
-          volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor,
-          'volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor'
-        )
+        try {
+          await compareImages(
+            image1,
+            volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor,
+            'volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor'
+          )
 
-        compareImages(
-          image2,
-          volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor,
-          'volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor'
-        ).then(done, done.fail)
+          await compareImages(
+            image2,
+            volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor,
+            'volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor'
+          )
+        } catch(error) {
+          return done.fail(error);
+        }
+
+        done()
       }
 
       eventTarget.addEventListener(

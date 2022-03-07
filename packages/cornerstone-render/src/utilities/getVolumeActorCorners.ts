@@ -8,7 +8,8 @@ import { Point3 } from '../types'
  * @returns An array of the corners of the `volumeActor` in world space.
  */
 export default function getVolumeActorCorners(volumeActor): Array<Point3> {
-  const bounds = volumeActor.getMapper().getBounds()
+  const imageData = volumeActor.getMapper().getInputData()
+  const bounds = imageData.extentToBounds(imageData.getExtent())
 
   return [
     [bounds[0], bounds[2], bounds[4]],

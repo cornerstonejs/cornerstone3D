@@ -22,7 +22,8 @@
   },
   "peerDependencies": {
     "gl-matrix": "^3.4.3",
-    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
+    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
+    "detect-gpu": "^4.0.7"
   },
   "dependencies": {
     "resemblejs": "^3.2.5"

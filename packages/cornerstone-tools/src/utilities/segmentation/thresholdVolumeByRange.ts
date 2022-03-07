@@ -1,5 +1,3 @@
-import { vec3 } from 'gl-matrix'
-
 import { cache } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
@@ -10,6 +8,7 @@ import {
 import { pointInShapeCallback } from '../../utilities'
 import { triggerSegmentationDataModified } from '../../store/SegmentationModule/triggerSegmentationEvents'
 import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
+import transformPhysicalToIndex from '../transformPhysicalToIndex'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
 
 export type ThresholdRangeOptions = {
@@ -97,7 +96,7 @@ function thresholdVolumeByRange(
     }
 
     const rectangleCornersIJK = pointsToUse.map(
-      (world) => _worldToIndex(imageData, world) as Types.Point3
+      (world) => transformPhysicalToIndex(imageData, world) as Types.Point3
     )
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
@@ -137,12 +136,6 @@ export function extendBoundingBoxInSliceAxisIfNecessary(
     numSlicesToProject
   )
   return extendedBoundsIJK
-}
-
-function _worldToIndex(imageData, ain) {
-  const vout = vec3.fromValues(0, 0, 0)
-  imageData.worldToIndex(ain, vout)
-  return vout
 }
 
 export default thresholdVolumeByRange

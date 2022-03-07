@@ -28,6 +28,7 @@ import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import lineSegment from '../../utilities/math/line'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
+import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import {
   resetElementCursor,
   hideElementCursor,
@@ -1240,14 +1241,10 @@ export default class BidirectionalTool extends AnnotationTool {
       const length = dist1 > dist2 ? dist1 : dist2
       const width = dist1 > dist2 ? dist2 : dist1
 
-      // @ts-ignore this will be fixed in the vtk master
-      const index1 = imageData.worldToIndex(worldPos1)
-      // @ts-ignore this will be fixed in the vtk master
-      const index2 = imageData.worldToIndex(worldPos2)
-      // @ts-ignore this will be fixed in the vtk master
-      const index3 = imageData.worldToIndex(worldPos3)
-      // @ts-ignore this will be fixed in the vtk master
-      const index4 = imageData.worldToIndex(worldPos4)
+      const index1 = transformPhysicalToIndex(imageData, worldPos1)
+      const index2 = transformPhysicalToIndex(imageData, worldPos2)
+      const index3 = transformPhysicalToIndex(imageData, worldPos3)
+      const index4 = transformPhysicalToIndex(imageData, worldPos4)
 
       this._isInsideVolume(index1, index2, index3, index4, dimensions)
         ? (this.isHandleOutsideImage = false)

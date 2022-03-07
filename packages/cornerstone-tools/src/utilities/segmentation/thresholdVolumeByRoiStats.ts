@@ -1,6 +1,6 @@
-import { vec3 } from 'gl-matrix'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
+import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import { getBoundingBoxAroundShape } from '../segmentation'
 import { ToolGroupSpecificSegmentationData } from '../../types'
 import thresholdVolumeByRange, {
@@ -82,7 +82,7 @@ function thresholdVolumeByRoiStats(
     }
 
     const rectangleCornersIJK = pointsToUse.map(
-      (world) => _worldToIndex(imageData, world) as Types.Point3
+      (world) => transformPhysicalToIndex(imageData, world) as Types.Point3
     )
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
@@ -121,12 +121,6 @@ function thresholdVolumeByRoiStats(
     segmentationData,
     rangeOptions
   )
-}
-
-function _worldToIndex(imageData, ain) {
-  const vout = vec3.fromValues(0, 0, 0)
-  imageData.worldToIndex(ain, vout)
-  return vout
 }
 
 function _getStrategyFn(statistic) {

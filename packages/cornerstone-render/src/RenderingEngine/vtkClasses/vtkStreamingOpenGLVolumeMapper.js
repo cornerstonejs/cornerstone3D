@@ -1,5 +1,5 @@
 import { mat3, mat4, vec3 } from 'gl-matrix'
-import macro from 'vtk.js/Sources/macro'
+import macro from 'vtk.js/Sources/macros'
 import vtkOpenGLVolumeMapper from 'vtk.js/Sources/Rendering/OpenGL/VolumeMapper'
 import { Filter } from 'vtk.js/Sources/Rendering/OpenGL/Texture/Constants'
 import { VtkDataTypes } from 'vtk.js/Sources/Common/Core/DataArray/Constants'
@@ -11,7 +11,7 @@ const { vtkWarningMacro } = macro
 /**
  * vtkStreamingOpenGLVolumeMapper - A dervied class of the core vtkOpenGLVolumeMapper class.
  * This class  replaces the buildBufferObjects function so that we progressively upload our textures
- * into GPU memory uisng the new methods on vtkStreamingOpenGLTexture.
+ * into GPU memory using the new methods on vtkStreamingOpenGLTexture.
  *
  *
  * @param {*} publicAPI The public API to extend
@@ -32,8 +32,12 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
    */
   publicAPI.buildBufferObjects = (ren, actor) => {
     const image = model.currentInput
+    if (!image) {
+      return
+    }
 
-    if (image === null) {
+    const scalars = image.getPointData() && image.getPointData().getScalars()
+    if (!scalars) {
       return
     }
 
@@ -55,7 +59,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       )
     }
 
-    const numComp = image.getPointData().getScalars().getNumberOfComponents()
+    const numComp = scalars.getNumberOfComponents()
     const iComps = vprop.getIndependentComponents()
     const numIComps = iComps ? numComp : 1
 
@@ -190,8 +194,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dims[1],
           dims[2],
           numComp,
-          dataType,
-          data
+          scalars.getDataType(),
+          scalars.getData(),
+          model.renderable.getPreferSizeOverAccuracy()
         )
       } else {
         model.scalarTexture.deactivate()
@@ -274,16 +279,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     const spc = model.currentInput.getSpacing()
     const dims = model.currentInput.getDimensions()
 
-    // TODO: need a better name because this is not physical?
-    // TODO: this should probably use extent, not bounds?
-    const physicalBounds = [...bounds]
-    physicalBounds[0] -= 0.5 * spc[0]
-    physicalBounds[1] += 0.5 * spc[0]
-    physicalBounds[2] -= 0.5 * spc[1]
-    physicalBounds[3] += 0.5 * spc[1]
-    physicalBounds[4] -= 0.5 * spc[2]
-    physicalBounds[5] += 0.5 * spc[2]
-
     // compute the viewport bounds of the volume
     // we will only render those fragments.
     const pos = new Float64Array(3)
@@ -296,9 +291,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     for (let i = 0; i < 8; ++i) {
       vec3.set(
         pos,
-        physicalBounds[i % 2],
-        physicalBounds[2 + (Math.floor(i / 2) % 2)],
-        physicalBounds[4 + Math.floor(i / 4)]
+        bounds[i % 2],
+        bounds[2 + (Math.floor(i / 2) % 2)],
+        bounds[4 + Math.floor(i / 4)]
       )
       vec3.transformMat4(pos, pos, model.modelToView)
       if (!cam.getParallelProjection()) {
@@ -330,13 +325,13 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       program.setUniformi('cameraParallel', cam.getParallelProjection())
     }
 
-    const ext = model.currentInput.getExtent()
+    const ext = model.currentInput.getSpatialExtent()
     const vsize = new Float64Array(3)
     vec3.set(
       vsize,
-      (ext[1] - ext[0] + 1) * spc[0],
-      (ext[3] - ext[2] + 1) * spc[1],
-      (ext[5] - ext[4] + 1) * spc[2]
+      (ext[1] - ext[0]) * spc[0],
+      (ext[3] - ext[2]) * spc[1],
+      (ext[5] - ext[4]) * spc[2]
     )
     program.setUniform3f('vSpacing', spc[0], spc[1], spc[2])
 
@@ -347,12 +342,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     vec3.transformMat4(pos, pos, model.modelToView)
 
     program.setUniform3f('vOriginVC', pos[0], pos[1], pos[2])
-
-    vec3.set(pos, ext[0] + 0.5, ext[2] + 0.5, ext[4] + 0.5)
-    model.currentInput.indexToWorldVec3(pos, pos)
-
-    vec3.transformMat4(pos, pos, model.modelToView)
-    program.setUniform3f('vOriginPlusHalfVoxelVC', pos[0], pos[1], pos[2])
 
     // apply the image directions
     const i2wmat4 = model.currentInput.getIndexToWorld()
@@ -401,30 +390,30 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     const pos2 = new Float64Array(3)
     for (let i = 0; i < 6; ++i) {
       switch (i) {
-        default:
-        case 0:
-          vec3.set(normal, 1.0, 0.0, 0.0)
-          vec3.set(pos2, ext[1] + 0.5, ext[3] + 0.5, ext[5] + 0.5)
-          break
         case 1:
           vec3.set(normal, -1.0, 0.0, 0.0)
-          vec3.set(pos2, ext[0] - 0.5, ext[2] - 0.5, ext[4] - 0.5)
+          vec3.set(pos2, ext[0], ext[2], ext[4])
           break
         case 2:
           vec3.set(normal, 0.0, 1.0, 0.0)
-          vec3.set(pos2, ext[1] + 0.5, ext[3] + 0.5, ext[5] + 0.5)
+          vec3.set(pos2, ext[1], ext[3], ext[5])
           break
         case 3:
           vec3.set(normal, 0.0, -1.0, 0.0)
-          vec3.set(pos2, ext[0] - 0.5, ext[2] - 0.5, ext[4] - 0.5)
+          vec3.set(pos2, ext[0], ext[2], ext[4])
           break
         case 4:
           vec3.set(normal, 0.0, 0.0, 1.0)
-          vec3.set(pos2, ext[1] + 0.5, ext[3] + 0.5, ext[5] + 0.5)
+          vec3.set(pos2, ext[1], ext[3], ext[5])
           break
         case 5:
           vec3.set(normal, 0.0, 0.0, -1.0)
-          vec3.set(pos2, ext[0] - 0.5, ext[2] - 0.5, ext[4] - 0.5)
+          vec3.set(pos2, ext[0], ext[2], ext[4])
+          break
+        case 0:
+        default:
+          vec3.set(normal, 1.0, 0.0, 0.0)
+          vec3.set(pos2, ext[1], ext[3], ext[5])
           break
       }
       vec3.transformMat3(normal, normal, model.idxNormalMatrix)
@@ -508,16 +497,32 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     }
   }
 
-  publicAPI.getRenderTargetSize = () => {
-    // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/VolumeMapper/index.js#L952
-    if (model.lastXYF > 1.43) {
-      const sz = model.framebuffer.getSize()
-      return [model.fvp[0] * sz[0], model.fvp[1] * sz[1]]
-    }
+  // publicAPI.getRenderTargetSize = () => {
+  //   // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/VolumeMapper/index.js#L952
+  //   if (model.lastXYF > 1.43) {
+  //     const sz = model.framebuffer.getSize()
+  //     return [model.fvp[0] * sz[0], model.fvp[1] * sz[1]]
+  //   }
 
-    // This seems wrong, it assumes the renderWindow only has one renderer
-    // but I don't know if this stuff is correct...
-    // return model.openGLRenderWindow.getFramebufferSize();
+  //   // This seems wrong, it assumes the renderWindow only has one renderer
+  //   // but I don't know if this stuff is correct...
+
+  //   const { usize, vsize } = model.openGLRenderer.getTiledSizeAndOrigin()
+
+  //   return [usize, vsize]
+  // }
+
+  // publicAPI.getRenderTargetSize = () => {
+  //   if (model._useSmallViewport) {
+  //     return [model._smallViewportWidth, model._smallViewportHeight]
+  //   }
+
+  //   return model.openGLRenderWindow.getFramebufferSize()
+  // }
+  publicAPI.getRenderTargetSize = () => {
+    if (model._useSmallViewport) {
+      return [model._smallViewportWidth, model._smallViewportHeight]
+    }
 
     const { usize, vsize } = model.openGLRenderer.getTiledSizeAndOrigin()
 

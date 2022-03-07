@@ -7,7 +7,8 @@ import {
 } from '../../../utilities/math/ellipse'
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import { pointInShapeCallback } from '../../../utilities'
+import { pointInShapeCallback } from '../../../utilities/'
+import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex'
 
 type OperationData = {
   toolGroupUID: string
@@ -19,13 +20,6 @@ type OperationData = {
   viewPlaneNormal: number[]
   viewUp: number[]
   constraintFn: () => boolean
-}
-
-// Todo: i don't think we need this we can use indexToWorldVec3
-function worldToIndex(imageData, ain) {
-  const vout = vec3.fromValues(0, 0, 0)
-  imageData.worldToIndex(ain, vout)
-  return vout
 }
 
 function fillCircle(
@@ -63,8 +57,8 @@ function fillCircle(
   const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
 
   const ellipsoidCornersIJK = [
-    <Types.Point3>worldToIndex(imageData, topLeftWorld),
-    <Types.Point3>worldToIndex(imageData, bottomRightWorld),
+    <Types.Point3>transformPhysicalToIndex(imageData, topLeftWorld),
+    <Types.Point3>transformPhysicalToIndex(imageData, bottomRightWorld),
   ]
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions)

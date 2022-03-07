@@ -3,7 +3,8 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import { pointInShapeCallback } from '../../../utilities'
+import { pointInShapeCallback } from '../../../utilities/'
+import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex'
 
 type EraseOperationData = {
   toolGroupUID: string
@@ -29,7 +30,7 @@ function eraseRectangle(
   const { imageData, dimensions, scalarData } = segmentation
 
   const rectangleCornersIJK = points.map((world) => {
-    return imageData.worldToIndex(world)
+    return transformPhysicalToIndex(imageData, world)
   })
 
   const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)

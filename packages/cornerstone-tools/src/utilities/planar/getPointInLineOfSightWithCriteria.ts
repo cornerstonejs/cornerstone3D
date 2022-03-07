@@ -51,7 +51,7 @@ export default function getPointInLineOfSightWithCriteria(
   const xMax = bounds[1]
 
   // 5. Calculating the line, we use a parametric line definition
-  const vector = [0, 0, 0]
+  const vector = <Types.Point3>[0, 0, 0]
 
   // 5.1 Point coordinate on the line
   let point = <Types.Point3>[0, 0, 0]
