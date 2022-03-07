@@ -4,10 +4,10 @@ import {
   getEnabledElementByUIDs,
   getEnabledElement,
   RenderingEngine,
-  getRenderingEngine,
   Utilities as csUtils,
   VolumeViewport,
-  getVolumeViewportsContatiningSameVolumes,
+  getVolumeViewportsContainingSameVolumes,
+  Types as csTypes,
 } from '@precisionmetrics/cornerstone-render'
 import {
   addToolState,
@@ -33,6 +33,8 @@ import {
   ToolSpecificToolState,
   Point2,
   Point3,
+  EventsTypes,
+  ToolHandle,
 } from '../types'
 import { isToolDataLocked } from '../stateManagement/annotation/toolDataLocking'
 import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
@@ -51,11 +53,7 @@ interface ToolConfiguration {
   }
 }
 
-type ViewportInput = {
-  renderingEngineUID: string
-  viewportUID: string
-}
-type ViewportInputs = Array<ViewportInput>
+type ViewportInputs = Array<csTypes.IViewportUID>
 
 interface CrosshairsSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -144,7 +142,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       defaultReferenceLineSlabThicknessControlsOn
 
     /**
-     * Will only fire fore cornerstone events:
+     * Will only fire for cornerstone events:
      * - TOUCH_DRAG
      * - MOUSE_DRAG
      *
@@ -167,7 +165,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   initializeViewport = ({
     renderingEngineUID,
     viewportUID,
-  }: ViewportInput): {
+  }: csTypes.IViewportUID): {
     normal: Point3
     point: Point3
   } => {
@@ -367,11 +365,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt,
-    toolData,
-    handle,
+    evt: EventsTypes.NormalizedMouseEventType,
+    toolData: ToolSpecificToolData,
+    handle: ToolHandle,
     interactionType = 'mouse'
-  ) => {
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -384,7 +382,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // from the camera variables of the viewports and of the slab thickness variable.
     // Remember that the translation and rotation operations operate on the camera
     // variables and not really on the handles. Similar for the slab thickness.
-
     this._activateModify(element)
 
     hideElementCursor(element)
@@ -546,7 +543,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     // AutoPan modification
     if (this.configuration.autoPan.enabled) {
-      const viewports = getVolumeViewportsContatiningSameVolumes(
+      const viewports = getVolumeViewportsContainingSameVolumes(
         viewport,
         renderingEngine.uid
       )
@@ -628,7 +625,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return imageNeedsUpdate
   }
 
-  filterInteractableToolStateForElement(element, toolState) {
+  filterInteractableToolStateForElement = (element, toolState) => {
     if (!toolState || !toolState.length) {
       return []
     }
@@ -643,11 +640,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return viewportUIDSpecificCrosshairs
   }
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-    const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
-    const { renderingEngine, viewport } = svgDrawingHelper.enabledElement
+  renderToolData(
+    enabledElement: csTypes.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
+    const { viewport, renderingEngine } = enabledElement
+    const { element } = viewport
+    const toolState = getToolState(enabledElement, this.name)
     const camera = viewport.getCamera()
 
     const filteredToolState = this.filterInteractableToolStateForElement(
@@ -658,7 +657,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // viewport ToolData
     const viewportToolData = filteredToolState[0]
     if (!toolState || !viewportToolData || !viewportToolData.data) {
-      // No toolstate yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
+      // No toolState yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
       return
     }
 
@@ -677,7 +676,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter)
 
     const otherViewportToolData = this._filterUniqueViewportOrientations(
-      svgDrawingHelper.enabledElement,
+      enabledElement,
       toolState
     )
 
@@ -688,7 +687,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       data.handles.toolCenter = this.toolCenter
 
-      const otherViewport = renderingEngine.getViewport(data.viewportUID)
+      const otherViewport = renderingEngine.getViewport(
+        data.viewportUID
+      ) as VolumeViewport
+
       const otherCamera = otherViewport.getCamera()
 
       const otherViewportControllable = this._getReferenceLineControllable(
@@ -704,7 +706,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const otherCanvasDiagonalLength = Math.sqrt(
         sWidth * sWidth + sHeight * sHeight
       )
-      const otherCanvasCenter = [sWidth * 0.5, sHeight * 0.5]
+      const otherCanvasCenter: Point2 = [sWidth * 0.5, sHeight * 0.5]
       const otherViewportCenterWorld =
         otherViewport.canvasToWorld(otherCanvasCenter)
 
@@ -717,18 +719,18 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.normalize(direction)
       vtkMath.multiplyScalar(<vec3>direction, otherCanvasDiagonalLength)
 
-      const pointWorld0 = [0, 0, 0]
+      const pointWorld0: Point3 = [0, 0, 0]
       vtkMath.add(otherViewportCenterWorld, direction, pointWorld0)
 
       const pointWorld1 = [0, 0, 0]
       vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1)
 
       // get canvas information for points and lines (canvas box, canvas horizontal distances)
-      const pointCanvas0 = viewport.worldToCanvas(pointWorld0)
+      const pointCanvas0: Point2 = viewport.worldToCanvas(pointWorld0)
 
       const { focalPoint } = camera
       const focalPointCanvas = viewport.worldToCanvas(focalPoint)
-      // Todo: focalpointCanvas is a lot, how is it doing arithmetics on it??
+      // Todo: focalpointCanvas is a Point2, how is it doing arithmetics on it??
       const canvasBox = [
         focalPointCanvas - sWidth * 0.5,
         focalPointCanvas + sWidth * 0.5,

@@ -6,19 +6,19 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 
 /**
- * @function cameraSyncCallback - Synchronizer callback to synchronize the voi of volumeActors of identical volumes
+ * Synchronizer callback to synchronize the voi of volumeActors of identical volumes
  * in different viewports.
  *
- * @param {object} synchronizerInstance The Instance of the Synchronizer
- * @param {IViewportUID} sourceViewport The list of UIDs defining the source viewport.
- * @param {IViewportUID} targetViewport The list of UIDs defining the target viewport.
- * @param {CustomEvent} voiModifiedEvent The VOI_MODIFIED event.
+ * @param synchronizerInstance - The Instance of the Synchronizer
+ * @param sourceViewport - The list of UIDs defining the source viewport.
+ * @param targetViewport - The list of UIDs defining the target viewport.
+ * @param voiModifiedEvent - The VOI_MODIFIED event.
  */
 export default function voiSyncCallback(
   synchronizerInstance,
   sourceViewport: Types.IViewportUID,
   targetViewport: Types.IViewportUID,
-  voiModifiedEvent: CustomEvent
+  voiModifiedEvent: Types.EventsTypes.VoiModifiedEvent
 ): void {
   const eventData = voiModifiedEvent.detail
   const { volumeUID, range } = eventData

@@ -10,6 +10,7 @@ import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
+ * @hidden
  */
 function vtkSharedVolumeMapper(publicAPI, model) {
   model.classHierarchy.push('vtkSharedVolumeMapper')

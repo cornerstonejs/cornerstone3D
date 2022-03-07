@@ -186,6 +186,14 @@ ctSceneToolGroup.setToolActive('Zoom', {
 ```
 
 
+### Knowlege Base
+mouse and keyboard fire events, we capture them and normalize them. Then fire our own events,
+which is mouseDown, then if any tool picked it up (either as tool selection or handle selection)
+we prevent default and go with that, otherwise the mouseDrag and mouseUp events are fired
+and normalized and we go with that logic.
+
+
+
 ### Adding Viewports to ToolGroups
 Finally, the toolGroup needs to get viewports that it should act on. You can use `addViewport` API in order to achieve this.
 

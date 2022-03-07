@@ -1,7 +1,7 @@
 // prettier-ignore
 // @ts-nocheck
 /**
- * Generates a unique id that has limited chance of collission
+ * Generates a unique id that has limited chance of collision
  *
  * @see {@link https://stackoverflow.com/a/2117523/1867984|StackOverflow: Source}
  * @returns a v4 compliant GUID

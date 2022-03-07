@@ -100,7 +100,7 @@ class AnnotationRenderingEngine {
         // are instance of BaseTool and we cannot simply check if tool is
         // instance of BaseAnnotationTool
         if (!(tool instanceof SegmentationDisplayTool) && tool.renderToolData) {
-          tool.renderToolData({ detail: eventData }, svgDrawingHelper)
+          tool.renderToolData(enabledElement, svgDrawingHelper)
           triggerEvent(element, EVENTS.ANNOTATION_RENDERED, { ...eventData })
         }
       }

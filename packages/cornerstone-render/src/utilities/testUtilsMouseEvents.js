@@ -9,15 +9,15 @@ function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
 }
 
 /**
- * This function uses the imageData being displayed on the viewport and
+ * This function uses the imageData being displayed on the viewport (the default image) and
  * an index (IJK) on the image to normalize the mouse event details.
  * It should be noted that the normalization is required since client and page XY
- * cannot accept a double. Therefore, for the requested index, canvas coordinate
+ * cannot accept a float. Therefore, for the requested index, canvas coordinate
  * will get calculated and normalized (rounded) to enable normalized client/page XY
  *
  * @param {vtkImageData} imageData
- * @param {[number, number,number]} index IJK index of the point to click
- * @param {HTMLCanvasElement} canvas the canvas to be clicked on
+ * @param {[number, number,number]} index - IJK index of the point to click
+ * @param {HTMLElement} element - the canvas to be clicked on
  * @param {StackViewport|VolumeViewport} viewport
  * @returns pageX, pageY, clientX, clientY, worldCoordinate
  */

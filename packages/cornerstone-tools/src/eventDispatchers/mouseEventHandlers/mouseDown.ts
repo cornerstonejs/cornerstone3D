@@ -1,11 +1,6 @@
-// State
-import {
-  // getters,
-  state,
-} from '../../store'
-
+import { state } from '../../store'
 import { ToolModes } from '../../enums'
-import { ToolSpecificToolData } from '../../types'
+import { ToolSpecificToolData, EventsTypes, Point3 } from '../../types'
 
 import {
   selectToolData,
@@ -30,13 +25,13 @@ type Tool = {
 type ToolAndToolData = {
   tool: Tool
   toolData: ToolSpecificToolData
-  handle?: unknown
+  handle?: Point3
 }
 
 const { Active, Passive } = ToolModes
 
 /**
- * @function mouseDown - When the mouse is depressed we check which entities can process these events in the following manner:
+ * When the mouse is depressed we check which entities can process these events in the following manner:
  *
  * - First we get the `activeTool` for the mouse button pressed.
  * - If the `activeTool` has a `preMouseDownCallback`, this is called. If the callback returns `true`,
@@ -56,22 +51,22 @@ const { Active, Passive } = ToolModes
  *
  * If the event is not consumed the event will bubble to the `mouseDownActivate` handler.
  *
- * @param {Event} evt The normalized mouseDown event.
+ * @param evt - The normalized mouseDown event.
  */
-export default function mouseDown(evt) {
-  // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
+export default function mouseDown(evt: EventsTypes.NormalizedMouseEventType) {
+  // If a tool has locked the current state it is dealing with an interaction within its own eventLoop.
   if (state.isInteractingWithTool) {
     return
   }
 
   const activeTool = getActiveToolForMouseEvent(evt)
 
-  // Check for preMouseDownCallbacks
+  // Check for preMouseDownCallbacks,
+  // If the tool claims it consumed the event, prevent further checks.
   if (activeTool && typeof activeTool.preMouseDownCallback === 'function') {
     const consumedEvent = activeTool.preMouseDownCallback(evt)
 
     if (consumedEvent) {
-      // If the tool claims it consumed the event, prevent further checks.
       return
     }
   }
@@ -108,7 +103,7 @@ export default function mouseDown(evt) {
   const isMultiSelect = !!evt.detail.event.shiftKey
 
   if (annotationToolsWithMoveableHandles.length > 0) {
-    const { tool, toolData, handle } = selectSuitableAnnotationTool(
+    const { tool, toolData, handle } = filterAnnotationToolsForSelection(
       annotationToolsWithMoveableHandles as ToolAndToolData[]
     )
 
@@ -126,7 +121,7 @@ export default function mouseDown(evt) {
   )
 
   if (moveableAnnotationTools.length > 0) {
-    const { tool, toolData } = selectSuitableAnnotationTool(
+    const { tool, toolData } = filterAnnotationToolsForSelection(
       moveableAnnotationTools as ToolAndToolData[]
     )
 
@@ -146,7 +141,13 @@ export default function mouseDown(evt) {
   }
 }
 
-function selectSuitableAnnotationTool(
+/**
+ * If there are multiple annotation tools, return the first one that isn't locked.
+ * If there's only one annotation tool, return it
+ * @param annotationTools - An array of tools and tool data.
+ * @returns The candidate for selection
+ */
+function filterAnnotationToolsForSelection(
   annotationTools: ToolAndToolData[]
 ): ToolAndToolData {
   return (
@@ -156,6 +157,13 @@ function selectSuitableAnnotationTool(
   )
 }
 
+/**
+ * If the tool data is selected, deselect it. If it's not selected, select it
+ * @param toolData - The ToolSpecificToolData object that we
+ * want to toggle the selection of.
+ * @param isMultiSelect - If true, the toolData will be deselected if it is
+ * already selected, or deselected if it is selected.
+ */
 function toggleToolDataSelection(
   toolData: ToolSpecificToolData,
   isMultiSelect = false

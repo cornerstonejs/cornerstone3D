@@ -3,6 +3,7 @@ import {
   eventTarget,
   getRenderingEngine,
   EVENTS as csRenderEvents,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as csToolsEvents } from '../enums'
 import {
@@ -84,7 +85,7 @@ class SegmentationRenderingEngine {
       'SegmentationDisplay'
     ) as SegmentationDisplayTool
 
-    function onSegmentationRender(evt) {
+    function onSegmentationRender(evt: Types.EventsTypes.ImageRenderedEvent) {
       const { element, viewportUID, renderingEngineUID } = evt.detail
 
       element.removeEventListener(
@@ -122,7 +123,7 @@ class SegmentationRenderingEngine {
       )
     })
 
-    segmentationDisplayToolInstance.renderToolData({ toolGroupUID })
+    segmentationDisplayToolInstance.renderToolData(toolGroupUID)
   }
 
   private _renderFlaggedToolGroups = () => {

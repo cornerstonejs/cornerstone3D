@@ -1,21 +1,22 @@
+import { Types } from '@precisionmetrics/cornerstone-render'
 import getVolumeActorCorners from '../vtkjs/getVolumeActorCorners'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { Point3 } from './../../types'
 
 /**
- * @function getSliceRange Given a `vtkVolumeActor`, and a normal direction,
+ * Given a `vtkVolumeActor`, and a normal direction,
  * calculate the range of slices in the focal normal direction that encapsulate
  * the volume. Also project the `focalPoint` onto this range.
  *
- * @param {object} volumeActor The `vtkVolumeActor`.
- * @param {Point3} viewPlaneNormal The normal to the camera view.
- * @param {Point3} focalPoint The focal point of the camera.
+ * @param volumeActor - The `vtkVolumeActor`.
+ * @param viewPlaneNormal - The normal to the camera view.
+ * @param focalPoint - The focal point of the camera.
  *
- * @returns {object} and object containing the `min`, `max` and `current`
+ * @returns an object containing the `min`, `max` and `current`
  * positions in the normal direction.
  */
 export default function getSliceRange(
-  volumeActor,
+  volumeActor: Types.VolumeActor,
   viewPlaneNormal: Point3,
   focalPoint: Point3
 ): { min: number; max: number; current: number } {

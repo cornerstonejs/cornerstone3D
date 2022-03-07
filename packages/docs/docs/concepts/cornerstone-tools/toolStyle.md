@@ -206,4 +206,4 @@ If you hover on the left side of the page the following control panel will appea
 shows various configurations in effect. The source code for this demo
 can be found in `packages/demo/src/ExampleToolDisplayConfiguration.tsx`.
 
-![2021-08-15-21-55-02](../../assets/toolStyles.png)
+![2021-08-15-21-55-02](../../../assets/toolStyles.png)

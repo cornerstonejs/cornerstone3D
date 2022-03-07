@@ -10,6 +10,7 @@ import {
   metaData,
   triggerEvent,
   eventTarget,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
@@ -39,7 +40,14 @@ import {
 } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import { ToolSpecificToolData, Point2, Point3 } from '../../types'
+import {
+  ToolSpecificToolData,
+  Point2,
+  Point3,
+  EventsTypes,
+  ToolHandle,
+  TextBoxHandle,
+} from '../../types'
 
 export interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -211,14 +219,14 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
         topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
         bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottmRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
       }
 
       if (
         canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottmRight[0] &&
+        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
+        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
       ) {
         data.handles.activeHandleIndex = null
         return textBox
@@ -304,11 +312,11 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt,
-    toolData,
-    handle,
+    evt: EventsTypes.NormalizedMouseEventType,
+    toolData: ToolSpecificToolData,
+    handle: ToolHandle,
     interactionType = 'mouse'
-  ) => {
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
     const { data } = toolData
@@ -318,7 +326,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     let movingTextBox = false
     let handleIndex
 
-    if (handle.worldPosition) {
+    if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true
     } else {
       handleIndex = data.handles.points.findIndex((p) => p === handle)
@@ -582,27 +590,13 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  /**
-   * getToolState = Custom getToolStateMethod with filtering.
-   * @param element
-   * @param toolState
-   */
-  filterInteractableToolStateForElement = (element, toolState) => {
-    if (!toolState || !toolState.length) {
-      return
-    }
-
-    const enabledElement = getEnabledElement(element)
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     const { viewport } = enabledElement
+    const { element } = viewport
 
-    return getToolStateForDisplay(viewport, toolState)
-  }
-
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-
-    const { enabledElement } = svgDrawingHelper
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState?.length) {
@@ -615,9 +609,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       return
     }
 
-    const { viewport } = enabledElement
     const targetUID = this.getTargetUID(viewport)
-
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < toolState.length; i++) {

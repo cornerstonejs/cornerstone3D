@@ -6,11 +6,11 @@ const DEFAULT_SEPARATOR = '-'
 /**
  * Generate a unique numeric ID string valid during a single runtime session;
  *
- * @param {object} [context] An optional object to be used as context.
+ * @param context - An optional object to be used as context.
  *  Defaults to a global context;
- * @param {string} [separator] The component separator. Defaults to "-";
- * @param {number} [max] The maximum component value. Defaults to 4294967295;
- * @returns {string} The string representation of the the unique ID;
+ * @param separator - The component separator. Defaults to "-";
+ * @param max - The maximum component value. Defaults to 4294967295;
+ * @returns The string representation of the the unique ID;
  */
 export default function getRuntimeId(
   context?: unknown,

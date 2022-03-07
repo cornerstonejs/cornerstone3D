@@ -1,10 +1,10 @@
 import EVENTS from './enums/events'
 import ERROR_CODES from './enums/errorCodes'
 import REQUEST_TYPE from './enums/requestType'
+import VIEWPORT_TYPE from './enums/viewportType'
+import INTERPOLATION_TYPE from './enums/interpolationType'
 //
 import ORIENTATION from './constants/orientation'
-import VIEWPORT_TYPE from './constants/viewportType'
-import INTERPOLATION_TYPE from './constants/interpolationType'
 //
 import {
   createVolumeActor,
@@ -64,22 +64,18 @@ import Settings from './Settings'
 // Namespaces
 import * as Types from './types'
 import * as Utilities from './utilities'
-import triggerEvent from './utilities/triggerEvent'
 
-import {
-  vtkSharedVolumeMapper,
-  vtkStreamingOpenGLTexture,
-} from './RenderingEngine/vtkClasses/index'
+import triggerEvent from './utilities/triggerEvent'
 
 import {
   setVolumesOnViewports,
   addVolumesOnViewports,
-  getVolumeViewportsContatiningSameVolumes,
+  getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeUID,
 } from './RenderingEngine/helpers'
 
+/** Cache getVolume, returns a volume from cache given the volumeUID {@link cache} */
 const getVolume = cache.getVolume
-
 /**
  * @packageDocumentation
  * @module cornerstone-render
@@ -88,9 +84,9 @@ export {
   // enums
   ERROR_CODES,
   EVENTS,
+  VIEWPORT_TYPE,
   // constants
   ORIENTATION,
-  VIEWPORT_TYPE,
   INTERPOLATION_TYPE,
   REQUEST_TYPE,
   //
@@ -108,7 +104,7 @@ export {
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
-  getVolumeViewportsContatiningSameVolumes,
+  getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeUID,
   //
   cache,
@@ -119,7 +115,7 @@ export {
   //
   eventTarget,
   triggerEvent,
-  //
+  // Image Loaders
   loadImage,
   loadAndCacheImage,
   loadAndCacheImages,
@@ -157,7 +153,4 @@ export {
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
   cpuColormaps,
-  // probably not how we want to export it
-  vtkSharedVolumeMapper,
-  vtkStreamingOpenGLTexture,
 }

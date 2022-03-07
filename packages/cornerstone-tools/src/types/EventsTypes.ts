@@ -1,6 +1,8 @@
 import { Types } from '@precisionmetrics/cornerstone-render'
+import IPoints from './IPoints'
 
-interface ICornerstoneToolsEventDetail {
+type NormalizedMouseEventData = {
+  eventName: string
   renderingEngineUID: string
   viewportUID: string
 
@@ -12,16 +14,8 @@ interface ICornerstoneToolsEventDetail {
   lastPoints: IPoints
   currentPoints: IPoints
   deltaPoints: IPoints
-  eventName: string
 }
 
-type IPoints = {
-  page: Types.Point2
-  client: Types.Point2
-  canvas: Types.Point2
-  world: Types.Point3
-}
+type NormalizedMouseEventType = Types.CustomEventType<NormalizedMouseEventData>
 
-export default ICornerstoneToolsEventDetail
-
-export { ICornerstoneToolsEventDetail, IPoints }
+export { NormalizedMouseEventData, NormalizedMouseEventType }

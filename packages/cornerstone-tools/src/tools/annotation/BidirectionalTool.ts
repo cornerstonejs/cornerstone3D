@@ -2,13 +2,12 @@ import { BaseAnnotationTool } from '../base'
 // ~~ VTK Viewport
 import {
   Settings,
-  Types,
   getEnabledElement,
   getVolume,
   StackViewport,
   triggerEvent,
   eventTarget,
-  metaData,
+  Types,
   VIEWPORT_TYPE,
 } from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
@@ -35,7 +34,13 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import { ToolSpecificToolData, Point3 } from '../../types'
+import {
+  ToolSpecificToolData,
+  Point3,
+  EventsTypes,
+  ToolHandle,
+  TextBoxHandle,
+} from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 interface BidirectionalSpecificToolData extends ToolSpecificToolData {
@@ -208,14 +213,14 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
         topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
         bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottmRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
       }
 
       if (
         canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottmRight[0] &&
+        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
+        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
       ) {
         data.handles.activeHandleIndex = null
         return textBox
@@ -330,11 +335,11 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt,
-    toolData,
-    handle,
+    evt: EventsTypes.NormalizedMouseEventType,
+    toolData: ToolSpecificToolData,
+    handle: ToolHandle,
     interactionType = 'mouse'
-  ) => {
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
     const { data } = toolData
@@ -344,7 +349,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     let movingTextBox = false
     let handleIndex
 
-    if (handle.worldPosition) {
+    if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true
     } else {
       handleIndex = data.handles.points.findIndex((p) => p === handle)
@@ -940,25 +945,12 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     )
   }
 
-  /**
-   * getToolState = Custom getToolStateMethod with filtering.
-   * @param element
-   */
-  filterInteractableToolStateForElement = (element, toolState) => {
-    if (!toolState || !toolState.length) {
-      return
-    }
-
-    const enabledElement = getEnabledElement(element)
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     const { viewport } = enabledElement
-    return getToolStateForDisplay(viewport, toolState)
-  }
-
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-    const { enabledElement } = svgDrawingHelper
-
+    const { element } = viewport
     let toolState = getToolState(enabledElement, this.name)
 
     if (!toolState?.length) {
@@ -971,7 +963,6 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       return
     }
 
-    const { viewport } = enabledElement
     const targetUID = this.getTargetUID(viewport)
 
     const renderingEngine = viewport.getRenderingEngine()

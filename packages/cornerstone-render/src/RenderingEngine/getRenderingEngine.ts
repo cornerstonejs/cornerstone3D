@@ -7,7 +7,7 @@ import { IViewport } from '../types'
  *
  * @example
  * How to get a RenderingEngine that was created earlier:
- * ```
+ * ```javascript
  * import { RenderingEngine, getRenderingEngine } from 'vtkjs-viewport';
  *
  * const renderingEngine = new RenderingEngine('my-engine');
@@ -16,7 +16,7 @@ import { IViewport } from '../types'
  * const renderingEngine = getRenderingEngine('my-engine');
  * ```
  *
- * @param uid The unique identifer that was used to create the RenderingEngine
+ * @param uid - The unique identifier that was used to create the RenderingEngine
  * @returns the matching RenderingEngine, or `undefined` if there is no match
  * @public
  */
@@ -24,6 +24,10 @@ export function getRenderingEngine(uid: string): RenderingEngine | undefined {
   return renderingEngineCache.get(uid)
 }
 
+/**
+ * Get all the rendering engines that are currently registered
+ * @returns An array of rendering engines.
+ */
 export function getRenderingEngines(): RenderingEngine[] | undefined {
   return renderingEngineCache.getAll()
 }

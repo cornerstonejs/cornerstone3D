@@ -1,3 +1,4 @@
+const path = require('path')
 const lightCodeTheme = require('prism-react-renderer/themes/github')
 const darkCodeTheme = require('prism-react-renderer/themes/dracula')
 
@@ -28,10 +29,9 @@ module.exports = {
           label: 'Docs',
         },
         {
-          type: 'doc',
-          docId: 'cornerstone-render/index',
+          to: 'api',
           position: 'left',
-          label: 'API',
+          label: 'API Reference',
         },
         {
           type: 'doc',
@@ -132,63 +132,21 @@ module.exports = {
   plugins: [
     'plugin-image-zoom',
     [
-      'docusaurus-plugin-typedoc',
+      'docusaurus-plugin-typedoc-api',
       {
-        id: 'api-1',
-        entryPoints: ['../cornerstone-render/src/index.ts'],
-        tsconfig: '../cornerstone-render/tsconfig.json',
-
-        out: 'cornerstone-render',
-        readme: 'none',
-        includeVersion: true,
-        excludePrivate: true,
-        excludeProtected: true,
-        excludeInternal: true,
-
-        sidebar: {
-          sidebarFile: null,
-        },
-      },
-    ],
-    [
-      'docusaurus-plugin-typedoc',
-      {
-        id: 'api-2',
-        entryPoints: ['../cornerstone-tools/src/index.ts'],
-        tsconfig: '../cornerstone-tools/tsconfig.json',
-
-        readme: 'none',
-        out: 'cornerstone-tools',
-        includeVersion: true,
-        excludePrivate: true,
-        excludeProtected: true,
-        excludeInternal: true,
-
-        sidebar: {
-          sidebarFile: null,
-        },
-      },
-    ],
-    [
-      'docusaurus-plugin-typedoc',
-      {
-        id: 'api-3',
-        entryPoints: [
-          '../cornerstone-image-loader-streaming-volume/src/index.ts',
+        projectRoot: path.join(__dirname, '../../'),
+        packages: [
+          ...[
+            'cornerstone-render',
+            'cornerstone-tools',
+            'cornerstone-image-loader-streaming-volume',
+          ].map((pkg) => `packages/${pkg}`),
         ],
-        tsconfig: '../cornerstone-image-loader-streaming-volume/tsconfig.json',
-
-        readme: 'none',
-        out: 'cornerstone-image-loader-streaming-volume',
-        includeVersion: true,
-        excludePrivate: true,
-        excludeProtected: true,
-        excludeInternal: true,
-
-        sidebar: {
-          sidebarFile: null,
-        },
+        minimal: false,
+        readmes: true,
+        debug: true,
+        tsconfigName: 'tsconfig.json',
       },
-    ]
+    ],
   ],
 }

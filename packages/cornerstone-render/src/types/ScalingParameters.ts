@@ -1,19 +1,27 @@
 type ScalingParameters = {
+  /** m in m*p+b which specifies the linear transformation from stored pixels to memory value  */
   rescaleSlope: number
+  /** b in m*p+b which specifies the offset of the transformation */
   rescaleIntercept: number
+  /** modality */
   modality: string
+  /** SUV body weight */
   suvbw?: number
+  /** SUV lean body mass */
   suvlbm?: number
+  /** SUV body surface area */
   suvbsa?: number
 }
 
-type PetScaling = {
+type PTScaling = {
+  /** suv body weight to suv lean body mass */
   suvbwToSuvlbm?: number
+  /** suv body weight to suv body surface area */
   suvbwToSuvbsa?: number
 }
 
 type Scaling = {
-  PET?: PetScaling
+  PET?: PTScaling
 }
 
-export { PetScaling, Scaling, ScalingParameters }
+export { PTScaling, Scaling, ScalingParameters }

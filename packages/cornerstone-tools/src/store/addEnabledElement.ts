@@ -1,3 +1,4 @@
+import { Types } from '@precisionmetrics/cornerstone-render'
 import {
   mouseEventListeners,
   wheelEventListener,
@@ -18,15 +19,17 @@ import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
  * When an element is "enabled", add event listeners and dispatchers to it
  * so we can use interactions to affect tool behaviors
  *
- * @param evt The ELEMENT_ENABLED event
+ * @param evt - The ELEMENT_ENABLED event
  */
-export default function addEnabledElement(evt: CustomEvent): void {
+export default function addEnabledElement(
+  evt: Types.EventsTypes.ElementEnabledEvent
+): void {
   const { element, viewportUID } = evt.detail
   const svgLayer = _createSvgAnnotationLayer()
 
   // Reset/Create svgNodeCache for element
   _setSvgNodeCache(element)
-  _appnedChild(svgLayer, element)
+  _appendChild(svgLayer, element)
 
   // Add this element to the annotation rendering engine
   annotationRenderingEngine.addViewportElement(viewportUID, element)
@@ -130,6 +133,6 @@ function _setSvgNodeCache(element) {
  * @param newNode
  * @param referenceNode
  */
-function _appnedChild(newNode: SVGElement, referenceNode: HTMLElement): void {
+function _appendChild(newNode: SVGElement, referenceNode: HTMLElement): void {
   referenceNode.querySelector('div.viewport-element').appendChild(newNode)
 }

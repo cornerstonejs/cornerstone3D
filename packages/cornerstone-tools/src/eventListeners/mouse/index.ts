@@ -8,12 +8,12 @@ import mouseMoveListener from './mouseMoveListener'
  * provide more helpful information.
  *
  * @private
- * @param enabledDomElement
+ * @param element - The DOM element to remove event listeners from.
  */
-function disable(enabledDomElement: HTMLElement): void {
-  enabledDomElement.removeEventListener('dblclick', mouseDoubleClickListener)
-  enabledDomElement.removeEventListener('mousedown', mouseDownListener)
-  enabledDomElement.removeEventListener('mousemove', mouseMoveListener)
+function disable(element: HTMLElement): void {
+  element.removeEventListener('dblclick', mouseDoubleClickListener)
+  element.removeEventListener('mousedown', mouseDownListener)
+  element.removeEventListener('mousemove', mouseMoveListener)
 }
 
 /**
@@ -22,15 +22,15 @@ function disable(enabledDomElement: HTMLElement): void {
  * provide more helpful information.
  *
  * @private
- * @param enabledDomElement
+ * @param element - The DOM element to register event listeners on.
  */
-function enable(enabledDomElement: HTMLElement): void {
+function enable(element: HTMLElement): void {
   // Prevent handlers from being attached multiple times
-  disable(enabledDomElement)
+  disable(element)
 
-  enabledDomElement.addEventListener('dblclick', mouseDoubleClickListener)
-  enabledDomElement.addEventListener('mousedown', mouseDownListener)
-  enabledDomElement.addEventListener('mousemove', mouseMoveListener)
+  element.addEventListener('dblclick', mouseDoubleClickListener)
+  element.addEventListener('mousedown', mouseDownListener)
+  element.addEventListener('mousemove', mouseMoveListener)
 }
 
 export default {

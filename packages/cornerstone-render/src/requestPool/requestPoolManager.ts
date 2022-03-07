@@ -15,11 +15,63 @@ type RequestPool = {
   [name in REQUEST_TYPE]: { [key: number]: RequestDetailsInterface[] }
 }
 
+// TODO: Some of this stuff shouldn't be public but it's easier right now
 /**
- * Request Pool manager documentation
+ * RequestPool manager class is a base class that manages the request pools.
+ * It is used imageRetrievalPoolManager, and imageLoadPoolManager to retrieve and load images.
+ * Previously requestPoolManager was used to manage the retrieval and loading and decoding
+ * of the images in a way that new requests were sent after the image was both loaded and decoded
+ * which was not performant since it was waiting for the image to be loaded and decoded before
+ * sending the next request which is a network request and can be done in parallel.
+ * Now, we use separate imageRetrievalPoolManager and imageLoadPoolManager
+ * to improve performance and both are extending the RequestPoolManager class which
+ * is a basic queueing pool.
+ *
+ * A new requestPool can be created by instantiating a new RequestPoolManager class.
+ *
+ * ```javascript
+ * const requestPoolManager = new RequestPoolManager()
+ * ```
+ *
+ * ## ImageLoadPoolManager
+ *
+ * You can use the imageLoadPoolManager to load images, by providing a `requestFn`
+ * that returns a promise for the image. You can provide a `type` to specify the type of
+ * request (interaction, thumbnail, prefetch), and you can provide additional details
+ * that will be passed to the requestFn. Below is an example of a requestFn that loads
+ * an image from an imageId:
+ *
+ * ```javascript
+ *
+ * const priority = -5
+ * const requestType = REQUEST_TYPE.Interaction
+ * const additionalDetails = { imageId }
+ * const options = {
+ *   targetBuffer: {
+ *     type: 'Float32Array',
+ *     offset: null,
+ *     length: null,
+ *   },
+ *   preScale: {
+ *     scalingParameters,
+ *   },
+ * }
+ *
+ * imageLoadPoolManager.addRequest(
+ *   loadAndCacheImage(imageId, options).then(() => { // set on viewport}),
+ *   requestType,
+ *   additionalDetails,
+ *   priority
+ * )
+ * ```
+ * ### ImageRetrievalPoolManager
+ * You don't need to directly use the imageRetrievalPoolManager to load images
+ * since the imageLoadPoolManager will automatically use it for retrieval. However,
+ * maximum number of concurrent requests can be set by calling `setMaxConcurrentRequests`.
+ *
+ *
  */
 class RequestPoolManager {
-  // TODO: Some of this stuff shouldn't be public but it's easier right now
   private requestPool: RequestPool
   private awake: boolean
   private numRequests = {
@@ -27,14 +79,21 @@ class RequestPoolManager {
     thumbnail: 0,
     prefetch: 0,
   }
+  /* maximum number of requests of each type. */
   public maxNumRequests: {
     interaction: number
     thumbnail: number
     prefetch: number
   }
+  /* A public property that is used to set the delay between requests. */
   public grabDelay: number
   private timeoutHandle: number
 
+  /**
+   * By default a request pool containing three priority groups, one for each
+   * of the request types, is created. Maximum number of requests of each type
+   * is set to 6.
+   */
   constructor() {
     this.requestPool = {
       interaction: { 0: [] },
@@ -79,8 +138,6 @@ class RequestPoolManager {
    * @param priority - Priority number for each category of requests. Its default
    * value is priority 0. The lower the priority number, the higher the priority number
    *
-   * @returns void
-   *
    */
   public addRequest(
     requestFn: () => Promise<void>,
@@ -114,8 +171,7 @@ class RequestPoolManager {
    * Filter the requestPoolManager's pool of request based on the result of
    * provided filter function. The provided filter function needs to return false or true
    *
-   * @param filterFunction The filter function for filtering of the requests to keep
-   * @category requestPool
+   * @param filterFunction - The filter function for filtering of the requests to keep
    */
   public filterRequests(
     filterFunction: (requestDetails: RequestDetailsInterface) => boolean
@@ -137,8 +193,7 @@ class RequestPoolManager {
    * pool of requests of type 'interaction' can be cleared via this function.
    *
    *
-   * @param type category of the request (either interaction, prefetch or thumbnail)
-   * @category requestPool
+   * @param type - category of the request (either interaction, prefetch or thumbnail)
    */
   public clearRequestStack(type: string): void {
     if (!this.requestPool[type]) {
@@ -253,8 +308,8 @@ class RequestPoolManager {
    * Returns the request pool containing different categories, their priority and
    * the added request details.
    *
-   * @returns
-   * @category requestPool
+   * @returns the request pool which contains different categories, their priority and
+   * the added request details
    */
   getRequestPool(): RequestPool {
     return this.requestPool

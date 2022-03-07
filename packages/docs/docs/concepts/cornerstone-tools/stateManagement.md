@@ -55,7 +55,7 @@ Tool data may have properties specific to their own tools, but must contain slic
 // Adds toolData
 toolStateManager.addToolState(toolData);
 
-// Remove the toolstate given the toolData reference.
+// Remove the toolState given the toolData reference.
 toolStateManager.removeToolState(toolData);
 
 // Returns the full toolState for a given Frame of Reference.

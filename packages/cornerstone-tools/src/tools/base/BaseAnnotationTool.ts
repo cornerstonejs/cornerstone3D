@@ -2,6 +2,7 @@ import {
   Settings,
   Utilities,
   Types,
+  getEnabledElement,
 } from '@precisionmetrics/cornerstone-render'
 import { vec4 } from 'gl-matrix'
 
@@ -13,9 +14,13 @@ import {
   ToolSpecificToolData,
   ToolSpecificToolState,
   Point2,
+  EventsTypes,
+  ToolHandle,
 } from '../../types'
 import getToolDataStyle from '../../util/getToolDataStyle'
 import triggerAnnotationRender from '../../util/triggerAnnotationRender'
+import getToolStateForDisplay from '../../util/planar/getToolStateForDisplay'
+
 export interface BaseAnnotationToolSpecificToolData
   extends ToolSpecificToolData {
   data: {
@@ -26,9 +31,10 @@ export interface BaseAnnotationToolSpecificToolData
 }
 
 /**
- * @class BaseAnnotationTool @extends BaseTool
- * @classdesc Abstract class for tools which create and display annotations on the
- * cornerstone3D canvas.
+ * Abstract class for tools which create and display annotations on the
+ * cornerstone3D canvas. In addition, it provides a base class for segmentation
+ * tools that require drawing an annotation before running the segmentation strategy
+ * for instance threshold segmentation based on an area and a threshold.
  */
 abstract class BaseAnnotationTool extends BaseTool {
   // ===================================================================
@@ -36,13 +42,10 @@ abstract class BaseAnnotationTool extends BaseTool {
   // ===================================================================
 
   /**
-   * @abstract @method addNewMeasurement Creates a new annotation.
+   * @abstract addNewMeasurement Creates a new annotation.
    *
-   * @method createNewMeasurement
-   * @memberof BaseAnnotationTool
-   *
-   * @param  {CustomEvent} evt The event.
-   * @param  {string} interactionType The interaction type used to add the measurement.
+   * @param evt - The event.
+   * @param interactionType -  The interaction type used to add the measurement.
    */
   abstract addNewMeasurement(
     evt: CustomEvent,
@@ -50,14 +53,18 @@ abstract class BaseAnnotationTool extends BaseTool {
   ): ToolSpecificToolData
 
   /**
-   * @abstract @method renderToolData Used to redraw the tool's annotation data per render
+   * @abstract renderToolData Used to redraw the tool's annotation data per render
    *
-   * @param {CustomEvent} evt The IMAGE_RENDERED event.
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  abstract renderToolData(evt: any, svgDrawingHelper: any)
+  abstract renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  )
 
   /**
-   * @abstract @method cancel Used to cancel the ongoing tool drawing and manipulation
+   * @abstract cancel Used to cancel the ongoing tool drawing and manipulation
    *
    */
   abstract cancel(element: HTMLElement)
@@ -65,21 +72,19 @@ abstract class BaseAnnotationTool extends BaseTool {
   // ===================================================================
   // Virtual Methods - Have default behavior or are optional.
   // ===================================================================
-
   /**
-   * @virtual @method handleSelectedCallback Custom callback for when a handle is selected.
-   * @memberof Tools.Base.BaseAnnotationTool
+   * @virtual handleSelectedCallback Custom callback for when a handle is selected.
    *
-   * @param  {CustomEvent} evt The event.
-   * @param  {ToolSpecificToolData} toolData - The toolData selected.
-   * @param  {any} handle - The selected handle.
-   * @param  {string} interactionType - The interaction type the handle was selected with.
+   * @param evt The event.
+   * @param toolData - The toolData selected.
+   * @param handle - The selected handle.
+   * @param interactionType - The interaction type the handle was selected with.
    */
   public abstract handleSelectedCallback(
-    evt,
+    evt: EventsTypes.NormalizedMouseEventType,
     toolData: ToolSpecificToolData,
-    handle,
-    interactionType
+    handle: ToolHandle,
+    interactionType: string
   ): void
 
   /**
@@ -95,6 +100,20 @@ abstract class BaseAnnotationTool extends BaseTool {
     toolData: ToolSpecificToolData,
     interactionType
   ): void
+
+  filterInteractableToolStateForElement = (
+    element: HTMLElement,
+    toolState: ToolSpecificToolState
+  ): ToolSpecificToolState | undefined => {
+    if (!toolState || !toolState.length) {
+      return
+    }
+
+    const enabledElement = getEnabledElement(element)
+    const { viewport } = enabledElement
+
+    return getToolStateForDisplay(viewport, toolState)
+  }
 
   /**
    * @virtual @method Event handler for MOUSE_MOVE event.
@@ -150,10 +169,11 @@ abstract class BaseAnnotationTool extends BaseTool {
     return annotationsNeedToBeRedrawn
   }
 
-  public onImageSpacingCalibrated = (evt) => {
-    const eventData = evt.detail
-    const { element } = eventData
+  public onImageSpacingCalibrated = (
+    evt: Types.EventsTypes.ImageSpacingCalibratedEvent
+  ) => {
     const {
+      element,
       rowScale,
       columnScale,
       imageId,
@@ -168,10 +188,10 @@ abstract class BaseAnnotationTool extends BaseTool {
     // Todo: handle other specific state managers that we might add in future
     const stateManager = getViewportSpecificStateManager(element)
 
-    const framesOfReferenece = stateManager.getFramesOfReference()
+    const framesOfReference = stateManager.getFramesOfReference()
 
     // For all the frameOfReferences
-    framesOfReferenece.forEach((frameOfReference) => {
+    framesOfReference.forEach((frameOfReference) => {
       const frameOfReferenceSpecificToolState =
         stateManager.getFrameOfReferenceToolState(frameOfReference)
 
@@ -183,7 +203,7 @@ abstract class BaseAnnotationTool extends BaseTool {
 
       // for this specific tool
       toolSpecificToolState.forEach((toolData) => {
-        // if the tooldata is drawn on the same imageId
+        // if the toolData is drawn on the same imageId
         if (toolData.metadata.referencedImageId === imageURI) {
           toolData.data.invalidated = true
           toolData.data.cachedStats = {}
@@ -227,12 +247,11 @@ abstract class BaseAnnotationTool extends BaseTool {
 
   /**
    * @virtual @method getHandleNearImagePoint
-   * @memberof BaseAnnotationTool
    *
-   * @param {HTMLElement} element The cornerstone3D enabled element.
-   * @param {ToolSpecificToolData} toolData The toolData to check.
-   * @param {Point2} canvasCoords The image point in canvas coordinates.
-   * @param {number} proximity The proximity to accept.
+   * @param element - The cornerstone3D enabled element.
+   * @param toolData - The toolData to check.
+   * @param canvasCoords - The image point in canvas coordinates.
+   * @param proximity - The proximity to accept.
    *
    * @returns {any|undefined} The handle if found (may be a point, textbox or other).
    */

@@ -1,16 +1,16 @@
-import { Point3, Scaling } from '../types'
+import { Point3, Scaling, Point2 } from '../types'
 
 type IImageData = {
-  dimensions: Point3
+  dimensions: Point2
   direction: Float32Array
-  spacing: Point3
+  spacing: Point2
   origin: Point3
   imageData: {
     worldToIndex?: (point: Point3) => Point3
     indexToWorld?: (point: Point3) => Point3
     getWorldToIndex?: () => Point3
     getIndexToWorld?: () => Point3
-    getSpacing?: () => Point3
+    getSpacing?: () => Point2
     getDirection?: () => Float32Array
   }
   metadata: { Modality: string }

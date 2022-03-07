@@ -11,12 +11,12 @@ import {
 } from './mouseEventHandlers'
 
 /**
- * @function enable These listeners are emitted in order, and can be cancelled/prevented from bubbling
+ * Enable these listeners are emitted in order, and can be cancelled/prevented from bubbling
  * by any previous event.
  *
- * @param {HTMLElement} element
+ * @param element - The element to add the event listeners to.
  */
-const enable = function (element: HTMLElement) {
+const enable = function (element: HTMLElement): void {
   element.addEventListener(CornerstoneTools3DEvents.MOUSE_CLICK, mouseClick)
   element.addEventListener(CornerstoneTools3DEvents.MOUSE_DOWN, mouseDown)
   element.addEventListener(

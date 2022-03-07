@@ -10,7 +10,7 @@ import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
 import { uuidv4 } from './utilities'
-import { Point3, Metadata } from './types'
+import { Point3, Metadata, EventsTypes } from './types'
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>
@@ -65,7 +65,6 @@ function createInternalVTKRepresentation({
 
 /**
  * This module deals with VolumeLoaders and loading volumes
- * @module VolumeLoader
  */
 
 const volumeLoaders = {}
@@ -78,17 +77,17 @@ let unknownVolumeLoader
  * The volume loader that is used will be
  * determined by the volume loader scheme matching against the volumeId.
  *
- * @param {String} volumeId A Cornerstone Volume Object's volumeId
- * @param {Object} [options] Options to be passed to the Volume Loader. Options
+ * @param volumeId - A Cornerstone Volume Object's volumeId
+ * @param options - Options to be passed to the Volume Loader. Options
  * contain the ImageIds that is passed to the loader
  *
- * @returns {Types.VolumeLoadObject} An Object which can be used to act after a volume is loaded or loading fails
+ * @returns An Object which can be used to act after a volume is loaded or loading fails
  *
  */
 function loadVolumeFromVolumeLoader(
   volumeId: string,
   options: VolumeLoaderOptions
-): Types.VolumeLoadObject {
+): Types.IVolumeLoadObject {
   const colonIndex = volumeId.indexOf(':')
   const scheme = volumeId.substring(0, colonIndex)
   const loader = volumeLoaders[scheme]
@@ -106,15 +105,15 @@ function loadVolumeFromVolumeLoader(
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
     function (volume) {
-      triggerEvent(eventTarget, EVENTS.IMAGE_LOADED, { volume })
+      triggerEvent(eventTarget, EVENTS.VOLUME_LOADED, { volume })
     },
     function (error) {
-      const errorObject = {
+      const errorObject: EventsTypes.VolumeLoadedFailedEventData = {
         volumeId,
         error,
       }
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_FAILED, errorObject)
+      triggerEvent(eventTarget, EVENTS.VOLUME_LOADED_FAILED, errorObject)
     }
   )
 
@@ -125,10 +124,10 @@ function loadVolumeFromVolumeLoader(
  * Loads a volume given a volumeId and optional priority and returns a promise which will resolve to
  * the loaded image object or fail if an error occurred.  The loaded image is not stored in the cache.
  *
- * @param {String} volumeId A Cornerstone Image Object's volumeId
- * @param {Object} [options] Options to be passed to the Volume Loader
+ * @param volumeId - A Cornerstone Image Object's volumeId
+ * @param options - Options to be passed to the Volume Loader
  *
- * @returns {Types.VolumeLoadObject} An Object which can be used to act after an image is loaded or loading fails
+ * @returns An Object which can be used to act after an image is loaded or loading fails
  * @category VolumeLoader
  */
 export function loadVolume(
@@ -157,10 +156,10 @@ export function loadVolume(
  * Loads an image given an volumeId and optional priority and returns a promise which will resolve to
  * the loaded image object or fail if an error occurred. The image is stored in the cache.
  *
- * @param {String} volumeId A Cornerstone Image Object's volumeId
- * @param {Object} [options] Options to be passed to the Volume Loader
+ * @param volumeId - A Cornerstone Image Object's volumeId
+ * @param options - Options to be passed to the Volume Loader
  *
- * @returns {Types.VolumeLoadObject} Volume Loader Object
+ * @returns Volume Loader Object
  * @category VolumeLoader
  */
 export async function createAndCacheVolume(
@@ -198,8 +197,10 @@ export async function createAndCacheVolume(
  * created that matches the image metadata of the referenceVolume. If scalarData
  * is given, it will be used to generate the intensity values for the derivedVolume.
  * Finally, it will save the volume in the cache.
- * @param referencedVolumeUID the volumeUID from which the new volume will get its metadata
- * @param options DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
+ * @param referencedVolumeUID - the volumeUID from which the new volume will get its metadata
+ * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
+ *
+ * @category VolumeLoader
  * @returns ImageVolume
  */
 export function createAndCacheDerivedVolume(
@@ -293,8 +294,10 @@ export function createAndCacheDerivedVolume(
  * dimensions, spacing, origin, direction, metadata, scalarData. It should be noted that
  * scalarData should be provided for this function to work. If a volume with the same
  * UID exists in the cache it returns it immediately.
- * @param options { scalarData, metadata, dimensions, spacing, origin, direction }
- * @param uid UID of the generated volume
+ * @param options -  { scalarData, metadata, dimensions, spacing, origin, direction }
+ * @param uid - UID of the generated volume
+ * @category VolumeLoader
+ *
  * @returns ImageVolume
  */
 export function createLocalVolume(
@@ -376,9 +379,8 @@ export function createLocalVolume(
 /**
  * Registers an volumeLoader plugin with cornerstone for the specified scheme
  *
- * @param {String} scheme The scheme to use for this volume loader (e.g. 'dicomweb', 'wadouri', 'http')
- * @param {Function} volumeLoader A Cornerstone Volume Loader function
- * @returns {void}
+ * @param scheme - The scheme to use for this volume loader (e.g. 'dicomweb', 'wadouri', 'http')
+ * @param volumeLoader - A Cornerstone Volume Loader function
  * @category VolumeLoader
  */
 export function registerVolumeLoader(
@@ -391,9 +393,9 @@ export function registerVolumeLoader(
 /**
  * Registers a new unknownVolumeLoader and returns the previous one
  *
- * @param {Function} volumeLoader A Cornerstone Volume Loader
+ * @param volumeLoader - A Cornerstone Volume Loader
  *
- * @returns {Function|Undefined} The previous Unknown Volume Loader
+ * @returns The previous Unknown Volume Loader
  * @category VolumeLoader
  */
 export function registerUnknownVolumeLoader(

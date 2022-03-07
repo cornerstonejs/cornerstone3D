@@ -38,7 +38,13 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 
-import { ToolSpecificToolData, Point3 } from '../../types'
+import {
+  ToolSpecificToolData,
+  Point3,
+  EventsTypes,
+  ToolHandle,
+  TextBoxHandle,
+} from '../../types'
 
 interface LengthSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -89,7 +95,7 @@ class LengthTool extends BaseAnnotationTool {
     })
 
     /**
-     * Will only fire fore cornerstone events:
+     * Will only fire for cornerstone events:
      * - TOUCH_DRAG
      * - MOUSE_DRAG
      *
@@ -309,7 +315,12 @@ class LengthTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  handleSelectedCallback(evt, toolData, handle, interactionType = 'mouse') {
+  handleSelectedCallback(
+    evt: EventsTypes.NormalizedMouseEventType,
+    toolData: ToolSpecificToolData,
+    handle: ToolHandle,
+    interactionType = 'mouse'
+  ): void {
     const eventData = evt.detail
     const { element } = eventData
     const { data } = toolData
@@ -319,7 +330,7 @@ class LengthTool extends BaseAnnotationTool {
     let movingTextBox = false
     let handleIndex
 
-    if (handle.worldPosition) {
+    if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true
     } else {
       handleIndex = data.handles.points.findIndex((p) => p === handle)
@@ -393,6 +404,7 @@ class LengthTool extends BaseAnnotationTool {
   }
 
   _mouseDragCallback(evt) {
+    console.debug('inside mouse drag')
     this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
@@ -519,26 +531,12 @@ class LengthTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  /**
-   * getToolState = Custom getToolStateMethod with filtering.
-   * @param element
-   * @param toolState
-   */
-  filterInteractableToolStateForElement(element, toolState) {
-    if (!toolState || !toolState.length) {
-      return
-    }
-
-    const enabledElement = getEnabledElement(element)
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     const { viewport } = enabledElement
-
-    return getToolStateForDisplay(viewport, toolState)
-  }
-
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-    const { enabledElement } = svgDrawingHelper
+    const { element } = viewport
 
     let toolState = getToolState(enabledElement, this.name)
 
@@ -553,9 +551,7 @@ class LengthTool extends BaseAnnotationTool {
       return
     }
 
-    const { viewport } = enabledElement
     const targetUID = this.getTargetUID(viewport)
-
     const renderingEngine = viewport.getRenderingEngine()
 
     // Draw SVG

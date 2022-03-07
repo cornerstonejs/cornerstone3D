@@ -13,16 +13,18 @@ import { Orientation, Point3 } from '../types'
  * These values may make slightly more sense when we peel back the curtains of
  * our solution and look at the camera that's leveraging these values.
  *
- * @see {@link https://faculty.washington.edu/chudler/slice.html|Axial vs Sagittal vs Coronal}
- * @see {@link https://kitware.github.io/vtk-js/api/Rendering_Core_Camera.html|VTK.js: Rendering_Core_Camera}
+ * see [Axial vs Sagittal vs Coronal](https://faculty.washington.edu/chudler/slice.html)
+ * see {@link https://kitware.github.io/vtk-js/api/Rendering_Core_Camera.html | VTK.js: Rendering_Core_Camera}
+ *
  * @example
  * Using ORIENTATION constant to set a viewport to use an Axial orientation
- * ```
+ *
+ * ```javascript
  * renderingEngine.setViewports([
  *  {
  *    viewportUID: 'a-viewport-uid',
  *    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
- *    canvas: document.querySelector('div.canvas-container'),
+ *    element: document.querySelector('div'),
  *    defaultOptions: {
  *      // 👇 Leveraging our reference constant
  *      orientation: ORIENTATION.AXIAL,

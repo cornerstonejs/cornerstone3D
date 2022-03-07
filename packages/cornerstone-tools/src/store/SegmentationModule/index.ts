@@ -1,9 +1,11 @@
-import lockedSegmentController from './lockedSegmentController'
-import segmentIndexController from './segmentIndexController'
-import activeSegmentationController from './activeSegmentationController'
-import segmentationVisibilityController from './segmentationVisibilityController'
-import segmentationColorController from './segmentationColorController'
-import segmentationConfigController from './segmentationConfigController'
+// name spaces
+import * as lockedSegmentController from './lockedSegmentController'
+import * as segmentIndexController from './segmentIndexController'
+import * as activeSegmentationController from './activeSegmentationController'
+import * as segmentationVisibilityController from './segmentationVisibilityController'
+import * as segmentationColorController from './segmentationColorController'
+import * as segmentationConfigController from './segmentationConfigController'
+//
 import createNewSegmentationForViewport from './createNewSegmentationForViewport'
 import {
   triggerSegmentationStateModified,
@@ -13,34 +15,12 @@ import {
 
 export {
   createNewSegmentationForViewport,
-  lockedSegmentController,
-  segmentIndexController,
   activeSegmentationController,
   segmentationVisibilityController,
   segmentationColorController,
-  segmentationConfigController,
-  triggerSegmentationStateModified,
-  triggerSegmentationGlobalStateModified,
-  triggerSegmentationDataModified,
-}
-
-export default {
-  createNewSegmentationForViewport,
-  activeSegmentationController,
-  //
-  segmentationVisibilityController,
-  segmentationColorController,
-
-  // Segment index utils
   segmentIndexController,
-
-  // Locked segment index
   lockedSegmentController,
-
-  // Configuration controller
   segmentationConfigController,
-
-  // triggers
   triggerSegmentationStateModified,
   triggerSegmentationGlobalStateModified,
   triggerSegmentationDataModified,

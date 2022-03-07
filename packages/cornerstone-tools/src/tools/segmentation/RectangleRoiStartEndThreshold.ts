@@ -324,11 +324,10 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     return cachedStats
   }
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-
-    const { enabledElement } = svgDrawingHelper
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState?.length) {

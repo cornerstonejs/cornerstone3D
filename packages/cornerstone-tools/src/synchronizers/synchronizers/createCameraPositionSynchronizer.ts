@@ -1,4 +1,4 @@
-import { SynchronizerManager } from '../../store'
+import { createSynchronizer } from '../../store/SynchronizerManager'
 import { EVENTS as RENDERING_EVENTS } from '@precisionmetrics/cornerstone-render'
 import cameraSyncCallback from '../callbacks/cameraSyncCallback'
 import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
@@ -16,7 +16,7 @@ const { CAMERA_MODIFIED } = RENDERING_EVENTS
 export default function createCameraPositionSynchronizer(
   synchronizerName: string
 ): Synchronizer {
-  const cameraPositionSynchronizer = SynchronizerManager.createSynchronizer(
+  const cameraPositionSynchronizer = createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
     cameraSyncCallback
