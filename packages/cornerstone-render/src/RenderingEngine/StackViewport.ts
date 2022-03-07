@@ -762,9 +762,8 @@ class StackViewport extends Viewport {
     const { volumeActor } = actor
     const volumeProperty = volumeActor.getProperty()
 
-    // Todo: not sure why typescript doesn't like this
-    const interpolation = INTERPOLATION_TYPE.LINEAR ? 1 : 0
-    volumeProperty.setInterpolationType(interpolation)
+    // @ts-ignore
+    volumeProperty.setInterpolationType(interpolationType)
     this.interpolationType = interpolationType
   }
 
