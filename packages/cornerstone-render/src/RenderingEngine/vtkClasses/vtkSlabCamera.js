@@ -1,4 +1,4 @@
-import macro from 'vtk.js/Sources/macro'
+import macro from 'vtk.js/Sources/macros'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 import { vec3, mat4 } from 'gl-matrix'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'

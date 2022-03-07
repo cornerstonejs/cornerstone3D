@@ -53,10 +53,11 @@ function compareImages(imageDataURL, baseline, outputName) {
         // and download the difference image
         // Todo: this should be a configurable threshold
         if (mismatch > 1) {
-          console.log(imageDataURL)
-
-          console.log('mismatch of ' + mismatch + '%')
           const diff = data.getImageDataUrl()
+          console.log('mismatch of ' + mismatch + '%')
+          console.log('diff image is')
+          console.log(diff)
+
           // Todo: we should store the diff image somewhere
 
           reject(new Error(`mismatch between images for ${outputName}`))

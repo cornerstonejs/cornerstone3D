@@ -211,7 +211,7 @@ describe('Segmentation Tools --', () => {
       }
 
       let compareCount = 0
-      const compareImageCallback = () => {
+      const compareImageCallback = async () => {
         compareCount++
 
         if (compareCount !== 3) {
@@ -225,23 +225,29 @@ describe('Segmentation Tools --', () => {
         const image2 = canvas2.toDataURL('image/png')
         const image3 = canvas3.toDataURL('image/png')
 
-        compareImages(
-          image1,
-          volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX,
-          'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX'
-        )
+        try {
+          await compareImages(
+            image1,
+            volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX,
+            'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX'
+          )
 
-        compareImages(
-          image2,
-          volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG,
-          'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG'
-        )
+          await compareImages(
+            image2,
+            volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG,
+            'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG'
+          )
 
-        compareImages(
-          image3,
-          volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR,
-          'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR'
-        ).then(done, done.fail)
+          await compareImages(
+            image3,
+            volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR,
+            'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR'
+          )
+        } catch (error) {
+          return done.fail(error)
+        }
+
+        done()
       }
 
       eventTarget.addEventListener(

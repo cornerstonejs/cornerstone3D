@@ -3,18 +3,14 @@ import type {
   VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
 
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import { vec3 } from 'gl-matrix'
 import { pointInSphere } from './math/sphere'
-import { getBoundingBoxAroundShape } from './segmentation'
-import type { PointInShapeCallback } from './pointInShapeCallback'
-import pointInShapeCallback from './pointInShapeCallback'
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
-
-function worldToIndex(imageData, ain) {
-  const vout = vec3.fromValues(0, 0, 0)
-  imageData.worldToIndex(ain, vout)
-  return vout
-}
+import { getBoundingBoxAroundShape } from './segmentation/getBoundingBoxUtils'
+import pointInShapeCallback, {
+  PointInShapeCallback,
+} from './pointInShapeCallback'
+import transformPhysicalToIndex from './transformPhysicalToIndex'
 
 // Todo: I *think* this can be done without the need to access viewport's camera
 // since sphere's center circle can be in any plane as long as its center
@@ -88,8 +84,8 @@ export default function pointInSurroundingSphereCallback(
   // convert the world coordinates to index coordinates
 
   const sphereCornersIJK = [
-    <Types.Point3>worldToIndex(imageData, topLeftWorld),
-    <Types.Point3>worldToIndex(imageData, bottomRightWorld),
+    <Types.Point3>transformPhysicalToIndex(imageData, topLeftWorld),
+    <Types.Point3>transformPhysicalToIndex(imageData, bottomRightWorld),
   ]
 
   // get the bounding box of the sphere in the image

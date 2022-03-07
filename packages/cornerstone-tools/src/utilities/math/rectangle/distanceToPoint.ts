@@ -1,11 +1,11 @@
-import type { Point2 } from '@precisionmetrics/cornerstone-render/src/types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 import lineSegment from '../line'
 
 type rectLineSegments = {
-  top: Point2[]
-  right: Point2[]
-  bottom: Point2[]
-  left: Point2[]
+  top: Types.Point2[]
+  right: Types.Point2[]
+  bottom: Types.Point2[]
+  left: Types.Point2[]
 }
 
 /**
@@ -24,17 +24,17 @@ function rectToLineSegments(
   width: number,
   height: number
 ): rectLineSegments {
-  const topLineStart: Point2 = [left, top]
-  const topLineEnd: Point2 = [left + width, top]
+  const topLineStart: Types.Point2 = [left, top]
+  const topLineEnd: Types.Point2 = [left + width, top]
 
-  const rightLineStart: Point2 = [left + width, top]
-  const rightLineEnd: Point2 = [left + width, top + height]
+  const rightLineStart: Types.Point2 = [left + width, top]
+  const rightLineEnd: Types.Point2 = [left + width, top + height]
 
-  const bottomLineStart: Point2 = [left + width, top + height]
-  const bottomLineEnd: Point2 = [left, top + height]
+  const bottomLineStart: Types.Point2 = [left + width, top + height]
+  const bottomLineEnd: Types.Point2 = [left, top + height]
 
-  const leftLineStart: Point2 = [left, top + height]
-  const leftLineEnd: Point2 = [left, top]
+  const leftLineStart: Types.Point2 = [left, top + height]
+  const leftLineEnd: Types.Point2 = [left, top]
 
   const lineSegments = {
     top: [topLineStart, topLineEnd],
@@ -54,7 +54,10 @@ function rectToLineSegments(
  * @param point - [x,y] coordinates of a point
  * @returns
  */
-export default function distanceToPoint(rect: number[], point: Point2): number {
+export default function distanceToPoint(
+  rect: number[],
+  point: Types.Point2
+): number {
   if (rect.length !== 4 || point.length !== 2) {
     throw Error(
       'rectangle:[left, top, width, height] or point: [x,y] not defined correctly'

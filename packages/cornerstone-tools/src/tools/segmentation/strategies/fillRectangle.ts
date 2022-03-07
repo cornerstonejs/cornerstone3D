@@ -3,6 +3,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
 import { pointInShapeCallback } from '../../../utilities'
+import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
 
 type OperationData = {
@@ -41,7 +42,7 @@ function fillRectangle(
   const { imageData, dimensions, scalarData } = segmentation
 
   let rectangleCornersIJK = points.map((world) => {
-    return imageData.worldToIndex(world)
+    return transformPhysicalToIndex(imageData, world)
   })
 
   // math round

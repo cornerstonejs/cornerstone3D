@@ -24,6 +24,7 @@ import {
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
+import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import {
@@ -610,13 +611,11 @@ export default class ProbeTool extends AnnotationTool {
       const { dimensions, scalarData, imageData, metadata } = image
 
       const modality = metadata.Modality
+      const index = transformPhysicalToIndex(imageData, worldPos)
 
-      //@ts-ignore
-      const index = imageData.worldToIndex(worldPos) as Types.Point3
-
-      index[0] = Math.floor(index[0])
-      index[1] = Math.floor(index[1])
-      index[2] = Math.floor(index[2])
+      index[0] = Math.round(index[0])
+      index[1] = Math.round(index[1])
+      index[2] = Math.round(index[2])
 
       if (csUtils.indexWithinDimensions(index, dimensions)) {
         this.isHandleOutsideImage = false

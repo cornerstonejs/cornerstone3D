@@ -1,4 +1,4 @@
-import macro from 'vtk.js/Sources/macro'
+import macro from 'vtk.js/Sources/macros'
 import vtkStreamingOpenGLRenderWindow from './vtkStreamingOpenGLRenderWindow'
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer'
 import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow'

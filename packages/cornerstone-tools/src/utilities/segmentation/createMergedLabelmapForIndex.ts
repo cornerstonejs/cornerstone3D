@@ -1,4 +1,4 @@
-import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
+import { Types } from '@precisionmetrics/cornerstone-render'
 import {
   createLocalVolume,
   Utilities as csUtils,
@@ -16,10 +16,10 @@ import {
  * @returns Merged labelmap
  */
 function createMergedLabelmapForIndex(
-  labelmaps: Array<IImageVolume>,
+  labelmaps: Array<Types.IImageVolume>,
   segmentIndex = 1,
   uid = 'mergedLabelmap'
-): IImageVolume {
+): Types.IImageVolume {
   labelmaps.forEach(({ direction, dimensions, origin, spacing }) => {
     if (
       !csUtils.isEqual(dimensions, labelmaps[0].dimensions) ||

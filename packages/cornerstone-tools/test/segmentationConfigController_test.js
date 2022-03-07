@@ -62,6 +62,9 @@ function createViewport(
   return element
 }
 
+// TODO: Ignored temporarily because fix/labelmap-outline changes
+// are not in VTK master
+
 describe('Segmentation Controller --', () => {
   beforeAll(() => {
     cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)

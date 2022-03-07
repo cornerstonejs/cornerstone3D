@@ -1,3 +1,4 @@
+import Point2 from './Point2'
 import Point3 from './Point3'
 
 /**
@@ -6,7 +7,7 @@ import Point3 from './Point3'
  */
 interface ICamera {
   /** Camera Clipping range*/
-  clippingRange?: Point3
+  clippingRange?: Point2
   /** Camera Focal point */
   focalPoint?: Point3
   /** Camera Parallel Projection flag - whether camera is using parallel projection */
