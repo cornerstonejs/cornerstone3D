@@ -9,16 +9,11 @@ import type ImageLoaderFn from './ImageLoaderFn'
 import type IImageVolume from './IImageVolume'
 import type VolumeLoaderFn from './VolumeLoaderFn'
 import type IRegisterImageLoader from './IRegisterImageLoader'
-import type IStreamingVolume from './IStreamingVolume'
+import type IStreamingVolumeProperties from './IStreamingVolumeProperties'
 import type CustomEventType from './CustomEventType'
-import type {
-  IViewport,
-  ViewportInput,
-  PublicViewportInput,
-  InternalViewportInput,
-} from './IViewport'
+import type { IViewport, PublicViewportInput } from './IViewport'
 import type { VolumeActor, ActorEntry } from './IActor'
-import type { ImageLoadObject, VolumeLoadObject } from './ILoadObject'
+import type { IImageLoadObject, IVolumeLoadObject } from './ILoadObject'
 import type LibraryConfiguration from './LibraryConfiguration'
 import type Metadata from './Metadata'
 import type Orientation from './Orientation'
@@ -31,14 +26,12 @@ import type ViewportInputOptions from './ViewportInputOptions'
 import type IImageData from './IImageData'
 import type CPUIImageData from './CPUIImageData'
 import type IImage from './IImage'
-import type {
-  PetScaling,
-  Scaling,
-  ScalingParameters,
-} from './ScalingParameters'
-import type StackProperties from './StackProperties'
+import type { PTScaling, Scaling, ScalingParameters } from './ScalingParameters'
+import type StackViewportProperties from './StackViewportProperties'
 import type IViewportUID from './IViewportUID'
 import type FlipDirection from './FlipDirection'
+import type ICachedImage from './ICachedImage'
+import type ICachedVolume from './ICachedVolume'
 
 // CPU types
 import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement'
@@ -53,6 +46,7 @@ import type CPUFallbackLookupTable from './CPUFallbackLookupTable'
 import type CPUFallbackLUT from './CPUFallbackLUT'
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools'
 import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput'
+import type * as EventsTypes from './EventsTypes'
 
 export type {
   ICamera,
@@ -62,25 +56,24 @@ export type {
   IViewportUID,
   IImageVolume,
   ScalingParameters,
-  PetScaling,
+  PTScaling,
   Scaling,
   IStreamingImageVolume,
   IImage,
   IImageData,
   CPUIImageData,
+  EventsTypes,
   ImageLoaderFn,
   VolumeLoaderFn,
   IRegisterImageLoader,
-  IStreamingVolume,
+  IStreamingVolumeProperties,
   IViewport,
-  ViewportInput,
-  StackProperties,
+  StackViewportProperties,
   PublicViewportInput,
-  InternalViewportInput,
   VolumeActor,
   ActorEntry,
-  ImageLoadObject,
-  VolumeLoadObject,
+  IImageLoadObject,
+  IVolumeLoadObject,
   IVolumeInput,
   VolumeInputCallback,
   //
@@ -95,6 +88,8 @@ export type {
   VOIRange,
   VOI,
   FlipDirection,
+  ICachedImage,
+  ICachedVolume,
   // CPU fallback types
   CPUFallbackEnabledElement,
   CPUFallbackViewport,

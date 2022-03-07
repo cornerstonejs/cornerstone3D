@@ -1,20 +1,27 @@
 import { ToolGroupManager } from '../../store'
 import { ToolModes } from '../../enums'
 import { keyEventListener } from '../../eventListeners'
+import { EventsTypes } from '../../types'
 
 const { Active } = ToolModes
 
 /**
- * @function getActiveToolForMouseEvent Iterate tool group tools until we find a tool that has a "ToolBinding"
- * that matches our MouseEvent's `buttons`. It's possible there will be no match (no active tool for that mouse button combination).
+ * Iterate tool group tools until we find a tool that has a "ToolBinding"
+ * that matches our MouseEvent's `buttons`. It's possible there will be no match
+ * (no active tool for that mouse button combination).
  *
- * @param evt The event dispatcher mouse event.
+ * @param evt - The event dispatcher mouse event.
  *
- * @returns {object} tool.
+ * @returns tool
  */
-export default function getActiveToolForMouseEvent(evt) {
+export default function getActiveToolForMouseEvent(
+  evt: EventsTypes.NormalizedMouseEventType
+) {
+  // Todo: we should refactor this to use getToolsWithModesForMouseEvent instead
   const { renderingEngineUID, viewportUID } = evt.detail
   const mouseEvent = evt.detail.event
+
+  // If any keyboard modifier key is also pressed
   const modifierKey = keyEventListener.getModifierKey()
 
   const toolGroup = ToolGroupManager.getToolGroup(
@@ -30,19 +37,19 @@ export default function getActiveToolForMouseEvent(evt) {
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j]
-    const tool = toolGroup.toolOptions[toolName]
+    const toolOptions = toolGroup.toolOptions[toolName]
 
     // tool has binding that matches the mouse button, if mouseEvent is undefined
     // it uses the primary button
     const correctBinding =
-      tool.bindings.length &&
-      tool.bindings.some(
+      toolOptions.bindings.length &&
+      toolOptions.bindings.some(
         (binding) =>
           binding.mouseButton === (mouseEvent ? mouseEvent.buttons : 1) &&
           binding.modifierKey === modifierKey
       )
 
-    if (tool.mode === Active && correctBinding) {
+    if (toolOptions.mode === Active && correctBinding) {
       return toolGroup.getToolInstance(toolName)
     }
   }

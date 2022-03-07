@@ -4,21 +4,27 @@ id: tools-introduction
 
 # Introduction
 
-`Cornerstone Tools` is a JavaScript library that assists in annotating, segmenting, and measuring medical images. This library also provides a framework for creating new tools, managing all tools in a consistent, cohesive manner, and importing/exporting tool measurement data.
+`CornerstoneTools3D` is a JavasScript library that works with the `CornerstoneCore3D` library to provide a set of tools for image annotation, segmentation and manipulation. This library also provides a framework for creating new tools, managing all tools in a consistent, cohesive manner, importing/exporting tool measurement data along with various Segmentation editing tools.
 
-This library is not stand-alone. It builds on top of `Cornerstone-core`; a standards compliant, fast, and extensible JavaScript library that displays interactive medical images.
+`CornerstoneTools3D` is not stand-alone library; it builds on top of `CornerstoneCore3D`; a standards compliant, fast, and extensible JavaScript library that displays interactive medical images.
 
 ## What is new?
+
+As seen in `CornerstoneCore3D` [documentation](./core-introduction.md), our GPU rendered images use the
+image metadata (such as direction and origin) to place the image at the correct position in the 3D world.
+In fact, both our [Volume Viewports](./concepts/)
+
+ at the exact
+location, with the exact orientation and direction in the 3D
 
 
 With a rendering library where everything exists in 3D space (even our stack viewports are rendered at the actual position and normal direction in space), rather than a 2D plane, we need to rethink how we do tool interactions. We are building a framework similar to CornerstoneTools called `CornerstoneTools3D` which will sit on top of the new rendering library.
 
-
 - Tool data is now stored in 3D patient space in a particular DICOM Frame of Reference (FoR). Previously, tools were attached to individual images by their unique image ID.
-In general, all images in a single DICOM study exist in the same FoR (e.g. both PET and CT in a PET/CT acquisition). Transformation matrices can be produced which can convert between frames of references. This is performed in order to map tools between imaging timepoints or between co-registered series (e.g. contrast CT to non-contrast CT).
+  In general, all images in a single DICOM study exist in the same FoR (e.g. both PET and CT in a PET/CT acquisition). Transformation matrices can be produced which can convert between frames of references. This is performed in order to map tools between imaging timepoints or between co-registered series (e.g. contrast CT to non-contrast CT).
 
 - A single Scene can include multiple imaging Volumes (e.g. a fusion scene would include both PET and CT, and possibly a segmentation volume).
-This impacts the tool library since previous APIs for setting e.g. the "viewport" parameters (e.g. window/level) in Cornerstone are no longer sensible, since they only affect one volume.
+  This impacts the tool library since previous APIs for setting e.g. the "viewport" parameters (e.g. window/level) in Cornerstone are no longer sensible, since they only affect one volume.
 
 - Navigating in the volume is performed in 3D space by moving the camera. This means that helpers used for scrolling to images in the stack will be removed (i.e. scrollToIndex). For StackViewports a new volume actor is created for each slice and camera is modified accordingly.
 
@@ -29,14 +35,11 @@ This impacts the tool library since previous APIs for setting e.g. the "viewport
   - Rectangle ROI
   - Elliptical ROI
 
-
-
 We are currently working on re-building the segmentation rendering in 3D and adding 3D segmentation editing tools to `Cornerstone-Tools`.
 You can subscribe to our newsletter to get notified instantly of new additions and changes.
 
-
-
 ## Migration plans
+
 The following will not be migrated at the current time, as we do not need these for our immediate goals of planar annotation tools. They could be added in future work:
 
 <table>

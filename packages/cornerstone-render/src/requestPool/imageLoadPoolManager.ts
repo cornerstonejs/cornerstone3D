@@ -1,6 +1,10 @@
 import { RequestPoolManager } from './requestPoolManager'
 
-// Loading = Retrieval + Decoding
+/**
+ * ImageLoad Pool Manager
+ * @category RequestPoolManager
+ *
+ */
 const imageLoadPoolManager = new RequestPoolManager()
 
 imageLoadPoolManager.maxNumRequests = {

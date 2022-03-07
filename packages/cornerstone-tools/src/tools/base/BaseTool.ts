@@ -5,6 +5,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import deepMerge from '../../util/deepMerge'
 import { ToolModes } from '../../enums'
+import { Types } from '@precisionmetrics/cornerstone-render'
 
 /**
  * Abstract base class from which all tools derive.
@@ -12,12 +13,16 @@ import { ToolModes } from '../../enums'
  * application.
  */
 abstract class BaseTool {
-  public initialConfiguration: Record<string, any>
+  /** Tool Name */
   public name: string
+  /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: Array<string>
+  public initialConfiguration: Record<string, any>
   public configuration: Record<string, any>
+  /** ToolGroup UID the tool instance belongs to */
+  public toolGroupUID: string
+  /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes
-  public toolGroupUID: string // the toolGroup this instance belongs to
 
   constructor(
     toolConfiguration: Record<string, any>,
@@ -51,18 +56,22 @@ abstract class BaseTool {
   }
 
   /**
-   *
-   * @param evt
-   * @param operationData
+   * It applies the active strategy to the enabled element.
+   * @param enabledElement - The element that is being operated on.
+   * @param operationData - The data that needs to be passed to the strategy.
+   * @returns The result of the strategy.
    */
-  public applyActiveStrategy(evt: any, operationData: any): any {
+  public applyActiveStrategy(
+    enabledElement: Types.IEnabledElement,
+    operationData: unknown
+  ): any {
     const { strategies, activeStrategy } = this.configuration
-    return strategies[activeStrategy].call(this, evt, operationData)
+    return strategies[activeStrategy].call(this, enabledElement, operationData)
   }
 
   /**
    * merges the new configuration with the tool configuration
-   * @param configuration toolConfiguration
+   * @param configuration - toolConfiguration
    */
   public setConfiguration(newConfiguration: Record<string, any>): void {
     this.configuration = deepMerge(this.configuration, newConfiguration)
@@ -73,8 +82,7 @@ abstract class BaseTool {
    * multiple implementations of tool behavior that can be switched by tool
    * configuration.
    *
-   * @param strategyName
-   * @public
+   * @param strategyName - name of the strategy to be set as active
    */
   public setActiveStrategy(strategyName: string): void {
     this.setConfiguration({ activeStrategy: strategyName })

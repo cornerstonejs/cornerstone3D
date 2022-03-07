@@ -12,7 +12,7 @@ The URL scheme in the ImageId is used by Cornerstone to determine which [Image L
 
 The ImageId format
 
-![image-id-format](./../assets/image-id-format.png)
+![image-id-format](./../../assets/image-id-format.png)
 
 
 

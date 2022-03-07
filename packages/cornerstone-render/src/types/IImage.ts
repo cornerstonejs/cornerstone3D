@@ -2,36 +2,64 @@ import CPUFallbackLUT from './CPUFallbackLUT'
 import CPUFallbackColormap from './CPUFallbackColormap'
 import CPUFallbackEnabledElement from './CPUFallbackEnabledElement'
 
+/**
+ * Cornerstone Image interface, it is used for both CPU and GPU rendering
+ */
 interface IImage {
+  /** Image Id */
   imageId: string
   sharedCacheKey?: string
+  /** minimum pixel value of the image */
   minPixelValue: number
+  /* maximum pixel value of the image */
   maxPixelValue: number
+  /** slope from metadata for scaling */
   slope: number
+  /** intercept from metadata for scaling */
   intercept: number
+  /** windowCenter from metadata */
   windowCenter: number[] | number
+  /** windowWidth from metadata */
   windowWidth: number[] | number
+  /** function that returns the pixelData as an array */
   getPixelData: () => Array<number>
   getCanvas: () => HTMLCanvasElement
+  /** image number of rows */
   rows: number
+  /** image number of columns */
   columns: number
+  /** image height */
   height: number
+  /** image width */
   width: number
+  /** is image a color image */
   color: boolean
+  /** is image rgb and alpha */
   rgba: boolean
+  /** number of components in the image */
   numComps: number
+  /** CPU: custom render method for the image */
   render?: (
     enabledElement: CPUFallbackEnabledElement,
     invalidated: boolean
   ) => unknown
+  /** column pixel spacing */
   columnPixelSpacing: number
+  /** row pixel spacing */
   rowPixelSpacing: number
+  /** slice thickness */
   sliceThickness?: number
+  /** whether image pixels are inverted in color */
   invert: boolean
+  /** image size in number of bytes */
   sizeInBytes: number
+  /** CPU: custom modality LUT for image  */
   modalityLUT?: CPUFallbackLUT
+  /** CPU: custom VOI LUT for image  */
   voiLUT?: CPUFallbackLUT
+  /** CPU: custom color map for image  */
   colormap?: CPUFallbackColormap
+  /** image scaling metadata - including PT suv values */
   scaling?: {
     PET?: {
       // @TODO: Do these values exist?
@@ -42,6 +70,7 @@ interface IImage {
       suvbwToSuvbsa?: number
     }
   }
+  /** CPU: image statistics for rendering */
   stats?: {
     lastStoredPixelDataToCanvasImageDataTime?: number
     lastGetPixelDataTime?: number
@@ -50,6 +79,7 @@ interface IImage {
     lastRenderedViewport?: unknown
     lastRenderTime?: number
   }
+  /** CPU: image cached LUT */
   cachedLut?: {
     windowWidth?: number | number[]
     windowCenter?: number | number[]

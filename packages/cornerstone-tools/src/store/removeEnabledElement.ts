@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
 import {
   mouseEventListeners,
   wheelEventListener,
@@ -25,7 +25,9 @@ import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
 
 const VIEWPORT_ELEMENT = 'viewport-element'
 
-function removeEnabledElement(elementDisabledEvt: CustomEvent): void {
+function removeEnabledElement(
+  elementDisabledEvt: Types.EventsTypes.ElementDisabledEvent
+): void {
   // Is DOM element
   const { element, viewportUID } = elementDisabledEvt.detail
 

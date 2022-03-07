@@ -1,14 +1,12 @@
 import EVENTS from '../enums/events'
 import renderingEngineCache from './renderingEngineCache'
-import VIEWPORT_TYPE from '../constants/viewportType'
 import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from '../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
-import {
-  PublicViewportInput,
-  ViewportInput,
-  InternalViewportInput,
-} from '../types'
+import VIEWPORT_TYPE from '../enums/viewportType'
+import { PublicViewportInput, EventsTypes } from '../types'
+import { ViewportInput } from '../types/IViewport'
+import { InternalViewportInput } from '../types/IViewport'
 import VolumeViewport from './VolumeViewport'
 import StackViewport from './StackViewport'
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline'
@@ -49,21 +47,33 @@ type ViewportDisplayCoords = {
  * to leverage the power of vtk.js whilst only using one WebGL context for the processing, and allowing
  * us to share texture memory across on-screen viewports that show the same data.
  *
- * @example
  * Instantiating a rendering engine:
- * ```
+ * ```js
  * const renderingEngine = new RenderingEngine('pet-ct-rendering-engine');
  * ```
+ *
+ * There are various ways you can trigger a render on viewports. The simplest is to call `render()`
+ * on the rendering engine; however, it will trigger a render on all viewports. A more efficient
+ * way to do this is to call `renderViewports([viewportUID])` on the rendering engine to
+ * trigger a render on a specific viewport(s). Each viewport also has a `.render` method which can be used to trigger a render on that
+ * viewport.
+ *
+ * Rendering engine uses `detect-gpu` external library to detect if GPU is available and
+ * it has minimum requirement to be able to render a volume with vtk.js. If GPU is not available
+ * RenderingEngine will throw an error if you try to render a volume; however, for StackViewports
+ * it is capable of falling back to CPU rendering for Stack images.
+ *
+ * By default RenderingEngine will use vtk.js enabled pipeline for rendering viewports,
+ * however, if a custom rendering pipeline is specified by a custom viewport, it will be used instead.
+ * We use this custom pipeline to render a StackViewport on CPU using Cornerstone-legacy cpu rendering pipeline.
  *
  * @public
  */
 class RenderingEngine implements IRenderingEngine {
+  /** Unique identifier for renderingEngine */
   readonly uid: string
+  /** A flag which tells if the renderingEngine has been destroyed */
   public hasBeenDestroyed: boolean
-  /**
-   * A hook into vtk-js `vtkOffscreenMultiRenderWindow`
-   * @member {any}
-   */
   public offscreenMultiRenderWindow: any
   readonly offScreenCanvasContainer: any // WebGL
   private _viewports: Map<string, StackViewport | VolumeViewport>
@@ -73,7 +83,6 @@ class RenderingEngine implements IRenderingEngine {
   private useCPURendering: boolean
 
   /**
-   *
    * @param uid - Unique identifier for RenderingEngine
    */
   constructor(uid?: string) {
@@ -104,14 +113,28 @@ class RenderingEngine implements IRenderingEngine {
    * properly create the Stack viewport or Volume viewport:
    *
    * 1) Checks if the viewport is defined already, if yes, remove it first
-   * 2) Calculates a new offScreen canvas with the new requested viewport
+   * 2) Checks if the viewport is using a custom rendering pipeline, if no,
+   * it calculates a new offscreen canvas with the new requested viewport
    * 3) Adds the viewport
    *
-   * @param {Object} viewportInputEntry viewport specifications
    *
-   * @returns {void}
-   * @memberof RenderingEngine
+   * ```typescript
+   * renderingEngine.enableElement({
+   *  viewportUID: viewportUID,
+   *  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *  element,
+   *  defaultOptions: {
+   *    orientation: ORIENTATION[orientation],
+   *    background: [1, 0, 1],
+   *  },
+   * })
+   * ```
+   *
+   * @fires EVENTS.ELEMENT_ENABLED
+   *
+   * @param viewportInputEntry - viewport specifications
    */
+
   public enableElement(viewportInputEntry: PublicViewportInput): void {
     this._throwIfDestroyed()
     const { element, viewportUID } = viewportInputEntry
@@ -157,15 +180,17 @@ class RenderingEngine implements IRenderingEngine {
 
   /**
    * Disables the requested viewportUID from the rendering engine:
+   *
    * 1) It removes the viewport from the the list of viewports
-   * 2) remove the renderer from the offScreen render window
+   * 2) remove the renderer from the offScreen render window if using vtk.js driven
+   * rendering pipeline
    * 3) resetting the viewport to remove the canvas attributes and canvas data
-   * 4) resize the offScreen appropriately
+   * 4) resize the offScreen appropriately (if using vtk.js driven rendering pipeline)
    *
-   * @param {string} viewportUID viewport UID
+   * @fires EVENTS.ELEMENT_ENABLED
    *
-   * @returns {void}
-   * @memberof RenderingEngine
+   * @param viewportUID - viewport UID
+   *
    */
   public disableElement(viewportUID: string): void {
     this._throwIfDestroyed()
@@ -206,10 +231,44 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Todo: Docs
+   * It takes an array of viewport input objects including element, viewportUID, type
+   * and defaultOptions. It will add the viewport to the rendering engine and enables them.
    *
-   * @param viewportInputEntries An array of viewport definitions to construct the rendering engine
+   *
+   * ```typescript
+   *renderingEngine.setViewports([
+   *   {
+   *     viewportUID: axialViewportUID,
+   *     type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *     element: document.getElementById('axialDiv'),
+   *     defaultOptions: {
+   *       orientation: ORIENTATION.AXIAL,
+   *     },
+   *   },
+   *   {
+   *     viewportUID: sagittalViewportUID,
+   *     type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *     element: document.getElementById('sagittalDiv'),
+   *     defaultOptions: {
+   *       orientation: ORIENTATION.SAGITTAL,
+   *     },
+   *   },
+   *   {
+   *     viewportUID: customOrientationViewportUID,
+   *     type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *     element: document.getElementById('customOrientationDiv'),
+   *     defaultOptions: {
+   *       orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
+   *     },
+   *   },
+   * ])
+   * ```
+   *
+   * @fires EVENTS.ELEMENT_ENABLED
+   *
+   * @param viewportInputEntries - Array<PublicViewportInput>
    */
+
   public setViewports(viewportInputEntries: Array<PublicViewportInput>): void {
     this._throwIfDestroyed()
     this._reset()
@@ -235,14 +294,13 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method resize Resizes the offscreen viewport and recalculates translations to on screen canvases.
-   * It is up to the parent app to call the size of the on-screen canvas changes.
+   * Resizes the offscreen viewport and recalculates translations to on screen canvases.
+   * It is up to the parent app to call the resize of the on-screen canvas changes.
    * This is left as an app level concern as one might want to debounce the changes, or the like.
    *
-   * @param {boolean} [immediate=true] Whether all of the viewports should be rendered immediately.
-   * @param {boolean} [resetPanZoomForViewPlane=true] Whether each viewport gets centered (reset pan) and
+   * @param immediate - Whether all of the viewports should be rendered immediately.
+   * @param resetPanZoomForViewPlane - Whether each viewport gets centered (reset pan) and
    * its zoom gets reset upon resize.
-   *
    */
   public resize(immediate = true, resetPanZoomForViewPlane = true): void {
     this._throwIfDestroyed()
@@ -275,18 +333,18 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method getViewport Returns the viewport by UID
+   * Returns the viewport by UID
    *
-   * @returns {StackViewport | VolumeViewport} viewport
+   * @returns viewport
    */
   public getViewport(uid: string): StackViewport | VolumeViewport {
     return this._viewports.get(uid)
   }
 
   /**
-   * @method getViewports Returns an array of all `Viewport`s on the `RenderingEngine` instance.
+   * getViewports Returns an array of all `Viewport`s on the `RenderingEngine` instance.
    *
-   * @returns {Viewport} The viewports Array.
+   * @returns Array of viewports
    */
   public getViewports(): Array<StackViewport | VolumeViewport> {
     this._throwIfDestroyed()
@@ -312,6 +370,10 @@ class RenderingEngine implements IRenderingEngine {
     return viewports.filter(isStackViewport)
   }
 
+  /**
+   * Return all the viewports that are volume viewports
+   * @returns An array of VolumeViewport objects.
+   */
   public getVolumeViewports(): Array<VolumeViewport> {
     this._throwIfDestroyed()
 
@@ -327,7 +389,9 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method render Renders all viewports on the next animation frame.
+   * Renders all viewports on the next animation frame.
+   *
+   * @fires EVENTS.IMAGE_RENDERED
    */
   public render(): void {
     const viewports = this.getViewports()
@@ -337,10 +401,9 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method renderFrameOfReference Renders any viewports viewing the
-   * given Frame Of Reference.
+   * Renders any viewports viewing the given Frame Of Reference.
    *
-   * @param {string} FrameOfReferenceUID The unique identifier of the
+   * @param FrameOfReferenceUID - The unique identifier of the
    * Frame Of Reference.
    */
   public renderFrameOfReference = (FrameOfReferenceUID: string): void => {
@@ -355,25 +418,26 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method renderViewports Renders the provided Viewport UIDs.
+   * Renders the provided Viewport UIDs.
    *
-   * @returns{void}
    */
   public renderViewports(viewportUIDs: Array<string>): void {
     this._setViewportsToBeRenderedNextFrame(viewportUIDs)
   }
 
   /**
-   * @method renderViewport Renders only a specific `Viewport` on the next animation frame.
+   * Renders only a specific `Viewport` on the next animation frame.
    *
-   * @param {string} viewportUID The UID of the viewport.
+   * @param viewportUID - The UID of the viewport.
    */
   public renderViewport(viewportUID: string): void {
     this._setViewportsToBeRenderedNextFrame([viewportUID])
   }
 
   /**
-   * @method destroy the rendering engine
+   * destroy the rendering engine. It will remove all the viewports and,
+   * if the rendering engine is using the GPU, it will also destroy the GPU
+   * resources.
    */
   public destroy(): void {
     if (this.hasBeenDestroyed) {
@@ -396,7 +460,7 @@ class RenderingEngine implements IRenderingEngine {
 
   /**
    * Fill the canvas with the background color
-   * @param {HTMLCanvasElement} canvas - The canvas element to draw on.
+   * @param canvas - The canvas element to draw on.
    * @param backgroundColor - An array of three numbers between 0 and 1 that
    * specify the red, green, and blue values of the background color.
    */
@@ -474,10 +538,9 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method enableVTKjsDrivenViewport Enables a viewport to be driven by the
-   * offscreen vtk.js rendering engine.
+   * Enables a viewport to be driven by the offscreen vtk.js rendering engine.
    *
-   * @param {PublicViewportInput} viewportInputEntry Information object used to
+   * @param viewportInputEntry - Information object used to
    * construct and enable the viewport.
    */
   private enableVTKjsDrivenViewport(viewportInputEntry: PublicViewportInput) {
@@ -520,10 +583,8 @@ class RenderingEngine implements IRenderingEngine {
    * 3) resetting the viewport to remove the canvas attributes and canvas data
    * 4) resize the offScreen appropriately
    *
-   * @param {string} viewportUID viewport UID
+   * @param viewportUID - viewport UID
    *
-   * @returns {void}
-   * @memberof RenderingEngine
    */
   private _removeViewport(viewportUID: string): void {
     // 1. Get the viewport
@@ -538,17 +599,13 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method addVtkjsDrivenViewport Adds a viewport driven by vtk.js to the
-   * `RenderingEngine`.
+   *  Adds a viewport driven by vtk.js to the `RenderingEngine`.
    *
-   * @param {PublicViewportInput} viewportInputEntry Information object used to
-   * construct and enable the viewport.
-   * @param {{
-   *       offScreenCanvasWidth: number;
-   *       offScreenCanvasHeight: number;
-   *       xOffset: number;
-   *     }} [offscreenCanvasProperties] How the viewport relates to the
-   * offscreen canvas.
+   * @param viewportInputEntry - Information object used to construct and enable the viewport.
+   * @param options - Options object used to configure the viewport.
+   * @param options.offScreenCanvasWidth - The width of the offscreen canvas.
+   * @param options.offScreenCanvasHeight - The height of the offscreen canvas.
+   * @param options.xOffset - The x offset of the viewport on the offscreen canvas.
    */
   private addVtkjsDrivenViewport(
     viewportInputEntry: InternalViewportInput,
@@ -624,7 +681,7 @@ class RenderingEngine implements IRenderingEngine {
     // 5. Storing the viewports
     this._viewports.set(viewportUID, viewport)
 
-    const eventData = {
+    const eventData: EventsTypes.ElementEnabledEventData = {
       element,
       viewportUID,
       renderingEngineUID: this.uid,
@@ -636,10 +693,9 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method addCustomViewport Adds a viewport using a custom rendering pipeline
-   * to the `RenderingEngine`.
+   * Adds a viewport using a custom rendering pipeline to the `RenderingEngine`.
    *
-   * @param {PublicViewportInput} viewportInputEntry Information object used to
+   * @param viewportInputEntry - Information object used to
    * construct and enable the viewport.
    */
   private addCustomViewport(viewportInputEntry: PublicViewportInput): void {
@@ -683,8 +739,7 @@ class RenderingEngine implements IRenderingEngine {
     // 5. Storing the viewports
     this._viewports.set(viewportUID, viewport)
 
-    const eventData = {
-      canvas,
+    const eventData: EventsTypes.ElementEnabledEventData = {
       element,
       viewportUID,
       renderingEngineUID: this.uid,
@@ -694,10 +749,10 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method setCustomViewports Sets multiple viewports using custom rendering
+   * Sets multiple viewports using custom rendering
    * pipelines to the `RenderingEngine`.
    *
-   * @param {PublicViewportInput[]} viewportInputEntries An array of information
+   * @param viewportInputEntries - An array of information
    * objects used to construct and enable the viewports.
    */
   private setCustomViewports(viewportInputEntries: PublicViewportInput[]) {
@@ -705,10 +760,10 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method setCustomViewports Sets multiple vtk.js driven viewports to
+   * Sets multiple vtk.js driven viewports to
    * the `RenderingEngine`.
    *
-   * @param {PublicViewportInput[]} viewportInputEntries An array of information
+   * @param viewportInputEntries - An array of information
    * objects used to construct and enable the viewports.
    */
   private setVtkjsDrivenViewports(viewportInputEntries: PublicViewportInput[]) {
@@ -757,7 +812,7 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * Resizes the offscreen canvas based on the provided vtk.js driven canvases.
    *
-   * @param canvases An array of HTML Canvas
+   * @param canvases - An array of HTML Canvas
    */
   private _resizeOffScreenCanvas(
     canvasesDrivenByVtkJs: Array<HTMLCanvasElement>
@@ -789,11 +844,11 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * Recalculates and updates the viewports location on the offScreen canvas upon its resize
    *
-   * @param viewports An array of viewports
-   * @param offScreenCanvasWidth new offScreen canvas width
-   * @param offScreenCanvasHeight new offScreen canvas height
+   * @param viewports - An array of viewports
+   * @param offScreenCanvasWidth - new offScreen canvas width
+   * @param offScreenCanvasHeight - new offScreen canvas height
    *
-   * @returns {number} _xOffset the final offset which will be used for the next viewport
+   * @returns _xOffset the final offset which will be used for the next viewport
    */
   private _resize(
     viewportsDrivenByVtkJs: Array<StackViewport | VolumeViewport>,
@@ -845,10 +900,10 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * Calculates the location of the provided viewport on the offScreenCanvas
    *
-   * @param viewports An array of viewports
-   * @param offScreenCanvasWidth new offScreen canvas width
-   * @param offScreenCanvasHeight new offScreen canvas height
-   * @param _xOffset xOffSet to draw
+   * @param viewports - An array of viewports
+   * @param offScreenCanvasWidth - new offScreen canvas width
+   * @param offScreenCanvasHeight - new offScreen canvas height
+   * @param _xOffset - xOffSet to draw
    */
   private _getViewportCoordsOnOffScreenCanvas(
     viewport: InternalViewportInput | StackViewport | VolumeViewport,
@@ -912,7 +967,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method _render Sets up animation frame if necessary
+   * Sets up animation frame if necessary
    */
   private _render() {
     // If we have viewports that need rendering and we have not already
@@ -928,7 +983,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method _renderFlaggedViewports Renders all viewports.
+   * Renders all viewports.
    */
   private _renderFlaggedViewports = () => {
     this._throwIfDestroyed()
@@ -1001,18 +1056,19 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method renderViewportUsingCustomOrVtkPipeline Renders the given viewport
-   * using its preffered method.
+   * Renders the given viewport
+   * using its proffered method.
    *
-   * @param {(StackViewport | VolumeViewport)} viewport The viewport to render
+   * @param viewport - The viewport to render
    */
   private renderViewportUsingCustomOrVtkPipeline(
     viewport: StackViewport | VolumeViewport
-  ): unknown {
+  ): EventsTypes.ImageRenderedEventData[] {
     let eventData
 
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
-      eventData = viewport.customRenderViewportToCanvas()
+      eventData =
+        viewport.customRenderViewportToCanvas() as EventsTypes.ImageRenderedEventData
     } else {
       if (this.useCPURendering) {
         throw new Error(
@@ -1036,19 +1092,14 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method _renderViewportFromVtkCanvasToOnscreenCanvas Renders a particular `Viewport`'s on screen canvas.
-   * @param {Viewport} viewport The `Viewport` to render.
-   * @param {object} offScreenCanvas The offscreen canvas to render from.
+   * Renders a particular `Viewport`'s on screen canvas.
+   * @param viewport - The `Viewport` to render.
+   * @param offScreenCanvas - The offscreen canvas to render from.
    */
   private _renderViewportFromVtkCanvasToOnscreenCanvas(
     viewport: StackViewport | VolumeViewport,
     offScreenCanvas
-  ): {
-    element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
-    suppressEvents: boolean
-  } {
+  ): EventsTypes.ImageRenderedEventData {
     const {
       element,
       canvas,
@@ -1086,18 +1137,17 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method _resetViewport Reset the viewport by removing the data attributes
+   * Reset the viewport by removing the data attributes
    * and clearing the context of draw. It also emits an element disabled event
    *
-   * @param {Viewport} viewport The `Viewport` to render.
-   * @returns{void}
+   * @param viewport - The `Viewport` to render.
    */
   private _resetViewport(viewport) {
     const renderingEngineUID = this.uid
 
     const { element, canvas, uid: viewportUID } = viewport
 
-    const eventData = {
+    const eventData: EventsTypes.ElementDisabledEventData = {
       element,
       viewportUID,
       renderingEngineUID,
@@ -1124,7 +1174,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method _reset Resets the `RenderingEngine`
+   * Resets the `RenderingEngine`
    */
   private _reset() {
     const viewports = this._getViewportsAsArray()
@@ -1139,7 +1189,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * @method _throwIfDestroyed Throws an error if trying to interact with the `RenderingEngine`
+   * Throws an error if trying to interact with the `RenderingEngine`
    * instance after its `destroy` method has been called.
    */
   private _throwIfDestroyed() {

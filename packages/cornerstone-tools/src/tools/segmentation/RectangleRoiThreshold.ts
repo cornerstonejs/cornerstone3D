@@ -5,6 +5,7 @@ import {
   StackViewport,
   triggerEvent,
   eventTarget,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool } from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement'
@@ -168,11 +169,12 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     return toolData
   }
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-
-    const { enabledElement } = svgDrawingHelper
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
+    const { viewport, renderingEngineUID } = enabledElement
+    const { element } = viewport
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState?.length) {
@@ -184,8 +186,6 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     if (!toolState?.length) {
       return
     }
-
-    const { viewport, renderingEngineUID } = enabledElement
 
     for (let i = 0; i < toolState.length; i++) {
       const toolData = toolState[i] as RectangleRoiThresholdToolData

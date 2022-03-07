@@ -1,5 +1,5 @@
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
+import type vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
+import type vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import Representations from '../enums/SegmentationRepresentations'
 
 export type LabelmapRepresentation = {

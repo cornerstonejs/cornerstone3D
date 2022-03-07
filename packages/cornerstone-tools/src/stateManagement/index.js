@@ -8,6 +8,7 @@ import setToolStyle from './annotation/setToolStyle'
 import setToolDataStyle from './annotation/setToolDataStyle'
 import * as toolDataLocking from './annotation/toolDataLocking'
 import * as toolDataSelection from './annotation/toolDataSelection'
+
 import {
   getToolState,
   addToolState,

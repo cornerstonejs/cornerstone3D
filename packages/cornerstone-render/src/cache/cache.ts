@@ -2,8 +2,11 @@ import {
   ICache,
   IImage,
   IImageVolume,
-  ImageLoadObject,
-  VolumeLoadObject,
+  IImageLoadObject,
+  IVolumeLoadObject,
+  ICachedImage,
+  ICachedVolume,
+  EventsTypes,
 } from '../types'
 import { triggerEvent, imageIdToURI } from '../utilities'
 import eventTarget from '../eventTarget'
@@ -11,25 +14,6 @@ import EVENTS from '../enums/events'
 import ERROR_CODES from '../enums/errorCodes'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
-
-interface CachedImage {
-  image?: IImage
-  imageId: string
-  imageLoadObject: ImageLoadObject
-  loaded: boolean
-  sharedCacheKey?: string
-  timeStamp: number
-  sizeInBytes: number
-}
-
-interface CachedVolume {
-  volume?: IImageVolume
-  volumeId: string
-  volumeLoadObject: VolumeLoadObject
-  loaded: boolean
-  timeStamp: number
-  sizeInBytes: number
-}
 
 /**
  * This module deals with Caching of images and volumes
@@ -72,8 +56,8 @@ interface CachedVolume {
  *
  */
 class Cache implements ICache {
-  private readonly _imageCache: Map<string, CachedImage> // volatile space
-  private readonly _volumeCache: Map<string, CachedVolume> // non-volatile space
+  private readonly _imageCache: Map<string, ICachedImage> // volatile space
+  private readonly _volumeCache: Map<string, ICachedVolume> // non-volatile space
   private _imageCacheSize: number
   private _volumeCacheSize: number
   private _maxCacheSize: number
@@ -92,9 +76,8 @@ class Cache implements ICache {
    * Maximum cache size should be set before adding the data; otherwise, it
    * will throw an error.
    *
-   * @param {number} newMaxCacheSize new maximum cache size
+   * @param newMaxCacheSize -  new maximum cache size
    *
-   * @returns {void}
    */
   public setMaxCacheSize = (newMaxCacheSize: number): void => {
     if (!newMaxCacheSize || typeof newMaxCacheSize !== 'number') {
@@ -111,9 +94,9 @@ class Cache implements ICache {
    * It throws error, if the sum of volatile (image) cache and unallocated cache
    * is less than the requested byteLength
    *
-   * @param {number} byteLength byte length of requested byte size
+   * @param byteLength - byte length of requested byte size
    *
-   * @returns {boolean}
+   * @returns - boolean indicating if there is enough space in the cache
    */
   public isCacheable = (byteLength: number): boolean => {
     const unallocatedSpace = this.getBytesAvailable()
@@ -126,14 +109,14 @@ class Cache implements ICache {
   /**
    * Returns maximum CacheSize allowed
    *
-   * @returns {number} maximum allowed cache size
+   * @returns maximum allowed cache size
    */
   public getMaxCacheSize = (): number => this._maxCacheSize
 
   /**
    * Returns current size of the cache
    *
-   * @returns {number} current size of the cache
+   * @returns current size of the cache
    */
   public getCacheSize = (): number =>
     this._imageCacheSize + this._volumeCacheSize
@@ -149,9 +132,8 @@ class Cache implements ICache {
   /**
    * Deletes the imageId from the image cache
    *
-   * @param {string} imageId imageId
+   * @param imageId - imageId
    *
-   * @returns {void}
    */
   private _decacheImage = (imageId: string) => {
     const { imageLoadObject } = this._imageCache.get(imageId)
@@ -171,9 +153,8 @@ class Cache implements ICache {
   /**
    * Deletes the volumeId from the volume cache
    *
-   * @param {string} volumeId volumeId
+   * @param volumeId - volumeId
    *
-   * @returns {void}
    */
   private _decacheVolume = (volumeId: string) => {
     const cachedVolume = this._volumeCache.get(volumeId)
@@ -202,14 +183,16 @@ class Cache implements ICache {
    * Deletes all the images and volumes in the cache
    *
    * Relevant events are fired for each decached image (IMAGE_CACHE_IMAGE_REMOVED) and
-   * the decached volume (IMAGE_CACHE_VOLUME_REMOVED).
+   * the decached volume (VOLUME_CACHE_VOLUME_REMOVED).
    *
+   * @fires EVENTS.IMAGE_CACHE_IMAGE_REMOVED
+   * @fires EVENTS.VOLUME_CACHE_VOLUME_REMOVED
    *
-   * @param {number} numBytes number of bytes
+   * @param numBytes - number of bytes
    *
-   * @returns {number} available number of bytes
+   * @returns available number of bytes
    */
-  public purgeCache = () => {
+  public purgeCache = (): void => {
     const imageIterator = this._imageCache.keys()
 
     /* eslint-disable no-constant-condition */
@@ -237,7 +220,9 @@ class Cache implements ICache {
 
       this.removeVolumeLoadObject(volumeId)
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_VOLUME_REMOVED, { volumeId })
+      triggerEvent(eventTarget, EVENTS.VOLUME_CACHE_VOLUME_REMOVED, {
+        volumeId,
+      })
     }
   }
 
@@ -255,11 +240,13 @@ class Cache implements ICache {
    * re-fetched, but we must do this not to straddle over the given memory
    * limit, even for a short time, as this may crash the application.
    *
-   * @params {number} numBytes - Number of bytes for the image/volume that is
+   * @fires EVENTS.IMAGE_CACHE_IMAGE_REMOVED
+   *
+   * @param numBytes - Number of bytes for the image/volume that is
    * going to be stored inside the cache
-   * @params {Array} [volumeImageIds] list of imageIds that correspond to the
+   * @param volumeImageIds - list of imageIds that correspond to the
    * volume whose numberOfBytes we want to store in the cache.
-   * @returns {number | undefined} bytesAvailable or undefined in purging cache
+   * @returns bytesAvailable or undefined in purging cache
    * does not successfully make enough space for the requested number of bytes
    */
   public decacheIfNecessaryUntilBytesAvailable(
@@ -347,13 +334,15 @@ class Cache implements ICache {
    * iterates over the imageCache and decache them one by one until the cache
    * size becomes less than the maximum allowed cache size
    *
-   * @param {string} imageId ImageId for the image
-   * @param {Object} imageLoadObject The object that is loading or loaded the image
-   * @returns {void}
+   * @fires EVENTS.IMAGE_CACHE_IMAGE_ADDED
+   * @fires EVENTS.CACHE_SIZE_EXCEEDED if the cache size exceeds the maximum
+   *
+   * @param imageId - ImageId for the image
+   * @param imageLoadObject - The object that is loading or loaded the image
    */
   public putImageLoadObject(
     imageId: string,
-    imageLoadObject: ImageLoadObject
+    imageLoadObject: IImageLoadObject
   ): Promise<any> {
     if (imageId === undefined) {
       throw new Error('putImageLoadObject: imageId must not be undefined')
@@ -378,7 +367,7 @@ class Cache implements ICache {
       )
     }
 
-    const cachedImage: CachedImage = {
+    const cachedImage: ICachedImage = {
       loaded: false,
       imageId,
       sharedCacheKey: undefined, // The sharedCacheKey for this imageId.  undefined by default
@@ -423,7 +412,7 @@ class Cache implements ICache {
         cachedImage.sizeInBytes = image.sizeInBytes
         this._incrementImageCacheSize(cachedImage.sizeInBytes)
 
-        const eventDetails = {
+        const eventDetails: EventsTypes.ImageCacheImageAddedEventData = {
           image: cachedImage,
         }
 
@@ -441,10 +430,10 @@ class Cache implements ICache {
   /**
    * Returns the object that is loading a given imageId
    *
-   * @param {string} imageId Image ID
-   * @returns {void}
+   * @param imageId - Image ID
+   * @returns IImageLoadObject
    */
-  public getImageLoadObject(imageId: string): ImageLoadObject {
+  public getImageLoadObject(imageId: string): IImageLoadObject {
     if (imageId === undefined) {
       throw new Error('getImageLoadObject: imageId must not be undefined')
     }
@@ -464,8 +453,8 @@ class Cache implements ICache {
    * Returns the volume that contains the requested imageId. It will check the
    * imageIds inside the volume to find a match.
    *
-   * @param {string} imageId Image ID
-   * @returns {{ImageVolume, string}|undefined} {volume, imageIdIndex}
+   * @param imageId - ImageId
+   * @returns - Volume object
    */
   public getVolumeContainingImageId(imageId: string): {
     volume: IImageVolume
@@ -500,8 +489,8 @@ class Cache implements ICache {
    * Returns the cached image from the imageCache for the requested imageId.
    * It first strips the imageId to remove the data loading scheme.
    *
-   * @param {string} imageId Image ID
-   * @returns {CachedImage} cached image
+   * @param imageId - Image ID
+   * @returns cached image
    */
   public getCachedImageBasedOnImageURI(imageId: string): any {
     const imageIdToUse = imageIdToURI(imageId)
@@ -519,18 +508,19 @@ class Cache implements ICache {
    * First, it creates a CachedVolume object and put it inside the volumeCache for
    * the volumeId. After the volumeLoadObject promise resolves to a volume,
    * it: 1) adds the volume into the correct CachedVolume object inside volumeCache
-   * 2) increments the cache size, 3) triggers IMAGE_CACHE_VOLUME_ADDED  4) Purge
+   * 2) increments the cache size, 3) triggers VOLUME_CACHE_VOLUME_ADDED  4) Purge
    * the cache if necessary -- if the cache size is greater than the maximum cache size, it
    * iterates over the imageCache (not volumeCache) and decache them one by one
    * until the cache size becomes less than the maximum allowed cache size
    *
-   * @param {string} volumeId volumeId of the volume
-   * @param {Object} volumeLoadObject The object that is loading or loaded the volume
-   * @returns {void}
+   * @fires EVENTS.VOLUME_CACHE_VOLUME_ADDED
+   *
+   * @param volumeId - volumeId of the volume
+   * @param volumeLoadObject - The object that is loading or loaded the volume
    */
   public putVolumeLoadObject(
     volumeId: string,
-    volumeLoadObject: VolumeLoadObject
+    volumeLoadObject: IVolumeLoadObject
   ): Promise<any> {
     if (volumeId === undefined) {
       throw new Error('putVolumeLoadObject: volumeId must not be undefined')
@@ -557,7 +547,7 @@ class Cache implements ICache {
     // todo: @Erik there are two loaded flags, one inside cachedVolume and the other
     // inside the volume.loadStatus.loaded, the actual all pixelData loaded is the
     // loadStatus one. This causes confusion
-    const cachedVolume: CachedVolume = {
+    const cachedVolume: ICachedVolume = {
       loaded: false,
       volumeId,
       volumeLoadObject,
@@ -602,12 +592,15 @@ class Cache implements ICache {
         cachedVolume.sizeInBytes = volume.sizeInBytes
         this._incrementVolumeCacheSize(cachedVolume.sizeInBytes)
 
-        const eventDetails = {
+        const eventDetails: EventsTypes.VolumeCacheVolumeAddedEventData = {
           volume: cachedVolume,
-          volumeId,
         }
 
-        triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_VOLUME_ADDED, eventDetails)
+        triggerEvent(
+          eventTarget,
+          EVENTS.VOLUME_CACHE_VOLUME_ADDED,
+          eventDetails
+        )
       })
       .catch((error) => {
         this._volumeCache.delete(volumeId)
@@ -618,10 +611,10 @@ class Cache implements ICache {
   /**
    * Returns the object that is loading a given volumeId
    *
-   * @param {string} volumeId Volume ID
-   * @returns {void}
+   * @param volumeId - Volume ID
+   * @returns IVolumeLoadObject
    */
-  public getVolumeLoadObject = (volumeId: string): VolumeLoadObject => {
+  public getVolumeLoadObject = (volumeId: string): IVolumeLoadObject => {
     if (volumeId === undefined) {
       throw new Error('getVolumeLoadObject: volumeId must not be undefined')
     }
@@ -640,8 +633,8 @@ class Cache implements ICache {
   /**
    * Returns the volume associated with the volumeId
    *
-   * @param {string} volumeId Volume ID
-   * @returns {void}
+   * @param volumeId - Volume ID
+   * @returns Volume
    */
   public getVolume = (volumeId: string): IImageVolume => {
     if (volumeId === undefined) {
@@ -664,8 +657,9 @@ class Cache implements ICache {
    *
    * It increases the cache size after removing the image.
    *
-   * @param {string} imageId Image ID
-   * @returns {void}
+   * @fires EVENTS.IMAGE_CACHE_IMAGE_REMOVED
+   *
+   * @param imageId - Image ID
    */
   public removeImageLoadObject = (imageId: string): void => {
     if (imageId === undefined) {
@@ -682,7 +676,6 @@ class Cache implements ICache {
     this._incrementImageCacheSize(-cachedImage.sizeInBytes)
 
     const eventDetails = {
-      image: cachedImage,
       imageId,
     }
 
@@ -695,8 +688,9 @@ class Cache implements ICache {
    *
    * It increases the cache size after removing the image.
    *
-   * @param {string} imageId Image ID
-   * @returns {void}
+   * @fires EVENTS.VOLUME_CACHE_VOLUME_REMOVED
+   *
+   * @param imageId - ImageId
    */
   public removeVolumeLoadObject = (volumeId: string): void => {
     if (volumeId === undefined) {
@@ -717,15 +711,14 @@ class Cache implements ICache {
       volumeId,
     }
 
-    triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_VOLUME_REMOVED, eventDetails)
+    triggerEvent(eventTarget, EVENTS.VOLUME_CACHE_VOLUME_REMOVED, eventDetails)
     this._decacheVolume(volumeId)
   }
 
   /**
    * Increases the image cache size with the provided increment
    *
-   * @param {number} increment bytes length
-   * @returns {void}
+   * @param increment - bytes length
    */
   private _incrementImageCacheSize = (increment: number) => {
     this._imageCacheSize += increment
@@ -734,8 +727,7 @@ class Cache implements ICache {
   /**
    * Increases the cache size with the provided increment
    *
-   * @param {number} increment bytes length
-   * @returns {void}
+   * @param increment - bytes length
    */
   private _incrementVolumeCacheSize = (increment: number) => {
     this._volumeCacheSize += increment

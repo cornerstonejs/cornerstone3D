@@ -4,13 +4,13 @@ import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunct
 import {
   cache,
   getEnabledElementByUIDs,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 
 import type {
   VolumeViewport,
   StackViewport,
 } from '@precisionmetrics/cornerstone-render'
-import { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume'
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import { LabelmapRepresentation } from '../../../types/SegmentationRepresentationTypes'
@@ -34,8 +34,8 @@ const MAX_NUMBER_COLORS = 255
  * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
  * Initializes the global and viewport specific state for the segmentation in the
  * SegmentationStateManager.
- * @param {IToolGroup} toolGroup - the tool group that contains the viewports
- * @param {Partial<ViewportSpecificSegmentationData>[]} segmentationDataArray - the array of segmentation data
+ * @param toolGroup - the tool group that contains the viewports
+ * @param segmentationDataArray - the array of segmentation data
  */
 async function addSegmentationData(
   toolGroupUID: string,
@@ -186,7 +186,7 @@ function render(
 }
 
 function _setLabelmapColorAndOpacity(
-  volumeActor: vtkVolume,
+  volumeActor: Types.VolumeActor,
   cfun: vtkColorTransferFunction,
   ofun: vtkPiecewiseFunction,
   colorLUTIndex: number,

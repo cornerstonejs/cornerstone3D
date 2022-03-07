@@ -2,6 +2,7 @@ import {
   cache,
   getEnabledElement,
   StackViewport,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
 import { Point3 } from '../../types'
@@ -270,12 +271,14 @@ export default class CircleScissorsTool extends BaseTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     if (!this.editData) {
       return
     }
 
-    const { enabledElement } = svgDrawingHelper
     const { viewport } = enabledElement
     const { viewportUIDsToRender } = this.editData
 

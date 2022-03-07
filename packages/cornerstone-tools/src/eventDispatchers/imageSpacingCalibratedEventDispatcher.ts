@@ -1,19 +1,24 @@
-import { EVENTS as RenderingEngineEvents } from '@precisionmetrics/cornerstone-render'
+import {
+  EVENTS as RenderingEngineEvents,
+  Types,
+} from '@precisionmetrics/cornerstone-render'
 import { ToolModes } from '../enums'
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 
 const { Active, Passive, Enabled } = ToolModes
 
 /**
- * @function onImageSpacingCalibrated - When image spacing is calibrated
+ * When image spacing is calibrated
  * check if tools need to react to this.
  *
  * - First we get all tools which are active, passive or enabled on the element.
  * - If any of these tools have a `onImageSpacingCalibrated` method, we call it.
  *
- * @param evt The normalized image calibration event.
+ * @param evt - The normalized image calibration event.
  */
-const onImageSpacingCalibrated = function (evt) {
+const onImageSpacingCalibrated = function (
+  evt: Types.EventsTypes.ImageSpacingCalibratedEvent
+) {
   const enabledTools = getToolsWithModesForMouseEvent(evt, [
     Active,
     Passive,

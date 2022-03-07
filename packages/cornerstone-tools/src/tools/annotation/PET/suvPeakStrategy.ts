@@ -1,3 +1,4 @@
+import { Types } from '@precisionmetrics/cornerstone-render'
 import {
   Point3,
   IImageVolume,
@@ -32,17 +33,11 @@ type Evt = {
  * @returns
  */
 export default function suvPeakStrategy(
-  evt: Evt,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): any {
-  const { enabledElement } = evt
   const { viewport } = enabledElement
-  const {
-    volume: ptVolume,
-    points: circlePoints,
-    viewUp,
-    viewPlaneNormal,
-  } = operationData
+  const { volume: ptVolume, points: circlePoints, viewUp } = operationData
 
   const { imageData } = ptVolume
 

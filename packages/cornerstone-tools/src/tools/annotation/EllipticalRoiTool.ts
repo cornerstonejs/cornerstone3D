@@ -8,6 +8,7 @@ import {
   VolumeViewport,
   eventTarget,
   triggerEvent,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
 import throttle from '../../util/throttle'
@@ -37,7 +38,14 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import { ToolSpecificToolData, Point3, Point2 } from '../../types'
+import {
+  ToolSpecificToolData,
+  Point3,
+  Point2,
+  EventsTypes,
+  ToolHandle,
+  TextBoxHandle,
+} from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
 
@@ -221,14 +229,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
         topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
         bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottmRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
       }
 
       if (
         canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottmRight[0] &&
+        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
+        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
       ) {
         data.handles.activeHandleIndex = null
         return textBox
@@ -326,11 +334,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt,
-    toolData,
-    handle,
+    evt: EventsTypes.NormalizedMouseEventType,
+    toolData: ToolSpecificToolData,
+    handle: ToolHandle,
     interactionType = 'mouse'
-  ) => {
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
     const { data } = toolData
@@ -345,7 +353,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     let canvasHeight
     let originalHandleCanvas
 
-    if (handle.worldPosition) {
+    if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true
     } else {
       const { points } = data.handles
@@ -676,25 +684,13 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
-  /**
-   * getToolState = Custom getToolStateMethod with filtering.
-   * @param element
-   */
-  filterInteractableToolStateForElement = (element, toolState) => {
-    if (!toolState || !toolState.length) {
-      return
-    }
-
-    const enabledElement = getEnabledElement(element)
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     const { viewport } = enabledElement
-    return getToolStateForDisplay(viewport, toolState)
-  }
+    const { element } = viewport
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const eventData = evt.detail
-    const { element } = eventData
-
-    const { enabledElement } = svgDrawingHelper
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState?.length) {
@@ -707,7 +703,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
       return
     }
 
-    const { viewport } = enabledElement
     const targetUID = this.getTargetUID(viewport)
 
     const renderingEngine = viewport.getRenderingEngine()

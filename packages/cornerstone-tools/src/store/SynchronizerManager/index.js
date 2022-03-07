@@ -5,7 +5,7 @@ import getSynchronizerById from './getSynchronizerById'
 import getAllSynchronizers from './getAllSynchronizers'
 import destroySynchronizerById from './destroySynchronizerById'
 
-export default {
+export {
   createSynchronizer,
   destroy,
   getSynchronizerById,

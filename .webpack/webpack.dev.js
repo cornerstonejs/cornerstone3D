@@ -5,10 +5,10 @@ const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
   .rules
 // Plugins
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const CopyPlugin = require('copy-webpack-plugin');
-const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js');
+const CopyPlugin = require('copy-webpack-plugin')
+const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js')
 
-const NODE_ENV = process.NODE_ENV;
+const NODE_ENV = process.NODE_ENV
 
 // PATHS
 const PROJECT_ROOT = path.join(__dirname, '..', 'packages/demo')
@@ -20,13 +20,12 @@ const OUT_PATH = path.join(__dirname, '..', 'packages', 'demo', 'dist')
 const shaderLoader = {
   test: /\.glsl$/i,
   loader: 'shader-loader',
-};
+}
 
-const exclude = excludeNodeModulesExcept([]);
-
+const exclude = excludeNodeModulesExcept([])
 
 module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
-  const mode = NODE_ENV === 'production' ? 'production' : 'development';
+  const mode = NODE_ENV === 'production' ? 'production' : 'development'
   // const baseConfig = webpackBase(env, argv, { SRC_DIR, DIST_DIR });
 
   // return merge(baseConfig, {
@@ -55,7 +54,7 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
         chunks: 'all',
       },
       //runtimeChunk: 'single',
-      minimize: mode === "production",
+      minimize: mode === 'production',
       // sideEffects: true,
     },
     module: {
@@ -94,8 +93,8 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
               loader: 'url-loader',
             },
           ],
-      },
-      ].concat(vtkRules)
+        },
+      ].concat(vtkRules),
       // Only enable this with a linked version of VTK
       //.concat(shaderLoader),
     },
@@ -113,7 +112,12 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
       // Generate `index.html` with injected build assets
       new HtmlWebpackPlugin({
         filename: 'index.html',
-        template: path.resolve(__dirname, './../packages/demo', 'public', 'index.html'),
+        template: path.resolve(
+          __dirname,
+          './../packages/demo',
+          'public',
+          'index.html'
+        ),
       }),
       new CopyPlugin({
         patterns: [
@@ -127,12 +131,12 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
     devServer: {
       hot: true,
       open: true,
-      port: 3000,
+      port: 3001,
       historyApiFallback: true,
       headers: {
-        "Cross-Origin-Embedder-Policy": "require-corp",
-        "Cross-Origin-Opener-Policy": "same-origin"
-      }
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+      },
     },
   }
-};
+}

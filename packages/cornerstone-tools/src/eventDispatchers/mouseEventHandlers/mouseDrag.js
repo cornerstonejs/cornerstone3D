@@ -12,6 +12,7 @@ export default function mouseDrag(evt) {
     return
   }
 
+  console.debug("i'm here")
   const activeTool = getActiveToolForMouseEvent(evt)
 
   const noFoundToolOrDoesNotHaveMouseDragCallback =

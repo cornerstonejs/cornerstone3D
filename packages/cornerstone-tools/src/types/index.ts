@@ -6,10 +6,8 @@ import type {
   ToolState,
 } from './toolStateTypes'
 import type ToolStateTextBox from './ToolStateTextBox'
-import type {
-  ICornerstoneToolsEventDetail,
-  IPoints,
-} from './cornerstoneToolsEventDetailTypes'
+import type * as EventsTypes from './EventsTypes'
+import type IPoints from './IPoints'
 import type BoundingBox from './BoundingBox'
 import type PlanarBoundingBox from './PlanarBoundingBox'
 import type Point2 from './Point2'
@@ -17,6 +15,8 @@ import type Point3 from './Point3'
 import type { IToolBinding } from './ISetToolModeOptions'
 import type ISetToolModeOptions from './ISetToolModeOptions'
 import type IToolGroup from './IToolGroup'
+import type ToolHandle from './ToolHandle'
+import type { AnnotationHandle, TextBoxHandle } from './ToolHandle'
 import type {
   SegmentationRepresentation,
   LabelmapRepresentation,
@@ -52,13 +52,16 @@ export type {
   Point2,
   Point3,
   // Event data
-  ICornerstoneToolsEventDetail,
+  EventsTypes,
   IPoints,
   // ToolBindings
   IToolBinding,
   ISetToolModeOptions,
   //
   IToolGroup,
+  ToolHandle,
+  AnnotationHandle,
+  TextBoxHandle,
   // Segmentation
   SegmentationRepresentation,
   LabelmapRepresentation,

@@ -4,13 +4,23 @@ import {
 } from './testUtilsPixelData'
 
 /**
- * It creates an image based on the imageId name. It splits the imageId
- * based on "_" and deciphers each field of rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb
- * fakeLoader: myImage_64_64_10_20_1_1_0 will create a grayscale test image of size 64 by
+ * It creates an image based on the imageId name for testing purposes. It splits the imageId
+ * based on "_" and deciphers each field of scheme, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, and PT.
+ * fakeLoader: myImage_64_64_10_20_1_1_0 will load a grayscale test image of size 64 by
  * 64 and with a vertical bar which starts at 10th pixel and span 20 pixels
  * width, with pixel spacing of 1 mm and 1 mm in x and y direction.
+ *
+ * fakeImageLoader should be registered for each test image:
+ *
+ * @example
+ * ```javascript
+ * cornerstone.registerImageLoader('fakeImageLoader', imageLoader)
+ * ```
+ *
+ * then you can use imageId like: 'fakeImageLoader: myImage_64_64_10_20_1_1_0'
+ *
  * @param {imageId} imageId
- * @returns
+ * @returns Promise that resolves to the image
  */
 const fakeImageLoader = (imageId) => {
   const imageURI = imageId.split(':')[1]
@@ -51,6 +61,21 @@ const fakeImageLoader = (imageId) => {
   }
 }
 
+/**
+ * Returns the requested metadata for the imageId
+ *
+ * Note: fakeMetadataLoader should be added as a provider for each test
+ *
+ * ```javascript
+ * metaData.addProvider(fakeMetaDataProvider, 10000)
+ * ```
+ *
+ *
+ *
+ * @param {string} type - metadata type
+ * @param {string} imageId - the imageId
+ * @returns metadata based on the imageId and type
+ */
 function fakeMetaDataProvider(type, imageId) {
   const imageURI = imageId.split(':')[1]
   const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =

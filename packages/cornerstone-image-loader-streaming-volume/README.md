@@ -1,1 +1,1 @@
-# @ohif/cornerstone-image-loader-streaming-volume
+# cornerstone-image-loader-streaming-volume

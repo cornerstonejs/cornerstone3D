@@ -4,16 +4,11 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import mouseMoveListener from './mouseMoveListener'
-import {
-  ICornerstoneToolsEventDetail,
-  IPoints,
-  Point2,
-  Point3,
-} from '../../types'
-// ~~ VIEWPORT LIBRARY
+import { EventsTypes, IPoints, Point2, Point3 } from '../../types'
 import getMouseEventPoints from './getMouseEventPoints'
 
-const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE } = CornerstoneTools3DEvents
+const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
+  CornerstoneTools3DEvents
 
 interface IMouseDownListenerState {
   renderingEngineUID: string
@@ -74,7 +69,7 @@ let state: IMouseDownListenerState = {
 }
 
 /**
- * Listens to mouse down events and dependong on interaction and further
+ * Listens to mouse down events from the DOM and depending on interaction and further
  * interaction can emit the following mouse events:
  *
  * - MOUSE_DOWN
@@ -83,7 +78,8 @@ let state: IMouseDownListenerState = {
  * - MOUSE_UP
  * - MOUSE_CLICK
  *
- * @param {MouseEvent} evt The mouse event.
+ * @param evt - The Mouse event.
+ * @private
  */
 function mouseDownListener(evt: MouseEvent) {
   state.element = <HTMLElement>evt.currentTarget
@@ -102,7 +98,7 @@ function mouseDownListener(evt: MouseEvent) {
   const startPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(startPoints, startPoints)
 
-  const eventData: ICornerstoneToolsEventDetail = {
+  const eventData: EventsTypes.NormalizedMouseEventData = {
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
     event: evt,
@@ -118,15 +114,17 @@ function mouseDownListener(evt: MouseEvent) {
   state.startPoints = _copyPoints(eventData.startPoints)
   state.lastPoints = _copyPoints(eventData.lastPoints)
 
+  // by triggering MOUSE_DOWN it checks if this is toolSelection, handle modification etc.
+  // of already existing tools
   const eventDidPropagate = triggerEvent(
     eventData.element,
     MOUSE_DOWN,
     eventData
   )
 
+  // if no tools responded to this event and prevented its default propagation behavior,
+  // create a new tool
   if (eventDidPropagate) {
-    // No tools responded to this event, create a new tool
-    eventData.eventName = MOUSE_DOWN_ACTIVATE
     triggerEvent(eventData.element, MOUSE_DOWN_ACTIVATE, eventData)
   }
 
@@ -138,7 +136,7 @@ function mouseDownListener(evt: MouseEvent) {
  *_onMouseDrag - Handle emission of drag events whilst the mouse is depressed.
  *
  * @private
- * @param {MouseEvent} evt The mouse event.
+ * @param evt - The mouse event.
  */
 function _onMouseDrag(evt: MouseEvent) {
   const currentPoints = getMouseEventPoints(evt, state.element)
@@ -149,7 +147,7 @@ function _onMouseDrag(evt: MouseEvent) {
 
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints)
 
-  const eventData: ICornerstoneToolsEventDetail = {
+  const eventData: EventsTypes.NormalizedMouseEventData = {
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
     event: evt,
@@ -159,10 +157,10 @@ function _onMouseDrag(evt: MouseEvent) {
     lastPoints: _copyPoints(lastPoints),
     currentPoints,
     deltaPoints,
-    eventName: CornerstoneTools3DEvents.MOUSE_DRAG,
+    eventName: MOUSE_DRAG,
   }
 
-  triggerEvent(state.element, CornerstoneTools3DEvents.MOUSE_DRAG, eventData)
+  triggerEvent(state.element, MOUSE_DRAG, eventData)
 
   // Update the last points
   state.lastPoints = _copyPoints(currentPoints)
@@ -172,19 +170,17 @@ function _onMouseDrag(evt: MouseEvent) {
  *_onMouseDrag - Handle emission of mouse up events, and re-enabling mouse move events.
  *
  * @private
- * @param {MouseEvent} evt The mouse event.
+ * @param evt - The mouse event.
  */
 function _onMouseUp(evt: MouseEvent): void {
   // Cancel the timeout preventing the click event from triggering
   clearTimeout(state.preventClickTimeout)
 
-  const eventName = state.isClickEvent
-    ? CornerstoneTools3DEvents.MOUSE_CLICK
-    : CornerstoneTools3DEvents.MOUSE_UP
+  const eventName = state.isClickEvent ? MOUSE_CLICK : MOUSE_UP
 
   const currentPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints)
-  const eventData = {
+  const eventData: EventsTypes.NormalizedMouseEventData = {
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
     event: evt,
@@ -215,48 +211,29 @@ function _preventClickHandler() {
 }
 
 /**
- * _copyPoints - Copies a set of points.
- * @param {IPoints} points The `IPoints` instance to copy.
+ * Copies a set of points.
+ * @param points - The `IPoints` instance to copy.
  *
- * @returns {IPoints} A copy of the points.
+ * @returns A copy of the points.
  */
 function _copyPoints(points: IPoints): IPoints {
-  return <IPoints>JSON.parse(JSON.stringify(points))
+  return JSON.parse(JSON.stringify(points))
 }
 
 /**
- * _subtractPoints - Subtracts `point1` from `point0`.
- * @param {IPoint} point0 The first point.
- * @param {IPoint} point1 The second point to subtract from the first.
- *
- * @returns {IPoint} The difference.
- */
-function _subtractPoints(point0: Point2, point1: Point2): Point2 {
-  return <Point2>[point0[0] - point1[0], point0[1] - point1[1]]
-}
-
-function _subtract3dPoints(point0: Point3, point1: Point3): Point3 {
-  return <Point3>[
-    point0[0] - point1[0],
-    point0[1] - point1[1],
-    point0[2] - point1[2],
-  ]
-}
-
-/**
- * _updateMouseEventsLastPoints - Recalculates the last world coordinate,
- * as the linear transform from client to world could be different if the camera was updated.
- * @param {HTMLElement} element
- * @param lastPoints
+ * Recalculates the last world coordinate, as the linear transform from client
+ * to world could be different if the camera was updated.
+ * @param element - The HTML element
+ * @param lastPoints - The last points
  */
 function _updateMouseEventsLastPoints(
   element: HTMLElement,
   lastPoints: IPoints
 ): IPoints {
-  const enabledElement = getEnabledElement(element)
+  const { viewport } = getEnabledElement(element)
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
-  const world = enabledElement.viewport.canvasToWorld(lastPoints.canvas)
+  const world = viewport.canvasToWorld(lastPoints.canvas)
 
   return {
     page: lastPoints.page,
@@ -267,19 +244,34 @@ function _updateMouseEventsLastPoints(
 }
 
 /**
- * _getDeltaPoints - Returns the difference bettwen two `IPoints` instances.
- * @param {IPoints} currentPoints - The current points.
- * @param {IPoints} lastPoints -- The last points, to be subtracted from the `currentPoints`.
+ * Returns the difference between two `IPoints` instances.
+ * @param currentPoints - The current points.
+ * @param lastPoints -- The last points, to be subtracted from the `currentPoints`.
  *
- * @returns {IPoints} The difference.
+ * @returns The difference in IPoints format
  */
 function _getDeltaPoints(currentPoints: IPoints, lastPoints: IPoints): IPoints {
   return {
-    page: _subtractPoints(currentPoints.page, lastPoints.page),
-    client: _subtractPoints(currentPoints.client, lastPoints.client),
-    canvas: _subtractPoints(currentPoints.canvas, lastPoints.canvas),
-    world: _subtract3dPoints(currentPoints.world, lastPoints.world),
+    page: _subtractPoints2D(currentPoints.page, lastPoints.page),
+    client: _subtractPoints2D(currentPoints.client, lastPoints.client),
+    canvas: _subtractPoints2D(currentPoints.canvas, lastPoints.canvas),
+    world: _subtractPoints3D(currentPoints.world, lastPoints.world),
   }
+}
+
+/**
+ * _subtractPoints - Subtracts `point1` from `point0`.
+ * @param point0 - The first point.
+ * @param point1 - The second point to subtract from the first.
+ *
+ * @returns The difference.
+ */
+function _subtractPoints2D(point0: Point2, point1: Point2): Point2 {
+  return [point0[0] - point1[0], point0[1] - point1[1]]
+}
+
+function _subtractPoints3D(point0: Point3, point1: Point3): Point3 {
+  return [point0[0] - point1[0], point0[1] - point1[1], point0[2] - point1[2]]
 }
 
 export default mouseDownListener

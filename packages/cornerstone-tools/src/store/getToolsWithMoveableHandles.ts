@@ -1,23 +1,24 @@
-import { ToolAndToolStateArray, ToolSpecificToolData, Point2 } from '../types'
+import {
+  ToolAndToolStateArray,
+  ToolSpecificToolData,
+  Point2,
+  Point3,
+} from '../types'
 
 type ToolsWithMoveableHandles = {
   tool: any
   toolData: ToolSpecificToolData
-  handle: any
+  handle: Point3
 }
 
 /**
- * @function getToolsWithMoveableHandles Filters an array of tools, returning
- * only tools with moveable handles at the mouse location that are not locked
+ * Filters an array of tools, returning only tools with moveable handles at the mouse location that are not locked
  *
- * @public
- * @function getToolsWithMoveableHandles
- *
- * @param  {HTMLElement} element The element
- * @param  {ToolAndToolStateArray}   toolAndToolStateArray   The input tool array.
- * @param  {Point2}      canvasCoords  The coordinates of the mouse position.
- * @param  {string}      [interactionType=mouse]
- * @returns {ToolAndToolStateArray}            The filtered array.
+ * @param element - The element
+ * @param toolAndToolStateArray - The input tool array.
+ * @param canvasCoords - The coordinates of the mouse position.
+ * @param interactionType - The type of interaction (e.g. 'mouse' or 'touch')
+ * @returns The filtered array.
  */
 export default function getToolsWithMoveableHandles(
   element: HTMLElement,

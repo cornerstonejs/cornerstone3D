@@ -2,8 +2,8 @@ import { state } from '../store'
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 
 /**
- *
- * @param canvasElement
+ * Returns the SVG drawing helper for the given HTML element.
+ * @param element - The HTML element to get the SVG drawing helper for.
  * @private
  */
 function getSvgDrawingHelper(element: HTMLElement) {
@@ -18,6 +18,7 @@ function getSvgDrawingHelper(element: HTMLElement) {
   })
 
   return {
+    // Todo: not sure if we need enabledElement and _element anymore here
     enabledElement: enabledElement,
     _element: element,
     _svgLayerElement: svgLayerElement,

@@ -1,15 +1,10 @@
 import { vec3 } from 'gl-matrix'
 
 import cache from '../cache'
-import VIEWPORT_TYPE from '../constants/viewportType'
+import VIEWPORT_TYPE from '../enums/viewportType'
 import Viewport from './Viewport'
-import {
-  ViewportInput,
-  Point2,
-  Point3,
-  IImageData,
-  IVolumeInput,
-} from '../types'
+import { Point2, Point3, IImageData, IVolumeInput } from '../types'
+import { ViewportInput } from '../types/IViewport'
 import { createVolumeActor } from './helpers'
 import { loadVolume } from '../volumeLoader'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
@@ -19,8 +14,13 @@ import { getShouldUseCPURendering } from '../init'
 const EPSILON = 1e-3
 
 /**
- * An object representing a single viewport, which is a camera
- * looking into a Viewport, and an associated target output `canvas`.
+ * An object representing a VolumeViewport. VolumeViewports are used to render
+ * 3D volumes from which various orientations can be viewed. Since VolumeViewports
+ * use SharedVolumeMappers behind the scene, memory footprint of visualizations
+ * of the same volume in different orientations is very small.
+ *
+ * For setting volumes on viewports you need to use {@link addVolumesOnViewports}
+ * which will add volumes to the specified viewports.
  */
 class VolumeViewport extends Viewport {
   useCPURendering = false

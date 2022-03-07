@@ -4,7 +4,7 @@ import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 import _cloneDeep from 'lodash.clonedeep'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
-import { vec2, vec3 } from 'gl-matrix'
+import { vec2, vec3, mat4 } from 'gl-matrix'
 
 import metaData from '../metaData'
 import Viewport from './Viewport'
@@ -19,28 +19,29 @@ import {
 import {
   Point2,
   Point3,
-  ViewportInput,
   VOIRange,
   ICamera,
   IImage,
   ScalingParameters,
   IImageData,
   CPUIImageData,
-  PetScaling,
+  PTScaling,
   Scaling,
-  StackProperties,
+  StackViewportProperties,
   FlipDirection,
   ActorEntry,
   CPUFallbackEnabledElement,
   CPUFallbackColormapData,
+  EventsTypes,
 } from '../types'
+import { ViewportInput } from '../types/IViewport'
 import drawImageSync from './helpers/cpuFallback/drawImageSync'
 import { getColormap } from './helpers/cpuFallback/colors/index'
 
 import { loadAndCacheImage } from '../imageLoader'
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager'
 import ERROR_CODES from '../enums/errorCodes'
-import INTERPOLATION_TYPE from '../constants/interpolationType'
+import INTERPOLATION_TYPE from '../enums/interpolationType'
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel'
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas'
 import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport'
@@ -75,16 +76,19 @@ type CalibrationEvent = {
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal viewport, and an associated target output `canvas`.
+ *
+ * StackViewports can be rendered using both GPU and a fallback CPU is the GPU
+ * is not available (or low performance). Read more about StackViewports in
+ * the documentation section of this website.
  */
 class StackViewport extends Viewport {
-  // Viewport Data
   private imageIds: Array<string>
   private currentImageIdIndex: number
 
   // Viewport Properties
   private voiRange: VOIRange
   private invert = false
-  private interpolationType: number
+  private interpolationType: INTERPOLATION_TYPE
   private rotation = 0
 
   // Helpers
@@ -107,6 +111,10 @@ class StackViewport extends Viewport {
   public modality: string // this is needed for tools
   public scaling: Scaling
 
+  /**
+   * Constructor for the StackViewport class
+   * @param props - ViewportInput
+   */
   constructor(props: ViewportInput) {
     super(props)
     this.scaling = {}
@@ -146,8 +154,13 @@ class StackViewport extends Viewport {
     this.resetCamera()
   }
 
+  static get useCustomRenderingPipeline(): boolean {
+    return getShouldUseCPURendering()
+  }
+
   /**
-   * Custom resize method
+   * Resizes the viewport - only used in CPU fallback for StackViewport. The
+   * GPU resizing happens inside the RenderingEngine.
    */
   public resize = (): void => {
     // GPU viewport resize is handled inside the RenderingEngine
@@ -161,7 +174,7 @@ class StackViewport extends Viewport {
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
    *
-   * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
+   * @returns IImageData: dimensions, direction, scalarData, vtkImageData, metadata, scaling
    */
   public getImageData(): IImageData | CPUIImageData {
     if (this.useCPURendering) {
@@ -201,12 +214,12 @@ class StackViewport extends Viewport {
   private getImageDataCPU(): CPUIImageData | undefined {
     const { metadata } = this._cpuFallbackEnabledElement
 
-    const spacing = metadata.spacing as Point3
+    const spacing = metadata.spacing as Point2
 
     return {
-      dimensions: metadata.dimensions as Point3,
+      dimensions: metadata.dimensions as Point2,
       spacing,
-      origin: metadata.origin as Point3,
+      origin: metadata.origin,
       direction: metadata.direction as Float32Array,
       metadata: { Modality: this.modality },
       scaling: this.scaling,
@@ -267,7 +280,7 @@ class StackViewport extends Viewport {
    * For color stack images, it sets the independent components to be false which
    * is required in vtk.
    *
-   * @param imageData vtkImageData for the viewport
+   * @param imageData - vtkImageData for the viewport
    * @returns actor vtkActor
    */
   private createActorMapper = (imageData) => {
@@ -299,7 +312,7 @@ class StackViewport extends Viewport {
    * Retrieves the metadata from the metadata provider, and optionally adds the
    * scaling to the viewport if modality is PET and scaling metadata is provided.
    *
-   * @param imageId a string representing the imageId for the image
+   * @param imageId - a string representing the imageId for the image
    * @returns imagePlaneModule and imagePixelModule containing the metadata for the image
    */
   private buildMetadata(imageId: string) {
@@ -369,8 +382,9 @@ class StackViewport extends Viewport {
    * Checks the metadataProviders to see if a calibratedPixelSpacing is
    * given. If so, checks the actor to see if it needs to be modified, and
    * set the flags for imageCalibration if a new actor needs to be created
-   * @param imageId imageId
-   * @param imagePlaneModule imaagePlaneModule
+   *
+   * @param imageId - imageId
+   * @param imagePlaneModule - imagePlaneModule
    * @returns modified imagePlaneModule with the calibrated spacings
    */
   private calibrateIfNecessary(imageId, imagePlaneModule) {
@@ -458,10 +472,14 @@ class StackViewport extends Viewport {
 
   /**
    * Sets the properties for the viewport on the default actor. Properties include
-   * setting the VOI, inverting the colors and setting the interpolation type
-   * @param voiRange Sets the lower and upper voi
-   * @param invert Inverts the colors
-   * @param interpolationType Changes the interpolation type (1:linear, 0: nearest)
+   * setting the VOI, inverting the colors and setting the interpolation type, rotation
+   * and flipHorizontal/Vertical.
+   * @param voiRange - Sets the lower and upper voi
+   * @param invert - Inverts the colors
+   * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
+   * @param rotation - image rotation in degrees
+   * @param flipHorizontal - flips the image horizontally
+   * @param flipVertical - flips the image vertically
    */
   public setProperties({
     voiRange,
@@ -470,7 +488,7 @@ class StackViewport extends Viewport {
     rotation,
     flipHorizontal,
     flipVertical,
-  }: StackProperties = {}): void {
+  }: StackViewportProperties = {}): void {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi
     if (typeof voiRange !== 'undefined' || !this.voiApplied) {
@@ -501,8 +519,9 @@ class StackViewport extends Viewport {
 
   /**
    * Retrieve the viewport properties
+   * @returns viewport properties including voi, invert, interpolation type, rotation, flip
    */
-  public getProperties = (): StackProperties => {
+  public getProperties = (): StackViewportProperties => {
     return {
       voiRange: this.voiRange,
       rotation: this.rotationCache,
@@ -514,7 +533,7 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * Reset the viewport properties
+   * Reset the viewport properties to the default values
    */
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true
@@ -530,6 +549,11 @@ class StackViewport extends Viewport {
     this.render()
   }
 
+  /**
+   * If the user has selected CPU rendering, return the CPU camera, otherwise
+   * return the default camera
+   * @returns The camera object.
+   */
   public getCamera(): ICamera {
     if (this.useCPURendering) {
       return this.getCameraCPU()
@@ -538,6 +562,11 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * Set the camera based on the provided camera object.
+   * @param cameraInterface - The camera interface that will be used to
+   * render the scene.
+   */
   public setCamera(cameraInterface: ICamera): void {
     if (this.useCPURendering) {
       this.setCameraCPU(cameraInterface)
@@ -686,7 +715,8 @@ class StackViewport extends Viewport {
 
     this.setRotationGPU(rotationCache, rotation)
   }
-  private setInterpolationType(interpolationType: number): void {
+
+  private setInterpolationType(interpolationType: INTERPOLATION_TYPE): void {
     if (this.useCPURendering) {
       this.setInterpolationTypeCPU(interpolationType)
       return
@@ -694,6 +724,7 @@ class StackViewport extends Viewport {
 
     this.setInterpolationTypeGPU(interpolationType)
   }
+
   private setInvertColor(invert: boolean): void {
     if (this.useCPURendering) {
       this.setInvertColorCPU(invert)
@@ -703,7 +734,7 @@ class StackViewport extends Viewport {
     this.setInvertColorGPU(invert)
   }
 
-  public setRotationCPU(rotationCache: number, rotation: number): void {
+  private setRotationCPU(rotationCache: number, rotation: number): void {
     const { viewport } = this._cpuFallbackEnabledElement
 
     viewport.rotation = rotation
@@ -711,7 +742,7 @@ class StackViewport extends Viewport {
     this.rotation = rotation
   }
 
-  public setRotationGPU(rotationCache: number, rotation: number): void {
+  private setRotationGPU(rotationCache: number, rotation: number): void {
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
     this.getVtkActiveCamera().roll(rotationCache)
 
@@ -721,7 +752,7 @@ class StackViewport extends Viewport {
     this.rotation = rotation
   }
 
-  private setInterpolationTypeGPU(interpolationType: number): void {
+  private setInterpolationTypeGPU(interpolationType: INTERPOLATION_TYPE): void {
     const actor = this.getDefaultActor()
 
     if (!actor) {
@@ -730,11 +761,14 @@ class StackViewport extends Viewport {
 
     const { volumeActor } = actor
     const volumeProperty = volumeActor.getProperty()
-    volumeProperty.setInterpolationType(interpolationType)
+
+    // Todo: not sure why typescript doesn't like this
+    const interpolation = INTERPOLATION_TYPE.LINEAR ? 1 : 0
+    volumeProperty.setInterpolationType(interpolation)
     this.interpolationType = interpolationType
   }
 
-  private setInterpolationTypeCPU(interpolationType: number): void {
+  private setInterpolationTypeCPU(interpolationType: INTERPOLATION_TYPE): void {
     const { viewport } = this._cpuFallbackEnabledElement
 
     if (interpolationType === INTERPOLATION_TYPE.LINEAR) {
@@ -742,6 +776,7 @@ class StackViewport extends Viewport {
     } else {
       viewport.pixelReplication = true
     }
+
     this.interpolationType = interpolationType
   }
 
@@ -838,14 +873,14 @@ class StackViewport extends Viewport {
   /**
    * Adds scaling parameters to the viewport to be used along all slices
    *
-   * @param imageIdScalingFactor suvbw, suvlbm, suvbsa
+   * @param imageIdScalingFactor - suvbw, suvlbm, suvbsa
    */
   private _addScalingToViewport(imageIdScalingFactor) {
     if (!this.scaling.PET) {
       // These ratios are constant across all frames, so only need one.
       const { suvbw, suvlbm, suvbsa } = imageIdScalingFactor
 
-      const petScaling = <PetScaling>{}
+      const petScaling = <PTScaling>{}
 
       if (suvlbm) {
         petScaling.suvbwToSuvlbm = suvlbm / suvbw
@@ -862,7 +897,7 @@ class StackViewport extends Viewport {
   /**
    * Calculates number of components based on the dicom metadata
    *
-   * @param photometricInterpretation string dicom tag
+   * @param photometricInterpretation - string dicom tag
    * @returns number representing number of components
    */
   private _getNumCompsFromPhotometricInterpretation(
@@ -882,9 +917,9 @@ class StackViewport extends Viewport {
    * Calculates image metadata based on the image object. It calculates normal
    * axis for the images, and output image metadata
    *
-   * @param image stack image containing cornerstone image
-   * @returns image metadata: { bitsAllocated, number of components, origin,
-   *  direction, dimensions, spacing, number of voxels.}
+   * @param image - stack image containing cornerstone image
+   * @returns image metadata: bitsAllocated, number of components, origin,
+   *  direction, dimensions, spacing, number of voxels.
    */
   private _getImageDataMetadata(image: IImage): ImageDataMetaData {
     // TODO: Creating a single image should probably not require a metadata provider.
@@ -959,9 +994,9 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * Converts the image direction to camera viewup and viewplaneNornaml
+   * Converts the image direction to camera viewUp and viewplaneNormal
    *
-   * @param imageDataDirection vtkImageData direction
+   * @param imageDataDirection - vtkImageData direction
    * @returns viewplane normal and viewUp of the camera
    */
   private _getCameraOrientation(imageDataDirection: Float32Array): {
@@ -986,7 +1021,7 @@ class StackViewport extends Viewport {
    * and empty scalar data for the image based on the metadata
    * tags (e.g., bitsAllocated)
    *
-   * @param image cornerstone Image object
+   * @param image - cornerstone Image object
    */
   private _createVTKImageData(image: IImage): void {
     const {
@@ -1033,14 +1068,13 @@ class StackViewport extends Viewport {
 
   /**
    * Sets the imageIds to be visualized inside the stack viewport. It accepts
-   * list of imageIds, the index of the first imageId to be viewed, and the callbacks
-   * to be run on the volume actors upon creaction. Invalidated property of
-   * the viewport is set to be true so that a new actor is forced to be created
+   * list of imageIds, the index of the first imageId to be viewed. It is a
+   * asynchronous function that returns a promise resolving to imageId being
+   * displayed in the stack viewport.
    *
    *
-   * @param imageIds list of strings, that represents list of image Ids
-   * @param currentImageIdIndex number representing the index of the initial image to be displayed
-   * @param callbacks list of function that runs on the volume actor
+   * @param imageIds - list of strings, that represents list of image Ids
+   * @param currentImageIdIndex - number representing the index of the initial image to be displayed
    */
   public async setStack(
     imageIds: Array<string>,
@@ -1072,8 +1106,8 @@ class StackViewport extends Viewport {
    * and direction of the previously displayed image in the viewport or not.
    * It returns a boolean
    *
-   * @param image Cornerstone Image object
-   * @param imageData vtkImageData
+   * @param image - Cornerstone Image object
+   * @param imageData - vtkImageData
    * @returns boolean
    */
   private _checkVTKImageDataMatchesCornerstoneImage(
@@ -1109,7 +1143,7 @@ class StackViewport extends Viewport {
    * It Updates the vtkImageData of the viewport with the new pixel data
    * from the provided image object.
    *
-   * @param image Cornerstone Image object
+   * @param image - Cornerstone Image object
    */
   private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
     const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId)
@@ -1159,8 +1193,8 @@ class StackViewport extends Viewport {
    * the image and triggers the STACK_NEW_IMAGE when the request successfully retrieves
    * the image. Next, the volume actor gets updated with the new new retrieved image.
    *
-   * @param imageId string representing the imageId
-   * @param imageIdIndex index of the imageId in the imageId list
+   * @param imageId - string representing the imageId
+   * @param imageIdIndex - index of the imageId in the imageId list
    */
   private async _loadImage(
     imageId: string,
@@ -1182,7 +1216,7 @@ class StackViewport extends Viewport {
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(image, imageIdIndex, imageId) {
-        const eventData = {
+        const eventData: EventsTypes.StackNewImageEventData = {
           image,
           imageId,
           viewportUID: this.uid,
@@ -1317,7 +1351,7 @@ class StackViewport extends Viewport {
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(image, imageIdIndex, imageId) {
-        const eventData = {
+        const eventData: EventsTypes.StackNewImageEventData = {
           image,
           imageId,
           viewportUID: this.uid,
@@ -1417,7 +1451,7 @@ class StackViewport extends Viewport {
    * Note: Camera gets reset for both situations. Therefore, each image renders at
    * its exact 3D location in the space, and both image and camera moves while scrolling.
    *
-   * @param image Cornerstone image
+   * @param image - Cornerstone image
    * @returns
    */
   private _updateActorToDisplayImageId(image) {
@@ -1527,7 +1561,7 @@ class StackViewport extends Viewport {
 
   /**
    * Loads the image based on the provided imageIdIndex
-   * @param imageIdIndex number represents imageId index
+   * @param imageIdIndex - number represents imageId index
    */
   private async _setImageIdIndex(imageIdIndex: number): Promise<string> {
     if (imageIdIndex >= this.imageIds.length) {
@@ -1575,9 +1609,10 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * Loads the image based on the provided imageIdIndex
+   * Loads the image based on the provided imageIdIndex. It is an Async function which
+   * returns a promise that resolves to the imageId.
    *
-   * @param imageIdIndex number represents imageId index in the list of
+   * @param imageIdIndex - number represents imageId index in the list of
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
@@ -1593,12 +1628,12 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * Calibrates the actor with new metadata that has been added for imageId. To calibrate
+   * Calibrates the image with new metadata that has been added for imageId. To calibrate
    * a viewport, you should add your calibration data manually to
    * calibratedPixelSpacingMetadataProvider and call viewport.calibrateSpacing
    * for it get applied.
    *
-   * @param imageId imageId to be calibrated
+   * @param imageId - imageId to be calibrated
    */
   public calibrateSpacing(imageId: string): void {
     const imageIdIndex = this.getImageIds().indexOf(imageId)
@@ -1610,7 +1645,7 @@ class StackViewport extends Viewport {
    * Restores the camera props such zooming and panning after an image is
    * changed, if needed (after scroll)
    *
-   * @param parallelScale camera parallel scale
+   * @param parallelScale - camera parallel scale
    */
   private _restoreCameraProps(
     { parallelScale: prevScale }: ICamera,
@@ -1655,10 +1690,9 @@ class StackViewport extends Viewport {
 
   private triggerCameraEvent(camera: ICamera, previousCamera: ICamera) {
     // Finally emit event for the full camera change cause during load image.
-    const eventDetail = {
+    const eventDetail: EventsTypes.CameraModifiedEventData = {
       previousCamera,
       camera,
-      canvas: this.canvas,
       element: this.element,
       viewportUID: this.uid,
       renderingEngineUID: this.renderingEngineUID,
@@ -1674,16 +1708,15 @@ class StackViewport extends Viewport {
     // Update the indexToWorld and WorldToIndex for viewport
     const { imageData } = this.getImageData()
     // Finally emit event for the full camera change cause during load image.
-    const eventDetail = {
-      canvas: this.canvas,
+    const eventDetail: EventsTypes.ImageSpacingCalibratedEventData = {
       element: this.element,
       viewportUID: this.uid,
       renderingEngineUID: this.renderingEngineUID,
       imageId: this.getCurrentImageId(),
-      imageData,
+      // Todo: why do we need to pass imageData? isn't' indexToWorld and worldToIndex enough?
+      imageData: imageData as vtkImageData,
+      worldToIndex: imageData.getWorldToIndex() as mat4,
       ...this._calibrationEvent,
-      indexToWorld: imageData.getIndexToWorld(),
-      worldToIndex: imageData.getWorldToIndex(),
     }
 
     if (!this.suppressEvents) {
@@ -1696,10 +1729,9 @@ class StackViewport extends Viewport {
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
-   * projected onto the plane defined by the `Viewport`'s `vtkCamera`'s focal point
-   * and the direction of projection.
+   * projected onto the plane defined by the `Viewport`'s camera.
    *
-   * @param canvasPos The position in canvas coordinates.
+   * @param canvasPos - The position in canvas coordinates.
    * @returns The corresponding world coordinates.
    * @public
    */
@@ -1712,10 +1744,10 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * @canvasToWorld Returns the canvas coordinates of the given `worldPos`
+   * Returns the canvas coordinates of the given `worldPos`
    * projected onto the `Viewport`'s `canvas`.
    *
-   * @param worldPos The position in world coordinates.
+   * @param worldPos - The position in world coordinates.
    * @returns The corresponding canvas coordinates.
    * @public
    */
@@ -1759,7 +1791,7 @@ class StackViewport extends Viewport {
 
     const diff = vec3.subtract(vec3.create(), worldPos, origin)
 
-    const worldPoint = [
+    const worldPoint: Point2 = [
       vec3.dot(diff, iVector) / spacing[0],
       vec3.dot(diff, jVector) / spacing[1],
     ]
@@ -1845,9 +1877,9 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * @method getRenderer Returns the `vtkRenderer` responsible for rendering the `Viewport`.
+   * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
    *
-   * @returns {object} The `vtkRenderer` for the `Viewport`.
+   * @returns The `vtkRenderer` for the `Viewport`.
    */
   public getRenderer() {
     if (this.useCPURendering) {
@@ -1857,6 +1889,11 @@ class StackViewport extends Viewport {
     return super.getRenderer()
   }
 
+  /**
+   * If the renderer is CPU based, throw an error. Otherwise, return the default
+   * actor which is the first actor in the renderer.
+   * @returns An actor entry.
+   */
   public getDefaultActor(): ActorEntry {
     if (this.useCPURendering) {
       throw this.getCPUFallbackError('getDefaultActor')
@@ -1865,6 +1902,10 @@ class StackViewport extends Viewport {
     return super.getDefaultActor()
   }
 
+  /**
+   * If the renderer is CPU based, throw an error. Otherwise, return the actors in the viewport
+   * @returns An array of ActorEntry objects.
+   */
   public getActors(): Array<ActorEntry> {
     if (this.useCPURendering) {
       throw this.getCPUFallbackError('getActors')
@@ -1873,6 +1914,11 @@ class StackViewport extends Viewport {
     return super.getActors()
   }
 
+  /**
+   * If the renderer is CPU based, throw an error. Otherwise, it returns the actor entry for the given actor UID.
+   * @param actorUID - The unique ID of the actor you want to get.
+   * @returns An ActorEntry object.
+   */
   public getActor(actorUID: string): ActorEntry {
     if (this.useCPURendering) {
       throw this.getCPUFallbackError('getActor')
@@ -1881,6 +1927,11 @@ class StackViewport extends Viewport {
     return super.getActor(actorUID)
   }
 
+  /**
+   * If the renderer is CPU-based, throw an error; otherwise, set the
+   * actors in the viewport.
+   * @param actors - An array of ActorEntry objects.
+   */
   public setActors(actors: Array<ActorEntry>): void {
     if (this.useCPURendering) {
       throw this.getCPUFallbackError('setActors')
@@ -1889,6 +1940,10 @@ class StackViewport extends Viewport {
     return super.setActors(actors)
   }
 
+  /**
+   * If the renderer is CPU based, throw an error. Otherwise, add a list of actors to the viewport
+   * @param actors - An array of ActorEntry objects.
+   */
   public addActors(actors: Array<ActorEntry>): void {
     if (this.useCPURendering) {
       throw this.getCPUFallbackError('addActors')
@@ -1897,6 +1952,12 @@ class StackViewport extends Viewport {
     return super.addActors(actors)
   }
 
+  /**
+   * If the renderer is CPU based, throw an error. Otherwise, add the
+   * actor to the viewport
+   * @param actorEntry - The ActorEntry object that was created by the
+   * user.
+   */
   public addActor(actorEntry: ActorEntry): void {
     if (this.useCPURendering) {
       throw this.getCPUFallbackError('addActor')
@@ -1905,6 +1966,9 @@ class StackViewport extends Viewport {
     return super.addActor(actorEntry)
   }
 
+  /**
+   * It throws an error if the renderer is CPU based. Otherwise, it removes the actors from the viewport.
+   */
   public removeAllActors(): void {
     if (this.useCPURendering) {
       throw this.getCPUFallbackError('removeAllActors')
@@ -1915,10 +1979,6 @@ class StackViewport extends Viewport {
 
   private getCPUFallbackError(method: string): Error {
     return new Error(`method ${method} cannot be used during CPU Fallback mode`)
-  }
-
-  static get useCustomRenderingPipeline() {
-    return getShouldUseCPURendering()
   }
 
   private fillWithBackgroundColor() {
@@ -1958,6 +2018,10 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * Sets the colormap for the current viewport.
+   * @param colormap - The colormap data to use.
+   */
   public setColormap(colormap: CPUFallbackColormapData) {
     if (this.useCPURendering) {
       this.setColormapCPU(colormap)
@@ -1966,6 +2030,9 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * It sets the colormap to the default colormap.
+   */
   public unsetColormap() {
     if (this.useCPURendering) {
       this.unsetColormapCPU()

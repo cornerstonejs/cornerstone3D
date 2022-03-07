@@ -4,10 +4,10 @@ import { vec3, mat3 } from 'gl-matrix'
 /**
  * It calculates the intersection of a line and a plane.
  * Plane equation is Ax+By+Cz=D
- * @param p0 [x,y,z] of the first point of the line
- * @param p1 [x,y,z] of the second point of the line
- * @param plane [A, B, C, D] Plane parameter: Ax+By+Cz=D
- * @returns [X,Y,Z] coordinates of the intersection
+ * @param p0 - [x,y,z] of the first point of the line
+ * @param p1 - [x,y,z] of the second point of the line
+ * @param plane - [A, B, C, D] Plane parameter: Ax+By+Cz=D
+ * @returns - [X,Y,Z] coordinates of the intersection
  */
 function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3 {
   const [x0, y0, z0] = p0
@@ -25,10 +25,10 @@ function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3 {
 }
 
 /**
- *
- * @param normal normal vector
- * @param point a point on the plane
- * @returns [A, B,C, D] of plane equation A*X + B*Y + C*Z = D
+ * It returns the plane equation defined by a point and a normal vector.
+ * @param normal - normal vector
+ * @param point - a point on the plane
+ * @returns - [A, B,C, D] of plane equation A*X + B*Y + C*Z = D
  */
 function planeEquation(normal: Point3, point: Point3 | vec3): Plane {
   const [A, B, C] = normal
@@ -41,7 +41,7 @@ function planeEquation(normal: Point3, point: Point3 | vec3): Plane {
  * A1*X + B1*Y + C1*Z = D1
  * A2*X + B2*Y + C2*Z = D2
  * A3*X + B3*Y + C3*Z = D3
- * @returns {x, y, z} the intersection in the world coordinate
+ * @returns - [x, y, z] the intersection in the world coordinate
  */
 function threePlaneIntersection(
   firstPlane: Plane,
@@ -63,10 +63,4 @@ function threePlaneIntersection(
   return [x, y, z]
 }
 
-const planar = {
-  linePlaneIntersection,
-  planeEquation,
-  threePlaneIntersection,
-}
-
-export default planar
+export { linePlaneIntersection, planeEquation, threePlaneIntersection }

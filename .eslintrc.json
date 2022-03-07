@@ -58,6 +58,7 @@
     "tsconfigRootDir": "./"
   },
   "rules": {
+    "tsdoc/syntax": "warn",
     "@typescript-eslint/ban-ts-comment": "off",
     "no-console": [
       "warn",

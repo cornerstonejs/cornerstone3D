@@ -8,9 +8,17 @@ import {
   StackViewport,
   eventTarget,
   triggerEvent,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as EVENTS } from '../../../enums'
-import { Point3, Point2 } from '../../../types'
+import {
+  Point3,
+  Point2,
+  EventsTypes,
+  ToolSpecificToolData,
+  ToolHandle,
+  TextBoxHandle,
+} from '../../../types'
 import { drawCircle as drawCircleSvg } from '../../../drawingSvg'
 import {
   resetElementCursor,
@@ -301,14 +309,14 @@ export default class SUVPeakTool extends EllipticalRoiTool {
         topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
         topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
         bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottmRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
       }
 
       if (
         canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottmRight[0] &&
+        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
+        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
       ) {
         data.handles.activeHandleIndex = null
         return textBox
@@ -332,11 +340,11 @@ export default class SUVPeakTool extends EllipticalRoiTool {
   }
 
   handleSelectedCallback = (
-    evt,
-    toolData,
-    handle,
+    evt: EventsTypes.NormalizedMouseEventType,
+    toolData: ToolSpecificToolData,
+    handle: ToolHandle,
     interactionType = 'mouse'
-  ) => {
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
     const { data } = toolData
@@ -352,7 +360,7 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     let originalHandleCanvas
 
     // If handle is textBox
-    if (handle.worldPosition) {
+    if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true
     } else {
       // If handle is not textBox but svg annotation handles
@@ -624,14 +632,8 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       volume: volume,
     }
 
-    const eventDetail = {
-      canvas: element,
-      enabledElement,
-      renderingEngine,
-    }
-
     const [bottomWorld, topWorld, suvPeak, suvMax] = this.applyActiveStrategy(
-      eventDetail,
+      enabledElement,
       operationData
     )
 
@@ -728,12 +730,12 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     return [primaryToolState, secondaryToolState]
   }
 
-  renderToolData(evt: CustomEvent, svgDrawingHelper: any): void {
-    const { enabledElement } = svgDrawingHelper
+  renderToolData(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any
+  ): void {
     const { viewport } = enabledElement
-
-    const eventData = evt.detail
-    const { element } = eventData
+    const { element } = viewport
 
     const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 

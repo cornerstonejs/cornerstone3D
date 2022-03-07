@@ -48,4 +48,4 @@ function addColorLut(colorLUT: Color[], colorLUTIndex = 0): void {
 }
 
 export default { getColorForSegmentIndex, addColorLut }
-export { getColorForSegmentIndex }
+export { getColorForSegmentIndex, addColorLut }

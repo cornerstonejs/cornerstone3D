@@ -3,6 +3,17 @@ import eventTarget from '../eventTarget'
 /**
  * Small utility to trigger a custom event for a given EventTarget.
  *
+ * @example
+ *
+ * ```javascript
+ * triggerEvent(element, EVENTS.IMAGE_RENDERED, { element })
+ * ```
+ * or it can trigger event on the eventTarget itself
+ *
+ * ```javascript
+ * triggerEvent(eventTarget, CSTOOLS_EVENTS.MEASUREMENT_MODIFIED, { viewportUID, toolDataUID })
+ * ```
+ *
  * @param el - The element or EventTarget to trigger the event upon
  * @param type - The event type name
  * @param detail - The event data to be sent
