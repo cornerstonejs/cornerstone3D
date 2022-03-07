@@ -24,6 +24,7 @@ import { deepMerge } from '../../../utilities'
 import { IToolGroup } from '../../../types'
 
 const MAX_NUMBER_COLORS = 255
+const labelMapConfigCache = new Map()
 
 /**
  * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
@@ -157,20 +158,19 @@ function render(
   }
 
   const actor = viewport.getActor(segmentationDataUID)
-
   if (!actor) {
     console.warn('No actor found for actorUID: ', segmentationDataUID)
     return
   }
 
-  const { volumeActor } = actor
   const { cfun, ofun } = labelmapRepresentation.config
 
   const labelmapConfig = config.representations[Representations.Labelmap]
   const renderInactiveSegmentations = config.renderInactiveSegmentations
 
   _setLabelmapColorAndOpacity(
-    volumeActor,
+    viewport.uid,
+    actor,
     cfun,
     ofun,
     colorLUTIndex,
@@ -182,7 +182,8 @@ function render(
 }
 
 function _setLabelmapColorAndOpacity(
-  volumeActor: Types.VolumeActor,
+  viewportUID: string,
+  actor: Types.ActorEntry,
   cfun: vtkColorTransferFunction,
   ofun: vtkPiecewiseFunction,
   colorLUTIndex: number,
@@ -205,25 +206,36 @@ function _setLabelmapColorAndOpacity(
 
   const colorLUT = SegmentationState.getColorLut(colorLUTIndex)
   const numColors = Math.min(256, colorLUT.length)
+  const { volumeActor, uid } = actor
 
-  for (let i = 0; i < numColors; i++) {
-    const color = colorLUT[i]
-    cfun.addRGBPoint(
-      i,
-      color[0] / MAX_NUMBER_COLORS,
-      color[1] / MAX_NUMBER_COLORS,
-      color[2] / MAX_NUMBER_COLORS
-    )
+  const needUpdate = _needsTransferFunctionUpdateUpdate(
+    viewportUID,
+    actor.uid,
+    fillAlpha,
+    colorLUTIndex
+  )
 
-    // Set the opacity per label.
-    const segmentOpacity = (color[3] / 255) * fillAlpha
-    ofun.addPoint(i, segmentOpacity)
+  // recent change to ColorTransferFunction has aff
+
+  if (needUpdate) {
+    for (let i = 0; i < numColors; i++) {
+      const color = colorLUT[i]
+      cfun.addRGBPoint(
+        i,
+        color[0] / MAX_NUMBER_COLORS,
+        color[1] / MAX_NUMBER_COLORS,
+        color[2] / MAX_NUMBER_COLORS
+      )
+
+      // Set the opacity per label.
+      const segmentOpacity = (color[3] / 255) * fillAlpha
+      ofun.addPoint(i, segmentOpacity)
+    }
+    ofun.setClamping(false)
+    volumeActor.getProperty().setRGBTransferFunction(0, cfun)
+    volumeActor.getProperty().setScalarOpacity(0, ofun)
   }
 
-  ofun.setClamping(false)
-
-  volumeActor.getProperty().setRGBTransferFunction(0, cfun)
-  volumeActor.getProperty().setScalarOpacity(0, ofun)
   volumeActor.getProperty().setInterpolationTypeToNearest()
 
   volumeActor.getProperty().setUseLabelOutline(labelmapConfig.renderOutline)
@@ -235,6 +247,31 @@ function _setLabelmapColorAndOpacity(
   const visible =
     visibility && (isActiveLabelmap || renderInactiveSegmentations)
   volumeActor.setVisibility(visible)
+}
+
+function _needsTransferFunctionUpdateUpdate(
+  viewportUID: string,
+  actorUID: string,
+  fillAlpha: number,
+  colorLUTIndex: number
+): boolean {
+  const cacheUID = `${viewportUID}-${actorUID}`
+  const config = labelMapConfigCache.get(cacheUID)
+
+  if (
+    config &&
+    config.fillAlpha === fillAlpha &&
+    config.colorLUTIndex === colorLUTIndex
+  ) {
+    return false
+  }
+
+  labelMapConfigCache.set(cacheUID, {
+    fillAlpha,
+    colorLUTIndex,
+  })
+
+  return true
 }
 
 function _removeLabelmapFromToolGroupViewports(

@@ -40,8 +40,15 @@ function fillRectangle(
   } = operationData
   const { imageData, dimensions, scalarData } = segmentation
 
-  const rectangleCornersIJK = points.map((world) => {
+  let rectangleCornersIJK = points.map((world) => {
     return imageData.worldToIndex(world)
+  })
+
+  // math round
+  rectangleCornersIJK = rectangleCornersIJK.map((point) => {
+    return point.map((coord) => {
+      return Math.round(coord)
+    })
   })
 
   const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
