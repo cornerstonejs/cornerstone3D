@@ -863,9 +863,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.normalize(worldUnitVectorFromCenter)
 
       const { viewPlaneNormal } = camera
-      // @ts-ignore
+      // @ts-ignore // Todo: fix after vtk pr merged
       const { matrix } = vtkMatrixBuilder
         .buildFromDegree()
+        // @ts-ignore fix after vtk pr merged
         .rotate(90, viewPlaneNormal)
 
       const worldUnitOrthoVectorFromCenter: Point3 = [0, 0, 0]

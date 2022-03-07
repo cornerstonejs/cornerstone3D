@@ -13,6 +13,7 @@ const { Active, Passive, Enabled } = ToolModes
  * @param evt - The normalized camera modified event.
  */
 const onCameraModified = function (evt: Types.EventsTypes.CameraModifiedEvent) {
+  // @ts-ignore
   const enabledTools = getToolsWithModesForMouseEvent(evt, [
     Active,
     Passive,

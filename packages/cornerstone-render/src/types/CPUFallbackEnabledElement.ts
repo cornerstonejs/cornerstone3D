@@ -1,5 +1,5 @@
 import Point2 from './Point2'
-import Point3 from './Point2'
+import Point3 from './Point3'
 import IImage from './IImage'
 import CPUFallbackViewport from './CPUFallbackViewport'
 import CPUFallbackTransform from './CPUFallbackTransform'

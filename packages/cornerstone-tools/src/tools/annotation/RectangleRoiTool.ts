@@ -269,7 +269,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
     const distanceToPoint = rectangle.distanceToPoint(
       [left, top, width, height],
-      point
+      point as Point2
     )
 
     if (distanceToPoint <= proximity) {
