@@ -19,6 +19,7 @@ const { Active, Passive, Enabled } = ToolModes
 const onImageSpacingCalibrated = function (
   evt: Types.EventsTypes.ImageSpacingCalibratedEvent
 ) {
+  // @ts-ignore
   const enabledTools = getToolsWithModesForMouseEvent(evt, [
     Active,
     Passive,

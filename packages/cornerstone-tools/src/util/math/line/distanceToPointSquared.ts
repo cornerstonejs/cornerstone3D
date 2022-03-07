@@ -1,4 +1,5 @@
 import { Types } from '@precisionmetrics/cornerstone-render'
+
 function dist2(p1: Types.Point2, p2: Types.Point2): number {
   return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
 }
@@ -34,7 +35,7 @@ export default function distanceToPointSquared(
     return dist2(point, lineEnd)
   }
 
-  const pt = [
+  const pt: Types.Point2 = [
     lineStart[0] + t * (lineEnd[0] - lineStart[0]),
     lineStart[1] + t * (lineEnd[1] - lineStart[1]),
   ]
