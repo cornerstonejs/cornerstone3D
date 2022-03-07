@@ -5,7 +5,7 @@ import {
   Types,
 } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
-import { Point3 } from '../../types'
+import { Point3, Point2 } from '../../types'
 
 import { fillInsideSphere } from './strategies/fillSphere'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -174,10 +174,10 @@ export default class SphereScissorsTool extends BaseTool {
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
     const radius = Math.sqrt(dX * dX + dY * dY)
 
-    const bottomCanvas = [centerCanvas[0], centerCanvas[1] + radius]
-    const topCanvas = [centerCanvas[0], centerCanvas[1] - radius]
-    const leftCanvas = [centerCanvas[0] - radius, centerCanvas[1]]
-    const rightCanvas = [centerCanvas[0] + radius, centerCanvas[1]]
+    const bottomCanvas: Point2 = [centerCanvas[0], centerCanvas[1] + radius]
+    const topCanvas: Point2 = [centerCanvas[0], centerCanvas[1] - radius]
+    const leftCanvas: Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
+    const rightCanvas: Point2 = [centerCanvas[0] + radius, centerCanvas[1]]
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
@@ -320,7 +320,7 @@ export default class SphereScissorsTool extends BaseTool {
       this.name,
       annotationUID,
       circleUID,
-      center,
+      center as Point2,
       radius,
       {
         color,

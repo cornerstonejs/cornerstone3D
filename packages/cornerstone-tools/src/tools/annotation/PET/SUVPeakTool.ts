@@ -476,10 +476,10 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
     const radius = Math.sqrt(dX * dX + dY * dY)
 
-    const bottomCanvas = [centerCanvas[0], centerCanvas[1] + radius]
-    const topCanvas = [centerCanvas[0], centerCanvas[1] - radius]
-    const leftCanvas = [centerCanvas[0] - radius, centerCanvas[1]]
-    const rightCanvas = [centerCanvas[0] + radius, centerCanvas[1]]
+    const bottomCanvas: Point2 = [centerCanvas[0], centerCanvas[1] + radius]
+    const topCanvas: Point2 = [centerCanvas[0], centerCanvas[1] - radius]
+    const leftCanvas: Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
+    const rightCanvas: Point2 = [centerCanvas[0] + radius, centerCanvas[1]]
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
@@ -572,10 +572,10 @@ export default class SUVPeakTool extends EllipticalRoiTool {
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
     const radius = Math.sqrt(dX * dX + dY * dY)
-    const bottomCanvas = [centerCanvas[0], centerCanvas[1] + radius]
-    const topCanvas = [centerCanvas[0], centerCanvas[1] - radius]
-    const leftCanvas = [centerCanvas[0] - radius, centerCanvas[1]]
-    const rightCanvas = [centerCanvas[0] + radius, centerCanvas[1]]
+    const bottomCanvas: Point2 = [centerCanvas[0], centerCanvas[1] + radius]
+    const topCanvas: Point2 = [centerCanvas[0], centerCanvas[1] - radius]
+    const leftCanvas: Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
+    const rightCanvas: Point2 = [centerCanvas[0] + radius, centerCanvas[1]]
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
@@ -818,7 +818,7 @@ export default class SUVPeakTool extends EllipticalRoiTool {
         this.name,
         annotationUID,
         circleUID,
-        center,
+        center as Point2,
         radiusToUse,
         {
           color,
@@ -920,9 +920,12 @@ export default class SUVPeakTool extends EllipticalRoiTool {
       } = boundingBox
 
       data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([bbLeft, bbTop]),
-        topRight: viewport.canvasToWorld([bbLeft + bbWidth, bbTop]),
-        bottomLeft: viewport.canvasToWorld([bbLeft, bbTop + bbHeight]),
+        topLeft: viewport.canvasToWorld([bbLeft, bbTop] as Point2),
+        topRight: viewport.canvasToWorld([bbLeft + bbWidth, bbTop] as Point2),
+        bottomLeft: viewport.canvasToWorld([
+          bbLeft,
+          bbTop + bbHeight,
+        ] as Point2),
         bottomRight: viewport.canvasToWorld([
           bbLeft + bbWidth,
           bbTop + bbHeight,
