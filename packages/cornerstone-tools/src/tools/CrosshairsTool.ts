@@ -726,17 +726,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1)
 
       // get canvas information for points and lines (canvas box, canvas horizontal distances)
-      const pointCanvas0: Point2 = viewport.worldToCanvas(pointWorld0)
+      const canvasBox = [0, 0, sWidth, sHeight]
 
-      const { focalPoint } = camera
-      const focalPointCanvas = viewport.worldToCanvas(focalPoint)
-      // Todo: focalpointCanvas is a Point2, how is it doing arithmetics on it??
-      const canvasBox = [
-        focalPointCanvas - sWidth * 0.5,
-        focalPointCanvas + sWidth * 0.5,
-        focalPointCanvas - sHeight * 0.5,
-        focalPointCanvas + sHeight * 0.5,
-      ]
+      const pointCanvas0 = viewport.worldToCanvas(pointWorld0)
 
       const otherViewportCenterCanvas = viewport.worldToCanvas(
         otherViewportCenterWorld

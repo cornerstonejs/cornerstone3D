@@ -13,7 +13,7 @@ export default function drawLine(
   options = {}
 ): void {
   // if length is NaN return
-  if (!start[0] || !start[1] || !end[0] || !end[1]) {
+  if (isNaN(start[0]) || isNaN(start[1]) || isNaN(end[0]) || isNaN(end[1])) {
     return
   }
 
