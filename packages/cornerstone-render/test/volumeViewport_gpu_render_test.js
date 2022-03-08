@@ -39,15 +39,12 @@ const AXIAL = 'AXIAL'
 const SAGITTAL = 'SAGITTAL'
 const CORONAL = 'CORONAL'
 
-const DOMElements = []
-
 function createViewport(renderingEngine, orientation) {
   const element = document.createElement('div')
 
   element.style.width = '1000px'
   element.style.height = '1000px'
   document.body.appendChild(element)
-  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
@@ -71,6 +68,7 @@ describe('Volume Viewport GPU -- ', () => {
   describe('Volume Viewport Axial Nearest Neighbor and Linear Interpolation --- ', function () {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
 
@@ -83,7 +81,7 @@ describe('Volume Viewport GPU -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -92,6 +90,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a volume: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -129,6 +128,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a volume: linear', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -162,6 +162,7 @@ describe('Volume Viewport GPU -- ', () => {
     beforeEach(function () {
       cache.purgeCache()
 
+      this.DOMElements = []
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -171,9 +172,10 @@ describe('Volume Viewport GPU -- ', () => {
     afterEach(function () {
       cache.purgeCache()
       this.renderingEngine.destroy()
+
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -182,6 +184,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a volume: nearest', function (done) {
       const element = createViewport(this.renderingEngine, SAGITTAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -219,6 +222,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a volume: linear', function (done) {
       const element = createViewport(this.renderingEngine, SAGITTAL)
+      this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -254,6 +258,8 @@ describe('Volume Viewport GPU -- ', () => {
     beforeEach(function () {
       cache.purgeCache()
 
+      this.DOMElements = []
+
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -263,9 +269,10 @@ describe('Volume Viewport GPU -- ', () => {
     afterEach(function () {
       cache.purgeCache()
       this.renderingEngine.destroy()
+
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -274,6 +281,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a volume: nearest', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -314,6 +322,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a volume: linear', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -349,6 +358,7 @@ describe('Volume Viewport GPU -- ', () => {
     beforeEach(function () {
       cache.purgeCache()
 
+      this.DOMElements = []
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -360,7 +370,7 @@ describe('Volume Viewport GPU -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -369,6 +379,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully use setVolumesOnViewports API to load image', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -408,6 +419,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('Should be able to filter viewports based on volumeUID', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -449,6 +461,8 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully use renderViewports API to load image', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
+
       const vp = this.renderingEngine.getViewport(viewportUID)
       const canvas = vp.getCanvas()
 
@@ -488,6 +502,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully use renderViewport API to load image', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -527,6 +542,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully debug the offscreen canvas', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -564,6 +580,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully render frameOfReference', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -609,6 +626,7 @@ describe('Volume Viewport GPU -- ', () => {
     beforeEach(function () {
       cache.purgeCache()
 
+      this.DOMElements = []
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -618,9 +636,10 @@ describe('Volume Viewport GPU -- ', () => {
     afterEach(function () {
       cache.purgeCache()
       this.renderingEngine.destroy()
+
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -629,6 +648,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a color volume: nearest', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
@@ -670,6 +690,7 @@ describe('Volume Viewport GPU -- ', () => {
 
     it('should successfully load a volume: linear', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
+      this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
       const vp = this.renderingEngine.getViewport(viewportUID)

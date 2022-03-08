@@ -48,15 +48,12 @@ const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
-const DOMElements = []
-
 function createViewport(renderingEngine, orientation, width, height) {
   const element = document.createElement('div')
 
   element.style.width = `${width}px`
   element.style.height = `${height}px`
   document.body.appendChild(element)
-  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
@@ -79,6 +76,7 @@ describe('renderingCore -- Stack', () => {
   describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -90,7 +88,7 @@ describe('renderingCore -- Stack', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -99,8 +97,8 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport of square size properly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
-
-      // imageId : imageLoaderScheme: imageURI_rows_colums_barStart_barWidth_xSpacing_ySpacing_rgbFlag
+      this.DOMElements.push(element)
+      // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
       const imageId = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -126,6 +124,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport of rectangle size properly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId = 'fakeImageLoader:imageURI_64_33_20_5_1_1_0'
 
@@ -153,6 +152,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport of square size and 5mm spacing properly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
 
@@ -181,11 +181,11 @@ describe('renderingCore -- Stack', () => {
 
     it('Should use enableElement API to render one stack viewport of square size and 5mm spacing properly: nearest', function (done) {
       const element = document.createElement('div')
+      this.DOMElements.push(element)
 
       element.style.width = `256px`
       element.style.height = `256px`
       document.body.appendChild(element)
-      DOMElements.push(element)
 
       const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
 
@@ -223,6 +223,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport, first slice correctly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_0_10_5_5_0'
       const imageId2 = 'fakeImageLoader:imageURI_64_64_10_20_5_5_0'
@@ -253,6 +254,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport, last slice correctly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_0_10_5_5_0'
       const imageId2 = 'fakeImageLoader:imageURI_64_64_10_20_5_5_0'
@@ -283,6 +285,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport with CT presets correctly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
 
@@ -315,6 +318,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport with multiple imageIds of different size and different spacing: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
       const imageId2 = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
@@ -344,6 +348,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport with multiple imageIds of different size and different spacing, second slice: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
       const imageId2 = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
@@ -375,7 +380,7 @@ describe('renderingCore -- Stack', () => {
   describe('Stack Viewport Linear Interpolation --- ', () => {
     beforeEach(function () {
       cache.purgeCache()
-
+      this.DOMElements = []
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -386,7 +391,7 @@ describe('renderingCore -- Stack', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -395,6 +400,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport with linear interpolation correctly', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -419,6 +425,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render one stack viewport with multiple images with linear interpolation correctly', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
       const imageId2 = 'fakeImageLoader:imageURI_256_256_50_10_1_1_0'
@@ -446,6 +453,7 @@ describe('renderingCore -- Stack', () => {
   describe('Color Stack Images', () => {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -457,7 +465,7 @@ describe('renderingCore -- Stack', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -466,6 +474,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render color images: linear', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 512, 512)
+      this.DOMElements.push(element)
 
       // color image generation with 10 strips of different colors
       const imageId1 = 'fakeImageLoader:imageURI_100_100_0_10_1_1_1'
@@ -491,6 +500,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should render color images: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 512, 512)
+      this.DOMElements.push(element)
 
       // color image generation with 10 strips of different colors
       const imageId1 = 'fakeImageLoader:imageURI_100_100_0_10_1_1_1'
@@ -519,6 +529,7 @@ describe('renderingCore -- Stack', () => {
   describe('Stack Viewport Calibration and Scaling --- ', () => {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -536,7 +547,7 @@ describe('renderingCore -- Stack', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -545,6 +556,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should be able to render a stack viewport with PET modality scaling', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0_1'
 
@@ -566,6 +578,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should be able to calibrate the pixel spacing', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
 
@@ -609,6 +622,7 @@ describe('renderingCore -- Stack', () => {
   describe('Stack Viewport setProperties API --- ', () => {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -623,18 +637,20 @@ describe('renderingCore -- Stack', () => {
 
     afterEach(function () {
       cache.purgeCache()
+
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
       })
     })
 
-    it('Should be able to use setPropertise API', function (done) {
+    it('Should be able to use setProperties API', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
 
@@ -677,6 +693,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should be able to resetProperties API', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
 
@@ -735,6 +752,7 @@ describe('renderingCore -- Stack', () => {
   describe('Calibration ', () => {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -752,7 +770,7 @@ describe('renderingCore -- Stack', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -761,6 +779,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should be able to calibrate an image', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0_1'
 
@@ -799,6 +818,7 @@ describe('renderingCore -- Stack', () => {
   describe('Calibration ', () => {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -816,7 +836,7 @@ describe('renderingCore -- Stack', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -825,6 +845,7 @@ describe('renderingCore -- Stack', () => {
 
     it('Should be able to fire imageCalibrated event with expected data', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
       // Note: this should be a unique image in our tests, since we
       // are basically modifying the metadata of the image to be calibrated
@@ -873,6 +894,7 @@ describe('renderingCore -- Stack', () => {
   describe('Flipping', function () {
     beforeEach(function () {
       cache.purgeCache()
+      this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -884,7 +906,7 @@ describe('renderingCore -- Stack', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -893,8 +915,9 @@ describe('renderingCore -- Stack', () => {
 
     it('Should be able to flip a stack viewport horizontally', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
-      // imageId : imageLoaderScheme: imageURI_rows_colums_barStart_barWidth_xSpacing_ySpacing_rgbFlag
+      // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
       const imageId = 'fakeImageLoader:imageURI_64_64_5_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -924,8 +947,9 @@ describe('renderingCore -- Stack', () => {
 
     it('Should be able to flip a stack viewport horizontally and rotate it', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
+      this.DOMElements.push(element)
 
-      // imageId : imageLoaderScheme: imageURI_rows_colums_barStart_barWidth_xSpacing_ySpacing_rgbFlag
+      // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
       const imageId = 'fakeImageLoader:imageURI_64_64_5_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)

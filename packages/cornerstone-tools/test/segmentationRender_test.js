@@ -46,8 +46,6 @@ const AXIAL = 'AXIAL'
 const SAGITTAL = 'SAGITTAL'
 const CORONAL = 'CORONAL'
 
-const DOMElements = []
-
 function createViewport(
   renderingEngine,
   orientation,
@@ -58,7 +56,6 @@ function createViewport(
   element.style.width = '250px'
   element.style.height = '250px'
   document.body.appendChild(element)
-  DOMElements.push(element)
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
@@ -82,6 +79,8 @@ describe('Segmentation Render -- ', () => {
       csTools3d.init()
       csTools3d.addTool(SegmentationDisplayTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool('SegmentationDisplay', {})
       this.segToolGroup.setToolEnabled('SegmentationDisplay', {})
@@ -103,7 +102,7 @@ describe('Segmentation Render -- ', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
 
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -111,7 +110,8 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render a segmentation on a volume', function (done) {
-      createViewport(this.renderingEngine, AXIAL)
+      const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
@@ -155,9 +155,13 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render a segmentation on a volume with more than one viewport', function (done) {
-      createViewport(this.renderingEngine, AXIAL, viewportUID1)
-      createViewport(this.renderingEngine, SAGITTAL, viewportUID2)
-      createViewport(this.renderingEngine, CORONAL, viewportUID3)
+      const el1 = createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      const el2 = createViewport(this.renderingEngine, SAGITTAL, viewportUID2)
+      const el3 = createViewport(this.renderingEngine, CORONAL, viewportUID3)
+
+      this.DOMElements.push(el1)
+      this.DOMElements.push(el2)
+      this.DOMElements.push(el3)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
@@ -228,7 +232,8 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render two segmentations on a viewport', function (done) {
-      createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      const element = createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
@@ -278,7 +283,8 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render a segmentation with toolGroup specific config', function (done) {
-      createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      const element = createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      this.DOMElements.push(element)
 
       const customToolGroupSeConfig = {
         representations: {

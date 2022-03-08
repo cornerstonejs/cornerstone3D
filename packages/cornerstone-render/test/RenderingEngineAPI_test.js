@@ -64,6 +64,13 @@ describe('RenderingEngineAPI -- ', () => {
 
     afterEach(function () {
       this.renderingEngine.destroy()
+      ;[this.elementAxial, this.elementSagittal, this.elementCustom].forEach(
+        (el) => {
+          if (el.parentNode) {
+            el.parentNode.removeChild(el)
+          }
+        }
+      )
       cache.purgeCache()
     })
 
@@ -130,6 +137,15 @@ describe('RenderingEngineAPI -- ', () => {
 
     afterEach(function () {
       this.renderingEngine.destroy()
+      ;[
+        this.elementAxial,
+        this.elementSagittal,
+        this.elementCustomOrientation,
+      ].forEach((el) => {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el)
+        }
+      })
     })
 
     it('should be able to successfully use enable api', function () {
