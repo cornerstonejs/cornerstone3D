@@ -38,7 +38,6 @@ const renderingEngineUID = Utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 const AXIAL = 'AXIAL'
-const DOMElements = []
 
 function calculateLength(pos1, pos2) {
   const dx = pos1[0] - pos2[0]
@@ -54,8 +53,6 @@ function createViewport(renderingEngine, viewportType, width, height) {
   element.style.width = `${width}px`
   element.style.height = `${height}px`
   document.body.appendChild(element)
-
-  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
@@ -85,6 +82,8 @@ describe('Bidirectional Tool (CPU): ', () => {
   beforeEach(function () {
     csTools3d.init()
     csTools3d.addTool(BidirectionalTool, {})
+    this.DOMElements = []
+
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool('Bidirectional', {
@@ -104,12 +103,13 @@ describe('Bidirectional Tool (CPU): ', () => {
     csTools3d.destroy()
     cache.purgeCache()
     eventTarget.reset()
+
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
-    DOMElements.forEach((el) => {
+    this.DOMElements.forEach((el) => {
       if (el.parentNode) {
         el.parentNode.removeChild(el)
       }
@@ -123,6 +123,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       512,
       128
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)
@@ -221,13 +222,14 @@ describe('Bidirectional Tool (CPU): ', () => {
     }
   })
 
-  it('Should successfully create a bidirectional tool on a cpu stack viewoprt and modify its handle', function (done) {
+  it('Should successfully create a bidirectional tool on a cpu stack viewport and modify its handle', function (done) {
     const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
       256
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)
@@ -371,6 +373,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       256,
       256
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)
@@ -497,13 +500,14 @@ describe('Bidirectional Tool (CPU): ', () => {
     }
   })
 
-  it('Should successfully create a bidirectional tool on a cpu stack viewoprt and select AND move it', function (done) {
+  it('Should successfully create a bidirectional tool on a cpu stack viewport and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,
       256,
       256
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)
@@ -700,6 +704,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       256,
       256
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)

@@ -41,13 +41,9 @@ const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'
 const viewportUID3 = 'CORONAL'
 
-const LABELMAP = SegmentationRepresentations.Labelmap
-
 const AXIAL = 'AXIAL'
 const SAGITTAL = 'SAGITTAL'
 const CORONAL = 'CORONAL'
-
-const DOMElements = []
 
 function createViewport(
   renderingEngine,
@@ -59,7 +55,6 @@ function createViewport(
   element.style.width = '250px'
   element.style.height = '250px'
   document.body.appendChild(element)
-  DOMElements.push(element)
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
@@ -84,6 +79,8 @@ describe('Segmentation Tools --', () => {
       csTools3d.addTool(SegmentationDisplayTool, {})
       csTools3d.addTool(SphereScissorsTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool('SegmentationDisplay', {})
       this.segToolGroup.addTool('SphereScissor', {})
@@ -109,14 +106,14 @@ describe('Segmentation Tools --', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
 
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
       })
     })
 
-    it('should be able to edit the sementation data with the sphere scissor', function (done) {
+    it('should be able to edit the segmentation data with the sphere scissor', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
       const element2 = createViewport(
         this.renderingEngine,
@@ -128,6 +125,9 @@ describe('Segmentation Tools --', () => {
         CORONAL,
         viewportUID3
       )
+      this.DOMElements.push(element)
+      this.DOMElements.push(element2)
+      this.DOMElements.push(element3)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'

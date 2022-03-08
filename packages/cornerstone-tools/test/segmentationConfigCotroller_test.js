@@ -29,28 +29,15 @@ const {
   RectangleScissorsTool,
 } = csTools3d
 
-const {
-  fakeVolumeLoader,
-  fakeMetaDataProvider,
-  createNormalizedMouseEvent,
-  compareImages,
-} = Utilities.testUtils
+const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
+  Utilities.testUtils
 
 const renderingEngineUID = Utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
-const viewportUID2 = 'SAGITTAL'
-const viewportUID3 = 'CORONAL'
-
-const LABELMAP = SegmentationRepresentations.Labelmap
-
 const AXIAL = 'AXIAL'
-const SAGITTAL = 'SAGITTAL'
-const CORONAL = 'CORONAL'
 
 const TOOL_GROUP_UID = 'segToolGroup'
-
-const DOMElements = []
 
 function createViewport(
   renderingEngine,
@@ -62,7 +49,6 @@ function createViewport(
   element.style.width = '250px'
   element.style.height = '250px'
   document.body.appendChild(element)
-  DOMElements.push(element)
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
@@ -87,6 +73,8 @@ describe('Segmentation Controller --', () => {
       csTools3d.addTool(SegmentationDisplayTool, {})
       csTools3d.addTool(RectangleScissorsTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
       this.segToolGroup.addTool('SegmentationDisplay', {})
       this.segToolGroup.addTool('RectangleScissor', {})
@@ -112,7 +100,7 @@ describe('Segmentation Controller --', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID(TOOL_GROUP_UID)
 
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -121,6 +109,7 @@ describe('Segmentation Controller --', () => {
 
     it('should be able to load a segmentation with a toolGroup specific config', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       const toolGroupSpecificConfig = {
         representations: {
@@ -229,6 +218,7 @@ describe('Segmentation Controller --', () => {
 
     it('should be able to set a global representation configuration', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       const globalRepresentationConfig = {
         renderOutline: false,
@@ -299,6 +289,7 @@ describe('Segmentation Controller --', () => {
 
     it('should prioritize the toolGroup specific config over global config ', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       const globalRepresentationConfig = {
         renderOutline: false,

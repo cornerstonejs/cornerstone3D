@@ -36,8 +36,6 @@ const viewportUID = 'VIEWPORT22'
 
 const AXIAL = 'AXIAL'
 
-const DOMElements = []
-
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 function createViewport(renderingEngine, viewportType, width, height) {
@@ -46,8 +44,6 @@ function createViewport(renderingEngine, viewportType, width, height) {
   element.style.width = `${width}px`
   element.style.height = `${height}px`
   document.body.appendChild(element)
-
-  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
@@ -72,6 +68,8 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     csTools3d.init()
     csTools3d.addTool(StackScrollMouseWheelTool, {})
     cache.purgeCache()
+    this.DOMElements = []
+
     this.stackToolGroup = ToolGroupManager.createToolGroup('StackScroll')
     this.stackToolGroup.addTool('StackScrollMouseWheel', {})
     this.stackToolGroup.setToolActive('StackScrollMouseWheel')
@@ -90,7 +88,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('StackScroll')
 
-    DOMElements.forEach((el) => {
+    this.DOMElements.forEach((el) => {
       if (el.parentNode) {
         el.parentNode.removeChild(el)
       }
@@ -104,6 +102,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       512,
       128
     )
+    this.DOMElements.push(element)
 
     const vp = this.renderingEngine.getViewport(viewportUID)
 
@@ -176,6 +175,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       256,
       256
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const imageId2 = 'fakeImageLoader:imageURI_64_64_0_20_1_1_0'
