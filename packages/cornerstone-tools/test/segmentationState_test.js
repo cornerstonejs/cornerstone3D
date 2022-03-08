@@ -32,12 +32,8 @@ const renderingEngineUID = Utilities.uuidv4()
 const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
-const SAGITTAL = 'SAGITTAL'
-const CORONAL = 'CORONAL'
 
 const LABELMAP = SegmentationRepresentations.Labelmap
-
-const DOMElements = []
 
 function createViewport(renderingEngine, orientation) {
   const element = document.createElement('div')
@@ -45,7 +41,6 @@ function createViewport(renderingEngine, orientation) {
   element.style.width = '250px'
   element.style.height = '250px'
   document.body.appendChild(element)
-  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
@@ -71,6 +66,8 @@ describe('Segmentation State -- ', () => {
       csTools3d.init()
       csTools3d.addTool(SegmentationDisplayTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool('SegmentationDisplay', {})
       this.segToolGroup.setToolEnabled('SegmentationDisplay', {})
@@ -92,7 +89,7 @@ describe('Segmentation State -- ', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
 
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -101,6 +98,7 @@ describe('Segmentation State -- ', () => {
 
     it('should successfully create a global and toolGroup state when segmentation is added', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
@@ -187,6 +185,7 @@ describe('Segmentation State -- ', () => {
 
     it('should successfully create a global default representation configuration', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'

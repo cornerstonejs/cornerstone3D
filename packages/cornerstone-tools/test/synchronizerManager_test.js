@@ -37,8 +37,6 @@ const renderingEngineUID = Utilities.uuidv4()
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
 
-const DOMElements = []
-
 const ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 const ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_15_1_1_1_0`
 
@@ -51,15 +49,11 @@ function createViewports(width, height) {
   element1.style.height = `${height}px`
   document.body.appendChild(element1)
 
-  DOMElements.push(element1)
-
   const element2 = document.createElement('div')
 
   element2.style.width = `${width}px`
   element2.style.height = `${height}px`
   document.body.appendChild(element2)
-
-  DOMElements.push(element2)
 
   return [element1, element2]
 }
@@ -73,6 +67,8 @@ describe('Synchronizer Manager: ', () => {
     csTools3d.init()
     csTools3d.addTool(StackScrollMouseWheelTool, {})
     cache.purgeCache()
+    this.DOMElements = []
+
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
     this.firstToolGroup.addTool('StackScrollMouseWheel')
     this.firstToolGroup.setToolActive('StackScrollMouseWheel')
@@ -92,7 +88,7 @@ describe('Synchronizer Manager: ', () => {
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
 
-    DOMElements.forEach((el) => {
+    this.DOMElements.forEach((el) => {
       if (el.parentNode) {
         el.parentNode.removeChild(el)
       }
@@ -101,6 +97,8 @@ describe('Synchronizer Manager: ', () => {
 
   it('Should successfully synchronizes viewports for Camera sync', function (done) {
     const [element1, element2] = createViewports(512, 128)
+    this.DOMElements.push(element1)
+    this.DOMElements.push(element2)
 
     this.renderingEngine.setViewports([
       {
@@ -205,6 +203,8 @@ describe('Synchronizer Manager: ', () => {
     csTools3d.init()
     csTools3d.addTool(WindowLevelTool, {})
     cache.purgeCache()
+    this.DOMElements = []
+
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
     this.firstToolGroup.addTool('WindowLevel', {
       configuration: { volumeUID: ctVolumeId },
@@ -232,7 +232,7 @@ describe('Synchronizer Manager: ', () => {
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
 
-    DOMElements.forEach((el) => {
+    this.DOMElements.forEach((el) => {
       if (el.parentNode) {
         el.parentNode.removeChild(el)
       }
@@ -241,6 +241,8 @@ describe('Synchronizer Manager: ', () => {
 
   it('Should successfully synchronizes viewports for VOI Synchronizer', function (done) {
     const [element1, element2] = createViewports(512, 128)
+    this.DOMElements.push(element1)
+    this.DOMElements.push(element2)
 
     this.renderingEngine.setViewports([
       {

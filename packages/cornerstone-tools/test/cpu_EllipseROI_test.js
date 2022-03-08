@@ -41,16 +41,12 @@ const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
-const DOMElements = []
-
 function createViewport(renderingEngine, viewportType, width, height) {
   const element = document.createElement('div')
 
   element.style.width = `${width}px`
   element.style.height = `${height}px`
   document.body.appendChild(element)
-
-  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
@@ -80,6 +76,8 @@ describe('EllipticalRoiTool (CPU):', () => {
   beforeEach(function () {
     csTools3d.init()
     csTools3d.addTool(EllipticalRoiTool, {})
+    this.DOMElements = []
+
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool('EllipticalRoi', {
@@ -106,7 +104,7 @@ describe('EllipticalRoiTool (CPU):', () => {
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
-    DOMElements.forEach((el) => {
+    this.DOMElements.forEach((el) => {
       if (el.parentNode) {
         el.parentNode.removeChild(el)
       }
@@ -120,6 +118,7 @@ describe('EllipticalRoiTool (CPU):', () => {
       512,
       128
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)
@@ -225,6 +224,7 @@ describe('EllipticalRoiTool (CPU):', () => {
       512,
       128
     )
+    this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const vp = this.renderingEngine.getViewport(viewportUID)

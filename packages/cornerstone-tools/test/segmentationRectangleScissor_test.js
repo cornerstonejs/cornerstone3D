@@ -39,15 +39,9 @@ const renderingEngineUID = Utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'
-const viewportUID3 = 'CORONAL'
-
-const LABELMAP = SegmentationRepresentations.Labelmap
 
 const AXIAL = 'AXIAL'
 const SAGITTAL = 'SAGITTAL'
-const CORONAL = 'CORONAL'
-
-const DOMElements = []
 
 function createViewport(
   renderingEngine,
@@ -59,7 +53,6 @@ function createViewport(
   element.style.width = '250px'
   element.style.height = '250px'
   document.body.appendChild(element)
-  DOMElements.push(element)
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
@@ -84,6 +77,8 @@ describe('Segmentation Tools --', () => {
       csTools3d.addTool(SegmentationDisplayTool, {})
       csTools3d.addTool(RectangleScissorsTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool('SegmentationDisplay', {})
       this.segToolGroup.addTool('RectangleScissor', {})
@@ -109,7 +104,7 @@ describe('Segmentation Tools --', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
 
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -117,7 +112,8 @@ describe('Segmentation Tools --', () => {
     })
 
     it('should be able to create a new segmentation from a viewport', function (done) {
-      createViewport(this.renderingEngine, AXIAL)
+      const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
@@ -162,8 +158,9 @@ describe('Segmentation Tools --', () => {
       }
     })
 
-    it('should be able to edit the sementation data with the rectangle scissor', function (done) {
+    it('should be able to edit the segmentation data with the rectangle scissor', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL)
+      this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
@@ -287,13 +284,15 @@ describe('Segmentation Tools --', () => {
       }
     })
 
-    it('should be able to edit the sementation data with the rectangle scissor with two viewports to render', function (done) {
+    it('should be able to edit the segmentation data with the rectangle scissor with two viewports to render', function (done) {
       const element1 = createViewport(this.renderingEngine, AXIAL)
       const element2 = createViewport(
         this.renderingEngine,
         SAGITTAL,
         viewportUID2
       )
+      this.DOMElements.push(element1)
+      this.DOMElements.push(element2)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'

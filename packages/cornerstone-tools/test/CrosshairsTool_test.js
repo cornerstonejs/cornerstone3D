@@ -33,8 +33,6 @@ const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
 const viewportUID3 = 'VIEWPORT3'
 
-const DOMElements = []
-
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 function createViewports(renderingEngine, viewportType, width, height) {
@@ -55,10 +53,6 @@ function createViewports(renderingEngine, viewportType, width, height) {
   element3.style.width = `${width}px`
   element3.style.height = `${height}px`
   document.body.appendChild(element3)
-
-  DOMElements.push(element1)
-  DOMElements.push(element2)
-  DOMElements.push(element3)
 
   renderingEngine.setViewports([
     {
@@ -102,6 +96,8 @@ describe('Cornerstone Tools: ', () => {
     csTools3d.init()
     csTools3d.addTool(CrosshairsTool, {})
     cache.purgeCache()
+    this.DOMElements = []
+
     this.testToolGroup = ToolGroupManager.createToolGroup('volume')
     this.testToolGroup.addTool('Crosshairs', {
       configuration: {},
@@ -121,7 +117,7 @@ describe('Cornerstone Tools: ', () => {
     unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('volume')
 
-    DOMElements.forEach((el) => {
+    this.DOMElements.forEach((el) => {
       if (el.parentNode) {
         el.parentNode.removeChild(el)
       }
@@ -135,6 +131,9 @@ describe('Cornerstone Tools: ', () => {
       512,
       128
     )
+    this.DOMElements.push(element1)
+    this.DOMElements.push(element2)
+    this.DOMElements.push(element3)
 
     let canvasesRendered = 0
     let annotationRendered = 0
@@ -235,6 +234,9 @@ describe('Cornerstone Tools: ', () => {
       512,
       128
     )
+    this.DOMElements.push(element1)
+    this.DOMElements.push(element2)
+    this.DOMElements.push(element3)
 
     let canvasesRendered = 0
     let annotationRendered = 0
@@ -369,6 +371,9 @@ describe('Cornerstone Tools: ', () => {
       512,
       128
     )
+    this.DOMElements.push(element1)
+    this.DOMElements.push(element2)
+    this.DOMElements.push(element3)
 
     let canvasesRendered = 0
 

@@ -21,8 +21,6 @@ const renderingEngineUID = Utilities.uuidv4()
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
 
-const DOMElements = []
-
 function createViewports(width, height) {
   const element1 = document.createElement('div')
 
@@ -30,15 +28,11 @@ function createViewports(width, height) {
   element1.style.height = `${height}px`
   document.body.appendChild(element1)
 
-  DOMElements.push(element1)
-
   const element2 = document.createElement('div')
 
   element2.style.width = `${width}px`
   element2.style.height = `${height}px`
   document.body.appendChild(element2)
-
-  DOMElements.push(element2)
 
   return [element1, element2]
 }
@@ -53,6 +47,8 @@ describe('ToolGroup Manager: ', () => {
       csTools3d.init()
       csTools3d.addTool(ProbeTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.toolGroup = ToolGroupManager.createToolGroup('volume1')
       this.toolGroup.addTool('Probe')
       this.toolGroup.setToolActive('Probe', {
@@ -76,7 +72,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -85,6 +81,8 @@ describe('ToolGroup Manager: ', () => {
 
     it('Should successfully creates tool groups', function () {
       const [element1, element2] = createViewports(512, 128)
+      this.DOMElements.push(element1)
+      this.DOMElements.push(element2)
 
       this.renderingEngine.setViewports([
         {
@@ -119,6 +117,8 @@ describe('ToolGroup Manager: ', () => {
       csTools3d.init()
       csTools3d.addTool(ProbeTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.toolGroup = ToolGroupManager.createToolGroup('volume1')
       this.toolGroup.addTool('Probe')
       this.toolGroup.setToolActive('Probe', {
@@ -142,7 +142,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -151,6 +151,8 @@ describe('ToolGroup Manager: ', () => {
 
     it('Should successfully create toolGroup and get tool instances', function () {
       const [element1, element2] = createViewports(512, 128)
+      this.DOMElements.push(element1)
+      this.DOMElements.push(element2)
 
       this.renderingEngine.setViewports([
         {
@@ -197,6 +199,8 @@ describe('ToolGroup Manager: ', () => {
 
     it('Should successfully Use toolGroup manager API', function () {
       const [element1, element2] = createViewports(512, 128)
+      this.DOMElements.push(element1)
+      this.DOMElements.push(element2)
 
       this.renderingEngine.setViewports([
         {
@@ -241,6 +245,8 @@ describe('ToolGroup Manager: ', () => {
 
     it('Should successfully make a tool enabled/disabled/active/passive', function () {
       const [element1, element2] = createViewports(512, 128)
+      this.DOMElements.push(element1)
+      this.DOMElements.push(element2)
 
       this.renderingEngine.setViewports([
         {
@@ -276,6 +282,8 @@ describe('ToolGroup Manager: ', () => {
 
     it('Should successfully setTool status', function () {
       const [element1, element2] = createViewports(512, 128)
+      this.DOMElements.push(element1)
+      this.DOMElements.push(element2)
 
       this.renderingEngine.setViewports([
         {

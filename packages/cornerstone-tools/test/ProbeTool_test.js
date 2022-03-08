@@ -40,8 +40,6 @@ const viewportUID = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
-const DOMElements = []
-
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 function createViewport(renderingEngine, viewportType, width, height) {
@@ -50,8 +48,6 @@ function createViewport(renderingEngine, viewportType, width, height) {
   element.style.width = `${width}px`
   element.style.height = `${height}px`
   document.body.appendChild(element)
-
-  DOMElements.push(element)
 
   renderingEngine.setViewports([
     {
@@ -76,6 +72,8 @@ describe('Probe Tool: ', () => {
       csTools3d.init()
       csTools3d.addTool(ProbeTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool('Probe', {
         configuration: { volumeUID: volumeId }, // Only for volume viewport
@@ -99,7 +97,7 @@ describe('Probe Tool: ', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -113,6 +111,7 @@ describe('Probe Tool: ', () => {
         512,
         128
       )
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -197,6 +196,7 @@ describe('Probe Tool: ', () => {
         256,
         256
       )
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -318,6 +318,7 @@ describe('Probe Tool: ', () => {
         256,
         512
       )
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -400,6 +401,7 @@ describe('Probe Tool: ', () => {
         256,
         512
       )
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -482,6 +484,7 @@ describe('Probe Tool: ', () => {
         512,
         128
       )
+      this.DOMElements.push(element)
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
@@ -565,6 +568,7 @@ describe('Probe Tool: ', () => {
         256,
         256
       )
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -687,6 +691,8 @@ describe('Probe Tool: ', () => {
       csTools3d.init()
       csTools3d.addTool(ProbeTool, {})
       cache.purgeCache()
+      this.DOMElements = []
+
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool('Probe', {
         configuration: { volumeUID: volumeId }, // Only for volume viewport
@@ -710,7 +716,7 @@ describe('Probe Tool: ', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
-      DOMElements.forEach((el) => {
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -724,6 +730,7 @@ describe('Probe Tool: ', () => {
         256,
         256
       )
+      this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
