@@ -12,7 +12,31 @@ const shaderLoader = {
 
 module.exports = function (config) {
   config.set({
-    reporters: ['junit', 'coverage', 'progress'],
+    reporters: ['junit', 'coverage', 'spec'],
+    client: {
+      jasmine: {
+        random: false, // don't randomize the order of tests
+        stopOnFailure: false,
+        failFast: false,
+      },
+      captureConsole: false,
+      clearContext: false,
+    },
+    specReporter: {
+      maxLogLines: 5, // limit number of lines logged per test
+      suppressSummary: true, // do not print summary
+      suppressErrorSummary: true, // do not print error summary
+      suppressFailed: false, // do not print information about failed tests
+      suppressPassed: false, // do not print information about passed tests
+      suppressSkipped: true, // do not print information about skipped tests
+      showSpecTiming: false, // print the time elapsed for each spec
+      failFast: false, // test would finish with error when a first fail occurs
+      prefixes: {
+        success: '    OK: ', // override prefix for passed tests, default is '✓ '
+        failure: 'FAILED: ', // override prefix for failed tests, default is '✗ '
+        skipped: 'SKIPPED: ', // override prefix for skipped tests, default is '- '
+      },
+    },
     junitReporter: {
       outputDir: 'junit',
       outputFile: 'test-results.xml',
@@ -24,6 +48,7 @@ module.exports = function (config) {
       // Reports / Output
       'karma-junit-reporter',
       'karma-coverage',
+      'karma-spec-reporter',
     ],
     frameworks: ['jasmine', 'webpack'],
     customHeaders: [
@@ -39,55 +64,16 @@ module.exports = function (config) {
       },
     ],
     files: [
-      {
-        // NOTE: This is super ugly, but I couldn't get the !(node_modules) approach to work properly
-        pattern:
-          'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js',
-        watched: false,
-      },
-      {
-        pattern:
-          'packages/cornerstone-image-loader-streaming-volume/src/**/*_test.js',
-        watched: false,
-      },
-      {
-        pattern: 'packages/cornerstone-render/test/**/*_test.js',
-        watched: false,
-      },
-      {
-        pattern: 'packages/cornerstone-render/src/**/*_test.js',
-        watched: false,
-      },
-      {
-        pattern: 'packages/cornerstone-tools/test/**/*_test.js',
-        watched: false,
-      },
-      {
-        pattern: 'packages/cornerstone-tools/src/**/*_test.js',
-        watched: false,
-      },
-      {
-        pattern: 'packages/demo/test/**/*_test.js',
-        watched: false,
-      },
-      {
-        pattern: 'packages/demo/src/**/*_test.js',
-        watched: false,
-      },
+      'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js',
+      'packages/cornerstone-render/test/**/*_test.js',
+      'packages/cornerstone-tools/test/**/*_test.js',
     ],
     preprocessors: {
       'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js': [
         'webpack',
       ],
-      'packages/cornerstone-image-loader-streaming-volume/src/**/*_test.js': [
-        'webpack',
-      ],
       'packages/cornerstone-render/test/**/*_test.js': ['webpack'],
-      'packages/cornerstone-render/src/**/*_test.js': ['webpack'],
       'packages/cornerstone-tools/test/**/*_test.js': ['webpack'],
-      'packages/cornerstone-tools/src/**/*_test.js': ['webpack'],
-      'packages/demo/test/**/*_test.js': ['webpack'],
-      'packages/demo/src/**/*_test.js': ['webpack'],
     },
     coverageIstanbulReporter: {
       reports: ['html', 'text-summary', 'lcovonly'],

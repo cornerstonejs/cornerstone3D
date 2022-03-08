@@ -165,6 +165,7 @@ function render(
 
   if (!actor) {
     console.warn('No actor found for actorUID: ', segmentationDataUID)
+    return
   }
 
   const { volumeActor } = actor

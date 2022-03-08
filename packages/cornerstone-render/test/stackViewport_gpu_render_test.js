@@ -621,6 +621,18 @@ describe('renderingCore -- Stack', () => {
       )
     })
 
+    afterEach(function () {
+      cache.purgeCache()
+      this.renderingEngine.destroy()
+      metaData.removeProvider(fakeMetaDataProvider)
+      unregisterAllImageLoaders()
+      DOMElements.forEach((el) => {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el)
+        }
+      })
+    })
+
     it('Should be able to use setPropertise API', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256)
 
