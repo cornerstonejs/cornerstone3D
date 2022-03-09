@@ -4,12 +4,15 @@ import { scrollThroughStack } from '../util/stackScrollTool'
 export default class StackScrollMouseWheelTool extends BaseTool {
   _configuration: any
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps = {},
+    defaultToolProps = {
       name: 'StackScrollMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       invert: false,
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
   }
 
   mouseWheelCallback(evt) {

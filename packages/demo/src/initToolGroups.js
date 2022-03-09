@@ -221,31 +221,31 @@ function getReferenceLineColor(viewportUID) {
 
 window.getReferenceLineColor = getReferenceLineColor
 
-function initToolGroups(toolConfiguration = {}) {
+function initToolGroups() {
   // TODO: Can we delete tool groups?
   // These need to be in lifecycle so we can undo on page death
-  csTools3d.addTool(PanTool, toolConfiguration)
+  csTools3d.addTool(PanTool)
   // @TODO: This kills the volumeUID and tool configuration
-  csTools3d.addTool(WindowLevelTool, toolConfiguration)
-  csTools3d.addTool(StackScrollMouseWheelTool, toolConfiguration)
-  csTools3d.addTool(StackScrollTool, toolConfiguration)
-  csTools3d.addTool(ZoomTool, toolConfiguration)
-  csTools3d.addTool(VolumeRotateMouseWheelTool, toolConfiguration)
-  csTools3d.addTool(MIPJumpToClickTool, toolConfiguration)
-  csTools3d.addTool(LengthTool, toolConfiguration)
-  csTools3d.addTool(ProbeTool, toolConfiguration)
-  csTools3d.addTool(RectangleRoiTool, toolConfiguration)
-  csTools3d.addTool(EllipticalRoiTool, toolConfiguration)
-  csTools3d.addTool(BidirectionalTool, toolConfiguration)
-  csTools3d.addTool(CrosshairsTool, toolConfiguration)
+  csTools3d.addTool(WindowLevelTool)
+  csTools3d.addTool(StackScrollMouseWheelTool)
+  csTools3d.addTool(StackScrollTool)
+  csTools3d.addTool(ZoomTool)
+  csTools3d.addTool(VolumeRotateMouseWheelTool)
+  csTools3d.addTool(MIPJumpToClickTool)
+  csTools3d.addTool(LengthTool)
+  csTools3d.addTool(ProbeTool)
+  csTools3d.addTool(RectangleRoiTool)
+  csTools3d.addTool(EllipticalRoiTool)
+  csTools3d.addTool(BidirectionalTool)
+  csTools3d.addTool(CrosshairsTool)
   // Segmentation
-  csTools3d.addTool(RectangleScissorsTool, toolConfiguration)
-  csTools3d.addTool(CircleScissorsTool, toolConfiguration)
-  csTools3d.addTool(SphereScissorsTool, toolConfiguration)
-  csTools3d.addTool(RectangleRoiThreshold, toolConfiguration)
-  csTools3d.addTool(RectangleRoiStartEndThreshold, toolConfiguration)
-  csTools3d.addTool(SUVPeakTool, toolConfiguration)
-  csTools3d.addTool(SegmentationDisplayTool, toolConfiguration)
+  csTools3d.addTool(RectangleScissorsTool)
+  csTools3d.addTool(CircleScissorsTool)
+  csTools3d.addTool(SphereScissorsTool)
+  csTools3d.addTool(RectangleRoiThreshold)
+  csTools3d.addTool(RectangleRoiStartEndThreshold)
+  csTools3d.addTool(SUVPeakTool)
+  csTools3d.addTool(SegmentationDisplayTool)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
     TOOL_GROUP_UIDS.STACK_CT
@@ -321,9 +321,7 @@ function addToolsToToolGroups({
   // Set up stack Scene tools
 
   if (stackPTViewportToolGroup) {
-    stackPTViewportToolGroup.addTool('WindowLevel', {
-      configuration: { stackUID: '' },
-    })
+    stackPTViewportToolGroup.addTool('WindowLevel')
     stackPTViewportToolGroup.setToolActive('WindowLevel', {
       bindings: [
         {
@@ -335,21 +333,11 @@ function addToolsToToolGroups({
     stackPTViewportToolGroup.addTool('Pan', {})
     stackPTViewportToolGroup.addTool('Zoom', {})
     stackPTViewportToolGroup.addTool('StackScrollMouseWheel', {})
-    stackPTViewportToolGroup.addTool('Bidirectional', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackPTViewportToolGroup.addTool('Length', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackPTViewportToolGroup.addTool('Probe', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackPTViewportToolGroup.addTool('RectangleRoi', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackPTViewportToolGroup.addTool('EllipticalRoi', {
-      configuration: { stackUID: ctStackUID },
-    })
+    stackPTViewportToolGroup.addTool('Bidirectional')
+    stackPTViewportToolGroup.addTool('Length')
+    stackPTViewportToolGroup.addTool('Probe')
+    stackPTViewportToolGroup.addTool('RectangleRoi')
+    stackPTViewportToolGroup.addTool('EllipticalRoi')
 
     stackPTViewportToolGroup.setToolPassive('Bidirectional')
     stackPTViewportToolGroup.setToolPassive('Length')
@@ -383,28 +371,16 @@ function addToolsToToolGroups({
   }
 
   if (stackCTViewportToolGroup) {
-    stackCTViewportToolGroup.addTool('WindowLevel', {
-      configuration: { stackUID: '' },
-    })
+    stackCTViewportToolGroup.addTool('WindowLevel')
     stackCTViewportToolGroup.addTool('Length', {})
     stackCTViewportToolGroup.addTool('Pan', {})
     stackCTViewportToolGroup.addTool('Zoom', {})
     stackCTViewportToolGroup.addTool('StackScrollMouseWheel', {})
-    stackCTViewportToolGroup.addTool('Bidirectional', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackCTViewportToolGroup.addTool('Length', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackCTViewportToolGroup.addTool('Probe', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackCTViewportToolGroup.addTool('RectangleRoi', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackCTViewportToolGroup.addTool('EllipticalRoi', {
-      configuration: { stackUID: ctStackUID },
-    })
+    stackCTViewportToolGroup.addTool('Bidirectional')
+    stackCTViewportToolGroup.addTool('Length')
+    stackCTViewportToolGroup.addTool('Probe')
+    stackCTViewportToolGroup.addTool('RectangleRoi')
+    stackCTViewportToolGroup.addTool('EllipticalRoi')
 
     stackCTViewportToolGroup.setToolActive('WindowLevel', {
       bindings: [
@@ -445,28 +421,16 @@ function addToolsToToolGroups({
   }
 
   if (stackDXViewportToolGroup) {
-    stackDXViewportToolGroup.addTool('WindowLevel', {
-      configuration: { stackUID: '' },
-    })
+    stackDXViewportToolGroup.addTool('WindowLevel')
     stackDXViewportToolGroup.addTool('Length', {})
     stackDXViewportToolGroup.addTool('Pan', {})
     stackDXViewportToolGroup.addTool('Zoom', {})
     stackDXViewportToolGroup.addTool('StackScrollMouseWheel', {})
-    stackDXViewportToolGroup.addTool('Bidirectional', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackDXViewportToolGroup.addTool('Length', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackDXViewportToolGroup.addTool('Probe', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackDXViewportToolGroup.addTool('RectangleRoi', {
-      configuration: { stackUID: ctStackUID },
-    })
-    stackDXViewportToolGroup.addTool('EllipticalRoi', {
-      configuration: { stackUID: ctStackUID },
-    })
+    stackDXViewportToolGroup.addTool('Bidirectional')
+    stackDXViewportToolGroup.addTool('Length')
+    stackDXViewportToolGroup.addTool('Probe')
+    stackDXViewportToolGroup.addTool('RectangleRoi')
+    stackDXViewportToolGroup.addTool('EllipticalRoi')
 
     stackDXViewportToolGroup.setToolActive('WindowLevel', {
       bindings: [
@@ -529,12 +493,10 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool('RectangleRoi', {})
     ctSceneToolGroup.addTool('EllipticalRoi', {})
     ctSceneToolGroup.addTool('Crosshairs', {
-      configuration: {
-        getReferenceLineColor,
-        getReferenceLineControllable,
-        getReferenceLineDraggableRotatable,
-        getReferenceLineSlabThicknessControlsOn,
-      },
+      getReferenceLineColor,
+      getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     })
 
     ctSceneToolGroup.setToolPassive('Bidirectional')
@@ -584,12 +546,10 @@ function addToolsToToolGroups({
     prostateSceneToolGroup.addTool('RectangleRoi', {})
     prostateSceneToolGroup.addTool('EllipticalRoi', {})
     prostateSceneToolGroup.addTool('Crosshairs', {
-      configuration: {
-        getReferenceLineColor,
-        getReferenceLineControllable,
-        getReferenceLineDraggableRotatable,
-        getReferenceLineSlabThicknessControlsOn,
-      },
+      getReferenceLineColor,
+      getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     })
 
     prostateSceneToolGroup.setToolPassive('Bidirectional')
@@ -640,12 +600,10 @@ function addToolsToToolGroups({
     ptSceneToolGroup.addTool('RectangleRoi', {})
     ptSceneToolGroup.addTool('EllipticalRoi', {})
     ptSceneToolGroup.addTool('Crosshairs', {
-      configuration: {
-        getReferenceLineColor,
-        getReferenceLineControllable,
-        getReferenceLineDraggableRotatable,
-        getReferenceLineSlabThicknessControlsOn,
-      },
+      getReferenceLineColor,
+      getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     })
 
     ptSceneToolGroup.addTool('Pan', {})
@@ -686,33 +644,19 @@ function addToolsToToolGroups({
     // Set up Fusion Scene tools
     fusionSceneToolGroup.addTool('Pan', {})
     fusionSceneToolGroup.addTool('StackScrollMouseWheel', {})
-    fusionSceneToolGroup.addTool('Bidirectional', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    fusionSceneToolGroup.addTool('Length', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    fusionSceneToolGroup.addTool('Probe', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    fusionSceneToolGroup.addTool('RectangleRoi', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
-    fusionSceneToolGroup.addTool('EllipticalRoi', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
+    fusionSceneToolGroup.addTool('Bidirectional', { volumeUID: ptVolumeUID })
+    fusionSceneToolGroup.addTool('Length', { volumeUID: ptVolumeUID })
+    fusionSceneToolGroup.addTool('Probe', { volumeUID: ptVolumeUID })
+    fusionSceneToolGroup.addTool('RectangleRoi', { volumeUID: ptVolumeUID })
+    fusionSceneToolGroup.addTool('EllipticalRoi', { volumeUID: ptVolumeUID })
     fusionSceneToolGroup.addTool('Zoom', {})
 
-    fusionSceneToolGroup.addTool('WindowLevel', {
-      configuration: { volumeUID: ptVolumeUID },
-    })
+    fusionSceneToolGroup.addTool('WindowLevel', { volumeUID: ptVolumeUID })
     fusionSceneToolGroup.addTool('Crosshairs', {
-      configuration: {
-        getReferenceLineColor,
-        getReferenceLineControllable,
-        getReferenceLineDraggableRotatable,
-        getReferenceLineSlabThicknessControlsOn,
-      },
+      getReferenceLineColor,
+      getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     })
 
     fusionSceneToolGroup.setToolPassive('Bidirectional')
@@ -748,10 +692,15 @@ function addToolsToToolGroups({
 
   if (ptMipSceneToolGroup) {
     ptMipSceneToolGroup.addTool('VolumeRotateMouseWheel', {})
-    ptMipSceneToolGroup.addTool('MIPJumpToClickTool', {})
-    ptMipSceneToolGroup.addTool('WindowLevel', {
-      configuration: { volumeUID: ptVolumeUID },
+    ptMipSceneToolGroup.addTool('MIPJumpToClickTool', {
+      // Just as an example to see it is capable of jumping in different viewports
+      targetViewportUIDs: [
+        VIEWPORT_IDS.CT.AXIAL,
+        VIEWPORT_IDS.PT.SAGITTAL,
+        VIEWPORT_IDS.FUSION.CORONAL,
+      ],
     })
+    ptMipSceneToolGroup.addTool('WindowLevel', { volumeUID: ptVolumeUID })
     ptMipSceneToolGroup.setToolActive('VolumeRotateMouseWheel')
     ptMipSceneToolGroup.setToolActive('MIPJumpToClickTool')
     ptMipSceneToolGroup.setToolActive('WindowLevel', {
@@ -799,9 +748,7 @@ function addToolsToToolGroups({
 
   if (ctTestSceneToolGroup) {
     // Set up CTOBLIQUE Scene tools
-    ctTestSceneToolGroup.addTool('Crosshairs', {
-      configuration: {},
-    })
+    ctTestSceneToolGroup.addTool('Crosshairs')
     ctTestSceneToolGroup.addTool('WindowLevel')
     ctTestSceneToolGroup.setToolActive('WindowLevel', {
       bindings: [
@@ -822,12 +769,10 @@ function addToolsToToolGroups({
   if (ptTestSceneToolGroup) {
     // Set up CTOBLIQUE Scene tools
     ptTestSceneToolGroup.addTool('Crosshairs', {
-      configuration: {
-        getReferenceLineColor,
-        getReferenceLineControllable,
-        getReferenceLineDraggableRotatable,
-        getReferenceLineSlabThicknessControlsOn,
-      },
+      getReferenceLineColor,
+      getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
     })
     ptTestSceneToolGroup.addTool('WindowLevel')
     ptTestSceneToolGroup.setToolActive('WindowLevel', {
@@ -848,7 +793,7 @@ function addToolsToToolGroups({
 
   if (ptTypesSceneToolGroup) {
     ptTypesSceneToolGroup.addTool('WindowLevel', {
-      configuration: { volumeUID: ptVolumeUID },
+      volumeUID: ptVolumeUID,
     })
     ptTypesSceneToolGroup.addTool('Pan', {})
     ptTypesSceneToolGroup.addTool('Zoom', {})

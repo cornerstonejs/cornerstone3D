@@ -17,6 +17,8 @@ import type ISetToolModeOptions from './ISetToolModeOptions'
 import type IToolGroup from './IToolGroup'
 import type ToolHandle from './ToolHandle'
 import type { AnnotationHandle, TextBoxHandle } from './ToolHandle'
+import type InteractionTypes from './InteractionTypes'
+import type { ToolProps, PublicToolProps } from './ToolProps'
 import type {
   SegmentationRepresentation,
   LabelmapRepresentation,
@@ -51,12 +53,15 @@ export type {
   PlanarBoundingBox,
   Point2,
   Point3,
+  ToolProps,
+  PublicToolProps,
   // Event data
   EventsTypes,
   IPoints,
   // ToolBindings
   IToolBinding,
   ISetToolModeOptions,
+  InteractionTypes,
   //
   IToolGroup,
   ToolHandle,

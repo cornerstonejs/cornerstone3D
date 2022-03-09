@@ -70,6 +70,7 @@ import {
   ToolModes,
   CornerstoneTools3DEvents,
   SegmentationRepresentations,
+  BlendModes,
 } from './enums'
 
 export {
@@ -113,6 +114,7 @@ export {
   SynchronizerManager,
   // Enums
   ToolBindings,
+  BlendModes,
   ToolModes,
   CornerstoneTools3DEvents,
   SegmentationRepresentations,

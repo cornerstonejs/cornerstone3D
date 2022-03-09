@@ -44,6 +44,8 @@ import {
   EventsTypes,
   ToolHandle,
   TextBoxHandle,
+  PublicToolProps,
+  ToolProps,
 } from '../../types'
 
 interface LengthSpecificToolData extends ToolSpecificToolData {
@@ -84,15 +86,18 @@ class LengthTool extends BaseAnnotationTool {
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'Length',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
       },
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
 
     /**
      * Will only fire for cornerstone events:

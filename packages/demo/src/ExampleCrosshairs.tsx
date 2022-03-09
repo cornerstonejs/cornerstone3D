@@ -8,10 +8,12 @@ import {
   init as cs3dInit,
   setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings, ToolModes } from '@precisionmetrics/cornerstone-tools'
+import {
+  ToolBindings,
+  ToolModes,
+  BlendModes,
+} from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
-
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
 import {
   setCTWWWC,
@@ -36,8 +38,6 @@ const VOLUME = 'volume'
 window.cache = cache
 
 let ctSceneToolGroup, prostateSceneToolGroup
-
-const { BlendMode } = vtkConstants
 
 const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS]
 
@@ -199,7 +199,7 @@ class CrosshairsExample extends Component {
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
@@ -209,7 +209,7 @@ class CrosshairsExample extends Component {
       [
         {
           volumeUID: prostateVolumeUID,
-          blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.PROSTATE.AXIAL, VIEWPORT_IDS.PROSTATE.SAGITTAL]

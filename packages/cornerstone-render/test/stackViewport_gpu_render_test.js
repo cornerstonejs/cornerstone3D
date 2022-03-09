@@ -700,17 +700,18 @@ describe('renderingCore -- Stack', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const firstImageRenderedCallback = () => {
-        let props = vp.getProperties()
-        expect(props.rotation).toBe(90)
-        expect(props.interpolationType).toBe(INTERPOLATION_TYPE.NEAREST)
-        expect(props.invert).toBe(true)
-
         element.removeEventListener(
           EVENTS.IMAGE_RENDERED,
           firstImageRenderedCallback
         )
 
+        let props = vp.getProperties()
+        expect(props.rotation).toBe(90)
+        expect(props.interpolationType).toBe(INTERPOLATION_TYPE.NEAREST)
+        expect(props.invert).toBe(true)
+
         setTimeout(() => {
+          console.log('reseting properties')
           vp.resetProperties()
         })
 
@@ -721,11 +722,14 @@ describe('renderingCore -- Stack', () => {
       }
 
       const secondImageRenderedCallback = () => {
+        console.log('resetProperties callback')
         const props = vp.getProperties()
         expect(props.rotation).toBe(0)
         expect(props.interpolationType).toBe(INTERPOLATION_TYPE.LINEAR)
         expect(props.invert).toBe(false)
+
         done()
+        console.log('done')
       }
 
       element.addEventListener(
@@ -854,15 +858,17 @@ describe('renderingCore -- Stack', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const imageRenderedCallback = () => {
+        element.removeEventListener(
+          EVENTS.IMAGE_RENDERED,
+          imageRenderedCallback
+        )
+
         const imageId = this.renderingEngine
           .getViewport(viewportUID)
           .getCurrentImageId()
 
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
-        element.removeEventListener(
-          EVENTS.IMAGE_RENDERED,
-          imageRenderedCallback
-        )
+
         element.addEventListener(
           EVENTS.IMAGE_RENDERED,
           secondImageRenderedCallback

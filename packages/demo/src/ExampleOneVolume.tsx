@@ -8,10 +8,8 @@ import {
   init as csRenderInit,
   setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import { ToolBindings, BlendModes } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
-
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
 
@@ -31,7 +29,6 @@ const VOLUME = 'volume'
 window.cache = cache
 
 let ctSceneToolGroup
-const { BlendMode } = vtkConstants
 
 const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS]
 
@@ -159,7 +156,7 @@ class OneVolumeExample extends Component {
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]

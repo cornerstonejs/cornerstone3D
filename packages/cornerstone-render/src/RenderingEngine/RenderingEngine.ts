@@ -618,6 +618,9 @@ class RenderingEngine implements IRenderingEngine {
     const { element, canvas, viewportUID, type, defaultOptions } =
       viewportInputEntry
 
+    // Make the element not focusable, we use this for modifier keys to work
+    element.tabIndex = -1
+
     const { offScreenCanvasWidth, offScreenCanvasHeight, xOffset } =
       offscreenCanvasProperties
 
@@ -700,6 +703,9 @@ class RenderingEngine implements IRenderingEngine {
    */
   private addCustomViewport(viewportInputEntry: PublicViewportInput): void {
     const { element, viewportUID, type, defaultOptions } = viewportInputEntry
+
+    // Make the element not focusable, we use this for modifier keys to work
+    element.tabIndex = -1
 
     const canvas = getOrCreateCanvas(element)
 

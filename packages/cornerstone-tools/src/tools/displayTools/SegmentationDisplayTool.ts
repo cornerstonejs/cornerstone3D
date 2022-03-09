@@ -19,14 +19,19 @@ import {
   SegmentationConfig,
 } from '../../types/SegmentationStateTypes'
 
+import { PublicToolProps, ToolProps } from '../../types'
+
 import { deepMerge } from '../../util'
 
 export default class SegmentationDisplayTool extends BaseTool {
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'SegmentationDisplay',
       configuration: {},
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
   }
 
   // Todo: this is too weird that we are passing toolGroupUID to the enableCallback

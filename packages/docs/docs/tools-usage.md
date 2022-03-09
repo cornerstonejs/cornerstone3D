@@ -90,7 +90,7 @@ In order to use the slab thickness you need to set the `blendMode` on the `Scene
 await ctScene.setVolumes([
   {
     volumeUID: ctVolumeUID,
-    blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+    blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
   },
 ])
 ```

@@ -1,19 +1,24 @@
 import { getEnabledElementByUIDs } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from './base'
 import { scrollThroughStack } from '../util/stackScrollTool'
+import { PublicToolProps, ToolProps } from '../types'
 
 export default class StackScrollTool extends BaseTool {
   touchDragCallback: () => void
   mouseDragCallback: () => void
   _configuration: any
 
-  // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'StackScroll',
-      invert: false,
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    })
+      configuration: {
+        invert: false,
+      },
+    }
+  ) {
+    super(toolProps, defaultToolProps)
 
     this.touchDragCallback = this._dragCallback.bind(this)
     this.mouseDragCallback = this._dragCallback.bind(this)

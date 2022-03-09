@@ -1,6 +1,5 @@
 import { ToolGroupManager } from '../../store'
 import { ToolModes } from '../../enums'
-import { keyEventListener } from '../../eventListeners'
 import { EventsTypes } from '../../types'
 
 type ModesFilter = Array<ToolModes>
@@ -17,8 +16,6 @@ export default function getToolsWithModesForMouseEvent(
   modesFilter: ModesFilter,
   evtButton?: any
 ) {
-  const modifierKey = keyEventListener.getModifierKey()
-
   const { renderingEngineUID, viewportUID } = evt.detail
   const toolGroup = ToolGroupManager.getToolGroup(
     renderingEngineUID,
@@ -37,15 +34,12 @@ export default function getToolsWithModesForMouseEvent(
     const toolName = toolGroupToolNames[j]
     const tool = toolGroup.toolOptions[toolName]
 
-    // tool has binding that matches the mouse button
+    // tool has binding that matches the mouse button - we match those with
+    // any modifier keys too since they can be passively interacted with
     const correctBinding =
       evtButton != null && // not null or undefined
       tool.bindings.length &&
-      tool.bindings.some(
-        (binding) =>
-          binding.mouseButton === evtButton &&
-          binding.modifierKey === modifierKey
-      )
+      tool.bindings.some((binding) => binding.mouseButton === evtButton)
 
     if (
       modesFilter.includes(tool.mode) &&
