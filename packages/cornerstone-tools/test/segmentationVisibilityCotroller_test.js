@@ -236,7 +236,7 @@ describe('Segmentation Controller --', () => {
       }
     })
 
-    // fit('should be able to load two segmentations on the toolGroup and make one invisible', function (done) {
+    // it('should be able to load two segmentations on the toolGroup and make one invisible', function (done) {
     //   const element = createViewport(this.renderingEngine, AXIAL)
 
     //   // fake volume generator follows the pattern of

@@ -5,7 +5,7 @@ import {
   Types,
 } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from '../base'
-import { Point3, Point2 } from '../../types'
+import { Point3, Point2, PublicToolProps, ToolProps } from '../../types'
 
 import { fillInsideSphere } from './strategies/fillSphere'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -53,19 +53,21 @@ export default class SphereScissorsTool extends BaseTool {
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'SphereScissor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
           FILL_INSIDE: fillInsideSphere,
-          // ERASE_INSIDE: eraseInsideCircle,
         },
         defaultStrategy: 'FILL_INSIDE',
         activeStrategy: 'FILL_INSIDE',
       },
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
   }
 
   addNewMeasurement = async (evt) => {

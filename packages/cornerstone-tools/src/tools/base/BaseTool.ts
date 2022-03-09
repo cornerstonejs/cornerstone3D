@@ -5,6 +5,29 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import deepMerge from '../../util/deepMerge'
 import { ToolModes } from '../../enums'
+import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
+
+interface IBaseTool {
+  /** Tool name */
+  name: string
+  /** ToolGroup UID the tool instance belongs to */
+  toolGroupUID: string
+  /** Tool supported interaction types */
+  supportedInteractionTypes: InteractionTypes[]
+  /** Tool Mode : Active, Passive, Enabled, Disabled */
+  mode: ToolModes
+  /** Tool Configuration */
+  configuration: {
+    preventHandleOutsideImage?: boolean
+    strategies?: Record<string, any>
+    defaultStrategy?: string
+    activeStrategy?: string
+    strategyOptions?: Record<string, unknown>
+  }
+
+  /** set the active strategy name */
+  // Todo: fix the rest in the documentation branch
+}
 
 /**
  * Abstract base class from which all tools derive.
@@ -23,21 +46,15 @@ abstract class BaseTool {
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes
 
-  constructor(
-    toolConfiguration: Record<string, any>,
-    defaultToolConfiguration: Record<string, any>
-  ) {
-    this.initialConfiguration = deepMerge(
-      defaultToolConfiguration,
-      toolConfiguration
-    )
+  constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
+    const initialProps = deepMerge(defaultToolProps, toolProps)
 
     const {
       name,
       configuration = {},
       supportedInteractionTypes,
       toolGroupUID,
-    } = this.initialConfiguration
+    } = initialProps
 
     // If strategies are not initialized in the tool config
     if (!configuration.strategies) {
@@ -47,8 +64,8 @@ abstract class BaseTool {
       configuration.strategyOptions = {}
     }
 
-    this.toolGroupUID = toolGroupUID
     this.name = name
+    this.toolGroupUID = toolGroupUID
     this.supportedInteractionTypes = supportedInteractionTypes || []
     this.configuration = Object.assign({}, configuration)
     this.mode = ToolModes.Disabled

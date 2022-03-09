@@ -40,6 +40,8 @@ import {
   EventsTypes,
   ToolHandle,
   TextBoxHandle,
+  PublicToolProps,
+  ToolProps,
 } from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
@@ -82,15 +84,18 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   isHandleOutsideImage: boolean
   preventHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'Bidirectional',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
       },
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,

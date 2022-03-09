@@ -1,6 +1,7 @@
 import { BaseTool } from './base'
 import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
 import { mat4, vec3 } from 'gl-matrix'
+import { PublicToolProps, ToolProps } from '../types'
 
 const DIRECTIONS = {
   X: [1, 0, 0],
@@ -22,8 +23,9 @@ const DIRECTIONS = {
 export default class VolumeRotateMouseWheelTool extends BaseTool {
   _configuration: any
 
-  constructor(toolConfiguration = {}) {
-    const defaultToolConfiguration = {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'VolumeRotateMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
@@ -31,8 +33,8 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
         rotateIncrementDegrees: 0.5,
       },
     }
-
-    super(toolConfiguration, defaultToolConfiguration)
+  ) {
+    super(toolProps, defaultToolProps)
   }
 
   // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js#L73

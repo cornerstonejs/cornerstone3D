@@ -61,7 +61,6 @@ function compareImages(imageDataURL, baseline, outputName) {
 
           reject(new Error(`mismatch between images for ${outputName}`))
         } else {
-          console.log(`Images match for ${outputName}`)
           resolve()
         }
       })

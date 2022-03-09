@@ -35,6 +35,8 @@ import {
   Point3,
   EventsTypes,
   ToolHandle,
+  PublicToolProps,
+  ToolProps,
 } from '../types'
 import { isToolDataLocked } from '../stateManagement/annotation/toolDataLocking'
 import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
@@ -105,8 +107,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   } | null
 
   constructor(
-    toolConfiguration: Record<string, any>,
-    defaultToolConfiguration = {
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'Crosshairs',
       supportedInteractionTypes: ['Mouse'],
       configuration: {
@@ -115,7 +117,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         // other viewports in the toolGroup if the center of the crosshairs
         // is outside of the viewport. This might be useful for the case
         // when the user is scrolling through an image (usually in the zoomed view)
-        // and the crosshairs will eventually get outisde of the viewport for
+        // and the crosshairs will eventually get outside of the viewport for
         // the other viewports.
         autoPan: {
           enabled: false,
@@ -124,21 +126,19 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       },
     }
   ) {
-    super(toolConfiguration, defaultToolConfiguration)
+    super(toolProps, defaultToolProps)
 
-    // todo this is weird? why do we have this nested? What is the diff between toolOptions and toolConfiguration in addTool?
     this._getReferenceLineColor =
-      toolConfiguration.configuration?.getReferenceLineColor ||
+      toolProps.configuration?.getReferenceLineColor ||
       defaultReferenceLineColor
     this._getReferenceLineControllable =
-      toolConfiguration.configuration?.getReferenceLineControllable ||
+      toolProps.configuration?.getReferenceLineControllable ||
       defaultReferenceLineControllable
     this._getReferenceLineDraggableRotatable =
-      toolConfiguration.configuration?.getReferenceLineDraggableRotatable ||
+      toolProps.configuration?.getReferenceLineDraggableRotatable ||
       defaultReferenceLineDraggableRotatable
     this._getReferenceLineSlabThicknessControlsOn =
-      toolConfiguration.configuration
-        ?.getReferenceLineSlabThicknessControlsOn ||
+      toolProps.configuration?.getReferenceLineSlabThicknessControlsOn ||
       defaultReferenceLineSlabThicknessControlsOn
 
     /**

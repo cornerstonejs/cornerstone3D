@@ -1,17 +1,21 @@
 import { BaseTool } from './base'
 // ~~ VTK Viewport
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import { PublicToolProps, ToolProps } from '../types'
 
 export default class ZoomTool extends BaseTool {
   touchDragCallback: () => void
   mouseDragCallback: () => void
 
   // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'Zoom',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
 
     /**
      * Will only fire two cornerstone events:

@@ -37,6 +37,8 @@ import {
   Point3,
   EventsTypes,
   ToolHandle,
+  PublicToolProps,
+  ToolProps,
 } from '../../types'
 
 interface ProbeSpecificToolData extends ToolSpecificToolData {
@@ -59,12 +61,18 @@ export default class ProbeTool extends BaseAnnotationTool {
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'Probe',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: { shadow: true, preventHandleOutsideImage: false },
-    })
+      configuration: {
+        shadow: true,
+        preventHandleOutsideImage: false,
+      },
+    }
+  ) {
+    super(toolProps, defaultToolProps)
 
     /**
      * Will only fire for cornerstone events:

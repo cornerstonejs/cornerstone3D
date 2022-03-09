@@ -1021,7 +1021,7 @@ describe('LengthTool:', () => {
       const secondCallback = () => {
         const enabledElement = getEnabledElement(element)
         const lengthToolState = getToolState(enabledElement, 'Length')
-        // Can successfully add Length tool to toolStateManager
+        //  Can successfully add Length tool to toolStateManager
         expect(lengthToolState).toBeDefined()
         expect(lengthToolState.length).toBe(1)
 
@@ -1034,14 +1034,14 @@ describe('LengthTool:', () => {
         const targets = Array.from(Object.keys(data))
         expect(targets.length).toBe(1)
 
-        // Todo: add calibrated spacing length check
-        // expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
         removeToolState(element, lengthToolData)
         done()
       }
 
       const firstCallback = () => {
+        element.removeEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -1061,7 +1061,6 @@ describe('LengthTool:', () => {
           clientY: clientY2,
         } = createNormalizedMouseEvent(imageData, index2, element, vp)
 
-        // Mouse Down
         let evt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
@@ -1072,7 +1071,6 @@ describe('LengthTool:', () => {
         })
         element.dispatchEvent(evt)
 
-        // Mouse move to put the end somewhere else
         evt = new MouseEvent('mousemove', {
           target: element,
           buttons: 1,
@@ -1095,7 +1093,6 @@ describe('LengthTool:', () => {
           .getCurrentImageId()
 
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
-        element.removeEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
         element.addEventListener(EVENTS.IMAGE_RENDERED, secondCallback)
       }
 

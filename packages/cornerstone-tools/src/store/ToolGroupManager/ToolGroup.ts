@@ -2,7 +2,6 @@ import { ToolBindings, ToolModes } from '../../enums'
 import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
 import { state } from '../index'
 import { ISetToolModeOptions, IToolGroup } from '../../types'
-import deepmerge from '../../util/deepMerge'
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors'
 import { initElementCursor } from '../../cursors/elementCursor'
@@ -30,7 +29,7 @@ export default class ToolGroup implements IToolGroup {
     }
     return toolInstance
   }
-  addTool(toolName, toolConfiguration = {}): void {
+  addTool(toolName: string, configuration = {}): void {
     const toolDefinition = state.tools[toolName]
     const hasToolName = typeof toolName !== 'undefined' && toolName !== ''
     const localToolInstance = this.toolOptions[toolName]
@@ -38,7 +37,7 @@ export default class ToolGroup implements IToolGroup {
     if (!hasToolName) {
       console.warn(
         'Tool with configuration did not produce a toolName: ',
-        toolConfiguration
+        configuration
       )
       return
     }
@@ -57,18 +56,15 @@ export default class ToolGroup implements IToolGroup {
 
     // Should these be renamed higher up, so we don't have to alias?
     // Wrap in try-catch so 3rd party tools don't explode?
-    const { toolClass: ToolClass, toolOptions: defaultToolOptions } =
-      toolDefinition
+    const { toolClass: ToolClass } = toolDefinition
 
-    const mergedToolConfiguration = deepmerge(
-      defaultToolOptions,
-      toolConfiguration
-    )
-
-    const instantiatedTool = new ToolClass({
-      ...mergedToolConfiguration,
+    const toolProps = {
+      name: toolName,
       toolGroupUID: this.uid,
-    })
+      configuration,
+    }
+
+    const instantiatedTool = new ToolClass(toolProps)
 
     // API instead of directly exposing schema?
     // Maybe not here, but feels like a "must" for any method outside of the ToolGroup itself

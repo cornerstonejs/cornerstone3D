@@ -436,7 +436,6 @@ class ModifierKeysExample extends Component {
               ref={(c) => this._elementNodes.set(i, c)}
               onContextMenu={(e) => e.preventDefault()}
               key={i}
-              tabIndex={-1}
             />
           ))}
         </ViewportGrid>
