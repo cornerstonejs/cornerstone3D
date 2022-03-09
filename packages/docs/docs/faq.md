@@ -1,5 +1,5 @@
 ---
-title: faq
+id: faq
 ---
 
 # Frequently Asked Questions

@@ -2,7 +2,7 @@
 id: core-installation
 ---
 
-# Installation
+# Core Installation
 
 This is repository is unpublished and unversioned. It's installation and
 configuration may be unfamiliar or difficult for those unacquainted with JS

@@ -4,19 +4,37 @@ module.exports = {
   docs: [
     {
       type: 'category',
-      label: 'Cornerstone-Core',
+      label: 'Getting Started',
       collapsed: true,
       items: [
-        'core-introduction',
+        'getting-started/core-installation',
+        'getting-started/tools-installation',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Tutorials',
+      collapsed: true,
+      items: ['tutorials/core-usage', 'tutorials/tools-usage'],
+    },
+    {
+      type: 'category',
+      label: 'How-to Guides',
+      collapsed: true,
+      items: [
+        'how-to-guides/core-configuration',
+        'how-to-guides/tools-configuration',
+        'how-to-guides/custom-tools',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Concepts',
+      collapsed: true,
+      items: [
         {
           type: 'category',
-          label: 'Setup',
-          collapsed: true,
-          items: ['core-installation', 'core-configuration'],
-        },
-        {
-          type: 'category',
-          label: 'Concepts',
+          label: 'Core',
           collapsed: true,
           items: [
             'concepts/cornerstone-core/imageId',
@@ -32,25 +50,9 @@ module.exports = {
             'concepts/cornerstone-core/requestPoolManager',
           ],
         },
-        'core-usage',
-        'core-tests',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Cornerstone-Tools',
-      collapsed: true,
-      items: [
-        'tools-introduction',
         {
           type: 'category',
-          label: 'Setup',
-          collapsed: true,
-          items: ['tools-installation', 'tools-configuration'],
-        },
-        {
-          type: 'category',
-          label: 'Concepts',
+          label: 'Tools',
           collapsed: true,
           items: [
             'concepts/cornerstone-tools/tools',
@@ -60,12 +62,15 @@ module.exports = {
             'concepts/cornerstone-tools/toolsStyle',
           ],
         },
-        'tools-usage',
       ],
     },
+    {
+      type: 'category',
+      label: 'Contributing',
+      collapsed: true,
+      items: ['contribute/pull-request', 'contribute/tests'],
+    },
     'migrationGuides',
-    'help',
-    'contributing',
     {
       type: 'link',
       label: 'Test Coverage Report',
@@ -76,6 +81,7 @@ module.exports = {
       label: 'Live Examples',
       href: 'pathname:///examples',
     },
+    'faq',
   ],
   // api: [
   //   {

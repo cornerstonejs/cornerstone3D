@@ -1,30 +1,24 @@
 ---
-id: core-introduction
+id: overview
 ---
 
-# Introduction
-
+# Overview
 
 `Cornerstone-3D` is a lightweight Javascript library for visualization and manipulation of medical images in modern web browsers that support the HTML5 canvas element.
-
-We have revisited the idea of image rendering in browsers, and re-built various
-functionalities to enable fast and performant visualization for most complex imaging use cases.
+Using `Cornerstone-3D` and its accompanying libraries (`Cornerstone-WADO-Image-Loader` and `Cornerstone-3D-Tools`), you can render all transfer syntaxes, manipulate and interact with images, annotate with various measurement tools, and render and edit segmentations.
 
 
-## What is new?
-
-- 3D rendering of medical images
-  - *New engine:* We have re-architectured the rendering engine for Cornerstone which implemented a `WebGL` rendering, and have created a wrapper around [vtk.js](https://github.com/kitware/vtk-js)
-  - *Shared Texture:* Our rendering engine can optimally share textures between canvases, so for complex scenarios that may require > 10 viewports, we share the texture between the viewports that _might_ look into the same data from different
-  angles (axial, sagittal, or coronal) or fuse them on top of each other.
-
-- Streaming of Volume data
-  - We have added a new volume loader which implements a progressive loading of volumes
-  to the GPU. You don't need to wait for all of the volume to load to have an initial view. Below, you can see
-  streaming of two volumes that are simultaneously loaded into the scenes for a 3x3 PET/CT fusion layout with a MIP view on the right.
 
 
-<!-- ![progressiveLoading](assets/progressiveLoading.gif) -->
+## How does Cornerstone-3D relate to cornerstone-core and cornerstone-tools library?
+Cornerstone-3D is developed by the same team that developed `cornerstone-core` and `cornerstone-tools`. Cornerstone-3D, and Cornerstone-3D-Tools provide the
+following advantages:
+
+- **Rendering**: new rendering engine for to enable advanced visualizations using [vtk.js](https://github.com/kitware/vtk-js)
+- **Optimal Memory Usage**: enables image rendering with high performance and low memory usage for complex scenarios that may require > 10 viewports using shared textures
+- **Volume Streaming**: streaming of volumes and progressively loading them to the GPU to enable faster initial view and interaction
+- **3D annotation tools**: addition of 3D annotation tools for volumes even for reconstructed views
+- **SVG Annotations**: addition of SVG annotations which significantly guarantees crisp rendering of annotations on high resolution monitors
 
 
 
@@ -46,7 +40,6 @@ these libraries would benefit from. These helper functions demonstrate how a con
 - register an image and volume loader
 - add metadata to the provider
 - sort the imageIds and lots of other useful utility functions
-
 
 At a later date, those helpers may make their
 way back into the rendering and tool libraries.
@@ -80,7 +73,7 @@ as follows:
 ```
 
 If a guide is no longer up-to-date, you can author a PR to update it by modifying
-the files in `./packages/docs/docs/*.md`. Read more on how to contribute [here](./contribute/pull-request.md).
+the files in `./packages/docs/docs/*.md`. Read more on how to contribute [here](../contribute/pull-request.md).
 A new page can be created by creating a new `.md` file and updating the `sidebar.js` to add the page
 to the sidebar.
 

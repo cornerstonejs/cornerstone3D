@@ -1,6 +1,5 @@
 ---
-id: contributing
-title: Contributing
+id: pull-request
 ---
 
 # Contributing

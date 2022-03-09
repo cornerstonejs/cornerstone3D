@@ -2,6 +2,6 @@
 id: tools-installation
 ---
 
-# Installation
+# Tools Installation
 
 Tools installation

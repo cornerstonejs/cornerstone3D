@@ -1,7 +1,7 @@
 ---
 id: tools-usage
 ---
-# Usage
+# Tools Usage
 Here we will explain how to use CornerstoneTools3D to manipulate the rendered images and also add annotations to them.
 
 ## Initialization and Destroy

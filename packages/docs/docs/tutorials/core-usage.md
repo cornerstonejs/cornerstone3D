@@ -1,7 +1,7 @@
 ---
 id: core-usage
 ---
-# Usage
+# Core Usage
 
 This page attempts to outline basic usage guidance. A more detailed, real-world
 example exists in the `./packages/demo` directory of this repository. All guidance
