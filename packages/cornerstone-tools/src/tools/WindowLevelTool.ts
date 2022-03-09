@@ -21,11 +21,14 @@ export default class WindowLevelTool extends BaseTool {
   touchDragCallback: () => void
   mouseDragCallback: () => void
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps = {},
+    defaultToolProps = {
       name: 'WindowLevel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
 
     this.touchDragCallback = this._dragCallback.bind(this)
     this.mouseDragCallback = this._dragCallback.bind(this)

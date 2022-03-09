@@ -45,6 +45,8 @@ import {
   EventsTypes,
   ToolHandle,
   TextBoxHandle,
+  PublicToolProps,
+  ToolProps,
 } from '../../types'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
@@ -93,20 +95,17 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   isHandleOutsideImage = false
 
   constructor(
-    toolConfiguration: Record<string, any>,
-    defaultToolConfiguration = {
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'EllipticalRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        strategies: {},
-        defaultStrategy: undefined,
-        activeStrategy: undefined,
         shadow: true,
         preventHandleOutsideImage: false,
       },
     }
   ) {
-    super(toolConfiguration, defaultToolConfiguration)
+    super(toolProps, defaultToolProps)
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,

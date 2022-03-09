@@ -26,7 +26,12 @@ import throttle from '../../util/throttle'
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import { ToolSpecificToolData, Point3 } from '../../types'
+import {
+  ToolSpecificToolData,
+  Point3,
+  PublicToolProps,
+  ToolProps,
+} from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 
 export interface RectangleRoiStartEndThresholdToolData
@@ -87,21 +92,16 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   isHandleOutsideImage: boolean
 
   constructor(
-    toolConfiguration: Record<string, any>,
-    defaultToolConfiguration = {
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'RectangleRoiStartEndThreshold',
-      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        strategies: {},
-        defaultStrategy: undefined,
-        activeStrategy: undefined,
-        shadow: true,
-        preventHandleOutsideImage: false,
         numSlicesToPropagate: 10,
       },
     }
   ) {
-    super(toolConfiguration, defaultToolConfiguration)
+    super(toolProps, defaultToolProps)
+
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStatsTool,
       100,

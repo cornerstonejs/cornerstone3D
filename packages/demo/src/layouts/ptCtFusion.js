@@ -1,18 +1,16 @@
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 import {
   ORIENTATION,
   VIEWPORT_TYPE,
   getVolume,
   setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
+import { BlendModes } from '@precisionmetrics/cornerstone-tools'
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
 import {
   setCTWWWC,
   setPetTransferFunction,
   getSetPetColorMapTransferFunction,
 } from '../helpers/transferFunctionHelpers'
-
-const { BlendMode } = vtkConstants
 
 function setLayout(
   renderingEngine,
@@ -235,7 +233,7 @@ async function setVolumes(
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
@@ -247,7 +245,7 @@ async function setVolumes(
       {
         volumeUID: ptVolumeUID,
         callback: setPetTransferFunction,
-        blendMode: BlendMode.COMPOSITE,
+        blendMode: BlendModes.COMPOSITE,
       },
     ],
     [VIEWPORT_IDS.PT.AXIAL, VIEWPORT_IDS.PT.SAGITTAL, VIEWPORT_IDS.PT.CORONAL]
@@ -259,12 +257,12 @@ async function setVolumes(
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
       {
         volumeUID: ptVolumeUID,
         callback: getSetPetColorMapTransferFunction(petColorMap),
-        blendMode: BlendMode.COMPOSITE,
+        blendMode: BlendModes.COMPOSITE,
       },
     ],
     [
@@ -304,7 +302,7 @@ async function setVolumes(
       {
         volumeUID: ptVolumeUID,
         callback: setPetTransferFunction,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },
     ],

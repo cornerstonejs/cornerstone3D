@@ -2,21 +2,26 @@ import { BaseTool } from './base'
 import {
   getEnabledElement,
   VolumeViewport,
-  getVolumeViewportsContainingVolumeUID,
 } from '@precisionmetrics/cornerstone-render'
 import { getVoxelPositionBasedOnIntensity } from '../util/planar'
 import jumpToWorld from '../util/viewport/jumpToWorld'
+import { PublicToolProps, ToolProps } from '../types'
 
 export default class MIPJumpToClickTool extends BaseTool {
   _configuration: any
   _bounds: any
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'MIPJumpToClickTool',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {},
-    })
+      configuration: {
+        targetViewportUIDs: [],
+      },
+    }
+  ) {
+    super(toolProps, defaultToolProps)
   }
 
   /**
@@ -29,7 +34,7 @@ export default class MIPJumpToClickTool extends BaseTool {
    * @param evt click event
    */
   mouseClickCallback(evt): void {
-    const { element, currentPoints, viewportUID } = evt.detail
+    const { element, currentPoints } = evt.detail
 
     // 1. Getting the enabled element
     const enabledElement = getEnabledElement(element)
@@ -59,20 +64,21 @@ export default class MIPJumpToClickTool extends BaseTool {
       return
     }
 
-    // 5. Get all the Viewports containing the volume
-    const viewports = getVolumeViewportsContainingVolumeUID(
-      targetVolumeUID,
-      renderingEngine.uid
-    )
+    const { targetViewportUIDs } = this.configuration
 
-    // 6. Update all the Viewports and its viewports
-    viewports.forEach((viewport) => {
-      // Don't want to jump for the viewport that was clicked on
-      if (viewport.uid === viewportUID) {
-        return
+    // 6. Update all the targetedViewports to jump
+    targetViewportUIDs.forEach((viewportUID) => {
+      // Todo: current limitation is that we cannot jump in viewports
+      // that don't belong to the renderingEngine of the source clicked viewport
+      const viewport = renderingEngine.getViewport(viewportUID)
+
+      if (viewport instanceof VolumeViewport) {
+        jumpToWorld(viewport, brightestPoint)
+      } else {
+        console.warn(
+          'Cannot jump to specified world coordinates for a viewport that is not a VolumeViewport'
+        )
       }
-
-      jumpToWorld(viewport, brightestPoint)
     })
   }
 }

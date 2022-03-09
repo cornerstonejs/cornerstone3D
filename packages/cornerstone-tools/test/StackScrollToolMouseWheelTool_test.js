@@ -132,7 +132,6 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
       attachEventHandler()
 
-      // Note: I don't know why I need this setTimeOut here
       element.dispatchEvent(evt)
     }
 

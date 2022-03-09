@@ -47,6 +47,8 @@ import {
   EventsTypes,
   ToolHandle,
   TextBoxHandle,
+  ToolProps,
+  PublicToolProps,
 } from '../../types'
 
 export interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
@@ -86,8 +88,8 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   isHandleOutsideImage: boolean
 
   constructor(
-    toolConfiguration: Record<string, any>,
-    defaultToolConfiguration = {
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'RectangleRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
@@ -96,7 +98,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       },
     }
   ) {
-    super(toolConfiguration, defaultToolConfiguration)
+    super(toolProps, defaultToolProps)
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,

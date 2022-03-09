@@ -18,6 +18,8 @@ import {
   ToolSpecificToolData,
   ToolHandle,
   TextBoxHandle,
+  PublicToolProps,
+  ToolProps,
 } from '../../../types'
 import { drawCircle as drawCircleSvg } from '../../../drawingSvg'
 import {
@@ -117,8 +119,9 @@ export default class SUVPeakTool extends EllipticalRoiTool {
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'ptSUVPeak',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
@@ -130,7 +133,9 @@ export default class SUVPeakTool extends EllipticalRoiTool {
         shadow: true,
         preventHandleOutsideImage: false,
       },
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
   }
 
   addNewMeasurement = (evt: CustomEvent): SUVPeakSpecificToolData => {

@@ -20,7 +20,12 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import { ToolSpecificToolData, Point3 } from '../../types'
+import {
+  ToolSpecificToolData,
+  Point3,
+  PublicToolProps,
+  ToolProps,
+} from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 
 export interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
@@ -60,15 +65,18 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'RectangleRoiThreshold',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
       },
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
   }
 
   addNewMeasurement = (evt: CustomEvent) => {

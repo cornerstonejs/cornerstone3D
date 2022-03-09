@@ -1,5 +1,6 @@
 import { BaseTool } from './base'
 import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
+import { PublicToolProps, ToolProps } from '../types'
 
 /**
  * @class PanTool
@@ -13,11 +14,14 @@ export default class PanTool extends BaseTool {
   touchDragCallback: () => void
   mouseDragCallback: () => void
 
-  constructor(toolConfiguration = {}) {
-    super(toolConfiguration, {
+  constructor(
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       name: 'Pan',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-    })
+    }
+  ) {
+    super(toolProps, defaultToolProps)
 
     this.touchDragCallback = this._dragCallback.bind(this)
     this.mouseDragCallback = this._dragCallback.bind(this)
