@@ -1,4 +1,4 @@
-import { imageLoader, Enums } from '@cornerstonejs/core'
+import { Enums } from '@cornerstonejs/core'
 import {
   getPixelData,
   decodeImageFrame,
@@ -146,8 +146,6 @@ function getTransferSyntaxForContentType(contentType: string): string {
 
   return defaultTransferSyntax
 }
-
-imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
 
 export default sharedArrayBufferImageLoader
 

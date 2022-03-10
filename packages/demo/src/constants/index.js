@@ -10,6 +10,7 @@ import {
   SphereScissorsTool,
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
+  BrushTool,
 } from '@cornerstonejs/tools'
 
 const renderingEngineId = 'PETCTRenderingEngine'
@@ -104,6 +105,7 @@ const SEGMENTATION_TOOLS = [
   SphereScissorsTool.toolName,
   RectangleRoiThresholdTool.toolName,
   RectangleRoiStartEndThresholdTool.toolName,
+  BrushTool.toolName,
 ]
 
 // A small simple list of in-built vtk-colormaps, to demonstrate switching transfer function on a volume.

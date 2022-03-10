@@ -23,6 +23,7 @@ import CircleScissorsTool from './segmentation/CircleScissorsTool'
 import SphereScissorsTool from './segmentation/SphereScissorsTool'
 import RectangleRoiThresholdTool from './segmentation/RectangleRoiThresholdTool'
 import RectangleRoiStartEndThresholdTool from './segmentation/RectangleRoiStartEndThresholdTool'
+import BrushTool from './segmentation/BrushTool'
 
 export {
   // ~~ BASE
@@ -51,4 +52,5 @@ export {
   SphereScissorsTool,
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
+  BrushTool,
 }

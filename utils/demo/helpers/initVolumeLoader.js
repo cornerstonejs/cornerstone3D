@@ -1,5 +1,8 @@
-import { volumeLoader } from '@cornerstonejs/core'
-import { cornerstoneStreamingImageVolumeLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import { imageLoader, volumeLoader } from '@cornerstonejs/core'
+import {
+  cornerstoneStreamingImageVolumeLoader,
+  sharedArrayBufferImageLoader,
+} from '@cornerstonejs/streaming-image-volume-loader'
 
 export default function initVolumeLoader() {
   volumeLoader.registerUnknownVolumeLoader(
@@ -9,4 +12,6 @@ export default function initVolumeLoader() {
     'cornerstoneStreamingImageVolume',
     cornerstoneStreamingImageVolumeLoader
   )
+
+  imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
 }

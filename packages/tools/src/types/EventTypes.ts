@@ -97,8 +97,11 @@ type AnnotationRenderedEventDetail = {
  * EventDetail for when a Segmentation Data is modified by a tool
  */
 type SegmentationDataModifiedEventDetail = {
-  /** segmentation Id which has all the representation data  */
+  /** unique id of the segmentationData */
   segmentationId: string
+  /** array of slice indices in a labelmap which have been modified */
+  // TODO: This is labelmap-specific and needs to be a labelmap-specific event
+  modifiedSlicesToUse?: number[]
 }
 
 /**

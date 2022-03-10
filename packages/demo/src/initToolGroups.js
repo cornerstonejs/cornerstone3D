@@ -30,6 +30,7 @@ const {
   CrosshairsTool,
   RectangleScissorsTool,
   CircleScissorsTool,
+  BrushTool,
   SphereScissorsTool,
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
@@ -241,6 +242,7 @@ function initToolGroups() {
   // Segmentation
   csTools3d.addTool(RectangleScissorsTool)
   csTools3d.addTool(CircleScissorsTool)
+  csTools3d.addTool(BrushTool)
   csTools3d.addTool(SphereScissorsTool)
   csTools3d.addTool(RectangleRoiThresholdTool)
   csTools3d.addTool(RectangleRoiStartEndThresholdTool)
@@ -483,6 +485,7 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool(CircleScissorsTool.toolName)
     ctSceneToolGroup.addTool(SphereScissorsTool.toolName)
     ctSceneToolGroup.addTool(WindowLevelTool.toolName)
+    ctSceneToolGroup.addTool(BrushTool.toolName)
 
     ctSceneToolGroup.addTool(LengthTool.toolName)
     ctSceneToolGroup.addTool(PanTool.toolName)
@@ -588,6 +591,7 @@ function addToolsToToolGroups({
     // Set up PT Scene tools
     ptSceneToolGroup.addTool(RectangleScissorsTool.toolName)
     ptSceneToolGroup.addTool(RectangleRoiThresholdTool.toolName)
+    ptSceneToolGroup.addTool(BrushTool.toolName)
     ptSceneToolGroup.addTool(SegmentationDisplayTool.toolName)
     ptSceneToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
     ptSceneToolGroup.addTool(RectangleRoiStartEndThresholdTool.toolName)

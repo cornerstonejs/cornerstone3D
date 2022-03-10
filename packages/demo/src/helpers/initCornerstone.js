@@ -2,6 +2,7 @@ import dicomParser from 'dicom-parser'
 import * as cornerstone from '@cornerstonejs/core'
 import * as csTools3d from '@cornerstonejs/tools'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js'
+import { cornerstoneStreamingImageVolumeLoader, sharedArrayBufferImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
@@ -10,6 +11,17 @@ const { calibratedPixelSpacingMetadataProvider } = cornerstone.utilities
 
 window.cornerstone = cornerstone
 window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader
+
+cornerstone.volumeLoader.registerUnknownVolumeLoader(
+  cornerstoneStreamingImageVolumeLoader
+)
+cornerstone.volumeLoader.registerVolumeLoader(
+  'cornerstoneStreamingImageVolume',
+  cornerstoneStreamingImageVolumeLoader
+)
+
+cornerstone.imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
+
 
 cornerstone.metaData.addProvider(
   WADORSHeaderProvider.get.bind(WADORSHeaderProvider),

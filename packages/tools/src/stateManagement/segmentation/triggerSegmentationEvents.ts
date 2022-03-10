@@ -121,9 +121,13 @@ function triggerSegmentationModified(segmentationId?: string): void {
  * Trigger an event that a segmentation data has been modified
  * @param segmentationId - The Id of segmentation
  */
-function triggerSegmentationDataModified(segmentationId: string): void {
+function triggerSegmentationDataModified(
+  segmentationId: string,
+  modifiedSlicesToUse?: number[]
+): void {
   const eventDetail: SegmentationDataModifiedEventDetail = {
     segmentationId,
+    modifiedSlicesToUse,
   }
 
   triggerEvent(eventTarget, Events.SEGMENTATION_DATA_MODIFIED, eventDetail)
