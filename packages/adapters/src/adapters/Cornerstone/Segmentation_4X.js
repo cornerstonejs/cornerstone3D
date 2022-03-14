@@ -378,7 +378,6 @@ function generateToolState(
             throw new Error(
                 "Segmentations orthogonal to the acquisition plane of the source data are not yet supported."
             );
-            break;
         case "Oblique":
             throw new Error(
                 "Segmentations oblique to the acquisition plane of the source data are not yet supported."
@@ -571,18 +570,6 @@ function getCorners(imagePlaneModule) {
         columnLength * rowCosines[2]
     ];
 
-    // console.log(
-    //     `entireRowVector: ${(entireRowVector[0],
-    //     entireRowVector[1],
-    //     entireRowVector[2])}`
-    // );
-
-    // console.log(
-    //     `entireColumnVector: ${(entireColumnVector[0],
-    //     entireColumnVector[1],
-    //     entireColumnVector[2])}`
-    // );
-
     const topLeft = [ipp[0], ipp[1], ipp[2]];
     const topRight = [
         topLeft[0] + entireRowVector[0],
@@ -606,62 +593,71 @@ function getCorners(imagePlaneModule) {
 
 /**
  * Find the reference frame of the segmentation frame in the source data.
- *  @returns {string} Returns the imageId
+ *
+ * @param  {Object}      multiframe        dicom metadata
+ * @param  {Int}         frameSegment      frame dicom index
+ * @param  {String[]}    imageIds          A list of imageIds.
+ * @param  {Object}      metadataProvider  A Cornerstone metadataProvider to query
+ *                                         metadata from imageIds.
+ * @param  {Float}       tolerance         The tolerance parameter
+ *
+ * @returns {String}     Returns the imageId
  */
 function findReferenceSourceImageId(
-    SourceImageSequence,
+    multiframe,
+    frameSegment,
     imageIds,
     metadataProvider,
-    PerFrameFunctionalGroups,
-    frameOfReferenceUID,
     tolerance
 ) {
-    const imageId = getImageIdOfSourceImage(
+    const {
+        FrameOfReferenceUID,
+        PerFrameFunctionalGroupsSequence,
         SourceImageSequence,
-        imageIds,
-        metadataProvider
-    );
+        ReferencedSeriesSequence
+    } = multiframe;
+    const PerFrameFunctionalGroup =
+        PerFrameFunctionalGroupsSequence[frameSegment];
+    let imageId = undefined;
 
-    if (!imageId) {
-        /** not found, we can do a check with the PlanePositionSequence.
-         * (WARNING!) However, if more than a source series is present,
-         * this logic can find the wrong frame
-         * (i.e. two source series, with the same frameOfReferenceUID,
-         * that have each a frame with the same ImagePositionPatient of PlanePositionSequence).
-         */
-        if (
-            PerFrameFunctionalGroups.PlanePositionSequence !== undefined &&
-            PerFrameFunctionalGroups.PlanePositionSequence[0] !== undefined &&
-            PerFrameFunctionalGroups.PlanePositionSequence[0]
-                .ImagePositionPatient !== undefined
-        ) {
-            for (let i = 0; i < imageIds.length; ++i) {
-                const sourceImageMetadata = cornerstone.metaData.get(
-                    "instance",
-                    imageIds[i]
-                );
+    if (ReferencedSeriesSequence) {
+        const referencedSeriesSequence = Array.isArray(ReferencedSeriesSequence)
+            ? ReferencedSeriesSequence[0]
+            : ReferencedSeriesSequence;
+        const ReferencedSeriesInstanceUID =
+            referencedSeriesSequence.SeriesInstanceUID;
 
-                if (
-                    sourceImageMetadata === undefined ||
-                    sourceImageMetadata.ImagePositionPatient === undefined ||
-                    sourceImageMetadata.FrameOfReferenceUID !==
-                        frameOfReferenceUID
-                ) {
-                    continue;
-                }
+        imageId = getImageIdOfSourceImagebyGeometry(
+            ReferencedSeriesInstanceUID,
+            FrameOfReferenceUID,
+            PerFrameFunctionalGroup,
+            imageIds,
+            tolerance
+        );
+    }
 
-                if (
-                    compareArrays(
-                        PerFrameFunctionalGroups.PlanePositionSequence[0]
-                            .ImagePositionPatient,
-                        sourceImageMetadata.ImagePositionPatient,
-                        tolerance
-                    )
-                ) {
-                    return imageIds[i];
-                }
-            }
+    if (imageId === undefined) {
+        let sourceImageSequence;
+        if (SourceImageSequence) {
+            sourceImageSequence = multiframe.SourceImageSequence[frameSegment];
+        } else if (PerFrameFunctionalGroup.DerivationImageSequence) {
+            let DerivationImageSequence =
+                PerFrameFunctionalGroup.DerivationImageSequence;
+            DerivationImageSequence = Array.isArray(DerivationImageSequence)
+                ? DerivationImageSequence[0]
+                : DerivationImageSequence;
+
+            sourceImageSequence = DerivationImageSequence.SourceImageSequence;
+            sourceImageSequence = Array.isArray(sourceImageSequence)
+                ? sourceImageSequence[0]
+                : sourceImageSequence;
         }
+
+        imageId = getImageIdOfSourceImagebySourceImageSequence(
+            sourceImageSequence,
+            imageIds,
+            metadataProvider
+        );
     }
 
     return imageId;
@@ -721,29 +717,11 @@ function checkSEGsOverlapping(
             continue;
         }
 
-        let SourceImageSequence;
-
-        if (multiframe.SourceImageSequence) {
-            SourceImageSequence = multiframe.SourceImageSequence[frameSegment];
-        } else {
-            SourceImageSequence =
-                PerFrameFunctionalGroups.DerivationImageSequence
-                    .SourceImageSequence;
-        }
-
-        if (!SourceImageSequence) {
-            console.warn(
-                "Source Image Sequence information missing: individual SEG frames are out of plane, this is not yet supported, skipping this frame."
-            );
-            continue;
-        }
-
         const imageId = findReferenceSourceImageId(
-            SourceImageSequence,
+            multiframe,
+            frameSegment,
             imageIds,
             metadataProvider,
-            PerFrameFunctionalGroups,
-            multiframe.FrameOfReferenceUID,
             tolerance
         );
 
@@ -912,28 +890,11 @@ function insertOverlappingPixelDataPlanar(
                 );
             }
 
-            let SourceImageSequence = undefined;
-            if (multiframe.SourceImageSequence) {
-                SourceImageSequence = multiframe.SourceImageSequence[i];
-            } else {
-                SourceImageSequence =
-                    PerFrameFunctionalGroups.DerivationImageSequence
-                        .SourceImageSequence;
-            }
-
-            if (!SourceImageSequence) {
-                throw new Error(
-                    "Source Image Sequence information missing: individual SEG frames are out of plane. " +
-                        "This is not yet supported. Aborting segmentation loading."
-                );
-            }
-
             const imageId = findReferenceSourceImageId(
-                SourceImageSequence,
+                multiframe,
+                i,
                 imageIds,
                 metadataProvider,
-                PerFrameFunctionalGroups,
-                multiframe.FrameOfReferenceUID,
                 tolerance
             );
 
@@ -1103,28 +1064,11 @@ function insertPixelDataPlanar(
             );
         }
 
-        let SourceImageSequence = undefined;
-        if (multiframe.SourceImageSequence) {
-            SourceImageSequence = multiframe.SourceImageSequence[i];
-        } else {
-            SourceImageSequence =
-                PerFrameFunctionalGroups.DerivationImageSequence
-                    .SourceImageSequence;
-        }
-
-        if (!SourceImageSequence) {
-            throw new Error(
-                "Source Image Sequence information missing: individual SEG frames are out of plane. " +
-                    "This is not yet supported. Aborting segmentation loading."
-            );
-        }
-
         const imageId = findReferenceSourceImageId(
-            SourceImageSequence,
+            multiframe,
+            i,
             imageIds,
             metadataProvider,
-            PerFrameFunctionalGroups,
-            multiframe.FrameOfReferenceUID,
             tolerance
         );
 
@@ -1293,15 +1237,15 @@ function unpackPixelData(multiframe) {
 }
 
 /**
- * getImageIdOfSourceImage - Returns the Cornerstone imageId of the source image.
+ * getImageIdOfSourceImagebySourceImageSequence - Returns the Cornerstone imageId of the source image.
  *
- * @param  {Object} SourceImageSequence Sequence describing the source image.
- * @param  {String[]} imageIds          A list of imageIds.
- * @param  {Object} metadataProvider    A Cornerstone metadataProvider to query
- *                                      metadata from imageIds.
- * @return {String}                     The corresponding imageId.
+ * @param  {Object}   SourceImageSequence  Sequence describing the source image.
+ * @param  {String[]} imageIds             A list of imageIds.
+ * @param  {Object}   metadataProvider     A Cornerstone metadataProvider to query
+ *                                         metadata from imageIds.
+ * @return {String}                        The corresponding imageId.
  */
-function getImageIdOfSourceImage(
+function getImageIdOfSourceImagebySourceImageSequence(
     SourceImageSequence,
     imageIds,
     metadataProvider
@@ -1323,6 +1267,67 @@ function getImageIdOfSourceImage(
               imageIds,
               metadataProvider
           );
+}
+
+/**
+ * getImageIdOfSourceImagebyGeometry - Returns the Cornerstone imageId of the source image.
+ *
+ * @param  {String}    ReferencedSeriesInstanceUID    Referenced series of the source image.
+ * @param  {String}    FrameOfReferenceUID            Frame of reference.
+ * @param  {Object}    PerFrameFunctionalGroup        Sequence describing segmentation reference attributes per frame.
+ * @param  {String[]}  imageIds                       A list of imageIds.
+ * @param  {Float}     tolerance                      The tolerance parameter
+ *
+ * @return {String}                                   The corresponding imageId.
+ */
+function getImageIdOfSourceImagebyGeometry(
+    ReferencedSeriesInstanceUID,
+    FrameOfReferenceUID,
+    PerFrameFunctionalGroup,
+    imageIds,
+    tolerance
+) {
+    if (
+        ReferencedSeriesInstanceUID === undefined ||
+        PerFrameFunctionalGroup.PlanePositionSequence === undefined ||
+        PerFrameFunctionalGroup.PlanePositionSequence[0] === undefined ||
+        PerFrameFunctionalGroup.PlanePositionSequence[0]
+            .ImagePositionPatient === undefined
+    ) {
+        return undefined;
+    }
+
+    for (
+        let imageIdsIndexc = 0;
+        imageIdsIndexc < imageIds.length;
+        ++imageIdsIndexc
+    ) {
+        const sourceImageMetadata = cornerstone.metaData.get(
+            "instance",
+            imageIds[imageIdsIndexc]
+        );
+
+        if (
+            sourceImageMetadata === undefined ||
+            sourceImageMetadata.ImagePositionPatient === undefined ||
+            sourceImageMetadata.FrameOfReferenceUID !== FrameOfReferenceUID ||
+            sourceImageMetadata.SeriesInstanceUID !==
+                ReferencedSeriesInstanceUID
+        ) {
+            continue;
+        }
+
+        if (
+            compareArrays(
+                PerFrameFunctionalGroup.PlanePositionSequence[0]
+                    .ImagePositionPatient,
+                sourceImageMetadata.ImagePositionPatient,
+                tolerance
+            )
+        ) {
+            return imageIds[imageIdsIndexc];
+        }
+    }
 }
 
 /**
