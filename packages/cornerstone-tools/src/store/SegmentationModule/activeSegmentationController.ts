@@ -7,7 +7,7 @@ import {
 /**
  * Get the active segmentation info for the first viewport in the tool group with
  * the given toolGroupUID.
- * @param {string} toolGroupUID - The UID of the tool group that the user is
+ * @param toolGroupUID - The UID of the tool group that the user is
  * currently interacting with.
  */
 function getActiveSegmentationInfo(toolGroupUID: string): {
@@ -35,9 +35,9 @@ function getActiveSegmentationInfo(toolGroupUID: string): {
 /**
  * Set the active segmentation for the given tool group for all its viewports
  *
- * @param {string} toolGroupUID - The ID of the tool group to set the active
+ * @param toolGroupUID - The ID of the tool group to set the active
  * segmentation for.
- * @param {string} segmentationDataUID - The UID of the segmentation data to set as
+ * @param segmentationDataUID - The UID of the segmentation data to set as
  * active.
  */
 function setActiveSegmentation(

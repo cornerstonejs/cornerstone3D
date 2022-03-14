@@ -1,18 +1,25 @@
-import Point3 from './Point3'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
-type AnnotationHandle = Point3
+/** Handle position in the world coordinates */
+type AnnotationHandle = Types.Point3
 
+/** TextBox handle type specifying its location
+ * in the world including bottomLeft and topRight
+ * and bottomRight and topLeft points, and its
+ * center world coordinates.
+ */
 type TextBoxHandle = {
   hasMoved: boolean
   worldBoundingBox: {
-    bottomLeft: Point3
-    bottomRight: Point3
-    topLeft: Point3
-    topRight: Point3
+    bottomLeft: Types.Point3
+    bottomRight: Types.Point3
+    topLeft: Types.Point3
+    topRight: Types.Point3
   }
-  worldPosition: Point3
+  worldPosition: Types.Point3
 }
 
+/** Tool Handle type can be either AnnotationHandle or TextBoxHandle */
 type ToolHandle = AnnotationHandle | TextBoxHandle
 
 export default ToolHandle

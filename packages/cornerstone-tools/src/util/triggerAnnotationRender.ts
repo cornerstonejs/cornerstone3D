@@ -7,6 +7,7 @@ import { CornerstoneTools3DEvents as EVENTS, ToolModes } from '../enums'
 import { draw as drawSvg } from '../drawingSvg'
 import getToolsWithModesForElement from './getToolsWithModesForElement'
 import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
+import { AnnotationRenderedEventData } from '../types/EventTypes'
 
 const { Active, Passive, Enabled } = ToolModes
 
@@ -82,7 +83,7 @@ class AnnotationRenderingEngine {
     ])
 
     const { renderingEngineUID, viewportUID } = enabledElement
-    const eventData = {
+    const eventData: AnnotationRenderedEventData = {
       element,
       renderingEngineUID,
       viewportUID,

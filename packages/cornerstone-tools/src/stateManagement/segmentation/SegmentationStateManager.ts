@@ -1,5 +1,7 @@
 import cloneDeep from 'lodash.clonedeep'
-import uuidv4 from '../../util/uuidv4'
+
+import { Utilities as csUtils } from '@precisionmetrics/cornerstone-render'
+
 import { addColorLUT } from './colorLUT'
 
 import {
@@ -25,13 +27,22 @@ const initialDefaultState = {
   toolGroups: {},
 }
 
+/**
+ * The SegmentationStateManager Class is responsible for managing the state of the
+ * segmentations. It stores a global state and a toolGroup specific state.
+ * In global state it stores the global configuration of each segmentation,
+ * but in toolGroup specific state it stores the toolGroup specific configuration
+ * which will override the global configuration.
+ *
+ * Note that this is a singleton state manager.
+ */
 export default class SegmentationStateManager {
   private state: SegmentationState
   public readonly uid: string
 
   constructor(uid?: string) {
     if (!uid) {
-      uid = uuidv4()
+      uid = csUtils.uuidv4()
     }
     this.state = cloneDeep(initialDefaultState)
     this.uid = uid
@@ -55,7 +66,7 @@ export default class SegmentationStateManager {
 
   /**
    * It returns the colorLut at the specified index.
-   * @param {number} lutIndex - The index of the color LUT to retrieve.
+   * @param lutIndex - The index of the color LUT to retrieve.
    * @returns A ColorLUT object.
    */
   getColorLut(lutIndex: number): ColorLUT | undefined {
@@ -72,9 +83,9 @@ export default class SegmentationStateManager {
   /**
    * Given a segmentation UID, return the global segmentation data for that
    * segmentation
-   * @param {string} segmentationUID - The UID of the segmentation to get the
+   * @param segmentationUID - The UID of the segmentation to get the
    * global data for.
-   * @returns {GlobalSegmentationData} - The global segmentation data for the
+   * @returns - The global segmentation data for the
    * segmentation with the given UID.
    */
   getGlobalSegmentationData(
@@ -106,7 +117,7 @@ export default class SegmentationStateManager {
   /**
    * It sets the global segmentation config including both representation config
    * and render inactive segmentations config
-   * @param {SegmentationConfig} config - The global configuration for the segmentations.
+   * @param config - The global configuration for the segmentations.
    */
   setGlobalSegmentationConfig(config: SegmentationConfig): void {
     this.state.global.config = config
@@ -116,7 +127,7 @@ export default class SegmentationStateManager {
    * Given a segmentation UID, return a list of tool group UIDs that have that
    * segmentation in their segmentation state (segmentation has been added
    * to the tool group).
-   * @param {string} segmentationUID - The UID of the segmentation volume.
+   * @param segmentationUID - The UID of the segmentation volume.
    * @returns An array of toolGroupUIDs.
    */
   getToolGroupsWithSegmentation(segmentationUID: string): string[] {
@@ -144,7 +155,7 @@ export default class SegmentationStateManager {
    * Get the segmentation state for the toolGroup containing array of
    * segmentation data objects.
    *
-   * @param {string} toolGroupUID - The UID of the tool group that the segmentation
+   * @param toolGroupUID - The UID of the tool group that the segmentation
    * belongs to.
    * @returns An array of objects, each of which contains the data for a single
    * segmentation data
@@ -162,11 +173,11 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Given a tool group UID and a representation type, return toolGroup specifc
+   * Given a tool group UID and a representation type, return toolGroup specific
    * config for that representation type.
    *
-   * @param {string} toolGroupUID - The UID of the tool group
-   * @param {string} representationType - The type of representation, currently only Labelmap
+   * @param toolGroupUID - The UID of the tool group
+   * @param representationType - The type of representation, currently only Labelmap
    * @returns A SegmentationConfig object.
    */
   getSegmentationConfig(toolGroupUID: string): SegmentationConfig | undefined {
@@ -183,9 +194,9 @@ export default class SegmentationStateManager {
    * Set the segmentation config for a given tool group. It will create a new
    * tool group specific config if one does not exist.
    *
-   * @param {string} toolGroupUID - The UID of the tool group that the segmentation
+   * @param toolGroupUID - The UID of the tool group that the segmentation
    * belongs to.
-   * @param {SegmentationConfig} config - SegmentationConfig
+   * @param config - SegmentationConfig
    */
   setSegmentationConfig(
     toolGroupUID: string,
@@ -213,9 +224,9 @@ export default class SegmentationStateManager {
 
   /**
    * Given a toolGroupUID and a segmentationDataUID, return the segmentation data for that tool group.
-   * @param {string} toolGroupUID - The UID of the tool group that the segmentation
+   * @param toolGroupUID - The UID of the tool group that the segmentation
    * data belongs to.
-   * @param {string} segmentationDataUID - string
+   * @param segmentationDataUID - string
    * @returns A ToolGroupSpecificSegmentationData object.
    */
   getSegmentationDataByUID(
@@ -235,7 +246,7 @@ export default class SegmentationStateManager {
 
   /**
    * Get the active segmentation data for a tool group
-   * @param {string} toolGroupUID - The UID of the tool group that the segmentation
+   * @param toolGroupUID - The UID of the tool group that the segmentation
    * data belongs to.
    * @returns A ToolGroupSpecificSegmentationData object.
    */
@@ -251,8 +262,8 @@ export default class SegmentationStateManager {
 
   /**
    * It adds a color LUT to the state.
-   * @param {ColorLUT} colorLut - ColorLUT
-   * @param {number} lutIndex - The index of the color LUT table to add.
+   * @param colorLut - ColorLUT
+   * @param lutIndex - The index of the color LUT table to add.
    */
   addColorLut(colorLut: ColorLUT, lutIndex: number): void {
     if (this.state.colorLutTables[lutIndex]) {
@@ -265,7 +276,7 @@ export default class SegmentationStateManager {
   /**
    * It adds a new segmentation to the global segmentation state. It will merge
    * the segmentation data with the existing global segmentation data if it exists.
-   * @param {GlobalSegmentationData} segmentationData - GlobalSegmentationData
+   * @param segmentationData - GlobalSegmentationData
    */
   addGlobalSegmentationData(segmentationData: GlobalSegmentationData): void {
     const { volumeUID } = segmentationData
@@ -307,10 +318,9 @@ export default class SegmentationStateManager {
 
   /**
    * Add a new segmentation data to the toolGroup's segmentation state
-   * @param {string} toolGroupUID - The UID of the tool group that the segmentation
+   * @param toolGroupUID - The UID of the tool group that the segmentation
    * belongs to.
-   * @param {ToolGroupSpecificSegmentationData} segmentationData -
-   * ToolGroupSpecificSegmentationData
+   * @param segmentationData - ToolGroupSpecificSegmentationData
    */
   addSegmentationData(
     toolGroupUID: string,
@@ -331,9 +341,9 @@ export default class SegmentationStateManager {
 
   /**
    * Set the active segmentation data for a tool group
-   * @param {string} toolGroupUID - The UID of the tool group that owns the
+   * @param toolGroupUID - The UID of the tool group that owns the
    * segmentation data.
-   * @param {string} segmentationDataUID - string
+   * @param segmentationDataUID - string
    */
   setActiveSegmentationData(
     toolGroupUID: string,
@@ -364,9 +374,9 @@ export default class SegmentationStateManager {
 
   /**
    * Remove a segmentation data from the toolGroup specific segmentation state
-   * @param {string} toolGroupUID - The UID of the tool group that the segmentation
+   * @param toolGroupUID - The UID of the tool group that the segmentation
    * data is associated with.
-   * @param {string} segmentationDataUID - string
+   * @param segmentationDataUID - string
    */
   removeSegmentationData(
     toolGroupUID: string,
@@ -400,10 +410,9 @@ export default class SegmentationStateManager {
    * It handles the active segmentation data based on the active status of the
    * segmentation data that was added or removed.
    *
-   * @param {string} toolGroupUID - The UID of the tool group that the segmentation
+   * @param toolGroupUID - The UID of the tool group that the segmentation
    * data belongs to.
-   * @param {ToolGroupSpecificSegmentationData}
-   * recentlyAddedOrRemovedSegmentationData - ToolGroupSpecificSegmentationData
+   * @param recentlyAddedOrRemovedSegmentationData - ToolGroupSpecificSegmentationData
    */
   _handleActiveSegmentation(
     toolGroupUID: string,

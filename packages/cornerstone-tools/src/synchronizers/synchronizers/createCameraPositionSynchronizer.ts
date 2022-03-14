@@ -6,12 +6,12 @@ import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
 const { CAMERA_MODIFIED } = RENDERING_EVENTS
 
 /**
- * @function createCameraPositionSynchronizer A helper that creates a new `Synchronizer`
- * which listens to the `CAMERA_MODIFIED` rendering event and calls the `cameraSyncCallback`.
+ * A helper that creates a new `Synchronizer` which listens to the `CAMERA_MODIFIED`
+ * rendering event and calls the `cameraSyncCallback`.
  *
- * @param {string} synchronizerName The name of the synchronizer.
+ * @param synchronizerName - The name of the synchronizer.
  *
- * @returns {Synchronizer} A new `Synchronizer` instance.
+ * @returns A new `Synchronizer` instance.
  */
 export default function createCameraPositionSynchronizer(
   synchronizerName: string

@@ -10,7 +10,7 @@ import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
 import { uuidv4 } from './utilities'
-import { Point3, Metadata, EventsTypes } from './types'
+import { Point3, Metadata, EventTypes } from './types'
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>
@@ -108,7 +108,7 @@ function loadVolumeFromVolumeLoader(
       triggerEvent(eventTarget, EVENTS.VOLUME_LOADED, { volume })
     },
     function (error) {
-      const errorObject: EventsTypes.VolumeLoadedFailedEventData = {
+      const errorObject: EventTypes.VolumeLoadedFailedEventData = {
         volumeId,
         error,
       }

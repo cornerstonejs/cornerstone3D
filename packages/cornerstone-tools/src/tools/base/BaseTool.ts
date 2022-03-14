@@ -2,7 +2,9 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
+  getVolume,
 } from '@precisionmetrics/cornerstone-render'
+import type { RenderingEngine } from '@precisionmetrics/cornerstone-render'
 import deepMerge from '../../util/deepMerge'
 import { ToolModes } from '../../enums'
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
@@ -26,7 +28,6 @@ interface IBaseTool {
   }
 
   /** set the active strategy name */
-  // Todo: fix the rest in the documentation branch
 }
 
 /**
@@ -34,12 +35,11 @@ interface IBaseTool {
  * Deals with cleanly merging custom and default configuration, and strategy
  * application.
  */
-abstract class BaseTool {
+abstract class BaseTool implements IBaseTool {
   /** Tool Name */
   public name: string
   /** Supported Interaction Types - currently only Mouse */
-  public supportedInteractionTypes: Array<string>
-  public initialConfiguration: Record<string, any>
+  public supportedInteractionTypes: InteractionTypes[]
   public configuration: Record<string, any>
   /** ToolGroup UID the tool instance belongs to */
   public toolGroupUID: string
@@ -134,6 +134,36 @@ abstract class BaseTool {
     }
 
     return actors[0].uid
+  }
+
+  /**
+   * Get the viewport and image for the targetUID. Since we are using the
+   * schema of stackTarget:<viewportUID>, we can get the viewport and image
+   * from the stack. For the volumeViewports, the targetUID is the actual
+   * volumeUID, so we can get the viewport and image.
+   *
+   * @param targetUID - toolData targetUID
+   * @param renderingEngine - The rendering engine
+   * @returns The viewport and image data for the target.
+   */
+  protected getTargetUIDViewportAndImage(
+    targetUID: string,
+    renderingEngine: RenderingEngine
+  ): {
+    viewport: Types.IViewport
+    image: Types.IImageData
+  } {
+    let image, viewport
+    if (targetUID.startsWith('stackTarget')) {
+      const coloneIndex = targetUID.indexOf(':')
+      const viewportUID = targetUID.substring(coloneIndex + 1)
+      viewport = renderingEngine.getViewport(viewportUID)
+      image = viewport.getImageData()
+    } else {
+      image = getVolume(targetUID)
+    }
+
+    return { image, viewport }
   }
 
   /**

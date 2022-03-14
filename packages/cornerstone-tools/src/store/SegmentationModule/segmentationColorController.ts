@@ -7,10 +7,9 @@ import { Color } from '../../types/SegmentationStateTypes'
  * color for that segment. It can be used for segmentation tools that need to
  * display the color of their annotation.
  *
- * @param {string} toolGroupUID - The UID of the tool group that owns the
- * segmentation data.
- * @param {string} segmentationDataUID - The UID of the segmentation data
- * @param {number} segmentIndex - The index of the segment in the segmentation
+ * @param toolGroupUID - The UID of the tool group that owns the segmentation data.
+ * @param segmentationDataUID - The UID of the segmentation data
+ * @param segmentIndex - The index of the segment in the segmentation
  * @returns A color.
  */
 function getColorForSegmentIndex(
@@ -38,9 +37,8 @@ function getColorForSegmentIndex(
 
 /**
  * Add a color LUT to the segmentation state to be used by the segmentations
- * @param {Color[]} colorLUT - A list of colors to be added to the color lookup
- * table.
- * @param {number} colorLUTIndex - The index of the color LUT in the state to be
+ * @param colorLUT - A list of colors to be added to the color lookup table.
+ * @param colorLUTIndex - The index of the color LUT in the state to be
  * updated.
  */
 function addColorLut(colorLUT: Color[], colorLUTIndex = 0): void {

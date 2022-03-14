@@ -1,12 +1,12 @@
 import { getRenderingEngine, Types } from '@precisionmetrics/cornerstone-render'
 
 /**
- * @function cameraSyncCallback - Synchronizer callback to synchronize the camera. Synchronization
+ * Synchronizer callback to synchronize the camera. Synchronization
  *
- * @param {object} synchronizerInstance The Instance of the Synchronizer
- * @param {IViewportUID} sourceViewport The list of UIDs defining the source viewport.
- * @param {IViewportUID} targetViewport The list of UIDs defining the target viewport.
- * @param {CustomEvent} cameraModifiedEvent The CAMERA_MODIFIED event.
+ * @param synchronizerInstance - The Instance of the Synchronizer
+ * @param sourceViewport - The list of UIDs defining the source viewport.
+ * @param targetViewport - The list of UIDs defining the target viewport.
+ * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
 export default function cameraSyncCallback(
   synchronizerInstance,

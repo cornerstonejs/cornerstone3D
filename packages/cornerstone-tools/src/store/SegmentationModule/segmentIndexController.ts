@@ -5,8 +5,7 @@ import { triggerSegmentationGlobalStateModified } from '.'
 /**
  * Returns the active segment index for the active segmentation in the tool group
  *
- * @param {string} toolGroupUID - The UID of the tool group that contains an
- * active segmentation.
+ * @param toolGroupUID - The UID of the tool group that contains an active segmentation.
  * @returns The active segment index.
  */
 function getActiveSegmentIndex(toolGroupUID: string): number | undefined {
@@ -29,10 +28,9 @@ function getActiveSegmentIndex(toolGroupUID: string): number | undefined {
  * Set the active segment index for the active segmentation of the toolGroup.
  * It fires a global state modified event.
  *
- * @event {SEGMENTATION_GLOBAL_STATE_MODIFIED}
- * @param {string} toolGroupUID - The UID of the tool group that contains the
- * segmentation.
- * @param {number} segmentIndex - The index of the segment to be activated.
+ * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @param toolGroupUID - The UID of the tool group that contains the segmentation.
+ * @param segmentIndex - The index of the segment to be activated.
  */
 function setActiveSegmentIndex(
   toolGroupUID: string,
@@ -59,10 +57,9 @@ function setActiveSegmentIndex(
  * Set the active segment index for a segmentation UID. It fires a global state
  * modified event.
  *
- * @event {SEGMENTATION_GLOBAL_STATE_MODIFIED}
- * @param {string} segmentationUID - The UID of the segmentation that the segment
- * belongs to.
- * @param {number} segmentIndex - The index of the segment to be activated.
+ * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @param segmentationUID - The UID of the segmentation that the segment belongs to.
+ * @param segmentIndex - The index of the segment to be activated.
  */
 function setActiveSegmentIndexForSegmentation(
   segmentationUID: string,
@@ -80,8 +77,7 @@ function setActiveSegmentIndexForSegmentation(
 
 /**
  * Get the active segment index for a segmentation in the global state
- * @param {string} segmentationUID - The UID of the segmentation to get the active
- * segment index from.
+ * @param segmentationUID - The UID of the segmentation to get the active segment index from.
  * @returns The active segment index for the given segmentation.
  */
 function getActiveSegmentIndexForSegmentation(

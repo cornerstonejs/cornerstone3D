@@ -7,8 +7,12 @@ import getRuntimeId from './getRuntimeId'
 import imageIdToURI from './imageIdToURI'
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider'
 import isEqual from './isEqual'
+import isOpposite from './isOpposite'
 import createUint8SharedArray from './createUint8SharedArray'
 import createFloat32SharedArray from './createFloat32SharedArray'
+import getClosestImageId from './getClosestImageId'
+import getSpacingInNormalDirection from './getSpacingInNormalDirection'
+import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir'
 
 // name spaces
 import * as planar from './planar'
@@ -26,8 +30,12 @@ export {
   getMinMax,
   getRuntimeId,
   isEqual,
+  isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,
   testUtils,
   windowLevel,
+  getClosestImageId,
+  getSpacingInNormalDirection,
+  getTargetVolumeAndSpacingInNormalDir,
 }

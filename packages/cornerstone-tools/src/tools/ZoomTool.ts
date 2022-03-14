@@ -1,5 +1,5 @@
 import { BaseTool } from './base'
-// ~~ VTK Viewport
+
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import { PublicToolProps, ToolProps } from '../types'
 

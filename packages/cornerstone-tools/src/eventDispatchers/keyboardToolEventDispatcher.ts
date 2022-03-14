@@ -1,25 +1,23 @@
-import CornerstoneTools3DEvents from '../enums/CornerstoneTools3DEvents'
+import Events from '../enums/CornerstoneTools3DEvents'
 import { keyDown, keyUp } from './keyboardEventHandlers'
 
 /**
- * @function enable These listeners are emitted in order, and can be cancelled/prevented from bubbling
- * by any previous event.
+ * Enable Key down and key up listeners
  *
- * @param {HTMLElement} element
+ * @param element - The HTML element to attach the event listeners to.
  */
 const enable = function (element: HTMLElement) {
-  element.addEventListener(CornerstoneTools3DEvents.KEY_DOWN, keyDown)
-  element.addEventListener(CornerstoneTools3DEvents.KEY_UP, keyUp)
+  element.addEventListener(Events.KEY_DOWN, keyDown)
+  element.addEventListener(Events.KEY_UP, keyUp)
 }
 
 /**
- * @function disable Remove the keyboardToolEventDispatcher handlers from the element.
- *
- * @param {HTMLElement} element
+ * Disable Key down and key up listeners
+ * @param element - The HTML element to attach the event listeners to.
  */
 const disable = function (element: HTMLElement) {
-  element.removeEventListener(CornerstoneTools3DEvents.KEY_DOWN, keyDown)
-  element.removeEventListener(CornerstoneTools3DEvents.KEY_UP, keyUp)
+  element.removeEventListener(Events.KEY_DOWN, keyDown)
+  element.removeEventListener(Events.KEY_UP, keyUp)
 }
 
 const keyboardToolEventDispatcher = {

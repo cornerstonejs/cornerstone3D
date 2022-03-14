@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { BaseAnnotationTool } from '../base'
-// ~~ VTK Viewport
+import { vec2 } from 'gl-matrix'
+
 import {
   getEnabledElement,
   Settings,
   getVolume,
-  Types,
   StackViewport,
   VolumeViewport,
   triggerEvent,
   eventTarget,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
-import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
+import { BaseAnnotationTool } from '../base'
 import {
   addToolState,
   getToolState,
@@ -21,7 +23,6 @@ import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg'
-import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
@@ -30,12 +31,13 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
+import { MeasurementModifiedEventData } from '../../types/EventTypes'
+
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import {
   ToolSpecificToolData,
-  Point3,
-  EventsTypes,
+  EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
@@ -44,7 +46,7 @@ import {
 interface ProbeSpecificToolData extends ToolSpecificToolData {
   data: {
     invalidated: boolean
-    handles: { points: Point3[] }
+    handles: { points: Types.Point3[] }
     cachedStats: any
     active: boolean
   }
@@ -90,13 +92,23 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   // Not necessary for this tool but needs to be defined since it's an abstract
   // method from the parent class.
-  pointNearTool(): boolean {
+  isPointNearTool(): boolean {
     return false
   }
 
   toolSelectedCallback() {}
 
-  addNewMeasurement(evt: CustomEvent): ProbeSpecificToolData {
+  /**
+   * Based on the current position of the mouse and the current imageId to create
+   * a Probe ToolData and stores it in the toolStateManager
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement = (
+    evt: EventTypes.MouseDownActivateEventType
+  ): ProbeSpecificToolData => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -115,11 +127,11 @@ export default class ProbeTool extends BaseAnnotationTool {
     } else {
       const volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
-      referencedImageId = getImageIdForTool(
+      referencedImageId = csUtils.getClosestImageId(
+        imageVolume,
         worldPos,
         viewPlaneNormal,
-        viewUp,
-        imageVolume
+        viewUp
       )
     }
 
@@ -130,8 +142,8 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
-        viewUp: <Point3>[...viewUp],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         label: '',
@@ -139,7 +151,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       },
       data: {
         invalidated: true,
-        handles: { points: [<Point3>[...worldPos]] },
+        handles: { points: [<Types.Point3>[...worldPos]] },
         cachedStats: {},
         active: true,
       },
@@ -173,7 +185,24 @@ export default class ProbeTool extends BaseAnnotationTool {
     return toolData
   }
 
-  getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
+  /**
+   * It checks if the mouse click is near ProveTool, it overwrites the baseAnnotationTool
+   * getHandleNearImagePoint method.
+   *
+   * @param element - The element that the tool is attached to.
+   * @param toolData - The tool data object associated with the annotation
+   * @param canvasCoords - The coordinates of the mouse click on canvas
+   * @param proximity - The distance from the mouse cursor to the point
+   * that is considered "near".
+   * @returns The handle that is closest to the cursor, or null if the cursor
+   * is not near any of the handles.
+   */
+  getHandleNearImagePoint(
+    element: HTMLElement,
+    toolData: ToolSpecificToolData,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): ToolHandle | undefined {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
@@ -182,17 +211,15 @@ export default class ProbeTool extends BaseAnnotationTool {
     const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
 
     const near =
-      vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
+      vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
 
     if (near === true) {
       return point
     }
-
-    return near
   }
 
   handleSelectedCallback(
-    evt: EventsTypes.NormalizedMouseEventType,
+    evt: EventTypes.MouseDownEventType,
     toolData: ToolSpecificToolData,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -231,7 +258,9 @@ export default class ProbeTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  _mouseUpCallback(evt) {
+  _mouseUpCallback(
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -290,7 +319,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     )
   }
 
-  cancel(element) {
+  cancel = (element: HTMLElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false
@@ -323,8 +352,8 @@ export default class ProbeTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   _deactivateModify(element) {
@@ -334,14 +363,22 @@ export default class ProbeTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the probe annotation data in each
+   * request animation frame. It calculates the updated cached statistics if
+   * data is invalidated and cache it.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
 
@@ -514,20 +551,6 @@ export default class ProbeTool extends BaseAnnotationTool {
     return values
   }
 
-  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
-    let imageVolume, viewport
-    if (targetUID.startsWith('stackTarget')) {
-      const coloneIndex = targetUID.indexOf(':')
-      const viewportUID = targetUID.substring(coloneIndex + 1)
-      viewport = renderingEngine.getViewport(viewportUID)
-      imageVolume = viewport.getImageData()
-    } else {
-      imageVolume = getVolume(targetUID)
-    }
-
-    return { imageVolume, viewport }
-  }
-
   _calculateCachedStats(toolData, renderingEngine, enabledElement) {
     const data = toolData.data
     const { viewportUID, renderingEngineUID } = enabledElement
@@ -540,15 +563,17 @@ export default class ProbeTool extends BaseAnnotationTool {
     for (let i = 0; i < targetUIDs.length; i++) {
       const targetUID = targetUIDs[i]
 
-      const { imageVolume, viewport } = this._getImageVolumeFromTargetUID(
+      const { image, viewport } = this.getTargetUIDViewportAndImage(
         targetUID,
         renderingEngine
       )
 
-      const { dimensions, scalarData, imageData, metadata } = imageVolume
+      const { dimensions, scalarData, imageData, metadata } = image
 
       const modality = metadata.Modality
-      const index = imageData.worldToIndex(worldPos)
+
+      //@ts-ignore
+      const index = imageData.worldToIndex(worldPos) as Types.Point3
 
       index[0] = Math.floor(index[0])
       index[1] = Math.floor(index[1])
@@ -568,7 +593,7 @@ export default class ProbeTool extends BaseAnnotationTool {
           index[2] = viewport.getCurrentImageIdIndex()
         }
 
-        const values = this._getValueForModality(value, imageVolume, modality)
+        const values = this._getValueForModality(value, image, modality)
 
         cachedStats[targetUID] = {
           index,
@@ -588,7 +613,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       // Dispatching measurement modified
       const eventType = EVENTS.MEASUREMENT_MODIFIED
 
-      const eventDetail = {
+      const eventDetail: MeasurementModifiedEventData = {
         toolData,
         viewportUID,
         renderingEngineUID,

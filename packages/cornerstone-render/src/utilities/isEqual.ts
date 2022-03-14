@@ -1,5 +1,3 @@
-import { Point3 } from '../types'
-
 /**
  * returns equal if the two arrays are identical within the
  * given tolerance.
@@ -11,8 +9,8 @@ import { Point3 } from '../types'
  * @returns True if the two values are within the tolerance levels.
  */
 export default function isEqual(
-  v1: Point3 | Float32Array,
-  v2: Point3 | Float32Array,
+  v1: number[] | Float32Array,
+  v2: number[] | Float32Array,
   tolerance = 1e-5
 ): boolean {
   if (v1.length !== v2.length) {

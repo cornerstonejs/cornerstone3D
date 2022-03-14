@@ -1,5 +1,6 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import _getHash from './_getHash'
-import { Point2 } from '../types'
 import _setAttributesIfNecessary from './_setAttributesIfNecessary'
 import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 
@@ -8,8 +9,8 @@ function drawEllipse(
   toolName: string,
   annotationUID: string,
   ellipseUID: string,
-  corner1: Point2,
-  corner2: Point2,
+  corner1: Types.Point2,
+  corner2: Types.Point2,
   options = {}
 ): void {
   const { color, width, lineWidth, lineDash } = Object.assign(

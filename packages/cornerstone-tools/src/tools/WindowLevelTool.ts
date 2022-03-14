@@ -62,7 +62,7 @@ export default class WindowLevelTool extends BaseTool {
       useDynamicRange = true
     } else {
       const properties = viewport.getProperties()
-      modality = viewport.modality
+      modality = (viewport as Types.IStackViewport).modality
       ;({ lower, upper } = properties.voiRange)
     }
 
@@ -87,7 +87,7 @@ export default class WindowLevelTool extends BaseTool {
       })
     }
 
-    const eventDetail: Types.EventsTypes.VoiModifiedEventData = {
+    const eventDetail: Types.EventTypes.VoiModifiedEventData = {
       volumeUID,
       viewportUID,
       range: newRange,

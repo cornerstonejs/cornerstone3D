@@ -5,7 +5,6 @@ import { ToolSpecificToolData } from '../../types'
 /*
  * Types
  */
-
 type LockedToolDataChangeDetails = {
   // List of instances changed to locked state by the last operation.
   added: Array<ToolSpecificToolData>
@@ -18,7 +17,6 @@ type LockedToolDataChangeDetails = {
 /*
  * Constants
  */
-
 const globalSetOfLockedToolData: Set<ToolSpecificToolData> = new Set()
 
 /*
@@ -28,11 +26,12 @@ const globalSetOfLockedToolData: Set<ToolSpecificToolData> = new Set()
 /**
  * Set the "Locked" state of a given tool data instance.
  *
- * @triggers LOCKED_TOOL_DATA_CHANGE
- * @param {ToolSpecificToolData} toolData The tool data instance which will have
+ * @triggers MEASUREMENT_LOCK_CHANGE
+ *
+ * @param toolData - The tool data instance which will have
  * its locked state changed. An event will only be triggered if the locked state
  * of the given tool data instance changed.
- * @param {boolean} [locked=true] A boolean value indicating if the instance should
+ * @param locked - A boolean value indicating if the instance should
  * be locked (true) or not (false)
  */
 function setToolDataLocked(
@@ -50,35 +49,59 @@ function setToolDataLocked(
   publish(detail, globalSetOfLockedToolData)
 }
 
-function lockToolDataList(toolDataList: ToolSpecificToolData[]): void {
-  const detail = makeEventDetail()
-  toolDataList.forEach((toolData) => {
-    lock(toolData, globalSetOfLockedToolData, detail)
-  })
-  publish(detail, globalSetOfLockedToolData)
-}
+// Todo: I don't think this function is also needed in the public API, someone
+// can just run a .map and estToolDataLocked on the array.
+// function lockToolDataList(toolDataList: ToolSpecificToolData[]): void {
+//   const detail = makeEventDetail()
+//   toolDataList.forEach((toolData) => {
+//     lock(toolData, globalSetOfLockedToolData, detail)
+//   })
+//   publish(detail, globalSetOfLockedToolData)
+// }
 
+/**
+ * Clears all the locked tool data
+ *
+ */
 function unlockAllToolData(): void {
   const detail = makeEventDetail()
   clearLockedToolDataSet(globalSetOfLockedToolData, detail)
   publish(detail, globalSetOfLockedToolData)
 }
 
+/**
+ * Returns an array of all the tool data that is currently locked
+ * @returns An array of tool specific tool data objects.
+ *
+ */
 function getLockedToolData(): Array<ToolSpecificToolData> {
   return Array.from(globalSetOfLockedToolData)
 }
 
-function getLockedToolDataByUID(toolDataUID: string): ToolSpecificToolData {
-  return getLockedToolData().find((toolData) => {
-    return toolData.metadata.toolDataUID === toolDataUID
-  })
-}
+// Todo: we shouldn't have this function, instead we need to grab the toolData
+// from the toolState manager and check if it locked or not.
+// function getLockedToolDataByUID(toolDataUID: string): ToolSpecificToolData {
+//   return getLockedToolData().find((toolData) => {
+//     return toolData.metadata.toolDataUID === toolDataUID
+//   })
+// }
 
+/**
+ * Given a ToolSpecificToolData object, return true if it is locked.
+ * @param toolData - ToolSpecificToolData
+ * @returns A boolean value.
+ */
 function isToolDataLocked(toolData: ToolSpecificToolData): boolean {
   return globalSetOfLockedToolData.has(toolData)
 }
 
-function getCountOfLockedToolData(): number {
+/**
+ * Get the number of locked tool data objects in the global set of locked tool data
+ * objects.
+ * @returns The number of locked tool data objects.
+ *
+ */
+function getLockedToolDataCounts(): number {
   return globalSetOfLockedToolData.size
 }
 
@@ -147,7 +170,7 @@ function publish(
     lockedToolDataSet.forEach((item) => void detail.locked.push(item))
     triggerEvent(
       eventTarget,
-      CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
+      CornerstoneTools3DEvents.MEASUREMENT_LOCK_CHANGE,
       detail
     )
   }
@@ -177,13 +200,10 @@ function getIsLocked() {
  */
 
 export {
-  LockedToolDataChangeDetails,
   setToolDataLocked,
-  lockToolDataList,
   unlockAllToolData,
   getLockedToolData,
-  getLockedToolDataByUID,
   isToolDataLocked,
-  getCountOfLockedToolData,
+  getLockedToolDataCounts,
   checkAndDefineIsLockedProperty,
 }

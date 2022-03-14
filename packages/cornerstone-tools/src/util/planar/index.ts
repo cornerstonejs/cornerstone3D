@@ -1,30 +1,18 @@
-import getSpacingInNormalDirection from './getSpacingInNormalDirection'
-import getTargetVolume from './getTargetVolume'
-import getToolStateWithinSlice from './getToolStateWithinSlice'
+import filterToolStateWithinSlice from './filterToolStateWithinSlice'
 import getWorldWidthAndHeightFromCorners from './getWorldWidthAndHeightFromCorners'
-import getToolStateForDisplay from './getToolStateForDisplay'
-import getImageIdForTool from './getImageIdForTool'
-import getVoxelPositionBasedOnIntensity from './getVoxelPositionBasedOnIntensity'
-import pointInShapeCallback from './pointInShapeCallback'
+import filterToolStateForDisplay from './filterToolStateForDisplay'
+import getPointInLineOfSightWithCriteria from './getPointInLineOfSightWithCriteria'
 
 export default {
-  getSpacingInNormalDirection,
-  getTargetVolume,
-  getToolStateWithinSlice,
+  filterToolStateWithinSlice,
   getWorldWidthAndHeightFromCorners,
-  getToolStateForDisplay,
-  getImageIdForTool,
-  getVoxelPositionBasedOnIntensity,
-  pointInShapeCallback,
+  filterToolStateForDisplay,
+  getPointInLineOfSightWithCriteria,
 }
 
 export {
-  getSpacingInNormalDirection,
-  getTargetVolume,
-  getToolStateWithinSlice,
+  filterToolStateWithinSlice,
   getWorldWidthAndHeightFromCorners,
-  getToolStateForDisplay,
-  getImageIdForTool,
-  getVoxelPositionBasedOnIntensity,
-  pointInShapeCallback,
+  filterToolStateForDisplay,
+  getPointInLineOfSightWithCriteria,
 }

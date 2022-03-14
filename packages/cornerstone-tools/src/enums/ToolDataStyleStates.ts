@@ -1,5 +1,5 @@
 /**
- * @enum ToolDataStates - This enum defines the 3 possible states available for
+ * ToolDataStyleStates - This enum defines the 4 possible states available for
  *  a ToolSpecificToolData instance.
  *
  * Default:
@@ -12,12 +12,11 @@
  * Locked:
  *   The tool data has been locked;
  */
-
-enum ToolDataStates {
+enum ToolDataStyleStates {
   Default = '',
   Highlighted = 'Highlighted',
   Selected = 'Selected',
   Locked = 'Locked',
 }
 
-export default ToolDataStates
+export default ToolDataStyleStates

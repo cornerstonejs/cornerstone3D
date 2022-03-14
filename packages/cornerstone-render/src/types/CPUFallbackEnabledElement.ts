@@ -25,8 +25,10 @@ interface CPUFallbackEnabledElement {
   needsRedraw?: boolean
   metadata?: {
     direction?: Float32Array
-    dimensions?: Point2
-    spacing?: Point2
+    /** Last index is always 1 for CPU */
+    dimensions?: Point3
+    /** Last spacing is always EPSILON for CPU */
+    spacing?: Point3
     origin?: Point3
     imagePlaneModule?: {
       frameOfReferenceUID: string

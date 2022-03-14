@@ -1,14 +1,15 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import _getHash from './_getHash'
 import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 import _setAttributesIfNecessary from './_setAttributesIfNecessary'
-import { Point2 } from '../types'
 
 function drawHandles(
   svgDrawingHelper: any,
   toolName: string,
   annotationUID: string,
   handleGroupUID: string,
-  handlePoints: Array<Point2>,
+  handlePoints: Array<Types.Point2>,
   options = {}
 ): void {
   const { color, handleRadius, width, lineWidth, fill, type } = Object.assign(

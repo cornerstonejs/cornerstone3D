@@ -1,5 +1,5 @@
 import { BaseAnnotationTool } from './base'
-// ~~ VTK Viewport
+
 import {
   getEnabledElementByUIDs,
   getEnabledElement,
@@ -7,8 +7,9 @@ import {
   Utilities as csUtils,
   VolumeViewport,
   getVolumeViewportsContainingSameVolumes,
-  Types as csTypes,
 } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import {
   addToolState,
   getToolState,
@@ -31,18 +32,17 @@ import { lineSegment } from '../util/math'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
-  Point2,
-  Point3,
-  EventsTypes,
+  EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
+  InteractionTypes,
 } from '../types'
 import { isToolDataLocked } from '../stateManagement/annotation/toolDataLocking'
 import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
+import { MouseDragEventType } from '../types/EventTypes'
 
 const { liangBarksyClip } = math.vec2
-const { isEqual, isOpposite } = math.vec3
 
 // TODO: nested config is weird
 interface ToolConfiguration {
@@ -55,7 +55,7 @@ interface ToolConfiguration {
   }
 }
 
-type ViewportInputs = Array<csTypes.IViewportUID>
+type ViewportInputs = Array<Types.IViewportUID>
 
 interface CrosshairsSpecificToolData extends ToolSpecificToolData {
   data: {
@@ -63,7 +63,7 @@ interface CrosshairsSpecificToolData extends ToolSpecificToolData {
       rotationPoints: any[] // rotation handles, used for rotation interactions
       slabThicknessPoints: any[] // slab thickness handles, used for setting the slab thickness
       activeOperation: number | null // 0 translation, 1 rotation handles, 2 slab thickness handles
-      toolCenter: Point3
+      toolCenter: Types.Point3
     }
     active: boolean
     activeViewportUIDs: string[] // a list of the viewport uids connected to the reference lines being translated
@@ -96,7 +96,7 @@ const OPERATION = {
 const EPSILON = 1e-3
 
 export default class CrosshairsTool extends BaseAnnotationTool {
-  toolCenter: Point3 = [0, 0, 0] // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
+  toolCenter: Types.Point3 = [0, 0, 0] // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportUID: string) => string
   _getReferenceLineControllable?: (viewportUID: string) => boolean
@@ -159,15 +159,15 @@ export default class CrosshairsTool extends BaseAnnotationTool {
    * Gets the camera from the viewport, and adds crosshairs toolData for the viewport
    * to the toolStateManager. If any toolData is found in the toolStateManager, it
    * overwrites it.
-   * @param {renderingEngineUID, viewportUID}
-   * @returns {normal, point} viewPlaneNormal and center of viewport canvas in world space
+   * @param viewportInfo - The viewportInfo for the viewport to add the crosshairs
+   * @returns viewPlaneNormal and center of viewport canvas in world space
    */
   initializeViewport = ({
     renderingEngineUID,
     viewportUID,
-  }: csTypes.IViewportUID): {
-    normal: Point3
-    point: Point3
+  }: Types.IViewportUID): {
+    normal: Types.Point3
+    point: Types.Point3
   } => {
     const enabledElement = getEnabledElementByUIDs(
       renderingEngineUID,
@@ -188,8 +188,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        cameraPosition: <Point3>[...position],
-        cameraFocalPoint: <Point3>[...focalPoint],
+        cameraPosition: <Types.Point3>[...position],
+        cameraFocalPoint: <Types.Point3>[...focalPoint],
         FrameOfReferenceUID,
         toolName: this.name,
       },
@@ -247,7 +247,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const { normal: normal2, point: point2 } =
       this.initializeViewport(secondViewport)
 
-    let normal3 = <Point3>[0, 0, 0]
+    let normal3 = <Types.Point3>[0, 0, 0]
     let point3 = vec3.create()
 
     // If there are three viewports
@@ -275,15 +275,17 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   /**
-   * For Crosshairs it handle the click event.
-   * @param evt
-   * @param interactionType
-   * @returns
+   * addNewMeasurement acts as jump for the crosshairs tool. It is called when
+   * the user clicks on the image. It does not store the toolData in the stateManager though.
+   *
+   * @param evt - The mouse event
+   * @param interactionType - The type of interaction (e.g., mouse, touch, etc.)
+   * @returns Crosshairs tool data
    */
-  addNewMeasurement(
-    evt: CustomEvent,
+  addNewMeasurement = (
+    evt: EventTypes.MouseDownActivateEventType,
     interactionType: string
-  ): CrosshairsSpecificToolData {
+  ): CrosshairsSpecificToolData => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -337,7 +339,25 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     console.log('Not implemented yet')
   }
 
-  getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
+  /**
+   * It checks if the mouse click is near crosshairs handles, if yes
+   * it returns the handle location. If the mouse click is not near any
+   * of the handles, it does not return anything.
+   *
+   * @param element - The element that the tool is attached to.
+   * @param toolData - The tool data object associated with the annotation
+   * @param canvasCoords - The coordinates of the mouse click on canvas
+   * @param proximity - The distance from the mouse cursor to the point
+   * that is considered "near".
+   * @returns The handle that is closest to the cursor, or null if the cursor
+   * is not near any of the handles.
+   */
+  getHandleNearImagePoint(
+    element: HTMLElement,
+    toolData: ToolSpecificToolData,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): ToolHandle | undefined {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
@@ -365,7 +385,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt: EventsTypes.NormalizedMouseEventType,
+    evt: EventTypes.MouseDownEventType,
     toolData: ToolSpecificToolData,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -389,14 +409,23 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  //
-  pointNearTool = (
-    element,
-    toolData,
-    canvasCoords,
-    proximity,
-    interactionType
-  ) => {
+  /**
+   * It returns if the canvas point is near the provided crosshairs toolData in the
+   * provided element or not. A proximity is passed to the function to determine the
+   * proximity of the point to the toolData in number of pixels.
+   *
+   * @param element - HTML Element
+   * @param toolData - Tool data
+   * @param canvasCoords - Canvas coordinates
+   * @param proximity - Proximity to tool to consider
+   * @returns Boolean, whether the canvas point is near tool
+   */
+  isPointNearTool = (
+    element: HTMLElement,
+    toolData: CrosshairsSpecificToolData,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): boolean => {
     if (this._pointNearTool(element, toolData, canvasCoords, 6)) {
       return true
     }
@@ -404,7 +433,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return false
   }
 
-  toolSelectedCallback = (evt, toolData, interactionType = 'mouse') => {
+  toolSelectedCallback = (
+    evt: EventTypes.MouseDownEventType,
+    toolData: ToolSpecificToolData,
+    interactionType: InteractionTypes
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -454,7 +487,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // NOTE: rotation and slab thickness handles are created/updated in renderTool.
     const currentCamera = viewport.getCamera()
     const oldCameraPosition = viewportToolData.metadata.cameraPosition
-    const deltaCameraPosition: Point3 = [0, 0, 0]
+    const deltaCameraPosition: Types.Point3 = [0, 0, 0]
     vtkMath.subtract(
       currentCamera.position,
       oldCameraPosition,
@@ -462,7 +495,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     )
 
     const oldCameraFocalPoint = viewportToolData.metadata.cameraFocalPoint
-    const deltaCameraFocalPoint: Point3 = [0, 0, 0]
+    const deltaCameraFocalPoint: Types.Point3 = [0, 0, 0]
     vtkMath.subtract(
       currentCamera.focalPoint,
       oldCameraFocalPoint,
@@ -480,7 +513,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       viewport.uid
     )
     if (
-      !isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
+      !csUtils.isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
       viewportControllable &&
       viewportDraggableRotatable
     ) {
@@ -488,7 +521,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       let IsTranslation = true
 
       // NOTE: it is a translation if the the focal point and camera position shifts are the same
-      if (!isEqual(deltaCameraPosition, deltaCameraFocalPoint, 1e-3)) {
+      if (!csUtils.isEqual(deltaCameraPosition, deltaCameraFocalPoint, 1e-3)) {
         IsTranslation = false
       }
 
@@ -563,7 +596,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   mouseMoveCallback = (
-    evt,
+    evt: EventTypes.MouseMoveEventType,
     filteredToolState: ToolSpecificToolState
   ): boolean => {
     const { element, currentPoints } = evt.detail
@@ -640,10 +673,16 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return viewportUIDSpecificCrosshairs
   }
 
-  renderToolData(
-    enabledElement: csTypes.IEnabledElement,
+  /**
+   * renders the crosshairs lines and handles in the requestAnimationFrame callback
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
+    enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     const { viewport, renderingEngine } = enabledElement
     const { element } = viewport
     const toolState = getToolState(enabledElement, this.name)
@@ -706,11 +745,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const otherCanvasDiagonalLength = Math.sqrt(
         sWidth * sWidth + sHeight * sHeight
       )
-      const otherCanvasCenter: Point2 = [sWidth * 0.5, sHeight * 0.5]
+      const otherCanvasCenter: Types.Point2 = [sWidth * 0.5, sHeight * 0.5]
       const otherViewportCenterWorld =
         otherViewport.canvasToWorld(otherCanvasCenter)
 
-      const direction: Point3 = [0, 0, 0]
+      const direction: Types.Point3 = [0, 0, 0]
       vtkMath.cross(
         camera.viewPlaneNormal,
         otherCamera.viewPlaneNormal,
@@ -719,7 +758,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.normalize(direction)
       vtkMath.multiplyScalar(<vec3>direction, otherCanvasDiagonalLength)
 
-      const pointWorld0: Point3 = [0, 0, 0]
+      const pointWorld0: Types.Point3 = [0, 0, 0]
       vtkMath.add(otherViewportCenterWorld, direction, pointWorld0)
 
       const pointWorld1 = [0, 0, 0]
@@ -858,7 +897,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         stHandlesCenterWorld = [...otherViewportCenterWorld]
       }
 
-      const worldUnitVectorFromCenter: Point3 = [0, 0, 0]
+      const worldUnitVectorFromCenter: Types.Point3 = [0, 0, 0]
       vtkMath.subtract(pointWorld0, pointWorld1, worldUnitVectorFromCenter)
       vtkMath.normalize(worldUnitVectorFromCenter)
 
@@ -869,7 +908,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         // @ts-ignore fix after vtk pr merged
         .rotate(90, viewPlaneNormal)
 
-      const worldUnitOrthoVectorFromCenter: Point3 = [0, 0, 0]
+      const worldUnitOrthoVectorFromCenter: Types.Point3 = [0, 0, 0]
       vec3.transformMat4(
         worldUnitOrthoVectorFromCenter,
         worldUnitVectorFromCenter,
@@ -877,12 +916,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       )
 
       const slabThicknessValue = otherViewport.getSlabThickness()
-      const worldOrthoVectorFromCenter: Point3 = [
+      const worldOrthoVectorFromCenter: Types.Point3 = [
         ...worldUnitOrthoVectorFromCenter,
       ]
       vtkMath.multiplyScalar(worldOrthoVectorFromCenter, slabThicknessValue)
 
-      const worldVerticalRefPoint: Point3 = [0, 0, 0]
+      const worldVerticalRefPoint: Types.Point3 = [0, 0, 0]
       vtkMath.add(
         stHandlesCenterWorld,
         worldOrthoVectorFromCenter,
@@ -1274,7 +1313,10 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     // render a circle to pin point the viewport color
     // TODO: This should not be part of the tool, and definitely not part of the renderToolData loop
-    const referenceColorCoordinates = [sWidth * 0.95, sHeight * 0.05] as Point2
+    const referenceColorCoordinates = [
+      sWidth * 0.95,
+      sHeight * 0.05,
+    ] as Types.Point2
     const circleRadius = canvasDiagonalLength * 0.01
 
     const circleUID = '0'
@@ -1367,13 +1409,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const camera = viewport.getCamera()
     const { focalPoint, position } = camera
 
-    const updatedPosition = <Point3>[
+    const updatedPosition = <Types.Point3>[
       position[0] - deltaPointsWorld[0],
       position[1] - deltaPointsWorld[1],
       position[2] - deltaPointsWorld[2],
     ]
 
-    const updatedFocalPoint = <Point3>[
+    const updatedFocalPoint = <Types.Point3>[
       focalPoint[0] - deltaPointsWorld[0],
       focalPoint[1] - deltaPointsWorld[1],
       focalPoint[2] - deltaPointsWorld[2],
@@ -1434,8 +1476,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         const cameraOfTarget = targetViewport.getCamera()
 
         return !(
-          isEqual(cameraOfTarget.viewPlaneNormal, viewPlaneNormal, 1e-2) &&
-          isEqual(cameraOfTarget.position, position, 1)
+          csUtils.isEqual(
+            cameraOfTarget.viewPlaneNormal,
+            viewPlaneNormal,
+            1e-2
+          ) && csUtils.isEqual(cameraOfTarget.position, position, 1)
         )
       }
     )
@@ -1489,8 +1534,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         vtkMath.normalize(otherViewPlaneNormal)
 
         return (
-          isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) &&
-          isEqual(camera.viewUp, otherCamera.viewUp, 1e-2)
+          csUtils.isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) &&
+          csUtils.isEqual(camera.viewUp, otherCamera.viewUp, 1e-2)
         )
       })
 
@@ -1530,8 +1575,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.normalize(otherViewPlaneNormal)
 
       if (
-        isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
-        isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
+        csUtils.isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
+        csUtils.isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
       ) {
         continue
       }
@@ -1548,12 +1593,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         const cameraOfStocked = stockedViewport.getCamera()
 
         if (
-          isEqual(
+          csUtils.isEqual(
             cameraOfStocked.viewPlaneNormal,
             otherCamera.viewPlaneNormal,
             1e-2
           ) &&
-          isEqual(cameraOfStocked.position, otherCamera.position, 1)
+          csUtils.isEqual(cameraOfStocked.position, otherCamera.position, 1)
         ) {
           cameraFound = true
         }
@@ -1595,8 +1640,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.normalize(otherViewPlaneNormal)
 
       if (
-        isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
-        isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
+        csUtils.isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
+        csUtils.isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
       ) {
         continue
       }
@@ -1613,12 +1658,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         const cameraOfStocked = stockedViewport.getCamera()
 
         if (
-          isEqual(
+          csUtils.isEqual(
             cameraOfStocked.viewPlaneNormal,
             otherCamera.viewPlaneNormal,
             1e-2
           ) &&
-          isEqual(cameraOfStocked.position, otherCamera.position, 1)
+          csUtils.isEqual(cameraOfStocked.position, otherCamera.position, 1)
         ) {
           cameraFound = true
         }
@@ -1653,8 +1698,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       vtkMath.normalize(otherViewPlaneNormal)
 
       if (
-        isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
-        isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
+        csUtils.isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
+        csUtils.isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
       ) {
         continue
       }
@@ -1671,12 +1716,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         const cameraOfStocked = stockedViewport.getCamera()
 
         if (
-          isEqual(
+          csUtils.isEqual(
             cameraOfStocked.viewPlaneNormal,
             otherCamera.viewPlaneNormal,
             1e-2
           ) &&
-          isEqual(cameraOfStocked.position, otherCamera.position, 1)
+          csUtils.isEqual(cameraOfStocked.position, otherCamera.position, 1)
         ) {
           cameraFound = true
         }
@@ -1717,7 +1762,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const viewport = renderingEngine.getViewport(viewportUID)
     const actors = viewport.getActors()
 
-    const delta: Point3 = [0, 0, 0]
+    const delta: Types.Point3 = [0, 0, 0]
     vtkMath.subtract(jumpWorld, this.toolCenter, delta)
 
     // TRANSLATION
@@ -1769,8 +1814,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   _deactivateModify(element) {
@@ -1780,11 +1825,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  _mouseUpCallback(evt) {
+  _mouseUpCallback(
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -1814,7 +1861,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     )
   }
 
-  _mouseDragCallback(evt) {
+  _mouseDragCallback(evt: MouseDragEventType) {
     const eventData = evt.detail
     const delta = eventData.deltaPoints.world
 
@@ -1900,7 +1947,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const dir1 = vec2.create()
       const dir2 = vec2.create()
 
-      const center: Point3 = [
+      const center: Types.Point3 = [
         this.toolCenter[0],
         this.toolCenter[1],
         this.toolCenter[2],
@@ -1997,7 +2044,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           const normal = camera.viewPlaneNormal
 
           const dotProd = vtkMath.dot(delta, normal)
-          const projectedDelta: Point3 = [...normal]
+          const projectedDelta: Types.Point3 = [...normal]
           vtkMath.multiplyScalar(projectedDelta, dotProd)
 
           if (
@@ -2012,9 +2059,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
             )
 
             const currentPoint = eventData.lastPoints.world
-            const direction: Point3 = [0, 0, 0]
+            const direction: Types.Point3 = [0, 0, 0]
 
-            const currentCenter: Point3 = [
+            const currentCenter: Types.Point3 = [
               this.toolCenter[0],
               this.toolCenter[1],
               this.toolCenter[2],
@@ -2042,9 +2089,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
             vtkMath.subtract(currentPoint, currentCenter, direction)
             const dotProdDirection = vtkMath.dot(direction, normal)
-            const projectedDirection: Point3 = [...normal]
+            const projectedDirection: Types.Point3 = [...normal]
             vtkMath.multiplyScalar(projectedDirection, dotProdDirection)
-            const normalizedProjectedDirection: Point3 = [
+            const normalizedProjectedDirection: Types.Point3 = [
               projectedDirection[0],
               projectedDirection[1],
               projectedDirection[2],
@@ -2053,7 +2100,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
               normalizedProjectedDirection,
               normalizedProjectedDirection
             )
-            const normalizedProjectedDelta: Point3 = [
+            const normalizedProjectedDelta: Types.Point3 = [
               projectedDelta[0],
               projectedDelta[1],
               projectedDelta[2],
@@ -2062,7 +2109,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
             let slabThicknessValue = otherViewport.getSlabThickness()
             if (
-              isOpposite(
+              csUtils.isOpposite(
                 normalizedProjectedDirection,
                 normalizedProjectedDelta,
                 1e-3
@@ -2129,7 +2176,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // Project delta over camera normal
     // (we don't need to pan, we need only to scroll the camera as in the wheel stack scroll tool)
     const dotProd = vtkMath.dot(delta, normal)
-    const projectedDelta: Point3 = [...normal]
+    const projectedDelta: Types.Point3 = [...normal]
     vtkMath.multiplyScalar(projectedDelta, dotProd)
 
     if (
@@ -2137,8 +2184,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       Math.abs(projectedDelta[1]) > 1e-3 ||
       Math.abs(projectedDelta[2]) > 1e-3
     ) {
-      const newFocalPoint: Point3 = [0, 0, 0]
-      const newPosition: Point3 = [0, 0, 0]
+      const newFocalPoint: Types.Point3 = [0, 0, 0]
+      const newPosition: Types.Point3 = [0, 0, 0]
 
       vtkMath.add(camera.focalPoint, projectedDelta, newFocalPoint)
       vtkMath.add(camera.position, projectedDelta, newPosition)

@@ -4,7 +4,12 @@ import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from '../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
 import VIEWPORT_TYPE from '../enums/viewportType'
-import { PublicViewportInput, EventsTypes } from '../types'
+import {
+  PublicViewportInput,
+  EventTypes,
+  IStackViewport,
+  IVolumeViewport,
+} from '../types'
 import { ViewportInput } from '../types/IViewport'
 import { InternalViewportInput } from '../types/IViewport'
 import VolumeViewport from './VolumeViewport'
@@ -20,8 +25,8 @@ interface IRenderingEngine {
   offScreenCanvasContainer: any
   setViewports(viewports: Array<PublicViewportInput>): void
   resize(): void
-  getViewport(uid: string): StackViewport | VolumeViewport
-  getViewports(): Array<StackViewport | VolumeViewport>
+  getViewport(uid: string): IStackViewport | IVolumeViewport
+  getViewports(): Array<IStackViewport | IVolumeViewport>
   render(): void
   renderViewports(viewportUIDs: Array<string>): void
   renderViewport(viewportUID: string): void
@@ -76,7 +81,7 @@ class RenderingEngine implements IRenderingEngine {
   public hasBeenDestroyed: boolean
   public offscreenMultiRenderWindow: any
   readonly offScreenCanvasContainer: any // WebGL
-  private _viewports: Map<string, StackViewport | VolumeViewport>
+  private _viewports: Map<string, IStackViewport | IVolumeViewport>
   private _needsRender: Set<string> = new Set()
   private _animationFrameSet = false
   private _animationFrameHandle: number | null = null
@@ -337,7 +342,7 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @returns viewport
    */
-  public getViewport(uid: string): StackViewport | VolumeViewport {
+  public getViewport(uid: string): IStackViewport | IVolumeViewport {
     return this._viewports.get(uid)
   }
 
@@ -346,7 +351,7 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @returns Array of viewports
    */
-  public getViewports(): Array<StackViewport | VolumeViewport> {
+  public getViewports(): Array<IStackViewport | IVolumeViewport> {
     this._throwIfDestroyed()
 
     return this._getViewportsAsArray()
@@ -362,7 +367,7 @@ class RenderingEngine implements IRenderingEngine {
     const viewports = this.getViewports()
 
     const isStackViewport = (
-      viewport: StackViewport | VolumeViewport
+      viewport: IStackViewport | IVolumeViewport
     ): viewport is StackViewport => {
       return viewport instanceof StackViewport
     }
@@ -380,7 +385,7 @@ class RenderingEngine implements IRenderingEngine {
     const viewports = this.getViewports()
 
     const isVolumeViewport = (
-      viewport: StackViewport | VolumeViewport
+      viewport: IStackViewport | IVolumeViewport
     ): viewport is VolumeViewport => {
       return viewport instanceof VolumeViewport
     }
@@ -507,7 +512,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   private _resizeVTKViewports(
-    vtkDrivenViewports: (StackViewport | VolumeViewport)[],
+    vtkDrivenViewports: Array<IStackViewport | IVolumeViewport>,
     resetPanZoomForViewPlane = true,
     immediate = true
   ) {
@@ -527,7 +532,7 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     // 3. Reset viewport cameras
-    vtkDrivenViewports.forEach((vp) => {
+    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
       vp.resetCamera(resetPanZoomForViewPlane)
     })
 
@@ -684,7 +689,7 @@ class RenderingEngine implements IRenderingEngine {
     // 5. Storing the viewports
     this._viewports.set(viewportUID, viewport)
 
-    const eventData: EventsTypes.ElementEnabledEventData = {
+    const eventData: EventTypes.ElementEnabledEventData = {
       element,
       viewportUID,
       renderingEngineUID: this.uid,
@@ -745,7 +750,7 @@ class RenderingEngine implements IRenderingEngine {
     // 5. Storing the viewports
     this._viewports.set(viewportUID, viewport)
 
-    const eventData: EventsTypes.ElementEnabledEventData = {
+    const eventData: EventTypes.ElementEnabledEventData = {
       element,
       viewportUID,
       renderingEngineUID: this.uid,
@@ -857,7 +862,7 @@ class RenderingEngine implements IRenderingEngine {
    * @returns _xOffset the final offset which will be used for the next viewport
    */
   private _resize(
-    viewportsDrivenByVtkJs: Array<StackViewport | VolumeViewport>,
+    viewportsDrivenByVtkJs: Array<IStackViewport | IVolumeViewport>,
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number
   ): number {
@@ -912,7 +917,7 @@ class RenderingEngine implements IRenderingEngine {
    * @param _xOffset - xOffSet to draw
    */
   private _getViewportCoordsOnOffScreenCanvas(
-    viewport: InternalViewportInput | StackViewport | VolumeViewport,
+    viewport: InternalViewportInput | IStackViewport | IVolumeViewport,
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number,
     _xOffset: number
@@ -1068,13 +1073,13 @@ class RenderingEngine implements IRenderingEngine {
    * @param viewport - The viewport to render
    */
   private renderViewportUsingCustomOrVtkPipeline(
-    viewport: StackViewport | VolumeViewport
-  ): EventsTypes.ImageRenderedEventData[] {
+    viewport: IStackViewport | IVolumeViewport
+  ): EventTypes.ImageRenderedEventData[] {
     let eventData
 
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
       eventData =
-        viewport.customRenderViewportToCanvas() as EventsTypes.ImageRenderedEventData
+        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventData
     } else {
       if (this.useCPURendering) {
         throw new Error(
@@ -1103,9 +1108,9 @@ class RenderingEngine implements IRenderingEngine {
    * @param offScreenCanvas - The offscreen canvas to render from.
    */
   private _renderViewportFromVtkCanvasToOnscreenCanvas(
-    viewport: StackViewport | VolumeViewport,
+    viewport: IStackViewport | IVolumeViewport,
     offScreenCanvas
-  ): EventsTypes.ImageRenderedEventData {
+  ): EventTypes.ImageRenderedEventData {
     const {
       element,
       canvas,
@@ -1153,7 +1158,7 @@ class RenderingEngine implements IRenderingEngine {
 
     const { element, canvas, uid: viewportUID } = viewport
 
-    const eventData: EventsTypes.ElementDisabledEventData = {
+    const eventData: EventTypes.ElementDisabledEventData = {
       element,
       viewportUID,
       renderingEngineUID,

@@ -1,17 +1,18 @@
 import { VolumeViewport } from '@precisionmetrics/cornerstone-render'
-import { Point3 } from '../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { vec3 } from 'gl-matrix'
 
 // Todo: merge this utility functionality with Crosshair _jump
 /**
  * Uses the viewport's current camera to jump to a specific world coordinate
- * @param enabledElement enabled element
- * @param jumpWorld location in the world to jump to
+ * @param enabledElement - enabled element
+ * @param jumpWorld - location in the world to jump to
  * @returns True if successful
  */
 export default function jumpToWorld(
   viewport: VolumeViewport,
-  jumpWorld: Point3
+  jumpWorld: Types.Point3
 ): true | undefined {
   // if not instance of volumeViewport, return
   if (!(viewport instanceof VolumeViewport)) {
@@ -20,7 +21,7 @@ export default function jumpToWorld(
 
   const { focalPoint } = viewport.getCamera()
 
-  const delta: Point3 = [0, 0, 0]
+  const delta: Types.Point3 = [0, 0, 0]
   vec3.sub(delta, jumpWorld, focalPoint)
 
   _applyShift(viewport, delta)
@@ -42,8 +43,8 @@ function _applyShift(viewport, delta) {
     Math.abs(projectedDelta[1]) > 1e-3 ||
     Math.abs(projectedDelta[2]) > 1e-3
   ) {
-    const newFocalPoint: Point3 = [0, 0, 0]
-    const newPosition: Point3 = [0, 0, 0]
+    const newFocalPoint: Types.Point3 = [0, 0, 0]
+    const newPosition: Types.Point3 = [0, 0, 0]
 
     vec3.add(newFocalPoint, camera.focalPoint, projectedDelta)
     vec3.add(newPosition, camera.position, projectedDelta)

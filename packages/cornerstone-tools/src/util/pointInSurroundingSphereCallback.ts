@@ -1,14 +1,14 @@
-import {
-  Point3,
-  IImageVolume,
-} from '@precisionmetrics/cornerstone-render/src/types'
+import type {
+  Types,
+  VolumeViewport,
+} from '@precisionmetrics/cornerstone-render'
 
 import { vec3 } from 'gl-matrix'
-import { pointInSphere } from '../math/sphere'
-import { getBoundingBoxAroundShape } from '../segmentation'
-import pointInShapeCallback, {
-  PointInShapeCallback,
-} from './pointInShapeCallback'
+import { pointInSphere } from './math/sphere'
+import { getBoundingBoxAroundShape } from './segmentation'
+import type { PointInShapeCallback } from './pointInShapeCallback'
+import pointInShapeCallback from './pointInShapeCallback'
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 
 function worldToIndex(imageData, ain) {
   const vout = vec3.fromValues(0, 0, 0)
@@ -18,14 +18,25 @@ function worldToIndex(imageData, ain) {
 
 // Todo: I *think* this can be done without the need to access viewport's camera
 // since sphere's center circle can be in any plane as long as its center
-// is the center of the sphere ...
+// is the center of the sphere ..
+
+/**
+ * Given a viewport, an imageData, and a circle points in the viewport, it will
+ * run the callback for each point in sphere whose great circle (biggest circle
+ * that can be drawn chopping a sphere) is the provided circle points.
+ *
+ * @param viewport - VolumeViewport
+ * @param imageData - The volume imageData
+ * @param circlePoints - [Types.Point3, Types.Point3]
+ * @param callback - A callback function that will be called for each point in the shape.
+ */
 export default function pointInSurroundingSphereCallback(
-  viewport: any, // Todo: typescript complains about VolumeViewport | StackViewport type
-  volume: IImageVolume,
-  circlePoints: [Point3, Point3],
+  viewport: VolumeViewport,
+  imageData: vtkImageData,
+  circlePoints: [Types.Point3, Types.Point3],
   callback: PointInShapeCallback
 ): void {
-  const { imageData, scalarData, dimensions } = volume
+  const dimensions = imageData.getDimensions() as Types.Point3
   const camera = viewport.getCamera()
 
   // Calculate viewRight from the camera, this will get used in order to
@@ -77,8 +88,8 @@ export default function pointInSurroundingSphereCallback(
   // convert the world coordinates to index coordinates
 
   const sphereCornersIJK = [
-    <Point3>worldToIndex(imageData, topLeftWorld),
-    <Point3>worldToIndex(imageData, bottomRightWorld),
+    <Types.Point3>worldToIndex(imageData, topLeftWorld),
+    <Types.Point3>worldToIndex(imageData, bottomRightWorld),
   ]
 
   // get the bounding box of the sphere in the image
@@ -90,11 +101,9 @@ export default function pointInSurroundingSphereCallback(
   }
 
   pointInShapeCallback(
-    boundsIJK,
-    scalarData,
     imageData,
-    dimensions,
     (pointLPS) => pointInSphere(sphereObj, pointLPS),
-    callback
+    callback,
+    boundsIJK
   )
 }

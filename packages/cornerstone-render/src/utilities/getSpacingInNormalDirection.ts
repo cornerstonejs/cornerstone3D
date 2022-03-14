@@ -1,22 +1,21 @@
-import { Point3 } from '../../types'
 import { vec3 } from 'gl-matrix'
+import { IImageVolume, Point3 } from '../types'
 
 /**
- * @function getSpacingInNormalDirection Given an `imageVolume` and a
- * normal direction (`viewPlaneNormal`), calculates the spacing between voxels
- * in the normal direction. If (`viewPlaneNormal`) is parallell to one of the
- * directions you will obtain the spacing in that direction. Otherwise each of
- * the `imageVolume`'s directions are projected onto the volume, so that you obtain
- * a spacing of the order of "seeing a new set of voxels if the camera where to dolly".
+ * Given an `imageVolume` and a normal direction (`viewPlaneNormal`), calculates
+ * the spacing between voxels in the normal direction. If (`viewPlaneNormal`) is
+ * parallel to one of the directions you will obtain the spacing in that direction.
+ * Otherwise each of the `imageVolume`'s directions are projected onto the volume,
+ * so that you obtain a spacing of the order of "seeing a new set of voxels if the camera where to dolly".
  *
- * @param {object} imageVolume
- * @param {Point3} viewPlaneNormal
+ * @param imageVolume - The image volume to calculate the spacing in the normal direction.
+ * @param viewPlaneNormal - The normal direction of the view plane.
  * @returns
  */
 export default function getSpacingInNormalDirection(
-  imageVolume,
+  imageVolume: IImageVolume,
   viewPlaneNormal: Point3
-) {
+): number {
   const { direction, spacing } = imageVolume
 
   // Calculate size of spacing vector in normal direction

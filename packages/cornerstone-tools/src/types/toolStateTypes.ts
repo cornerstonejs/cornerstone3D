@@ -1,4 +1,4 @@
-import { Point3 } from './../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 import BaseAnnotationTool from '../tools/base/BaseAnnotationTool'
 
 type ToolSpecificToolData = {
@@ -10,19 +10,19 @@ type ToolSpecificToolData = {
     /**
      * The position of the camera in world space
      */
-    cameraPosition?: Point3
+    cameraPosition?: Types.Point3
     /**
      * The focal point of the camera in world space
      */
-    cameraFocalPoint?: Point3
+    cameraFocalPoint?: Types.Point3
     /**
      * The normal on which the tool was drawn
      */
-    viewPlaneNormal?: Point3
+    viewPlaneNormal?: Types.Point3
     /**
      * The viewUp on which the tool was drawn.
      */
-    viewUp?: Point3
+    viewUp?: Types.Point3
     /**
      * A unique identifier for this tool data.
      */
@@ -56,16 +56,16 @@ type ToolSpecificToolData = {
   }
   data: {
     handles: {
-      points?: Point3[]
+      points?: Types.Point3[]
       activeHandleIndex?: number | null
       textBox?: {
         hasMoved: boolean
-        worldPosition: Point3
+        worldPosition: Types.Point3
         worldBoundingBox: {
-          topLeft: Point3
-          topRight: Point3
-          bottomLeft: Point3
-          bottomRight: Point3
+          topLeft: Types.Point3
+          topRight: Types.Point3
+          bottomLeft: Types.Point3
+          bottomRight: Types.Point3
         }
       }
       activeOperation?: number | null
@@ -97,10 +97,16 @@ type ToolAndToolStateArray = Array<{
   toolState: ToolSpecificToolState
 }>
 
+type ToolAndToolDataArray = Array<{
+  tool: BaseAnnotationTool
+  toolData: ToolSpecificToolData
+}>
+
 export {
   ToolSpecificToolData,
   ToolSpecificToolState,
   FrameOfReferenceSpecificToolState,
   ToolAndToolStateArray,
+  ToolAndToolDataArray,
   ToolState,
 }

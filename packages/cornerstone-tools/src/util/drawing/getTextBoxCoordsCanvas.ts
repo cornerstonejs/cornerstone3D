@@ -1,18 +1,18 @@
-import { Point2 } from '../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 /**
  * Determine the coordinates that will place the textbox to the right of the
  * annotation.
  *
  * @param annotationCanvasPoints - The canvas points of the annotation's handles.
- * @returns {Point2} - The coordinates for default placement of the textbox.
+ * @returns - The coordinates for default placement of the textbox.
  */
 export default function getTextBoxCoordsCanvas(
-  annotationCanvasPoints: Array<Point2>
-): Point2 {
+  annotationCanvasPoints: Array<Types.Point2>
+): Types.Point2 {
   const corners = _determineCorners(annotationCanvasPoints)
   const centerY = (corners.top[1] + corners.bottom[1]) / 2
-  const textBoxCanvas = <Point2>[corners.right[0], centerY]
+  const textBoxCanvas = <Types.Point2>[corners.right[0], centerY]
 
   return textBoxCanvas
 }
@@ -20,10 +20,10 @@ export default function getTextBoxCoordsCanvas(
 /**
  * Determine the handles that have the min/max x and y values.
  *
- * @param {Point2} canvasPoints - The canvas points of the annotation's handles.
- * @returns {Object} - The top, left, bottom, and right handles.
+ * @param canvasPoints - The canvas points of the annotation's handles.
+ * @returns - The top, left, bottom, and right handles.
  */
-function _determineCorners(canvasPoints: Array<Point2>) {
+function _determineCorners(canvasPoints: Array<Types.Point2>) {
   const handlesLeftToRight = [canvasPoints[0], canvasPoints[1]].sort(_compareX)
   const handlesTopToBottom = [canvasPoints[0], canvasPoints[1]].sort(_compareY)
   const right = handlesLeftToRight[handlesLeftToRight.length - 1]

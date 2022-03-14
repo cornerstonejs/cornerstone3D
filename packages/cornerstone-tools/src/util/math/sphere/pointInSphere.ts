@@ -1,8 +1,8 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
 import { vec3 } from 'gl-matrix'
-import { Point3 } from '../../../types'
 
 type Sphere = {
-  center: Point3 | vec3
+  center: Types.Point3 | vec3
   radius: number
 }
 
@@ -12,13 +12,13 @@ type Sphere = {
  * ellipse's rotation in different views, we can use a simpler equation
  * which would be faster (no if statements).
  *
- * @param sphere Sphere object with center and radius
- * @param pointLPS the point to check in world coordinates
+ * @param sphere - Sphere object with center and radius
+ * @param pointLPS - the point to check in world coordinates
  * @returns boolean
  */
 export default function pointInSphere(
   sphere: Sphere,
-  pointLPS: Point3
+  pointLPS: Types.Point3
 ): boolean {
   const { center, radius } = sphere
   const [x, y, z] = pointLPS

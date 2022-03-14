@@ -1,28 +1,31 @@
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
-import { createLocalVolume } from '@precisionmetrics/cornerstone-render'
-import isEqual from '../math/vec3/isEqual'
+import {
+  createLocalVolume,
+  Utilities as csUtils,
+} from '@precisionmetrics/cornerstone-render'
 
 /**
- * Given a list of labelmaps (with the possibility of overlapping regions),
- * it generates a new labelmap with the same dimensions as the input labelmaps,
- * by merging all the overlapping regions. This methods can be used
- * to avoid double counting the segments in more than one labelmaps
+ * Given a list of labelmaps (with the possibility of overlapping regions), and
+ * a segmentIndex it creates a new labelmap with the same dimensions as the input labelmaps,
+ * but merges them into a single labelmap for the segmentIndex. It wipes out
+ * all other segment Indices. This is useful for calculating statistics regarding
+ * a specific segment when there are overlapping regions between labelmap (e.g. TMTV)
  *
- * @param {} labelmaps
- * @param {number} segmentIndex
- * @returns {number} TMTV in ml
+ * @param labelmaps - Array of labelmaps
+ * @param segmentIndex - The segment index to merge
+ * @returns Merged labelmap
  */
 function createMergedLabelmap(
   labelmaps: Array<IImageVolume>,
-  segmentIndex = 1, // The segment index to use for the merged labelmap
+  segmentIndex = 1,
   uid = 'mergedLabelmap'
 ): IImageVolume {
   labelmaps.forEach(({ direction, dimensions, origin, spacing }) => {
     if (
-      !isEqual(dimensions, labelmaps[0].dimensions) ||
-      !isEqual(direction, labelmaps[0].direction) ||
-      !isEqual(spacing, labelmaps[0].spacing) ||
-      !isEqual(origin, labelmaps[0].origin)
+      !csUtils.isEqual(dimensions, labelmaps[0].dimensions) ||
+      !csUtils.isEqual(direction, labelmaps[0].direction) ||
+      !csUtils.isEqual(spacing, labelmaps[0].spacing) ||
+      !csUtils.isEqual(origin, labelmaps[0].origin)
     ) {
       throw new Error('labelmaps must have the same size and shape')
     }

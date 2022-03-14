@@ -2,10 +2,11 @@ import {
   cache,
   getEnabledElement,
   StackViewport,
-  Types,
 } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { BaseTool } from '../base'
-import { Point3, Point2, PublicToolProps, ToolProps } from '../../types'
+import { PublicToolProps, ToolProps, EventTypes } from '../../types'
 
 import { fillInsideCircle } from './strategies/fillCircle'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -70,7 +71,15 @@ export default class CircleScissorsTool extends BaseTool {
     super(toolProps, defaultToolProps)
   }
 
-  addNewMeasurement = async (evt) => {
+  /**
+   * Based on the current position of the mouse and the enabledElement, it
+   * finds the active segmentation info and use it for the current tool.
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -109,8 +118,8 @@ export default class CircleScissorsTool extends BaseTool {
     // Todo: Used for drawing the svg only, we might not need it at all
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
-        viewUp: <Point3>[...viewUp],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
         toolName: this.name,
@@ -157,7 +166,7 @@ export default class CircleScissorsTool extends BaseTool {
     )
   }
 
-  _mouseDragCallback = (evt) => {
+  _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
     this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
@@ -177,10 +186,16 @@ export default class CircleScissorsTool extends BaseTool {
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
     const radius = Math.sqrt(dX * dX + dY * dY)
 
-    const bottomCanvas: Point2 = [centerCanvas[0], centerCanvas[1] + radius]
-    const topCanvas: Point2 = [centerCanvas[0], centerCanvas[1] - radius]
-    const leftCanvas: Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
-    const rightCanvas: Point2 = [centerCanvas[0] + radius, centerCanvas[1]]
+    const bottomCanvas: Types.Point2 = [
+      centerCanvas[0],
+      centerCanvas[1] + radius,
+    ]
+    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius]
+    const leftCanvas: Types.Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
+    const rightCanvas: Types.Point2 = [
+      centerCanvas[0] + radius,
+      centerCanvas[1],
+    ]
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
@@ -199,7 +214,9 @@ export default class CircleScissorsTool extends BaseTool {
     )
   }
 
-  _mouseUpCallback = (evt) => {
+  _mouseUpCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -258,8 +275,8 @@ export default class CircleScissorsTool extends BaseTool {
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
@@ -270,14 +287,22 @@ export default class CircleScissorsTool extends BaseTool {
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the circleScissor annotation data in each
+   * request animation frame. Note that the annotation are disappeared
+   * after the segmentation modification.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     if (!this.editData) {
       return
     }
@@ -323,7 +348,7 @@ export default class CircleScissorsTool extends BaseTool {
       this.name,
       annotationUID,
       circleUID,
-      center as Point2,
+      center as Types.Point2,
       radius,
       {
         color,

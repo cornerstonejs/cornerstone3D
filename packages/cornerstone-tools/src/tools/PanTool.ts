@@ -1,5 +1,7 @@
 import { BaseTool } from './base'
-import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { PublicToolProps, ToolProps } from '../types'
 
 /**

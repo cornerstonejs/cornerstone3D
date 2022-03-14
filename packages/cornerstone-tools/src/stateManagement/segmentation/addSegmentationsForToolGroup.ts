@@ -1,3 +1,5 @@
+import { Utilities as csUtils } from '@precisionmetrics/cornerstone-render'
+
 import _cloneDeep from 'lodash.clonedeep'
 import {
   SegmentationDataInput,
@@ -8,17 +10,16 @@ import Representations from '../../enums/SegmentationRepresentations'
 import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
 
 import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
-import { uuidv4 } from '../../util'
 
 /**
  * Add a segmentation to the viewports of the toolGroup. It will use the
  * provided segmentationDataArray to create and configure the segmentation based
  * on the representation type and representation specific configuration.
- * @param {string} toolGroupUID - The UID of the toolGroup to add the segmentation to.
+ * @param toolGroupUID - The UID of the toolGroup to add the segmentation to.
  * @param segmentationDataArray - minimum of volumeUID should be provided, it will
  * throw an error if not. If no representation type is provided, it will use
  * the default labelmap representation.
- * @param {SegmentationConfig} toolGroupSpecificConfig - The toolGroup specific configuration
+ * @param toolGroupSpecificConfig - The toolGroup specific configuration
  * for the segmentation display.
  */
 async function addSegmentationsForToolGroup(
@@ -38,7 +39,7 @@ async function addSegmentationsForToolGroup(
   const promises = segmentationDataArray.map(async (segData) => {
     const segmentationData = _cloneDeep(segData)
 
-    segmentationData.segmentationDataUID = uuidv4()
+    segmentationData.segmentationDataUID = csUtils.uuidv4()
     return _addSegmentation(
       toolGroupUID,
       segmentationData,

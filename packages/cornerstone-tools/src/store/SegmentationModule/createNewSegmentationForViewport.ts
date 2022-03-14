@@ -4,10 +4,9 @@ import {
   createAndCacheDerivedVolume,
   createLocalVolume,
   VolumeViewport,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
-
-import { Point3 } from '../../types'
-import { uuidv4 } from '../../util'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 type LabelmapOptions = {
   volumeUID?: string
@@ -16,9 +15,9 @@ type LabelmapOptions = {
     type: 'Float32Array' | 'Uint8Array'
   }
   metadata?: any
-  dimensions?: Point3
-  spacing?: Point3
-  origin?: Point3
+  dimensions?: Types.Point3
+  spacing?: Types.Point3
+  origin?: Types.Point3
   direction?: Float32Array
 }
 
@@ -27,8 +26,8 @@ type LabelmapOptions = {
  * viewport. It looks at the metadata of the imageData to determine the volume
  * dimensions and spacing if particular options are not provided.
  *
- * @param {VolumeViewport} viewport - VolumeViewport
- * @param {LabelmapOptions} [options] - LabelmapOptions
+ * @param viewport - VolumeViewport
+ * @param options - LabelmapOptions
  * @returns A promise that resolves to the UID of the new labelmap.
  */
 async function createNewSegmentationForViewport(
@@ -49,7 +48,7 @@ async function createNewSegmentationForViewport(
   const { uid } = viewport.getDefaultActor()
   // Name the segmentation volume with the viewport UID
   const segmentationUID = `${uid}-based-segmentation-${
-    options?.volumeUID ?? uuidv4().slice(0, 8)
+    options?.volumeUID ?? csUtils.uuidv4().slice(0, 8)
   }`
 
   if (options) {

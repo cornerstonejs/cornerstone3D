@@ -2,7 +2,7 @@ import cache from './cache/cache'
 import EVENTS from './enums/events'
 import eventTarget from './eventTarget'
 import { triggerEvent } from './utilities'
-import { IImage, ImageLoaderFn, IImageLoadObject, EventsTypes } from './types'
+import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from './types'
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 
 export interface ImageLoaderOptions {
@@ -50,7 +50,7 @@ function loadImageFromImageLoader(
       triggerEvent(eventTarget, EVENTS.IMAGE_LOADED, { image })
     },
     function (error) {
-      const errorObject: EventsTypes.ImageLoadedFailedEventData = {
+      const errorObject: EventTypes.ImageLoadedFailedEventData = {
         imageId,
         error,
       }
@@ -270,8 +270,8 @@ export function cancelLoadAll(): void {
 /**
  * Registers an imageLoader plugin with cornerstone for the specified scheme
  *
- * @param scheme The scheme to use for this image loader (e.g. 'dicomweb', 'wadouri', 'http')
- * @param imageLoader A Cornerstone Image Loader function
+ * @param scheme - The scheme to use for this image loader (e.g. 'dicomweb', 'wadouri', 'http')
+ * @param imageLoader - A Cornerstone Image Loader function
  * @category ImageLoader
  */
 export function registerImageLoader(

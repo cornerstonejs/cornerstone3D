@@ -26,7 +26,7 @@ import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
 const VIEWPORT_ELEMENT = 'viewport-element'
 
 function removeEnabledElement(
-  elementDisabledEvt: Types.EventsTypes.ElementDisabledEvent
+  elementDisabledEvt: Types.EventTypes.ElementDisabledEvent
 ): void {
   // Is DOM element
   const { element, viewportUID } = elementDisabledEvt.detail

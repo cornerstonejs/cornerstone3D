@@ -4,16 +4,14 @@ import {
   Settings,
   StackViewport,
   metaData,
-  Types,
   triggerEvent,
   eventTarget,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { vec3 } from 'gl-matrix'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-import {
-  getImageIdForTool,
-  getSpacingInNormalDirection,
-} from '../../util/planar'
 import { addToolState, getToolState } from '../../stateManagement'
 import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
 import {
@@ -22,25 +20,25 @@ import {
 } from '../../drawingSvg'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import throttle from '../../util/throttle'
-
+import { MeasurementModifiedEventData } from '../../types/EventTypes'
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import {
   ToolSpecificToolData,
-  Point3,
   PublicToolProps,
   ToolProps,
+  EventTypes,
 } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 
 export interface RectangleRoiStartEndThresholdToolData
   extends ToolSpecificToolData {
   metadata: {
-    cameraPosition?: Point3
-    cameraFocalPoint?: Point3
-    viewPlaneNormal?: Point3
-    viewUp?: Point3
+    cameraPosition?: Types.Point3
+    cameraFocalPoint?: Types.Point3
+    viewPlaneNormal?: Types.Point3
+    viewUp?: Types.Point3
     toolDataUID?: string
     FrameOfReferenceUID: string
     referencedImageId?: string
@@ -54,11 +52,11 @@ export interface RectangleRoiStartEndThresholdToolData
     startSlice: number
     endSlice: number
     cachedStats: {
-      projectionPoints: Point3[][] // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
+      projectionPoints: Types.Point3[][] // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[]
     }
     handles: {
-      points: Point3[]
+      points: Types.Point3[]
       activeHandleIndex: number | null
     }
     // labelmapUID: string
@@ -109,7 +107,15 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     )
   }
 
-  addNewMeasurement = (evt: CustomEvent) => {
+  /**
+   * Based on the current position of the mouse and the enabledElement it creates
+   * the edit data for the tool.
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -128,11 +134,11 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     } else {
       volumeUID = this.getTargetUID(viewport)
       imageVolume = getVolume(volumeUID)
-      referencedImageId = getImageIdForTool(
+      referencedImageId = csUtils.getClosestImageId(
+        imageVolume,
         worldPos,
         viewPlaneNormal,
-        viewUp,
-        imageVolume
+        viewUp
       )
     }
 
@@ -144,7 +150,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     }
 
     const startIndex = viewport.getCurrentImageIdIndex()
-    const spacingInNormal = getSpacingInNormalDirection(
+    const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
     )
@@ -162,9 +168,9 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         enabledElement,
-        viewUp: <Point3>[...viewUp],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
@@ -187,10 +193,10 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
             worldBoundingBox: null,
           },
           points: [
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
           ],
           activeHandleIndex: null,
         },
@@ -284,11 +290,11 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     // Find the imageIds for the projection points
     const projectionPointsImageIds = []
     for (const RectanglePoints of newProjectionPoints) {
-      const imageId = getImageIdForTool(
+      const imageId = csUtils.getClosestImageId(
+        imageVolume,
         RectanglePoints[0],
         viewPlaneNormal,
-        metadata.viewUp,
-        imageVolume
+        metadata.viewUp
       )
       projectionPointsImageIds.push(imageId)
     }
@@ -314,7 +320,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     // Dispatching measurement modified
     const eventType = EVENTS.MEASUREMENT_MODIFIED
 
-    const eventDetail = {
+    const eventDetail: MeasurementModifiedEventData = {
       toolData,
       viewportUID,
       renderingEngineUID,
@@ -324,10 +330,17 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     return cachedStats
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the rectangleRoiStartEnd annotation data in each
+   * request animation frame.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
 
     if (!toolState?.length) {
@@ -362,7 +375,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       const color = this.getStyle(settings, 'color', toolData)
 
       // range of slices to render based on the start and end slice, like
-      // np arange
+      // np.arange
 
       // if indexIJK is outside the start/end slice, we don't render
       if (
@@ -443,9 +456,9 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
   _getEndSliceIndex(
     imageVolume: Types.IImageVolume,
-    worldPos: Point3,
+    worldPos: Types.Point3,
     spacingInNormal: number,
-    viewPlaneNormal: Point3
+    viewPlaneNormal: Types.Point3
   ): number | undefined {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate
 

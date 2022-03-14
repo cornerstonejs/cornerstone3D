@@ -2,35 +2,39 @@ import {
   getEnabledElement,
   triggerEvent,
 } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import mouseMoveListener from './mouseMoveListener'
-import { EventsTypes, IPoints, Point2, Point3 } from '../../types'
+import { EventTypes, IPoints } from '../../types'
 import getMouseEventPoints from './getMouseEventPoints'
 
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
   CornerstoneTools3DEvents
 
 interface IMouseDownListenerState {
+  mouseButton: number
+  element: HTMLElement
   renderingEngineUID: string
   viewportUID: string
   isClickEvent: boolean
   clickDelay: number
   preventClickTimeout: ReturnType<typeof setTimeout>
-  element: HTMLElement
   startPoints: IPoints
   lastPoints: IPoints
 }
 
 // STATE
 const defaultState: IMouseDownListenerState = {
+  mouseButton: undefined,
   //
+  element: null,
   renderingEngineUID: undefined,
   viewportUID: undefined,
   //
   isClickEvent: true,
   clickDelay: 200,
   preventClickTimeout: null,
-  element: null,
   startPoints: {
     page: [0, 0],
     client: [0, 0],
@@ -46,6 +50,7 @@ const defaultState: IMouseDownListenerState = {
 }
 
 let state: IMouseDownListenerState = {
+  mouseButton: undefined,
   //
   renderingEngineUID: undefined,
   viewportUID: undefined,
@@ -84,6 +89,8 @@ let state: IMouseDownListenerState = {
 function mouseDownListener(evt: MouseEvent) {
   state.element = <HTMLElement>evt.currentTarget
 
+  state.mouseButton = evt.button
+
   const enabledElement = getEnabledElement(state.element)
   const { renderingEngineUID, viewportUID } = enabledElement
 
@@ -98,17 +105,18 @@ function mouseDownListener(evt: MouseEvent) {
   const startPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(startPoints, startPoints)
 
-  const eventData: EventsTypes.NormalizedMouseEventData = {
+  const eventData: EventTypes.MouseDownEventData = {
+    event: evt,
+    eventName: MOUSE_DOWN,
+    element: state.element,
+    mouseButton: state.mouseButton,
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
-    event: evt,
     camera: {},
-    element: state.element,
     startPoints,
     lastPoints: startPoints,
     currentPoints: startPoints,
     deltaPoints,
-    eventName: MOUSE_DOWN,
   }
 
   state.startPoints = _copyPoints(eventData.startPoints)
@@ -147,17 +155,18 @@ function _onMouseDrag(evt: MouseEvent) {
 
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints)
 
-  const eventData: EventsTypes.NormalizedMouseEventData = {
+  const eventData: EventTypes.MouseDragEventData = {
+    event: evt,
+    eventName: MOUSE_DRAG,
+    mouseButton: state.mouseButton,
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
-    event: evt,
     camera: {},
     element: state.element,
     startPoints: _copyPoints(state.startPoints),
     lastPoints: _copyPoints(lastPoints),
     currentPoints,
     deltaPoints,
-    eventName: MOUSE_DRAG,
   }
 
   triggerEvent(state.element, MOUSE_DRAG, eventData)
@@ -180,17 +189,20 @@ function _onMouseUp(evt: MouseEvent): void {
 
   const currentPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints)
-  const eventData: EventsTypes.NormalizedMouseEventData = {
+  const eventData:
+    | EventTypes.MouseUpEventData
+    | EventTypes.MouseClickEventType = {
+    event: evt,
+    eventName,
+    mouseButton: state.mouseButton,
+    element: state.element,
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
-    event: evt,
     camera: {},
-    element: state.element,
     startPoints: _copyPoints(state.startPoints),
     lastPoints: _copyPoints(state.lastPoints),
     currentPoints,
     deltaPoints,
-    eventName,
   }
 
   triggerEvent(eventData.element, eventName, eventData)
@@ -266,12 +278,22 @@ function _getDeltaPoints(currentPoints: IPoints, lastPoints: IPoints): IPoints {
  *
  * @returns The difference.
  */
-function _subtractPoints2D(point0: Point2, point1: Point2): Point2 {
+function _subtractPoints2D(
+  point0: Types.Point2,
+  point1: Types.Point2
+): Types.Point2 {
   return [point0[0] - point1[0], point0[1] - point1[1]]
 }
 
-function _subtractPoints3D(point0: Point3, point1: Point3): Point3 {
+function _subtractPoints3D(
+  point0: Types.Point3,
+  point1: Types.Point3
+): Types.Point3 {
   return [point0[0] - point1[0], point0[1] - point1[1], point0[2] - point1[2]]
+}
+
+export function getMouseButton(): number {
+  return state.mouseButton
 }
 
 export default mouseDownListener
