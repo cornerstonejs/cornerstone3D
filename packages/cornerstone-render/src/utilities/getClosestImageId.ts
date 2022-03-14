@@ -1,13 +1,25 @@
-import { metaData } from '@precisionmetrics/cornerstone-render'
 import { vec3 } from 'gl-matrix'
-import { Point3 } from './../../types'
+import { metaData } from '../metaData'
+import { IImageVolume, Point3 } from '../types'
+
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
-export default function getImageIdForTool(
+/**
+ * Given an image, a point in space and the viewPlaneNormal it returns the
+ * closest imageId of the image volume that is within half voxel spacing
+ * of the point in space.
+ * @param imageVolume - The image volume
+ * @param worldPos - The position in the world coordinate system (from mouse click)
+ * @param viewPlaneNormal - The normal vector of the viewport
+ * @param viewUp - The viewUp vector of the camera.
+ *
+ * @returns The imageId for the tool.
+ */
+export default function getClosestImageId(
+  imageVolume: IImageVolume,
   worldPos: Point3,
   viewPlaneNormal: Point3,
-  viewUp: Point3,
-  imageVolume
+  viewUp: Point3
 ): string {
   if (!imageVolume) {
     return

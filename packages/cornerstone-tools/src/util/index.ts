@@ -12,13 +12,11 @@ import deepMerge from './deepMerge'
 import throttle from './throttle'
 import getDefault from './getDefault'
 import isObject from './isObject'
-import getToolDataStyle from './getToolDataStyle'
 import calibrateImageSpacing from './calibrateImageSpacing'
 import * as segmentation from './segmentation'
 import triggerAnnotationRenderForViewportUIDs from './triggerAnnotationRenderForViewportUIDs'
-
-// UUID Generation
-import uuidv4 from './uuidv4'
+import pointInShapeCallback from './pointInShapeCallback'
+import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback'
 
 // Events
 import { triggerEvent } from '@precisionmetrics/cornerstone-render'
@@ -35,12 +33,12 @@ export {
   throttle,
   getDefault,
   isObject,
-  uuidv4,
   triggerEvent,
-  getToolDataStyle,
   calibrateImageSpacing,
   segmentation,
   triggerAnnotationRenderForViewportUIDs,
+  pointInShapeCallback,
+  pointInSurroundingSphereCallback,
 }
 
 export default {
@@ -55,10 +53,10 @@ export default {
   throttle,
   getDefault,
   isObject,
-  uuidv4,
   triggerEvent,
-  getToolDataStyle,
   calibrateImageSpacing,
   segmentation,
   triggerAnnotationRenderForViewportUIDs,
+  pointInShapeCallback,
+  pointInSurroundingSphereCallback,
 }

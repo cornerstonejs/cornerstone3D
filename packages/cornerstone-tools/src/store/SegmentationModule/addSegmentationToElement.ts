@@ -13,9 +13,8 @@ import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationState
  * you should create a toolGroup on the viewports and add the segmentation to the
  * toolGroup.
  *
- * @param {HTMLElement} element - The element that will be rendered.
- * @param {ToolGroupSpecificSegmentationData} segmentationData -
- * ToolGroupSpecificSegmentationData
+ * @param element - The element that will be rendered.
+ * @param segmentationData - ToolGroupSpecificSegmentationData
  */
 async function addSegmentationToElement(
   element: HTMLElement,

@@ -1,5 +1,5 @@
 /**
- * @enum ToolModes - This enum defines the 4 tool states which are available.
+ * ToolModes - This enum defines the 4 tool states which are available.
  *
  * Active:
  * - Can be actively used by mouse/touch events mapped to its `ToolBinding`s.

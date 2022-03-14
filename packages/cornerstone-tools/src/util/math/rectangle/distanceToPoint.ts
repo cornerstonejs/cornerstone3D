@@ -1,34 +1,44 @@
+import type { Point2 } from '@precisionmetrics/cornerstone-render/src/types'
 import lineSegment from '../line'
-import { Types } from '@precisionmetrics/cornerstone-render'
 
-type rectLineSegmentas = {
-  top: number[][]
-  right: number[][]
-  bottom: number[][]
-  left: number[][]
+type rectLineSegments = {
+  top: Point2[]
+  right: Point2[]
+  bottom: Point2[]
+  left: Point2[]
 }
 
+/**
+ * Given a rectangle left, top, width and height, return an object containing the
+ * line segments that make up the rectangle's four sides
+ * @param left - The x-coordinate of the left edge of the rectangle.
+ * @param top - The y-coordinate of the top edge of the rectangle.
+ * @param width - The width of the rectangle.
+ * @param height - The height of the rectangle.
+ * @returns An object with four keys, each of which contains an array of two
+ * points.
+ */
 function rectToLineSegments(
   left: number,
   top: number,
   width: number,
   height: number
-): rectLineSegmentas {
-  const topLineStart = [left, top]
-  const topLineEnd = [left + width, top]
+): rectLineSegments {
+  const topLineStart: Point2 = [left, top]
+  const topLineEnd: Point2 = [left + width, top]
 
-  const rigthLineStart = [left + width, top]
-  const rigthLineEnd = [left + width, top + height]
+  const rightLineStart: Point2 = [left + width, top]
+  const rightLineEnd: Point2 = [left + width, top + height]
 
-  const bottomLineStart = [left + width, top + height]
-  const bottomLineEnd = [left, top + height]
+  const bottomLineStart: Point2 = [left + width, top + height]
+  const bottomLineEnd: Point2 = [left, top + height]
 
-  const leftLineStart = [left, top + height]
-  const leftLineEnd = [left, top]
+  const leftLineStart: Point2 = [left, top + height]
+  const leftLineEnd: Point2 = [left, top]
 
   const lineSegments = {
     top: [topLineStart, topLineEnd],
-    right: [rigthLineStart, rigthLineEnd],
+    right: [rightLineStart, rightLineEnd],
     bottom: [bottomLineStart, bottomLineEnd],
     left: [leftLineStart, leftLineEnd],
   }
@@ -40,14 +50,11 @@ function rectToLineSegments(
  * Calculates distance of the point to the rectangle. It calculates the minimum
  * distance between the point and each line segment of the rectangle.
  *
- * @param rect : coordinates of the rectangle [left, top, width, height]
- * @param point : [x,y] coordinates of a point
+ * @param rect - coordinates of the rectangle [left, top, width, height]
+ * @param point - [x,y] coordinates of a point
  * @returns
  */
-export default function distanceToPoint(
-  rect: number[],
-  point: Types.Point2
-): number {
+export default function distanceToPoint(rect: number[], point: Point2): number {
   if (rect.length !== 4 || point.length !== 2) {
     throw Error(
       'rectangle:[left, top, width, height] or point: [x,y] not defined correctly'

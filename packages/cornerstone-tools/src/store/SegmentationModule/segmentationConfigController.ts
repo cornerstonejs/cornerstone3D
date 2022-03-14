@@ -18,7 +18,7 @@ function getGlobalSegmentationConfig(): SegmentationConfig {
 
 /**
  * Set the global segmentation config
- * @param {SegmentationConfig} segmentationConfig - SegmentationConfig
+ * @param segmentationConfig - SegmentationConfig
  */
 function setGlobalSegmentationConfig(
   segmentationConfig: SegmentationConfig
@@ -28,8 +28,7 @@ function setGlobalSegmentationConfig(
 
 /**
  * Given a representation type, return the corresponding global representation config
- * @param {SegmentationRepresentations} representationType - The type of
- * representation to query
+ * @param representationType - The type of representation to query
  * @returns A representation configuration object.
  */
 function getGlobalRepresentationConfig(
@@ -43,10 +42,9 @@ function getGlobalRepresentationConfig(
  * Set the global configuration for a given representation type. It fires
  * a SEGMENTATION_GLOBAL_STATE_MODIFIED event.
  *
- * @event {SEGMENTATION_GLOBAL_STATE_MODIFIED}
- * @param {SegmentationRepresentations} representationType - The type of
- * representation to set config for
- * @param {RepresentationConfig} config - The configuration for the representation.
+ * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @param representationType - The type of representation to set config for
+ * @param config - The configuration for the representation.
  */
 function setGlobalRepresentationConfig(
   representationType: SegmentationRepresentations,
@@ -68,9 +66,8 @@ function setGlobalRepresentationConfig(
  * the global representation config with the partial config. It fires a
  * SEGMENTATION_GLOBAL_STATE_MODIFIED event.
  *
- * @event {SEGMENTATION_GLOBAL_STATE_MODIFIED}
- * @param {SegmentationRepresentations} representationType - The type of
- * representation to update.
+ * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @param representationType - The type of representation to update.
  * @param config - Partial<RepresentationConfig>
  */
 function updateGlobalRepresentationConfig(
@@ -102,7 +99,7 @@ function updateGlobalSegmentationConfig(
 
 /**
  * Get the toolGroup specific segmentation config
- * @param {string} toolGroupUID - The UID of the tool group
+ * @param toolGroupUID - The UID of the tool group
  * @returns A SegmentationConfig object.
  */
 function getSegmentationConfig(toolGroupUID: string): SegmentationConfig {
@@ -113,9 +110,8 @@ function getSegmentationConfig(toolGroupUID: string): SegmentationConfig {
  * Set the toolGroup specific segmentation config.
  * It fires a SEGMENTATION_STATE_MODIFIED event.
  *
- * @param {string} toolGroupUID - The UID of the tool group that the segmentation
- * config is for.
- * @param {SegmentationConfig} segmentationConfig - The segmentation config to set.
+ * @param toolGroupUID - The UID of the tool group that the segmentation config is for.
+ * @param segmentationConfig - The segmentation config to set.
  */
 function setSegmentationConfig(
   toolGroupUID: string,
@@ -128,11 +124,9 @@ function setSegmentationConfig(
  * Set the representation config for a given tool group for the given representation type.
  * It fires a SEGMENTATION_STATE_MODIFIED event.
  *
- * @param {string} toolGroupUID - The unique identifier of the tool group.
- * @param {SegmentationRepresentations} representationType - The type of
- * representation to set config for.
- * @param {RepresentationConfig} representationConfig - The configuration for the
- * representation.
+ * @param toolGroupUID - The unique identifier of the tool group.
+ * @param representationType - The type of representation to set config for.
+ * @param representationConfig - The configuration for the representation.
  */
 function setRepresentationConfig(
   toolGroupUID: string,
@@ -157,10 +151,9 @@ function setRepresentationConfig(
 
 /**
  * Get the representation config for a given tool group and representation type
- * @param {string} toolGroupUID - The UID of the tool group that contains the tool
- * that you want to get the representation config for.
- * @param {SegmentationRepresentations} representationType - The type of
- * representation to get.
+ * @param toolGroupUID - The UID of the tool group that contains the tool that you
+ * want to get the representation config for.
+ * @param representationType - The type of representation to get.
  * @returns A RepresentationConfig object.
  */
 function getRepresentationConfig(

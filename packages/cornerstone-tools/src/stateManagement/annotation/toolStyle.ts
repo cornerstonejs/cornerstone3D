@@ -1,6 +1,5 @@
 import { Settings } from '@precisionmetrics/cornerstone-render'
-import { ToolModes, ToolDataStates } from '../../enums'
-
+import { ToolModes, ToolDataStyleStates } from '../../enums'
 /*
  * Initialization
  */
@@ -29,17 +28,19 @@ Settings.getDefaultSettings().set('tool.style', {
 
 initializeDefaultStyleAlternatives()
 
-/*
- * Definitions
+/**
+ * For each tool style states (Default, Highlighted, Selected, Locked),
+ * and each Mode (None, Active, Inactive), it initializes the default
+ * settings for the tool style.
  */
-
 function initializeDefaultStyleAlternatives(): void {
+  // Todo: why there is an empty string here?
   const modes = ['', ToolModes.Active, ToolModes.Passive]
   const states = [
-    ToolDataStates.Default,
-    ToolDataStates.Highlighted,
-    ToolDataStates.Selected,
-    ToolDataStates.Locked,
+    ToolDataStyleStates.Default,
+    ToolDataStyleStates.Highlighted,
+    ToolDataStyleStates.Selected,
+    ToolDataStyleStates.Locked,
   ]
   const defaultSettings = Settings.getDefaultSettings()
   defaultSettings.forEach((name: string) => {
@@ -54,6 +55,7 @@ function initializeDefaultStyleAlternatives(): void {
     states.forEach((state) => {
       modes.forEach((mode) => {
         const key = `${name}${state}${mode}`
+        // Todo: Is the following because of not setting object with undefined or null?
         defaultSettings.set(key, defaultSettings.get(key))
       })
     })
@@ -62,14 +64,14 @@ function initializeDefaultStyleAlternatives(): void {
 
 /**
  * Build a list of alternative property names in ascending order of priority
- * @param {string} property The base property name -- e.g., 'color'
- * @param {ToolDataStates} state An optional state to determine the final property name
- * @param {ToolModes} mode An optional mode to determine the final property name
- * @returns {string[]} A list of alternative property names
+ * @param property - The base property name -- e.g., 'color'
+ * @param state - An optional state to determine the final property name
+ * @param mode - An optional mode to determine the final property name
+ * @returns A list of alternative property names
  */
 function getStyleAlternatives(
   property: string,
-  state?: ToolDataStates,
+  state?: ToolDataStyleStates,
   mode?: ToolModes
 ): string[] {
   const list = [`tool.style.${property}`]
@@ -78,10 +80,18 @@ function getStyleAlternatives(
   return list
 }
 
+/**
+ * Get the value of a style property from the settings
+ * @param settings - The settings object.
+ * @param property - The name of the property to get.
+ * @param state - The state of the tool (Default, Locked etc.)
+ * @param mode - The current tool mode. (Active, Passive etc.)
+ * @returns The value of the property.
+ */
 function getStyleProperty(
   settings: Settings,
   property: string,
-  state?: ToolDataStates,
+  state?: ToolDataStyleStates,
   mode?: ToolModes
 ): unknown {
   // `alternatives` is a list of property names with priority in ascending
@@ -96,25 +106,31 @@ function getStyleProperty(
   }
 }
 
+/**
+ * Get the default value of a style property
+ * @param property - The name of the style property to get.
+ * @param state - The state of the tool (Default, Locked etc.)
+ * @param mode - The current tool mode. (Active, Passive etc.)
+ * @returns The value of the property.
+ */
 function getDefaultStyleProperty(
   property: string,
-  state?: ToolDataStates,
+  state?: ToolDataStyleStates,
   mode?: ToolModes
 ): unknown {
   return getStyleProperty(Settings.getRuntimeSettings(), property, state, mode)
 }
 
 /**
- * @function getFont - Returns a font string of the form
- * "{fontSize}px fontName" used by `canvas`.
- * @param {Settings} settings An optional Settings instance to read from.
- * @param {ToolDataStates} state An optional state to determine the final property name
- * @param {ToolModes} mode An optional mode to determine the final property name
- * @returns {string} The font string.
+ * getFont - Returns a font string of the form "{fontSize}px fontName" used by `canvas`.
+ * @param settings - An optional Settings instance to read from.
+ * @param state - An optional state to determine the final property name
+ * @param mode - An optional mode to determine the final property name
+ * @returns The font string.
  */
 function getFont(
   settings?: Settings,
-  state?: ToolDataStates,
+  state?: ToolDataStyleStates,
   mode?: ToolModes
 ): string {
   const sty = Settings.assert(settings)

@@ -1,5 +1,4 @@
-import { BaseAnnotationTool } from '../base'
-// ~~ VTK Viewport
+import { vec2, vec3 } from 'gl-matrix'
 import {
   Settings,
   getEnabledElement,
@@ -7,10 +6,11 @@ import {
   StackViewport,
   triggerEvent,
   eventTarget,
-  Types,
-  VIEWPORT_TYPE,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
-import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
+import { BaseAnnotationTool } from '../base'
 import throttle from '../../util/throttle'
 import {
   addToolState,
@@ -23,7 +23,6 @@ import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
-import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
@@ -36,29 +35,34 @@ import {
 } from '../../cursors/elementCursor'
 import {
   ToolSpecificToolData,
-  Point3,
-  EventsTypes,
+  EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
+  InteractionTypes,
 } from '../../types'
+import {
+  MeasurementModifiedEventData,
+  MouseDragEventType,
+  MouseMoveEventType,
+} from '../../types/EventTypes'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 interface BidirectionalSpecificToolData extends ToolSpecificToolData {
   data: {
     invalidated: boolean
     handles: {
-      points: Point3[]
+      points: Types.Point3[]
       activeHandleIndex: number | null
       textBox: {
         hasMoved: boolean
-        worldPosition: Point3
+        worldPosition: Types.Point3
         worldBoundingBox: {
-          topLeft: Point3
-          topRight: Point3
-          bottomLeft: Point3
-          bottomRight: Point3
+          topLeft: Types.Point3
+          topRight: Types.Point3
+          bottomLeft: Types.Point3
+          bottomRight: Types.Point3
         }
       }
     }
@@ -104,7 +108,17 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement(evt: CustomEvent): BidirectionalSpecificToolData {
+  /**
+   * Based on the current position of the mouse and the current imageId to create
+   * a Bidirectional ToolData and stores it in the toolStateManager
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement(
+    evt: EventTypes.MouseDownActivateEventType
+  ): BidirectionalSpecificToolData {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -123,11 +137,11 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     } else {
       const volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
-      referencedImageId = getImageIdForTool(
+      referencedImageId = csUtils.getClosestImageId(
+        imageVolume,
         worldPos,
         viewPlaneNormal,
-        viewUp,
-        imageVolume
+        viewUp
       )
     }
 
@@ -138,8 +152,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
-        viewUp: <Point3>[...viewUp],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         toolName: this.name,
         label: '',
@@ -150,20 +164,20 @@ export default class BidirectionalTool extends BaseAnnotationTool {
         handles: {
           points: [
             // long
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
             // short
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
           ],
           textBox: {
             hasMoved: false,
-            worldPosition: <Point3>[0, 0, 0],
+            worldPosition: <Types.Point3>[0, 0, 0],
             worldBoundingBox: {
-              topLeft: <Point3>[0, 0, 0],
-              topRight: <Point3>[0, 0, 0],
-              bottomLeft: <Point3>[0, 0, 0],
-              bottomRight: <Point3>[0, 0, 0],
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
           activeHandleIndex: null,
@@ -205,67 +219,40 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return toolData
   }
 
-  getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
-
-    const { data } = toolData
-    const { points, textBox } = data.handles
-    const { worldBoundingBox } = textBox
-
-    if (worldBoundingBox) {
-      const canvasBoundingBox = {
-        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
-        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
-        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
-      }
-
-      if (
-        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
-        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
-      ) {
-        data.handles.activeHandleIndex = null
-        return textBox
-      }
-    }
-
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i]
-      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
-
-      const near =
-        vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
-
-      if (near === true) {
-        data.handles.activeHandleIndex = i
-        return point
-      }
-    }
-
-    data.handles.activeHandleIndex = null
-  }
-
-  pointNearTool = (element, toolData, canvasCoords, proximity) => {
+  /**
+   * It returns if the canvas point is near the provided toolData in the provided
+   * element or not. A proximity is passed to the function to determine the
+   * proximity of the point to the toolData in number of pixels.
+   *
+   * @param element - HTML Element
+   * @param toolData - Tool data
+   * @param canvasCoords - Canvas coordinates
+   * @param proximity - Proximity to tool to consider
+   * @returns Boolean, whether the canvas point is near tool
+   */
+  isPointNearTool = (
+    element: HTMLElement,
+    toolData: BidirectionalSpecificToolData,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): boolean => {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
     const { data } = toolData
     const { points } = data.handles
 
     // Check long axis
-    let canavasPoint1 = viewport.worldToCanvas(points[0])
-    let canavasPoint2 = viewport.worldToCanvas(points[1])
+    let canvasPoint1 = viewport.worldToCanvas(points[0])
+    let canvasPoint2 = viewport.worldToCanvas(points[1])
 
     let line = {
       start: {
-        x: canavasPoint1[0],
-        y: canavasPoint1[1],
+        x: canvasPoint1[0],
+        y: canvasPoint1[1],
       },
       end: {
-        x: canavasPoint2[0],
-        y: canavasPoint2[1],
+        x: canvasPoint2[0],
+        y: canvasPoint2[1],
       },
     }
 
@@ -280,17 +267,17 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     }
 
     // Check short axis
-    canavasPoint1 = viewport.worldToCanvas(points[2])
-    canavasPoint2 = viewport.worldToCanvas(points[3])
+    canvasPoint1 = viewport.worldToCanvas(points[2])
+    canvasPoint2 = viewport.worldToCanvas(points[3])
 
     line = {
       start: {
-        x: canavasPoint1[0],
-        y: canavasPoint1[1],
+        x: canvasPoint1[0],
+        y: canvasPoint1[1],
       },
       end: {
-        x: canavasPoint2[0],
-        y: canavasPoint2[1],
+        x: canvasPoint2[0],
+        y: canvasPoint2[1],
       },
     }
 
@@ -303,9 +290,15 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     if (distanceToPoint <= proximity) {
       return true
     }
+
+    return false
   }
 
-  toolSelectedCallback = (evt, toolData, interactionType = 'mouse') => {
+  toolSelectedCallback = (
+    evt: EventTypes.MouseDownEventType,
+    toolData: ToolSpecificToolData,
+    interactionType: InteractionTypes
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -340,7 +333,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt: EventsTypes.NormalizedMouseEventType,
+    evt: EventTypes.MouseDownEventType,
     toolData: ToolSpecificToolData,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -387,7 +380,9 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  _mouseUpCallback = (evt) => {
+  _mouseUpCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -486,7 +481,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     this.isDrawing = false
   }
 
-  _mouseDragDrawCallback = (evt) => {
+  _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
     this.isDrawing = true
 
     const eventData = evt.detail
@@ -568,7 +563,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     this.editData.hasMoved = true
   }
 
-  _mouseDragModifyCallback = (evt) => {
+  _mouseDragModifyCallback = (evt: MouseDragEventType) => {
     this.isDrawing = true
 
     const eventData = evt.detail
@@ -871,7 +866,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return wouldPutThroughShortAxis
   }
 
-  cancel(element) {
+  cancel = (element: HTMLElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false
@@ -906,8 +901,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
   _deactivateDraw = (element) => {
@@ -918,8 +913,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
   _activateModify = (element) => {
@@ -929,8 +924,8 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback)
   }
 
   _deactivateModify = (element) => {
@@ -943,17 +938,25 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     )
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(
-      EVENTS.TOUCH_DRAG,
-      this._mouseDragModifyCallback
-    )
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(
+    //   EVENTS.TOUCH_DRAG,
+    //   this._mouseDragModifyCallback
+    // )
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the bidirectional annotation data in each
+   * request animation frame. It calculates the updated cached statistics if
+   * data is invalidated and cache it.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
     let toolState = getToolState(enabledElement, this.name)
@@ -1117,20 +1120,6 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
-    let imageVolume, viewport
-    if (targetUID.startsWith('stackTarget')) {
-      const coloneIndex = targetUID.indexOf(':')
-      const viewportUID = targetUID.substring(coloneIndex + 1)
-      viewport = renderingEngine.getViewport(viewportUID)
-      imageVolume = viewport.getImageData()
-    } else {
-      imageVolume = getVolume(targetUID)
-    }
-
-    return { imageVolume, viewport }
-  }
-
   _calculateLength(pos1, pos2) {
     const dx = pos1[0] - pos2[0]
     const dy = pos1[1] - pos2[1]
@@ -1140,7 +1129,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
   }
 
   _calculateCachedStats = (toolData, renderingEngine, enabledElement) => {
-    const { data, metadata } = toolData
+    const { data } = toolData
     const { viewportUID, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
@@ -1148,28 +1137,31 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     const worldPos3 = data.handles.points[2]
     const worldPos4 = data.handles.points[3]
 
-    // https://github.com/Kitware/vtk-js/blob/b50fd091cb9b5b65981bc7c64af45e8f2472d7a1/Sources/Common/Core/Math/index.js#L331
     const { cachedStats } = data
     const targetUIDs = Object.keys(cachedStats)
 
     for (let i = 0; i < targetUIDs.length; i++) {
       const targetUID = targetUIDs[i]
 
-      const { imageVolume } = this._getImageVolumeFromTargetUID(
+      const { image } = this.getTargetUIDViewportAndImage(
         targetUID,
         renderingEngine
       )
 
-      const { imageData, dimensions } = imageVolume
+      const { imageData, dimensions } = image
 
       const dist1 = this._calculateLength(worldPos1, worldPos2)
       const dist2 = this._calculateLength(worldPos3, worldPos4)
       const length = dist1 > dist2 ? dist1 : dist2
       const width = dist1 > dist2 ? dist2 : dist1
 
+      // @ts-ignore this will be fixed in the vtk master
       const index1 = imageData.worldToIndex(worldPos1)
+      // @ts-ignore this will be fixed in the vtk master
       const index2 = imageData.worldToIndex(worldPos2)
+      // @ts-ignore this will be fixed in the vtk master
       const index3 = imageData.worldToIndex(worldPos3)
+      // @ts-ignore this will be fixed in the vtk master
       const index4 = imageData.worldToIndex(worldPos4)
 
       this._isInsideVolume(index1, index2, index3, index4, dimensions)
@@ -1187,7 +1179,7 @@ export default class BidirectionalTool extends BaseAnnotationTool {
     // Dispatching measurement modified
     const eventType = EVENTS.MEASUREMENT_MODIFIED
 
-    const eventDetail = {
+    const eventDetail: MeasurementModifiedEventData = {
       toolData,
       viewportUID,
       renderingEngineUID,
@@ -1202,15 +1194,5 @@ export default class BidirectionalTool extends BaseAnnotationTool {
       indexWithinDimensions(index3, dimensions) &&
       indexWithinDimensions(index4, dimensions)
     )
-  }
-
-  _clipIndexToVolume = (index, dimensions) => {
-    for (let i = 0; i <= 2; i++) {
-      if (index[i] < 0) {
-        index[i] = 0
-      } else if (index[i] >= dimensions[i]) {
-        index[i] = dimensions[i] - 1
-      }
-    }
   }
 }

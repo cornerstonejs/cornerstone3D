@@ -1,26 +1,25 @@
-import {
-  Point3,
-  IImageVolume,
-  IEnabledElement,
-} from '@precisionmetrics/cornerstone-render/src/types'
+import type {
+  Types,
+  VolumeViewport,
+} from '@precisionmetrics/cornerstone-render'
 
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import pointInSurroundingSphereCallback from '../../../util/planar/pointInSurroundingSphereCallback'
+import { pointInSurroundingSphereCallback } from '../../../util'
 
 type OperationData = {
-  points: [Point3, Point3, Point3, Point3]
-  volume: IImageVolume
+  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
+  volume: Types.IImageVolume
   toolGroupUID: string
   segmentIndex: number
   segmentationDataUID: string
   segmentsLocked: number[]
-  viewPlaneNormal: Point3
-  viewUp: Point3
+  viewPlaneNormal: Types.Point3
+  viewUp: Types.Point3
   constraintFn: () => boolean
 }
 
 function fillSphere(
-  enabledElement: IEnabledElement,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   _inside = true
 ): void {
@@ -34,7 +33,7 @@ function fillSphere(
     points,
   } = operationData
 
-  const { scalarData } = segmentation
+  const { scalarData, imageData } = segmentation
 
   const callback = ({ index, value }) => {
     if (segmentsLocked.includes(value)) {
@@ -44,8 +43,8 @@ function fillSphere(
   }
 
   pointInSurroundingSphereCallback(
-    viewport,
-    segmentation,
+    viewport as VolumeViewport,
+    imageData,
     [points[0], points[1]],
     callback
   )
@@ -56,12 +55,11 @@ function fillSphere(
 /**
  * Fill inside a sphere with the given segment index in the given operation data. The
  * operation data contains the sphere required points.
- * @param {IEnabledElement} enabledElement - The element that is enabled and
- * selected.
- * @param {OperationData} operationData - OperationData
+ * @param enabledElement - The element that is enabled and selected.
+ * @param operationData - OperationData
  */
 export function fillInsideSphere(
-  enabledElement: IEnabledElement,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
   fillSphere(enabledElement, operationData, true)
@@ -70,12 +68,11 @@ export function fillInsideSphere(
 /**
  * Fill outside a sphere with the given segment index in the given operation data. The
  * operation data contains the sphere required points.
- * @param {IEnabledElement} enabledElement - The element that is enabled and
- * selected.
- * @param {OperationData} operationData - OperationData
+ * @param enabledElement - The element that is enabled and selected.
+ * @param operationData - OperationData
  */
 export function fillOutsideSphere(
-  enabledElement: IEnabledElement,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
   fillSphere(enabledElement, operationData, false)

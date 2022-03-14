@@ -347,7 +347,7 @@ class SegmentationExample extends Component {
   }
 
   onGlobalSegmentationStateUpdated = (evt) => {
-    const { segmentationUIDs } = evt.detail
+    const { segmentationUID } = evt.detail
     const allSegmentationUIDs =
       SegmentationState.getGlobalSegmentationState().map(
         ({ volumeUID }) => volumeUID

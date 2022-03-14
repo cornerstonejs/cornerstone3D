@@ -1,5 +1,7 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import _getHash from './_getHash'
-import { Point2 } from '../types'
+
 import _setAttributesIfNecessary from './_setAttributesIfNecessary'
 import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 
@@ -8,7 +10,7 @@ function drawCircle(
   toolName: string,
   annotationUID: string,
   circleUID: string,
-  center: Point2,
+  center: Types.Point2,
   radius: number,
   options = {}
 ): void {

@@ -1,6 +1,6 @@
 import { ToolGroupManager } from '../../store'
 import { ToolModes } from '../../enums'
-import { EventsTypes } from '../../types'
+import { EventTypes } from '../../types'
 
 type ModesFilter = Array<ToolModes>
 
@@ -12,7 +12,7 @@ type ModesFilter = Array<ToolModes>
  * @param modesFilter An array of entries from the `ToolModes` enum.
  */
 export default function getToolsWithModesForMouseEvent(
-  evt: EventsTypes.NormalizedMouseEventType,
+  evt: EventTypes.NormalizedMouseEventType,
   modesFilter: ModesFilter,
   evtButton?: any
 ) {

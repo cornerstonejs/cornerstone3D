@@ -14,7 +14,7 @@ import triggerAnnotationRender from '../util/triggerAnnotationRender'
  *
  * @param evt - The normalized IMAGE_RENDERED event.
  */
-const onImageRendered = function (evt: Types.EventsTypes.ImageRenderedEvent) {
+const onImageRendered = function (evt: Types.EventTypes.ImageRenderedEvent) {
   // TODO: should we do this on camera modified instead of image rendered?
   // e.g. no need to re-render annotations if only the VOI has changed
   triggerAnnotationRender(evt.detail.element)

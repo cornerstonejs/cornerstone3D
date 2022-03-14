@@ -30,7 +30,6 @@ const {
   SphereScissorsTool,
   RectangleRoiThreshold,
   RectangleRoiStartEndThreshold,
-  SUVPeakTool,
   SegmentationDisplayTool,
 } = csTools3d
 
@@ -244,7 +243,6 @@ function initToolGroups() {
   csTools3d.addTool(SphereScissorsTool)
   csTools3d.addTool(RectangleRoiThreshold)
   csTools3d.addTool(RectangleRoiStartEndThreshold)
-  csTools3d.addTool(SUVPeakTool)
   csTools3d.addTool(SegmentationDisplayTool)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(

@@ -1,4 +1,5 @@
-import CornerstoneTools3DEvents from '../enums/CornerstoneTools3DEvents'
+import Events from '../enums/CornerstoneTools3DEvents'
+
 import {
   mouseClick,
   mouseDown,
@@ -17,42 +18,30 @@ import {
  * @param element - The element to add the event listeners to.
  */
 const enable = function (element: HTMLElement): void {
-  element.addEventListener(CornerstoneTools3DEvents.MOUSE_CLICK, mouseClick)
-  element.addEventListener(CornerstoneTools3DEvents.MOUSE_DOWN, mouseDown)
-  element.addEventListener(
-    CornerstoneTools3DEvents.MOUSE_DOWN_ACTIVATE,
-    mouseDownActivate
-  )
-  element.addEventListener(
-    CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK,
-    mouseDoubleClick
-  )
-  element.addEventListener(CornerstoneTools3DEvents.MOUSE_DRAG, mouseDrag)
-  element.addEventListener(CornerstoneTools3DEvents.MOUSE_MOVE, mouseMove)
-  element.addEventListener(CornerstoneTools3DEvents.MOUSE_UP, mouseUp)
-  element.addEventListener(CornerstoneTools3DEvents.MOUSE_WHEEL, mouseWheel)
+  element.addEventListener(Events.MOUSE_CLICK, mouseClick)
+  element.addEventListener(Events.MOUSE_DOWN, mouseDown)
+  element.addEventListener(Events.MOUSE_DOWN_ACTIVATE, mouseDownActivate)
+  element.addEventListener(Events.MOUSE_DOUBLE_CLICK, mouseDoubleClick)
+  element.addEventListener(Events.MOUSE_DRAG, mouseDrag)
+  element.addEventListener(Events.MOUSE_MOVE, mouseMove)
+  element.addEventListener(Events.MOUSE_UP, mouseUp)
+  element.addEventListener(Events.MOUSE_WHEEL, mouseWheel)
 }
 
 /**
- * @function disable Remove the MouseToolEventDispatcher handlers from the element.
+ * Disable and Remove the MouseToolEventDispatcher handlers from the element.
  *
- * @param {HTMLElement} element
+ * @param element - HTMLElement
  */
 const disable = function (element: HTMLElement) {
-  element.removeEventListener(CornerstoneTools3DEvents.MOUSE_CLICK, mouseClick)
-  element.removeEventListener(CornerstoneTools3DEvents.MOUSE_DOWN, mouseDown)
-  element.removeEventListener(
-    CornerstoneTools3DEvents.MOUSE_DOWN_ACTIVATE,
-    mouseDownActivate
-  )
-  element.removeEventListener(
-    CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK,
-    mouseDoubleClick
-  )
-  element.removeEventListener(CornerstoneTools3DEvents.MOUSE_DRAG, mouseDrag)
-  element.removeEventListener(CornerstoneTools3DEvents.MOUSE_MOVE, mouseMove)
-  element.removeEventListener(CornerstoneTools3DEvents.MOUSE_UP, mouseUp)
-  element.removeEventListener(CornerstoneTools3DEvents.MOUSE_WHEEL, mouseWheel)
+  element.removeEventListener(Events.MOUSE_CLICK, mouseClick)
+  element.removeEventListener(Events.MOUSE_DOWN, mouseDown)
+  element.removeEventListener(Events.MOUSE_DOWN_ACTIVATE, mouseDownActivate)
+  element.removeEventListener(Events.MOUSE_DOUBLE_CLICK, mouseDoubleClick)
+  element.removeEventListener(Events.MOUSE_DRAG, mouseDrag)
+  element.removeEventListener(Events.MOUSE_MOVE, mouseMove)
+  element.removeEventListener(Events.MOUSE_UP, mouseUp)
+  element.removeEventListener(Events.MOUSE_WHEEL, mouseWheel)
 }
 
 const mouseToolEventDispatcher = {

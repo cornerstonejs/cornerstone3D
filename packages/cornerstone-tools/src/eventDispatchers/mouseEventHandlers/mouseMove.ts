@@ -6,17 +6,20 @@ import { ToolModes } from '../../enums'
 import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
 import triggerAnnotationRender from '../../util/triggerAnnotationRender'
+import { MouseMoveEventType } from '../../types/EventTypes'
 
 const { Active, Passive } = ToolModes
 
 /**
- * @function mouseMove - On mouse move when not dragging, fire tools `mouseMoveCallback`s.
+ * mouseMove - On mouse move when not dragging, fire tools `mouseMoveCallback`s.
  * This is mostly used to update the [un]hover state
  * of a tool.
  *
- * @param {Event} evt The normalized mouseDown event.
+ * @param evt - The normalized mouseDown event.
  */
-export default function mouseMove(evt) {
+export default function mouseMove(evt: MouseMoveEventType) {
+  // Tool interactions when mouse moved are handled inside each tool.
+  // This function is mostly used to update the [un]hover state
   if (state.isInteractingWithTool || state.isMultiPartToolActive) {
     return
   }

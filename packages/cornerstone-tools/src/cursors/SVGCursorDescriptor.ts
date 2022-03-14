@@ -441,9 +441,9 @@ function extend(
  * Registers a cursor to the list, so that it will be used for the given `toolName`.
  * Overwrites the given cursor if it is already set.
  *
- * @param {string} toolName The name of the tool to assign a cursor to.
- * @param {string} iconContent The SVG icon content of the cursor.
- * @param {{x: number, y: number}} viewBox The viewBox of the cursor object.
+ * @param toolName - The name of the tool to assign a cursor to.
+ * @param iconContent - The SVG icon content of the cursor.
+ * @param viewBox - The viewBox of the cursor object.
  */
 function registerCursor(
   toolName: string,

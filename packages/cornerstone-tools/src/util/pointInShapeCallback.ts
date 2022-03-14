@@ -1,22 +1,61 @@
-import { Point3, Point2 } from '@precisionmetrics/cornerstone-render/src/types'
 import { vec3 } from 'gl-matrix'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 
 export type PointInShapeCallback = ({
   value,
   index,
   pointIJK,
   pointLPS,
+}: {
+  value: number
+  index: number
+  pointIJK: Types.Point3
+  pointLPS: Types.Point3
 }) => void
 
+export type ShapeFnCriteria = (
+  pointIJK: Types.Point3,
+  pointLPS: Types.Point3
+) => boolean
+
+type BoundsIJK = [Types.Point2, Types.Point2, Types.Point2]
+
+/**
+ * For each point in the image (If boundsIJK is not provided, otherwise, for each
+ * point in the provided bounding box), It runs the provided callback IF the point
+ * passes the provided criteria to be inside the shape (which is defined by the
+ * provided pointInShapeFn)
+ *
+ * @param imageData - The image data object.
+ * @param dimensions - The dimensions of the image.
+ * @param pointInShapeFn - A function that takes a point in LPS space and returns
+ * true if the point is in the shape and false if it is not.
+ * @param callback - A function that will be called for
+ * every point in the shape.
+ * @param boundsIJK - The bounds of the volume in IJK coordinates.
+ */
 export default function pointInShapeCallback(
-  boundsIJK: [Point2, Point2, Point2],
-  scalarData,
-  imageData,
-  dimensions: Point3,
-  pointInShapeFn,
-  callback: PointInShapeCallback
+  imageData: vtkImageData | Types.CPUImageData,
+  pointInShapeFn: ShapeFnCriteria,
+  callback: PointInShapeCallback,
+  boundsIJK?: BoundsIJK
 ): void {
   let iMin, iMax, jMin, jMax, kMin, kMax
+
+  let scalarData
+
+  // if getScalarData is a method on imageData
+  if ((imageData as Types.CPUImageData).getScalarData) {
+    scalarData = (imageData as Types.CPUImageData).getScalarData()
+  } else {
+    scalarData = (imageData as vtkImageData)
+      .getPointData()
+      .getScalars()
+      .getData()
+  }
+
+  const dimensions = imageData.getDimensions()
 
   if (!boundsIJK) {
     iMin = 0
@@ -39,6 +78,7 @@ export default function pointInShapeCallback(
   const spacing = imageData.getSpacing()
   const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing
 
+  // @ts-ignore will be fixed in vtk-master
   const worldPosStart = imageData.indexToWorld(start)
 
   const rowStep = vec3.fromValues(
@@ -65,14 +105,14 @@ export default function pointInShapeCallback(
   for (let k = kMin; k <= kMax; k++) {
     for (let j = jMin; j <= jMax; j++) {
       for (let i = iMin; i <= iMax; i++) {
-        const pointIJK: Point3 = [i, j, k]
+        const pointIJK: Types.Point3 = [i, j, k]
         const dI = i - iMin
         const dJ = j - jMin
         const dK = k - kMin
 
         const startWorld = worldPosStart
 
-        const pointLPS = [
+        const pointLPS: Types.Point3 = [
           startWorld[0] +
             dI * rowStep[0] +
             dJ * columnStep[0] +

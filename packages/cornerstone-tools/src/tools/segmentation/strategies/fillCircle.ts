@@ -1,9 +1,5 @@
 import { vec3 } from 'gl-matrix'
-import {
-  Point3,
-  IImageVolume,
-  IEnabledElement,
-} from '@precisionmetrics/cornerstone-render/src/types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import {
   getCanvasEllipseCorners,
@@ -11,13 +7,13 @@ import {
 } from '../../../util/math/ellipse'
 import { getBoundingBoxAroundShape } from '../../../util/segmentation'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import { pointInShapeCallback } from '../../../util/planar'
+import { pointInShapeCallback } from '../../../util'
 
 type OperationData = {
   toolGroupUID: string
   segmentationDataUID: string
   points: any // Todo:fix
-  volume: IImageVolume
+  volume: Types.IImageVolume
   segmentIndex: number
   segmentsLocked: number[]
   viewPlaneNormal: number[]
@@ -33,7 +29,7 @@ function worldToIndex(imageData, ain) {
 }
 
 function fillCircle(
-  enabledElement: IEnabledElement,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   inside = true
 ): void {
@@ -67,8 +63,8 @@ function fillCircle(
   const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
 
   const ellipsoidCornersIJK = [
-    <Point3>worldToIndex(imageData, topLeftWorld),
-    <Point3>worldToIndex(imageData, bottomRightWorld),
+    <Types.Point3>worldToIndex(imageData, topLeftWorld),
+    <Types.Point3>worldToIndex(imageData, bottomRightWorld),
   ]
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions)
@@ -79,7 +75,7 @@ function fillCircle(
 
   // using circle as a form of ellipse
   const ellipseObj = {
-    center: center,
+    center: center as Types.Point3,
     xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
     yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
     zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
@@ -93,12 +89,10 @@ function fillCircle(
   }
 
   pointInShapeCallback(
-    boundsIJK,
-    scalarData,
     imageData,
-    dimensions,
     (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-    callback
+    callback,
+    boundsIJK
   )
 
   triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
@@ -108,10 +102,10 @@ function fillCircle(
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
  * It fills the segmentation pixels inside the defined circle.
  * @param enabledElement - The element for which the segment is being erased.
- * @param {EraseOperationData} operationData - EraseOperationData
+ * @param operationData - EraseOperationData
  */
 export function fillInsideCircle(
-  enabledElement: IEnabledElement,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
   fillCircle(enabledElement, operationData, true)
@@ -121,10 +115,10 @@ export function fillInsideCircle(
  * Fill outside the circular region segment inside the segmentation defined by the operationData.
  * It fills the segmentation pixels outside the  defined circle.
  * @param enabledElement - The element for which the segment is being erased.
- * @param {EraseOperationData} operationData - EraseOperationData
+ * @param operationData - EraseOperationData
  */
 export function fillOutsideCircle(
-  enabledElement: IEnabledElement,
+  enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
   fillCircle(enabledElement, operationData, false)

@@ -33,6 +33,8 @@ interface IViewport {
   defaultOptions: any
   /** viewport options */
   options: ViewportInputOptions
+  /** Suppress events */
+  suppressEvents: boolean
   /** frameOfReferenceUID the viewport's default actor is rendering */
   getFrameOfReferenceUID: () => string
   /** method to convert canvas to world coordinates */
@@ -61,14 +63,14 @@ interface IViewport {
   setOptions(options: ViewportInputOptions, immediate: boolean): void
   /** reset camera and options*/
   reset(immediate: boolean): void
-  /** reset camera for viewport */
-  resetCamera(): void
   /** returns the canvas */
   getCanvas(): HTMLCanvasElement
   /** returns camera object */
   getCamera(): ICamera
   /** sets the camera */
   setCamera(cameraInterface: ICamera): void
+  /** whether the viewport has custom rendering */
+  customRenderViewportToCanvas: () => unknown
   _getCorners(bounds: Array<number>): Array<number>[]
 }
 

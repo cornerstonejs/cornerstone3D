@@ -8,7 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import Events from '../enums/events'
 import VIEWPORT_TYPE from '../enums/viewportType'
 import { ICamera, ActorEntry } from '../types'
-import { ViewportInput } from '../types/IViewport'
+import { ViewportInput, IViewport } from '../types/IViewport'
 import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { triggerEvent, planar } from '../utilities'
@@ -24,7 +24,7 @@ import { vtkSlabCamera } from './vtkClasses'
  * which is camera properties/methods, vtk.js actors, and other common
  * logic.
  */
-class Viewport {
+class Viewport implements IViewport {
   /** unique identifier for the viewport */
   readonly uid: string
   /** HTML element in DOM that is used for rendering the viewport */
@@ -417,7 +417,7 @@ class Viewport {
    */
   protected resetCameraNoEvent() {
     this._suppressCameraModifiedEvents = true
-    this.resetViewportCamera()
+    this.resetCamera()
     this._suppressCameraModifiedEvents = false
   }
 
@@ -487,7 +487,7 @@ class Viewport {
    * @param resetPanZoomForViewPlane - if true, it renders the center of the volume instead
    * @returns boolean
    */
-  protected resetViewportCamera(resetPanZoomForViewPlane = false) {
+  protected resetCamera(resetPanZoomForViewPlane = false): boolean {
     const renderer = this.getRenderer()
     const previousCamera = _cloneDeep(this.getCamera())
 

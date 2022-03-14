@@ -1,5 +1,6 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import drawTextBox from './drawTextBox'
-import { Point2, ToolStateTextBox } from '../types'
 import drawLink from './drawLink'
 
 function drawLinkedTextBox(
@@ -10,8 +11,8 @@ function drawLinkedTextBox(
   textBoxUID: string,
   //
   textLines: Array<string>,
-  textBoxPosition: Point2,
-  annotationAnchorPoints: Array<Point2>,
+  textBoxPosition: Types.Point2,
+  annotationAnchorPoints: Array<Types.Point2>,
   // textBox: ToolStateTextBox,
   textBox: unknown,
   options = {}

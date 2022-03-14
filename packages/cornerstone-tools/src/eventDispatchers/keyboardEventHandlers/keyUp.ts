@@ -1,10 +1,20 @@
 import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener'
 import { ToolGroupManager } from '../../store'
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
+import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent'
+import { KeyDownEventType } from '../../types/EventTypes'
 
-export default function keyUp(evt) {
+/**
+ * KeyDown event listener to handle viewport cursor icon changes
+ *
+ * @param evt - The KeyboardEvent
+ */
+export default function keyUp(evt: KeyDownEventType): void {
   // get the active tool for the primary mouse button
-  const activeTool = getActiveToolForMouseEvent(evt)
+  const activeTool = getActiveToolForKeyboardEvent(evt)
+
+  if (!activeTool) {
+    return
+  }
 
   const { renderingEngineUID, viewportUID } = evt.detail
 

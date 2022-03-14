@@ -1,22 +1,18 @@
-import {
-  getEnabledElement,
-  VolumeViewport,
-  StackViewport,
-} from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID'
 import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled'
 import filterViewportsWithSameOrientation from './filterViewportsWithSameOrientation'
 
 /**
- * @function getViewportUIDsWithToolToRender given a cornerstone3D enabled `element`,
- * and a `toolName`, find all viewportUIDs looking at the same Frame Of Reference that have
- * the tool with the given `toolName` active, passive or enabled.
+ * Given a cornerstone3D enabled `element`, and a `toolName`, find all viewportUIDs
+ * looking at the same Frame Of Reference that have the tool with the given `toolName`
+ * active, passive or enabled.
  *
- * @param {HTMLElement} element The target cornerstone3D enabled element.
- * @param {string} toolName The string toolName.
- * @param {boolean=true} requireSameOrientation If true, only return viewports matching the orientation of the original viewport
+ * @param element - The target cornerstone3D enabled element.
+ * @param toolName - The string toolName.
+ * @param requireSameOrientation - If true, only return viewports matching the orientation of the original viewport
  *
- * @returns {string[]} An array of viewportUIDs.
+ * @returns An array of viewportUIDs.
  */
 export default function getViewportUIDsWithToolToRender(
   element: HTMLElement,

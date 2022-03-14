@@ -69,7 +69,14 @@ export default class SegmentationDisplayTool extends BaseTool {
     triggerSegmentationStateModified(toolGroupUID)
   }
 
-  renderToolData(toolGroupUID: string): void {
+  /**
+   * It is used to trigger the render for each segmentations in the toolGroup.
+   * Based on the segmentation representation type, it will call the corresponding
+   * render function.
+   *
+   * @param toolGroupUID - the toolGroupUID
+   */
+  renderToolData = (toolGroupUID: string): void => {
     const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
 
     if (!toolGroup) {

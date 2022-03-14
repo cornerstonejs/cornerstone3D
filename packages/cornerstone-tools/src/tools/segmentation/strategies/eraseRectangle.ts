@@ -1,13 +1,14 @@
+import { ImageVolume } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { getBoundingBoxAroundShape } from '../../../util/segmentation'
-import { Point3 } from '../../../types'
-import { ImageVolume, Types } from '@precisionmetrics/cornerstone-render'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import pointInShapeCallback from '../../../util/planar/pointInShapeCallback'
+import { pointInShapeCallback } from '../../../util'
 
 type EraseOperationData = {
   toolGroupUID: string
   segmentationDataUID: string
-  points: [Point3, Point3, Point3, Point3]
+  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
   volume: ImageVolume
   constraintFn: (x: [number, number, number]) => boolean
   segmentsLocked: number[]
@@ -47,14 +48,7 @@ function eraseRectangle(
     scalarData[index] = 0
   }
 
-  pointInShapeCallback(
-    boundsIJK,
-    scalarData,
-    imageData,
-    dimensions,
-    pointInShape,
-    callback
-  )
+  pointInShapeCallback(imageData, pointInShape, callback, boundsIJK)
 
   triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
 }
@@ -63,7 +57,7 @@ function eraseRectangle(
  * Erase the rectangle region segment inside the segmentation defined by the operationData.
  * It erases the segmentation pixels inside the defined rectangle.
  * @param enabledElement - The element for which the segment is being erased.
- * @param {EraseOperationData} operationData - EraseOperationData
+ * @param operationData - EraseOperationData
  */
 export function eraseInsideRectangle(
   enabledElement: Types.IEnabledElement,
@@ -76,7 +70,7 @@ export function eraseInsideRectangle(
  * Erase the rectangle region segment inside the segmentation defined by the operationData.
  * It erases the segmentation pixels outside the defined rectangle.
  * @param enabledElement - The element for which the segment is being erased.
- * @param {EraseOperationData} operationData - EraseOperationData
+ * @param operationData - EraseOperationData
  */
 export function eraseOutsideRectangle(
   enabledElement: Types.IEnabledElement,

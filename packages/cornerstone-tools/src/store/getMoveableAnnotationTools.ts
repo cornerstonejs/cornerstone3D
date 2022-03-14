@@ -1,27 +1,22 @@
-import { ToolSpecificToolData, ToolAndToolStateArray, Point2 } from '../types'
-import BaseAnnotationTool from '../tools/base/BaseAnnotationTool'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
-type ToolAndToolData = {
-  tool: BaseAnnotationTool
-  toolData: ToolSpecificToolData
-}
+import { ToolAndToolDataArray, ToolAndToolStateArray } from '../types'
 
 /**
- * @function getMoveableAnnotationTools Filters an array of tools, returning only
- * tools with moveable handles at the mouse location.
+ * Filters an array of tools, returning only tools with moveable handles at the mouse location.
  *
- * @param  {HTMLElement} element The element
- * @param  {ToolAndToolStateArray}   toolAndToolStateArray   The input tool array.
- * @param  {Point2}      canvasCoords  The coordinates of the mouse position.
- * @param  {string}      [interactionType=mouse]
- * @returns {ToolAndToolStateArray}            The filtered array.
+ * @param element - The HTML element
+ * @param toolAndToolStateArray - The input tool array.
+ * @param canvasCoords - The coordinates of the mouse position.
+ * @param interactionType - The type of interaction that is taking place.
+ * @returns The filtered array containing toolAndToolData
  */
 export default function getMoveableAnnotationTools(
   element: HTMLElement,
   toolAndToolStateArray: ToolAndToolStateArray,
-  canvasCoords: Point2,
+  canvasCoords: Types.Point2,
   interactionType = 'mouse'
-): Array<ToolAndToolData> {
+): ToolAndToolDataArray {
   const proximity = 6
 
   // TODO - This could get pretty expensive pretty quickly. We don't want to fetch the camera
@@ -38,7 +33,7 @@ export default function getMoveableAnnotationTools(
         continue
       }
 
-      const near = tool.pointNearTool(
+      const near = tool.isPointNearTool(
         element,
         toolState[i],
         canvasCoords,

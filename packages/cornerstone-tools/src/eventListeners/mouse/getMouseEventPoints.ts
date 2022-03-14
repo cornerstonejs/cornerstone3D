@@ -1,5 +1,7 @@
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
-import { IPoints, Point2 } from '../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
+import { IPoints } from '../../types'
 
 /**
  * Given a native mouse event, get the associated cornerstone3D enabled element
@@ -37,8 +39,8 @@ export default function getMouseEventPoints(
  */
 function _pagePointsToCanvasPoints(
   element: HTMLElement,
-  pagePoint: Point2
-): Point2 {
+  pagePoint: Types.Point2
+): Types.Point2 {
   const rect = element.getBoundingClientRect()
   return [
     pagePoint[0] - rect.left - window.pageXOffset,
@@ -47,18 +49,18 @@ function _pagePointsToCanvasPoints(
 }
 
 /**
- * Converts the event's `pageX` and `pageY` properties to Point2 format
+ * Converts the event's `pageX` and `pageY` properties to Types.Point2 format
  *
  * @param evt - The Mouse `Event`
  */
-function _pageToPoint(evt: MouseEvent): Point2 {
+function _pageToPoint(evt: MouseEvent): Types.Point2 {
   return [evt.pageX, evt.pageY]
 }
 
 /**
- * Converts the event's `clientX` and `clientY` properties to Point2 format
+ * Converts the event's `clientX` and `clientY` properties to Types.Point2 format
  * @param evt - The Mouse `Event`
  */
-function _clientToPoint(evt: MouseEvent): Point2 {
+function _clientToPoint(evt: MouseEvent): Types.Point2 {
   return [evt.clientX, evt.clientY]
 }

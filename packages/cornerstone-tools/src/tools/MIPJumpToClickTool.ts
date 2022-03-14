@@ -3,7 +3,7 @@ import {
   getEnabledElement,
   VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
-import { getVoxelPositionBasedOnIntensity } from '../util/planar'
+import { getPointInLineOfSightWithCriteria } from '../util/planar'
 import jumpToWorld from '../util/viewport/jumpToWorld'
 import { PublicToolProps, ToolProps } from '../types'
 
@@ -53,11 +53,11 @@ export default class MIPJumpToClickTool extends BaseTool {
     }
 
     // 4. Search for the brightest point location in the line of sight
-    const brightestPoint = getVoxelPositionBasedOnIntensity(
+    const brightestPoint = getPointInLineOfSightWithCriteria(
       viewport as VolumeViewport,
+      currentPoints.world,
       targetVolumeUID,
-      maxFn,
-      currentPoints.world
+      maxFn
     )
 
     if (!brightestPoint || !brightestPoint.length) {

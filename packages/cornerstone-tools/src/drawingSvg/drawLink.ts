@@ -1,6 +1,8 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import drawLine from './drawLine'
 import findClosestPoint from '../util/math/vec2/findClosestPoint'
-import { PlanarBoundingBox, Point2 } from '../types'
+import { PlanarBoundingBox } from '../types'
 
 /**
  * Draw a link between an annotation to a box.
@@ -11,8 +13,8 @@ function drawLink(
   annotationUID: string,
   linkUID: string,
   // Find closest point to approx. bounding box
-  annotationAnchorPoints: Array<Point2>,
-  refPoint: Point2,
+  annotationAnchorPoints: Array<Types.Point2>,
+  refPoint: Types.Point2,
   // Find bounding box point that's closest to our identified
   // start point
   boundingBox: PlanarBoundingBox,
@@ -58,15 +60,17 @@ function drawLink(
  *
  * @param boundingBox
  */
-function _boundingBoxPoints(boundingBox: PlanarBoundingBox): Array<Point2> {
+function _boundingBoxPoints(
+  boundingBox: PlanarBoundingBox
+): Array<Types.Point2> {
   const { x: left, y: top, height, width } = boundingBox
   const halfWidth = width / 2
   const halfHeight = height / 2
 
-  const topMiddle = [left + halfWidth, top] as Point2
-  const leftMiddle = [left, top + halfHeight] as Point2
-  const bottomMiddle = [left + halfWidth, top + height] as Point2
-  const rightMiddle = [left + width, top + halfHeight] as Point2
+  const topMiddle = [left + halfWidth, top] as Types.Point2
+  const leftMiddle = [left, top + halfHeight] as Types.Point2
+  const bottomMiddle = [left + halfWidth, top + height] as Types.Point2
+  const rightMiddle = [left + width, top + halfHeight] as Types.Point2
 
   return [topMiddle, leftMiddle, bottomMiddle, rightMiddle]
 }

@@ -4,6 +4,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import EVENTS from '../enums/CornerstoneTools3DEvents'
 import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
+import { MeasurementModifiedEventType } from '../types/EventTypes'
 
 /**
  * This is a callback function that is called when a measurement is modified.
@@ -17,7 +18,7 @@ import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRen
  * of all tools and just trigger a render for that (instead of the entire toolData, even if
  * no svg update happens since the attributes for handles are the same)
  */
-const onMeasurementModified = function (evt) {
+const onMeasurementModified = function (evt: MeasurementModifiedEventType) {
   const { viewportUID, renderingEngineUID } = evt.detail
   const renderingEngine = getRenderingEngine(renderingEngineUID)
   triggerAnnotationRenderForViewportUIDs(renderingEngine, [viewportUID])

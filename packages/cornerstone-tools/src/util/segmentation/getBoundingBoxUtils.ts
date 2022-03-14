@@ -1,18 +1,18 @@
-import { Point3, Point2 } from '../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 /**
  * With a given vertices coordinates in IJK, it calculates the minimum and maximum
  * coordinate in each axis, and returns them. If dimensions are provided it also
  * clip the min, max to the provided width, height and depth
  *
- * @param vertices shape vertices coordinates
- * @param [dimensions] dimensions of the image
+ * @param vertices - shape vertices coordinates
+ * @param dimensions - dimensions of the image
  * @returns [[xMin,xMax],[yMin,yMax], [zMin,zMax]]
  */
 function getBoundingBoxAroundShape(
-  vertices: Point3[],
-  dimensions?: Point3
-): [Point2, Point2, Point2] {
+  vertices: Types.Point3[],
+  dimensions?: Types.Point3
+): [Types.Point2, Types.Point2, Types.Point2] {
   let xMin = Infinity
   let xMax = 0
   let yMin = Infinity
@@ -63,9 +63,9 @@ function getBoundingBoxAroundShape(
  * @returns extended bounds
  */
 function extend2DBoundingBoxInViewAxis(
-  boundsIJK: [Point2, Point2, Point2],
+  boundsIJK: [Types.Point2, Types.Point2, Types.Point2],
   numSlicesToProject: number
-): [Point2, Point2, Point2] {
+): [Types.Point2, Types.Point2, Types.Point2] {
   // find which index in boundsIJK has the same first and last value
   const sliceNormalIndex = boundsIJK.findIndex(([min, max]) => min === max)
 
@@ -100,11 +100,11 @@ export { getBoundingBoxAroundShape, extend2DBoundingBoxInViewAxis }
 // function extendBoundingBox
 
 // function extend2DBoundingBoxInViewAxis(
-//   boundsIJK: [Point2, Point2, Point2],
+//   boundsIJK: [Types.Point2, Types.Point2, Types.Point2],
 //   sliceNumbers: number[],
 //   vtkImageData: any,
-//   viewPlaneNormal: Point3
-// ): [Point2, Point2, Point2] {
+//   viewPlaneNormal: Types.Point3
+// ): [Types.Point2, Types.Point2, Types.Point2] {
 //   const direction = vtkImageData.getDirection()
 
 //   // Calculate size of spacing vector in normal direction

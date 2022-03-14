@@ -2,20 +2,35 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { Types } from '@precisionmetrics/cornerstone-render'
 import { defaultFrameOfReferenceSpecificToolStateManager } from './FrameOfReferenceSpecificToolStateManager'
-import { uuidv4 } from '../../util'
 import {
   ToolSpecificToolState,
   ToolSpecificToolData,
 } from '../../types/toolStateTypes'
 
+import {
+  MeasurementAddedEventData,
+  MeasurementRemovedEventData,
+} from '../../types/EventTypes'
+
+/**
+ * It returns the default tool state manager.
+ * @returns the singleton default tool state manager.
+ */
 function getDefaultToolStateManager() {
   return defaultFrameOfReferenceSpecificToolStateManager
 }
 
+/**
+ * Given an element, return the FrameOfReferenceSpecificStateManager for that
+ * element
+ * @param element - The element that the state manager is managing the state of.
+ * @returns The default state manager
+ */
 function getViewportSpecificStateManager(
   element?: Types.IEnabledElement | HTMLElement
 ) {
@@ -30,12 +45,12 @@ function getViewportSpecificStateManager(
 
 // TODO: Why is this now using enabledElement instead of element?
 /**
- * getToolState - Returns the toolState for the `FrameOfReference` of the `Viewport`
+ * Returns the toolState for the `FrameOfReference` of the `Viewport`
  * being viewed by the cornerstone3D enabled `element`.
  *
- * @param {HTMLElement} element
- * @param {string} toolName
- * @returns {ToolSpecificToolState} The tool state corresponding to the Frame of Reference and the toolName.
+ * @param enabledElement - The cornerstone enabled element.
+ * @param toolName - The name of the tool.
+ * @returns The tool state corresponding to the Frame of Reference and the toolName.
  */
 function getToolState(
   // element: HTMLElement,
@@ -49,10 +64,11 @@ function getToolState(
 }
 
 /**
- * @function addToolState
+ * Add the toolData to the toolState for the `FrameOfReference` of the `Viewport`
+ * being viewed by the cornerstone3D enabled `element`.
  *
- * @param {HTMLElement} element
- * @param {ToolSpecificToolData} toolData
+ * @param element - HTMLElement
+ * @param toolData - The tool data that is being added to the tool state manager.
  */
 function addToolState(
   element: HTMLElement,
@@ -61,19 +77,18 @@ function addToolState(
   const toolStateManager = getViewportSpecificStateManager(element)
 
   if (toolData.metadata.toolDataUID === undefined) {
-    toolData.metadata.toolDataUID = uuidv4() as string
+    toolData.metadata.toolDataUID = csUtils.uuidv4() as string
   }
 
   toolStateManager.addToolState(toolData)
 
-  // trigger measurement added
   const enabledElement = getEnabledElement(element)
   const { renderingEngine } = enabledElement
   const { viewportUID } = enabledElement
 
   const eventType = EVENTS.MEASUREMENT_ADDED
 
-  const eventDetail = {
+  const eventDetail: MeasurementAddedEventData = {
     toolData,
     viewportUID,
     renderingEngineUID: renderingEngine.uid,
@@ -83,10 +98,9 @@ function addToolState(
 }
 
 /**
- * @function removeToolState
- *
- * @param {*} element
- * @param {*} toolData
+ * Remove the tool state from the tool state manager.
+ * @param element - HTMLElement
+ * @param toolData - The tool data that will be removed.
  */
 function removeToolState(
   element: HTMLElement,
@@ -102,7 +116,7 @@ function removeToolState(
 
   const eventType = EVENTS.MEASUREMENT_REMOVED
 
-  const eventDetail = {
+  const eventDetail: MeasurementRemovedEventData = {
     toolData,
     viewportUID,
     renderingEngineUID: renderingEngine.uid,
@@ -112,10 +126,9 @@ function removeToolState(
 }
 
 /**
- * @function removeToolStateByToolDataUID
- *
- * @param {*} element
- * @param {*} toolDataUID
+ * Remove the toolData by UID of the toolData.
+ * @param element - HTMLElement
+ * @param toolDataUID - The unique identifier for the tool data.
  */
 function removeToolStateByToolDataUID(
   element: HTMLElement,
@@ -142,6 +155,12 @@ function removeToolStateByToolDataUID(
   triggerEvent(eventTarget, eventType, eventDetail)
 }
 
+/**
+ * Get the ToolSpecificToolData object by its UID
+ * @param toolDataUID - The unique identifier of the tool data.
+ * @param element - The element that the tool is being used on.
+ * @returns A ToolSpecificToolData object.
+ */
 function getToolDataByToolDataUID(
   toolDataUID: string,
   element?: HTMLElement

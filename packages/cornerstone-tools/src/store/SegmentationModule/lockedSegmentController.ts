@@ -6,9 +6,9 @@ import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEve
 /**
  * Get the locked status of a segment index in a segmentation
  *
- * @param {string} toolGroupUID - The UID of the tool group that contains the
+ * @param toolGroupUID - The UID of the tool group that contains the
  * segmentation.
- * @param {number} segmentIndex - The index of the segment
+ * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not for modification
  */
 // Todo: should this be based on a segmentationUID instead of a toolGroupUID?
@@ -35,11 +35,12 @@ function getSegmentIndexLockedStatus(
  * Set the locked status of a segment in a segmentation globally. It fires
  * a global state modified event.
  *
- * @event {SegmentationGlobalStateModifiedEvent}
- * @param {string} toolGroupUID - the UID of the tool group that contains the
+ * @triggers {SegmentationGlobalStateModifiedEvent}
+ *
+ * @param toolGroupUID - the UID of the tool group that contains the
  * segmentation
- * @param {number} segmentIndex - the index of the segment to lock/unlock
- * @param {boolean} locked - boolean
+ * @param segmentIndex - the index of the segment to lock/unlock
+ * @param locked - boolean
  */
 // Todo: shouldn't this be a based on a segmentationUID instead of a toolGroupUID?
 function setSegmentIndexLockedStatus(
@@ -71,9 +72,9 @@ function setSegmentIndexLockedStatus(
 
 /**
  * Get the locked status for a segment index in a segmentation
- * @param {string} segmentationUID - The UID of the segmentation that the segment
+ * @param segmentationUID - The UID of the segmentation that the segment
  * belongs to.
- * @param {number} segmentIndex - The index of the segment
+ * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not.
  */
 function getSegmentIndexLockedStatusForSegmentation(
@@ -92,9 +93,9 @@ function getSegmentIndexLockedStatusForSegmentation(
 
 /**
  * Set the locked status of a segment index in a segmentation
- * @param {string} segmentationUID - The UID of the segmentation whose segment
+ * @param segmentationUID - The UID of the segmentation whose segment
  * index is being modified.
- * @param {number} segmentIndex - The index of the segment to lock/unlock.
+ * @param segmentIndex - The index of the segment to lock/unlock.
  */
 function setSegmentIndexLockedStatusForSegmentation(
   segmentationUID: string,
@@ -121,7 +122,7 @@ function setSegmentIndexLockedStatusForSegmentation(
 
 /**
  * Get the locked segments for a segmentation
- * @param {string} segmentationUID - The UID of the segmentation to get locked
+ * @param segmentationUID - The UID of the segmentation to get locked
  * segments for.
  * @returns An array of locked segment indices.
  */

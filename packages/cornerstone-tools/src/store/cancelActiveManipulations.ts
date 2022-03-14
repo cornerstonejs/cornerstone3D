@@ -9,8 +9,8 @@ import getToolsWithDataForElement from './getToolsWithDataForElement'
  * cancellation (returned its toolDataUID), since tools that are not being manipulated will
  * short circuit early
  *
- * @param element canvas element
- * @returns {string | undefined} toolDataUID that is cancelled
+ * @param element - canvas element
+ * @returns toolDataUID that is cancelled
  */
 export default function cancelActiveManipulations(
   element: HTMLElement

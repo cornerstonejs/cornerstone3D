@@ -1,5 +1,5 @@
 import { BaseAnnotationTool } from '../base'
-// ~~ VTK Viewport
+
 import {
   getEnabledElement,
   Settings,
@@ -8,9 +8,10 @@ import {
   VolumeViewport,
   eventTarget,
   triggerEvent,
-  Types,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
-import { getImageIdForTool, getToolStateForDisplay } from '../../util/planar'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import throttle from '../../util/throttle'
 import {
   addToolState,
@@ -23,7 +24,6 @@ import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
-import { vec2 } from 'gl-matrix'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
@@ -40,31 +40,35 @@ import {
 } from '../../cursors/elementCursor'
 import {
   ToolSpecificToolData,
-  Point3,
-  Point2,
-  EventsTypes,
+  EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
+  InteractionTypes,
 } from '../../types'
+import {
+  MeasurementModifiedEventData,
+  MouseDragEventType,
+  MouseMoveEventType,
+} from '../../types/EventTypes'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
-import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
+import { pointInShapeCallback } from '../../util/'
 
 export interface EllipticalRoiSpecificToolData extends ToolSpecificToolData {
   data: {
     invalidated: boolean
     handles: {
-      points: [Point3, Point3, Point3, Point3] // [bottom, top, left, right]
+      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3] // [bottom, top, left, right]
       activeHandleIndex: number | null
       textBox?: {
         hasMoved: boolean
-        worldPosition: Point3
+        worldPosition: Types.Point3
         worldBoundingBox: {
-          topLeft: Point3
-          topRight: Point3
-          bottomLeft: Point3
-          bottomRight: Point3
+          topLeft: Types.Point3
+          topRight: Types.Point3
+          bottomLeft: Types.Point3
+          bottomRight: Types.Point3
         }
       }
     }
@@ -114,7 +118,17 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement = (evt: CustomEvent): EllipticalRoiSpecificToolData => {
+  /**
+   * Based on the current position of the mouse and the current imageId to create
+   * a EllipticalRoi ToolData and stores it in the toolStateManager
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement = (
+    evt: EventTypes.MouseDownActivateEventType
+  ): EllipticalRoiSpecificToolData => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -135,11 +149,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     } else {
       const volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
-      referencedImageId = getImageIdForTool(
+      referencedImageId = csUtils.getClosestImageId(
+        imageVolume,
         worldPos,
         viewPlaneNormal,
-        viewUp,
-        imageVolume
+        viewUp
       )
     }
 
@@ -150,8 +164,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
-        viewUp: <Point3>[...viewUp],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         label: '',
@@ -162,12 +176,12 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         handles: {
           textBox: {
             hasMoved: false,
-            worldPosition: <Point3>[0, 0, 0],
+            worldPosition: <Types.Point3>[0, 0, 0],
             worldBoundingBox: {
-              topLeft: <Point3>[0, 0, 0],
-              topRight: <Point3>[0, 0, 0],
-              bottomLeft: <Point3>[0, 0, 0],
-              bottomRight: <Point3>[0, 0, 0],
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
           points: [
@@ -175,7 +189,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
             [...worldPos],
             [...worldPos],
             [...worldPos],
-          ] as [Point3, Point3, Point3, Point3],
+          ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3],
           activeHandleIndex: null,
         },
         isDrawing: true,
@@ -215,57 +229,37 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     return toolData
   }
 
-  getHandleNearImagePoint = (element, toolData, canvasCoords, proximity) => {
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
-
-    const { data } = toolData
-    const { points, textBox } = data.handles
-    const { worldBoundingBox } = textBox
-
-    if (worldBoundingBox) {
-      const canvasBoundingBox = {
-        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
-        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
-        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
-      }
-
-      if (
-        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
-        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
-      ) {
-        data.handles.activeHandleIndex = null
-        return textBox
-      }
-    }
-
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i]
-      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
-
-      const near =
-        vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
-
-      if (near === true) {
-        data.handles.activeHandleIndex = i
-        return point
-      }
-    }
-
-    data.handles.activeHandleIndex = null
-  }
-
-  pointNearTool = (element, toolData, canvasCoords, proximity) => {
+  /**
+   * It returns if the canvas point is near the provided toolData in the provided
+   * element or not. A proximity is passed to the function to determine the
+   * proximity of the point to the toolData in number of pixels.
+   *
+   * @param element - HTML Element
+   * @param toolData - Tool data
+   * @param canvasCoords - Canvas coordinates
+   * @param proximity - Proximity to tool to consider
+   * @returns Boolean, whether the canvas point is near tool
+   */
+  isPointNearTool = (
+    element: HTMLElement,
+    toolData: EllipticalRoiSpecificToolData,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): boolean => {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
     const { data } = toolData
     const { points } = data.handles
 
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+    // For some reason Typescript doesn't understand this, so we need to be
+    // more specific about the type
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p)) as [
+      Types.Point2,
+      Types.Point2,
+      Types.Point2,
+      Types.Point2
+    ]
     const canvasCorners = getCanvasEllipseCorners(canvasCoordinates)
 
     const [canvasPoint1, canvasPoint2] = canvasCorners
@@ -296,9 +290,15 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     if (pointInMajorEllipse && !pointInMinorEllipse) {
       return true
     }
+
+    return false
   }
 
-  toolSelectedCallback = (evt, toolData, interactionType = 'mouse') => {
+  toolSelectedCallback = (
+    evt: EventTypes.MouseDownEventType,
+    toolData: ToolSpecificToolData,
+    interactionType: InteractionTypes
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -333,7 +333,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt: EventsTypes.NormalizedMouseEventType,
+    evt: EventTypes.MouseDownEventType,
     toolData: ToolSpecificToolData,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -405,7 +405,9 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  _mouseUpCallback = (evt) => {
+  _mouseUpCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -446,7 +448,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     )
   }
 
-  _mouseDragDrawCallback = (evt) => {
+  _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
     this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
@@ -464,10 +466,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
 
     // Todo: why bottom is -dY, it should be +dY
-    const bottomCanvas = <Point2>[centerCanvas[0], centerCanvas[1] - dY]
-    const topCanvas = <Point2>[centerCanvas[0], centerCanvas[1] + dY]
-    const leftCanvas = <Point2>[centerCanvas[0] - dX, centerCanvas[1]]
-    const rightCanvas = <Point2>[centerCanvas[0] + dX, centerCanvas[1]]
+    const bottomCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] - dY]
+    const topCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] + dY]
+    const leftCanvas = <Types.Point2>[centerCanvas[0] - dX, centerCanvas[1]]
+    const rightCanvas = <Types.Point2>[centerCanvas[0] + dX, centerCanvas[1]]
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
@@ -486,7 +488,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     )
   }
 
-  _mouseDragModifyCallback = (evt) => {
+  _mouseDragModifyCallback = (evt: MouseDragEventType) => {
     this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
@@ -560,19 +562,25 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     if (handleIndex === 0 || handleIndex === 1) {
       // Dragging top or bottom point
       const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
-      const canvasBottom = <Point2>[centerCanvas[0], centerCanvas[1] - dYCanvas]
-      const canvasTop = <Point2>[centerCanvas[0], centerCanvas[1] + dYCanvas]
+      const canvasBottom = <Types.Point2>[
+        centerCanvas[0],
+        centerCanvas[1] - dYCanvas,
+      ]
+      const canvasTop = <Types.Point2>[
+        centerCanvas[0],
+        centerCanvas[1] + dYCanvas,
+      ]
 
       points[0] = canvasToWorld(canvasBottom)
       points[1] = canvasToWorld(canvasTop)
 
       const dXCanvas = currentCanvasPoints[0] - originalHandleCanvas[0]
       const newHalfCanvasWidth = canvasWidth / 2 + dXCanvas
-      const canvasLeft = <Point2>[
+      const canvasLeft = <Types.Point2>[
         centerCanvas[0] - newHalfCanvasWidth,
         centerCanvas[1],
       ]
-      const canvasRight = <Point2>[
+      const canvasRight = <Types.Point2>[
         centerCanvas[0] + newHalfCanvasWidth,
         centerCanvas[1],
       ]
@@ -582,19 +590,25 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     } else {
       // Dragging left or right point
       const dXCanvas = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
-      const canvasLeft = <Point2>[centerCanvas[0] - dXCanvas, centerCanvas[1]]
-      const canvasRight = <Point2>[centerCanvas[0] + dXCanvas, centerCanvas[1]]
+      const canvasLeft = <Types.Point2>[
+        centerCanvas[0] - dXCanvas,
+        centerCanvas[1],
+      ]
+      const canvasRight = <Types.Point2>[
+        centerCanvas[0] + dXCanvas,
+        centerCanvas[1],
+      ]
 
       points[2] = canvasToWorld(canvasLeft)
       points[3] = canvasToWorld(canvasRight)
 
       const dYCanvas = currentCanvasPoints[1] - originalHandleCanvas[1]
       const newHalfCanvasHeight = canvasHeight / 2 + dYCanvas
-      const canvasBottom = <Point2>[
+      const canvasBottom = <Types.Point2>[
         centerCanvas[0],
         centerCanvas[1] - newHalfCanvasHeight,
       ]
-      const canvasTop = <Point2>[
+      const canvasTop = <Types.Point2>[
         centerCanvas[0],
         centerCanvas[1] + newHalfCanvasHeight,
       ]
@@ -604,7 +618,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     }
   }
 
-  cancel(element) {
+  cancel = (element: HTMLElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false
@@ -638,8 +652,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback)
   }
 
   _deactivateModify = (element) => {
@@ -652,11 +666,11 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     )
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(
-      EVENTS.TOUCH_DRAG,
-      this._mouseDragModifyCallback
-    )
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(
+    //   EVENTS.TOUCH_DRAG,
+    //   this._mouseDragModifyCallback
+    // )
   }
 
   _activateDraw = (element) => {
@@ -667,8 +681,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
   _deactivateDraw = (element) => {
@@ -679,14 +693,22 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the ellipticalRoi annotation data in each
+   * request animation frame. It calculates the updated cached statistics if
+   * data is invalidated and cache it.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
 
@@ -722,8 +744,8 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [Point2, Point2, Point2, Point2]
-      const canvasCorners = <Array<Point2>>(
+      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2]
+      const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates)
       )
       if (!data.cachedStats[targetUID]) {
@@ -901,20 +923,6 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
-    let imageVolume, viewport
-    if (targetUID.startsWith('stackTarget')) {
-      const coloneIndex = targetUID.indexOf(':')
-      const viewportUID = targetUID.substring(coloneIndex + 1)
-      viewport = renderingEngine.getViewport(viewportUID)
-      imageVolume = viewport.getImageData()
-    } else {
-      imageVolume = getVolume(targetUID)
-    }
-
-    return { imageVolume, viewport }
-  }
-
   _calculateCachedStats = (
     toolData,
     viewport,
@@ -929,7 +937,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
     const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
-    const [topLeftCanvas, bottomRightCanvas] = <Array<Point2>>(
+    const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
       getCanvasEllipseCorners(canvasCoordinates)
     )
 
@@ -944,19 +952,21 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     for (let i = 0; i < targetUIDs.length; i++) {
       const targetUID = targetUIDs[i]
 
-      const { imageVolume } = this._getImageVolumeFromTargetUID(
+      const { image } = this.getTargetUIDViewportAndImage(
         targetUID,
         renderingEngine
       )
 
-      const { dimensions, scalarData, imageData, metadata } = imageVolume
+      const { dimensions, imageData, metadata } = image
 
+      // @ts-ignore
       const worldPos1Index = imageData.worldToIndex(worldPos1)
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0])
       worldPos1Index[1] = Math.floor(worldPos1Index[1])
       worldPos1Index[2] = Math.floor(worldPos1Index[2])
 
+      // @ts-ignore
       const worldPos2Index = imageData.worldToIndex(worldPos2)
 
       worldPos2Index[0] = Math.floor(worldPos2Index[0])
@@ -980,13 +990,13 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
           [iMin, iMax],
           [jMin, jMax],
           [kMin, kMax],
-        ] as [Point2, Point2, Point2]
+        ] as [Types.Point2, Types.Point2, Types.Point2]
 
         const center = [
           (topLeftWorld[0] + bottomRightWorld[0]) / 2,
           (topLeftWorld[1] + bottomRightWorld[1]) / 2,
           (topLeftWorld[2] + bottomRightWorld[2]) / 2,
-        ] as Point3
+        ] as Types.Point3
 
         const ellipseObj = {
           center,
@@ -1019,12 +1029,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         }
 
         pointInShapeCallback(
-          boundsIJK,
-          scalarData,
           imageData,
-          dimensions,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          meanMaxCalculator
+          meanMaxCalculator,
+          boundsIJK
         )
 
         mean /= count
@@ -1036,12 +1044,10 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
         }
 
         pointInShapeCallback(
-          boundsIJK,
-          scalarData,
           imageData,
-          dimensions,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          stdCalculator
+          stdCalculator,
+          boundsIJK
         )
 
         stdDev /= count
@@ -1069,7 +1075,7 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
     // Dispatching measurement modified
     const eventType = EVENTS.MEASUREMENT_MODIFIED
 
-    const eventDetail = {
+    const eventDetail: MeasurementModifiedEventData = {
       toolData,
       viewportUID,
       renderingEngineUID,
@@ -1089,14 +1095,14 @@ export default class EllipticalRoiTool extends BaseAnnotationTool {
 
   /**
    * This is a temporary function to use the old ellipse's canvas-based
-   * calculation for pointNearTool, we should move the the world-based
-   * calculation to the tool's pointNearTool function.
+   * calculation for isPointNearTool, we should move the the world-based
+   * calculation to the tool's isPointNearTool function.
    *
-   * @param {Object} ellipse
-   * @param {Array} location
-   * @returns {Boolean}
+   * @param ellipse - The ellipse object
+   * @param location - The location to check
+   * @returns True if the point is inside the ellipse
    */
-  _pointInEllipseCanvas(ellipse, location: Point2): boolean {
+  _pointInEllipseCanvas(ellipse, location: Types.Point2): boolean {
     const xRadius = ellipse.width / 2
     const yRadius = ellipse.height / 2
 

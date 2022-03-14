@@ -5,7 +5,7 @@ import * as toolStyle from './annotation/toolStyle'
 import getStyle from './annotation/getStyle'
 import setGlobalStyle from './annotation/setGlobalStyle'
 import setToolStyle from './annotation/setToolStyle'
-import setToolDataStyle from './annotation/setToolDataStyle'
+import { setToolDataStyle } from './annotation/toolDataStyle'
 import * as toolDataLocking from './annotation/toolDataLocking'
 import * as toolDataSelection from './annotation/toolDataSelection'
 
@@ -43,7 +43,6 @@ export {
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  setToolDataStyle,
   removeToolState,
   removeToolStateByToolDataUID,
   getDefaultToolStateManager,

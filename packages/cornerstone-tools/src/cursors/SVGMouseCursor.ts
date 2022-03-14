@@ -1,4 +1,4 @@
-import { ToolModes, ToolDataStates } from '../enums'
+import { ToolModes, ToolDataStyleStates } from '../enums'
 import { getDefaultStyleProperty } from '../stateManagement/annotation/toolStyle'
 import MouseCursor from './MouseCursor'
 import ImageMouseCursor from './ImageMouseCursor'
@@ -6,7 +6,7 @@ import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor'
 import type { SVGCursorDescriptor } from './SVGCursorDescriptor'
 
 const PROPERTY = 'color'
-const STATE = ToolDataStates.Highlighted
+const STATE = ToolDataStyleStates.Highlighted
 const MODE = ToolModes.Active
 
 export default class SVGMouseCursor extends ImageMouseCursor {
@@ -23,11 +23,11 @@ export default class SVGMouseCursor extends ImageMouseCursor {
   /**
    * Get a shared instance of the SVGMouseCursor class satisfying the given parameters.
    *
-   * @param {string} name The name of the cursor (defined in SVGCursorDescriptor.ts);
-   * @param {boolean} pointer Should be true to use the version of the cursor containing
+   * @param name - The name of the cursor (defined in SVGCursorDescriptor.ts);
+   * @param pointer - Should be true to use the version of the cursor containing
    * a mouse pointer. Defaults to false (which does not add a pointer to the cursor);
-   * @param {string} color The color of the cursor. Defaults to tool.style.colorHighlightedActive;
-   * @returns {SVGMouseCursor | undefined} Returns a SVGMouseCursor instance or
+   * @param color - The color of the cursor. Defaults to tool.style.colorHighlightedActive;
+   * @returns a SVGMouseCursor instance or
    * undefined if no SVG cursor descriptor was found with the given name;
    */
   static getDefinedCursor(

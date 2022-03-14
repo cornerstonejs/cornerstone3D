@@ -12,6 +12,7 @@ import {
 } from '../store/ToolGroupManager'
 
 import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
+import { SegmentationRenderedEventData } from '../types/EventTypes'
 
 class SegmentationRenderingEngine {
   private _needsRender: Set<string> = new Set()
@@ -85,7 +86,7 @@ class SegmentationRenderingEngine {
       'SegmentationDisplay'
     ) as SegmentationDisplayTool
 
-    function onSegmentationRender(evt: Types.EventsTypes.ImageRenderedEvent) {
+    function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
       const { element, viewportUID, renderingEngineUID } = evt.detail
 
       element.removeEventListener(
@@ -95,7 +96,7 @@ class SegmentationRenderingEngine {
 
       const toolGroup = getToolGroup(renderingEngineUID, viewportUID)
 
-      const eventData = {
+      const eventData: SegmentationRenderedEventData = {
         toolGroupUID: toolGroup.uid,
         viewportUID,
       }

@@ -1,14 +1,15 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import _getHash from './_getHash'
-import { Point2 } from '../types'
 import _setAttributesIfNecessary from './_setAttributesIfNecessary'
 
 /**
  * Draws a textBox.
  *
- * @param textLines   The text to display.
- * @param position    The x/y position of the textbox
- * @param options     Options for the textBox.
- * @returns Bounding box; can be used for pointNearTool
+ * @param textLines - The text to display.
+ * @param position - The x/y position of the textbox
+ * @param options - Options for the textBox.
+ * @returns Bounding box; can be used for isPointNearTool
  */
 function drawTextBox(
   svgDrawingHelper: Record<string, unknown>,
@@ -16,7 +17,7 @@ function drawTextBox(
   annotationUID: string,
   textUID: string,
   textLines: Array<string>,
-  position: Point2,
+  position: Types.Point2,
   options = {}
 ): SVGRect {
   const mergedOptions = Object.assign(
@@ -52,7 +53,7 @@ function _drawTextGroup(
   annotationUID: string,
   textUID: string,
   textLines: Array<string>,
-  position: Point2,
+  position: Types.Point2,
   options: any
 ): SVGRect {
   const { padding, color, fontFamily, fontSize, background } = options

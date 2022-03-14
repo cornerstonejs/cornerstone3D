@@ -1,18 +1,17 @@
-import getVOILUT from './getVOILut';
-import { IImage, CPUFallbackLUT } from '../../../../types';
+import getVOILUT from './getVOILut'
+import { IImage, CPUFallbackLUT } from '../../../../types'
 
 /**
  * Creates a LUT used while rendering to convert stored pixel values to
  * display pixels
  *
- * @param {Image} image A Cornerstone Image Object
- * @param {Number} windowWidth The Window Width
- * @param {Number} windowCenter The Window Center
- * @param {Boolean} invert A boolean describing whether or not the image has been inverted
- * @param {Array} [voiLUT] A Volume of Interest Lookup Table
+ * @param image - A Cornerstone Image Object
+ * @param windowWidth - The Window Width
+ * @param windowCenter - The Window Center
+ * @param invert - A boolean describing whether or not the image has been inverted
+ * @param voiLUT- A Volume of Interest Lookup Table
  *
- * @returns {Uint8ClampedArray} A lookup table to apply to the image
- * @memberof Internal
+ * @returns A lookup table to apply to the image
  */
 export default function (
   image: IImage,
@@ -21,23 +20,23 @@ export default function (
   invert: boolean,
   voiLUT?: CPUFallbackLUT
 ) {
-  const maxPixelValue = image.maxPixelValue;
-  const minPixelValue = image.minPixelValue;
-  const offset = Math.min(minPixelValue, 0);
+  const maxPixelValue = image.maxPixelValue
+  const minPixelValue = image.minPixelValue
+  const offset = Math.min(minPixelValue, 0)
 
   if (image.cachedLut === undefined) {
-    const length = maxPixelValue - offset + 1;
+    const length = maxPixelValue - offset + 1
 
-    image.cachedLut = {};
-    image.cachedLut.lutArray = new Uint8ClampedArray(length);
+    image.cachedLut = {}
+    image.cachedLut.lutArray = new Uint8ClampedArray(length)
   }
 
-  const lut = image.cachedLut.lutArray;
+  const lut = image.cachedLut.lutArray
   const vlutfn = getVOILUT(
     Array.isArray(windowWidth) ? windowWidth[0] : windowWidth,
     Array.isArray(windowCenter) ? windowCenter[0] : windowCenter,
     voiLUT
-  );
+  )
 
   if (invert === true) {
     for (
@@ -45,7 +44,7 @@ export default function (
       storedValue <= maxPixelValue;
       storedValue++
     ) {
-      lut[storedValue + -offset] = 255 - vlutfn(storedValue);
+      lut[storedValue + -offset] = 255 - vlutfn(storedValue)
     }
   } else {
     for (
@@ -53,9 +52,9 @@ export default function (
       storedValue <= maxPixelValue;
       storedValue++
     ) {
-      lut[storedValue + -offset] = vlutfn(storedValue);
+      lut[storedValue + -offset] = vlutfn(storedValue)
     }
   }
 
-  return lut;
+  return lut
 }

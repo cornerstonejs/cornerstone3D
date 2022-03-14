@@ -1,18 +1,13 @@
 import { vec3 } from 'gl-matrix'
-import {
-  IImageVolume,
-  IEnabledElement,
-  Point3,
-  Point2,
-} from '@precisionmetrics/cornerstone-render/src/types'
 
 import { cache } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import {
   getBoundingBoxAroundShape,
   extend2DBoundingBoxInViewAxis,
 } from '../segmentation'
-import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
+import { pointInShapeCallback } from '../../util'
 import { triggerSegmentationDataModified } from '../../store/SegmentationModule/triggerSegmentationEvents'
 import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
@@ -26,14 +21,14 @@ export type ThresholdRangeOptions = {
 
 export type ToolDataForThresholding = {
   metadata: {
-    enabledElement: IEnabledElement
+    enabledElement: Types.IEnabledElement
   }
   data: {
     handles: {
-      points: Point3[]
+      points: Types.Point3[]
     }
     cachedStats: {
-      projectionPoints: Point3[][]
+      projectionPoints: Types.Point3[][]
     }
   }
 }
@@ -42,19 +37,19 @@ export type ToolDataForThresholding = {
  * Given an array of rectangle toolData, and a segmentation and referenceVolumes:
  * It fills the segmentation at SegmentIndex=1 based on a range of thresholds of the referenceVolumes
  * inside the drawn annotations.
- * @param {string} toolGroupUID - The toolGroupUID of the tool that is performing the operation
- * @param {RectangleRoiThresholdToolData[]} toolDataList Array of rectangle annotation toolData
- * @param {ToolGroupSpecificSegmentationData} segmentationData - The segmentation data to be modified
- * @param {IImageVolume} segmentation segmentation volume
- * @param {ThresholdRangeOptions} options Options for thresholding
+ * @param toolGroupUID - - The toolGroupUID of the tool that is performing the operation
+ * @param toolDataList - Array of rectangle annotation toolData
+ * @param segmentationData - - The segmentation data to be modified
+ * @param segmentation - segmentation volume
+ * @param options - Options for thresholding
  */
 function thresholdVolumeByRange(
   toolGroupUID: string,
   toolDataList: ToolDataForThresholding[],
-  referenceVolumes: IImageVolume[],
+  referenceVolumes: Types.IImageVolume[],
   segmentationData: ToolGroupSpecificSegmentationData,
   options: ThresholdRangeOptions
-): IImageVolume {
+): Types.IImageVolume {
   if (referenceVolumes.length > 1) {
     throw new Error('thresholding more than one volumes is not supported yet')
   }
@@ -102,7 +97,7 @@ function thresholdVolumeByRange(
     }
 
     const rectangleCornersIJK = pointsToUse.map(
-      (world) => _worldToIndex(imageData, world) as Point3
+      (world) => _worldToIndex(imageData, world) as Types.Point3
     )
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 
@@ -125,14 +120,7 @@ function thresholdVolumeByRange(
       scalarData[index] = 1
     }
 
-    pointInShapeCallback(
-      boundsIJK,
-      scalarData,
-      segmentationImageData,
-      dimensions,
-      () => true,
-      callback
-    )
+    pointInShapeCallback(segmentationImageData, () => true, callback, boundsIJK)
   })
 
   triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
@@ -141,9 +129,9 @@ function thresholdVolumeByRange(
 }
 
 export function extendBoundingBoxInSliceAxisIfNecessary(
-  boundsIJK: [Point2, Point2, Point2],
+  boundsIJK: [Types.Point2, Types.Point2, Types.Point2],
   numSlicesToProject: number
-): [Point2, Point2, Point2] {
+): [Types.Point2, Types.Point2, Types.Point2] {
   const extendedBoundsIJK = extend2DBoundingBoxInViewAxis(
     boundsIJK,
     numSlicesToProject

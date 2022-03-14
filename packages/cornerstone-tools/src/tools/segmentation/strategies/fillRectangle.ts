@@ -1,13 +1,14 @@
+import { ImageVolume } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { getBoundingBoxAroundShape } from '../../../util/segmentation'
-import { Point3 } from '../../../types'
-import { ImageVolume, Types } from '@precisionmetrics/cornerstone-render'
-import pointInShapeCallback from '../../../util/planar/pointInShapeCallback'
+import { pointInShapeCallback } from '../../../util'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
 
 type OperationData = {
   toolGroupUID: string
   segmentationDataUID: string
-  points: [Point3, Point3, Point3, Point3]
+  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
   volume: ImageVolume
   constraintFn: (x: [number, number, number]) => boolean
   segmentIndex: number
@@ -17,10 +18,10 @@ type OperationData = {
 /**
  * For each point in the bounding box around the rectangle, if the point is inside
  * the rectangle, set the scalar value to the segmentIndex
- * @param {string} toolGroupUID - string
- * @param {OperationData} operationData - OperationData
- * @param {any} [constraintFn]
- * @param [inside=true] - boolean
+ * @param toolGroupUID - string
+ * @param operationData - OperationData
+ * @param constraintFn - can be used to perform threshold segmentation
+ * @param inside - boolean
  */
 // Todo: why we have another constraintFn? in addition to the one in the operationData?
 function fillRectangle(
@@ -67,24 +68,17 @@ function fillRectangle(
     }
   }
 
-  pointInShapeCallback(
-    boundsIJK,
-    scalarData,
-    imageData,
-    dimensions,
-    pointInRectangle,
-    callback
-  )
+  pointInShapeCallback(imageData, pointInRectangle, callback, boundsIJK)
 
   triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
 }
 
 /**
  * Fill the inside of a rectangle
- * @param {string} toolGroupUID - The unique identifier of the tool group.
- * @param {OperationData} operationData - The data that will be used to create the
+ * @param toolGroupUID - The unique identifier of the tool group.
+ * @param operationData - The data that will be used to create the
  * new rectangle.
- * @param {any} [constraintFn]
+ * @param constraintFn - can be used to perform threshold segmentation
  */
 export function fillInsideRectangle(
   enabledElement: Types.IEnabledElement,
@@ -96,10 +90,10 @@ export function fillInsideRectangle(
 
 /**
  * Fill the area outside of a rectangle for the toolGroupUID and segmentationDataUID.
- * @param {string} toolGroupUID - The unique identifier of the tool group.
- * @param {OperationData} operationData - The data that will be used to create the
+ * @param toolGroupUID - The unique identifier of the tool group.
+ * @param operationData - The data that will be used to create the
  * new rectangle.
- * @param {any} [constraintFn]
+ * @param constraintFn - can be used to perform threshold segmentation
  */
 export function fillOutsideRectangle(
   enabledElement: Types.IEnabledElement,

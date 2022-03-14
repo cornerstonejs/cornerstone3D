@@ -1,4 +1,4 @@
-import { Point3 } from '../../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 type ellipsoid = {
   center: [number, number, number]
@@ -9,15 +9,15 @@ type ellipsoid = {
 
 /**
  * Checks whether the point is inside the provided ellipse with constraint of a plane (viewPlane).
- * @param ellipse ellipse object including {center, width, height, depth}
- * @param point [x,y,z] of the point
- * @param viewPlane camera viewPlane
+ * @param ellipse - ellipse object including {center, width, height, depth}
+ * @param point - [x,y,z] of the point
+ * @param viewPlane - camera viewPlane
  * @returns whether the point is inside the ellipse
  */
 export default function pointInEllipsoidWithConstraint(
   ellipsoid: ellipsoid,
-  point: Point3,
-  viewPlane: Point3 // constraint
+  point: Types.Point3,
+  viewPlane: Types.Point3 // constraint
 ) {
   // Todo: This implementation should be used for oblique planes segmentation tools
   // but still not a priority

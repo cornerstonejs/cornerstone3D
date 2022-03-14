@@ -1,17 +1,15 @@
-import { vec2 } from 'gl-matrix'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import {
   getEnabledElement,
-  VIEWPORT_TYPE,
   getVolume,
   StackViewport,
   Settings,
   triggerEvent,
   eventTarget,
-  Types,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { getToolStateForDisplay, getImageIdForTool } from '../../util/planar'
 import { BaseAnnotationTool } from '../base'
 import throttle from '../../util/throttle'
 import {
@@ -32,6 +30,7 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import { MeasurementModifiedEventData } from '../../types/EventTypes'
 
 import {
   resetElementCursor,
@@ -40,28 +39,28 @@ import {
 
 import {
   ToolSpecificToolData,
-  Point3,
-  EventsTypes,
+  EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
+  InteractionTypes,
 } from '../../types'
 
 interface LengthSpecificToolData extends ToolSpecificToolData {
   data: {
     invalidated: boolean
     handles: {
-      points: Point3[]
+      points: Types.Point3[]
       activeHandleIndex: number | null
       textBox: {
         hasMoved: boolean
-        worldPosition: Point3
+        worldPosition: Types.Point3
         worldBoundingBox: {
-          topLeft: Point3
-          topRight: Point3
-          bottomLeft: Point3
-          bottomRight: Point3
+          topLeft: Types.Point3
+          topRight: Types.Point3
+          bottomLeft: Types.Point3
+          bottomRight: Types.Point3
         }
       }
     }
@@ -99,19 +98,6 @@ class LengthTool extends BaseAnnotationTool {
   ) {
     super(toolProps, defaultToolProps)
 
-    /**
-     * Will only fire for cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-    this._activateModify = this._activateModify.bind(this)
-    this._deactivateModify = this._deactivateModify.bind(this)
-    this._mouseUpCallback = this._mouseUpCallback.bind(this)
-    this._mouseDragCallback = this._mouseDragCallback.bind(this)
-
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,
       100,
@@ -119,7 +105,17 @@ class LengthTool extends BaseAnnotationTool {
     )
   }
 
-  addNewMeasurement(evt: CustomEvent): LengthSpecificToolData {
+  /**
+   * Based on the current position of the mouse and the current imageId to create
+   * a Length ToolData and stores it in the toolStateManager
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement = (
+    evt: EventTypes.MouseDownActivateEventType
+  ): LengthSpecificToolData => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -140,11 +136,11 @@ class LengthTool extends BaseAnnotationTool {
     } else {
       const volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
-      referencedImageId = getImageIdForTool(
+      referencedImageId = csUtils.getClosestImageId(
+        imageVolume,
         worldPos,
         viewPlaneNormal,
-        viewUp,
-        imageVolume
+        viewUp
       )
     }
 
@@ -155,8 +151,8 @@ class LengthTool extends BaseAnnotationTool {
 
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
-        viewUp: <Point3>[...viewUp],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         label: '',
@@ -165,16 +161,16 @@ class LengthTool extends BaseAnnotationTool {
       data: {
         invalidated: true,
         handles: {
-          points: [<Point3>[...worldPos], <Point3>[...worldPos]],
+          points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
           activeHandleIndex: null,
           textBox: {
             hasMoved: false,
-            worldPosition: <Point3>[0, 0, 0],
+            worldPosition: <Types.Point3>[0, 0, 0],
             worldBoundingBox: {
-              topLeft: <Point3>[0, 0, 0],
-              topRight: <Point3>[0, 0, 0],
-              bottomLeft: <Point3>[0, 0, 0],
-              bottomRight: <Point3>[0, 0, 0],
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
         },
@@ -213,50 +209,23 @@ class LengthTool extends BaseAnnotationTool {
     return toolData
   }
 
-  getHandleNearImagePoint(element, toolData, canvasCoords, proximity) {
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
-
-    const { data } = toolData
-    const { points, textBox } = data.handles
-    const { worldBoundingBox } = textBox
-
-    if (worldBoundingBox) {
-      const canvasBoundingBox = {
-        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
-        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
-        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
-      }
-
-      if (
-        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
-        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
-      ) {
-        data.handles.activeHandleIndex = null
-        return textBox
-      }
-    }
-
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i]
-      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
-
-      const near =
-        vec2.distance(canvasCoords, <vec2>toolDataCanvasCoordinate) < proximity
-
-      if (near === true) {
-        data.handles.activeHandleIndex = i
-        return point
-      }
-    }
-
-    data.handles.activeHandleIndex = null
-  }
-
-  pointNearTool(element, toolData, canvasCoords, proximity) {
+  /**
+   * It returns if the canvas point is near the provided length toolData in the provided
+   * element or not. A proximity is passed to the function to determine the
+   * proximity of the point to the toolData in number of pixels.
+   *
+   * @param element - HTML Element
+   * @param toolData - Tool data
+   * @param canvasCoords - Canvas coordinates
+   * @param proximity - Proximity to tool to consider
+   * @returns Boolean, whether the canvas point is near tool
+   */
+  isPointNearTool = (
+    element: HTMLElement,
+    toolData: LengthSpecificToolData,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): boolean => {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
     const { data } = toolData
@@ -284,9 +253,15 @@ class LengthTool extends BaseAnnotationTool {
     if (distanceToPoint <= proximity) {
       return true
     }
+
+    return false
   }
 
-  toolSelectedCallback(evt, toolData, interactionType = 'mouse') {
+  toolSelectedCallback = (
+    evt: EventTypes.MouseDownEventType,
+    toolData: ToolSpecificToolData,
+    interactionType: InteractionTypes
+  ): void => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -321,7 +296,7 @@ class LengthTool extends BaseAnnotationTool {
   }
 
   handleSelectedCallback(
-    evt: EventsTypes.NormalizedMouseEventType,
+    evt: EventTypes.MouseDownEventType,
     toolData: ToolSpecificToolData,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -368,7 +343,9 @@ class LengthTool extends BaseAnnotationTool {
     evt.preventDefault()
   }
 
-  _mouseUpCallback(evt) {
+  _mouseUpCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -408,8 +385,9 @@ class LengthTool extends BaseAnnotationTool {
     this.isDrawing = false
   }
 
-  _mouseDragCallback(evt) {
-    console.debug('inside mouse drag')
+  _mouseDragCallback = (
+    evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  ) => {
     this.isDrawing = true
     const eventData = evt.detail
     const { element } = eventData
@@ -419,7 +397,8 @@ class LengthTool extends BaseAnnotationTool {
     const { data } = toolData
 
     if (movingTextBox) {
-      const { deltaPoints } = eventData
+      // Drag mode - moving text box
+      const { deltaPoints } = eventData as EventTypes.MouseDragEventData
       const worldPosDelta = deltaPoints.world
 
       const { textBox } = data.handles
@@ -431,8 +410,8 @@ class LengthTool extends BaseAnnotationTool {
 
       textBox.hasMoved = true
     } else if (handleIndex === undefined) {
-      // Moving tool
-      const { deltaPoints } = eventData
+      // Drag mode - moving handle
+      const { deltaPoints } = eventData as EventTypes.MouseDragEventData
       const worldPosDelta = deltaPoints.world
 
       const points = data.handles.points
@@ -444,7 +423,7 @@ class LengthTool extends BaseAnnotationTool {
       })
       data.invalidated = true
     } else {
-      // Moving handle
+      // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventData
       const worldPos = currentPoints.world
 
@@ -463,7 +442,7 @@ class LengthTool extends BaseAnnotationTool {
     )
   }
 
-  cancel(element) {
+  cancel = (element: HTMLElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false
@@ -490,29 +469,29 @@ class LengthTool extends BaseAnnotationTool {
     }
   }
 
-  _activateModify(element) {
+  _activateModify = (element: HTMLElement) => {
     state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  _deactivateModify(element) {
+  _deactivateModify = (element: HTMLElement) => {
     state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  _activateDraw(element) {
+  _activateDraw = (element: HTMLElement) => {
     state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
@@ -520,11 +499,11 @@ class LengthTool extends BaseAnnotationTool {
     element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  _deactivateDraw(element) {
+  _deactivateDraw = (element: HTMLElement) => {
     state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
@@ -532,14 +511,22 @@ class LengthTool extends BaseAnnotationTool {
     element.removeEventListener(EVENTS.MOUSE_MOVE, this._mouseDragCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the length annotation data in each
+   * request animation frame. It calculates the updated cached statistics if
+   * data is invalidated and cache it.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
 
@@ -671,14 +658,6 @@ class LengthTool extends BaseAnnotationTool {
     }
   }
 
-  _findTextBoxAnchorPoints(points) {
-    return [
-      points[0],
-      points[1],
-      [(points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2],
-    ]
-  }
-
   // text line for the current active length measurement
   _getTextLines(data, targetUID) {
     const cachedVolumeStats = data.cachedStats[targetUID]
@@ -695,20 +674,6 @@ class LengthTool extends BaseAnnotationTool {
     return textLines
   }
 
-  _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
-    let imageVolume, viewport
-    if (targetUID.startsWith('stackTarget')) {
-      const coloneIndex = targetUID.indexOf(':')
-      const viewportUID = targetUID.substring(coloneIndex + 1)
-      viewport = renderingEngine.getViewport(viewportUID)
-      imageVolume = viewport.getImageData()
-    } else {
-      imageVolume = getVolume(targetUID)
-    }
-
-    return { imageVolume, viewport }
-  }
-
   _calculateLength(pos1, pos2) {
     const dx = pos1[0] - pos2[0]
     const dy = pos1[1] - pos2[1]
@@ -719,7 +684,6 @@ class LengthTool extends BaseAnnotationTool {
 
   _calculateCachedStats(toolData, renderingEngine, enabledElement) {
     const data = toolData.data
-    const { referencedImageId } = toolData.metadata
     const { viewportUID, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
@@ -732,16 +696,18 @@ class LengthTool extends BaseAnnotationTool {
     for (let i = 0; i < targetUIDs.length; i++) {
       const targetUID = targetUIDs[i]
 
-      const { imageVolume } = this._getImageVolumeFromTargetUID(
+      const { image } = this.getTargetUIDViewportAndImage(
         targetUID,
         renderingEngine
       )
 
-      const { imageData, dimensions } = imageVolume
+      const { imageData, dimensions } = image
 
       const length = this._calculateLength(worldPos1, worldPos2)
 
+      // @ts-ignore
       const index1 = imageData.worldToIndex(worldPos1)
+      // @ts-ignore
       const index2 = imageData.worldToIndex(worldPos2)
 
       this._isInsideVolume(index1, index2, dimensions)
@@ -763,7 +729,7 @@ class LengthTool extends BaseAnnotationTool {
     // Dispatching measurement modified
     const eventType = EVENTS.MEASUREMENT_MODIFIED
 
-    const eventDetail = {
+    const eventDetail: MeasurementModifiedEventData = {
       toolData,
       viewportUID,
       renderingEngineUID,
@@ -778,16 +744,6 @@ class LengthTool extends BaseAnnotationTool {
       indexWithinDimensions(index1, dimensions) &&
       indexWithinDimensions(index2, dimensions)
     )
-  }
-
-  _clipIndexToVolume(index, dimensions) {
-    for (let i = 0; i <= 2; i++) {
-      if (index[i] < 0) {
-        index[i] = 0
-      } else if (index[i] >= dimensions[i]) {
-        index[i] = dimensions[i] - 1
-      }
-    }
   }
 }
 

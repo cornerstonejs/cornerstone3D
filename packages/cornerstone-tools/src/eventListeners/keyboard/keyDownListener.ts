@@ -1,9 +1,10 @@
+import _cloneDeep from 'lodash.clonedeep'
 import {
   getEnabledElement,
   triggerEvent,
 } from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
-import _cloneDeep from 'lodash.clonedeep'
+import { KeyDownEventData, KeyUpEventData } from '../../types/EventTypes'
 
 interface IKeyDownListenerState {
   renderingEngineUID: string
@@ -35,7 +36,7 @@ let state: IKeyDownListenerState = {
 
 /**
  * Normalizes the keyboard event and triggers KEY_DOWN event from CornerstoneTools3D events
- * @param evt keyboard event
+ * @param evt - DOM Keyboard event
  */
 function keyListener(evt: KeyboardEvent): void {
   state.element = <HTMLElement>evt.currentTarget
@@ -49,14 +50,14 @@ function keyListener(evt: KeyboardEvent): void {
   state.keyCode = evt.keyCode
 
   evt.preventDefault()
-  const eventData = {
+  const eventData: KeyDownEventData = {
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
     element: state.element,
-    detail: evt,
     key: state.key,
     keyCode: state.keyCode,
 
+    // detail: evt,
     // Todo: mouse event points can be used later for placing tools with a key
     // e.g., putting an arrow/probe/etc. on the mouse position. Another use case
     // hovering and deleting the tool
@@ -72,13 +73,13 @@ function keyListener(evt: KeyboardEvent): void {
 }
 
 function _onKeyUp(evt: KeyboardEvent): void {
-  const eventData = {
+  const eventData: KeyUpEventData = {
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
     element: state.element,
-    detail: evt,
     key: state.key,
     keyCode: state.keyCode,
+    // detail: evt,
   }
 
   // Remove our temporary handlers

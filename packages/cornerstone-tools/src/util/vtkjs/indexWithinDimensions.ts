@@ -1,17 +1,16 @@
-import { Point3 } from '../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 /**
- * @function indexWithinDimensions Returns true if the specified index is within
- * the given dimensions.
+ * Returns true if the specified index is within the given dimensions.
  *
- * @param {Point3} index
- * @param {Point3} dimensions
+ * @param index - The index to check.
+ * @param dimensions - The dimensions to check against.
  *
- * @returns {boolean} True if the index is in-bounds.
+ * @returns True if the index is in-bounds.
  */
 export default function indexWithinDimensions(
-  index: Point3,
-  dimensions: Point3
+  index: Types.Point3,
+  dimensions: Types.Point3
 ): boolean {
   if (
     index[0] < 0 ||

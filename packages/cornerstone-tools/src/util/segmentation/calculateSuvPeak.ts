@@ -1,18 +1,19 @@
 import { vec3 } from 'gl-matrix'
-import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { Point3 } from '../../types'
-import pointInShapeCallback from '../../util/planar/pointInShapeCallback'
-import pointInSurroundingSphereCallback from '../../util/planar/pointInSurroundingSphereCallback'
+import {
+  pointInSurroundingSphereCallback,
+  pointInShapeCallback,
+} from '../../util'
 import { getBoundingBoxAroundShape } from '../segmentation'
 
 export type ToolDataForThresholding = {
   data: {
     handles: {
-      points: Point3[]
+      points: Types.Point3[]
     }
     cachedStats: {
-      projectionPoints: Point3[][]
+      projectionPoints: Types.Point3[][]
     }
   }
 }
@@ -22,17 +23,17 @@ export type ToolDataForThresholding = {
  * volume. If a rectangle is provided, the peak is calculated within that
  * rectangle. Otherwise, the calculation is performed on the entire volume which
  * will be slower but same result.
- * @param viewport Viewport to use for the calculation
- * @param labelmap Labelmap from which the mask is taken
- * @param referenceVolume PET volume to use for SUV calculation
- * @param toolData [Optional] list of toolData to use for SUV calculation
- * @param segmentIndex The index of the segment to use for masking
+ * @param viewport - Viewport to use for the calculation
+ * @param labelmap - Labelmap from which the mask is taken
+ * @param referenceVolume - PET volume to use for SUV calculation
+ * @param toolData - [Optional] list of toolData to use for SUV calculation
+ * @param segmentIndex - The index of the segment to use for masking
  * @returns
  */
 function calculateSuvPeak(
   viewport,
-  labelmap: IImageVolume,
-  referenceVolume: IImageVolume,
+  labelmap: Types.IImageVolume,
+  referenceVolume: Types.IImageVolume,
   toolData?: ToolDataForThresholding[],
   segmentIndex = 1
 ): any {
@@ -47,13 +48,13 @@ function calculateSuvPeak(
   }
 
   const {
-    scalarData: labelmapData,
+    scalarData: LabelmapScalarData,
     dimensions,
     imageData: labelmapImageData,
   } = labelmap
 
   const {
-    scalarData: referenceVolumeData,
+    scalarData: referenceVolumeScalarData,
     imageData: referenceVolumeImageData,
   } = referenceVolume
 
@@ -66,7 +67,7 @@ function calculateSuvPeak(
     const rectangleCornersIJK = pointsToUse.map((world) => {
       const ijk = vec3.fromValues(0, 0, 0)
       referenceVolumeImageData.worldToIndex(world, ijk)
-      return ijk as Point3
+      return ijk as Types.Point3
     })
 
     boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
@@ -78,13 +79,13 @@ function calculateSuvPeak(
 
   const callback = ({ pointIJK, pointLPS }) => {
     const offset = referenceVolumeImageData.computeOffsetIndex(pointIJK)
-    const value = labelmapData[offset]
+    const value = LabelmapScalarData[offset]
 
     if (value !== segmentIndex) {
       return
     }
 
-    const referenceValue = referenceVolumeData[offset]
+    const referenceValue = referenceVolumeScalarData[offset]
 
     if (referenceValue > max) {
       max = referenceValue
@@ -94,12 +95,10 @@ function calculateSuvPeak(
   }
 
   pointInShapeCallback(
-    boundsIJK, // if boundsIJK is not provided then it calculates on the imageData extents
-    labelmapData,
     labelmapImageData,
-    dimensions,
     () => true,
-    callback
+    callback,
+    boundsIJK // if boundsIJK is not provided then it calculates on the imageData extents
   )
 
   const camera = viewport.getCamera()
@@ -116,7 +115,10 @@ function calculateSuvPeak(
   referenceVolumeImageData.indexToWorld(<vec3>maxIJK, secondaryCircleWorld)
   vec3.scaleAndAdd(bottomWorld, secondaryCircleWorld, viewUp, -diameter / 2)
   vec3.scaleAndAdd(topWorld, secondaryCircleWorld, viewUp, diameter / 2)
-  const suvPeakCirclePoints = [bottomWorld, topWorld] as [Point3, Point3]
+  const suvPeakCirclePoints = [bottomWorld, topWorld] as [
+    Types.Point3,
+    Types.Point3
+  ]
 
   /**
    * 3. Find the Mean and Max of the 1cc sphere centered on the suv Max of the previous
@@ -131,7 +133,7 @@ function calculateSuvPeak(
 
   pointInSurroundingSphereCallback(
     viewport,
-    referenceVolume,
+    referenceVolumeImageData,
     suvPeakCirclePoints,
     suvPeakMeanCallback
   )

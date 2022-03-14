@@ -1,4 +1,4 @@
-import { CPUFallbackEnabledElement, IImage } from '../../../../types';
+import { CPUFallbackEnabledElement, IImage } from '../../../../types'
 
 /**
  * Determine whether or not an Enabled Element needs to be re-rendered.
@@ -6,18 +6,17 @@ import { CPUFallbackEnabledElement, IImage } from '../../../../types';
  * If the imageId has changed, or if any of the last rendered viewport
  * parameters have changed, this function will return true.
  *
- * @param {EnabledElement} enabledElement An Enabled Element
- * @param {Image} image An Image
- * @return {boolean} Whether or not the Enabled Element needs to re-render its image
- * @memberof rendering
+ * @param enabledElement - An Enabled Element
+ * @param image - An Image
+ * @returns Whether - or not the Enabled Element needs to re-render its image
  */
 export default function doesImageNeedToBeRendered(
   enabledElement: CPUFallbackEnabledElement,
   image: IImage
 ): boolean {
-  const lastRenderedImageId = enabledElement.renderingTools.lastRenderedImageId;
+  const lastRenderedImageId = enabledElement.renderingTools.lastRenderedImageId
   const lastRenderedViewport =
-    enabledElement.renderingTools.lastRenderedViewport;
+    enabledElement.renderingTools.lastRenderedViewport
 
   return (
     image.imageId !== lastRenderedImageId ||
@@ -33,5 +32,5 @@ export default function doesImageNeedToBeRendered(
     lastRenderedViewport.modalityLUT !== enabledElement.viewport.modalityLUT ||
     lastRenderedViewport.voiLUT !== enabledElement.viewport.voiLUT ||
     lastRenderedViewport.colormap !== enabledElement.viewport.colormap
-  );
+  )
 }

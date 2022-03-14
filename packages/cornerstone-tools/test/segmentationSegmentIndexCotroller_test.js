@@ -205,9 +205,8 @@ describe('Segmentation Index Controller --', () => {
       eventTarget.addEventListener(
         EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUIDs } = evt.detail
-          expect(segmentationUIDs.length).toBe(1)
-          expect(segmentationUIDs[0].includes(volumeId)).toBe(true)
+          const { segmentationUID } = evt.detail
+          expect(segmentationUID.includes(volumeId)).toBe(true)
         }
       )
 
@@ -357,9 +356,8 @@ describe('Segmentation Index Controller --', () => {
       eventTarget.addEventListener(
         EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUIDs } = evt.detail
-          expect(segmentationUIDs.length).toBe(1)
-          expect(segmentationUIDs[0].includes(volumeId)).toBe(true)
+          const { segmentationUID } = evt.detail
+          expect(segmentationUID.includes(volumeId)).toBe(true)
         }
       )
 
@@ -538,9 +536,8 @@ describe('Segmentation Index Controller --', () => {
       eventTarget.addEventListener(
         EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUIDs } = evt.detail
-          expect(segmentationUIDs.length).toBe(1)
-          expect(segmentationUIDs[0].includes(volumeId)).toBe(true)
+          const { segmentationUID } = evt.detail
+          expect(segmentationUID.includes(volumeId)).toBe(true)
         }
       )
 

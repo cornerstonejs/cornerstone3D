@@ -1,7 +1,6 @@
-import { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 import getVolumeActorCorners from '../vtkjs/getVolumeActorCorners'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import { Point3 } from './../../types'
 
 /**
  * Given a `vtkVolumeActor`, and a normal direction,
@@ -17,8 +16,8 @@ import { Point3 } from './../../types'
  */
 export default function getSliceRange(
   volumeActor: Types.VolumeActor,
-  viewPlaneNormal: Point3,
-  focalPoint: Point3
+  viewPlaneNormal: Types.Point3,
+  focalPoint: Types.Point3
 ): { min: number; max: number; current: number } {
   const corners = getVolumeActorCorners(volumeActor)
 
