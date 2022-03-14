@@ -34,8 +34,7 @@ export default class Settings {
   /**
    * Unset a specific key or a set of keys within a namespace when the key ends with a dot (ASCII #46).
    * If the key is ".", all keys will be removed and this command works as a reset.
-   * @param {object} dictionary The dictionary on which to unset a key.
-   * @param {string} name The key to be unset or a namespace.
+   * @param key - name The key to be unset or a namespace.
    * @returns boolean
    */
   unset(key: string): boolean {
@@ -53,7 +52,7 @@ export default class Settings {
   /**
    * Recursively import all properties from the given plain JavaScript object.
    * This method has the opposite effect of the `dump` method.
-   * @param {Record<string, unknown>} root The root object whose properties will
+   * @param root - The root object whose properties will
    * be imported.
    */
   import(root: Record<string, unknown>): void {
@@ -68,7 +67,7 @@ export default class Settings {
    * Build a JSON representation of the current internal state of this settings
    * object. The returned object can be safely passed to `JSON.stringify`
    * function.
-   * @returns {Record<string, unknown>} The JSON representation of the current
+   * @returns The JSON representation of the current
    * state of this settings instance
    */
   dump(): Record<string, unknown> {

@@ -15,7 +15,7 @@ module.exports = function (config) {
     reporters: ['junit', 'coverage', 'spec'],
     client: {
       jasmine: {
-        random: false, // don't randomize the order of tests
+        // random: false, // don't randomize the order of tests
         stopOnFailure: false,
         failFast: false,
       },

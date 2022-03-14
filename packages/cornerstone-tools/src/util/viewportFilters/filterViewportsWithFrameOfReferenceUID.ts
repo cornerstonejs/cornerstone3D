@@ -1,17 +1,18 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 /**
- * @function filterViewportsWithFrameOfReferenceUID Given an array of viewports,
- * returns a list of viewports that are viewing a worldspace with the given
- * `FrameOfReferenceUID`.
+ * Given an array of viewports, returns a list of viewports that are viewing a
+ * world space with the given `FrameOfReferenceUID`.
  *
- * @param {object[]} viewports An array of viewports.
- * @param {string} FrameOfReferenceUID The UID defining a particular worldspace/Frame Of Reference.
+ * @param viewports - An array of viewports.
+ * @param FrameOfReferenceUID - The UID defining a particular world space/Frame Of Reference.
  *
- * @returns {object[]} A filtered array of viewports.
+ * @returns A filtered array of viewports.
  */
 export default function filterViewportsWithFrameOfReferenceUID(
-  viewports,
-  FrameOfReferenceUID
-) {
+  viewports: Array<Types.IStackViewport | Types.IVolumeViewport>,
+  FrameOfReferenceUID: string
+): Array<Types.IStackViewport | Types.IVolumeViewport> {
   const numViewports = viewports.length
   const viewportsWithFrameOfReferenceUID = []
 

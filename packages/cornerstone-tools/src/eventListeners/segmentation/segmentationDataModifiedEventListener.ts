@@ -3,13 +3,13 @@ import { cache } from '@precisionmetrics/cornerstone-render'
 import triggerSegmentationRender from '../../util/triggerSegmentationRender'
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
-import { SegmentationDataModifiedEvent } from '../../types/SegmentationEventTypes'
+import { SegmentationDataModifiedEventType } from '../../types/EventTypes'
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
  */
 const onSegmentationDataModified = function (
-  evt: SegmentationDataModifiedEvent
+  evt: SegmentationDataModifiedEventType
 ): void {
   const { toolGroupUID, segmentationDataUID } = evt.detail
 

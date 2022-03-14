@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix'
-import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { getBoundingBoxAroundShape } from '../segmentation'
-import { Point3, ToolGroupSpecificSegmentationData } from '../../types'
+import { ToolGroupSpecificSegmentationData } from '../../types'
 import thresholdVolumeByRange, {
   ToolDataForThresholding,
   extendBoundingBoxInSliceAxisIfNecessary,
@@ -24,16 +24,16 @@ export type ThresholdRoiStatsOptions = {
  * it thresholds the referenceVolumes based on a weighted value of the statistic.
  * For instance in radiation oncology, usually 41% of the maximum of the ROI is used
  * in radiation planning.
- * @param {string} toolGroupUID - The toolGroupUID of the tool that is performing the operation
- * @param {RectangleRoiThresholdToolData[]} toolDataList Array of rectangle annotation toolData
- * @param {ToolGroupSpecificSegmentationData} segmentationData - The segmentation data to be modified
- * @param {IImageVolume} labelmap segmentation volume
- * @param {ThresholdRoiStatsOptions} options Options for thresholding
+ * @param toolGroupUID - The toolGroupUID of the tool that is performing the operation
+ * @param toolDataList Array of rectangle annotation toolData
+ * @param segmentationData - The segmentation data to be modified
+ * @param labelmap segmentation volume
+ * @param options Options for thresholding
  */
 function thresholdVolumeByRoiStats(
   toolGroupUID: string,
   toolDataList: ToolDataForThresholding[],
-  referenceVolumes: IImageVolume[],
+  referenceVolumes: Types.IImageVolume[],
   segmentationData: ToolGroupSpecificSegmentationData,
   options: ThresholdRoiStatsOptions
 ): void {
@@ -82,7 +82,7 @@ function thresholdVolumeByRoiStats(
     }
 
     const rectangleCornersIJK = pointsToUse.map(
-      (world) => _worldToIndex(imageData, world) as Point3
+      (world) => _worldToIndex(imageData, world) as Types.Point3
     )
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
 

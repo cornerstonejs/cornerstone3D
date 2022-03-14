@@ -3,10 +3,11 @@ import {
   getEnabledElement,
   Settings,
   StackViewport,
-  Types,
 } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { BaseTool } from '../base'
-import { Point3, Point2, PublicToolProps, ToolProps } from '../../types'
+import { PublicToolProps, ToolProps, EventTypes } from '../../types'
 import { fillInsideRectangle } from './strategies/fillRectangle'
 import { eraseInsideRectangle } from './strategies/eraseRectangle'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
@@ -71,7 +72,15 @@ export default class RectangleScissorsTool extends BaseTool {
     super(toolProps, defaultToolProps)
   }
 
-  addNewMeasurement = async (evt) => {
+  /**
+   * Based on the current position of the mouse and the enabledElement, it
+   * finds the active segmentation info and use it for the current tool.
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -111,8 +120,8 @@ export default class RectangleScissorsTool extends BaseTool {
     // Todo: Used for drawing the svg only, we might not need it at all
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
-        viewUp: <Point3>[...viewUp],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
         toolName: this.name,
@@ -122,10 +131,10 @@ export default class RectangleScissorsTool extends BaseTool {
         invalidated: true,
         handles: {
           points: [
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
           ],
           activeHandleIndex: null,
         },
@@ -167,7 +176,7 @@ export default class RectangleScissorsTool extends BaseTool {
     )
   }
 
-  _mouseDragCallback = (evt) => {
+  _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
     this.isDrawing = true
 
     const eventData = evt.detail
@@ -221,8 +230,11 @@ export default class RectangleScissorsTool extends BaseTool {
         bottomRightCanvas = worldToCanvas(points[1])
         topLeftCanvas = worldToCanvas(points[2])
 
-        bottomLeftCanvas = <Point2>[topLeftCanvas[0], bottomRightCanvas[1]]
-        topRightCanvas = <Point2>[bottomRightCanvas[0], topLeftCanvas[1]]
+        bottomLeftCanvas = <Types.Point2>[
+          topLeftCanvas[0],
+          bottomRightCanvas[1],
+        ]
+        topRightCanvas = <Types.Point2>[bottomRightCanvas[0], topLeftCanvas[1]]
 
         bottomLeftWorld = canvasToWorld(bottomLeftCanvas)
         topRightWorld = canvasToWorld(topRightCanvas)
@@ -244,7 +256,9 @@ export default class RectangleScissorsTool extends BaseTool {
     )
   }
 
-  _mouseUpCallback = (evt) => {
+  _mouseUpCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
     const eventData = evt.detail
     const { element } = eventData
 
@@ -300,8 +314,8 @@ export default class RectangleScissorsTool extends BaseTool {
     element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
@@ -312,14 +326,22 @@ export default class RectangleScissorsTool extends BaseTool {
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
     element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
 
-    element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the rectangleScissor annotation data in each
+   * request animation frame. Note that the annotation are disappeared
+   * after the segmentation modification.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     if (!this.editData) {
       return
     }

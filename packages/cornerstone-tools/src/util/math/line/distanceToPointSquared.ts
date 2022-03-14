@@ -5,11 +5,11 @@ function dist2(p1: Types.Point2, p2: Types.Point2): number {
 }
 
 /**
- * Calculates the distance-squared of the point to a line
+ * Calculates the distance-squared of a point to a line
  *
- * @param lineStart x,y coordinates of the start of the line
- * @param lineEnd x,y coordinates of the end of the line
- * @param point x,y of the point
+ * @param lineStart - x,y coordinates of the start of the line
+ * @param lineEnd - x,y coordinates of the end of the line
+ * @param point - x,y of the point
  * @returns distance-squared
  */
 export default function distanceToPointSquared(

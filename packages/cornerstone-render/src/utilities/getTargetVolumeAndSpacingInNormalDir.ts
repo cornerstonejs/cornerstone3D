@@ -1,36 +1,42 @@
-import { cache } from '@precisionmetrics/cornerstone-render'
+import cache from '../cache/cache'
+import type { VolumeViewport } from '../RenderingEngine'
+import { ICamera, IImageVolume } from '../types'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 /**
- * @function getTargetVolume Given a volume viewport and camera, find the target volume for a tool.
+ * Given a volume viewport and camera, find the target volume.
+ * The imageVolume is retrieved from cache for the specified targetVolumeUID or
+ * in case it is not provided, it chooses the volumeUID on the viewport (there
+ * might be more than one in case of fusion) that has the finest resolution in the
+ * direction of view (normal).
  *
- * @param {object} viewport
- * @param {object} camera
- * @param {string} [targetVolumeUID] If a target volumeUID is given that volume
+ * @param viewport - volume viewport
+ * @param camera - current camera
+ * @param targetVolumeUID - If a target volumeUID is given that volume
  * is forced to be used.
  *
- * @returns {object} The imageVolume specified or the volume with the smallest
- * spacing in the normal direction of the camera.
+ * @returns An object containing the imageVolume and spacingInNormalDirection.
+ *
  */
-export default function getTargetVolume(
-  viewport,
-  camera,
+export default function getTargetVolumeAndSpacingInNormalDir(
+  viewport: VolumeViewport,
+  camera: ICamera,
   targetVolumeUID?: string
-) {
+): {
+  imageVolume: IImageVolume
+  spacingInNormalDirection: number
+} {
   const { viewPlaneNormal } = camera
-
   const volumeActors = viewport.getActors()
 
   if (!volumeActors && !volumeActors.length) {
-    // No stack to scroll through
     return { spacingInNormalDirection: null, imageVolume: null }
   }
   const numVolumeActors = volumeActors.length
-
   const imageVolumes = volumeActors.map((va) => cache.getVolume(va.uid))
 
+  // If a volumeUID is defined, set that volume as the target
   if (targetVolumeUID) {
-    // If a volumeUID is defined, set that volume as the target
     const imageVolume = imageVolumes.find((iv) => iv.uid === targetVolumeUID)
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
@@ -42,7 +48,6 @@ export default function getTargetVolume(
   }
 
   // Fetch volume actor with finest resolution in direction of projection.
-
   const smallest = {
     spacingInNormalDirection: Infinity,
     imageVolume: null,

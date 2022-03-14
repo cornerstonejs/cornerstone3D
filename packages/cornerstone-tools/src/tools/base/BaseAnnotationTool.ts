@@ -1,34 +1,27 @@
 import {
-  Settings,
   Utilities,
-  Types,
   getEnabledElement,
+  VolumeViewport,
+  Settings,
 } from '@precisionmetrics/cornerstone-render'
-import { vec4 } from 'gl-matrix'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
+import { vec4, vec2 } from 'gl-matrix'
 
 import BaseTool from './BaseTool'
 import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
-import { getStyleProperty } from '../../stateManagement/annotation/toolStyle'
 import { getViewportSpecificStateManager } from '../../stateManagement/annotation/toolState'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
-  Point2,
-  EventsTypes,
+  EventTypes,
   ToolHandle,
+  InteractionTypes,
 } from '../../types'
-import getToolDataStyle from '../../util/getToolDataStyle'
 import triggerAnnotationRender from '../../util/triggerAnnotationRender'
-import getToolStateForDisplay from '../../util/planar/getToolStateForDisplay'
-
-export interface BaseAnnotationToolSpecificToolData
-  extends ToolSpecificToolData {
-  data: {
-    active: boolean
-    handles: any
-    cachedStats: any
-  }
-}
+import filterToolStateForDisplay from '../../util/planar/filterToolStateForDisplay'
+import { getStyleProperty } from '../../stateManagement/annotation/toolStyle'
+import { getToolDataStyleState } from '../../stateManagement/annotation/toolDataStyle'
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -42,18 +35,19 @@ abstract class BaseAnnotationTool extends BaseTool {
   // ===================================================================
 
   /**
-   * @abstract addNewMeasurement Creates a new annotation.
+   * @abstract addNewMeasurement Creates a new annotation based on the clicked mouse position
    *
-   * @param evt - The event.
+   * @param evt - The normalized mouse event
    * @param interactionType -  The interaction type used to add the measurement.
    */
   abstract addNewMeasurement(
-    evt: CustomEvent,
-    interactionType: string
+    evt: EventTypes.MouseDownActivateEventType,
+    interactionType: InteractionTypes
   ): ToolSpecificToolData
 
   /**
-   * @abstract renderToolData Used to redraw the tool's annotation data per render
+   * @abstract renderToolData it used to draw the tool's annotation data in each
+   * request animation frame
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
@@ -69,42 +63,68 @@ abstract class BaseAnnotationTool extends BaseTool {
    */
   abstract cancel(element: HTMLElement)
 
-  // ===================================================================
-  // Virtual Methods - Have default behavior or are optional.
-  // ===================================================================
   /**
-   * @virtual handleSelectedCallback Custom callback for when a handle is selected.
+   * handleSelectedCallback Custom callback for when a handle is selected.
    *
-   * @param evt The event.
+   * @param evt - The normalized mouse event
    * @param toolData - The toolData selected.
-   * @param handle - The selected handle.
+   * @param handle - The selected handle (either Types.Point3 in space for annotations, or TextBoxHandle object for text boxes).
    * @param interactionType - The interaction type the handle was selected with.
    */
-  public abstract handleSelectedCallback(
-    evt: EventsTypes.NormalizedMouseEventType,
+  abstract handleSelectedCallback(
+    evt: EventTypes.MouseDownEventType,
     toolData: ToolSpecificToolData,
     handle: ToolHandle,
-    interactionType: string
+    interactionType: InteractionTypes
   ): void
 
   /**
-   * @virtual @method toolSelectedCallback Custom callback for when a tool is selected.
-   * @memberof BaseAnnotationTool
+   * Custom callback for when an annotation is selected
    *
-   * @param  {CustomEvent} evt The event.
-   * @param  {ToolSpecificToolData} toolData - The `ToolSpecificToolData` to check.
-   * @param  {string} [interactionType=mouse]
+   * @param evt - The normalized mouse event
+   * @param toolData - The `ToolSpecificToolData` to check.
+   * @param interactionType - The interaction type used to select the tool.
    */
-  public abstract toolSelectedCallback(
-    evt,
+  abstract toolSelectedCallback(
+    evt: EventTypes.MouseDownEventType,
     toolData: ToolSpecificToolData,
-    interactionType
+    interactionType: InteractionTypes
   ): void
 
-  filterInteractableToolStateForElement = (
+  /**
+   * Returns true if the provided canvas coordinate tool is near the toolData
+   *
+   * @param element - The HTML element
+   * @param toolData - The toolData to check
+   * @param canvasCoords - The canvas coordinate to check
+   * @param proximity - The minimum proximity to consider the point near
+   * @param interactionType - The interaction type used to select the tool.
+   *
+   * @returns boolean if the point is near.
+   */
+  abstract isPointNearTool(
+    element: HTMLElement,
+    toolData: ToolSpecificToolData,
+    canvasCoords: Types.Point2,
+    proximity: number,
+    interactionType: string
+  ): boolean
+
+  /**
+   * @virtual Given the element and toolState which is an array of toolData, it
+   * filters the toolState array to only include the toolData based on the viewportType.
+   * If the viewport is StackViewport, it filters based on the current imageId of the viewport,
+   * if the viewport is volumeViewport, it only returns those that are within the
+   * same slice as the current rendered slice in the volume viewport.
+   * imageId as the enabledElement.
+   * @param element - The HTML element
+   * @param toolState - The toolState to filter (array of toolData)
+   * @returns The filtered toolState
+   */
+  filterInteractableToolStateForElement(
     element: HTMLElement,
     toolState: ToolSpecificToolState
-  ): ToolSpecificToolState | undefined => {
+  ): ToolSpecificToolState | undefined {
     if (!toolState || !toolState.length) {
       return
     }
@@ -112,30 +132,27 @@ abstract class BaseAnnotationTool extends BaseTool {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
-    return getToolStateForDisplay(viewport, toolState)
+    return filterToolStateForDisplay(viewport, toolState)
   }
 
   /**
-   * @virtual @method Event handler for MOUSE_MOVE event.
+   * @virtual Event handler for Cornerstone MOUSE_MOVE event.
    *
    *
-   * @param {CustomEvent} evt - The event.
-   * @param {ToolSpecificToolState} filteredToolState The toolState to check for hover interactions
-   * @returns {boolean} - True if the image needs to be updated.
+   * @param evt - The normalized mouse event
+   * @param filteredToolState - The toolState to check for hover interactions
+   * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
    */
   public mouseMoveCallback = (
-    evt,
+    evt: EventTypes.MouseMoveEventType,
     filteredToolState: ToolSpecificToolState
   ): boolean => {
     const { element, currentPoints } = evt.detail
     const canvasCoords = currentPoints.canvas
     let annotationsNeedToBeRedrawn = false
 
-    for (let i = 0; i < filteredToolState.length; i++) {
-      const toolData = filteredToolState[
-        i
-      ] as BaseAnnotationToolSpecificToolData
-
+    for (const toolData of filteredToolState) {
+      // Do not do anything if the toolData is locked
       if (isToolDataLocked(toolData)) {
         continue
       }
@@ -145,11 +162,13 @@ abstract class BaseAnnotationTool extends BaseTool {
         ? data.handles.activeHandleIndex
         : undefined
 
+      // Perform tool specific imagePointNearToolOrHandle to determine if the mouse
+      // is near the tool or its handles or its textBox.
       const near = this._imagePointNearToolOrHandle(
         element,
         toolData,
         canvasCoords,
-        6
+        6 // Todo: This should come from the state
       )
 
       const nearToolAndNotMarkedActive = near && !data.active
@@ -169,8 +188,17 @@ abstract class BaseAnnotationTool extends BaseTool {
     return annotationsNeedToBeRedrawn
   }
 
+  /**
+   * On Image Calibration, take all the toolData from the ToolState manager,
+   * and invalidate them to force them to be re-rendered and their stats to be recalculated.
+   * Then use the old and new imageData (non-calibrated and calibrated) to calculate the
+   * new position for the annotations in the space of the new imageData.
+   *
+   * @param evt - The calibration event
+   *
+   */
   public onImageSpacingCalibrated = (
-    evt: Types.EventsTypes.ImageSpacingCalibratedEvent
+    evt: Types.EventTypes.ImageSpacingCalibratedEvent
   ) => {
     const {
       element,
@@ -181,16 +209,19 @@ abstract class BaseAnnotationTool extends BaseTool {
       worldToIndex: noneCalibratedWorldToIndex,
     } = evt.detail
 
+    const { viewport } = getEnabledElement(element)
+
+    if (viewport instanceof VolumeViewport) {
+      throw new Error('Cannot calibrate a volume viewport')
+    }
+
     const calibratedIndexToWorld = calibratedImageData.getIndexToWorld()
 
     const imageURI = Utilities.imageIdToURI(imageId)
-
-    // Todo: handle other specific state managers that we might add in future
     const stateManager = getViewportSpecificStateManager(element)
-
     const framesOfReference = stateManager.getFramesOfReference()
 
-    // For all the frameOfReferences
+    // For each frame Of Reference
     framesOfReference.forEach((frameOfReference) => {
       const frameOfReferenceSpecificToolState =
         stateManager.getFrameOfReferenceToolState(frameOfReference)
@@ -205,9 +236,15 @@ abstract class BaseAnnotationTool extends BaseTool {
       toolSpecificToolState.forEach((toolData) => {
         // if the toolData is drawn on the same imageId
         if (toolData.metadata.referencedImageId === imageURI) {
+          // make them invalid since the image has been calibrated so that
+          // we can update the cachedStats and also rendering
           toolData.data.invalidated = true
           toolData.data.cachedStats = {}
 
+          // Update toolData points to the new calibrated points. Basically,
+          // using the worldToIndex function we get the index on the non-calibrated
+          // image and then using the calibratedIndexToWorld function we get the
+          // corresponding point on the calibrated image world.
           toolData.data.handles.points = toolData.data.handles.points.map(
             (point) => {
               const p = vec4.fromValues(...point, 1)
@@ -235,7 +272,7 @@ abstract class BaseAnnotationTool extends BaseTool {
                 calibratedIndexToWorld
               )
 
-              return <Types.Point3>pCalibrated.slice(0, 3)
+              return pCalibrated.slice(0, 3) as Types.Point3
             }
           )
         }
@@ -246,60 +283,130 @@ abstract class BaseAnnotationTool extends BaseTool {
   }
 
   /**
-   * @virtual @method getHandleNearImagePoint
+   * It checks if the mouse click is near TextBoxHandle or AnnotationHandle itself, and
+   * return either it. It prioritize TextBoxHandle over AnnotationHandle. If
+   * the mouse click is not near any of the handles, it does not return anything.
    *
-   * @param element - The cornerstone3D enabled element.
-   * @param toolData - The toolData to check.
-   * @param canvasCoords - The image point in canvas coordinates.
-   * @param proximity - The proximity to accept.
-   *
-   * @returns {any|undefined} The handle if found (may be a point, textbox or other).
+   * @param element - The element that the tool is attached to.
+   * @param toolData - The tool data object associated with the annotation
+   * @param canvasCoords - The coordinates of the mouse click on canvas
+   * @param proximity - The distance from the mouse cursor to the point
+   * that is considered "near".
+   * @returns The handle that is closest to the cursor, or null if the cursor
+   * is not near any of the handles.
    */
-  public abstract getHandleNearImagePoint(
+  getHandleNearImagePoint(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
-    canvasCoords: Point2,
+    canvasCoords: Types.Point2,
     proximity: number
-  ): unknown
+  ): ToolHandle | undefined {
+    const enabledElement = getEnabledElement(element)
+    const { viewport } = enabledElement
+
+    const { data } = toolData
+    const { points, textBox } = data.handles
+    const { worldBoundingBox } = textBox
+
+    if (worldBoundingBox) {
+      const canvasBoundingBox = {
+        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
+        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
+        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
+        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+      }
+
+      if (
+        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
+        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
+        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
+        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
+      ) {
+        data.handles.activeHandleIndex = null
+        return textBox
+      }
+    }
+
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i]
+      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
+
+      const near =
+        vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+
+      if (near === true) {
+        data.handles.activeHandleIndex = i
+        return point
+      }
+    }
+
+    data.handles.activeHandleIndex = null
+  }
 
   /**
-   * @virtual @method Returns true if the given coords are need the tool.
-   * @memberof BaseAnnotationTool
-   *
-   * @param {HTMLElement} element
-   * @param  {ToolSpecificToolData} toolData - The `ToolSpecificToolData` to check.
-   * @param {Point2} canvasCoords The image point in canvas coordinates.
-   * @param {number} proximity The proximity to accept.
-   * @param {string} interactionType The interaction type used to add the measurement.
-   *
-   * @returns {boolean} If the point is near the tool.
+   * It takes the settings (e.g., global, or runtime setting), the property (e.g., 'lineWidth'),
+   * and the tool data, and returns the value of the property
+   * of the property
+   * @param settings - The settings object for the tool.
+   * @param property - The name of the style property to get.
+   * @param toolData - The tool data for the tool that is
+   * currently active.
+   * @returns The value of the property.
    */
-  public abstract pointNearTool(
-    element: HTMLElement,
-    toolData: ToolSpecificToolData,
-    canvasCoords: Point2,
-    proximity: number,
-    interactionType: string
-  ): boolean
+  public getStyle(
+    settings: Settings,
+    property: string,
+    toolData?: ToolSpecificToolData
+  ): unknown {
+    return getStyleProperty(
+      settings,
+      property,
+      getToolDataStyleState(toolData),
+      this.mode
+    )
+  }
 
   /**
-   * @protected @method _imagePointNearToolOrHandle Returns true if the
-   * `canvasCoords` are near a handle or selectable part of the tool
-   * @memberof BaseAnnotationTool
-   *
-   * @param {HTMLElement} element
-   * @param {ToolSpecificToolData} toolData
-   * @param {Point2} canvasCoords
-   * @param {number} proximity
-   *
-   * @returns {boolean} If the point is near.
+   * It returns the style for the text box
+   * @param settings - The settings object for the tool.
+   * @param toolData - The tool data for the tool that is
+   * currently active.
+   * @returns An object of the style settings for the text box.
    */
-  protected _imagePointNearToolOrHandle(
+  public getLinkedTextBoxStyle(
+    settings: Settings,
+    toolData?: ToolSpecificToolData
+  ): Record<string, unknown> {
+    // Todo: this function can be used to set different styles for different toolMode
+    // for the textBox.
+
+    return {
+      fontFamily: this.getStyle(settings, 'textBox.fontFamily', toolData),
+      fontSize: this.getStyle(settings, 'textBox.fontSize', toolData),
+      color: this.getStyle(settings, 'textBox.color', toolData),
+      background: this.getStyle(settings, 'textBox.background', toolData),
+      lineWidth: this.getStyle(settings, 'textBox.link.lineWidth', toolData),
+      lineDash: this.getStyle(settings, 'textBox.link.lineDash', toolData),
+    }
+  }
+
+  /**
+   * Returns true if the `canvasCoords` are near a handle or selectable part of the tool
+   *
+   * @param element - The HTML element
+   * @param toolData - The toolData to check
+   * @param canvasCoords - The canvas coordinates to check
+   * @param proximity - The proximity to consider
+   *
+   * @returns If the point is near.
+   */
+  private _imagePointNearToolOrHandle(
     element: HTMLElement,
     toolData: ToolSpecificToolData,
-    canvasCoords: Point2,
+    canvasCoords: Types.Point2,
     proximity: number
   ): boolean {
+    // Based on the tool instance type, check if the point is near the tool handles
     const handleNearImagePoint = this.getHandleNearImagePoint(
       element,
       toolData,
@@ -311,8 +418,8 @@ abstract class BaseAnnotationTool extends BaseTool {
       return true
     }
 
-    // todo: support other interactions
-    const toolNewImagePoint = this.pointNearTool(
+    // If the point is not near the handles, check if the point is near the tool
+    const toolNewImagePoint = this.isPointNearTool(
       element,
       toolData,
       canvasCoords,
@@ -320,33 +427,8 @@ abstract class BaseAnnotationTool extends BaseTool {
       'mouse'
     )
 
-    return toolNewImagePoint
-  }
-
-  public getStyle(
-    settings: Settings,
-    property: string,
-    toolData?: ToolSpecificToolData
-  ): unknown {
-    return getStyleProperty(
-      settings,
-      property,
-      getToolDataStyle(toolData),
-      this.mode
-    )
-  }
-
-  public getLinkedTextBoxStyle(
-    settings: Settings,
-    toolData?: ToolSpecificToolData
-  ): Record<string, unknown> {
-    return {
-      fontFamily: this.getStyle(settings, 'textBox.fontFamily', toolData),
-      fontSize: this.getStyle(settings, 'textBox.fontSize', toolData),
-      color: this.getStyle(settings, 'textBox.color', toolData),
-      background: this.getStyle(settings, 'textBox.background', toolData),
-      lineWidth: this.getStyle(settings, 'textBox.link.lineWidth', toolData),
-      lineDash: this.getStyle(settings, 'textBox.link.lineDash', toolData),
+    if (toolNewImagePoint) {
+      return true
     }
   }
 }

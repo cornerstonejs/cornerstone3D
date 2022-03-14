@@ -1,5 +1,5 @@
 /**
- * @enum Mouse This enum enumerates the different buttons returned by `.buttons` on the mouse event.
+ * Mouse This enum enumerates the different buttons returned by `.buttons` on the mouse event.
  * These values are used when setting a tool active in a tool group.
  *
  * See also: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons

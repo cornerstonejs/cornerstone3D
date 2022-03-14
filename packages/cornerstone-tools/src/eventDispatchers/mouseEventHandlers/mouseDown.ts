@@ -1,6 +1,7 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
 import { state } from '../../store'
 import { ToolModes } from '../../enums'
-import { ToolSpecificToolData, EventsTypes, Point3 } from '../../types'
+import { ToolSpecificToolData, EventTypes } from '../../types'
 
 import {
   selectToolData,
@@ -25,7 +26,7 @@ type Tool = {
 type ToolAndToolData = {
   tool: Tool
   toolData: ToolSpecificToolData
-  handle?: Point3
+  handle?: Types.Point3
 }
 
 const { Active, Passive } = ToolModes
@@ -53,7 +54,7 @@ const { Active, Passive } = ToolModes
  *
  * @param evt - The normalized mouseDown event.
  */
-export default function mouseDown(evt: EventsTypes.NormalizedMouseEventType) {
+export default function mouseDown(evt: EventTypes.MouseDownEventType) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventLoop.
   if (state.isInteractingWithTool) {
     return

@@ -1,14 +1,13 @@
-import VolumeViewport from '../RenderingEngine/VolumeViewport'
-import StackViewport from '../RenderingEngine/StackViewport'
-
 import RenderingEngine from '../RenderingEngine/RenderingEngine'
+import IStackViewport from './IStackViewport'
+import IVolumeViewport from './IVolumeViewport'
 
 /**
  * Cornerstone Enabled Element interface
  */
 interface IEnabledElement {
   /** Cornerstone Viewport instance - can be Stack or Volume Viewport as of now */
-  viewport: VolumeViewport | StackViewport
+  viewport: IStackViewport | IVolumeViewport
   /** Cornerstone Rendering Engine instance */
   renderingEngine: RenderingEngine
   /** Unique ID of the viewport in the renderingEngine */

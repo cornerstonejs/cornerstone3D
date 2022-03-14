@@ -32,7 +32,8 @@ import {
   ActorEntry,
   CPUFallbackEnabledElement,
   CPUFallbackColormapData,
-  EventsTypes,
+  EventTypes,
+  IStackViewport,
 } from '../types'
 import { ViewportInput } from '../types/IViewport'
 import drawImageSync from './helpers/cpuFallback/drawImageSync'
@@ -81,7 +82,7 @@ type CalibrationEvent = {
  * is not available (or low performance). Read more about StackViewports in
  * the documentation section of this website.
  */
-class StackViewport extends Viewport {
+class StackViewport extends Viewport implements IStackViewport {
   private imageIds: Array<string>
   private currentImageIdIndex: number
 
@@ -214,10 +215,10 @@ class StackViewport extends Viewport {
   private getImageDataCPU(): CPUIImageData | undefined {
     const { metadata } = this._cpuFallbackEnabledElement
 
-    const spacing = metadata.spacing as Point2
+    const spacing = metadata.spacing
 
     return {
-      dimensions: metadata.dimensions as Point2,
+      dimensions: metadata.dimensions,
       spacing,
       origin: metadata.origin,
       direction: metadata.direction as Float32Array,
@@ -225,6 +226,8 @@ class StackViewport extends Viewport {
       scaling: this.scaling,
       imageData: {
         getDirection: () => metadata.direction,
+        getDimensions: () => metadata.dimensions,
+        getScalarData: () => this.cpuImagePixelData,
         getSpacing: () => spacing,
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvasCPU(point)
@@ -1215,7 +1218,7 @@ class StackViewport extends Viewport {
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(image, imageIdIndex, imageId) {
-        const eventData: EventsTypes.StackNewImageEventData = {
+        const eventData: EventTypes.StackNewImageEventData = {
           image,
           imageId,
           viewportUID: this.uid,
@@ -1350,7 +1353,7 @@ class StackViewport extends Viewport {
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(image, imageIdIndex, imageId) {
-        const eventData: EventsTypes.StackNewImageEventData = {
+        const eventData: EventTypes.StackNewImageEventData = {
           image,
           imageId,
           viewportUID: this.uid,
@@ -1583,12 +1586,14 @@ class StackViewport extends Viewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  public resetCamera(resetPanZoomForViewPlane = true): void {
+  public resetCamera(resetPanZoomForViewPlane = true): boolean {
     if (this.useCPURendering) {
       this.resetCameraCPU(resetPanZoomForViewPlane)
     } else {
       this.resetCameraGPU()
     }
+
+    return true
   }
 
   private resetCameraCPU(resetPanZoomForViewPlane: boolean) {
@@ -1604,7 +1609,7 @@ class StackViewport extends Viewport {
   private resetCameraGPU() {
     // Todo: this doesn't work for resetPanZoomForViewPlane = true
     const resetPanZoomForViewPlane = false
-    this.resetViewportCamera(resetPanZoomForViewPlane)
+    super.resetCamera(resetPanZoomForViewPlane)
   }
 
   /**
@@ -1689,7 +1694,7 @@ class StackViewport extends Viewport {
 
   private triggerCameraEvent(camera: ICamera, previousCamera: ICamera) {
     // Finally emit event for the full camera change cause during load image.
-    const eventDetail: EventsTypes.CameraModifiedEventData = {
+    const eventDetail: EventTypes.CameraModifiedEventData = {
       previousCamera,
       camera,
       element: this.element,
@@ -1707,7 +1712,7 @@ class StackViewport extends Viewport {
     // Update the indexToWorld and WorldToIndex for viewport
     const { imageData } = this.getImageData()
     // Finally emit event for the full camera change cause during load image.
-    const eventDetail: EventsTypes.ImageSpacingCalibratedEventData = {
+    const eventDetail: EventTypes.ImageSpacingCalibratedEventData = {
       element: this.element,
       viewportUID: this.uid,
       renderingEngineUID: this.renderingEngineUID,
@@ -1991,7 +1996,7 @@ class StackViewport extends Viewport {
     }
   }
 
-  customRenderViewportToCanvas = () => {
+  public customRenderViewportToCanvas = () => {
     if (!this.useCPURendering) {
       throw new Error(
         'Custom cpu rendering pipeline should only be hit in CPU rendering mode'

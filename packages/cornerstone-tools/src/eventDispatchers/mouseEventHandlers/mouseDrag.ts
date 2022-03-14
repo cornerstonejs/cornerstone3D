@@ -1,13 +1,14 @@
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
 import { state } from '../../store'
+import { MouseDragEventType } from '../../types/EventTypes'
 
 /**
- * @function mouseDrag - Event handler for mouse drag events. Fires the `mouseDragCallback`
+ * mouseDrag - Event handler for mouse drag events. Fires the `mouseDragCallback`
  * function on active tools.
  *
- * @param {Event} evt The normalized mouseDown event.
+ * @param evt - The normalized mouseDown event.
  */
-export default function mouseDrag(evt) {
+export default function mouseDrag(evt: MouseDragEventType) {
   if (state.isInteractingWithTool) {
     return
   }

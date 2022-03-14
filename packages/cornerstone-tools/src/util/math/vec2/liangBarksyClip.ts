@@ -2,8 +2,7 @@
 // MIT Licensed.
 
 /**
- * @preserve
- * Fast, destructive implemetation of Liang-Barsky line clipping algorithm.
+ * Fast, destructive implementation of Liang-Barsky line clipping algorithm.
  * It clips a 2D segment by a rectangle.
  * @author Alexander Milevski <info@w8r.name>
  * @license MIT

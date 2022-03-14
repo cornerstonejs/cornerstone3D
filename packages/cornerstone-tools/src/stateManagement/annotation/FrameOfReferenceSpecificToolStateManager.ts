@@ -1,4 +1,3 @@
-import uuidv4 from '../../util/uuidv4'
 import {
   ToolSpecificToolData,
   ToolSpecificToolState,
@@ -11,6 +10,7 @@ import {
   EVENTS as RENDERING_EVENTS,
   eventTarget,
   Types,
+  Utilities,
 } from '@precisionmetrics/cornerstone-render'
 
 import {
@@ -24,8 +24,6 @@ interface FilterInterface {
 }
 
 /**
- * @class FrameOfReferenceSpecificToolStateManager
- *
  * This class stores toolState in per FrameOfReference. Tool coordinates are
  * in the world coordinates for the viewports, which is the patient coordinate system for DICOM.
  *
@@ -34,7 +32,8 @@ interface FilterInterface {
  * the same FrameOfReferenceUID, however no core tool in this library currently does this.
  * This could be useful for e.g. viewing two different reads of the same data side-by-side.
  *
-
+ * Note that this class is a singleton and should not be instantiated directly.
+ *
  */
 export default class FrameOfReferenceSpecificToolStateManager {
   private toolState: ToolState
@@ -45,7 +44,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
    */
   constructor(uid?: string) {
     if (!uid) {
-      uid = uuidv4()
+      uid = Utilities.uuidv4()
     }
     this.toolState = {}
     this.uid = uid
@@ -58,14 +57,14 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * When a volume is modified we invalidate all
-   * of the `toolState` on the volume's `FrameOfReferenceUID`. This is mainly to update
-   * statistics calculations when an annotation is drawn whilst data is still loading.
+   * When a volume is modified we invalidate all of the `toolState` on the
+   * volume's `FrameOfReferenceUID`. This is mainly to update statistics calculations
+   * when an annotation is drawn whilst data is still loading.
    *
    * @param evt - The IMAGE_VOLUME_MODIFIED rendering event.
    */
   _imageVolumeModifiedHandler = (
-    evt: Types.EventsTypes.ImageVolumeModifiedEvent
+    evt: Types.EventTypes.ImageVolumeModifiedEvent
   ) => {
     const eventData = evt.detail
     const { FrameOfReferenceUID } = eventData
@@ -111,10 +110,10 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method get - get `ToolSpecificToolState` from the the manager given the `FrameOfReferenceUID` and `toolName`.
+   * Get `ToolSpecificToolState` from the the manager given the `FrameOfReferenceUID` and `toolName`.
    *
-   * @param {string} FrameOfReferenceUID - The UID of the FrameOfReference to retrieve data for.
-   * @param {string} toolName - The name of the tool to retrieve data for.
+   * @param FrameOfReferenceUID - The UID of the FrameOfReference to retrieve data for.
+   * @param toolName - The name of the tool to retrieve data for.
    */
   get = (
     FrameOfReferenceUID: string,
@@ -131,14 +130,14 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method getToolStateByToolDataUID Given the unique identified for the some `toolData`,
-   * returns the `toolData` from the `toolState`. Searches are more efficient if either/both of
+   * Given the unique identified for the some `toolData`, returns the `toolData`
+   * from the `toolState`. Searches are more efficient if either/both of
    * the `FrameOfReferenceUID` and the `toolName` are given by the `filter`.
    *
-   * @param {string} toolDataUID The unique identifier of the `toolData`.
-   * @param {FilterInterface} [filter] A `filter` which reduces the scope of the search.
+   * @param toolDataUID - The unique identifier of the `toolData`.
+   * @param filter - A `filter` which reduces the scope of the search.
    *
-   * @returns {ToolSpecificToolData} The retrieved `toolData`.
+   * @returns The retrieved `toolData`.
    */
   getToolStateByToolDataUID = (
     toolDataUID: string,
@@ -157,9 +156,9 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method addToolState Adds an instance of `ToolSpecificToolData` to the `toolState`.
+   * Adds an instance of `ToolSpecificToolData` to the `toolState`.
    *
-   * @param {ToolSpecificToolData} toolData The toolData to add.
+   * @param toolData - The toolData to add.
    */
   addToolState = (toolData: ToolSpecificToolData): void => {
     const { metadata } = toolData
@@ -188,9 +187,9 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method removeToolState Removes an instance of `ToolSpecificToolData` from the `toolState`.
+   * Removes an instance of `ToolSpecificToolData` from the `toolState`.
    *
-   * @param {ToolSpecificToolData} toolData The toolData to remove.
+   * @param toolData - The toolData to remove.
    */
   removeToolState = (toolData: ToolSpecificToolData): void => {
     const { metadata } = toolData
@@ -228,12 +227,12 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method removeToolStateByToolDataUID Given the unique identified for the some `toolData`,
-   * removes the `toolData` from the `toolState`. Searches are more efficient if either/both of
+   * Given the unique identified for the some `toolData`, removes the `toolData`
+   * from the `toolState`. Searches are more efficient if either/both of
    * the `FrameOfReferenceUID` and the `toolName` are given by the `filter`.
    *
-   * @param {string} toolDataUID The unique identifier of the `toolData` to remove.
-   * @param {FilterInterface} [filter] A `filter` which reduces the scope of the search.
+   * @param toolDataUID - The unique identifier of the `toolData` to remove.
+   * @param filter - A `filter` which reduces the scope of the search.
    */
   removeToolStateByToolDataUID = (
     toolDataUID: string,
@@ -259,7 +258,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method saveToolState Returns a section of the toolState. Useful for serialization.
+   * Returns a section of the toolState. Useful for serialization.
    *
    * - If no arguments are given, the entire `ToolState` instance is returned.
    * - If the `FrameOfReferenceUID` is given, the corresponding
@@ -267,10 +266,10 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * - If both the `FrameOfReferenceUID` and the `toolName` are are given, the
    * corresponding `ToolSpecificToolState` instance is returned.
    *
-   * @param {string} [FrameOfReferenceUID] A filter string for returning the `toolState` of a specific frame of reference.
-   * @param {string} [toolName] A filter string for returning `toolState` for a specific tool on a specific frame of reference.
+   * @param FrameOfReferenceUID - A filter string for returning the `toolState` of a specific frame of reference.
+   * @param toolName - A filter string for returning `toolState` for a specific tool on a specific frame of reference.
    *
-   * @returns {ToolSpecificToolData} The retrieved `toolData`.
+   * @returns The retrieved `toolData`.
    */
   saveToolState = (
     FrameOfReferenceUID?: string,
@@ -298,7 +297,7 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method restoreToolState Restores a section of the `toolState`. Useful for loading in serialized data.
+   * Restores a section of the `toolState`. Useful for loading in serialized data.
    *
    * - If no arguments are given, the entire `ToolState` instance is restored.
    * - If the `FrameOfReferenceUID` is given, the corresponding
@@ -306,8 +305,8 @@ export default class FrameOfReferenceSpecificToolStateManager {
    * - If both the `FrameOfReferenceUID` and the `toolName` are are given, the
    * corresponding `ToolSpecificToolState` instance is restored.
    *
-   * @param {string} [FrameOfReferenceUID] A filter string for restoring only the `toolState` of a specific frame of reference.
-   * @param {string} [toolName] A filter string for restoring `toolData` for a specific tool on a specific frame of reference.
+   * @param FrameOfReferenceUID - A filter string for restoring only the `toolState` of a specific frame of reference.
+   * @param toolName - A filter string for restoring `toolData` for a specific tool on a specific frame of reference.
    */
   restoreToolState = (
     state:
@@ -343,15 +342,17 @@ export default class FrameOfReferenceSpecificToolStateManager {
   }
 
   /**
-   * @method _getToolSpecificToolStateAndIndex Given the unique identifier for a tool,
-   * returns the `ToolSpecificToolState` it belongs to, and the `index` of its position in that array.
+   * Given the unique identifier for a tool, returns the `ToolSpecificToolState`
+   * it belongs to, and the `index` of its position in that array.
    *
-   * @param {string} toolDataUID The unique identifier of the `toolData`.
-   * @param {FilterInterface} [filter] A `filter` which reduces the scope of the search.
+   * @param toolDataUID - The unique identifier of the `toolData`.
+   * @param filter - A `filter` which reduces the scope of the search.
    *
    * @returns {object}
    * @returns {object.toolSpecificToolState} The `ToolSpecificToolState` instance containing the `toolData`.
    * @returns {object.index} The `index` of the `toolData` in the `toolSpecificToolState` array.
+   *
+   * @internal
    */
   private _getToolSpecificToolStateAndIndex(
     toolDataUID: string,

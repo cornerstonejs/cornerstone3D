@@ -13,7 +13,6 @@ const {
   metaData,
   getEnabledElement,
   eventTarget,
-  createAndCacheVolume,
   registerVolumeLoader,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,

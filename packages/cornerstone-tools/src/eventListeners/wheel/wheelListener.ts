@@ -6,11 +6,12 @@ import normalizeWheel from './normalizeWheel'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 // ~~ VIEWPORT LIBRARY
 import getMouseEventPoints from '../mouse/getMouseEventPoints'
+import { MouseWheelEventData } from '../../types/EventTypes'
 
 /**
  * wheelListener - Captures and normalizes mouse wheel events. Emits as a
  * cornerstoneTools3D mouse wheel event.
- * @param {WheelEvent} evt The mouse wheel event.
+ * @param evt - The mouse wheel event.
  */
 function wheelListener(evt: WheelEvent) {
   const element = <HTMLElement>evt.currentTarget
@@ -29,7 +30,9 @@ function wheelListener(evt: WheelEvent) {
   const { spinX, spinY, pixelX, pixelY } = normalizeWheel(evt)
   const direction = spinY < 0 ? -1 : 1
 
-  const eventData = {
+  const eventData: MouseWheelEventData = {
+    event: evt,
+    eventName: CornerstoneTools3DEvents.MOUSE_WHEEL,
     renderingEngineUID,
     viewportUID,
     element,

@@ -111,8 +111,7 @@ describe('Segmentation State -- ', () => {
           const globalState =
             SegmentationState.getGlobalSegmentationDataByUID(segVolumeId)
 
-          expect(evt.detail.segmentationUIDs.length).toBe(1)
-          expect(evt.detail.segmentationUIDs[0]).toBe(segVolumeId)
+          expect(evt.detail.segmentationUID.includes(segVolumeId)).toBe(true)
 
           expect(globalState).toBeDefined()
 
@@ -195,7 +194,6 @@ describe('Segmentation State -- ', () => {
       eventTarget.addEventListener(
         EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUIDs } = evt.detail
           const globalConfig = SegmentationState.getGlobalSegmentationConfig()
 
           expect(globalConfig.renderInactiveSegmentations).toBe(true)

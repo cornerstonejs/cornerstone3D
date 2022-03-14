@@ -2,22 +2,22 @@ import {
   getEnabledElement,
   StackViewport,
   VolumeViewport,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import clip from '../clip'
-import getTargetVolume from '../planar/getTargetVolume'
 import getSliceRange from './getSliceRange'
 import snapFocalPointToSlice from './snapFocalPointToSlice'
 
 /**
- * @function scrollThroughStack Scroll the stack defined by the event (`evt`)
+ * Scroll the stack defined by the event (`evt`)
  * and volume with `volumeUID` `deltaFrames number of frames`.
  * Frames are defined as increasing in the view direction.
  *
- * @param {CustomEvent} evt The event corresponding to an interaction with a
+ * @param evt - The event corresponding to an interaction with a
  * specific viewport.
- * @param {number} deltaFrames The number of frames to jump through.
- * @param {string} volumeUID The `volumeUID` of the volume to scroll through
- * @param {boolean} invert inversion of the scrolling
+ * @param deltaFrames - The number of frames to jump through.
+ * @param volumeUID - The `volumeUID` of the volume to scroll through
+ * @param invert - inversion of the scrolling
  * on the viewport.
  */
 export default function scrollThroughStack(
@@ -44,11 +44,8 @@ export default function scrollThroughStack(
     viewport.setImageIdIndex(newImageIdIndex)
   } else if (viewport instanceof VolumeViewport) {
     // If volumeUID is specified, scroll through that specific volume
-    const { spacingInNormalDirection, imageVolume } = getTargetVolume(
-      viewport,
-      camera,
-      volumeUID
-    )
+    const { spacingInNormalDirection, imageVolume } =
+      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeUID)
 
     if (!imageVolume) {
       return

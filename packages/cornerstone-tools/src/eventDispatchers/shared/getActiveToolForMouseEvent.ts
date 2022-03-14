@@ -1,7 +1,7 @@
 import { ToolGroupManager } from '../../store'
-import { ToolModes } from '../../enums'
+import { ToolBindings, ToolModes } from '../../enums'
 import { keyEventListener } from '../../eventListeners'
-import { EventsTypes } from '../../types'
+import { EventTypes } from '../../types'
 
 const { Active } = ToolModes
 
@@ -15,7 +15,7 @@ const { Active } = ToolModes
  * @returns tool
  */
 export default function getActiveToolForMouseEvent(
-  evt: EventsTypes.NormalizedMouseEventType
+  evt: EventTypes.NormalizedMouseEventType
 ) {
   // Todo: we should refactor this to use getToolsWithModesForMouseEvent instead
   const { renderingEngineUID, viewportUID } = evt.detail
@@ -45,7 +45,8 @@ export default function getActiveToolForMouseEvent(
       toolOptions.bindings.length &&
       toolOptions.bindings.some(
         (binding) =>
-          binding.mouseButton === (mouseEvent ? mouseEvent.buttons : 1) &&
+          binding.mouseButton ===
+            (mouseEvent ? mouseEvent.buttons : ToolBindings.Mouse.Primary) &&
           binding.modifierKey === modifierKey
       )
 

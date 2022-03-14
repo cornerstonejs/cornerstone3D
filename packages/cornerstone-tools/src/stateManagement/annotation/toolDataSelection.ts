@@ -6,7 +6,7 @@ import { ToolSpecificToolData } from '../../types'
  * Types
  */
 
-type SelectionChangeDetail = {
+export type SelectionChangeDetail = {
   // Items added to selection
   added: Array<ToolSpecificToolData>
   // Items removed from selection
@@ -26,10 +26,10 @@ const selectedToolData: Set<ToolSpecificToolData> = new Set()
  */
 
 /**
- * Set a given tool data instance as selected.
+ * Set a given toolData as selected.
  *
- * @param {ToolSpecificToolData} toolData The tool data instance to be selected
- * @param {boolean} [preserveSelected=false] When true, preserves existing
+ * @param toolData - The toolData to be selected
+ * @param preserveSelected - When true, preserves existing
  *  selections (i.e., the given tool data is appended to the selection set).
  *  When false (the default behavior) the currently selected items are discarded
  *  (i.e., the given tool data instance replaces the currently selected ones).
@@ -50,11 +50,10 @@ function selectToolData(
 }
 
 /**
- * Deselect one or all tool data instances.
+ * Deselect one or all toolData instances.
  *
- * @param {ToolSpecificToolData} [toolData] Optional. If a tool data instance is
- * provided that instance will be removed from the internal selection set.
- * If none is given, ALL selections will be cleared.
+ * @param toolData - If a toolData is provided that instance will be removed from
+ * the internal selection set. If none is given, ALL selections will be cleared.
  */
 function deselectToolData(toolData?: ToolSpecificToolData): void {
   const detail = makeEventDetail()
@@ -68,16 +67,31 @@ function deselectToolData(toolData?: ToolSpecificToolData): void {
   publish(detail, selectedToolData)
 }
 
+/**
+ * Return an array of ALL the selected tool data
+ * @returns An array of ToolSpecificToolData objects.
+ */
 function getSelectedToolData(): Array<ToolSpecificToolData> {
   return Array.from(selectedToolData)
 }
 
+/**
+ * Given a toolDataUID, return the ToolSpecificToolData object that has that
+ * toolDataUID
+ * @param toolDataUID - The UID of the toolData to be retrieved.
+ * @returns A ToolSpecificToolData object.
+ */
 function getSelectedToolDataByUID(toolDataUID: string): ToolSpecificToolData {
   return getSelectedToolData().find((toolData) => {
     return toolData.metadata.toolDataUID === toolDataUID
   })
 }
 
+/**
+ * Given a tool name, return ALL the tool data for that tool that are selected
+ * @param toolName - The name of the tool you want to get the selected tool data for
+ * @returns An array of tool specific tool data that are selected
+ */
 function getSelectedToolDataByToolName(
   toolName: string
 ): Array<ToolSpecificToolData> {
@@ -86,11 +100,21 @@ function getSelectedToolDataByToolName(
   })
 }
 
+/**
+ * Given a toolData object, return true if it is selected, false
+ * otherwise.
+ * @param toolData - ToolSpecificToolData
+ * @returns A boolean value.
+ */
 function isToolDataSelected(toolData: ToolSpecificToolData): boolean {
   return selectedToolData.has(toolData)
 }
 
-function getSelectionSize(): number {
+/**
+ * Return the number of the selected tool data
+ * @returns The size of the selected tool data set
+ */
+function getSelectedToolDataCount(): number {
   return selectedToolData.size
 }
 
@@ -136,12 +160,11 @@ function publish(
  */
 
 export {
-  SelectionChangeDetail,
   selectToolData,
   deselectToolData,
   getSelectedToolData,
   getSelectedToolDataByUID,
   getSelectedToolDataByToolName,
   isToolDataSelected,
-  getSelectionSize,
+  getSelectedToolDataCount,
 }

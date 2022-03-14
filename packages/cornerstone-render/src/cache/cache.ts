@@ -6,7 +6,7 @@ import {
   IVolumeLoadObject,
   ICachedImage,
   ICachedVolume,
-  EventsTypes,
+  EventTypes,
 } from '../types'
 import { triggerEvent, imageIdToURI } from '../utilities'
 import eventTarget from '../eventTarget'
@@ -412,7 +412,7 @@ class Cache implements ICache {
         cachedImage.sizeInBytes = image.sizeInBytes
         this._incrementImageCacheSize(cachedImage.sizeInBytes)
 
-        const eventDetails: EventsTypes.ImageCacheImageAddedEventData = {
+        const eventDetails: EventTypes.ImageCacheImageAddedEventData = {
           image: cachedImage,
         }
 
@@ -592,7 +592,7 @@ class Cache implements ICache {
         cachedVolume.sizeInBytes = volume.sizeInBytes
         this._incrementVolumeCacheSize(cachedVolume.sizeInBytes)
 
-        const eventDetails: EventsTypes.VolumeCacheVolumeAddedEventData = {
+        const eventDetails: EventTypes.VolumeCacheVolumeAddedEventData = {
           volume: cachedVolume,
         }
 

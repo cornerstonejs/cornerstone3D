@@ -60,8 +60,8 @@ function _getElementCursors(
 
 /**
  * Set the cursor for an element
- * @param {HTMLElement} element - The element to set the cursor on.
- * @param {string} cursorName - The name of the cursor to set. This can be
+ * @param element - The element to set the cursor on.
+ * @param cursorName - The name of the cursor to set. This can be
  * any cursor name either Cornerstone-specific cursor names or the standard
  * CSS cursor names.
  */
@@ -84,7 +84,6 @@ function setCursorForElement(element: HTMLElement, cursorName: string): void {
 /*
  * Exports
  */
-
 export {
   initElementCursor,
   setCursorForElement,

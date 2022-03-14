@@ -18,7 +18,7 @@ export default function voiSyncCallback(
   synchronizerInstance,
   sourceViewport: Types.IViewportUID,
   targetViewport: Types.IViewportUID,
-  voiModifiedEvent: Types.EventsTypes.VoiModifiedEvent
+  voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
 ): void {
   const eventData = voiModifiedEvent.detail
   const { volumeUID, range } = eventData

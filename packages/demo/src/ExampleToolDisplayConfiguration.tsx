@@ -269,7 +269,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     // Register for Tool Data Locking Event
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
+      CornerstoneTools3DEvents.MEASUREMENT_LOCK_CHANGE,
       onLockedToolDataChange
     )
 
@@ -299,7 +299,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     // Remove listener for Tool Data Locking Event
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.LOCKED_TOOL_DATA_CHANGE,
+      CornerstoneTools3DEvents.MEASUREMENT_LOCK_CHANGE,
       onLockedToolDataChange
     )
 

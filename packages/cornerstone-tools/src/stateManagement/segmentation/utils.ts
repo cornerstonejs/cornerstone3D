@@ -3,7 +3,9 @@ import { SegmentationDataInput } from '../../types/SegmentationStateTypes'
 /**
  * Checks if the segmentationDataArray is valid meaning it contains
  * volumeUID of the segmentation.
- * @param {Partial<ViewportSpecificSegmentationData>[]} segmentationDataArray
+ *
+ * @param segmentationDataArray - Array of segmentationData
+ * @internal
  */
 function checkSegmentationDataIsValid(
   segmentationDataArray: SegmentationDataInput[]

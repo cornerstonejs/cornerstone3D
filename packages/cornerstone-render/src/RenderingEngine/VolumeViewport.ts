@@ -10,6 +10,7 @@ import { loadVolume } from '../volumeLoader'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import { ActorEntry, FlipDirection } from '../types'
 import { getShouldUseCPURendering } from '../init'
+import IVolumeViewport from '../types/IVolumeViewport'
 
 const EPSILON = 1e-3
 
@@ -22,7 +23,7 @@ const EPSILON = 1e-3
  * For setting volumes on viewports you need to use {@link addVolumesOnViewports}
  * which will add volumes to the specified viewports.
  */
-class VolumeViewport extends Viewport {
+class VolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false
   private _FrameOfReferenceUID: string
 
@@ -71,13 +72,13 @@ class VolumeViewport extends Viewport {
   }
 
   /**
-   * @method setVolumes Creates volume actors for all volumes defined in the `volumeInputArray`.
+   * Creates volume actors for all volumes defined in the `volumeInputArray`.
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
    * For each entry, if a `blendMode` and/or `slabThickness` is defined, this will be set on the actor's
    * `VolumeMapper`.
    *
-   * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the volumes to add.
-   * @param {boolean} [immediate=false] Whether the `Viewport` should be rendered as soon as volumes are added.
+   * @param volumeInputArray - The array of `VolumeInput`s which define the volumes to add.
+   * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async setVolumes(
     volumeInputArray: Array<IVolumeInput>,
@@ -135,11 +136,11 @@ class VolumeViewport extends Viewport {
   }
 
   /**
-   * @method addVolumes Creates volume actors for all volumes defined in the `volumeInputArray`.
+   * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
    *
-   * @param {Array<VolumeInput>} volumeInputArray The array of `VolumeInput`s which define the volumes to add.
-   * @param {boolean} [immediate=false] Whether the `Viewport` should be rendered as soon as volumes are added.
+   * @param volumeInputArray - The array of `VolumeInput`s which define the volumes to add.
+   * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async addVolumes(
     volumeInputArray: Array<IVolumeInput>,
@@ -180,10 +181,10 @@ class VolumeViewport extends Viewport {
   /**
    * It removes the volume actor from the Viewport. If the volume actor is not in
    * the viewport, it does nothing.
-   * @param actorUIDs Array of actor UIDs to remove. In case of simple volume it will
-   * be the volume UID, but in caase of Segmentation it will be `{volumeUID}-{representationType}`
+   * @param actorUIDs - Array of actor UIDs to remove. In case of simple volume it will
+   * be the volume UID, but in case of Segmentation it will be `{volumeUID}-{representationType}`
    * since the same volume can be rendered in multiple representations.
-   * @param immediate If true, the Viewport will be rendered immediately
+   * @param immediate - If true, the Viewport will be rendered immediately
    */
   public removeVolumeActors(actorUIDs: Array<string>, immediate = false): void {
     this.removeActors(actorUIDs)
@@ -221,6 +222,12 @@ class VolumeViewport extends Viewport {
     return true
   }
 
+  /**
+   * Given a point in world coordinates, return the intensity at that point
+   * @param point - The point in world coordinates to get the intensity
+   * from.
+   * @returns The intensity value of the voxel at the given point.
+   */
   public getIntensityFromWorld(point: Point3): number {
     const volumeActor = this.getDefaultActor().volumeActor
     const imageData = volumeActor.getMapper().getInputData()
@@ -229,27 +236,30 @@ class VolumeViewport extends Viewport {
   }
 
   /**
-   * @method getBounds gets the visible bounds of the viewport
+   * getBounds gets the visible bounds of the viewport
    *
-   * @param {any} bounds of the viewport
    */
   public getBounds() {
     const renderer = this.getRenderer()
     return renderer.computeVisiblePropBounds()
   }
 
+  /**
+   * Flip the viewport along the desired axis
+   * @param flipDirection - FlipDirection
+   */
   public flip(flipDirection: FlipDirection): void {
     super.flip(flipDirection)
   }
 
   /**
    * Reset the camera for the volume viewport
-   * @param resetPanZoomForViewPlane=false only reset Pan and Zoom, if true,
+   * @param resetPanZoomForViewPlane - only reset Pan and Zoom, if true,
    * it renders the center of the volume instead
    * viewport to the middle of the volume
    */
-  public resetCamera(resetPanZoomForViewPlane = false): void {
-    this.resetViewportCamera(resetPanZoomForViewPlane)
+  public resetCamera(resetPanZoomForViewPlane = false): boolean {
+    return super.resetCamera(resetPanZoomForViewPlane)
   }
 
   public getFrameOfReferenceUID = (): string => {
@@ -257,9 +267,9 @@ class VolumeViewport extends Viewport {
   }
 
   /**
-   * @method Sets the slab thickness option in the `Viewport`'s `options`.
+   * Sets the slab thickness option in the `Viewport`'s `options`.
    *
-   * @param {number} [slabThickness]
+   * @param slabThickness - The slab thickness to set.
    */
   public setSlabThickness(slabThickness: number): void {
     this.setCamera({
@@ -268,9 +278,9 @@ class VolumeViewport extends Viewport {
   }
 
   /**
-   * @method Gets the slab thickness option in the `Viewport`'s `options`.
+   * Gets the slab thickness option in the `Viewport`'s `options`.
    *
-   * @returns {number} [slabThickness]
+   * @returns slabThickness - The slab thickness.
    */
   public getSlabThickness(): number {
     const { slabThickness } = this.getCamera()
@@ -314,13 +324,13 @@ class VolumeViewport extends Viewport {
   }
 
   /**
-   * @method _setVolumeActors Attaches the volume actors to the viewport.
+   * Attaches the volume actors to the viewport.
    *
-   * @param {Array<ActorEntry>} volumeActorEntries The volume actors to add the viewport.
+   * @param volumeActorEntries - The volume actors to add the viewport.
    *
    * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */
-  public _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
+  private _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
     const renderer = this.getRenderer()
 
     this.setActors(volumeActorEntries)
@@ -361,7 +371,7 @@ class VolumeViewport extends Viewport {
    * projected onto the plane defined by the `Viewport`'s `vtkCamera`'s focal point
    * and the direction of projection.
    *
-   * @param canvasPos The position in canvas coordinates.
+   * @param canvasPos - The position in canvas coordinates.
    * @returns The corresponding world coordinates.
    * @public
    */
@@ -401,10 +411,10 @@ class VolumeViewport extends Viewport {
   }
 
   /**
-   * @canvasToWorld Returns the canvas coordinates of the given `worldPos`
+   * Returns the canvas coordinates of the given `worldPos`
    * projected onto the `Viewport`'s `canvas`.
    *
-   * @param worldPos The position in world coordinates.
+   * @param worldPos - The position in world coordinates.
    * @returns The corresponding canvas coordinates.
    * @public
    */
@@ -449,7 +459,7 @@ class VolumeViewport extends Viewport {
    * If so, it uses the origin and focalPoint to calculate the slice index.
    * Todo: This only works if the imageIds are properly sorted
    *
-   * @returns {number|undefined} The slice index
+   * @returns The slice index
    */
   public getCurrentImageIdIndex = (): number | undefined => {
     return this._getImageIdIndex()
@@ -461,7 +471,7 @@ class VolumeViewport extends Viewport {
    * If so, it uses the origin and focalPoint to find which imageId is
    * currently being viewed.
    *
-   * @returns {string|undefined} ImageId
+   * @returns ImageId
    */
   public getCurrentImageId = (): string | undefined => {
     const index = this._getImageIdIndex()

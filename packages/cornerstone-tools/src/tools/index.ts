@@ -24,9 +24,6 @@ import SphereScissorsTool from './segmentation/SphereScissorsTool'
 import RectangleRoiThreshold from './segmentation/RectangleRoiThreshold'
 import RectangleRoiStartEndThreshold from './segmentation/RectangleRoiStartEndThreshold'
 
-// PET annotation tool
-import SUVPeakTool from './annotation/PET/SUVPeakTool'
-
 export {
   // ~~ BASE
   BaseTool,
@@ -54,6 +51,4 @@ export {
   SphereScissorsTool,
   RectangleRoiThreshold,
   RectangleRoiStartEndThreshold,
-  // PET annotation
-  SUVPeakTool,
 }

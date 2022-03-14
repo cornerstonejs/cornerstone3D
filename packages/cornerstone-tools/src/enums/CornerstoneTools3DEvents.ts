@@ -1,211 +1,217 @@
 /**
- *  The events for cornerstoneTools3D Tools. Native events are captured,
- *  normalized, and re-triggered with a `cornerstoneTools3D` prefix. This allows
- *  us to handle events consistently across different browsers. Event types:
+ *  The events for cornerstoneTools3D Tools. Native Mouse and Keyboard events are
+ *  captured, normalized, and re-triggered with a `CORNERSTONE_TOOLS` prefix. This
+ *  allows us to handle events consistently across different browsers.
  *
- * - Mouse
- * - Touch
- * - Keyboard
- *
- * Missing:
- *
- * - Pointer
- * - Non-interaction events (measurement removed/added)
- *
- *  @enum {String}
- *  @readonly
  */
-// Todo: add documentation. I'll add it after we finalize the API.
 enum CornerstoneTools3DEvents {
+  ///////////////////////////////////////
+  //      Measurements - Annotations
+  ///////////////////////////////////////
+
   /**
-   *  @type {String}
+   * Triggers on the eventTarget when a new measurement is added.
+   *
+   * Make use of {@link EventTypes.MeasurementAddedEventType | Measurement Added Event Type  }
+   * for typing your event listeners for this measurement added event, and see what event
+   * detail is included in {@link EventTypes.MeasurementAddedEventData | Measurement Added Event Data}.
    */
   MEASUREMENT_ADDED = 'CORNERSTONE_TOOLS_MEASUREMENT_ADDED',
 
   /**
-   *  @type {String}
+   * Triggers on the eventTarget when a measurement is modified (e.g. a handle is modified).
+   * Make use of {@link EventTypes.MeasurementModifiedEventType | Measurement Modified Event Type}
+   * for typing your event listeners for this measurement modified event, and see what
+   * event detail is included in {@link EventTypes.MeasurementModifiedEventData | Measurement Modified Event Data}.
    */
   MEASUREMENT_MODIFIED = 'CORNERSTONE_TOOLS_MEASUREMENT_MODIFIED',
 
   /**
-   *  @type {String}
-   */
-  MEASUREMENT_COMPLETED = 'CORNERSTONE_TOOLS_MEASUREMENT_COMPLETED',
-
-  /**
-   *  @type {String}
+   * Triggers on the eventTarget when a measurement is removed from the toolState manager.
+   * Make use of {@link EventTypes.MeasurementRemovedEventType | Measurement Removed Event Type}
+   * for typing your event listeners for this measurement removed event, and see what
+   * event detail is included in {@link EventTypes.MeasurementRemovedEventData | Measurement Removed Event Data}.
    */
   MEASUREMENT_REMOVED = 'CORNERSTONE_TOOLS_MEASUREMENT_REMOVED',
 
+  /**
+   * Triggers on the eventTarget when a measurement selection status is changed.
+   * Make use of {@link EventTypes.MeasurementSelectionChangeEventType | Measurement Selection Change Event Type}
+   * for typing your event listeners for this measurement selection change event, and see what
+   * event detail is included in {@link EventTypes.MeasurementSelectionChangeEventData | Measurement Selection Change Event Data}.
+   */
   MEASUREMENT_SELECTION_CHANGE = 'CORNERSTONE_TOOLS_MEASUREMENT_SELECTION_CHANGE',
 
+  /**
+   * Triggers on the eventTarget when a measurement locked status is changed.
+   * Make use of {@link EventTypes.MeasurementLockChangeEventType | Measurement Lock Change Event Type}
+   * for typing your event listeners for this measurement lock change event, and see what
+   * event detail is included in {@link EventTypes.MeasurementLockChangeEventData | Measurement Lock Change Event Data}.
+   */
+  MEASUREMENT_LOCK_CHANGE = 'CORNERSTONE_TOOLS_MEASUREMENT_LOCK_CHANGE',
+
+  /**
+   * Triggers on the eventTarget when an annotation is rendered.
+   * Make use of {@link EventTypes.AnnotationRenderedEventType | Annotation Rendered Event Type}
+   * for typing your event listeners for this annotation rendered event, and see what
+   * event detail is included in {@link EventTypes.AnnotationRenderedEventData | Annotation Rendered Event Data}.
+   */
   ANNOTATION_RENDERED = 'CORNERSTONE_TOOLS_ANNOTATION_RENDERED',
 
-  LOCKED_TOOL_DATA_CHANGE = 'CORNERSTONE_TOOLS_LOCKED_TOOL_DATA_CHANGE',
+  ///////////////////////////////////////
+  //        Segmentations Events
+  ///////////////////////////////////////
 
-  //
-  // segmentation display
-  //
-  SEGMENTATION_RENDERED = 'CORNERSTONE_TOOLS_SEGMENTATION_RENDERED',
-  //
-  // segmentation state
-  //
-  SEGMENTATION_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_STATE_MODIFIED',
-  //
-  // segmentation global state
-  //
-  SEGMENTATION_GLOBAL_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_GLOBAL_STATE_MODIFIED',
-  //
-  // segmentation data modified
-  //
-  SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
-  //
-  //
-  // KEYBOARD
-  //
-  //
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/keydown
-   *  @type {String}
+   * Triggers on the eventTarget when a Segmentation is rendered by the Segmentation Rendering Engine.
+   * Make use of {@link EventTypes.SegmentationRenderedEventType | Segmentation Rendered Event Type}
+   * for typing your event listeners for this segmentation rendered event, and see what
+   * event detail is included in {@link EventTypes.SegmentationRenderedEventData | Segmentation Rendered Event Data}.
+   */
+  SEGMENTATION_RENDERED = 'CORNERSTONE_TOOLS_SEGMENTATION_RENDERED',
+
+  /**
+   * Triggers on the eventTarget when a Segmentation state of a toolGroup is modified in the state manager.
+   * Make use of {@link EventTypes.SegmentationStateModifiedEventType | Segmentation State Modified Event Type}
+   * for typing your event listeners for this segmentation state modified event, and see what
+   * event detail is included in {@link EventTypes.SegmentationStateModifiedEventData | Segmentation State Modified Event Data}.
+   */
+  SEGMENTATION_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_STATE_MODIFIED',
+
+  /**
+   * Triggers on the eventTarget when a Segmentation global state is updated in the state manager.
+   * Make use of {@link EventTypes.SegmentationGlobalStateModifiedEventType | Segmentation Global State Modified Event Type}
+   * for typing your event listeners for this segmentation global state modified event, and see what
+   * event detail is included in {@link EventTypes.SegmentationGlobalStateModifiedEventData | Segmentation Global State Modified Event Data}.
+   */
+  SEGMENTATION_GLOBAL_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_GLOBAL_STATE_MODIFIED',
+
+  /**
+   * Triggers on the eventTarget when a Segmentation data is modified (e.g., by brush tool).
+   * Make use of {@link EventTypes.SegmentationDataModifiedEventType | Segmentation Data Modified Event Type}
+   * for typing your event listeners for this segmentation data modified event, and see what
+   * event detail is included in {@link EventTypes.SegmentationDataModifiedEventData | Segmentation Data Modified Event Data}.
+   */
+  SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
+
+  ///////////////////////////////////////
+  //         Keyboard Events
+  ///////////////////////////////////////
+
+  /**
+   * Triggers on the eventTarget when a key on the keyboard is pressed.
+   * Make use of {@link EventTypes.KeyDownEventType | Key Down Event Type}
+   * for typing your event listeners for this key down event, and see what
+   * event detail is included in {@link EventTypes.KeyDownEventData | Key Down Event Data}.
    */
   KEY_DOWN = 'CORNERSTONE_TOOLS_KEY_DOWN',
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/keyup
-   *  @type {String}
+   * Triggers on the eventTarget when a key on the keyboard is released.
+   * Make use of {@link EventTypes.KeyUpEventType | Key Up Event Type}
+   * for typing your event listeners for this key up event, and see what
+   * event detail is included in {@link EventTypes.KeyUpEventData | Key Up Event Data}.
    */
   KEY_UP = 'CORNERSTONE_TOOLS_KEY_UP',
 
-  /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/keypress
-   *  @type {String}
-   */
-  KEY_PRESS = 'CORNERSTONE_TOOLS_KEY_PRESS',
+  ///////////////////////////////////////
+  //      Mouse Events
+  ///////////////////////////////////////
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/mousedown
-   *  @type {String}
+   * Triggers on the eventTarget when the mouse is pressed down, it is CornerstoneTools normalized event.
+   * Make use of {@link EventTypes.MouseDownEventType | Mouse Down Event Type}
+   * for typing your event listeners for this mouse down event, and see what
+   * event detail is included in {@link EventTypes.MouseDownEventData | Mouse Down Event Data}.
    */
   MOUSE_DOWN = 'CORNERSTONE_TOOLS_MOUSE_DOWN',
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/mouseup
-   *  @type {String}
+   * Triggers on the eventTarget when the mouse is released, it is CornerstoneTools normalized event.
+   * Make use of {@link EventTypes.MouseUpEventType | Mouse Up Event Type}
+   * for typing your event listeners for this mouse up event, and see what
+   * event detail is included in {@link EventTypes.MouseUpEventData | Mouse Up Event Data}.
    */
   MOUSE_UP = 'CORNERSTONE_TOOLS_MOUSE_UP',
 
   /**
-   * Is fired if a handled `MOUSE_DOWN` event does not `stopPropagation`. The hook
+   * Triggers on the eventTarget when a handled `MOUSE_DOWN` event does not `stopPropagation`. The hook
    * we use to create new measurement data for mouse events.
-   *  @type {String}
+   * Make use of {@link EventTypes.MouseDownActivateEventType | Mouse Down Activate Event Type}
+   * for typing your event listeners for this mouse down activate event, and see what
+   * event detail is included in {@link EventTypes.MouseDownActivateEventData | Mouse Down Activate Event Data}.
    */
   MOUSE_DOWN_ACTIVATE = 'CORNERSTONE_TOOLS_MOUSE_DOWN_ACTIVATE',
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/drag
-   *  @type {String}
+   * Triggers on the event target when mouse is dragging an annotation or textBox.
+   * Make use of {@link EventTypes.MouseDragEventType | Mouse Drag Event Type}
+   * for typing your event listeners for this mouse drag event, and see what
+   * event detail is included in {@link EventTypes.MouseDragEventData | Mouse Drag Event Data}.
    */
   MOUSE_DRAG = 'CORNERSTONE_TOOLS_MOUSE_DRAG',
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/mousemove
-   *  @type {String}
+   * Triggers on the eventTarget, when the mouse is moved, it is CornerstoneTools normalized event.
+   * It can be just a mouse move or when double click is performed and measurement
+   * drawing can be performed with just mouse move.
+   * Make use of {@link EventTypes.MouseMoveEventType | Mouse Move Event Type}
+   * for typing your event listeners for this mouse move event, and see what
+   * event detail is included in {@link EventTypes.MouseMoveEventData | Mouse Move Event Data}.
    */
   MOUSE_MOVE = 'CORNERSTONE_TOOLS_MOUSE_MOVE',
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/click
-   *  @type {String}
+   * Triggers on the eventTarget when a mouse click is detected. It is CornerstoneTools normalized event.
+   * Make use of {@link EventTypes.MouseClickEventType | Mouse Click Event Type}
+   * for typing your event listeners for this mouse click event, and see what
+   * event detail is included in {@link EventTypes.MouseClickEventData | Mouse Click Event Data}.
    */
   MOUSE_CLICK = 'CORNERSTONE_TOOLS_MOUSE_CLICK',
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/dblclick
-   *  @type {String}
+   * Triggers on the eventTarget when a mouse double click is detected. It is CornerstoneTools normalized event.
+   * Make use of {@link EventTypes.MouseDoubleClickEventType | Mouse Double Click Event Type}
+   * for typing your event listeners for this mouse double click event, and see what
+   * event detail is included in {@link EventTypes.MouseDoubleClickEventData | Mouse Double Click Event Data}.
    */
   MOUSE_DOUBLE_CLICK = 'CORNERSTONE_TOOLS_MOUSE_DOUBLE_CLICK',
 
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/wheel
-   *  @type {String}
+   * Triggers on the eventTarget when a mouse wheel event is detected. It is CornerstoneTools normalized event.
+   * Make use of {@link EventTypes.MouseWheelEventType | Mouse Wheel Event Type}
+   * for typing your event listeners for this mouse wheel event, and see what
+   * event detail is included in {@link EventTypes.MouseWheelEventData | Mouse Wheel Event Data}.
    */
   MOUSE_WHEEL = 'CORNERSTONE_TOOLS_MOUSE_WHEEL',
 
-  //
-  // TOUCH
-  //
+  // Todo: not being fired as of now
+  // MEASUREMENT_COMPLETED = 'CORNERSTONE_TOOLS_MEASUREMENT_COMPLETED',
+  // Todo: not implemented yet
+  // KEY_PRESS = 'CORNERSTONE_TOOLS_KEY_PRESS',
 
+  ///////////////////////////////////////
+  //   Touch Events - Not Implemented yet
+  ///////////////////////////////////////
   /**
-   * https://developer.mozilla.org/en-US/docs/Web/Events/touchstart
-   *  @type {String}
-   */
   TOUCH_START = 'CORNERSTONE_TOOLS_TOUCH_START',
-
-  /**
-   * Is fired if a handled `TOUCH_START` event does not `stopPropagation`. The hook
-   * we use to create new measurement data for touch events.
-   *  @type {String}
-   */
   TOUCH_START_ACTIVE = 'CORNERSTONE_TOOLS_TOUCH_START_ACTIVE',
-
-  /**
-   *  @type {String}
-   */
   TOUCH_END = 'CORNERSTONE_TOOLS_TOUCH_END',
-
-  /**
-   *  @type {String}
-   */
   TOUCH_DRAG = 'CORNERSTONE_TOOLS_TOUCH_DRAG',
-
-  /**
-   *  @type {String}
-   */
   TOUCH_DRAG_END = 'CORNERSTONE_TOOLS_TOUCH_DRAG_END',
-
-  /**
-   * http://hammerjs.github.io/recognizer-pinch/
-   *  @type {String}
-   */
+  // http://hammerjs.github.io/recognizer-pinch/
   TOUCH_PINCH = 'CORNERSTONE_TOOLS_TOUCH_PINCH',
-
-  /**
-   * http://hammerjs.github.io/recognizer-rotate/
-   *  @type {String}
-   */
+  // http://hammerjs.github.io/recognizer-rotate/
   TOUCH_ROTATE = 'CORNERSTONE_TOOLS_TOUCH_ROTATE',
-
-  /**
-   * http://hammerjs.github.io/recognizer-press/
-   *  @type {String}
-   */
+  // http://hammerjs.github.io/recognizer-press/
   TOUCH_PRESS = 'CORNERSTONE_TOOLS_TOUCH_PRESS',
-
-  /**
-   * http://hammerjs.github.io/recognizer-tap/
-   *  @type {String}
-   */
+  // http://hammerjs.github.io/recognizer-tap/
   TAP = 'CORNERSTONE_TOOLS_TAP',
-
-  /**
-   *  @type {String}
-   */
   DOUBLE_TAP = 'CORNERSTONE_TOOLS_DOUBLE_TAP',
-
-  /**
-   *  @type {String}
-   */
   MULTI_TOUCH_START = 'CORNERSTONE_TOOLS_MULTI_TOUCH_START',
-
-  /**
-   *  @type {String}
-   */
   MULTI_TOUCH_START_ACTIVE = 'CORNERSTONE_TOOLS_MULTI_TOUCH_START_ACTIVE',
-
-  /**
-   *  @type {String}
-   */
   MULTI_TOUCH_DRAG = 'CORNERSTONE_TOOLS_MULTI_TOUCH_DRAG',
+  */
 }
 
 export default CornerstoneTools3DEvents

@@ -1,14 +1,11 @@
-import {
-  ToolAndToolStateArray,
-  ToolSpecificToolData,
-  Point2,
-  Point3,
-} from '../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
+import { ToolAndToolStateArray, ToolSpecificToolData } from '../types'
 
 type ToolsWithMoveableHandles = {
   tool: any
   toolData: ToolSpecificToolData
-  handle: Point3
+  handle: Types.Point3
 }
 
 /**
@@ -23,7 +20,7 @@ type ToolsWithMoveableHandles = {
 export default function getToolsWithMoveableHandles(
   element: HTMLElement,
   toolAndToolStateArray: ToolAndToolStateArray,
-  canvasCoords: Point2,
+  canvasCoords: Types.Point2,
   interactionType = 'mouse'
 ): Array<ToolsWithMoveableHandles> {
   const proximity = 6

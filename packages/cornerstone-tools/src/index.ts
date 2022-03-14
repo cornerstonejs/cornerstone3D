@@ -8,7 +8,6 @@ import {
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  setToolDataStyle,
   removeToolState,
   removeToolStateByToolDataUID,
   getDefaultToolStateManager,
@@ -62,7 +61,6 @@ import {
   SphereScissorsTool,
   RectangleRoiThreshold,
   RectangleRoiStartEndThreshold,
-  SUVPeakTool,
   SegmentationDisplayTool,
 } from './tools'
 import {
@@ -104,7 +102,6 @@ export {
   RectangleRoiThreshold,
   RectangleRoiStartEndThreshold,
   // PET annotation
-  SUVPeakTool,
   SegmentationDisplayTool,
   // Synchronizers
   synchronizers,
@@ -134,7 +131,6 @@ export {
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  setToolDataStyle,
   getToolDataNearPoint,
   getToolDataNearPointOnEnabledElement,
   // Utilities

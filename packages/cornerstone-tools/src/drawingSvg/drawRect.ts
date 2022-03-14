@@ -1,5 +1,6 @@
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import _getHash from './_getHash'
-import { Point2 } from '../types'
 import _setAttributesIfNecessary from './_setAttributesIfNecessary'
 import _setNewAttributesIfValid from './_setNewAttributesIfValid'
 
@@ -9,8 +10,8 @@ export default function drawRect(
   toolName: string,
   annotationUID: string,
   rectangleUID: string,
-  start: Point2,
-  end: Point2,
+  start: Types.Point2,
+  end: Types.Point2,
   options = {}
 ): void {
   const {

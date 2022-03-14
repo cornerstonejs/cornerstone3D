@@ -1,16 +1,21 @@
-import { vec3 } from 'gl-matrix'
-import { Point3 } from '../../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 type Ellipse = {
-  center: Point3 | vec3
+  center: Types.Point3
   xRadius: number
   yRadius: number
   zRadius: number
 }
 
+/**
+ * Given an ellipse and a point, return true if the point is inside the ellipse
+ * @param ellipse - The ellipse object to check against.
+ * @param pointLPS - The point in LPS space to test.
+ * @returns A boolean value.
+ */
 export default function pointInEllipse(
   ellipse: Ellipse,
-  pointLPS: Point3
+  pointLPS: Types.Point3
 ): boolean {
   const { center: circleCenterWorld, xRadius, yRadius, zRadius } = ellipse
   const [x, y, z] = pointLPS

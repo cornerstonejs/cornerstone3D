@@ -5,9 +5,10 @@ import {
   StackViewport,
   triggerEvent,
   eventTarget,
-  Types,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
-import { getImageIdForTool } from '../../util/planar'
+import type { Types } from '@precisionmetrics/cornerstone-render'
+
 import { addToolState, getToolState } from '../../stateManagement'
 import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
@@ -22,18 +23,19 @@ import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotation
 
 import {
   ToolSpecificToolData,
-  Point3,
   PublicToolProps,
   ToolProps,
+  EventTypes,
 } from '../../types'
+import { MeasurementModifiedEventData } from '../../types/EventTypes'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 
 export interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
   metadata: {
-    cameraPosition?: Point3
-    cameraFocalPoint?: Point3
-    viewPlaneNormal?: Point3
-    viewUp?: Point3
+    cameraPosition?: Types.Point3
+    cameraFocalPoint?: Types.Point3
+    viewPlaneNormal?: Types.Point3
+    viewUp?: Types.Point3
     toolDataUID?: string
     FrameOfReferenceUID: string
     referencedImageId?: string
@@ -44,7 +46,7 @@ export interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
   data: {
     invalidated: boolean
     handles: {
-      points: Point3[]
+      points: Types.Point3[]
       activeHandleIndex: number | null
     }
     // segmentationUID: string
@@ -79,7 +81,15 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     super(toolProps, defaultToolProps)
   }
 
-  addNewMeasurement = (evt: CustomEvent) => {
+  /**
+   * Based on the current position of the mouse and the enabledElement it creates
+   * the edit data for the tool.
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The toolData object.
+   *
+   */
+  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
     const eventData = evt.detail
     const { currentPoints, element } = eventData
     const worldPos = currentPoints.world
@@ -99,11 +109,11 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     } else {
       volumeUID = this.getTargetUID(viewport)
       const imageVolume = getVolume(volumeUID)
-      referencedImageId = getImageIdForTool(
+      referencedImageId = csUtils.getClosestImageId(
+        imageVolume,
         worldPos,
         viewPlaneNormal,
-        viewUp,
-        imageVolume
+        viewUp
       )
     }
 
@@ -116,9 +126,9 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     // decide on the active segmentIndex, active segmentationIndex etc.
     const toolData = {
       metadata: {
-        viewPlaneNormal: <Point3>[...viewPlaneNormal],
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         enabledElement,
-        viewUp: <Point3>[...viewUp],
+        viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: this.name,
@@ -134,10 +144,10 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
             worldBoundingBox: null,
           },
           points: [
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
-            <Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
           ],
           activeHandleIndex: null,
         },
@@ -177,10 +187,17 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     return toolData
   }
 
-  renderToolData(
+  /**
+   * it is used to draw the RectangleRoi Threshold annotation data in each
+   * request animation frame.
+   *
+   * @param enabledElement - The Cornerstone's enabledElement.
+   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   */
+  renderToolData = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void {
+  ): void => {
     const { viewport, renderingEngineUID } = enabledElement
     const { element } = viewport
     let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
@@ -222,11 +239,12 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       // have a cached stats mechanism for this tool yet?
       const eventType = EVENTS.MEASUREMENT_MODIFIED
 
-      const eventDetail = {
+      const eventDetail: MeasurementModifiedEventData = {
         toolData,
         viewportUID: viewport.uid,
         renderingEngineUID,
       }
+
       triggerEvent(eventTarget, eventType, eventDetail)
 
       let activeHandleCanvasCoords

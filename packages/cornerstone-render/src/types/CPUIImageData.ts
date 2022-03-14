@@ -1,21 +1,29 @@
-import { Point3, Scaling, Point2 } from '../types'
+import { Point3, Scaling } from '../types'
 
-type IImageData = {
-  dimensions: Point2
+type CPUImageData = {
+  worldToIndex?: (point: Point3) => Point3
+  indexToWorld?: (point: Point3) => Point3
+  getWorldToIndex?: () => Point3
+  getIndexToWorld?: () => Point3
+  /** Last spacing is always EPSILON */
+  getSpacing?: () => Point3
+  getDirection?: () => Float32Array
+  getScalarData?: () => number[]
+  /** Last index is always 1 */
+  getDimensions?: () => Point3
+}
+
+type CPUIImageData = {
+  dimensions: Point3
   direction: Float32Array
-  spacing: Point2
+  spacing: Point3
   origin: Point3
-  imageData: {
-    worldToIndex?: (point: Point3) => Point3
-    indexToWorld?: (point: Point3) => Point3
-    getWorldToIndex?: () => Point3
-    getIndexToWorld?: () => Point3
-    getSpacing?: () => Point2
-    getDirection?: () => Float32Array
-  }
+  imageData: CPUImageData
   metadata: { Modality: string }
   scalarData: number[]
   scaling: Scaling
 }
 
-export default IImageData
+export default CPUIImageData
+
+export { CPUImageData }

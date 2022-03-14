@@ -289,7 +289,7 @@ export default class StreamingImageVolume extends ImageVolume {
       vtkOpenGLTexture.setUpdatedFrame(imageIdIndex)
       imageData.modified()
 
-      const eventData: Types.EventsTypes.ImageVolumeModifiedEventData = {
+      const eventData: Types.EventTypes.ImageVolumeModifiedEventData = {
         FrameOfReferenceUID,
         imageVolume: volume,
       }

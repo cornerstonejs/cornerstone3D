@@ -1,5 +1,5 @@
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
-import isEqual from '../math/vec3/isEqual'
+import { Utilities as csUtils } from '@precisionmetrics/cornerstone-render'
 
 /**
  * Given a list of labelmaps (with the possibility of overlapping regions),
@@ -7,20 +7,21 @@ import isEqual from '../math/vec3/isEqual'
  * by flattening and rasterizing each segment into a single labelmap and summing
  * the total number of volume voxels. It should be noted that for this calculation
  * we do not double count voxels that are part of multiple labelmaps.
- * @param {} labelmaps
- * @param {number} segmentIndex
- * @returns {number} TMTV in ml
+ * @param labelmaps - list of labelmaps
+ * @param segmentIndex - the segment index to calculate TMTV for
+ * @returns TMTV in ml
  */
 function calculateTMTV(
   labelmaps: Array<IImageVolume>,
   segmentIndex = 1
 ): number {
+  // Todo: this function should use mergeLabelmaps instead of writing its own logic
   labelmaps.forEach(({ direction, dimensions, origin, spacing }) => {
     if (
-      !isEqual(dimensions, labelmaps[0].dimensions) ||
-      !isEqual(direction, labelmaps[0].direction) ||
-      !isEqual(spacing, labelmaps[0].spacing) ||
-      !isEqual(origin, labelmaps[0].origin)
+      !csUtils.isEqual(dimensions, labelmaps[0].dimensions) ||
+      !csUtils.isEqual(direction, labelmaps[0].direction) ||
+      !csUtils.isEqual(spacing, labelmaps[0].spacing) ||
+      !csUtils.isEqual(origin, labelmaps[0].origin)
     ) {
       throw new Error('labelmaps must have the same size and shape')
     }

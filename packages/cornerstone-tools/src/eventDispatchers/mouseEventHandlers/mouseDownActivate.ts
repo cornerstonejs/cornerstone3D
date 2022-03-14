@@ -1,7 +1,7 @@
 import { state } from '../../store'
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
 import { selectToolData } from '../../stateManagement/annotation/toolDataSelection'
-import { EventsTypes } from '../../types'
+import { EventTypes } from '../../types'
 
 /**
  * If the `mouseDown` handler does not consume an event,
@@ -11,9 +11,9 @@ import { EventsTypes } from '../../types'
  * @param evt - The normalized mouseDown event.
  */
 export default function mouseDownActivate(
-  evt: EventsTypes.NormalizedMouseEventType
+  evt: EventTypes.MouseDownActivateEventType
 ) {
-  // If a tool has locked the current state it is dealing with an interaction within its own eventloop.
+  // If a tool has locked the current state it is dealing with an interaction within its own eventLoop.
   if (state.isInteractingWithTool) {
     return
   }

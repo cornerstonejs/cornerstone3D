@@ -7,11 +7,6 @@ import {
   Types,
 } from '@precisionmetrics/cornerstone-render'
 
-import type {
-  VolumeViewport,
-  StackViewport,
-} from '@precisionmetrics/cornerstone-render'
-
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import { LabelmapRepresentation } from '../../../types/SegmentationRepresentationTypes'
 import Representations from '../../../enums/SegmentationRepresentations'
@@ -121,8 +116,8 @@ async function addSegmentationData(
  * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
  * Initializes the global and viewport specific state for the segmentation in the
  * SegmentationStateManager.
- * @param {IToolGroup} toolGroup - the tool group that contains the viewports
- * @param {Partial<ViewportSpecificSegmentationData>[]} segmentationDataArray - the array of segmentation data
+ * @param toolGroup - the tool group that contains the viewports
+ * @param segmentationDataArray - the array of segmentation data
  */
 function removeSegmentationData(
   toolGroupUID: string,
@@ -136,11 +131,11 @@ function removeSegmentationData(
  * It takes the enabled element, the segmentation UID, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
  * @param enabledElement - The cornerstone enabled element
- * @param {string} segmentationUID - The UID of the segmentation to be rendered.
- * @param {unknown} configuration - The configuration object for the labelmap.
+ * @param segmentationUID - The UID of the segmentation to be rendered.
+ * @param configuration - The configuration object for the labelmap.
  */
 function render(
-  viewport: VolumeViewport | StackViewport,
+  viewport: Types.IViewport,
   segmentationData: ToolGroupSpecificSegmentationData,
   config: SegmentationConfig
 ): void {

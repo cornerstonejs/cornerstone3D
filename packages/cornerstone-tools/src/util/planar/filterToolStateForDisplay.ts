@@ -2,13 +2,19 @@ import {
   StackViewport,
   VolumeViewport,
   Types,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 
-import getTargetVolume from './getTargetVolume'
-import getToolStateWithinSlice from './getToolStateWithinSlice'
+import filterToolStateWithinSlice from './filterToolStateWithinSlice'
 import { ToolSpecificToolState } from '../../types'
 
-export default function getToolStateForDisplay(
+/**
+ * Given the viewport and the toolState, it filters the toolState array and only
+ * return those toolData that should be displayed on the viewport
+ * @param toolState - ToolSpecificToolState
+ * @returns A filtered version of the toolState.
+ */
+export default function filterToolStateForDisplay(
   viewport: Types.IViewport,
   toolState: ToolSpecificToolState
 ): ToolSpecificToolState {
@@ -16,7 +22,9 @@ export default function getToolStateForDisplay(
     // 1. Get the currently displayed imageId from the StackViewport
     const imageId = viewport.getCurrentImageId()
 
-    // 2. remove the dataLoader scheme
+    // 2. remove the dataLoader scheme since it might be an annotation that was
+    // created on the volumeViewport initially and has the volumeLoader scheme
+    // but shares the same imageId
     const colonIndex = imageId.indexOf(':')
     const imageURI = imageId.substring(colonIndex + 1)
 
@@ -27,10 +35,15 @@ export default function getToolStateForDisplay(
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera()
 
-    const { spacingInNormalDirection } = getTargetVolume(viewport, camera)
+    const { spacingInNormalDirection } =
+      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera)
 
-    // Get data with same normal
-    return getToolStateWithinSlice(toolState, camera, spacingInNormalDirection)
+    // Get data with same normal and within the same slice
+    return filterToolStateWithinSlice(
+      toolState,
+      camera,
+      spacingInNormalDirection
+    )
   } else {
     throw new Error(`Viewport Type ${viewport.type} not supported`)
   }

@@ -25,6 +25,7 @@ import type IStreamingImageVolume from './IStreamingImageVolume'
 import type ViewportInputOptions from './ViewportInputOptions'
 import type IImageData from './IImageData'
 import type CPUIImageData from './CPUIImageData'
+import type { CPUImageData } from './CPUIImageData'
 import type IImage from './IImage'
 import type { PTScaling, Scaling, ScalingParameters } from './ScalingParameters'
 import type StackViewportProperties from './StackViewportProperties'
@@ -32,6 +33,8 @@ import type IViewportUID from './IViewportUID'
 import type FlipDirection from './FlipDirection'
 import type ICachedImage from './ICachedImage'
 import type ICachedVolume from './ICachedVolume'
+import type IStackViewport from './IStackViewport'
+import type IVolumeViewport from './IVolumeViewport'
 
 // CPU types
 import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement'
@@ -46,10 +49,12 @@ import type CPUFallbackLookupTable from './CPUFallbackLookupTable'
 import type CPUFallbackLUT from './CPUFallbackLUT'
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools'
 import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput'
-import type * as EventsTypes from './EventsTypes'
+import type * as EventTypes from './EventTypes'
 
 export type {
   ICamera,
+  IStackViewport,
+  IVolumeViewport,
   IEnabledElement,
   ICache,
   IVolume,
@@ -62,7 +67,8 @@ export type {
   IImage,
   IImageData,
   CPUIImageData,
-  EventsTypes,
+  CPUImageData,
+  EventTypes,
   ImageLoaderFn,
   VolumeLoaderFn,
   IRegisterImageLoader,

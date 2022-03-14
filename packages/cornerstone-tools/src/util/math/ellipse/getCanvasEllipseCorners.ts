@@ -1,19 +1,26 @@
-import { Point2 } from '../../../types'
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
 type canvasCoordinates = [
-  Point2, // bottom
-  Point2, // top
-  Point2, // left
-  Point2 // right
+  Types.Point2, // bottom
+  Types.Point2, // top
+  Types.Point2, // left
+  Types.Point2 // right
 ]
 
+/**
+ * It takes the canvas coordinates of the ellipse corners and returns the top left and bottom right
+ * corners of it
+ *
+ * @param ellipseCanvasPoints - The coordinates of the ellipse in the canvas.
+ * @returns An array of two points.
+ */
 export default function getCanvasEllipseCorners(
-  canvasCoordinates: canvasCoordinates
-): Array<Point2> {
-  const [bottom, top, left, right] = canvasCoordinates
+  ellipseCanvasPoints: canvasCoordinates
+): Array<Types.Point2> {
+  const [bottom, top, left, right] = ellipseCanvasPoints
 
-  const topLeft = <Point2>[left[0], top[1]]
-  const bottomRight = <Point2>[right[0], bottom[1]]
+  const topLeft = <Types.Point2>[left[0], top[1]]
+  const bottomRight = <Types.Point2>[right[0], bottom[1]]
 
   return [topLeft, bottomRight]
 }

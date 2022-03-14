@@ -11,11 +11,12 @@ import SegmentationRepresentations from '../../enums/SegmentationRepresentations
  * Remember that segmentations are not removed directly to the viewport's HTML Element,
  * you should use the toolGroups to do that
  *
- * @param {HTMLElement} element - The element that the segmentation is being added
+ * @param element - The element that the segmentation is being added
  * to.
- * @param {ToolGroupSpecificSegmentationData} segmentationData -
- * ToolGroupSpecificSegmentationData
- * @param [removeFromCache=false] - boolean
+ * @param segmentationData - ToolGroupSpecificSegmentationData
+ * @param removeFromCache - boolean
+ *
+ * @internal
  */
 function removeSegmentationFromElement(
   element: HTMLElement,

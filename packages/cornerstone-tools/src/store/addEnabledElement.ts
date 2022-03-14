@@ -22,7 +22,7 @@ import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
  * @param evt - The ELEMENT_ENABLED event
  */
 export default function addEnabledElement(
-  evt: Types.EventsTypes.ElementEnabledEvent
+  evt: Types.EventTypes.ElementEnabledEvent
 ): void {
   const { element, viewportUID } = evt.detail
   const svgLayer = _createSvgAnnotationLayer()
