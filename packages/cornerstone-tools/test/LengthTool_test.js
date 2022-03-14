@@ -27,12 +27,7 @@ const {
   cancelActiveManipulations,
 } = csTools3d
 
-const {
-  fakeImageLoader,
-  fakeVolumeLoader,
-  fakeMetaDataProvider,
-  createNormalizedMouseEvent,
-} = Utilities.testUtils
+const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider, createNormalizedMouseEvent } = Utilities.testUtils
 
 const {
   Utilities: { calibrateImageSpacing },
@@ -120,12 +115,7 @@ describe('LengthTool:', () => {
     })
 
     it('Should successfully create a length tool on a canvas with mouse drag - 512 x 128', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
-        512,
-        128
-      )
+      const element = createViewport(this.renderingEngine, VIEWPORT_TYPE.STACK, 512, 128)
 
       this.DOMElements.push(element)
 
@@ -135,31 +125,26 @@ describe('LengthTool:', () => {
       let p1, p2
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const enabledElement = getEnabledElement(element)
-            const lengthToolState = getToolState(enabledElement, 'Length')
-            // Can successfully add Length tool to toolStateManager
-            expect(lengthToolState).toBeDefined()
-            expect(lengthToolState.length).toBe(1)
+        element.addEventListener(CornerstoneTools3DEvents.ANNOTATION_RENDERED, () => {
+          const enabledElement = getEnabledElement(element)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
 
-            const lengthToolData = lengthToolState[0]
-            expect(lengthToolData.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthToolData.metadata.toolName).toBe('Length')
-            expect(lengthToolData.data.invalidated).toBe(false)
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(imageId1.split(':')[1])
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
 
-            const data = lengthToolData.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-            removeToolState(element, lengthToolData)
-            done()
-          }
-        )
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          removeToolState(element, lengthToolData)
+          done()
+        })
       }
 
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
@@ -228,12 +213,7 @@ describe('LengthTool:', () => {
     })
 
     it('Should successfully create a length tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        VIEWPORT_TYPE.ORTHOGRAPHIC,
-        512,
-        128
-      )
+      const element = createViewport(this.renderingEngine, VIEWPORT_TYPE.ORTHOGRAPHIC, 512, 128)
       this.DOMElements.push(element)
 
       const vp = this.renderingEngine.getViewport(viewportUID)
@@ -241,30 +221,27 @@ describe('LengthTool:', () => {
       let p1, p2
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const enabledElement = getEnabledElement(element)
-            const lengthToolState = getToolState(enabledElement, 'Length')
-            // Can successfully add Length tool to toolStateManager
-            expect(lengthToolState).toBeDefined()
-            expect(lengthToolState.length).toBe(1)
+        element.addEventListener(CornerstoneTools3DEvents.ANNOTATION_RENDERED, () => {
+          const enabledElement = getEnabledElement(element)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
 
-            const lengthToolData = lengthToolState[0]
-            expect(lengthToolData.metadata.toolName).toBe('Length')
-            expect(lengthToolData.data.invalidated).toBe(false)
-            expect(lengthToolData.data.active).toBe(false)
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
+          expect(lengthToolData.data.active).toBe(false)
 
-            const data = lengthToolData.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-            removeToolState(element, lengthToolData)
-            done()
-          }
-        )
+          removeToolState(element, lengthToolData)
+          done()
+        })
       }
 
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
@@ -323,11 +300,7 @@ describe('LengthTool:', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
+          setVolumesOnViewports(this.renderingEngine, [{ volumeUID: volumeId }], [viewportUID])
           vp.render()
         })
       } catch (e) {
@@ -336,12 +309,7 @@ describe('LengthTool:', () => {
     })
 
     it('Should successfully create a length tool and modify its handle', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
-        256,
-        256
-      )
+      const element = createViewport(this.renderingEngine, VIEWPORT_TYPE.STACK, 256, 256)
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
@@ -350,33 +318,28 @@ describe('LengthTool:', () => {
       let p2, p3
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const enabledElement = getEnabledElement(element)
-            const lengthToolState = getToolState(enabledElement, 'Length')
-            // Can successfully add Length tool to toolStateManager
-            expect(lengthToolState).toBeDefined()
-            expect(lengthToolState.length).toBe(1)
+        element.addEventListener(CornerstoneTools3DEvents.ANNOTATION_RENDERED, () => {
+          const enabledElement = getEnabledElement(element)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
 
-            const lengthToolData = lengthToolState[0]
-            expect(lengthToolData.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthToolData.metadata.toolName).toBe('Length')
-            expect(lengthToolData.data.invalidated).toBe(false)
-            expect(lengthToolData.data.active).toBe(false)
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(imageId1.split(':')[1])
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
+          expect(lengthToolData.data.active).toBe(false)
 
-            const data = lengthToolData.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
+          expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-            removeToolState(element, lengthToolData)
-            done()
-          }
-        )
+          removeToolState(element, lengthToolData)
+          done()
+        })
       }
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
         const index1 = [50, 50, 0]
@@ -477,12 +440,7 @@ describe('LengthTool:', () => {
     })
 
     it('Should successfully create a length tool and select but not move it', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
-        256,
-        256
-      )
+      const element = createViewport(this.renderingEngine, VIEWPORT_TYPE.STACK, 256, 256)
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
@@ -491,33 +449,28 @@ describe('LengthTool:', () => {
       let p1, p2
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const enabledElement = getEnabledElement(element)
-            const lengthToolState = getToolState(enabledElement, 'Length')
-            // Can successfully add Length tool to toolStateManager
-            expect(lengthToolState).toBeDefined()
-            expect(lengthToolState.length).toBe(1)
+        element.addEventListener(CornerstoneTools3DEvents.ANNOTATION_RENDERED, () => {
+          const enabledElement = getEnabledElement(element)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
 
-            const lengthToolData = lengthToolState[0]
-            expect(lengthToolData.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthToolData.metadata.toolName).toBe('Length')
-            expect(lengthToolData.data.invalidated).toBe(false)
-            expect(lengthToolData.data.active).toBe(false)
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(imageId1.split(':')[1])
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
+          expect(lengthToolData.data.active).toBe(false)
 
-            const data = lengthToolData.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-            removeToolState(element, lengthToolData)
-            done()
-          }
-        )
+          removeToolState(element, lengthToolData)
+          done()
+        })
       }
 
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
@@ -610,12 +563,7 @@ describe('LengthTool:', () => {
     })
 
     it('Should successfully create a length tool and select AND move it', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
-        256,
-        256
-      )
+      const element = createViewport(this.renderingEngine, VIEWPORT_TYPE.STACK, 256, 256)
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
@@ -624,72 +572,64 @@ describe('LengthTool:', () => {
       let p1, p2, p3, p4
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const enabledElement = getEnabledElement(element)
-            const lengthToolState = getToolState(enabledElement, 'Length')
-            // Can successfully add Length tool to toolStateManager
-            expect(lengthToolState).toBeDefined()
-            expect(lengthToolState.length).toBe(1)
+        element.addEventListener(CornerstoneTools3DEvents.ANNOTATION_RENDERED, () => {
+          const enabledElement = getEnabledElement(element)
+          const lengthToolState = getToolState(enabledElement, 'Length')
+          // Can successfully add Length tool to toolStateManager
+          expect(lengthToolState).toBeDefined()
+          expect(lengthToolState.length).toBe(1)
 
-            const lengthToolData = lengthToolState[0]
-            expect(lengthToolData.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthToolData.metadata.toolName).toBe('Length')
-            expect(lengthToolData.data.invalidated).toBe(false)
+          const lengthToolData = lengthToolState[0]
+          expect(lengthToolData.metadata.referencedImageId).toBe(imageId1.split(':')[1])
+          expect(lengthToolData.metadata.toolName).toBe('Length')
+          expect(lengthToolData.data.invalidated).toBe(false)
 
-            const data = lengthToolData.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthToolData.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            // We don't expect the length to change on tool move
-            expect(data[targets[0]].length).toBeCloseTo(
-              calculateLength(p1, p2),
-              6
-            )
+          // We don't expect the length to change on tool move
+          expect(data[targets[0]].length).toBeCloseTo(calculateLength(p1, p2), 6)
 
-            const handles = lengthToolData.data.handles.points
+          const handles = lengthToolData.data.handles.points
 
-            const preMoveFirstHandle = p1
-            const preMoveSecondHandle = p2
-            const preMoveCenter = p3
+          const preMoveFirstHandle = p1
+          const preMoveSecondHandle = p2
+          const preMoveCenter = p3
 
-            const centerToHandle1 = [
-              preMoveCenter[0] - preMoveFirstHandle[0],
-              preMoveCenter[1] - preMoveFirstHandle[1],
-              preMoveCenter[2] - preMoveFirstHandle[2],
-            ]
+          const centerToHandle1 = [
+            preMoveCenter[0] - preMoveFirstHandle[0],
+            preMoveCenter[1] - preMoveFirstHandle[1],
+            preMoveCenter[2] - preMoveFirstHandle[2],
+          ]
 
-            const centerToHandle2 = [
-              preMoveCenter[0] - preMoveSecondHandle[0],
-              preMoveCenter[1] - preMoveSecondHandle[1],
-              preMoveCenter[2] - preMoveSecondHandle[2],
-            ]
+          const centerToHandle2 = [
+            preMoveCenter[0] - preMoveSecondHandle[0],
+            preMoveCenter[1] - preMoveSecondHandle[1],
+            preMoveCenter[2] - preMoveSecondHandle[2],
+          ]
 
-            const afterMoveCenter = p4
+          const afterMoveCenter = p4
 
-            const afterMoveFirstHandle = [
-              afterMoveCenter[0] - centerToHandle1[0],
-              afterMoveCenter[1] - centerToHandle1[1],
-              afterMoveCenter[2] - centerToHandle1[2],
-            ]
+          const afterMoveFirstHandle = [
+            afterMoveCenter[0] - centerToHandle1[0],
+            afterMoveCenter[1] - centerToHandle1[1],
+            afterMoveCenter[2] - centerToHandle1[2],
+          ]
 
-            const afterMoveSecondHandle = [
-              afterMoveCenter[0] - centerToHandle2[0],
-              afterMoveCenter[1] - centerToHandle2[1],
-              afterMoveCenter[2] - centerToHandle2[2],
-            ]
+          const afterMoveSecondHandle = [
+            afterMoveCenter[0] - centerToHandle2[0],
+            afterMoveCenter[1] - centerToHandle2[1],
+            afterMoveCenter[2] - centerToHandle2[2],
+          ]
 
-            // Expect handles are moved accordingly
-            expect(handles[0]).toEqual(afterMoveFirstHandle)
-            expect(handles[1]).toEqual(afterMoveSecondHandle)
+          // Expect handles are moved accordingly
+          expect(handles[0]).toEqual(afterMoveFirstHandle)
+          expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-            removeToolState(element, lengthToolData)
-            done()
-          }
-        )
+          removeToolState(element, lengthToolData)
+          done()
+        })
       }
 
       element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
@@ -843,12 +783,7 @@ describe('LengthTool:', () => {
     })
 
     it('Should cancel drawing of a LengthTool annotation', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
-        512,
-        128
-      )
+      const element = createViewport(this.renderingEngine, VIEWPORT_TYPE.STACK, 512, 128)
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
@@ -930,9 +865,7 @@ describe('LengthTool:', () => {
           expect(lengthToolState.length).toBe(1)
 
           const lengthToolData = lengthToolState[0]
-          expect(lengthToolData.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
+          expect(lengthToolData.metadata.referencedImageId).toBe(imageId1.split(':')[1])
           expect(lengthToolData.metadata.toolName).toBe('Length')
           expect(lengthToolData.data.invalidated).toBe(false)
           expect(lengthToolData.data.handles.activeHandleIndex).toBe(null)
@@ -950,10 +883,7 @@ describe('LengthTool:', () => {
 
       this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
 
-      element.addEventListener(
-        CornerstoneTools3DEvents.KEY_DOWN,
-        cancelToolDrawing
-      )
+      element.addEventListener(CornerstoneTools3DEvents.KEY_DOWN, cancelToolDrawing)
 
       try {
         vp.setStack([imageId1], 0)
@@ -1042,6 +972,7 @@ describe('LengthTool:', () => {
 
       const firstCallback = () => {
         element.removeEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
+        element.addEventListener(EVENTS.IMAGE_RENDERED, secondCallback)
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -1093,7 +1024,6 @@ describe('LengthTool:', () => {
           .getCurrentImageId()
 
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
-        element.addEventListener(EVENTS.IMAGE_RENDERED, secondCallback)
       }
 
       element.addEventListener(EVENTS.IMAGE_RENDERED, firstCallback)

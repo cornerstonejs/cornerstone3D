@@ -1,8 +1,6 @@
 const { merge } = require('webpack-merge');
 const path = require('path');
 const webpackBase = require('./webpack.base.js');
-// const cssToJavaScriptRule = require('./rules/cssToJavaScript.js');
-// const stylusToJavaScriptRule = require('./rules/stylusToJavaScript.js');
 
 const SRC_DIR = path.join(__dirname, '../src');
 const DIST_DIR = path.join(__dirname, '../dist');
@@ -16,8 +14,5 @@ module.exports = (env, argv) => {
   const baseConfig = webpackBase(env, argv, { SRC_DIR, DIST_DIR });
 
   return merge(baseConfig, {
-    // module: {
-    //   rules: [cssToJavaScriptRule, stylusToJavaScriptRule],
-    // },
   });
 };

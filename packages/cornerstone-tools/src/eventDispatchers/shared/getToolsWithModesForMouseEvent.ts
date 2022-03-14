@@ -17,10 +17,7 @@ export default function getToolsWithModesForMouseEvent(
   evtButton?: any
 ) {
   const { renderingEngineUID, viewportUID } = evt.detail
-  const toolGroup = ToolGroupManager.getToolGroup(
-    renderingEngineUID,
-    viewportUID
-  )
+  const toolGroup = ToolGroupManager.getToolGroup(renderingEngineUID, viewportUID)
 
   if (!toolGroup) {
     return []
