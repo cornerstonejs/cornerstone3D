@@ -194,7 +194,7 @@ describe('ProbeTool (CPU):', () => {
     }
   })
 
-  it('Should successfully click to put two probe tools  on a cpu stack viewport - 256 x 256', function (done) {
+  it('Should successfully click to put two probe tools on a cpu stack viewport - 256 x 256', function (done) {
     const element = createViewport(
       this.renderingEngine,
       VIEWPORT_TYPE.STACK,

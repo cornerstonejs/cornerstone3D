@@ -60,7 +60,7 @@ module.exports = {
           items: [
             {
               html: `
-                <img src='https://i.imgur.com/yE2WibH.png' id="cs-logo" alt="cornerstone" />
+                <img crossorigin src='https://i.imgur.com/yE2WibH.png' id="cs-logo" alt="cornerstone" />
               `,
             },
           ],
@@ -96,7 +96,7 @@ module.exports = {
           items: [
             {
               label: 'Donate',
-              to: 'https://google.com/',
+              to: 'https://ohif.org/donate/',
             },
             {
               label: 'GitHub',
@@ -131,22 +131,23 @@ module.exports = {
   ],
   plugins: [
     'plugin-image-zoom',
-    [
-      'docusaurus-plugin-typedoc-api',
-      {
-        projectRoot: path.join(__dirname, '../../'),
-        packages: [
-          ...[
-            'cornerstone-render',
-            'cornerstone-tools',
-            'cornerstone-image-loader-streaming-volume',
-          ].map((pkg) => `packages/${pkg}`),
-        ],
-        minimal: false,
-        readmes: true,
-        debug: true,
-        tsconfigName: 'tsconfig.json',
-      },
-    ],
+    require.resolve('./webpackConfigurationPlugin'),
+    // [
+    //   'docusaurus-plugin-typedoc-api',
+    //   {
+    //     projectRoot: path.join(__dirname, '../../'),
+    //     packages: [
+    //       ...[
+    //         'cornerstone-render',
+    //         'cornerstone-tools',
+    //         'cornerstone-image-loader-streaming-volume',
+    //       ].map((pkg) => `packages/${pkg}`),
+    //     ],
+    //     minimal: false,
+    //     readmes: true,
+    //     debug: true,
+    //     tsconfigName: 'tsconfig.json',
+    //   },
+    // ],
   ],
 }

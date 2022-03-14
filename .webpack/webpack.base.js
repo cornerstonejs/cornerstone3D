@@ -29,15 +29,6 @@ module.exports = (env, argv, { DIST_DIR }) => {
     devtool: 'eval-source-map',
     module: {
       rules: [
-        // ts-loader: convert typescript (es6) to javascript (es6),
-        // {
-        //   test: /\.ts$/,
-        //   exclude: /node_modules/,
-        //   loader: 'ts-loader',
-        //   options: {
-        //     configFile: 'tsconfig.build.json'
-        //   }
-        // },
         // babel-loader: converts javascript (es6) to javascript (es5)
         {
           test: /\.(mjs|js|ts)$/,
@@ -64,14 +55,7 @@ module.exports = (env, argv, { DIST_DIR }) => {
       // :wave:
       /\b(vtk.js)/,
       // Used to build/load metadata
-      // TODO: Remove these as dependencies
       {
-        'cornerstone-wado-image-loader': {
-          commonjs: 'cornerstone-wado-image-loader',
-          commonjs2: 'cornerstone-wado-image-loader',
-          amd: 'cornerstone-wado-image-loader',
-          root: 'cornerstoneWADOImageLoader',
-        },
         'gl-matrix': {
           root: 'window',
           commonjs: 'gl-matrix',

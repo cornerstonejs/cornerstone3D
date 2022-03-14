@@ -11,6 +11,10 @@
   "scripts": {
     "build": "lerna run build:package --stream",
     "build:demo": "lerna run build:demo --stream",
+    "example": "node ./utils/ExampleRunner/example-runner-cli.js",
+    "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
+    "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
+    "serve-static-examples": "npx serve static-examples",
     "dev": "lerna run dev:demo --stream",
     "docs": "lerna run docs",
     "docs:watch": "lerna run docs:watch",
@@ -52,7 +56,6 @@
     "calculate-suv": "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^8.1.0",
-    "cornerstone-wado-image-loader": "^4.1.2",
     "cross-env": "^7.0.3",
     "css-loader": "^5.2.7",
     "cssnano": "^4.1.11",
