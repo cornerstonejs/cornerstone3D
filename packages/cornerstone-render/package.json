@@ -15,6 +15,9 @@
     "build:webpack": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:package": "yarn run build",
     "prepublishOnly": "yarn run build",
+    "example": "node ../../utils/ExampleRunner/example-runner-cli.js",
+    "all-examples": "node ../../utils/ExampleRunner/build-all-examples-cli.js",
+    "build-all-examples": "node ../../utils/ExampleRunner/build-all-examples-cli.js --build",
     "start": "yarn run dev"
   },
   "peerDependencies": {

@@ -1,5 +1,4 @@
 import { mat3, mat4, vec3 } from 'gl-matrix'
-import isEqual from 'lodash.isequal'
 import macro from 'vtk.js/Sources/macro'
 import vtkOpenGLVolumeMapper from 'vtk.js/Sources/Rendering/OpenGL/VolumeMapper'
 import { Filter } from 'vtk.js/Sources/Rendering/OpenGL/Texture/Constants'

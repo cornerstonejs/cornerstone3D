@@ -23,6 +23,9 @@ yarn-error.log*
 yalc.lock
 package-lock.json
 
+# Example output
+static-examples
+
 # Docs output
 packages/docs/dist/
 packages/docs/static/

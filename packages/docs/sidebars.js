@@ -69,7 +69,12 @@ module.exports = {
     {
       type: 'link',
       label: 'Test Coverage Report',
-      href: '/coverage',
+      href: 'pathname:///test-coverage',
+    },
+    {
+      type: 'link',
+      label: 'Live Examples',
+      href: 'pathname:///examples',
     },
   ],
   // api: [

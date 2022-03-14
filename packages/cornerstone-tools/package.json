@@ -15,6 +15,7 @@
     "build:lib-esm": "tsc --project ./tsconfig.build.json -m es6 --outDir ./dist/lib-esm",
     "build:webpack": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:package": "yarn run build",
+    "example": "node ../../utils/ExampleRunner/example-runner-cli.js",
     "prepublishOnly": "yarn run build",
     "start": "yarn run dev"
   },

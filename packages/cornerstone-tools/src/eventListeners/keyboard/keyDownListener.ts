@@ -1,8 +1,5 @@
 import _cloneDeep from 'lodash.clonedeep'
-import {
-  getEnabledElement,
-  triggerEvent,
-} from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement, triggerEvent } from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import { KeyDownEventData, KeyUpEventData } from '../../types/EventTypes'
 
