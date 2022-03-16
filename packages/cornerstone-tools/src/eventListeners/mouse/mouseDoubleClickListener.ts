@@ -25,7 +25,7 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
     world: [0, 0, 0],
   }
 
-  const eventData: EventTypes.MouseDoubleClickEventData = {
+  const eventDetail: EventTypes.MouseDoubleClickEventDetail = {
     event: evt,
     eventName: CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK,
     viewportUID,
@@ -38,7 +38,11 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
     deltaPoints,
   }
 
-  triggerEvent(element, CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK, eventData)
+  triggerEvent(
+    element,
+    CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK,
+    eventDetail
+  )
 }
 
 export default mouseDoubleClickListener

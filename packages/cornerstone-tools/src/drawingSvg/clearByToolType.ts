@@ -12,9 +12,9 @@ function clearByToolType(
   // Todo: check variable namings when this function starts to get utilized
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
-    const toolDataUID = node.dataset.toolUid
+    const toolUID = node.dataset.toolUid
 
-    if (toolDataUID === toolType) {
+    if (toolUID === toolType) {
       svgDrawingHelper._svgLayerElement.removeChild(node)
     }
   }

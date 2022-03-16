@@ -19,7 +19,7 @@ import {
   ToolBindings,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
-  removeToolStateByToolDataUID,
+  removeAnnotation,
   destroy as CS3dToolsDestroy,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -68,11 +68,11 @@ class StackViewportExample extends Component {
     leftClickTool: 'WindowLevel',
     layoutIndex: 0,
     destroyed: false,
-    measurementsAdded: [],
-    measurementsRemoved: [],
-    cancelledMeasurements: null,
-    measurementsModified: new Map(),
-    showMeasurementEvents: false,
+    annotationsAdded: [],
+    annotationsRemoved: [],
+    cancelledAnnotations: null,
+    annotationsModified: new Map(),
+    showAnnotationEvents: false,
     deleteOnToolCancel: false,
     //
     viewportGrid: {
@@ -358,16 +358,16 @@ class StackViewportExample extends Component {
 
     // add event listeners for tools
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.MEASUREMENT_ADDED,
-      this.updateMeasurementAdded
+      CornerstoneTools3DEvents.ANNOTATION_ADDED,
+      this.updateAnnotationAdded
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.MEASUREMENT_MODIFIED,
-      this.updateMeasurementModified
+      CornerstoneTools3DEvents.ANNOTATION_MODIFIED,
+      this.updateAnnotationModified
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.MEASUREMENT_REMOVED,
-      this.updateMeasurementRemoved
+      CornerstoneTools3DEvents.ANNOTATION_REMOVED,
+      this.updateAnnotationRemoved
     )
     eventTarget.addEventListener(
       CornerstoneTools3DEvents.KEY_DOWN,
@@ -393,62 +393,59 @@ class StackViewportExample extends Component {
   cancelToolDrawing = (evt) => {
     const element = evt.currentTarget
     if (evt.code === 'Escape') {
-      const toolDataUID = cancelActiveManipulations(element)
-      if (!!toolDataUID) {
-        this.setState({ cancelledMeasurements: toolDataUID })
+      const annotationUID = cancelActiveManipulations(element)
+      if (!!annotationUID) {
+        this.setState({ cancelledAnnotations: annotationUID })
 
         if (this.state.deleteOnToolCancel) {
-          removeToolStateByToolDataUID(element, toolDataUID)
+          removeAnnotation(element, annotationUID)
           this.renderingEngine.render()
         }
       }
     }
   }
 
-  updateMeasurementAdded = (evt) => {
-    const { toolData, viewportUID } = evt.detail
+  updateAnnotationAdded = (evt) => {
+    const { annotation, viewportUID } = evt.detail
 
-    const { metadata } = toolData
+    const { metadata, annotationUID } = annotation
     const detail = {
       viewportUID,
       toolName: metadata.toolName,
-      toolId: metadata.toolDataUID,
+      toolId: annotationUID,
     }
     this.setState({
-      measurementsAdded: [...this.state.measurementsAdded, detail],
+      annotationsAdded: [...this.state.annotationsAdded, detail],
     })
   }
 
-  updateMeasurementRemoved = (evt) => {
-    const { toolData, viewportUID } = evt.detail
+  updateAnnotationRemoved = (evt) => {
+    const { annotation, viewportUID } = evt.detail
 
-    const { metadata } = toolData
+    const { metadata, annotationUID } = annotation
     const detail = {
       viewportUID,
       toolName: metadata.toolName,
-      toolId: metadata.toolDataUID,
+      toolId: annotationUID,
     }
     this.setState({
-      measurementsRemoved: [...this.state.measurementsRemoved, detail],
+      annotationsRemoved: [...this.state.annotationsRemoved, detail],
     })
   }
 
-  updateMeasurementModified = (evt) => {
+  updateAnnotationModified = (evt) => {
     const eventDetail = evt.detail
 
     const toolDisplayDetail = getToolDetailForDisplay(eventDetail)
     this.setState((prevState) => {
-      const nextState = new Map(prevState.measurementsModified)
+      const nextState = new Map(prevState.annotationsModified)
       const nextEntry = {
         ...nextState.get(toolDisplayDetail.toolId),
         toolDisplayDetail,
       }
 
       return {
-        measurementsModified: nextState.set(
-          toolDisplayDetail.toolId,
-          nextEntry
-        ),
+        annotationsModified: nextState.set(toolDisplayDetail.toolId, nextEntry),
       }
     })
   }
@@ -620,12 +617,12 @@ class StackViewportExample extends Component {
             name="toggle"
             onClick={() =>
               this.setState({
-                showMeasurementEvents: !this.state.showMeasurementEvents,
+                showAnnotationEvents: !this.state.showAnnotationEvents,
               })
             }
           />
           <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
-            Show measurement events
+            Show annotation events
           </label>
           <input
             type="checkbox"
@@ -638,7 +635,7 @@ class StackViewportExample extends Component {
             }
           />
           <label htmlFor="toggle" style={{ marginLeft: '5px' }}>
-            Delete Measurement on Tool Cancellation via Esc
+            Delete Annotation on Tool Cancellation via Esc
           </label>
         </div>
         <div style={{ paddingBottom: '55px' }}>
@@ -666,13 +663,13 @@ class StackViewportExample extends Component {
           </ViewportGrid>
         </div>
         <div>
-          {this.state.showMeasurementEvents && (
+          {this.state.showAnnotationEvents && (
             <div style={{ display: 'flex' }}>
               <div style={{ width: '33.33%' }}>
-                <h3>Measurement Added</h3>
+                <h3>Annotation Added</h3>
                 <div>
-                  {this.state.measurementsAdded[0] &&
-                    this.state.measurementsAdded.map((m, index) => {
+                  {this.state.annotationsAdded[0] &&
+                    this.state.annotationsAdded.map((m, index) => {
                       return (
                         <div key={index}>
                           <h4>{`${m.toolName} -- ${m.toolId.substring(
@@ -689,13 +686,13 @@ class StackViewportExample extends Component {
               </div>
 
               <div style={{ width: '33.33%' }}>
-                <h3>Measurement Modified</h3>
+                <h3>Annotation Modified</h3>
                 <div>
-                  {this.state.measurementsModified.size
-                    ? [...this.state.measurementsModified.keys()].map(
+                  {this.state.annotationsModified.size
+                    ? [...this.state.annotationsModified.keys()].map(
                         (id, index) => {
                           const value =
-                            this.state.measurementsModified.get(
+                            this.state.annotationsModified.get(
                               id
                             ).toolDisplayDetail
                           return (
@@ -725,10 +722,10 @@ class StackViewportExample extends Component {
                 </div>
               </div>
               <div style={{ width: '15.3%' }}>
-                <h3>Measurement Removed</h3>
+                <h3>Annotation Removed</h3>
                 <div>
-                  {this.state.measurementsRemoved[0] &&
-                    this.state.measurementsRemoved.map((m, index) => {
+                  {this.state.annotationsRemoved[0] &&
+                    this.state.annotationsRemoved.map((m, index) => {
                       return (
                         <div key={index}>
                           <h4>{`${m.toolName} -- ${m.toolId.substring(
@@ -746,8 +743,8 @@ class StackViewportExample extends Component {
               <div style={{ width: '15.3%' }}>
                 <h3>Tool Cancelled</h3>
                 <div>
-                  {this.state.cancelledMeasurements && (
-                    <h4>{this.state.cancelledMeasurements.substring(0, 5)}</h4>
+                  {this.state.cancelledAnnotations && (
+                    <h4>{this.state.cancelledAnnotations.substring(0, 5)}</h4>
                   )}
                 </div>
               </div>

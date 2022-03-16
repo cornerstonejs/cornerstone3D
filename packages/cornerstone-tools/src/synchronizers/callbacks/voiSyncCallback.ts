@@ -20,8 +20,8 @@ export default function voiSyncCallback(
   targetViewport: Types.IViewportUID,
   voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
 ): void {
-  const eventData = voiModifiedEvent.detail
-  const { volumeUID, range } = eventData
+  const eventDetail = voiModifiedEvent.detail
+  const { volumeUID, range } = eventDetail
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineUID)
   if (!renderingEngine) {

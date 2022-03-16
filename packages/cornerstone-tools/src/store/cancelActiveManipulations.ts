@@ -1,16 +1,16 @@
 import { ToolModes } from '../enums'
 import getToolsWithModesForElement from '../util/getToolsWithModesForElement'
-import getToolsWithDataForElement from './getToolsWithDataForElement'
+import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement'
 
 /**
  * Cancel the current active manipulation that is being performed on the provided
  * element. It filters all the active and passive tools for the enabledElement
  * and calls cancel() method for all of them, and returns the tool that has executed its
- * cancellation (returned its toolDataUID), since tools that are not being manipulated will
+ * cancellation (returned its annotationUID), since tools that are not being manipulated will
  * short circuit early
  *
  * @param element - canvas element
- * @returns toolDataUID that is cancelled
+ * @returns annotationUID that is cancelled
  */
 export default function cancelActiveManipulations(
   element: HTMLElement
@@ -20,11 +20,11 @@ export default function cancelActiveManipulations(
     ToolModes.Passive,
   ])
 
-  const toolsWithData = getToolsWithDataForElement(element, tools)
+  const toolsWithData = filterToolsWithAnnotationsForElement(element, tools)
   for (const { tool } of toolsWithData) {
-    const toolDataUID = tool.cancel(element)
-    if (toolDataUID) {
-      return toolDataUID
+    const annotationUID = tool.cancel(element)
+    if (annotationUID) {
+      return annotationUID
     }
   }
 }

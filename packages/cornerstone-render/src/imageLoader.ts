@@ -50,7 +50,7 @@ function loadImageFromImageLoader(
       triggerEvent(eventTarget, EVENTS.IMAGE_LOADED, { image })
     },
     function (error) {
-      const errorObject: EventTypes.ImageLoadedFailedEventData = {
+      const errorObject: EventTypes.ImageLoadedFailedEventDetail = {
         imageId,
         error,
       }

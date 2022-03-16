@@ -29,7 +29,10 @@ const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id 
 const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
 
 // ======== Set up page ======== //
-setTitleAndDescription('Volume Events', 'Shows events emitted by Cornerstone Volume Viewports.')
+setTitleAndDescription(
+  'Volume Events',
+  'Shows events emitted by Cornerstone Volume Viewports.'
+)
 
 const content = document.getElementById('content')
 const element = document.createElement('div')
@@ -66,26 +69,41 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = RenderingEngineEvents
+const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } =
+  RenderingEngineEvents
 
-element.addEventListener(IMAGE_RENDERED, (evt) => {
-  updateLastEvents(eventNumber, IMAGE_RENDERED, JSON.stringify(evt.detail))
-  eventNumber++
-})
+element.addEventListener(
+  IMAGE_RENDERED,
+  (evt: Types.EventTypes.ImageRenderedEvent) => {
+    updateLastEvents(eventNumber, IMAGE_RENDERED, JSON.stringify(evt.detail))
+    eventNumber++
+  }
+)
 
-element.addEventListener(CAMERA_MODIFIED, (evt) => {
-  updateLastEvents(eventNumber, CAMERA_MODIFIED, JSON.stringify(evt.detail))
-  eventNumber++
-})
+element.addEventListener(
+  CAMERA_MODIFIED,
+  (evt: Types.EventTypes.CameraModifiedEvent) => {
+    updateLastEvents(eventNumber, CAMERA_MODIFIED, JSON.stringify(evt.detail))
+    eventNumber++
+  }
+)
 
-element.addEventListener(STACK_NEW_IMAGE, (evt) => {
-  // Remove the image since then we serialise a bunch of pixeldata to the screen.
-  const { imageId, renderingEngineUID, viewportUID } = evt.detail
-  const detail = { imageId, renderingEngineUID, viewportUID, image: 'cornerstoneImageObject' }
+element.addEventListener(
+  STACK_NEW_IMAGE,
+  (evt: Types.EventTypes.StackNewImageEvent) => {
+    // Remove the image since then we serialise a bunch of pixeldata to the screen.
+    const { imageId, renderingEngineUID, viewportUID } = evt.detail
+    const detail = {
+      imageId,
+      renderingEngineUID,
+      viewportUID,
+      image: 'cornerstoneImageObject',
+    }
 
-  updateLastEvents(eventNumber, STACK_NEW_IMAGE, JSON.stringify(detail))
-  eventNumber++
-})
+    updateLastEvents(eventNumber, STACK_NEW_IMAGE, JSON.stringify(detail))
+    eventNumber++
+  }
+)
 // ============================= //
 
 // TODO -> Maybe some of these implementations should be pushed down to some API
@@ -96,13 +114,18 @@ addButtonToToolbar('Set VOI Range', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Get the volume actor from the viewport
   const actor = viewport.getActor(volumeUID)
 
   // Set the mapping range of the actor to a range to highlight bones
-  actor.volumeActor.getProperty().getRGBTransferFunction(0).setMappingRange(-1500, 2500)
+  actor.volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
+    .setMappingRange(-1500, 2500)
 
   viewport.render()
 })
@@ -112,7 +135,9 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Reset the camera so that we can set some pan and zoom relative to the
   // defaults for this demo. Note that changes could be relative instead.
@@ -121,12 +146,14 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the current camera properties
   const camera = viewport.getCamera()
 
-  const { parallelScale, position, focalPoint } = cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(
-    camera,
-    50
-  )
+  const { parallelScale, position, focalPoint } =
+    cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50)
 
-  viewport.setCamera({ parallelScale, position, focalPoint })
+  viewport.setCamera({
+    parallelScale,
+    position: <Types.Point3>position,
+    focalPoint: <Types.Point3>focalPoint,
+  })
   viewport.render()
 })
 
@@ -135,7 +162,9 @@ addButtonToToolbar('Reset Viewport', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the volume viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Resets the viewport's camera
   viewport.resetCamera()
@@ -153,8 +182,10 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'VOLUME',
   })
@@ -169,14 +200,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a volume in memory
   const volume = await createAndCacheVolume(volumeUID, {

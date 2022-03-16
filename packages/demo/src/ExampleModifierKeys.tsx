@@ -12,7 +12,7 @@ import {
   ToolBindings,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
-  removeToolStateByToolDataUID,
+  removeAnnotation,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -170,12 +170,12 @@ class ModifierKeysExample extends Component {
   cancelToolDrawing = (evt) => {
     const element = evt.currentTarget
     if (evt.code === 'Escape') {
-      const toolDataUID = cancelActiveManipulations(element)
-      if (!!toolDataUID) {
-        this.setState({ cancelledMeasurements: toolDataUID })
+      const annotationUID = cancelActiveManipulations(element)
+      if (!!annotationUID) {
+        this.setState({ cancelledAnnotations: annotationUID })
 
         if (this.state.deleteOnToolCancel) {
-          removeToolStateByToolDataUID(element, toolDataUID)
+          removeAnnotation(element, annotationUID)
           this.renderingEngine.render()
         }
       }

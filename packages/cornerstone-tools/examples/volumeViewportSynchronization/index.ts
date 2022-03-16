@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
-  Types,
   VIEWPORT_TYPE,
+  Types,
   ORIENTATION,
   createAndCacheVolume,
   setVolumesOnViewports,
@@ -26,7 +26,8 @@ const {
   synchronizers,
   SynchronizerManager,
 } = cornerstoneTools
-const { createCameraPositionSynchronizer, createVOISynchronizer } = synchronizers
+const { createCameraPositionSynchronizer, createVOISynchronizer } =
+  synchronizers
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -37,7 +38,11 @@ const cameraSynchronizerId = 'CAMERA_SYNCHRONIZER_ID'
 const voiSynchronizerId = 'VOI_SYNCHRONIZER_ID'
 
 const renderingEngineUID = 'myRenderingEngine'
-const viewportUIDs = ['CT_SAGITTAL_STACK_1', 'CT_SAGITTAL_STACK_2', 'CT_SAGITTAL_STACK_3']
+const viewportUIDs = [
+  'CT_SAGITTAL_STACK_1',
+  'CT_SAGITTAL_STACK_2',
+  'CT_SAGITTAL_STACK_3',
+]
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -95,9 +100,12 @@ const SynchronizerButtonInfo = [
 
 SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
   addToggleButtonToToolbar(`Camera ${viewportLabel}`, (evt, toggle) => {
-    console.log('test', toggle)
+    const synchronizer =
+      SynchronizerManager.getSynchronizerById(cameraSynchronizerId)
 
-    const synchronizer = SynchronizerManager.getSynchronizerById(cameraSynchronizerId)
+    if (!synchronizer) {
+      return
+    }
 
     if (toggle) {
       synchronizer.add({ renderingEngineUID, viewportUID })
@@ -109,9 +117,12 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
 
 SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
   addToggleButtonToToolbar(`VOI ${viewportLabel}`, (evt, toggle) => {
-    console.log('test', toggle)
+    const synchronizer =
+      SynchronizerManager.getSynchronizerById(voiSynchronizerId)
 
-    const synchronizer = SynchronizerManager.getSynchronizerById(voiSynchronizerId)
+    if (!synchronizer) {
+      return
+    }
 
     if (toggle) {
       synchronizer.add({ renderingEngineUID, viewportUID })
@@ -131,10 +142,10 @@ async function run() {
   const toolGroupUID = 'TOOL_GROUP_UID'
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool, {})
-  cornerstoneTools.addTool(WindowLevelTool, {})
-  cornerstoneTools.addTool(StackScrollMouseWheelTool, {})
-  cornerstoneTools.addTool(ZoomTool, {})
+  cornerstoneTools.addTool(PanTool)
+  cornerstoneTools.addTool(WindowLevelTool)
+  cornerstoneTools.addTool(StackScrollMouseWheelTool)
+  cornerstoneTools.addTool(ZoomTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -174,13 +185,16 @@ async function run() {
   toolGroup.setToolActive('StackScrollMouseWheel')
 
   // Create synchronizers
-  const cameraSynchronizer = createCameraPositionSynchronizer(cameraSynchronizerId)
+  const cameraSynchronizer =
+    createCameraPositionSynchronizer(cameraSynchronizerId)
   const voiSynchronizer = createVOISynchronizer(voiSynchronizerId)
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'VOLUME',
   })
@@ -196,7 +210,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -205,7 +219,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -214,7 +228,7 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ]
@@ -222,7 +236,9 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool goup on the viewports
-  viewportUIDs.forEach((viewportUID) => toolGroup.addViewports(renderingEngineUID, viewportUID))
+  viewportUIDs.forEach((viewportUID) =>
+    toolGroup.addViewports(renderingEngineUID, viewportUID)
+  )
 
   // Define a volume in memory
   const volume = await createAndCacheVolume(volumeUID, {

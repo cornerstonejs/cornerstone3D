@@ -1,14 +1,14 @@
-// Given a measurement event, returns the correct info for displaying
+// Given an annotation event, returns the correct info for displaying
 export default function getToolDetailForDisplay(eventDetail) {
-  const { toolData } = eventDetail
+  const { annotation } = eventDetail
 
-  const { data, metadata } = toolData
+  const { data, metadata } = annotation
   const { cachedStats } = data
   const detail = {
     viewportUID: eventDetail.viewportUID,
     stats: {},
     toolName: metadata.toolName,
-    toolId: metadata.toolDataUID,
+    toolId: annotation.annotationUID,
   }
 
   const targetUIDs = Object.keys(cachedStats)

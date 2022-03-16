@@ -8,7 +8,7 @@ import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEv
 const { Active, Passive, Enabled } = ToolModes
 
 /**
- * When image spacing is calibrated modify the tool state for all of its tools
+ * When image spacing is calibrated modify the annotations for all of its tools
  * to consider the new calibration info.
  *
  * - First we get all tools which are active, passive or enabled on the element.

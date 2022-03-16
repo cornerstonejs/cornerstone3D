@@ -8,10 +8,6 @@ import Synchronizer from './SynchronizerManager/Synchronizer'
 
 import svgNodeCache from './svgNodeCache'
 import state from './state'
-import {
-  getToolDataNearPoint,
-  getToolDataNearPointOnEnabledElement,
-} from './getToolDataNearPoint'
 
 import * as ToolGroupManager from './ToolGroupManager'
 import * as SynchronizerManager from './SynchronizerManager'
@@ -25,8 +21,6 @@ export {
   addEnabledElement,
   removeEnabledElement,
   cancelActiveManipulations,
-  getToolDataNearPoint,
-  getToolDataNearPointOnEnabledElement,
   svgNodeCache,
   // Managers
   ToolGroupManager,

@@ -1,18 +1,17 @@
 import {
-  FrameOfReferenceSpecificToolStateManager,
-  toolStyle,
-  getToolState,
-  addToolState,
-  toolDataLocking,
-  toolDataSelection,
+  FrameOfReferenceSpecificAnnotationManager,
+  annotationStyle,
+  getAnnotations,
+  addAnnotation,
+  annotationLocking,
+  annotationSelection,
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  removeToolState,
-  removeToolStateByToolDataUID,
-  getDefaultToolStateManager,
-  getViewportSpecificStateManager,
-  getToolDataByToolDataUID,
+  removeAnnotation,
+  getDefaultAnnotationManager,
+  getViewportSpecificAnnotationManager,
+  getAnnotation,
   // segmentations
   addSegmentationsForToolGroup,
   removeSegmentationsForToolGroup,
@@ -23,8 +22,6 @@ import { init, destroy } from './init'
 import {
   addTool,
   removeTool,
-  getToolDataNearPoint,
-  getToolDataNearPointOnEnabledElement,
   ToolGroupManager,
   SynchronizerManager,
   Synchronizer,
@@ -38,11 +35,11 @@ import * as drawing from './drawingSvg'
 import * as Utilities from './util'
 import * as Types from './types'
 import * as Cursors from './cursors'
-import ToolState from './stateManagement/annotation'
+import AnnotationState from './stateManagement/annotation'
 
 import {
   BaseTool,
-  BaseAnnotationTool,
+  AnnotationTool,
   PanTool,
   WindowLevelTool,
   ZoomTool,
@@ -79,7 +76,7 @@ export {
   init,
   destroy,
   BaseTool,
-  BaseAnnotationTool,
+  AnnotationTool,
   // Tools
   PanTool,
   WindowLevelTool,
@@ -115,31 +112,27 @@ export {
   ToolModes,
   CornerstoneTools3DEvents,
   SegmentationRepresentations,
-  // ToolState Managers
-  FrameOfReferenceSpecificToolStateManager,
-  ToolState,
+  FrameOfReferenceSpecificAnnotationManager,
+  AnnotationState,
   // Drawing API
   drawing,
   // State
-  toolStyle,
-  getToolState,
-  addToolState,
-  removeToolState,
-  removeToolStateByToolDataUID,
-  toolDataLocking,
-  toolDataSelection,
+  annotationStyle,
+  getAnnotations,
+  addAnnotation,
+  removeAnnotation,
+  annotationLocking,
+  annotationSelection,
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  getToolDataNearPoint,
-  getToolDataNearPointOnEnabledElement,
   // Utilities
   Utilities,
   Types,
   Cursors,
-  getDefaultToolStateManager,
-  getViewportSpecificStateManager,
-  getToolDataByToolDataUID,
+  getDefaultAnnotationManager,
+  getViewportSpecificAnnotationManager,
+  getAnnotation,
   // Segmentations
   SegmentationState,
   SegmentationModule,

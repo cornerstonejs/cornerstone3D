@@ -1,4 +1,8 @@
-import { RenderingEngine, Types, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render'
+import {
+  RenderingEngine,
+  Types,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -7,7 +11,8 @@ import {
 } from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 
-const { LengthTool, ToolGroupManager, ToolBindings, ToolModes } = cornerstoneTools
+const { LengthTool, ToolGroupManager, ToolBindings, ToolModes } =
+  cornerstoneTools
 
 // ======== Set up page ======== //
 setTitleAndDescription('Annotation Tool Modes', 'Annotation tools mode')
@@ -40,23 +45,31 @@ content.append(instructions)
 
 const toolGroupUID = 'STACK_TOOL_GROUP_UID'
 
-let toolModes = [ToolModes.Active, ToolModes.Passive, ToolModes.Enabled, ToolModes.Disabled]
-let selectedToolMode = ToolModes.Active
+const toolModes = [
+  ToolModes.Active,
+  ToolModes.Passive,
+  ToolModes.Enabled,
+  ToolModes.Disabled,
+]
+const selectedToolMode = ToolModes.Active
 
-addDropdownToToolbar({ options: toolModes, defaultOption: selectedToolMode }, (newToolMode) => {
-  const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupUID)
+addDropdownToToolbar(
+  { options: toolModes, defaultOption: selectedToolMode },
+  (newToolMode) => {
+    const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupUID)
 
-  // Set the new tool active
-  toolGroup[`setTool${newToolMode}`]('Length', {
-    bindings: [
-      {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click (only applies if active)
-      },
-    ],
-  })
+    // Set the new tool active
+    toolGroup[`setTool${newToolMode}`]('Length', {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary, // Left Click (only applies if active)
+        },
+      ],
+    })
 
-  instructions.innerText = instructionText[newToolMode]
-})
+    instructions.innerText = instructionText[newToolMode]
+  }
+)
 
 /**
  * Runs the demo
@@ -66,14 +79,14 @@ async function run() {
   await initDemo()
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool, {})
+  cornerstoneTools.addTool(LengthTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add the tools to the tool group
-  toolGroup.addTool('Length', {})
+  toolGroup.addTool('Length')
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -87,8 +100,10 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'STACK',
   })
@@ -104,7 +119,7 @@ async function run() {
     type: VIEWPORT_TYPE.STACK,
     element,
     defaultOptions: {
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
@@ -114,7 +129,9 @@ async function run() {
   toolGroup.addViewports(renderingEngineUID, viewportUID)
 
   // Get the stack viewport that was created
-  const viewport = <Types.StackViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]]

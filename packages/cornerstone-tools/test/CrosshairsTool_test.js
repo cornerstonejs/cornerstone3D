@@ -19,8 +19,8 @@ const {
 const {
   CrosshairsTool,
   ToolGroupManager,
-  getToolState,
-  removeToolState,
+  getAnnotations,
+  removeAnnotation,
   CornerstoneTools3DEvents,
 } = csTools3d
 
@@ -158,23 +158,22 @@ describe('Cornerstone Tools: ', () => {
       const centerCanvas = [sWidth * 0.5, sHeight * 0.5]
       const canvasCenterWorld = vp.canvasToWorld(centerCanvas)
 
-      const enabledElement = getEnabledElement(element1)
-      const crosshairToolState = getToolState(enabledElement, 'Crosshairs')
+      const crosshairAnnotations = getAnnotations(element1, 'Crosshairs')
 
       // Can successfully add add crosshairs initial state
       // Todo: right now crosshairs are being initialized on camera reset
       // when crosshair initialization is decoupled from the initial reset
       // There should be no initial state for it
-      expect(crosshairToolState).toBeDefined()
-      expect(crosshairToolState.length).toBe(3)
+      expect(crosshairAnnotations).toBeDefined()
+      expect(crosshairAnnotations.length).toBe(3)
 
-      crosshairToolState.map((crosshairToolData) => {
-        expect(crosshairToolData.metadata.cameraFocalPoint).toBeDefined()
-        crosshairToolData.data.handles.toolCenter.forEach((p, i) => {
+      crosshairAnnotations.map((crosshairAnnotation) => {
+        expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined()
+        crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
           expect(p).toBeCloseTo(canvasCenterWorld[i], 3)
           expect(p).toBeCloseTo(imageCenterWorld[i], 3)
         })
-        removeToolState(element1, crosshairToolData)
+        removeAnnotation(element1, crosshairAnnotation.annotationUID)
       })
 
       done()
@@ -250,19 +249,17 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      const enabledElement = getEnabledElement(element1)
-
-      const crosshairToolStateAfter = getToolState(enabledElement, 'Crosshairs')
+      const crosshairAnnotationsAfter = getAnnotations(element1, 'Crosshairs')
       const axialCanvasToolCenter =
-        crosshairToolStateAfter[0].data.handles.toolCenter
+        crosshairAnnotationsAfter[0].data.handles.toolCenter
 
-      crosshairToolStateAfter.map((crosshairToolData) => {
-        expect(crosshairToolData.metadata.cameraFocalPoint).toBeDefined()
-        crosshairToolData.data.handles.toolCenter.forEach((p, i) => {
-          // Can succesfully move the tool center in all viewports
+      crosshairAnnotationsAfter.map((crosshairAnnotation) => {
+        expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined()
+        crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
+          // Can successfully move the tool center in all viewports
           expect(p).toBeCloseTo(p1[i], 3)
           expect(p).toBeCloseTo(axialCanvasToolCenter[i], 3)
-          removeToolState(element1, crosshairToolData)
+          removeAnnotation(element1, crosshairAnnotation.annotationUID)
         })
       })
       done()
@@ -297,11 +294,11 @@ describe('Cornerstone Tools: ', () => {
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
       const { imageData } = vp1.getImageData()
 
-      const enabledElement = getEnabledElement(element1)
-      const crosshairToolState = getToolState(enabledElement, 'Crosshairs')
+      const crosshairAnnotations = getAnnotations(element1, 'Crosshairs')
 
       // First viewport is axial
-      const currentWorldLocation = crosshairToolState[0].data.handles.toolCenter
+      const currentWorldLocation =
+        crosshairAnnotations[0].data.handles.toolCenter
       const currentIndexLocation = imageData.worldToIndex(currentWorldLocation)
 
       const jumpIndexLocation = [
@@ -392,12 +389,11 @@ describe('Cornerstone Tools: ', () => {
       const { imageData } = vp1.getImageData()
 
       setTimeout(() => {
-        const enabledElement = getEnabledElement(element1)
-        const crosshairToolState = getToolState(enabledElement, 'Crosshairs')
+        const crosshairAnnotations = getAnnotations(element1, 'Crosshairs')
 
         // First viewport is axial
         const currentWorldLocation =
-          crosshairToolState[0].data.handles.toolCenter
+          crosshairAnnotations[0].data.handles.toolCenter
         const currentIndexLocation =
           imageData.worldToIndex(currentWorldLocation)
 
@@ -462,16 +458,16 @@ describe('Cornerstone Tools: ', () => {
 
         // Moving Crosshairs
         setTimeout(() => {
-          const crosshairToolStateAfter = getToolState(
-            enabledElement,
+          const crosshairAnnotationsAfter = getAnnotations(
+            element1,
             'Crosshairs'
           )
-          crosshairToolStateAfter.map((crosshairToolData) => {
-            expect(crosshairToolData.metadata.cameraFocalPoint).toBeDefined()
-            crosshairToolData.data.handles.toolCenter.forEach((p, i) => {
-              // Can succesfully move the tool center in all viewports
+          crosshairAnnotationsAfter.map((crosshairAnnotation) => {
+            expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined()
+            crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
+              // Can successfully move the tool center in all viewports
               expect(p).toBeCloseTo(worldCoord2[i], 3)
-              removeToolState(element1, crosshairToolData)
+              removeAnnotation(element1, crosshairAnnotation.annotationUID)
             })
           })
           done()

@@ -3,7 +3,7 @@ import { state } from '../../store'
 import { ToolModes } from '../../enums'
 
 // // Util
-import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
+import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement'
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
 import triggerAnnotationRender from '../../util/triggerAnnotationRender'
 import { MouseMoveEventType } from '../../types/EventTypes'
@@ -29,27 +29,25 @@ export default function mouseMove(evt: MouseMoveEventType) {
     Passive,
   ])
 
-  const eventData = evt.detail
-  const { element } = eventData
+  const eventDetail = evt.detail
+  const { element } = eventDetail
 
   // Annotation tool specific
-  const annotationTools = getToolsWithDataForElement(
+  const toolsWithAnnotations = filterToolsWithAnnotationsForElement(
     element,
     activeAndPassiveTools
   )
 
-  const numAnnotationTools = annotationTools.length
   let annotationsNeedToBeRedrawn = false
 
-  for (let t = 0; t < numAnnotationTools; t++) {
-    const { tool, toolState } = annotationTools[t]
+  for (const { tool, annotations } of toolsWithAnnotations) {
     if (typeof tool.mouseMoveCallback === 'function') {
       annotationsNeedToBeRedrawn =
-        tool.mouseMoveCallback(evt, toolState) || annotationsNeedToBeRedrawn
+        tool.mouseMoveCallback(evt, annotations) || annotationsNeedToBeRedrawn
     }
   }
 
-  // Tool data activation status changed, redraw the annotations
+  // Annotation activation status changed, redraw the annotations
   if (annotationsNeedToBeRedrawn === true) {
     triggerAnnotationRender(element)
   }

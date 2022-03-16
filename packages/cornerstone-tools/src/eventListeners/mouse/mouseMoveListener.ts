@@ -4,7 +4,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
 import getMouseEventPoints from './getMouseEventPoints'
-import { MouseMoveEventData } from '../../types/EventTypes'
+import { MouseMoveEventDetail } from '../../types/EventTypes'
 
 const eventName = CornerstoneTools3DEvents.MOUSE_MOVE
 
@@ -20,7 +20,7 @@ function mouseMoveListener(evt: MouseEvent) {
   const { renderingEngineUID, viewportUID } = enabledElement
 
   const currentPoints = getMouseEventPoints(evt)
-  const eventData: MouseMoveEventData = {
+  const eventDetail: MouseMoveEventDetail = {
     renderingEngineUID,
     viewportUID,
     camera: {},
@@ -30,7 +30,7 @@ function mouseMoveListener(evt: MouseEvent) {
     event: evt,
   }
 
-  triggerEvent(element, eventName, eventData)
+  triggerEvent(element, eventName, eventDetail)
 }
 
 export default mouseMoveListener

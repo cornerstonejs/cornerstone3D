@@ -71,7 +71,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.DOMElements = []
 
     this.stackToolGroup = ToolGroupManager.createToolGroup('StackScroll')
-    this.stackToolGroup.addTool('StackScrollMouseWheel', {})
+    this.stackToolGroup.addTool('StackScrollMouseWheel')
     this.stackToolGroup.setToolActive('StackScrollMouseWheel')
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)

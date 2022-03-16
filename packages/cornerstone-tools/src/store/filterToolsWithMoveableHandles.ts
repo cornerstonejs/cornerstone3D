@@ -1,40 +1,37 @@
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { ToolAndToolStateArray, ToolSpecificToolData } from '../types'
-
-type ToolsWithMoveableHandles = {
-  tool: any
-  toolData: ToolSpecificToolData
-  handle: Types.Point3
-}
+import {
+  ToolAnnotationsPair,
+  ToolsWithMoveableHandles,
+} from '../types/InternalToolTypes'
 
 /**
  * Filters an array of tools, returning only tools with moveable handles at the mouse location that are not locked
  *
  * @param element - The element
- * @param toolAndToolStateArray - The input tool array.
+ * @param ToolAndAnnotations - The input tool array.
  * @param canvasCoords - The coordinates of the mouse position.
  * @param interactionType - The type of interaction (e.g. 'mouse' or 'touch')
  * @returns The filtered array.
  */
-export default function getToolsWithMoveableHandles(
+export default function filterToolsWithMoveableHandles(
   element: HTMLElement,
-  toolAndToolStateArray: ToolAndToolStateArray,
+  ToolAndAnnotations: ToolAnnotationsPair[],
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
-): Array<ToolsWithMoveableHandles> {
+): ToolsWithMoveableHandles[] {
   const proximity = 6
   const toolsWithMoveableHandles = []
 
-  toolAndToolStateArray.forEach(({ tool, toolState }) => {
-    for (let i = 0; i < toolState.length; i++) {
-      if (toolState[i].isLocked) {
+  ToolAndAnnotations.forEach(({ tool, annotations }) => {
+    for (const annotation of annotations) {
+      if (annotation.isLocked) {
         continue
       }
 
       const handle = tool.getHandleNearImagePoint(
         element,
-        toolState[i],
+        annotation,
         canvasCoords,
         proximity
       )
@@ -42,7 +39,7 @@ export default function getToolsWithMoveableHandles(
       if (handle) {
         toolsWithMoveableHandles.push({
           tool,
-          toolData: toolState[i],
+          annotation,
           handle,
         })
         break

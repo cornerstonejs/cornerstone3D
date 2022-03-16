@@ -21,8 +21,8 @@ const {
 const {
   LengthTool,
   ToolGroupManager,
-  getToolState,
-  removeToolState,
+  getAnnotations,
+  removeAnnotation,
   CornerstoneTools3DEvents,
 } = csTools3d
 
@@ -133,25 +133,24 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const lengthToolState = getToolState(enabledElement, 'Length')
-          // Can successfully add Length tool to toolStateManager
-          expect(lengthToolState).toBeDefined()
-          expect(lengthToolState.length).toBe(1)
+          const lengthAnnotations = getAnnotations(element, 'Length')
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-          const lengthToolData = lengthToolState[0]
-          expect(lengthToolData.metadata.referencedImageId).toBe(
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthToolData.metadata.toolName).toBe('Length')
-          expect(lengthToolData.data.invalidated).toBe(false)
+          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.invalidated).toBe(false)
 
-          const data = lengthToolData.data.cachedStats
+          const data = lengthAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-          removeToolState(element, lengthToolData)
+          removeAnnotation(element, lengthAnnotation.annotationUID)
           done()
         }
       )
@@ -240,27 +239,26 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const lengthToolState = getToolState(enabledElement, 'Length')
-          // Can successfully add Length tool to toolStateManager
-          expect(lengthToolState).toBeDefined()
-          expect(lengthToolState.length).toBe(1)
+          const lengthAnnotations = getAnnotations(element, 'Length')
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-          const lengthToolData = lengthToolState[0]
-          expect(lengthToolData.metadata.referencedImageId).toBe(
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthToolData.metadata.toolName).toBe('Length')
-          expect(lengthToolData.data.invalidated).toBe(false)
-          expect(lengthToolData.data.active).toBe(false)
+          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.invalidated).toBe(false)
+          expect(lengthAnnotation.highlighted).toBe(false)
 
-          const data = lengthToolData.data.cachedStats
+          const data = lengthAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          removeToolState(element, lengthToolData)
+          removeAnnotation(element, lengthAnnotation.annotationUID)
           done()
         }
       )
@@ -381,27 +379,26 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const lengthToolState = getToolState(enabledElement, 'Length')
-          // Can successfully add Length tool to toolStateManager
-          expect(lengthToolState).toBeDefined()
-          expect(lengthToolState.length).toBe(1)
+          const lengthAnnotations = getAnnotations(element, 'Length')
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-          const lengthToolData = lengthToolState[0]
-          expect(lengthToolData.metadata.referencedImageId).toBe(
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthToolData.metadata.toolName).toBe('Length')
-          expect(lengthToolData.data.invalidated).toBe(false)
-          expect(lengthToolData.data.active).toBe(false)
+          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.invalidated).toBe(false)
+          expect(lengthAnnotation.highlighted).toBe(false)
 
-          const data = lengthToolData.data.cachedStats
+          const data = lengthAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeToolState(element, lengthToolData)
+          removeAnnotation(element, lengthAnnotation.annotationUID)
           done()
         }
       )
@@ -514,20 +511,19 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const lengthToolState = getToolState(enabledElement, 'Length')
-          // Can successfully add Length tool to toolStateManager
-          expect(lengthToolState).toBeDefined()
-          expect(lengthToolState.length).toBe(1)
+          const lengthAnnotations = getAnnotations(element, 'Length')
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-          const lengthToolData = lengthToolState[0]
-          expect(lengthToolData.metadata.referencedImageId).toBe(
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthToolData.metadata.toolName).toBe('Length')
-          expect(lengthToolData.data.invalidated).toBe(false)
+          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.invalidated).toBe(false)
 
-          const data = lengthToolData.data.cachedStats
+          const data = lengthAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
@@ -537,7 +533,7 @@ describe('Length Tool (CPU):', () => {
             6
           )
 
-          const handles = lengthToolData.data.handles.points
+          const handles = lengthAnnotation.data.handles.points
 
           const preMoveFirstHandle = p1
           const preMoveSecondHandle = p2
@@ -573,7 +569,7 @@ describe('Length Tool (CPU):', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle)
           expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          removeToolState(element, lengthToolData)
+          removeAnnotation(element, lengthAnnotation.annotationUID)
           done()
         }
       )

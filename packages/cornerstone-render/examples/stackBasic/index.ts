@@ -1,8 +1,19 @@
-import { RenderingEngine, Types, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render'
-import { initDemo, createImageIdsAndCacheMetaData, setTitleAndDescription } from '../../../../utils/demo/helpers'
+import {
+  RenderingEngine,
+  Types,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers'
 
 // ======== Set up page ======== //
-setTitleAndDescription('Basic Stack', 'Displays a single DICOM image in a Stack viewport.')
+setTitleAndDescription(
+  'Basic Stack',
+  'Displays a single DICOM image in a Stack viewport.'
+)
 
 const content = document.getElementById('content')
 const element = document.createElement('div')
@@ -22,8 +33,10 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'STACK',
   })
@@ -39,14 +52,16 @@ async function run() {
     type: VIEWPORT_TYPE.STACK,
     element,
     defaultOptions: {
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.StackViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a stack containing a single image
   const stack = [imageIds[0]]

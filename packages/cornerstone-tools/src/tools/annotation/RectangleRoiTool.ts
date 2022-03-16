@@ -1,4 +1,4 @@
-import { BaseAnnotationTool } from '../base'
+import { AnnotationTool } from '../base'
 
 import {
   getEnabledElement,
@@ -14,11 +14,11 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import throttle from '../../util/throttle'
 import {
-  addToolState,
-  getToolState,
-  removeToolState,
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
 } from '../../stateManagement'
-import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
 
 import {
   drawHandles as drawHandlesSvg,
@@ -39,7 +39,7 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import {
-  ToolSpecificToolData,
+  Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -47,11 +47,10 @@ import {
   PublicToolProps,
   InteractionTypes,
 } from '../../types'
-import { MeasurementModifiedEventData } from '../../types/EventTypes'
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
-export interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
+export interface RectangleRoiAnnotation extends Annotation {
   data: {
-    invalidated: boolean
     handles: {
       points: Types.Point3[]
       activeHandleIndex: number | null
@@ -66,15 +65,15 @@ export interface RectangleRoiSpecificToolData extends ToolSpecificToolData {
         }
       }
     }
+    label: string
     cachedStats?: any
-    active: boolean
   }
 }
 
-export default class RectangleRoiTool extends BaseAnnotationTool {
+export default class RectangleRoiTool extends AnnotationTool {
   _throttledCalculateCachedStats: any
   editData: {
-    toolData: any
+    annotation: any
     viewportUIDsToRender: string[]
     handleIndex?: number
     movingTextBox?: boolean
@@ -107,17 +106,17 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a RectangleRoi ToolData and stores it in the toolStateManager
+   * a RectangleRoi Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The toolData object.
+   * @returns The annotation object.
    *
    */
-  addNewMeasurement = (
+  addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): RectangleRoiSpecificToolData => {
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+  ): RectangleRoiAnnotation => {
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
     const enabledElement = getEnabledElement(element)
@@ -148,17 +147,18 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       referencedImageId = referencedImageId.substring(colonIndex + 1)
     }
 
-    const toolData = {
+    const annotation = {
+      invalidated: true,
+      highlighted: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        label: '',
         toolName: this.name,
       },
       data: {
-        invalidated: true,
+        label: '',
         handles: {
           points: [
             <Types.Point3>[...worldPos],
@@ -179,14 +179,13 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
           activeHandleIndex: null,
         },
         cachedStats: {},
-        active: true,
       },
     }
 
-    // Ensure settings are initialized after tool data instantiation
-    Settings.getObjectSettings(toolData, RectangleRoiTool)
+    // Ensure settings are initialized after annotation instantiation
+    Settings.getObjectSettings(annotation, RectangleRoiTool)
 
-    addToolState(element, toolData)
+    addAnnotation(element, annotation)
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -194,7 +193,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -212,30 +211,30 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       viewportUIDsToRender
     )
 
-    return toolData
+    return annotation
   }
 
   /**
-   * It returns if the canvas point is near the provided toolData in the provided
+   * It returns if the canvas point is near the provided annotation in the provided
    * element or not. A proximity is passed to the function to determine the
-   * proximity of the point to the toolData in number of pixels.
+   * proximity of the point to the annotation in number of pixels.
    *
    * @param element - HTML Element
-   * @param toolData - Tool data
+   * @param annotation - Annotation
    * @param canvasCoords - Canvas coordinates
    * @param proximity - Proximity to tool to consider
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
     element: HTMLElement,
-    toolData: RectangleRoiSpecificToolData,
+    annotation: RectangleRoiAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
-    const { data } = toolData
+    const { data } = annotation
     const { points } = data.handles
 
     const canvasPoint1 = viewport.worldToCanvas(points[0])
@@ -263,15 +262,13 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    toolData: ToolSpecificToolData,
+    annotation: RectangleRoiAnnotation,
     interactionType: InteractionTypes
   ): void => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { data } = toolData
-
-    data.active = true
+    annotation.highlighted = true
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -279,7 +276,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       movingTextBox: false,
     }
@@ -301,15 +298,15 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
   handleSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    toolData: ToolSpecificToolData,
+    annotation: RectangleRoiAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void => {
-    const eventData = evt.detail
-    const { element } = eventData
-    const { data } = toolData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
+    const { data } = annotation
 
-    data.active = true
+    annotation.highlighted = true
 
     let movingTextBox = false
     let handleIndex
@@ -327,7 +324,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       handleIndex,
       movingTextBox,
@@ -350,18 +347,18 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } =
+    const { annotation, viewportUIDsToRender, newAnnotation, hasMoved } =
       this.editData
-    const { data } = toolData
+    const { data } = annotation
 
     if (newAnnotation && !hasMoved) {
       return
     }
 
-    data.active = false
+    annotation.highlighted = false
     data.handles.activeHandleIndex = null
 
     this._deactivateModify(element)
@@ -379,7 +376,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeToolState(element, toolData)
+      removeAnnotation(element, annotation.annotationUID)
     }
 
     triggerAnnotationRenderForViewportUIDs(
@@ -393,16 +390,16 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   ) => {
     this.isDrawing = true
 
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } =
+    const { annotation, viewportUIDsToRender, handleIndex, movingTextBox } =
       this.editData
-    const { data } = toolData
+    const { data } = annotation
 
     if (movingTextBox) {
       // Drag mode - Move the text boxes world position
-      const { deltaPoints } = eventData as EventTypes.MouseDragEventData
+      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail
       const worldPosDelta = deltaPoints.world
 
       const { textBox } = data.handles
@@ -415,7 +412,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       textBox.hasMoved = true
     } else if (handleIndex === undefined) {
       // Drag mode - Moving tool, so move all points by the world points delta
-      const { deltaPoints } = eventData as EventTypes.MouseDragEventData
+      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail
       const worldPosDelta = deltaPoints.world
 
       const { points } = data.handles
@@ -425,10 +422,10 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         point[1] += worldPosDelta[1]
         point[2] += worldPosDelta[2]
       })
-      data.invalidated = true
+      annotation.invalidated = true
     } else {
       // Moving handle.
-      const { currentPoints } = eventData
+      const { currentPoints } = eventDetail
       const enabledElement = getEnabledElement(element)
       const { worldToCanvas, canvasToWorld } = enabledElement.viewport
       const worldPos = currentPoints.world
@@ -489,7 +486,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
 
           break
       }
-      data.invalidated = true
+      annotation.invalidated = true
     }
 
     this.editData.hasMoved = true
@@ -511,11 +508,11 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { toolData, viewportUIDsToRender } = this.editData
+      const { annotation, viewportUIDsToRender } = this.editData
 
-      const { data } = toolData
+      const { data } = annotation
 
-      data.active = false
+      annotation.highlighted = false
       data.handles.activeHandleIndex = null
 
       const enabledElement = getEnabledElement(element)
@@ -527,7 +524,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolDataUID
+      return annotation.annotationUID
     }
   }
   /**
@@ -589,62 +586,64 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
   }
 
   /**
-   * it is used to draw the rectangleRoi annotation data in each
+   * it is used to draw the rectangleRoi annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
+    let annotations = getAnnotations(element, this.name)
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
-    toolState = this.filterInteractableToolStateForElement(element, toolState)
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations
+    )
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
     const targetUID = this.getTargetUID(viewport)
     const renderingEngine = viewport.getRenderingEngine()
 
-    for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i] as RectangleRoiSpecificToolData
-      const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
-      const toolMetadata = toolData.metadata
-      const annotationUID = toolMetadata.toolDataUID
+    for (let i = 0; i < annotations.length; i++) {
+      const annotation = annotations[i] as RectangleRoiAnnotation
+      const settings = Settings.getObjectSettings(annotation, RectangleRoiTool)
+      const annotationUID = annotation.annotationUID
 
-      const data = toolData.data
+      const data = annotation.data
       const { points, activeHandleIndex } = data.handles
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
-      const lineDash = this.getStyle(settings, 'lineDash', toolData)
-      const color = this.getStyle(settings, 'color', toolData)
+      const lineWidth = this.getStyle(settings, 'lineWidth', annotation)
+      const lineDash = this.getStyle(settings, 'lineDash', annotation)
+      const color = this.getStyle(settings, 'color', annotation)
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
       if (!data.cachedStats[targetUID]) {
         data.cachedStats[targetUID] = {}
         this._calculateCachedStats(
-          toolData,
+          annotation,
           viewPlaneNormal,
           viewUp,
           renderingEngine,
           enabledElement
         )
-      } else if (data.invalidated) {
+      } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
-          toolData,
+          annotation,
           viewPlaneNormal,
           viewUp,
           renderingEngine,
@@ -659,7 +658,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         // which doesn't have the full volume at each time, and we are only working
         // on one slice at a time.
         if (viewport instanceof VolumeViewport) {
-          const { referencedImageId } = toolData.metadata
+          const { referencedImageId } = annotation.metadata
 
           // todo: this is not efficient, but necessary
           // invalidate all the relevant stackViewports if they are not
@@ -690,7 +689,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       let activeHandleCanvasCoords
 
       if (
-        !isToolDataLocked(toolData) &&
+        !isAnnotationLocked(annotation) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {
@@ -754,7 +753,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, toolData)
+        this.getLinkedTextBoxStyle(settings, annotation)
       )
 
       const { x: left, y: top, width, height } = boundingBox
@@ -790,7 +789,7 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
    * _getTextLines - Returns the Area, mean and std deviation of the area of the
    * target volume enclosed by the rectangle.
    *
-   * @param data - The toolData tool-specific data.
+   * @param data - The annotation tool-specific data.
    * @param targetUID - The volumeUID of the volume to display the stats for.
    */
   _getTextLines = (data, targetUID: string) => {
@@ -838,18 +837,18 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
    * will be constant across the two points. In the other two directions iterate
    * over the voxels and calculate the first and second-order statistics.
    *
-   * @param data - The toolData tool-specific data.
+   * @param data - The annotation tool-specific data.
    * @param viewPlaneNormal - The normal vector of the camera.
    * @param viewUp - The viewUp vector of the camera.
    */
   _calculateCachedStats = (
-    toolData,
+    annotation,
     viewPlaneNormal,
     viewUp,
     renderingEngine,
     enabledElement
   ) => {
-    const { data } = toolData
+    const { data } = annotation
     const { viewportUID, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
@@ -966,13 +965,13 @@ export default class RectangleRoiTool extends BaseAnnotationTool {
       }
     }
 
-    data.invalidated = false
+    annotation.invalidated = false
 
-    // Dispatching measurement modified
-    const eventType = EVENTS.MEASUREMENT_MODIFIED
+    // Dispatching annotation modified
+    const eventType = EVENTS.ANNOTATION_MODIFIED
 
-    const eventDetail: MeasurementModifiedEventData = {
-      toolData,
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
       viewportUID,
       renderingEngineUID,
     }

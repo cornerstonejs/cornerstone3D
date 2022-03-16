@@ -12,7 +12,7 @@ import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEve
  * @returns A boolean value indicating whether the segment is locked or not for modification
  */
 // Todo: should this be based on a segmentationUID instead of a toolGroupUID?
-function getSegmentIndexLockedStatus(
+function getSegmentIndexLocked(
   toolGroupUID: string,
   segmentIndex: number
 ): boolean {
@@ -43,10 +43,10 @@ function getSegmentIndexLockedStatus(
  * @param locked - boolean
  */
 // Todo: shouldn't this be a based on a segmentationUID instead of a toolGroupUID?
-function setSegmentIndexLockedStatus(
+function setSegmentIndexLocked(
   toolGroupUID: string,
   segmentIndex: number,
-  locked: boolean
+  locked = true
 ): void {
   const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupUID)
 
@@ -77,7 +77,7 @@ function setSegmentIndexLockedStatus(
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not.
  */
-function getSegmentIndexLockedStatusForSegmentation(
+function getSegmentIndexLockedForSegmentation(
   segmentationUID: string,
   segmentIndex: number
 ): boolean {
@@ -97,10 +97,10 @@ function getSegmentIndexLockedStatusForSegmentation(
  * index is being modified.
  * @param segmentIndex - The index of the segment to lock/unlock.
  */
-function setSegmentIndexLockedStatusForSegmentation(
+function setSegmentIndexLockedForSegmentation(
   segmentationUID: string,
   segmentIndex: number,
-  locked: boolean
+  locked = true
 ): void {
   const segmentationGlobalState =
     getGlobalSegmentationDataByUID(segmentationUID)
@@ -126,7 +126,7 @@ function setSegmentIndexLockedStatusForSegmentation(
  * segments for.
  * @returns An array of locked segment indices.
  */
-function getLockedSegmentsForSegmentation(
+function getSegmentsLockedForSegmentation(
   segmentationUID: string
 ): number[] | [] {
   const globalState = getGlobalSegmentationDataByUID(segmentationUID)
@@ -141,20 +141,20 @@ function getLockedSegmentsForSegmentation(
 
 export {
   // toolGroup active segmentation
-  getSegmentIndexLockedStatus,
-  setSegmentIndexLockedStatus,
+  getSegmentIndexLocked,
+  setSegmentIndexLocked,
   // set
-  getSegmentIndexLockedStatusForSegmentation,
-  setSegmentIndexLockedStatusForSegmentation,
-  getLockedSegmentsForSegmentation,
+  getSegmentIndexLockedForSegmentation,
+  setSegmentIndexLockedForSegmentation,
+  getSegmentsLockedForSegmentation,
 }
 
 export default {
   // toolGroup active segmentation
-  getSegmentIndexLockedStatus,
-  setSegmentIndexLockedStatus,
+  getSegmentIndexLocked,
+  setSegmentIndexLocked,
   // set
-  getSegmentIndexLockedStatusForSegmentation,
-  setSegmentIndexLockedStatusForSegmentation,
-  getLockedSegmentsForSegmentation,
+  getSegmentIndexLockedForSegmentation,
+  setSegmentIndexLockedForSegmentation,
+  getSegmentsLockedForSegmentation,
 }

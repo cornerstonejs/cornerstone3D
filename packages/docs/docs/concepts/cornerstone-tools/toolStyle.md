@@ -8,7 +8,7 @@ includes various properties such as color when selected, highlighted, or locked;
 textbox color, line dash style and thickness and more.
 
 ## Default Setting
-CornerstoneTools 3D comes with a default settings for tools styles that can be found here `packages/cornerstone-tools/src/stateManagement/toolStyle.ts`
+CornerstoneTools 3D comes with a default settings for tools styles that can be found here `packages/cornerstone-tools/src/stateManagement/annotationStyle.ts`
 
 ```js
 {
@@ -74,8 +74,7 @@ settings.set("tool.style.colorActive", "blue")
 ```js
 import { Settings } from '@ohif/cornerstone-render'
 
-// 1. Getting the toolData to be used to locate the tool settings
-const toolData = getToolDataOfTheClickedTool()
+1. Getting the annotation to be used to locate the tool settings
 
 // 2. Getting objectSettings for the desired tools
 const settings = Settings.getObjectSettings()

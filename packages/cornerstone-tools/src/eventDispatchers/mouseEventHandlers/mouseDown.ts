@@ -1,33 +1,24 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
 import { state } from '../../store'
 import { ToolModes } from '../../enums'
-import { ToolSpecificToolData, EventTypes } from '../../types'
+import { Annotation, EventTypes } from '../../types'
+import {
+  ToolAnnotationPair,
+  ToolsWithMoveableHandles,
+} from '../../types/InternalToolTypes'
 
 import {
-  selectToolData,
-  deselectToolData,
-  isToolDataSelected,
-} from '../../stateManagement/annotation/toolDataSelection'
+  setAnnotationSelected,
+  isAnnotationSelected,
+} from '../../stateManagement/annotation/annotationSelection'
 
-import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
 
-// // Util
-import getToolsWithMoveableHandles from '../../store/getToolsWithMoveableHandles'
-import getToolsWithDataForElement from '../../store/getToolsWithDataForElement'
-import getMoveableAnnotationTools from '../../store/getMoveableAnnotationTools'
+// Util
+import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableHandles'
+import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement'
+import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools'
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
-
-type Tool = {
-  handleSelectedCallback: CallableFunction
-  toolSelectedCallback: CallableFunction
-}
-
-type ToolAndToolData = {
-  tool: Tool
-  toolData: ToolSpecificToolData
-  handle?: Types.Point3
-}
 
 const { Active, Passive } = ToolModes
 
@@ -37,15 +28,15 @@ const { Active, Passive } = ToolModes
  * - First we get the `activeTool` for the mouse button pressed.
  * - If the `activeTool` has a `preMouseDownCallback`, this is called. If the callback returns `true`,
  *   the event does not propagate further.
- * - Next we get all tools which are active or passive (`activeAndPassiveTools`), as toolData for these tools could
- *   possibly catch and handle these events. We then filter the `activeAndPassiveTools` using `getToolsWithDataForElement`, which filters tools with `toolState`
+ * - Next we get all tools which are active or passive (`activeAndPassiveTools`), as annotation. for these tools could
+ *   possibly catch and handle these events. We then filter the `activeAndPassiveTools` using `filterToolsWithAnnotationsForElement`, which filters tools with annotations
  *   for this frame of reference. Optionally a tool can employ a further filtering (via a
- *   `filterInteractableToolStateForElement` callback) for tools interactable within the current camera view
+ *   `filterInteractableAnnotationsForElement` callback) for tools interactable within the current camera view
  *   (e.g. tools that only render when viewed from a certain direction).
- * - Next we check if any handles are interactable for each tool (`getToolsWithMoveableHandles`). If interactable
+ * - Next we check if any handles are interactable for each tool (`filterToolsWithMoveableHandles`). If interactable
  *   handles are found, the first tool/handle found consumes the event and the event does not propagate further.
  * - Next we check any tools are interactable (e.g. moving an entire length annotation rather than one of its handles:
- *   `getMoveableAnnotationTools`). If interactable tools are found, the first tool found consumes the event and the
+ *   `filterMoveableAnnotationTools`). If interactable tools are found, the first tool found consumes the event and the
  *   event does not propagate further.
  * - Finally, if the `activeTool` has `postMouseDownCallback`, this is called.  If the callback returns `true`,
  *   the event does not propagate further.
@@ -87,15 +78,23 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     ...(passiveToolsIfEventWasPrimaryMouseButton || []),
   ]
 
-  const eventData = evt.detail
-  const { element } = eventData
+  const eventDetail = evt.detail
+  const { element } = eventDetail
 
-  // Annotation tool specific
-  const annotationTools = getToolsWithDataForElement(element, applicableTools)
-  const canvasCoords = eventData.currentPoints.canvas
-  const annotationToolsWithMoveableHandles = getToolsWithMoveableHandles(
+  // Filter tools with annotations for this element
+  const annotationToolsWithAnnotations = filterToolsWithAnnotationsForElement(
     element,
-    annotationTools,
+    applicableTools
+  )
+
+  const canvasCoords = eventDetail.currentPoints.canvas
+
+  // For the canvas coordinates, find all tools that might respond to this mouse down
+  // on their handles. This filter will call getHandleNearImagePoint for each tool
+  // instance (each annotation)
+  const annotationToolsWithMoveableHandles = filterToolsWithMoveableHandles(
+    element,
+    annotationToolsWithAnnotations,
     canvasCoords,
     'mouse'
   )
@@ -103,35 +102,42 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
   // Preserve existing selections when shift key is pressed
   const isMultiSelect = !!evt.detail.event.shiftKey
 
+  // If there are annotation tools whose handle is near the mouse, select the first one
+  // that isn't locked. If there's only one annotation tool, select it.
   if (annotationToolsWithMoveableHandles.length > 0) {
-    const { tool, toolData, handle } = filterAnnotationToolsForSelection(
-      annotationToolsWithMoveableHandles as ToolAndToolData[]
-    )
+    const { tool, annotation, handle } = getAnnotationForSelection(
+      annotationToolsWithMoveableHandles
+    ) as ToolsWithMoveableHandles
 
-    toggleToolDataSelection(toolData, isMultiSelect)
-    tool.handleSelectedCallback(evt, toolData, handle, 'mouse')
+    toggleAnnotationSelection(annotation, isMultiSelect)
+    tool.handleSelectedCallback(evt, annotation, handle, 'Mouse')
 
     return
   }
 
-  const moveableAnnotationTools = getMoveableAnnotationTools(
+  // If there were no annotation tools whose handle was near the mouse, try to check
+  // if any of the annotation tools are interactable (e.g. moving an entire length annotation)
+  const moveableAnnotationTools = filterMoveableAnnotationTools(
     element,
-    annotationTools,
+    annotationToolsWithAnnotations,
     canvasCoords,
     'mouse'
   )
 
+  // If there are annotation tools that are interactable, select the first one
+  // that isn't locked. If there's only one annotation tool, select it.
   if (moveableAnnotationTools.length > 0) {
-    const { tool, toolData } = filterAnnotationToolsForSelection(
-      moveableAnnotationTools as ToolAndToolData[]
+    const { tool, annotation } = getAnnotationForSelection(
+      moveableAnnotationTools
     )
 
-    toggleToolDataSelection(toolData, isMultiSelect)
-    tool.toolSelectedCallback(evt, toolData, 'mouse')
+    toggleAnnotationSelection(annotation, isMultiSelect)
+    tool.toolSelectedCallback(evt, annotation, 'Mouse')
 
     return
   }
 
+  // Run the postMouseDownCallback for the active tool if it exists
   if (activeTool && typeof activeTool.postMouseDownCallback === 'function') {
     const consumedEvent = activeTool.postMouseDownCallback(evt)
 
@@ -140,42 +146,48 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
       return
     }
   }
+
+  // Don't stop propagation so that mouseDownActivate can handle the event
 }
 
 /**
  * If there are multiple annotation tools, return the first one that isn't locked.
  * If there's only one annotation tool, return it
- * @param annotationTools - An array of tools and tool data.
+ * @param annotationTools - An array of tools and annotation.
  * @returns The candidate for selection
  */
-function filterAnnotationToolsForSelection(
-  annotationTools: ToolAndToolData[]
-): ToolAndToolData {
+function getAnnotationForSelection(
+  toolsWithMovableHandles: ToolAnnotationPair[]
+): ToolAnnotationPair {
   return (
-    (annotationTools.length > 1 &&
-      annotationTools.find((item) => !isToolDataLocked(item.toolData))) ||
-    annotationTools[0]
+    (toolsWithMovableHandles.length > 1 &&
+      toolsWithMovableHandles.find(
+        (item) => !isAnnotationLocked(item.annotation)
+      )) ||
+    toolsWithMovableHandles[0]
   )
 }
 
 /**
- * If the tool data is selected, deselect it. If it's not selected, select it
- * @param toolData - The ToolSpecificToolData object that we
+ * If the annotation is selected, deselect it. If it's not selected, select it
+ * @param annotation - The Annotation object that we
  * want to toggle the selection of.
- * @param isMultiSelect - If true, the toolData will be deselected if it is
+ * @param isMultiSelect - If true, the annotation. will be deselected if it is
  * already selected, or deselected if it is selected.
  */
-function toggleToolDataSelection(
-  toolData: ToolSpecificToolData,
+function toggleAnnotationSelection(
+  annotation: Annotation,
   isMultiSelect = false
 ): void {
   if (isMultiSelect) {
-    if (isToolDataSelected(toolData)) {
-      deselectToolData(toolData)
+    if (isAnnotationSelected(annotation)) {
+      setAnnotationSelected(annotation, false)
     } else {
-      selectToolData(toolData, true)
+      const preserveSelected = true
+      setAnnotationSelected(annotation, true, preserveSelected)
     }
   } else {
-    selectToolData(toolData, false)
+    const preserveSelected = false
+    setAnnotationSelected(annotation, true, preserveSelected)
   }
 }

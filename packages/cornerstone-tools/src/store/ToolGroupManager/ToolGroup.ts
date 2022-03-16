@@ -77,8 +77,8 @@ export default class ToolGroup implements IToolGroup {
    * Removes viewport from the toolGroup. If only renderingEngineUID is defined
    * it removes all the viewports with the same renderingEngineUID, if more filters
    * are provided, it uses them to search the viewport.
-   * @param renderingEngineUID renderingEngine uid
-   * @param viewportUID viewport uid
+   * @param renderingEngineUID - renderingEngine uid
+   * @param viewportUID - viewport uid
    */
   removeViewports(renderingEngineUID: string, viewportUID?: string): void {
     const indices = []
@@ -105,10 +105,13 @@ export default class ToolGroup implements IToolGroup {
     }
   }
   // ~ setToolMode
-  setToolActive(toolName: string, toolModeOptions: ISetToolModeOptions): void {
+  setToolActive(
+    toolName: string,
+    toolModeOptions = {} as ISetToolModeOptions
+  ): void {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
-        `Tool ${toolName} not added to toolgroup, can't set tool mode.`
+        `Tool ${toolName} not added to toolGroup, can't set tool mode.`
       )
 
       return
@@ -118,7 +121,7 @@ export default class ToolGroup implements IToolGroup {
       ? this.toolOptions[toolName].bindings
       : []
 
-    const newBindings = toolModeOptions ? toolModeOptions.bindings : []
+    const newBindings = toolModeOptions.bindings ? toolModeOptions.bindings : []
 
     // We should not override the bindings if they are already set
     const toolModeOptionsWithMode = {
@@ -142,7 +145,7 @@ export default class ToolGroup implements IToolGroup {
   setToolPassive(toolName: string): void {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
-        `Tool ${toolName} not added to toolgroup, can't set tool mode.`
+        `Tool ${toolName} not added to toolGroup, can't set tool mode.`
       )
 
       return

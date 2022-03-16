@@ -8,9 +8,9 @@ import triggerAnnotationRender from '../util/triggerAnnotationRender'
  *  When the image is rendered, check what tools can be rendered for this element.
  *
  * - First we get all tools which are active, passive or enabled on the element.
- * - If any of these tools have a `renderToolData` method, then we render them.
- * - Note that these tools don't necessarily have to be instances of  `BaseAnnotationTool`,
- *   Any tool may register a `renderToolData` method (e.g. a tool that displays an overlay).
+ * - If any of these tools have a `renderAnnotation` method, then we render them.
+ * - Note that these tools don't necessarily have to be instances of  `AnnotationTool`,
+ *   Any tool may register a `renderAnnotation` method (e.g. a tool that displays an overlay).
  *
  * @param evt - The normalized IMAGE_RENDERED event.
  */

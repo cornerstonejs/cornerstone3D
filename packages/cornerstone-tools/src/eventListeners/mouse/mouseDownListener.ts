@@ -105,7 +105,7 @@ function mouseDownListener(evt: MouseEvent) {
   const startPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(startPoints, startPoints)
 
-  const eventData: EventTypes.MouseDownEventData = {
+  const eventDetail: EventTypes.MouseDownEventDetail = {
     event: evt,
     eventName: MOUSE_DOWN,
     element: state.element,
@@ -119,21 +119,21 @@ function mouseDownListener(evt: MouseEvent) {
     deltaPoints,
   }
 
-  state.startPoints = _copyPoints(eventData.startPoints)
-  state.lastPoints = _copyPoints(eventData.lastPoints)
+  state.startPoints = _copyPoints(eventDetail.startPoints)
+  state.lastPoints = _copyPoints(eventDetail.lastPoints)
 
   // by triggering MOUSE_DOWN it checks if this is toolSelection, handle modification etc.
   // of already existing tools
   const eventDidPropagate = triggerEvent(
-    eventData.element,
+    eventDetail.element,
     MOUSE_DOWN,
-    eventData
+    eventDetail
   )
 
   // if no tools responded to this event and prevented its default propagation behavior,
   // create a new tool
   if (eventDidPropagate) {
-    triggerEvent(eventData.element, MOUSE_DOWN_ACTIVATE, eventData)
+    triggerEvent(eventDetail.element, MOUSE_DOWN_ACTIVATE, eventDetail)
   }
 
   document.addEventListener('mousemove', _onMouseDrag)
@@ -155,7 +155,7 @@ function _onMouseDrag(evt: MouseEvent) {
 
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints)
 
-  const eventData: EventTypes.MouseDragEventData = {
+  const eventDetail: EventTypes.MouseDragEventDetail = {
     event: evt,
     eventName: MOUSE_DRAG,
     mouseButton: state.mouseButton,
@@ -169,7 +169,7 @@ function _onMouseDrag(evt: MouseEvent) {
     deltaPoints,
   }
 
-  triggerEvent(state.element, MOUSE_DRAG, eventData)
+  triggerEvent(state.element, MOUSE_DRAG, eventDetail)
 
   // Update the last points
   state.lastPoints = _copyPoints(currentPoints)
@@ -189,8 +189,8 @@ function _onMouseUp(evt: MouseEvent): void {
 
   const currentPoints = getMouseEventPoints(evt, state.element)
   const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints)
-  const eventData:
-    | EventTypes.MouseUpEventData
+  const eventDetail:
+    | EventTypes.MouseUpEventDetail
     | EventTypes.MouseClickEventType = {
     event: evt,
     eventName,
@@ -205,7 +205,7 @@ function _onMouseUp(evt: MouseEvent): void {
     deltaPoints,
   }
 
-  triggerEvent(eventData.element, eventName, eventData)
+  triggerEvent(eventDetail.element, eventName, eventDetail)
 
   // Remove our temporary handlers
   document.removeEventListener('mousemove', _onMouseDrag)

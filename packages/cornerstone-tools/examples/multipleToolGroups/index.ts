@@ -1,11 +1,28 @@
-import { RenderingEngine, Types, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render'
-import { initDemo, createImageIdsAndCacheMetaData, setTitleAndDescription } from '../../../../utils/demo/helpers'
+import {
+  RenderingEngine,
+  Types,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 
-const { LengthTool, WindowLevelTool, StackScrollMouseWheelTool, ToolGroupManager, ToolBindings } = cornerstoneTools
+const {
+  LengthTool,
+  WindowLevelTool,
+  StackScrollMouseWheelTool,
+  ToolGroupManager,
+  ToolBindings,
+} = cornerstoneTools
 
 // ======== Set up page ======== //
-setTitleAndDescription('Multiple Tool Groups', 'Here we show the usage of multiple tool groups at the same time')
+setTitleAndDescription(
+  'Multiple Tool Groups',
+  'Here we show the usage of multiple tool groups at the same time'
+)
 
 const size = '500px'
 const content = document.getElementById('content')
@@ -32,7 +49,8 @@ viewportGrid.appendChild(element3)
 content.appendChild(viewportGrid)
 
 const instructions = document.createElement('p')
-instructions.innerText = 'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll'
+instructions.innerText =
+  'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll'
 
 content.append(instructions)
 // ============================= //
@@ -48,16 +66,16 @@ async function run() {
   const toolGroupUID2 = 'STACK_TOOL_GROUP_UID_2'
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(WindowLevelTool, {})
-  cornerstoneTools.addTool(LengthTool, {})
-  cornerstoneTools.addTool(StackScrollMouseWheelTool, {})
+  cornerstoneTools.addTool(WindowLevelTool)
+  cornerstoneTools.addTool(LengthTool)
+  cornerstoneTools.addTool(StackScrollMouseWheelTool)
 
   // Define tool group 1, used by viewport 1
   const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupUID1)
 
   // Add tools to the tool group
-  toolGroup1.addTool('WindowLevel', {})
-  toolGroup1.addTool('StackScrollMouseWheel', {})
+  toolGroup1.addTool('WindowLevel')
+  toolGroup1.addTool('StackScrollMouseWheel')
 
   // Set the initial state of the tools
   toolGroup1.setToolActive('WindowLevel', {
@@ -87,19 +105,22 @@ async function run() {
   toolGroup2.setToolActive('StackScrollMouseWheel')
 
   const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs'
-  const StudyInstanceUID = '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
+  const StudyInstanceUID =
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot,
     type: 'STACK',
   })
 
   const ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
     wadoRsRoot,
     type: 'STACK',
   })
@@ -108,7 +129,11 @@ async function run() {
   const renderingEngineUID = 'myRenderingEngine'
   const renderingEngine = new RenderingEngine(renderingEngineUID)
 
-  const viewportUIDs = ['CT_AXIAL_STACK_1', 'CT_AXIAL_STACK_2', 'PT_AXIAL_STACK']
+  const viewportUIDs = [
+    'CT_AXIAL_STACK_1',
+    'CT_AXIAL_STACK_2',
+    'PT_AXIAL_STACK',
+  ]
 
   // Create a stack viewport
   const viewportInputArray = [
@@ -117,7 +142,7 @@ async function run() {
       type: VIEWPORT_TYPE.STACK,
       element: element1,
       defaultOptions: {
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -125,7 +150,7 @@ async function run() {
       type: VIEWPORT_TYPE.STACK,
       element: element2,
       defaultOptions: {
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -133,7 +158,7 @@ async function run() {
       type: VIEWPORT_TYPE.STACK,
       element: element3,
       defaultOptions: {
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ]
@@ -141,9 +166,15 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Get the stack viewport that was created
-  const viewport1 = <Types.StackViewport>renderingEngine.getViewport(viewportUIDs[0])
-  const viewport2 = <Types.StackViewport>renderingEngine.getViewport(viewportUIDs[1])
-  const viewport3 = <Types.StackViewport>renderingEngine.getViewport(viewportUIDs[2])
+  const viewport1 = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUIDs[0])
+  )
+  const viewport2 = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUIDs[1])
+  )
+  const viewport3 = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUIDs[2])
+  )
 
   // Define a stack containing a single image
   const ctStack = [ctImageIds[0], ctImageIds[1], ctImageIds[2]]
