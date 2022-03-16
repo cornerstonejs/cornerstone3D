@@ -7,9 +7,9 @@ import {
   getGlobalSegmentationState,
 } from '../../stateManagement/segmentation/segmentationState'
 import {
-  SegmentationStateModifiedEventData,
-  SegmentationDataModifiedEventData,
-  SegmentationGlobalStateModifiedEventData,
+  SegmentationStateModifiedEventDetail,
+  SegmentationDataModifiedEventDetail,
+  SegmentationGlobalStateModifiedEventDetail,
 } from '../../types/EventTypes'
 
 /**
@@ -18,11 +18,11 @@ import {
  * @param toolGroupUID - The UID of the toolGroup
  */
 function triggerSegmentationStateModified(toolGroupUID: string): void {
-  const eventData: SegmentationStateModifiedEventData = {
+  const eventDetail: SegmentationStateModifiedEventDetail = {
     toolGroupUID,
   }
 
-  triggerEvent(eventTarget, EVENTS.SEGMENTATION_STATE_MODIFIED, eventData)
+  triggerEvent(eventTarget, EVENTS.SEGMENTATION_STATE_MODIFIED, eventDetail)
 }
 
 /**
@@ -52,7 +52,7 @@ function triggerSegmentationGlobalStateModified(
   // 1. Trigger an event notifying all listeners about the segmentationUID
   // that has been updated.
   segmentationUIDs.forEach((segmentationUID) => {
-    const eventDetail: SegmentationGlobalStateModifiedEventData = {
+    const eventDetail: SegmentationGlobalStateModifiedEventDetail = {
       segmentationUID,
     }
     triggerEvent(
@@ -78,7 +78,7 @@ function triggerSegmentationDataModified(
   toolGroupUID: string,
   segmentationDataUID: string
 ): void {
-  const eventDetail: SegmentationDataModifiedEventData = {
+  const eventDetail: SegmentationDataModifiedEventDetail = {
     toolGroupUID,
     segmentationDataUID,
   }

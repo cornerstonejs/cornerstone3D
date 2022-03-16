@@ -6,8 +6,8 @@ import {
   segmentationStateModifiedEventListener,
 } from './segmentation'
 import {
-  measurementSelectionListener,
-  measurementModifiedListener,
+  annotationSelectionListener,
+  annotationModifiedListener,
 } from './annotations'
 //import touchEventListeners from './touchEventListeners';
 
@@ -17,6 +17,6 @@ export {
   keyEventListener,
   segmentationStateModifiedEventListener,
   segmentationDataModifiedEventListener,
-  measurementSelectionListener,
-  measurementModifiedListener,
+  annotationSelectionListener,
+  annotationModifiedListener,
 }

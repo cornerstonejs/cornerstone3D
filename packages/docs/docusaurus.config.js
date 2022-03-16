@@ -132,22 +132,22 @@ module.exports = {
   plugins: [
     'plugin-image-zoom',
     require.resolve('./webpackConfigurationPlugin'),
-    // [
-    //   'docusaurus-plugin-typedoc-api',
-    //   {
-    //     projectRoot: path.join(__dirname, '../../'),
-    //     packages: [
-    //       ...[
-    //         'cornerstone-render',
-    //         'cornerstone-tools',
-    //         'cornerstone-image-loader-streaming-volume',
-    //       ].map((pkg) => `packages/${pkg}`),
-    //     ],
-    //     minimal: false,
-    //     readmes: true,
-    //     debug: true,
-    //     tsconfigName: 'tsconfig.json',
-    //   },
-    // ],
+    [
+      'docusaurus-plugin-typedoc-api',
+      {
+        projectRoot: path.join(__dirname, '../../'),
+        packages: [
+          ...[
+            'cornerstone-render',
+            'cornerstone-tools',
+            'cornerstone-image-loader-streaming-volume',
+          ].map((pkg) => `packages/${pkg}`),
+        ],
+        minimal: false,
+        readmes: true,
+        debug: true,
+        tsconfigName: 'tsconfig.json',
+      },
+    ],
   ],
 }

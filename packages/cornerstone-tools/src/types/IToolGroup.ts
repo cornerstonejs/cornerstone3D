@@ -19,17 +19,17 @@ export default interface IToolGroup {
   }
   // ~ setToolMode
   setToolActive: {
-    (toolName: string, toolModeOptions: ISetToolModeOptions): void
+    (toolName: string, toolModeOptions?: ISetToolModeOptions): void
   }
 
   setToolPassive: {
-    (toolName: string, toolModeOptions: ISetToolModeOptions): void
+    (toolName: string): void
   }
   setToolEnabled: {
-    (toolName: string, toolModeOptions: ISetToolModeOptions): void
+    (toolName: string): void
   }
   setToolDisabled: {
-    (toolName: string, toolModeOptions: ISetToolModeOptions): void
+    (toolName: string): void
   }
   getToolModeOptions: {
     (toolName: string): ISetToolModeOptions

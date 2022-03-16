@@ -689,14 +689,14 @@ class RenderingEngine implements IRenderingEngine {
     // 5. Storing the viewports
     this._viewports.set(viewportUID, viewport)
 
-    const eventData: EventTypes.ElementEnabledEventData = {
+    const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
       viewportUID,
       renderingEngineUID: this.uid,
     }
 
     if (!viewport.suppressEvents) {
-      triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+      triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventDetail)
     }
   }
 
@@ -750,13 +750,13 @@ class RenderingEngine implements IRenderingEngine {
     // 5. Storing the viewports
     this._viewports.set(viewportUID, viewport)
 
-    const eventData: EventTypes.ElementEnabledEventData = {
+    const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
       viewportUID,
       renderingEngineUID: this.uid,
     }
 
-    triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventData)
+    triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventDetail)
   }
 
   /**
@@ -1004,13 +1004,14 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     const viewports = this._getViewportsAsArray()
-    const eventDataArray = []
+    const eventDetailArray = []
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i]
       if (this._needsRender.has(viewport.uid)) {
-        const eventData = this.renderViewportUsingCustomOrVtkPipeline(viewport)
-        eventDataArray.push(eventData)
+        const eventDetail =
+          this.renderViewportUsingCustomOrVtkPipeline(viewport)
+        eventDetailArray.push(eventDetail)
 
         // This viewport has been rendered, we can remove it from the set
         this._needsRender.delete(viewport.uid)
@@ -1026,8 +1027,8 @@ class RenderingEngine implements IRenderingEngine {
     this._animationFrameSet = false
     this._animationFrameHandle = null
 
-    eventDataArray.forEach((eventData) => {
-      triggerEvent(eventData.element, EVENTS.IMAGE_RENDERED, eventData)
+    eventDetailArray.forEach((eventDetail) => {
+      triggerEvent(eventDetail.element, EVENTS.IMAGE_RENDERED, eventDetail)
     })
   }
 
@@ -1074,12 +1075,12 @@ class RenderingEngine implements IRenderingEngine {
    */
   private renderViewportUsingCustomOrVtkPipeline(
     viewport: IStackViewport | IVolumeViewport
-  ): EventTypes.ImageRenderedEventData[] {
-    let eventData
+  ): EventTypes.ImageRenderedEventDetail[] {
+    let eventDetail
 
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
-      eventData =
-        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventData
+      eventDetail =
+        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail
     } else {
       if (this.useCPURendering) {
         throw new Error(
@@ -1093,13 +1094,13 @@ class RenderingEngine implements IRenderingEngine {
       const context = openGLRenderWindow.get3DContext()
       const offScreenCanvas = context.canvas
 
-      eventData = this._renderViewportFromVtkCanvasToOnscreenCanvas(
+      eventDetail = this._renderViewportFromVtkCanvasToOnscreenCanvas(
         viewport,
         offScreenCanvas
       )
     }
 
-    return eventData
+    return eventDetail
   }
 
   /**
@@ -1110,7 +1111,7 @@ class RenderingEngine implements IRenderingEngine {
   private _renderViewportFromVtkCanvasToOnscreenCanvas(
     viewport: IStackViewport | IVolumeViewport,
     offScreenCanvas
-  ): EventTypes.ImageRenderedEventData {
+  ): EventTypes.ImageRenderedEventDetail {
     const {
       element,
       canvas,
@@ -1158,7 +1159,7 @@ class RenderingEngine implements IRenderingEngine {
 
     const { element, canvas, uid: viewportUID } = viewport
 
-    const eventData: EventTypes.ElementDisabledEventData = {
+    const eventDetail: EventTypes.ElementDisabledEventDetail = {
       element,
       viewportUID,
       renderingEngineUID,
@@ -1166,7 +1167,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
-    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventData)
+    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventDetail)
 
     element.removeAttribute('data-viewport-uid')
     element.removeAttribute('data-rendering-engine-uid')

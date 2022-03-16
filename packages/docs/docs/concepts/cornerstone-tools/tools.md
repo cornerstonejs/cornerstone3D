@@ -29,7 +29,7 @@ mode.
 ### Adding Tools
 
 The `Cornerstone3D-tools` library comes packaged with several common tools. All implement either
-the `BaseTool` or `BaseAnnotationTool`. Adding a tool makes it available to ToolGroups.
+the `BaseTool` or `AnnotationTool`. Adding a tool makes it available to ToolGroups.
 
 
 ```js
@@ -135,7 +135,7 @@ You can activate both a Stack and a Volume viewport and draw annotations on
 one while editing (modifying or moving) the other. This is accomplished by
 providing the toolGroup of the VolumeViewports with the `VolumeUID`.
 
-When drawing a measurement:
+When drawing an annotation:
 -The tool gets the volume using volumeUID
 - It checks which imageId of the volume the tool has been drawn on
 - If in a stack viewport, we are at the same imageId, we render the tool
@@ -148,7 +148,7 @@ ctStackToolGroup.addTool('Length')
 ```
 
 <div style={{padding:"56.25% 0 0 0", position:"relative"}}>
-    <iframe src="https://player.vimeo.com/video/601943316?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;h=a6f3ee6e3d" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style= {{ position:"absolute",top:0,left:0,width:"100%",height:"100%"}} title="measurement-report"></iframe>
+    <iframe src="https://player.vimeo.com/video/601943316?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;h=a6f3ee6e3d" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style= {{ position:"absolute",top:0,left:0,width:"100%",height:"100%"}} title="annotation-report"></iframe>
 </div>
 
 

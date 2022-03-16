@@ -1,4 +1,4 @@
-import { BaseTool, BaseAnnotationTool } from './base'
+import { BaseTool, AnnotationTool } from './base'
 import PanTool from './PanTool'
 import WindowLevelTool from './WindowLevelTool'
 import StackScrollTool from './StackScrollTool'
@@ -27,7 +27,7 @@ import RectangleRoiStartEndThreshold from './segmentation/RectangleRoiStartEndTh
 export {
   // ~~ BASE
   BaseTool,
-  BaseAnnotationTool,
+  AnnotationTool,
   // Manipulation Tools
   PanTool,
   WindowLevelTool,

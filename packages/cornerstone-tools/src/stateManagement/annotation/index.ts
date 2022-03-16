@@ -1,3 +1,3 @@
-import * as ToolState from './toolState'
+import * as AnnotationState from './annotationState'
 
-export default ToolState
+export default AnnotationState

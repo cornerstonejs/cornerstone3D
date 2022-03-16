@@ -11,12 +11,12 @@ import eventTarget from '../eventTarget'
  * or it can trigger event on the eventTarget itself
  *
  * ```javascript
- * triggerEvent(eventTarget, CSTOOLS_EVENTS.MEASUREMENT_MODIFIED, { viewportUID, toolDataUID })
+ * triggerEvent(eventTarget, CSTOOLS_EVENTS.ANNOTATION_MODIFIED, { viewportUID, annotationUID })
  * ```
  *
  * @param el - The element or EventTarget to trigger the event upon
  * @param type - The event type name
- * @param detail - The event data to be sent
+ * @param detail - The event detail to be sent
  * @returns false if event is cancelable and at least one of the event handlers
  * which received event called Event.preventDefault(). Otherwise it returns true.
  */

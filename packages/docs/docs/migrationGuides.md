@@ -54,7 +54,7 @@ renderingEngine.enableElement(
  }
 );
 
-// ELEMENT_ENABLED eventData includes:
+// ELEMENT_ENABLED eventDetail includes:
 {
   canvas,
   sceneUID,
@@ -66,7 +66,7 @@ renderingEngine.enableElement(
 ### loadAndCacheImage
 
 
-In Cornerstone-3D, first, a volume is defined (similar to “stacks” in Cornerstone), and memory for this volume is allocated, then the user can trigger a load to fetch the data. As the data corresponding to each imageId is fetched and decoded, the volume is filled up with data, the callback is called as each frame returns, and the eventData given to the callback is shown in the example.
+In Cornerstone-3D, first, a volume is defined (similar to “stacks” in Cornerstone), and memory for this volume is allocated, then the user can trigger a load to fetch the data. As the data corresponding to each imageId is fetched and decoded, the volume is filled up with data, the callback is called as each frame returns, and the eventDetail given to the callback is shown in the example.
 
 We are still using `cornerstoneWADOImageLoader` to process requests, but are instead filling up a volume instead of creating individual Cornerstone images.
 
@@ -112,7 +112,7 @@ const ctVolume = await createAndCacheVolume(
 ctVolume.load(callback)
 ```
 
-Where eventData passed to the callback is (currently) of the form:
+Where eventDetail passed to the callback is (currently) of the form:
 
 ```
 // Success:
@@ -150,8 +150,8 @@ In Cornerstone we had:
 cornerstone.displayImage(image, element);
 
 // Triggers cornerstone.events.IMAGE_RENDERED
-// with eventData as follows
-const eventData = {
+// with eventDetail as follows
+const eventDetail = {
   viewport: enabledElement.viewport,
   element,
   image,
@@ -173,7 +173,7 @@ fusionScene.setVolumes([
 on IMAGE_RENDERED
 
 ```js
-eventData: {
+eventDetail: {
   viewport,
 }
 
@@ -219,7 +219,7 @@ myViewport.render();
 on IMAGE_RENDERED event fired for all viewports:
 
 ```js
-eventData: {
+eventDetail: {
   viewport,
 }
 ```
@@ -255,7 +255,7 @@ if you plan to leave the page, this will destroy all elements.
 The ELEMENT_DISABLED event contains just a reference to the canvas element which is now disabled, and related UIDs.
 
 ```js
-eventData: {
+eventDetail: {
   viewportUID,
   sceneUID,
   renderingEngineUID,

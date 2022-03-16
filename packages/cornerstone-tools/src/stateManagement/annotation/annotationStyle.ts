@@ -1,5 +1,9 @@
 import { Settings } from '@precisionmetrics/cornerstone-render'
-import { ToolModes, ToolDataStyleStates } from '../../enums'
+import { ToolModes, AnnotationStyleStates } from '../../enums'
+import { Annotation } from '../../types'
+import { isAnnotationLocked } from './annotationLocking'
+import { isAnnotationSelected } from './annotationSelection'
+import state from '../../store/state'
 /*
  * Initialization
  */
@@ -37,10 +41,10 @@ function initializeDefaultStyleAlternatives(): void {
   // Todo: why there is an empty string here?
   const modes = ['', ToolModes.Active, ToolModes.Passive]
   const states = [
-    ToolDataStyleStates.Default,
-    ToolDataStyleStates.Highlighted,
-    ToolDataStyleStates.Selected,
-    ToolDataStyleStates.Locked,
+    AnnotationStyleStates.Default,
+    AnnotationStyleStates.Highlighted,
+    AnnotationStyleStates.Selected,
+    AnnotationStyleStates.Locked,
   ]
   const defaultSettings = Settings.getDefaultSettings()
   defaultSettings.forEach((name: string) => {
@@ -71,7 +75,7 @@ function initializeDefaultStyleAlternatives(): void {
  */
 function getStyleAlternatives(
   property: string,
-  state?: ToolDataStyleStates,
+  state?: AnnotationStyleStates,
   mode?: ToolModes
 ): string[] {
   const list = [`tool.style.${property}`]
@@ -91,7 +95,7 @@ function getStyleAlternatives(
 function getStyleProperty(
   settings: Settings,
   property: string,
-  state?: ToolDataStyleStates,
+  state?: AnnotationStyleStates,
   mode?: ToolModes
 ): unknown {
   // `alternatives` is a list of property names with priority in ascending
@@ -115,7 +119,7 @@ function getStyleProperty(
  */
 function getDefaultStyleProperty(
   property: string,
-  state?: ToolDataStyleStates,
+  state?: AnnotationStyleStates,
   mode?: ToolModes
 ): unknown {
   return getStyleProperty(Settings.getRuntimeSettings(), property, state, mode)
@@ -130,7 +134,7 @@ function getDefaultStyleProperty(
  */
 function getFont(
   settings?: Settings,
-  state?: ToolDataStyleStates,
+  state?: AnnotationStyleStates,
   mode?: ToolModes
 ): string {
   const sty = Settings.assert(settings)
@@ -139,10 +143,53 @@ function getFont(
   return `${fontSize}px ${fontFamily}`
 }
 
+/**
+ * Given a Annotation object, return the annotationStyleStates that it
+ * should be in based on its data
+ * @param annotation - The annotation that we want to style.
+ * @returns The state of the annotation whether it is Default, Highlighted, Locked, or Selected.
+ */
+function getAnnotationStyle(annotation?: Annotation): AnnotationStyleStates {
+  if (annotation) {
+    if (annotation.data && annotation.highlighted)
+      return AnnotationStyleStates.Highlighted
+    if (isAnnotationSelected(annotation)) return AnnotationStyleStates.Selected
+    if (isAnnotationLocked(annotation)) return AnnotationStyleStates.Locked
+  }
+
+  return AnnotationStyleStates.Default
+}
+
+/**
+ * Set the style of an annotation object
+ * @param string - toolName - The name of the tool.
+ * @param annotation - The annotation object.
+ * @param style - The style object to set.
+ * @returns A boolean value indicating whether the style was set.
+ */
+function setAnnotationStyle(
+  toolName: string,
+  annotation: Record<string, unknown>,
+  style: Record<string, unknown>
+): boolean {
+  const descriptor = state.tools[toolName]
+  if (descriptor) {
+    const { toolClass } = descriptor
+    return Settings.getObjectSettings(annotation, toolClass).set(
+      'tool.style',
+      style
+    )
+  }
+  return false
+}
+
 export {
   initializeDefaultStyleAlternatives,
   getStyleAlternatives,
   getStyleProperty,
   getDefaultStyleProperty,
   getFont,
+  // annotation style set/get
+  getAnnotationStyle,
+  setAnnotationStyle,
 }

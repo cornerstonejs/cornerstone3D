@@ -1,7 +1,10 @@
 import _cloneDeep from 'lodash.clonedeep'
-import { getEnabledElement, triggerEvent } from '@precisionmetrics/cornerstone-render'
+import {
+  getEnabledElement,
+  triggerEvent,
+} from '@precisionmetrics/cornerstone-render'
 import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
-import { KeyDownEventData, KeyUpEventData } from '../../types/EventTypes'
+import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes'
 
 interface IKeyDownListenerState {
   renderingEngineUID: string
@@ -47,7 +50,7 @@ function keyListener(evt: KeyboardEvent): void {
   state.keyCode = evt.keyCode
 
   evt.preventDefault()
-  const eventData: KeyDownEventData = {
+  const eventDetail: KeyDownEventDetail = {
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
     element: state.element,
@@ -61,7 +64,11 @@ function keyListener(evt: KeyboardEvent): void {
     // points: getMouseEventPoints(evt),
   }
 
-  triggerEvent(eventData.element, CornerstoneTools3DEvents.KEY_DOWN, eventData)
+  triggerEvent(
+    eventDetail.element,
+    CornerstoneTools3DEvents.KEY_DOWN,
+    eventDetail
+  )
 
   document.addEventListener('keyup', _onKeyUp)
 
@@ -70,7 +77,7 @@ function keyListener(evt: KeyboardEvent): void {
 }
 
 function _onKeyUp(evt: KeyboardEvent): void {
-  const eventData: KeyUpEventData = {
+  const eventDetail: KeyUpEventDetail = {
     renderingEngineUID: state.renderingEngineUID,
     viewportUID: state.viewportUID,
     element: state.element,
@@ -85,7 +92,11 @@ function _onKeyUp(evt: KeyboardEvent): void {
 
   // Restore `state` to `defaultState`
   state = _cloneDeep(defaultState)
-  triggerEvent(eventData.element, CornerstoneTools3DEvents.KEY_UP, eventData)
+  triggerEvent(
+    eventDetail.element,
+    CornerstoneTools3DEvents.KEY_UP,
+    eventDetail
+  )
 }
 
 export function getModifierKey(): number | undefined {

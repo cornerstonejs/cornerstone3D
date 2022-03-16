@@ -4,7 +4,7 @@ id: tools-introduction
 
 # Introduction
 
-`CornerstoneTools3D` is a JavasScript library that works with the `CornerstoneCore3D` library to provide a set of tools for image annotation, segmentation and manipulation. This library also provides a framework for creating new tools, managing all tools in a consistent, cohesive manner, importing/exporting tool measurement data along with various Segmentation editing tools.
+`CornerstoneTools3D` is a JavasScript library that works with the `CornerstoneCore3D` library to provide a set of tools for image annotation, segmentation and manipulation. This library also provides a framework for creating new tools, managing all tools in a consistent, cohesive manner, importing/exporting tool annotations along with various Segmentation editing tools.
 
 `CornerstoneTools3D` is not stand-alone library; it builds on top of `CornerstoneCore3D`; a standards compliant, fast, and extensible JavaScript library that displays interactive medical images.
 
@@ -20,7 +20,7 @@ location, with the exact orientation and direction in the 3D
 
 With a rendering library where everything exists in 3D space (even our stack viewports are rendered at the actual position and normal direction in space), rather than a 2D plane, we need to rethink how we do tool interactions. We are building a framework similar to CornerstoneTools called `CornerstoneTools3D` which will sit on top of the new rendering library.
 
-- Tool data is now stored in 3D patient space in a particular DICOM Frame of Reference (FoR). Previously, tools were attached to individual images by their unique image ID.
+- Annotations are now stored in 3D patient space in a particular DICOM Frame of Reference (FoR). Previously, tools were attached to individual images by their unique image ID.
   In general, all images in a single DICOM study exist in the same FoR (e.g. both PET and CT in a PET/CT acquisition). Transformation matrices can be produced which can convert between frames of references. This is performed in order to map tools between imaging timepoints or between co-registered series (e.g. contrast CT to non-contrast CT).
 
 - A single Scene can include multiple imaging Volumes (e.g. a fusion scene would include both PET and CT, and possibly a segmentation volume).
@@ -59,7 +59,7 @@ The following will not be migrated at the current time, as we do not need these 
     <td>Cursors are polish that are not a priority for this first leg of work.</td>
   </tr>
   <tr>
-    <td>Styling configuration (i.e. textStyle/toolStyle/toolColors)</td>
+    <td>Styling configuration (i.e. textStyle/annotationStyle/toolColors)</td>
     <td>In the first pass we shall focus on the functionality, and there is no plan to migrate these customization options yet.</td>
   </tr>
   <tr>

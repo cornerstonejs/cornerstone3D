@@ -14,11 +14,11 @@ import {
 } from '../eventDispatchers'
 // ~~
 
-import getToolsWithDataForElement from './getToolsWithDataForElement'
+import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement'
 import { state } from './state'
 import getToolsWithModesForElement from '../util/getToolsWithModesForElement'
 import { ToolModes } from '../enums'
-import { removeToolState } from '../stateManagement'
+import { removeAnnotation } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'
 import getToolGroup from './ToolGroupManager/getToolGroup'
 import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
@@ -94,10 +94,10 @@ const _removeAllToolsForElement = function (element) {
     ToolModes.Passive,
   ])
 
-  const toolsWithData = getToolsWithDataForElement(element, tools)
-  toolsWithData.forEach(({ toolState }) => {
-    toolState.forEach((state) => {
-      removeToolState(element, state)
+  const toolsWithData = filterToolsWithAnnotationsForElement(element, tools)
+  toolsWithData.forEach(({ annotations }) => {
+    annotations.forEach((annotation) => {
+      removeAnnotation(element, annotation.annotationUID)
     })
   })
 }

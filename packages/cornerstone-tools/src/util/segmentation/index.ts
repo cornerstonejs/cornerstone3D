@@ -5,9 +5,7 @@ import {
 } from './getBoundingBoxUtils'
 import thresholdVolumeByRange from './thresholdVolumeByRange'
 import thresholdVolumeByRoiStats from './thresholdVolumeByRoiStats'
-import calculateSuvPeak from './calculateSuvPeak'
-import calculateTMTV from './calculateTMTV'
-import createMergedLabelmap from './createMergedLabelmap'
+import createMergedLabelmapForIndex from './createMergedLabelmapForIndex'
 import isValidRepresentationConfig from './isValidRepresentationConfig'
 import getDefaultRepresentationConfig from './getDefaultRepresentationConfig'
 
@@ -17,9 +15,7 @@ export {
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
-  calculateSuvPeak,
-  calculateTMTV,
-  createMergedLabelmap,
+  createMergedLabelmapForIndex,
   isValidRepresentationConfig,
   getDefaultRepresentationConfig,
 }
@@ -30,9 +26,7 @@ export default {
   // fillOutsideBoundingBox,
   thresholdVolumeByRange,
   thresholdVolumeByRoiStats,
-  calculateSuvPeak,
-  calculateTMTV,
-  createMergedLabelmap,
+  createMergedLabelmapForIndex,
   isValidRepresentationConfig,
   getDefaultRepresentationConfig,
 }

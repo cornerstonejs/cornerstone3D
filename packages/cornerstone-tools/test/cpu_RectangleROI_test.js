@@ -21,8 +21,8 @@ const {
 const {
   RectangleRoiTool,
   ToolGroupManager,
-  getToolState,
-  removeToolState,
+  getAnnotations,
+  removeAnnotation,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
 } = csTools3d
@@ -124,31 +124,27 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const rectangleToolState = getToolState(
-            enabledElement,
-            'RectangleRoi'
-          )
-          // Can successfully add rectangleROI to toolStateManager
-          expect(rectangleToolState).toBeDefined()
-          expect(rectangleToolState.length).toBe(1)
+          const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+          // Can successfully add rectangleROI to annotationManager
+          expect(rectangleAnnotations).toBeDefined()
+          expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleToolData = rectangleToolState[0]
-          expect(rectangleToolData.metadata.referencedImageId).toBe(
+          const rectangleAnnotation = rectangleAnnotations[0]
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
 
-          expect(rectangleToolData.metadata.toolName).toBe('RectangleRoi')
-          expect(rectangleToolData.data.invalidated).toBe(false)
+          expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+          expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleToolData.data.cachedStats
+          const data = rectangleAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
           // the rectangle is drawn on the strip
           expect(data[targets[0]].mean).toBe(255)
 
-          removeToolState(element, rectangleToolData)
+          removeAnnotation(element, rectangleAnnotation.annotationUID)
           done()
         }
       )
@@ -231,30 +227,26 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const rectangleToolState = getToolState(
-            enabledElement,
-            'RectangleRoi'
-          )
-          // Can successfully add rectangleROI to toolStateManager
-          expect(rectangleToolState).toBeDefined()
-          expect(rectangleToolState.length).toBe(1)
+          const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+          // Can successfully add rectangleROI to annotationManager
+          expect(rectangleAnnotations).toBeDefined()
+          expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleToolData = rectangleToolState[0]
-          expect(rectangleToolData.metadata.referencedImageId).toBe(
+          const rectangleAnnotation = rectangleAnnotations[0]
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(rectangleToolData.metadata.toolName).toBe('RectangleRoi')
-          expect(rectangleToolData.data.invalidated).toBe(false)
+          expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+          expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleToolData.data.cachedStats
+          const data = rectangleAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].mean).toBe(255)
           expect(data[targets[0]].stdDev).toBe(0)
 
-          removeToolState(element, rectangleToolData)
+          removeAnnotation(element, rectangleAnnotation.annotationUID)
           done()
         }
       )
@@ -372,30 +364,26 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const rectangleToolState = getToolState(
-            enabledElement,
-            'RectangleRoi'
-          )
-          // Can successfully add rectangleROI to toolStateManager
-          expect(rectangleToolState).toBeDefined()
-          expect(rectangleToolState.length).toBe(1)
+          const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+          // Can successfully add rectangleROI to annotationManager
+          expect(rectangleAnnotations).toBeDefined()
+          expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleToolData = rectangleToolState[0]
-          expect(rectangleToolData.metadata.referencedImageId).toBe(
+          const rectangleAnnotation = rectangleAnnotations[0]
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(rectangleToolData.metadata.toolName).toBe('RectangleRoi')
-          expect(rectangleToolData.data.invalidated).toBe(false)
+          expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+          expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleToolData.data.cachedStats
+          const data = rectangleAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].mean).toBe(255)
           expect(data[targets[0]].stdDev).toBe(0)
 
-          removeToolState(element, rectangleToolData)
+          removeAnnotation(element, rectangleAnnotation.annotationUID)
           done()
         }
       )
@@ -506,23 +494,19 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const rectangleToolState = getToolState(
-            enabledElement,
-            'RectangleRoi'
-          )
-          // Can successfully add rectangleROI to toolStateManager
-          expect(rectangleToolState).toBeDefined()
-          expect(rectangleToolState.length).toBe(1)
+          const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+          // Can successfully add rectangleROI to annotationManager
+          expect(rectangleAnnotations).toBeDefined()
+          expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleToolData = rectangleToolState[0]
-          expect(rectangleToolData.metadata.referencedImageId).toBe(
+          const rectangleAnnotation = rectangleAnnotations[0]
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(rectangleToolData.metadata.toolName).toBe('RectangleRoi')
-          expect(rectangleToolData.data.invalidated).toBe(false)
+          expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+          expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleToolData.data.cachedStats
+          const data = rectangleAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
@@ -530,7 +514,7 @@ describe('RectangleRoiTool (CPU):', () => {
           expect(data[targets[0]].mean).not.toBe(255)
           expect(data[targets[0]].stdDev).not.toBe(0)
 
-          const handles = rectangleToolData.data.handles.points
+          const handles = rectangleAnnotation.data.handles.points
 
           const preMoveFirstHandle = p1
           const preMoveSecondHandle = p2
@@ -566,7 +550,7 @@ describe('RectangleRoiTool (CPU):', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle)
           expect(handles[3]).toEqual(afterMoveSecondHandle)
 
-          removeToolState(element, rectangleToolData)
+          removeAnnotation(element, rectangleAnnotation.annotationUID)
           done()
         }
       )
@@ -817,20 +801,19 @@ describe('RectangleRoiTool (CPU):', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const enabledElement = getEnabledElement(element)
-        const rectangleToolState = getToolState(enabledElement, 'RectangleRoi')
-        // Can successfully add rectangleROI to toolStateManager
-        expect(rectangleToolState).toBeDefined()
-        expect(rectangleToolState.length).toBe(1)
+        const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+        // Can successfully add rectangleROI to annotationManager
+        expect(rectangleAnnotations).toBeDefined()
+        expect(rectangleAnnotations.length).toBe(1)
 
-        const rectangleToolData = rectangleToolState[0]
-        expect(rectangleToolData.metadata.referencedImageId).toBe(
+        const rectangleAnnotation = rectangleAnnotations[0]
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
           imageId1.split(':')[1]
         )
-        expect(rectangleToolData.metadata.toolName).toBe('RectangleRoi')
-        expect(rectangleToolData.data.invalidated).toBe(false)
+        expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+        expect(rectangleAnnotation.invalidated).toBe(false)
 
-        const data = rectangleToolData.data.cachedStats
+        const data = rectangleAnnotation.data.cachedStats
         const targets = Array.from(Object.keys(data))
         expect(targets.length).toBe(1)
 
@@ -838,7 +821,7 @@ describe('RectangleRoiTool (CPU):', () => {
         expect(data[targets[0]].mean).not.toBe(255)
         expect(data[targets[0]].stdDev).not.toBe(0)
 
-        const handles = rectangleToolData.data.handles.points
+        const handles = rectangleAnnotation.data.handles.points
 
         const preMoveFirstHandle = p1
         const preMoveSecondHandle = p2
@@ -874,7 +857,7 @@ describe('RectangleRoiTool (CPU):', () => {
         expect(handles[0]).toEqual(afterMoveFirstHandle)
         expect(handles[3]).toEqual(afterMoveSecondHandle)
 
-        removeToolState(element, rectangleToolData)
+        removeAnnotation(element, rectangleAnnotation.annotationUID)
         done()
       }, 100)
     }

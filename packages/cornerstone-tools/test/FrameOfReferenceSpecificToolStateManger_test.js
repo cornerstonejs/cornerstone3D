@@ -1,21 +1,21 @@
 import * as csTools from '../src/index'
 import * as cornerstone3D from '../../cornerstone-render/src/index'
 
-const toolStateManager = csTools.ToolState.getDefaultToolStateManager()
+const annotationManager = csTools.AnnotationState.getDefaultAnnotationManager()
 
 const FrameOfReferenceUID = 'MY_FRAME_OF_REFERENCE_UID'
 
 const TOOLNAME_0 = 'toolName_0'
 const TOOLNAME_1 = 'toolName_1'
 
-const toolDataUID0 = 'toolData_000'
-const toolDataUID1 = 'toolData_001'
+const annotationUID0 = 'annotation_000'
+const annotationUID1 = 'annotation_001'
 
-function addAndReturnToolName0ToolData() {
-  const toolData = {
+function addAndReturnToolName0Annotation() {
+  const annotation = {
     metadata: {
       viewPlaneNormal: [0, 0, 1],
-      toolDataUID: toolDataUID0,
+      annotationUID: annotationUID0,
       FrameOfReferenceUID,
       toolName: TOOLNAME_0,
     },
@@ -29,16 +29,16 @@ function addAndReturnToolName0ToolData() {
     },
   }
 
-  toolStateManager.addToolState(toolData)
+  annotationManager.addAnnotation(annotation)
 
-  return toolData
+  return annotation
 }
 
-function addAndReturnToolName1ToolData() {
-  const toolData = {
+function addAndReturnToolName1Annotation() {
+  const annotation = {
     metadata: {
       viewPlaneNormal: [0, 0, 1],
-      toolDataUID: toolDataUID1,
+      annotationUID: annotationUID1,
       FrameOfReferenceUID,
       toolName: TOOLNAME_1,
     },
@@ -52,12 +52,12 @@ function addAndReturnToolName1ToolData() {
     },
   }
 
-  toolStateManager.addToolState(toolData)
+  annotationManager.addAnnotation(annotation)
 
-  return toolData
+  return annotation
 }
 
-describe('FrameOfReferenceSpecificToolStateManager:', () => {
+describe('FrameOfReferenceSpecificAnnotationManager:', () => {
   beforeAll(function () {
     cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
     csTools.init()
@@ -68,163 +68,164 @@ describe('FrameOfReferenceSpecificToolStateManager:', () => {
   })
 
   beforeEach(() => {
-    // Reset the toolStateManager
-    toolStateManager.restoreToolState({})
+    // Reset the annotationManager
+    annotationManager.restoreAnnotations({})
   })
 
-  it('should correctly add toolState and delete it', () => {
-    const toolData = addAndReturnToolName0ToolData()
+  it('should correctly add annotations and delete it', () => {
+    const annotation = addAndReturnToolName0Annotation()
 
-    toolStateManager.removeToolState(toolData)
+    annotationManager.removeAnnotation(annotation.annotationUID)
 
-    const undefinedToolData =
-      toolStateManager.getToolStateByToolDataUID(toolDataUID0)
+    const undefinedAnnotation = annotationManager.getAnnotation(annotationUID0)
 
-    expect(undefinedToolData).toBeUndefined()
+    expect(undefinedAnnotation).toBeUndefined()
   })
-  it('should correctly add toolState and get it by its UID using different levels of efficient filtering', () => {
-    const toolData = addAndReturnToolName0ToolData()
-    const { metadata } = toolData
-    const { toolDataUID, FrameOfReferenceUID, toolName } = metadata
+  it('should correctly add annotations and get it by its UID using different levels of efficient filtering', () => {
+    const annotation = addAndReturnToolName0Annotation()
+    const { metadata, annotationUID } = annotation
+    const { FrameOfReferenceUID, toolName } = metadata
 
-    const toolDataFoundByToolDataUID =
-      toolStateManager.getToolStateByToolDataUID(toolDataUID)
+    const annotationFoundByAnnotationUID =
+      annotationManager.getAnnotation(annotationUID)
 
-    const toolDataFoundByToolDataUIDAndFoR =
-      toolStateManager.getToolStateByToolDataUID(toolDataUID, {
+    const annotationFoundByAnnotationUIDAndFoR =
+      annotationManager.getAnnotation(annotationUID, {
         FrameOfReferenceUID,
       })
 
-    const toolDataFoundByToolAllFilters =
-      toolStateManager.getToolStateByToolDataUID(toolDataUID, {
+    const annotationFoundByToolAllFilters = annotationManager.getAnnotation(
+      annotationUID,
+      {
         FrameOfReferenceUID,
         toolName,
-      })
+      }
+    )
 
-    expect(toolData).toEqual(toolDataFoundByToolDataUID)
-    expect(toolData).toEqual(toolDataFoundByToolDataUIDAndFoR)
-    expect(toolData).toEqual(toolDataFoundByToolAllFilters)
+    expect(annotation).toEqual(annotationFoundByAnnotationUID)
+    expect(annotation).toEqual(annotationFoundByAnnotationUIDAndFoR)
+    expect(annotation).toEqual(annotationFoundByToolAllFilters)
   })
-  it('should get various parts of the toolState hierarchy', () => {
-    const toolData = addAndReturnToolName0ToolData()
-    const { metadata } = toolData
-    const { toolDataUID, FrameOfReferenceUID, toolName } = metadata
+  it('should get various parts of the annotations hierarchy', () => {
+    const annotation = addAndReturnToolName0Annotation()
+    const { metadata, annotationUID } = annotation
+    const { FrameOfReferenceUID, toolName } = metadata
 
-    const toolSpecificToolStateForFrameOfReference =
-      toolStateManager.saveToolState(FrameOfReferenceUID, toolName)
+    const toolSpecificAnnotationsForFrameOfReference =
+      annotationManager.saveAnnotations(FrameOfReferenceUID, toolName)
 
-    const frameOfReferenceSpecificToolState =
-      toolStateManager.saveToolState(FrameOfReferenceUID)
+    const frameOfReferenceSpecificAnnotations =
+      annotationManager.saveAnnotations(FrameOfReferenceUID)
 
-    const entireToolState = toolStateManager.saveToolState()
+    const annotations = annotationManager.saveAnnotations()
 
-    expect(
-      toolSpecificToolStateForFrameOfReference[0].metadata.toolDataUID
-    ).toEqual(toolDataUID)
-    expect(frameOfReferenceSpecificToolState[toolName]).toBeDefined()
-    expect(entireToolState[FrameOfReferenceUID]).toBeDefined()
+    expect(toolSpecificAnnotationsForFrameOfReference[0].annotationUID).toEqual(
+      annotationUID
+    )
+    expect(frameOfReferenceSpecificAnnotations[toolName]).toBeDefined()
+    expect(annotations[FrameOfReferenceUID]).toBeDefined()
   })
-  it('should restore various parts of the toolState to the toolStateManager', () => {
-    const toolData_0 = addAndReturnToolName0ToolData()
-    const toolData_1 = addAndReturnToolName1ToolData()
-    const metadata_0 = toolData_0.metadata
-    const metadata_1 = toolData_1.metadata
-    //const { toolDataUID, FrameOfReferenceUID, toolName } = metadata;
+  it('should restore various parts of the annotations to the annotationManager', () => {
+    const annotation_0 = addAndReturnToolName0Annotation()
+    const annotation_1 = addAndReturnToolName1Annotation()
+    const metadata_0 = annotation_0.metadata
+    const metadata_1 = annotation_1.metadata
 
-    // Make copy of toolState
-    const toolState = toolStateManager.saveToolState()
+    // Make copy of annotations
+    const annotations = annotationManager.saveAnnotations()
 
-    // Reset toolState.
-    toolStateManager.restoreToolState({})
+    // Reset annotations.
+    annotationManager.restoreAnnotations({})
 
-    const toolName1ToolSpecificToolState =
-      toolState[FrameOfReferenceUID][metadata_1.toolName]
+    const toolName1toolSpecificAnnotations =
+      annotations[FrameOfReferenceUID][metadata_1.toolName]
 
-    const frameOfReferenceSpecificToolState = toolState[FrameOfReferenceUID]
+    const frameOfReferenceSpecificAnnotations = annotations[FrameOfReferenceUID]
 
-    // Restore tool only specific toolState for toolState 1 only.
-    toolStateManager.restoreToolState(
-      toolName1ToolSpecificToolState,
+    // Restore tool only specific annotations for annotations 1 only.
+    annotationManager.restoreAnnotations(
+      toolName1toolSpecificAnnotations,
       FrameOfReferenceUID,
       metadata_1.toolName
     )
 
-    const toolStateWithOnlyTool1 = toolStateManager.saveToolState()
+    const annotationsOfTool1 = annotationManager.saveAnnotations()
 
     expect(
-      toolStateWithOnlyTool1[FrameOfReferenceUID][metadata_1.toolName]
+      annotationsOfTool1[FrameOfReferenceUID][metadata_1.toolName]
     ).toBeDefined()
     expect(
-      toolStateWithOnlyTool1[FrameOfReferenceUID][metadata_0.toolName]
+      annotationsOfTool1[FrameOfReferenceUID][metadata_0.toolName]
     ).toBeUndefined()
 
-    // Reset toolState.
-    toolStateManager.restoreToolState({})
+    // Reset annotations.
+    annotationManager.restoreAnnotations({})
 
-    // Restore toolState for FrameOfReference
-    toolStateManager.restoreToolState(
-      frameOfReferenceSpecificToolState,
+    // Restore annotations for FrameOfReference
+    annotationManager.restoreAnnotations(
+      frameOfReferenceSpecificAnnotations,
       FrameOfReferenceUID
     )
 
-    const frameOfReferenceToolState = toolStateManager.saveToolState()
+    const frameOfReferenceAnnotations = annotationManager.saveAnnotations()
 
-    expect(frameOfReferenceToolState[FrameOfReferenceUID]).toBeDefined()
+    expect(frameOfReferenceAnnotations[FrameOfReferenceUID]).toBeDefined()
     expect(
-      frameOfReferenceToolState[FrameOfReferenceUID][metadata_1.toolName]
+      frameOfReferenceAnnotations[FrameOfReferenceUID][metadata_1.toolName]
     ).toBeDefined()
     expect(
-      frameOfReferenceToolState[FrameOfReferenceUID][metadata_0.toolName]
+      frameOfReferenceAnnotations[FrameOfReferenceUID][metadata_0.toolName]
     ).toBeDefined()
 
-    toolStateManager.restoreToolState({})
+    annotationManager.restoreAnnotations({})
 
-    // Restore entire toolState
-    toolStateManager.restoreToolState(toolState)
+    // Restore entire annotations
+    annotationManager.restoreAnnotations(annotations)
 
-    const newlySavedToolState = toolStateManager.saveToolState()
+    const newlySavedAnnotations = annotationManager.saveAnnotations()
 
-    expect(newlySavedToolState[FrameOfReferenceUID]).toBeDefined()
+    expect(newlySavedAnnotations[FrameOfReferenceUID]).toBeDefined()
     expect(
-      newlySavedToolState[FrameOfReferenceUID][metadata_1.toolName]
+      newlySavedAnnotations[FrameOfReferenceUID][metadata_1.toolName]
     ).toBeDefined()
     expect(
-      newlySavedToolState[FrameOfReferenceUID][metadata_0.toolName]
+      newlySavedAnnotations[FrameOfReferenceUID][metadata_0.toolName]
     ).toBeDefined()
   })
-  it('Should remove toolState by UID using different levels of efficient filtering', () => {
-    const toolData = addAndReturnToolName0ToolData()
-    const { metadata } = toolData
-    const { toolDataUID, FrameOfReferenceUID, toolName } = metadata
 
-    let undefinedToolData
+  it('Should remove annotations by UID using different levels of efficient filtering', () => {
+    const annotation = addAndReturnToolName0Annotation()
+    const { metadata, annotationUID } = annotation
+    const { FrameOfReferenceUID, toolName } = metadata
 
-    const toolStateSnapshot = toolStateManager.saveToolState()
+    let undefinedAnnotation
 
-    // Remove toolData by UID, and check it was removed.
-    toolStateManager.removeToolStateByToolDataUID(toolDataUID)
-    undefinedToolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
-    expect(undefinedToolData).toBeUndefined()
+    const annotationsSnapshot = annotationManager.saveAnnotations()
 
-    // Restore toolState
-    toolStateManager.restoreToolState(toolStateSnapshot)
+    // Remove annotation by UID, and check it was removed.
+    annotationManager.removeAnnotation(annotationUID)
+    undefinedAnnotation = annotationManager.getAnnotation(annotationUID)
+    expect(undefinedAnnotation).toBeUndefined()
 
-    // Remove toolData by UID and FrameOfReferenceUID, and check it was removed.
-    toolStateManager.removeToolStateByToolDataUID(toolDataUID, {
+    // Restore annotations
+    annotationManager.restoreAnnotations(annotationsSnapshot)
+
+    // Remove annotation by UID and FrameOfReferenceUID, and check it was removed.
+    annotationManager.removeAnnotation(annotationUID, {
       FrameOfReferenceUID,
     })
-    undefinedToolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
-    expect(undefinedToolData).toBeUndefined()
+    undefinedAnnotation = annotationManager.getAnnotation(annotationUID)
+    expect(undefinedAnnotation).toBeUndefined()
 
-    // Restore toolState
-    toolStateManager.restoreToolState(toolStateSnapshot)
+    // Restore annotations
+    annotationManager.restoreAnnotations(annotationsSnapshot)
 
-    // Remove toolData by UID, FrameOfReferenceUID and toolName, and check it was removed.
-    toolStateManager.removeToolStateByToolDataUID(toolDataUID, {
+    // Remove annotation by UID, FrameOfReferenceUID and toolName, and check it was removed.
+    annotationManager.removeAnnotation(annotationUID, {
       FrameOfReferenceUID,
       toolName,
     })
-    undefinedToolData = toolStateManager.getToolStateByToolDataUID(toolDataUID)
-    expect(undefinedToolData).toBeUndefined()
+    undefinedAnnotation = annotationManager.getAnnotation(annotationUID)
+    expect(undefinedAnnotation).toBeUndefined()
   })
 })

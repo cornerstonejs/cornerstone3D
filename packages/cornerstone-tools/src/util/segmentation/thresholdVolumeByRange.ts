@@ -19,7 +19,7 @@ export type ThresholdRangeOptions = {
   overwrite: boolean
 }
 
-export type ToolDataForThresholding = {
+export type AnnotationForThresholding = {
   metadata: {
     enabledElement: Types.IEnabledElement
   }
@@ -34,18 +34,18 @@ export type ToolDataForThresholding = {
 }
 
 /**
- * Given an array of rectangle toolData, and a segmentation and referenceVolumes:
+ * Given an array of rectangle annotation, and a segmentation and referenceVolumes:
  * It fills the segmentation at SegmentIndex=1 based on a range of thresholds of the referenceVolumes
  * inside the drawn annotations.
  * @param toolGroupUID - - The toolGroupUID of the tool that is performing the operation
- * @param toolDataList - Array of rectangle annotation toolData
+ * @param annotations - Array of rectangle annotations
  * @param segmentationData - - The segmentation data to be modified
  * @param segmentation - segmentation volume
  * @param options - Options for thresholding
  */
 function thresholdVolumeByRange(
   toolGroupUID: string,
-  toolDataList: ToolDataForThresholding[],
+  annotations: AnnotationForThresholding[],
   referenceVolumes: Types.IImageVolume[],
   segmentationData: ToolGroupSpecificSegmentationData,
   options: ThresholdRangeOptions
@@ -78,9 +78,9 @@ function thresholdVolumeByRange(
     }
   }
 
-  toolDataList.forEach((toolData) => {
+  annotations.forEach((annotation) => {
     // Threshold Options
-    const { data } = toolData
+    const { data } = annotation
     const { points } = data.handles
 
     const referenceVolume = referenceVolumes[0]

@@ -1,6 +1,6 @@
 import { state } from '../../store'
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
-import { selectToolData } from '../../stateManagement/annotation/toolDataSelection'
+import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection'
 import { EventTypes } from '../../types'
 
 /**
@@ -28,7 +28,8 @@ export default function mouseDownActivate(
     return
   }
 
-  if (activeTool.addNewMeasurement) {
-    selectToolData(activeTool.addNewMeasurement(evt, 'mouse'))
+  if (activeTool.addNewAnnotation) {
+    const annotation = activeTool.addNewAnnotation(evt, 'mouse')
+    setAnnotationSelected(annotation)
   }
 }

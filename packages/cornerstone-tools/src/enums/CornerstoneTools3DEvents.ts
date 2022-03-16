@@ -6,55 +6,55 @@
  */
 enum CornerstoneTools3DEvents {
   ///////////////////////////////////////
-  //      Measurements - Annotations
+  //            Annotations
   ///////////////////////////////////////
 
   /**
-   * Triggers on the eventTarget when a new measurement is added.
+   * Triggers on the eventTarget when a new annotation is added.
    *
-   * Make use of {@link EventTypes.MeasurementAddedEventType | Measurement Added Event Type  }
-   * for typing your event listeners for this measurement added event, and see what event
-   * detail is included in {@link EventTypes.MeasurementAddedEventData | Measurement Added Event Data}.
+   * Make use of {@link EventTypes.AnnotationAddedEventType | Annotation Added Event Type  }
+   * for typing your event listeners for this annotation added event, and see what event
+   * detail is included in {@link EventTypes.AnnotationAddedEventDetail | Annotation Added Event Detail}.
    */
-  MEASUREMENT_ADDED = 'CORNERSTONE_TOOLS_MEASUREMENT_ADDED',
+  ANNOTATION_ADDED = 'CORNERSTONE_TOOLS_ANNOTATION_ADDED',
 
   /**
-   * Triggers on the eventTarget when a measurement is modified (e.g. a handle is modified).
-   * Make use of {@link EventTypes.MeasurementModifiedEventType | Measurement Modified Event Type}
-   * for typing your event listeners for this measurement modified event, and see what
-   * event detail is included in {@link EventTypes.MeasurementModifiedEventData | Measurement Modified Event Data}.
+   * Triggers on the eventTarget when an annotation is modified (e.g. a handle is modified).
+   * Make use of {@link EventTypes.AnnotationModifiedEventType | Annotation Modified Event Type}
+   * for typing your event listeners for this annotation modified event, and see what
+   * event detail is included in {@link EventTypes.AnnotationModifiedEventDetail | Annotation Modified Event Detail}.
    */
-  MEASUREMENT_MODIFIED = 'CORNERSTONE_TOOLS_MEASUREMENT_MODIFIED',
+  ANNOTATION_MODIFIED = 'CORNERSTONE_TOOLS_ANNOTATION_MODIFIED',
 
   /**
-   * Triggers on the eventTarget when a measurement is removed from the toolState manager.
-   * Make use of {@link EventTypes.MeasurementRemovedEventType | Measurement Removed Event Type}
-   * for typing your event listeners for this measurement removed event, and see what
-   * event detail is included in {@link EventTypes.MeasurementRemovedEventData | Measurement Removed Event Data}.
+   * Triggers on the eventTarget when an annotation is removed from the annotations manager.
+   * Make use of {@link EventTypes.AnnotationRemovedEventType | Annotation Removed Event Type}
+   * for typing your event listeners for this annotation removed event, and see what
+   * event detail is included in {@link EventTypes.AnnotationRemovedEventDetail | Annotation Removed Event Detail}.
    */
-  MEASUREMENT_REMOVED = 'CORNERSTONE_TOOLS_MEASUREMENT_REMOVED',
+  ANNOTATION_REMOVED = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED',
 
   /**
-   * Triggers on the eventTarget when a measurement selection status is changed.
-   * Make use of {@link EventTypes.MeasurementSelectionChangeEventType | Measurement Selection Change Event Type}
-   * for typing your event listeners for this measurement selection change event, and see what
-   * event detail is included in {@link EventTypes.MeasurementSelectionChangeEventData | Measurement Selection Change Event Data}.
+   * Triggers on the eventTarget when an annotation selection status is changed.
+   * Make use of {@link EventTypes.AnnotationSelectionChangeEventType | Annotation Selection Change Event Type}
+   * for typing your event listeners for this annotation selection change event, and see what
+   * event detail is included in {@link EventTypes.AnnotationSelectionChangeEventDetail | Annotation Selection Change Event Detail}.
    */
-  MEASUREMENT_SELECTION_CHANGE = 'CORNERSTONE_TOOLS_MEASUREMENT_SELECTION_CHANGE',
+  ANNOTATION_SELECTION_CHANGE = 'CORNERSTONE_TOOLS_ANNOTATION_SELECTION_CHANGE',
 
   /**
-   * Triggers on the eventTarget when a measurement locked status is changed.
-   * Make use of {@link EventTypes.MeasurementLockChangeEventType | Measurement Lock Change Event Type}
-   * for typing your event listeners for this measurement lock change event, and see what
-   * event detail is included in {@link EventTypes.MeasurementLockChangeEventData | Measurement Lock Change Event Data}.
+   * Triggers on the eventTarget when an annotation locked status is changed.
+   * Make use of {@link EventTypes.AnnotationLockChangeEventType | Annotation Lock Change Event Type}
+   * for typing your event listeners for this annotation lock change event, and see what
+   * event detail is included in {@link EventTypes.AnnotationLockChangeEventDetail | Annotation Lock Change Event Detail}.
    */
-  MEASUREMENT_LOCK_CHANGE = 'CORNERSTONE_TOOLS_MEASUREMENT_LOCK_CHANGE',
+  ANNOTATION_LOCK_CHANGE = 'CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE',
 
   /**
    * Triggers on the eventTarget when an annotation is rendered.
    * Make use of {@link EventTypes.AnnotationRenderedEventType | Annotation Rendered Event Type}
    * for typing your event listeners for this annotation rendered event, and see what
-   * event detail is included in {@link EventTypes.AnnotationRenderedEventData | Annotation Rendered Event Data}.
+   * event detail is included in {@link EventTypes.AnnotationRenderedEventDetail | Annotation Rendered Event Detail}.
    */
   ANNOTATION_RENDERED = 'CORNERSTONE_TOOLS_ANNOTATION_RENDERED',
 
@@ -66,7 +66,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a Segmentation is rendered by the Segmentation Rendering Engine.
    * Make use of {@link EventTypes.SegmentationRenderedEventType | Segmentation Rendered Event Type}
    * for typing your event listeners for this segmentation rendered event, and see what
-   * event detail is included in {@link EventTypes.SegmentationRenderedEventData | Segmentation Rendered Event Data}.
+   * event detail is included in {@link EventTypes.SegmentationRenderedEventDetail | Segmentation Rendered Event Detail}.
    */
   SEGMENTATION_RENDERED = 'CORNERSTONE_TOOLS_SEGMENTATION_RENDERED',
 
@@ -74,7 +74,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a Segmentation state of a toolGroup is modified in the state manager.
    * Make use of {@link EventTypes.SegmentationStateModifiedEventType | Segmentation State Modified Event Type}
    * for typing your event listeners for this segmentation state modified event, and see what
-   * event detail is included in {@link EventTypes.SegmentationStateModifiedEventData | Segmentation State Modified Event Data}.
+   * event detail is included in {@link EventTypes.SegmentationStateModifiedEventDetail | Segmentation State Modified Event Detail}.
    */
   SEGMENTATION_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_STATE_MODIFIED',
 
@@ -82,7 +82,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a Segmentation global state is updated in the state manager.
    * Make use of {@link EventTypes.SegmentationGlobalStateModifiedEventType | Segmentation Global State Modified Event Type}
    * for typing your event listeners for this segmentation global state modified event, and see what
-   * event detail is included in {@link EventTypes.SegmentationGlobalStateModifiedEventData | Segmentation Global State Modified Event Data}.
+   * event detail is included in {@link EventTypes.SegmentationGlobalStateModifiedEventDetail | Segmentation Global State Modified Event Detail}.
    */
   SEGMENTATION_GLOBAL_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_GLOBAL_STATE_MODIFIED',
 
@@ -90,7 +90,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a Segmentation data is modified (e.g., by brush tool).
    * Make use of {@link EventTypes.SegmentationDataModifiedEventType | Segmentation Data Modified Event Type}
    * for typing your event listeners for this segmentation data modified event, and see what
-   * event detail is included in {@link EventTypes.SegmentationDataModifiedEventData | Segmentation Data Modified Event Data}.
+   * event detail is included in {@link EventTypes.SegmentationDataModifiedEventDetail | Segmentation Data Modified Event Detail}.
    */
   SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
 
@@ -102,7 +102,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a key on the keyboard is pressed.
    * Make use of {@link EventTypes.KeyDownEventType | Key Down Event Type}
    * for typing your event listeners for this key down event, and see what
-   * event detail is included in {@link EventTypes.KeyDownEventData | Key Down Event Data}.
+   * event detail is included in {@link EventTypes.KeyDownEventDetail | Key Down Event Detail}.
    */
   KEY_DOWN = 'CORNERSTONE_TOOLS_KEY_DOWN',
 
@@ -110,7 +110,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a key on the keyboard is released.
    * Make use of {@link EventTypes.KeyUpEventType | Key Up Event Type}
    * for typing your event listeners for this key up event, and see what
-   * event detail is included in {@link EventTypes.KeyUpEventData | Key Up Event Data}.
+   * event detail is included in {@link EventTypes.KeyUpEventDetail | Key Up Event Detail}.
    */
   KEY_UP = 'CORNERSTONE_TOOLS_KEY_UP',
 
@@ -122,7 +122,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when the mouse is pressed down, it is CornerstoneTools normalized event.
    * Make use of {@link EventTypes.MouseDownEventType | Mouse Down Event Type}
    * for typing your event listeners for this mouse down event, and see what
-   * event detail is included in {@link EventTypes.MouseDownEventData | Mouse Down Event Data}.
+   * event detail is included in {@link EventTypes.MouseDownEventDetail | Mouse Down Event Detail}.
    */
   MOUSE_DOWN = 'CORNERSTONE_TOOLS_MOUSE_DOWN',
 
@@ -130,16 +130,16 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when the mouse is released, it is CornerstoneTools normalized event.
    * Make use of {@link EventTypes.MouseUpEventType | Mouse Up Event Type}
    * for typing your event listeners for this mouse up event, and see what
-   * event detail is included in {@link EventTypes.MouseUpEventData | Mouse Up Event Data}.
+   * event detail is included in {@link EventTypes.MouseUpEventDetail | Mouse Up Event Detail}.
    */
   MOUSE_UP = 'CORNERSTONE_TOOLS_MOUSE_UP',
 
   /**
    * Triggers on the eventTarget when a handled `MOUSE_DOWN` event does not `stopPropagation`. The hook
-   * we use to create new measurement data for mouse events.
+   * we use to create new annotation for mouse events.
    * Make use of {@link EventTypes.MouseDownActivateEventType | Mouse Down Activate Event Type}
    * for typing your event listeners for this mouse down activate event, and see what
-   * event detail is included in {@link EventTypes.MouseDownActivateEventData | Mouse Down Activate Event Data}.
+   * event detail is included in {@link EventTypes.MouseDownActivateEventDetail | Mouse Down Activate Event Detail}.
    */
   MOUSE_DOWN_ACTIVATE = 'CORNERSTONE_TOOLS_MOUSE_DOWN_ACTIVATE',
 
@@ -147,17 +147,17 @@ enum CornerstoneTools3DEvents {
    * Triggers on the event target when mouse is dragging an annotation or textBox.
    * Make use of {@link EventTypes.MouseDragEventType | Mouse Drag Event Type}
    * for typing your event listeners for this mouse drag event, and see what
-   * event detail is included in {@link EventTypes.MouseDragEventData | Mouse Drag Event Data}.
+   * event detail is included in {@link EventTypes.MouseDragEventDetail | Mouse Drag Event Detail}.
    */
   MOUSE_DRAG = 'CORNERSTONE_TOOLS_MOUSE_DRAG',
 
   /**
    * Triggers on the eventTarget, when the mouse is moved, it is CornerstoneTools normalized event.
-   * It can be just a mouse move or when double click is performed and measurement
+   * It can be just a mouse move or when double click is performed and annotation
    * drawing can be performed with just mouse move.
    * Make use of {@link EventTypes.MouseMoveEventType | Mouse Move Event Type}
    * for typing your event listeners for this mouse move event, and see what
-   * event detail is included in {@link EventTypes.MouseMoveEventData | Mouse Move Event Data}.
+   * event detail is included in {@link EventTypes.MouseMoveEventDetail | Mouse Move Event Detail}.
    */
   MOUSE_MOVE = 'CORNERSTONE_TOOLS_MOUSE_MOVE',
 
@@ -165,7 +165,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a mouse click is detected. It is CornerstoneTools normalized event.
    * Make use of {@link EventTypes.MouseClickEventType | Mouse Click Event Type}
    * for typing your event listeners for this mouse click event, and see what
-   * event detail is included in {@link EventTypes.MouseClickEventData | Mouse Click Event Data}.
+   * event detail is included in {@link EventTypes.MouseClickEventDetail | Mouse Click Event Detail}.
    */
   MOUSE_CLICK = 'CORNERSTONE_TOOLS_MOUSE_CLICK',
 
@@ -173,7 +173,7 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a mouse double click is detected. It is CornerstoneTools normalized event.
    * Make use of {@link EventTypes.MouseDoubleClickEventType | Mouse Double Click Event Type}
    * for typing your event listeners for this mouse double click event, and see what
-   * event detail is included in {@link EventTypes.MouseDoubleClickEventData | Mouse Double Click Event Data}.
+   * event detail is included in {@link EventTypes.MouseDoubleClickEventDetail | Mouse Double Click Event Detail}.
    */
   MOUSE_DOUBLE_CLICK = 'CORNERSTONE_TOOLS_MOUSE_DOUBLE_CLICK',
 
@@ -181,12 +181,12 @@ enum CornerstoneTools3DEvents {
    * Triggers on the eventTarget when a mouse wheel event is detected. It is CornerstoneTools normalized event.
    * Make use of {@link EventTypes.MouseWheelEventType | Mouse Wheel Event Type}
    * for typing your event listeners for this mouse wheel event, and see what
-   * event detail is included in {@link EventTypes.MouseWheelEventData | Mouse Wheel Event Data}.
+   * event detail is included in {@link EventTypes.MouseWheelEventDetail | Mouse Wheel Event Detail}.
    */
   MOUSE_WHEEL = 'CORNERSTONE_TOOLS_MOUSE_WHEEL',
 
   // Todo: not being fired as of now
-  // MEASUREMENT_COMPLETED = 'CORNERSTONE_TOOLS_MEASUREMENT_COMPLETED',
+  // ANNOTATION_COMPLETED = 'CORNERSTONE_TOOLS_ANNOTATION_COMPLETED',
   // Todo: not implemented yet
   // KEY_PRESS = 'CORNERSTONE_TOOLS_KEY_PRESS',
 

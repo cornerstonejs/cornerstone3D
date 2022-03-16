@@ -108,7 +108,7 @@ function loadVolumeFromVolumeLoader(
       triggerEvent(eventTarget, EVENTS.VOLUME_LOADED, { volume })
     },
     function (error) {
-      const errorObject: EventTypes.VolumeLoadedFailedEventData = {
+      const errorObject: EventTypes.VolumeLoadedFailedEventDetail = {
         volumeId,
         error,
       }

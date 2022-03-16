@@ -15,7 +15,7 @@ import {
  * @param segmentIndex - The segment index to merge
  * @returns Merged labelmap
  */
-function createMergedLabelmap(
+function createMergedLabelmapForIndex(
   labelmaps: Array<IImageVolume>,
   segmentIndex = 1,
   uid = 'mergedLabelmap'
@@ -60,4 +60,4 @@ function createMergedLabelmap(
   return mergedVolume
 }
 
-export default createMergedLabelmap
+export default createMergedLabelmapForIndex

@@ -1,4 +1,8 @@
-import { RenderingEngine, Types, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render'
+import {
+  RenderingEngine,
+  Types,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -18,7 +22,10 @@ const {
 } = cornerstoneTools
 
 // ======== Set up page ======== //
-setTitleAndDescription('Annotation Tools Stack', 'Annotation tools for a stack viewport')
+setTitleAndDescription(
+  'Annotation Tools Stack',
+  'Annotation tools for a stack viewport'
+)
 
 const content = document.getElementById('content')
 const element = document.createElement('div')
@@ -40,26 +47,35 @@ content.append(instructions)
 
 const toolGroupUID = 'STACK_TOOL_GROUP_UID'
 
-let toolsNames = ['Length', 'Probe', 'RectangleRoi', 'EllipticalRoi', 'Bidirectional']
+const toolsNames = [
+  'Length',
+  'Probe',
+  'RectangleRoi',
+  'EllipticalRoi',
+  'Bidirectional',
+]
 let selectedToolName = toolsNames[0]
 
-addDropdownToToolbar({ options: toolsNames, defaultOption: selectedToolName }, (newSelectedToolName) => {
-  const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupUID)
+addDropdownToToolbar(
+  { options: toolsNames, defaultOption: selectedToolName },
+  (newSelectedToolName) => {
+    const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupUID)
 
-  // Set the new tool active
-  toolGroup.setToolActive(newSelectedToolName, {
-    bindings: [
-      {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
-      },
-    ],
-  })
+    // Set the new tool active
+    toolGroup.setToolActive(newSelectedToolName, {
+      bindings: [
+        {
+          mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        },
+      ],
+    })
 
-  // Set the old tool passive
-  toolGroup.setToolPassive(selectedToolName, {})
+    // Set the old tool passive
+    toolGroup.setToolPassive(selectedToolName)
 
-  selectedToolName = newSelectedToolName
-})
+    selectedToolName = newSelectedToolName
+  }
+)
 
 /**
  * Runs the demo
@@ -69,11 +85,11 @@ async function run() {
   await initDemo()
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool, {})
-  cornerstoneTools.addTool(ProbeTool, {})
-  cornerstoneTools.addTool(RectangleRoiTool, {})
-  cornerstoneTools.addTool(EllipticalRoiTool, {})
-  cornerstoneTools.addTool(BidirectionalTool, {})
+  cornerstoneTools.addTool(LengthTool)
+  cornerstoneTools.addTool(ProbeTool)
+  cornerstoneTools.addTool(RectangleRoiTool)
+  cornerstoneTools.addTool(EllipticalRoiTool)
+  cornerstoneTools.addTool(BidirectionalTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -97,15 +113,17 @@ async function run() {
   })
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
-  toolGroup.setToolPassive('Probe', {})
-  toolGroup.setToolPassive('RectangleRoi', {})
-  toolGroup.setToolPassive('EllipticalRoi', {})
-  toolGroup.setToolPassive('Bidirectional', {})
+  toolGroup.setToolPassive('Probe')
+  toolGroup.setToolPassive('RectangleRoi')
+  toolGroup.setToolPassive('EllipticalRoi')
+  toolGroup.setToolPassive('Bidirectional')
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'STACK',
   })
@@ -121,7 +139,7 @@ async function run() {
     type: VIEWPORT_TYPE.STACK,
     element,
     defaultOptions: {
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
@@ -131,7 +149,9 @@ async function run() {
   toolGroup.addViewports(renderingEngineUID, viewportUID)
 
   // Get the stack viewport that was created
-  const viewport = <Types.StackViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a stack containing a single image
   const stack = [imageIds[0]]

@@ -13,12 +13,12 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { BaseAnnotationTool } from '../base'
+import { AnnotationTool } from '../base'
 import {
-  addToolState,
-  getToolState,
-  removeToolState,
-} from '../../stateManagement/annotation/toolState'
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
+} from '../../stateManagement/annotation/annotationState'
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
@@ -31,30 +31,29 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import { MeasurementModifiedEventData } from '../../types/EventTypes'
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
 import {
-  ToolSpecificToolData,
+  Annotation,
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
 } from '../../types'
 
-interface ProbeSpecificToolData extends ToolSpecificToolData {
+interface ProbeAnnotation extends Annotation {
   data: {
-    invalidated: boolean
     handles: { points: Types.Point3[] }
     cachedStats: any
-    active: boolean
+    label: string
   }
 }
-export default class ProbeTool extends BaseAnnotationTool {
+export default class ProbeTool extends AnnotationTool {
   touchDragCallback: any
   mouseDragCallback: any
-  editData: { toolData: any; viewportUIDsToRender: string[] } | null
+  editData: { annotation: any; viewportUIDsToRender: string[] } | null
   _configuration: any
   eventDispatchDetail: {
     viewportUID: string
@@ -100,17 +99,17 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a Probe ToolData and stores it in the toolStateManager
+   * a Probe Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The toolData object.
+   * @returns The annotation object.
    *
    */
-  addNewMeasurement = (
+  addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): ProbeSpecificToolData => {
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+  ): ProbeAnnotation => {
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
     const enabledElement = getEnabledElement(element)
@@ -140,27 +139,27 @@ export default class ProbeTool extends BaseAnnotationTool {
       referencedImageId = referencedImageId.substring(colonIndex + 1)
     }
 
-    const toolData = {
+    const annotation = {
+      invalidated: true,
+      highlighted: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        label: '',
         toolName: this.name,
       },
       data: {
-        invalidated: true,
+        label: '',
         handles: { points: [<Types.Point3>[...worldPos]] },
         cachedStats: {},
-        active: true,
       },
     }
 
-    // Ensure settings are initialized after tool data instantiation
-    Settings.getObjectSettings(toolData, ProbeTool)
+    // Ensure settings are initialized after annotation instantiation
+    Settings.getObjectSettings(annotation, ProbeTool)
 
-    addToolState(element, toolData)
+    addAnnotation(element, annotation)
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -168,7 +167,7 @@ export default class ProbeTool extends BaseAnnotationTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
     }
     this._activateModify(element)
@@ -182,7 +181,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       viewportUIDsToRender
     )
 
-    return toolData
+    return annotation
   }
 
   /**
@@ -190,7 +189,7 @@ export default class ProbeTool extends BaseAnnotationTool {
    * getHandleNearImagePoint method.
    *
    * @param element - The element that the tool is attached to.
-   * @param toolData - The tool data object associated with the annotation
+   * @param annotation - The annotation object associated with the annotation
    * @param canvasCoords - The coordinates of the mouse click on canvas
    * @param proximity - The distance from the mouse cursor to the point
    * that is considered "near".
@@ -199,19 +198,19 @@ export default class ProbeTool extends BaseAnnotationTool {
    */
   getHandleNearImagePoint(
     element: HTMLElement,
-    toolData: ToolSpecificToolData,
+    annotation: ProbeAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): ToolHandle | undefined {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
 
-    const { data } = toolData
+    const { data } = annotation
     const point = data.handles.points[0]
-    const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
+    const annotationCanvasCoordinate = viewport.worldToCanvas(point)
 
     const near =
-      vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity
+      vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity
 
     if (near === true) {
       return point
@@ -220,16 +219,14 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.MouseDownEventType,
-    toolData: ToolSpecificToolData,
+    annotation: ProbeAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { data } = toolData
-
-    data.active = true
+    annotation.highlighted = true
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -240,7 +237,7 @@ export default class ProbeTool extends BaseAnnotationTool {
 
     this.editData = {
       //handle, // This would be useful for other tools with more than one handle
-      toolData,
+      annotation,
       viewportUIDsToRender,
     }
     this._activateModify(element)
@@ -261,13 +258,12 @@ export default class ProbeTool extends BaseAnnotationTool {
   _mouseUpCallback(
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { toolData, viewportUIDsToRender } = this.editData
-    const { data } = toolData
+    const { annotation, viewportUIDsToRender } = this.editData
 
-    data.active = false
+    annotation.highlighted = false
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -289,7 +285,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeToolState(element, toolData)
+      removeAnnotation(element, annotation.annotationUID)
     }
 
     triggerAnnotationRenderForViewportUIDs(
@@ -300,15 +296,15 @@ export default class ProbeTool extends BaseAnnotationTool {
 
   _mouseDragCallback(evt) {
     this.isDrawing = true
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
-    const { toolData, viewportUIDsToRender } = this.editData
-    const { data } = toolData
+    const { annotation, viewportUIDsToRender } = this.editData
+    const { data } = annotation
 
     data.handles.points[0] = [...worldPos]
-    data.invalidated = true
+    annotation.invalidated = true
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -326,10 +322,10 @@ export default class ProbeTool extends BaseAnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { toolData, viewportUIDsToRender } = this.editData
-      const { data } = toolData
+      const { annotation, viewportUIDsToRender } = this.editData
+      const { data } = annotation
 
-      data.active = false
+      annotation.highlighted = false
       data.handles.activeHandleIndex = null
 
       const enabledElement = getEnabledElement(element)
@@ -341,7 +337,7 @@ export default class ProbeTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolDataUID
+      return annotation.annotationUID
     }
   }
 
@@ -368,49 +364,52 @@ export default class ProbeTool extends BaseAnnotationTool {
   }
 
   /**
-   * it is used to draw the probe annotation data in each
+   * it is used to draw the probe annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
+    let annotations = getAnnotations(element, this.name)
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
-    toolState = this.filterInteractableToolStateForElement(element, toolState)
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations
+    )
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
     const targetUID = this.getTargetUID(viewport)
     const renderingEngine = viewport.getRenderingEngine()
 
-    for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i] as ProbeSpecificToolData
-      const settings = Settings.getObjectSettings(toolData, ProbeTool)
-      const annotationUID = toolData.metadata.toolDataUID
-      const data = toolData.data
+    for (let i = 0; i < annotations.length; i++) {
+      const annotation = annotations[i] as ProbeAnnotation
+      const settings = Settings.getObjectSettings(annotation, ProbeTool)
+      const annotationUID = annotation.annotationUID
+      const data = annotation.data
       const point = data.handles.points[0]
       const canvasCoordinates = viewport.worldToCanvas(point)
-      const color = this.getStyle(settings, 'color', toolData)
+      const color = this.getStyle(settings, 'color', annotation)
 
       if (!data.cachedStats[targetUID]) {
         data.cachedStats[targetUID] = {}
-        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
-      } else if (data.invalidated) {
-        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement)
+      } else if (annotation.invalidated) {
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement)
 
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related stackViewports data if
@@ -420,7 +419,7 @@ export default class ProbeTool extends BaseAnnotationTool {
         // which doesn't have the full volume at each time, and we are only working
         // on one slice at a time.
         if (viewport instanceof VolumeViewport) {
-          const { referencedImageId } = toolData.metadata
+          const { referencedImageId } = annotation.metadata
 
           // todo: this is not efficient, but necessary
           // invalidate all the relevant stackViewports if they are not
@@ -474,7 +473,7 @@ export default class ProbeTool extends BaseAnnotationTool {
           textUID,
           textLines,
           [textCanvasCoorinates[0], textCanvasCoorinates[1]],
-          this.getLinkedTextBoxStyle(settings, toolData)
+          this.getLinkedTextBoxStyle(settings, annotation)
         )
       }
     }
@@ -551,8 +550,8 @@ export default class ProbeTool extends BaseAnnotationTool {
     return values
   }
 
-  _calculateCachedStats(toolData, renderingEngine, enabledElement) {
-    const data = toolData.data
+  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
+    const data = annotation.data
     const { viewportUID, renderingEngineUID } = enabledElement
 
     const worldPos = data.handles.points[0]
@@ -608,13 +607,13 @@ export default class ProbeTool extends BaseAnnotationTool {
         }
       }
 
-      data.invalidated = false
+      annotation.invalidated = false
 
-      // Dispatching measurement modified
-      const eventType = EVENTS.MEASUREMENT_MODIFIED
+      // Dispatching annotation modified
+      const eventType = EVENTS.ANNOTATION_MODIFIED
 
-      const eventDetail: MeasurementModifiedEventData = {
-        toolData,
+      const eventDetail: AnnotationModifiedEventDetail = {
+        annotation,
         viewportUID,
         renderingEngineUID,
       }

@@ -1,12 +1,10 @@
 import type {
-  ToolSpecificToolData,
-  ToolSpecificToolState,
-  FrameOfReferenceSpecificToolState,
-  ToolAndToolStateArray,
-  ToolAndToolDataArray,
-  ToolState,
-} from './toolStateTypes'
-import type ToolStateTextBox from './ToolStateTextBox'
+  Annotation,
+  Annotations,
+  FrameOfReferenceSpecificAnnotations,
+  AnnotationState,
+} from './AnnotationTypes'
+import type AnnotationTextBox from './AnnotationTextBox'
 import type * as EventTypes from './EventTypes'
 import type IPoints from './IPoints'
 import type BoundingBox from './BoundingBox'
@@ -36,14 +34,12 @@ import type {
 } from './SegmentationStateTypes'
 
 export type {
-  // ToolState
-  ToolSpecificToolData,
-  ToolSpecificToolState,
-  FrameOfReferenceSpecificToolState,
-  ToolAndToolStateArray,
-  ToolAndToolDataArray,
-  ToolState,
-  ToolStateTextBox,
+  // AnnotationState
+  Annotation,
+  Annotations,
+  FrameOfReferenceSpecificAnnotations,
+  AnnotationState,
+  AnnotationTextBox,
   // Geometry
   BoundingBox,
   PlanarBoundingBox,

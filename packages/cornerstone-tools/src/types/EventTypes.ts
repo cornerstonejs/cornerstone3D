@@ -1,11 +1,11 @@
 import { Types } from '@precisionmetrics/cornerstone-render'
-import { ToolSpecificToolData } from './toolStateTypes'
+import { Annotation } from './AnnotationTypes'
 import IPoints from './IPoints'
 
 /**
- * The normalized mouse event data
+ * The normalized mouse event detail
  */
-type NormalizedMouseEventData = {
+type NormalizedMouseEventDetail = {
   /** The original event object. */
   event: Record<string, unknown> | MouseEvent
   /** The normalized event name. */
@@ -21,70 +21,70 @@ type NormalizedMouseEventData = {
 }
 
 /**
- * The data that is passed to the event handler when a new measurement is added
- * to the toolState.
+ * The data that is passed to the event handler when a new annotation is added
+ * to the annotations.
  */
-type MeasurementAddedEventData = {
-  /** uniq id of the viewport */
+type AnnotationAddedEventDetail = {
+  /** unique id of the viewport */
   viewportUID: string
-  /** uniq id of the rendering engine */
+  /** unique id of the rendering engine */
   renderingEngineUID: string
-  /** The tool data that is being added to the tool state manager. */
-  toolData: ToolSpecificToolData
+  /** The annotation that is being added to the annotations manager. */
+  annotation: Annotation
 }
 
 /**
- * The data that is passed to the event handler when a measurement is modified.
+ * The data that is passed to the event handler when an annotation is modified.
  */
-type MeasurementModifiedEventData = {
-  /** uniq id of the viewport */
+type AnnotationModifiedEventDetail = {
+  /** unique id of the viewport */
   viewportUID: string
-  /** uniq id of the rendering engine */
+  /** unique id of the rendering engine */
   renderingEngineUID: string
-  /** The tool data that is being added to the tool state manager. */
-  toolData: ToolSpecificToolData
+  /** The annotation that is being added to the annotations manager. */
+  annotation: Annotation
 }
 
 /**
- * The data that is passed to the event handler when a measurement is completed drawing.
+ * The data that is passed to the event handler when an annotation is completed drawing.
  */
-type MeasurementRemovedEventData = {
-  /** uniq id of the viewport */
+type AnnotationRemovedEventDetail = {
+  /** unique id of the viewport */
   viewportUID: string
-  /** uniq id of the rendering engine */
+  /** unique id of the rendering engine */
   renderingEngineUID: string
-  /** The tool data that is being added to the tool state manager. */
-  toolData: ToolSpecificToolData
+  /** The annotation that is being added to the annotations manager. */
+  annotation: Annotation
 }
 
 /**
- * The data that is passed to the event handler when a measurement selection status changes.
+ * The data that is passed to the event handler when an annotation selection status changes.
  */
-type MeasurementSelectionChangeEventData = {
-  /** ToolData added to the selection */
-  added: Array<ToolSpecificToolData>
-  /** ToolData removed from the selection */
-  removed: Array<ToolSpecificToolData>
+type AnnotationSelectionChangeEventDetail = {
+  /** Annotation added to the selection */
+  added: Array<Annotation>
+  /** Annotation removed from the selection */
+  removed: Array<Annotation>
   /** Updated selection */
-  selection: Array<ToolSpecificToolData>
+  selection: Array<Annotation>
 }
 
 /**
- * The data that is passed to the event handler when a measurement lock status changes.
+ * The data that is passed to the event handler when an annotation lock status changes.
  */
-type MeasurementLockChangeEventData = {
+type AnnotationLockChangeEventDetail = {
   // List of instances changed to locked state by the last operation.
-  added: Array<ToolSpecificToolData>
+  added: Array<Annotation>
   // List of instances removed from locked state by the last operation.
-  removed: Array<ToolSpecificToolData>
+  removed: Array<Annotation>
   // Updated list of currently locked instances
-  locked: Array<ToolSpecificToolData>
+  locked: Array<Annotation>
 }
 
 /**
- * The data that is passed to the event handler when a measurement selection status changes.
+ * The data that is passed to the event handler when an annotation selection status changes.
  */
-type AnnotationRenderedEventData = {
+type AnnotationRenderedEventDetail = {
   /** The HTML element that the annotation was rendered on. */
   element: HTMLElement
   /** unique id of the viewport */
@@ -94,50 +94,50 @@ type AnnotationRenderedEventData = {
 }
 
 /**
- * EventData for when a Segmentation Data is modified by a tool
+ * EventDetail for when a Segmentation Data is modified by a tool
  */
-type SegmentationDataModifiedEventData = {
-  /** uniq id of the toolGroup */
+type SegmentationDataModifiedEventDetail = {
+  /** unique id of the toolGroup */
   toolGroupUID: string
-  /** uniq id of the segmentationData */
+  /** unique id of the segmentationData */
   segmentationDataUID: string
 }
 
 /**
- * EventData for when a Segmentation is rendered by segmentation rendering engine
+ * EventDetail for when a Segmentation is rendered by segmentation rendering engine
  */
-type SegmentationRenderedEventData = {
-  /** uniq id of the viewport */
+type SegmentationRenderedEventDetail = {
+  /** unique id of the viewport */
   viewportUID: string
-  /** uniq id of the toolGroup segmentation belongs to */
+  /** unique id of the toolGroup segmentation belongs to */
   toolGroupUID: string
 }
 
 /**
- * EventData for when a Segmentation State for a toolGroup is modified
+ * EventDetail for when a Segmentation State for a toolGroup is modified
  */
-type SegmentationStateModifiedEventData = {
-  /** uniq id of the toolGroup */
+type SegmentationStateModifiedEventDetail = {
+  /** unique id of the toolGroup */
   toolGroupUID: string
 }
 
 /**
- * EventData for when a Segmentation Global State is modified
+ * EventDetail for when a Segmentation Global State is modified
  */
-type SegmentationGlobalStateModifiedEventData = {
-  /** uniq id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeUID */
+type SegmentationGlobalStateModifiedEventDetail = {
+  /** unique id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeUID */
   segmentationUID: string
 }
 
 /**
- * EventData for keyDown event
+ * EventDetail for keyDown event
  */
-type KeyDownEventData = {
+type KeyDownEventDetail = {
   /** html element */
   element: HTMLElement
-  /** uniq id of the viewport */
+  /** unique id of the viewport */
   viewportUID: string
-  /** uniq id of the rendering engine */
+  /** unique id of the rendering engine */
   renderingEngineUID: string
   /** The key that was pressed */
   key: string
@@ -145,13 +145,13 @@ type KeyDownEventData = {
   keyCode: number
 }
 
-/** EventData for keyDown event */
-type KeyUpEventData = KeyDownEventData
+/** EventDetail for keyDown event */
+type KeyUpEventDetail = KeyDownEventDetail
 
 /**
- * EventData for mouseDown event
+ * EventDetail for mouseDown event
  */
-type MouseDownEventData = NormalizedMouseEventData & {
+type MouseDownEventDetail = NormalizedMouseEventDetail & {
   /** The mouse button that was pressed. */
   mouseButton: number
   /** The starting points of the mouse event. */
@@ -165,9 +165,9 @@ type MouseDownEventData = NormalizedMouseEventData & {
 }
 
 /**
- * EventData for mouseDrag event
+ * EventDetail for mouseDrag event
  */
-type MouseDragEventData = NormalizedMouseEventData & {
+type MouseDragEventDetail = NormalizedMouseEventDetail & {
   /** The mouse button that was pressed. */
   mouseButton: number
   /** The starting points of the mouse event. */
@@ -181,17 +181,17 @@ type MouseDragEventData = NormalizedMouseEventData & {
 }
 
 /**
- * EventData mouseMove event
+ * EventDetail mouseMove event
  */
-type MouseMoveEventData = NormalizedMouseEventData & {
+type MouseMoveEventDetail = NormalizedMouseEventDetail & {
   /** The current mouse position. */
   currentPoints: IPoints
 }
 
 /**
- * EventData for mouseUp event
+ * EventDetail for mouseUp event
  */
-type MouseUpEventData = NormalizedMouseEventData & {
+type MouseUpEventDetail = NormalizedMouseEventDetail & {
   /** The mouse button that was pressed. */
   mouseButton: number
   /** The starting points of the mouse event. */
@@ -205,10 +205,10 @@ type MouseUpEventData = NormalizedMouseEventData & {
 }
 
 /**
- * EventData for mouseDown Activate, it is triggered when mouseDown event is fired
- * but stopPropagation is not called, used for creating new measurement
+ * EventDetail for mouseDown Activate, it is triggered when mouseDown event is fired
+ * but stopPropagation is not called, used for creating new annotation
  */
-type MouseDownActivateEventData = NormalizedMouseEventData & {
+type MouseDownActivateEventDetail = NormalizedMouseEventDetail & {
   /** The mouse button that was pressed. */
   mouseButton: number
   /** The starting points of the mouse event. */
@@ -222,9 +222,9 @@ type MouseDownActivateEventData = NormalizedMouseEventData & {
 }
 
 /**
- * EventData mouseClick (a mouse down which is followed by a mouse up)
+ * EventDetail mouseClick (a mouse down which is followed by a mouse up)
  */
-type MouseClickEventData = NormalizedMouseEventData & {
+type MouseClickEventDetail = NormalizedMouseEventDetail & {
   /** The mouse button that was pressed. */
   mouseButton: number
   /** The starting points of the mouse event. */
@@ -238,9 +238,9 @@ type MouseClickEventData = NormalizedMouseEventData & {
 }
 
 /**
- * EventData mouseClick (a mouse down which is followed by a mouse up)
+ * EventDetail mouseClick (a mouse down which is followed by a mouse up)
  */
-type MouseDoubleClickEventData = NormalizedMouseEventData & {
+type MouseDoubleClickEventDetail = NormalizedMouseEventDetail & {
   /** The starting points of the mouse event. */
   startPoints: IPoints
   /** The last points of the mouse. */
@@ -252,9 +252,9 @@ type MouseDoubleClickEventData = NormalizedMouseEventData & {
 }
 
 /**
- * Mouse Wheel event data
+ * Mouse Wheel event detail
  */
-type MouseWheelEventData = NormalizedMouseEventData & {
+type MouseWheelEventDetail = NormalizedMouseEventDetail & {
   /** wheel detail */
   detail: Record<string, any>
   /** wheel information */
@@ -280,161 +280,162 @@ type MouseWheelEventData = NormalizedMouseEventData & {
 /**
  * The Normalized mouse event type
  */
-type NormalizedMouseEventType = Types.CustomEventType<NormalizedMouseEventData>
+type NormalizedMouseEventType =
+  Types.CustomEventType<NormalizedMouseEventDetail>
 
 /**
- * The MeasurementAdded event type
+ * The AnnotationAdded event type
  */
-type MeasurementAddedEventType =
-  Types.CustomEventType<MeasurementAddedEventData>
+type AnnotationAddedEventType =
+  Types.CustomEventType<AnnotationAddedEventDetail>
 
 /**
- * The MeasurementModified event type
+ * The AnnotationModified event type
  */
-type MeasurementModifiedEventType =
-  Types.CustomEventType<MeasurementModifiedEventData>
+type AnnotationModifiedEventType =
+  Types.CustomEventType<AnnotationModifiedEventDetail>
 
 /**
- * The MeasurementRemoved event type
+ * The AnnotationRemoved event type
  */
-type MeasurementRemovedEventType =
-  Types.CustomEventType<MeasurementRemovedEventData>
+type AnnotationRemovedEventType =
+  Types.CustomEventType<AnnotationRemovedEventDetail>
 
 /**
- * The MeasurementSelectionChange event type
+ * The AnnotationSelectionChange event type
  */
-type MeasurementSelectionChangeEventType =
-  Types.CustomEventType<MeasurementSelectionChangeEventData>
+type AnnotationSelectionChangeEventType =
+  Types.CustomEventType<AnnotationSelectionChangeEventDetail>
 
 /**
  * The AnnotationRendered event type
  */
 type AnnotationRenderedEventType =
-  Types.CustomEventType<AnnotationRenderedEventData>
+  Types.CustomEventType<AnnotationRenderedEventDetail>
 
 /**
- * The MeasurementLockChange event type
+ * The AnnotationLockChange event type
  */
-type MeasurementLockChangeEventType =
-  Types.CustomEventType<MeasurementLockChangeEventData>
+type AnnotationLockChangeEventType =
+  Types.CustomEventType<AnnotationLockChangeEventDetail>
 
 /**
  * Event for when SegmentationData is modified
  */
 type SegmentationDataModifiedEventType =
-  Types.CustomEventType<SegmentationDataModifiedEventData>
+  Types.CustomEventType<SegmentationDataModifiedEventDetail>
 
 /**
  * Event for when SegmentationState is modified
  */
 type SegmentationStateModifiedEventType =
-  Types.CustomEventType<SegmentationStateModifiedEventData>
+  Types.CustomEventType<SegmentationStateModifiedEventDetail>
 
 /**
  * Event for when Segmentation is rendered
  */
 type SegmentationRenderedEventType =
-  Types.CustomEventType<SegmentationRenderedEventData>
+  Types.CustomEventType<SegmentationRenderedEventDetail>
 
 /**
  * Event for when Segmentation Global State is modified
  */
 type SegmentationGlobalStateModifiedEventType =
-  Types.CustomEventType<SegmentationGlobalStateModifiedEventData>
+  Types.CustomEventType<SegmentationGlobalStateModifiedEventDetail>
 
 /**
  * Event for when a key is pressed
  */
-type KeyDownEventType = Types.CustomEventType<KeyDownEventData>
+type KeyDownEventType = Types.CustomEventType<KeyDownEventDetail>
 
 /**
  * Event for when a key is released
  */
-type KeyUpEventType = Types.CustomEventType<KeyUpEventData>
+type KeyUpEventType = Types.CustomEventType<KeyUpEventDetail>
 
 /**
  * Event for when a mouse button is pressed
  */
-type MouseDownEventType = Types.CustomEventType<MouseDownEventData>
+type MouseDownEventType = Types.CustomEventType<MouseDownEventDetail>
 
 /**
  * Event for mouse down event
  */
 type MouseDownActivateEventType =
-  Types.CustomEventType<MouseDownActivateEventData>
+  Types.CustomEventType<MouseDownActivateEventDetail>
 
 /**
  * Event for mouse drag
  */
-type MouseDragEventType = Types.CustomEventType<MouseDragEventData>
+type MouseDragEventType = Types.CustomEventType<MouseDragEventDetail>
 
 /**
  * Event for mouse up
  */
-type MouseUpEventType = Types.CustomEventType<MouseUpEventData>
+type MouseUpEventType = Types.CustomEventType<MouseUpEventDetail>
 
 /**
  * Event for mouse click
  */
-type MouseClickEventType = Types.CustomEventType<MouseClickEventData>
+type MouseClickEventType = Types.CustomEventType<MouseClickEventDetail>
 
 /**
  * Event for mouse move
  */
-type MouseMoveEventType = Types.CustomEventType<MouseMoveEventData>
+type MouseMoveEventType = Types.CustomEventType<MouseMoveEventDetail>
 
 /**
  * Event for mouse double click
  */
 type MouseDoubleClickEventType =
-  Types.CustomEventType<MouseDoubleClickEventData>
+  Types.CustomEventType<MouseDoubleClickEventDetail>
 
 /**
  * Event for mouse wheel
  */
-type MouseWheelEventType = Types.CustomEventType<MouseWheelEventData>
+type MouseWheelEventType = Types.CustomEventType<MouseWheelEventDetail>
 
 export {
-  NormalizedMouseEventData,
+  NormalizedMouseEventDetail,
   NormalizedMouseEventType,
-  MeasurementAddedEventData,
-  MeasurementAddedEventType,
-  MeasurementModifiedEventData,
-  MeasurementModifiedEventType,
-  MeasurementRemovedEventData,
-  MeasurementRemovedEventType,
-  MeasurementSelectionChangeEventData,
-  MeasurementSelectionChangeEventType,
-  AnnotationRenderedEventData,
+  AnnotationAddedEventDetail,
+  AnnotationAddedEventType,
+  AnnotationModifiedEventDetail,
+  AnnotationModifiedEventType,
+  AnnotationRemovedEventDetail,
+  AnnotationRemovedEventType,
+  AnnotationSelectionChangeEventDetail,
+  AnnotationSelectionChangeEventType,
+  AnnotationRenderedEventDetail,
   AnnotationRenderedEventType,
-  MeasurementLockChangeEventData,
-  MeasurementLockChangeEventType,
+  AnnotationLockChangeEventDetail,
+  AnnotationLockChangeEventType,
   SegmentationDataModifiedEventType,
-  SegmentationStateModifiedEventData,
+  SegmentationStateModifiedEventDetail,
   SegmentationStateModifiedEventType,
-  SegmentationDataModifiedEventData,
+  SegmentationDataModifiedEventDetail,
   SegmentationRenderedEventType,
-  SegmentationRenderedEventData,
+  SegmentationRenderedEventDetail,
   SegmentationGlobalStateModifiedEventType,
-  SegmentationGlobalStateModifiedEventData,
-  KeyDownEventData,
+  SegmentationGlobalStateModifiedEventDetail,
+  KeyDownEventDetail,
   KeyDownEventType,
-  KeyUpEventData,
+  KeyUpEventDetail,
   KeyUpEventType,
-  MouseDownEventData,
+  MouseDownEventDetail,
   MouseDownEventType,
-  MouseDownActivateEventData,
+  MouseDownActivateEventDetail,
   MouseDownActivateEventType,
-  MouseDragEventData,
+  MouseDragEventDetail,
   MouseDragEventType,
-  MouseUpEventData,
+  MouseUpEventDetail,
   MouseUpEventType,
-  MouseClickEventData,
+  MouseClickEventDetail,
   MouseClickEventType,
-  MouseMoveEventData,
+  MouseMoveEventDetail,
   MouseMoveEventType,
-  MouseDoubleClickEventData,
+  MouseDoubleClickEventDetail,
   MouseDoubleClickEventType,
-  MouseWheelEventData,
+  MouseWheelEventDetail,
   MouseWheelEventType,
 }

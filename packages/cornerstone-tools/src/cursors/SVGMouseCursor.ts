@@ -1,12 +1,12 @@
-import { ToolModes, ToolDataStyleStates } from '../enums'
-import { getDefaultStyleProperty } from '../stateManagement/annotation/toolStyle'
+import { ToolModes, AnnotationStyleStates } from '../enums'
+import { getDefaultStyleProperty } from '../stateManagement/annotation/annotationStyle'
 import MouseCursor from './MouseCursor'
 import ImageMouseCursor from './ImageMouseCursor'
 import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor'
 import type { SVGCursorDescriptor } from './SVGCursorDescriptor'
 
 const PROPERTY = 'color'
-const STATE = ToolDataStyleStates.Highlighted
+const STATE = AnnotationStyleStates.Highlighted
 const MODE = ToolModes.Active
 
 export default class SVGMouseCursor extends ImageMouseCursor {

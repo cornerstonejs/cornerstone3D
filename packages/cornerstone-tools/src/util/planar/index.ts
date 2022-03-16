@@ -1,18 +1,18 @@
-import filterToolStateWithinSlice from './filterToolStateWithinSlice'
+import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice'
 import getWorldWidthAndHeightFromCorners from './getWorldWidthAndHeightFromCorners'
-import filterToolStateForDisplay from './filterToolStateForDisplay'
+import filterAnnotationsForDisplay from './filterAnnotationsForDisplay'
 import getPointInLineOfSightWithCriteria from './getPointInLineOfSightWithCriteria'
 
 export default {
-  filterToolStateWithinSlice,
+  filterAnnotationsWithinSlice,
   getWorldWidthAndHeightFromCorners,
-  filterToolStateForDisplay,
+  filterAnnotationsForDisplay,
   getPointInLineOfSightWithCriteria,
 }
 
 export {
-  filterToolStateWithinSlice,
+  filterAnnotationsWithinSlice,
   getWorldWidthAndHeightFromCorners,
-  filterToolStateForDisplay,
+  filterAnnotationsForDisplay,
   getPointInLineOfSightWithCriteria,
 }

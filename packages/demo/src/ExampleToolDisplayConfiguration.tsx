@@ -15,8 +15,8 @@ import {
 import {
   CornerstoneTools3DEvents,
   ToolBindings,
-  toolDataLocking,
-  toolDataSelection,
+  annotationLocking,
+  annotationSelection,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -261,16 +261,16 @@ class ToolDisplayConfigurationExample extends Component {
     // Update Tool Style Settings
     displayToolStyleValues()
 
-    // Register for Tool Data Selection Event
+    // Register for annotation Selection Event
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
-      onMeasurementSelectionChange
+      CornerstoneTools3DEvents.ANNOTATION_SELECTION_CHANGE,
+      onAnnotationSelectionChange
     )
 
-    // Register for Tool Data Locking Event
+    // Register for annotation Locking Event
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.MEASUREMENT_LOCK_CHANGE,
-      onLockedToolDataChange
+      CornerstoneTools3DEvents.ANNOTATION_LOCK_CHANGE,
+      onLockedAnnotationChange
     )
 
     // Set WindowLevel tool as active in order to initialize the mouse cursor
@@ -291,16 +291,16 @@ class ToolDisplayConfigurationExample extends Component {
       this.viewportGridResizeObserver.disconnect()
     }
 
-    // Remove listener for Tool Data Selection Event
+    // Remove listener for annotation Selection Event
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.MEASUREMENT_SELECTION_CHANGE,
-      onMeasurementSelectionChange
+      CornerstoneTools3DEvents.ANNOTATION_SELECTION_CHANGE,
+      onAnnotationSelectionChange
     )
 
-    // Remove listener for Tool Data Locking Event
+    // Remove listener for annotation Locking Event
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.MEASUREMENT_LOCK_CHANGE,
-      onLockedToolDataChange
+      CornerstoneTools3DEvents.ANNOTATION_LOCK_CHANGE,
+      onLockedAnnotationChange
     )
 
     cache.purgeCache()
@@ -368,7 +368,7 @@ class ToolDisplayConfigurationExample extends Component {
           ) : null}
           <p>
             Demo for testing selection and styling options for annotations (aka
-            tool data). In order to select multiple items or <em>unselect</em>
+            annotation). In order to select multiple items or <em>unselect</em>
             one, just hold the <em>SHIFT</em> key on click.
           </p>
         </div>
@@ -487,15 +487,19 @@ function onExportSettings(e: React.MouseEvent<HTMLElement>) {
 }
 
 function onLockSelected() {
-  toolDataLocking.lockToolDataList(toolDataSelection.getSelectedToolData())
+  const annotations = annotationSelection.getAnnotationsSelected()
+
+  annotations.forEach((annotation) => {
+    annotationLocking.setAnnotationLocked(annotation)
+  })
 }
 
 function onUnlockAll() {
-  toolDataLocking.unlockAllToolData()
+  annotationLocking.unlockAllAnnotations()
 }
 
-function onLockedToolDataChange(e: CustomEvent) {
-  console.info('Locked Tool Data Changed:', e.detail)
+function onLockedAnnotationChange(e: CustomEvent) {
+  console.info('Locked annotation Changed:', e.detail)
   getRenderingEngines().forEach((renderEngine) => renderEngine.render())
 }
 
@@ -530,21 +534,21 @@ function onFileInputChange(e: React.FormEvent<HTMLInputElement>) {
   }
 }
 
-function onMeasurementSelectionChange(e: CustomEvent): void {
-  let toolData = null
+function onAnnotationSelectionChange(e: CustomEvent): void {
+  let annotation = null
   const { added, selection } = e.detail
   if (added.length > 0) {
-    toolData = added[0]
+    annotation = added[0]
   } else if (selection.length > 0) {
     // Use the previous selection
-    toolData = selection[selection.length - 1]
+    annotation = selection[selection.length - 1]
   }
   ;(
     document.querySelector(
       '.tool-style-controls button#use-selected-annotation'
     ) as HTMLElement
-  ).dataset.targetId = toolData
-    ? `toolData:${toolData.metadata.toolDataUID}`
+  ).dataset.targetId = annotation
+    ? `annotation:${annotation.annotationUID}`
     : ''
   getRenderingEngines().forEach((renderEngine) => renderEngine.render())
 }
@@ -596,10 +600,10 @@ function getTargetSettings(): Settings {
 }
 
 function getTargetFromTargetId(id: string): unknown {
-  const toolDataRegex = /^toolData:(.+)$/
+  const annotationRegex = /^annotation:(.+)$/
   let match
-  if ((match = toolDataRegex.exec(id)) !== null) {
-    return toolDataSelection.getSelectedToolDataByUID(match[1])
+  if ((match = annotationRegex.exec(id)) !== null) {
+    return annotationSelection.getAnnotationSelected(match[1])
   }
 }
 

@@ -12,43 +12,37 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { vec3 } from 'gl-matrix'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-import { addToolState, getToolState } from '../../stateManagement'
-import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
+import { addAnnotation, getAnnotations } from '../../stateManagement'
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
 import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import throttle from '../../util/throttle'
-import { MeasurementModifiedEventData } from '../../types/EventTypes'
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import {
-  ToolSpecificToolData,
-  PublicToolProps,
-  ToolProps,
-  EventTypes,
-} from '../../types'
+import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 
-export interface RectangleRoiStartEndThresholdToolData
-  extends ToolSpecificToolData {
+export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
   metadata: {
     cameraPosition?: Types.Point3
     cameraFocalPoint?: Types.Point3
     viewPlaneNormal?: Types.Point3
     viewUp?: Types.Point3
-    toolDataUID?: string
+    annotationUID?: string
     FrameOfReferenceUID: string
     referencedImageId?: string
     toolName: string
-    enabledElement: any // Todo: how to remove this from the tooldata??
+    enabledElement: any // Todo: how to remove this from the annotation??
     volumeUID: string
     spacingInNormal: number
   }
   data: {
-    invalidated: boolean
+    label: string
     startSlice: number
     endSlice: number
     cachedStats: {
@@ -59,8 +53,6 @@ export interface RectangleRoiStartEndThresholdToolData
       points: Types.Point3[]
       activeHandleIndex: number | null
     }
-    // labelmapUID: string
-    active: boolean
   }
 }
 
@@ -79,7 +71,7 @@ export interface RectangleRoiStartEndThresholdToolData
 export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
   _throttledCalculateCachedStats: any
   editData: {
-    toolData: any
+    annotation: any
     viewportUIDsToRender: string[]
     handleIndex?: number
     newAnnotation?: boolean
@@ -112,12 +104,12 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
    * the edit data for the tool.
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The toolData object.
+   * @returns The annotation object.
    *
    */
-  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+  addNewAnnotation = (evt: EventTypes.MouseDownActivateEventType) => {
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
     const enabledElement = getEnabledElement(element)
@@ -166,7 +158,9 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       viewPlaneNormal
     )
 
-    const toolData = {
+    const annotation = {
+      highlighted: true,
+      invalidated: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         enabledElement,
@@ -178,7 +172,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         spacingInNormal,
       },
       data: {
-        invalidated: true,
+        label: '',
         startSlice: startIndex,
         endSlice: endIndex,
         cachedStats: {
@@ -201,19 +195,18 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
           activeHandleIndex: null,
         },
         labelmapUID: null,
-        active: true,
       },
     }
 
     // update the projection points in 3D space, since we are projecting
     // the points to the slice plane, we need to make sure the points are
     // computed for later export
-    this._computeProjectionPoints(toolData, imageVolume)
+    this._computeProjectionPoints(annotation, imageVolume)
 
-    // Ensure settings are initialized after tool data instantiation
-    Settings.getObjectSettings(toolData, RectangleRoiStartEndThresholdTool)
+    // Ensure settings are initialized after annotation instantiation
+    Settings.getObjectSettings(annotation, RectangleRoiStartEndThresholdTool)
 
-    addToolState(element, toolData)
+    addAnnotation(element, annotation)
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -221,7 +214,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       handleIndex: 3,
       newAnnotation: true,
@@ -238,15 +231,15 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       viewportUIDsToRender
     )
 
-    return toolData
+    return annotation
   }
 
   // Todo: make it work for other acquisition planes
   _computeProjectionPoints(
-    toolData: RectangleRoiStartEndThresholdToolData,
+    annotation: RectangleRoiStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
   ): void {
-    const { data, metadata } = toolData
+    const { data, metadata } = annotation
     const { viewPlaneNormal, spacingInNormal } = metadata
     const { imageData } = imageVolume
     const { startSlice, endSlice } = data
@@ -302,8 +295,8 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     data.cachedStats.projectionPointsImageIds = projectionPointsImageIds
   }
 
-  _calculateCachedStatsTool(toolData, enabledElement) {
-    const data = toolData.data
+  _calculateCachedStatsTool(annotation, enabledElement) {
+    const data = annotation.data
     const { viewportUID, renderingEngineUID, viewport } = enabledElement
 
     const { cachedStats } = data
@@ -313,15 +306,15 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleRoi class, we need to
     // bring the logic for handle to some cachedStats calculation
-    this._computeProjectionPoints(toolData, imageVolume)
+    this._computeProjectionPoints(annotation, imageVolume)
 
-    data.invalidated = false
+    annotation.invalidated = false
 
-    // Dispatching measurement modified
-    const eventType = EVENTS.MEASUREMENT_MODIFIED
+    // Dispatching annotation modified
+    const eventType = EVENTS.ANNOTATION_MODIFIED
 
-    const eventDetail: MeasurementModifiedEventData = {
-      toolData,
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
       viewportUID,
       renderingEngineUID,
     }
@@ -331,48 +324,52 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   }
 
   /**
-   * it is used to draw the rectangleRoiStartEnd annotation data in each
+   * it is used to draw the rectangleRoiStartEnd annotation in each
    * request animation frame.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
-    const toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
+    const annotations = getAnnotations(
+      enabledElement.viewport.element,
+      this.name
+    )
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
-    // toolState = this.filterInteractableToolStateForElement(element, toolState)
+    // annotations = this.filterInteractableAnnotationsForElement(element, annotations)
 
-    // if (!toolState?.length) {
+    // if (!annotations?.length) {
     //   return
     // }
 
     const { viewport } = enabledElement
     const sliceIndex = viewport.getCurrentImageIdIndex()
 
-    for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i] as RectangleRoiStartEndThresholdToolData
+    for (let i = 0; i < annotations.length; i++) {
+      const annotation = annotations[
+        i
+      ] as RectangleRoiStartEndThresholdAnnotation
       const settings = Settings.getObjectSettings(
-        toolData,
+        annotation,
         RectangleRoiStartEndThresholdTool
       )
-      const toolMetadata = toolData.metadata
-      const annotationUID = toolMetadata.toolDataUID
+      const annotationUID = annotation.annotationUID
 
-      const data = toolData.data
+      const data = annotation.data
       const { startSlice, endSlice } = data
       const { points, activeHandleIndex } = data.handles
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
-      const lineDash = this.getStyle(settings, 'lineDash', toolData)
-      const color = this.getStyle(settings, 'color', toolData)
+      const lineWidth = this.getStyle(settings, 'lineWidth', annotation)
+      const lineDash = this.getStyle(settings, 'lineDash', annotation)
+      const color = this.getStyle(settings, 'color', annotation)
 
       // range of slices to render based on the start and end slice, like
       // np.arange
@@ -387,8 +384,8 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
 
-      if (data.invalidated) {
-        this._throttledCalculateCachedStats(toolData, enabledElement)
+      if (annotation.invalidated) {
+        this._throttledCalculateCachedStats(annotation, enabledElement)
       }
 
       // if it is inside the start/end slice, but not exactly the first or
@@ -407,7 +404,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       let activeHandleCanvasCoords
 
       if (
-        !isToolDataLocked(toolData) &&
+        !isAnnotationLocked(annotation) &&
         !this.editData &&
         activeHandleIndex !== null &&
         firstOrLastSlice

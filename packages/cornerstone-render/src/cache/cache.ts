@@ -412,7 +412,7 @@ class Cache implements ICache {
         cachedImage.sizeInBytes = image.sizeInBytes
         this._incrementImageCacheSize(cachedImage.sizeInBytes)
 
-        const eventDetails: EventTypes.ImageCacheImageAddedEventData = {
+        const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
           image: cachedImage,
         }
 
@@ -592,7 +592,7 @@ class Cache implements ICache {
         cachedVolume.sizeInBytes = volume.sizeInBytes
         this._incrementVolumeCacheSize(cachedVolume.sizeInBytes)
 
-        const eventDetails: EventTypes.VolumeCacheVolumeAddedEventData = {
+        const eventDetails: EventTypes.VolumeCacheVolumeAddedEventDetail = {
           volume: cachedVolume,
         }
 
