@@ -5,19 +5,19 @@ import {
   Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 
-import filterToolStateWithinSlice from './filterToolStateWithinSlice'
-import { ToolSpecificToolState } from '../../types'
+import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice'
+import { Annotations } from '../../types'
 
 /**
- * Given the viewport and the toolState, it filters the toolState array and only
- * return those toolData that should be displayed on the viewport
- * @param toolState - ToolSpecificToolState
- * @returns A filtered version of the toolState.
+ * Given the viewport and the annotations, it filters the annotations array and only
+ * return those annotation that should be displayed on the viewport
+ * @param annotations - Annotations
+ * @returns A filtered version of the annotations.
  */
-export default function filterToolStateForDisplay(
+export default function filterAnnotationsForDisplay(
   viewport: Types.IViewport,
-  toolState: ToolSpecificToolState
-): ToolSpecificToolState {
+  annotations: Annotations
+): Annotations {
   if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport
     const imageId = viewport.getCurrentImageId()
@@ -28,9 +28,9 @@ export default function filterToolStateForDisplay(
     const colonIndex = imageId.indexOf(':')
     const imageURI = imageId.substring(colonIndex + 1)
 
-    // 3. Filter tool data in the frame of reference by the referenced image ID property
-    return toolState.filter((toolData) => {
-      return toolData.metadata.referencedImageId === imageURI
+    // 3. Filter annotation in the frame of reference by the referenced image ID property
+    return annotations.filter((annotation) => {
+      return annotation.metadata.referencedImageId === imageURI
     })
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera()
@@ -39,8 +39,8 @@ export default function filterToolStateForDisplay(
       csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera)
 
     // Get data with same normal and within the same slice
-    return filterToolStateWithinSlice(
-      toolState,
+    return filterAnnotationsWithinSlice(
+      annotations,
       camera,
       spacingInNormalDirection
     )

@@ -1,4 +1,4 @@
-import { BaseAnnotationTool } from './base'
+import { AnnotationTool } from './base'
 
 import {
   getEnabledElementByUIDs,
@@ -11,10 +11,10 @@ import {
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import {
-  addToolState,
-  getToolState,
-  removeToolStateByToolDataUID,
-} from '../stateManagement/annotation/toolState'
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
+} from '../stateManagement/annotation/annotationState'
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
@@ -30,15 +30,15 @@ import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 import { lineSegment } from '../util/math'
 import {
-  ToolSpecificToolData,
-  ToolSpecificToolState,
+  Annotation,
+  Annotations,
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   InteractionTypes,
 } from '../types'
-import { isToolDataLocked } from '../stateManagement/annotation/toolDataLocking'
+import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking'
 import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
 import { MouseDragEventType } from '../types/EventTypes'
 
@@ -57,7 +57,7 @@ interface ToolConfiguration {
 
 type ViewportInputs = Array<Types.IViewportUID>
 
-interface CrosshairsSpecificToolData extends ToolSpecificToolData {
+interface CrosshairsAnnotation extends Annotation {
   data: {
     handles: {
       rotationPoints: any[] // rotation handles, used for rotation interactions
@@ -65,7 +65,6 @@ interface CrosshairsSpecificToolData extends ToolSpecificToolData {
       activeOperation: number | null // 0 translation, 1 rotation handles, 2 slab thickness handles
       toolCenter: Types.Point3
     }
-    active: boolean
     activeViewportUIDs: string[] // a list of the viewport uids connected to the reference lines being translated
     viewportUID: string
   }
@@ -95,7 +94,7 @@ const OPERATION = {
 
 const EPSILON = 1e-3
 
-export default class CrosshairsTool extends BaseAnnotationTool {
+export default class CrosshairsTool extends AnnotationTool {
   toolCenter: Types.Point3 = [0, 0, 0] // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportUID: string) => string
@@ -103,7 +102,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   _getReferenceLineDraggableRotatable?: (viewportUID: string) => boolean
   _getReferenceLineSlabThicknessControlsOn?: (viewportUID: string) => boolean
   editData: {
-    toolData: any
+    annotation: any
   } | null
 
   constructor(
@@ -156,8 +155,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   /**
-   * Gets the camera from the viewport, and adds crosshairs toolData for the viewport
-   * to the toolStateManager. If any toolData is found in the toolStateManager, it
+   * Gets the camera from the viewport, and adds crosshairs annotation for the viewport
+   * to the annotationManager. If any annotation is found in the annotationManager, it
    * overwrites it.
    * @param viewportInfo - The viewportInfo for the viewport to add the crosshairs
    * @returns viewPlaneNormal and center of viewport canvas in world space
@@ -177,16 +176,20 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const { element } = viewport
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera()
 
-    // Check if there is already toolData for this viewport
-    let toolState = getToolState(enabledElement, this.name)
-    toolState = this.filterInteractableToolStateForElement(element, toolState)
+    // Check if there is already annotation for this viewport
+    let annotations = getAnnotations(element, this.name)
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations
+    )
 
-    if (toolState.length) {
-      // If found, it will override it by removing the toolData and adding it later
-      removeToolStateByToolDataUID(element, toolState[0].metadata.toolDataUID)
+    if (annotations.length) {
+      // If found, it will override it by removing the annotation and adding it later
+      removeAnnotation(element, annotations[0].annotationUID)
     }
 
-    const toolData = {
+    const annotation = {
+      highlighted: false,
       metadata: {
         cameraPosition: <Types.Point3>[...position],
         cameraFocalPoint: <Types.Point3>[...focalPoint],
@@ -199,7 +202,6 @@ export default class CrosshairsTool extends BaseAnnotationTool {
           slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
           toolCenter: this.toolCenter,
         },
-        active: false,
         // Todo: add enum for active Operations
         activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
         activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
@@ -209,7 +211,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     resetElementCursor(element)
 
-    addToolState(element, toolData)
+    addAnnotation(element, annotation)
 
     return {
       normal: viewPlaneNormal,
@@ -275,35 +277,35 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   /**
-   * addNewMeasurement acts as jump for the crosshairs tool. It is called when
-   * the user clicks on the image. It does not store the toolData in the stateManager though.
+   * addNewAnnotation acts as jump for the crosshairs tool. It is called when
+   * the user clicks on the image. It does not store the annotation in the stateManager though.
    *
    * @param evt - The mouse event
    * @param interactionType - The type of interaction (e.g., mouse, touch, etc.)
-   * @returns Crosshairs tool data
+   * @returns Crosshairs annotation
    */
-  addNewMeasurement = (
+  addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType,
     interactionType: string
-  ): CrosshairsSpecificToolData => {
-    const eventData = evt.detail
-    const { element } = eventData
+  ): CrosshairsAnnotation => {
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { currentPoints } = eventData
+    const { currentPoints } = eventDetail
     const jumpWorld = currentPoints.world
 
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
     this._jump(enabledElement, jumpWorld)
 
-    const toolState = getToolState(enabledElement, this.name)
-    const filteredToolState = this.filterInteractableToolStateForElement(
+    const annotations = getAnnotations(element, this.name)
+    const filteredAnnotations = this.filterInteractableAnnotationsForElement(
       viewport.element,
-      toolState
+      annotations
     )
 
-    // viewport ToolData
-    const { data } = filteredToolState[0]
+    // viewport Annotation
+    const { data } = filteredAnnotations[0]
 
     const { rotationPoints } = data.handles
     const viewportUIDArray = []
@@ -332,7 +334,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     hideElementCursor(element)
 
     this._activateModify(element)
-    return filteredToolState[0]
+    return filteredAnnotations[0]
   }
 
   cancel = () => {
@@ -345,7 +347,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
    * of the handles, it does not return anything.
    *
    * @param element - The element that the tool is attached to.
-   * @param toolData - The tool data object associated with the annotation
+   * @param annotation - The annotation object associated with the annotation
    * @param canvasCoords - The coordinates of the mouse click on canvas
    * @param proximity - The distance from the mouse cursor to the point
    * that is considered "near".
@@ -354,7 +356,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
    */
   getHandleNearImagePoint(
     element: HTMLElement,
-    toolData: ToolSpecificToolData,
+    annotation: Annotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): ToolHandle | undefined {
@@ -363,7 +365,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     let point = this._getRotationHandleNearImagePoint(
       viewport,
-      toolData,
+      annotation,
       canvasCoords,
       proximity
     )
@@ -374,7 +376,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
     point = this._getSlabThicknessHandleNearImagePoint(
       viewport,
-      toolData,
+      annotation,
       canvasCoords,
       proximity
     )
@@ -386,16 +388,14 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   handleSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    toolData: ToolSpecificToolData,
+    annotation: Annotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { data } = toolData
-
-    data.active = true
+    annotation.highlighted = true
 
     // NOTE: handle index or coordinates are not used when dragging.
     // This because the handle points are actually generated in the renderTool and they are a derivative
@@ -410,23 +410,23 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   /**
-   * It returns if the canvas point is near the provided crosshairs toolData in the
+   * It returns if the canvas point is near the provided crosshairs annotation in the
    * provided element or not. A proximity is passed to the function to determine the
-   * proximity of the point to the toolData in number of pixels.
+   * proximity of the point to the annotation in number of pixels.
    *
    * @param element - HTML Element
-   * @param toolData - Tool data
+   * @param annotation - Annotation
    * @param canvasCoords - Canvas coordinates
    * @param proximity - Proximity to tool to consider
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
     element: HTMLElement,
-    toolData: CrosshairsSpecificToolData,
+    annotation: CrosshairsAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    if (this._pointNearTool(element, toolData, canvasCoords, 6)) {
+    if (this._pointNearTool(element, annotation, canvasCoords, 6)) {
       return true
     }
 
@@ -435,15 +435,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    toolData: ToolSpecificToolData,
+    annotation: Annotation,
     interactionType: InteractionTypes
   ): void => {
-    const eventData = evt.detail
-    const { element } = eventData
-
-    const { data } = toolData
-
-    data.active = true
+    const eventDetail = evt.detail
+    const { element } = eventDetail
+    annotation.highlighted = true
 
     this._activateModify(element)
 
@@ -453,8 +450,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   onCameraModified = (evt) => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
     const viewport = enabledElement.viewport as VolumeViewport
@@ -466,27 +463,26 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       requireSameOrientation
     )
 
-    const toolState = getToolState(enabledElement, this.name)
-    const filteredToolState = this.filterInteractableToolStateForElement(
-      element,
-      toolState
-    )
+    const annotations = getAnnotations(element, this.name)
+    const filteredToolAnnotations =
+      this.filterInteractableAnnotationsForElement(element, annotations)
 
-    // viewport ToolData
-    const viewportToolData = filteredToolState[0] as CrosshairsSpecificToolData
+    // viewport Annotation
+    const viewportAnnotation =
+      filteredToolAnnotations[0] as CrosshairsAnnotation
 
-    if (!viewportToolData) {
+    if (!viewportAnnotation) {
       return
     }
 
-    // -- Update the camera of other linked viewports containging the same volumeUID that
+    // -- Update the camera of other linked viewports containing the same volumeUID that
     //    have the same camera in case of translation
-    // -- Update the crosshair center in world coordinates in toolData.
+    // -- Update the crosshair center in world coordinates in annotation.
     // This is necessary because other tools can modify the position of the slices,
     // e.g. stackscroll tool at wheel scroll. So we update the coordinates of the center always here.
     // NOTE: rotation and slab thickness handles are created/updated in renderTool.
     const currentCamera = viewport.getCamera()
-    const oldCameraPosition = viewportToolData.metadata.cameraPosition
+    const oldCameraPosition = viewportAnnotation.metadata.cameraPosition
     const deltaCameraPosition: Types.Point3 = [0, 0, 0]
     vtkMath.subtract(
       currentCamera.position,
@@ -494,7 +490,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       deltaCameraPosition
     )
 
-    const oldCameraFocalPoint = viewportToolData.metadata.cameraFocalPoint
+    const oldCameraFocalPoint = viewportAnnotation.metadata.cameraFocalPoint
     const deltaCameraFocalPoint: Types.Point3 = [0, 0, 0]
     vtkMath.subtract(
       currentCamera.focalPoint,
@@ -503,8 +499,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     )
 
     // updated cached "previous" camera position and focal point
-    viewportToolData.metadata.cameraPosition = [...currentCamera.position]
-    viewportToolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
+    viewportAnnotation.metadata.cameraPosition = [...currentCamera.position]
+    viewportAnnotation.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
 
     const viewportControllable = this._getReferenceLineControllable(
       viewport.uid
@@ -538,20 +534,20 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       ) {
         // update linked view in the same scene that have the same camera
         // this goes here, because the parent viewport translation may happen in another tool
-        // const otherLinkedViewportsToolDataWithSameCameraDirection =
+        // const otherLinkedViewportsAnnotationsWithSameCameraDirection =
         //   this._filterLinkedViewportWithSameOrientationAndScene(
         //     enabledElement,
-        //     toolState
+        //     annotations
         //   )
 
         // for (
         //   let i = 0;
-        //   i < otherLinkedViewportsToolDataWithSameCameraDirection.length;
+        //   i < otherLinkedViewportsAnnotationsWithSameCameraDirection.length;
         //   ++i
         // ) {
-        //   const toolData =
-        //     otherLinkedViewportsToolDataWithSameCameraDirection[i]
-        //   const { data } = toolData
+        //   const annotation =
+        //     otherLinkedViewportsAnnotationsWithSameCameraDirection[i]
+        //   const { data } = annotation
         //   const scene = renderingEngine.getScene(data.sceneUID)
         //   const otherViewport = scene.getViewport(data.viewportUID)
         //   const camera = otherViewport.getCamera()
@@ -563,8 +559,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         //   vtkMath.add(camera.position, deltaCameraPosition, newPosition)
 
         //   // updated cached "previous" camera position and focal point
-        //   toolData.metadata.cameraPosition = [...currentCamera.position]
-        //   toolData.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
+        //   annotation.metadata.cameraPosition = [...currentCamera.position]
+        //   annotation.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
         // }
 
         // update center of the crosshair
@@ -597,20 +593,20 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   mouseMoveCallback = (
     evt: EventTypes.MouseMoveEventType,
-    filteredToolState: ToolSpecificToolState
+    filteredToolAnnotations: Annotations
   ): boolean => {
     const { element, currentPoints } = evt.detail
     const canvasCoords = currentPoints.canvas
     let imageNeedsUpdate = false
 
-    for (let i = 0; i < filteredToolState.length; i++) {
-      const toolData = filteredToolState[i] as CrosshairsSpecificToolData
+    for (let i = 0; i < filteredToolAnnotations.length; i++) {
+      const annotation = filteredToolAnnotations[i] as CrosshairsAnnotation
 
-      if (isToolDataLocked(toolData)) {
+      if (isAnnotationLocked(annotation)) {
         continue
       }
 
-      const { data } = toolData
+      const { data, highlighted } = annotation
       if (!data.handles) {
         continue
       }
@@ -627,7 +623,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       const handleNearImagePoint = this.getHandleNearImagePoint(
         element,
-        toolData,
+        annotation,
         canvasCoords,
         6
       )
@@ -636,13 +632,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       if (handleNearImagePoint) {
         near = true
       } else {
-        near = this._pointNearTool(element, toolData, canvasCoords, 6)
+        near = this._pointNearTool(element, annotation, canvasCoords, 6)
       }
 
-      const nearToolAndNotMarkedActive = near && !data.active
-      const notNearToolAndMarkedActive = !near && data.active
+      const nearToolAndNotMarkedActive = near && !highlighted
+      const notNearToolAndMarkedActive = !near && highlighted
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
-        data.active = !data.active
+        annotation.highlighted = !highlighted
         imageNeedsUpdate = true
       } else if (
         data.handles.activeOperation !== previousActiveOperation ||
@@ -658,16 +654,16 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return imageNeedsUpdate
   }
 
-  filterInteractableToolStateForElement = (element, toolState) => {
-    if (!toolState || !toolState.length) {
+  filterInteractableAnnotationsForElement = (element, annotations) => {
+    if (!annotations || !annotations.length) {
       return []
     }
 
     const enabledElement = getEnabledElement(element)
     const { viewportUID } = enabledElement
 
-    const viewportUIDSpecificCrosshairs = toolState.filter(
-      (toolData) => toolData.data.viewportUID === viewportUID
+    const viewportUIDSpecificCrosshairs = annotations.filter(
+      (annotation) => annotation.data.viewportUID === viewportUID
     )
 
     return viewportUIDSpecificCrosshairs
@@ -679,28 +675,26 @@ export default class CrosshairsTool extends BaseAnnotationTool {
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
     const { viewport, renderingEngine } = enabledElement
     const { element } = viewport
-    const toolState = getToolState(enabledElement, this.name)
+    const annotations = getAnnotations(element, this.name)
     const camera = viewport.getCamera()
 
-    const filteredToolState = this.filterInteractableToolStateForElement(
-      element,
-      toolState
-    )
+    const filteredToolAnnotations =
+      this.filterInteractableAnnotationsForElement(element, annotations)
 
-    // viewport ToolData
-    const viewportToolData = filteredToolState[0]
-    if (!toolState || !viewportToolData || !viewportToolData.data) {
-      // No toolState yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
+    // viewport Annotation
+    const viewportAnnotation = filteredToolAnnotations[0]
+    if (!annotations || !viewportAnnotation || !viewportAnnotation.data) {
+      // No annotations yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
       return
     }
 
-    const annotationUID = viewportToolData.metadata.toolDataUID
+    const annotationUID = viewportAnnotation.annotationUID
 
     // Get cameras/canvases for each of these.
     // -- Get two world positions for this canvas in this line (e.g. the diagonal)
@@ -711,18 +705,19 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const { sWidth, sHeight } = viewport
     const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight)
 
-    const data = viewportToolData.data
+    const data = viewportAnnotation.data
     const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter)
 
-    const otherViewportToolData = this._filterUniqueViewportOrientations(
-      enabledElement,
-      toolState
-    )
+    const otherViewportAnnotations =
+      this._filterAnnotationsByUniqueViewportOrientations(
+        enabledElement,
+        annotations
+      )
 
     const referenceLines = []
 
-    otherViewportToolData.forEach((toolData) => {
-      const { data } = toolData
+    otherViewportAnnotations.forEach((annotation) => {
+      const { data } = annotation
 
       data.handles.toolCenter = this.toolCenter
 
@@ -834,7 +829,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         canvasVectorFromCenterStart,
         canvasUnitVectorFromCenter,
         // Don't put a gap if the the third view is missing
-        otherViewportToolData.length === 2 ? canvasDiagonalLength * 0.04 : 0
+        otherViewportAnnotations.length === 2 ? canvasDiagonalLength * 0.04 : 0
       )
 
       // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
@@ -1307,12 +1302,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
     })
 
-    // Save new handles points in toolData
+    // Save new handles points in annotation
     data.handles.rotationPoints = newRtpoints
     data.handles.slabThicknessPoints = newStpoints
 
     // render a circle to pin point the viewport color
-    // TODO: This should not be part of the tool, and definitely not part of the renderToolData loop
+    // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
     const referenceColorCoordinates = [
       sWidth * 0.95,
       sHeight * 0.05,
@@ -1452,26 +1447,26 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   // It filters the viewports with crosshairs and only return viewports
   // that have different camera.
-  _getToolDataForViewportsWithDifferentCameras = (
+  _getAnnotationsForViewportsWithDifferentCameras = (
     enabledElement,
-    toolState
+    annotations
   ) => {
     const { viewportUID, renderingEngine, viewport } = enabledElement
 
-    const otherViewportToolData = toolState.filter(
-      (toolData) => toolData.data.viewportUID !== viewportUID
+    const otherViewportAnnotations = annotations.filter(
+      (annotation) => annotation.data.viewportUID !== viewportUID
     )
 
-    if (!otherViewportToolData || !otherViewportToolData.length) {
+    if (!otherViewportAnnotations || !otherViewportAnnotations.length) {
       return []
     }
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, position } = camera
 
-    const viewportsWithDifferentCameras = otherViewportToolData.filter(
-      (toolData) => {
-        const { viewportUID } = toolData.data
+    const viewportsWithDifferentCameras = otherViewportAnnotations.filter(
+      (annotation) => {
+        const { viewportUID } = annotation.data
         const targetViewport = renderingEngine.getViewport(viewportUID)
         const cameraOfTarget = targetViewport.getCamera()
 
@@ -1490,16 +1485,16 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   _filterLinkedViewportWithSameOrientationAndScene = (
     enabledElement,
-    toolState
+    annotations
   ) => {
     const { renderingEngine, viewport } = enabledElement
     const viewportControllable = this._getReferenceLineControllable(
       viewport.uid
     )
 
-    const otherLinkedViewportToolDataFromSameScene = toolState.filter(
-      (toolData) => {
-        const { data } = toolData
+    const otherLinkedViewportAnnotationsFromSameScene = annotations.filter(
+      (annotation) => {
+        const { data } = annotation
         const otherViewport = renderingEngine.getViewport(data.viewportUID)
         const otherViewportControllable = this._getReferenceLineControllable(
           otherViewport.uid
@@ -1515,8 +1510,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     )
 
     if (
-      !otherLinkedViewportToolDataFromSameScene ||
-      !otherLinkedViewportToolDataFromSameScene.length
+      !otherLinkedViewportAnnotationsFromSameScene ||
+      !otherLinkedViewportAnnotationsFromSameScene.length
     ) {
       return []
     }
@@ -1525,9 +1520,9 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     const viewPlaneNormal = camera.viewPlaneNormal
     vtkMath.normalize(viewPlaneNormal)
 
-    const otherLinkedViewportsToolDataWithSameCameraDirection =
-      otherLinkedViewportToolDataFromSameScene.filter((toolData) => {
-        const { viewportUID } = toolData.data
+    const otherLinkedViewportsAnnotationsWithSameCameraDirection =
+      otherLinkedViewportAnnotationsFromSameScene.filter((annotation) => {
+        const { viewportUID } = annotation.data
         const otherViewport = renderingEngine.getViewport(viewportUID)
         const otherCamera = otherViewport.getCamera()
         const otherViewPlaneNormal = otherCamera.viewPlaneNormal
@@ -1539,18 +1534,21 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         )
       })
 
-    return otherLinkedViewportsToolDataWithSameCameraDirection
+    return otherLinkedViewportsAnnotationsWithSameCameraDirection
   }
 
-  _filterUniqueViewportOrientations = (enabledElement, toolState) => {
+  _filterAnnotationsByUniqueViewportOrientations = (
+    enabledElement,
+    annotations
+  ) => {
     const { renderingEngine, viewport } = enabledElement
     const camera = viewport.getCamera()
     const viewPlaneNormal = camera.viewPlaneNormal
     vtkMath.normalize(viewPlaneNormal)
 
-    const otherLinkedViewportToolDataFromSameScene = toolState.filter(
-      (toolData) => {
-        const { data } = toolData
+    const otherLinkedViewportAnnotationsFromSameScene = annotations.filter(
+      (annotation) => {
+        const { data } = annotation
         const otherViewport = renderingEngine.getViewport(data.viewportUID)
         const otherViewportControllable = this._getReferenceLineControllable(
           otherViewport.uid
@@ -1564,11 +1562,15 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
     )
 
-    const otherViewportsToolDataWithUniqueCameras = []
+    const otherViewportsAnnotationsWithUniqueCameras = []
     // Iterate first on other viewport from the same scene linked
-    for (let i = 0; i < otherLinkedViewportToolDataFromSameScene.length; ++i) {
-      const toolData = otherLinkedViewportToolDataFromSameScene[i]
-      const { viewportUID } = toolData.data
+    for (
+      let i = 0;
+      i < otherLinkedViewportAnnotationsFromSameScene.length;
+      ++i
+    ) {
+      const annotation = otherLinkedViewportAnnotationsFromSameScene[i]
+      const { viewportUID } = annotation.data
       const otherViewport = renderingEngine.getViewport(viewportUID)
       const otherCamera = otherViewport.getCamera()
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal
@@ -1584,11 +1586,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       let cameraFound = false
       for (
         let jj = 0;
-        jj < otherViewportsToolDataWithUniqueCameras.length;
+        jj < otherViewportsAnnotationsWithUniqueCameras.length;
         ++jj
       ) {
-        const stockedToolData = otherViewportsToolDataWithUniqueCameras[jj]
-        const { viewportUID } = stockedToolData.data
+        const annotation = otherViewportsAnnotationsWithUniqueCameras[jj]
+        const { viewportUID } = annotation.data
         const stockedViewport = renderingEngine.getViewport(viewportUID)
         const cameraOfStocked = stockedViewport.getCamera()
 
@@ -1605,13 +1607,13 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
 
       if (!cameraFound) {
-        otherViewportsToolDataWithUniqueCameras.push(toolData)
+        otherViewportsAnnotationsWithUniqueCameras.push(annotation)
       }
     }
 
-    const otherNonLinkedViewportToolDataFromSameScene = toolState.filter(
-      (toolData) => {
-        const { data } = toolData
+    const otherNonLinkedViewportAnnotationsFromSameScene = annotations.filter(
+      (annotation) => {
+        const { data } = annotation
         const otherViewport = renderingEngine.getViewport(data.viewportUID)
         const otherViewportControllable = this._getReferenceLineControllable(
           otherViewport.uid
@@ -1628,11 +1630,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     // Iterate second on other viewport from the same scene non linked
     for (
       let i = 0;
-      i < otherNonLinkedViewportToolDataFromSameScene.length;
+      i < otherNonLinkedViewportAnnotationsFromSameScene.length;
       ++i
     ) {
-      const toolData = otherNonLinkedViewportToolDataFromSameScene[i]
-      const { viewportUID } = toolData.data
+      const annotation = otherNonLinkedViewportAnnotationsFromSameScene[i]
+      const { viewportUID } = annotation.data
       const otherViewport = renderingEngine.getViewport(viewportUID)
 
       const otherCamera = otherViewport.getCamera()
@@ -1649,11 +1651,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       let cameraFound = false
       for (
         let jj = 0;
-        jj < otherViewportsToolDataWithUniqueCameras.length;
+        jj < otherViewportsAnnotationsWithUniqueCameras.length;
         ++jj
       ) {
-        const stockedToolData = otherViewportsToolDataWithUniqueCameras[jj]
-        const { viewportUID } = stockedToolData.data
+        const annotation = otherViewportsAnnotationsWithUniqueCameras[jj]
+        const { viewportUID } = annotation.data
         const stockedViewport = renderingEngine.getViewport(viewportUID)
         const cameraOfStocked = stockedViewport.getCamera()
 
@@ -1670,28 +1672,28 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
 
       if (!cameraFound) {
-        otherViewportsToolDataWithUniqueCameras.push(toolData)
+        otherViewportsAnnotationsWithUniqueCameras.push(annotation)
       }
     }
 
     // Iterate on all the viewport
-    const otherViewportToolData =
-      this._getToolDataForViewportsWithDifferentCameras(
+    const otherViewportAnnotations =
+      this._getAnnotationsForViewportsWithDifferentCameras(
         enabledElement,
-        toolState
+        annotations
       )
 
-    for (let i = 0; i < otherViewportToolData.length; ++i) {
-      const toolData = otherViewportToolData[i]
+    for (let i = 0; i < otherViewportAnnotations.length; ++i) {
+      const annotation = otherViewportAnnotations[i]
       if (
-        otherViewportsToolDataWithUniqueCameras.find(
-          (element) => element === toolData
+        otherViewportsAnnotationsWithUniqueCameras.find(
+          (element) => element === annotation
         ) === true
       ) {
         continue
       }
 
-      const { viewportUID } = toolData.data
+      const { viewportUID } = annotation.data
       const otherViewport = renderingEngine.getViewport(viewportUID)
       const otherCamera = otherViewport.getCamera()
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal
@@ -1707,11 +1709,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       let cameraFound = false
       for (
         let jj = 0;
-        jj < otherViewportsToolDataWithUniqueCameras.length;
+        jj < otherViewportsAnnotationsWithUniqueCameras.length;
         ++jj
       ) {
-        const stockedToolData = otherViewportsToolDataWithUniqueCameras[jj]
-        const { viewportUID } = stockedToolData.data
+        const annotation = otherViewportsAnnotationsWithUniqueCameras[jj]
+        const { viewportUID } = annotation.data
         const stockedViewport = renderingEngine.getViewport(viewportUID)
         const cameraOfStocked = stockedViewport.getCamera()
 
@@ -1728,11 +1730,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
 
       if (!cameraFound) {
-        otherViewportsToolDataWithUniqueCameras.push(toolData)
+        otherViewportsAnnotationsWithUniqueCameras.push(annotation)
       }
     }
 
-    return otherViewportsToolDataWithUniqueCameras
+    return otherViewportsAnnotationsWithUniqueCameras
   }
 
   _checkIfViewportsRenderingSameScene = (viewport, otherViewport) => {
@@ -1755,27 +1757,24 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   _jump = (enabledElement, jumpWorld) => {
     state.isInteractingWithTool = true
+    const { viewport, renderingEngine } = enabledElement
 
-    const toolState = getToolState(enabledElement, this.name)
-    const { renderingEngine, viewportUID } = enabledElement
-
-    const viewport = renderingEngine.getViewport(viewportUID)
-    const actors = viewport.getActors()
+    const annotations = getAnnotations(viewport.element, this.name)
 
     const delta: Types.Point3 = [0, 0, 0]
     vtkMath.subtract(jumpWorld, this.toolCenter, delta)
 
     // TRANSLATION
-    // get the toolData of the other viewport which are parallel to the delta shift and are of the same scene
-    const otherViewportToolData =
-      this._getToolDataForViewportsWithDifferentCameras(
+    // get the annotation of the other viewport which are parallel to the delta shift and are of the same scene
+    const otherViewportAnnotations =
+      this._getAnnotationsForViewportsWithDifferentCameras(
         enabledElement,
-        toolState
+        annotations
       )
 
-    const viewportsToolDataToUpdate = otherViewportToolData.filter(
-      (toolData) => {
-        const { data } = toolData
+    const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
+      (annotation) => {
+        const { data } = annotation
         const otherViewport = renderingEngine.getViewport(data.viewportUID)
 
         const sameScene = this._checkIfViewportsRenderingSameScene(
@@ -1791,14 +1790,14 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       }
     )
 
-    if (viewportsToolDataToUpdate.length === 0) {
+    if (viewportsAnnotationsToUpdate.length === 0) {
       state.isInteractingWithTool = false
       return false
     }
 
     this._applyDeltaShiftToSelectedViewportCameras(
       renderingEngine,
-      viewportsToolDataToUpdate,
+      viewportsAnnotationsToUpdate,
       delta
     )
 
@@ -1832,12 +1831,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   _mouseUpCallback(
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    this.editData.toolData.data.active = false
-    this.editData.toolData.data.handles.activeOperation = null
-    this.editData.toolData.data.activeViewportUIDs = []
+    this.editData.annotation.highlighted = false
+    this.editData.annotation.data.handles.activeOperation = null
+    this.editData.annotation.data.activeViewportUIDs = []
 
     this._deactivateModify(element)
 
@@ -1862,8 +1861,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   _mouseDragCallback(evt: MouseDragEventType) {
-    const eventData = evt.detail
-    const delta = eventData.deltaPoints.world
+    const eventDetail = evt.detail
+    const delta = eventDetail.deltaPoints.world
 
     if (
       Math.abs(delta[0]) < 1e-3 &&
@@ -1873,40 +1872,41 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       return
     }
 
-    const { element } = eventData
+    const { element } = eventDetail
     const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewport } = enabledElement
-    const toolState = getToolState(enabledElement, this.name)
-    const filteredToolState = this.filterInteractableToolStateForElement(
+    const annotations = getAnnotations(
       element,
-      toolState
-    )
+      this.name
+    ) as CrosshairsAnnotation[]
+    const filteredToolAnnotations =
+      this.filterInteractableAnnotationsForElement(element, annotations)
 
-    // viewport ToolData
-    const viewportToolData = filteredToolState[0]
-    if (!viewportToolData) {
+    // viewport Annotation
+    const viewportAnnotation = filteredToolAnnotations[0]
+    if (!viewportAnnotation) {
       return
     }
 
-    const { handles } = viewportToolData.data
+    const { handles } = viewportAnnotation.data
     const { currentPoints } = evt.detail
     const canvasCoords = currentPoints.canvas
 
     if (handles.activeOperation === OPERATION.DRAG) {
       // TRANSLATION
-      // get the toolData of the other viewport which are parallel to the delta shift and are of the same scene
-      const otherViewportToolData =
-        this._getToolDataForViewportsWithDifferentCameras(
+      // get the annotation of the other viewport which are parallel to the delta shift and are of the same scene
+      const otherViewportAnnotations =
+        this._getAnnotationsForViewportsWithDifferentCameras(
           enabledElement,
-          toolState
+          annotations
         )
 
-      const viewportsToolDataToUpdate = otherViewportToolData.filter(
-        (toolData) => {
-          const { data } = toolData
+      const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
+        (annotation) => {
+          const { data } = annotation
           const otherViewport = renderingEngine.getViewport(data.viewportUID)
 
-          return viewportToolData.data.activeViewportUIDs.find(
+          return viewportAnnotation.data.activeViewportUIDs.find(
             (uid) => uid === otherViewport.uid
           )
         }
@@ -1914,20 +1914,20 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       this._applyDeltaShiftToSelectedViewportCameras(
         renderingEngine,
-        viewportsToolDataToUpdate,
+        viewportsAnnotationsToUpdate,
         delta
       )
     } else if (handles.activeOperation === OPERATION.ROTATE) {
       // ROTATION
-      const otherViewportToolData =
-        this._getToolDataForViewportsWithDifferentCameras(
+      const otherViewportAnnotations =
+        this._getAnnotationsForViewportsWithDifferentCameras(
           enabledElement,
-          toolState
+          annotations
         )
 
-      const viewportsToolDataToUpdate = otherViewportToolData.filter(
-        (toolData) => {
-          const { data } = toolData
+      const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
+        (annotation) => {
+          const { data } = annotation
           data.handles.toolCenter = center
           const otherViewport = renderingEngine.getViewport(data.viewportUID)
           const otherViewportControllable = this._getReferenceLineControllable(
@@ -1955,12 +1955,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
       const centerCanvas = viewport.worldToCanvas(center)
 
-      const finalPointCanvas = eventData.currentPoints.canvas
+      const finalPointCanvas = eventDetail.currentPoints.canvas
       const originalPointCanvas = vec2.create()
       vec2.sub(
         originalPointCanvas,
         finalPointCanvas,
-        eventData.deltaPoints.canvas
+        eventDetail.deltaPoints.canvas
       )
       vec2.sub(dir1, originalPointCanvas, <vec2>centerCanvas)
       vec2.sub(dir2, finalPointCanvas, <vec2>centerCanvas)
@@ -1991,8 +1991,8 @@ export default class CrosshairsTool extends BaseAnnotationTool {
       const otherViewportsUIDs = []
       // update camera for the other viewports.
       // NOTE: The lines then are rendered by the onCameraModified
-      viewportsToolDataToUpdate.forEach((toolData) => {
-        const { data } = toolData
+      viewportsAnnotationsToUpdate.forEach((annotation) => {
+        const { data } = annotation
         data.handles.toolCenter = center
 
         const otherViewport = renderingEngine.getViewport(data.viewportUID)
@@ -2022,20 +2022,20 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     } else if (handles.activeOperation === OPERATION.SLAB) {
       // SLAB THICKNESS
       // this should be just the active one under the mouse,
-      const viewportsToolDataToUpdate = toolState.filter(
-        (toolData: CrosshairsSpecificToolData) => {
-          const { data } = toolData
+      const viewportsAnnotationsToUpdate = annotations.filter(
+        (annotation: CrosshairsAnnotation) => {
+          const { data } = annotation
           const otherViewport = renderingEngine.getViewport(data.viewportUID)
 
-          return viewportToolData.data.activeViewportUIDs.find(
+          return viewportAnnotation.data.activeViewportUIDs.find(
             (uid) => uid === otherViewport.uid
           )
         }
       )
 
-      viewportsToolDataToUpdate.forEach(
-        (toolData: CrosshairsSpecificToolData) => {
-          const { data } = toolData
+      viewportsAnnotationsToUpdate.forEach(
+        (annotation: CrosshairsAnnotation) => {
+          const { data } = annotation
 
           const otherViewport = renderingEngine.getViewport(
             data.viewportUID
@@ -2058,7 +2058,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
                 projectedDelta[2] * projectedDelta[2]
             )
 
-            const currentPoint = eventData.lastPoints.world
+            const currentPoint = eventDetail.lastPoints.world
             const direction: Types.Point3 = [0, 0, 0]
 
             const currentCenter: Types.Point3 = [
@@ -2071,7 +2071,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
             const viewportDraggableRotatable =
               this._getReferenceLineDraggableRotatable(otherViewport.uid)
             if (!viewportDraggableRotatable) {
-              const { rotationPoints } = this.editData.toolData.data.handles
+              const { rotationPoints } = this.editData.annotation.data.handles
               const otherViewportRotationPoints = rotationPoints.filter(
                 (point) => point[1].uid === otherViewport.uid
               )
@@ -2124,7 +2124,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
             slabThicknessValue = Math.max(0.1, slabThicknessValue)
 
             const near = this._pointNearReferenceLine(
-              viewportToolData,
+              viewportAnnotation,
               canvasCoords,
               6,
               otherViewport
@@ -2149,25 +2149,25 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   _applyDeltaShiftToSelectedViewportCameras(
     renderingEngine,
-    viewportsToolDataToUpdate,
+    viewportsAnnotationsToUpdate,
     delta
   ) {
     // update camera for the other viewports.
     // NOTE1: The lines then are rendered by the onCameraModified
     // NOTE2: crosshair center are automatically updated in the onCameraModified event
-    viewportsToolDataToUpdate.forEach((toolData) => {
-      this._applyDeltaShiftToViewportCamera(renderingEngine, toolData, delta)
+    viewportsAnnotationsToUpdate.forEach((annotation) => {
+      this._applyDeltaShiftToViewportCamera(renderingEngine, annotation, delta)
     })
   }
   _applyDeltaShiftToViewportCamera(
     renderingEngine: RenderingEngine,
-    toolData,
+    annotation,
     delta
   ) {
     // update camera for the other viewports.
     // NOTE1: The lines then are rendered by the onCameraModified
     // NOTE2: crosshair center are automatically updated in the onCameraModified event
-    const { data } = toolData
+    const { data } = annotation
 
     const viewport = renderingEngine.getViewport(data.viewportUID)
     const camera = viewport.getCamera()
@@ -2199,12 +2199,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
   }
 
   _pointNearReferenceLine = (
-    toolData,
+    annotation,
     canvasCoords,
     proximity,
     lineViewport
   ) => {
-    const { data } = toolData
+    const { data } = annotation
     const { rotationPoints } = data.handles
 
     for (let i = 0; i < rotationPoints.length - 1; ++i) {
@@ -2267,11 +2267,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   _getRotationHandleNearImagePoint(
     viewport,
-    toolData,
+    annotation,
     canvasCoords,
     proximity
   ) {
-    const { data } = toolData
+    const { data } = annotation
     const { rotationPoints } = data.handles
 
     for (let i = 0; i < rotationPoints.length; i++) {
@@ -2290,12 +2290,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         continue
       }
 
-      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
-      if (vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity) {
+      const annotationCanvasCoordinate = viewport.worldToCanvas(point)
+      if (vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity) {
         data.handles.activeOperation = OPERATION.ROTATE
 
         this.editData = {
-          toolData,
+          annotation,
         }
 
         return point
@@ -2307,11 +2307,11 @@ export default class CrosshairsTool extends BaseAnnotationTool {
 
   _getSlabThicknessHandleNearImagePoint(
     viewport,
-    toolData,
+    annotation,
     canvasCoords,
     proximity
   ) {
-    const { data } = toolData
+    const { data } = annotation
     const { slabThicknessPoints } = data.handles
 
     for (let i = 0; i < slabThicknessPoints.length; i++) {
@@ -2330,14 +2330,14 @@ export default class CrosshairsTool extends BaseAnnotationTool {
         continue
       }
 
-      const toolDataCanvasCoordinate = viewport.worldToCanvas(point)
-      if (vec2.distance(canvasCoords, toolDataCanvasCoordinate) < proximity) {
+      const annotationCanvasCoordinate = viewport.worldToCanvas(point)
+      if (vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity) {
         data.handles.activeOperation = OPERATION.SLAB
 
         data.activeViewportUIDs = [otherViewport.uid]
 
         this.editData = {
-          toolData,
+          annotation,
         }
 
         return point
@@ -2347,12 +2347,12 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     return null
   }
 
-  _pointNearTool(element, toolData, canvasCoords, proximity) {
+  _pointNearTool(element, annotation, canvasCoords, proximity) {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
     const { sWidth, sHeight } = viewport
     const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight)
-    const { data } = toolData
+    const { data } = annotation
 
     const { rotationPoints } = data.handles
     const { slabThicknessPoints } = data.handles
@@ -2510,7 +2510,7 @@ export default class CrosshairsTool extends BaseAnnotationTool {
     data.activeViewportUIDs = [...viewportUIDArray]
 
     this.editData = {
-      toolData,
+      annotation,
     }
 
     return data.handles.activeOperation === OPERATION.DRAG ? true : false

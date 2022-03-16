@@ -1,4 +1,4 @@
-import measurementSelectionListener from './measurementSelectionListener'
-import measurementModifiedListener from './measurementModifiedListener'
+import annotationSelectionListener from './annotationSelectionListener'
+import annotationModifiedListener from './annotationModifiedListener'
 
-export { measurementSelectionListener, measurementModifiedListener }
+export { annotationSelectionListener, annotationModifiedListener }

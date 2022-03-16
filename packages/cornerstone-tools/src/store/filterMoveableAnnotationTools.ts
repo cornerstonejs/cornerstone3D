@@ -1,22 +1,28 @@
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { ToolAndToolDataArray, ToolAndToolStateArray } from '../types'
+import {
+  ToolAnnotationPair,
+  ToolAnnotationsPair,
+} from '../types/InternalToolTypes'
 
 /**
- * Filters an array of tools, returning only tools with moveable handles at the mouse location.
+ * Filters an array of tools with annotations, returning the first annotation
+ * for each tool that is moveable and at the mouse location. It results in
+ * one annotation per tool.
+ *
  *
  * @param element - The HTML element
- * @param toolAndToolStateArray - The input tool array.
+ * @param ToolAndAnnotations - The input tool array.
  * @param canvasCoords - The coordinates of the mouse position.
  * @param interactionType - The type of interaction that is taking place.
- * @returns The filtered array containing toolAndToolData
+ * @returns The filtered array containing ToolAndAnnotation
  */
-export default function getMoveableAnnotationTools(
+export default function filterMoveableAnnotationTools(
   element: HTMLElement,
-  toolAndToolStateArray: ToolAndToolStateArray,
+  ToolAndAnnotations: ToolAnnotationsPair[],
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
-): ToolAndToolDataArray {
+): ToolAnnotationPair[] {
   const proximity = 6
 
   // TODO - This could get pretty expensive pretty quickly. We don't want to fetch the camera
@@ -27,15 +33,15 @@ export default function getMoveableAnnotationTools(
 
   const moveableAnnotationTools = []
 
-  toolAndToolStateArray.forEach(({ tool, toolState }) => {
-    for (let i = 0; i < toolState.length; i++) {
-      if (toolState[i].isLocked) {
+  ToolAndAnnotations.forEach(({ tool, annotations }) => {
+    for (const annotation of annotations) {
+      if (annotation.isLocked) {
         continue
       }
 
       const near = tool.isPointNearTool(
         element,
-        toolState[i],
+        annotation,
         canvasCoords,
         proximity,
         interactionType
@@ -44,7 +50,7 @@ export default function getMoveableAnnotationTools(
       if (near) {
         moveableAnnotationTools.push({
           tool,
-          toolData: toolState[i],
+          annotation,
         })
         break
       }

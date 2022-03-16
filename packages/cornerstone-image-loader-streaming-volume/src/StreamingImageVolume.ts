@@ -289,12 +289,12 @@ export default class StreamingImageVolume extends ImageVolume {
       vtkOpenGLTexture.setUpdatedFrame(imageIdIndex)
       imageData.modified()
 
-      const eventData: Types.EventTypes.ImageVolumeModifiedEventData = {
+      const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
         FrameOfReferenceUID,
         imageVolume: volume,
       }
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventData)
+      triggerEvent(eventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventDetail)
 
       if (framesProcessed === numFrames) {
         loadStatus.loaded = true
@@ -352,13 +352,13 @@ export default class StreamingImageVolume extends ImageVolume {
         })
       }
 
-      const eventData = {
+      const eventDetail = {
         error,
         imageIdIndex,
         imageId,
       }
 
-      triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventData)
+      triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventDetail)
     }
 
     const requests = imageIds.map((imageId, imageIdIndex) => {

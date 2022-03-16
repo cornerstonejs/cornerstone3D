@@ -25,7 +25,7 @@ import {
 } from '../../store/SegmentationModule'
 
 // Todo
-// Define type for toolData
+// Define type for annotation
 
 /**
  * @public
@@ -36,7 +36,7 @@ import {
  */
 export default class CircleScissorsTool extends BaseTool {
   editData: {
-    toolData: any
+    annotation: any
     segmentation: any
     segmentIndex: number
     segmentationDataUID: string
@@ -76,12 +76,12 @@ export default class CircleScissorsTool extends BaseTool {
    * finds the active segmentation info and use it for the current tool.
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The toolData object.
+   * @returns The annotation object.
    *
    */
-  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+  addNewAnnotation = (evt: EventTypes.MouseDownActivateEventType) => {
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
     const canvasPos = currentPoints.canvas
 
@@ -106,7 +106,7 @@ export default class CircleScissorsTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(toolGroupUID)
     const segmentsLocked =
-      lockedSegmentController.getLockedSegmentsForSegmentation(volumeUID)
+      lockedSegmentController.getSegmentsLockedForSegmentation(volumeUID)
     const segmentColor = segmentationColorController.getColorForSegmentIndex(
       toolGroupUID,
       activeSegmentationInfo.segmentationDataUID,
@@ -116,7 +116,9 @@ export default class CircleScissorsTool extends BaseTool {
     const segmentation = cache.getVolume(volumeUID)
 
     // Todo: Used for drawing the svg only, we might not need it at all
-    const toolData = {
+    const annotation = {
+      invalidated: true,
+      highlighted: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
@@ -126,21 +128,19 @@ export default class CircleScissorsTool extends BaseTool {
         segmentColor,
       },
       data: {
-        invalidated: true,
         handles: {
           points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
           activeHandleIndex: null,
         },
         isDrawing: true,
         cachedStats: {},
-        active: true,
       },
     }
 
     const viewportUIDsToRender = [viewport.uid]
 
     this.editData = {
-      toolData,
+      annotation,
       segmentation,
       centerCanvas: canvasPos,
       segmentIndex,
@@ -168,17 +168,17 @@ export default class CircleScissorsTool extends BaseTool {
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
     this.isDrawing = true
-    const eventData = evt.detail
-    const { element } = eventData
-    const { currentPoints } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
+    const { currentPoints } = eventDetail
     const currentCanvasPoints = currentPoints.canvas
     const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewport } = enabledElement
     const { canvasToWorld } = viewport
 
     //////
-    const { toolData, viewportUIDsToRender, centerCanvas } = this.editData
-    const { data } = toolData
+    const { annotation, viewportUIDsToRender, centerCanvas } = this.editData
+    const { data } = annotation
 
     // Center of circle in canvas Coordinates
 
@@ -204,7 +204,7 @@ export default class CircleScissorsTool extends BaseTool {
       canvasToWorld(rightCanvas),
     ]
 
-    data.invalidated = true
+    annotation.invalidated = true
 
     this.editData.hasMoved = true
 
@@ -217,11 +217,11 @@ export default class CircleScissorsTool extends BaseTool {
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
     const {
-      toolData,
+      annotation,
       newAnnotation,
       hasMoved,
       segmentation,
@@ -229,14 +229,14 @@ export default class CircleScissorsTool extends BaseTool {
       segmentsLocked,
       segmentationDataUID,
     } = this.editData
-    const { data } = toolData
-    const { viewPlaneNormal, viewUp } = toolData.metadata
+    const { data } = annotation
+    const { viewPlaneNormal, viewUp } = annotation.metadata
 
     if (newAnnotation && !hasMoved) {
       return
     }
 
-    data.active = false
+    annotation.highlighted = false
     data.handles.activeHandleIndex = null
 
     this._deactivateDraw(element)
@@ -292,14 +292,14 @@ export default class CircleScissorsTool extends BaseTool {
   }
 
   /**
-   * it is used to draw the circleScissor annotation data in each
+   * it is used to draw the circleScissor annotation in each
    * request animation frame. Note that the annotation are disappeared
    * after the segmentation modification.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
@@ -314,13 +314,13 @@ export default class CircleScissorsTool extends BaseTool {
       return
     }
 
-    const { toolData } = this.editData
+    const { annotation } = this.editData
 
-    // Todo: rectangle colro based on segment index
-    const toolMetadata = toolData.metadata
-    const annotationUID = toolMetadata.toolDataUID
+    // Todo: rectangle color based on segment index
+    const toolMetadata = annotation.metadata
+    const annotationUID = annotation.annotationUID
 
-    const data = toolData.data
+    const data = annotation.data
     const { points } = data.handles
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
 

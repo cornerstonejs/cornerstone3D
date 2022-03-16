@@ -5,15 +5,25 @@ import {
   ORIENTATION,
   createAndCacheVolume,
   setVolumesOnViewports,
+  Types,
   Utilities,
 } from '@precisionmetrics/cornerstone-render'
-import { initDemo, createImageIdsAndCacheMetaData, setTitleAndDescription } from '../../../../utils/demo/helpers'
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 const { BlendMode } = vtkConstants
 
-const { ToolGroupManager, VolumeRotateMouseWheelTool, MIPJumpToClickTool, ToolBindings } = cornerstoneTools
+const {
+  ToolGroupManager,
+  VolumeRotateMouseWheelTool,
+  MIPJumpToClickTool,
+  ToolBindings,
+} = cornerstoneTools
 // Define a unique id for each volume
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -22,7 +32,9 @@ const ptVolumeName = 'PT_VOLUME_UID'
 const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 function setPetTransferFunction({ volumeActor }) {
-  const rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+  const rgbTransferFunction = volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
 
   rgbTransferFunction.setRange(0, 5)
 
@@ -30,7 +42,10 @@ function setPetTransferFunction({ volumeActor }) {
 }
 
 // ======== Set up page ======== //
-setTitleAndDescription('MIP Jump To Region', 'Here we demonstrate the MIPJumpToClickTool.')
+setTitleAndDescription(
+  'MIP Jump To Click',
+  'Here we demonstrate the MIPJumpToClickTool.'
+)
 
 const size = '500px'
 const content = document.getElementById('content')
@@ -57,7 +72,8 @@ viewportGrid.appendChild(element3)
 content.appendChild(viewportGrid)
 
 const instructions = document.createElement('p')
-instructions.innerText = 'Left Click on the MIP to jump the other viewports.\n Use the mouse wheel to rotate the MIP.'
+instructions.innerText =
+  'Left Click on the MIP to jump the other viewports.\n Use the mouse wheel to rotate the MIP.'
 
 content.append(instructions)
 // ============================= //
@@ -72,18 +88,16 @@ async function run() {
   const mipToolGroupUID = 'MIP_TOOL_GROUP_UID'
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool, {})
-  cornerstoneTools.addTool(MIPJumpToClickTool, {})
+  cornerstoneTools.addTool(VolumeRotateMouseWheelTool)
+  cornerstoneTools.addTool(MIPJumpToClickTool)
 
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID)
 
-  mipToolGroup.addTool('VolumeRotateMouseWheel', {})
-  mipToolGroup.addTool('MIPJumpToClickTool', {})
+  mipToolGroup.addTool('VolumeRotateMouseWheel')
+  mipToolGroup.addTool('MIPJumpToClickTool')
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  // TODO Alireza: Update the MIPJumpToClickTool to just fire event?
-  // TODO Alireza: Then need to add synchronizer here.
   mipToolGroup.setToolActive('MIPJumpToClickTool', {
     bindings: [
       {
@@ -96,19 +110,22 @@ async function run() {
   mipToolGroup.setToolActive('VolumeRotateMouseWheel')
 
   const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs'
-  const StudyInstanceUID = '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
+  const StudyInstanceUID =
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot,
     type: 'VOLUME',
   })
 
   const ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
     wadoRsRoot,
     type: 'VOLUME',
   })
@@ -118,7 +135,11 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineUID)
 
   // Create the viewports
-  const viewportUIDs = ['CT_AXIAL_STACK', 'CT_SAGITTAL_STACK', 'CT_OBLIQUE_STACK']
+  const viewportUIDs = [
+    'CT_AXIAL_STACK',
+    'CT_SAGITTAL_STACK',
+    'CT_OBLIQUE_STACK',
+  ]
 
   const viewportInputArray = [
     {
@@ -127,7 +148,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -136,7 +157,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -145,14 +166,14 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ]
 
   renderingEngine.setViewports(viewportInputArray)
 
-  // Set the tool goup on the viewports
+  // Set the tool group on the viewports
   mipToolGroup.addViewports(renderingEngineUID, viewportUIDs[2])
 
   // Define volumes in memory
@@ -167,7 +188,7 @@ async function run() {
   ctVolume.load()
   ptVolume.load()
 
-  // Calculate size of fullbody pet mip
+  // Calculate size of fullBody pet mip
   const ptVolumeDimensions = ptVolume.dimensions
 
   // Only make the MIP as large as it needs to be.
@@ -177,7 +198,11 @@ async function run() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   )
 
-  setVolumesOnViewports(renderingEngine, [{ volumeUID: ctVolumeUID }], [viewportUIDs[0]])
+  setVolumesOnViewports(
+    renderingEngine,
+    [{ volumeUID: ctVolumeUID }],
+    [viewportUIDs[0]]
+  )
   setVolumesOnViewports(
     renderingEngine,
     [{ volumeUID: ptVolumeUID, callback: setPetTransferFunction }],

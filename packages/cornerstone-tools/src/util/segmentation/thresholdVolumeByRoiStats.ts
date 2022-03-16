@@ -4,7 +4,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 import { getBoundingBoxAroundShape } from '../segmentation'
 import { ToolGroupSpecificSegmentationData } from '../../types'
 import thresholdVolumeByRange, {
-  ToolDataForThresholding,
+  AnnotationForThresholding,
   extendBoundingBoxInSliceAxisIfNecessary,
 } from './thresholdVolumeByRange'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
@@ -18,21 +18,21 @@ export type ThresholdRoiStatsOptions = {
 }
 
 /**
- * Given an array of rectangle toolData, and a labelmap and referenceVolumes:
+ * Given an array of rectangle annotation, and a labelmap and referenceVolumes:
  * It loops over the drawn annotations ROIs (3D, 3rd dimension is determined by numSlices),
  * and calculates the `statistic` (given in options) for the merged Roi. Then,
  * it thresholds the referenceVolumes based on a weighted value of the statistic.
  * For instance in radiation oncology, usually 41% of the maximum of the ROI is used
  * in radiation planning.
  * @param toolGroupUID - The toolGroupUID of the tool that is performing the operation
- * @param toolDataList Array of rectangle annotation toolData
+ * @param annotations Array of rectangle annotation annotation
  * @param segmentationData - The segmentation data to be modified
  * @param labelmap segmentation volume
  * @param options Options for thresholding
  */
 function thresholdVolumeByRoiStats(
   toolGroupUID: string,
-  toolDataList: ToolDataForThresholding[],
+  annotations: AnnotationForThresholding[],
   referenceVolumes: Types.IImageVolume[],
   segmentationData: ToolGroupSpecificSegmentationData,
   options: ThresholdRoiStatsOptions
@@ -70,8 +70,8 @@ function thresholdVolumeByRoiStats(
   const [fn, baseValue] = _getStrategyFn(statistic)
   let value = baseValue
 
-  toolDataList.forEach((toolData) => {
-    const { data } = toolData
+  annotations.forEach((annotation) => {
+    const { data } = annotation
     const { points } = data.handles
 
     let pointsToUse = points
@@ -116,7 +116,7 @@ function thresholdVolumeByRoiStats(
   // Run threshold volume by the new range
   thresholdVolumeByRange(
     toolGroupUID,
-    toolDataList,
+    annotations,
     referenceVolumes,
     segmentationData,
     rangeOptions

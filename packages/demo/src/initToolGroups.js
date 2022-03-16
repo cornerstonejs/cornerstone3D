@@ -43,7 +43,7 @@ const {
  * line, will also rotate all the other active/intersecting ones of the same
  * angle.
  *
- * TO DO: would be ideal to hoister these configurations to a tool state manager
+ * TO DO: would be ideal to hoister these configurations to a annotations manager
  * that is a level higher than frame of reference (or a module, when/if we port
  * the concept from csTools2d)
  */

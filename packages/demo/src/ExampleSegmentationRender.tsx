@@ -16,7 +16,7 @@ import {
   ToolBindings,
   ToolModes,
   CornerstoneTools3DEvents,
-  toolDataSelection,
+  annotationSelection,
   Utilities as csToolsUtils,
   // segs
   SegmentationModule,
@@ -383,7 +383,7 @@ class SegmentationExample extends Component {
       selectedsegmentationUID = activeSegmentationInfo.segmentationDataUID
 
       segmentLocked =
-        SegmentationModule.lockedSegmentController.getSegmentIndexLockedStatusForSegmentation(
+        SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
           activeSegmentationInfo.volumeUID,
           activeSegmentIndex
         )
@@ -596,12 +596,12 @@ class SegmentationExample extends Component {
     const { volumeUID, activeSegmentIndex } = activesegmentationInfo
 
     const activeSegmentLockedStatus =
-      SegmentationModule.lockedSegmentController.getSegmentIndexLockedStatusForSegmentation(
+      SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
         volumeUID,
         activeSegmentIndex
       )
 
-    SegmentationModule.lockedSegmentController.setSegmentIndexLockedStatusForSegmentation(
+    SegmentationModule.lockedSegmentController.setSegmentIndexLockedForSegmentation(
       volumeUID,
       activeSegmentIndex,
       !activeSegmentLockedStatus
@@ -630,7 +630,7 @@ class SegmentationExample extends Component {
     )
 
     const segmentIsLocked =
-      SegmentationModule.lockedSegmentController.getSegmentIndexLockedStatus(
+      SegmentationModule.lockedSegmentController.getSegmentIndexLocked(
         toolGroupUID,
         newIndex
       )
@@ -685,21 +685,21 @@ class SegmentationExample extends Component {
       throw new Error('cannot apply start slice')
     }
 
-    let toolData = toolDataSelection.getSelectedToolDataByToolName(
+    let annotation = annotationSelection.getAnnotationsSelectedByToolName(
       this.state.ptCtLeftClickTool
     )
 
-    if (!toolData) {
+    if (!annotation) {
       throw new Error('No annotation selected ')
     }
 
-    toolData = toolData[0]
+    annotation = annotation[0]
 
     const {
       metadata: {
         enabledElement: { viewport },
       },
-    } = toolData // assuming they are all overlayed on the same toolGroup
+    } = annotation // assuming they are all overlayed on the same toolGroup
 
     const volumeActorInfo = viewport.getDefaultActor()
 
@@ -720,8 +720,8 @@ class SegmentationExample extends Component {
 
     // get the current slice Index
     const sliceIndex = viewport.getCurrentImageIdIndex()
-    toolData.data.endSlice = sliceIndex
-    toolData.data.invalidated = true // IMPORTANT: invalidate the toolData for the cached stat to get updated
+    annotation.data.endSlice = sliceIndex
+    annotation.data.invalidated = true // IMPORTANT: invalidate the annotation for the cached stat to get updated
 
     viewport.render()
   }
@@ -731,35 +731,35 @@ class SegmentationExample extends Component {
       throw new Error('cannot apply start slice')
     }
 
-    let toolData = toolDataSelection.getSelectedToolDataByToolName(
+    let annotation = annotationSelection.getAnnotationsSelectedByToolName(
       this.state.ptCtLeftClickTool
     )
 
-    if (!toolData) {
+    if (!annotation) {
       throw new Error('No annotation selected ')
     }
 
-    toolData = toolData[0]
+    annotation = annotation[0]
 
     const {
       metadata: {
         enabledElement: { viewport },
       },
-    } = toolData // assuming they are all overlayed on the same toolGroup
+    } = annotation // assuming they are all overlayed on the same toolGroup
 
     const { focalPoint, viewPlaneNormal } = viewport.getCamera()
 
-    const selectedToolDataList =
-      toolDataSelection.getSelectedToolDataByToolName(
+    const selectedAnnotations =
+      annotationSelection.getAnnotationsSelectedByToolName(
         this.state.ptCtLeftClickTool
       )
 
-    const { handles } = toolData.data
+    const { handles } = annotation.data
     const { points } = handles
 
     // get the current slice Index
     const sliceIndex = viewport.getCurrentImageIdIndex()
-    toolData.data.startSlice = sliceIndex
+    annotation.data.startSlice = sliceIndex
 
     // distance between camera focal point and each point on the rectangle
     const newPoints = points.map((point) => {
@@ -776,26 +776,26 @@ class SegmentationExample extends Component {
     })
 
     handles.points = newPoints
-    toolData.data.invalidated = true // IMPORTANT: invalidate the toolData for the cached stat to get updated
+    annotation.data.invalidated = true // IMPORTANT: invalidate the annotation for the cached stat to get updated
     viewport.render()
   }
 
   executeThresholding = (mode) => {
-    let toolData = toolDataSelection.getSelectedToolDataByToolName(
+    let annotation = annotationSelection.getAnnotationsSelectedByToolName(
       this.state.ptCtLeftClickTool
     )
 
-    if (!toolData) {
+    if (!annotation) {
       throw new Error('No annotation selected ')
     }
 
-    toolData = toolData[0]
+    annotation = annotation[0]
 
     const {
       metadata: {
         enabledElement: { viewport },
       },
-    } = toolData // assuming they are all overlayed on the same toolGroup
+    } = annotation // assuming they are all overlayed on the same toolGroup
 
     const volumeActorInfo = viewport.getDefaultActor()
 
@@ -809,15 +809,15 @@ class SegmentationExample extends Component {
     )
 
     const numSlices = this.state.numSlicesForThreshold
-    const selectedToolDataList =
-      toolDataSelection.getSelectedToolDataByToolName(
+    const selectedAnnotations =
+      annotationSelection.getAnnotationsSelectedByToolName(
         this.state.ptCtLeftClickTool
       )
 
     if (mode === 'max') {
       csToolsUtils.segmentation.thresholdVolumeByRoiStats(
         this.state.selectedToolGroupName,
-        selectedToolDataList,
+        selectedAnnotations,
         [referenceVolume],
         segmentationData,
         {
@@ -833,7 +833,7 @@ class SegmentationExample extends Component {
 
     csToolsUtils.segmentation.thresholdVolumeByRange(
       this.state.selectedToolGroupName,
-      selectedToolDataList,
+      selectedAnnotations,
       [referenceVolume],
       segmentationData,
       {
@@ -1185,7 +1185,7 @@ class SegmentationExample extends Component {
                     )
 
                   const activeSegmentIndexLocked =
-                    SegmentationModule.lockedSegmentController.getSegmentIndexLockedStatusForSegmentation(
+                    SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
                       volumeUID,
                       activeSegmentIndex
                     )

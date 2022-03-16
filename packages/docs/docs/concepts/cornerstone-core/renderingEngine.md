@@ -155,11 +155,11 @@ disableElement(viewportUID: string)
 
 [`element_enabled`](/docs/cornerstone-render/enums/EVENTS#element_enabled) and
 [`element_disabled`](/docs/cornerstone-render/enums/EVENTS#element_enabled) events are fired
-with below event data.
+with below event detail.
 
 
 ```js
-const eventData = {
+const eventDetail = {
   canvas,
   viewportUID,
   renderingEngineUID,

@@ -21,8 +21,8 @@ const {
 const {
   EllipticalRoiTool,
   ToolGroupManager,
-  getToolState,
-  removeToolState,
+  getAnnotations,
+  removeAnnotation,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
 } = csTools3d
@@ -126,28 +126,27 @@ describe('EllipticalRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const enabledElement = getEnabledElement(element)
-          const ellipseToolState = getToolState(enabledElement, 'EllipticalRoi')
-          // Can successfully add Length tool to toolStateManager
-          expect(ellipseToolState).toBeDefined()
-          expect(ellipseToolState.length).toBe(1)
+          const ellipseAnnotations = getAnnotations(element, 'EllipticalRoi')
+          // Can successfully add Length tool to annotationManager
+          expect(ellipseAnnotations).toBeDefined()
+          expect(ellipseAnnotations.length).toBe(1)
 
-          const ellipseToolData = ellipseToolState[0]
-          expect(ellipseToolData.metadata.referencedImageId).toBe(
+          const ellipseAnnotation = ellipseAnnotations[0]
+          expect(ellipseAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
 
-          expect(ellipseToolData.metadata.toolName).toBe('EllipticalRoi')
-          expect(ellipseToolData.data.invalidated).toBe(false)
+          expect(ellipseAnnotation.metadata.toolName).toBe('EllipticalRoi')
+          expect(ellipseAnnotation.invalidated).toBe(false)
 
-          const data = ellipseToolData.data.cachedStats
+          const data = ellipseAnnotation.data.cachedStats
           const targets = Array.from(Object.keys(data))
           expect(targets.length).toBe(1)
 
           // the rectangle is drawn on the strip
           expect(data[targets[0]].mean).toBe(255)
 
-          removeToolState(element, ellipseToolData)
+          removeAnnotation(element, ellipseAnnotation.annotationUID)
           done()
         }
       )
@@ -297,29 +296,28 @@ describe('EllipticalRoiTool (CPU):', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const enabledElement = getEnabledElement(element)
-        const ellipseToolState = getToolState(enabledElement, 'EllipticalRoi')
-        // Can successfully add Length tool to toolStateManager
-        expect(ellipseToolState).toBeDefined()
-        expect(ellipseToolState.length).toBe(1)
+        const ellipseAnnotations = getAnnotations(element, 'EllipticalRoi')
+        // Can successfully add Length tool to annotationManager
+        expect(ellipseAnnotations).toBeDefined()
+        expect(ellipseAnnotations.length).toBe(1)
 
-        const ellipseToolData = ellipseToolState[0]
-        expect(ellipseToolData.metadata.referencedImageId).toBe(
+        const ellipseAnnotation = ellipseAnnotations[0]
+        expect(ellipseAnnotation.metadata.referencedImageId).toBe(
           imageId1.split(':')[1]
         )
 
-        expect(ellipseToolData.metadata.toolName).toBe('EllipticalRoi')
-        expect(ellipseToolData.data.invalidated).toBe(false)
-        expect(ellipseToolData.data.active).toBe(false)
+        expect(ellipseAnnotation.metadata.toolName).toBe('EllipticalRoi')
+        expect(ellipseAnnotation.invalidated).toBe(false)
+        expect(ellipseAnnotation.highlighted).toBe(false)
 
-        const data = ellipseToolData.data.cachedStats
+        const data = ellipseAnnotation.data.cachedStats
         const targets = Array.from(Object.keys(data))
         expect(targets.length).toBe(1)
 
         // the rectangle is drawn on the strip
         expect(data[targets[0]].mean).toBe(255)
 
-        removeToolState(element, ellipseToolData)
+        removeAnnotation(element, ellipseAnnotation.annotationUID)
         done()
       }, 100)
     }

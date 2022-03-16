@@ -76,7 +76,7 @@ export default class SegmentationDisplayTool extends BaseTool {
    *
    * @param toolGroupUID - the toolGroupUID
    */
-  renderToolData = (toolGroupUID: string): void => {
+  renderAnnotation = (toolGroupUID: string): void => {
     const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
 
     if (!toolGroup) {

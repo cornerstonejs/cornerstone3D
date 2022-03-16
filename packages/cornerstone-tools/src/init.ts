@@ -2,16 +2,16 @@ import {
   eventTarget,
   EVENTS as RENDERING_EVENTS,
 } from '@precisionmetrics/cornerstone-render'
-import { getDefaultToolStateManager } from './stateManagement/annotation/toolState'
+import { getDefaultAnnotationManager } from './stateManagement/annotation/annotationState'
 import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState'
 import { CornerstoneTools3DEvents as TOOLS_EVENTS } from './enums'
 import { addEnabledElement, removeEnabledElement } from './store'
 import { resetCornerstoneToolsState } from './store/state'
 import {
-  measurementSelectionListener,
+  annotationSelectionListener,
   segmentationDataModifiedEventListener,
   segmentationStateModifiedEventListener,
-  measurementModifiedListener,
+  annotationModifiedListener,
 } from './eventListeners'
 
 import ToolGroupManager from './store/ToolGroupManager'
@@ -33,18 +33,18 @@ export function destroy() {
   _removeCornerstoneEventListeners()
   _removeCornerstoneToolsEventListeners()
 
-  // Impportant: destroy ToolGroups first, in order for cleanup to work correctly for the
+  // Important: destroy ToolGroups first, in order for cleanup to work correctly for the
   // added tools.
   ToolGroupManager.destroy()
 
   // Remove all tools
   resetCornerstoneToolsState()
 
-  // remove all toolData
-  const toolStateManager = getDefaultToolStateManager()
+  // remove all annotation.
+  const annotationManager = getDefaultAnnotationManager()
   const segmentationStateManager = getDefaultSegmentationStateManager()
 
-  toolStateManager.restoreToolState({})
+  annotationManager.restoreAnnotations({})
   segmentationStateManager.resetState()
   csToolsInitialized = false
 }
@@ -86,18 +86,18 @@ function _removeCornerstoneEventListeners() {
 
 /**
  * It adds an event listener to the event target (the cornerstoneTools object) for
- * the measurement selected and measurement modified events.
+ * the annotation selected and annotation modified events.
  */
 function _addCornerstoneToolsEventListeners() {
   // Clear any listeners that may already be set
   _removeCornerstoneToolsEventListeners()
 
-  const selectionEvent = TOOLS_EVENTS.MEASUREMENT_SELECTION_CHANGE
+  const selectionEvent = TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE
   const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
   const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
-  const modifiedEvent = TOOLS_EVENTS.MEASUREMENT_MODIFIED
+  const modifiedEvent = TOOLS_EVENTS.ANNOTATION_MODIFIED
 
-  eventTarget.addEventListener(selectionEvent, measurementSelectionListener)
+  eventTarget.addEventListener(selectionEvent, annotationSelectionListener)
   eventTarget.addEventListener(
     segmentationDataModified,
     segmentationDataModifiedEventListener
@@ -107,20 +107,20 @@ function _addCornerstoneToolsEventListeners() {
     segmentationStateModifiedEventListener
   )
 
-  eventTarget.addEventListener(selectionEvent, measurementSelectionListener)
-  eventTarget.addEventListener(modifiedEvent, measurementModifiedListener)
+  eventTarget.addEventListener(selectionEvent, annotationSelectionListener)
+  eventTarget.addEventListener(modifiedEvent, annotationModifiedListener)
 }
 
 /**
- * Remove the event listener for the the measurement selected and measurement modified events.
+ * Remove the event listener for the the annotation selected and annotation modified events.
  */
 function _removeCornerstoneToolsEventListeners() {
-  const selectionEvent = TOOLS_EVENTS.MEASUREMENT_SELECTION_CHANGE
-  const modifiedEvent = TOOLS_EVENTS.MEASUREMENT_MODIFIED
+  const selectionEvent = TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE
+  const modifiedEvent = TOOLS_EVENTS.ANNOTATION_MODIFIED
   const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
   const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
 
-  eventTarget.removeEventListener(selectionEvent, measurementSelectionListener)
+  eventTarget.removeEventListener(selectionEvent, annotationSelectionListener)
   eventTarget.removeEventListener(
     segmentationDataModified,
     segmentationDataModifiedEventListener
@@ -130,8 +130,8 @@ function _removeCornerstoneToolsEventListeners() {
     segmentationStateModifiedEventListener
   )
 
-  eventTarget.removeEventListener(selectionEvent, measurementSelectionListener)
-  eventTarget.removeEventListener(modifiedEvent, measurementModifiedListener)
+  eventTarget.removeEventListener(selectionEvent, annotationSelectionListener)
+  eventTarget.removeEventListener(modifiedEvent, annotationModifiedListener)
 }
 
 export default init

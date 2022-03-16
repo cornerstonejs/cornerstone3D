@@ -8,7 +8,7 @@ const PAGE_HEIGHT = 800
  * consistent and helpful across different browsers
  *
  * @param event - the original mouse event
- * @returns a normalized eventData
+ * @returns a normalized eventDetail
  */
 export default function normalizeWheel(event) {
   let spinX = 0,

@@ -13,7 +13,6 @@ function drawLinkedTextBox(
   textLines: Array<string>,
   textBoxPosition: Types.Point2,
   annotationAnchorPoints: Array<Types.Point2>,
-  // textBox: ToolStateTextBox,
   textBox: unknown,
   options = {}
   // TODO: yCenter as an option

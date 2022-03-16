@@ -88,19 +88,22 @@ async function run() {
   await initDemo()
 
   const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs'
-  const StudyInstanceUID = '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
+  const StudyInstanceUID =
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot,
     type: 'VOLUME',
   })
 
   const ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
     wadoRsRoot,
     type: 'VOLUME',
   })
@@ -117,14 +120,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a volume in memory
   const ctVolume = await createAndCacheVolume(ctVolumeUID, {
@@ -158,12 +163,21 @@ async function run() {
     if (ptRequests[i]) customOrderedRequests.push(ptRequests[i])
   }
 
-  const requests = generateRequests(customOrderedRequests, ctRequests, ptRequests)
+  const requests = generateRequests(
+    customOrderedRequests,
+    ctRequests,
+    ptRequests
+  )
 
   // adding requests to the imageLoadPoolManager
   requests.forEach((request) => {
     const { callLoadImage, requestType, additionalDetails, priority } = request
-    imageLoadPoolManager.addRequest(callLoadImage, requestType, additionalDetails, priority)
+    imageLoadPoolManager.addRequest(
+      callLoadImage,
+      requestType,
+      additionalDetails,
+      priority
+    )
   })
 
   // Render the image

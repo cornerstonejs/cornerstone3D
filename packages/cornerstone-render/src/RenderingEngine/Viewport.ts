@@ -13,7 +13,7 @@ import renderingEngineCache from './renderingEngineCache'
 import RenderingEngine from './RenderingEngine'
 import { triggerEvent, planar } from '../utilities'
 import { ViewportInputOptions, Point2, Point3, FlipDirection } from '../types'
-import { vtkSlabCamera } from './vtkClasses'
+import type { vtkSlabCamera } from './vtkClasses'
 
 /**
  * An object representing a single viewport, which is a camera

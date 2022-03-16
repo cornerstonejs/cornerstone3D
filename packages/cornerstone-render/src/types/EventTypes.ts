@@ -11,7 +11,7 @@ import type vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 /**
  * CAMERA_MODIFIED Event's data
  */
-type CameraModifiedEventData = {
+type CameraModifiedEventDetail = {
   /** Previous camera properties */
   previousCamera: ICamera
   /** Current camera properties */
@@ -27,7 +27,7 @@ type CameraModifiedEventData = {
 /**
  * VOI_MODIFIED Event's data
  */
-type VoiModifiedEventData = {
+type VoiModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportUID: string
   /** Unique ID for the volume in the cache */
@@ -39,7 +39,7 @@ type VoiModifiedEventData = {
 /**
  * ELEMENT_DISABLED Event's data
  */
-type ElementDisabledEventData = {
+type ElementDisabledEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
@@ -51,7 +51,7 @@ type ElementDisabledEventData = {
 /**
  * ELEMENT_Enabled Event's data
  */
-type ElementEnabledEventData = {
+type ElementEnabledEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
@@ -63,7 +63,7 @@ type ElementEnabledEventData = {
 /**
  * IMAGE_RENDERED Event's data
  */
-type ImageRenderedEventData = {
+type ImageRenderedEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
@@ -76,7 +76,7 @@ type ImageRenderedEventData = {
 /**
  * IMAGE_VOLUME_MODIFIED Event's data
  */
-type ImageVolumeModifiedEventData = {
+type ImageVolumeModifiedEventDetail = {
   /** the modified volume */
   imageVolume: IImageVolume
   /** FrameOfReferenceUID where the volume belongs to */
@@ -86,7 +86,7 @@ type ImageVolumeModifiedEventData = {
 /**
  * IMAGE_LOADED Event's data
  */
-type ImageLoadedEventData = {
+type ImageLoadedEventDetail = {
   /** the loaded image */
   image: IImage
 }
@@ -94,7 +94,7 @@ type ImageLoadedEventData = {
 /**
  * IMAGE_LOADED_FAILED Event's data
  */
-type ImageLoadedFailedEventData = {
+type ImageLoadedFailedEventDetail = {
   /** the imageId for the image */
   imageId: string
   error: unknown
@@ -103,7 +103,7 @@ type ImageLoadedFailedEventData = {
 /**
  * VOLUME_LOADED Event's data
  */
-type VolumeLoadedEventData = {
+type VolumeLoadedEventDetail = {
   /** the loaded volume */
   volume: IImageVolume
 }
@@ -111,7 +111,7 @@ type VolumeLoadedEventData = {
 /**
  * VOLUME_LOADED_FAILED Event's data
  */
-type VolumeLoadedFailedEventData = {
+type VolumeLoadedFailedEventDetail = {
   /** the volumeId for the volume */
   volumeId: string
   error: unknown
@@ -120,7 +120,7 @@ type VolumeLoadedFailedEventData = {
 /**
  * IMAGE_CACHE_IMAGE_REMOVED Event's data
  */
-type ImageCacheImageRemovedEventData = {
+type ImageCacheImageRemovedEventDetail = {
   /** the removed image id */
   imageId: string
 }
@@ -128,7 +128,7 @@ type ImageCacheImageRemovedEventData = {
 /**
  * IMAGE_CACHE_IMAGE_ADDED Event's data
  */
-type ImageCacheImageAddedEventData = {
+type ImageCacheImageAddedEventDetail = {
   /** the added image */
   image: ICachedImage
 }
@@ -136,7 +136,7 @@ type ImageCacheImageAddedEventData = {
 /**
  * VOLUME_CACHE_VOLUME_REMOVED Event's data
  */
-type VolumeCacheVolumeRemovedEventData = {
+type VolumeCacheVolumeRemovedEventDetail = {
   /** the removed volume id */
   volumeId: string
 }
@@ -144,7 +144,7 @@ type VolumeCacheVolumeRemovedEventData = {
 /**
  * VOLUME_CACHE_VOLUME_ADDED Event's data
  */
-type VolumeCacheVolumeAddedEventData = {
+type VolumeCacheVolumeAddedEventDetail = {
   /** the added volume */
   volume: ICachedVolume
 }
@@ -152,7 +152,7 @@ type VolumeCacheVolumeAddedEventData = {
 /**
  * STACK_NEW_IMAGE Event's data
  */
-type StackNewImageEventData = {
+type StackNewImageEventDetail = {
   /** the new image set on the stack viewport */
   image: IImage
   /** the image imageId */
@@ -166,7 +166,7 @@ type StackNewImageEventData = {
 /**
  * IMAGE_SPACING_CALIBRATED Event's data
  */
-type ImageSpacingCalibratedEventData = {
+type ImageSpacingCalibratedEventDetail = {
   element: HTMLElement
   viewportUID: string
   renderingEngineUID: string
@@ -180,7 +180,7 @@ type ImageSpacingCalibratedEventData = {
 /**
  * IMAGE_LOAD_PROGRESS Event's data. Note this is only for one image load and NOT volume load.
  */
-type ImageLoadProgressEventData = {
+type ImageLoadProgressEventDetail = {
   /** url we are loading from */
   url: string
   /** loading image image id */
@@ -196,125 +196,126 @@ type ImageLoadProgressEventData = {
 /**
  * CameraModified Event type
  */
-type CameraModifiedEvent = CustomEventType<CameraModifiedEventData>
+type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>
 
 /**
  * VOI_MODIFIED Event type
  */
-type VoiModifiedEvent = CustomEventType<VoiModifiedEventData>
+type VoiModifiedEvent = CustomEventType<VoiModifiedEventDetail>
 
 /**
  * ELEMENT_DISABLED Event type
  */
-type ElementDisabledEvent = CustomEventType<ElementDisabledEventData>
+type ElementDisabledEvent = CustomEventType<ElementDisabledEventDetail>
 
 /**
  * ELEMENT_ENABLED Event type
  */
-type ElementEnabledEvent = CustomEventType<ElementEnabledEventData>
+type ElementEnabledEvent = CustomEventType<ElementEnabledEventDetail>
 
 /**
  * IMAGE_RENDERED Event type
  */
-type ImageRenderedEvent = CustomEventType<ElementEnabledEventData>
+type ImageRenderedEvent = CustomEventType<ElementEnabledEventDetail>
 
 /**
  * IMAGE_VOLUME_MODIFIED Event type
  */
-type ImageVolumeModifiedEvent = CustomEventType<ImageVolumeModifiedEventData>
+type ImageVolumeModifiedEvent = CustomEventType<ImageVolumeModifiedEventDetail>
 
 /**
  * IMAGE_LOADED Event type
  */
-type ImageLoadedEvent = CustomEventType<ImageLoadedEventData>
+type ImageLoadedEvent = CustomEventType<ImageLoadedEventDetail>
 
 /**
  * IMAGE_LOADED_FAILED Event type
  */
-type ImageLoadedFailedEvent = CustomEventType<ImageLoadedFailedEventData>
+type ImageLoadedFailedEvent = CustomEventType<ImageLoadedFailedEventDetail>
 
 /**
  * VOLUME_LOADED Event type
  */
-type VolumeLoadedEvent = CustomEventType<VolumeLoadedEventData>
+type VolumeLoadedEvent = CustomEventType<VolumeLoadedEventDetail>
 
 /**
  * VOLUME_LOADED_FAILED Event type
  */
-type VolumeLoadedFailedEvent = CustomEventType<VolumeLoadedFailedEventData>
+type VolumeLoadedFailedEvent = CustomEventType<VolumeLoadedFailedEventDetail>
 
 /**
  * IMAGE_CACHE_IMAGE_ADDED Event type
  */
-type ImageCacheImageAddedEvent = CustomEventType<ImageCacheImageAddedEventData>
+type ImageCacheImageAddedEvent =
+  CustomEventType<ImageCacheImageAddedEventDetail>
 
 /**
  * IMAGE_CACHE_IMAGE_REMOVED Event type
  */
 type ImageCacheImageRemovedEvent =
-  CustomEventType<ImageCacheImageRemovedEventData>
+  CustomEventType<ImageCacheImageRemovedEventDetail>
 
 /**
  * VOLUME_CACHE_VOLUME_ADDED Event type
  */
 type VolumeCacheVolumeAddedEvent =
-  CustomEventType<VolumeCacheVolumeAddedEventData>
+  CustomEventType<VolumeCacheVolumeAddedEventDetail>
 
 /**
  * VOLUME_CACHE_VOLUME_REMOVED Event type
  */
 type VolumeCacheVolumeRemovedEvent =
-  CustomEventType<VolumeCacheVolumeRemovedEventData>
+  CustomEventType<VolumeCacheVolumeRemovedEventDetail>
 
 /**
  * START_NEW_IMAGE
  */
-type StartNewImageEvent = CustomEventType<StackNewImageEventData>
+type StackNewImageEvent = CustomEventType<StackNewImageEventDetail>
 
 /**
  * IMAGE_SPACING_CALIBRATED
  */
 type ImageSpacingCalibratedEvent =
-  CustomEventType<ImageSpacingCalibratedEventData>
+  CustomEventType<ImageSpacingCalibratedEventDetail>
 
 /**
  * IMAGE_LOAD_PROGRESS
  */
-type ImageLoadProgressEvent = CustomEventType<ImageLoadProgressEventData>
+type ImageLoadProgressEvent = CustomEventType<ImageLoadProgressEventDetail>
 
 export type {
-  CameraModifiedEventData,
+  CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,
-  VoiModifiedEventData,
+  VoiModifiedEventDetail,
   ElementDisabledEvent,
-  ElementDisabledEventData,
+  ElementDisabledEventDetail,
   ElementEnabledEvent,
-  ElementEnabledEventData,
-  ImageRenderedEventData,
+  ElementEnabledEventDetail,
+  ImageRenderedEventDetail,
   ImageRenderedEvent,
   ImageVolumeModifiedEvent,
-  ImageVolumeModifiedEventData,
+  ImageVolumeModifiedEventDetail,
   ImageLoadedEvent,
-  ImageLoadedEventData,
-  ImageLoadedFailedEventData,
+  ImageLoadedEventDetail,
+  ImageLoadedFailedEventDetail,
   ImageLoadedFailedEvent,
   VolumeLoadedEvent,
-  VolumeLoadedEventData,
+  VolumeLoadedEventDetail,
   VolumeLoadedFailedEvent,
-  VolumeLoadedFailedEventData,
+  VolumeLoadedFailedEventDetail,
   ImageCacheImageAddedEvent,
-  ImageCacheImageAddedEventData,
+  ImageCacheImageAddedEventDetail,
   ImageCacheImageRemovedEvent,
-  ImageCacheImageRemovedEventData,
+  ImageCacheImageRemovedEventDetail,
   VolumeCacheVolumeAddedEvent,
-  VolumeCacheVolumeAddedEventData,
+  VolumeCacheVolumeAddedEventDetail,
   VolumeCacheVolumeRemovedEvent,
-  VolumeCacheVolumeRemovedEventData,
-  StartNewImageEvent,
-  StackNewImageEventData,
+  VolumeCacheVolumeRemovedEventDetail,
+  StackNewImageEvent,
+  StackNewImageEventDetail,
   ImageSpacingCalibratedEvent,
-  ImageSpacingCalibratedEventData,
+  ImageSpacingCalibratedEventDetail,
   ImageLoadProgressEvent,
-  ImageLoadProgressEventData,
+  ImageLoadProgressEventDetail,
 }

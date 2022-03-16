@@ -38,7 +38,7 @@ import {
 export default class RectangleScissorsTool extends BaseTool {
   _throttledCalculateCachedStats: any
   editData: {
-    toolData: any
+    annotation: any
     segmentationDataUID: string
     segmentation: any
     segmentIndex: number
@@ -77,12 +77,12 @@ export default class RectangleScissorsTool extends BaseTool {
    * finds the active segmentation info and use it for the current tool.
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The toolData object.
+   * @returns The annotation object.
    *
    */
-  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+  addNewAnnotation = (evt: EventTypes.MouseDownActivateEventType) => {
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
     const enabledElement = getEnabledElement(element)
@@ -108,7 +108,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(toolGroupUID)
     const segmentsLocked =
-      lockedSegmentController.getLockedSegmentsForSegmentation(volumeUID)
+      lockedSegmentController.getSegmentsLockedForSegmentation(volumeUID)
     const segmentColor = segmentationColorController.getColorForSegmentIndex(
       toolGroupUID,
       activeSegmentationInfo.segmentationDataUID,
@@ -118,7 +118,9 @@ export default class RectangleScissorsTool extends BaseTool {
     const segmentation = cache.getVolume(volumeUID)
 
     // Todo: Used for drawing the svg only, we might not need it at all
-    const toolData = {
+    const annotation = {
+      highlighted: true,
+      invalidated: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
@@ -128,7 +130,6 @@ export default class RectangleScissorsTool extends BaseTool {
         segmentColor,
       },
       data: {
-        invalidated: true,
         handles: {
           points: [
             <Types.Point3>[...worldPos],
@@ -138,12 +139,11 @@ export default class RectangleScissorsTool extends BaseTool {
           ],
           activeHandleIndex: null,
         },
-        active: true,
       },
     }
 
-    // Ensure settings are initialized after tool data instantiation
-    Settings.getObjectSettings(toolData, RectangleRoiTool)
+    // Ensure settings are initialized after annotation instantiation
+    Settings.getObjectSettings(annotation, RectangleRoiTool)
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -151,7 +151,7 @@ export default class RectangleScissorsTool extends BaseTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       segmentation,
       segmentIndex,
       segmentsLocked,
@@ -179,14 +179,14 @@ export default class RectangleScissorsTool extends BaseTool {
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
     this.isDrawing = true
 
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { toolData, viewportUIDsToRender, handleIndex } = this.editData
-    const { data } = toolData
+    const { annotation, viewportUIDsToRender, handleIndex } = this.editData
+    const { data } = annotation
 
     // Moving handle.
-    const { currentPoints } = eventData
+    const { currentPoints } = eventDetail
     const enabledElement = getEnabledElement(element)
     const { worldToCanvas, canvasToWorld } = enabledElement.viewport
     const worldPos = currentPoints.world
@@ -244,7 +244,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
         break
     }
-    data.invalidated = true
+    annotation.invalidated = true
 
     this.editData.hasMoved = true
 
@@ -259,11 +259,11 @@ export default class RectangleScissorsTool extends BaseTool {
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
     const {
-      toolData,
+      annotation,
       newAnnotation,
       hasMoved,
       segmentation,
@@ -271,13 +271,13 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentIndex,
       segmentsLocked,
     } = this.editData
-    const { data } = toolData
+    const { data } = annotation
 
     if (newAnnotation && !hasMoved) {
       return
     }
 
-    data.active = false
+    annotation.highlighted = false
     data.handles.activeHandleIndex = null
 
     this._deactivateDraw(element)
@@ -331,14 +331,14 @@ export default class RectangleScissorsTool extends BaseTool {
   }
 
   /**
-   * it is used to draw the rectangleScissor annotation data in each
+   * it is used to draw the rectangleScissor annotation in each
    * request animation frame. Note that the annotation are disappeared
    * after the segmentation modification.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
@@ -347,14 +347,14 @@ export default class RectangleScissorsTool extends BaseTool {
     }
 
     const { viewport } = enabledElement
-    const { toolData } = this.editData
+    const { annotation } = this.editData
 
-    // Todo: rectangle colro based on segment index
-    const settings = Settings.getObjectSettings(toolData, RectangleRoiTool)
-    const toolMetadata = toolData.metadata
-    const annotationUID = toolMetadata.toolDataUID
+    // Todo: rectangle color based on segment index
+    const settings = Settings.getObjectSettings(annotation, RectangleRoiTool)
+    const toolMetadata = annotation.metadata
+    const annotationUID = annotation.annotationUID
 
-    const data = toolData.data
+    const data = annotation.data
     const { points } = data.handles
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`

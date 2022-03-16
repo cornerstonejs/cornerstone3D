@@ -1,11 +1,13 @@
 import type { Types } from '@precisionmetrics/cornerstone-render'
-import BaseAnnotationTool from '../tools/base/BaseAnnotationTool'
 
-type ToolSpecificToolData = {
+type Annotation = {
   /**
-   * Determine if the tool data instance is in a locked state.
+   * A unique identifier for this annotation.
    */
+  annotationUID?: string
+  highlighted?: boolean
   isLocked?: boolean
+  invalidated?: boolean
   metadata: {
     /**
      * The position of the camera in world space
@@ -24,10 +26,6 @@ type ToolSpecificToolData = {
      */
     viewUp?: Types.Point3
     /**
-     * A unique identifier for this tool data.
-     */
-    toolDataUID?: string
-    /**
      * The FrameOfReferenceUID
      */
     FrameOfReferenceUID: string
@@ -42,20 +40,15 @@ type ToolSpecificToolData = {
      */
     referencedImageId?: string
     /**
-     * The registered name of the tool
-     */
-    label?: string
-    /**
-     * The registered name of the tool
-     */
-    text?: string
-    /**
      * VolumeUID of the volume that the tool was configured to work on.
      */
     volumeUID?: string
   }
+  /**
+   * Data for annotation, Derivatives need to define their own data types.
+   */
   data: {
-    handles: {
+    handles?: {
       points?: Types.Point3[]
       activeHandleIndex?: number | null
       textBox?: {
@@ -68,45 +61,27 @@ type ToolSpecificToolData = {
           bottomRight: Types.Point3
         }
       }
-      activeOperation?: number | null
-      rotationPoints?: unknown
-      slabThicknessPoints?: unknown
+      [key: string]: any
     }
-    active: boolean
     cachedStats?: unknown
-    invalidated?: boolean
-    activeViewportUIDs?: string[]
-    viewportUID?: string
   }
 }
 
-type ToolSpecificToolState = Array<ToolSpecificToolData>
+type Annotations = Array<Annotation>
 
-type FrameOfReferenceSpecificToolState = {
-  // Any string key must have type of Array<ToolSpecificToolData>
-  [key: string]: ToolSpecificToolState
+type FrameOfReferenceSpecificAnnotations = {
+  // Any string key must have type of Array<Annotation>
+  [key: string]: Annotations
 }
 
-type ToolState = {
-  // Any string key must have type of FrameOfReferenceSpecificToolState
-  [key: string]: FrameOfReferenceSpecificToolState
+type AnnotationState = {
+  // Any string key must have type of FrameOfReferenceSpecificAnnotations
+  [key: string]: FrameOfReferenceSpecificAnnotations
 }
-
-type ToolAndToolStateArray = Array<{
-  tool: BaseAnnotationTool
-  toolState: ToolSpecificToolState
-}>
-
-type ToolAndToolDataArray = Array<{
-  tool: BaseAnnotationTool
-  toolData: ToolSpecificToolData
-}>
 
 export {
-  ToolSpecificToolData,
-  ToolSpecificToolState,
-  FrameOfReferenceSpecificToolState,
-  ToolAndToolStateArray,
-  ToolAndToolDataArray,
-  ToolState,
+  FrameOfReferenceSpecificAnnotations,
+  AnnotationState,
+  Annotations,
+  Annotation,
 }

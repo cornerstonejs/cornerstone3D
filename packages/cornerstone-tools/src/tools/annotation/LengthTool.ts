@@ -10,14 +10,14 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { BaseAnnotationTool } from '../base'
+import { AnnotationTool } from '../base'
 import throttle from '../../util/throttle'
 import {
-  addToolState,
-  getToolState,
-  removeToolState,
-} from '../../stateManagement/annotation/toolState'
-import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
+} from '../../stateManagement/annotation/annotationState'
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
 import { lineSegment } from '../../util/math'
 
 import {
@@ -30,7 +30,7 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { indexWithinDimensions } from '../../util/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../util/drawing'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
-import { MeasurementModifiedEventData } from '../../types/EventTypes'
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
 import {
   resetElementCursor,
@@ -38,7 +38,7 @@ import {
 } from '../../cursors/elementCursor'
 
 import {
-  ToolSpecificToolData,
+  Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -47,9 +47,8 @@ import {
   InteractionTypes,
 } from '../../types'
 
-interface LengthSpecificToolData extends ToolSpecificToolData {
+interface LengthAnnotation extends Annotation {
   data: {
-    invalidated: boolean
     handles: {
       points: Types.Point3[]
       activeHandleIndex: number | null
@@ -64,17 +63,17 @@ interface LengthSpecificToolData extends ToolSpecificToolData {
         }
       }
     }
+    label: string
     cachedStats: any
-    active: boolean
   }
 }
 
-class LengthTool extends BaseAnnotationTool {
+class LengthTool extends AnnotationTool {
   public touchDragCallback: any
   public mouseDragCallback: any
   _throttledCalculateCachedStats: any
   editData: {
-    toolData: any
+    annotation: any
     viewportUIDsToRender: string[]
     handleIndex?: number
     movingTextBox?: boolean
@@ -107,17 +106,17 @@ class LengthTool extends BaseAnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a Length ToolData and stores it in the toolStateManager
+   * a Length Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The toolData object.
+   * @returns The annotation object.
    *
    */
-  addNewMeasurement = (
+  addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): LengthSpecificToolData => {
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+  ): LengthAnnotation => {
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
     const enabledElement = getEnabledElement(element)
     const { viewport, renderingEngine } = enabledElement
@@ -149,17 +148,17 @@ class LengthTool extends BaseAnnotationTool {
       referencedImageId = referencedImageId.substring(colonIndex + 1)
     }
 
-    const toolData = {
+    const annotation = {
+      highlighted: true,
+      invalidated: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        label: '',
         toolName: this.name,
       },
       data: {
-        invalidated: true,
         handles: {
           points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
           activeHandleIndex: null,
@@ -174,15 +173,15 @@ class LengthTool extends BaseAnnotationTool {
             },
           },
         },
+        label: '',
         cachedStats: {},
-        active: true,
       },
     }
 
-    // Ensure settings are initialized after tool data instantiation
-    Settings.getObjectSettings(toolData, LengthTool)
+    // Ensure settings are initialized after annotation instantiation
+    Settings.getObjectSettings(annotation, LengthTool)
 
-    addToolState(element, toolData)
+    addAnnotation(element, annotation)
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -190,7 +189,7 @@ class LengthTool extends BaseAnnotationTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       handleIndex: 1,
       movingTextBox: false,
@@ -206,29 +205,29 @@ class LengthTool extends BaseAnnotationTool {
       viewportUIDsToRender
     )
 
-    return toolData
+    return annotation
   }
 
   /**
-   * It returns if the canvas point is near the provided length toolData in the provided
+   * It returns if the canvas point is near the provided length annotation in the provided
    * element or not. A proximity is passed to the function to determine the
-   * proximity of the point to the toolData in number of pixels.
+   * proximity of the point to the annotation in number of pixels.
    *
    * @param element - HTML Element
-   * @param toolData - Tool data
+   * @param annotation - Annotation
    * @param canvasCoords - Canvas coordinates
    * @param proximity - Proximity to tool to consider
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
     element: HTMLElement,
-    toolData: LengthSpecificToolData,
+    annotation: LengthAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement
-    const { data } = toolData
+    const { data } = annotation
     const [point1, point2] = data.handles.points
     const canvasPoint1 = viewport.worldToCanvas(point1)
     const canvasPoint2 = viewport.worldToCanvas(point2)
@@ -259,15 +258,13 @@ class LengthTool extends BaseAnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    toolData: ToolSpecificToolData,
+    annotation: LengthAnnotation,
     interactionType: InteractionTypes
   ): void => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { data } = toolData
-
-    data.active = true
+    annotation.highlighted = true
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -275,7 +272,7 @@ class LengthTool extends BaseAnnotationTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       movingTextBox: false,
     }
@@ -297,15 +294,15 @@ class LengthTool extends BaseAnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.MouseDownEventType,
-    toolData: ToolSpecificToolData,
+    annotation: LengthAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void {
-    const eventData = evt.detail
-    const { element } = eventData
-    const { data } = toolData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
+    const { data } = annotation
 
-    data.active = true
+    annotation.highlighted = true
 
     let movingTextBox = false
     let handleIndex
@@ -323,7 +320,7 @@ class LengthTool extends BaseAnnotationTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       handleIndex,
       movingTextBox,
@@ -346,12 +343,12 @@ class LengthTool extends BaseAnnotationTool {
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { toolData, viewportUIDsToRender, newAnnotation, hasMoved } =
+    const { annotation, viewportUIDsToRender, newAnnotation, hasMoved } =
       this.editData
-    const { data } = toolData
+    const { data } = annotation
 
     if (newAnnotation && !hasMoved) {
       // when user starts the drawing by click, and moving the mouse, instead
@@ -359,7 +356,7 @@ class LengthTool extends BaseAnnotationTool {
       return
     }
 
-    data.active = false
+    annotation.highlighted = false
     data.handles.activeHandleIndex = null
 
     this._deactivateModify(element)
@@ -373,7 +370,7 @@ class LengthTool extends BaseAnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeToolState(element, toolData)
+      removeAnnotation(element, annotation.annotationUID)
     }
 
     triggerAnnotationRenderForViewportUIDs(
@@ -389,16 +386,16 @@ class LengthTool extends BaseAnnotationTool {
     evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
   ) => {
     this.isDrawing = true
-    const eventData = evt.detail
-    const { element } = eventData
+    const eventDetail = evt.detail
+    const { element } = eventDetail
 
-    const { toolData, viewportUIDsToRender, handleIndex, movingTextBox } =
+    const { annotation, viewportUIDsToRender, handleIndex, movingTextBox } =
       this.editData
-    const { data } = toolData
+    const { data } = annotation
 
     if (movingTextBox) {
       // Drag mode - moving text box
-      const { deltaPoints } = eventData as EventTypes.MouseDragEventData
+      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail
       const worldPosDelta = deltaPoints.world
 
       const { textBox } = data.handles
@@ -411,7 +408,7 @@ class LengthTool extends BaseAnnotationTool {
       textBox.hasMoved = true
     } else if (handleIndex === undefined) {
       // Drag mode - moving handle
-      const { deltaPoints } = eventData as EventTypes.MouseDragEventData
+      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail
       const worldPosDelta = deltaPoints.world
 
       const points = data.handles.points
@@ -421,14 +418,14 @@ class LengthTool extends BaseAnnotationTool {
         point[1] += worldPosDelta[1]
         point[2] += worldPosDelta[2]
       })
-      data.invalidated = true
+      annotation.invalidated = true
     } else {
       // Move mode - after double click, and mouse move to draw
-      const { currentPoints } = eventData
+      const { currentPoints } = eventDetail
       const worldPos = currentPoints.world
 
       data.handles.points[handleIndex] = [...worldPos]
-      data.invalidated = true
+      annotation.invalidated = true
     }
 
     this.editData.hasMoved = true
@@ -450,10 +447,10 @@ class LengthTool extends BaseAnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { toolData, viewportUIDsToRender } = this.editData
-      const { data } = toolData
+      const { annotation, viewportUIDsToRender } = this.editData
+      const { data } = annotation
 
-      data.active = false
+      annotation.highlighted = false
       data.handles.activeHandleIndex = null
 
       const enabledElement = getEnabledElement(element)
@@ -465,7 +462,7 @@ class LengthTool extends BaseAnnotationTool {
       )
 
       this.editData = null
-      return toolData.metadata.toolDataUID
+      return annotation.annotationUID
     }
   }
 
@@ -516,30 +513,33 @@ class LengthTool extends BaseAnnotationTool {
   }
 
   /**
-   * it is used to draw the length annotation data in each
+   * it is used to draw the length annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let toolState = getToolState(enabledElement, this.name)
+    let annotations = getAnnotations(element, this.name)
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
-    toolState = this.filterInteractableToolStateForElement(element, toolState)
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations
+    )
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
@@ -547,22 +547,22 @@ class LengthTool extends BaseAnnotationTool {
     const renderingEngine = viewport.getRenderingEngine()
 
     // Draw SVG
-    for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i] as LengthSpecificToolData
-      const settings = Settings.getObjectSettings(toolData, LengthTool)
-      const annotationUID = toolData.metadata.toolDataUID
-      const data = toolData.data
+    for (let i = 0; i < annotations.length; i++) {
+      const annotation = annotations[i] as LengthAnnotation
+      const settings = Settings.getObjectSettings(annotation, LengthTool)
+      const annotationUID = annotation.annotationUID
+      const data = annotation.data
       const { points, activeHandleIndex } = data.handles
-      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
-      const lineDash = this.getStyle(settings, 'lineDash', toolData)
-      const color = this.getStyle(settings, 'color', toolData)
+      const lineWidth = this.getStyle(settings, 'lineWidth', annotation)
+      const lineDash = this.getStyle(settings, 'lineDash', annotation)
+      const color = this.getStyle(settings, 'color', annotation)
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
 
       let activeHandleCanvasCoords
 
       if (
-        !isToolDataLocked(toolData) &&
+        !isAnnotationLocked(annotation) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {
@@ -605,10 +605,10 @@ class LengthTool extends BaseAnnotationTool {
       if (!data.cachedStats[targetUID]) {
         data.cachedStats[targetUID] = {}
 
-        this._calculateCachedStats(toolData, renderingEngine, enabledElement)
-      } else if (data.invalidated) {
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement)
+      } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
-          toolData,
+          annotation,
           renderingEngine,
           enabledElement
         )
@@ -644,7 +644,7 @@ class LengthTool extends BaseAnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, toolData)
+        this.getLinkedTextBoxStyle(settings, annotation)
       )
 
       const { x: left, y: top, width, height } = boundingBox
@@ -658,7 +658,7 @@ class LengthTool extends BaseAnnotationTool {
     }
   }
 
-  // text line for the current active length measurement
+  // text line for the current active length annotation
   _getTextLines(data, targetUID) {
     const cachedVolumeStats = data.cachedStats[targetUID]
     const { length } = cachedVolumeStats
@@ -682,8 +682,8 @@ class LengthTool extends BaseAnnotationTool {
     return Math.sqrt(dx * dx + dy * dy + dz * dz)
   }
 
-  _calculateCachedStats(toolData, renderingEngine, enabledElement) {
-    const data = toolData.data
+  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
+    const data = annotation.data
     const { viewportUID, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
@@ -724,13 +724,13 @@ class LengthTool extends BaseAnnotationTool {
       }
     }
 
-    data.invalidated = false
+    annotation.invalidated = false
 
-    // Dispatching measurement modified
-    const eventType = EVENTS.MEASUREMENT_MODIFIED
+    // Dispatching annotation modified
+    const eventType = EVENTS.ANNOTATION_MODIFIED
 
-    const eventDetail: MeasurementModifiedEventData = {
-      toolData,
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
       viewportUID,
       renderingEngineUID,
     }

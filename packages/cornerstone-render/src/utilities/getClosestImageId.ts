@@ -61,7 +61,7 @@ export default function getClosestImageId(
     // 4.a Get metadata for the imageId
     const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId)
 
-    // 4.b Calculate the direction vector from toolData point to the first voxel
+    // 4.b Calculate the direction vector from annotation. point to the first voxel
     // of this image defined by imageId
     const dir = vec3.create()
     vec3.sub(dir, worldPos, imagePositionPatient)

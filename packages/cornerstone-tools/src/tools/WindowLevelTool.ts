@@ -87,7 +87,7 @@ export default class WindowLevelTool extends BaseTool {
       })
     }
 
-    const eventDetail: Types.EventTypes.VoiModifiedEventData = {
+    const eventDetail: Types.EventTypes.VoiModifiedEventDetail = {
       volumeUID,
       viewportUID,
       range: newRange,

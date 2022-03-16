@@ -67,19 +67,22 @@ async function run() {
   await initDemo()
 
   const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs'
-  const StudyInstanceUID = '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
+  const StudyInstanceUID =
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot,
     type: 'VOLUME',
   })
 
   const ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
     wadoRsRoot,
     type: 'VOLUME',
   })
@@ -96,14 +99,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a volume in memory
   const ctVolume = await createAndCacheVolume(ctVolumeUID, {
@@ -146,22 +151,26 @@ async function run() {
     const yMultiple = dimensions[0]
     const zMultiple = dimensions[0] * dimensions[1]
 
-    const value = scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]]
+    const value =
+      scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]]
 
     return value
   }
 
   element.addEventListener('mousemove', (evt) => {
-    var rect = element.getBoundingClientRect()
+    const rect = element.getBoundingClientRect()
 
-    const canvasPos = [Math.floor(evt.clientX - rect.left), Math.floor(evt.clientY - rect.top)]
+    const canvasPos = <Types.Point2>[
+      Math.floor(evt.clientX - rect.left),
+      Math.floor(evt.clientY - rect.top),
+    ]
     // Convert canvas coordiantes to world coordinates
     const worldPos = viewport.canvasToWorld(canvasPos)
 
     canvasPosElement.innerText = `canvas: (${canvasPos[0]}, ${canvasPos[1]})`
-    worldPosElement.innerText = `world: (${worldPos[0].toFixed(2)}, ${worldPos[1].toFixed(2)}, ${worldPos[2].toFixed(
+    worldPosElement.innerText = `world: (${worldPos[0].toFixed(
       2
-    )})`
+    )}, ${worldPos[1].toFixed(2)}, ${worldPos[2].toFixed(2)})`
     ctValueElement.innerText = `CT value: ${getValue(ctVolume, worldPos)}`
     ptValueElement.innerText = `PT value: ${getValue(ptVolume, worldPos)}`
   })

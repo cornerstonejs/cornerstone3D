@@ -127,7 +127,7 @@ function loadImage(uri, imageId) {
       const total = oProgress.total
       const percentComplete = Math.round((loaded / total) * 100)
 
-      const eventData = {
+      const eventDetail = {
         imageId,
         loaded,
         total,
@@ -137,7 +137,7 @@ function loadImage(uri, imageId) {
       cornerstone.triggerEvent(
         cornerstone.eventTarget,
         'cornerstoneimageloadprogress',
-        eventData
+        eventDetail
       )
     }
   }

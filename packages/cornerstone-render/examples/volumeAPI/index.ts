@@ -31,7 +31,10 @@ const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id 
 const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
 
 // ======== Set up page ======== //
-setTitleAndDescription('Volume Viewport API', 'Demonstrates how to interact with a Volume viewport.')
+setTitleAndDescription(
+  'Volume Viewport API',
+  'Demonstrates how to interact with a Volume viewport.'
+)
 
 const content = document.getElementById('content')
 const element = document.createElement('div')
@@ -50,13 +53,18 @@ addButtonToToolbar('Set VOI Range', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Get the volume actor from the viewport
   const actor = viewport.getActor(volumeUID)
 
   // Set the mapping range of the actor to a range to highlight bones
-  actor.volumeActor.getProperty().getRGBTransferFunction(0).setMappingRange(-1500, 2500)
+  actor.volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
+    .setMappingRange(-1500, 2500)
 
   viewport.render()
 })
@@ -65,7 +73,9 @@ addButtonToToolbar('Flip H', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the volume viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Flip the viewport horizontally
   const { flipHorizontal } = viewport.getProperties()
@@ -80,7 +90,9 @@ addButtonToToolbar('Flip V', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the volume viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Flip the viewport vertically
   const { flipVertical } = viewport.getProperties()
@@ -95,12 +107,16 @@ addButtonToToolbar('Invert', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the volume viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Get the volume actor from the viewport
   const actor = viewport.getActor(volumeUID)
 
-  const rgbTransferFunction = actor.volumeActor.getProperty().getRGBTransferFunction(0)
+  const rgbTransferFunction = actor.volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
 
   Utilities.invertRgbTransferFunction(rgbTransferFunction)
 
@@ -112,7 +128,9 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Reset the camera so that we can set some pan and zoom relative to the
   // defaults for this demo. Note that changes could be relative instead.
@@ -121,12 +139,14 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the current camera properties
   const camera = viewport.getCamera()
 
-  const { parallelScale, position, focalPoint } = cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(
-    camera,
-    50
-  )
+  const { parallelScale, position, focalPoint } =
+    cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50)
 
-  viewport.setCamera({ parallelScale, position, focalPoint })
+  viewport.setCamera({
+    parallelScale,
+    position: <Types.Point3>position,
+    focalPoint: <Types.Point3>focalPoint,
+  })
   viewport.render()
 })
 
@@ -135,7 +155,9 @@ addButtonToToolbar('Reset Viewport', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the volume viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Resets the viewport's camera
   viewport.resetCamera()
@@ -145,16 +167,26 @@ addButtonToToolbar('Reset Viewport', () => {
 })
 
 // TOOD -> Oblique
-const orientationOptions = { axial: 'axial', sagittal: 'sagittal', coronal: 'coronal', oblique: 'oblique' }
+const orientationOptions = {
+  axial: 'axial',
+  sagittal: 'sagittal',
+  coronal: 'coronal',
+  oblique: 'oblique',
+}
 
 addDropdownToToolbar(
-  { options: ['axial', 'sagittal', 'coronal', 'oblique'], defaultOption: 'sagittal' },
+  {
+    options: ['axial', 'sagittal', 'coronal', 'oblique'],
+    defaultOption: 'sagittal',
+  },
   (selectedValue) => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineUID)
 
     // Get the volume viewport
-    const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportUID)
+    )
 
     // TODO -> Maybe we should rename sliceNormal to viewPlaneNormal everywhere?
     let viewUp
@@ -179,7 +211,9 @@ addDropdownToToolbar(
       case orientationOptions.oblique:
         // Some random oblique value for this dataset
         viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446]
-        viewPlaneNormal = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446]
+        viewPlaneNormal = [
+          -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+        ]
 
         break
       default:
@@ -195,33 +229,39 @@ addDropdownToToolbar(
   }
 )
 
-addSliderToToolbar('Slab Thickness', { range: [0, 50], defaultValue: 0 }, (value) => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+addSliderToToolbar(
+  'Slab Thickness',
+  { range: [0, 50], defaultValue: 0 },
+  (value) => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineUID)
 
-  // Get the volume viewport
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportUID)
+    )
 
-  let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND
+    let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND
 
-  if (value < 0.1) {
-    // Cannot render zero thickness
-    value = 0.1
+    if (value < 0.1) {
+      // Cannot render zero thickness
+      value = 0.1
 
-    // Not a mip, just show slice
-    blendMode = BlendMode.COMPOSITE_BLEND
+      // Not a mip, just show slice
+      blendMode = BlendMode.COMPOSITE_BLEND
+    }
+
+    // Get the volume actor from the viewport
+    const actor = viewport.getActor(volumeUID)
+
+    viewport.setSlabThickness(value)
+
+    // TODO -> We should have set blend mode for volume on the viewport?
+    actor.volumeActor.getMapper().setBlendMode(blendMode)
+
+    viewport.render()
   }
-
-  // Get the volume actor from the viewport
-  const actor = viewport.getActor(volumeUID)
-
-  viewport.setSlabThickness(value)
-
-  // TODO -> We should have set blend mode for volume on the viewport?
-  actor.volumeActor.getMapper().setBlendMode(blendMode)
-
-  viewport.render()
-})
+)
 
 /**
  * Runs the demo
@@ -232,8 +272,10 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'VOLUME',
   })
@@ -248,14 +290,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a volume in memory
   const volume = await createAndCacheVolume(volumeUID, {

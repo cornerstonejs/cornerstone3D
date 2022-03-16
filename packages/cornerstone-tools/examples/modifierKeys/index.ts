@@ -1,12 +1,29 @@
-import { RenderingEngine, Types, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render'
-import { initDemo, createImageIdsAndCacheMetaData, setTitleAndDescription } from '../../../../utils/demo/helpers'
+import {
+  RenderingEngine,
+  Types,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 
-const { WindowLevelTool, LengthTool, RectangleRoiTool, BidirectionalTool, ToolGroupManager, ToolBindings } =
-  cornerstoneTools
+const {
+  WindowLevelTool,
+  LengthTool,
+  RectangleRoiTool,
+  BidirectionalTool,
+  ToolGroupManager,
+  ToolBindings,
+} = cornerstoneTools
 
 // ======== Set up page ======== //
-setTitleAndDescription('Tools on Modifier Keys', 'Here we demonstrate how we add modifier keys to tools')
+setTitleAndDescription(
+  'Tools on Modifier Keys',
+  'Here we demonstrate how we add modifier keys to tools'
+)
 
 const content = document.getElementById('content')
 const element = document.createElement('div')
@@ -38,20 +55,20 @@ async function run() {
   await initDemo()
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(WindowLevelTool, {})
-  cornerstoneTools.addTool(LengthTool, {})
-  cornerstoneTools.addTool(RectangleRoiTool, {})
-  cornerstoneTools.addTool(BidirectionalTool, {})
+  cornerstoneTools.addTool(WindowLevelTool)
+  cornerstoneTools.addTool(LengthTool)
+  cornerstoneTools.addTool(RectangleRoiTool)
+  cornerstoneTools.addTool(BidirectionalTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add the tools to the tool group
-  toolGroup.addTool('WindowLevel', {})
-  toolGroup.addTool('Length', {})
-  toolGroup.addTool('RectangleRoi', {})
-  toolGroup.addTool('Bidirectional', {})
+  toolGroup.addTool('WindowLevel')
+  toolGroup.addTool('Length')
+  toolGroup.addTool('RectangleRoi')
+  toolGroup.addTool('Bidirectional')
 
   // TODO Why doesn't this work?
 
@@ -91,8 +108,10 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'STACK',
   })
@@ -108,7 +127,7 @@ async function run() {
     type: VIEWPORT_TYPE.STACK,
     element,
     defaultOptions: {
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
@@ -118,7 +137,9 @@ async function run() {
   toolGroup.addViewports(renderingEngineUID, viewportUID)
 
   // Get the stack viewport that was created
-  const viewport = <Types.StackViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a stack containing a single image
   const stack = [imageIds[0]]

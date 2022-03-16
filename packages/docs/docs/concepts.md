@@ -106,7 +106,7 @@ mode.
 ### Adding Tools
 
 The @Tools library comes packaged with several common tools. All implement either
-the `BaseTool` or `BaseAnnotationTool`. Adding a tool makes it available to ToolGroups.
+the `BaseTool` or `AnnotationTool`. Adding a tool makes it available to ToolGroups.
 A high level `.removeTool` also exists.
 
 ```js

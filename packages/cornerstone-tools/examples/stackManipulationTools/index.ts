@@ -1,12 +1,29 @@
-import { RenderingEngine, Types, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render'
-import { initDemo, createImageIdsAndCacheMetaData, setTitleAndDescription } from '../../../../utils/demo/helpers'
+import {
+  RenderingEngine,
+  Types,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 
-const { PanTool, WindowLevelTool, StackScrollMouseWheelTool, ZoomTool, ToolGroupManager, ToolBindings } =
-  cornerstoneTools
+const {
+  PanTool,
+  WindowLevelTool,
+  StackScrollMouseWheelTool,
+  ZoomTool,
+  ToolGroupManager,
+  ToolBindings,
+} = cornerstoneTools
 
 // ======== Set up page ======== //
-setTitleAndDescription('Basic Stack Manipulation', 'Manipulation tools for a stack viewport')
+setTitleAndDescription(
+  'Basic Stack Manipulation',
+  'Manipulation tools for a stack viewport'
+)
 
 const content = document.getElementById('content')
 const element = document.createElement('div')
@@ -21,7 +38,8 @@ element.style.height = '500px'
 content.appendChild(element)
 
 const instructions = document.createElement('p')
-instructions.innerText = 'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll'
+instructions.innerText =
+  'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll'
 
 content.append(instructions)
 // ============================= //
@@ -36,10 +54,10 @@ async function run() {
   const toolGroupUID = 'STACK_TOOL_GROUP_UID'
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool, {})
-  cornerstoneTools.addTool(WindowLevelTool, {})
-  cornerstoneTools.addTool(StackScrollMouseWheelTool, {})
-  cornerstoneTools.addTool(ZoomTool, {})
+  cornerstoneTools.addTool(PanTool)
+  cornerstoneTools.addTool(WindowLevelTool)
+  cornerstoneTools.addTool(StackScrollMouseWheelTool)
+  cornerstoneTools.addTool(ZoomTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -80,8 +98,10 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'STACK',
   })
@@ -97,7 +117,7 @@ async function run() {
     type: VIEWPORT_TYPE.STACK,
     element,
     defaultOptions: {
-      background: [0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0, 0.2],
     },
   }
 
@@ -107,7 +127,9 @@ async function run() {
   toolGroup.addViewports(renderingEngineUID, viewportUID)
 
   // Get the stack viewport that was created
-  const viewport = <Types.StackViewport>renderingEngine.getViewport(viewportUID)
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUID)
+  )
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]]

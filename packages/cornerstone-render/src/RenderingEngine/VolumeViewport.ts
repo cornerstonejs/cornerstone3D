@@ -236,12 +236,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
-   * getBounds gets the visible bounds of the viewport
-   *
+   * gets the visible bounds of the viewport in the world coordinate system
    */
-  public getBounds() {
+  public getBounds(): number[] {
     const renderer = this.getRenderer()
-    return renderer.computeVisiblePropBounds()
+    const bounds = renderer.computeVisiblePropBounds()
+    return bounds
   }
 
   /**
@@ -315,7 +315,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     }
   }
 
-  // Todo: expand this to include all properties for volume viewport
+  /**
+   * Currently only returning the flip direction of the viewport, Todo: should
+   * be like StackViewport to be able to return and also set other properties
+   * such as voi, invert, etc.
+   *
+   * @returns FlipDirection of the viewport
+   */
   public getProperties = (): FlipDirection => {
     return {
       flipHorizontal: this.flipHorizontal,

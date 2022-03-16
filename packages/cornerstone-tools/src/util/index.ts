@@ -5,12 +5,15 @@ import viewportFilters from './viewportFilters'
 import vtkjs from './vtkjs'
 import drawing from './drawing'
 import stackScrollTool from './stackScrollTool'
+import {
+  getAnnotationNearPoint,
+  getAnnotationNearPointOnEnabledElement,
+} from './getAnnotationNearPoint'
 
 // Lodash/common JS functionality
 import debounce from './debounce'
 import deepMerge from './deepMerge'
 import throttle from './throttle'
-import getDefault from './getDefault'
 import isObject from './isObject'
 import calibrateImageSpacing from './calibrateImageSpacing'
 import * as segmentation from './segmentation'
@@ -31,7 +34,6 @@ export {
   debounce,
   deepMerge,
   throttle,
-  getDefault,
   isObject,
   triggerEvent,
   calibrateImageSpacing,
@@ -39,6 +41,8 @@ export {
   triggerAnnotationRenderForViewportUIDs,
   pointInShapeCallback,
   pointInSurroundingSphereCallback,
+  getAnnotationNearPoint,
+  getAnnotationNearPointOnEnabledElement,
 }
 
 export default {
@@ -51,7 +55,6 @@ export default {
   debounce,
   deepMerge,
   throttle,
-  getDefault,
   isObject,
   triggerEvent,
   calibrateImageSpacing,
@@ -59,4 +62,6 @@ export default {
   triggerAnnotationRenderForViewportUIDs,
   pointInShapeCallback,
   pointInSurroundingSphereCallback,
+  getAnnotationNearPoint,
+  getAnnotationNearPointOnEnabledElement,
 }

@@ -4,14 +4,22 @@ import {
   VIEWPORT_TYPE,
   ORIENTATION,
   createAndCacheVolume,
-  EVENTS as RenderingEngineEvents,
 } from '@precisionmetrics/cornerstone-render'
-import { initDemo, createImageIdsAndCacheMetaData, setTitleAndDescription } from '../../../../utils/demo/helpers'
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
-const { LengthTool, ToolGroupManager, StackScrollMouseWheelTool, ToolBindings } = cornerstoneTools
+const {
+  LengthTool,
+  ToolGroupManager,
+  StackScrollMouseWheelTool,
+  ToolBindings,
+} = cornerstoneTools
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
@@ -19,8 +27,8 @@ const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with 
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Shared Tool State Between Stack and Volume Viewports',
-  'Here we demonstrate that toolstate is stored on frame of reference, this annotations drawn on volume viewports can be displayed on stack viewports displaying the same data and vice versa.'
+  'Shared Annotations Between Stack and Volume Viewports',
+  'Here we demonstrate that annotations are stored on frame of reference, this annotations drawn on volume viewports can be displayed on stack viewports displaying the same data and vice versa.'
 )
 
 const size = '500px'
@@ -60,8 +68,8 @@ async function run() {
   const toolGroupUID = 'STACK_TOOL_GROUP_UID'
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool, {})
-  cornerstoneTools.addTool(StackScrollMouseWheelTool, {})
+  cornerstoneTools.addTool(LengthTool)
+  cornerstoneTools.addTool(StackScrollMouseWheelTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -69,7 +77,7 @@ async function run() {
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool('Length', { configuration: { volumeUID } })
-  toolGroup.addTool('StackScrollMouseWheel', {})
+  toolGroup.addTool('StackScrollMouseWheel')
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -86,15 +94,19 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const volumeImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'VOLUME',
   })
 
   const stackImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID: '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'STACK',
   })
@@ -116,7 +128,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -124,7 +136,7 @@ async function run() {
       type: VIEWPORT_TYPE.STACK,
       element: element2,
       defaultOptions: {
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ]
@@ -132,15 +144,21 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool goup on the viewports
-  viewportUIDs.forEach((viewportUID) => toolGroup.addViewports(renderingEngineUID, viewportUID))
+  viewportUIDs.forEach((viewportUID) =>
+    toolGroup.addViewports(renderingEngineUID, viewportUID)
+  )
 
   // Define a volume in memory
   const volume = await createAndCacheVolume(volumeUID, {
     imageIds: smallVolumeImageIds,
   })
 
-  const volumeViewport = <Types.VolumeViewport>renderingEngine.getViewport(viewportUIDs[0])
-  const stackViewport = <Types.StackViewport>renderingEngine.getViewport(viewportUIDs[1])
+  const volumeViewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportUIDs[0])
+  )
+  const stackViewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportUIDs[1])
+  )
 
   // Set the stack on the stackViewport
   stackViewport.setStack(smallStackImageIds)

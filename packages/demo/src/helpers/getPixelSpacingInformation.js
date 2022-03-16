@@ -41,7 +41,7 @@ export default function getPixelSpacingInformation(instance) {
     DETECTOR: 'DETECTOR',
   }
 
-  if (!isProjection){
+  if (!isProjection) {
     return PixelSpacing
   }
 
@@ -60,7 +60,7 @@ export default function getPixelSpacingInformation(instance) {
     PixelSpacing === ImagerPixelSpacing
   ) {
     // If Imager Pixel Spacing and Pixel Spacing are present and they have the same values,
-    // then the user should be informed that the measurements are at the detector plane
+    // then the user should be informed that the annotations are at the detector plane
     return {
       PixelSpacing,
       type: TYPES.DETECTOR,
@@ -118,7 +118,7 @@ export default function getPixelSpacingInformation(instance) {
     SequenceOfUltrasoundRegions.length > 1
   ) {
     console.warn(
-      'Sequence of Ultrasound Regions > one entry. This is not yet implemented, all measurements will be shown in pixels.'
+      'Sequence of Ultrasound Regions > one entry. This is not yet implemented, all annotations will be shown in pixels.'
     )
   } else if (isProjection === false && !ImagerPixelSpacing) {
     // If only Pixel Spacing is present, and this is not a projection radiograph,

@@ -73,8 +73,8 @@ async function run() {
   const toolGroupUID = 'STACK_TOOL_GROUP_UID'
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool, {})
-  cornerstoneTools.addTool(StackScrollMouseWheelTool, {})
+  cornerstoneTools.addTool(LengthTool)
+  cornerstoneTools.addTool(StackScrollMouseWheelTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -125,7 +125,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -134,7 +134,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
@@ -144,14 +144,14 @@ async function run() {
       defaultOptions: {
         orientation: {
           // Random oblique orientation
-          viewUp: [
+          viewUp: <Types.Point3>[
             -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
           ],
-          sliceNormal: [
+          sliceNormal: <Types.Point3>[
             -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
           ],
         },
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ]

@@ -142,7 +142,7 @@ abstract class BaseTool implements IBaseTool {
    * from the stack. For the volumeViewports, the targetUID is the actual
    * volumeUID, so we can get the viewport and image.
    *
-   * @param targetUID - toolData targetUID
+   * @param targetUID - annotation targetUID
    * @param renderingEngine - The rendering engine
    * @returns The viewport and image data for the target.
    */
@@ -168,7 +168,7 @@ abstract class BaseTool implements IBaseTool {
 
   /**
    * Get the target UID for the viewport which will be used to store the cached
-   * statistics scoped to that target in the toolState.
+   * statistics scoped to that target in the annotations.
    * For StackViewport, targetUID is the viewportUID, but for the volume viewport,
    * the targetUID will be grabbed from the volumeUID if particularly specified
    * in the tool configuration, or if not, the first actorUID in the viewport.

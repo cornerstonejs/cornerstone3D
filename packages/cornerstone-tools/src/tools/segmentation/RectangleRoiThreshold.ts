@@ -9,8 +9,8 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { addToolState, getToolState } from '../../stateManagement'
-import { isToolDataLocked } from '../../stateManagement/annotation/toolDataLocking'
+import { addAnnotation, getAnnotations } from '../../stateManagement'
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 
 import {
@@ -21,43 +21,37 @@ import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
 
-import {
-  ToolSpecificToolData,
-  PublicToolProps,
-  ToolProps,
-  EventTypes,
-} from '../../types'
-import { MeasurementModifiedEventData } from '../../types/EventTypes'
+import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 
-export interface RectangleRoiThresholdToolData extends ToolSpecificToolData {
+export interface RectangleRoiThresholdAnnotation extends Annotation {
   metadata: {
     cameraPosition?: Types.Point3
     cameraFocalPoint?: Types.Point3
     viewPlaneNormal?: Types.Point3
     viewUp?: Types.Point3
-    toolDataUID?: string
+    annotationUID?: string
     FrameOfReferenceUID: string
     referencedImageId?: string
     toolName: string
-    enabledElement: any // Todo: how to remove this from the tooldata??
+    enabledElement: any // Todo: how to remove this from the annotation??
     volumeUID: string
   }
   data: {
-    invalidated: boolean
+    label: string
     handles: {
       points: Types.Point3[]
       activeHandleIndex: number | null
     }
     // segmentationUID: string
-    active: boolean
   }
 }
 
 export default class RectangleRoiThresholdTool extends RectangleRoiTool {
   _throttledCalculateCachedStats: any
   editData: {
-    toolData: any
+    annotation: any
     viewportUIDsToRender: string[]
     handleIndex?: number
     newAnnotation?: boolean
@@ -86,12 +80,12 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
    * the edit data for the tool.
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The toolData object.
+   * @returns The annotation object.
    *
    */
-  addNewMeasurement = (evt: EventTypes.MouseDownActivateEventType) => {
-    const eventData = evt.detail
-    const { currentPoints, element } = eventData
+  addNewAnnotation = (evt: EventTypes.MouseDownActivateEventType) => {
+    const eventDetail = evt.detail
+    const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
     const enabledElement = getEnabledElement(element)
@@ -122,9 +116,11 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       referencedImageId = referencedImageId.substring(colonIndex + 1)
     }
 
-    // Todo: how not to store enabledElement on the toolData, segmentationModule needs the element to
+    // Todo: how not to store enabledElement on the annotation, segmentationModule needs the element to
     // decide on the active segmentIndex, active segmentationIndex etc.
-    const toolData = {
+    const annotation = {
+      highlighted: true,
+      invalidated: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         enabledElement,
@@ -135,7 +131,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         volumeUID,
       },
       data: {
-        invalidated: true,
+        label: '',
         handles: {
           // No need a textBox
           textBox: {
@@ -152,14 +148,13 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
           activeHandleIndex: null,
         },
         segmentationUID: null,
-        active: true,
       },
     }
 
-    // Ensure settings are initialized after tool data instantiation
-    Settings.getObjectSettings(toolData, RectangleRoiThresholdTool)
+    // Ensure settings are initialized after annotation instantiation
+    Settings.getObjectSettings(annotation, RectangleRoiThresholdTool)
 
-    addToolState(element, toolData)
+    addAnnotation(element, annotation)
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
@@ -167,7 +162,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     )
 
     this.editData = {
-      toolData,
+      annotation,
       viewportUIDsToRender,
       handleIndex: 3,
       newAnnotation: true,
@@ -184,49 +179,51 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       viewportUIDsToRender
     )
 
-    return toolData
+    return annotation
   }
 
   /**
-   * it is used to draw the RectangleRoi Threshold annotation data in each
+   * it is used to draw the RectangleRoi Threshold annotation in each
    * request animation frame.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
    */
-  renderToolData = (
+  renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
     const { viewport, renderingEngineUID } = enabledElement
     const { element } = viewport
-    let toolState = getToolState(svgDrawingHelper.enabledElement, this.name)
+    let annotations = getAnnotations(element, this.name)
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
-    toolState = this.filterInteractableToolStateForElement(element, toolState)
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations
+    )
 
-    if (!toolState?.length) {
+    if (!annotations?.length) {
       return
     }
 
-    for (let i = 0; i < toolState.length; i++) {
-      const toolData = toolState[i] as RectangleRoiThresholdToolData
+    for (let i = 0; i < annotations.length; i++) {
+      const annotation = annotations[i] as RectangleRoiThresholdAnnotation
       const settings = Settings.getObjectSettings(
-        toolData,
+        annotation,
         RectangleRoiThresholdTool
       )
-      const toolMetadata = toolData.metadata
-      const annotationUID = toolMetadata.toolDataUID
+      const annotationUID = annotation.annotationUID
 
-      const data = toolData.data
+      const data = annotation.data
       const { points, activeHandleIndex } = data.handles
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-      const lineWidth = this.getStyle(settings, 'lineWidth', toolData)
-      const lineDash = this.getStyle(settings, 'lineDash', toolData)
-      const color = this.getStyle(settings, 'color', toolData)
+      const lineWidth = this.getStyle(settings, 'lineWidth', annotation)
+      const lineDash = this.getStyle(settings, 'lineDash', annotation)
+      const color = this.getStyle(settings, 'color', annotation)
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
@@ -237,10 +234,10 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       // Todo: This is not correct way to add the event trigger,
       // this will trigger on all mouse hover too. Problem is that we don't
       // have a cached stats mechanism for this tool yet?
-      const eventType = EVENTS.MEASUREMENT_MODIFIED
+      const eventType = EVENTS.ANNOTATION_MODIFIED
 
-      const eventDetail: MeasurementModifiedEventData = {
-        toolData,
+      const eventDetail: AnnotationModifiedEventDetail = {
+        annotation,
         viewportUID: viewport.uid,
         renderingEngineUID,
       }
@@ -250,7 +247,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       let activeHandleCanvasCoords
 
       if (
-        !isToolDataLocked(toolData) &&
+        !isAnnotationLocked(annotation) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {

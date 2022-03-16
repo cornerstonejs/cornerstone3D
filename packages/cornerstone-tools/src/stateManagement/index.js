@@ -1,23 +1,22 @@
-import FrameOfReferenceSpecificToolStateManager, {
-  defaultFrameOfReferenceSpecificToolStateManager,
-} from './annotation/FrameOfReferenceSpecificToolStateManager'
-import * as toolStyle from './annotation/toolStyle'
+import FrameOfReferenceSpecificAnnotationManager, {
+  defaultFrameOfReferenceSpecificAnnotationManager,
+} from './annotation/FrameOfReferenceSpecificAnnotationManager'
+import * as annotationStyle from './annotation/annotationStyle'
 import getStyle from './annotation/getStyle'
 import setGlobalStyle from './annotation/setGlobalStyle'
 import setToolStyle from './annotation/setToolStyle'
-import { setToolDataStyle } from './annotation/toolDataStyle'
-import * as toolDataLocking from './annotation/toolDataLocking'
-import * as toolDataSelection from './annotation/toolDataSelection'
+import { setAnnotationStyle } from './annotation/annotationStyle'
+import * as annotationLocking from './annotation/annotationLocking'
+import * as annotationSelection from './annotation/annotationSelection'
 
 import {
-  getToolState,
-  addToolState,
-  removeToolState,
-  removeToolStateByToolDataUID,
-  getDefaultToolStateManager,
-  getViewportSpecificStateManager,
-  getToolDataByToolDataUID,
-} from './annotation/toolState'
+  getAnnotations,
+  addAnnotation,
+  removeAnnotation,
+  getDefaultAnnotationManager,
+  getViewportSpecificAnnotationManager,
+  getAnnotation,
+} from './annotation/annotationState'
 
 import {
   getGlobalSegmentationDataByUID,
@@ -33,21 +32,20 @@ import {
 
 export {
   // annotations
-  FrameOfReferenceSpecificToolStateManager,
-  defaultFrameOfReferenceSpecificToolStateManager,
-  toolDataLocking,
-  toolDataSelection,
-  toolStyle,
-  getToolState,
-  addToolState,
+  FrameOfReferenceSpecificAnnotationManager,
+  defaultFrameOfReferenceSpecificAnnotationManager,
+  annotationLocking,
+  annotationSelection,
+  annotationStyle,
+  getAnnotations,
+  addAnnotation,
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  removeToolState,
-  removeToolStateByToolDataUID,
-  getDefaultToolStateManager,
-  getViewportSpecificStateManager,
-  getToolDataByToolDataUID,
+  removeAnnotation,
+  getDefaultAnnotationManager,
+  getViewportSpecificAnnotationManager,
+  getAnnotation,
   // segmentations
   addSegmentationsForToolGroup,
   getGlobalSegmentationDataByUID,

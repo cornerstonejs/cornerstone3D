@@ -2,6 +2,7 @@ import {
   RenderingEngine,
   VIEWPORT_TYPE,
   init as csRenderInit,
+  Types,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -34,7 +35,7 @@ async function setup() {
       type: VIEWPORT_TYPE.STACK,
       element,
       defaultOptions: {
-        background: [0.2, 0, 0.2],
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ]

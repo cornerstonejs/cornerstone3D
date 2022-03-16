@@ -131,7 +131,7 @@ function Index() {
     {
       title: 'New stack viewport',
       url: '/stackViewport',
-      text: 'Example for displaying stack images and measurement events',
+      text: 'Example for displaying stack images and annotation events',
     },
     {
       title: 'Nine Stack Viewports',

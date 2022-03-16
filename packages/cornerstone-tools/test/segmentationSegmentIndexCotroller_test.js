@@ -457,7 +457,7 @@ describe('Segmentation Index Controller --', () => {
             2
           )
 
-          SegmentationModule.lockedSegmentController.setSegmentIndexLockedStatus(
+          SegmentationModule.lockedSegmentController.setSegmentIndexLocked(
             TOOL_GROUP_UID,
             1,
             true
@@ -499,7 +499,7 @@ describe('Segmentation Index Controller --', () => {
         expect(anotherWayActiveSegmentIndex).toBe(2)
 
         const locked1 =
-          SegmentationModule.lockedSegmentController.getLockedSegmentsForSegmentation(
+          SegmentationModule.lockedSegmentController.getSegmentsLockedForSegmentation(
             segmentationInfo.volumeUID
           )
 
@@ -507,7 +507,7 @@ describe('Segmentation Index Controller --', () => {
         expect(locked1[0]).toBe(1)
 
         const lockedStatus1 =
-          SegmentationModule.lockedSegmentController.getSegmentIndexLockedStatus(
+          SegmentationModule.lockedSegmentController.getSegmentIndexLocked(
             TOOL_GROUP_UID,
             1
           )
@@ -515,7 +515,7 @@ describe('Segmentation Index Controller --', () => {
         expect(lockedStatus1).toBe(true)
 
         const lockedStatus2 =
-          SegmentationModule.lockedSegmentController.getSegmentIndexLockedStatusForSegmentation(
+          SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
             segmentationInfo.volumeUID,
             2
           )

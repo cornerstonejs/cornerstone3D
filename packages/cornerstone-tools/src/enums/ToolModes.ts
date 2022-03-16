@@ -5,14 +5,14 @@
  * - Can be actively used by mouse/touch events mapped to its `ToolBinding`s.
  * - Can add data if an annotation tool.
  * - Can be passively interacted by grabbing a tool or its handles.
- * - Renders data if the tool has a `renderToolData` method.
+ * - Renders data if the tool has a `renderAnnotation` method.
  * Passive:
  * - Can be passively interacted by grabbing a tool or its handles.
- * - Renders data if the tool has a `renderToolData` method.
+ * - Renders data if the tool has a `renderAnnotation` method.
  * Enabled:
- * - Renders data if the tool has a `renderToolData` method.
+ * - Renders data if the tool has a `renderAnnotation` method.
  * Disabled:
- * - Tool data does not render.
+ * - Annotation does not render.
  */
 enum ToolModes {
   Active = 'Active',

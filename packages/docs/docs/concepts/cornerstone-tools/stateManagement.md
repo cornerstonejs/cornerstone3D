@@ -6,36 +6,36 @@ title: State Management
 
 # State Management
 
-We will shift from using an image ID-based default tool state manager to a FrameOfReference tool state manager, where measurements use world coordinates for points. Under the hood, the tool state manager will have a very familiar structure to current cornerstoneTools toolState managers:
+We will shift from using an image ID-based default annotations manager to a FrameOfReference annotations manager, where annotations use world coordinates for points. Under the hood, the annotations manager will have a very familiar structure to current cornerstoneTools annotations managers:
 
 ```js
-const toolState = {
+const annotations = {
  myFrameOfReferenceUID: {
    myToolID: [
      {
        sliceNormal: [0, 0, 1], // The normal on which the tool was drawn
-       toolUID: 'someUniqueIdentifier.1.231.4.12.5', // A unique identifier for this tool state.
+       toolUID: 'someUniqueIdentifier.1.231.4.12.5', // A unique identifier for this annotations.
        FrameOfReferenceUID: 'myFrameOfReference.1.2.3',
        toolName: 'myToolID',
-       // properties specific to that toolData.
+       // properties specific to that annotation.
      },
-     // ... Other toolData entries for myToolID
+     // ... Other annotation entries for myToolID
    ],
-   // Other toolData present on the frameOfReference
+   // Other annotation present on the frameOfReference
  },
  //... other FramesOfReference
 };
 ```
 
 
-Where an individual toolState entry will look something like this:
+Where an individual annotations entry will look something like this:
 
 ```js
-// Example length toolData entry:
+// Example length annotation entry:
 
-const toolData = {
+const annotation = {
  sliceNormal: [0, 0, 1], // Drawn on an axial plane.
- uid: 'someUniqueIdentifier.1.231.4.12.5', // A unique identifier for this tool state.
+ uid: 'someUniqueIdentifier.1.231.4.12.5', // A unique identifier for this annotations.
  FrameOfReferenceUID: 'myFrameOfReference.1.2.3', // The FrameOfReferenceUID
  toolName: 'length', // The tool name
  handles: {
@@ -48,30 +48,30 @@ const toolData = {
 };
 ```
 
-Tool data may have properties specific to their own tools, but must contain sliceNormal, UID and tool. Developers will be able to interact with the toolState manager with the following API:
+Annotation may have properties specific to their own tools, but must contain sliceNormal, UID and tool. Developers will be able to interact with the annotations manager with the following API:
 
 
 ```js
-// Adds toolData
-toolStateManager.addToolState(toolData);
+// Adds annotation
+annotationManager.addAnnotation(annotation);
 
-// Remove the toolState given the toolData reference.
-toolStateManager.removeToolState(toolData);
+// Remove the annotations given the annotation reference.
+annotationManager.removeAnnotation(annotation.annotationUID);
 
-// Returns the full toolState for a given Frame of Reference.
-// Optional: If a toolName is given only returns the toolState for that tool.
-// Optional: If a toolDataUID is given, only that specific toolData is returned.
-toolStateManager.getToolStateByFrameOfReference(FrameOfReferenceUID,
+// Returns the full annotations for a given Frame of Reference.
+// Optional: If a toolName is given only returns the annotations for that tool.
+// Optional: If a annotationUID is given, only that specific annotation is returned.
+annotationManager.getAnnotationsByFrameOfReference(FrameOfReferenceUID,
  toolName,
- toolDataUID
+ annotationUID
 );
 
-// A helper which returns the single toolData entry matching the UID.
-// Less efficient than getToolStateByFrameOfReference with all arguments, but allows
+// A helper which returns the single annotation entry matching the UID.
+// Less efficient than getAnnotationsByFrameOfReference with all arguments, but allows
 // you to find the annotation if you don't have all the information.
-toolStateManager.getToolStateByToolDataUID(toolDataUID);
+annotationManager.getAnnotation(annotationUID);
 
-// Deletes the tool data found by the given UID.
-// Less efficient than removeToolState, but can be called if you have only the UID.
-toolStateManager.removeToolStateByToolDataUID(toolDataUID);
+// Deletes the annotation found by the given UID.
+// Less efficient than removeAnnotation, but can be called if you have only the UID.
+annotationManager.removeAnnotation(annotationUID);
 ```

@@ -48,11 +48,11 @@ class FlipViewportExample extends Component {
     leftClickTool: 'WindowLevel',
     layoutIndex: 0,
     destroyed: false,
-    measurementsAdded: [],
-    measurementsRemoved: [],
-    cancelledMeasurements: null,
-    measurementsModified: new Map(),
-    showMeasurementEvents: false,
+    annotationsAdded: [],
+    annotationsRemoved: [],
+    cancelledAnnotations: null,
+    annotationsModified: new Map(),
+    showAnnotationEvents: false,
     deleteOnToolCancel: false,
     //
     viewportGrid: {

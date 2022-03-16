@@ -1,4 +1,7 @@
-import { RenderingEngine, Utilities } from '@precisionmetrics/cornerstone-render'
+import {
+  RenderingEngine,
+  Utilities,
+} from '@precisionmetrics/cornerstone-render'
 
 const { calibratedPixelSpacingMetadataProvider } = Utilities
 
