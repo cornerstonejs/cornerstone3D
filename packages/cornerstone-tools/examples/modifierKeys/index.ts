@@ -65,23 +65,23 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add the tools to the tool group
-  toolGroup.addTool('WindowLevel')
-  toolGroup.addTool('Length')
-  toolGroup.addTool('RectangleRoi')
-  toolGroup.addTool('Bidirectional')
+  toolGroup.addTool(WindowLevelTool.toolName)
+  toolGroup.addTool(LengthTool.toolName)
+  toolGroup.addTool(RectangleRoiTool.toolName)
+  toolGroup.addTool(BidirectionalTool.toolName)
 
   // TODO Why doesn't this work?
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive('WindowLevel', {
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click
       },
     ],
   })
-  toolGroup.setToolActive('Length', {
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Shift + Left Click
@@ -89,7 +89,7 @@ async function run() {
       },
     ],
   })
-  toolGroup.setToolActive('RectangleRoi', {
+  toolGroup.setToolActive(RectangleRoiTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Ctrl + Left Click
@@ -97,7 +97,7 @@ async function run() {
       },
     ],
   })
-  toolGroup.setToolActive('Bidirectional', {
+  toolGroup.setToolActive(BidirectionalTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Alt/Meta + Left Click

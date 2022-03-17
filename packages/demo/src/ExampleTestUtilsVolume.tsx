@@ -231,10 +231,10 @@ class testUtilVolume extends Component {
         ctTestSceneToolGroup.setToolPassive(toolName)
       })
 
-      ctTestSceneToolGroup.setToolDisabled('WindowLevel')
+      ctTestSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
     } else {
       // Set window level + threshold
-      ctTestSceneToolGroup.setToolActive('WindowLevel', options)
+      ctTestSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {

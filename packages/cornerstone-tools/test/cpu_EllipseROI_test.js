@@ -74,15 +74,15 @@ describe('EllipticalRoiTool (CPU):', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(EllipticalRoiTool, {})
+    csTools3d.addTool(EllipticalRoiTool)
     this.DOMElements = []
 
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-    this.stackToolGroup.addTool('EllipticalRoi', {
+    this.stackToolGroup.addTool(EllipticalRoiTool.toolName, {
       configuration: { volumeUID: volumeId },
     })
-    this.stackToolGroup.setToolActive('EllipticalRoi', {
+    this.stackToolGroup.setToolActive(EllipticalRoiTool.toolName, {
       bindings: [{ mouseButton: 1 }],
     })
 
@@ -126,7 +126,10 @@ describe('EllipticalRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const ellipseAnnotations = getAnnotations(element, 'EllipticalRoi')
+          const ellipseAnnotations = getAnnotations(
+            element,
+            EllipticalRoiTool.toolName
+          )
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined()
           expect(ellipseAnnotations.length).toBe(1)
@@ -136,7 +139,9 @@ describe('EllipticalRoiTool (CPU):', () => {
             imageId1.split(':')[1]
           )
 
-          expect(ellipseAnnotation.metadata.toolName).toBe('EllipticalRoi')
+          expect(ellipseAnnotation.metadata.toolName).toBe(
+            EllipticalRoiTool.toolName
+          )
           expect(ellipseAnnotation.invalidated).toBe(false)
 
           const data = ellipseAnnotation.data.cachedStats
@@ -296,7 +301,10 @@ describe('EllipticalRoiTool (CPU):', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const ellipseAnnotations = getAnnotations(element, 'EllipticalRoi')
+        const ellipseAnnotations = getAnnotations(
+          element,
+          EllipticalRoiTool.toolName
+        )
         // Can successfully add Length tool to annotationManager
         expect(ellipseAnnotations).toBeDefined()
         expect(ellipseAnnotations.length).toBe(1)
@@ -306,7 +314,9 @@ describe('EllipticalRoiTool (CPU):', () => {
           imageId1.split(':')[1]
         )
 
-        expect(ellipseAnnotation.metadata.toolName).toBe('EllipticalRoi')
+        expect(ellipseAnnotation.metadata.toolName).toBe(
+          EllipticalRoiTool.toolName
+        )
         expect(ellipseAnnotation.invalidated).toBe(false)
         expect(ellipseAnnotation.highlighted).toBe(false)
 

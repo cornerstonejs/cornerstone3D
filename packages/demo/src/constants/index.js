@@ -1,3 +1,17 @@
+import {
+  ProbeTool,
+  CrosshairsTool,
+  LengthTool,
+  BidirectionalTool,
+  RectangleRoiTool,
+  EllipticalRoiTool,
+  RectangleScissorsTool,
+  CircleScissorsTool,
+  SphereScissorsTool,
+  RectangleRoiThresholdTool,
+  RectangleRoiStartEndThresholdTool,
+} from '@precisionmetrics/cornerstone-tools'
+
 const renderingEngineUID = 'PETCTRenderingEngine'
 const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME'
 const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME'
@@ -75,22 +89,21 @@ const TOOL_GROUP_UIDS = {
 
 // A string helper for the drop down.
 const ANNOTATION_TOOLS = [
-  'Probe',
-  'Crosshairs',
-  'Length',
-  'Bidirectional',
-  'RectangleRoi',
-  'EllipticalRoi',
-  'ptSUVPeak',
+  ProbeTool.toolName,
+  CrosshairsTool.toolName,
+  LengthTool.toolName,
+  BidirectionalTool.toolName,
+  RectangleRoiTool.toolName,
+  EllipticalRoiTool.toolName,
 ]
 
 // A string helper for the drop down.
 const SEGMENTATION_TOOLS = [
-  'RectangleScissor',
-  'CircleScissor',
-  'SphereScissor',
-  'RectangleRoiThreshold',
-  'RectangleRoiStartEndThreshold',
+  RectangleScissorsTool.toolName,
+  CircleScissorsTool.toolName,
+  SphereScissorsTool.toolName,
+  RectangleRoiThresholdTool.toolName,
+  RectangleRoiStartEndThresholdTool.toolName,
 ]
 
 // A small simple list of in-built vtk-colormaps, to demonstrate switching transfer function on a volume.

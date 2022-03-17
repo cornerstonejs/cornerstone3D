@@ -1,9 +1,10 @@
 import { getEnabledElementByUIDs } from '@precisionmetrics/cornerstone-render'
 import { BaseTool } from './base'
-import { scrollThroughStack } from '../util/stackScrollTool'
+import { scrollThroughStack } from '../utilities/stackScrollTool'
 import { PublicToolProps, ToolProps } from '../types'
 
 export default class StackScrollTool extends BaseTool {
+  static toolName = 'StackScroll'
   touchDragCallback: () => void
   mouseDragCallback: () => void
   _configuration: any
@@ -11,7 +12,6 @@ export default class StackScrollTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'StackScroll',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         invert: false,

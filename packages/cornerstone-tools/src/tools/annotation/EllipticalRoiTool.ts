@@ -12,7 +12,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import throttle from '../../util/throttle'
+import throttle from '../../utilities/throttle'
 import {
   addAnnotation,
   getAnnotations,
@@ -26,14 +26,14 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import { indexWithinDimensions } from '../../util/vtkjs'
-import { getTextBoxCoordsCanvas } from '../../util/drawing'
-import getWorldWidthAndHeightFromTwoPoints from '../../util/planar/getWorldWidthAndHeightFromTwoPoints'
+import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { indexWithinDimensions } from '../../utilities/vtkjs'
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints'
 import {
   pointInEllipse,
   getCanvasEllipseCorners,
-} from '../../util/math/ellipse'
+} from '../../utilities/math/ellipse'
 import {
   resetElementCursor,
   hideElementCursor,
@@ -52,8 +52,8 @@ import {
   MouseDragEventType,
   MouseMoveEventType,
 } from '../../types/EventTypes'
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
-import { pointInShapeCallback } from '../../util/'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import { pointInShapeCallback } from '../../utilities/'
 
 export interface EllipticalRoiAnnotation extends Annotation {
   data: {
@@ -77,6 +77,7 @@ export interface EllipticalRoiAnnotation extends Annotation {
 }
 
 export default class EllipticalRoiTool extends AnnotationTool {
+  static toolName = 'EllipticalRoi'
   touchDragCallback: any
   mouseDragCallback: any
   _throttledCalculateCachedStats: any
@@ -99,7 +100,6 @@ export default class EllipticalRoiTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'EllipticalRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
@@ -170,7 +170,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: this.name,
+        toolName: EllipticalRoiTool.toolName,
       },
       data: {
         label: '',
@@ -204,7 +204,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      EllipticalRoiTool.toolName
     )
 
     this.editData = {
@@ -305,7 +305,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      EllipticalRoiTool.toolName
     )
 
     this.editData = {
@@ -374,7 +374,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      EllipticalRoiTool.toolName
     )
 
     this.editData = {
@@ -418,8 +418,6 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     annotation.highlighted = false
     data.handles.activeHandleIndex = null
-
-    delete data.isDrawing
 
     this._deactivateModify(element)
     this._deactivateDraw(element)
@@ -551,7 +549,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const { points } = data.handles
 
     // Move current point in that direction.
-    // Move other points in oposite direction.
+    // Move other points in opposite direction.
 
     const { currentPoints } = eventDetail
     const currentCanvasPoints = currentPoints.canvas
@@ -709,7 +707,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let annotations = getAnnotations(element, this.name)
+    let annotations = getAnnotations(element, EllipticalRoiTool.toolName)
 
     if (!annotations?.length) {
       return
@@ -813,7 +811,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
         const handleGroupUID = '0'
         drawHandlesSvg(
           svgDrawingHelper,
-          this.name,
+          EllipticalRoiTool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -826,7 +824,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       const ellipseUID = '0'
       drawEllipseSvg(
         svgDrawingHelper,
-        this.name,
+        EllipticalRoiTool.toolName,
         annotationUID,
         ellipseUID,
         canvasCorners[0],
@@ -844,41 +842,39 @@ export default class EllipticalRoiTool extends AnnotationTool {
       }
 
       // Poor man's cached?
-      if (!this.isDrawing) {
-        let canvasTextBoxCoords
+      let canvasTextBoxCoords
 
-        if (!data.handles.textBox.hasMoved) {
-          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners)
+      if (!data.handles.textBox.hasMoved) {
+        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners)
 
-          data.handles.textBox.worldPosition =
-            viewport.canvasToWorld(canvasTextBoxCoords)
-        }
+        data.handles.textBox.worldPosition =
+          viewport.canvasToWorld(canvasTextBoxCoords)
+      }
 
-        const textBoxPosition = viewport.worldToCanvas(
-          data.handles.textBox.worldPosition
-        )
+      const textBoxPosition = viewport.worldToCanvas(
+        data.handles.textBox.worldPosition
+      )
 
-        const textBoxUID = '1'
-        const boundingBox = drawLinkedTextBoxSvg(
-          svgDrawingHelper,
-          this.name,
-          annotationUID,
-          textBoxUID,
-          textLines,
-          textBoxPosition,
-          canvasCoordinates,
-          {},
-          this.getLinkedTextBoxStyle(settings, annotation)
-        )
+      const textBoxUID = '1'
+      const boundingBox = drawLinkedTextBoxSvg(
+        svgDrawingHelper,
+        EllipticalRoiTool.toolName,
+        annotationUID,
+        textBoxUID,
+        textLines,
+        textBoxPosition,
+        canvasCoordinates,
+        {},
+        this.getLinkedTextBoxStyle(settings, annotation)
+      )
 
-        const { x: left, y: top, width, height } = boundingBox
+      const { x: left, y: top, width, height } = boundingBox
 
-        data.handles.textBox.worldBoundingBox = {
-          topLeft: viewport.canvasToWorld([left, top]),
-          topRight: viewport.canvasToWorld([left + width, top]),
-          bottomLeft: viewport.canvasToWorld([left, top + height]),
-          bottomRight: viewport.canvasToWorld([left + width, top + height]),
-        }
+      data.handles.textBox.worldBoundingBox = {
+        topLeft: viewport.canvasToWorld([left, top]),
+        topRight: viewport.canvasToWorld([left + width, top]),
+        bottomLeft: viewport.canvasToWorld([left, top + height]),
+        bottomRight: viewport.canvasToWorld([left + width, top + height]),
       }
     }
   }

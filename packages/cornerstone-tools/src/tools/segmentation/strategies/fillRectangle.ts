@@ -1,8 +1,8 @@
 import { ImageVolume } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { getBoundingBoxAroundShape } from '../../../util/segmentation'
-import { pointInShapeCallback } from '../../../util'
+import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
+import { pointInShapeCallback } from '../../../utilities'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
 
 type OperationData = {
@@ -27,7 +27,6 @@ type OperationData = {
 function fillRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
-  constraintFn?: any,
   inside = true
 ): void {
   const {
@@ -37,6 +36,7 @@ function fillRectangle(
     segmentIndex,
     segmentationDataUID,
     toolGroupUID,
+    constraintFn,
   } = operationData
   const { imageData, dimensions, scalarData } = segmentation
 
@@ -82,10 +82,9 @@ function fillRectangle(
  */
 export function fillInsideRectangle(
   enabledElement: Types.IEnabledElement,
-  operationData: OperationData,
-  constraintFn?: any
+  operationData: OperationData
 ): void {
-  fillRectangle(enabledElement, operationData, constraintFn, true)
+  fillRectangle(enabledElement, operationData, true)
 }
 
 /**
@@ -97,8 +96,7 @@ export function fillInsideRectangle(
  */
 export function fillOutsideRectangle(
   enabledElement: Types.IEnabledElement,
-  operationData: OperationData,
-  constraintFn?: any
+  operationData: OperationData
 ): void {
-  fillRectangle(enabledElement, operationData, constraintFn, false)
+  fillRectangle(enabledElement, operationData, false)
 }

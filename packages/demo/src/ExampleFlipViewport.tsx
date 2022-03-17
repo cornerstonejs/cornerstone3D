@@ -45,7 +45,7 @@ class FlipViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
-    leftClickTool: 'WindowLevel',
+    leftClickTool: WindowLevelTool.toolName,
     layoutIndex: 0,
     destroyed: false,
     annotationsAdded: [],
@@ -299,12 +299,12 @@ class FlipViewportExample extends Component {
         stackCTViewportToolGroup.setToolPassive(toolName)
       })
 
-      ctSceneToolGroup.setToolDisabled('WindowLevel')
-      stackCTViewportToolGroup.setToolDisabled('WindowLevel')
+      ctSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      stackCTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
     } else {
       // Set window level + threshold
-      ctSceneToolGroup.setToolActive('WindowLevel', options)
-      stackCTViewportToolGroup.setToolActive('WindowLevel', options)
+      ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {

@@ -10,7 +10,7 @@ import { BaseTool } from '../base'
 import { PublicToolProps, ToolProps, EventTypes } from '../../types'
 import { fillInsideRectangle } from './strategies/fillRectangle'
 import { eraseInsideRectangle } from './strategies/eraseRectangle'
-import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
+import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -20,7 +20,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 import {
   segmentationColorController,
   lockedSegmentController,
@@ -36,6 +36,7 @@ import {
  * @extends Tools.Base.BaseTool
  */
 export default class RectangleScissorsTool extends BaseTool {
+  static toolName = 'RectangleScissor'
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
@@ -57,7 +58,6 @@ export default class RectangleScissorsTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'RectangleScissor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
@@ -126,7 +126,7 @@ export default class RectangleScissorsTool extends BaseTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
-        toolName: this.name,
+        toolName: RectangleScissorsTool.toolName,
         segmentColor,
       },
       data: {
@@ -147,7 +147,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      RectangleScissorsTool.toolName
     )
 
     this.editData = {
@@ -368,7 +368,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const rectangleUID = '0'
     drawRectSvg(
       svgDrawingHelper,
-      this.name,
+      RectangleScissorsTool.toolName,
       annotationUID,
       rectangleUID,
       canvasCoordinates[0],

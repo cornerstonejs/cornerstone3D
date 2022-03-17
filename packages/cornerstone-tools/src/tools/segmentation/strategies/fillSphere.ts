@@ -4,7 +4,7 @@ import type {
 } from '@precisionmetrics/cornerstone-render'
 
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import { pointInSurroundingSphereCallback } from '../../../util'
+import { pointInSurroundingSphereCallback } from '../../../utilities'
 
 type OperationData = {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]

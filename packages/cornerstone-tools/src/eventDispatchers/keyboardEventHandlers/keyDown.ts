@@ -22,7 +22,8 @@ export default function keyDown(evt: KeyDownEventType): void {
     viewportUID
   )
 
-  if (Object.keys(toolGroup.toolOptions).includes(activeTool.name)) {
-    toolGroup.resetViewportsCursor({ name: activeTool.name })
+  const toolName = activeTool.getToolName()
+  if (Object.keys(toolGroup.toolOptions).includes(toolName)) {
+    toolGroup.setViewportsCursorByToolName(toolName)
   }
 }

@@ -1,5 +1,5 @@
 import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 
 /**
  * This is a callback function that is called when an annotation is modified.

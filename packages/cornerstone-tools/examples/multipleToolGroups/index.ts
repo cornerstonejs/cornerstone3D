@@ -74,35 +74,35 @@ async function run() {
   const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupUID1)
 
   // Add tools to the tool group
-  toolGroup1.addTool('WindowLevel')
-  toolGroup1.addTool('StackScrollMouseWheel')
+  toolGroup1.addTool(WindowLevelTool.toolName)
+  toolGroup1.addTool(StackScrollMouseWheelTool.toolName)
 
   // Set the initial state of the tools
-  toolGroup1.setToolActive('WindowLevel', {
+  toolGroup1.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click
       },
     ],
   })
-  toolGroup1.setToolActive('StackScrollMouseWheel')
+  toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName)
 
   // Define tool group 2, used by viewport 2
   const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupUID2)
 
   // Add tools to the tool group
-  toolGroup2.addTool('Length', {})
-  toolGroup2.addTool('StackScrollMouseWheel', {})
+  toolGroup2.addTool(LengthTool.toolName)
+  toolGroup2.addTool(StackScrollMouseWheelTool.toolName)
 
   // Set the initial state of the tools
-  toolGroup2.setToolActive('Length', {
+  toolGroup2.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click
       },
     ],
   })
-  toolGroup2.setToolActive('StackScrollMouseWheel')
+  toolGroup2.setToolActive(StackScrollMouseWheelTool.toolName)
 
   const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs'
   const StudyInstanceUID =

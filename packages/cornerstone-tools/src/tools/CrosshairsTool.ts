@@ -23,12 +23,12 @@ import {
 import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../enums'
-import { getViewportUIDsWithToolToRender } from '../util/viewportFilters'
+import { getViewportUIDsWithToolToRender } from '../utilities/viewportFilters'
 import { resetElementCursor, hideElementCursor } from '../cursors/elementCursor'
-import { math } from '../util'
+import { math } from '../utilities'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import { lineSegment } from '../util/math'
+import { lineSegment } from '../utilities/math'
 import {
   Annotation,
   Annotations,
@@ -39,7 +39,7 @@ import {
   InteractionTypes,
 } from '../types'
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking'
-import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../utilities/triggerAnnotationRenderForViewportUIDs'
 import { MouseDragEventType } from '../types/EventTypes'
 
 const { liangBarksyClip } = math.vec2
@@ -95,6 +95,8 @@ const OPERATION = {
 const EPSILON = 1e-3
 
 export default class CrosshairsTool extends AnnotationTool {
+  static toolName = 'Crosshairs'
+
   toolCenter: Types.Point3 = [0, 0, 0] // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportUID: string) => string
@@ -108,7 +110,6 @@ export default class CrosshairsTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'Crosshairs',
       supportedInteractionTypes: ['Mouse'],
       configuration: {
         shadow: true,
@@ -139,19 +140,6 @@ export default class CrosshairsTool extends AnnotationTool {
     this._getReferenceLineSlabThicknessControlsOn =
       toolProps.configuration?.getReferenceLineSlabThicknessControlsOn ||
       defaultReferenceLineSlabThicknessControlsOn
-
-    /**
-     * Will only fire for cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-    this._activateModify = this._activateModify.bind(this)
-    this._deactivateModify = this._deactivateModify.bind(this)
-    this._mouseUpCallback = this._mouseUpCallback.bind(this)
-    this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
   /**
@@ -177,7 +165,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera()
 
     // Check if there is already annotation for this viewport
-    let annotations = getAnnotations(element, this.name)
+    let annotations = getAnnotations(element, CrosshairsTool.toolName)
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
@@ -194,7 +182,7 @@ export default class CrosshairsTool extends AnnotationTool {
         cameraPosition: <Types.Point3>[...position],
         cameraFocalPoint: <Types.Point3>[...focalPoint],
         FrameOfReferenceUID,
-        toolName: this.name,
+        toolName: CrosshairsTool.toolName,
       },
       data: {
         handles: {
@@ -298,7 +286,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const { viewport } = enabledElement
     this._jump(enabledElement, jumpWorld)
 
-    const annotations = getAnnotations(element, this.name)
+    const annotations = getAnnotations(element, CrosshairsTool.toolName)
     const filteredAnnotations = this.filterInteractableAnnotationsForElement(
       viewport.element,
       annotations
@@ -459,11 +447,11 @@ export default class CrosshairsTool extends AnnotationTool {
     const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name,
+      CrosshairsTool.toolName,
       requireSameOrientation
     )
 
-    const annotations = getAnnotations(element, this.name)
+    const annotations = getAnnotations(element, CrosshairsTool.toolName)
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations)
 
@@ -681,7 +669,7 @@ export default class CrosshairsTool extends AnnotationTool {
   ): void => {
     const { viewport, renderingEngine } = enabledElement
     const { element } = viewport
-    const annotations = getAnnotations(element, this.name)
+    const annotations = getAnnotations(element, CrosshairsTool.toolName)
     const camera = viewport.getCamera()
 
     const filteredToolAnnotations =
@@ -1060,7 +1048,7 @@ export default class CrosshairsTool extends AnnotationTool {
         lineUID = `${lineIndex}One`
         drawLineSvg(
           svgDrawingHelper,
-          this.name,
+          CrosshairsTool.toolName,
           annotationUID,
           lineUID,
           line[1],
@@ -1074,7 +1062,7 @@ export default class CrosshairsTool extends AnnotationTool {
         lineUID = `${lineIndex}Two`
         drawLineSvg(
           svgDrawingHelper,
-          this.name,
+          CrosshairsTool.toolName,
           annotationUID,
           lineUID,
           line[3],
@@ -1087,7 +1075,7 @@ export default class CrosshairsTool extends AnnotationTool {
       } else {
         drawLineSvg(
           svgDrawingHelper,
-          this.name,
+          CrosshairsTool.toolName,
           annotationUID,
           lineUID,
           line[2],
@@ -1167,7 +1155,7 @@ export default class CrosshairsTool extends AnnotationTool {
           let handleUID = `${lineIndex}One`
           drawHandlesSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             handleUID,
             rotationHandles,
@@ -1180,7 +1168,7 @@ export default class CrosshairsTool extends AnnotationTool {
           handleUID = `${lineIndex}Two`
           drawHandlesSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             handleUID,
             slabThicknessHandles,
@@ -1200,7 +1188,7 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw rotation handles inactive
           drawHandlesSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             handleUID,
             rotationHandles,
@@ -1220,7 +1208,7 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw slab thickness handles inactive
           drawHandlesSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             handleUID,
             slabThicknessHandles,
@@ -1235,7 +1223,7 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw all rotation handles as active
           drawHandlesSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             handleUID,
             rotationHandles,
@@ -1254,7 +1242,7 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw only the slab thickness handles for the active viewport as active
           drawHandlesSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             lineUID,
             slabThicknessHandles,
@@ -1272,7 +1260,7 @@ export default class CrosshairsTool extends AnnotationTool {
           lineUID = `${lineIndex}STOne`
           drawLineSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             lineUID,
             line[5],
@@ -1287,7 +1275,7 @@ export default class CrosshairsTool extends AnnotationTool {
           lineUID = `${lineIndex}STTwo`
           drawLineSvg(
             svgDrawingHelper,
-            this.name,
+            CrosshairsTool.toolName,
             annotationUID,
             lineUID,
             line[7],
@@ -1317,7 +1305,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const circleUID = '0'
     drawCircleSvg(
       svgDrawingHelper,
-      this.name,
+      CrosshairsTool.toolName,
       annotationUID,
       circleUID,
       referenceColorCoordinates,
@@ -1759,7 +1747,10 @@ export default class CrosshairsTool extends AnnotationTool {
     state.isInteractingWithTool = true
     const { viewport, renderingEngine } = enabledElement
 
-    const annotations = getAnnotations(viewport.element, this.name)
+    const annotations = getAnnotations(
+      viewport.element,
+      CrosshairsTool.toolName
+    )
 
     const delta: Types.Point3 = [0, 0, 0]
     vtkMath.subtract(jumpWorld, this.toolCenter, delta)
@@ -1806,7 +1797,7 @@ export default class CrosshairsTool extends AnnotationTool {
     return true
   }
 
-  _activateModify(element) {
+  _activateModify = (element) => {
     state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
@@ -1817,7 +1808,7 @@ export default class CrosshairsTool extends AnnotationTool {
     // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  _deactivateModify(element) {
+  _deactivateModify = (element) => {
     state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
@@ -1828,9 +1819,9 @@ export default class CrosshairsTool extends AnnotationTool {
     // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  _mouseUpCallback(
+  _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ) {
+  ) => {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
@@ -1850,7 +1841,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name,
+      CrosshairsTool.toolName,
       requireSameOrientation
     )
 
@@ -1860,7 +1851,7 @@ export default class CrosshairsTool extends AnnotationTool {
     )
   }
 
-  _mouseDragCallback(evt: MouseDragEventType) {
+  _mouseDragCallback = (evt: MouseDragEventType) => {
     const eventDetail = evt.detail
     const delta = eventDetail.deltaPoints.world
 
@@ -1877,7 +1868,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const { renderingEngine, viewport } = enabledElement
     const annotations = getAnnotations(
       element,
-      this.name
+      CrosshairsTool.toolName
     ) as CrosshairsAnnotation[]
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations)

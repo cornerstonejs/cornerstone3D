@@ -152,28 +152,28 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add tools to the tool group
-  toolGroup.addTool('WindowLevel', { configuration: { volumeUID } })
-  toolGroup.addTool('Pan', {})
-  toolGroup.addTool('Zoom', {})
-  toolGroup.addTool('StackScrollMouseWheel', {})
+  toolGroup.addTool(WindowLevelTool.toolName, { configuration: { volumeUID } })
+  toolGroup.addTool(PanTool.toolName)
+  toolGroup.addTool(ZoomTool.toolName)
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName)
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
-  toolGroup.setToolActive('WindowLevel', {
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click
       },
     ],
   })
-  toolGroup.setToolActive('Pan', {
+  toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Auxiliary, // Middle Click
       },
     ],
   })
-  toolGroup.setToolActive('Zoom', {
+  toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Secondary, // Right Click
@@ -182,7 +182,7 @@ async function run() {
   })
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive('StackScrollMouseWheel')
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
 
   // Create synchronizers
   const cameraSynchronizer =

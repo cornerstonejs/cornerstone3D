@@ -70,15 +70,15 @@ describe('Rectangle Roi Tool: ', () => {
   describe('Cornerstone Tools: ', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(RectangleRoiTool, {})
+      csTools3d.addTool(RectangleRoiTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-      this.stackToolGroup.addTool('RectangleRoi', {
+      this.stackToolGroup.addTool(RectangleRoiTool.toolName, {
         configuration: { volumeUID: volumeId },
       })
-      this.stackToolGroup.setToolActive('RectangleRoi', {
+      this.stackToolGroup.setToolActive(RectangleRoiTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
@@ -120,7 +120,10 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+            const rectangleAnnotations = getAnnotations(
+              element,
+              RectangleRoiTool.toolName
+            )
             // Can successfully add rectangleROI to annotationManager
             expect(rectangleAnnotations).toBeDefined()
             expect(rectangleAnnotations.length).toBe(1)
@@ -130,7 +133,9 @@ describe('Rectangle Roi Tool: ', () => {
               imageId1.split(':')[1]
             )
 
-            expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+            expect(rectangleAnnotation.metadata.toolName).toBe(
+              RectangleRoiTool.toolName
+            )
             expect(rectangleAnnotation.invalidated).toBe(false)
 
             const data = rectangleAnnotation.data.cachedStats
@@ -222,13 +227,18 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+            const rectangleAnnotations = getAnnotations(
+              element,
+              RectangleRoiTool.toolName
+            )
             // Can successfully add rectangleROI to annotationManager
             expect(rectangleAnnotations).toBeDefined()
             expect(rectangleAnnotations.length).toBe(1)
 
             const rectangleAnnotation = rectangleAnnotations[0]
-            expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+            expect(rectangleAnnotation.metadata.toolName).toBe(
+              RectangleRoiTool.toolName
+            )
             expect(rectangleAnnotation.invalidated).toBe(false)
 
             const data = rectangleAnnotation.data.cachedStats
@@ -330,7 +340,10 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+            const rectangleAnnotations = getAnnotations(
+              element,
+              RectangleRoiTool.toolName
+            )
             // Can successfully add rectangleROI to annotationManager
             expect(rectangleAnnotations).toBeDefined()
             expect(rectangleAnnotations.length).toBe(1)
@@ -339,7 +352,9 @@ describe('Rectangle Roi Tool: ', () => {
             expect(rectangleAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+            expect(rectangleAnnotation.metadata.toolName).toBe(
+              RectangleRoiTool.toolName
+            )
             expect(rectangleAnnotation.invalidated).toBe(false)
 
             const data = rectangleAnnotation.data.cachedStats
@@ -467,7 +482,10 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+            const rectangleAnnotations = getAnnotations(
+              element,
+              RectangleRoiTool.toolName
+            )
             // Can successfully add rectangleROI to annotationManager
             expect(rectangleAnnotations).toBeDefined()
             expect(rectangleAnnotations.length).toBe(1)
@@ -476,7 +494,9 @@ describe('Rectangle Roi Tool: ', () => {
             expect(rectangleAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+            expect(rectangleAnnotation.metadata.toolName).toBe(
+              RectangleRoiTool.toolName
+            )
             expect(rectangleAnnotation.invalidated).toBe(false)
 
             const data = rectangleAnnotation.data.cachedStats
@@ -597,7 +617,10 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+            const rectangleAnnotations = getAnnotations(
+              element,
+              RectangleRoiTool.toolName
+            )
             // Can successfully add rectangleROI to annotationManager
             expect(rectangleAnnotations).toBeDefined()
             expect(rectangleAnnotations.length).toBe(1)
@@ -606,7 +629,9 @@ describe('Rectangle Roi Tool: ', () => {
             expect(rectangleAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+            expect(rectangleAnnotation.metadata.toolName).toBe(
+              RectangleRoiTool.toolName
+            )
             expect(rectangleAnnotation.invalidated).toBe(false)
 
             const data = rectangleAnnotation.data.cachedStats
@@ -776,15 +801,15 @@ describe('Rectangle Roi Tool: ', () => {
   describe('Should successfully cancel a RectangleROI tool', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(RectangleRoiTool, {})
+      csTools3d.addTool(RectangleRoiTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-      this.stackToolGroup.addTool('RectangleRoi', {
+      this.stackToolGroup.addTool(RectangleRoiTool.toolName, {
         configuration: { volumeUID: volumeId },
       })
-      this.stackToolGroup.setToolActive('RectangleRoi', {
+      this.stackToolGroup.setToolActive(RectangleRoiTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
@@ -942,7 +967,10 @@ describe('Rectangle Roi Tool: ', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const rectangleAnnotations = getAnnotations(element, 'RectangleRoi')
+          const rectangleAnnotations = getAnnotations(
+            element,
+            RectangleRoiTool.toolName
+          )
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined()
           expect(rectangleAnnotations.length).toBe(1)
@@ -951,7 +979,9 @@ describe('Rectangle Roi Tool: ', () => {
           expect(rectangleAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(rectangleAnnotation.metadata.toolName).toBe('RectangleRoi')
+          expect(rectangleAnnotation.metadata.toolName).toBe(
+            RectangleRoiTool.toolName
+          )
           expect(rectangleAnnotation.invalidated).toBe(false)
 
           const data = rectangleAnnotation.data.cachedStats

@@ -77,13 +77,13 @@ describe('Segmentation Render -- ', () => {
   describe('Rendering', function () {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(SegmentationDisplayTool, {})
+      csTools3d.addTool(SegmentationDisplayTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
-      this.segToolGroup.addTool('SegmentationDisplay', {})
-      this.segToolGroup.setToolEnabled('SegmentationDisplay', {})
+      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
+      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)

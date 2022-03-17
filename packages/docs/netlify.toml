@@ -18,6 +18,7 @@
   YARN_VERSION = "1.22.5"
   NETLIFY_USE_YARN = "true"
   YARN_FLAGS = "--no-ignore-optional --pure-lockfile"
+  NODE_OPTIONS = "--max_old_space_size=16384"
 
 # COMMENT: This a rule for Single Page Applications
 [[redirects]]
@@ -32,3 +33,12 @@
     [headers.values]
     Cross-Origin-Embedder-Policy = "require-corp"
     Cross-Origin-Opener-Policy =  "same-origin"
+
+# Attempt to speed up docusaurus builds by persisting the webpack cache
+# across deploys. This is done in the main docusaurus repo: https://github.com/facebook/docusaurus/blob/cc0bceab9c1678303f6237f5526753edc1b12fc3/website/netlify.toml#L22
+[[plugins]]
+package = "netlify-plugin-cache"
+  [plugins.inputs]
+  paths = [
+    "node_modules/.cache/webpack",
+  ]

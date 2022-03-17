@@ -1,4 +1,4 @@
-import math from '../src/util/math'
+import math from '../src/utilities/math'
 
 describe('Cornerstone-tools Utilities:', function () {
   it('Should successfully find the closest point to the target point', () => {

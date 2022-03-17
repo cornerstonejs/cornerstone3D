@@ -71,16 +71,16 @@ describe('Segmentation Controller --', () => {
   describe('Visibility/Color Controller', function () {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(SegmentationDisplayTool, {})
-      csTools3d.addTool(RectangleScissorsTool, {})
+      csTools3d.addTool(SegmentationDisplayTool)
+      csTools3d.addTool(RectangleScissorsTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
-      this.segToolGroup.addTool('SegmentationDisplay', {})
-      this.segToolGroup.addTool('RectangleScissor', {})
-      this.segToolGroup.setToolEnabled('SegmentationDisplay', {})
-      this.segToolGroup.setToolActive('RectangleScissor', {
+      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
+      this.segToolGroup.addTool(RectangleScissorsTool.toolName)
+      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
+      this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
       this.renderingEngine = new RenderingEngine(renderingEngineUID)

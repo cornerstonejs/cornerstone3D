@@ -15,8 +15,8 @@ import {
 import {
   getDefaultRepresentationConfig,
   isValidRepresentationConfig,
-} from '../../util/segmentation'
-import { deepMerge } from '../../util'
+} from '../../utilities/segmentation'
+import { deepMerge } from '../../utilities'
 
 /**
  * It returns the defaultSegmentationStateManager.

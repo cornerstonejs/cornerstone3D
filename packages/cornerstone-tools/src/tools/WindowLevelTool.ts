@@ -18,13 +18,13 @@ const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024
 const PT = 'PT'
 
 export default class WindowLevelTool extends BaseTool {
+  static toolName = 'WindowLevel'
   touchDragCallback: () => void
   mouseDragCallback: () => void
 
   constructor(
     toolProps = {},
     defaultToolProps = {
-      name: 'WindowLevel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
     }
   ) {

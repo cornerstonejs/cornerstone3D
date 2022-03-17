@@ -12,7 +12,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import throttle from '../../util/throttle'
+import throttle from '../../utilities/throttle'
 import {
   addAnnotation,
   getAnnotations,
@@ -27,16 +27,16 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import rectangle from '../../util/math/rectangle'
-import { getTextBoxCoordsCanvas } from '../../util/drawing'
-import getWorldWidthAndHeightFromCorners from '../../util/planar/getWorldWidthAndHeightFromCorners'
-import { indexWithinDimensions } from '../../util/vtkjs'
+import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import rectangle from '../../utilities/math/rectangle'
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
+import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners'
+import { indexWithinDimensions } from '../../utilities/vtkjs'
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 
 import {
   Annotation,
@@ -71,6 +71,8 @@ export interface RectangleRoiAnnotation extends Annotation {
 }
 
 export default class RectangleRoiTool extends AnnotationTool {
+  static toolName = 'RectangleRoi'
+
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
@@ -87,7 +89,6 @@ export default class RectangleRoiTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'RectangleRoi',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
@@ -155,7 +156,7 @@ export default class RectangleRoiTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: this.name,
+        toolName: RectangleRoiTool.toolName,
       },
       data: {
         label: '',
@@ -189,7 +190,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      RectangleRoiTool.toolName
     )
 
     this.editData = {
@@ -272,7 +273,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      RectangleRoiTool.toolName
     )
 
     this.editData = {
@@ -320,7 +321,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      RectangleRoiTool.toolName
     )
 
     this.editData = {
@@ -600,7 +601,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let annotations = getAnnotations(element, this.name)
+    let annotations = getAnnotations(element, RectangleRoiTool.toolName)
 
     if (!annotations?.length) {
       return
@@ -702,7 +703,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.name,
+          RectangleRoiTool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -715,7 +716,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       const rectangleUID = '0'
       drawRectSvg(
         svgDrawingHelper,
-        this.name,
+        RectangleRoiTool.toolName,
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],
@@ -746,7 +747,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       const textBoxUID = '1'
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.name,
+        RectangleRoiTool.toolName,
         annotationUID,
         textBoxUID,
         textLines,

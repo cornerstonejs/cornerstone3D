@@ -1,13 +1,14 @@
 import { BaseTool } from './base'
-import { scrollThroughStack } from '../util/stackScrollTool'
+import { scrollThroughStack } from '../utilities/stackScrollTool'
 
 export default class StackScrollMouseWheelTool extends BaseTool {
+  static toolName = 'StackScrollMouseWheel'
+
   _configuration: any
 
   constructor(
     toolProps = {},
     defaultToolProps = {
-      name: 'StackScrollMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       invert: false,
     }

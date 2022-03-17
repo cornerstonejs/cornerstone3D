@@ -4,7 +4,6 @@ const { BlendMode } = vtkConstants
 
 /**
  * Enums for blendModes for viewport images based on vtk.js
- * NONE: no blending
  * COMPOSITE: composite blending - suitable for compositing multiple images
  * MAXIMUM_INTENSITY_BLEND: maximum intensity projection - suitable for MIP
  *
@@ -13,7 +12,6 @@ const { BlendMode } = vtkConstants
  * as the blend.
  */
 enum BlendModes {
-  NONE = BlendMode.NONE,
   COMPOSITE = BlendMode.COMPOSITE,
   MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
   MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,

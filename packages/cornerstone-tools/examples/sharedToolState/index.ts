@@ -76,12 +76,12 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool('Length', { configuration: { volumeUID } })
-  toolGroup.addTool('StackScrollMouseWheel')
+  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeUID } })
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName)
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive('Length', {
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click
@@ -90,7 +90,7 @@ async function run() {
   })
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive('StackScrollMouseWheel')
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const volumeImageIds = await createImageIdsAndCacheMetaData({

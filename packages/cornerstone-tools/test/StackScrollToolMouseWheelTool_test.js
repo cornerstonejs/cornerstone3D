@@ -20,7 +20,8 @@ const {
   setVolumesOnViewports,
 } = cornerstone3D
 
-const { StackScrollMouseWheelTool, ToolGroupManager } = csTools3d
+const { StackScrollMouseWheelTool, ToolGroupManager, StackScrollTool } =
+  csTools3d
 
 const {
   fakeImageLoader,
@@ -66,13 +67,15 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(StackScrollMouseWheelTool, {})
+    csTools3d.addTool(StackScrollMouseWheelTool)
     cache.purgeCache()
     this.DOMElements = []
 
-    this.stackToolGroup = ToolGroupManager.createToolGroup('StackScroll')
-    this.stackToolGroup.addTool('StackScrollMouseWheel')
-    this.stackToolGroup.setToolActive('StackScrollMouseWheel')
+    this.stackToolGroup = ToolGroupManager.createToolGroup(
+      StackScrollTool.toolName
+    )
+    this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName)
+    this.stackToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
     registerImageLoader('fakeImageLoader', fakeImageLoader)
@@ -86,7 +89,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupByToolGroupUID('StackScroll')
+    ToolGroupManager.destroyToolGroupByToolGroupUID(StackScrollTool.toolName)
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {

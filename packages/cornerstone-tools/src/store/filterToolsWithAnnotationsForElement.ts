@@ -1,6 +1,7 @@
 import { getAnnotations } from '../stateManagement/annotation/annotationState'
 import { ToolAnnotationsPair } from '../types/InternalToolTypes'
 import type AnnotationTool from '../tools/base/AnnotationTool'
+import BaseTool from '../tools/base/BaseTool'
 
 /**
  * Filters an array of tools, returning only tools which have annotation.
@@ -24,7 +25,10 @@ export default function filterToolsWithAnnotationsForElement(
       continue
     }
 
-    let annotations = getAnnotations(element, tool.name)
+    let annotations = getAnnotations(
+      element,
+      (tool.constructor as typeof BaseTool).toolName
+    )
 
     if (!annotations) {
       continue

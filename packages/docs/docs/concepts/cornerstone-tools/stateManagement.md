@@ -37,7 +37,7 @@ const annotation = {
  sliceNormal: [0, 0, 1], // Drawn on an axial plane.
  uid: 'someUniqueIdentifier.1.231.4.12.5', // A unique identifier for this annotations.
  FrameOfReferenceUID: 'myFrameOfReference.1.2.3', // The FrameOfReferenceUID
- toolName: 'length', // The tool name
+ toolName: LengthTool.toolName, // The tool name
  handles: {
    points: [
      // Two points in world space that define the line.

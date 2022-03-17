@@ -5,7 +5,14 @@ import {
   VIEWPORT_TYPE,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings, Utilities } from '@precisionmetrics/cornerstone-tools'
+import {
+  ToolBindings,
+  Utilities,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
+} from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
@@ -24,7 +31,9 @@ let stackDXViewportToolGroup
 
 const { calibrateImageSpacing } = Utilities
 
-const toolsToUse = ANNOTATION_TOOLS.filter((tool) => tool !== 'Crosshairs')
+const toolsToUse = ANNOTATION_TOOLS.filter(
+  (tool) => tool !== CrosshairsTool.toolName
+)
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
 class CalibrationExample extends Component {
@@ -153,13 +162,13 @@ class CalibrationExample extends Component {
     ANNOTATION_TOOLS.forEach((toolName) => {
       toolGroup.setToolPassive(toolName)
     })
-    toolGroup.setToolActive('WindowLevel', {
+    toolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
-    toolGroup.setToolActive('Pan', {
+    toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
     })
-    toolGroup.setToolActive('Zoom', {
+    toolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
   }
