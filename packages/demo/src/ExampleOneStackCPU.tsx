@@ -10,7 +10,13 @@ import {
   INTERPOLATION_TYPE,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import {
+  ToolBindings,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
+} from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
@@ -27,9 +33,12 @@ window.cache = cache
 
 let stackCTViewportToolGroup, stackPTViewportToolGroup
 
-const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = [
+  WindowLevelTool.toolName,
+  PanTool.toolName,
+  ZoomTool.toolName,
+  ...ANNOTATION_TOOLS,
+].filter((tool) => tool !== CrosshairsTool.toolName)
 
 const availableStacks = ['ct', 'pt', 'dx', 'color']
 
@@ -46,7 +55,7 @@ class OneStackExampleCPU extends Component {
       numRows: 1,
       viewports: [{}],
     },
-    ptCtLeftClickTool: 'WindowLevel',
+    ptCtLeftClickTool: WindowLevelTool.toolName,
     currentStack: 'ct',
     falseColor: false,
     activeToolGroup: null,
@@ -207,13 +216,13 @@ class OneStackExampleCPU extends Component {
       toolGroup.setToolPassive(toolName)
     })
 
-    toolGroup.setToolActive('WindowLevel', {
+    toolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
-    toolGroup.setToolActive('Pan', {
+    toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
     })
-    toolGroup.setToolActive('Zoom', {
+    toolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
   }
@@ -333,7 +342,7 @@ class OneStackExampleCPU extends Component {
       currentStack: stackName,
       falseColor: false,
       activeToolGroup,
-      ptCtLeftClickTool: 'WindowLevel', // reset ui
+      ptCtLeftClickTool: WindowLevelTool.toolName, // reset ui
     })
   }
 

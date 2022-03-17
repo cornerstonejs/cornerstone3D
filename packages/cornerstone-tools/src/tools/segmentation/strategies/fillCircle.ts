@@ -4,10 +4,10 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 import {
   getCanvasEllipseCorners,
   pointInEllipse,
-} from '../../../util/math/ellipse'
-import { getBoundingBoxAroundShape } from '../../../util/segmentation'
+} from '../../../utilities/math/ellipse'
+import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
 import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import { pointInShapeCallback } from '../../../util'
+import { pointInShapeCallback } from '../../../utilities'
 
 type OperationData = {
   toolGroupUID: string

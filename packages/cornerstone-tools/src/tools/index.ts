@@ -21,8 +21,8 @@ import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool'
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 import CircleScissorsTool from './segmentation/CircleScissorsTool'
 import SphereScissorsTool from './segmentation/SphereScissorsTool'
-import RectangleRoiThreshold from './segmentation/RectangleRoiThreshold'
-import RectangleRoiStartEndThreshold from './segmentation/RectangleRoiStartEndThreshold'
+import RectangleRoiThresholdTool from './segmentation/RectangleRoiThresholdTool'
+import RectangleRoiStartEndThresholdTool from './segmentation/RectangleRoiStartEndThresholdTool'
 
 export {
   // ~~ BASE
@@ -49,6 +49,6 @@ export {
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,
-  RectangleRoiThreshold,
-  RectangleRoiStartEndThreshold,
+  RectangleRoiThresholdTool,
+  RectangleRoiStartEndThresholdTool,
 }

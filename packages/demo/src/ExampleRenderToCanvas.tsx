@@ -26,7 +26,7 @@ class RenderToCanvasExample extends Component {
       numRows: 1,
       viewports: [{}],
     },
-    ptCtLeftClickTool: 'WindowLevel',
+    ptCtLeftClickTool: WindowLevelTool.toolName,
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     imageId: imageId,

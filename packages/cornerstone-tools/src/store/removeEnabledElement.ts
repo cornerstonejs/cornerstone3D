@@ -16,12 +16,12 @@ import {
 
 import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement'
 import { state } from './state'
-import getToolsWithModesForElement from '../util/getToolsWithModesForElement'
+import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement'
 import { ToolModes } from '../enums'
 import { removeAnnotation } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'
 import getToolGroup from './ToolGroupManager/getToolGroup'
-import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
+import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender'
 
 const VIEWPORT_ELEMENT = 'viewport-element'
 

@@ -29,14 +29,14 @@ export default function ptCtToggleAnnotationTool(
       fusionSceneToolGroup.setToolPassive(toolName)
     })
 
-    ctSceneToolGroup.setToolDisabled('WindowLevel')
-    ptSceneToolGroup.setToolDisabled('WindowLevel')
-    fusionSceneToolGroup.setToolDisabled('WindowLevel')
+    ctSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
+    ptSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
+    fusionSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
   } else {
     // Set window level + threshold
-    ctSceneToolGroup.setToolActive('WindowLevel', options)
-    ptSceneToolGroup.setToolActive('WindowLevel', options)
-    fusionSceneToolGroup.setToolActive('WindowLevel', options)
+    ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
+    ptSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
+    fusionSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
 
     // Set all annotation tools passive
     ANNOTATION_TOOLS.forEach((toolName) => {

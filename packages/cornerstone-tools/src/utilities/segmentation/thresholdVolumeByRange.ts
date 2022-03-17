@@ -7,7 +7,7 @@ import {
   getBoundingBoxAroundShape,
   extend2DBoundingBoxInViewAxis,
 } from '../segmentation'
-import { pointInShapeCallback } from '../../util'
+import { pointInShapeCallback } from '../../utilities'
 import { triggerSegmentationDataModified } from '../../store/SegmentationModule/triggerSegmentationEvents'
 import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'

@@ -1,4 +1,4 @@
-import triggerSegmentationRender from '../../util/triggerSegmentationRender'
+import triggerSegmentationRender from '../../utilities/triggerSegmentationRender'
 
 import { SegmentationStateModifiedEventType } from '../../types/EventTypes'
 

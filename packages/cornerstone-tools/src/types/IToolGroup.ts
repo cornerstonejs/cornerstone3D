@@ -43,7 +43,7 @@ export default interface IToolGroup {
   getActivePrimaryButtonTools: {
     (): undefined | string
   }
-  resetViewportsCursor: {
-    ({ name: string }): void
+  setViewportsCursorByToolName: {
+    (toolName: string, strategyName?: string): void
   }
 }

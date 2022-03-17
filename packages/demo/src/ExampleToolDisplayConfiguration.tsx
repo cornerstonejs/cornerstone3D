@@ -46,12 +46,12 @@ let ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup
 
 class ToolDisplayConfigurationExample extends Component {
   listOfTools = [
-    'WindowLevel',
-    'Length',
-    'Bidirectional',
-    'RectangleRoi',
-    'EllipticalRoi',
-    'Probe',
+    WindowLevelTool.toolName,
+    LengthTool.toolName,
+    BidirectionalTool.toolName,
+    RectangleRoiTool.toolName,
+    EllipticalRoiTool.toolName,
+    ProbeTool.toolName,
   ]
 
   _elementNodes = null
@@ -71,7 +71,7 @@ class ToolDisplayConfigurationExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
-    activeTools: 'WindowLevel',
+    activeTools: WindowLevelTool.toolName,
     layoutIndex: 0,
     destroyed: false,
     viewportGrid: {
@@ -279,7 +279,7 @@ class ToolDisplayConfigurationExample extends Component {
       stackCTViewportToolGroup,
       stackDXViewportToolGroup,
     ].forEach((toolGroup) => {
-      toolGroup.setToolActive('WindowLevel', {
+      toolGroup.setToolActive(WindowLevelTool.toolName, {
         bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
       })
     })
@@ -325,7 +325,7 @@ class ToolDisplayConfigurationExample extends Component {
   }
 
   toggleActiveTool = () => {
-    const defaultTool = 'WindowLevel'
+    const defaultTool = WindowLevelTool.toolName
     const activeTools = new Set()
     const options = {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],

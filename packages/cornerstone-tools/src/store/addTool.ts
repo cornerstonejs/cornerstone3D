@@ -14,40 +14,36 @@ import { state } from './state'
  * @returns
  */
 export function addTool(ToolClass): void {
-  // Instantiating the ToolClass only to see if it exists and name is not undefined
-  const tool = new ToolClass()
-  const hasToolName = typeof tool.name !== 'undefined' && tool.name !== ''
-  const toolAlreadyAdded = state.tools[tool.name] !== undefined
+  // Check if tool exists and name is not undefined
+  const toolName = ToolClass.toolName
+  const toolAlreadyAdded = state.tools[toolName] !== undefined
 
-  if (!hasToolName) {
-    throw new Error(`No Tool Found for the ToolClass`)
+  if (!toolName) {
+    throw new Error(`No Tool Found for the ToolClass ${ToolClass.name}`)
   }
 
   if (toolAlreadyAdded) {
-    throw new Error(`${tool.name} has already been added globally`)
+    throw new Error(`${toolName} has already been added globally`)
   }
 
   // Stores the toolNames and ToolClass to be instantiated in the toolGroup on toolGroup.addTool
-  state.tools[tool.name] = {
+  state.tools[toolName] = {
     toolClass: ToolClass,
   }
 }
 
-export function removeTool(ToolClass, toolOptions = {}) {
-  const tool = new ToolClass(toolOptions)
-  const hasToolName = typeof tool.name !== 'undefined' && tool.name !== ''
+export function removeTool(ToolClass): void {
+  const toolName = ToolClass.toolName
 
-  if (!hasToolName) {
-    throw new Error(
-      `Tool with configuration did not produce a toolName: ${toolOptions}`
-    )
+  if (!toolName) {
+    throw new Error(`No tool found for: ${ToolClass.name}`)
   }
 
-  if (!state.tools[tool.name] !== undefined) {
-    delete state.tools[tool.name]
+  if (!state.tools[toolName] !== undefined) {
+    delete state.tools[toolName]
   } else {
     throw new Error(
-      `${tool.name} cannot be removed because it has not been added`
+      `${toolName} cannot be removed because it has not been added`
     )
   }
 }

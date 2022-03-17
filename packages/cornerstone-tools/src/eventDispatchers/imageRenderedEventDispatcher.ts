@@ -2,7 +2,7 @@ import {
   EVENTS as RenderingEngineEvents,
   Types,
 } from '@precisionmetrics/cornerstone-render'
-import triggerAnnotationRender from '../util/triggerAnnotationRender'
+import triggerAnnotationRender from '../utilities/triggerAnnotationRender'
 
 /**
  *  When the image is rendered, check what tools can be rendered for this element.

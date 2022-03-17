@@ -11,14 +11,14 @@ import {
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { AnnotationTool } from '../base'
-import throttle from '../../util/throttle'
+import throttle from '../../utilities/throttle'
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState'
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
-import { lineSegment } from '../../util/math'
+import { lineSegment } from '../../utilities/math'
 
 import {
   drawHandles as drawHandlesSvg,
@@ -26,10 +26,10 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import { indexWithinDimensions } from '../../util/vtkjs'
-import { getTextBoxCoordsCanvas } from '../../util/drawing'
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { indexWithinDimensions } from '../../utilities/vtkjs'
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
 import {
@@ -69,6 +69,8 @@ interface LengthAnnotation extends Annotation {
 }
 
 class LengthTool extends AnnotationTool {
+  static toolName = 'Length'
+
   public touchDragCallback: any
   public mouseDragCallback: any
   _throttledCalculateCachedStats: any
@@ -87,7 +89,6 @@ class LengthTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'Length',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
@@ -156,7 +157,7 @@ class LengthTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: this.name,
+        toolName: LengthTool.toolName,
       },
       data: {
         handles: {
@@ -185,7 +186,7 @@ class LengthTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      LengthTool.toolName
     )
 
     this.editData = {
@@ -268,7 +269,7 @@ class LengthTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      LengthTool.toolName
     )
 
     this.editData = {
@@ -316,7 +317,7 @@ class LengthTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      LengthTool.toolName
     )
 
     this.editData = {
@@ -527,7 +528,7 @@ class LengthTool extends AnnotationTool {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let annotations = getAnnotations(element, this.name)
+    let annotations = getAnnotations(element, LengthTool.toolName)
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
@@ -575,7 +576,7 @@ class LengthTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.name,
+          LengthTool.toolName,
           annotationUID,
           handleGroupUID,
           canvasCoordinates,
@@ -590,7 +591,7 @@ class LengthTool extends AnnotationTool {
       const lineUID = '1'
       drawLineSvg(
         svgDrawingHelper,
-        this.name,
+        LengthTool.toolName,
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -637,7 +638,7 @@ class LengthTool extends AnnotationTool {
       const textBoxUID = '1'
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.name,
+        LengthTool.toolName,
         annotationUID,
         textBoxUID,
         textLines,

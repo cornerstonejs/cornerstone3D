@@ -21,6 +21,7 @@ import {
   cancelActiveManipulations,
   removeAnnotation,
   destroy as CS3dToolsDestroy,
+  CrosshairsTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -58,14 +59,16 @@ let ctSceneToolGroup,
   stackDXViewportToolGroup,
   ptSceneToolGroup
 
-const toolsToUse = ANNOTATION_TOOLS.filter((tool) => tool !== 'Crosshairs')
+const toolsToUse = ANNOTATION_TOOLS.filter(
+  (tool) => tool !== CrosshairsTool.toolName
+)
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
 class StackViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
-    leftClickTool: 'WindowLevel',
+    leftClickTool: WindowLevelTool.toolName,
     layoutIndex: 0,
     destroyed: false,
     annotationsAdded: [],
@@ -492,18 +495,18 @@ class StackViewportExample extends Component {
         stackDXViewportToolGroup.setToolPassive(toolName)
       })
 
-      ctSceneToolGroup.setToolDisabled('WindowLevel')
-      ptSceneToolGroup.setToolDisabled('WindowLevel')
-      stackCTViewportToolGroup.setToolDisabled('WindowLevel')
-      stackPTViewportToolGroup.setToolDisabled('WindowLevel')
-      stackDXViewportToolGroup.setToolDisabled('WindowLevel')
+      ctSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      ptSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      stackCTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      stackPTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      stackDXViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
     } else {
       // Set window level + threshold
-      ctSceneToolGroup.setToolActive('WindowLevel', options)
-      ptSceneToolGroup.setToolActive('WindowLevel', options)
-      stackCTViewportToolGroup.setToolActive('WindowLevel', options)
-      stackPTViewportToolGroup.setToolActive('WindowLevel', options)
-      stackDXViewportToolGroup.setToolActive('WindowLevel', options)
+      ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      ptSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      stackPTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      stackDXViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {

@@ -4,6 +4,7 @@ import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import { PublicToolProps, ToolProps } from '../types'
 
 export default class ZoomTool extends BaseTool {
+  static toolName = 'Zoom'
   touchDragCallback: () => void
   mouseDragCallback: () => void
 
@@ -11,7 +12,6 @@ export default class ZoomTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'Zoom',
       supportedInteractionTypes: ['Mouse', 'Touch'],
     }
   ) {

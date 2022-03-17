@@ -25,15 +25,15 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import { indexWithinDimensions } from '../../util/vtkjs'
+import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { indexWithinDimensions } from '../../utilities/vtkjs'
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 
 import {
   Annotation,
@@ -51,6 +51,8 @@ interface ProbeAnnotation extends Annotation {
   }
 }
 export default class ProbeTool extends AnnotationTool {
+  static toolName = 'Probe'
+
   touchDragCallback: any
   mouseDragCallback: any
   editData: { annotation: any; viewportUIDsToRender: string[] } | null
@@ -65,7 +67,6 @@ export default class ProbeTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'Probe',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
@@ -74,19 +75,6 @@ export default class ProbeTool extends AnnotationTool {
     }
   ) {
     super(toolProps, defaultToolProps)
-
-    /**
-     * Will only fire for cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-    this._activateModify = this._activateModify.bind(this)
-    this._deactivateModify = this._deactivateModify.bind(this)
-    this._mouseUpCallback = this._mouseUpCallback.bind(this)
-    this._mouseDragCallback = this._mouseDragCallback.bind(this)
   }
 
   // Not necessary for this tool but needs to be defined since it's an abstract
@@ -147,7 +135,7 @@ export default class ProbeTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: this.name,
+        toolName: ProbeTool.toolName,
       },
       data: {
         label: '',
@@ -163,7 +151,7 @@ export default class ProbeTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      ProbeTool.toolName
     )
 
     this.editData = {
@@ -230,7 +218,7 @@ export default class ProbeTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      ProbeTool.toolName
     )
 
     // Find viewports to render on drag.
@@ -255,9 +243,9 @@ export default class ProbeTool extends AnnotationTool {
     evt.preventDefault()
   }
 
-  _mouseUpCallback(
+  _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ) {
+  ) => {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
@@ -294,7 +282,7 @@ export default class ProbeTool extends AnnotationTool {
     )
   }
 
-  _mouseDragCallback(evt) {
+  _mouseDragCallback = (evt) => {
     this.isDrawing = true
     const eventDetail = evt.detail
     const { currentPoints, element } = eventDetail
@@ -341,7 +329,7 @@ export default class ProbeTool extends AnnotationTool {
     }
   }
 
-  _activateModify(element) {
+  _activateModify = (element) => {
     state.isInteractingWithTool = true
 
     element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
@@ -352,7 +340,7 @@ export default class ProbeTool extends AnnotationTool {
     // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
   }
 
-  _deactivateModify(element) {
+  _deactivateModify = (element) => {
     state.isInteractingWithTool = false
 
     element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
@@ -378,7 +366,7 @@ export default class ProbeTool extends AnnotationTool {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let annotations = getAnnotations(element, this.name)
+    let annotations = getAnnotations(element, ProbeTool.toolName)
 
     if (!annotations?.length) {
       return
@@ -451,7 +439,7 @@ export default class ProbeTool extends AnnotationTool {
 
       drawHandlesSvg(
         svgDrawingHelper,
-        this.name,
+        ProbeTool.toolName,
         annotationUID,
         handleGroupUID,
         [canvasCoordinates],
@@ -468,7 +456,7 @@ export default class ProbeTool extends AnnotationTool {
         const textUID = '0'
         drawTextBoxSvg(
           svgDrawingHelper,
-          this.name,
+          ProbeTool.toolName,
           annotationUID,
           textUID,
           textLines,

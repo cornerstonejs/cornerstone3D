@@ -70,15 +70,15 @@ describe('Probe Tool: ', () => {
   describe('Cornerstone Tools: ', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(ProbeTool, {})
+      csTools3d.addTool(ProbeTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-      this.stackToolGroup.addTool('Probe', {
+      this.stackToolGroup.addTool(ProbeTool.toolName, {
         configuration: { volumeUID: volumeId }, // Only for volume viewport
       })
-      this.stackToolGroup.setToolActive('Probe', {
+      this.stackToolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
@@ -121,7 +121,7 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, 'Probe')
+            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
 
@@ -129,7 +129,7 @@ describe('Probe Tool: ', () => {
             expect(probeAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(probeAnnotation.metadata.toolName).toBe('Probe')
+            expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
             expect(probeAnnotation.invalidated).toBe(false)
 
             const data = probeAnnotation.data.cachedStats
@@ -205,7 +205,7 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, 'Probe')
+            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(2)
 
@@ -213,7 +213,9 @@ describe('Probe Tool: ', () => {
             expect(firstProbeAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(firstProbeAnnotation.metadata.toolName).toBe('Probe')
+            expect(firstProbeAnnotation.metadata.toolName).toBe(
+              ProbeTool.toolName
+            )
             expect(firstProbeAnnotation.invalidated).toBe(false)
 
             let data = firstProbeAnnotation.data.cachedStats
@@ -225,7 +227,9 @@ describe('Probe Tool: ', () => {
 
             // Second click
             const secondProbeAnnotation = probeAnnotations[1]
-            expect(secondProbeAnnotation.metadata.toolName).toBe('Probe')
+            expect(secondProbeAnnotation.metadata.toolName).toBe(
+              ProbeTool.toolName
+            )
             expect(secondProbeAnnotation.invalidated).toBe(false)
 
             data = secondProbeAnnotation.data.cachedStats
@@ -326,7 +330,7 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, 'Probe')
+            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
 
@@ -334,7 +338,7 @@ describe('Probe Tool: ', () => {
             expect(probeAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(probeAnnotation.metadata.toolName).toBe('Probe')
+            expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
             expect(probeAnnotation.invalidated).toBe(false)
 
             const data = probeAnnotation.data.cachedStats
@@ -408,7 +412,7 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, 'Probe')
+            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
 
@@ -416,7 +420,7 @@ describe('Probe Tool: ', () => {
             expect(probeAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(probeAnnotation.metadata.toolName).toBe('Probe')
+            expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
             expect(probeAnnotation.invalidated).toBe(false)
 
             const data = probeAnnotation.data.cachedStats
@@ -488,13 +492,13 @@ describe('Probe Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const probeAnnotations = getAnnotations(element, 'Probe')
+            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
             // Can successfully add Length tool to annotationManager
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
 
             const probeAnnotation = probeAnnotations[0]
-            expect(probeAnnotation.metadata.toolName).toBe('Probe')
+            expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
             expect(probeAnnotation.invalidated).toBe(false)
 
             const data = probeAnnotation.data.cachedStats
@@ -574,7 +578,7 @@ describe('Probe Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const probeAnnotations = getAnnotations(element, 'Probe')
+            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
             // Can successfully add Length tool to annotationManager
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
@@ -583,7 +587,7 @@ describe('Probe Tool: ', () => {
             expect(probeAnnotation.metadata.referencedImageId).toBe(
               imageId1.split(':')[1]
             )
-            expect(probeAnnotation.metadata.toolName).toBe('Probe')
+            expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
             expect(probeAnnotation.invalidated).toBe(false)
 
             const data = probeAnnotation.data.cachedStats
@@ -683,15 +687,15 @@ describe('Probe Tool: ', () => {
   describe('Should successfully cancel a ProbeTool', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(ProbeTool, {})
+      csTools3d.addTool(ProbeTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-      this.stackToolGroup.addTool('Probe', {
+      this.stackToolGroup.addTool(ProbeTool.toolName, {
         configuration: { volumeUID: volumeId }, // Only for volume viewport
       })
-      this.stackToolGroup.setToolActive('Probe', {
+      this.stackToolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
@@ -797,7 +801,7 @@ describe('Probe Tool: ', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const probeAnnotations = getAnnotations(element, 'Probe')
+          const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined()
           expect(probeAnnotations.length).toBe(1)
@@ -806,7 +810,7 @@ describe('Probe Tool: ', () => {
           expect(probeAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(probeAnnotation.metadata.toolName).toBe('Probe')
+          expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
           expect(probeAnnotation.invalidated).toBe(false)
           expect(probeAnnotation.highlighted).toBe(false)
 

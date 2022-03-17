@@ -8,7 +8,13 @@ import {
   metaData,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
-import { Cursors } from '@precisionmetrics/cornerstone-tools'
+import {
+  Cursors,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
+} from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
@@ -25,9 +31,12 @@ window.cache = cache
 
 let stackCTViewportToolGroup
 
-const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = [
+  WindowLevelTool.toolName,
+  PanTool.toolName,
+  ZoomTool.toolName,
+  ...ANNOTATION_TOOLS,
+].filter((tool) => tool !== CrosshairsTool.toolName)
 
 const availableStacks = ['ct', 'dx', 'color']
 
@@ -44,7 +53,7 @@ class CursorExample extends Component {
       numRows: 1,
       viewports: [{}],
     },
-    cursorName: 'WindowLevel',
+    cursorName: WindowLevelTool.toolName,
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     currentStack: 'ct',

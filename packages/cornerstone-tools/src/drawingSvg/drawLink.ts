@@ -1,7 +1,7 @@
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import drawLine from './drawLine'
-import findClosestPoint from '../util/math/vec2/findClosestPoint'
+import findClosestPoint from '../utilities/math/vec2/findClosestPoint'
 import { PlanarBoundingBox } from '../types'
 
 /**

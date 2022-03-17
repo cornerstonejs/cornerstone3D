@@ -24,6 +24,12 @@ import {
   SegmentationRepresentations,
   addSegmentationsForToolGroup,
   removeSegmentationsForToolGroup,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
+  RectangleRoiTool,
+  RectangleRoiStartEndThresholdTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -64,9 +70,9 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
 const toolsToUse = [
-  'WindowLevel',
-  'Pan',
-  'Zoom',
+  WindowLevelTool.toolName,
+  PanTool.toolName,
+  ZoomTool.toolName,
   ...ANNOTATION_TOOLS,
   ...SEGMENTATION_TOOLS,
 ]
@@ -124,7 +130,7 @@ class SegmentationExample extends Component {
         },
       ],
     },
-    ptCtLeftClickTool: 'WindowLevel',
+    ptCtLeftClickTool: WindowLevelTool.toolName,
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     // Segmentation
@@ -983,13 +989,13 @@ class SegmentationExample extends Component {
 
   hideAllSegmentations = () => {
     this.state.toolGroups[this.state.selectedToolGroupName].setToolDisabled(
-      'SegmentationDisplay'
+      SegmentationDisplayTool.toolName
     )
   }
 
   showAllSegmentations = () => {
     this.state.toolGroups[this.state.selectedToolGroupName].setToolEnabled(
-      'SegmentationDisplay'
+      SegmentationDisplayTool.toolName
     )
   }
 
@@ -1049,8 +1055,8 @@ class SegmentationExample extends Component {
               .getToolInstance(this.state.ptCtLeftClickTool)
               .setActiveStrategy(activeStrategy)
 
-            toolGroup.resetViewportsCursor(
-              { name: this.state.ptCtLeftClickTool },
+            toolGroup.setViewportsCursorByToolName(
+              this.state.ptCtLeftClickTool,
               activeStrategy
             )
             this.setState({ chosenToolStrategy: activeStrategy })
@@ -1150,7 +1156,7 @@ class SegmentationExample extends Component {
         <div>{this.getSetToolModes()}</div>
         {this.state.segmentationToolActive && (
           <div style={{ marginTop: '15px' }}>
-            {this.state.ptCtLeftClickTool.includes('RectangleRoi')
+            {this.state.ptCtLeftClickTool.includes(RectangleRoiTool.toolName)
               ? this.getThresholdUID()
               : this.getScissorsUI()}
             <span> All global segmentations </span>

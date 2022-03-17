@@ -9,7 +9,13 @@ import {
   cpuColormaps,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import {
+  ToolBindings,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
+} from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
@@ -26,9 +32,12 @@ window.cache = cache
 
 let stackCTViewportToolGroup
 
-const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = [
+  WindowLevelTool.toolName,
+  PanTool.toolName,
+  ZoomTool.toolName,
+  ...ANNOTATION_TOOLS,
+].filter((tool) => tool !== CrosshairsTool.toolName)
 
 const availableStacks = ['ct', 'dx', 'color']
 
@@ -45,7 +54,7 @@ class OneStackExample extends Component {
       numRows: 1,
       viewports: [{}],
     },
-    ptCtLeftClickTool: 'WindowLevel',
+    ptCtLeftClickTool: WindowLevelTool.toolName,
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
     currentStack: 'ct',
@@ -176,13 +185,13 @@ class OneStackExample extends Component {
     ANNOTATION_TOOLS.forEach((toolName) => {
       toolGroup.setToolPassive(toolName)
     })
-    toolGroup.setToolActive('WindowLevel', {
+    toolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
-    toolGroup.setToolActive('Pan', {
+    toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
     })
-    toolGroup.setToolActive('Zoom', {
+    toolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
   }

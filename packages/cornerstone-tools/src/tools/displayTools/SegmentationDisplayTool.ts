@@ -1,8 +1,5 @@
 import { BaseTool } from '../base'
-import {
-  getEnabledElementByUIDs,
-  Types,
-} from '@precisionmetrics/cornerstone-render'
+import { getEnabledElementByUIDs } from '@precisionmetrics/cornerstone-render'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
 import { LabelmapDisplay } from './Labelmap'
@@ -10,10 +7,7 @@ import {
   triggerSegmentationStateModified,
   segmentationConfigController,
 } from '../../store/SegmentationModule'
-import {
-  getToolGroup,
-  getToolGroupByToolGroupUID,
-} from '../../store/ToolGroupManager'
+import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
 import {
   ToolGroupSpecificSegmentationData,
   SegmentationConfig,
@@ -21,13 +15,13 @@ import {
 
 import { PublicToolProps, ToolProps } from '../../types'
 
-import { deepMerge } from '../../util'
+import { deepMerge } from '../../utilities'
 
 export default class SegmentationDisplayTool extends BaseTool {
+  static toolName = 'SegmentationDisplay'
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'SegmentationDisplay',
       configuration: {},
     }
   ) {

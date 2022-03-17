@@ -5,13 +5,11 @@ import {
   getVolume,
 } from '@precisionmetrics/cornerstone-render'
 import type { RenderingEngine } from '@precisionmetrics/cornerstone-render'
-import deepMerge from '../../util/deepMerge'
+import deepMerge from '../../utilities/deepMerge'
 import { ToolModes } from '../../enums'
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
 
 interface IBaseTool {
-  /** Tool name */
-  name: string
   /** ToolGroup UID the tool instance belongs to */
   toolGroupUID: string
   /** Tool supported interaction types */
@@ -26,8 +24,6 @@ interface IBaseTool {
     activeStrategy?: string
     strategyOptions?: Record<string, unknown>
   }
-
-  /** set the active strategy name */
 }
 
 /**
@@ -36,8 +32,7 @@ interface IBaseTool {
  * application.
  */
 abstract class BaseTool implements IBaseTool {
-  /** Tool Name */
-  public name: string
+  static toolName = 'BaseTool'
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[]
   public configuration: Record<string, any>
@@ -50,7 +45,6 @@ abstract class BaseTool implements IBaseTool {
     const initialProps = deepMerge(defaultToolProps, toolProps)
 
     const {
-      name,
       configuration = {},
       supportedInteractionTypes,
       toolGroupUID,
@@ -64,11 +58,19 @@ abstract class BaseTool implements IBaseTool {
       configuration.strategyOptions = {}
     }
 
-    this.name = name
     this.toolGroupUID = toolGroupUID
     this.supportedInteractionTypes = supportedInteractionTypes || []
     this.configuration = Object.assign({}, configuration)
     this.mode = ToolModes.Disabled
+  }
+
+  /**
+   * Returns the name of the tool
+   * @returns The name of the tool.
+   */
+  public getToolName(): string {
+    // Since toolName is static we get it from the class constructor
+    return (<typeof BaseTool>this.constructor).toolName
   }
 
   /**

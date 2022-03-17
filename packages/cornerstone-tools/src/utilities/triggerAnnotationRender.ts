@@ -160,7 +160,7 @@ class AnnotationRenderingEngine {
     }
 
     // const enabledToolsWithAnnotations = enabledTools.filter((tool) => {
-    //   const annotations = getAnnotations(element, tool.name)
+    //   const annotations = getAnnotations(element, (tool.constructor as typeof BaseTool).toolName)
     //   return annotations && annotations.length
     // })
 

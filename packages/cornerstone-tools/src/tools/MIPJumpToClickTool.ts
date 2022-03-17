@@ -3,18 +3,19 @@ import {
   getEnabledElement,
   VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
-import { getPointInLineOfSightWithCriteria } from '../util/planar'
-import jumpToWorld from '../util/viewport/jumpToWorld'
+import { getPointInLineOfSightWithCriteria } from '../utilities/planar'
+import jumpToWorld from '../utilities/viewport/jumpToWorld'
 import { PublicToolProps, ToolProps } from '../types'
 
 export default class MIPJumpToClickTool extends BaseTool {
+  static toolName = 'MIPJumpToClickTool'
+
   _configuration: any
   _bounds: any
 
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'MIPJumpToClickTool',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         targetViewportUIDs: [],

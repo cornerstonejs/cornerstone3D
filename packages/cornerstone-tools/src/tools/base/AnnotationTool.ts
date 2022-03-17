@@ -18,8 +18,8 @@ import {
   ToolHandle,
   InteractionTypes,
 } from '../../types'
-import triggerAnnotationRender from '../../util/triggerAnnotationRender'
-import filterAnnotationsForDisplay from '../../util/planar/filterAnnotationsForDisplay'
+import triggerAnnotationRender from '../../utilities/triggerAnnotationRender'
+import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay'
 import { getStyleProperty } from '../../stateManagement/annotation/annotationStyle'
 import { getAnnotationStyle } from '../../stateManagement/annotation/annotationStyle'
 
@@ -30,6 +30,7 @@ import { getAnnotationStyle } from '../../stateManagement/annotation/annotationS
  * for instance threshold segmentation based on an area and a threshold.
  */
 abstract class AnnotationTool extends BaseTool {
+  static toolName = 'AnnotationTool'
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
@@ -227,7 +228,7 @@ abstract class AnnotationTool extends BaseTool {
         stateManager.getFrameOfReferenceAnnotations(frameOfReference)
 
       const toolSpecificAnnotations =
-        frameOfReferenceSpecificAnnotations[this.name]
+        frameOfReferenceSpecificAnnotations[this.getToolName()]
 
       if (!toolSpecificAnnotations || !toolSpecificAnnotations.length) {
         return

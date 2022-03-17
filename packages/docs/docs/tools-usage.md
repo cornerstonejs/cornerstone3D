@@ -41,7 +41,7 @@ import * as csTools3D from '@ohif/cornerstone-tools'
 csTools3d.init()
 
 // 2. Adding tools (it creates tool instance in the background)
-csTools3d.addTool(ProbeTool, {})
+csTools3d.addTool(ProbeTool)
 
 // 3. All tools need a toolGroup
 const stackToolGroup = ToolGroupManager.createToolGroup('stack')
@@ -49,12 +49,12 @@ const stackToolGroup = ToolGroupManager.createToolGroup('stack')
 // 4. Adding a tool to the tool group. Note the volumeUID that is
 // being passed since csTools need to know which volume it should
 // grab the pixel data from
-stackToolGroup.addTool('Probe', {
+stackToolGroup.addTool(ProbeTool.toolName, {
   configuration: { volumeUID: volumeId },
 })
 
 // 5. Activating the probeTool and assigning primary mouse button to it.
-stackToolGroup.setToolActive('Probe', {
+stackToolGroup.setToolActive(ProbeTool.toolName, {
   bindings: [{ mouseButton:  ToolBindings.Mouse.Primary }],
 })
 ```
@@ -65,7 +65,7 @@ Crosshairs enables cross-locating a point in 2 or 3 viewports. They can be
 Active, Passive, Enabled, Disabled similar to other tools.
 
 ```js
-ctSceneToolGroup.addTool('Crosshairs', {
+ctSceneToolGroup.addTool(CrosshairsTool.toolName, {
   configuration: {
     getReferenceLineColor,
     getReferenceLineControllable,
@@ -100,7 +100,7 @@ Customization options include changing the colour of the crosshairs and determin
 To familiarize yourself with these options, go to `initiToolGroups` in the demo folder.
 
 ```js
-ctSceneToolGroup.addTool('Crosshairs', {
+ctSceneToolGroup.addTool(CrosshairsTool.toolName, {
   configuration: {
     getReferenceLineColor,
     getReferenceLineControllable,

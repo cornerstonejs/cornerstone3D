@@ -26,7 +26,8 @@ export default function keyUp(evt: KeyDownEventType): void {
   // Reset the modifier key
   resetModifierKey()
 
-  if (Object.keys(toolGroup.toolOptions).includes(activeTool.name)) {
-    toolGroup.resetViewportsCursor({ name: activeTool.name })
+  const toolName = activeTool.getToolName()
+  if (Object.keys(toolGroup.toolOptions).includes(toolName)) {
+    toolGroup.setViewportsCursorByToolName(toolName)
   }
 }

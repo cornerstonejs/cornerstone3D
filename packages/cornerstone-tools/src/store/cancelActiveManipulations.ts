@@ -1,5 +1,5 @@
 import { ToolModes } from '../enums'
-import getToolsWithModesForElement from '../util/getToolsWithModesForElement'
+import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement'
 import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement'
 
 /**

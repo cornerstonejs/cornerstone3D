@@ -5,7 +5,7 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: circleci/node:14.16.1-browsers
+    - image: cimg/node:14.16.1-browsers
       environment:
         TERM: xterm # Enable colors in term
 
@@ -56,6 +56,48 @@ jobs:
           path: ./junit
       - store_artifacts:
           path: ./junit
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - packages/docs
+
+  BUILD_DOCS:
+    <<: *defaults
+    resource_class: xlarge
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      # TODO: Coverage is not found? Not persisted?
+      #- run:
+      #    name: Copy Test Coverage for Docs
+      #    command: cd packages/docs && yarn run copy-coverage-to-docs && cd ..
+      # TODO: Try to fix this later
+      #- run:
+      #    name: Prep Examples
+      #    command: cd packages/docs && yarn run prep-examples && cd ..
+      - run:
+          name: Build Docs
+          command: cd packages/docs && yarn run docs:ci && cd ..
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - packages/docs/build
+
+  DEPLOY_DOCS:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ./
+      - run: # print the name of the branch we're on
+          name: "What branch am I on?"
+          command: echo ${CIRCLE_BRANCH}
+      - run:
+          name: Deploy to Netlify
+          # This uses environment variables in the CircleCI
+          # NETLIFY_AUTH_TOKEN
+          # NETLIFY_SITE_ID
+          command: ./node_modules/netlify-cli/bin/run deploy --dir=./packages/docs/build --alias ${CIRCLE_BRANCH}
+
 
   # NPM_PUBLISH:
   #   <<: *defaults
@@ -89,7 +131,13 @@ workflows:
             - CHECKOUT
       - TEST:
           requires:
-            - CHECKOUT
+            - CHECKOUT # TODO: Also require build?
+      - BUILD_DOCS:
+          requires:
+            - TEST
+      - DEPLOY_DOCS:
+          requires:
+            - BUILD_DOCS
 
   # MERGE TO MASTER
   # TEST_AND_RELEASE:

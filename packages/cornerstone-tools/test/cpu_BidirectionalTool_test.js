@@ -81,15 +81,15 @@ describe('Bidirectional Tool (CPU): ', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(BidirectionalTool, {})
+    csTools3d.addTool(BidirectionalTool)
     this.DOMElements = []
 
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-    this.stackToolGroup.addTool('Bidirectional', {
+    this.stackToolGroup.addTool(BidirectionalTool.toolName, {
       configuration: { volumeUID: volumeId },
     })
-    this.stackToolGroup.setToolActive('Bidirectional', {
+    this.stackToolGroup.setToolActive(BidirectionalTool.toolName, {
       bindings: [{ mouseButton: 1 }],
     })
 
@@ -136,7 +136,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         () => {
           const bidirectionalAnnotations = getAnnotations(
             element,
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           // Can successfully add Length tool to annotationManager
           expect(bidirectionalAnnotations).toBeDefined()
@@ -144,7 +144,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
           const bidirectionalAnnotation = bidirectionalAnnotations[0]
           expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           expect(bidirectionalAnnotation.invalidated).toBe(false)
 
@@ -243,7 +243,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         () => {
           const bidirectionalAnnotations = getAnnotations(
             element,
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           // Can successfully add Length tool to annotationManager
           expect(bidirectionalAnnotations).toBeDefined()
@@ -254,7 +254,7 @@ describe('Bidirectional Tool (CPU): ', () => {
             imageId1.split(':')[1]
           )
           expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           expect(bidirectionalAnnotation.invalidated).toBe(false)
 
@@ -388,7 +388,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         () => {
           const bidirectionalAnnotations = getAnnotations(
             element,
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           // Can successfully add Length tool to annotationManager
           expect(bidirectionalAnnotations).toBeDefined()
@@ -399,7 +399,7 @@ describe('Bidirectional Tool (CPU): ', () => {
             imageId1.split(':')[1]
           )
           expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           expect(bidirectionalAnnotation.invalidated).toBe(false)
 
@@ -523,7 +523,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         () => {
           const bidirectionalAnnotations = getAnnotations(
             element,
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           // Can successfully add Length tool to annotationManager
           expect(bidirectionalAnnotations).toBeDefined()
@@ -534,7 +534,7 @@ describe('Bidirectional Tool (CPU): ', () => {
             imageId1.split(':')[1]
           )
           expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            'Bidirectional'
+            BidirectionalTool.toolName
           )
           expect(bidirectionalAnnotation.invalidated).toBe(false)
 
@@ -784,7 +784,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       setTimeout(() => {
         const bidirectionalAnnotations = getAnnotations(
           element,
-          'Bidirectional'
+          BidirectionalTool.toolName
         )
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined()
@@ -794,7 +794,9 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
           imageId1.split(':')[1]
         )
-        expect(bidirectionalAnnotation.metadata.toolName).toBe('Bidirectional')
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
         expect(bidirectionalAnnotation.invalidated).toBe(false)
         expect(bidirectionalAnnotation.highlighted).toBe(false)
 

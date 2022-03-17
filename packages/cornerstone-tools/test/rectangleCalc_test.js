@@ -1,4 +1,4 @@
-import rectangle from '../src/util/math/rectangle'
+import rectangle from '../src/utilities/math/rectangle'
 
 describe('Rectangle:', function () {
   beforeEach(() => {

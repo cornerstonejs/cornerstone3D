@@ -81,15 +81,15 @@ describe('Length Tool (CPU):', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(LengthTool, {})
+    csTools3d.addTool(LengthTool)
     cache.purgeCache()
     this.DOMElements = []
 
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-    this.stackToolGroup.addTool('Length', {
+    this.stackToolGroup.addTool(LengthTool.toolName, {
       configuration: { volumeUID: volumeId },
     })
-    this.stackToolGroup.setToolActive('Length', {
+    this.stackToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [{ mouseButton: 1 }],
     })
 
@@ -133,7 +133,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = getAnnotations(element, 'Length')
+          const lengthAnnotations = getAnnotations(element, LengthTool.toolName)
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined()
           expect(lengthAnnotations.length).toBe(1)
@@ -142,7 +142,7 @@ describe('Length Tool (CPU):', () => {
           expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
           expect(lengthAnnotation.invalidated).toBe(false)
 
           const data = lengthAnnotation.data.cachedStats
@@ -239,7 +239,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = getAnnotations(element, 'Length')
+          const lengthAnnotations = getAnnotations(element, LengthTool.toolName)
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined()
           expect(lengthAnnotations.length).toBe(1)
@@ -248,7 +248,7 @@ describe('Length Tool (CPU):', () => {
           expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
           expect(lengthAnnotation.invalidated).toBe(false)
           expect(lengthAnnotation.highlighted).toBe(false)
 
@@ -379,7 +379,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = getAnnotations(element, 'Length')
+          const lengthAnnotations = getAnnotations(element, LengthTool.toolName)
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined()
           expect(lengthAnnotations.length).toBe(1)
@@ -388,7 +388,7 @@ describe('Length Tool (CPU):', () => {
           expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
           expect(lengthAnnotation.invalidated).toBe(false)
           expect(lengthAnnotation.highlighted).toBe(false)
 
@@ -511,7 +511,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = getAnnotations(element, 'Length')
+          const lengthAnnotations = getAnnotations(element, LengthTool.toolName)
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined()
           expect(lengthAnnotations.length).toBe(1)
@@ -520,7 +520,7 @@ describe('Length Tool (CPU):', () => {
           expect(lengthAnnotation.metadata.referencedImageId).toBe(
             imageId1.split(':')[1]
           )
-          expect(lengthAnnotation.metadata.toolName).toBe('Length')
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
           expect(lengthAnnotation.invalidated).toBe(false)
 
           const data = lengthAnnotation.data.cachedStats
