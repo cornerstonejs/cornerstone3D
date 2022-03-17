@@ -3,7 +3,7 @@ import {
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
 import EVENTS from '../enums/CornerstoneTools3DEvents'
-import triggerAnnotationRenderForViewportUIDs from '../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../utilities/triggerAnnotationRenderForViewportUIDs'
 import { AnnotationModifiedEventType } from '../types/EventTypes'
 
 /**

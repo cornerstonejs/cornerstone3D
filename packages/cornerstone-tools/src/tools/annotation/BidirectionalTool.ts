@@ -11,7 +11,7 @@ import {
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { AnnotationTool } from '../base'
-import throttle from '../../util/throttle'
+import throttle from '../../utilities/throttle'
 import {
   addAnnotation,
   getAnnotations,
@@ -25,10 +25,10 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import { indexWithinDimensions } from '../../util/vtkjs'
-import lineSegment from '../../util/math/line'
-import { getTextBoxCoordsCanvas } from '../../util/drawing'
+import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { indexWithinDimensions } from '../../utilities/vtkjs'
+import lineSegment from '../../utilities/math/line'
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import {
   resetElementCursor,
   hideElementCursor,
@@ -47,7 +47,7 @@ import {
   MouseDragEventType,
   MouseMoveEventType,
 } from '../../types/EventTypes'
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 
 interface BidirectionalAnnotation extends Annotation {
   data: {
@@ -71,6 +71,8 @@ interface BidirectionalAnnotation extends Annotation {
 }
 
 export default class BidirectionalTool extends AnnotationTool {
+  static toolName = 'Bidirectional'
+
   touchDragCallback: any
   mouseDragCallback: any
   _throttledCalculateCachedStats: any
@@ -90,7 +92,6 @@ export default class BidirectionalTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'Bidirectional',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
@@ -156,7 +157,7 @@ export default class BidirectionalTool extends AnnotationTool {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        toolName: this.name,
+        toolName: BidirectionalTool.toolName,
         referencedImageId,
       },
       data: {
@@ -193,7 +194,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      BidirectionalTool.toolName
     )
 
     this.editData = {
@@ -305,7 +306,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      BidirectionalTool.toolName
     )
 
     this.editData = {
@@ -353,7 +354,7 @@ export default class BidirectionalTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      BidirectionalTool.toolName
     )
 
     hideElementCursor(element)
@@ -956,7 +957,10 @@ export default class BidirectionalTool extends AnnotationTool {
   ): void => {
     const { viewport } = enabledElement
     const { element } = viewport
-    let annotations = getAnnotations(viewport.element, this.name)
+    let annotations = getAnnotations(
+      viewport.element,
+      BidirectionalTool.toolName
+    )
 
     if (!annotations?.length) {
       return
@@ -1020,7 +1024,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.name,
+          BidirectionalTool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -1033,7 +1037,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const lineUID = '0'
       drawLineSvg(
         svgDrawingHelper,
-        this.name,
+        BidirectionalTool.toolName,
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -1048,7 +1052,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const secondLineUID = '1'
       drawLineSvg(
         svgDrawingHelper,
-        this.name,
+        BidirectionalTool.toolName,
         annotationUID,
         secondLineUID,
         canvasCoordinates[2],
@@ -1081,7 +1085,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const textBoxUID = '1'
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.name,
+        BidirectionalTool.toolName,
         annotationUID,
         textBoxUID,
         textLines,

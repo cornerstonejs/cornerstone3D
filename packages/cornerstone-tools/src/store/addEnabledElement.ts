@@ -13,7 +13,7 @@ import {
 } from '../eventDispatchers'
 import { state } from './state'
 
-import { annotationRenderingEngine } from '../util/triggerAnnotationRender'
+import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender'
 
 /**
  * When an element is "enabled", add event listeners and dispatchers to it

@@ -13,6 +13,11 @@ import {
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeAnnotation,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
+  LengthTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -34,9 +39,12 @@ window.cache = cache
 
 let stackCTViewportToolGroup
 
-const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS].filter(
-  (tool) => tool !== 'Crosshairs'
-)
+const toolsToUse = [
+  WindowLevelTool.toolName,
+  PanTool.toolName,
+  ZoomTool.toolName,
+  ...ANNOTATION_TOOLS,
+].filter((tool) => tool !== CrosshairsTool.toolName)
 
 class ModifierKeysExample extends Component {
   state = {
@@ -51,7 +59,7 @@ class ModifierKeysExample extends Component {
       numRows: 1,
       viewports: [{}],
     },
-    ptCtLeftClickTool: 'WindowLevel',
+    ptCtLeftClickTool: WindowLevelTool.toolName,
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
   }
@@ -120,7 +128,7 @@ class ModifierKeysExample extends Component {
     addToolsToToolGroups({ stackCTViewportToolGroup })
 
     // Overriding the lenght tool bindings
-    stackCTViewportToolGroup.setToolActive('Length', {
+    stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,
@@ -207,13 +215,13 @@ class ModifierKeysExample extends Component {
     ANNOTATION_TOOLS.forEach((toolName) => {
       toolGroup.setToolPassive(toolName)
     })
-    toolGroup.setToolActive('WindowLevel', {
+    toolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
-    toolGroup.setToolActive('Pan', {
+    toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
     })
-    toolGroup.setToolActive('Zoom', {
+    toolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
   }
@@ -238,7 +246,7 @@ class ModifierKeysExample extends Component {
     stackCTViewportToolGroup.setToolPassive(activeTool)
 
     // Since disabling/passive tools makes the bindings to be []
-    stackCTViewportToolGroup.setToolActive('Length', {
+    stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,

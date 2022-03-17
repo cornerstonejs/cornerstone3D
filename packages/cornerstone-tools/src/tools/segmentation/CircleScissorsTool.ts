@@ -16,7 +16,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 import {
   segmentationColorController,
   lockedSegmentController,
@@ -35,6 +35,7 @@ import {
  * @extends Tools.Base.BaseTool
  */
 export default class CircleScissorsTool extends BaseTool {
+  static toolName = 'CircleScissor'
   editData: {
     annotation: any
     segmentation: any
@@ -56,7 +57,6 @@ export default class CircleScissorsTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'CircleScissor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
@@ -124,7 +124,7 @@ export default class CircleScissorsTool extends BaseTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
-        toolName: this.name,
+        toolName: CircleScissorsTool.toolName,
         segmentColor,
       },
       data: {
@@ -345,7 +345,7 @@ export default class CircleScissorsTool extends BaseTool {
     const circleUID = '0'
     drawCircleSvg(
       svgDrawingHelper,
-      this.name,
+      CircleScissorsTool.toolName,
       annotationUID,
       circleUID,
       center as Types.Point2,

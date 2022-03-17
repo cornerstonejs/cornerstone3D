@@ -8,7 +8,13 @@ import {
   Utilities,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import {
+  ToolBindings,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
+} from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import {
@@ -31,7 +37,9 @@ const { fakeImageLoader, fakeMetaDataProvider } = Utilities.testUtils
 
 let stackCTViewportToolGroup
 
-const toolsToUse = ANNOTATION_TOOLS.filter((tool) => tool !== 'Crosshairs')
+const toolsToUse = ANNOTATION_TOOLS.filter(
+  (tool) => tool !== CrosshairsTool.toolName
+)
 const ctLayoutTools = ['Levels'].concat(toolsToUse)
 
 class testUtil extends Component {
@@ -161,10 +169,10 @@ class testUtil extends Component {
         stackCTViewportToolGroup.setToolPassive(toolName)
       })
 
-      stackCTViewportToolGroup.setToolDisabled('WindowLevel')
+      stackCTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
     } else {
       // Set window level + threshold
-      stackCTViewportToolGroup.setToolActive('WindowLevel', options)
+      stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {

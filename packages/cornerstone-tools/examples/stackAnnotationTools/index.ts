@@ -48,11 +48,11 @@ content.append(instructions)
 const toolGroupUID = 'STACK_TOOL_GROUP_UID'
 
 const toolsNames = [
-  'Length',
-  'Probe',
-  'RectangleRoi',
-  'EllipticalRoi',
-  'Bidirectional',
+  LengthTool.toolName,
+  ProbeTool.toolName,
+  RectangleRoiTool.toolName,
+  EllipticalRoiTool.toolName,
+  BidirectionalTool.toolName,
 ]
 let selectedToolName = toolsNames[0]
 
@@ -96,15 +96,15 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add the tools to the tool group
-  toolGroup.addTool('Length', {})
-  toolGroup.addTool('Probe', {})
-  toolGroup.addTool('RectangleRoi', {})
-  toolGroup.addTool('EllipticalRoi', {})
-  toolGroup.addTool('Bidirectional', {})
+  toolGroup.addTool(LengthTool.toolName)
+  toolGroup.addTool(ProbeTool.toolName)
+  toolGroup.addTool(RectangleRoiTool.toolName)
+  toolGroup.addTool(EllipticalRoiTool.toolName)
+  toolGroup.addTool(BidirectionalTool.toolName)
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive('Length', {
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click
@@ -113,10 +113,10 @@ async function run() {
   })
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
-  toolGroup.setToolPassive('Probe')
-  toolGroup.setToolPassive('RectangleRoi')
-  toolGroup.setToolPassive('EllipticalRoi')
-  toolGroup.setToolPassive('Bidirectional')
+  toolGroup.setToolPassive(ProbeTool.toolName)
+  toolGroup.setToolPassive(RectangleRoiTool.toolName)
+  toolGroup.setToolPassive(EllipticalRoiTool.toolName)
+  toolGroup.setToolPassive(BidirectionalTool.toolName)
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

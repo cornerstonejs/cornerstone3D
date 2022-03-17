@@ -1,5 +1,5 @@
 import { getRenderingEngines } from '@precisionmetrics/cornerstone-render'
-import { triggerAnnotationRenderForViewportUIDs } from '../../util'
+import { triggerAnnotationRenderForViewportUIDs } from '../../utilities'
 
 /**
  * When an annotation is deselected, trigger an annotation render for all viewports.

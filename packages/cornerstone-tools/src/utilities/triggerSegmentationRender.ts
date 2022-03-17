@@ -119,7 +119,7 @@ class SegmentationRenderingEngine {
     })
 
     const segmentationDisplayToolInstance = toolGroup.getToolInstance(
-      'SegmentationDisplay'
+      SegmentationDisplayTool.toolName
     ) as SegmentationDisplayTool
 
     function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {

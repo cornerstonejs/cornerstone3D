@@ -104,18 +104,18 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add the tools to the tool group
-  toolGroup.addTool('Length', {})
-  toolGroup.addTool('Bidirectional', {})
+  toolGroup.addTool(LengthTool.toolName)
+  toolGroup.addTool(BidirectionalTool.toolName)
 
   // Set both tools passive to we can edit annotations
-  toolGroup.setToolActive('Length', {
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click
       },
     ],
   })
-  toolGroup.setToolPassive('Bidirectional')
+  toolGroup.setToolPassive(BidirectionalTool.toolName)
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

@@ -13,22 +13,18 @@ const DIRECTIONS = {
 }
 
 /**
- * @class VolumeRotateMouseWheelTool
- * @classdesc Tool that rotates the camera on mouse wheel.
+ * Tool that rotates the camera on mouse wheel.
  * It rotates the camera around the focal point, and around a defined axis. Default
  * axis is set to be Z axis, but it can be configured to any custom normalized axis.
  *
- * @export
- * @class VolumeRotateMouseWheelTool
- * @extends {BaseTool}
  */
 export default class VolumeRotateMouseWheelTool extends BaseTool {
+  static toolName = 'VolumeRotateMouseWheel'
   _configuration: any
 
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'VolumeRotateMouseWheel',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         direction: DIRECTIONS.Z,

@@ -117,10 +117,10 @@ import * as csTools3d from 'vtkjs-viewport-tools'
 // tool to one or more tool groups
 const { PanTool, StackScrollMouseWheelTool, ZoomTool, LengthTool } = csTools3d
 
-csTools3d.addTool(PanTool, {})
-csTools3d.addTool(StackScrollMouseWheelTool, {})
-csTools3d.addTool(ZoomTool, {})
-csTools3d.addTool(LengthTool, {})
+csTools3d.addTool(PanTool)
+csTools3d.addTool(StackScrollMouseWheelTool)
+csTools3d.addTool(ZoomTool)
+csTools3d.addTool(LengthTool)
 ```
 
 ### Tool Group Manager
@@ -138,10 +138,10 @@ const toolGroupUID = 'TOOL_GROUP_UID'
 const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
 
 // Add tools to ToolGroup
-sceneToolGroup.addTool('Pan', {})
-sceneToolGroup.addTool('Zoom', {})
-sceneToolGroup.addTool('StackScrollMouseWheel', {})
-sceneToolGroup.addTool('Length', {
+sceneToolGroup.addTool(PanTool.toolName)
+sceneToolGroup.addTool(ZoomTool.toolName)
+sceneToolGroup.addTool(StackScrollMouseWheelTool.toolName)
+sceneToolGroup.addTool(LengthTool.toolName, {
   configuration: { volumeUID: ctVolumeUID },
 })
 ```
@@ -200,14 +200,14 @@ _NOTE:_
 ```js
 // Set the ToolGroup's ToolMode for each tool
 // Possible modes include: 'Active', 'Passive', 'Enabled', 'Disabled'
-sceneToolGroup.setToolActive('StackScrollMouseWheel')
-sceneToolGroup.setToolActive('Length', {
+sceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
+sceneToolGroup.setToolActive(LengthTool.toolName, {
   bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
 })
-sceneToolGroup.setToolActive('Pan', {
+sceneToolGroup.setToolActive(PanTool.toolName, {
   bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
 })
-sceneToolGroup.setToolActive('Zoom', {
+sceneToolGroup.setToolActive(ZoomTool.toolName, {
   bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
 })
 ```

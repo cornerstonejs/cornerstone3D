@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-import { AnnotationTool } from '../tools'
+import { AnnotationTool, BaseTool } from '../tools'
 import { Annotation } from '../types'
 import { getAnnotations } from '../stateManagement/annotation/annotationState'
 import ToolGroupManager from '../store/ToolGroupManager'
@@ -98,7 +98,10 @@ function findAnnotationNearPointByTool(
   // Todo: this function does not return closest annotation. It just returns
   // the first annotation that is found in the proximity. BUT, we are not using
   // the function anywhere.
-  const annotations = getAnnotations(enabledElement.viewport.element, tool.name)
+  const annotations = getAnnotations(
+    enabledElement.viewport.element,
+    (tool.constructor as typeof BaseTool).toolName
+  )
   if (annotations?.length) {
     const { element } = enabledElement.viewport
     for (const annotation of annotations) {

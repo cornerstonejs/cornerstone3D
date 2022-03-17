@@ -12,6 +12,10 @@ import {
   ToolBindings,
   ToolModes,
   BlendModes,
+  WindowLevelTool,
+  PanTool,
+  CrosshairsTool,
+  ZoomTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -39,7 +43,12 @@ window.cache = cache
 
 let ctSceneToolGroup, prostateSceneToolGroup
 
-const toolsToUse = ['WindowLevel', 'Pan', 'Zoom', ...ANNOTATION_TOOLS]
+const toolsToUse = [
+  WindowLevelTool.toolName,
+  PanTool.toolName,
+  ZoomTool.toolName,
+  ...ANNOTATION_TOOLS,
+]
 
 class CrosshairsExample extends Component {
   state = {
@@ -54,7 +63,7 @@ class CrosshairsExample extends Component {
       numRows: 2,
       viewports: [{}, {}, {}, {}, {}],
     },
-    leftClickTool: 'WindowLevel',
+    leftClickTool: WindowLevelTool.toolName,
     toolGroupName: 'FirstRow',
     toolGroups: {},
     ctWindowLevelDisplay: { ww: 0, wc: 0 },

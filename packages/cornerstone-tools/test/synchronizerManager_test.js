@@ -65,13 +65,13 @@ describe('Synchronizer Manager: ', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(StackScrollMouseWheelTool, {})
+    csTools3d.addTool(StackScrollMouseWheelTool)
     cache.purgeCache()
     this.DOMElements = []
 
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
-    this.firstToolGroup.addTool('StackScrollMouseWheel')
-    this.firstToolGroup.setToolActive('StackScrollMouseWheel')
+    this.firstToolGroup.addTool(StackScrollMouseWheelTool.toolName)
+    this.firstToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -201,15 +201,15 @@ describe('Synchronizer Manager: ', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(WindowLevelTool, {})
+    csTools3d.addTool(WindowLevelTool)
     cache.purgeCache()
     this.DOMElements = []
 
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
-    this.firstToolGroup.addTool('WindowLevel', {
+    this.firstToolGroup.addTool(WindowLevelTool.toolName, {
       configuration: { volumeUID: ctVolumeId },
     })
-    this.firstToolGroup.setToolActive('WindowLevel', {
+    this.firstToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary,

@@ -20,7 +20,7 @@ import {
 import addSegmentationToElement from '../../../store/SegmentationModule/addSegmentationToElement'
 import removeSegmentationFromElement from '../../../store/SegmentationModule/removeSegmentationFromElement'
 
-import { deepMerge } from '../../../util'
+import { deepMerge } from '../../../utilities'
 import { IToolGroup } from '../../../types'
 
 const MAX_NUMBER_COLORS = 255

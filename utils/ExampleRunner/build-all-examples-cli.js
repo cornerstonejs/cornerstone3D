@@ -1,7 +1,9 @@
 #! /usr/bin/env node
 
 /* eslint-disable */
-var { program } = require('commander')
+const { Command } = require('commander');
+const program = new Command();
+
 var path = require('path')
 var shell = require('shelljs')
 var fs = require('fs')
@@ -14,8 +16,6 @@ var buildConfig = require('./template-multiexample-config.js')
 const buildExampleIndex = require('./build-example-index.js');
 const rootPath = path.resolve(path.join(__dirname, '../..'))
 var distDir = path.join(rootPath, '/static-examples')
-console.warn('distDir', distDir)
-
 
 program
   .option('--build', 'Build and write examples to disk, rather than using the Webpack Dev Server')

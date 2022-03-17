@@ -18,11 +18,11 @@ import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
-import { getViewportUIDsWithToolToRender } from '../../util/viewportFilters'
-import throttle from '../../util/throttle'
+import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import throttle from '../../utilities/throttle'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 import { hideElementCursor } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../util/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 
 import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -69,6 +69,7 @@ export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
  * // it so that the handles are grabbable on all slices.
  */
 export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
+  static toolName = 'RectangleRoiStartEndThreshold'
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
@@ -84,7 +85,6 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'RectangleRoiStartEndThreshold',
       configuration: {
         numSlicesToPropagate: 10,
       },
@@ -167,7 +167,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: this.name,
+        toolName: RectangleRoiStartEndThresholdTool.toolName,
         volumeUID,
         spacingInNormal,
       },
@@ -210,7 +210,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
       element,
-      this.name
+      RectangleRoiStartEndThresholdTool.toolName
     )
 
     this.editData = {
@@ -336,7 +336,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   ): void => {
     const annotations = getAnnotations(
       enabledElement.viewport.element,
-      this.name
+      RectangleRoiStartEndThresholdTool.toolName
     )
 
     if (!annotations?.length) {
@@ -418,7 +418,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.name,
+          RectangleRoiStartEndThresholdTool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -437,7 +437,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       const rectangleUID = '0'
       drawRectSvg(
         svgDrawingHelper,
-        this.name,
+        RectangleRoiStartEndThresholdTool.toolName,
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],

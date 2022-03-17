@@ -45,13 +45,13 @@ describe('ToolGroup Manager: ', () => {
   describe('ToolGroup Manager: ', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(ProbeTool, {})
+      csTools3d.addTool(ProbeTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.toolGroup = ToolGroupManager.createToolGroup('volume1')
-      this.toolGroup.addTool('Probe')
-      this.toolGroup.setToolActive('Probe', {
+      this.toolGroup.addTool(ProbeTool.toolName)
+      this.toolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [
           {
             mouseButton: ToolBindings.Mouse.Primary,
@@ -115,13 +115,13 @@ describe('ToolGroup Manager: ', () => {
   describe('ToolGroup Manager: ', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(ProbeTool, {})
+      csTools3d.addTool(ProbeTool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.toolGroup = ToolGroupManager.createToolGroup('volume1')
-      this.toolGroup.addTool('Probe')
-      this.toolGroup.setToolActive('Probe', {
+      this.toolGroup.addTool(ProbeTool.toolName)
+      this.toolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [
           {
             mouseButton: ToolBindings.Mouse.Primary,
@@ -189,9 +189,6 @@ describe('ToolGroup Manager: ', () => {
 
       const tg3 = ToolGroupManager.createToolGroup('volume1')
       expect(tg3).toBeUndefined()
-
-      const instance = tg.getToolInstance('Probe')
-      expect(instance.name).toBe('Probe')
 
       const instance2 = tg.getToolInstance('probe')
       expect(instance2).toBeUndefined()
@@ -273,11 +270,11 @@ describe('ToolGroup Manager: ', () => {
 
       // Remove viewports
       let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
-      expect(tg.getToolInstance('Probe').mode).toBe('Active')
-      expect(tg.getToolInstance('Length')).toBeUndefined()
+      expect(tg.getToolInstance(ProbeTool.toolName).mode).toBe('Active')
+      expect(tg.getToolInstance(LengthTool.toolName)).toBeUndefined()
 
-      tg.setToolPassive('Probe')
-      expect(tg.getToolInstance('Probe').mode).toBe('Passive')
+      tg.setToolPassive(ProbeTool.toolName)
+      expect(tg.getToolInstance(ProbeTool.toolName).mode).toBe('Passive')
     })
 
     it('Should successfully setTool status', function () {
@@ -315,15 +312,15 @@ describe('ToolGroup Manager: ', () => {
       tg.setToolEnabled()
       tg.setToolDisabled()
 
-      expect(tg.getToolInstance('Probe').mode).toBe('Active')
+      expect(tg.getToolInstance(ProbeTool.toolName).mode).toBe('Active')
 
-      csTools3d.addTool(LengthTool, {})
-      tg.addTool('Length')
-      tg.setToolEnabled('Length')
-      expect(tg.getToolInstance('Length').mode).toBe('Enabled')
+      csTools3d.addTool(LengthTool)
+      tg.addTool(LengthTool.toolName)
+      tg.setToolEnabled(LengthTool.toolName)
+      expect(tg.getToolInstance(LengthTool.toolName).mode).toBe('Enabled')
 
-      tg.setToolDisabled('Length')
-      expect(tg.getToolInstance('Length').mode).toBe('Disabled')
+      tg.setToolDisabled(LengthTool.toolName)
+      expect(tg.getToolInstance(LengthTool.toolName).mode).toBe('Disabled')
     })
   })
 })

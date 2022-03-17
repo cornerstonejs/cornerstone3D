@@ -18,16 +18,16 @@ export default function getToolDetailForDisplay(eventDetail) {
     const index = targetUID.indexOf(':')
     const target = targetUID.substring(index + 1)
 
-    if (metadata.toolName === 'Length') {
+    if (metadata.toolName === LengthTool.toolName) {
       detail.stats[`${target}-length`] = stat.length
     }
 
-    if (metadata.toolName === 'Bidirectional') {
+    if (metadata.toolName === BidirectionalTool.toolName) {
       detail.stats[`${target}-length`] = stat.length
       detail.stats[`${target}-width`] = stat.width
     }
 
-    if (metadata.toolName === 'Probe') {
+    if (metadata.toolName === ProbeTool.toolName) {
       const { value, SUVBw, SUVLbm, SUVBsa, Modality } = stat
 
       if (Modality === 'PT') {
@@ -52,13 +52,13 @@ export default function getToolDetailForDisplay(eventDetail) {
       }
     }
 
-    if (metadata.toolName === 'RectangleRoi') {
+    if (metadata.toolName === RectangleRoiTool.toolName) {
       detail.stats[`${target}-area`] = stat.area
       detail.stats[`${target}-mean`] = stat.mean
       detail.stats[`${target}-std`] = stat.stdDev
     }
 
-    if (metadata.toolName === 'EllipticalRoi') {
+    if (metadata.toolName === EllipticalRoiTool.toolName) {
       detail.stats[`${target}-area`] = stat.area
       detail.stats[`${target}-mean`] = stat.mean
       detail.stats[`${target}-std`] = stat.stdDev

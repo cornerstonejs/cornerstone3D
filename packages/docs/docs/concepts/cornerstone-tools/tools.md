@@ -40,11 +40,11 @@ import * as csTools3d from '@ohif/cornerstone-tools'
 // tool to one or more tool groups
 const { PanTool, ProbeTool, StackScrollMouseWheelTool, ZoomTool, LengthTool } = csTools3d
 
-csTools3d.addTool(PanTool, {})
-csTools3d.addTool(StackScrollMouseWheelTool, {})
-csTools3d.addTool(ZoomTool, {})
-csTools3d.addTool(LengthTool, {})
-csTools3d.addTool(ProbeTool, {})
+csTools3d.addTool(PanTool)
+csTools3d.addTool(StackScrollMouseWheelTool)
+csTools3d.addTool(ZoomTool)
+csTools3d.addTool(LengthTool)
+csTools3d.addTool(ProbeTool)
 ```
 
 > Tools added above should also be added to the corresponding toolGroup.
@@ -124,9 +124,9 @@ const ctSceneToolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
 // Add tools to ToolGroup
 // Manipulation tools
-ctSceneToolGroup.addTool('Pan', {})
-ctSceneToolGroup.addTool('Zoom', {})
-ctSceneToolGroup.addTool('Probe', {})
+ctSceneToolGroup.addTool(PanTool.toolName)
+ctSceneToolGroup.addTool(ZoomTool.toolName)
+ctSceneToolGroup.addTool(ProbeTool.toolName)
 ```
 
 ### Annotation sharing
@@ -141,10 +141,10 @@ When drawing an annotation:
 - If in a stack viewport, we are at the same imageId, we render the tool
 
 ```js
-ctSceneToolGroup.addTool('Length', {
+ctSceneToolGroup.addTool(LengthTool.toolName, {
   configuration: { volumeUID: ctVolumeUID },
 })
-ctStackToolGroup.addTool('Length')
+ctStackToolGroup.addTool(LengthTool.toolName)
 ```
 
 <div style={{padding:"56.25% 0 0 0", position:"relative"}}>
@@ -158,7 +158,7 @@ Cornerstone3D-Tools is capable of calculating dynamic statistics based on the mo
 In order to enable such dynamic tool statistics, you are required to provide the `volumeUID` when you are adding the tool.
 
 ```js
-ctSceneToolGroup.addTool('Probe', {
+ctSceneToolGroup.addTool(ProbeTool.toolName, {
   configuration: { volumeUID: ctVolumeUID },
 })
 ```
@@ -173,14 +173,14 @@ You can use `setToolActive` for each toolGroup to activate a tool providing a co
 ```js
 // Set the ToolGroup's ToolMode for each tool
 // Possible modes include: 'Active', 'Passive', 'Enabled', 'Disabled'
-ctSceneToolGroup.setToolActive('StackScrollMouseWheel')
-ctSceneToolGroup.setToolActive('Length', {
+ctSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
+ctSceneToolGroup.setToolActive(LengthTool.toolName, {
   bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
 })
-ctSceneToolGroup.setToolActive('Pan', {
+ctSceneToolGroup.setToolActive(PanTool.toolName, {
   bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
 })
-ctSceneToolGroup.setToolActive('Zoom', {
+ctSceneToolGroup.setToolActive(ZoomTool.toolName, {
   bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
 })
 ```

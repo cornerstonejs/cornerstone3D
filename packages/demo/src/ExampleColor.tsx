@@ -100,23 +100,27 @@ class ColorExample extends Component {
       },
     ])
 
-    colorSceneToolGroup.addTool('WindowLevel', {
+    colorSceneToolGroup.addTool(WindowLevelTool.toolName, {
       configuration: { volumeUID },
     })
-    colorSceneToolGroup.addTool('Pan', { configuration: { volumeUID } })
-    colorSceneToolGroup.addTool('Zoom', { configuration: { volumeUID } })
-    colorSceneToolGroup.addTool('StackScrollMouseWheel', {
+    colorSceneToolGroup.addTool(PanTool.toolName, {
+      configuration: { volumeUID },
+    })
+    colorSceneToolGroup.addTool(ZoomTool.toolName, {
+      configuration: { volumeUID },
+    })
+    colorSceneToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
       configuration: { volumeUID },
     })
 
-    colorSceneToolGroup.setToolActive('StackScrollMouseWheel')
-    colorSceneToolGroup.setToolActive('WindowLevel', {
+    colorSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
+    colorSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
     })
-    colorSceneToolGroup.setToolActive('Pan', {
+    colorSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
     })
-    colorSceneToolGroup.setToolActive('Zoom', {
+    colorSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
 

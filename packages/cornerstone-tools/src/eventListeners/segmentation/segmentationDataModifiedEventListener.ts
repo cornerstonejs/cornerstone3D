@@ -1,6 +1,6 @@
 import { cache } from '@precisionmetrics/cornerstone-render'
 
-import triggerSegmentationRender from '../../util/triggerSegmentationRender'
+import triggerSegmentationRender from '../../utilities/triggerSegmentationRender'
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
 import { SegmentationDataModifiedEventType } from '../../types/EventTypes'

@@ -37,7 +37,7 @@ class CacheDecacheExample extends Component {
   state = {
     progressText: 'fetching metadata...',
     metadataLoaded: false,
-    leftClickTool: 'WindowLevel',
+    leftClickTool: WindowLevelTool.toolName,
     layoutIndex: 0,
     destroyed: false,
     // cache

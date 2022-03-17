@@ -59,7 +59,7 @@ addDropdownToToolbar(
     const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupUID)
 
     // Set the new tool active
-    toolGroup[`setTool${newToolMode}`]('Length', {
+    toolGroup[`setTool${newToolMode}`](LengthTool.toolName, {
       bindings: [
         {
           mouseButton: ToolBindings.Mouse.Primary, // Left Click (only applies if active)
@@ -86,11 +86,11 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
 
   // Add the tools to the tool group
-  toolGroup.addTool('Length')
+  toolGroup.addTool(LengthTool.toolName)
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive('Length', {
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: ToolBindings.Mouse.Primary, // Left Click

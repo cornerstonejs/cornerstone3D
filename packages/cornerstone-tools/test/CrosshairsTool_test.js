@@ -94,12 +94,12 @@ describe('Cornerstone Tools: ', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(CrosshairsTool, {})
+    csTools3d.addTool(CrosshairsTool)
     cache.purgeCache()
     this.DOMElements = []
 
     this.testToolGroup = ToolGroupManager.createToolGroup('volume')
-    this.testToolGroup.addTool('Crosshairs', {
+    this.testToolGroup.addTool(CrosshairsTool.toolName, {
       configuration: {},
     })
 
@@ -158,7 +158,10 @@ describe('Cornerstone Tools: ', () => {
       const centerCanvas = [sWidth * 0.5, sHeight * 0.5]
       const canvasCenterWorld = vp.canvasToWorld(centerCanvas)
 
-      const crosshairAnnotations = getAnnotations(element1, 'Crosshairs')
+      const crosshairAnnotations = getAnnotations(
+        element1,
+        CrosshairsTool.toolName
+      )
 
       // Can successfully add add crosshairs initial state
       // Todo: right now crosshairs are being initialized on camera reset
@@ -199,7 +202,7 @@ describe('Cornerstone Tools: ', () => {
         crosshairsEventHandler
       )
 
-      this.testToolGroup.setToolActive('Crosshairs', {
+      this.testToolGroup.setToolActive(CrosshairsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
     }
@@ -249,7 +252,10 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      const crosshairAnnotationsAfter = getAnnotations(element1, 'Crosshairs')
+      const crosshairAnnotationsAfter = getAnnotations(
+        element1,
+        CrosshairsTool.toolName
+      )
       const axialCanvasToolCenter =
         crosshairAnnotationsAfter[0].data.handles.toolCenter
 
@@ -287,14 +293,17 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      this.testToolGroup.setToolActive('Crosshairs', {
+      this.testToolGroup.setToolActive(CrosshairsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
       const { imageData } = vp1.getImageData()
 
-      const crosshairAnnotations = getAnnotations(element1, 'Crosshairs')
+      const crosshairAnnotations = getAnnotations(
+        element1,
+        CrosshairsTool.toolName
+      )
 
       // First viewport is axial
       const currentWorldLocation =
@@ -381,7 +390,7 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      this.testToolGroup.setToolActive('Crosshairs', {
+      this.testToolGroup.setToolActive(CrosshairsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
@@ -389,7 +398,10 @@ describe('Cornerstone Tools: ', () => {
       const { imageData } = vp1.getImageData()
 
       setTimeout(() => {
-        const crosshairAnnotations = getAnnotations(element1, 'Crosshairs')
+        const crosshairAnnotations = getAnnotations(
+          element1,
+          CrosshairsTool.toolName
+        )
 
         // First viewport is axial
         const currentWorldLocation =
@@ -460,7 +472,7 @@ describe('Cornerstone Tools: ', () => {
         setTimeout(() => {
           const crosshairAnnotationsAfter = getAnnotations(
             element1,
-            'Crosshairs'
+            CrosshairsTool.toolName
           )
           crosshairAnnotationsAfter.map((crosshairAnnotation) => {
             expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined()

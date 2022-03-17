@@ -13,13 +13,13 @@ import { PublicToolProps, ToolProps } from '../types'
  * @extends {BaseTool}
  */
 export default class PanTool extends BaseTool {
+  static toolName = 'Pan'
   touchDragCallback: () => void
   mouseDragCallback: () => void
 
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      name: 'Pan',
       supportedInteractionTypes: ['Mouse', 'Touch'],
     }
   ) {
