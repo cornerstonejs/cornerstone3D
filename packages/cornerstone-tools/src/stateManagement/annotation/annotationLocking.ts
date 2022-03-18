@@ -73,6 +73,11 @@ function getAnnotationsLockedCount(): number {
   return globalLockedAnnotationsSet.size
 }
 
+/**
+ * Properly initialize the isLocked on annotation, and set it as locked if
+ * isLocked is true.
+ * @param annotation - The annotation object to be checked.
+ */
 function checkAndDefineIsLockedProperty(annotation: Annotation): void {
   if (annotation) {
     const isLocked = !!annotation.isLocked

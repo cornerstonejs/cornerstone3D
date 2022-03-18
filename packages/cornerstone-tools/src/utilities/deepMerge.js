@@ -57,7 +57,14 @@ const mergeObject = (target, source, optionsArgument) => {
   return destination
 }
 
-const deepmerge = (target = {}, source = {}, optionsArgument) => {
+/**
+ * Merge two objects, recursively merging any objects that are arrays
+ * @param [target] - The target object.
+ * @param [source] - The source object to merge into the target object.
+ * @param [optionsArgument] - The options object.
+ * @returns The merged object.
+ */
+const deepmerge = (target = {}, source = {}, optionsArgument = undefined) => {
   const array = Array.isArray(source)
   const options = optionsArgument || { arrayMerge: defaultArrayMerge }
   const arrayMerge = options.arrayMerge || defaultArrayMerge

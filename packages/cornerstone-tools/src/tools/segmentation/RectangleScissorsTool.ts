@@ -29,11 +29,11 @@ import {
 } from '../../store/SegmentationModule'
 
 /**
- * @public
- * @class RectangleScissorsTool
- * @memberof Tools
- * @classdesc Tool for manipulating segmentation data by drawing a rectangle.
- * @extends Tools.Base.BaseTool
+ * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
+ * active Segmentation on the viewport (enabled element) and requires an active
+ * segmentation to be already present. By default it will use the activeSegmentIndex
+ * for the segmentation to modify. You can use SegmentationModule to set the active
+ * segmentation and segmentIndex.
  */
 export default class RectangleScissorsTool extends BaseTool {
   static toolName = 'RectangleScissor'
@@ -51,7 +51,6 @@ export default class RectangleScissorsTool extends BaseTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  _configuration: any
   isDrawing: boolean
   isHandleOutsideImage: boolean
 

@@ -252,7 +252,7 @@ class CrosshairsExample extends Component {
   setToolMode = (toolMode) => {
     const toolGroup = this.state.toolGroups[this.state.toolGroupName]
     if (toolMode === ToolModes.Active) {
-      const activeTool = toolGroup.getActivePrimaryButtonTools()
+      const activeTool = toolGroup.getActivePrimaryMouseButtonTool()
       if (activeTool) {
         toolGroup.setToolPassive(activeTool)
       }

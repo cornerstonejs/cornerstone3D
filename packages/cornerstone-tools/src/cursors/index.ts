@@ -2,11 +2,11 @@ import MouseCursor, { standardCursorNames } from './MouseCursor'
 import ImageMouseCursor from './ImageMouseCursor'
 import SVGMouseCursor from './SVGMouseCursor'
 import * as elementCursor from './elementCursor'
-import { setCursorForElement } from './elementCursor'
+import setCursorForElement from './setCursorForElement'
 import { registerCursor, svgCursorNames } from './SVGCursorDescriptor'
-import type { SVGCursorDescriptor } from './SVGCursorDescriptor'
 
-const cursorNames = [...svgCursorNames, ...standardCursorNames]
+// Todo: this should be enum
+const CursorNames = [...svgCursorNames, ...standardCursorNames]
 
 export {
   MouseCursor,
@@ -14,8 +14,6 @@ export {
   SVGMouseCursor,
   elementCursor,
   registerCursor,
-  cursorNames,
+  CursorNames,
   setCursorForElement,
 }
-
-export type { SVGCursorDescriptor }

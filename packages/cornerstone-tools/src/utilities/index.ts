@@ -1,10 +1,3 @@
-// Util libraries
-import math from './math'
-import planar from './planar'
-import viewportFilters from './viewportFilters'
-import vtkjs from './vtkjs'
-import drawing from './drawing'
-import stackScrollTool from './stackScrollTool'
 import {
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
@@ -16,10 +9,18 @@ import deepMerge from './deepMerge'
 import throttle from './throttle'
 import isObject from './isObject'
 import calibrateImageSpacing from './calibrateImageSpacing'
-import * as segmentation from './segmentation'
+
 import triggerAnnotationRenderForViewportUIDs from './triggerAnnotationRenderForViewportUIDs'
 import pointInShapeCallback from './pointInShapeCallback'
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback'
+
+// name spaces
+import * as segmentation from './segmentation'
+import * as drawing from './drawing'
+import * as math from './math'
+import * as planar from './planar'
+import * as stackScrollTool from './stackScrollTool'
+import * as viewportFilters from './viewportFilters'
 
 // Events
 import { triggerEvent } from '@precisionmetrics/cornerstone-render'
@@ -28,7 +29,6 @@ export {
   math,
   planar,
   viewportFilters,
-  vtkjs,
   stackScrollTool,
   drawing,
   debounce,
@@ -49,7 +49,6 @@ export default {
   math,
   planar,
   viewportFilters,
-  vtkjs,
   stackScrollTool,
   drawing,
   debounce,

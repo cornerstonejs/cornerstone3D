@@ -14,6 +14,7 @@ import {
   WindowLevelTool,
   PanTool,
   ZoomTool,
+  StackScrollTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -40,6 +41,7 @@ const toolsToUse = [
   WindowLevelTool.toolName,
   PanTool.toolName,
   ZoomTool.toolName,
+  StackScrollTool.toolName,
   ...ANNOTATION_TOOLS,
 ]
 
@@ -250,7 +252,8 @@ class OneVolumeExample extends Component {
     ctSceneToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
-    const currentBindings = ctSceneToolGroup.toolOptions[toolName].bindings
+    const currentBindings =
+      ctSceneToolGroup.toolOptions[toolName]?.bindings ?? []
 
     ctSceneToolGroup.setToolActive(toolName, {
       bindings: [

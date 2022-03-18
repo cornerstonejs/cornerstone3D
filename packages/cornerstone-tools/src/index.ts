@@ -1,17 +1,11 @@
 import {
   FrameOfReferenceSpecificAnnotationManager,
   annotationStyle,
-  getAnnotations,
-  addAnnotation,
   annotationLocking,
   annotationSelection,
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  removeAnnotation,
-  getDefaultAnnotationManager,
-  getViewportSpecificAnnotationManager,
-  getAnnotation,
   // segmentations
   addSegmentationsForToolGroup,
   removeSegmentationsForToolGroup,
@@ -28,6 +22,8 @@ import {
   cancelActiveManipulations,
   SegmentationModule,
 } from './store'
+
+import ToolGroup from './store/ToolGroupManager/ToolGroup'
 
 // Name spaces
 import * as synchronizers from './synchronizers'
@@ -60,6 +56,7 @@ import {
   RectangleRoiStartEndThresholdTool,
   SegmentationDisplayTool,
 } from './tools'
+
 import {
   ToolBindings,
   ToolModes,
@@ -106,6 +103,8 @@ export {
   // Managers
   ToolGroupManager,
   SynchronizerManager,
+  //
+  ToolGroup,
   // Enums
   ToolBindings,
   BlendModes,
@@ -118,9 +117,6 @@ export {
   drawing,
   // State
   annotationStyle,
-  getAnnotations,
-  addAnnotation,
-  removeAnnotation,
   annotationLocking,
   annotationSelection,
   getStyle,
@@ -130,9 +126,6 @@ export {
   Utilities,
   Types,
   Cursors,
-  getDefaultAnnotationManager,
-  getViewportSpecificAnnotationManager,
-  getAnnotation,
   // Segmentations
   SegmentationState,
   SegmentationModule,

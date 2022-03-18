@@ -27,7 +27,6 @@ import {
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
-import { indexWithinDimensions } from '../../utilities/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints'
 import {
@@ -72,10 +71,56 @@ export interface EllipticalRoiAnnotation extends Annotation {
       }
     }
     label: string
-    cachedStats: any
+    cachedStats?: {
+      [targetUID: string]: {
+        Modality: string
+        area: number
+        max: number
+        mean: number
+        stdDev: number
+      }
+    }
   }
 }
 
+/**
+ * EllipticalRoiTool let you draw annotations that measures the statistics
+ * such as area, max, mean and stdDev of an elliptical region of interest.
+ * You can use EllipticalRoiTool in all perpendicular views (axial, sagittal, coronal).
+ * Note: annotation tools in cornerstone3DTools exists in the exact location
+ * in the physical 3d space, as a result, by default, all annotations that are
+ * drawing in the same frameOfReference will get shared between viewports that
+ * are in the same frameOfReference. Elliptical tool's text box lines are dynamically
+ * generated based on the viewport's underlying Modality. For instance, if
+ * the viewport is displaying CT, the text box will shown the statistics in Hounsfield units,
+ * and if the viewport is displaying PET, the text box will show the statistics in
+ * SUV units.
+ *
+ * The resulting annotation's data (statistics) and metadata (the
+ * state of the viewport while drawing was happening) will get added to the
+ * ToolState manager and can be accessed from the ToolState by calling getAnnotations
+ * or similar methods.
+ *
+ * ```js
+ * cornerstoneTools.addTool(EllipticalRoiTool)
+ *
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ *
+ * toolGroup.addTool(EllipticalRoiTool.toolName)
+ *
+ * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ *
+ * toolGroup.setToolActive(EllipticalRoiTool.toolName, {
+ *   bindings: [
+ *    {
+ *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *     },
+ *   ],
+ * })
+ * ```
+ *
+ * Read more in the Docs section of the website.
+ */
 export default class EllipticalRoiTool extends AnnotationTool {
   static toolName = 'EllipticalRoi'
   touchDragCallback: any
@@ -93,7 +138,6 @@ export default class EllipticalRoiTool extends AnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  _configuration: any
   isDrawing: boolean
   isHandleOutsideImage = false
 
@@ -746,7 +790,14 @@ export default class EllipticalRoiTool extends AnnotationTool {
         getCanvasEllipseCorners(canvasCoordinates)
       )
       if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {}
+        data.cachedStats[targetUID] = {
+          Modality: null,
+          area: null,
+          max: null,
+          mean: null,
+          stdDev: null,
+        }
+
         this._calculateCachedStats(
           annotation,
           viewport,
@@ -1083,8 +1134,8 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
   _isInsideVolume = (index1, index2, dimensions) => {
     return (
-      indexWithinDimensions(index1, dimensions) &&
-      indexWithinDimensions(index2, dimensions)
+      csUtils.indexWithinDimensions(index1, dimensions) &&
+      csUtils.indexWithinDimensions(index2, dimensions)
     )
   }
 

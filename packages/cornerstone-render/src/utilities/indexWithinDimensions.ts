@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import { Point3 } from '../types'
 
 /**
  * Returns true if the specified index is within the given dimensions.
@@ -9,8 +9,8 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
  * @returns True if the index is in-bounds.
  */
 export default function indexWithinDimensions(
-  index: Types.Point3,
-  dimensions: Types.Point3
+  index: Point3,
+  dimensions: Point3
 ): boolean {
   if (
     index[0] < 0 ||

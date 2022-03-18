@@ -21,8 +21,7 @@ const {
 const {
   EllipticalRoiTool,
   ToolGroupManager,
-  getAnnotations,
-  removeAnnotation,
+  AnnotationState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
 } = csTools3d
@@ -121,7 +120,7 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const ellipseAnnotations = getAnnotations(
+            const ellipseAnnotations = AnnotationState.getAnnotations(
               element,
               EllipticalRoiTool.toolName
             )
@@ -146,7 +145,10 @@ describe('Ellipse Tool: ', () => {
             // the rectangle is drawn on the strip
             expect(data[targets[0]].mean).toBe(255)
 
-            removeAnnotation(element, ellipseAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              ellipseAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -230,7 +232,7 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const ellipseAnnotations = getAnnotations(
+            const ellipseAnnotations = AnnotationState.getAnnotations(
               element,
               EllipticalRoiTool.toolName
             )
@@ -251,7 +253,10 @@ describe('Ellipse Tool: ', () => {
             expect(data[targets[0]].mean).toBe(255)
             expect(data[targets[0]].stdDev).toBe(0)
 
-            removeAnnotation(element, ellipseAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              ellipseAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -440,7 +445,7 @@ describe('Ellipse Tool: ', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const ellipseAnnotations = getAnnotations(
+          const ellipseAnnotations = AnnotationState.getAnnotations(
             element,
             EllipticalRoiTool.toolName
           )
@@ -466,7 +471,10 @@ describe('Ellipse Tool: ', () => {
           // the rectangle is drawn on the strip
           expect(data[targets[0]].mean).toBe(255)
 
-          removeAnnotation(element, ellipseAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            ellipseAnnotation.annotationUID
+          )
           done()
         }, 100)
       }
