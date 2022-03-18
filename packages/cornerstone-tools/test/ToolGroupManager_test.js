@@ -7,10 +7,13 @@ const {
   VIEWPORT_TYPE,
   ORIENTATION,
   Utilities,
-  unregisterAllImageLoaders,
   metaData,
-  registerVolumeLoader,
+  volumeLoader,
+  imageLoader,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader } = volumeLoader
 
 const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
 

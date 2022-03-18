@@ -8,13 +8,10 @@ const {
   ORIENTATION,
   EVENTS,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   eventTarget,
   metaData,
-  getEnabledElement,
-  createAndCacheVolume,
-  registerVolumeLoader,
+  volumeLoader,
   setVolumesOnViewports,
 } = cornerstone3D
 
@@ -82,8 +79,8 @@ describe('Rectangle Roi Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -93,7 +90,7 @@ describe('Rectangle Roi Tool: ', () => {
       eventTarget.reset()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {
@@ -316,14 +313,16 @@ describe('Rectangle Roi Tool: ', () => {
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
-          vp.render()
-        })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .then(() => {
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
+          })
       } catch (e) {
         done.fail(e)
       }
@@ -828,8 +827,8 @@ describe('Rectangle Roi Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -839,7 +838,7 @@ describe('Rectangle Roi Tool: ', () => {
       eventTarget.reset()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {

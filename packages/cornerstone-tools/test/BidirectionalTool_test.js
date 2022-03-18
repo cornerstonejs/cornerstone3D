@@ -8,12 +8,10 @@ const {
   ORIENTATION,
   EVENTS,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
+  volumeLoader,
   metaData,
-  createAndCacheVolume,
   eventTarget,
-  registerVolumeLoader,
   setVolumesOnViewports,
 } = cornerstone3D
 
@@ -89,8 +87,8 @@ describe('Cornerstone Tools: ', () => {
     })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
 
@@ -100,7 +98,7 @@ describe('Cornerstone Tools: ', () => {
     eventTarget.reset()
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
     this.DOMElements.forEach((el) => {
@@ -323,7 +321,7 @@ describe('Cornerstone Tools: ', () => {
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
     try {
-      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+      volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesOnViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],

@@ -12,14 +12,13 @@ const {
   INTERPOLATION_TYPE,
   EVENTS,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
-  createAndCacheVolume,
-  registerVolumeLoader,
+  volumeLoader,
   setVolumesOnViewports,
 } = cornerstone3D
 
+const { registerVolumeLoader } = volumeLoader
 const { StackScrollMouseWheelTool, ToolGroupManager, StackScrollTool } =
   csTools3d
 
@@ -78,7 +77,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.stackToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
@@ -88,7 +87,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     cache.purgeCache()
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID(StackScrollTool.toolName)
 
     this.DOMElements.forEach((el) => {
@@ -157,7 +156,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
     try {
-      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+      volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesOnViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],

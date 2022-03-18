@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   ORIENTATION,
   VIEWPORT_TYPE,
   init as cs3dInit,
@@ -192,12 +192,15 @@ class CrosshairsExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctImageIds,
     })
-    const prostateVolume = await createAndCacheVolume(prostateVolumeUID, {
-      imageIds: prostateImageIds,
-    })
+    const prostateVolume = await volumeLoader.createAndCacheVolume(
+      prostateVolumeUID,
+      {
+        imageIds: prostateImageIds,
+      }
+    )
 
     ctVolume.load()
     prostateVolume.load()

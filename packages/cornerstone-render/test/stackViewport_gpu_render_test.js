@@ -31,8 +31,7 @@ const {
   VIEWPORT_TYPE,
   INTERPOLATION_TYPE,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
   EVENTS,
 } = cornerstone3D
@@ -79,7 +78,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -87,7 +86,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -382,7 +381,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -390,7 +389,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -456,7 +455,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -464,7 +463,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -532,7 +531,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -546,7 +545,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -625,7 +624,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -640,7 +639,7 @@ describe('renderingCore -- Stack', () => {
 
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -759,7 +758,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -773,7 +772,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -825,7 +824,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -839,7 +838,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -903,7 +902,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -911,7 +910,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)

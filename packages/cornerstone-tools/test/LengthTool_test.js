@@ -9,12 +9,9 @@ const {
   EVENTS,
   eventTarget,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
-  getEnabledElement,
-  createAndCacheVolume,
-  registerVolumeLoader,
+  volumeLoader,
   setVolumesOnViewports,
 } = cornerstone3D
 
@@ -96,8 +93,8 @@ describe('LengthTool:', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -108,7 +105,7 @@ describe('LengthTool:', () => {
 
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {
@@ -331,14 +328,16 @@ describe('LengthTool:', () => {
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
-          vp.render()
-        })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .then(() => {
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
+          })
       } catch (e) {
         done.fail(e)
       }
@@ -966,8 +965,8 @@ describe('LengthTool:', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -977,7 +976,7 @@ describe('LengthTool:', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {
@@ -1129,8 +1128,8 @@ describe('LengthTool:', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -1146,7 +1145,7 @@ describe('LengthTool:', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       DOMElements.forEach((el) => {

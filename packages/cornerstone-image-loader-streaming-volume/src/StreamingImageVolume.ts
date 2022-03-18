@@ -7,7 +7,7 @@ import {
   ImageVolume,
   cache,
   Types,
-  loadImage,
+  imageLoader,
   Utilities as cornerstoneUtils,
   REQUEST_TYPE,
   ERROR_CODES,
@@ -404,7 +404,7 @@ export default class StreamingImageVolume extends ImageVolume {
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       function callLoadImage(imageId, imageIdIndex, options) {
-        return loadImage(imageId, options).then(
+        return imageLoader.loadImage(imageId, options).then(
           () => {
             successCallback(imageIdIndex, imageId, scalingParameters)
           },

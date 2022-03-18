@@ -87,7 +87,7 @@ class CursorExample extends Component {
     csTools3d.init()
     registerWebImageLoader(cs)
 
-    this.setState({ cursorNames: Cursors.cursorNames })
+    this.setState({ cursorNames: Cursors.CursorNames })
     ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise

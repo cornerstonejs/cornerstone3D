@@ -128,7 +128,6 @@ function loadVolumeFromVolumeLoader(
  * @param options - Options to be passed to the Volume Loader
  *
  * @returns An Object which can be used to act after an image is loaded or loading fails
- * @category VolumeLoader
  */
 export function loadVolume(
   volumeId: string,
@@ -160,7 +159,6 @@ export function loadVolume(
  * @param options - Options to be passed to the Volume Loader
  *
  * @returns Volume Loader Object
- * @category VolumeLoader
  */
 export async function createAndCacheVolume(
   volumeId: string,
@@ -200,7 +198,6 @@ export async function createAndCacheVolume(
  * @param referencedVolumeUID - the volumeUID from which the new volume will get its metadata
  * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
  *
- * @category VolumeLoader
  * @returns ImageVolume
  */
 export function createAndCacheDerivedVolume(
@@ -296,7 +293,6 @@ export function createAndCacheDerivedVolume(
  * UID exists in the cache it returns it immediately.
  * @param options -  { scalarData, metadata, dimensions, spacing, origin, direction }
  * @param uid - UID of the generated volume
- * @category VolumeLoader
  *
  * @returns ImageVolume
  */
@@ -381,7 +377,6 @@ export function createLocalVolume(
  *
  * @param scheme - The scheme to use for this volume loader (e.g. 'dicomweb', 'wadouri', 'http')
  * @param volumeLoader - A Cornerstone Volume Loader function
- * @category VolumeLoader
  */
 export function registerVolumeLoader(
   scheme: string,
@@ -396,7 +391,6 @@ export function registerVolumeLoader(
  * @param volumeLoader - A Cornerstone Volume Loader
  *
  * @returns The previous Unknown Volume Loader
- * @category VolumeLoader
  */
 export function registerUnknownVolumeLoader(
   volumeLoader: Types.VolumeLoaderFn

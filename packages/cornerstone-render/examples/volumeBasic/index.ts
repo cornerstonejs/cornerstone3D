@@ -3,7 +3,7 @@ import {
   Types,
   VIEWPORT_TYPE,
   ORIENTATION,
-  createAndCacheVolume,
+  volumeLoader,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -74,7 +74,7 @@ async function run() {
   const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
 
   // Define a volume in memory
-  const volume = await createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
     imageIds,
   })
 

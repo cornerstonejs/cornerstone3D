@@ -8,12 +8,10 @@ const {
   ORIENTATION,
   EVENTS,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   eventTarget,
   metaData,
-  getEnabledElement,
-  registerVolumeLoader,
+  volumeLoader,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
 } = cornerstone3D
@@ -86,8 +84,8 @@ describe('RectangleRoiTool (CPU):', () => {
     })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
 
@@ -97,7 +95,7 @@ describe('RectangleRoiTool (CPU):', () => {
     eventTarget.reset()
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
     this.DOMElements.forEach((el) => {

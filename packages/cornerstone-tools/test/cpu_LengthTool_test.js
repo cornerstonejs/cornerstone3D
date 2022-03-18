@@ -9,11 +9,9 @@ const {
   EVENTS,
   eventTarget,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
-  getEnabledElement,
-  registerVolumeLoader,
+  volumeLoader,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
 } = cornerstone3D
@@ -93,8 +91,8 @@ describe('Length Tool (CPU):', () => {
     })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
 
@@ -104,7 +102,7 @@ describe('Length Tool (CPU):', () => {
     cache.purgeCache()
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
     this.DOMElements.forEach((el) => {

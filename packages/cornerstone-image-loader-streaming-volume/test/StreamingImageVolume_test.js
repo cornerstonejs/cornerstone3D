@@ -1,16 +1,8 @@
 import * as cornerstoneStreamingImageVolumeLoader from '../src'
 import * as cornerstone from '@precisionmetrics/cornerstone-render'
 
-const {
-  cache,
-  metaData,
-  Utilities,
-  registerVolumeLoader,
-  unregisterAllImageLoaders,
-} = cornerstone
-
+const { cache, metaData, Utilities, imageLoader, volumeLoader } = cornerstone
 const { testUtils } = Utilities
-// import { User } from ... doesn't work right now since we don't have named exports set up
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
 const imageIds = [
@@ -48,7 +40,7 @@ const fakeSharedBufferImageLoader = (imageId, options) => {
 }
 
 // regular imageLoader
-const imageLoader = (imageId) => {
+const fakeImageLoader = (imageId) => {
   // imageId1 => all voxels = 1
   // imageId2 => all voxels = 2
   // etc.
@@ -73,8 +65,8 @@ const imageLoader = (imageId) => {
 }
 
 function setupLoaders() {
-  cornerstone.registerImageLoader('fakeImageLoader', imageLoader)
-  cornerstone.registerImageLoader(
+  imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+  imageLoader.registerImageLoader(
     'fakeSharedBufferImageLoader',
     fakeSharedBufferImageLoader
   )
@@ -125,7 +117,7 @@ function setupLoaders() {
     }
   }
 
-  cornerstone.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+  volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
 
   return {
     imageIds,
@@ -149,7 +141,7 @@ describe('StreamingImageVolume', () => {
     it('load: correctly streams pixel data from Images into Volume via a SharedArrayBuffer', async function () {
       const volumeId = 'fakeVolumeLoader:VOLUME'
 
-      await cornerstone.createAndCacheVolume(volumeId, {
+      await volumeLoader.createAndCacheVolume(volumeId, {
         imageIds: this.imageIds,
       })
       const volume = cornerstone.getVolume(volumeId)
@@ -192,7 +184,7 @@ describe('StreamingImageVolume', () => {
       ]
 
       // caching volume
-      await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
         imageIds: this.imageIds,
       })
 
@@ -207,7 +199,7 @@ describe('StreamingImageVolume', () => {
       expect(cache.getImageLoadObject(imageIds[0])).not.toBeDefined()
 
       // loading the images
-      await cornerstone.loadAndCacheImages(imageIds)
+      await imageLoader.loadAndCacheImages(imageIds)
 
       // imageLoader is not being called for any imageIds
       expect(spyedImageLoader).not.toHaveBeenCalled()
@@ -225,7 +217,7 @@ describe('StreamingImageVolume', () => {
     })
 
     // it('cancelLoading: ', async function () {
-    //   await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+    //   await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
     //     imageIds: this.imageIds,
     //   })
 
@@ -257,7 +249,7 @@ describe('StreamingImageVolume', () => {
     // })
 
     it('decache: properly decaches the Volume into a set of Images', async function () {
-      await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
         imageIds: this.imageIds,
       })
 
@@ -294,7 +286,7 @@ describe('StreamingImageVolume', () => {
     })
 
     it('decache: completely removes the Volume from the cache', async function () {
-      await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+      await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
         imageIds: this.imageIds,
       })
 
@@ -352,14 +344,14 @@ describe('StreamingImageVolume', () => {
     //   ]
 
     //   // loading the images first
-    //   await cornerstone.loadAndCacheImages(imageIds)
+    //   await imageLoader.loadAndCacheImages(imageIds)
 
     //   // only cached images so far
     //   expect(cache.getCacheSize()).toBe(50000)
     //   expect(cache.getImageLoadObject(imageIds[0])).toBeDefined()
 
     //   // caching volume
-    //   await cornerstone.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+    //   await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
     //     imageIds: this.imageIds,
     //   })
 
@@ -404,11 +396,11 @@ describe('StreamingImageVolume', () => {
     beforeEach(function () {
       cache.purgeCache()
       metaData.addProvider(testUtils.fakeMetaDataProvider, 10000)
-      cornerstone.registerImageLoader(
+      imageLoader.registerImageLoader(
         'fakeSharedBufferImageLoader',
         fakeSharedBufferImageLoader
       )
-      registerVolumeLoader(
+      volumeLoader.registerVolumeLoader(
         'fakeSharedBufferImageLoader',
         testUtils.fakeImageLoader
       )
@@ -417,7 +409,7 @@ describe('StreamingImageVolume', () => {
     afterEach(function () {
       cache.purgeCache()
       metaData.removeProvider(testUtils.fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
     })
 
     it('should successfully use metadata for streaming image volume', async function () {
@@ -434,7 +426,7 @@ describe('StreamingImageVolume', () => {
       const volumeId = 'cornerstoneStreamingImageVolume:volume'
 
       try {
-        await cornerstone.createAndCacheVolume(volumeId, {
+        await volumeLoader.createAndCacheVolume(volumeId, {
           imageIds: imageIds,
         })
         const volume = cornerstone.getVolume(volumeId)

@@ -3,7 +3,7 @@ import {
   Types,
   VIEWPORT_TYPE,
   ORIENTATION,
-  createAndCacheVolume,
+  volumeLoader,
   Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
@@ -111,7 +111,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
     imageIds: ctImageIds,
   })
 
@@ -119,7 +119,7 @@ async function run() {
   ctVolume.load()
 
   // Define a volume in memory
-  const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
     imageIds: ptImageIds,
   })
 

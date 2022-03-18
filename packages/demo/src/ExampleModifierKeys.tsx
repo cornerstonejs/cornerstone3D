@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
   ORIENTATION,
   eventTarget,
   VIEWPORT_TYPE,

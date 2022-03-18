@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   init as csRenderInit,
   imageLoadPoolManager,
 } from '@precisionmetrics/cornerstone-render'
@@ -172,10 +172,10 @@ class PriorityLoadExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 

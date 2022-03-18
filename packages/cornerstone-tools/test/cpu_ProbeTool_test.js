@@ -8,12 +8,10 @@ const {
   ORIENTATION,
   Utilities,
   eventTarget,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
   EVENTS,
-  getEnabledElement,
-  registerVolumeLoader,
+  volumeLoader,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
 } = cornerstone3D
@@ -86,8 +84,8 @@ describe('ProbeTool (CPU):', () => {
     })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
 
@@ -98,7 +96,7 @@ describe('ProbeTool (CPU):', () => {
 
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
     this.DOMElements.forEach((el) => {

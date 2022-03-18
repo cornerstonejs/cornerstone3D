@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
@@ -12,6 +12,7 @@ import {
   synchronizers,
   ToolBindings,
   BlendModes,
+  WindowLevelTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -160,8 +161,8 @@ class FlipViewportExample extends Component {
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewport(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({
@@ -208,7 +209,7 @@ class FlipViewportExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 

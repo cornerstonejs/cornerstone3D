@@ -7,14 +7,15 @@ const {
   VIEWPORT_TYPE,
   ORIENTATION,
   Utilities,
-  unregisterAllImageLoaders,
   metaData,
   EVENTS,
-  getEnabledElement,
-  createAndCacheVolume,
-  registerVolumeLoader,
+  volumeLoader,
   setVolumesOnViewports,
+  imageLoader,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 
 const {
   CrosshairsTool,

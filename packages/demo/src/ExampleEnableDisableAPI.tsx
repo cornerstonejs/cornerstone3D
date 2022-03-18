@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
@@ -206,6 +206,8 @@ class EnableDisableViewportExample extends Component {
 
     // volume ct
     ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
@@ -254,7 +256,7 @@ class EnableDisableViewportExample extends Component {
     const CTVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+      const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
         imageIds: ctVolumeImageIds,
       })
 
@@ -294,7 +296,7 @@ class EnableDisableViewportExample extends Component {
     const PETVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+      const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
         imageIds: ctVolumeImageIds2,
       })
 
@@ -370,7 +372,7 @@ class EnableDisableViewportExample extends Component {
 
     const { toolGroup, viewportUID, type, canvas } = viewportInput
 
-    toolGroup.addViewport(renderingEngineUID, viewportUID)
+    toolGroup.addViewport(viewportUID, renderingEngineUID)
 
     // load
     if (viewportUID === VIEWPORT_IDS.STACK.CT) {

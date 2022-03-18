@@ -5,8 +5,7 @@ import { vec3 } from 'gl-matrix'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  createAndCacheDerivedVolume,
+  volumeLoader,
   init as cs3dInit,
   eventTarget,
 } from '@precisionmetrics/cornerstone-render'
@@ -251,10 +250,10 @@ class SegmentationExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -531,8 +530,12 @@ class SegmentationExample extends Component {
     const ctViewport = this.renderingEngine.getViewport('ctAxial')
     const { imageData: backgroundImageData } = ctViewport.getImageData()
 
-    await createAndCacheDerivedVolume(ctVolumeUID, { uid: labelmap1UID })
-    await createAndCacheDerivedVolume(ctVolumeUID, { uid: labelmap2UID })
+    await volumeLoader.createAndCacheDerivedVolume(ctVolumeUID, {
+      uid: labelmap1UID,
+    })
+    await volumeLoader.createAndCacheDerivedVolume(ctVolumeUID, {
+      uid: labelmap2UID,
+    })
 
     const boneSoftVolume = cache.getVolume(labelmap1UID)
     const fatVolume = cache.getVolume(labelmap2UID)

@@ -1,13 +1,6 @@
 import * as cornerstone3D from '../src/index'
 
-const {
-  registerImageLoader,
-  registerUnknownImageLoader,
-  unregisterAllImageLoaders,
-  loadImage,
-  loadAndCacheImage,
-  cache,
-} = cornerstone3D
+const { imageLoader, cache } = cornerstone3D
 
 describe('imageLoader -- ', function () {
   beforeAll(() => {
@@ -75,26 +68,38 @@ describe('imageLoader -- ', function () {
       cache.purgeCache()
     })
     it('allows registration of new image loader', async function () {
-      registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
-      registerImageLoader(this.exampleScheme2, this.exampleImageLoader2)
+      imageLoader.registerImageLoader(
+        this.exampleScheme1,
+        this.exampleImageLoader1
+      )
+      imageLoader.registerImageLoader(
+        this.exampleScheme2,
+        this.exampleImageLoader2
+      )
 
-      await loadAndCacheImage(this.exampleScheme1ImageId, this.options)
+      await imageLoader.loadAndCacheImage(
+        this.exampleScheme1ImageId,
+        this.options
+      )
 
-      await loadAndCacheImage(this.exampleScheme2ImageId, this.options)
+      await imageLoader.loadAndCacheImage(
+        this.exampleScheme2ImageId,
+        this.options
+      )
 
       expect(cache.getImageLoadObject(this.exampleScheme1ImageId)).toBeDefined()
       expect(cache.getImageLoadObject(this.exampleScheme2ImageId)).toBeDefined()
     })
 
     it('allows registration of unknown image loader', function () {
-      let oldUnknownImageLoader = registerUnknownImageLoader(
+      let oldUnknownImageLoader = imageLoader.registerUnknownImageLoader(
         this.exampleImageLoader1
       )
 
       expect(oldUnknownImageLoader).not.toBeDefined()
 
       // Check that it returns the old value for the unknown image loader
-      oldUnknownImageLoader = registerUnknownImageLoader(
+      oldUnknownImageLoader = imageLoader.registerUnknownImageLoader(
         this.exampleImageLoader1
       )
 
@@ -108,8 +113,11 @@ describe('imageLoader -- ', function () {
     })
 
     it('allows loading with storage in image cache (loadImage)', async function () {
-      registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
-      const imageLoadObject = loadAndCacheImage(
+      imageLoader.registerImageLoader(
+        this.exampleScheme1,
+        this.exampleImageLoader1
+      )
+      const imageLoadObject = imageLoader.loadAndCacheImage(
         this.exampleScheme1ImageId,
         this.options
       )
@@ -117,9 +125,12 @@ describe('imageLoader -- ', function () {
       await expectAsync(imageLoadObject).toBeResolvedTo(this.image1)
     })
 
-    it('allows loading without storage in image cache (loadAndCacheImage)', async function () {
-      registerImageLoader(this.exampleScheme2, this.exampleImageLoader2)
-      const imageLoadObject = loadImage(
+    it('allows loading without storage in image cache (imageLoader.loadAndCacheImage)', async function () {
+      imageLoader.registerImageLoader(
+        this.exampleScheme2,
+        this.exampleImageLoader2
+      )
+      const imageLoadObject = imageLoader.loadImage(
         this.exampleScheme2ImageId,
         this.options
       )
@@ -128,9 +139,12 @@ describe('imageLoader -- ', function () {
     })
 
     it('falls back to the unknownImageLoader if no appropriate scheme is present', async function () {
-      registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
-      registerUnknownImageLoader(this.exampleImageLoader2)
-      const imageLoadObject = loadAndCacheImage(
+      imageLoader.registerImageLoader(
+        this.exampleScheme1,
+        this.exampleImageLoader1
+      )
+      imageLoader.registerUnknownImageLoader(this.exampleImageLoader2)
+      const imageLoadObject = imageLoader.loadAndCacheImage(
         this.exampleScheme2ImageId,
         this.options
       )
@@ -144,9 +158,12 @@ describe('imageLoader -- ', function () {
       cache.purgeCache()
     })
 
-    it('allows loading with storage in image cache (loadAndCacheImage)', async function () {
-      registerImageLoader(this.exampleScheme1, this.exampleImageLoader1)
-      const imageLoadObject = loadAndCacheImage(
+    it('allows loading with storage in image cache (imageLoader.loadAndCacheImage)', async function () {
+      imageLoader.registerImageLoader(
+        this.exampleScheme1,
+        this.exampleImageLoader1
+      )
+      const imageLoadObject = imageLoader.loadAndCacheImage(
         this.exampleScheme1ImageId,
         this.options
       )
@@ -156,7 +173,7 @@ describe('imageLoader -- ', function () {
   })
 
   afterEach(() => {
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     cache.purgeCache()
   })
 })

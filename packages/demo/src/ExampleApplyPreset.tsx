@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   ORIENTATION,
   VIEWPORT_TYPE,
   init,
@@ -151,7 +151,7 @@ class ApplyPresetExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: volumeImageIds,
     })
 

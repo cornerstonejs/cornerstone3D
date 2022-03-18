@@ -8,13 +8,10 @@ const {
   ORIENTATION,
   EVENTS,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
-  getEnabledElement,
   eventTarget,
-  createAndCacheVolume,
-  registerVolumeLoader,
+  volumeLoader,
   setVolumesOnViewports,
 } = cornerstone3D
 
@@ -83,8 +80,8 @@ describe('Ellipse Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -95,7 +92,7 @@ describe('Ellipse Tool: ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -315,14 +312,16 @@ describe('Ellipse Tool: ', () => {
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
-          vp.render()
-        })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .then(() => {
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
+          })
       } catch (e) {
         done.fail(e)
       }
@@ -345,8 +344,8 @@ describe('Ellipse Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -356,7 +355,7 @@ describe('Ellipse Tool: ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {

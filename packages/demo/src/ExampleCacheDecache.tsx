@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  loadAndCacheImages,
+  volumeLoader,
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
   setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+import { WindowLevelTool } from '@precisionmetrics/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -144,8 +144,8 @@ class CacheDecacheExample extends Component {
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({ ctSceneToolGroup, stackCTViewportToolGroup })
@@ -182,7 +182,7 @@ class CacheDecacheExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -248,7 +248,7 @@ class CacheDecacheExample extends Component {
   loadStack = async () => {
     const ctStackImageIds = await this.ctStackImageIdsPromise
 
-    loadAndCacheImages(ctStackImageIds)
+    volumeLoader.loadAndCacheImages(ctStackImageIds)
   }
 
   getImageCacheForDisplay = () => {

@@ -9,13 +9,15 @@ const {
   VIEWPORT_TYPE,
   ORIENTATION,
   Utilities,
-  unregisterAllImageLoaders,
   metaData,
   EVENTS,
-  createAndCacheVolume,
-  registerVolumeLoader,
   setVolumesOnViewports,
+  volumeLoader,
+  imageLoader,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { createAndCacheVolume, registerVolumeLoader } = volumeLoader
 
 const {
   StackScrollMouseWheelTool,

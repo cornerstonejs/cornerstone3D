@@ -1,7 +1,4 @@
-import {
-  registerImageLoader,
-  REQUEST_TYPE,
-} from '@precisionmetrics/cornerstone-render'
+import { imageLoader, REQUEST_TYPE } from '@precisionmetrics/cornerstone-render'
 import {
   getPixelData,
   decodeImageFrame,
@@ -146,7 +143,7 @@ function getTransferSyntaxForContentType(contentType: string): string {
   return defaultTransferSyntax
 }
 
-registerImageLoader('csiv', sharedArrayBufferImageLoader)
+imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
 
 export default sharedArrayBufferImageLoader
 

@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
-  createAndCacheVolume,
+  volumeLoader,
   setVolumesOnViewports,
   Types,
   Utilities,
@@ -177,10 +177,10 @@ async function run() {
   mipToolGroup.addViewport(viewportUIDs[2], renderingEngineUID)
 
   // Define volumes in memory
-  const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
     imageIds: ptImageIds,
   })
-  const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
     imageIds: ctImageIds,
   })
 

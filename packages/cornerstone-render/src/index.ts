@@ -23,30 +23,12 @@ import {
 } from './RenderingEngine/getRenderingEngine'
 import cache, { Cache } from './cache'
 import { ImageVolume } from './cache/classes/ImageVolume'
-import {
-  loadImage,
-  loadAndCacheImage,
-  loadAndCacheImages,
-  registerImageLoader,
-  registerUnknownImageLoader,
-  unregisterAllImageLoaders,
-  cancelLoadAll,
-  cancelLoadImage,
-  cancelLoadImages,
-} from './imageLoader'
 import { RequestPoolManager } from './requestPool/requestPoolManager'
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager'
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
 import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 
-import {
-  createAndCacheVolume,
-  createAndCacheDerivedVolume,
-  createLocalVolume,
-  registerVolumeLoader,
-  registerUnknownVolumeLoader,
-} from './volumeLoader'
 import getEnabledElement, { getEnabledElementByUIDs } from './getEnabledElement'
 import configuration from './configuration'
 import metaData from './metaData'
@@ -62,8 +44,11 @@ import {
 import Settings from './Settings'
 
 // Namespaces
+import * as volumeLoader from './volumeLoader'
+import * as imageLoader from './imageLoader'
 import * as Types from './types'
 import * as Utilities from './utilities'
+import { registerImageLoader } from './imageLoader' // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent'
 
@@ -76,10 +61,7 @@ import {
 
 /** Cache getVolume, returns a volume from cache given the volumeUID {@link cache} */
 const getVolume = cache.getVolume
-/**
- * @packageDocumentation
- * @module cornerstone-render
- */
+
 export {
   // enums
   ERROR_CODES,
@@ -115,23 +97,11 @@ export {
   //
   eventTarget,
   triggerEvent,
-  // Image Loaders
-  loadImage,
-  loadAndCacheImage,
-  loadAndCacheImages,
-  cancelLoadAll,
-  cancelLoadImage,
-  cancelLoadImages,
-  registerImageLoader,
-  registerUnknownImageLoader,
-  unregisterAllImageLoaders,
-  //
-  createAndCacheVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
-  createAndCacheDerivedVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
-  createLocalVolume,
-  registerVolumeLoader,
-  registerUnknownVolumeLoader,
-  //
+  // Image Loader
+  imageLoader,
+  registerImageLoader, // Todo: remove this after CSWIL uses imageLoader
+  // Volume Loader
+  volumeLoader,
   getVolume,
   //
   metaData,

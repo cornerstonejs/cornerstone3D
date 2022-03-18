@@ -2,12 +2,10 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  registerImageLoader,
-  registerVolumeLoader,
+  volumeLoader,
   metaData,
   VIEWPORT_TYPE,
   ORIENTATION,
-  createAndCacheVolume,
   Utilities,
   init as csRenderInit,
   setVolumesOnViewports,
@@ -75,7 +73,7 @@ class testUtilVolume extends Component {
     this._offScreenRef = React.createRef()
     this._viewportGridRef = React.createRef()
 
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
 
     this.ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
@@ -155,8 +153,8 @@ class testUtilVolume extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    await createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
-    await createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
+    await volumeLoader.createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
+    await volumeLoader.createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
 
     axialSync.addSource({
       renderingEngineUID: renderingEngineUID,

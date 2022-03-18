@@ -1,6 +1,5 @@
 import {
-  registerVolumeLoader,
-  registerUnknownVolumeLoader,
+  volumeLoader,
   cache,
   Utilities,
   ERROR_CODES,
@@ -162,8 +161,8 @@ function cornerstoneStreamingImageVolumeLoader(
   }
 }
 
-registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
-registerVolumeLoader(
+volumeLoader.registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
+volumeLoader.registerVolumeLoader(
   'cornerstoneStreamingImageVolume',
   cornerstoneStreamingImageVolumeLoader
 )

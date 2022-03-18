@@ -4,7 +4,7 @@ import {
   Settings,
   getRenderingEngines,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   metaData,
   eventTarget,
   ORIENTATION,
@@ -17,6 +17,12 @@ import {
   ToolBindings,
   annotationLocking,
   annotationSelection,
+  WindowLevelTool,
+  LengthTool,
+  BidirectionalTool,
+  RectangleRoiTool,
+  ProbeTool,
+  EllipticalRoiTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -219,7 +225,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 

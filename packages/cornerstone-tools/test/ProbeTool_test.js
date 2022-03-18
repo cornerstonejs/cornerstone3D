@@ -8,13 +8,10 @@ const {
   ORIENTATION,
   Utilities,
   eventTarget,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
   EVENTS,
-  getEnabledElement,
-  createAndCacheVolume,
-  registerVolumeLoader,
+  volumeLoader,
   setVolumesOnViewports,
 } = cornerstone3D
 
@@ -82,8 +79,8 @@ describe('Probe Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -93,7 +90,7 @@ describe('Probe Tool: ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {
@@ -579,14 +576,16 @@ describe('Probe Tool: ', () => {
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
-          vp.render()
-        })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .then(() => {
+            setVolumesOnViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
+          })
       } catch (e) {
         done.fail(e)
       }
@@ -738,8 +737,8 @@ describe('Probe Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -749,7 +748,7 @@ describe('Probe Tool: ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {

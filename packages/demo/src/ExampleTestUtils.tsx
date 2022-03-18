@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  registerImageLoader,
+  imageLoader,
   metaData,
   VIEWPORT_TYPE,
   Utilities,
@@ -68,7 +68,7 @@ class testUtil extends Component {
     this._offScreenRef = React.createRef()
     this._viewportGridRef = React.createRef()
 
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
 
     this.ctStackImageIdsPromise = ['fakeImageLoader:imageURI_64_64_10_5_1_1_0']

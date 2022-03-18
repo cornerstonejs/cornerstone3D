@@ -9,14 +9,16 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
-  unregisterAllImageLoaders,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
+  volumeLoader,
+  imageLoader,
   Utilities,
   setVolumesOnViewports,
   eventTarget,
 } = cornerstone3D
+
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { unregisterAllImageLoaders } = imageLoader
 
 const {
   ToolGroupManager,

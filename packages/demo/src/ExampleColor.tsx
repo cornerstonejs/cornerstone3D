@@ -6,7 +6,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   metaData,
-  createAndCacheVolume,
+  volumeLoader,
   init as csRenderInit,
   setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -61,7 +61,9 @@ class ColorExample extends Component {
 
     const volumeUID = 'VOLUME'
 
-    const volume = await createAndCacheVolume(volumeUID, { imageIds })
+    const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+      imageIds,
+    })
 
     volume.load()
 

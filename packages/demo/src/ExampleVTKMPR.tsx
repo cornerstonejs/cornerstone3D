@@ -3,13 +3,14 @@ import {
   cache,
   RenderingEngine,
   eventTarget,
-  createAndCacheVolume,
+  volumeLoader,
   EVENTS as RENDERING_EVENTS,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
   SynchronizerManager,
   synchronizers,
+  WindowLevelTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -180,10 +181,10 @@ class MPRExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 

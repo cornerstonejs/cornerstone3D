@@ -1,8 +1,7 @@
 import { _cloneDeep } from 'lodash.clonedeep'
 import {
   getEnabledElement,
-  createAndCacheDerivedVolume,
-  createLocalVolume,
+  volumeLoader,
   VolumeViewport,
   Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
@@ -53,11 +52,11 @@ async function createNewSegmentationForViewport(
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
     const properties = _cloneDeep(options)
-    await createLocalVolume(properties, segmentationUID)
+    await volumeLoader.createLocalVolume(properties, segmentationUID)
   } else {
     // create a labelmap from a reference volume
     const { uid: volumeUID } = viewport.getDefaultActor()
-    await createAndCacheDerivedVolume(volumeUID, {
+    await volumeLoader.createAndCacheDerivedVolume(volumeUID, {
       uid: segmentationUID,
     })
   }

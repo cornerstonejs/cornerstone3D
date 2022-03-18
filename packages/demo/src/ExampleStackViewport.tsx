@@ -3,7 +3,7 @@ import {
   cache,
   RenderingEngine,
   eventTarget,
-  createAndCacheVolume,
+  volumeLoader,
   metaData,
   ORIENTATION,
   VIEWPORT_TYPE,
@@ -22,6 +22,7 @@ import {
   removeAnnotation,
   destroy as CS3dToolsDestroy,
   CrosshairsTool,
+  WindowLevelTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -304,11 +305,11 @@ class StackViewportExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
-    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: ptVolumeImageIds,
     })
 

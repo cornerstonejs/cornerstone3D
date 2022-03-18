@@ -17,8 +17,7 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
   EVENTS,
   setUseCPURenderingOnlyForDebugOrTests,
@@ -69,7 +68,7 @@ describe('StackViewport CPU -- ', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -77,7 +76,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -270,7 +269,7 @@ describe('StackViewport CPU -- ', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -278,7 +277,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -429,7 +428,7 @@ describe('StackViewport CPU -- ', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -437,7 +436,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
