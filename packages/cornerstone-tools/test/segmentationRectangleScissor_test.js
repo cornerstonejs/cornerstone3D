@@ -131,7 +131,7 @@ describe('Segmentation Tools --', () => {
         done()
       })
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -256,7 +256,7 @@ describe('Segmentation Tools --', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -417,8 +417,8 @@ describe('Segmentation Tools --', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp2.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp2.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {

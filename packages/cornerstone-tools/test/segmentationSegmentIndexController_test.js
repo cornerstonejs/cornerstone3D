@@ -210,7 +210,7 @@ describe('Segmentation Index Controller --', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -361,7 +361,7 @@ describe('Segmentation Index Controller --', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -541,7 +541,7 @@ describe('Segmentation Index Controller --', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {

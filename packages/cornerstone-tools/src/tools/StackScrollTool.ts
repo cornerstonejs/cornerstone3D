@@ -31,8 +31,8 @@ export default class StackScrollTool extends BaseTool {
     const { deltaPoints, viewportUID, renderingEngineUID } = evt.detail
     const deltaFrames = deltaPoints.canvas[1]
     const { viewport } = getEnabledElementByUIDs(
+      viewportUID,
       renderingEngineUID,
-      viewportUID
     )
     const volumeUID = this.getTargetUID(viewport)
     const { invert } = this.configuration

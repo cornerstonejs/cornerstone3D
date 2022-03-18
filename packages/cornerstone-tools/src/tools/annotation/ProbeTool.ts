@@ -84,7 +84,7 @@ interface ProbeAnnotation extends Annotation {
  *
  * toolGroup.addTool(ProbeTool.toolName)
  *
- * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(ProbeTool.toolName, {
  *   bindings: [

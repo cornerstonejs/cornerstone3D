@@ -132,22 +132,22 @@ function setLayout(
 
   // CT tool groups
   viewportInput.slice(0, 3).forEach(({ viewportUID }, index) => {
-    ctSceneToolGroup.addViewports(renderingEngineUID, viewportUID)
+    ctSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
   })
 
   // PT tool groups
   viewportInput.slice(3, 6).forEach(({ viewportUID }, index) => {
-    ptSceneToolGroup.addViewports(renderingEngineUID, viewportUID)
+    ptSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
   })
 
   // Fusion tool groups
   viewportInput.slice(6, 9).forEach(({ viewportUID }, index) => {
-    fusionSceneToolGroup.addViewports(renderingEngineUID, viewportUID)
+    fusionSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
   })
 
   // PET MIP tool groups
   viewportInput.slice(9, 10).forEach(({ viewportUID }, index) => {
-    ptMipSceneToolGroup.addViewports(renderingEngineUID, viewportUID)
+    ptMipSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
   })
 
   const axialViewports = [0, 3, 6]

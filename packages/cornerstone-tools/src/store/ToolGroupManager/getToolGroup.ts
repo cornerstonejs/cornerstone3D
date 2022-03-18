@@ -9,15 +9,15 @@ import { IToolGroup } from '../../types'
  * for it. This will not impact memory usage much as the volume textures are
  * shared across all viewports rendering the same image.
  *
- * @param renderingEngineUID - The UID of the rendering engine that the
- * tool group is associated with.
  * @param viewportUID - The UID of the viewport that the tool is being
  * added to.
+ * @param renderingEngineUID - The UID of the rendering engine that the
+ * tool group is associated with.
  * @returns A tool group.
  */
 function getToolGroup(
-  renderingEngineUID: string,
-  viewportUID: string
+  viewportUID: string,
+  renderingEngineUID: string
 ): IToolGroup | undefined {
   const toolGroupFilteredByUIDs = state.toolGroups.filter((tg) =>
     tg.viewportsInfo.some(

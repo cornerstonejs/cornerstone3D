@@ -129,9 +129,9 @@ class OneStackExampleCPU extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    stackCTViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+    stackCTViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({
@@ -318,10 +318,10 @@ class OneStackExampleCPU extends Component {
     let activeToolGroup
     if (stackName === 'pt') {
       activeToolGroup = stackPTViewportToolGroup
-      activeToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.STACK.CT)
+      activeToolGroup.addViewport(VIEWPORT_IDS.STACK.CT, renderingEngineUID)
     } else {
       activeToolGroup = stackCTViewportToolGroup
-      activeToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.STACK.CT)
+      activeToolGroup.addViewport(VIEWPORT_IDS.STACK.CT, renderingEngineUID)
     }
 
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)

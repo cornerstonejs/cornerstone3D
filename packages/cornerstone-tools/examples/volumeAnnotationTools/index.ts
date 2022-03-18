@@ -158,9 +158,9 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray)
 
-  // Set the tool goup on the viewports
+  // Set the tool group on the viewports
   viewportUIDs.forEach((viewportUID) =>
-    toolGroup.addViewports(renderingEngineUID, viewportUID)
+    toolGroup.addViewport(viewportUID, renderingEngineUID)
   )
 
   // Define a volume in memory

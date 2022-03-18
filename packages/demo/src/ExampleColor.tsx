@@ -138,9 +138,9 @@ class ColorExample extends Component {
       [axialViewportID, sagittalViewportID, coronalViewportID]
     )
 
-    colorSceneToolGroup.addViewports(renderingEngineUID, axialViewportID)
-    colorSceneToolGroup.addViewports(renderingEngineUID, sagittalViewportID)
-    colorSceneToolGroup.addViewports(renderingEngineUID, coronalViewportID)
+    colorSceneToolGroup.addViewport(axialViewportID, renderingEngineUID)
+    colorSceneToolGroup.addViewport(sagittalViewportID, renderingEngineUID)
+    colorSceneToolGroup.addViewport(coronalViewportID, renderingEngineUID)
 
     renderingEngine.render()
   }

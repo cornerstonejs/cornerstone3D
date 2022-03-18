@@ -125,8 +125,8 @@ async function run() {
 
   renderingEngine.enableElement(viewportInput)
 
-  // Set the tool goup on the viewport
-  toolGroup.addViewports(renderingEngineUID, viewportUID)
+  // Set the tool group on the viewport
+  toolGroup.addViewport(viewportUID, renderingEngineUID)
 
   // Get the stack viewport that was created
   const viewport = <Types.IStackViewport>(

@@ -25,8 +25,8 @@ export default function getActiveToolForMouseEvent(
   const modifierKey = keyEventListener.getModifierKey()
 
   const toolGroup = ToolGroupManager.getToolGroup(
-    renderingEngineUID,
-    viewportUID
+    viewportUID,
+    renderingEngineUID
   )
 
   if (!toolGroup) {

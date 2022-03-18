@@ -158,7 +158,7 @@ describe('Segmentation State -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -217,7 +217,7 @@ describe('Segmentation State -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()

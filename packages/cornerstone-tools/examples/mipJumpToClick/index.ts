@@ -174,7 +174,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  mipToolGroup.addViewports(renderingEngineUID, viewportUIDs[2])
+  mipToolGroup.addViewport(viewportUIDs[2], renderingEngineUID)
 
   // Define volumes in memory
   const ptVolume = await createAndCacheVolume(ptVolumeUID, {
