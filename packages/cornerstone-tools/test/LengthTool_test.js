@@ -4,41 +4,37 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  EVENTS,
+  Enums,
   eventTarget,
-  Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  utilities,
+  imageLoader,
   metaData,
-  getEnabledElement,
-  createAndCacheVolume,
-  registerVolumeLoader,
-  setVolumesOnViewports,
+  volumeLoader,
+  setVolumesForViewports,
+  CONSTANTS,
 } = cornerstone3D
+
+const { Events, ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   LengthTool,
   ToolGroupManager,
-  AnnotationState,
-  CornerstoneTools3DEvents,
+  Enums: csToolsEnums,
   cancelActiveManipulations,
+  annotation,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const {
-  Utilities: { calibrateImageSpacing },
-} = csTools3d
-
-const renderingEngineUID = Utilities.uuidv4()
-const { calibratedPixelSpacingMetadataProvider } = Utilities
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 
@@ -77,7 +73,7 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 describe('LengthTool:', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Cornerstone Tools: -- Length ', () => {
@@ -96,8 +92,8 @@ describe('LengthTool:', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -108,7 +104,7 @@ describe('LengthTool:', () => {
 
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {
@@ -121,7 +117,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool on a canvas with mouse drag - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -134,39 +130,36 @@ describe('LengthTool:', () => {
       let p1, p2
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const lengthAnnotations = AnnotationState.getAnnotations(
-              element,
-              LengthTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(lengthAnnotations).toBeDefined()
-            expect(lengthAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const lengthAnnotations = annotation.state.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-            const lengthAnnotation = lengthAnnotations[0]
-            expect(lengthAnnotation.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-            expect(lengthAnnotation.invalidated).toBe(false)
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+          expect(lengthAnnotation.invalidated).toBe(false)
 
-            const data = lengthAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-            AnnotationState.removeAnnotation(
-              element,
-              lengthAnnotation.annotationUID
-            )
-            done()
-          }
-        )
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          annotation.state.removeAnnotation(
+            element,
+            lengthAnnotation.annotationUID
+          )
+          done()
+        })
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -234,7 +227,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.ORTHOGRAPHIC,
+        ViewportType.ORTHOGRAPHIC,
         512,
         128
       )
@@ -245,38 +238,35 @@ describe('LengthTool:', () => {
       let p1, p2
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const lengthAnnotations = AnnotationState.getAnnotations(
-              element,
-              LengthTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(lengthAnnotations).toBeDefined()
-            expect(lengthAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const lengthAnnotations = annotation.state.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-            const lengthAnnotation = lengthAnnotations[0]
-            expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-            expect(lengthAnnotation.invalidated).toBe(false)
-            expect(lengthAnnotation.highlighted).toBe(false)
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+          expect(lengthAnnotation.invalidated).toBe(false)
+          expect(lengthAnnotation.highlighted).toBe(false)
 
-            const data = lengthAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-            AnnotationState.removeAnnotation(
-              element,
-              lengthAnnotation.annotationUID
-            )
-            done()
-          }
-        )
+          annotation.state.removeAnnotation(
+            element,
+            lengthAnnotation.annotationUID
+          )
+          done()
+        })
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 4]
         const index2 = [10, 1, 4]
 
@@ -331,14 +321,16 @@ describe('LengthTool:', () => {
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
-          vp.render()
-        })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .then(() => {
+            setVolumesForViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
+          })
       } catch (e) {
         done.fail(e)
       }
@@ -347,7 +339,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool and modify its handle', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -359,40 +351,37 @@ describe('LengthTool:', () => {
       let p2, p3
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const lengthAnnotations = AnnotationState.getAnnotations(
-              element,
-              LengthTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(lengthAnnotations).toBeDefined()
-            expect(lengthAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const lengthAnnotations = annotation.state.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-            const lengthAnnotation = lengthAnnotations[0]
-            expect(lengthAnnotation.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-            expect(lengthAnnotation.invalidated).toBe(false)
-            expect(lengthAnnotation.highlighted).toBe(false)
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+          expect(lengthAnnotation.invalidated).toBe(false)
+          expect(lengthAnnotation.highlighted).toBe(false)
 
-            const data = lengthAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
+          expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-            AnnotationState.removeAnnotation(
-              element,
-              lengthAnnotation.annotationUID
-            )
-            done()
-          }
-        )
+          annotation.state.removeAnnotation(
+            element,
+            lengthAnnotation.annotationUID
+          )
+          done()
+        })
       }
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [50, 50, 0]
         const index2 = [5, 5, 0]
         const index3 = [33, 33, 0]
@@ -493,7 +482,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool and select but not move it', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -505,41 +494,38 @@ describe('LengthTool:', () => {
       let p1, p2
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const lengthAnnotations = AnnotationState.getAnnotations(
-              element,
-              LengthTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(lengthAnnotations).toBeDefined()
-            expect(lengthAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const lengthAnnotations = annotation.state.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-            const lengthAnnotation = lengthAnnotations[0]
-            expect(lengthAnnotation.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-            expect(lengthAnnotation.invalidated).toBe(false)
-            expect(lengthAnnotation.highlighted).toBe(false)
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+          expect(lengthAnnotation.invalidated).toBe(false)
+          expect(lengthAnnotation.highlighted).toBe(false)
 
-            const data = lengthAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-            AnnotationState.removeAnnotation(
-              element,
-              lengthAnnotation.annotationUID
-            )
-            done()
-          }
-        )
+          annotation.state.removeAnnotation(
+            element,
+            lengthAnnotation.annotationUID
+          )
+          done()
+        })
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [20, 20, 0]
         const index2 = [20, 30, 0]
 
@@ -631,7 +617,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool and select AND move it', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -643,80 +629,77 @@ describe('LengthTool:', () => {
       let p1, p2, p3, p4
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const lengthAnnotations = AnnotationState.getAnnotations(
-              element,
-              LengthTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(lengthAnnotations).toBeDefined()
-            expect(lengthAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const lengthAnnotations = annotation.state.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-            const lengthAnnotation = lengthAnnotations[0]
-            expect(lengthAnnotation.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-            expect(lengthAnnotation.invalidated).toBe(false)
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+          expect(lengthAnnotation.invalidated).toBe(false)
 
-            const data = lengthAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            // We don't expect the length to change on tool move
-            expect(data[targets[0]].length).toBeCloseTo(
-              calculateLength(p1, p2),
-              6
-            )
+          // We don't expect the length to change on tool move
+          expect(data[targets[0]].length).toBeCloseTo(
+            calculateLength(p1, p2),
+            6
+          )
 
-            const handles = lengthAnnotation.data.handles.points
+          const handles = lengthAnnotation.data.handles.points
 
-            const preMoveFirstHandle = p1
-            const preMoveSecondHandle = p2
-            const preMoveCenter = p3
+          const preMoveFirstHandle = p1
+          const preMoveSecondHandle = p2
+          const preMoveCenter = p3
 
-            const centerToHandle1 = [
-              preMoveCenter[0] - preMoveFirstHandle[0],
-              preMoveCenter[1] - preMoveFirstHandle[1],
-              preMoveCenter[2] - preMoveFirstHandle[2],
-            ]
+          const centerToHandle1 = [
+            preMoveCenter[0] - preMoveFirstHandle[0],
+            preMoveCenter[1] - preMoveFirstHandle[1],
+            preMoveCenter[2] - preMoveFirstHandle[2],
+          ]
 
-            const centerToHandle2 = [
-              preMoveCenter[0] - preMoveSecondHandle[0],
-              preMoveCenter[1] - preMoveSecondHandle[1],
-              preMoveCenter[2] - preMoveSecondHandle[2],
-            ]
+          const centerToHandle2 = [
+            preMoveCenter[0] - preMoveSecondHandle[0],
+            preMoveCenter[1] - preMoveSecondHandle[1],
+            preMoveCenter[2] - preMoveSecondHandle[2],
+          ]
 
-            const afterMoveCenter = p4
+          const afterMoveCenter = p4
 
-            const afterMoveFirstHandle = [
-              afterMoveCenter[0] - centerToHandle1[0],
-              afterMoveCenter[1] - centerToHandle1[1],
-              afterMoveCenter[2] - centerToHandle1[2],
-            ]
+          const afterMoveFirstHandle = [
+            afterMoveCenter[0] - centerToHandle1[0],
+            afterMoveCenter[1] - centerToHandle1[1],
+            afterMoveCenter[2] - centerToHandle1[2],
+          ]
 
-            const afterMoveSecondHandle = [
-              afterMoveCenter[0] - centerToHandle2[0],
-              afterMoveCenter[1] - centerToHandle2[1],
-              afterMoveCenter[2] - centerToHandle2[2],
-            ]
+          const afterMoveSecondHandle = [
+            afterMoveCenter[0] - centerToHandle2[0],
+            afterMoveCenter[1] - centerToHandle2[1],
+            afterMoveCenter[2] - centerToHandle2[2],
+          ]
 
-            // Expect handles are moved accordingly
-            expect(handles[0]).toEqual(afterMoveFirstHandle)
-            expect(handles[1]).toEqual(afterMoveSecondHandle)
+          // Expect handles are moved accordingly
+          expect(handles[0]).toEqual(afterMoveFirstHandle)
+          expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-            AnnotationState.removeAnnotation(
-              element,
-              lengthAnnotation.annotationUID
-            )
-            done()
-          }
-        )
+          annotation.state.removeAnnotation(
+            element,
+            lengthAnnotation.annotationUID
+          )
+          done()
+        })
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [20, 20, 0]
         const index2 = [20, 30, 0]
 
@@ -831,7 +814,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool on a canvas and remove it after', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -844,47 +827,44 @@ describe('LengthTool:', () => {
       let p1, p2
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const lengthAnnotations = AnnotationState.getAnnotations(
-              element,
-              LengthTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(lengthAnnotations).toBeDefined()
-            expect(lengthAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const lengthAnnotations = annotation.state.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined()
+          expect(lengthAnnotations.length).toBe(1)
 
-            const lengthAnnotation = lengthAnnotations[0]
-            expect(lengthAnnotation.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
-            expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-            expect(lengthAnnotation.invalidated).toBe(false)
+          const lengthAnnotation = lengthAnnotations[0]
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+          expect(lengthAnnotation.invalidated).toBe(false)
 
-            const data = lengthAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = lengthAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-            AnnotationState.removeAnnotation(
-              element,
-              lengthAnnotation.annotationUID
-            )
+          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+          annotation.state.removeAnnotation(
+            element,
+            lengthAnnotation.annotationUID
+          )
 
-            const annotationsAfterRemove = AnnotationState.getAnnotations(
-              element,
-              LengthTool.toolName
-            )
+          const annotationsAfterRemove = annotation.state.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
 
-            expect(annotationsAfterRemove).not.toBeDefined()
+          expect(annotationsAfterRemove).not.toBeDefined()
 
-            done()
-          }
-        )
+          done()
+        })
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -966,8 +946,8 @@ describe('LengthTool:', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -977,7 +957,7 @@ describe('LengthTool:', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {
@@ -990,7 +970,7 @@ describe('LengthTool:', () => {
     it('Should cancel drawing of a LengthTool annotation', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -1001,7 +981,7 @@ describe('LengthTool:', () => {
 
       let p1, p2
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -1068,7 +1048,7 @@ describe('LengthTool:', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const lengthAnnotations = AnnotationState.getAnnotations(
+          const lengthAnnotations = annotation.state.getAnnotations(
             element,
             LengthTool.toolName
           )
@@ -1090,7 +1070,7 @@ describe('LengthTool:', () => {
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             lengthAnnotation.annotationUID
           )
@@ -1100,10 +1080,7 @@ describe('LengthTool:', () => {
 
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
-      element.addEventListener(
-        CornerstoneTools3DEvents.KEY_DOWN,
-        cancelToolDrawing
-      )
+      element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
       try {
         vp.setStack([imageId1], 0)
@@ -1129,8 +1106,8 @@ describe('LengthTool:', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -1146,7 +1123,7 @@ describe('LengthTool:', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       DOMElements.forEach((el) => {
@@ -1159,7 +1136,7 @@ describe('LengthTool:', () => {
     it('Should be able to calibrate an image and update the tool', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -1169,7 +1146,7 @@ describe('LengthTool:', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const secondCallback = () => {
-        const lengthAnnotations = AnnotationState.getAnnotations(element, LengthTool.toolName)
+        const lengthAnnotations = annotation.state.getAnnotations(element, LengthTool.toolName)
         //  Can successfully add Length tool to annotationManager
         expect(lengthAnnotations).toBeDefined()
         expect(lengthAnnotations.length).toBe(1)
@@ -1185,13 +1162,13 @@ describe('LengthTool:', () => {
 
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-        AnnotationState.removeAnnotation(element, lengthAnnotation.annotationUID)
+        annotation.state.removeAnnotation(element, lengthAnnotation.annotationUID)
         done()
       }
 
       const firstCallback = () => {
-        element.removeEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
-        element.addEventListener(EVENTS.IMAGE_RENDERED, secondCallback)
+        element.removeEventListener(Events.IMAGE_RENDERED, firstCallback)
+        element.addEventListener(Events.IMAGE_RENDERED, secondCallback)
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -1245,7 +1222,7 @@ describe('LengthTool:', () => {
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
+      element.addEventListener(Events.IMAGE_RENDERED, firstCallback)
 
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 

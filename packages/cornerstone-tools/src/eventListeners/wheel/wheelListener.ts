@@ -3,7 +3,7 @@ import {
   triggerEvent,
 } from '@precisionmetrics/cornerstone-render'
 import normalizeWheel from './normalizeWheel'
-import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
+import Events from '../../enums/Events'
 // ~~ VIEWPORT LIBRARY
 import getMouseEventPoints from '../mouse/getMouseEventPoints'
 import { MouseWheelEventDetail } from '../../types/EventTypes'
@@ -32,7 +32,7 @@ function wheelListener(evt: WheelEvent) {
 
   const eventDetail: MouseWheelEventDetail = {
     event: evt,
-    eventName: CornerstoneTools3DEvents.MOUSE_WHEEL,
+    eventName: Events.MOUSE_WHEEL,
     renderingEngineUID,
     viewportUID,
     element,
@@ -48,7 +48,7 @@ function wheelListener(evt: WheelEvent) {
     points: getMouseEventPoints(evt),
   }
 
-  triggerEvent(element, CornerstoneTools3DEvents.MOUSE_WHEEL, eventDetail)
+  triggerEvent(element, Events.MOUSE_WHEEL, eventDetail)
 }
 
 export default wheelListener

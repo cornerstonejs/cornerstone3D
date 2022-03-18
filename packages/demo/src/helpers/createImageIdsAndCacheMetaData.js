@@ -2,14 +2,14 @@ import { api } from 'dicomweb-client'
 import dcmjs from 'dcmjs'
 import { calculateSUVScalingFactors } from '@precisionmetrics/calculate-suv'
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata'
-import { Utilities } from '@precisionmetrics/cornerstone-render'
+import { utilities } from '@precisionmetrics/cornerstone-render'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 import getPixelSpacingInformation from './getPixelSpacingInformation'
 
 const { DicomMetaDictionary } = dcmjs.data
-const { calibratedPixelSpacingMetadataProvider } = Utilities
+const { calibratedPixelSpacingMetadataProvider } = utilities
 
 const VOLUME = 'volume'
 const STACK = 'stack'

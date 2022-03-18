@@ -2,7 +2,7 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
-  getVolume,
+  cache,
 } from '@precisionmetrics/cornerstone-render'
 import type { RenderingEngine } from '@precisionmetrics/cornerstone-render'
 import deepMerge from '../../utilities/deepMerge'
@@ -111,7 +111,7 @@ abstract class BaseTool implements IBaseTool {
    * from the volumeUID if particularly specified in the tool configuration, or if
    * not, the first actorUID in the viewport is returned as the volumeUID. NOTE: for
    * segmentations, actorUID is not necessarily the volumeUID since the segmentation
-   * can have multiple representations, use SegmentationModule to get the volumeUID
+   * can have multiple representations, use segmentation helpers to get the volumeUID
    * based on the actorUID.
    *
    * @param viewport - Volume viewport
@@ -162,7 +162,7 @@ abstract class BaseTool implements IBaseTool {
       viewport = renderingEngine.getViewport(viewportUID)
       image = viewport.getImageData()
     } else {
-      image = getVolume(targetUID)
+      image = cache.getVolume(targetUID)
     }
 
     return { image, viewport }

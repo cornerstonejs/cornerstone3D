@@ -1,8 +1,8 @@
-import EVENTS from './enums/events'
-import ERROR_CODES from './enums/errorCodes'
-import REQUEST_TYPE from './enums/requestType'
-import VIEWPORT_TYPE from './enums/viewportType'
-import INTERPOLATION_TYPE from './enums/interpolationType'
+import Events from './enums/Events'
+import RequestType from './enums/RequestType'
+import ViewportType from './enums/ViewportType'
+import InterpolationType from './enums/InterpolationType'
+import BlendModes from './enums/BlendModes'
 //
 import ORIENTATION from './constants/orientation'
 //
@@ -21,136 +21,102 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine'
-import cache, { Cache } from './cache'
+import cache from './cache'
 import { ImageVolume } from './cache/classes/ImageVolume'
-import {
-  loadImage,
-  loadAndCacheImage,
-  loadAndCacheImages,
-  registerImageLoader,
-  registerUnknownImageLoader,
-  unregisterAllImageLoaders,
-  cancelLoadAll,
-  cancelLoadImage,
-  cancelLoadImages,
-} from './imageLoader'
-import { RequestPoolManager } from './requestPool/requestPoolManager'
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager'
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
-import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
+import CPU_COLORMAPS from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 
-import {
-  createAndCacheVolume,
-  createAndCacheDerivedVolume,
-  createLocalVolume,
-  registerVolumeLoader,
-  registerUnknownVolumeLoader,
-} from './volumeLoader'
 import getEnabledElement, { getEnabledElementByUIDs } from './getEnabledElement'
-import configuration from './configuration'
 import metaData from './metaData'
 import {
   init,
   getShouldUseCPURendering,
   isCornerstoneInitialized,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
 } from './init'
 
 // Classes
 import Settings from './Settings'
 
 // Namespaces
+import * as volumeLoader from './volumeLoader'
+import * as imageLoader from './imageLoader'
 import * as Types from './types'
-import * as Utilities from './utilities'
+import * as utilities from './utilities'
+import { registerImageLoader } from './imageLoader' // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent'
 
 import {
-  setVolumesOnViewports,
-  addVolumesOnViewports,
-  getVolumeViewportsContainingSameVolumes,
-  getVolumeViewportsContainingVolumeUID,
+  setVolumesForViewports,
+  addVolumesToViewports,
 } from './RenderingEngine/helpers'
 
-/** Cache getVolume, returns a volume from cache given the volumeUID {@link cache} */
-const getVolume = cache.getVolume
-/**
- * @packageDocumentation
- * @module cornerstone-render
- */
-export {
-  // enums
-  ERROR_CODES,
-  EVENTS,
-  VIEWPORT_TYPE,
-  // constants
+const Enums = {
+  Events,
+  ViewportType,
+  InterpolationType,
+  RequestType,
+  BlendModes,
+}
+
+const CONSTANTS = {
   ORIENTATION,
-  INTERPOLATION_TYPE,
-  REQUEST_TYPE,
+  CPU_COLORMAPS,
+}
+
+export type { Types }
+
+export {
+  init,
+  isCornerstoneInitialized,
+  // enums
+  Enums,
+  CONSTANTS,
+  Events as EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
-  configuration,
-  Types,
   Settings,
   // Rendering Engine
   VolumeViewport,
   Viewport,
   StackViewport,
   RenderingEngine,
-  // Rendering Engine Helpers
+  ImageVolume,
+  // Helpers
   getRenderingEngine,
   getRenderingEngines,
+  getEnabledElement,
+  getEnabledElementByUIDs,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
-  getVolumeViewportsContainingSameVolumes,
-  getVolumeViewportsContainingVolumeUID,
-  //
-  cache,
-  Cache,
-  getEnabledElement,
-  getEnabledElementByUIDs,
   renderToCanvas,
-  //
+  // cache
+  cache,
+  // event helpers
   eventTarget,
   triggerEvent,
-  // Image Loaders
-  loadImage,
-  loadAndCacheImage,
-  loadAndCacheImages,
-  cancelLoadAll,
-  cancelLoadImage,
-  cancelLoadImages,
-  registerImageLoader,
-  registerUnknownImageLoader,
-  unregisterAllImageLoaders,
-  //
-  createAndCacheVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
-  createAndCacheDerivedVolume, // naming may not be perfect? async createAndCacheVolume? // createAndCacheVolume(id, options).then(volume => volume.load())
-  createLocalVolume,
-  registerVolumeLoader,
-  registerUnknownVolumeLoader,
-  //
-  getVolume,
+  // Image Loader
+  imageLoader,
+  registerImageLoader, // Todo: remove this after CSWIL uses imageLoader now
+  // Volume Loader
+  volumeLoader,
   //
   metaData,
   //
-  Utilities,
-  setVolumesOnViewports,
-  addVolumesOnViewports,
+  utilities,
+  setVolumesForViewports,
+  addVolumesToViewports,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
   imageLoadPoolManager,
-  RequestPoolManager,
   setMaxSimultaneousRequests,
-  ImageVolume,
   // CPU Rendering
-  init,
-  isCornerstoneInitialized,
   getShouldUseCPURendering,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
-  cpuColormaps,
+  setUseCPURendering,
+  resetUseCPURendering,
 }

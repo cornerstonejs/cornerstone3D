@@ -1,7 +1,7 @@
 import { Types } from '@precisionmetrics/cornerstone-render'
 import {
-  createLocalVolume,
-  Utilities as csUtils,
+  volumeLoader,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 
 /**
@@ -55,7 +55,12 @@ function createMergedLabelmapForIndex(
   }
 
   const preventCache = true
-  const mergedVolume = createLocalVolume(options, uid, preventCache)
+  // Todo: following should be async
+  const mergedVolume = volumeLoader.createLocalVolume(
+    options,
+    uid,
+    preventCache
+  )
 
   return mergedVolume
 }

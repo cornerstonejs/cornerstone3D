@@ -1,7 +1,7 @@
 import {
   getRenderingEngines,
   RenderingEngine,
-  getVolumeViewportsContainingVolumeUID,
+  utilities,
 } from '@precisionmetrics/cornerstone-render'
 
 type RenderingEngineAndViewportUIDs = {
@@ -9,6 +9,12 @@ type RenderingEngineAndViewportUIDs = {
   viewportUIDs: Array<string>
 }
 
+/**
+ * Given a volumeUID, it finds the viewports and renderingEngines that
+ * include that volume, and triggers a render if renderingEngine is available.
+ *
+ * @param volumeUID - The UID of the volume
+ */
 const autoLoad = (volumeUID: string): void => {
   const renderingEngineAndViewportUIDs =
     getRenderingEngineAndViewportsContainingVolume(volumeUID)
@@ -38,7 +44,7 @@ function getRenderingEngineAndViewportsContainingVolume(
 
   for (let i = 0; i < renderingEnginesArray.length; i++) {
     const renderingEngine = renderingEnginesArray[i]
-    const viewports = getVolumeViewportsContainingVolumeUID(
+    const viewports = utilities.getVolumeViewportsContainingVolumeUID(
       volumeUID,
       renderingEngine.uid
     )

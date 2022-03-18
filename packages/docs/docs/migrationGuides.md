@@ -34,7 +34,7 @@ renderingEngine.setViewports([
  {
     sceneUID: "CT",
     viewportUID: "CTAxial",
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     canvas,
     defaultOptions: {
       orientation: ORIENTATION.AXIAL,
@@ -46,7 +46,7 @@ renderingEngine.enableElement(
  {
     sceneUID: "CT",
     viewportUID: "CTAxial",
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     canvas,
     defaultOptions: {
       orientation: ORIENTATION.AXIAL,

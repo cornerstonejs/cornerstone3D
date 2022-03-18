@@ -1,5 +1,5 @@
 import { createSynchronizer } from '../../store/SynchronizerManager'
-import { EVENTS } from '@precisionmetrics/cornerstone-render'
+import { Enums } from '@precisionmetrics/cornerstone-render'
 import voiSyncCallback from '../callbacks/voiSyncCallback'
 import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
 
@@ -16,7 +16,7 @@ export default function createVOISynchronizer(
 ): Synchronizer {
   const VOISynchronizer = createSynchronizer(
     synchronizerName,
-    EVENTS.VOI_MODIFIED,
+    Enums.Events.VOI_MODIFIED,
     voiSyncCallback
   )
 

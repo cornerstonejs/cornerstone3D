@@ -1,10 +1,13 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
 import {
-  ORIENTATION,
-  VIEWPORT_TYPE,
-  getVolume,
-  Utilities,
+  Enums,
+  CONSTANTS,
+  utilities,
+  cache,
 } from '@precisionmetrics/cornerstone-render'
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 function setLayout(
   renderingEngine,
@@ -16,7 +19,7 @@ function setLayout(
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BW,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -27,7 +30,7 @@ function setLayout(
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_LBM,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -38,7 +41,7 @@ function setLayout(
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BSA,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -65,11 +68,11 @@ function setPetBWTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, 5)
 
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = getVolume(volumeUID)
+  const imageVolume = cache.getVolume(volumeUID)
 
   let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET
 
@@ -89,12 +92,12 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, max)
 
-  Utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setPetBSATransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = getVolume(volumeUID)
+  const imageVolume = cache.getVolume(volumeUID)
 
   let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET
 
@@ -114,8 +117,8 @@ function setPetBSATransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, max)
 
-  Utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setVolumes(renderingEngine, ptVolumeUID) {

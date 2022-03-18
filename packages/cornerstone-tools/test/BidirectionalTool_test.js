@@ -4,35 +4,37 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  EVENTS,
-  Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  Enums,
+  utilities,
+  imageLoader,
+  volumeLoader,
   metaData,
-  createAndCacheVolume,
   eventTarget,
-  registerVolumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
+  CONSTANTS,
 } = cornerstone3D
+
+const { Events, ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   BidirectionalTool,
   ToolGroupManager,
-  AnnotationState,
-  CornerstoneTools3DEvents,
+  Enums: csToolsEnums,
   cancelActiveManipulations,
+  annotation,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 
@@ -72,7 +74,7 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 describe('Cornerstone Tools: ', () => {
   beforeAll(() => {
     // initialize the library
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {
@@ -89,8 +91,8 @@ describe('Cornerstone Tools: ', () => {
     })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
 
@@ -100,7 +102,7 @@ describe('Cornerstone Tools: ', () => {
     eventTarget.reset()
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
     this.DOMElements.forEach((el) => {
@@ -113,7 +115,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a Bidirectional tool on a canvas with mouse drag - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -126,39 +128,36 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = AnnotationState.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          AnnotationState.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 0]
       const index2 = [10, 1, 0]
 
@@ -224,7 +223,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool on a canvas with mouse drag Volume viewport - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -235,39 +234,36 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = AnnotationState.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          AnnotationState.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 4]
       const index2 = [10, 1, 4]
 
@@ -323,8 +319,8 @@ describe('Cornerstone Tools: ', () => {
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
     try {
-      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+      volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID]
@@ -339,7 +335,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool and modify its handle', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -351,42 +347,39 @@ describe('Cornerstone Tools: ', () => {
     let p2, p3
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = AnnotationState.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          AnnotationState.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       // Not not to move the handle too much since the length become width and it would fail
       const index1 = [50, 50, 0]
       const index2 = [5, 5, 0]
@@ -487,7 +480,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool and select but not move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -499,42 +492,39 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = AnnotationState.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          AnnotationState.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 
@@ -625,7 +615,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -637,82 +627,76 @@ describe('Cornerstone Tools: ', () => {
     let p1, p2, p3, p4
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = AnnotationState.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // We don't expect the length to change on tool move
-          expect(data[targets[0]].length).toBeCloseTo(
-            calculateLength(p1, p2),
-            6
-          )
+        // We don't expect the length to change on tool move
+        expect(data[targets[0]].length).toBeCloseTo(calculateLength(p1, p2), 6)
 
-          const handles = bidirectionalAnnotation.data.handles.points
+        const handles = bidirectionalAnnotation.data.handles.points
 
-          const preMoveFirstHandle = p1
-          const preMoveSecondHandle = p2
-          const preMoveCenter = p3
+        const preMoveFirstHandle = p1
+        const preMoveSecondHandle = p2
+        const preMoveCenter = p3
 
-          const centerToHandle1 = [
-            preMoveCenter[0] - preMoveFirstHandle[0],
-            preMoveCenter[1] - preMoveFirstHandle[1],
-            preMoveCenter[2] - preMoveFirstHandle[2],
-          ]
+        const centerToHandle1 = [
+          preMoveCenter[0] - preMoveFirstHandle[0],
+          preMoveCenter[1] - preMoveFirstHandle[1],
+          preMoveCenter[2] - preMoveFirstHandle[2],
+        ]
 
-          const centerToHandle2 = [
-            preMoveCenter[0] - preMoveSecondHandle[0],
-            preMoveCenter[1] - preMoveSecondHandle[1],
-            preMoveCenter[2] - preMoveSecondHandle[2],
-          ]
+        const centerToHandle2 = [
+          preMoveCenter[0] - preMoveSecondHandle[0],
+          preMoveCenter[1] - preMoveSecondHandle[1],
+          preMoveCenter[2] - preMoveSecondHandle[2],
+        ]
 
-          const afterMoveCenter = p4
+        const afterMoveCenter = p4
 
-          const afterMoveFirstHandle = [
-            afterMoveCenter[0] - centerToHandle1[0],
-            afterMoveCenter[1] - centerToHandle1[1],
-            afterMoveCenter[2] - centerToHandle1[2],
-          ]
+        const afterMoveFirstHandle = [
+          afterMoveCenter[0] - centerToHandle1[0],
+          afterMoveCenter[1] - centerToHandle1[1],
+          afterMoveCenter[2] - centerToHandle1[2],
+        ]
 
-          const afterMoveSecondHandle = [
-            afterMoveCenter[0] - centerToHandle2[0],
-            afterMoveCenter[1] - centerToHandle2[1],
-            afterMoveCenter[2] - centerToHandle2[2],
-          ]
+        const afterMoveSecondHandle = [
+          afterMoveCenter[0] - centerToHandle2[0],
+          afterMoveCenter[1] - centerToHandle2[1],
+          afterMoveCenter[2] - centerToHandle2[2],
+        ]
 
-          // Expect handles are moved accordingly
-          expect(handles[0]).toEqual(afterMoveFirstHandle)
-          expect(handles[1]).toEqual(afterMoveSecondHandle)
+        // Expect handles are moved accordingly
+        expect(handles[0]).toEqual(afterMoveFirstHandle)
+        expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          AnnotationState.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 
@@ -826,7 +810,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully cancel drawing of a BidirectionalTool', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -837,7 +821,7 @@ describe('Cornerstone Tools: ', () => {
 
     let p1, p2
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 4]
       const index2 = [10, 1, 4]
 
@@ -904,7 +888,7 @@ describe('Cornerstone Tools: ', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const bidirectionalAnnotations = AnnotationState.getAnnotations(
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
           element,
           BidirectionalTool.toolName
         )
@@ -928,7 +912,7 @@ describe('Cornerstone Tools: ', () => {
 
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-        AnnotationState.removeAnnotation(
+        annotation.state.removeAnnotation(
           element,
           bidirectionalAnnotation.annotationUID
         )
@@ -937,10 +921,7 @@ describe('Cornerstone Tools: ', () => {
     }
 
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
-    element.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
-      cancelToolDrawing
-    )
+    element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
     try {
       vp.setStack([imageId1], 0)

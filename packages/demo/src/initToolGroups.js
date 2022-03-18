@@ -1,4 +1,7 @@
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+
+const { MouseBindings } = csTools3d.Enums
+
 import {
   TOOL_GROUP_UIDS,
   ptVolumeUID,
@@ -323,7 +326,7 @@ function addToolsToToolGroups({
     stackPTViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -348,21 +351,21 @@ function addToolsToToolGroups({
     stackPTViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     stackPTViewportToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     stackPTViewportToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -384,7 +387,7 @@ function addToolsToToolGroups({
     stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -399,21 +402,21 @@ function addToolsToToolGroups({
     stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     stackCTViewportToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     stackCTViewportToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -434,7 +437,7 @@ function addToolsToToolGroups({
     stackDXViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -449,21 +452,21 @@ function addToolsToToolGroups({
     stackDXViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     stackDXViewportToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     stackDXViewportToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -510,21 +513,21 @@ function addToolsToToolGroups({
     ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     ctSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     ctSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -563,21 +566,21 @@ function addToolsToToolGroups({
     prostateSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     prostateSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     prostateSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -619,21 +622,21 @@ function addToolsToToolGroups({
     ptSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     ptSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     ptSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -679,21 +682,21 @@ function addToolsToToolGroups({
     fusionSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     fusionSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     fusionSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -717,7 +720,7 @@ function addToolsToToolGroups({
     ptMipSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -730,14 +733,14 @@ function addToolsToToolGroups({
     ctVRSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     ctVRSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })
@@ -751,7 +754,7 @@ function addToolsToToolGroups({
     ctObliqueToolGroup.setToolActive(StackScrollTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -764,14 +767,14 @@ function addToolsToToolGroups({
     ctTestSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     ctTestSceneToolGroup.setToolPassive(CrosshairsTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -789,14 +792,14 @@ function addToolsToToolGroups({
     ptTestSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
     ptTestSceneToolGroup.setToolPassive(CrosshairsTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -812,7 +815,7 @@ function addToolsToToolGroups({
     ptTypesSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -820,14 +823,14 @@ function addToolsToToolGroups({
     ptTypesSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Auxiliary,
+          mouseButton: MouseBindings.Auxiliary,
         },
       ],
     })
     ptTypesSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Secondary,
+          mouseButton: MouseBindings.Secondary,
         },
       ],
     })

@@ -1,16 +1,18 @@
 import {
-  ORIENTATION,
-  VIEWPORT_TYPE,
-  getVolume,
-  setVolumesOnViewports,
+  Enums,
+  cache,
+  setVolumesForViewports,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
-import { BlendModes } from '@precisionmetrics/cornerstone-tools'
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
 import {
   setCTWWWC,
   setPetTransferFunction,
   getSetPetColorMapTransferFunction,
 } from '../helpers/transferFunctionHelpers'
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 function setLayout(
   renderingEngine,
@@ -33,7 +35,7 @@ function setLayout(
     // CT
     {
       viewportUID: VIEWPORT_IDS.CT.AXIAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
@@ -41,7 +43,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -49,7 +51,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.CT.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -60,7 +62,7 @@ function setLayout(
 
     {
       viewportUID: VIEWPORT_IDS.PT.AXIAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(3),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
@@ -69,7 +71,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(4),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -78,7 +80,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.PT.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(5),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -90,7 +92,7 @@ function setLayout(
 
     {
       viewportUID: VIEWPORT_IDS.FUSION.AXIAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(6),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
@@ -98,7 +100,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.FUSION.SAGITTAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(7),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -106,7 +108,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.FUSION.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(8),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -116,7 +118,7 @@ function setLayout(
     // PET MIP
     {
       viewportUID: VIEWPORT_IDS.PTMIP.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(9),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -227,42 +229,42 @@ async function setVolumes(
   ptVolumeUID,
   petColorMap
 ) {
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
   )
 
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
         volumeUID: ptVolumeUID,
         callback: setPetTransferFunction,
-        blendMode: BlendModes.COMPOSITE,
+        blendMode: Enums.BlendModes.COMPOSITE,
       },
     ],
     [VIEWPORT_IDS.PT.AXIAL, VIEWPORT_IDS.PT.SAGITTAL, VIEWPORT_IDS.PT.CORONAL]
   )
 
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
       {
         volumeUID: ptVolumeUID,
         callback: getSetPetColorMapTransferFunction(petColorMap),
-        blendMode: BlendModes.COMPOSITE,
+        blendMode: Enums.BlendModes.COMPOSITE,
       },
     ],
     [
@@ -286,7 +288,7 @@ async function setVolumes(
    *        ignore the slab thickness. Check the vtkSlabCamera for more info.
    */
 
-  const ptVolume = getVolume(ptVolumeUID)
+  const ptVolume = cache.getVolume(ptVolumeUID)
   const ptVolumeDimensions = ptVolume.dimensions
 
   // Only make the MIP as large as it needs to be.
@@ -296,13 +298,13 @@ async function setVolumes(
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   )
 
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
         volumeUID: ptVolumeUID,
         callback: setPetTransferFunction,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },
     ],

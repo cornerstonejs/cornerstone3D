@@ -17,8 +17,10 @@ import {
   ToolGroupSpecificSegmentationData,
 } from '../../../types/SegmentationStateTypes'
 
-import internalAddSegmentationToElement from '../../../store/SegmentationModule/internalAddSegmentationToElement'
-import internalRemoveSegmentationFromElement from '../../../store/SegmentationModule/internalRemoveSegmentationFromElement'
+import {
+  internalAddSegmentationToElement,
+  internalRemoveSegmentationFromElement,
+} from '../../../stateManagement/segmentation/helpers'
 
 import { deepMerge } from '../../../utilities'
 import { IToolGroup } from '../../../types'
@@ -297,7 +299,7 @@ function _removeLabelmapFromToolGroupViewports(
     const { viewportUID, renderingEngineUID } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
       viewportUID,
-      renderingEngineUID,
+      renderingEngineUID
     )
     internalRemoveSegmentationFromElement(
       enabledElement.viewport.element,
@@ -317,7 +319,7 @@ async function _addLabelmapToToolGroupViewports(
     const { viewportUID, renderingEngineUID } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
       viewportUID,
-      renderingEngineUID,
+      renderingEngineUID
     )
 
     if (!enabledElement) {

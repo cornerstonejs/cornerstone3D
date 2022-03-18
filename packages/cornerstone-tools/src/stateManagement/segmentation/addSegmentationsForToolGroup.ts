@@ -1,11 +1,11 @@
-import { Utilities as csUtils } from '@precisionmetrics/cornerstone-render'
+import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
 
 import _cloneDeep from 'lodash.clonedeep'
 import {
   SegmentationDataInput,
   SegmentationConfig,
 } from '../../types/SegmentationStateTypes'
-import { checkSegmentationDataIsValid } from './utils'
+import { checkSegmentationDataIsValid } from './helpers'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
 

@@ -22,27 +22,19 @@ import * as calibrated_1_5_imageURI_11_11_4_1_1_1_0_1 from './groundTruth/calibr
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const {
-  Utilities: { calibrateImageSpacing },
+  utilities: { calibrateImageSpacing },
 } = csTools3d
 
-const {
-  cache,
-  RenderingEngine,
-  VIEWPORT_TYPE,
-  INTERPOLATION_TYPE,
-  Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
-  metaData,
-  EVENTS,
-} = cornerstone3D
+const { cache, RenderingEngine, utilities, imageLoader, metaData, Enums } =
+  cornerstone3D
 
-const { calibratedPixelSpacingMetadataProvider } = Utilities
+const { Events, ViewportType, InterpolationType } = Enums
+const { calibratedPixelSpacingMetadataProvider } = utilities
 
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 
@@ -58,7 +50,7 @@ function createViewport(renderingEngine, orientation, width, height) {
   renderingEngine.setViewports([
     {
       viewportUID: viewportUID,
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
@@ -71,7 +63,7 @@ function createViewport(renderingEngine, orientation, width, height) {
 describe('renderingCore -- Stack', () => {
   beforeAll(() => {
     // initialize cornerstone
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
   describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
     beforeEach(function () {
@@ -79,7 +71,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -87,7 +79,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -102,7 +94,7 @@ describe('renderingCore -- Stack', () => {
       const imageId = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -114,7 +106,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -130,7 +122,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -142,7 +134,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -158,7 +150,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -171,7 +163,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -191,7 +183,7 @@ describe('renderingCore -- Stack', () => {
 
       this.renderingEngine.enableElement({
         viewportUID: viewportUID,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: element,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -200,7 +192,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -213,7 +205,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -231,7 +223,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -244,7 +236,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId1, imageId2, imageId3], 0).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -262,7 +254,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -275,7 +267,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId1, imageId2, imageId3], 2).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -291,7 +283,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -306,7 +298,7 @@ describe('renderingCore -- Stack', () => {
         vp.setStack([imageId], 0).then(() => {
           vp.setProperties({
             voiRange: { lower: -160, upper: 240 },
-            interpolationType: INTERPOLATION_TYPE.NEAREST,
+            interpolationType: InterpolationType.NEAREST,
           })
         })
 
@@ -325,7 +317,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -338,7 +330,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId1, imageId2], 0).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -355,7 +347,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -368,7 +360,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId1, imageId2], 1).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -382,7 +374,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -390,7 +382,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -404,7 +396,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -431,7 +423,7 @@ describe('renderingCore -- Stack', () => {
       const imageId2 = 'fakeImageLoader:imageURI_256_256_50_10_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -456,7 +448,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -464,7 +456,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -479,7 +471,7 @@ describe('renderingCore -- Stack', () => {
       // color image generation with 10 strips of different colors
       const imageId1 = 'fakeImageLoader:imageURI_100_100_0_10_1_1_1'
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -505,7 +497,7 @@ describe('renderingCore -- Stack', () => {
       // color image generation with 10 strips of different colors
       const imageId1 = 'fakeImageLoader:imageURI_100_100_0_10_1_1_1'
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -517,7 +509,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         vp.setStack([imageId1], 0).then(() => {
-          vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+          vp.setProperties({ interpolationType: InterpolationType.NEAREST })
           vp.render()
         })
       } catch (e) {
@@ -532,7 +524,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -546,7 +538,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -561,7 +553,7 @@ describe('renderingCore -- Stack', () => {
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0_1'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         expect(vp.scaling.PET).toEqual({
           suvbwToSuvlbm: 1,
           suvbwToSuvbsa: 1,
@@ -589,11 +581,11 @@ describe('renderingCore -- Stack', () => {
 
         vp.calibrateSpacing(imageId1)
         element.removeEventListener(
-          EVENTS.IMAGE_RENDERED,
+          Events.IMAGE_RENDERED,
           imageRenderedCallback
         )
         element.addEventListener(
-          EVENTS.IMAGE_RENDERED,
+          Events.IMAGE_RENDERED,
           secondImageRenderedCallbackAfterCalibration
         )
       }
@@ -602,9 +594,9 @@ describe('renderingCore -- Stack', () => {
         done()
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, imageRenderedCallback)
+      element.addEventListener(Events.IMAGE_RENDERED, imageRenderedCallback)
 
-      element.addEventListener(EVENTS.IMAGE_SPACING_CALIBRATED, (evt) => {
+      element.addEventListener(Events.IMAGE_SPACING_CALIBRATED, (evt) => {
         const { rowScale, columnScale } = evt.detail
         expect(rowScale).toBe(2)
         expect(columnScale).toBe(2)
@@ -625,7 +617,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -640,7 +632,7 @@ describe('renderingCore -- Stack', () => {
 
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -657,13 +649,13 @@ describe('renderingCore -- Stack', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const subscribeToImageRendered = () => {
-        element.addEventListener(EVENTS.IMAGE_RENDERED, (evt) => {
+        element.addEventListener(Events.IMAGE_RENDERED, (evt) => {
           const canvas = vp.getCanvas()
           const image = canvas.toDataURL('image/png')
 
           let props = vp.getProperties()
           expect(props.rotation).toBe(90)
-          expect(props.interpolationType).toBe(INTERPOLATION_TYPE.NEAREST)
+          expect(props.interpolationType).toBe(InterpolationType.NEAREST)
           expect(props.invert).toBe(true)
 
           compareImages(
@@ -678,7 +670,7 @@ describe('renderingCore -- Stack', () => {
         vp.setStack([imageId1], 0).then(() => {
           subscribeToImageRendered()
           vp.setProperties({
-            interpolationType: INTERPOLATION_TYPE.NEAREST,
+            interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
             rotation: 90,
@@ -701,13 +693,13 @@ describe('renderingCore -- Stack', () => {
 
       const firstImageRenderedCallback = () => {
         element.removeEventListener(
-          EVENTS.IMAGE_RENDERED,
+          Events.IMAGE_RENDERED,
           firstImageRenderedCallback
         )
 
         let props = vp.getProperties()
         expect(props.rotation).toBe(90)
-        expect(props.interpolationType).toBe(INTERPOLATION_TYPE.NEAREST)
+        expect(props.interpolationType).toBe(InterpolationType.NEAREST)
         expect(props.invert).toBe(true)
 
         setTimeout(() => {
@@ -716,7 +708,7 @@ describe('renderingCore -- Stack', () => {
         })
 
         element.addEventListener(
-          EVENTS.IMAGE_RENDERED,
+          Events.IMAGE_RENDERED,
           secondImageRenderedCallback
         )
       }
@@ -725,7 +717,7 @@ describe('renderingCore -- Stack', () => {
         console.log('resetProperties callback')
         const props = vp.getProperties()
         expect(props.rotation).toBe(0)
-        expect(props.interpolationType).toBe(INTERPOLATION_TYPE.LINEAR)
+        expect(props.interpolationType).toBe(InterpolationType.LINEAR)
         expect(props.invert).toBe(false)
 
         done()
@@ -733,14 +725,14 @@ describe('renderingCore -- Stack', () => {
       }
 
       element.addEventListener(
-        EVENTS.IMAGE_RENDERED,
+        Events.IMAGE_RENDERED,
         firstImageRenderedCallback
       )
 
       try {
         vp.setStack([imageId1], 0).then(() => {
           vp.setProperties({
-            interpolationType: INTERPOLATION_TYPE.NEAREST,
+            interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
             rotation: 90,
@@ -759,7 +751,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -773,7 +765,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -790,8 +782,8 @@ describe('renderingCore -- Stack', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const firstCallback = () => {
-        element.removeEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
-        element.addEventListener(EVENTS.IMAGE_RENDERED, secondCallback)
+        element.removeEventListener(Events.IMAGE_RENDERED, firstCallback)
+        element.addEventListener(Events.IMAGE_RENDERED, secondCallback)
         const imageId = this.renderingEngine
           .getViewport(viewportUID)
           .getCurrentImageId()
@@ -808,7 +800,7 @@ describe('renderingCore -- Stack', () => {
         ).then(done, done.fail)
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
+      element.addEventListener(Events.IMAGE_RENDERED, firstCallback)
 
       try {
         vp.setStack([imageId1], 0)
@@ -825,7 +817,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
         calibratedPixelSpacingMetadataProvider.get.bind(
@@ -839,7 +831,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -859,7 +851,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageRenderedCallback = () => {
         element.removeEventListener(
-          EVENTS.IMAGE_RENDERED,
+          Events.IMAGE_RENDERED,
           imageRenderedCallback
         )
 
@@ -870,7 +862,7 @@ describe('renderingCore -- Stack', () => {
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
 
         element.addEventListener(
-          EVENTS.IMAGE_RENDERED,
+          Events.IMAGE_RENDERED,
           secondImageRenderedCallback
         )
       }
@@ -879,9 +871,9 @@ describe('renderingCore -- Stack', () => {
         done()
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, imageRenderedCallback)
+      element.addEventListener(Events.IMAGE_RENDERED, imageRenderedCallback)
 
-      element.addEventListener(EVENTS.IMAGE_SPACING_CALIBRATED, (evt) => {
+      element.addEventListener(Events.IMAGE_SPACING_CALIBRATED, (evt) => {
         expect(evt.detail).toBeDefined()
         expect(evt.detail.rowScale).toBe(1)
         expect(evt.detail.columnScale).toBe(5)
@@ -903,7 +895,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -911,7 +903,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -927,7 +919,7 @@ describe('renderingCore -- Stack', () => {
       const imageId = 'fakeImageLoader:imageURI_64_64_5_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -940,7 +932,7 @@ describe('renderingCore -- Stack', () => {
       try {
         vp.setStack([imageId], 0).then(() => {
           vp.setProperties({
-            interpolationType: INTERPOLATION_TYPE.NEAREST,
+            interpolationType: InterpolationType.NEAREST,
             flipHorizontal: true,
           })
 
@@ -959,7 +951,7 @@ describe('renderingCore -- Stack', () => {
       const imageId = 'fakeImageLoader:imageURI_64_64_5_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -972,7 +964,7 @@ describe('renderingCore -- Stack', () => {
       try {
         vp.setStack([imageId], 0).then(() => {
           vp.setProperties({
-            interpolationType: INTERPOLATION_TYPE.NEAREST,
+            interpolationType: InterpolationType.NEAREST,
             rotation: 90,
             flipHorizontal: true,
           })

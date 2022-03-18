@@ -16,22 +16,25 @@ import * as volumeURI_100_100_10_1_1_1_1_color_coronal_linear from './groundTrut
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
-  EVENTS,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
-  getVolumeViewportsContainingVolumeUID,
+  Enums,
+  volumeLoader,
+  utilities,
+  setVolumesForViewports,
+  CONSTANTS,
 } = cornerstone3D
 
-const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
-  Utilities.testUtils
+const { ViewportType, Events } = Enums
+const { ORIENTATION } = CONSTANTS
 
-const renderingEngineUID = Utilities.uuidv4()
+const { registerVolumeLoader } = volumeLoader
+const { unregisterAllImageLoaders } = imageLoader
+
+const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
+  utilities.testUtils
+
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 
@@ -49,7 +52,7 @@ function createViewport(renderingEngine, orientation) {
   renderingEngine.setViewports([
     {
       viewportUID: viewportUID,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
         orientation: ORIENTATION[orientation],
@@ -62,7 +65,7 @@ function createViewport(renderingEngine, orientation) {
 
 describe('Volume Viewport GPU -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Volume Viewport Axial Nearest Neighbor and Linear Interpolation --- ', function () {
@@ -97,7 +100,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -111,9 +114,10 @@ describe('Volume Viewport GPU -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest()
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -133,7 +137,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -144,14 +148,16 @@ describe('Volume Viewport GPU -- ', () => {
       })
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
-          vp.render()
-        })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .then(() => {
+            setVolumesForViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
+          })
       } catch (e) {
         done.fail(e)
       }
@@ -191,7 +197,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -205,9 +211,10 @@ describe('Volume Viewport GPU -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest()
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -227,7 +234,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -238,9 +245,10 @@ describe('Volume Viewport GPU -- ', () => {
       })
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]
@@ -289,7 +297,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -305,9 +313,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -327,7 +336,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -338,9 +347,10 @@ describe('Volume Viewport GPU -- ', () => {
       })
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]
@@ -377,7 +387,7 @@ describe('Volume Viewport GPU -- ', () => {
       })
     })
 
-    it('should successfully use setVolumesOnViewports API to load image', function (done) {
+    it('should successfully use setVolumesForViewports API to load image', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
       this.DOMElements.push(element)
 
@@ -386,7 +396,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -402,9 +412,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -425,9 +436,9 @@ describe('Volume Viewport GPU -- ', () => {
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const viewport = this.renderingEngine.getViewport(viewportUID)
-        const viewports = getVolumeViewportsContainingVolumeUID(
+        const viewports = utilities.getVolumeViewportsContainingVolumeUID(
           volumeId,
           this.renderingEngine.uid
         )
@@ -444,9 +455,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -470,7 +482,7 @@ describe('Volume Viewport GPU -- ', () => {
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -485,9 +497,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -509,7 +522,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -525,9 +538,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -549,7 +563,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         const offScreen = this.renderingEngine._debugRender()
@@ -563,9 +577,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -587,7 +602,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -603,9 +618,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -655,7 +671,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -673,9 +689,10 @@ describe('Volume Viewport GPU -- ', () => {
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -695,7 +712,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -711,9 +728,10 @@ describe('Volume Viewport GPU -- ', () => {
       }
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]

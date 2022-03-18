@@ -5,8 +5,8 @@ import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import { vec3, mat4 } from 'gl-matrix'
 import _cloneDeep from 'lodash.clonedeep'
 
-import Events from '../enums/events'
-import VIEWPORT_TYPE from '../enums/viewportType'
+import Events from '../enums/Events'
+import ViewportType from '../enums/ViewportType'
 import { ICamera, ActorEntry } from '../types'
 import { ViewportInput, IViewport } from '../types/IViewport'
 import renderingEngineCache from './renderingEngineCache'
@@ -34,7 +34,7 @@ class Viewport implements IViewport {
   /** RenderingEngine uid that the viewport belongs to */
   readonly renderingEngineUID: string
   /** Type of viewport */
-  readonly type: VIEWPORT_TYPE
+  readonly type: ViewportType
   protected flipHorizontal = false
   protected flipVertical = false
 
@@ -795,7 +795,7 @@ class Viewport implements IViewport {
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
     }
 
-    if (this.type == VIEWPORT_TYPE.PERSPECTIVE) {
+    if (this.type == ViewportType.PERSPECTIVE) {
       const renderer = this.getRenderer()
 
       renderer.resetCameraClippingRange()

@@ -1,9 +1,9 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
+  volumeLoader,
+  Enums,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -18,8 +18,13 @@ const {
   LengthTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
+const { MouseBindings } = csToolsEnums
+
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
@@ -84,7 +89,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -124,7 +129,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
@@ -133,7 +138,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -149,7 +154,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
     imageIds: smallVolumeImageIds,
   })
 

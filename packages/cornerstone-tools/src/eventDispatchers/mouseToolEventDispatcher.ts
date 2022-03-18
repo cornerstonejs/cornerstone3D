@@ -1,4 +1,4 @@
-import Events from '../enums/CornerstoneTools3DEvents'
+import Events from '../enums/Events'
 
 import {
   mouseClick,

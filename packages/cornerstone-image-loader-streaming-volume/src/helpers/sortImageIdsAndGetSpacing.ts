@@ -13,7 +13,7 @@ type SortedImageIdsItem = {
  * @param imageIds - array of imageIds
  * @param scanAxisNormal - [x, y, z] array or gl-matrix vec3
  *
- * @returns The sortedImageIds, zSpacing, and origin of the first imageg in the series.
+ * @returns The sortedImageIds, zSpacing, and origin of the first image in the series.
  */
 export default function sortImageIdsAndGetSpacing(
   imageIds: Array<string>,

@@ -1,10 +1,10 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
+  Enums,
+  volumeLoader,
   getRenderingEngine,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -17,6 +17,8 @@ import {
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 const renderingEngineUID = 'myRenderingEngine'
 const viewportUID = 'CT_SAGITTAL_STACK'
 
@@ -207,7 +209,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
@@ -223,7 +225,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
     imageIds: ctImageIds,
   })
 
@@ -239,7 +241,7 @@ async function run() {
   // Load the PT in the background as we know we'll need it
 
   // Define a volume in memory
-  const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
     imageIds: ptImageIds,
   })
 

@@ -2,16 +2,15 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  setUseCPURenderingOnlyForDebugOrTests,
+  Enums,
+  setUseCPURendering,
   init as csRenderInit,
   metaData,
-  cpuColormaps,
-  INTERPOLATION_TYPE,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -30,6 +29,7 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
+const { ViewportType } = Enums
 
 let stackCTViewportToolGroup, stackPTViewportToolGroup
 
@@ -64,7 +64,7 @@ class OneStackExampleCPU extends Component {
   constructor(props) {
     super(props)
 
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
     this._elementNodes = new Map()
     this._offScreenRef = React.createRef()
 
@@ -119,7 +119,7 @@ class OneStackExampleCPU extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
@@ -176,7 +176,7 @@ class OneStackExampleCPU extends Component {
     await ctStackViewport.setStack(stacks.ct, 0)
     ctStackViewport.setProperties({
       voiRange: { lower: -160, upper: 240 },
-      // interpolationType: INTERPOLATION_TYPE.NEAREST,
+      // interpolationType: InterpolationType.NEAREST,
     })
 
     // Start listening for resize
@@ -217,13 +217,13 @@ class OneStackExampleCPU extends Component {
     })
 
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -241,7 +241,8 @@ class OneStackExampleCPU extends Component {
         mode === 'Active' &&
         bindings.length &&
         bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+          (binding) =>
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary
         )
     )
 
@@ -253,7 +254,7 @@ class OneStackExampleCPU extends Component {
     activeToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
+        { mouseButton: csToolsEnums.MouseBindings.Primary },
       ],
     })
 
@@ -361,7 +362,7 @@ class OneStackExampleCPU extends Component {
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
     if (falseColor) {
-      vp.setColormap(cpuColormaps.hotIron)
+      vp.setColormap(CONSTANTS.CPU_COLORMAPS.hotIron)
     } else {
       vp.unsetColormap()
     }

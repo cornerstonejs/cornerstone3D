@@ -1,11 +1,11 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
+  Enums,
+  volumeLoader,
   getRenderingEngine,
-  Utilities,
+  utilities,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -20,6 +20,8 @@ import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 const { BlendMode } = vtkConstants
 
 const renderingEngineUID = 'myRenderingEngine'
@@ -118,7 +120,7 @@ addButtonToToolbar('Invert', () => {
     .getProperty()
     .getRGBTransferFunction(0)
 
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 
   viewport.render()
 })
@@ -286,7 +288,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
@@ -302,7 +304,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
     imageIds,
   })
 

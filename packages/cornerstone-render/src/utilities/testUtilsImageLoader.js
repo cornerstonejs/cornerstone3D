@@ -14,7 +14,7 @@ import {
  *
  * @example
  * ```javascript
- * cornerstone.registerImageLoader('fakeImageLoader', imageLoader)
+ * imageLoader.registerImageLoader('fakeImageLoader', imageLoader)
  * ```
  *
  * then you can use imageId like: 'fakeImageLoader: myImage_64_64_10_20_1_1_0'

@@ -8,31 +8,37 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_visiblity from './groundTruth/volum
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
+  volumeLoader,
+  Enums,
+  utilities,
+  setVolumesForViewports,
   eventTarget,
+  imageLoader,
+  CONSTANTS,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
+  Enums: csToolsEnums,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
-  SegmentationModule,
+  segmentation,
   RectangleScissorsTool,
 } = csTools3d
 
-const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
-  Utilities.testUtils
+const { Events } = csToolsEnums
 
-const renderingEngineUID = Utilities.uuidv4()
+const { addSegmentationsForToolGroup } = segmentation
+
+const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
+  utilities.testUtils
+
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 
@@ -53,7 +59,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -65,7 +71,7 @@ function createViewport(
 
 describe('Segmentation Controller --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Visibility/Color Controller', function () {
@@ -132,7 +138,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 
@@ -142,7 +148,7 @@ describe('Segmentation Controller --', () => {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-              setVolumesOnViewports(
+              setVolumesForViewports(
                 this.renderingEngine,
                 [{ volumeUID: volumeId }],
                 [viewportUID1]
@@ -191,7 +197,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 
@@ -201,7 +207,7 @@ describe('Segmentation Controller --', () => {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-              setVolumesOnViewports(
+              setVolumesForViewports(
                 this.renderingEngine,
                 [{ volumeUID: volumeId }],
                 [viewportUID1]
@@ -209,11 +215,8 @@ describe('Segmentation Controller --', () => {
                 vp1.render()
 
                 const colorLUTIndex = 1
-                SegmentationModule.segmentationColorController.addColorLut(
-                  [
-                    [0, 0, 0, 0],
-                    [245, 209, 145, 255],
-                  ],
+                segmentation.segmentationColor.addColorLUT(
+                  [[245, 209, 145, 255]],
                   colorLUTIndex
                 )
 
@@ -259,7 +262,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.SegmentationState.getSegmentationState(TOOL_GROUP_UID)
+    //       csTools3d.segmentation.state.getSegmentationState(TOOL_GROUP_UID)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].visibility).toBe(true)
@@ -271,7 +274,7 @@ describe('Segmentation Controller --', () => {
     //   }
 
     //   eventTarget.addEventListener(
-    //     EVENTS.SEGMENTATION_RENDERED,
+    //     Events.SEGMENTATION_RENDERED,
     //     compareImageCallback
     //   )
 
@@ -281,7 +284,7 @@ describe('Segmentation Controller --', () => {
     //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
     //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
     //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-    //           setVolumesOnViewports(
+    //           setVolumesForViewports(
     //             this.renderingEngine,
     //             [{ volumeUID: volumeId }],
     //             [viewportUID1]
@@ -298,11 +301,11 @@ describe('Segmentation Controller --', () => {
     //               },
     //             ]).then(() => {
     //               const segmentationData =
-    //                 SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+    //                 segmentation.activeSegmentation.getActiveSegmentationInfo(
     //                   TOOL_GROUP_UID
     //                 )
 
-    //               SegmentationModule.segmentationVisibilityController.setSegmentationVisibility(
+    //               segmentation.segmentationVisibility.setSegmentationVisibility(
     //                 TOOL_GROUP_UID,
     //                 segmentationData.segmentationDataUID,
     //                 false

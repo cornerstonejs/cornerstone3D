@@ -7,10 +7,10 @@ import {
 import cloneDeep from 'lodash.clonedeep'
 
 import {
-  EVENTS as RENDERING_EVENTS,
+  Enums,
   eventTarget,
   Types,
-  Utilities,
+  utilities,
 } from '@precisionmetrics/cornerstone-render'
 
 import { checkAndDefineIsLockedProperty } from './annotationLocking'
@@ -42,14 +42,14 @@ export default class FrameOfReferenceSpecificAnnotationManager {
    */
   constructor(uid?: string) {
     if (!uid) {
-      uid = Utilities.uuidv4()
+      uid = utilities.uuidv4()
     }
     this.annotations = {}
     this.uid = uid
 
     // Listen to the IMAGE_VOLUME_MODIFIED event to invalidate data.
     eventTarget.addEventListener(
-      RENDERING_EVENTS.IMAGE_VOLUME_MODIFIED,
+      Enums.Events.IMAGE_VOLUME_MODIFIED,
       this._imageVolumeModifiedHandler
     )
   }

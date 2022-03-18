@@ -1,12 +1,12 @@
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 import {
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
-  setVolumesOnViewports,
+  volumeLoader,
+  Enums,
+  setVolumesForViewports,
   Types,
-  Utilities,
+  utilities,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -18,12 +18,17 @@ import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 const { BlendMode } = vtkConstants
 
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
+
 const {
   ToolGroupManager,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
+
+const { MouseBindings } = csToolsEnums
 // Define a unique id for each volume
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -38,7 +43,7 @@ function setPetTransferFunction({ volumeActor }) {
 
   rgbTransferFunction.setRange(0, 5)
 
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 // ======== Set up page ======== //
@@ -101,7 +106,7 @@ async function run() {
   mipToolGroup.setToolActive('MIPJumpToClickTool', {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -144,7 +149,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -153,7 +158,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -162,7 +167,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -177,10 +182,10 @@ async function run() {
   mipToolGroup.addViewport(viewportUIDs[2], renderingEngineUID)
 
   // Define volumes in memory
-  const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
     imageIds: ptImageIds,
   })
-  const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
     imageIds: ctImageIds,
   })
 
@@ -198,18 +203,18 @@ async function run() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   )
 
-  setVolumesOnViewports(
+  setVolumesForViewports(
     renderingEngine,
     [{ volumeUID: ctVolumeUID }],
     [viewportUIDs[0]]
   )
-  setVolumesOnViewports(
+  setVolumesForViewports(
     renderingEngine,
     [{ volumeUID: ptVolumeUID, callback: setPetTransferFunction }],
     [viewportUIDs[1]]
   )
 
-  setVolumesOnViewports(
+  setVolumesForViewports(
     renderingEngine,
     [
       {

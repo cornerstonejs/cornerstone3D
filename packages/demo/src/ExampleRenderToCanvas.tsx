@@ -6,6 +6,7 @@ import {
   init as cs3dInit,
 } from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+import { WindowLevelTool } from '@precisionmetrics/cornerstone-tools'
 import getImageIds from './helpers/getImageIds'
 import { renderingEngineUID } from './constants'
 

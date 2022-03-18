@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
 import {
@@ -17,14 +17,15 @@ const {
   LengthTool,
   BidirectionalTool,
   ToolGroupManager,
-  ToolBindings,
-  annotationLocking,
-  annotationSelection,
-  AnnotationState,
+  Enums: { MouseBindings },
+  annotation,
 } = cornerstoneTools
 
+const { locking, selection } = annotation
+const { ViewportType } = Enums
+
 const defaultFrameOfReferenceSpecificAnnotationManager =
-  AnnotationState.getDefaultAnnotationManager()
+  annotation.state.getDefaultAnnotationManager()
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -70,7 +71,7 @@ addToggleButtonToToolbar(
         bidirectionalAnnotationUID
       )
 
-    annotationLocking.setAnnotationLocked(annotation, toggle)
+    locking.setAnnotationLocked(annotation, toggle)
   }
 )
 
@@ -80,7 +81,7 @@ addButtonToToolbar('Select Length Annotation', () => {
       lengthAnnotationUID
     )
 
-  annotationSelection.setAnnotationSelected(annotation, true)
+  selection.setAnnotationSelected(annotation, true)
 
   // Render the image to see it was selected
   const renderingEngine = getRenderingEngine(renderingEngineUID)
@@ -111,7 +112,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -134,7 +135,7 @@ async function run() {
   const viewportUID = 'CT_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

@@ -1,5 +1,5 @@
 import { eventTarget, triggerEvent } from '@precisionmetrics/cornerstone-render'
-import { CornerstoneTools3DEvents } from '../../enums'
+import { Events } from '../../enums'
 import { Annotation } from '../../types'
 import { AnnotationLockChangeEventDetail } from '../../types/EventTypes'
 
@@ -141,11 +141,7 @@ function publish(
 ) {
   if (detail.added.length > 0 || detail.removed.length > 0) {
     lockedAnnotationsSet.forEach((item) => void detail.locked.push(item))
-    triggerEvent(
-      eventTarget,
-      CornerstoneTools3DEvents.ANNOTATION_LOCK_CHANGE,
-      detail
-    )
+    triggerEvent(eventTarget, Events.ANNOTATION_LOCK_CHANGE, detail)
   }
 }
 

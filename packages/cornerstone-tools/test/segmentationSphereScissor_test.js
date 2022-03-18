@@ -7,35 +7,41 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR from './groundTru
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
+  Enums,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
+  imageLoader,
+  volumeLoader,
+  utilities,
+  setVolumesForViewports,
   eventTarget,
+  CONSTANTS,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
-  SegmentationModule,
+  segmentation,
+  Enums: csToolsEnums,
   SphereScissorsTool,
 } = csTools3d
+
+const { Events } = csToolsEnums
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const {
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
   compareImages,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'
@@ -58,7 +64,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -70,7 +76,7 @@ function createViewport(
 
 describe('Segmentation Tools --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Sphere Scissor', function () {
@@ -137,7 +143,7 @@ describe('Segmentation Tools --', () => {
 
       const drawSphere = () => {
         eventTarget.addEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           compareImageCallback
         )
 
@@ -199,7 +205,7 @@ describe('Segmentation Tools --', () => {
         }
 
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -251,12 +257,12 @@ describe('Segmentation Tools --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -269,7 +275,7 @@ describe('Segmentation Tools --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1, viewportUID2, viewportUID3]
@@ -278,13 +284,13 @@ describe('Segmentation Tools --', () => {
             vp2.render()
             vp3.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {

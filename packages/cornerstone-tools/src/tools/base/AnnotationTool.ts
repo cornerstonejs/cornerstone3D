@@ -1,5 +1,5 @@
 import {
-  Utilities,
+  utilities,
   getEnabledElement,
   VolumeViewport,
   Settings,
@@ -20,8 +20,8 @@ import {
 } from '../../types'
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender'
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay'
-import { getStyleProperty } from '../../stateManagement/annotation/annotationStyle'
-import { getAnnotationStyle } from '../../stateManagement/annotation/annotationStyle'
+import { getStyleProperty } from '../../stateManagement/annotation/config/annotationStyle'
+import { getState } from '../../stateManagement/annotation/config'
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -222,7 +222,7 @@ abstract class AnnotationTool extends BaseTool {
 
     const calibratedIndexToWorld = calibratedImageData.getIndexToWorld()
 
-    const imageURI = Utilities.imageIdToURI(imageId)
+    const imageURI = utilities.imageIdToURI(imageId)
     const stateManager = getViewportSpecificAnnotationManager(element)
     const framesOfReference = stateManager.getFramesOfReference()
 
@@ -364,12 +364,7 @@ abstract class AnnotationTool extends BaseTool {
     property: string,
     annotation?: Annotation
   ): unknown {
-    return getStyleProperty(
-      settings,
-      property,
-      getAnnotationStyle(annotation),
-      this.mode
-    )
+    return getStyleProperty(settings, property, getState(annotation), this.mode)
   }
 
   /**

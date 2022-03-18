@@ -15,21 +15,21 @@ import * as cpu_imageURI_256_256_100_100_1_1_0_hotIron from './groundTruth/cpu_i
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  utilities,
+  imageLoader,
   metaData,
-  EVENTS,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
-  cpuColormaps,
+  Enums,
+  setUseCPURendering,
+  resetUseCPURendering,
+  CONSTANTS,
 } = cornerstone3D
 
+const { Events, ViewportType } = Enums
+const { CPU_COLORMAPS } = CONSTANTS
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 const AXIAL = 'AXIAL'
@@ -44,7 +44,7 @@ function createViewport(renderingEngine, orientation, width, height) {
   renderingEngine.setViewports([
     {
       viewportUID: viewportUID,
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
@@ -56,11 +56,11 @@ function createViewport(renderingEngine, orientation, width, height) {
 
 describe('StackViewport CPU -- ', () => {
   beforeEach(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
   })
 
   afterEach(() => {
-    resetCPURenderingOnlyForDebugOrTests()
+    resetUseCPURendering()
   })
 
   describe('Basic Rendering --- ', function () {
@@ -69,7 +69,7 @@ describe('StackViewport CPU -- ', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -77,7 +77,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -93,7 +93,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -119,7 +119,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -145,7 +145,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -158,7 +158,7 @@ describe('StackViewport CPU -- ', () => {
 
       try {
         vp.setStack([imageId], 0)
-        // vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST });
+        // vp.setProperties({ interpolationType: InterpolationType.NEAREST });
         vp.render()
       } catch (e) {
         done.fail(e)
@@ -177,7 +177,7 @@ describe('StackViewport CPU -- ', () => {
 
       this.renderingEngine.enableElement({
         viewportUID: viewportUID,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: element,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -186,7 +186,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -215,7 +215,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -244,7 +244,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -270,7 +270,7 @@ describe('StackViewport CPU -- ', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -278,7 +278,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -294,7 +294,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -326,7 +326,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -353,7 +353,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId2 = 'fakeImageLoader:imageURI_256_256_50_10_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -377,7 +377,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId1 = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -403,7 +403,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId1 = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0'
 
       const vp = this.renderingEngine.getViewport(viewportUID)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -429,7 +429,7 @@ describe('StackViewport CPU -- ', () => {
       this.DOMElements = []
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -437,7 +437,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -453,7 +453,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -466,7 +466,7 @@ describe('StackViewport CPU -- ', () => {
 
       try {
         vp.setStack([imageId], 0).then(() => {
-          vp.setColormap(cpuColormaps.hotIron)
+          vp.setColormap(CPU_COLORMAPS.hotIron)
           vp.render()
         })
       } catch (e) {

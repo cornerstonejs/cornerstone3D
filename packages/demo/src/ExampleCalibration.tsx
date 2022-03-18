@@ -2,12 +2,12 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
-  Utilities,
+  Enums as csToolsEnums,
+  utilities,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -26,10 +26,11 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
+const { ViewportType } = Enums
 
 let stackDXViewportToolGroup
 
-const { calibrateImageSpacing } = Utilities
+const { calibrateImageSpacing } = utilities
 
 const toolsToUse = ANNOTATION_TOOLS.filter(
   (tool) => tool !== CrosshairsTool.toolName
@@ -99,7 +100,7 @@ class CalibrationExample extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.DX,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0, 0, 0],
@@ -163,13 +164,13 @@ class CalibrationExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -186,7 +187,7 @@ class CalibrationExample extends Component {
         mode === 'Active' &&
         bindings.some(
           (binding) =>
-            binding.mouseButton === ToolBindings.Mouse.Primary &&
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary &&
             binding.modifierKey === undefined
         )
     )
@@ -200,7 +201,7 @@ class CalibrationExample extends Component {
       bindings: [
         ...currentBindings,
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: csToolsEnums.MouseBindings.Primary,
         },
       ],
     })

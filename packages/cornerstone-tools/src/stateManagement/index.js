@@ -1,10 +1,9 @@
 import FrameOfReferenceSpecificAnnotationManager, {
   defaultFrameOfReferenceSpecificAnnotationManager,
 } from './annotation/FrameOfReferenceSpecificAnnotationManager'
-import * as annotationStyle from './annotation/annotationStyle'
-import getStyle from './annotation/getStyle'
-import setGlobalStyle from './annotation/setGlobalStyle'
-import setToolStyle from './annotation/setToolStyle'
+import getStyle from './annotation/config/getStyle'
+import setGlobalStyle from './annotation/config/setGlobalStyle'
+import setToolStyle from './annotation/config/setToolStyle'
 import * as annotationLocking from './annotation/annotationLocking'
 import * as annotationSelection from './annotation/annotationSelection'
 
@@ -18,15 +17,8 @@ import {
 } from './annotation/annotationState'
 
 import {
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
   addSegmentationsForToolGroup,
-  removeSegmentationsForToolGroup,
-  getGlobalSegmentationState,
-  getSegmentationDataByUID,
-  getToolGroupsWithSegmentation,
-  SegmentationState,
+  removeSegmentationsFromToolGroup,
 } from './segmentation'
 
 export {
@@ -35,7 +27,6 @@ export {
   defaultFrameOfReferenceSpecificAnnotationManager,
   annotationLocking,
   annotationSelection,
-  annotationStyle,
   getAnnotations,
   addAnnotation,
   getStyle,
@@ -47,12 +38,5 @@ export {
   getAnnotation,
   // segmentations
   addSegmentationsForToolGroup,
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
-  removeSegmentationsForToolGroup,
-  getGlobalSegmentationState,
-  getToolGroupsWithSegmentation,
-  getSegmentationDataByUID,
-  SegmentationState,
+  removeSegmentationsFromToolGroup,
 }

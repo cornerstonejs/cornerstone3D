@@ -2,14 +2,15 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
-  Cursors,
+  cursors,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -28,6 +29,8 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let stackCTViewportToolGroup
 
@@ -87,7 +90,7 @@ class CursorExample extends Component {
     csTools3d.init()
     registerWebImageLoader(cs)
 
-    this.setState({ cursorNames: Cursors.cursorNames })
+    this.setState({ cursorNames: cursors.CursorNames })
     ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise
@@ -109,7 +112,7 @@ class CursorExample extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
@@ -213,7 +216,7 @@ class CursorExample extends Component {
             const element = this._elementNodes.get(0)
             const cursorName = evt.target.value
             this.setState({ cursorName })
-            Cursors.setCursorForElement(element, cursorName)
+            cursors.setCursorForElement(element, cursorName)
           }}
         >
           {this.state.cursorNames.map((cursorName) => (

@@ -2,9 +2,9 @@ import { ImageVolume } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
-import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
-import { pointInShapeCallback } from '../../../utilities/'
 import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex'
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
+import { pointInShapeCallback } from '../../../utilities'
 
 type EraseOperationData = {
   toolGroupUID: string

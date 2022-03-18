@@ -5,31 +5,21 @@ import { vec3 } from 'gl-matrix'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  createAndCacheDerivedVolume,
+  volumeLoader,
   init as cs3dInit,
   eventTarget,
 } from '@precisionmetrics/cornerstone-render'
 import {
   // Segmentation
   synchronizers,
-  ToolBindings,
-  ToolModes,
-  CornerstoneTools3DEvents,
-  annotationSelection,
-  Utilities as csToolsUtils,
-  // segs
-  SegmentationModule,
-  SegmentationState,
-  SegmentationRepresentations,
-  addSegmentationsForToolGroup,
-  removeSegmentationsForToolGroup,
+  Enums as csToolsEnums,
+  annotation,
+  utilities as csToolsUtils,
+  segmentation,
   WindowLevelTool,
   PanTool,
-  CrosshairsTool,
   ZoomTool,
   RectangleRoiTool,
-  RectangleRoiStartEndThresholdTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -68,6 +58,8 @@ let ctSceneToolGroup,
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
+
+const { selection } = annotation
 
 const toolsToUse = [
   WindowLevelTool.toolName,
@@ -251,10 +243,10 @@ class SegmentationExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -309,34 +301,34 @@ class SegmentationExample extends Component {
 
   _removeEventListeners() {
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_STATE_MODIFIED,
       this.onSegmentationStateModified
     )
 
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
       this.onGlobalSegmentationStateUpdated
     )
 
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_REMOVED,
+      csToolsEnums.Events.SEGMENTATION_REMOVED,
       this.onSegmentationRemoved
     )
   }
 
   _addEventListeners() {
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_STATE_MODIFIED,
       this.onSegmentationStateModified
     )
 
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
       this.onGlobalSegmentationStateUpdated
     )
 
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_REMOVED,
+      csToolsEnums.Events.SEGMENTATION_REMOVED,
       this.onSegmentationRemoved
     )
   }
@@ -354,10 +346,9 @@ class SegmentationExample extends Component {
 
   onGlobalSegmentationStateUpdated = (evt) => {
     const { segmentationUID } = evt.detail
-    const allSegmentationUIDs =
-      SegmentationState.getGlobalSegmentationState().map(
-        ({ volumeUID }) => volumeUID
-      )
+    const allSegmentationUIDs = segmentation.state
+      .getGlobalSegmentationState()
+      .map(({ volumeUID }) => volumeUID)
 
     let newSelectedSegmentationUID = this.state.selectedSegmentationUIDFromAll
     if (newSelectedSegmentationUID === '') {
@@ -378,9 +369,7 @@ class SegmentationExample extends Component {
     }
 
     const activeSegmentationInfo =
-      SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
-        toolGroupUID
-      )
+      segmentation.activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
 
     let selectedsegmentationUID, segmentLocked, activeSegmentIndex
 
@@ -389,14 +378,14 @@ class SegmentationExample extends Component {
       selectedsegmentationUID = activeSegmentationInfo.segmentationDataUID
 
       segmentLocked =
-        SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
+        segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
           activeSegmentationInfo.volumeUID,
           activeSegmentIndex
         )
     }
 
     const toolGroupSegmentations =
-      SegmentationState.getSegmentationState(toolGroupUID)
+      segmentation.state.getSegmentationState(toolGroupUID)
 
     let segmentationDataUIDs
 
@@ -418,11 +407,9 @@ class SegmentationExample extends Component {
     const { element } = evt.detail
 
     const segmentationUIDs =
-      SegmentationModule.getsegmentationUIDsForElement(element)
+      segmentation.state.getsegmentationUIDsForElement(element)
     const activesegmentationUID =
-      SegmentationModule.activeSegmentationController.getActivesegmentationUID(
-        element
-      )
+      segmentation.activeSegmentation.getActivesegmentationUID(element)
     this.setState({
       availableSegmentations: segmentationUIDs,
       selectedsegmentationUID: activesegmentationUID,
@@ -436,16 +423,19 @@ class SegmentationExample extends Component {
     const { viewportUID, renderingEngineUID } = viewportsInfo[0]
     const viewport = this.renderingEngine.getViewport(viewportUID)
 
-    SegmentationModule.createNewSegmentationForViewport(viewport).then(
-      (segmentationUID) => {
-        addSegmentationsForToolGroup(this.state.selectedToolGroupName, [
-          {
-            volumeUID: segmentationUID,
-            // default representation which is labelmap
-          },
-        ])
-      }
-    )
+    segmentation
+      .createNewSegmentationForToolGroup(this.state.selectedToolGroupName)
+      .then((segmentationUID) => {
+        segmentation.addSegmentationsForToolGroup(
+          this.state.selectedToolGroupName,
+          [
+            {
+              volumeUID: segmentationUID,
+              // default representation which is labelmap
+            },
+          ]
+        )
+      })
   }
 
   setToolMode = (toolMode) => {
@@ -457,20 +447,20 @@ class SegmentationExample extends Component {
       this.setState({ segmentationToolActive: true })
     }
     const toolGroup = toolGroups[this.state.selectedToolGroupName]
-    if (toolMode === ToolModes.Active) {
+    if (toolMode === csToolsEnums.ToolModes.Active) {
       const activeTool = toolGroup.getActivePrimaryMouseButtonTool()
       if (activeTool) {
         toolGroup.setToolPassive(activeTool)
       }
 
       toolGroup.setToolActive(toolName, {
-        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+        bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
       })
-    } else if (toolMode === ToolModes.Passive) {
+    } else if (toolMode === csToolsEnums.ToolModes.Passive) {
       toolGroup.setToolPassive(toolName)
-    } else if (toolMode === ToolModes.Enabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Enabled) {
       toolGroup.setToolEnabled(toolName)
-    } else if (toolMode === ToolModes.Disabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Disabled) {
       toolGroup.setToolDisabled(toolName)
     }
   }
@@ -531,8 +521,12 @@ class SegmentationExample extends Component {
     const ctViewport = this.renderingEngine.getViewport('ctAxial')
     const { imageData: backgroundImageData } = ctViewport.getImageData()
 
-    await createAndCacheDerivedVolume(ctVolumeUID, { uid: labelmap1UID })
-    await createAndCacheDerivedVolume(ctVolumeUID, { uid: labelmap2UID })
+    await volumeLoader.createAndCacheDerivedVolume(ctVolumeUID, {
+      uid: labelmap1UID,
+    })
+    await volumeLoader.createAndCacheDerivedVolume(ctVolumeUID, {
+      uid: labelmap2UID,
+    })
 
     const boneSoftVolume = cache.getVolume(labelmap1UID)
     const fatVolume = cache.getVolume(labelmap2UID)
@@ -555,30 +549,30 @@ class SegmentationExample extends Component {
     const toolGroupUID = this.state.selectedToolGroupName
 
     if (!initialConfig) {
-      await addSegmentationsForToolGroup(toolGroupUID, [
+      await segmentation.addSegmentationsForToolGroup(toolGroupUID, [
         {
           volumeUID: segmentationUID,
           active: true,
           representation: {
-            type: SegmentationRepresentations.Labelmap,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
           },
         },
       ])
     } else {
-      await addSegmentationsForToolGroup(
+      await segmentation.addSegmentationsForToolGroup(
         toolGroupUID,
         [
           {
             volumeUID: segmentationUID,
             active: true,
             representation: {
-              type: SegmentationRepresentations.Labelmap,
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
             },
           },
         ],
         {
           representations: {
-            [SegmentationRepresentations.Labelmap]: {
+            [csToolsEnums.SegmentationRepresentations.Labelmap]: {
               renderOutline: false,
             },
           },
@@ -595,19 +589,19 @@ class SegmentationExample extends Component {
     const checked = evt.target.checked
 
     const activesegmentationInfo =
-      SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+      segmentation.activeSegmentation.getActiveSegmentationInfo(
         this.state.selectedToolGroupName
       )
 
     const { volumeUID, activeSegmentIndex } = activesegmentationInfo
 
     const activeSegmentLockedStatus =
-      SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
+      segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
         volumeUID,
         activeSegmentIndex
       )
 
-    SegmentationModule.lockedSegmentController.setSegmentIndexLockedForSegmentation(
+    segmentation.segmentLocking.setSegmentIndexLockedForSegmentation(
       volumeUID,
       activeSegmentIndex,
       !activeSegmentLockedStatus
@@ -619,9 +613,7 @@ class SegmentationExample extends Component {
   changeActiveSegmentIndex = (direction) => {
     const toolGroupUID = this.state.selectedToolGroupName
     const activeSegmentationInfo =
-      SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
-        toolGroupUID
-      )
+      segmentation.activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
 
     const { activeSegmentIndex } = activeSegmentationInfo
     let newIndex = activeSegmentIndex + direction
@@ -630,16 +622,12 @@ class SegmentationExample extends Component {
       newIndex = 0
     }
 
-    SegmentationModule.segmentIndexController.setActiveSegmentIndex(
+    segmentation.segmentIndex.setActiveSegmentIndex(toolGroupUID, newIndex)
+
+    const segmentIsLocked = segmentation.segmentLocking.getSegmentIndexLocked(
       toolGroupUID,
       newIndex
     )
-
-    const segmentIsLocked =
-      SegmentationModule.lockedSegmentController.getSegmentIndexLocked(
-        toolGroupUID,
-        newIndex
-      )
 
     this.setState({
       selectedViewportActiveSegmentIndex: newIndex,
@@ -650,8 +638,7 @@ class SegmentationExample extends Component {
   calculateTMTV = () => {
     const viewportUID = this.state.selectedToolGroupName
     const { element } = this.renderingEngine.getViewport(viewportUID)
-    const segmentationUIDs =
-      SegmentationModule.getsegmentationUIDsForElement(element)
+    const segmentationUIDs = segmentation.getsegmentationUIDsForElement(element)
 
     const labelmaps = segmentationUIDs.map((uid) => cache.getVolume(uid))
     const segmentationIndex = 1
@@ -672,7 +659,7 @@ class SegmentationExample extends Component {
     const { uid } = viewport.getDefaultActor()
     const referenceVolume = cache.getVolume(uid)
 
-    const segmentationUIDs = SegmentationModule.getsegmentationUIDsForElement(
+    const segmentationUIDs = segmentation.getsegmentationUIDsForElement(
       viewport.element
     )
 
@@ -691,7 +678,7 @@ class SegmentationExample extends Component {
       throw new Error('cannot apply start slice')
     }
 
-    let annotation = annotationSelection.getAnnotationsSelectedByToolName(
+    let annotation = selection.getAnnotationsSelectedByToolName(
       this.state.ptCtLeftClickTool
     )
 
@@ -716,7 +703,7 @@ class SegmentationExample extends Component {
       this.state.selectedToolGroupName,
       this.state.selectedsegmentationUID
     )
-    const globalState = SegmentationState.getGlobalSegmentationDataByUID(
+    const globalState = segmentation.state.getGlobalSegmentationDataByUID(
       segmentationData.volumeUID
     )
 
@@ -737,7 +724,7 @@ class SegmentationExample extends Component {
       throw new Error('cannot apply start slice')
     }
 
-    let annotation = annotationSelection.getAnnotationsSelectedByToolName(
+    let annotation = selection.getAnnotationsSelectedByToolName(
       this.state.ptCtLeftClickTool
     )
 
@@ -755,10 +742,9 @@ class SegmentationExample extends Component {
 
     const { focalPoint, viewPlaneNormal } = viewport.getCamera()
 
-    const selectedAnnotations =
-      annotationSelection.getAnnotationsSelectedByToolName(
-        this.state.ptCtLeftClickTool
-      )
+    const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
+      this.state.ptCtLeftClickTool
+    )
 
     const { handles } = annotation.data
     const { points } = handles
@@ -787,7 +773,7 @@ class SegmentationExample extends Component {
   }
 
   executeThresholding = (mode) => {
-    let annotation = annotationSelection.getAnnotationsSelectedByToolName(
+    let annotation = selection.getAnnotationsSelectedByToolName(
       this.state.ptCtLeftClickTool
     )
 
@@ -815,10 +801,9 @@ class SegmentationExample extends Component {
     )
 
     const numSlices = this.state.numSlicesForThreshold
-    const selectedAnnotations =
-      annotationSelection.getAnnotationsSelectedByToolName(
-        this.state.ptCtLeftClickTool
-      )
+    const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
+      this.state.ptCtLeftClickTool
+    )
 
     if (mode === 'max') {
       csToolsUtils.segmentation.thresholdVolumeByRoiStats(
@@ -968,19 +953,20 @@ class SegmentationExample extends Component {
 
   deleteSegmentation = () => {
     const segmentationDataUID = this.state.selectedsegmentationUID
-    removeSegmentationsForToolGroup(this.state.selectedToolGroupName, [
-      segmentationDataUID,
-    ])
+    segmentation.removeSegmentationsFromToolGroup(
+      this.state.selectedToolGroupName,
+      [segmentationDataUID]
+    )
   }
 
   toggleSegmentationVisibility = (segmentDataUID) => {
     const visibilityStatus =
-      SegmentationModule.segmentationVisibilityController.getSegmentationVisibility(
+      segmentation.segmentationVisibility.getSegmentationVisibility(
         this.state.selectedToolGroupName,
         segmentDataUID
       )
 
-    SegmentationModule.segmentationVisibilityController.setSegmentationVisibility(
+    segmentation.segmentationVisibility.setSegmentationVisibility(
       this.state.selectedToolGroupName,
       segmentDataUID,
       !visibilityStatus
@@ -1070,15 +1056,15 @@ class SegmentationExample extends Component {
           onChange={(evt) => {
             const toolGroupName = evt.target.value
             const toolGroupSegmentations =
-              SegmentationState.getSegmentationState(toolGroupName)
+              segmentation.state.getSegmentationState(toolGroupName)
 
             const activeSegmentationData =
-              SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+              segmentation.activeSegmentation.getActiveSegmentationInfo(
                 toolGroupName
               )
 
             const toolGroupSegmentationConfig =
-              SegmentationModule.segmentationConfigController.getSegmentationConfig(
+              segmentation.segmentationConfig.getSegmentationConfig(
                 toolGroupName
               )
 
@@ -1108,25 +1094,25 @@ class SegmentationExample extends Component {
         </select>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Active)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Active)}
         >
           Active
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Passive)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Passive)}
         >
           Passive
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Enabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Enabled)}
         >
           Enabled
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Disabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Disabled)}
         >
           Disabled
         </button>
@@ -1179,28 +1165,30 @@ class SegmentationExample extends Component {
             <button
               onClick={async () => {
                 const toolGroupUID = this.state.selectedToolGroupName
-                addSegmentationsForToolGroup(toolGroupUID, [
-                  {
-                    volumeUID: this.state.selectedSegmentationUIDFromAll,
-                    // no representation -> labelmap
-                  },
-                ]).then(() => {
-                  const { volumeUID, activeSegmentIndex } =
-                    SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
-                      toolGroupUID
-                    )
+                segmentation
+                  .addSegmentationsForToolGroup(toolGroupUID, [
+                    {
+                      volumeUID: this.state.selectedSegmentationUIDFromAll,
+                      // no representation -> labelmap
+                    },
+                  ])
+                  .then(() => {
+                    const { volumeUID, activeSegmentIndex } =
+                      segmentation.activeSegmentation.getActiveSegmentationInfo(
+                        toolGroupUID
+                      )
 
-                  const activeSegmentIndexLocked =
-                    SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
-                      volumeUID,
-                      activeSegmentIndex
-                    )
+                    const activeSegmentIndexLocked =
+                      segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
+                        volumeUID,
+                        activeSegmentIndex
+                      )
 
-                  this.setState({
-                    selectedViewportActiveSegmentIndex: activeSegmentIndex,
-                    segmentLocked: activeSegmentIndexLocked,
+                    this.setState({
+                      selectedViewportActiveSegmentIndex: activeSegmentIndex,
+                      segmentLocked: activeSegmentIndexLocked,
+                    })
                   })
-                })
               }}
               className="btn btn-primary"
               style={{ margin: '2px 4px' }}
@@ -1225,7 +1213,7 @@ class SegmentationExample extends Component {
                 onChange={(evt) => {
                   const selectedsegmentationUID = evt.target.value
 
-                  SegmentationModule.activeSegmentationController.setActiveSegmentation(
+                  segmentation.activeSegmentation.setActiveSegmentation(
                     this.state.selectedToolGroupName,
                     selectedsegmentationUID
                   )
@@ -1383,7 +1371,7 @@ class SegmentationExample extends Component {
                   onChange={(evt) => {
                     const fillAlpha = Number(evt.target.value)
                     const representationType =
-                      SegmentationRepresentations.Labelmap
+                      csToolsEnums.SegmentationRepresentations.Labelmap
 
                     this.setState({ fillAlphaToolGroup: fillAlpha })
                   }}
@@ -1410,13 +1398,13 @@ class SegmentationExample extends Component {
               </div>
               <button
                 onClick={() => {
-                  SegmentationModule.segmentationConfigController.setSegmentationConfig(
+                  segmentation.segmentationConfig.setSegmentationConfig(
                     this.state.selectedToolGroupName,
                     {
                       renderInactiveSegmentations:
                         this.state.renderInactiveSegmentationsToolGroup,
                       representations: {
-                        [SegmentationRepresentations.Labelmap]: {
+                        [csToolsEnums.SegmentationRepresentations.Labelmap]: {
                           renderOutline: this.state.renderOutlineToolGroup,
                           fillAlpha: this.state.fillAlphaToolGroup,
                           fillAlphaInactive:
@@ -1441,8 +1429,9 @@ class SegmentationExample extends Component {
               onChange={() => {
                 const renderOutline = !this.state.renderOutlineGlobal
 
-                const representationType = SegmentationRepresentations.Labelmap
-                SegmentationModule.segmentationConfigController.updateGlobalRepresentationConfig(
+                const representationType =
+                  csToolsEnums.SegmentationRepresentations.Labelmap
+                segmentation.segmentationConfig.updateGlobalRepresentationConfig(
                   representationType,
                   { renderOutline }
                 )
@@ -1464,11 +1453,9 @@ class SegmentationExample extends Component {
                 const renderInactiveSegmentations =
                   !this.state.renderInactiveSegmentationsGlobal
 
-                SegmentationModule.segmentationConfigController.updateGlobalSegmentationConfig(
-                  {
-                    renderInactiveSegmentations,
-                  }
-                )
+                segmentation.segmentationConfig.updateGlobalSegmentationConfig({
+                  renderInactiveSegmentations,
+                })
 
                 this.setState({
                   renderInactiveSegmentationsGlobal:
@@ -1494,9 +1481,9 @@ class SegmentationExample extends Component {
                   onChange={(evt) => {
                     const fillAlpha = Number(evt.target.value)
                     const representationType =
-                      SegmentationRepresentations.Labelmap
+                      csToolsEnums.SegmentationRepresentations.Labelmap
 
-                    SegmentationModule.segmentationConfigController.updateGlobalRepresentationConfig(
+                    segmentation.segmentationConfig.updateGlobalRepresentationConfig(
                       representationType,
                       {
                         fillAlpha,
@@ -1520,9 +1507,9 @@ class SegmentationExample extends Component {
                   onChange={(evt) => {
                     const fillAlphaInactive = Number(evt.target.value)
                     const representationType =
-                      SegmentationRepresentations.Labelmap
+                      csToolsEnums.SegmentationRepresentations.Labelmap
 
-                    SegmentationModule.segmentationConfigController.updateGlobalRepresentationConfig(
+                    segmentation.segmentationConfig.updateGlobalRepresentationConfig(
                       representationType,
                       {
                         fillAlphaInactive,

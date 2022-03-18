@@ -7,7 +7,7 @@ import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsFo
  * element. It filters all the active and passive tools for the enabledElement
  * and calls cancel() method for all of them, and returns the tool that has executed its
  * cancellation (returned its annotationUID), since tools that are not being manipulated will
- * short circuit early
+ * short circuit early. Note: not all tools currently implement a cancel method.
  *
  * @param element - canvas element
  * @returns annotationUID that is cancelled

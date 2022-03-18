@@ -2,7 +2,7 @@ import wheelListener from './wheelListener'
 
 /**
  * Listens for the wheel event, and handles it. Handled event
- * will be "normalized" and re-emitted as `EVENTS.MOUSE_WHEEL`
+ * will be "normalized" and re-emitted as `Events.MOUSE_WHEEL`
  *
  * @param element - The HTML element
  */
@@ -12,7 +12,7 @@ function enable(element: HTMLElement) {
 }
 
 /**
- * Removes listener and handler for wheel event. `EVENTS.MOUSE_WHEEL`
+ * Removes listener and handler for wheel event. `Events.MOUSE_WHEEL`
  * will no longer be emitted.
  *
  * @param element - THe HTML element

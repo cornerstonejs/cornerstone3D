@@ -1,12 +1,12 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import {
-  ORIENTATION,
-  VIEWPORT_TYPE,
-} from '@precisionmetrics/cornerstone-render'
+import { Enums, CONSTANTS } from '@precisionmetrics/cornerstone-render'
 import {
   setCTWWWC,
   setCTVRTransferFunction,
 } from '../helpers/transferFunctionHelpers'
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
   const viewportInput = [
@@ -14,7 +14,7 @@ function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
     {
       sceneUID: SCENE_IDS.CTOBLIQUE,
       viewportUID: VIEWPORT_IDS.CTOBLIQUE.OBLIQUE,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,

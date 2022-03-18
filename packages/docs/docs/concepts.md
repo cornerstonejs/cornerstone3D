@@ -13,7 +13,7 @@ _app.js_
 import {
   RenderingEngine, // class
   ORIENTATION, // constant
-  VIEWPORT_TYPE, // enum
+  ViewportType, // enum
 } from 'vtkjs-viewport'
 
 // RENDER
@@ -24,7 +24,7 @@ const viewports = []
 const viewport = {
   sceneUID,
   viewportUID: 'viewportUID_0',
-  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+  type: ViewportType.ORTHOGRAPHIC,
   canvas: document.querySelector('.target-canvas'),
   defaultOptions: {
     orientation: ORIENTATION.AXIAL,
@@ -202,13 +202,13 @@ _NOTE:_
 // Possible modes include: 'Active', 'Passive', 'Enabled', 'Disabled'
 sceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
 sceneToolGroup.setToolActive(LengthTool.toolName, {
-  bindings: [ { mouseButton: ToolBindings.Mouse.Primary } ],
+  bindings: [ { mouseButton: MouseBindings.Primary } ],
 })
 sceneToolGroup.setToolActive(PanTool.toolName, {
-  bindings: [ { mouseButton: ToolBindings.Mouse.Auxiliary } ],
+  bindings: [ { mouseButton: MouseBindings.Auxiliary } ],
 })
 sceneToolGroup.setToolActive(ZoomTool.toolName, {
-  bindings: [ { mouseButton: ToolBindings.Mouse.Secondary } ],
+  bindings: [ { mouseButton: MouseBindings.Secondary } ],
 })
 ```
 
@@ -227,7 +227,7 @@ Synchronizers also expose a `disabled` flag that can be used to temporarily prev
 synchronization.
 
 ```js
-import { EVENTS as RENDERING_EVENTS } from 'vtkjs-viewport'
+import { Events as RENDERING_EVENTS } from 'vtkjs-viewport'
 import { SynchronizerManager } from 'vtkjs-viewport-tools'
 
 const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(

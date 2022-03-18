@@ -55,7 +55,7 @@ stackToolGroup.addTool(ProbeTool.toolName, {
 
 // 5. Activating the probeTool and assigning primary mouse button to it.
 stackToolGroup.setToolActive(ProbeTool.toolName, {
-  bindings: [{ mouseButton:  ToolBindings.Mouse.Primary }],
+  bindings: [{ mouseButton:  MouseBindings.Primary }],
 })
 ```
 

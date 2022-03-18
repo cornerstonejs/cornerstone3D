@@ -1,4 +1,4 @@
-import REQUEST_TYPE from '../enums/requestType'
+import RequestType from '../enums/RequestType'
 
 type AdditionalDetails = {
   imageId?: string
@@ -7,12 +7,12 @@ type AdditionalDetails = {
 
 type RequestDetailsInterface = {
   requestFn: () => Promise<void>
-  type: REQUEST_TYPE
+  type: RequestType
   additionalDetails: AdditionalDetails
 }
 
 type RequestPool = {
-  [name in REQUEST_TYPE]: { [key: number]: RequestDetailsInterface[] }
+  [name in RequestType]: { [key: number]: RequestDetailsInterface[] }
 }
 
 // TODO: Some of this stuff shouldn't be public but it's easier right now
@@ -44,7 +44,7 @@ type RequestPool = {
  * ```javascript
  *
  * const priority = -5
- * const requestType = REQUEST_TYPE.Interaction
+ * const requestType = RequestType.Interaction
  * const additionalDetails = { imageId }
  * const options = {
  *   targetBuffer: {
@@ -141,7 +141,7 @@ class RequestPoolManager {
    */
   public addRequest(
     requestFn: () => Promise<void>,
-    type: REQUEST_TYPE,
+    type: RequestType,
     additionalDetails: Record<string, unknown>,
     priority = 0
   ): void {

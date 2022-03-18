@@ -10,31 +10,37 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom from './groundTruth/volum
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
+  Enums,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
+  imageLoader,
+  volumeLoader,
+  utilities,
+  setVolumesForViewports,
   eventTarget,
+  CONSTANTS,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
-  SegmentationState,
-  SegmentationModule,
+  segmentation,
+  Enums: csToolsEnums,
 } = csTools3d
 
-const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
-  Utilities.testUtils
+const { Events } = csToolsEnums
 
-const renderingEngineUID = Utilities.uuidv4()
+const { addSegmentationsForToolGroup } = segmentation
+const { SegmentationRepresentations } = csToolsEnums
+
+const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
+  utilities.testUtils
+
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'
@@ -59,7 +65,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -71,7 +77,7 @@ function createViewport(
 
 describe('Segmentation Render -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Rendering', function () {
@@ -118,7 +124,7 @@ describe('Segmentation Render -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID1)
 
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -137,7 +143,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1]
@@ -171,7 +177,7 @@ describe('Segmentation Render -- ', () => {
       const vp3 = this.renderingEngine.getViewport(viewportUID3)
 
       let renderedViewportCounts = 0
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         renderedViewportCounts++
 
         if (renderedViewportCounts !== 3) {
@@ -214,7 +220,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1, viewportUID2, viewportUID3]
@@ -243,7 +249,7 @@ describe('Segmentation Render -- ', () => {
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_60_60_2_80_80_7'
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
 
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
 
@@ -262,7 +268,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1]
@@ -300,7 +306,7 @@ describe('Segmentation Render -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
 
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
         expect(evt.detail.toolGroupUID).toBe('segToolGroup')
@@ -313,16 +319,16 @@ describe('Segmentation Render -- ', () => {
       })
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_STATE_MODIFIED,
+        Events.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
-          const toolGroupState = SegmentationState.getSegmentationState(
+          const toolGroupState = segmentation.state.getSegmentationState(
             this.segToolGroup.uid
           )
 
           expect(toolGroupState).toBeDefined()
 
           const toolGroupConfig =
-            SegmentationModule.segmentationConfigController.getSegmentationConfig(
+            segmentation.segmentationConfig.getSegmentationConfig(
               this.segToolGroup.uid
             )
 
@@ -341,7 +347,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1]

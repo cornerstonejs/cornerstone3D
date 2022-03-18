@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -15,8 +15,11 @@ const {
   WindowLevelTool,
   StackScrollMouseWheelTool,
   ToolGroupManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
+
+const { ViewportType } = Enums
+const { MouseBindings } = csToolsEnums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -81,7 +84,7 @@ async function run() {
   toolGroup1.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -98,7 +101,7 @@ async function run() {
   toolGroup2.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -139,7 +142,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -147,7 +150,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -155,7 +158,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element: element3,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],

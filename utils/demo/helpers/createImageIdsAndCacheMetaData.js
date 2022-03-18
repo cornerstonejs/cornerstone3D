@@ -2,7 +2,7 @@ import { api } from 'dicomweb-client'
 import dcmjs from 'dcmjs'
 import { calculateSUVScalingFactors } from '@precisionmetrics/calculate-suv'
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata'
-import { Utilities } from '@precisionmetrics/cornerstone-render'
+import { utilities } from '@precisionmetrics/cornerstone-render'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'
@@ -10,7 +10,7 @@ import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 import getPixelSpacingInformation from './getPixelSpacingInformation'
 
 const { DicomMetaDictionary } = dcmjs.data
-const { calibratedPixelSpacingMetadataProvider } = Utilities
+const { calibratedPixelSpacingMetadataProvider } = utilities
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -61,7 +61,10 @@ export default async function createImageIdsAndCacheMetaData({
       SOPInstanceUID +
       '/frames/1'
 
-    cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, instanceMetaData)
+    cornerstoneWADOImageLoader.wadors.metaDataManager.add(
+      imageId,
+      instanceMetaData
+    )
 
     // let imageId
     // if (type === VOLUME) {
@@ -118,9 +121,14 @@ export default async function createImageIdsAndCacheMetaData({
       }
     })
     if (InstanceMetadataArray.length) {
-      const suvScalingFactors = calculateSUVScalingFactors(InstanceMetadataArray)
+      const suvScalingFactors = calculateSUVScalingFactors(
+        InstanceMetadataArray
+      )
       InstanceMetadataArray.forEach((instanceMetadata, index) => {
-        ptScalingMetaDataProvider.addInstance(imageIds[index], suvScalingFactors[index])
+        ptScalingMetaDataProvider.addInstance(
+          imageIds[index],
+          suvScalingFactors[index]
+        )
       })
     }
   }

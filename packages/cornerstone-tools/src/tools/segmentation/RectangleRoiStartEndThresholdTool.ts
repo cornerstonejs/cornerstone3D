@@ -1,17 +1,17 @@
 import {
   getEnabledElement,
-  getVolume,
+  cache,
   Settings,
   StackViewport,
   metaData,
   triggerEvent,
   eventTarget,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { vec3 } from 'gl-matrix'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { Events } from '../../enums'
 import { addAnnotation, getAnnotations } from '../../stateManagement'
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
 import {
@@ -124,7 +124,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       throw new Error('Stack Viewport Not implemented')
     } else {
       volumeUID = this.getTargetUID(viewport)
-      imageVolume = getVolume(volumeUID)
+      imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -300,7 +300,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     const { cachedStats } = data
     const volumeUID = this.getTargetUID(viewport)
-    const imageVolume = getVolume(volumeUID)
+    const imageVolume = cache.getVolume(volumeUID)
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleRoi class, we need to
@@ -310,7 +310,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     annotation.invalidated = false
 
     // Dispatching annotation modified
-    const eventType = EVENTS.ANNOTATION_MODIFIED
+    const eventType = Events.ANNOTATION_MODIFIED
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,

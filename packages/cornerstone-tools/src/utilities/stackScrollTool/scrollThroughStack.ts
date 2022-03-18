@@ -2,7 +2,7 @@ import {
   getEnabledElement,
   StackViewport,
   VolumeViewport,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import clip from '../clip'
 import getSliceRange from './getSliceRange'

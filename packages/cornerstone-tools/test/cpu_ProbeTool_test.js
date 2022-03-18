@@ -4,36 +4,38 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  Utilities,
+  utilities,
   eventTarget,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  imageLoader,
   metaData,
-  EVENTS,
-  getEnabledElement,
-  registerVolumeLoader,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  Enums,
+  volumeLoader,
+  setUseCPURendering,
+  resetUseCPURendering,
+  CONSTANTS,
 } = cornerstone3D
+
+const { Events, ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ProbeTool,
   ToolGroupManager,
-  AnnotationState,
-  CornerstoneTools3DEvents,
   cancelActiveManipulations,
+  annotation,
+  Enums: csToolsEnums,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
   fakeMetaDataProvider,
   fakeVolumeLoader,
   createNormalizedMouseEvent,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 
@@ -64,11 +66,11 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
 describe('ProbeTool (CPU):', () => {
   beforeAll(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
   })
 
   afterAll(() => {
-    resetCPURenderingOnlyForDebugOrTests()
+    resetUseCPURendering()
   })
 
   beforeEach(function () {
@@ -86,8 +88,8 @@ describe('ProbeTool (CPU):', () => {
     })
 
     this.renderingEngine = new RenderingEngine(renderingEngineUID)
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
 
@@ -98,7 +100,7 @@ describe('ProbeTool (CPU):', () => {
 
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
+    imageLoader.unregisterAllImageLoaders()
     ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
     this.DOMElements.forEach((el) => {
@@ -111,7 +113,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put a probe tool on a cpu stack viewport - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -121,41 +123,38 @@ describe('ProbeTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          // Can successfully add probe tool to annotationManager
-          const probeAnnotations = AnnotationState.getAnnotations(
-            element,
-            ProbeTool.toolName
-          )
-          expect(probeAnnotations).toBeDefined()
-          expect(probeAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        // Can successfully add probe tool to annotationManager
+        const probeAnnotations = annotation.state.getAnnotations(
+          element,
+          ProbeTool.toolName
+        )
+        expect(probeAnnotations).toBeDefined()
+        expect(probeAnnotations.length).toBe(1)
 
-          const probeAnnotation = probeAnnotations[0]
-          expect(probeAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
-          expect(probeAnnotation.invalidated).toBe(false)
+        const probeAnnotation = probeAnnotations[0]
+        expect(probeAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
+        expect(probeAnnotation.invalidated).toBe(false)
 
-          const data = probeAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = probeAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(255)
+        // The world coordinate is on the white bar so value is 255
+        expect(data[targets[0]].value).toBe(255)
 
-          AnnotationState.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          probeAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0]
 
       const { imageData } = vp.getImageData()
@@ -201,7 +200,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put two probe tools on a cpu stack viewport - 256 x 256', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -211,63 +210,56 @@ describe('ProbeTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          // Can successfully add probe tool to annotationManager
-          const probeAnnotations = AnnotationState.getAnnotations(
-            element,
-            ProbeTool.toolName
-          )
-          expect(probeAnnotations).toBeDefined()
-          expect(probeAnnotations.length).toBe(2)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        // Can successfully add probe tool to annotationManager
+        const probeAnnotations = annotation.state.getAnnotations(
+          element,
+          ProbeTool.toolName
+        )
+        expect(probeAnnotations).toBeDefined()
+        expect(probeAnnotations.length).toBe(2)
 
-          const firstProbeAnnotation = probeAnnotations[0]
-          expect(firstProbeAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(firstProbeAnnotation.metadata.toolName).toBe(
-            ProbeTool.toolName
-          )
-          expect(firstProbeAnnotation.invalidated).toBe(false)
+        const firstProbeAnnotation = probeAnnotations[0]
+        expect(firstProbeAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(firstProbeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
+        expect(firstProbeAnnotation.invalidated).toBe(false)
 
-          let data = firstProbeAnnotation.data.cachedStats
-          let targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        let data = firstProbeAnnotation.data.cachedStats
+        let targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(255)
+        // The world coordinate is on the white bar so value is 255
+        expect(data[targets[0]].value).toBe(255)
 
-          // Second click
-          const secondProbeAnnotation = probeAnnotations[1]
-          expect(secondProbeAnnotation.metadata.toolName).toBe(
-            ProbeTool.toolName
-          )
-          expect(secondProbeAnnotation.invalidated).toBe(false)
+        // Second click
+        const secondProbeAnnotation = probeAnnotations[1]
+        expect(secondProbeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
+        expect(secondProbeAnnotation.invalidated).toBe(false)
 
-          data = secondProbeAnnotation.data.cachedStats
-          targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        data = secondProbeAnnotation.data.cachedStats
+        targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(0)
+        // The world coordinate is on the white bar so value is 255
+        expect(data[targets[0]].value).toBe(0)
 
-          //
-          AnnotationState.removeAnnotation(
-            element,
-            firstProbeAnnotation.annotationUID
-          )
-          AnnotationState.removeAnnotation(
-            element,
-            secondProbeAnnotation.annotationUID
-          )
+        //
+        annotation.state.removeAnnotation(
+          element,
+          firstProbeAnnotation.annotationUID
+        )
+        annotation.state.removeAnnotation(
+          element,
+          secondProbeAnnotation.annotationUID
+        )
 
-          done()
-        }
-      )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0] // 255
       const index2 = [20, 20, 0] // 0
 
@@ -335,7 +327,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put a probe tool on a cpu stack viewport - 256 x 512', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       512
     )
@@ -345,41 +337,38 @@ describe('ProbeTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          // Can successfully add probe tool to annotationManager
-          const probeAnnotations = AnnotationState.getAnnotations(
-            element,
-            ProbeTool.toolName
-          )
-          expect(probeAnnotations).toBeDefined()
-          expect(probeAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        // Can successfully add probe tool to annotationManager
+        const probeAnnotations = annotation.state.getAnnotations(
+          element,
+          ProbeTool.toolName
+        )
+        expect(probeAnnotations).toBeDefined()
+        expect(probeAnnotations.length).toBe(1)
 
-          const probeAnnotation = probeAnnotations[0]
-          expect(probeAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
-          expect(probeAnnotation.invalidated).toBe(false)
+        const probeAnnotation = probeAnnotations[0]
+        expect(probeAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
+        expect(probeAnnotation.invalidated).toBe(false)
 
-          const data = probeAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = probeAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(255)
+        // The world coordinate is on the white bar so value is 255
+        expect(data[targets[0]].value).toBe(255)
 
-          AnnotationState.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          probeAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [150, 100, 0] // 255
 
       const { imageData } = vp.getImageData()
@@ -423,7 +412,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put a probe tool on a cpu stack viewport - 256 x 512', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       512
     )
@@ -433,41 +422,38 @@ describe('ProbeTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          // Can successfully add probe tool to annotationManager
-          const probeAnnotations = AnnotationState.getAnnotations(
-            element,
-            ProbeTool.toolName
-          )
-          expect(probeAnnotations).toBeDefined()
-          expect(probeAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        // Can successfully add probe tool to annotationManager
+        const probeAnnotations = annotation.state.getAnnotations(
+          element,
+          ProbeTool.toolName
+        )
+        expect(probeAnnotations).toBeDefined()
+        expect(probeAnnotations.length).toBe(1)
 
-          const probeAnnotation = probeAnnotations[0]
-          expect(probeAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
-          expect(probeAnnotation.invalidated).toBe(false)
+        const probeAnnotation = probeAnnotations[0]
+        expect(probeAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
+        expect(probeAnnotation.invalidated).toBe(false)
 
-          const data = probeAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = probeAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // The world coordinate is on the white bar so value is 255
-          expect(data[targets[0]].value).toBe(0)
+        // The world coordinate is on the white bar so value is 255
+        expect(data[targets[0]].value).toBe(0)
 
-          AnnotationState.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          probeAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [35, 35, 0] // 0
 
       const { imageData } = vp.getImageData()
@@ -511,7 +497,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully create a Probe tool on a cpu stack viewport and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -523,47 +509,44 @@ describe('ProbeTool (CPU):', () => {
     let p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const probeAnnotations = AnnotationState.getAnnotations(
-            element,
-            ProbeTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(probeAnnotations).toBeDefined()
-          expect(probeAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const probeAnnotations = annotation.state.getAnnotations(
+          element,
+          ProbeTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(probeAnnotations).toBeDefined()
+        expect(probeAnnotations.length).toBe(1)
 
-          const probeAnnotation = probeAnnotations[0]
-          expect(probeAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
-          expect(probeAnnotation.invalidated).toBe(false)
+        const probeAnnotation = probeAnnotations[0]
+        expect(probeAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName)
+        expect(probeAnnotation.invalidated).toBe(false)
 
-          const data = probeAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = probeAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // We expect the probeTool which was original on 255 strip should be 0 now
-          expect(data[targets[0]].value).toBe(0)
+        // We expect the probeTool which was original on 255 strip should be 0 now
+        expect(data[targets[0]].value).toBe(0)
 
-          const handles = probeAnnotation.data.handles.points
+        const handles = probeAnnotation.data.handles.points
 
-          expect(handles[0][0]).toEqual(p2[0])
-          expect(handles[0][1]).toEqual(p2[1])
-          expect(handles[0][2]).toEqual(p2[2])
+        expect(handles[0][0]).toEqual(p2[0])
+        expect(handles[0][1]).toEqual(p2[1])
+        expect(handles[0][2]).toEqual(p2[2])
 
-          AnnotationState.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          probeAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0] // 255
       const index2 = [40, 40, 0] // 0
 
@@ -642,7 +625,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully cancel drawing of a ProbeTool on a cpu stack viewport', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -653,7 +636,7 @@ describe('ProbeTool (CPU):', () => {
 
     let p2
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0] // 255
       const index2 = [40, 40, 0] // 0
 
@@ -719,7 +702,7 @@ describe('ProbeTool (CPU):', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const probeAnnotations = AnnotationState.getAnnotations(
+        const probeAnnotations = annotation.state.getAnnotations(
           element,
           ProbeTool.toolName
         )
@@ -748,16 +731,16 @@ describe('ProbeTool (CPU):', () => {
         expect(handles[0][1]).toEqual(p2[1])
         expect(handles[0][2]).toEqual(p2[2])
 
-        AnnotationState.removeAnnotation(element, probeAnnotation.annotationUID)
+        annotation.state.removeAnnotation(
+          element,
+          probeAnnotation.annotationUID
+        )
         done()
       }, 100)
     }
 
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
-    element.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
-      cancelToolDrawing
-    )
+    element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
     try {
       vp.setStack([imageId1], 0)

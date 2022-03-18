@@ -1,4 +1,4 @@
-import { getVolume, Utilities } from '@precisionmetrics/cornerstone-render'
+import { cache, utilities } from '@precisionmetrics/cornerstone-render'
 import applyPreset from './applyPreset'
 import colors from './colors'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
@@ -9,7 +9,7 @@ function setCTWWWC({ volumeActor, volumeUID }) {
   let lower, upper, windowWidth, windowCenter
 
   if (volumeUID) {
-    const volume = getVolume(volumeUID)
+    const volume = cache.getVolume(volumeUID)
     ;({ windowWidth, windowCenter } = volume.metadata.voiLut[0])
   } else {
     windowWidth = 400
@@ -64,11 +64,11 @@ function setPetTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, 5)
 
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setCTVRTransferFunction({ volumeActor, volumeUID }) {
-  const volume = getVolume(volumeUID)
+  const volume = cache.getVolume(volumeUID)
 
   const { windowWidth, windowCenter } = volume.metadata.voiLut[0]
 

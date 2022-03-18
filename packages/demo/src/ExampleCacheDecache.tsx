@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  loadAndCacheImages,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  volumeLoader,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+import { WindowLevelTool } from '@precisionmetrics/cornerstone-tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -28,6 +28,8 @@ import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-load
 
 const VOLUME = 'volume'
 const STACK = 'stack'
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 window.cache = cache
 
@@ -102,7 +104,7 @@ class CacheDecacheExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -110,7 +112,7 @@ class CacheDecacheExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -118,7 +120,7 @@ class CacheDecacheExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -127,7 +129,7 @@ class CacheDecacheExample extends Component {
       // stack CT
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -144,8 +146,8 @@ class CacheDecacheExample extends Component {
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({ ctSceneToolGroup, stackCTViewportToolGroup })
@@ -182,7 +184,7 @@ class CacheDecacheExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -196,7 +198,7 @@ class CacheDecacheExample extends Component {
 
     const onLoad = () => this.setState({ progressText: 'Loaded.' })
 
-    setVolumesOnViewports(
+    setVolumesForViewports(
       this.renderingEngine,
       [{ volumeUID: ctVolumeUID }],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
@@ -248,7 +250,7 @@ class CacheDecacheExample extends Component {
   loadStack = async () => {
     const ctStackImageIds = await this.ctStackImageIdsPromise
 
-    loadAndCacheImages(ctStackImageIds)
+    volumeLoader.loadAndCacheImages(ctStackImageIds)
   }
 
   getImageCacheForDisplay = () => {

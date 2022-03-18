@@ -4,30 +4,37 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
+  Enums,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
+  volumeLoader,
+  utilities,
+  setVolumesForViewports,
   eventTarget,
+  imageLoader,
+  CONSTANTS,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationState,
-  Utilities: { segmentation: segUtils },
-  SegmentationRepresentations,
+  Enums: csToolsEnums,
+  segmentation,
+  utilities: { segmentation: segUtils },
 } = csTools3d
 
-const { fakeMetaDataProvider, fakeVolumeLoader } = Utilities.testUtils
+const { Events } = csToolsEnums
 
-const renderingEngineUID = Utilities.uuidv4()
+const { addSegmentationsForToolGroup } = segmentation
+const { SegmentationRepresentations } = csToolsEnums
+
+const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
+
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 
@@ -45,7 +52,7 @@ function createViewport(renderingEngine, orientation) {
   renderingEngine.setViewports([
     {
       viewportUID: viewportUID,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
         orientation: ORIENTATION[orientation],
@@ -58,7 +65,7 @@ function createViewport(renderingEngine, orientation) {
 
 describe('Segmentation State -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('State', function () {
@@ -106,10 +113,10 @@ describe('Segmentation State -- ', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const globalState =
-            SegmentationState.getGlobalSegmentationDataByUID(segVolumeId)
+            segmentation.state.getGlobalSegmentationDataByUID(segVolumeId)
 
           expect(evt.detail.segmentationUID.includes(segVolumeId)).toBe(true)
 
@@ -121,10 +128,10 @@ describe('Segmentation State -- ', () => {
         }
       )
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_STATE_MODIFIED,
+        Events.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
           const stateManager =
-            SegmentationState.getDefaultSegmentationStateManager(segVolumeId)
+            segmentation.state.getDefaultSegmentationStateManager(segVolumeId)
 
           const state = stateManager.getState()
 
@@ -138,7 +145,7 @@ describe('Segmentation State -- ', () => {
           expect(toolGroupSegmentationState).toBeDefined()
           expect(toolGroupSegmentationState.segmentations.length).toBe(1)
 
-          const segState = SegmentationState.getSegmentationState(
+          const segState = segmentation.state.getSegmentationState(
             this.segToolGroup.uid
           )
 
@@ -165,7 +172,7 @@ describe('Segmentation State -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID]
@@ -192,9 +199,9 @@ describe('Segmentation State -- ', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const globalConfig = SegmentationState.getGlobalSegmentationConfig()
+          const globalConfig = segmentation.state.getGlobalSegmentationConfig()
 
           expect(globalConfig.renderInactiveSegmentations).toBe(true)
           expect(globalConfig.representations).toBeDefined()
@@ -224,7 +231,7 @@ describe('Segmentation State -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID]

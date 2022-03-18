@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   metaData,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import { Enums as csToolsEnums } from '@precisionmetrics/cornerstone-tools'
 import * as cs from '@precisionmetrics/cornerstone-render'
 
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -34,6 +34,8 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 const VOLUME = 'volume'
 
 window.cache = cache
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let ctSceneToolGroup,
   stackCTViewportToolGroup,
@@ -138,7 +140,7 @@ class EnableDisableViewportExample extends Component {
         {
           // CT volume axial
           viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(0),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
@@ -148,7 +150,7 @@ class EnableDisableViewportExample extends Component {
         {
           // stack CT
           viewportUID: VIEWPORT_IDS.STACK.CT,
-          type: VIEWPORT_TYPE.STACK,
+          type: ViewportType.STACK,
           element: this._elementNodes.get(1),
           toolGroup: stackCTViewportToolGroup,
           defaultOptions: {
@@ -158,7 +160,7 @@ class EnableDisableViewportExample extends Component {
         {
           // dx
           viewportUID: VIEWPORT_IDS.STACK.DX,
-          type: VIEWPORT_TYPE.STACK,
+          type: ViewportType.STACK,
           element: this._elementNodes.get(2),
           toolGroup: stackDXViewportToolGroup,
           defaultOptions: {
@@ -168,7 +170,7 @@ class EnableDisableViewportExample extends Component {
         {
           // CT volume Coronal
           viewportUID: VIEWPORT_IDS.CT.CORONAL,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(3),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
@@ -177,7 +179,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           viewportUID: VIEWPORT_IDS.CT.AXIAL,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(4),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
@@ -206,6 +208,8 @@ class EnableDisableViewportExample extends Component {
 
     // volume ct
     ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
@@ -254,7 +258,7 @@ class EnableDisableViewportExample extends Component {
     const CTVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+      const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
         imageIds: ctVolumeImageIds,
       })
 
@@ -273,7 +277,7 @@ class EnableDisableViewportExample extends Component {
 
       ctVolume.load(onLoad)
 
-      await setVolumesOnViewports(
+      await setVolumesForViewports(
         renderingEngine,
         [{ volumeUID: ctVolumeUID }],
         [
@@ -294,13 +298,13 @@ class EnableDisableViewportExample extends Component {
     const PETVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+      const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
         imageIds: ctVolumeImageIds2,
       })
 
       ptVolume.load()
 
-      await setVolumesOnViewports(
+      await setVolumesForViewports(
         renderingEngine,
         [{ volumeUID: ptVolumeUID }],
         [
@@ -370,7 +374,7 @@ class EnableDisableViewportExample extends Component {
 
     const { toolGroup, viewportUID, type, canvas } = viewportInput
 
-    toolGroup.addViewport(renderingEngineUID, viewportUID)
+    toolGroup.addViewport(viewportUID, renderingEngineUID)
 
     // load
     if (viewportUID === VIEWPORT_IDS.STACK.CT) {
@@ -397,7 +401,7 @@ class EnableDisableViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

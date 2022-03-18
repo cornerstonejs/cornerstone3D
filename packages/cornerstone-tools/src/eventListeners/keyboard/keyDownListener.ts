@@ -3,7 +3,7 @@ import {
   getEnabledElement,
   triggerEvent,
 } from '@precisionmetrics/cornerstone-render'
-import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
+import Events from '../../enums/Events'
 import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes'
 
 interface IKeyDownListenerState {
@@ -64,11 +64,7 @@ function keyListener(evt: KeyboardEvent): void {
     // points: getMouseEventPoints(evt),
   }
 
-  triggerEvent(
-    eventDetail.element,
-    CornerstoneTools3DEvents.KEY_DOWN,
-    eventDetail
-  )
+  triggerEvent(eventDetail.element, Events.KEY_DOWN, eventDetail)
 
   document.addEventListener('keyup', _onKeyUp)
 
@@ -92,11 +88,7 @@ function _onKeyUp(evt: KeyboardEvent): void {
 
   // Restore `state` to `defaultState`
   state = _cloneDeep(defaultState)
-  triggerEvent(
-    eventDetail.element,
-    CornerstoneTools3DEvents.KEY_UP,
-    eventDetail
-  )
+  triggerEvent(eventDetail.element, Events.KEY_UP, eventDetail)
 }
 
 export function getModifierKey(): number | undefined {
