@@ -1,6 +1,6 @@
 import {
   getEnabledElement,
-  addVolumesOnViewports,
+  addVolumesToViewports,
 } from '@precisionmetrics/cornerstone-render'
 
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
@@ -40,7 +40,7 @@ async function internalAddSegmentationToElement(
   if (representation.type === SegmentationRepresentations.Labelmap) {
     const { volumeUID } = segmentationData
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
-    await addVolumesOnViewports(
+    await addVolumesToViewports(
       renderingEngine,
       [
         {

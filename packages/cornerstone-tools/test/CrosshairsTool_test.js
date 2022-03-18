@@ -10,7 +10,7 @@ const {
   metaData,
   EVENTS,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   imageLoader,
 } = cornerstone3D
 
@@ -220,7 +220,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]
@@ -364,7 +364,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]
@@ -506,7 +506,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]

@@ -12,7 +12,7 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } = cornerstone3D
 
 const {
@@ -315,7 +315,7 @@ describe('Ellipse Tool: ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]

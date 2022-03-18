@@ -4,7 +4,7 @@ import {
   Types,
   ORIENTATION,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -248,7 +248,7 @@ async function run() {
   // Set the volume to load
   volume.load()
 
-  setVolumesOnViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
 
   // Render the image
   renderingEngine.render()

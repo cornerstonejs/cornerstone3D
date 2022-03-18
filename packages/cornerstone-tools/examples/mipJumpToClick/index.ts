@@ -4,7 +4,7 @@ import {
   VIEWPORT_TYPE,
   ORIENTATION,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   Types,
   Utilities,
 } from '@precisionmetrics/cornerstone-render'
@@ -198,18 +198,18 @@ async function run() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   )
 
-  setVolumesOnViewports(
+  setVolumesForViewports(
     renderingEngine,
     [{ volumeUID: ctVolumeUID }],
     [viewportUIDs[0]]
   )
-  setVolumesOnViewports(
+  setVolumesForViewports(
     renderingEngine,
     [{ volumeUID: ptVolumeUID, callback: setPetTransferFunction }],
     [viewportUIDs[1]]
   )
 
-  setVolumesOnViewports(
+  setVolumesForViewports(
     renderingEngine,
     [
       {

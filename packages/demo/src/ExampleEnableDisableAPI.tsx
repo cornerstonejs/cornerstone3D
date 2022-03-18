@@ -7,7 +7,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import * as cs from '@precisionmetrics/cornerstone-render'
@@ -275,7 +275,7 @@ class EnableDisableViewportExample extends Component {
 
       ctVolume.load(onLoad)
 
-      await setVolumesOnViewports(
+      await setVolumesForViewports(
         renderingEngine,
         [{ volumeUID: ctVolumeUID }],
         [
@@ -302,7 +302,7 @@ class EnableDisableViewportExample extends Component {
 
       ptVolume.load()
 
-      await setVolumesOnViewports(
+      await setVolumesForViewports(
         renderingEngine,
         [{ volumeUID: ptVolumeUID }],
         [

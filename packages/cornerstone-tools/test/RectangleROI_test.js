@@ -12,7 +12,7 @@ const {
   eventTarget,
   metaData,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } = cornerstone3D
 
 const {
@@ -316,7 +316,7 @@ describe('Rectangle Roi Tool: ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]

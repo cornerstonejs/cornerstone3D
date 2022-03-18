@@ -20,7 +20,7 @@ const EPSILON = 1e-3
  * use SharedVolumeMappers behind the scene, memory footprint of visualizations
  * of the same volume in different orientations is very small.
  *
- * For setting volumes on viewports you need to use {@link addVolumesOnViewports}
+ * For setting volumes on viewports you need to use {@link addVolumesToViewports}
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport extends Viewport implements IVolumeViewport {

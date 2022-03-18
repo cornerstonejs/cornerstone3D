@@ -10,7 +10,7 @@ import {
   INTERPOLATION_TYPE,
   EVENTS as RENDERING_EVENTS,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   SynchronizerManager,
@@ -326,7 +326,7 @@ class StackViewportExample extends Component {
     ctVolume.load(onLoad)
     ptVolume.load(onLoad)
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -337,7 +337,7 @@ class StackViewportExample extends Component {
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL]
     )
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {

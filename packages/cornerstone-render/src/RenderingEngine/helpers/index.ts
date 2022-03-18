@@ -2,8 +2,8 @@ import createVolumeActor from './createVolumeActor'
 import createVolumeMapper from './createVolumeMapper'
 import getOrCreateCanvas from './getOrCreateCanvas'
 import renderToCanvas from './renderToCanvas'
-import setVolumesOnViewports from './setVolumesOnViewports'
-import addVolumesOnViewports from './addVolumesOnViewports'
+import setVolumesForViewports from './setVolumesForViewports'
+import addVolumesToViewports from './addVolumesToViewports'
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes'
 import getVolumeViewportsContainingVolumeUID from './getVolumeViewportsContainingVolumeUID'
 
@@ -12,8 +12,8 @@ export {
   createVolumeMapper,
   getOrCreateCanvas,
   renderToCanvas,
-  setVolumesOnViewports,
-  addVolumesOnViewports,
+  setVolumesForViewports,
+  addVolumesToViewports,
   getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeUID,
 }

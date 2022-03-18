@@ -6,7 +6,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   ToolBindings,
@@ -167,7 +167,7 @@ class ApplyPresetExample extends Component {
 
     ctVolume.load(onLoad)
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {

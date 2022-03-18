@@ -53,8 +53,8 @@ import { registerImageLoader } from './imageLoader' // since it is used by CSWIL
 import triggerEvent from './utilities/triggerEvent'
 
 import {
-  setVolumesOnViewports,
-  addVolumesOnViewports,
+  setVolumesForViewports,
+  addVolumesToViewports,
   getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeUID,
 } from './RenderingEngine/helpers'
@@ -80,21 +80,20 @@ export {
   Viewport,
   StackViewport,
   RenderingEngine,
-  // Rendering Engine Helpers
+  // Helpers
   getRenderingEngine,
   getRenderingEngines,
+  getEnabledElement,
+  getEnabledElementByUIDs,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
   getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeUID,
-  //
-  cache,
-  Cache,
-  getEnabledElement,
-  getEnabledElementByUIDs,
   renderToCanvas,
-  //
+  // cache
+  cache,
+  // event helpers
   eventTarget,
   triggerEvent,
   // Image Loader
@@ -106,8 +105,8 @@ export {
   metaData,
   //
   Utilities,
-  setVolumesOnViewports,
-  addVolumesOnViewports,
+  setVolumesForViewports,
+  addVolumesToViewports,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

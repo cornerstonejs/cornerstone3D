@@ -2,7 +2,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   cache,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { BlendModes } from '@precisionmetrics/cornerstone-tools'
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
@@ -227,7 +227,7 @@ async function setVolumes(
   ptVolumeUID,
   petColorMap
 ) {
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
@@ -239,7 +239,7 @@ async function setVolumes(
     [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
   )
 
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
@@ -251,7 +251,7 @@ async function setVolumes(
     [VIEWPORT_IDS.PT.AXIAL, VIEWPORT_IDS.PT.SAGITTAL, VIEWPORT_IDS.PT.CORONAL]
   )
 
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
@@ -296,7 +296,7 @@ async function setVolumes(
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   )
 
-  await setVolumesOnViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {

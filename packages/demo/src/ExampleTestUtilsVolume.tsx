@@ -8,7 +8,7 @@ import {
   ORIENTATION,
   Utilities,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   ToolBindings,
@@ -165,7 +165,7 @@ class testUtilVolume extends Component {
       viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
     })
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -175,7 +175,7 @@ class testUtilVolume extends Component {
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.CORONAL]
     )
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {

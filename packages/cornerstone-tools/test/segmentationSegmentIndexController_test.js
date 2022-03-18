@@ -14,7 +14,7 @@ const {
   imageLoader,
   volumeLoader,
   Utilities,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   eventTarget,
 } = cornerstone3D
 
@@ -216,7 +216,7 @@ describe('Segmentation Index Controller --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]
@@ -367,7 +367,7 @@ describe('Segmentation Index Controller --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]
@@ -547,7 +547,7 @@ describe('Segmentation Index Controller --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]

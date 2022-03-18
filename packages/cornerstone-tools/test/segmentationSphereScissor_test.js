@@ -13,7 +13,7 @@ const {
   imageLoader,
   volumeLoader,
   Utilities,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   eventTarget,
 } = cornerstone3D
 
@@ -265,7 +265,7 @@ describe('Segmentation Tools --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1, viewportUID2, viewportUID3]

@@ -16,7 +16,7 @@ const {
   imageLoader,
   volumeLoader,
   Utilities,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   eventTarget,
 } = cornerstone3D
 
@@ -139,7 +139,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1]
@@ -216,7 +216,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1, viewportUID2, viewportUID3]
@@ -264,7 +264,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1]
@@ -343,7 +343,7 @@ describe('Segmentation Render -- ', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
             [viewportUID1]

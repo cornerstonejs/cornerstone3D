@@ -8,7 +8,7 @@ import {
   metaData,
   volumeLoader,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -126,7 +126,7 @@ class ColorExample extends Component {
       bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
     })
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       this.renderingEngine,
       [
         {

@@ -13,7 +13,7 @@ const {
   metaData,
   volumeLoader,
   Utilities,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   eventTarget,
   imageLoader,
 } = cornerstone3D
@@ -144,7 +144,7 @@ describe('Segmentation Controller --', () => {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-              setVolumesOnViewports(
+              setVolumesForViewports(
                 this.renderingEngine,
                 [{ volumeUID: volumeId }],
                 [viewportUID1]
@@ -203,7 +203,7 @@ describe('Segmentation Controller --', () => {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-              setVolumesOnViewports(
+              setVolumesForViewports(
                 this.renderingEngine,
                 [{ volumeUID: volumeId }],
                 [viewportUID1]
@@ -283,7 +283,7 @@ describe('Segmentation Controller --', () => {
     //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
     //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
     //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-    //           setVolumesOnViewports(
+    //           setVolumesForViewports(
     //             this.renderingEngine,
     //             [{ volumeUID: volumeId }],
     //             [viewportUID1]

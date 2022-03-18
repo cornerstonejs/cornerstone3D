@@ -2,7 +2,7 @@ import { RenderingEngine, VolumeViewport } from '../'
 import { IVolumeInput } from '../../types'
 
 /**
- * Similar to {@link addVolumesOnViewports} it adds volumes to viewports; however,
+ * Similar to {@link addVolumesToViewports} it adds volumes to viewports; however,
  * this method will Set the volumes on the viewports which means that the previous
  * volumes will be removed.
  *
@@ -13,7 +13,7 @@ import { IVolumeInput } from '../../types'
  * @param immediateRender - If true, the volumes will be rendered immediately
  * @returns A promise that resolves when all volumes have been added
  */
-async function setVolumesOnViewports(
+async function setVolumesForViewports(
   renderingEngine: RenderingEngine,
   volumeInputs: Array<IVolumeInput>,
   viewportUIDs: Array<string>,
@@ -29,7 +29,7 @@ async function setVolumesOnViewports(
 
     // if not instance of VolumeViewport, throw
     if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('setVolumesOnViewports only supports VolumeViewport')
+      throw new Error('setVolumesForViewports only supports VolumeViewport')
     }
   })
 
@@ -44,4 +44,4 @@ async function setVolumesOnViewports(
   return
 }
 
-export default setVolumesOnViewports
+export default setVolumesForViewports

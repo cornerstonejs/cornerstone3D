@@ -6,7 +6,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import { WindowLevelTool } from '@precisionmetrics/cornerstone-tools'
@@ -196,7 +196,7 @@ class CacheDecacheExample extends Component {
 
     const onLoad = () => this.setState({ progressText: 'Loaded.' })
 
-    setVolumesOnViewports(
+    setVolumesForViewports(
       this.renderingEngine,
       [{ volumeUID: ctVolumeUID }],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]

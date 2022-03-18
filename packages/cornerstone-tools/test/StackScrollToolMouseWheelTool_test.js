@@ -15,7 +15,7 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } = cornerstone3D
 
 const { registerVolumeLoader } = volumeLoader
@@ -157,7 +157,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID]

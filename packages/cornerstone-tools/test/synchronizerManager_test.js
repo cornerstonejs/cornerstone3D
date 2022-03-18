@@ -11,7 +11,7 @@ const {
   Utilities,
   metaData,
   EVENTS,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   volumeLoader,
   imageLoader,
 } = cornerstone3D
@@ -177,14 +177,14 @@ describe('Synchronizer Manager: ', () => {
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: ctVolumeId }],
           [viewportUID1]
         )
       })
       createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: ptVolumeId }],
           [viewportUID2]
@@ -343,7 +343,7 @@ describe('Synchronizer Manager: ', () => {
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: ctVolumeId }],
           [viewportUID1, viewportUID2]

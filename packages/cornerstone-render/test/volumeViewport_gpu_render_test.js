@@ -23,7 +23,7 @@ const {
   EVENTS,
   volumeLoader,
   Utilities,
-  setVolumesOnViewports,
+  setVolumesForViewports,
   getVolumeViewportsContainingVolumeUID,
 } = cornerstone3D
 
@@ -116,7 +116,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -150,7 +150,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]
@@ -213,7 +213,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -247,7 +247,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]
@@ -315,7 +315,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -349,7 +349,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]
@@ -386,7 +386,7 @@ describe('Volume Viewport GPU -- ', () => {
       })
     })
 
-    it('should successfully use setVolumesOnViewports API to load image', function (done) {
+    it('should successfully use setVolumesForViewports API to load image', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
       this.DOMElements.push(element)
 
@@ -414,7 +414,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -457,7 +457,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -499,7 +499,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -540,7 +540,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -579,7 +579,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -620,7 +620,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -691,7 +691,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]
@@ -730,7 +730,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId, callback }],
               [viewportUID]

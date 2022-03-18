@@ -12,7 +12,7 @@ const {
   metaData,
   EVENTS,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } = cornerstone3D
 
 const {
@@ -579,7 +579,7 @@ describe('Probe Tool: ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]

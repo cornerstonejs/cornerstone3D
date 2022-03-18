@@ -6,7 +6,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as cs3dInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   ToolBindings,
@@ -205,7 +205,7 @@ class CrosshairsExample extends Component {
     ctVolume.load()
     prostateVolume.load()
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -216,7 +216,7 @@ class CrosshairsExample extends Component {
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
     )
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {

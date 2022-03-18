@@ -13,7 +13,7 @@ import { IVolumeInput } from '../../types'
  * @param immediateRender - If true, the volumes will be rendered immediately
  * @returns A promise that resolves when all volumes have been added
  */
-async function addVolumesOnViewports(
+async function addVolumesToViewports(
   renderingEngine: RenderingEngine,
   volumeInputs: Array<IVolumeInput>,
   viewportUIDs: Array<string>,
@@ -29,7 +29,7 @@ async function addVolumesOnViewports(
 
     // if not instance of VolumeViewport, throw
     if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('addVolumesOnViewports only supports VolumeViewport')
+      throw new Error('addVolumesToViewports only supports VolumeViewport')
     }
   })
 
@@ -44,4 +44,4 @@ async function addVolumesOnViewports(
   return
 }
 
-export default addVolumesOnViewports
+export default addVolumesToViewports

@@ -12,7 +12,7 @@ const {
   volumeLoader,
   metaData,
   eventTarget,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } = cornerstone3D
 
 const {
@@ -322,7 +322,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID]

@@ -12,7 +12,7 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } = cornerstone3D
 
 const {
@@ -331,7 +331,7 @@ describe('LengthTool:', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID]

@@ -10,7 +10,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   CornerstoneTools3DEvents,
@@ -241,7 +241,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     ctVolume.load(onLoad)
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
