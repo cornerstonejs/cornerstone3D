@@ -137,9 +137,9 @@ class OneVolumeExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.CORONAL)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
 
     addToolsToToolGroups({ ctSceneToolGroup })
 

@@ -1,9 +1,12 @@
-import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
-import { ORIENTATION, VIEWPORT_TYPE } from '@precisionmetrics/cornerstone-render';
+import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
+import {
+  ORIENTATION,
+  VIEWPORT_TYPE,
+} from '@precisionmetrics/cornerstone-render'
 import {
   setCTWWWC,
   setCTVRTransferFunction,
-} from '../helpers/transferFunctionHelpers';
+} from '../helpers/transferFunctionHelpers'
 
 function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
   const viewportInput = [
@@ -17,22 +20,22 @@ function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
         orientation: ORIENTATION.CORONAL,
       },
     },
-  ];
+  ]
 
-  renderingEngine.setViewports(viewportInput);
+  renderingEngine.setViewports(viewportInput)
 
-  const renderingEngineUID = renderingEngine.uid;
-  const viewportInputEntry = viewportInput[0];
+  const renderingEngineUID = renderingEngine.uid
+  const viewportInputEntry = viewportInput[0]
 
-  const { sceneUID, viewportUID } = viewportInputEntry;
+  const { sceneUID, viewportUID } = viewportInputEntry
 
-  ctObliqueToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID);
+  ctObliqueToolGroup.addViewport(viewportUID, renderingEngineUID)
 }
 
 function setVolumes(renderingEngine, ctVolumeUID) {
-  const ctObliqueScene = renderingEngine.getScene(SCENE_IDS.CTOBLIQUE);
+  const ctObliqueScene = renderingEngine.getScene(SCENE_IDS.CTOBLIQUE)
 
-  ctObliqueScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }]);
+  ctObliqueScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }])
 }
 
-export default { setLayout, setVolumes };
+export default { setLayout, setVolumes }

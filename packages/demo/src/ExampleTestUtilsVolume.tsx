@@ -136,18 +136,17 @@ class testUtilVolume extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    ctTestSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
-    // ctTestSceneToolGroup.addViewports(
+    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    // ctTestSceneToolGroup.addViewport(
+    //   VIEWPORT_IDS.CT.AXIAL,
     //   renderingEngineUID,
-    //   SCENE_IDS.PT,
-    //   VIEWPORT_IDS.CT.AXIAL
     // )
-    ctTestSceneToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.CT.CORONAL
+    ctTestSceneToolGroup.addViewport(
+      VIEWPORT_IDS.CT.CORONAL,
+      renderingEngineUID
     )
 
-    ptTestSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.PT.AXIAL)
+    ptTestSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
 
     addToolsToToolGroups({ ctTestSceneToolGroup })
     addToolsToToolGroups({ ptTestSceneToolGroup })

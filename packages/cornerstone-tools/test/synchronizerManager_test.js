@@ -158,8 +158,8 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
-    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
+    this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
 
     try {
       const axialSync = createCameraPositionSynchronizer('axialSync')
@@ -325,8 +325,8 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
-    this.firstToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
+    this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
 
     try {
       const voiSync = createVOISynchronizer('ctWLSync')

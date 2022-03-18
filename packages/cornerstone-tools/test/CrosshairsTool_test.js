@@ -213,9 +213,9 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
     element3.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID3)
+    this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.uid)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -357,9 +357,9 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID3)
+    this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.uid)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -499,9 +499,9 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
     element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
 
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID2)
-    this.testToolGroup.addViewports(this.renderingEngine.uid, viewportUID3)
+    this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.uid)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {

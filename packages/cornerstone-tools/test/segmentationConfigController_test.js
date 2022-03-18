@@ -186,7 +186,7 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
@@ -247,7 +247,7 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
@@ -327,7 +327,7 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {

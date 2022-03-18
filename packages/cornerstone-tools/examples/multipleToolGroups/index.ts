@@ -186,10 +186,10 @@ async function run() {
   viewport3.setStack(ptStack)
 
   // Set viewport 1 to toolgroup 1
-  toolGroup1.addViewports(renderingEngineUID, viewportUIDs[0])
+  toolGroup1.addViewport(viewportUIDs[0], renderingEngineUID)
   // Set viewport 2 and 3 to toolgroup 2
-  toolGroup2.addViewports(renderingEngineUID, viewportUIDs[1])
-  toolGroup2.addViewports(renderingEngineUID, viewportUIDs[2])
+  toolGroup2.addViewport(viewportUIDs[1], renderingEngineUID)
+  toolGroup2.addViewport(viewportUIDs[2], renderingEngineUID)
 
   // Render the image
   renderingEngine.render()

@@ -111,9 +111,9 @@ class testUtil extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    stackCTViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+    stackCTViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({ stackCTViewportToolGroup })

@@ -130,7 +130,7 @@ describe('Segmentation Render -- ', () => {
         ).then(done, done.fail)
       })
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -205,9 +205,9 @@ describe('Segmentation Render -- ', () => {
         })
       })
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp2.uid)
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp3.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp2.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp3.uid, this.renderingEngine.uid)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -255,7 +255,7 @@ describe('Segmentation Render -- ', () => {
         ).then(done, done.fail)
       })
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -334,7 +334,7 @@ describe('Segmentation Render -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()

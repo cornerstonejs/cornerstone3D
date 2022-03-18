@@ -176,19 +176,19 @@ class ToolDisplayConfigurationExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
 
     // stack ct
-    stackCTViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+    stackCTViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     // dx and color
-    stackDXViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.DX
+    stackDXViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.DX,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({

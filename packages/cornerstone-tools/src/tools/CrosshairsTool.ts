@@ -166,8 +166,8 @@ export default class CrosshairsTool extends AnnotationTool {
     point: Types.Point3
   } => {
     const enabledElement = getEnabledElementByUIDs(
+      viewportUID,
       renderingEngineUID,
-      viewportUID
     )
     const { FrameOfReferenceUID, viewport } = enabledElement
     const { element } = viewport

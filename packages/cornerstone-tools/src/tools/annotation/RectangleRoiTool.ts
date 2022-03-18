@@ -83,7 +83,7 @@ interface RectangleRoiCachedStats {
  *
  * toolGroup.addTool(RectangleRoiAnnotation.toolName)
  *
- * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(RectangleRoiAnnotation.toolName, {
  *   bindings: [

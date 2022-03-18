@@ -229,28 +229,27 @@ class StackViewportExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.AXIAL)
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
 
     // pt volume axial
-    ptSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.PT.AXIAL)
-    ptSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.PT.SAGITTAL)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineUID)
 
     // stack ct, stack pet, and stack DX
-    stackCTViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+    stackCTViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
-    // stackDXViewportToolGroup.addViewports(
+    // stackDXViewportToolGroup.addViewport(
+    //   VIEWPORT_IDS.STACK.DX,
     //   renderingEngineUID,
-    //   undefined,
-    //   VIEWPORT_IDS.STACK.DX
     // )
 
-    stackPTViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.PT
+    stackPTViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.PT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({

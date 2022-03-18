@@ -183,7 +183,7 @@ describe('Probe Tool: ', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         vp.setStack([imageId1], 0)
@@ -317,7 +317,7 @@ describe('Probe Tool: ', () => {
         document.dispatchEvent(evt2)
       })
 
-      this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         vp.setStack([imageId1], 0)
@@ -405,7 +405,7 @@ describe('Probe Tool: ', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         vp.setStack([imageId1], 0)
@@ -493,7 +493,7 @@ describe('Probe Tool: ', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         vp.setStack([imageId1], 0)
@@ -576,7 +576,7 @@ describe('Probe Tool: ', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -711,7 +711,7 @@ describe('Probe Tool: ', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
         vp.setStack([imageId1], 0)
@@ -874,7 +874,7 @@ describe('Probe Tool: ', () => {
         }, 100)
       }
 
-      this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
       element.addEventListener(
         CornerstoneTools3DEvents.KEY_DOWN,
         cancelToolDrawing

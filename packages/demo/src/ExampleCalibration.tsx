@@ -109,9 +109,9 @@ class CalibrationExample extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    stackDXViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.DX
+    stackDXViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.DX,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({ stackDXViewportToolGroup })

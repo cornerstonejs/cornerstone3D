@@ -1,7 +1,16 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import { ORIENTATION, VIEWPORT_TYPE, getVolume, Utilities } from '@precisionmetrics/cornerstone-render';
+import {
+  ORIENTATION,
+  VIEWPORT_TYPE,
+  getVolume,
+  Utilities,
+} from '@precisionmetrics/cornerstone-render'
 
-function setLayout(renderingEngine, elementContainers, { ptTypesSceneToolGroup }) {
+function setLayout(
+  renderingEngine,
+  elementContainers,
+  { ptTypesSceneToolGroup }
+) {
   const viewportInput = [
     // PT Coronal SUV BW
     {
@@ -45,12 +54,14 @@ function setLayout(renderingEngine, elementContainers, { ptTypesSceneToolGroup }
   viewportInput.forEach((viewportInputEntry) => {
     const { sceneUID, viewportUID } = viewportInputEntry
 
-    ptTypesSceneToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID)
+    ptTypesSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
   })
 }
 
 function setPetBWTransferFunction({ volumeActor, volumeUID }) {
-  const rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+  const rgbTransferFunction = volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
 
   rgbTransferFunction.setRange(0, 5)
 
@@ -72,7 +83,9 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 
   const max = 5 * scalingFactor
 
-  const rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+  const rgbTransferFunction = volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
 
   rgbTransferFunction.setRange(0, max)
 
@@ -86,12 +99,16 @@ function setPetBSATransferFunction({ volumeActor, volumeUID }) {
   let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET
 
   if (scalingFactor === undefined) {
-    console.warn('No suvbwToSuvbsa scaling factor, likely missing PatientWeight or PatientSize from dataset')
+    console.warn(
+      'No suvbwToSuvbsa scaling factor, likely missing PatientWeight or PatientSize from dataset'
+    )
 
     scalingFactor = 1
   }
 
-  const rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+  const rgbTransferFunction = volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
 
   const max = 5 * scalingFactor
 
@@ -106,9 +123,15 @@ function setVolumes(renderingEngine, ptVolumeUID) {
   const ptLBMScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_LBM)
   const ptBSAScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BSA)
 
-  ptBWScene.setVolumes([{ volumeUID: ptVolumeUID, callback: setPetBWTransferFunction }])
-  ptLBMScene.setVolumes([{ volumeUID: ptVolumeUID, callback: setPetLBMTransferFunction }])
-  ptBSAScene.setVolumes([{ volumeUID: ptVolumeUID, callback: setPetBSATransferFunction }])
+  ptBWScene.setVolumes([
+    { volumeUID: ptVolumeUID, callback: setPetBWTransferFunction },
+  ])
+  ptLBMScene.setVolumes([
+    { volumeUID: ptVolumeUID, callback: setPetLBMTransferFunction },
+  ])
+  ptBSAScene.setVolumes([
+    { volumeUID: ptVolumeUID, callback: setPetBSATransferFunction },
+  ])
 }
 
 export default { setLayout, setVolumes }

@@ -91,7 +91,7 @@ interface LengthAnnotation extends Annotation {
  *
  * toolGroup.addTool(LengthTool.toolName)
  *
- * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(LengthTool.toolName, {
  *   bindings: [

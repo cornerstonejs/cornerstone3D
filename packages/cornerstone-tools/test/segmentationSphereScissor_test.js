@@ -257,9 +257,9 @@ describe('Segmentation Tools --', () => {
         }
       )
 
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp1.uid)
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp2.uid)
-      this.segToolGroup.addViewports(this.renderingEngine.uid, vp3.uid)
+      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp2.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp3.uid, this.renderingEngine.uid)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {

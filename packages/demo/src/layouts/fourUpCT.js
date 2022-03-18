@@ -62,10 +62,10 @@ function setLayout(
 
     if (sceneUID === SCENE_IDS.CT) {
       console.log(`adding ${viewportUID} to CT toolgroup`)
-      ctSceneToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID)
+      ctSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
     } else if (sceneUID === SCENE_IDS.CTVR) {
       console.log(`adding ${viewportUID} to CTVR toolgroup`)
-      ctVRSceneToolGroup.addViewports(renderingEngineUID, sceneUID, viewportUID)
+      ctVRSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
     }
   })
 }

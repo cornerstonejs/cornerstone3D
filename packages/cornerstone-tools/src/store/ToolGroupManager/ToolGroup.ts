@@ -1,5 +1,8 @@
 import { ToolBindings, ToolModes } from '../../enums'
-import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
+import {
+  getRenderingEngine,
+  getRenderingEngines,
+} from '@precisionmetrics/cornerstone-render'
 import { state } from '../index'
 import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types'
 
@@ -104,18 +107,38 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
-   * Add a viewportInfo containing viewportUID and renderingEngineUID to the toolGroup
-   * @param renderingEngineUID - The UID of the rendering engine
-   * @param viewportUID - The UID of the viewport.
+   * Add a viewport to the ToolGroup. It accepts viewportUID and optional
+   * renderingEngineUID parameter. If renderingEngineUID is not provided,
+   * it checks if cornerstone-core has more than one renderingEngine; If so,
+   * it will throw an error. If cornerstone-core has only one renderingEngine,
+   * it will use that renderingEngine.
+   *
+   * @param viewportUID - The unique identifier for the viewport.
+   * @param renderingEngineUID - The rendering engine to use.
    */
-  addViewports(renderingEngineUID: string, viewportUID: string): void {
-    this.viewportsInfo.push({ renderingEngineUID, viewportUID })
+  addViewport(viewportUID: string, renderingEngineUID?: string): void {
+    const renderingEngines = getRenderingEngines()
+
+    if (!renderingEngineUID && renderingEngines.length > 1) {
+      throw new Error(
+        'You must specify a renderingEngineUID when there are multiple rendering engines.'
+      )
+    }
+
+    const renderingEngineUIDToUse =
+      renderingEngineUID || renderingEngines[0].uid
+
+    this.viewportsInfo.push({
+      viewportUID,
+      renderingEngineUID: renderingEngineUIDToUse,
+    })
   }
 
   /**
    * Removes viewport from the toolGroup. If only renderingEngineUID is defined
-   * it removes all the viewports with the same renderingEngineUID, if more filters
-   * are provided, it uses them to search the viewport.
+   * it removes all the viewports with the same renderingEngineUID, if viewportUID
+   * is also provided, it will remove that specific viewport from the ToolGroup.
+   *
    * @param renderingEngineUID - renderingEngine uid
    * @param viewportUID - viewport uid
    */
