@@ -105,7 +105,7 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
 
       const tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg).toBeDefined()
@@ -175,14 +175,14 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
 
       const tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg).toBeDefined()
 
       const tg2 = ToolGroupManager.getToolGroup(
-        renderingEngineUID,
-        viewportUID1
+        viewportUID1,
+        renderingEngineUID
       )
       expect(tg2).toBeDefined()
       expect(tg).toBe(tg2)
@@ -223,7 +223,7 @@ describe('ToolGroup Manager: ', () => {
       // Remove viewports
       let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
 
-      tg.addViewports(this.renderingEngine.uid, viewportUID1)
+      tg.addViewport(viewportUID1, this.renderingEngine.uid)
       expect(tg.viewportsInfo.length).toBe(1)
 
       tg.removeViewports(renderingEngineUID)
@@ -232,7 +232,7 @@ describe('ToolGroup Manager: ', () => {
       expect(tg.viewportsInfo.length).toBe(0)
 
       //
-      tg.addViewports(this.renderingEngine.uid, viewportUID1)
+      tg.addViewport(viewportUID1, this.renderingEngine.uid)
       tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg.viewportsInfo.length).toBe(1)
 
@@ -266,7 +266,7 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
 
       // Remove viewports
       let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
@@ -303,7 +303,7 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewports(this.renderingEngine.uid, viewportUID1)
+      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
 
       // Remove viewports
       let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')

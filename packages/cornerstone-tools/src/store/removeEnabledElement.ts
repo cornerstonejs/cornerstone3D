@@ -84,7 +84,7 @@ const _removeViewportFromSynchronizers = (element: HTMLElement) => {
 const _removeViewportFromToolGroup = (element: HTMLElement) => {
   const { renderingEngineUID, viewportUID } = getEnabledElement(element)
 
-  const toolGroup = getToolGroup(renderingEngineUID, viewportUID)
+  const toolGroup = getToolGroup(viewportUID, renderingEngineUID)
 
   if (toolGroup) {
     toolGroup.removeViewports(renderingEngineUID, viewportUID)

@@ -205,12 +205,12 @@ class EnableDisableViewportExample extends Component {
     // Tools added for the first two viewports
 
     // volume ct
-    ctSceneToolGroup.addViewports(renderingEngineUID, VIEWPORT_IDS.CT.SAGITTAL)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
 
     // stack ct
-    stackCTViewportToolGroup.addViewports(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+    stackCTViewportToolGroup.addViewport(
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({
@@ -243,9 +243,9 @@ class EnableDisableViewportExample extends Component {
       ]
       await dxColorViewport.setStack(fakeStack)
 
-      stackDXViewportToolGroup.addViewports(
-        renderingEngineUID,
-        VIEWPORT_IDS.STACK.DX
+      stackDXViewportToolGroup.addViewport(
+        VIEWPORT_IDS.STACK.DX,
+        renderingEngineUID
       )
     }
 
@@ -370,7 +370,7 @@ class EnableDisableViewportExample extends Component {
 
     const { toolGroup, viewportUID, type, canvas } = viewportInput
 
-    toolGroup.addViewports(renderingEngineUID, viewportUID)
+    toolGroup.addViewport(renderingEngineUID, viewportUID)
 
     // load
     if (viewportUID === VIEWPORT_IDS.STACK.CT) {

@@ -259,8 +259,8 @@ function _removeLabelmapFromToolGroupViewports(
   for (const viewportInfo of viewportsInfo) {
     const { viewportUID, renderingEngineUID } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
+      viewportUID,
       renderingEngineUID,
-      viewportUID
     )
     internalRemoveSegmentationFromElement(
       enabledElement.viewport.element,
@@ -279,8 +279,8 @@ async function _addLabelmapToToolGroupViewports(
   for (const viewportInfo of viewportsInfo) {
     const { viewportUID, renderingEngineUID } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
+      viewportUID,
       renderingEngineUID,
-      viewportUID
     )
 
     if (!enabledElement) {

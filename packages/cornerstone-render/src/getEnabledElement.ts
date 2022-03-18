@@ -38,7 +38,7 @@ export default function getEnabledElement(
 
   const { viewportUid, renderingEngineUid } = element.dataset
 
-  return getEnabledElementByUIDs(renderingEngineUid, viewportUid)
+  return getEnabledElementByUIDs(viewportUid, renderingEngineUid)
 }
 
 /**
@@ -46,14 +46,14 @@ export default function getEnabledElement(
  * renderingEngine and viewport as parameters to return the associated
  * EnabledElement.
  *
- * @param renderingEngineUID - The UID of the rendering engine.
  * @param viewportUID - The UID of the viewport
+ * @param renderingEngineUID - The UID of the rendering engine.
  * @returns The enabled element which is an object that contains the viewport, rendering
  * engine, viewport UID, rendering engine UID, and the Frame of Reference UID.
  */
 export function getEnabledElementByUIDs(
-  renderingEngineUID: string,
-  viewportUID: string
+  viewportUID: string,
+  renderingEngineUID: string
 ): IEnabledElement {
   if (!renderingEngineUID || !viewportUID) {
     return

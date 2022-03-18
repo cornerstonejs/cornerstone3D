@@ -95,7 +95,7 @@ interface BidirectionalAnnotation extends Annotation {
  *
  * toolGroup.addTool(BidirectionalTool.toolName)
  *
- * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(BidirectionalTool.toolName, {
  *   bindings: [

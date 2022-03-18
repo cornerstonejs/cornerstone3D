@@ -108,7 +108,7 @@ export interface EllipticalRoiAnnotation extends Annotation {
  *
  * toolGroup.addTool(EllipticalRoiTool.toolName)
  *
- * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(EllipticalRoiTool.toolName, {
  *   bindings: [

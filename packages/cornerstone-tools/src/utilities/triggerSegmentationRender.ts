@@ -130,7 +130,7 @@ class SegmentationRenderingEngine {
         onSegmentationRender
       )
 
-      const toolGroup = getToolGroup(renderingEngineUID, viewportUID)
+      const toolGroup = getToolGroup(viewportUID, renderingEngineUID)
 
       const eventDetail: SegmentationRenderedEventDetail = {
         toolGroupUID: toolGroup.uid,

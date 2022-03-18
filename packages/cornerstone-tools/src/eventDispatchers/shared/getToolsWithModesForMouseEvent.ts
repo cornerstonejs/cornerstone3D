@@ -9,7 +9,7 @@ type ModesFilter = Array<ToolModes>
  * find all the tools on the element that are in one of the specified modes.
  * If the evtButton is specified, only tools with a matching binding will be returned.
  * @param evt - The normalized mouseDown event.
- * @param modesFilter An array of entries from the `ToolModes` enum.
+ * @param modesFilter - An array of entries from the `ToolModes` enum.
  */
 export default function getToolsWithModesForMouseEvent(
   evt: EventTypes.NormalizedMouseEventType,
@@ -17,7 +17,10 @@ export default function getToolsWithModesForMouseEvent(
   evtButton?: any
 ) {
   const { renderingEngineUID, viewportUID } = evt.detail
-  const toolGroup = ToolGroupManager.getToolGroup(renderingEngineUID, viewportUID)
+  const toolGroup = ToolGroupManager.getToolGroup(
+    viewportUID,
+    renderingEngineUID
+  )
 
   if (!toolGroup) {
     return []

@@ -20,8 +20,8 @@ export default interface IToolGroup {
   /** Add a tool to toolGroup with its configuration */
   addTool: { (toolName: string, toolConfiguration?: any): void }
   /** Add viewports to share the tools for the ToolGroup */
-  addViewports: {
-    (renderingEngineUID: string, viewportUID?: string): void
+  addViewport: {
+    (viewportUID: string, renderingEngineUID?: string): void
   }
   /** Remove viewports from the ToolGroup */
   removeViewports: {

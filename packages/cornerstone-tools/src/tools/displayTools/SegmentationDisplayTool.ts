@@ -113,8 +113,8 @@ export default class SegmentationDisplayTool extends BaseTool {
     const toolGroupViewports = toolGroup.viewportsInfo.map(
       ({ renderingEngineUID, viewportUID }) => {
         const enabledElement = getEnabledElementByUIDs(
+          viewportUID,
           renderingEngineUID,
-          viewportUID
         )
 
         if (enabledElement) {

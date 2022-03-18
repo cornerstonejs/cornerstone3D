@@ -455,7 +455,6 @@ function getDefinedSVGCursorDescriptor(
 const svgCursorNames = Object.keys(DefinedDescriptorsMap)
 
 export {
-  SVGCursorDescriptor as default,
   getDefinedSVGCursorDescriptor,
   registerCursor,
   svgCursorNames,

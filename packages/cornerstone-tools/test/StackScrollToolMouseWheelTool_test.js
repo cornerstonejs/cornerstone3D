@@ -154,7 +154,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
-    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -229,7 +229,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
 
-    this.stackToolGroup.addViewports(this.renderingEngine.uid, vp.uid)
+    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
     try {
       vp.setStack([imageId1, imageId2], 0).then(() => {
