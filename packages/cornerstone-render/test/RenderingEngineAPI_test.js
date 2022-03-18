@@ -1,10 +1,10 @@
 import * as cornerstone3D from '../src/index'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const { RenderingEngine, cache, Utilities, VIEWPORT_TYPE, ORIENTATION } =
+const { RenderingEngine, cache, utilities, VIEWPORT_TYPE, ORIENTATION } =
   cornerstone3D
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const axialViewportUID = 'AXIAL_VIEWPORT'
 const sagittalViewportUID = 'SAGITTAL_VIEWPORT'

@@ -16,7 +16,7 @@ const {
   cache,
   RenderingEngine,
   VIEWPORT_TYPE,
-  Utilities,
+  utilities,
   imageLoader,
   metaData,
   EVENTS,
@@ -26,9 +26,9 @@ const {
 } = cornerstone3D
 
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 const AXIAL = 'AXIAL'

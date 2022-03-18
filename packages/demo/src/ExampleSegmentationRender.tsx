@@ -16,7 +16,7 @@ import {
   ToolModes,
   CornerstoneTools3DEvents,
   annotationSelection,
-  Utilities as csToolsUtils,
+  utilities as csToolsUtils,
   // segs
   SegmentationModule,
   SegmentationState,

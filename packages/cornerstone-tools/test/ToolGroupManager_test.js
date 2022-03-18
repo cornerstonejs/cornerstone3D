@@ -6,7 +6,7 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
-  Utilities,
+  utilities,
   metaData,
   volumeLoader,
   imageLoader,
@@ -17,9 +17,9 @@ const { registerVolumeLoader } = volumeLoader
 
 const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
 
-const { fakeMetaDataProvider, fakeVolumeLoader } = Utilities.testUtils
+const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'

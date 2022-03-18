@@ -22,7 +22,7 @@ const {
   metaData,
   EVENTS,
   volumeLoader,
-  Utilities,
+  utilities,
   setVolumesForViewports,
   getVolumeViewportsContainingVolumeUID,
 } = cornerstone3D
@@ -31,9 +31,9 @@ const { registerVolumeLoader } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 

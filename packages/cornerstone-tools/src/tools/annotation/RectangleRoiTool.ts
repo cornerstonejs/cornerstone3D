@@ -8,7 +8,7 @@ import {
   VolumeViewport,
   triggerEvent,
   eventTarget,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 

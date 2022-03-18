@@ -11,7 +11,7 @@ const {
   ORIENTATION,
   INTERPOLATION_TYPE,
   EVENTS,
-  Utilities,
+  utilities,
   imageLoader,
   metaData,
   volumeLoader,
@@ -28,7 +28,7 @@ const {
   fakeVolumeLoader,
   createNormalizedMouseEvent,
   compareImages,
-} = Utilities.testUtils
+} = utilities.testUtils
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID22'
 

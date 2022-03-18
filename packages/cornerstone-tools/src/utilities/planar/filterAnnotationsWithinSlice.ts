@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix'
-import { Utilities as csUtils } from '@precisionmetrics/cornerstone-render'
+import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 import { Annotations, Annotation } from '../../types'
 

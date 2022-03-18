@@ -10,7 +10,7 @@ import {
   EVENTS as RENDERING_EVENTS,
   eventTarget,
   Types,
-  Utilities,
+  utilities,
 } from '@precisionmetrics/cornerstone-render'
 
 import { checkAndDefineIsLockedProperty } from './annotationLocking'
@@ -42,7 +42,7 @@ export default class FrameOfReferenceSpecificAnnotationManager {
    */
   constructor(uid?: string) {
     if (!uid) {
-      uid = Utilities.uuidv4()
+      uid = utilities.uuidv4()
     }
     this.annotations = {}
     this.uid = uid

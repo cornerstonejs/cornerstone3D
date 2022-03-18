@@ -6,7 +6,7 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
-  Utilities,
+  utilities,
   metaData,
   EVENTS,
   volumeLoader,
@@ -25,9 +25,9 @@ const {
 } = csTools3d
 
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'

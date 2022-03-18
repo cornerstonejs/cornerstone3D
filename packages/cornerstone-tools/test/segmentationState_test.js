@@ -8,7 +8,7 @@ const {
   ORIENTATION,
   metaData,
   volumeLoader,
-  Utilities,
+  utilities,
   setVolumesForViewports,
   eventTarget,
   imageLoader,
@@ -23,13 +23,13 @@ const {
   addSegmentationsForToolGroup,
   CornerstoneTools3DEvents: EVENTS,
   SegmentationState,
-  Utilities: { segmentation: segUtils },
+  utilities: { segmentation: segUtils },
   SegmentationRepresentations,
 } = csTools3d
 
-const { fakeMetaDataProvider, fakeVolumeLoader } = Utilities.testUtils
+const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 

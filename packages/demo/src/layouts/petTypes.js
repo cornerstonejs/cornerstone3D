@@ -3,7 +3,7 @@ import {
   ORIENTATION,
   VIEWPORT_TYPE,
   getVolume,
-  Utilities,
+  utilities,
   cache,
 } from '@precisionmetrics/cornerstone-render'
 
@@ -66,7 +66,7 @@ function setPetBWTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, 5)
 
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
@@ -90,8 +90,8 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, max)
 
-  Utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setPetBSATransferFunction({ volumeActor, volumeUID }) {
@@ -115,8 +115,8 @@ function setPetBSATransferFunction({ volumeActor, volumeUID }) {
 
   rgbTransferFunction.setRange(0, max)
 
-  Utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 function setVolumes(renderingEngine, ptVolumeUID) {

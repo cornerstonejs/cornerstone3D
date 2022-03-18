@@ -6,7 +6,7 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
-  Utilities,
+  utilities,
   eventTarget,
   imageLoader,
   metaData,
@@ -29,9 +29,9 @@ const {
   fakeMetaDataProvider,
   fakeVolumeLoader,
   createNormalizedMouseEvent,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 

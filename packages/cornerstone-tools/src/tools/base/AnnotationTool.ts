@@ -1,5 +1,5 @@
 import {
-  Utilities,
+  utilities,
   getEnabledElement,
   VolumeViewport,
   Settings,
@@ -222,7 +222,7 @@ abstract class AnnotationTool extends BaseTool {
 
     const calibratedIndexToWorld = calibratedImageData.getIndexToWorld()
 
-    const imageURI = Utilities.imageIdToURI(imageId)
+    const imageURI = utilities.imageIdToURI(imageId)
     const stateManager = getViewportSpecificAnnotationManager(element)
     const framesOfReference = stateManager.getFramesOfReference()
 

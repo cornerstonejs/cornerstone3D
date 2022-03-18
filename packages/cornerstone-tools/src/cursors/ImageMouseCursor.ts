@@ -1,4 +1,4 @@
-import { Utilities } from '@precisionmetrics/cornerstone-render'
+import { utilities } from '@precisionmetrics/cornerstone-render'
 import MouseCursor from './MouseCursor'
 
 const DEFAULT_NAME = 'image-cursor'
@@ -34,6 +34,6 @@ export default class ImageMouseCursor extends MouseCursor {
   }
 
   static getUniqueInstanceName(prefix: string): string {
-    return `${prefix}-${Utilities.getRuntimeId(ImageMouseCursor)}`
+    return `${prefix}-${utilities.getRuntimeId(ImageMouseCursor)}`
   }
 }

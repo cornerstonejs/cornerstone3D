@@ -8,7 +8,7 @@ import {
   cache,
   Types,
   imageLoader,
-  Utilities as cornerstoneUtils,
+  utilities as cornerstoneUtils,
   REQUEST_TYPE,
   ERROR_CODES,
 } from '@precisionmetrics/cornerstone-render'

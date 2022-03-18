@@ -47,7 +47,7 @@ import Settings from './Settings'
 import * as volumeLoader from './volumeLoader'
 import * as imageLoader from './imageLoader'
 import * as Types from './types'
-import * as Utilities from './utilities'
+import * as utilities from './utilities'
 import { registerImageLoader } from './imageLoader' // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent'
@@ -58,9 +58,6 @@ import {
   getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeUID,
 } from './RenderingEngine/helpers'
-
-/** Cache getVolume, returns a volume from cache given the volumeUID {@link cache} */
-const getVolume = cache.getVolume
 
 export {
   // enums
@@ -80,6 +77,7 @@ export {
   Viewport,
   StackViewport,
   RenderingEngine,
+  ImageVolume,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,
@@ -98,13 +96,13 @@ export {
   triggerEvent,
   // Image Loader
   imageLoader,
-  registerImageLoader, // Todo: remove this after CSWIL uses imageLoader
+  registerImageLoader, // Todo: remove this after CSWIL uses imageLoader now
   // Volume Loader
   volumeLoader,
   //
   metaData,
   //
-  Utilities,
+  utilities,
   setVolumesForViewports,
   addVolumesToViewports,
   //
@@ -113,7 +111,6 @@ export {
   imageLoadPoolManager,
   RequestPoolManager,
   setMaxSimultaneousRequests,
-  ImageVolume,
   // CPU Rendering
   init,
   isCornerstoneInitialized,

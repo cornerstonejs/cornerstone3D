@@ -1,7 +1,7 @@
 import { IImageVolume } from '@precisionmetrics/cornerstone-render/src/types'
 import {
   volumeLoader,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 
 /**

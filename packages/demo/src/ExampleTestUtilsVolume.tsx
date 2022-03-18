@@ -6,7 +6,7 @@ import {
   metaData,
   VIEWPORT_TYPE,
   ORIENTATION,
-  Utilities,
+  utilities,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -40,7 +40,7 @@ const STACK = 'stack'
 window.cache = cache
 
 const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } =
-  Utilities.testUtils
+  utilities.testUtils
 
 let ctTestSceneToolGroup, ptTestSceneToolGroup
 

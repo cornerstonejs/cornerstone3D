@@ -4,7 +4,7 @@ import {
   VIEWPORT_TYPE,
   ORIENTATION,
   volumeLoader,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
 import {

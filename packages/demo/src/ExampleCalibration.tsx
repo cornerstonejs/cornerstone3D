@@ -7,7 +7,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import {
   ToolBindings,
-  Utilities,
+  utilities,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -29,7 +29,7 @@ window.cache = cache
 
 let stackDXViewportToolGroup
 
-const { calibrateImageSpacing } = Utilities
+const { calibrateImageSpacing } = utilities
 
 const toolsToUse = ANNOTATION_TOOLS.filter(
   (tool) => tool !== CrosshairsTool.toolName

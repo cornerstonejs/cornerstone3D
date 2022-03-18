@@ -6,7 +6,7 @@ import {
   volumeLoader,
   setVolumesForViewports,
   Types,
-  Utilities,
+  utilities,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -38,7 +38,7 @@ function setPetTransferFunction({ volumeActor }) {
 
   rgbTransferFunction.setRange(0, 5)
 
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
 // ======== Set up page ======== //

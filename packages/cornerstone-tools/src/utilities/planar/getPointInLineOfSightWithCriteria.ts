@@ -1,7 +1,7 @@
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import {
   VolumeViewport,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 

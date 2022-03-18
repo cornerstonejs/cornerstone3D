@@ -2,7 +2,7 @@ import {
   StackViewport,
   VolumeViewport,
   Types,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice'

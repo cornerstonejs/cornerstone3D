@@ -15,7 +15,7 @@ const {
   metaData,
   imageLoader,
   volumeLoader,
-  Utilities,
+  utilities,
   setVolumesForViewports,
   eventTarget,
 } = cornerstone3D
@@ -34,9 +34,9 @@ const {
 } = csTools3d
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'

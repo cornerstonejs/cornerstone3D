@@ -8,7 +8,7 @@ const {
   ORIENTATION,
   EVENTS,
   eventTarget,
-  Utilities,
+  utilities,
   imageLoader,
   metaData,
   volumeLoader,
@@ -28,14 +28,14 @@ const {
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
-} = Utilities.testUtils
+} = utilities.testUtils
 
 const {
-  Utilities: { calibrateImageSpacing },
+  utilities: { calibrateImageSpacing },
 } = csTools3d
 
-const renderingEngineUID = Utilities.uuidv4()
-const { calibratedPixelSpacingMetadataProvider } = Utilities
+const renderingEngineUID = utilities.uuidv4()
+const { calibratedPixelSpacingMetadataProvider } = utilities
 
 const viewportUID = 'VIEWPORT'
 

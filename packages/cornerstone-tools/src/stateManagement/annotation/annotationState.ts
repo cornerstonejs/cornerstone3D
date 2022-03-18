@@ -2,7 +2,7 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { Types } from '@precisionmetrics/cornerstone-render'

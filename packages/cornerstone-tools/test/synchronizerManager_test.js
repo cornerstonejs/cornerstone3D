@@ -8,7 +8,7 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   ORIENTATION,
-  Utilities,
+  utilities,
   metaData,
   EVENTS,
   setVolumesForViewports,
@@ -29,12 +29,12 @@ const {
 } = csTools3d
 
 const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } =
-  Utilities.testUtils
+  utilities.testUtils
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'

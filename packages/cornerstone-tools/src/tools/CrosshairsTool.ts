@@ -4,7 +4,7 @@ import {
   getEnabledElementByUIDs,
   getEnabledElement,
   RenderingEngine,
-  Utilities as csUtils,
+  utilities as csUtils,
   VolumeViewport,
   getVolumeViewportsContainingSameVolumes,
 } from '@precisionmetrics/cornerstone-render'
@@ -167,7 +167,7 @@ export default class CrosshairsTool extends AnnotationTool {
   } => {
     const enabledElement = getEnabledElementByUIDs(
       viewportUID,
-      renderingEngineUID,
+      renderingEngineUID
     )
     const { FrameOfReferenceUID, viewport } = enabledElement
     const { element } = viewport

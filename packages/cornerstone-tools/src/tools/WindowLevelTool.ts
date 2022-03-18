@@ -5,7 +5,7 @@ import {
   triggerEvent,
   VolumeViewport,
   StackViewport,
-  Utilities,
+  utilities,
   cache,
   Types,
   getVolumeViewportsContainingVolumeUID,
@@ -136,7 +136,7 @@ export default class WindowLevelTool extends BaseTool {
     const wwDelta = deltaPointsCanvas[0] * multiplier
     const wcDelta = deltaPointsCanvas[1] * multiplier
 
-    let { windowWidth, windowCenter } = Utilities.windowLevel.toWindowLevel(
+    let { windowWidth, windowCenter } = utilities.windowLevel.toWindowLevel(
       lower,
       upper
     )
@@ -147,7 +147,7 @@ export default class WindowLevelTool extends BaseTool {
     windowWidth = Math.max(windowWidth, 1)
 
     // Convert back to range
-    return Utilities.windowLevel.toLowHighRange(windowWidth, windowCenter)
+    return utilities.windowLevel.toLowHighRange(windowWidth, windowCenter)
   }
 
   _getMultiplyerFromDynamicRange(volumeUID) {

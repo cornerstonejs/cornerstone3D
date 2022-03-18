@@ -1,7 +1,7 @@
 import {
   volumeLoader,
   cache,
-  Utilities,
+  utilities,
   ERROR_CODES,
   Types,
 } from '@precisionmetrics/cornerstone-render'
@@ -9,7 +9,7 @@ import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
 import StreamingImageVolume from './StreamingImageVolume'
 
-const { createUint8SharedArray, createFloat32SharedArray } = Utilities
+const { createUint8SharedArray, createFloat32SharedArray } = utilities
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>

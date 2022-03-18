@@ -5,7 +5,7 @@ import {
   imageLoader,
   metaData,
   VIEWPORT_TYPE,
-  Utilities,
+  utilities,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
@@ -33,7 +33,7 @@ const STACK = 'stack'
 
 window.cache = cache
 
-const { fakeImageLoader, fakeMetaDataProvider } = Utilities.testUtils
+const { fakeImageLoader, fakeMetaDataProvider } = utilities.testUtils
 
 let stackCTViewportToolGroup
 

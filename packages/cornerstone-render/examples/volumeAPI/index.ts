@@ -5,7 +5,7 @@ import {
   ORIENTATION,
   volumeLoader,
   getRenderingEngine,
-  Utilities,
+  utilities,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -118,7 +118,7 @@ addButtonToToolbar('Invert', () => {
     .getProperty()
     .getRGBTransferFunction(0)
 
-  Utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction)
 
   viewport.render()
 })

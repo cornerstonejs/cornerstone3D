@@ -1,6 +1,6 @@
 import cloneDeep from 'lodash.clonedeep'
 
-import { Utilities as csUtils } from '@precisionmetrics/cornerstone-render'
+import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
 
 import { addColorLUT } from './colorLUT'
 

@@ -22,7 +22,7 @@ import * as calibrated_1_5_imageURI_11_11_4_1_1_1_0_1 from './groundTruth/calibr
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const {
-  Utilities: { calibrateImageSpacing },
+  utilities: { calibrateImageSpacing },
 } = csTools3d
 
 const {
@@ -30,18 +30,18 @@ const {
   RenderingEngine,
   VIEWPORT_TYPE,
   INTERPOLATION_TYPE,
-  Utilities,
+  utilities,
   imageLoader,
   metaData,
   EVENTS,
 } = cornerstone3D
 
-const { calibratedPixelSpacingMetadataProvider } = Utilities
+const { calibratedPixelSpacingMetadataProvider } = utilities
 
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 

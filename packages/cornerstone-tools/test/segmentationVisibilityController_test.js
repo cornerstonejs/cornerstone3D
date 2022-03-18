@@ -12,7 +12,7 @@ const {
   ORIENTATION,
   metaData,
   volumeLoader,
-  Utilities,
+  utilities,
   setVolumesForViewports,
   eventTarget,
   imageLoader,
@@ -32,9 +32,9 @@ const {
 } = csTools3d
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
-  Utilities.testUtils
+  utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 

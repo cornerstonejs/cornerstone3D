@@ -28,7 +28,7 @@ import ToolGroup from './store/ToolGroupManager/ToolGroup'
 // Name spaces
 import * as synchronizers from './synchronizers'
 import * as drawing from './drawingSvg'
-import * as Utilities from './utilities'
+import * as utilities from './utilities'
 import * as Types from './types'
 import * as Cursors from './cursors'
 import AnnotationState from './stateManagement/annotation'
@@ -123,7 +123,7 @@ export {
   setGlobalStyle,
   setToolStyle,
   // Utilities
-  Utilities,
+  utilities,
   Types,
   Cursors,
   // Segmentations
