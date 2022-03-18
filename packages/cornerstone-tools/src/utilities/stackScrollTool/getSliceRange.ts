@@ -1,5 +1,5 @@
+import { Utilities as csUtils } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
-import getVolumeActorCorners from '../vtkjs/getVolumeActorCorners'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 
 /**
@@ -19,7 +19,7 @@ export default function getSliceRange(
   viewPlaneNormal: Types.Point3,
   focalPoint: Types.Point3
 ): { min: number; max: number; current: number } {
-  const corners = getVolumeActorCorners(volumeActor)
+  const corners = csUtils.getVolumeActorCorners(volumeActor)
 
   // Get rotation matrix from normal to +X (since bounds is aligned to XYZ)
   const transform = vtkMatrixBuilder

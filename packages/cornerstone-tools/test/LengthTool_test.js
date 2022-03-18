@@ -21,8 +21,7 @@ const {
 const {
   LengthTool,
   ToolGroupManager,
-  getAnnotations,
-  removeAnnotation,
+  AnnotationState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
 } = csTools3d
@@ -138,7 +137,7 @@ describe('LengthTool:', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const lengthAnnotations = getAnnotations(
+            const lengthAnnotations = AnnotationState.getAnnotations(
               element,
               LengthTool.toolName
             )
@@ -158,7 +157,10 @@ describe('LengthTool:', () => {
             expect(targets.length).toBe(1)
 
             expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-            removeAnnotation(element, lengthAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              lengthAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -246,7 +248,7 @@ describe('LengthTool:', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const lengthAnnotations = getAnnotations(
+            const lengthAnnotations = AnnotationState.getAnnotations(
               element,
               LengthTool.toolName
             )
@@ -265,7 +267,10 @@ describe('LengthTool:', () => {
 
             expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-            removeAnnotation(element, lengthAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              lengthAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -357,7 +362,7 @@ describe('LengthTool:', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const lengthAnnotations = getAnnotations(
+            const lengthAnnotations = AnnotationState.getAnnotations(
               element,
               LengthTool.toolName
             )
@@ -379,7 +384,10 @@ describe('LengthTool:', () => {
 
             expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-            removeAnnotation(element, lengthAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              lengthAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -500,7 +508,7 @@ describe('LengthTool:', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const lengthAnnotations = getAnnotations(
+            const lengthAnnotations = AnnotationState.getAnnotations(
               element,
               LengthTool.toolName
             )
@@ -522,7 +530,10 @@ describe('LengthTool:', () => {
 
             expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-            removeAnnotation(element, lengthAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              lengthAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -635,7 +646,7 @@ describe('LengthTool:', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const lengthAnnotations = getAnnotations(
+            const lengthAnnotations = AnnotationState.getAnnotations(
               element,
               LengthTool.toolName
             )
@@ -696,7 +707,10 @@ describe('LengthTool:', () => {
             expect(handles[0]).toEqual(afterMoveFirstHandle)
             expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-            removeAnnotation(element, lengthAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              lengthAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -833,7 +847,7 @@ describe('LengthTool:', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const lengthAnnotations = getAnnotations(
+            const lengthAnnotations = AnnotationState.getAnnotations(
               element,
               LengthTool.toolName
             )
@@ -853,9 +867,12 @@ describe('LengthTool:', () => {
             expect(targets.length).toBe(1)
 
             expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-            removeAnnotation(element, lengthAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              lengthAnnotation.annotationUID
+            )
 
-            const annotationsAfterRemove = getAnnotations(
+            const annotationsAfterRemove = AnnotationState.getAnnotations(
               element,
               LengthTool.toolName
             )
@@ -1051,7 +1068,10 @@ describe('LengthTool:', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const lengthAnnotations = getAnnotations(element, LengthTool.toolName)
+          const lengthAnnotations = AnnotationState.getAnnotations(
+            element,
+            LengthTool.toolName
+          )
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined()
           expect(lengthAnnotations.length).toBe(1)
@@ -1070,7 +1090,10 @@ describe('LengthTool:', () => {
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-          removeAnnotation(element, lengthAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            lengthAnnotation.annotationUID
+          )
           done()
         }, 100)
       }
@@ -1146,7 +1169,7 @@ describe('LengthTool:', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const secondCallback = () => {
-        const lengthAnnotations = getAnnotations(element, LengthTool.toolName)
+        const lengthAnnotations = AnnotationState.getAnnotations(element, LengthTool.toolName)
         //  Can successfully add Length tool to annotationManager
         expect(lengthAnnotations).toBeDefined()
         expect(lengthAnnotations.length).toBe(1)
@@ -1162,7 +1185,7 @@ describe('LengthTool:', () => {
 
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-        removeAnnotation(element, lengthAnnotation.annotationUID)
+        AnnotationState.removeAnnotation(element, lengthAnnotation.annotationUID)
         done()
       }
 

@@ -4,6 +4,11 @@ import { state } from '../index'
 // any attached events
 // We should probably just have a destroySynchronizer call
 // then use getByX to allow versatility in how we can call destroy
+
+/**
+ * Destroy a synchronizer by its ID.
+ * @param synchronizerId - The id of the synchronizer to destroy.
+ */
 function destroySynchronizerById(synchronizerId: string): void {
   const synchronizerIndex = state.synchronizers.findIndex(
     (sync) => sync.id === synchronizerId

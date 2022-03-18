@@ -1,6 +1,15 @@
 import { state } from '../index'
 import Synchronizer, { ISynchronizerEventHandler } from './Synchronizer'
 
+/**
+ * Create a new synchronizer instance from Synchronizer class
+ * @param synchronizerId - The id of the synchronizer.
+ * @param eventName - The name of the event that will be emitted by the
+ * synchronizer.
+ * @param eventHandler - The event handler that will be
+ * called when the event is emitted.
+ * @returns A reference to the synchronizer.
+ */
 function createSynchronizer(
   synchronizerId: string,
   eventName: string,

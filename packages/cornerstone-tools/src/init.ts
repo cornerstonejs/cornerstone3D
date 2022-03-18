@@ -18,7 +18,13 @@ import ToolGroupManager from './store/ToolGroupManager'
 
 let csToolsInitialized = false
 
-export function init(defaultConfiguration = {}) {
+/**
+ * Initialize the cornerstoneTools package. It will add event listeners for mouse
+ * and keyboard events.
+ * @param defaultConfiguration - A configuration object that will be used to
+ * initialize the tool.
+ */
+export function init(defaultConfiguration = {}): void {
   if (csToolsInitialized) {
     return
   }
@@ -29,7 +35,12 @@ export function init(defaultConfiguration = {}) {
   csToolsInitialized = true
 }
 
-export function destroy() {
+/**
+ * It destroys and cleanup state for cornerstone3DTools. It removes all the tools
+ * that were added to the tool groups and restore states. It also removes all
+ * event listeners.
+ */
+export function destroy(): void {
   _removeCornerstoneEventListeners()
   _removeCornerstoneToolsEventListeners()
 
@@ -53,11 +64,9 @@ export function destroy() {
  * Wires up event listeners for the Cornerstone#ElementDisabled and
  * Cornerstone#ElementEnabled events.
  *
- * @private
- * @method
- * @returns {void}
+ * @internal
  */
-function _addCornerstoneEventListeners() {
+function _addCornerstoneEventListeners(): void {
   // Clear any listeners that may already be set
   _removeCornerstoneEventListeners()
 
@@ -72,11 +81,8 @@ function _addCornerstoneEventListeners() {
  * Removes event listeners for the Cornerstone#ElementDisabled and
  * Cornerstone#ElementEnabled events.
  *
- * @private
- * @method
- * @returns {void}
  */
-function _removeCornerstoneEventListeners() {
+function _removeCornerstoneEventListeners(): void {
   const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
   const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
 

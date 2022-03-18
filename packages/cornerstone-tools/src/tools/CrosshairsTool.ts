@@ -94,6 +94,15 @@ const OPERATION = {
 
 const EPSILON = 1e-3
 
+/**
+ * CrosshairsTool is a tool that provides reference lines between different viewports
+ * of a toolGroup. Using crosshairs, you can jump to a specific location in one
+ * viewport and the rest of the viewports in the toolGroup will be aligned to that location.
+ * Crosshairs have grababble handles that can be used to rotate and translate the
+ * reference lines. They can also be used to set the slab thickness of the viewports
+ * by modifying the slab thickness handles.
+ *
+ */
 export default class CrosshairsTool extends AnnotationTool {
   static toolName = 'Crosshairs'
 

@@ -26,7 +26,6 @@ import {
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
-import { indexWithinDimensions } from '../../utilities/vtkjs'
 import {
   resetElementCursor,
   hideElementCursor,
@@ -46,17 +45,65 @@ import {
 interface ProbeAnnotation extends Annotation {
   data: {
     handles: { points: Types.Point3[] }
-    cachedStats: any
+    cachedStats: {
+      [targetUID: string]: {
+        Modality: string
+        index: Types.Point3
+        value: number
+      }
+    }
     label: string
   }
 }
+
+/**
+ * ProbeTool let you get the underlying voxel value by putting a probe in that
+ * location. It will give index of the location and value of the voxel.
+ * You can use ProbeTool in all perpendicular views (axial, sagittal, coronal).
+ * Note: annotation tools in cornerstone3DTools exists in the exact location
+ * in the physical 3d space, as a result, by default, all annotations that are
+ * drawing in the same frameOfReference will get shared between viewports that
+ * are in the same frameOfReference. Probe tool's text box are dynamically
+ * generated based on the viewport's underlying Modality. For instance, if
+ * the viewport is displaying CT, the text box will shown the statistics in Hounsfield units,
+ * and if the viewport is displaying PET, the text box will show the statistics in
+ * SUV units.
+ *
+ * The resulting annotation's data (statistics) and metadata (the
+ * state of the viewport while drawing was happening) will get added to the
+ * ToolState manager and can be accessed from the ToolState by calling getAnnotations
+ * or similar methods.
+ *
+ * To use the ProbeTool, you first need to add it to cornerstoneTools, then create
+ * a toolGroup and add the ProbeTool to it. Finally, setToolActive on the toolGroup
+ *
+ * ```js
+ * cornerstoneTools.addTool(ProbeTool)
+ *
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ *
+ * toolGroup.addTool(ProbeTool.toolName)
+ *
+ * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ *
+ * toolGroup.setToolActive(ProbeTool.toolName, {
+ *   bindings: [
+ *    {
+ *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *     },
+ *   ],
+ * })
+ * ```
+ *
+ * Read more in the Docs section of the website.
+ *
+ */
 export default class ProbeTool extends AnnotationTool {
   static toolName = 'Probe'
 
   touchDragCallback: any
   mouseDragCallback: any
   editData: { annotation: any; viewportUIDsToRender: string[] } | null
-  _configuration: any
   eventDispatchDetail: {
     viewportUID: string
     renderingEngineUID: string
@@ -394,7 +441,12 @@ export default class ProbeTool extends AnnotationTool {
       const color = this.getStyle(settings, 'color', annotation)
 
       if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {}
+        data.cachedStats[targetUID] = {
+          Modality: null,
+          index: null,
+          value: null,
+        }
+
         this._calculateCachedStats(annotation, renderingEngine, enabledElement)
       } else if (annotation.invalidated) {
         this._calculateCachedStats(annotation, renderingEngine, enabledElement)
@@ -566,7 +618,7 @@ export default class ProbeTool extends AnnotationTool {
       index[1] = Math.floor(index[1])
       index[2] = Math.floor(index[2])
 
-      if (indexWithinDimensions(index, dimensions)) {
+      if (csUtils.indexWithinDimensions(index, dimensions)) {
         this.isHandleOutsideImage = false
         const yMultiple = dimensions[0]
         const zMultiple = dimensions[0] * dimensions[1]
@@ -608,5 +660,7 @@ export default class ProbeTool extends AnnotationTool {
 
       triggerEvent(eventTarget, eventType, eventDetail)
     }
+
+    return cachedStats
   }
 }

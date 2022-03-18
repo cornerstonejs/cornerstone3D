@@ -160,7 +160,7 @@ class SegmentationRenderingEngine {
       )
     })
 
-    segmentationDisplayToolInstance.renderAnnotation(toolGroupUID)
+    segmentationDisplayToolInstance.renderSegmentation(toolGroupUID)
   }
 
   /**

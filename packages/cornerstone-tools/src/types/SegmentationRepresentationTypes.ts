@@ -2,16 +2,22 @@ import type vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTr
 import type vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 import Representations from '../enums/SegmentationRepresentations'
 
+/**
+ * Labelmap representation type
+ */
 export type LabelmapRepresentation = {
+  /** labelmap representation type  */
   type: typeof Representations.Labelmap
+  /** config */
   config: {
+    /** color transfer function */
     cfun?: vtkColorTransferFunction
+    /** opacity transfer function */
     ofun?: vtkPiecewiseFunction
   }
 }
 
 /**
- * Todo: Other representations
+ * Segmentation representation. Currently only Labelmap is supported.
  */
-
 export type SegmentationRepresentation = LabelmapRepresentation

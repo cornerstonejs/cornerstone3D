@@ -13,6 +13,8 @@ import createFloat32SharedArray from './createFloat32SharedArray'
 import getClosestImageId from './getClosestImageId'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir'
+import getVolumeActorCorners from './getVolumeActorCorners'
+import indexWithinDimensions from './indexWithinDimensions'
 
 // name spaces
 import * as planar from './planar'
@@ -38,4 +40,6 @@ export {
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
+  getVolumeActorCorners,
+  indexWithinDimensions,
 }

@@ -25,8 +25,6 @@ import isObject from './isObject'
  * See [David Corbacho's article](https://css-tricks.com/debouncing-throttling-explained-examples/)
  * for details over the differences between `debounce` and `throttle`.
  *
- * @since 0.1.0
- * @category Function
  * @param {Function} func The function to debounce.
  * @param {number} [wait=0]
  *  The number of milliseconds to delay; if omitted, `requestAnimationFrame` is

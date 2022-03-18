@@ -32,6 +32,11 @@ export function addTool(ToolClass): void {
   }
 }
 
+/**
+ * Removes the tool class from the cornerstoneTools.
+ *
+ * @param ToolClass - A tool calls to instantiate.
+ */
 export function removeTool(ToolClass): void {
   const toolName = ToolClass.toolName
 

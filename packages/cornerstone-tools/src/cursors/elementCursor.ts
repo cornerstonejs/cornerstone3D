@@ -1,4 +1,4 @@
-import { MouseCursor, SVGMouseCursor } from '.'
+import { MouseCursor } from '.'
 
 const ELEMENT_CURSORS_MAP = Symbol('ElementCursorsMap')
 
@@ -58,35 +58,12 @@ function _getElementCursors(
   return cursors
 }
 
-/**
- * Set the cursor for an element
- * @param element - The element to set the cursor on.
- * @param cursorName - The name of the cursor to set. This can be
- * any cursor name either Cornerstone-specific cursor names or the standard
- * CSS cursor names.
- */
-function setCursorForElement(element: HTMLElement, cursorName: string): void {
-  let cursor = SVGMouseCursor.getDefinedCursor(cursorName, true)
-  if (!cursor) {
-    cursor = MouseCursor.getDefinedCursor(cursorName)
-  }
-
-  if (!cursor) {
-    console.log(
-      `Cursor ${cursorName} is not defined either as SVG or as a standard cursor.`
-    )
-    cursor = MouseCursor.getDefinedCursor(cursorName)
-  }
-
-  _setElementCursor(element, cursor)
-}
-
 /*
  * Exports
  */
 export {
   initElementCursor,
-  setCursorForElement,
   resetElementCursor,
   hideElementCursor,
+  _setElementCursor as setElementCursor,
 }

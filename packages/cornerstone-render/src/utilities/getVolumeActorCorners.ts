@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import { Point3 } from '../types'
 
 /**
  * Converts `vtkVolumeActor` bounds to corners in world space.
@@ -7,9 +7,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
  *
  * @returns An array of the corners of the `volumeActor` in world space.
  */
-export default function getVolumeActorCorners(
-  volumeActor
-): Array<Types.Point3> {
+export default function getVolumeActorCorners(volumeActor): Array<Point3> {
   const bounds = volumeActor.getMapper().getBounds()
 
   return [

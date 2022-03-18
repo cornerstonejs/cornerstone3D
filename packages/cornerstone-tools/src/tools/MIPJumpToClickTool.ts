@@ -7,10 +7,15 @@ import { getPointInLineOfSightWithCriteria } from '../utilities/planar'
 import jumpToWorld from '../utilities/viewport/jumpToWorld'
 import { PublicToolProps, ToolProps } from '../types'
 
+/**
+ * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the
+ * user to click on a point in the MIP and the targetViewportUIDS (provided in the
+ * tool configuration) will be scrolled (jumped) to the location of the point with
+ * the highest intensity value in the MIP.
+ */
 export default class MIPJumpToClickTool extends BaseTool {
   static toolName = 'MIPJumpToClickTool'
 
-  _configuration: any
   _bounds: any
 
   constructor(
@@ -32,7 +37,7 @@ export default class MIPJumpToClickTool extends BaseTool {
    * this triggers a cameraModified event which then 4) moves all other synced
    * viewports and their crosshairs.
    *
-   * @param evt click event
+   * @param evt - click event
    */
   mouseClickCallback(evt): void {
     const { element, currentPoints } = evt.detail

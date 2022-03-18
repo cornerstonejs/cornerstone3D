@@ -17,6 +17,37 @@ import { PublicToolProps, ToolProps } from '../../types'
 
 import { deepMerge } from '../../utilities'
 
+/**
+ * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
+ * Generally, any Segmentation can be viewed in various representations such as
+ * labelmap (3d), contours, surface etc. As of now, Cornerstone3DTools only implements
+ * Labelmap representation (default).
+ *
+ * SegmentationDisplayTool works at ToolGroup level, and is responsible for displaying the
+ * segmentation for ALL viewports of a toolGroup, this way we can support complex
+ * scenarios for displaying segmentations.
+ *
+ * Current Limitations:
+ * - Only supports rendering of the volumetric segmentations in 3D space. (StackViewport segmentations are not supported yet)
+ * - Labelmap representation is the only supported representation for now.
+ *
+ * Similar to other tools in Cornerstone3DTools, the SegmentationDisplayTool should
+ * be added to the CornerstoneTools by calling cornerstoneTools.addTool(SegmentationDisplayTool)
+ * and a toolGroup should be created for it using the ToolGroupManager API, finally
+ * viewports information such as viewportUID and renderingEngineUID should be provided
+ * to the toolGroup and the SegmentationDisplayTool should be set to be activated.
+ * For adding segmentations to be displayed you can addSegmentationsForToolGroup helper.
+ *
+ * ```js
+ *
+ *  addSegmentationsForToolGroup('toolGroupUID', [
+ *     {
+ *       volumeUID: segmentationUID,
+ *     },
+ *  ])
+ *
+ * ```
+ */
 export default class SegmentationDisplayTool extends BaseTool {
   static toolName = 'SegmentationDisplay'
   constructor(
@@ -28,7 +59,6 @@ export default class SegmentationDisplayTool extends BaseTool {
     super(toolProps, defaultToolProps)
   }
 
-  // Todo: this is too weird that we are passing toolGroupUID to the enableCallback
   enableCallback(): void {
     const toolGroupUID = this.toolGroupUID
     const toolGroupSegmentationState = getSegmentationState(toolGroupUID)
@@ -70,7 +100,7 @@ export default class SegmentationDisplayTool extends BaseTool {
    *
    * @param toolGroupUID - the toolGroupUID
    */
-  renderAnnotation = (toolGroupUID: string): void => {
+  renderSegmentation = (toolGroupUID: string): void => {
     const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
 
     if (!toolGroup) {

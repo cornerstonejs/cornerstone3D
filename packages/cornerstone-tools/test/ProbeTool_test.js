@@ -21,8 +21,7 @@ const {
 const {
   ProbeTool,
   ToolGroupManager,
-  getAnnotations,
-  removeAnnotation,
+  AnnotationState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
 } = csTools3d
@@ -121,7 +120,10 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
+            const probeAnnotations = AnnotationState.getAnnotations(
+              element,
+              ProbeTool.toolName
+            )
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
 
@@ -139,7 +141,10 @@ describe('Probe Tool: ', () => {
             // The world coordinate is on the white bar so value is 255
             expect(data[targets[0]].value).toBe(255)
 
-            removeAnnotation(element, probeAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              probeAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -205,7 +210,10 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
+            const probeAnnotations = AnnotationState.getAnnotations(
+              element,
+              ProbeTool.toolName
+            )
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(2)
 
@@ -240,8 +248,14 @@ describe('Probe Tool: ', () => {
             expect(data[targets[0]].value).toBe(0)
 
             //
-            removeAnnotation(element, firstProbeAnnotation.annotationUID)
-            removeAnnotation(element, secondProbeAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              firstProbeAnnotation.annotationUID
+            )
+            AnnotationState.removeAnnotation(
+              element,
+              secondProbeAnnotation.annotationUID
+            )
 
             done()
           }
@@ -330,7 +344,10 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
+            const probeAnnotations = AnnotationState.getAnnotations(
+              element,
+              ProbeTool.toolName
+            )
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
 
@@ -348,7 +365,10 @@ describe('Probe Tool: ', () => {
             // The world coordinate is on the white bar so value is 255
             expect(data[targets[0]].value).toBe(255)
 
-            removeAnnotation(element, probeAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              probeAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -412,7 +432,10 @@ describe('Probe Tool: ', () => {
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
             // Can successfully add probe tool to annotationManager
-            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
+            const probeAnnotations = AnnotationState.getAnnotations(
+              element,
+              ProbeTool.toolName
+            )
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
 
@@ -430,7 +453,10 @@ describe('Probe Tool: ', () => {
             // The world coordinate is on the white bar so value is 255
             expect(data[targets[0]].value).toBe(0)
 
-            removeAnnotation(element, probeAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              probeAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -492,7 +518,10 @@ describe('Probe Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
+            const probeAnnotations = AnnotationState.getAnnotations(
+              element,
+              ProbeTool.toolName
+            )
             // Can successfully add Length tool to annotationManager
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
@@ -507,7 +536,10 @@ describe('Probe Tool: ', () => {
 
             expect(data[targets[0]].value).toBe(255)
 
-            removeAnnotation(element, probeAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              probeAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -578,7 +610,10 @@ describe('Probe Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
+            const probeAnnotations = AnnotationState.getAnnotations(
+              element,
+              ProbeTool.toolName
+            )
             // Can successfully add Length tool to annotationManager
             expect(probeAnnotations).toBeDefined()
             expect(probeAnnotations.length).toBe(1)
@@ -601,7 +636,10 @@ describe('Probe Tool: ', () => {
 
             expect(handles[0]).toEqual(p2)
 
-            removeAnnotation(element, probeAnnotation.annotationUID)
+            AnnotationState.removeAnnotation(
+              element,
+              probeAnnotation.annotationUID
+            )
             done()
           }
         )
@@ -801,7 +839,10 @@ describe('Probe Tool: ', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const probeAnnotations = getAnnotations(element, ProbeTool.toolName)
+          const probeAnnotations = AnnotationState.getAnnotations(
+            element,
+            ProbeTool.toolName
+          )
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined()
           expect(probeAnnotations.length).toBe(1)
@@ -825,7 +866,10 @@ describe('Probe Tool: ', () => {
 
           expect(handles[0]).toEqual(p2)
 
-          removeAnnotation(element, probeAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            probeAnnotation.annotationUID
+          )
           done()
         }, 100)
       }

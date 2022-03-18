@@ -3,6 +3,11 @@ import { BaseTool } from './base'
 import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
 import { PublicToolProps, ToolProps } from '../types'
 
+/**
+ * ZoomTool tool manipulates the camera zoom applied to a viewport. It
+ * provides a way to set the zoom of a viewport by dragging mouse over the image.
+ *
+ */
 export default class ZoomTool extends BaseTool {
   static toolName = 'Zoom'
   touchDragCallback: () => void

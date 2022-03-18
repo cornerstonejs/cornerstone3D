@@ -17,6 +17,12 @@ const DEFAULT_MULTIPLIER = 4
 const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024
 const PT = 'PT'
 
+/**
+ * WindowLevel tool manipulates the windowLevel applied to a viewport. It
+ * provides a way to set the windowCenter and windowWidth of a viewport
+ * by dragging mouse over the image.
+ *
+ */
 export default class WindowLevelTool extends BaseTool {
   static toolName = 'WindowLevel'
   touchDragCallback: () => void
