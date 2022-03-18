@@ -4,6 +4,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { mat4, vec3 } from 'gl-matrix'
 import { PublicToolProps, ToolProps } from '../types'
+import { MouseWheelEventType } from '../types/EventTypes'
 
 const DIRECTIONS = {
   X: [1, 0, 0],
@@ -35,8 +36,8 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
     super(toolProps, defaultToolProps)
   }
 
-  // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js#L73
-  mouseWheelCallback(evt) {
+  mouseWheelCallback(evt: MouseWheelEventType) {
+    // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js#L73
     const { element, wheel } = evt.detail
     const enabledElement = getEnabledElement(element)
     const { viewport } = enabledElement

@@ -5,12 +5,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 import { PublicToolProps, ToolProps } from '../types'
 
 /**
- * @class PanTool
- * @classdesc Tool that pans the camera in the plane defined by the sliceNormal and the viewUp.
- *
- * @export
- * @class PanTool
- * @extends {BaseTool}
+ * Tool that pans the camera in the plane defined by the sliceNormal and the viewUp.
  */
 export default class PanTool extends BaseTool {
   static toolName = 'Pan'

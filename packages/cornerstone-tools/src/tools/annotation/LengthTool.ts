@@ -27,7 +27,6 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
-import { indexWithinDimensions } from '../../utilities/vtkjs'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
@@ -64,9 +63,48 @@ interface LengthAnnotation extends Annotation {
       }
     }
     label: string
-    cachedStats: any
+    cachedStats: {
+      [targetUID: string]: {
+        length: number
+      }
+    }
   }
 }
+
+/**
+ * LengthTool let you draw annotations that measures the length of two drawing
+ * points on a slice. You can use the LengthTool in all imaging planes even in oblique
+ * reconstructed planes. Note: annotation tools in cornerstone3DTools exists in the exact location
+ * in the physical 3d space, as a result, by default, all annotations that are
+ * drawing in the same frameOfReference will get shared between viewports that
+ * are in the same frameOfReference.
+ *
+ * The resulting annotation's data (statistics) and metadata (the
+ * state of the viewport while drawing was happening) will get added to the
+ * ToolState manager and can be accessed from the ToolState by calling getAnnotations
+ * or similar methods.
+ *
+ * ```js
+ * cornerstoneTools.addTool(LengthTool)
+ *
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ *
+ * toolGroup.addTool(LengthTool.toolName)
+ *
+ * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ *
+ * toolGroup.setToolActive(LengthTool.toolName, {
+ *   bindings: [
+ *    {
+ *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *     },
+ *   ],
+ * })
+ * ```
+ *
+ * Read more in the Docs section of the website.
+
+ */
 
 class LengthTool extends AnnotationTool {
   static toolName = 'Length'
@@ -82,7 +120,6 @@ class LengthTool extends AnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  _configuration: any
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
@@ -604,7 +641,9 @@ class LengthTool extends AnnotationTool {
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {}
+        data.cachedStats[targetUID] = {
+          length: null,
+        }
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement)
       } else if (annotation.invalidated) {
@@ -742,8 +781,8 @@ class LengthTool extends AnnotationTool {
 
   _isInsideVolume(index1, index2, dimensions) {
     return (
-      indexWithinDimensions(index1, dimensions) &&
-      indexWithinDimensions(index2, dimensions)
+      csUtils.indexWithinDimensions(index1, dimensions) &&
+      csUtils.indexWithinDimensions(index2, dimensions)
     )
   }
 }

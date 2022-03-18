@@ -31,7 +31,6 @@ import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters
 import rectangle from '../../utilities/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners'
-import { indexWithinDimensions } from '../../utilities/vtkjs'
 import {
   resetElementCursor,
   hideElementCursor,
@@ -49,6 +48,54 @@ import {
 } from '../../types'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
+interface RectangleRoiCachedStats {
+  [targetUID: string]: {
+    Modality: string
+    area: number
+    max: number
+    mean: number
+    stdDev: number
+  }
+}
+
+/**
+ * RectangleRoiAnnotation let you draw annotations that measures the statistics
+ * such as area, max, mean and stdDev of a Rectangular region of interest.
+ * You can use RectangleRoiAnnotation in all perpendicular views (axial, sagittal, coronal).
+ * Note: annotation tools in cornerstone3DTools exists in the exact location
+ * in the physical 3d space, as a result, by default, all annotations that are
+ * drawing in the same frameOfReference will get shared between viewports that
+ * are in the same frameOfReference. RectangleRoi tool's text box lines are dynamically
+ * generated based on the viewport's underlying Modality. For instance, if
+ * the viewport is displaying CT, the text box will shown the statistics in Hounsfield units,
+ * and if the viewport is displaying PET, the text box will show the statistics in
+ * SUV units.
+ *
+ * The resulting annotation's data (statistics) and metadata (the
+ * state of the viewport while drawing was happening) will get added to the
+ * ToolState manager and can be accessed from the ToolState by calling getAnnotations
+ * or similar methods.
+ *
+ * ```js
+ * cornerstoneTools.addTool(RectangleRoiAnnotation)
+ *
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ *
+ * toolGroup.addTool(RectangleRoiAnnotation.toolName)
+ *
+ * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ *
+ * toolGroup.setToolActive(RectangleRoiAnnotation.toolName, {
+ *   bindings: [
+ *    {
+ *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *     },
+ *   ],
+ * })
+ * ```
+ *
+ * Read more in the Docs section of the website.
+ */
 export interface RectangleRoiAnnotation extends Annotation {
   data: {
     handles: {
@@ -66,7 +113,12 @@ export interface RectangleRoiAnnotation extends Annotation {
       }
     }
     label: string
-    cachedStats?: any
+    cachedStats?:
+      | RectangleRoiCachedStats
+      | {
+          projectionPoints?: Types.Point3[]
+          projectionPointsImageIds?: string[]
+        }
   }
 }
 
@@ -82,7 +134,6 @@ export default class RectangleRoiTool extends AnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  _configuration: any
   isDrawing: boolean
   isHandleOutsideImage: boolean
 
@@ -634,7 +685,14 @@ export default class RectangleRoiTool extends AnnotationTool {
       const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
       if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {}
+        data.cachedStats[targetUID] = {
+          Modality: null,
+          area: null,
+          max: null,
+          mean: null,
+          stdDev: null,
+        }
+
         this._calculateCachedStats(
           annotation,
           viewPlaneNormal,
@@ -983,8 +1041,8 @@ export default class RectangleRoiTool extends AnnotationTool {
 
   _isInsideVolume = (index1, index2, dimensions) => {
     return (
-      indexWithinDimensions(index1, dimensions) &&
-      indexWithinDimensions(index2, dimensions)
+      csUtils.indexWithinDimensions(index1, dimensions) &&
+      csUtils.indexWithinDimensions(index2, dimensions)
     )
   }
 }

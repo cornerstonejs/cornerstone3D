@@ -13,10 +13,7 @@ import {
   Utilities,
 } from '@precisionmetrics/cornerstone-render'
 
-import {
-  setAnnotationLocked,
-  checkAndDefineIsLockedProperty,
-} from './annotationLocking'
+import { checkAndDefineIsLockedProperty } from './annotationLocking'
 
 interface FilterInterface {
   FrameOfReferenceUID?: string
@@ -33,6 +30,7 @@ interface FilterInterface {
  * This could be useful for e.g. viewing two different reads of the same data side-by-side.
  *
  * Note that this class is a singleton and should not be instantiated directly.
+ * To get the stored annotations information you can use ToolState helpers.
  *
  */
 export default class FrameOfReferenceSpecificAnnotationManager {

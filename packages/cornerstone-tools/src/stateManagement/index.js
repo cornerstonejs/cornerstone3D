@@ -5,7 +5,6 @@ import * as annotationStyle from './annotation/annotationStyle'
 import getStyle from './annotation/getStyle'
 import setGlobalStyle from './annotation/setGlobalStyle'
 import setToolStyle from './annotation/setToolStyle'
-import { setAnnotationStyle } from './annotation/annotationStyle'
 import * as annotationLocking from './annotation/annotationLocking'
 import * as annotationSelection from './annotation/annotationSelection'
 

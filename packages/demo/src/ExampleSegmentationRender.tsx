@@ -458,7 +458,7 @@ class SegmentationExample extends Component {
     }
     const toolGroup = toolGroups[this.state.selectedToolGroupName]
     if (toolMode === ToolModes.Active) {
-      const activeTool = toolGroup.getActivePrimaryButtonTools()
+      const activeTool = toolGroup.getActivePrimaryMouseButtonTool()
       if (activeTool) {
         toolGroup.setToolPassive(activeTool)
       }

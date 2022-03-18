@@ -28,6 +28,10 @@ import { getAnnotationStyle } from '../../stateManagement/annotation/annotationS
  * cornerstone3D canvas. In addition, it provides a base class for segmentation
  * tools that require drawing an annotation before running the segmentation strategy
  * for instance threshold segmentation based on an area and a threshold.
+ * Annotation tools make use of drawing utilities to draw SVG elements on the viewport.
+ *
+ * To create a new annotation tool, derive from this class and implement the
+ * abstract methods.
  */
 abstract class AnnotationTool extends BaseTool {
   static toolName = 'AnnotationTool'

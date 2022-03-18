@@ -15,8 +15,10 @@ import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationState
  *
  * @param element - The element that will be rendered.
  * @param segmentationData - ToolGroupSpecificSegmentationData
+ *
+ * @internal
  */
-async function addSegmentationToElement(
+async function internalAddSegmentationToElement(
   element: HTMLElement,
   segmentationData: ToolGroupSpecificSegmentationData
 ): Promise<void> {
@@ -54,4 +56,4 @@ async function addSegmentationToElement(
   }
 }
 
-export default addSegmentationToElement
+export default internalAddSegmentationToElement

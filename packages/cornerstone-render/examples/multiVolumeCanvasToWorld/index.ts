@@ -4,9 +4,9 @@ import {
   VIEWPORT_TYPE,
   ORIENTATION,
   createAndCacheVolume,
+  Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
-import { Utilities } from '@precisionmetrics/cornerstone-tools'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -144,7 +144,7 @@ async function run() {
     index[1] = Math.floor(index[1])
     index[2] = Math.floor(index[2])
 
-    if (!Utilities.vtkjs.indexWithinDimensions(index, dimensions)) {
+    if (!csUtils.indexWithinDimensions(index, dimensions)) {
       return
     }
 

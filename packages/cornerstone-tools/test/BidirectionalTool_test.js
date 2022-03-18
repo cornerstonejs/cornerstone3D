@@ -11,7 +11,6 @@ const {
   registerImageLoader,
   unregisterAllImageLoaders,
   metaData,
-  getEnabledElement,
   createAndCacheVolume,
   eventTarget,
   registerVolumeLoader,
@@ -21,8 +20,7 @@ const {
 const {
   BidirectionalTool,
   ToolGroupManager,
-  getAnnotations,
-  removeAnnotation,
+  AnnotationState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
 } = csTools3d
@@ -131,7 +129,7 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const bidirectionalAnnotations = getAnnotations(
+          const bidirectionalAnnotations = AnnotationState.getAnnotations(
             element,
             BidirectionalTool.toolName
           )
@@ -151,7 +149,10 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeAnnotation(element, bidirectionalAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            bidirectionalAnnotation.annotationUID
+          )
           done()
         }
       )
@@ -237,7 +238,7 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const bidirectionalAnnotations = getAnnotations(
+          const bidirectionalAnnotations = AnnotationState.getAnnotations(
             element,
             BidirectionalTool.toolName
           )
@@ -257,7 +258,10 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeAnnotation(element, bidirectionalAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            bidirectionalAnnotation.annotationUID
+          )
           done()
         }
       )
@@ -350,7 +354,7 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const bidirectionalAnnotations = getAnnotations(
+          const bidirectionalAnnotations = AnnotationState.getAnnotations(
             element,
             BidirectionalTool.toolName
           )
@@ -373,7 +377,10 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          removeAnnotation(element, bidirectionalAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            bidirectionalAnnotation.annotationUID
+          )
           done()
         }
       )
@@ -495,7 +502,7 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const bidirectionalAnnotations = getAnnotations(
+          const bidirectionalAnnotations = AnnotationState.getAnnotations(
             element,
             BidirectionalTool.toolName
           )
@@ -518,7 +525,10 @@ describe('Cornerstone Tools: ', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          removeAnnotation(element, bidirectionalAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            bidirectionalAnnotation.annotationUID
+          )
           done()
         }
       )
@@ -630,7 +640,7 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const bidirectionalAnnotations = getAnnotations(
+          const bidirectionalAnnotations = AnnotationState.getAnnotations(
             element,
             BidirectionalTool.toolName
           )
@@ -693,7 +703,10 @@ describe('Cornerstone Tools: ', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle)
           expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          removeAnnotation(element, bidirectionalAnnotation.annotationUID)
+          AnnotationState.removeAnnotation(
+            element,
+            bidirectionalAnnotation.annotationUID
+          )
           done()
         }
       )
@@ -891,7 +904,7 @@ describe('Cornerstone Tools: ', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const bidirectionalAnnotations = getAnnotations(
+        const bidirectionalAnnotations = AnnotationState.getAnnotations(
           element,
           BidirectionalTool.toolName
         )
@@ -915,7 +928,10 @@ describe('Cornerstone Tools: ', () => {
 
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-        removeAnnotation(element, bidirectionalAnnotation.annotationUID)
+        AnnotationState.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
         done()
       }, 100)
     }

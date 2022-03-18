@@ -4,18 +4,20 @@ import type {
   FrameOfReferenceSpecificAnnotations,
   AnnotationState,
 } from './AnnotationTypes'
-import type AnnotationTextBox from './AnnotationTextBox'
 import type * as EventTypes from './EventTypes'
 import type IPoints from './IPoints'
-import type BoundingBox from './BoundingBox'
 import type PlanarBoundingBox from './PlanarBoundingBox'
-import type { IToolBinding } from './ISetToolModeOptions'
-import type ISetToolModeOptions from './ISetToolModeOptions'
+import type {
+  SetToolBindingsType,
+  IToolBinding,
+  ToolOptionsType,
+} from './ISetToolModeOptions'
 import type IToolGroup from './IToolGroup'
 import type ToolHandle from './ToolHandle'
 import type { AnnotationHandle, TextBoxHandle } from './ToolHandle'
 import type InteractionTypes from './InteractionTypes'
 import type { ToolProps, PublicToolProps } from './ToolProps'
+import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes'
 import type {
   SegmentationRepresentation,
   LabelmapRepresentation,
@@ -39,9 +41,7 @@ export type {
   Annotations,
   FrameOfReferenceSpecificAnnotations,
   AnnotationState,
-  AnnotationTextBox,
   // Geometry
-  BoundingBox,
   PlanarBoundingBox,
   ToolProps,
   PublicToolProps,
@@ -50,7 +50,8 @@ export type {
   IPoints,
   // ToolBindings
   IToolBinding,
-  ISetToolModeOptions,
+  SetToolBindingsType,
+  ToolOptionsType,
   InteractionTypes,
   //
   IToolGroup,
@@ -70,4 +71,7 @@ export type {
   ToolGroupSpecificSegmentationData,
   ToolGroupSpecificSegmentationStateWithConfig,
   ToolGroupSpecificSegmentationState,
+  // Cursors
+  SVGCursorDescriptor,
+  SVGPoint,
 }

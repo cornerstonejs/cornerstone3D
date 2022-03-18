@@ -48,6 +48,12 @@ export interface RectangleRoiThresholdAnnotation extends Annotation {
   }
 }
 
+/**
+ * This tool is exactly the RectangleRoiTool but only draws a rectangle on the image,
+ * and by using utility functions such as thresholdByRange and thresholdByRoiStat it can be used to
+ * create a segmentation. This tool, however, does not calculate the statistics
+ * as RectangleRoiTool does.
+ */
 export default class RectangleRoiThresholdTool extends RectangleRoiTool {
   static toolName = 'RectangleRoiThreshold'
   _throttledCalculateCachedStats: any
@@ -58,7 +64,6 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  _configuration: any
   isDrawing: boolean
   isHandleOutsideImage: boolean
 

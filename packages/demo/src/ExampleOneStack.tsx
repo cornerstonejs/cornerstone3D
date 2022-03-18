@@ -15,6 +15,7 @@ import {
   PanTool,
   CrosshairsTool,
   ZoomTool,
+  StackScrollTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
@@ -25,6 +26,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 
 const STACK = 'stack'
 
@@ -36,6 +38,7 @@ const toolsToUse = [
   WindowLevelTool.toolName,
   PanTool.toolName,
   ZoomTool.toolName,
+  StackScrollTool.toolName,
   ...ANNOTATION_TOOLS,
 ].filter((tool) => tool !== CrosshairsTool.toolName)
 
@@ -137,16 +140,17 @@ class OneStackExample extends Component {
     this.ctStackImageIds = ctStackImageIds
 
     const stacks = {
-      ct: [
-        ctStackImageIds[ctMiddleSlice],
-        ctStackImageIds[ctMiddleSlice + 1],
-        ctStackImageIds[ctMiddleSlice + 2],
-      ],
-      dx: [dxStackImageIds[0], dxStackImageIds[1]],
-      color: [
-        colorImageIds[colorMiddleSlice],
-        colorImageIds[colorMiddleSlice + 1],
-      ],
+      // ct: [
+      //   ctStackImageIds[ctMiddleSlice],
+      //   ctStackImageIds[ctMiddleSlice + 1],
+      //   ctStackImageIds[ctMiddleSlice + 2],
+      // ],
+      // dx: [dxStackImageIds[0], dxStackImageIds[1]],
+      // color: [
+      //   colorImageIds[colorMiddleSlice],
+      //   colorImageIds[colorMiddleSlice + 1],
+      // ],
+      ct: sortImageIdsByIPP(ctStackImageIds),
     }
 
     this.stacks = stacks
@@ -217,7 +221,7 @@ class OneStackExample extends Component {
 
     // Using mouse primary for the selected tool
     const currentBindings =
-      stackCTViewportToolGroup.toolOptions[toolName].bindings
+      stackCTViewportToolGroup.toolOptions[toolName]?.bindings ?? []
 
     stackCTViewportToolGroup.setToolActive(toolName, {
       bindings: [

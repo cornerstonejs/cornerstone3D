@@ -57,7 +57,7 @@ export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
 }
 
 /**
- * This tools is similar to the RectangleRoiThresholdTool which
+ * This tool is similar to the RectangleRoiThresholdTool which
  * only draws a rectangle on the image, and by using utility functions
  * such as thresholdByRange and thresholdByRoiStat it can be used to
  * create a segmentation. The only difference is that it only acts on the
@@ -78,7 +78,6 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  _configuration: any
   isDrawing: boolean
   isHandleOutsideImage: boolean
 

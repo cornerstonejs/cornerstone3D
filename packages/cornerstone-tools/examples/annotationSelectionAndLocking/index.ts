@@ -20,11 +20,11 @@ const {
   ToolBindings,
   annotationLocking,
   annotationSelection,
-  getDefaultAnnotationManager,
+  AnnotationState,
 } = cornerstoneTools
 
 const defaultFrameOfReferenceSpecificAnnotationManager =
-  getDefaultAnnotationManager()
+  AnnotationState.getDefaultAnnotationManager()
 
 // ======== Set up page ======== //
 setTitleAndDescription(

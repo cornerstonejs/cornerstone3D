@@ -130,10 +130,10 @@ describe('Synchronizer Manager: ', () => {
         return
       }
 
-      const synchronizers = SynchronizerManager.getSynchronizers({
+      const synchronizers = SynchronizerManager.getSynchronizers(
         renderingEngineUID,
-        viewportUID: viewportUID1,
-      })
+        viewportUID1
+      )
 
       expect(synchronizers.length).toBe(1)
 

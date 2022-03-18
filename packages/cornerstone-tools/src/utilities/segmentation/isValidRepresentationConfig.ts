@@ -2,6 +2,13 @@ import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/Labelma
 import SegmentationRepresentation from '../../enums/SegmentationRepresentations'
 import { RepresentationConfig } from '../../types/SegmentationStateTypes'
 
+/**
+ * Given a representation type and a configuration, return true if the
+ * configuration is valid for that representation type
+ * @param representationType - The type of segmentation representation
+ * @param config - RepresentationConfig
+ * @returns A boolean value.
+ */
 export default function isValidRepresentationConfig(
   representationType: string,
   config: RepresentationConfig

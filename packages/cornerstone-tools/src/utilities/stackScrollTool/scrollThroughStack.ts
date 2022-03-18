@@ -7,6 +7,7 @@ import {
 import clip from '../clip'
 import getSliceRange from './getSliceRange'
 import snapFocalPointToSlice from './snapFocalPointToSlice'
+import { MouseDragEventType, MouseWheelEventType } from '../../types/EventTypes'
 
 /**
  * Scroll the stack defined by the event (`evt`)
@@ -21,24 +22,23 @@ import snapFocalPointToSlice from './snapFocalPointToSlice'
  * on the viewport.
  */
 export default function scrollThroughStack(
-  evt,
+  evt: MouseWheelEventType | MouseDragEventType,
   deltaFrames: number,
   volumeUID: string,
   invert = false
-) {
-  const { element, wheel } = evt.detail
+): void {
+  const { element } = evt.detail
   const { viewport } = getEnabledElement(element)
   const { type: viewportType } = viewport
   const camera = viewport.getCamera()
   const { focalPoint, viewPlaneNormal, position } = camera
+  const delta = invert ? -deltaFrames : deltaFrames
 
   if (viewport instanceof StackViewport) {
     // stack viewport
     const currentImageIdIndex = viewport.getCurrentImageIdIndex()
     const numberOfFrames = viewport.getImageIds().length
-    const { direction } = wheel
-    const stackDirection = invert ? -direction : direction
-    let newImageIdIndex = currentImageIdIndex + stackDirection
+    let newImageIdIndex = currentImageIdIndex + delta
     newImageIdIndex = clip(newImageIdIndex, 0, numberOfFrames - 1)
 
     viewport.setImageIdIndex(newImageIdIndex)
@@ -59,8 +59,6 @@ export default function scrollThroughStack(
 
     const { volumeActor } = actor
     const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
-
-    const delta = invert ? -deltaFrames : deltaFrames
 
     const { newFocalPoint, newPosition } = snapFocalPointToSlice(
       focalPoint,

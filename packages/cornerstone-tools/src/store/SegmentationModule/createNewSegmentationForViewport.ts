@@ -8,19 +8,6 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
-type LabelmapOptions = {
-  volumeUID?: string
-  scalarData?: Float32Array | Uint8Array
-  targetBuffer?: {
-    type: 'Float32Array' | 'Uint8Array'
-  }
-  metadata?: any
-  dimensions?: Types.Point3
-  spacing?: Types.Point3
-  origin?: Types.Point3
-  direction?: Float32Array
-}
-
 /**
  * Create a new 3D segmentation volume from the default imageData presented in the
  * viewport. It looks at the metadata of the imageData to determine the volume
@@ -32,7 +19,18 @@ type LabelmapOptions = {
  */
 async function createNewSegmentationForViewport(
   viewport: VolumeViewport,
-  options?: LabelmapOptions
+  options?: {
+    volumeUID?: string
+    scalarData?: Float32Array | Uint8Array
+    targetBuffer?: {
+      type: 'Float32Array' | 'Uint8Array'
+    }
+    metadata?: any
+    dimensions?: Types.Point3
+    spacing?: Types.Point3
+    origin?: Types.Point3
+    direction?: Float32Array
+  }
 ): Promise<string> {
   const { element } = viewport
   const enabledElement = getEnabledElement(element)

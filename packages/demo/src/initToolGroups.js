@@ -369,6 +369,7 @@ function addToolsToToolGroups({
   }
 
   if (stackCTViewportToolGroup) {
+    stackCTViewportToolGroup.addTool(StackScrollTool.toolName)
     stackCTViewportToolGroup.addTool(WindowLevelTool.toolName)
     stackCTViewportToolGroup.addTool(LengthTool.toolName)
     stackCTViewportToolGroup.addTool(PanTool.toolName)
@@ -472,6 +473,7 @@ function addToolsToToolGroups({
     // Set up CT Scene tools
 
     // @TODO: This kills the volumeUID and tool configuration
+    ctSceneToolGroup.addTool(StackScrollTool.toolName)
     ctSceneToolGroup.addTool(RectangleScissorsTool.toolName)
     ctSceneToolGroup.addTool(RectangleRoiThresholdTool.toolName)
     ctSceneToolGroup.addTool(SegmentationDisplayTool.toolName)

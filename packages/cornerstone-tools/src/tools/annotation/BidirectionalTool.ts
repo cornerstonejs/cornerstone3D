@@ -26,7 +26,6 @@ import {
 import { state } from '../../store'
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
-import { indexWithinDimensions } from '../../utilities/vtkjs'
 import lineSegment from '../../utilities/math/line'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import {
@@ -66,10 +65,49 @@ interface BidirectionalAnnotation extends Annotation {
       }
     }
     label: string
-    cachedStats: any
+    cachedStats: {
+      [targetUID: string]: {
+        length: number
+        width: number
+      }
+    }
   }
 }
 
+/**
+ * BidirectionalTool let you draw annotations that measures the length and
+ * width at the same time in `mm` unit. It is consisted of two perpendicular lines and
+ * a text box. You can use the BidirectionalTool in all planes even in oblique
+ * reconstructed planes. Note: annotation tools in cornerstone3DTools exists in the exact location
+ * in the physical 3d space, as a result, by default, all annotations that are
+ * drawing in the same frameOfReference will get shared between viewports that
+ * are in the same frameOfReference.
+ *
+ * The resulting annotation's data (statistics) and metadata (the
+ * state of the viewport while drawing was happening) will get added to the
+ * ToolState manager and can be accessed from the ToolState by calling getAnnotations
+ * or similar methods.
+ *
+ * ```js
+ * cornerstoneTools.addTool(BidirectionalTool)
+ *
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ *
+ * toolGroup.addTool(BidirectionalTool.toolName)
+ *
+ * toolGroup.addViewports('renderingEngineUID', 'viewportUID')
+ *
+ * toolGroup.setToolActive(BidirectionalTool.toolName, {
+ *   bindings: [
+ *    {
+ *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *     },
+ *   ],
+ * })
+ * ```
+ *
+ * Read more in the Docs section of the website.
+ */
 export default class BidirectionalTool extends AnnotationTool {
   static toolName = 'Bidirectional'
 
@@ -84,7 +122,6 @@ export default class BidirectionalTool extends AnnotationTool {
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
-  _configuration: any
   isDrawing: boolean
   isHandleOutsideImage: boolean
   preventHandleOutsideImage: boolean
@@ -294,6 +331,12 @@ export default class BidirectionalTool extends AnnotationTool {
     return false
   }
 
+  /**
+   * Handles the toolSelected callback for bidirectional tool
+   * @param evt - EventTypes.MouseDownEventType
+   * @param annotation - Bidirectional annotation
+   * @param interactionType - interaction type (mouse, touch)
+   */
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
     annotation: BidirectionalAnnotation,
@@ -330,6 +373,15 @@ export default class BidirectionalTool extends AnnotationTool {
     evt.preventDefault()
   }
 
+  /**
+   * Executes the callback for when mouse has selected a handle (anchor point) of
+   * the bidirectional tool or when the text box has been selected.
+   *
+   * @param evt - EventTypes.MouseDownEventType
+   * @param annotation - Bidirectional annotation
+   * @param handle - Handle index or selected textBox information
+   * @param interactionType - interaction type (mouse, touch)
+   */
   handleSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
     annotation: BidirectionalAnnotation,
@@ -378,6 +430,14 @@ export default class BidirectionalTool extends AnnotationTool {
     evt.preventDefault()
   }
 
+  /**
+   * Handles the mouse up action for the bidirectional tool. It can be at the end
+   * of the annotation drawing (MouseUpEventType) or when the user clicks and release
+   * the mouse button instantly which let to the annotation to draw without holding
+   * the mouse button (MouseClickEventType).
+   *
+   * @param evt - mouse up or mouse click event types
+   */
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
@@ -479,6 +539,9 @@ export default class BidirectionalTool extends AnnotationTool {
     this.isDrawing = false
   }
 
+  /**
+   * @param evt - mouse move event type or mouse drag
+   */
   _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
     this.isDrawing = true
 
@@ -561,6 +624,10 @@ export default class BidirectionalTool extends AnnotationTool {
     this.editData.hasMoved = true
   }
 
+  /**
+   * Mouse drag to edit annotation callback
+   * @param evt - mouse drag event
+   */
   _mouseDragModifyCallback = (evt: MouseDragEventType) => {
     this.isDrawing = true
 
@@ -606,6 +673,10 @@ export default class BidirectionalTool extends AnnotationTool {
     )
   }
 
+  /**
+   * Mouse dragging a handle callback
+   * @param evt - mouse drag event
+   */
   _mouseDragModifyHandle = (evt) => {
     const eventDetail = evt.detail
     const { currentPoints, element } = eventDetail
@@ -824,46 +895,10 @@ export default class BidirectionalTool extends AnnotationTool {
     }
   }
 
-  _movingLongAxisWouldPutItThroughShortAxis = (
-    proposedFirstLineSegment,
-    secondLineSegment
-  ) => {
-    const vectorInSecondLineDirection = vec2.create()
-
-    vec2.set(
-      vectorInSecondLineDirection,
-      secondLineSegment.end.x - secondLineSegment.start.x,
-      secondLineSegment.end.y - secondLineSegment.start.y
-    )
-
-    vec2.normalize(vectorInSecondLineDirection, vectorInSecondLineDirection)
-
-    const extendedSecondLineSegment = {
-      start: {
-        x: secondLineSegment.start.x - vectorInSecondLineDirection[0] * 10,
-        y: secondLineSegment.start.y - vectorInSecondLineDirection[1] * 10,
-      },
-      end: {
-        x: secondLineSegment.end.x + vectorInSecondLineDirection[0] * 10,
-        y: secondLineSegment.end.y + vectorInSecondLineDirection[1] * 10,
-      },
-    }
-
-    // Add some buffer in the secondLineSegment when finding the proposedIntersectionPoint
-    // Of points to stop us getting stack when rotating quickly.
-
-    const proposedIntersectionPoint = lineSegment.intersectLine(
-      [extendedSecondLineSegment.start.x, extendedSecondLineSegment.start.y],
-      [extendedSecondLineSegment.end.x, extendedSecondLineSegment.end.y],
-      [proposedFirstLineSegment.start.x, proposedFirstLineSegment.start.y],
-      [proposedFirstLineSegment.end.x, proposedFirstLineSegment.end.y]
-    )
-
-    const wouldPutThroughShortAxis = !proposedIntersectionPoint
-
-    return wouldPutThroughShortAxis
-  }
-
+  /**
+   * Cancels an ongoing drawing of a bidirectional annotation
+   * @param element - HTML Element
+   */
   cancel = (element: HTMLElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
@@ -991,7 +1026,10 @@ export default class BidirectionalTool extends AnnotationTool {
       const color = this.getStyle(settings, 'color', annotation)
 
       if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {}
+        data.cachedStats[targetUID] = {
+          length: null,
+          width: null,
+        }
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement)
       } else if (annotation.invalidated) {
@@ -1106,6 +1144,49 @@ export default class BidirectionalTool extends AnnotationTool {
     }
   }
 
+  _movingLongAxisWouldPutItThroughShortAxis = (
+    proposedFirstLineSegment,
+    secondLineSegment
+  ) => {
+    const vectorInSecondLineDirection = vec2.create()
+
+    vec2.set(
+      vectorInSecondLineDirection,
+      secondLineSegment.end.x - secondLineSegment.start.x,
+      secondLineSegment.end.y - secondLineSegment.start.y
+    )
+
+    vec2.normalize(vectorInSecondLineDirection, vectorInSecondLineDirection)
+
+    const extendedSecondLineSegment = {
+      start: {
+        x: secondLineSegment.start.x - vectorInSecondLineDirection[0] * 10,
+        y: secondLineSegment.start.y - vectorInSecondLineDirection[1] * 10,
+      },
+      end: {
+        x: secondLineSegment.end.x + vectorInSecondLineDirection[0] * 10,
+        y: secondLineSegment.end.y + vectorInSecondLineDirection[1] * 10,
+      },
+    }
+
+    // Add some buffer in the secondLineSegment when finding the proposedIntersectionPoint
+    // Of points to stop us getting stack when rotating quickly.
+
+    const proposedIntersectionPoint = lineSegment.intersectLine(
+      [extendedSecondLineSegment.start.x, extendedSecondLineSegment.start.y],
+      [extendedSecondLineSegment.end.x, extendedSecondLineSegment.end.y],
+      [proposedFirstLineSegment.start.x, proposedFirstLineSegment.start.y],
+      [proposedFirstLineSegment.end.x, proposedFirstLineSegment.end.y]
+    )
+
+    const wouldPutThroughShortAxis = !proposedIntersectionPoint
+
+    return wouldPutThroughShortAxis
+  }
+
+  /**
+   * get text box content
+   */
   _getTextLines = (data, targetUID) => {
     const { cachedStats } = data
     const { length, width } = cachedStats[targetUID]
@@ -1189,14 +1270,16 @@ export default class BidirectionalTool extends AnnotationTool {
       renderingEngineUID,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
+
+    return cachedStats
   }
 
   _isInsideVolume = (index1, index2, index3, index4, dimensions): boolean => {
     return (
-      indexWithinDimensions(index1, dimensions) &&
-      indexWithinDimensions(index2, dimensions) &&
-      indexWithinDimensions(index3, dimensions) &&
-      indexWithinDimensions(index4, dimensions)
+      csUtils.indexWithinDimensions(index1, dimensions) &&
+      csUtils.indexWithinDimensions(index2, dimensions) &&
+      csUtils.indexWithinDimensions(index3, dimensions) &&
+      csUtils.indexWithinDimensions(index4, dimensions)
     )
   }
 }

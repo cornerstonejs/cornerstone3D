@@ -3,7 +3,7 @@ import { getDefaultStyleProperty } from '../stateManagement/annotation/annotatio
 import MouseCursor from './MouseCursor'
 import ImageMouseCursor from './ImageMouseCursor'
 import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor'
-import type { SVGCursorDescriptor } from './SVGCursorDescriptor'
+import type { SVGCursorDescriptor } from '../types'
 
 const PROPERTY = 'color'
 const STATE = AnnotationStyleStates.Highlighted

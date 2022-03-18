@@ -72,7 +72,10 @@ function removeEnabledElement(
 const _removeViewportFromSynchronizers = (element: HTMLElement) => {
   const enabledElement = getEnabledElement(element)
 
-  const synchronizers = getSynchronizers(enabledElement)
+  const synchronizers = getSynchronizers(
+    enabledElement.renderingEngineUID,
+    enabledElement.viewportUID
+  )
   synchronizers.forEach((sync) => {
     sync.remove(enabledElement)
   })
