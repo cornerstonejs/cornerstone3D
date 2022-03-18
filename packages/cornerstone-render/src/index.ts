@@ -102,7 +102,6 @@ export {
   registerImageLoader, // Todo: remove this after CSWIL uses imageLoader
   // Volume Loader
   volumeLoader,
-  getVolume,
   //
   metaData,
   //

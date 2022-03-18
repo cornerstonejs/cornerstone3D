@@ -4,7 +4,7 @@ import { vec2 } from 'gl-matrix'
 import {
   getEnabledElement,
   Settings,
-  getVolume,
+  cache,
   StackViewport,
   VolumeViewport,
   triggerEvent,
@@ -160,7 +160,7 @@ export default class ProbeTool extends AnnotationTool {
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
       const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = getVolume(volumeUID)
+      const imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,

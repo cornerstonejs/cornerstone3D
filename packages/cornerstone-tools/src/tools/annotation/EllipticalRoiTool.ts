@@ -3,11 +3,11 @@ import { AnnotationTool } from '../base'
 import {
   getEnabledElement,
   Settings,
-  getVolume,
   StackViewport,
   VolumeViewport,
   eventTarget,
   triggerEvent,
+  cache,
   Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
@@ -190,7 +190,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
       const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = getVolume(volumeUID)
+      const imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,

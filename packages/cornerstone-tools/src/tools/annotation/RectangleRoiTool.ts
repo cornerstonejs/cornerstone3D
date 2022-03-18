@@ -2,7 +2,7 @@ import { AnnotationTool } from '../base'
 
 import {
   getEnabledElement,
-  getVolume,
+  cache,
   Settings,
   StackViewport,
   VolumeViewport,
@@ -185,7 +185,7 @@ export default class RectangleRoiTool extends AnnotationTool {
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
       const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = getVolume(volumeUID)
+      const imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,

@@ -2,7 +2,7 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
-  getVolume,
+  cache,
 } from '@precisionmetrics/cornerstone-render'
 import type { RenderingEngine } from '@precisionmetrics/cornerstone-render'
 import deepMerge from '../../utilities/deepMerge'
@@ -162,7 +162,7 @@ abstract class BaseTool implements IBaseTool {
       viewport = renderingEngine.getViewport(viewportUID)
       image = viewport.getImageData()
     } else {
-      image = getVolume(targetUID)
+      image = cache.getVolume(targetUID)
     }
 
     return { image, viewport }

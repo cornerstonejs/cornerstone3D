@@ -2,10 +2,10 @@ import { vec2, vec3 } from 'gl-matrix'
 import {
   Settings,
   getEnabledElement,
-  getVolume,
   StackViewport,
   triggerEvent,
   eventTarget,
+  cache,
   Utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
@@ -173,7 +173,7 @@ export default class BidirectionalTool extends AnnotationTool {
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
       const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = getVolume(volumeUID)
+      const imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,

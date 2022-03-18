@@ -1,6 +1,6 @@
 import {
   getEnabledElement,
-  getVolume,
+  cache,
   Settings,
   StackViewport,
   metaData,
@@ -124,7 +124,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       throw new Error('Stack Viewport Not implemented')
     } else {
       volumeUID = this.getTargetUID(viewport)
-      imageVolume = getVolume(volumeUID)
+      imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -300,7 +300,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     const { cachedStats } = data
     const volumeUID = this.getTargetUID(viewport)
-    const imageVolume = getVolume(volumeUID)
+    const imageVolume = cache.getVolume(volumeUID)
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleRoi class, we need to

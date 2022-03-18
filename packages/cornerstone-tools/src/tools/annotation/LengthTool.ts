@@ -1,7 +1,7 @@
 import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
 import {
   getEnabledElement,
-  getVolume,
+  cache,
   StackViewport,
   Settings,
   triggerEvent,
@@ -172,7 +172,7 @@ class LengthTool extends AnnotationTool {
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
       const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = getVolume(volumeUID)
+      const imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,

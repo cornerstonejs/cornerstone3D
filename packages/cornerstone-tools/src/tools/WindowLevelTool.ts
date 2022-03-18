@@ -1,7 +1,6 @@
 import { BaseTool } from './base'
 import {
   getEnabledElement,
-  getVolume,
   EVENTS,
   triggerEvent,
   VolumeViewport,
@@ -169,7 +168,7 @@ export default class WindowLevelTool extends BaseTool {
   }
 
   _getImageDynamicRange = (volumeUID: string) => {
-    const imageVolume = getVolume(volumeUID)
+    const imageVolume = cache.getVolume(volumeUID)
     const { dimensions, scalarData } = imageVolume
     const middleSliceIndex = Math.floor(dimensions[2] / 2)
 

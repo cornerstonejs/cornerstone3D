@@ -1,6 +1,6 @@
 import {
   getEnabledElement,
-  getVolume,
+  cache,
   Settings,
   StackViewport,
   triggerEvent,
@@ -107,7 +107,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
       volumeUID = this.getTargetUID(viewport)
-      const imageVolume = getVolume(volumeUID)
+      const imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,

@@ -1,7 +1,7 @@
 import {
   ORIENTATION,
   VIEWPORT_TYPE,
-  getVolume,
+  cache,
   setVolumesOnViewports,
 } from '@precisionmetrics/cornerstone-render'
 import { BlendModes } from '@precisionmetrics/cornerstone-tools'
@@ -286,7 +286,7 @@ async function setVolumes(
    *        ignore the slab thickness. Check the vtkSlabCamera for more info.
    */
 
-  const ptVolume = getVolume(ptVolumeUID)
+  const ptVolume = cache.getVolume(ptVolumeUID)
   const ptVolumeDimensions = ptVolume.dimensions
 
   // Only make the MIP as large as it needs to be.

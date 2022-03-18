@@ -144,7 +144,7 @@ describe('StreamingImageVolume', () => {
       await volumeLoader.createAndCacheVolume(volumeId, {
         imageIds: this.imageIds,
       })
-      const volume = cornerstone.getVolume(volumeId)
+      const volume = cache.getVolume(volumeId)
 
       let framesLoaded = 0
       const callback = (evt) => {
@@ -191,7 +191,7 @@ describe('StreamingImageVolume', () => {
       expect(cache.getCacheSize()).toBe(50000)
 
       // loading the volume
-      const volume = cornerstone.getVolume(volumeId)
+      const volume = cache.getVolume(volumeId)
       const callback = undefined
       // adding requests to the pool manager
       volume.load(callback)
@@ -222,7 +222,7 @@ describe('StreamingImageVolume', () => {
     //   })
 
     //   const volumeId = 'fakeVolumeLoader:VOLUME'
-    //   const volume = cornerstone.getVolume(volumeId)
+    //   const volume = cache.getVolume(volumeId)
 
     //   const callback = undefined
     //   const prefetch = false
@@ -254,7 +254,7 @@ describe('StreamingImageVolume', () => {
       })
 
       const volumeId = 'fakeVolumeLoader:VOLUME'
-      const volume = cornerstone.getVolume(volumeId)
+      const volume = cache.getVolume(volumeId)
       const completelyRemove = false
 
       volume.load()
@@ -267,7 +267,7 @@ describe('StreamingImageVolume', () => {
       const cacheSizeAfterDecache = cache.getCacheSize()
 
       // Gets the volume
-      const volAfterDecache = cornerstone.getVolume(volumeId)
+      const volAfterDecache = cache.getVolume(volumeId)
       expect(volAfterDecache).not.toBeDefined()
 
       expect(cacheSizeBeforeDecache - cacheSizeAfterDecache).toBe(50000)
@@ -291,7 +291,7 @@ describe('StreamingImageVolume', () => {
       })
 
       const volumeId = 'fakeVolumeLoader:VOLUME'
-      const volume = cornerstone.getVolume(volumeId)
+      const volume = cache.getVolume(volumeId)
 
       const completelyRemove = true
 
@@ -303,7 +303,7 @@ describe('StreamingImageVolume', () => {
       volume.decache(completelyRemove)
 
       // Gets the volume
-      const volAfterDecache = cornerstone.getVolume(volumeId)
+      const volAfterDecache = cache.getVolume(volumeId)
       expect(volAfterDecache).not.toBeDefined()
 
       const cacheSizeAfterPurge = cache.getCacheSize()
@@ -358,7 +358,7 @@ describe('StreamingImageVolume', () => {
     //   expect(cache.getCacheSize()).toBe(100000)
 
     //   // loading the volume
-    //   const volume = cornerstone.getVolume(volumeId)
+    //   const volume = cache.getVolume(volumeId)
     //   const prefetch = false
     //   const callback = undefined
     //   // adding requests to the pool manager
@@ -429,7 +429,7 @@ describe('StreamingImageVolume', () => {
         await volumeLoader.createAndCacheVolume(volumeId, {
           imageIds: imageIds,
         })
-        const volume = cornerstone.getVolume(volumeId)
+        const volume = cache.getVolume(volumeId)
 
         let framesLoaded = 0
         const callback = (evt) => {

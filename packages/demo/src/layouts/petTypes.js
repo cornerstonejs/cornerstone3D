@@ -4,6 +4,7 @@ import {
   VIEWPORT_TYPE,
   getVolume,
   Utilities,
+  cache,
 } from '@precisionmetrics/cornerstone-render'
 
 function setLayout(
@@ -69,7 +70,7 @@ function setPetBWTransferFunction({ volumeActor, volumeUID }) {
 }
 
 function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = getVolume(volumeUID)
+  const imageVolume = cache.getVolume(volumeUID)
 
   let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET
 
@@ -94,7 +95,7 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
 }
 
 function setPetBSATransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = getVolume(volumeUID)
+  const imageVolume = cache.getVolume(volumeUID)
 
   let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET
 
