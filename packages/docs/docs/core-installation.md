@@ -112,7 +112,7 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 // See: `/examples/helpers/WADORSHeaderProvider`
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 // ~~ This project's rendering library
-import { registerImageLoader } from 'vtkjs-viewport'
+import { imageLoader } from 'vtkjs-viewport'
 
 // Add our metadata provider at a very high priority
 cornerstone.metaData.addProvider(
@@ -141,7 +141,7 @@ cornerstoneWADOImageLoader.webWorkerManager.initialize(config)
 
 // Registers the rendering library's image loader
 // Works for imageIds prefixed with `vtkjs:`
-registerImageLoader(cornerstone)
+imageLoader.registerImageLoader(cornerstone)
 ```
 
 ### @Tools

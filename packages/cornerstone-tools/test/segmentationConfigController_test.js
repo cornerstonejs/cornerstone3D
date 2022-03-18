@@ -8,31 +8,38 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize from './groundT
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
+  Enums,
+  imageLoader,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
+  utilities,
+  setVolumesForViewports,
   eventTarget,
+  volumeLoader,
+  CONSTANTS,
 } = cornerstone3D
+
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { unregisterAllImageLoaders } = imageLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
-  SegmentationModule,
+  segmentation,
+  Enums: csToolsEnums,
   RectangleScissorsTool,
 } = csTools3d
 
-const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
-  Utilities.testUtils
+const { Events } = csToolsEnums
 
-const renderingEngineUID = Utilities.uuidv4()
+const { addSegmentationsForToolGroup } = segmentation
+const { SegmentationRepresentations } = csToolsEnums
+
+const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
+  utilities.testUtils
+
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const AXIAL = 'AXIAL'
@@ -52,7 +59,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -67,7 +74,7 @@ function createViewport(
 
 describe('Segmentation Controller --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Config Controller', function () {
@@ -140,15 +147,13 @@ describe('Segmentation Controller --', () => {
         )
 
         const representationConfig =
-          SegmentationModule.segmentationConfigController.getRepresentationConfig(
+          segmentation.segmentationConfig.getRepresentationConfig(
             TOOL_GROUP_UID,
             SegmentationRepresentations.Labelmap
           )
 
         const segmentationConfig =
-          SegmentationModule.segmentationConfigController.getSegmentationConfig(
-            TOOL_GROUP_UID
-          )
+          segmentation.segmentationConfig.getSegmentationConfig(TOOL_GROUP_UID)
 
         const representationConfigFromSegmentationConfig =
           segmentationConfig.representations[
@@ -162,12 +167,12 @@ describe('Segmentation Controller --', () => {
         ).toEqual(representationConfig.renderOutline)
 
         const globalRepresentationConfig =
-          SegmentationModule.segmentationConfigController.getGlobalRepresentationConfig(
+          segmentation.segmentationConfig.getGlobalRepresentationConfig(
             SegmentationRepresentations.Labelmap
           )
 
         const globalSegmentationConfig =
-          SegmentationModule.segmentationConfigController.getGlobalSegmentationConfig()
+          segmentation.segmentationConfig.getGlobalSegmentationConfig()
 
         expect(globalRepresentationConfig).toBeDefined()
         expect(globalRepresentationConfig.renderOutline).toBe(true)
@@ -185,7 +190,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 
@@ -194,7 +199,7 @@ describe('Segmentation Controller --', () => {
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID1]
@@ -246,7 +251,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 
@@ -255,19 +260,19 @@ describe('Segmentation Controller --', () => {
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID1]
             ).then(() => {
               vp1.render()
 
-              SegmentationModule.segmentationConfigController.setGlobalRepresentationConfig(
+              segmentation.segmentationConfig.setGlobalRepresentationConfig(
                 SegmentationRepresentations.Labelmap,
                 globalRepresentationConfig
               )
               const colorLUTIndex = 1
-              SegmentationModule.segmentationColorController.addColorLut(
+              segmentation.segmentationColor.addColorLUT(
                 [
                   [0, 0, 0, 0],
                   [0, 0, 255, 255],
@@ -326,7 +331,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 
@@ -335,19 +340,19 @@ describe('Segmentation Controller --', () => {
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-            setVolumesOnViewports(
+            setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
               [viewportUID1]
             ).then(() => {
               vp1.render()
 
-              SegmentationModule.segmentationConfigController.setGlobalRepresentationConfig(
+              segmentation.segmentationConfig.setGlobalRepresentationConfig(
                 SegmentationRepresentations.Labelmap,
                 globalRepresentationConfig
               )
               const colorLUTIndex = 1
-              SegmentationModule.segmentationColorController.addColorLut(
+              segmentation.segmentationColor.addColorLUT(
                 [
                   [0, 0, 0, 0],
                   [0, 255, 255, 255],

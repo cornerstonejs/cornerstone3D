@@ -1,22 +1,33 @@
 import {
-  registerVolumeLoader,
-  registerUnknownVolumeLoader,
+  volumeLoader,
   cache,
-  Utilities,
-  ERROR_CODES,
+  utilities,
+  Enums,
   Types,
 } from '@precisionmetrics/cornerstone-render'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
 import StreamingImageVolume from './StreamingImageVolume'
 
-const { createUint8SharedArray, createFloat32SharedArray } = Utilities
+const { createUint8SharedArray, createFloat32SharedArray } = utilities
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>
   cancel: () => void
 }
 
+/**
+ * It handles loading of a image by streaming in its imageIds. It will be the
+ * volume loader if the schema for the volumeID is `cornerstoneStreamingImageVolume`.
+ * This function returns a promise that resolves to the StreamingImageVolume instance.
+ *
+ * In order to use the cornerstoneStreamingImageVolumeLoader you should use
+ * createAndCacheVolume helper from the cornerstone-core volumeLoader module.
+ *
+ * @param volumeId - The ID of the volume
+ * @param options - options for loading, imageIds
+ * @returns a promise that resolves to a StreamingImageVolume
+ */
 function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,
   options: {
@@ -92,7 +103,7 @@ function cornerstoneStreamingImageVolumeLoader(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(sizeInBytes)
   if (!isCacheable) {
-    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    throw new Error(Enums.Events.CACHE_SIZE_EXCEEDED)
   }
 
   cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes)
@@ -162,8 +173,8 @@ function cornerstoneStreamingImageVolumeLoader(
   }
 }
 
-registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
-registerVolumeLoader(
+volumeLoader.registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
+volumeLoader.registerVolumeLoader(
   'cornerstoneStreamingImageVolume',
   cornerstoneStreamingImageVolumeLoader
 )

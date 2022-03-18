@@ -11,7 +11,6 @@ import state from './state'
 
 import * as ToolGroupManager from './ToolGroupManager'
 import * as SynchronizerManager from './SynchronizerManager'
-import * as SegmentationModule from './SegmentationModule'
 
 export {
   // Store
@@ -25,7 +24,6 @@ export {
   // Managers
   ToolGroupManager,
   SynchronizerManager,
-  SegmentationModule,
   // Classes
   Synchronizer,
 }

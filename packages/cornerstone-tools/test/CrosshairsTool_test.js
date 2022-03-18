@@ -4,29 +4,37 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  Utilities,
-  unregisterAllImageLoaders,
+  utilities,
   metaData,
-  EVENTS,
-  createAndCacheVolume,
-  registerVolumeLoader,
-  setVolumesOnViewports,
+  Enums,
+  volumeLoader,
+  setVolumesForViewports,
+  imageLoader,
+  CONSTANTS,
 } = cornerstone3D
+
+const { utilities: toolsUtilities } = csTools3d
+const { transformPhysicalToIndex } = toolsUtilities
+
+const { Events, ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 
 const {
   CrosshairsTool,
   ToolGroupManager,
-  AnnotationState,
-  CornerstoneTools3DEvents,
-  Utilities: csTools3dTuils,
+  Enums: csToolsEnums,
+  annotation,
 } = csTools3d
 
-const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
-  Utilities.testUtils
+const { Events: csToolsEvents } = csToolsEnums
 
-const renderingEngineUID = Utilities.uuidv4()
+const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
+  utilities.testUtils
+
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
@@ -88,7 +96,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
 describe('Cornerstone Tools: ', () => {
   beforeAll(() => {
     // initialize the library
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {
@@ -126,7 +134,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully initialize the crosshairs to the middle of the image and canvas', function (done) {
     const [element1, element2, element3] = createViewports(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -157,7 +165,7 @@ describe('Cornerstone Tools: ', () => {
       const centerCanvas = [sWidth * 0.5, sHeight * 0.5]
       const canvasCenterWorld = vp.canvasToWorld(centerCanvas)
 
-      const crosshairAnnotations = AnnotationState.getAnnotations(
+      const crosshairAnnotations = annotation.state.getAnnotations(
         element1,
         CrosshairsTool.toolName
       )
@@ -175,7 +183,7 @@ describe('Cornerstone Tools: ', () => {
           expect(p).toBeCloseTo(canvasCenterWorld[i], 3)
           expect(p).toBeCloseTo(imageCenterWorld[i], 3)
         })
-        AnnotationState.removeAnnotation(
+        annotation.state.removeAnnotation(
           element1,
           crosshairAnnotation.annotationUID
         )
@@ -192,15 +200,15 @@ describe('Cornerstone Tools: ', () => {
       }
 
       element1.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element2.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element3.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
 
@@ -209,9 +217,9 @@ describe('Cornerstone Tools: ', () => {
       })
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-    element3.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
+    element3.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
 
     this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -219,7 +227,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]
@@ -234,7 +242,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully jump to move the crosshairs', function (done) {
     const [element1, element2, element3] = createViewports(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -254,7 +262,7 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      const crosshairAnnotationsAfter = AnnotationState.getAnnotations(
+      const crosshairAnnotationsAfter = annotation.state.getAnnotations(
         element1,
         CrosshairsTool.toolName
       )
@@ -267,7 +275,7 @@ describe('Cornerstone Tools: ', () => {
           // Can successfully move the tool center in all viewports
           expect(p).toBeCloseTo(p1[i], 3)
           expect(p).toBeCloseTo(axialCanvasToolCenter[i], 3)
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element1,
             crosshairAnnotation.annotationUID
           )
@@ -278,15 +286,15 @@ describe('Cornerstone Tools: ', () => {
 
     const attachCrosshairsHandler = () => {
       element1.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element2.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element3.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
     }
@@ -305,7 +313,7 @@ describe('Cornerstone Tools: ', () => {
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
       const { imageData } = vp1.getImageData()
 
-      const crosshairAnnotations = AnnotationState.getAnnotations(
+      const crosshairAnnotations = annotation.state.getAnnotations(
         element1,
         CrosshairsTool.toolName
       )
@@ -313,7 +321,7 @@ describe('Cornerstone Tools: ', () => {
       // First viewport is axial
       const currentWorldLocation =
         crosshairAnnotations[0].data.handles.toolCenter
-      const currentIndexLocation = csTools3dTuils.transformPhysicalToIndex(
+      const currentIndexLocation = transformPhysicalToIndex(
         imageData,
         currentWorldLocation
       )
@@ -356,9 +364,9 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -366,7 +374,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]
@@ -381,7 +389,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully drag and move the crosshairs', function (done) {
     const [element1, element2, element3] = createViewports(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -406,7 +414,7 @@ describe('Cornerstone Tools: ', () => {
       const { imageData } = vp1.getImageData()
 
       setTimeout(() => {
-        const crosshairAnnotations = AnnotationState.getAnnotations(
+        const crosshairAnnotations = annotation.state.getAnnotations(
           element1,
           CrosshairsTool.toolName
         )
@@ -414,7 +422,7 @@ describe('Cornerstone Tools: ', () => {
         // First viewport is axial
         const currentWorldLocation =
           crosshairAnnotations[0].data.handles.toolCenter
-        const currentIndexLocation = csTools3dTuils.transformPhysicalToIndex(
+        const currentIndexLocation = transformPhysicalToIndex(
           imageData,
           currentWorldLocation
         )
@@ -480,7 +488,7 @@ describe('Cornerstone Tools: ', () => {
 
         // Moving Crosshairs
         setTimeout(() => {
-          const crosshairAnnotationsAfter = AnnotationState.getAnnotations(
+          const crosshairAnnotationsAfter = annotation.state.getAnnotations(
             element1,
             CrosshairsTool.toolName
           )
@@ -489,7 +497,7 @@ describe('Cornerstone Tools: ', () => {
             crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
               // Can successfully move the tool center in all viewports
               expect(p).toBeCloseTo(worldCoord2[i], 3)
-              AnnotationState.removeAnnotation(
+              annotation.state.removeAnnotation(
                 element1,
                 crosshairAnnotation.annotationUID
               )
@@ -500,9 +508,9 @@ describe('Cornerstone Tools: ', () => {
       }, 50)
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -510,7 +518,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]

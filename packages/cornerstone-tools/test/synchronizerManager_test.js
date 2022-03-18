@@ -6,16 +6,20 @@ import * as windowLevel_canvas2 from './groundTruth/windowLevel_canvas2.png'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  Utilities,
-  unregisterAllImageLoaders,
+  utilities,
   metaData,
-  EVENTS,
-  createAndCacheVolume,
-  registerVolumeLoader,
-  setVolumesOnViewports,
+  Enums,
+  setVolumesForViewports,
+  volumeLoader,
+  imageLoader,
+  CONSTANTS,
 } = cornerstone3D
+
+const { Events, ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
+
+const { unregisterAllImageLoaders } = imageLoader
+const { createAndCacheVolume, registerVolumeLoader } = volumeLoader
 
 const {
   StackScrollMouseWheelTool,
@@ -23,16 +27,18 @@ const {
   ToolGroupManager,
   synchronizers,
   SynchronizerManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = csTools3d
 
+const { MouseBindings } = csToolsEnums
+
 const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } =
-  Utilities.testUtils
+  utilities.testUtils
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
@@ -60,7 +66,7 @@ function createViewports(width, height) {
 
 describe('Synchronizer Manager: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {
@@ -103,7 +109,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.setViewports([
       {
         viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -112,7 +118,7 @@ describe('Synchronizer Manager: ', () => {
       },
       {
         viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -155,8 +161,8 @@ describe('Synchronizer Manager: ', () => {
       done()
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -175,14 +181,14 @@ describe('Synchronizer Manager: ', () => {
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: ctVolumeId }],
           [viewportUID1]
         )
       })
       createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: ptVolumeId }],
           [viewportUID2]
@@ -196,7 +202,7 @@ describe('Synchronizer Manager: ', () => {
 
 describe('Synchronizer Manager: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {
@@ -212,7 +218,7 @@ describe('Synchronizer Manager: ', () => {
     this.firstToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })
@@ -247,7 +253,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.setViewports([
       {
         viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -256,7 +262,7 @@ describe('Synchronizer Manager: ', () => {
       },
       {
         viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -270,7 +276,7 @@ describe('Synchronizer Manager: ', () => {
     const [pageX2, pageY2] = [211, 20]
 
     const addEventListenerForVOI = () => {
-      element2.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element2.addEventListener(Events.IMAGE_RENDERED, () => {
         const vp2 = this.renderingEngine.getViewport(viewportUID2)
         const canvas2 = vp2.getCanvas()
         const image2 = canvas2.toDataURL('image/png')
@@ -322,8 +328,8 @@ describe('Synchronizer Manager: ', () => {
       document.dispatchEvent(evt3)
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -341,7 +347,7 @@ describe('Synchronizer Manager: ', () => {
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        setVolumesOnViewports(
+        setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: ctVolumeId }],
           [viewportUID1, viewportUID2]

@@ -8,35 +8,41 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_indexLocked from './groundTruth/vol
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
+  Enums,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
+  imageLoader,
+  volumeLoader,
+  utilities,
+  setVolumesForViewports,
   eventTarget,
+  CONSTANTS,
 } = cornerstone3D
+
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
-  SegmentationModule,
+  segmentation,
+  Enums: csToolsEnums,
   RectangleScissorsTool,
 } = csTools3d
+
+const { Events } = csToolsEnums
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const {
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
   compareImages,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 
@@ -57,7 +63,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -69,7 +75,7 @@ function createViewport(
 
 describe('Segmentation Index Controller --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Index/Lock Controller', function () {
@@ -169,7 +175,7 @@ describe('Segmentation Index Controller --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -179,7 +185,7 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
           eventTarget.addEventListener(
-            EVENTS.SEGMENTATION_RENDERED,
+            Events.SEGMENTATION_RENDERED,
             compareImageCallback
           )
           drawRectangle([30, 30, 0], [50, 50, 0])
@@ -198,12 +204,12 @@ describe('Segmentation Index Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -214,20 +220,20 @@ describe('Segmentation Index Controller --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp1.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -292,7 +298,7 @@ describe('Segmentation Index Controller --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -301,13 +307,10 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          SegmentationModule.segmentIndexController.setActiveSegmentIndex(
-            TOOL_GROUP_UID,
-            2
-          )
+          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_UID, 2)
 
           eventTarget.addEventListener(
-            EVENTS.SEGMENTATION_RENDERED,
+            Events.SEGMENTATION_RENDERED,
             compareImageCallback
           )
           drawRectangle([30, 30, 0], [50, 50, 0])
@@ -319,15 +322,13 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndex(
-            TOOL_GROUP_UID
-          )
+          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_UID)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationInfo =
-          SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+          segmentation.activeSegmentation.getActiveSegmentationInfo(
             TOOL_GROUP_UID
           )
 
@@ -335,7 +336,7 @@ describe('Segmentation Index Controller --', () => {
         expect(segmentationInfo.volumeUID).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndexForSegmentation(
+          segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
             segmentationInfo.volumeUID
           )
 
@@ -349,12 +350,12 @@ describe('Segmentation Index Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -365,20 +366,20 @@ describe('Segmentation Index Controller --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp1.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -443,7 +444,7 @@ describe('Segmentation Index Controller --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -452,19 +453,16 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          SegmentationModule.segmentIndexController.setActiveSegmentIndex(
-            TOOL_GROUP_UID,
-            2
-          )
+          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_UID, 2)
 
-          SegmentationModule.lockedSegmentController.setSegmentIndexLocked(
+          segmentation.segmentLocking.setSegmentIndexLocked(
             TOOL_GROUP_UID,
             1,
             true
           )
 
           eventTarget.addEventListener(
-            EVENTS.SEGMENTATION_RENDERED,
+            Events.SEGMENTATION_RENDERED,
             compareImageCallback
           )
           drawRectangle([30, 30, 0], [50, 50, 0])
@@ -476,15 +474,13 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndex(
-            TOOL_GROUP_UID
-          )
+          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_UID)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationInfo =
-          SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+          segmentation.activeSegmentation.getActiveSegmentationInfo(
             TOOL_GROUP_UID
           )
 
@@ -492,30 +488,29 @@ describe('Segmentation Index Controller --', () => {
         expect(segmentationInfo.volumeUID).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndexForSegmentation(
+          segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
             segmentationInfo.volumeUID
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)
 
         const locked1 =
-          SegmentationModule.lockedSegmentController.getSegmentsLockedForSegmentation(
+          segmentation.segmentLocking.getSegmentsLockedForSegmentation(
             segmentationInfo.volumeUID
           )
 
         expect(locked1.length).toBe(1)
         expect(locked1[0]).toBe(1)
 
-        const lockedStatus1 =
-          SegmentationModule.lockedSegmentController.getSegmentIndexLocked(
-            TOOL_GROUP_UID,
-            1
-          )
+        const lockedStatus1 = segmentation.segmentLocking.getSegmentIndexLocked(
+          TOOL_GROUP_UID,
+          1
+        )
 
         expect(lockedStatus1).toBe(true)
 
         const lockedStatus2 =
-          SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
+          segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
             segmentationInfo.volumeUID,
             2
           )
@@ -529,12 +524,12 @@ describe('Segmentation Index Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -545,20 +540,20 @@ describe('Segmentation Index Controller --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp1.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {

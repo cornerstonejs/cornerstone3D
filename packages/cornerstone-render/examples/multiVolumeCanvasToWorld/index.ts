@@ -1,10 +1,10 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
-  Utilities as csUtils,
+  volumeLoader,
+  Enums,
+  utilities as csUtils,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
 import {
@@ -15,6 +15,9 @@ import {
 } from '../../../../utils/demo/helpers'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
@@ -95,7 +98,7 @@ async function run() {
   const viewportUID = 'CT_SAGITTAL_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
@@ -111,7 +114,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
     imageIds: ctImageIds,
   })
 
@@ -119,7 +122,7 @@ async function run() {
   ctVolume.load()
 
   // Define a volume in memory
-  const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
     imageIds: ptImageIds,
   })
 

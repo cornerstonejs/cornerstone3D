@@ -4,12 +4,12 @@ import { vec2 } from 'gl-matrix'
 import {
   getEnabledElement,
   Settings,
-  getVolume,
+  cache,
   StackViewport,
   VolumeViewport,
   triggerEvent,
   eventTarget,
-  Utilities as csUtils,
+  utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
@@ -25,7 +25,7 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { Events } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import {
   resetElementCursor,
@@ -90,7 +90,7 @@ interface ProbeAnnotation extends Annotation {
  * toolGroup.setToolActive(ProbeTool.toolName, {
  *   bindings: [
  *    {
- *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *       mouseButton: MouseBindings.Primary, // Left Click
  *     },
  *   ],
  * })
@@ -161,7 +161,7 @@ export default class ProbeTool extends AnnotationTool {
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
       const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = getVolume(volumeUID)
+      const imageVolume = cache.getVolume(volumeUID)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -380,23 +380,23 @@ export default class ProbeTool extends AnnotationTool {
   _activateModify = (element) => {
     state.isInteractingWithTool = true
 
-    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false
 
-    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
@@ -649,7 +649,7 @@ export default class ProbeTool extends AnnotationTool {
       annotation.invalidated = false
 
       // Dispatching annotation modified
-      const eventType = EVENTS.ANNOTATION_MODIFIED
+      const eventType = Events.ANNOTATION_MODIFIED
 
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,

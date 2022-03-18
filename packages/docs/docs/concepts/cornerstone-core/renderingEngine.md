@@ -65,7 +65,7 @@ events.
 import {
   RenderingEngine,
   ORIENTATION,
-  VIEWPORT_TYPE,
+  ViewportType,
 } from '@ohif/cornerstone-render'
 
 
@@ -78,7 +78,7 @@ const viewportInput = [
   {
     sceneUID: 'ctScene',
     viewportUID: 'ctAxial',
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     canvas: canvas1,
     defaultOptions: {
       orientation: ORIENTATION.AXIAL,
@@ -88,7 +88,7 @@ const viewportInput = [
   {
     sceneUID: 'ctScene',
     viewportUID: 'ctSagittal',
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     canvas: canvas2,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
@@ -97,7 +97,7 @@ const viewportInput = [
   // CT Axial Stack Viewport
   {
     viewportUID: 'ctStack',
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     canvas: canvas3,
     defaultOptions: {
       orientation: ORIENTATION.AXIAL,
@@ -122,7 +122,7 @@ and a
 import {
   RenderingEngine,
   ORIENTATION,
-  VIEWPORT_TYPE,
+  ViewportType,
 } from '@ohif/cornerstone-render'
 
 
@@ -132,7 +132,7 @@ const renderingEngine = new RenderingEngine(renderingEngineUID)
 const viewport = {
   sceneUID: 'ctScene',
   viewportUID: 'ctAxial',
-  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+  type: ViewportType.ORTHOGRAPHIC,
   canvas: canvas1,
   defaultOptions: {
     orientation: ORIENTATION.AXIAL,
@@ -153,8 +153,8 @@ disableElement(viewportUID: string)
 ```
 
 
-[`element_enabled`](/docs/cornerstone-render/enums/EVENTS#element_enabled) and
-[`element_disabled`](/docs/cornerstone-render/enums/EVENTS#element_enabled) events are fired
+[`element_enabled`](/docs/cornerstone-render/enums/Events#element_enabled) and
+[`element_disabled`](/docs/cornerstone-render/enums/Events#element_enabled) events are fired
 with below event detail.
 
 

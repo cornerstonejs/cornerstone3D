@@ -3,10 +3,9 @@ import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import cloneDeep from 'lodash.clonedeep'
 
 import { ImageVolume } from './cache/classes/ImageVolume'
-import ERROR_CODES from './enums/errorCodes'
 import * as Types from './types'
 import cache from './cache/cache'
-import EVENTS from './enums/events'
+import Events from './enums/Events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
 import { uuidv4 } from './utilities'
@@ -105,7 +104,7 @@ function loadVolumeFromVolumeLoader(
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
     function (volume) {
-      triggerEvent(eventTarget, EVENTS.VOLUME_LOADED, { volume })
+      triggerEvent(eventTarget, Events.VOLUME_LOADED, { volume })
     },
     function (error) {
       const errorObject: EventTypes.VolumeLoadedFailedEventDetail = {
@@ -113,7 +112,7 @@ function loadVolumeFromVolumeLoader(
         error,
       }
 
-      triggerEvent(eventTarget, EVENTS.VOLUME_LOADED_FAILED, errorObject)
+      triggerEvent(eventTarget, Events.VOLUME_LOADED_FAILED, errorObject)
     }
   )
 
@@ -128,7 +127,6 @@ function loadVolumeFromVolumeLoader(
  * @param options - Options to be passed to the Volume Loader
  *
  * @returns An Object which can be used to act after an image is loaded or loading fails
- * @category VolumeLoader
  */
 export function loadVolume(
   volumeId: string,
@@ -160,7 +158,6 @@ export function loadVolume(
  * @param options - Options to be passed to the Volume Loader
  *
  * @returns Volume Loader Object
- * @category VolumeLoader
  */
 export async function createAndCacheVolume(
   volumeId: string,
@@ -200,7 +197,6 @@ export async function createAndCacheVolume(
  * @param referencedVolumeUID - the volumeUID from which the new volume will get its metadata
  * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
  *
- * @category VolumeLoader
  * @returns ImageVolume
  */
 export function createAndCacheDerivedVolume(
@@ -248,7 +244,7 @@ export function createAndCacheDerivedVolume(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(numBytes)
   if (!isCacheable) {
-    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    throw new Error(Events.CACHE_SIZE_EXCEEDED)
   }
 
   const volumeScalarData = new TypedArray(scalarLength)
@@ -296,7 +292,6 @@ export function createAndCacheDerivedVolume(
  * UID exists in the cache it returns it immediately.
  * @param options -  { scalarData, metadata, dimensions, spacing, origin, direction }
  * @param uid - UID of the generated volume
- * @category VolumeLoader
  *
  * @returns ImageVolume
  */
@@ -335,7 +330,7 @@ export function createLocalVolume(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(numBytes)
   if (!isCacheable) {
-    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    throw new Error(Events.CACHE_SIZE_EXCEEDED)
   }
 
   const scalarArray = vtkDataArray.newInstance({
@@ -381,7 +376,6 @@ export function createLocalVolume(
  *
  * @param scheme - The scheme to use for this volume loader (e.g. 'dicomweb', 'wadouri', 'http')
  * @param volumeLoader - A Cornerstone Volume Loader function
- * @category VolumeLoader
  */
 export function registerVolumeLoader(
   scheme: string,
@@ -396,7 +390,6 @@ export function registerVolumeLoader(
  * @param volumeLoader - A Cornerstone Volume Loader
  *
  * @returns The previous Unknown Volume Loader
- * @category VolumeLoader
  */
 export function registerUnknownVolumeLoader(
   volumeLoader: Types.VolumeLoaderFn

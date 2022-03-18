@@ -2,15 +2,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  volumeLoader,
+  Enums,
+  CONSTANTS,
   init,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
-  BlendModes,
+  Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -34,6 +33,8 @@ import {
 } from './constants'
 
 const VOLUME = 'volume'
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 window.cache = cache
 
@@ -111,7 +112,7 @@ class ApplyPresetExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -120,7 +121,7 @@ class ApplyPresetExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -129,7 +130,7 @@ class ApplyPresetExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -151,7 +152,7 @@ class ApplyPresetExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: volumeImageIds,
     })
 
@@ -167,13 +168,13 @@ class ApplyPresetExample extends Component {
 
     ctVolume.load(onLoad)
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       viewportInput.map(({ viewportUID }) => viewportUID)
@@ -226,13 +227,13 @@ class ApplyPresetExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -249,7 +250,8 @@ class ApplyPresetExample extends Component {
         mode === 'Active' &&
         bindings.length &&
         bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+          (binding) =>
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary
         )
     )
 
@@ -261,7 +263,7 @@ class ApplyPresetExample extends Component {
     ctSceneToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
+        { mouseButton: csToolsEnums.MouseBindings.Primary },
       ],
     })
 

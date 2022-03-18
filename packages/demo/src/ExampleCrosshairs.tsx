@@ -2,16 +2,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  volumeLoader,
+  Enums,
+  CONSTANTS,
   init as cs3dInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
-  ToolModes,
-  BlendModes,
+  Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -40,6 +38,8 @@ import {
 const VOLUME = 'volume'
 
 window.cache = cache
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let ctSceneToolGroup, prostateSceneToolGroup
 
@@ -115,7 +115,7 @@ class CrosshairsExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -124,7 +124,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -133,7 +133,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -142,7 +142,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PROSTATE.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -151,7 +151,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PROSTATE.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -192,33 +192,36 @@ class CrosshairsExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctImageIds,
     })
-    const prostateVolume = await createAndCacheVolume(prostateVolumeUID, {
-      imageIds: prostateImageIds,
-    })
+    const prostateVolume = await volumeLoader.createAndCacheVolume(
+      prostateVolumeUID,
+      {
+        imageIds: prostateImageIds,
+      }
+    )
 
     ctVolume.load()
     prostateVolume.load()
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
     )
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
           volumeUID: prostateVolumeUID,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.PROSTATE.AXIAL, VIEWPORT_IDS.PROSTATE.SAGITTAL]
@@ -251,20 +254,20 @@ class CrosshairsExample extends Component {
 
   setToolMode = (toolMode) => {
     const toolGroup = this.state.toolGroups[this.state.toolGroupName]
-    if (toolMode === ToolModes.Active) {
+    if (toolMode === csToolsEnums.ToolModes.Active) {
       const activeTool = toolGroup.getActivePrimaryMouseButtonTool()
       if (activeTool) {
         toolGroup.setToolPassive(activeTool)
       }
 
       toolGroup.setToolActive(this.state.leftClickTool, {
-        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+        bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
       })
-    } else if (toolMode === ToolModes.Passive) {
+    } else if (toolMode === csToolsEnums.ToolModes.Passive) {
       toolGroup.setToolPassive(this.state.leftClickTool)
-    } else if (toolMode === ToolModes.Enabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Enabled) {
       toolGroup.setToolEnabled(this.state.leftClickTool)
-    } else if (toolMode === ToolModes.Disabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Disabled) {
       toolGroup.setToolDisabled(this.state.leftClickTool)
     }
   }
@@ -335,25 +338,25 @@ class CrosshairsExample extends Component {
         </select>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Active)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Active)}
         >
           Active
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Passive)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Passive)}
         >
           Passive
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Enabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Enabled)}
         >
           Enabled
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Disabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Disabled)}
         >
           Disabled
         </button>

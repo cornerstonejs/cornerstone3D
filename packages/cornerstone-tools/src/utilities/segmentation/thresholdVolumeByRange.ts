@@ -6,7 +6,7 @@ import {
   extend2DBoundingBoxInViewAxis,
 } from '../segmentation'
 import { pointInShapeCallback } from '../../utilities'
-import { triggerSegmentationDataModified } from '../../store/SegmentationModule/triggerSegmentationEvents'
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
 import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
 import transformPhysicalToIndex from '../transformPhysicalToIndex'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'

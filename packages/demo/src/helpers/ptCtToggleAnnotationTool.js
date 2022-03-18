@@ -1,4 +1,4 @@
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import { Enums, WindowLevelTool } from '@precisionmetrics/cornerstone-tools'
 import { ANNOTATION_TOOLS } from '../constants'
 
 export default function ptCtToggleAnnotationTool(
@@ -9,7 +9,7 @@ export default function ptCtToggleAnnotationTool(
   annotationToolName
 ) {
   const options = {
-    bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+    bindings: [{ mouseButton: Enums.MouseBindings.Primary }],
   }
 
   if (enableAnnotationTool) {

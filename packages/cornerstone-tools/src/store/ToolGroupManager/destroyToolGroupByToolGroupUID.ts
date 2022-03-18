@@ -1,5 +1,5 @@
 import { state } from '../index'
-import { removeSegmentationsForToolGroup } from '../../stateManagement/segmentation'
+import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmentation'
 
 // ToolGroups function entirely by their "state" being queried and leveraged
 // removing a ToolGroup from state is equivalent to killing it
@@ -17,7 +17,7 @@ function destroyToolGroupByToolGroupUID(toolGroupUID: string): void {
 
   if (toolGroupIndex > -1) {
     // Todo: this should not happen here)
-    removeSegmentationsForToolGroup(toolGroupUID)
+    removeSegmentationsFromToolGroup(toolGroupUID)
     state.toolGroups.splice(toolGroupIndex, 1)
   }
 }

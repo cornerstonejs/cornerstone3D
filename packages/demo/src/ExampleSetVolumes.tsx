@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import { synchronizers } from '@precisionmetrics/cornerstone-tools'
@@ -181,10 +181,10 @@ class VTKSetVolumesExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: ptVolumeImageIds1,
     })
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds1,
     })
 
@@ -257,10 +257,10 @@ class VTKSetVolumesExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await createAndCacheVolume(ptVolumeUID2, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID2, {
       imageIds: ptVolumeImageIds2,
     })
-    const ctVolume = await createAndCacheVolume(ctVolumeUID2, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID2, {
       imageIds: ctVolumeImageIds2,
     })
 

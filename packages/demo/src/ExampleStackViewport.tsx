@@ -3,25 +3,21 @@ import {
   cache,
   RenderingEngine,
   eventTarget,
-  createAndCacheVolume,
+  volumeLoader,
   metaData,
-  ORIENTATION,
-  VIEWPORT_TYPE,
-  INTERPOLATION_TYPE,
-  EVENTS as RENDERING_EVENTS,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  SynchronizerManager,
+  Enums as csToolsEnums,
   synchronizers,
-  ToolGroupManager,
-  ToolBindings,
-  CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeAnnotation,
   destroy as CS3dToolsDestroy,
   CrosshairsTool,
+  WindowLevelTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -50,6 +46,8 @@ import getToolDetailForDisplay from './helpers/getToolDetailForDisplay'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
+const { ViewportType, InterpolationType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 window.cache = cache
 
@@ -164,7 +162,7 @@ class StackViewportExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -172,7 +170,7 @@ class StackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -181,7 +179,7 @@ class StackViewportExample extends Component {
       // stack CT
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -190,7 +188,7 @@ class StackViewportExample extends Component {
       // pt volume
       {
         viewportUID: VIEWPORT_IDS.PT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -199,7 +197,7 @@ class StackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -209,7 +207,7 @@ class StackViewportExample extends Component {
       // dx
       // {
       //   viewportUID: VIEWPORT_IDS.STACK.DX,
-      //   type: VIEWPORT_TYPE.STACK,
+      //   type: ViewportType.STACK,
       //   element: this._elementNodes.get(4),
       //   defaultOptions: {
       //     orientation: ORIENTATION.AXIAL,
@@ -218,7 +216,7 @@ class StackViewportExample extends Component {
       // PT stack
       {
         viewportUID: VIEWPORT_IDS.STACK.PT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(5),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -272,7 +270,7 @@ class StackViewportExample extends Component {
 
     ctStackViewport.setProperties({
       voiRange: { lower: -160, upper: 240 },
-      interpolationType: INTERPOLATION_TYPE.LINEAR,
+      interpolationType: InterpolationType.LINEAR,
     })
 
     const ptStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.PT)
@@ -304,11 +302,11 @@ class StackViewportExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
-    const ptVolume = await createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: ptVolumeImageIds,
     })
 
@@ -325,7 +323,7 @@ class StackViewportExample extends Component {
     ctVolume.load(onLoad)
     ptVolume.load(onLoad)
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -336,7 +334,7 @@ class StackViewportExample extends Component {
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL]
     )
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -360,19 +358,19 @@ class StackViewportExample extends Component {
 
     // add event listeners for tools
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_ADDED,
+      csToolsEnums.Events.ANNOTATION_ADDED,
       this.updateAnnotationAdded
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_MODIFIED,
+      csToolsEnums.Events.ANNOTATION_MODIFIED,
       this.updateAnnotationModified
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_REMOVED,
+      csToolsEnums.Events.ANNOTATION_REMOVED,
       this.updateAnnotationRemoved
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
+      csToolsEnums.Events.KEY_DOWN,
       this.cancelToolDrawing
     )
 
@@ -473,7 +471,7 @@ class StackViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

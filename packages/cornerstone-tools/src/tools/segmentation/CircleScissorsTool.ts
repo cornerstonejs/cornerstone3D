@@ -9,7 +9,7 @@ import { BaseTool } from '../base'
 import { PublicToolProps, ToolProps, EventTypes } from '../../types'
 
 import { fillInsideCircle } from './strategies/fillCircle'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { Events } from '../../enums'
 import { drawCircle as drawCircleSvg } from '../../drawingSvg'
 import {
   resetElementCursor,
@@ -18,11 +18,11 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 import {
-  segmentationColorController,
-  lockedSegmentController,
-  segmentIndexController,
-  activeSegmentationController,
-} from '../../store/SegmentationModule'
+  segmentLocking,
+  activeSegmentation,
+  segmentIndex as segmentIndexController,
+  segmentationColor,
+} from '../../stateManagement/segmentation'
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -91,7 +91,7 @@ export default class CircleScissorsTool extends BaseTool {
     const toolGroupUID = this.toolGroupUID
 
     const activeSegmentationInfo =
-      activeSegmentationController.getActiveSegmentationInfo(toolGroupUID)
+      activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
@@ -102,8 +102,8 @@ export default class CircleScissorsTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(toolGroupUID)
     const segmentsLocked =
-      lockedSegmentController.getSegmentsLockedForSegmentation(volumeUID)
-    const segmentColor = segmentationColorController.getColorForSegmentIndex(
+      segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
+    const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupUID,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex
@@ -267,24 +267,24 @@ export default class CircleScissorsTool extends BaseTool {
    * Add event handlers for the modify event loop, and prevent default event propagation.
    */
   _activateDraw = (element) => {
-    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.
    */
   _deactivateDraw = (element) => {
-    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**

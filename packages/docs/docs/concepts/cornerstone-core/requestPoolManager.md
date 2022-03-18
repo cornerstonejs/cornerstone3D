@@ -46,7 +46,7 @@ You will need to define a *sendRequest* function to make an load image request.
 
 
 ```js
-import {imageLoadPoolManager, loadAndCacheImage, REQUEST_TYPE} from '@ohif/cornerstone-render'
+import {imageLoadPoolManager, loadAndCacheImage, RequestType} from '@ohif/cornerstone-render'
 
 function sendRequest(imageId, imageIdIndex, options) {
   return loadAndCacheImage(imageId, options).then(
@@ -64,7 +64,7 @@ const imageId = "schema://image"
 const imageIdIndex = 10
 
 
-const requestType = REQUEST_TYPE.Interaction
+const requestType = RequestType.Interaction
 const priority = -5
 const additionalDetails = { imageId }
 const options = {

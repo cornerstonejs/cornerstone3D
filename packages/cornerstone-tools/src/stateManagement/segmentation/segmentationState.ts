@@ -2,7 +2,7 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager'
 import {
   triggerSegmentationStateModified,
   triggerSegmentationGlobalStateModified,
-} from '../../store/SegmentationModule'
+} from './triggerSegmentationEvents'
 import {
   GlobalSegmentationState,
   GlobalSegmentationData,
@@ -283,9 +283,9 @@ function getColorLut(index: number): ColorLUT | undefined {
  * @param colorLut - The color LUT array to add.
  * @param index - The index of the color LUT to add.
  */
-function addColorLut(colorLut: ColorLUT, index: number): void {
+function addColorLUT(colorLut: ColorLUT, index: number): void {
   const segmentationStateManager = getDefaultSegmentationStateManager()
-  segmentationStateManager.addColorLut(colorLut, index)
+  segmentationStateManager.addColorLUT(colorLut, index)
   // Todo: trigger event color LUT added
 }
 
@@ -433,7 +433,7 @@ export {
   setGlobalSegmentationConfig,
   setSegmentationConfig,
   // colorLUT
-  addColorLut,
+  addColorLUT,
   getColorLut,
   // get/set global state
   getGlobalSegmentationState,

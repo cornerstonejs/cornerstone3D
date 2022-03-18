@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  registerImageLoader,
+  imageLoader,
   metaData,
-  VIEWPORT_TYPE,
-  Utilities,
+  Enums,
+  utilities,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -32,8 +32,9 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
+const { ViewportType } = Enums
 
-const { fakeImageLoader, fakeMetaDataProvider } = Utilities.testUtils
+const { fakeImageLoader, fakeMetaDataProvider } = utilities.testUtils
 
 let stackCTViewportToolGroup
 
@@ -68,7 +69,7 @@ class testUtil extends Component {
     this._offScreenRef = React.createRef()
     this._viewportGridRef = React.createRef()
 
-    registerImageLoader('fakeImageLoader', fakeImageLoader)
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
 
     this.ctStackImageIdsPromise = ['fakeImageLoader:imageURI_64_64_10_5_1_1_0']
@@ -101,7 +102,7 @@ class testUtil extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [1, 0, 1],
@@ -158,7 +159,7 @@ class testUtil extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

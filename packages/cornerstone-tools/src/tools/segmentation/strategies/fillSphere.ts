@@ -3,7 +3,7 @@ import type {
   VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
 
-import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
 import { pointInSurroundingSphereCallback } from '../../../utilities'
 
 type OperationData = {

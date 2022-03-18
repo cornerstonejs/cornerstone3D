@@ -1,9 +1,9 @@
 import {
   RenderingEngine,
-  Utilities,
+  utilities,
 } from '@precisionmetrics/cornerstone-render'
 
-const { calibratedPixelSpacingMetadataProvider } = Utilities
+const { calibratedPixelSpacingMetadataProvider } = utilities
 
 /**
  * It adds the provided spacing to the Cornerstone internal calibratedPixelSpacing

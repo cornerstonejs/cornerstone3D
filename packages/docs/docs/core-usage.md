@@ -28,7 +28,7 @@ _app.js_
 import {
   RenderingEngine, // class
   ORIENTATION, // constant
-  VIEWPORT_TYPE, // enum
+  ViewportType, // enum
 } from '@ohif/cornerstone-render'
 
 const sceneUID = 'SCENE_UID'
@@ -62,7 +62,7 @@ const viewportInput = [
   {
     sceneUID,
     viewportUID: viewportUID1,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {
       orientation: ORIENTATION.AXIAL,
@@ -73,7 +73,7 @@ const viewportInput = [
   {
     sceneUID,
     viewportUID: viewportUID2,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
@@ -84,7 +84,7 @@ const viewportInput = [
   {
     sceneUID,
     viewportUID: viewportUID3,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     canvas: document.querySelector('.target-canvas-3'),
     defaultOptions: {
       background: [0, 0, 0],

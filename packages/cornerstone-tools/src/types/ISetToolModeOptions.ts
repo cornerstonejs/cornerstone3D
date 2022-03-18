@@ -1,16 +1,14 @@
-import { ToolModes } from '../enums'
-import ToolBindings from '../enums/ToolBindings'
+import { ToolModes, MouseBindings, KeyboardBindings } from '../enums'
 
-type ToolBindingMouseType =
-  typeof ToolBindings.Mouse[keyof typeof ToolBindings.Mouse]
+type ToolBindingMouseType = typeof MouseBindings[keyof typeof MouseBindings]
 
 type ToolBindingKeyboardType =
-  typeof ToolBindings.Keyboard[keyof typeof ToolBindings.Keyboard]
+  typeof KeyboardBindings[keyof typeof KeyboardBindings]
 
 type IToolBinding = {
-  /** Mouse button bindings e.g., ToolBindings.Mouse.Primary/Secondary etc. */
+  /** Mouse button bindings e.g., MouseBindings.Primary/Secondary etc. */
   mouseButton: ToolBindingMouseType
-  /** Keyboard bindings e.g., ToolBindings.Keyboard.Shift/Ctrl etc. */
+  /** Keyboard bindings e.g., KeyboardBindings.Shift/Ctrl etc. */
   modifierKey?: ToolBindingKeyboardType
 }
 

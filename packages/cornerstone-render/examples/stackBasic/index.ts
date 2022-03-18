@@ -1,13 +1,15 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers'
+
+const { ViewportType } = Enums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -49,7 +51,7 @@ async function run() {
   const viewportUID = 'CT_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

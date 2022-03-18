@@ -14,7 +14,6 @@ import type CustomEventType from './CustomEventType'
 import type { IViewport, PublicViewportInput } from './IViewport'
 import type { VolumeActor, ActorEntry } from './IActor'
 import type { IImageLoadObject, IVolumeLoadObject } from './ILoadObject'
-import type LibraryConfiguration from './LibraryConfiguration'
 import type Metadata from './Metadata'
 import type Orientation from './Orientation'
 import type Point2 from './Point2'
@@ -83,7 +82,6 @@ export type {
   IVolumeInput,
   VolumeInputCallback,
   //
-  LibraryConfiguration,
   Metadata,
   Orientation,
   Point2,

@@ -3,7 +3,7 @@ import Point2 from './Point2'
 import Point3 from './Point3'
 import ViewportInputOptions from './ViewportInputOptions'
 import { ActorEntry } from './IActor'
-import VIEWPORT_TYPE from '../enums/viewportType'
+import ViewportType from '../enums/ViewportType'
 
 /**
  * Viewport interface for cornerstone viewports
@@ -14,7 +14,7 @@ interface IViewport {
   /** renderingEngineUID the viewport belongs to */
   renderingEngineUID: string
   /** viewport type, can be ORTHOGRAPHIC or STACK for now */
-  type: VIEWPORT_TYPE
+  type: ViewportType
   /** canvas associated to the viewport */
   canvas: HTMLCanvasElement
   /** public DOM element associated to the viewport */
@@ -83,7 +83,7 @@ type PublicViewportInput = {
   /** unique id for the viewport in the renderingEngine */
   viewportUID: string
   /** type of the viewport */
-  type: VIEWPORT_TYPE
+  type: ViewportType
   /** options for the viewport */
   defaultOptions: ViewportInputOptions
 }
@@ -92,7 +92,7 @@ type InternalViewportInput = {
   element: HTMLElement
   canvas: HTMLCanvasElement
   viewportUID: string
-  type: VIEWPORT_TYPE
+  type: ViewportType
   defaultOptions: ViewportInputOptions
 }
 
@@ -101,7 +101,7 @@ type ViewportInput = {
   element: HTMLElement
   canvas: HTMLCanvasElement
   renderingEngineUID: string
-  type: VIEWPORT_TYPE
+  type: ViewportType
   sx: number
   sy: number
   sWidth: number

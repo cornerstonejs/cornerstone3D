@@ -27,7 +27,7 @@ _NOTE:_
 import dicomParser from 'dicom-parser'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 import cornerstone from '@ohif/cornerstone-render'
-import { registerImageLoader } from '@ohif/cornerstone-render'
+import { imageLoader } from '@ohif/cornerstone-render'
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 
 // Add our metadata provider at a very high priority
@@ -57,5 +57,5 @@ cornerstoneWADOImageLoader.webWorkerManager.initialize(config)
 
 // Registers the rendering library's image loader
 // Works for imageIds prefixed with `csiv:`
-registerImageLoader(cornerstone)
+imageLoader.registerImageLoader(cornerstone)
 ```

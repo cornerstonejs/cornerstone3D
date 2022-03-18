@@ -3,20 +3,23 @@ import React, { Component } from 'react'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
   RenderingEngine,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
   metaData,
-  createAndCacheVolume,
+  volumeLoader,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import { Enums as csToolsEnums } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
-import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+import { registerWebImageLoader } from './helpers/registerWebImageLoader'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { initToolGroups } from './initToolGroups'
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const axialViewportID = 'AXIAL'
 const sagittalViewportID = 'SAGITTAL'
@@ -61,7 +64,9 @@ class ColorExample extends Component {
 
     const volumeUID = 'VOLUME'
 
-    const volume = await createAndCacheVolume(volumeUID, { imageIds })
+    const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+      imageIds,
+    })
 
     volume.load()
 
@@ -76,7 +81,7 @@ class ColorExample extends Component {
     renderingEngine.setViewports([
       {
         viewportUID: axialViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.axialContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -84,7 +89,7 @@ class ColorExample extends Component {
       },
       {
         viewportUID: sagittalViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.sagittalContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -92,7 +97,7 @@ class ColorExample extends Component {
       },
       {
         viewportUID: coronalViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.coronalContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -115,16 +120,16 @@ class ColorExample extends Component {
 
     colorSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
     colorSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     colorSceneToolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     colorSceneToolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       this.renderingEngine,
       [
         {

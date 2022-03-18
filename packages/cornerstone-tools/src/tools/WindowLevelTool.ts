@@ -1,15 +1,13 @@
 import { BaseTool } from './base'
 import {
   getEnabledElement,
-  getVolume,
-  EVENTS,
+  Enums,
   triggerEvent,
   VolumeViewport,
   StackViewport,
-  Utilities,
+  utilities,
   cache,
   Types,
-  getVolumeViewportsContainingVolumeUID,
 } from '@precisionmetrics/cornerstone-render'
 
 // Todo: should move to configuration
@@ -59,10 +57,11 @@ export default class WindowLevelTool extends BaseTool {
       volumeUID = this.getTargetUID(viewport as VolumeViewport)
       ;({ volumeActor } = viewport.getActor(volumeUID))
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
-      viewportsContainingVolumeUID = getVolumeViewportsContainingVolumeUID(
-        volumeUID,
-        renderingEngine.uid
-      )
+      viewportsContainingVolumeUID =
+        utilities.getVolumeViewportsContainingVolumeUID(
+          volumeUID,
+          renderingEngine.uid
+        )
       ;[lower, upper] = rgbTransferFunction.getRange()
       modality = cache.getVolume(volumeUID).metadata.Modality
       useDynamicRange = true
@@ -99,7 +98,7 @@ export default class WindowLevelTool extends BaseTool {
       range: newRange,
     }
 
-    triggerEvent(element, EVENTS.VOI_MODIFIED, eventDetail)
+    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail)
 
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
@@ -137,7 +136,7 @@ export default class WindowLevelTool extends BaseTool {
     const wwDelta = deltaPointsCanvas[0] * multiplier
     const wcDelta = deltaPointsCanvas[1] * multiplier
 
-    let { windowWidth, windowCenter } = Utilities.windowLevel.toWindowLevel(
+    let { windowWidth, windowCenter } = utilities.windowLevel.toWindowLevel(
       lower,
       upper
     )
@@ -148,7 +147,7 @@ export default class WindowLevelTool extends BaseTool {
     windowWidth = Math.max(windowWidth, 1)
 
     // Convert back to range
-    return Utilities.windowLevel.toLowHighRange(windowWidth, windowCenter)
+    return utilities.windowLevel.toLowHighRange(windowWidth, windowCenter)
   }
 
   _getMultiplyerFromDynamicRange(volumeUID) {
@@ -169,7 +168,7 @@ export default class WindowLevelTool extends BaseTool {
   }
 
   _getImageDynamicRange = (volumeUID: string) => {
-    const imageVolume = getVolume(volumeUID)
+    const imageVolume = cache.getVolume(volumeUID)
     const { dimensions, scalarData } = imageVolume
     const middleSliceIndex = Math.floor(dimensions[2] / 2)
 

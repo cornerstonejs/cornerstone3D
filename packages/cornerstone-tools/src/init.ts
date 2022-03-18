@@ -1,10 +1,7 @@
-import {
-  eventTarget,
-  EVENTS as RENDERING_EVENTS,
-} from '@precisionmetrics/cornerstone-render'
+import { eventTarget, Enums } from '@precisionmetrics/cornerstone-render'
 import { getDefaultAnnotationManager } from './stateManagement/annotation/annotationState'
 import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState'
-import { CornerstoneTools3DEvents as TOOLS_EVENTS } from './enums'
+import { Events as TOOLS_EVENTS } from './enums'
 import { addEnabledElement, removeEnabledElement } from './store'
 import { resetCornerstoneToolsState } from './store/state'
 import {
@@ -70,8 +67,8 @@ function _addCornerstoneEventListeners(): void {
   // Clear any listeners that may already be set
   _removeCornerstoneEventListeners()
 
-  const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
-  const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
+  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED
+  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED
 
   eventTarget.addEventListener(elementEnabledEvent, addEnabledElement)
   eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement)
@@ -83,8 +80,8 @@ function _addCornerstoneEventListeners(): void {
  *
  */
 function _removeCornerstoneEventListeners(): void {
-  const elementEnabledEvent = RENDERING_EVENTS.ELEMENT_ENABLED
-  const elementDisabledEvent = RENDERING_EVENTS.ELEMENT_DISABLED
+  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED
+  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED
 
   eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement)
   eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement)

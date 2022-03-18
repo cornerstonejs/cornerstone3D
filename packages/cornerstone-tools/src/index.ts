@@ -1,17 +1,3 @@
-import {
-  FrameOfReferenceSpecificAnnotationManager,
-  annotationStyle,
-  annotationLocking,
-  annotationSelection,
-  getStyle,
-  setGlobalStyle,
-  setToolStyle,
-  // segmentations
-  addSegmentationsForToolGroup,
-  removeSegmentationsForToolGroup,
-  SegmentationState,
-} from './stateManagement'
-
 import { init, destroy } from './init'
 import {
   addTool,
@@ -20,18 +6,16 @@ import {
   SynchronizerManager,
   Synchronizer,
   cancelActiveManipulations,
-  SegmentationModule,
 } from './store'
-
-import ToolGroup from './store/ToolGroupManager/ToolGroup'
 
 // Name spaces
 import * as synchronizers from './synchronizers'
 import * as drawing from './drawingSvg'
-import * as Utilities from './utilities'
+import * as utilities from './utilities'
+import * as cursors from './cursors'
 import * as Types from './types'
-import * as Cursors from './cursors'
-import AnnotationState from './stateManagement/annotation'
+import * as annotation from './stateManagement/annotation'
+import * as segmentation from './stateManagement/segmentation'
 
 import {
   BaseTool,
@@ -58,23 +42,32 @@ import {
 } from './tools'
 
 import {
-  ToolBindings,
+  MouseBindings,
+  KeyboardBindings,
   ToolModes,
-  CornerstoneTools3DEvents,
+  Events,
   SegmentationRepresentations,
-  BlendModes,
 } from './enums'
 
+const Enums = {
+  MouseBindings,
+  KeyboardBindings,
+  ToolModes,
+  Events,
+  SegmentationRepresentations,
+}
+
 export {
-  // LifeCycle
+  //
+  init,
+  destroy,
   addTool,
   removeTool,
   cancelActiveManipulations,
-  init,
-  destroy,
+  // Base Tools
   BaseTool,
   AnnotationTool,
-  // Tools
+  // Manipulation Tools
   PanTool,
   WindowLevelTool,
   ZoomTool,
@@ -89,46 +82,30 @@ export {
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
-  // Segmentation Tools
+  // Segmentation Display
+  SegmentationDisplayTool,
+  // Segmentation Editing Tools
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
-  // PET annotation
-  SegmentationDisplayTool,
   // Synchronizers
   synchronizers,
   Synchronizer,
-  // Managers
-  ToolGroupManager,
   SynchronizerManager,
-  //
-  ToolGroup,
+  Types,
+  // ToolGroups
+  ToolGroupManager,
   // Enums
-  ToolBindings,
-  BlendModes,
-  ToolModes,
-  CornerstoneTools3DEvents,
-  SegmentationRepresentations,
-  FrameOfReferenceSpecificAnnotationManager,
-  AnnotationState,
+  Enums,
   // Drawing API
   drawing,
-  // State
-  annotationStyle,
-  annotationLocking,
-  annotationSelection,
-  getStyle,
-  setGlobalStyle,
-  setToolStyle,
-  // Utilities
-  Utilities,
-  Types,
-  Cursors,
+  // Annotation
+  annotation,
   // Segmentations
-  SegmentationState,
-  SegmentationModule,
-  addSegmentationsForToolGroup,
-  removeSegmentationsForToolGroup,
+  segmentation,
+  // Utilities
+  utilities,
+  cursors,
 }

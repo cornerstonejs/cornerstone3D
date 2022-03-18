@@ -1,5 +1,5 @@
 import {
-  EVENTS,
+  Enums,
   eventTarget,
   metaData,
   imageLoadPoolManager,
@@ -7,20 +7,19 @@ import {
   ImageVolume,
   cache,
   Types,
-  loadImage,
-  Utilities as cornerstoneUtils,
-  REQUEST_TYPE,
-  ERROR_CODES,
+  imageLoader,
+  utilities as cornerstoneUtils,
 } from '@precisionmetrics/cornerstone-render'
 
 import { scaleArray, autoLoad } from './helpers'
 
-const requestType = REQUEST_TYPE.Prefetch
+const requestType = Enums.RequestType.Prefetch
 const { getMinMax } = cornerstoneUtils
 
-// TODO James wants another layer in between ImageVolume and SliceStreamingImageVolume
-// which adds loaded/loading as an interface?
-
+/**
+ * Streaming Image Volume Class that extends ImageVolume base class.
+ * It implements load method to load the imageIds and insert them into the volume.
+ */
 export default class StreamingImageVolume extends ImageVolume {
   private _cornerstoneImageMetaData
 
@@ -45,8 +44,6 @@ export default class StreamingImageVolume extends ImageVolume {
 
   /**
    * Creates the metadata required for converting the volume to an cornerstoneImage
-   *
-   * @returns {void}
    */
   private _createCornerstoneImageMetaData() {
     const numImages = this.imageIds.length
@@ -99,6 +96,11 @@ export default class StreamingImageVolume extends ImageVolume {
     return true
   }
 
+  /**
+   * It cancels loading the images of the volume. It sets the loading status to false
+   * and filters any imageLoad request in the requestPoolManager that has the same
+   * volumeUID
+   */
   public cancelLoading(): void {
     const { loadStatus } = this
 
@@ -124,10 +126,19 @@ export default class StreamingImageVolume extends ImageVolume {
     imageLoadPoolManager.filterRequests(filterFunction)
   }
 
+  /**
+   * Clear the load callbacks
+   */
   public clearLoadCallbacks(): void {
     this.loadStatus.callbacks = []
   }
 
+  /**
+   * It triggers a prefetch for images in the volume.
+   * @param callback - A callback function to be called when the volume is fully loaded
+   * @param priority - The priority for loading the volume images, lower number is higher priority
+   * @returns
+   */
   public load = (
     callback: (...args: unknown[]) => void,
     priority = 5
@@ -162,9 +173,16 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   /**
-   * Useful for sorting requests outside of the volume loader itself
-   * e.g. loading a single slice of CT, followed by a single slice of PET, before
-   * moving to the next slice
+   * It returns the imageLoad requests for the streaming image volume instance.
+   * It involves getting all the imageIds of the volume and creating a success callback
+   * which would update the texture (when the image has loaded) and the failure callback.
+   * Note that this method does not run executes the requests but only returns the requests.
+   * It can be used for sorting requests outside of the volume loader itself
+   * e.g. loading a single slice of CT, followed by a single slice of PET (interleaved), before
+   * moving to the next slice.
+   *
+   * @returns Array of requests including imageId of the request, its imageIdIndex,
+   * options (targetBuffer and scaling parameters), and additionalDetails (volumeUID)
    */
   public getImageLoadRequests = () => {
     const { scalarData, loadStatus } = this
@@ -294,7 +312,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageVolume: volume,
       }
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventDetail)
+      triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail)
 
       if (framesProcessed === numFrames) {
         loadStatus.loaded = true
@@ -358,7 +376,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageId,
       }
 
-      triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventDetail)
+      triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail)
     }
 
     const requests = imageIds.map((imageId, imageIdIndex) => {
@@ -404,7 +422,7 @@ export default class StreamingImageVolume extends ImageVolume {
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       function callLoadImage(imageId, imageIdIndex, options) {
-        return loadImage(imageId, options).then(
+        return imageLoader.loadImage(imageId, options).then(
           () => {
             successCallback(imageIdIndex, imageId, scalingParameters)
           },
@@ -427,6 +445,7 @@ export default class StreamingImageVolume extends ImageVolume {
 
     return requests
   }
+
   private _prefetchImageIds(priority: number) {
     const requests = this.getImageLoadRequests()
 
@@ -639,7 +658,6 @@ export default class StreamingImageVolume extends ImageVolume {
    * It iterates over all the imageIds and convert them until there is no
    * enough space left inside the imageCache. Finally it will decache the Volume.
    *
-   * @returns {void}
    */
   private _convertToImages() {
     // 1. Try to decache images in the volatile Image Cache to provide
@@ -683,6 +701,12 @@ export default class StreamingImageVolume extends ImageVolume {
     this._removeFromCache()
   }
 
+  /**
+   * If completelyRemove is true, remove the volume completely from the cache. Otherwise,
+   * convert the volume to cornerstone images (stack images) and store it in the cache
+   * @param completelyRemove - If true, the image will be removed from the
+   * cache completely.
+   */
   public decache(completelyRemove = false): void {
     if (completelyRemove) {
       this._removeFromCache()

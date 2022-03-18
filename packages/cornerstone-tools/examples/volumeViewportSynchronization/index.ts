@@ -1,10 +1,10 @@
 import {
   RenderingEngine,
-  VIEWPORT_TYPE,
   Types,
-  ORIENTATION,
-  createAndCacheVolume,
-  setVolumesOnViewports,
+  Enums,
+  volumeLoader,
+  setVolumesForViewports,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -22,10 +22,15 @@ const {
   ZoomTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
-  ToolBindings,
+  Enums: csToolsEnums,
   synchronizers,
   SynchronizerManager,
 } = cornerstoneTools
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
+const { MouseBindings } = csToolsEnums
+
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
@@ -162,21 +167,21 @@ async function run() {
   toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Auxiliary, // Middle Click
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
     ],
   })
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Secondary, // Right Click
+        mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   })
@@ -206,7 +211,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -215,7 +220,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -224,7 +229,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -241,14 +246,14 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
     imageIds,
   })
 
   // Set the volume to load
   volume.load()
 
-  setVolumesOnViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
 
   // Render the image
   renderingEngine.render()

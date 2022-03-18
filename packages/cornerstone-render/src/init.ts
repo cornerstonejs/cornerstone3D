@@ -67,7 +67,7 @@ async function init(defaultConfiguration = {}): Promise<boolean> {
  * @category Initialization
  *
  */
-function setUseCPURenderingOnlyForDebugOrTests(status: boolean): void {
+function setUseCPURendering(status: boolean): void {
   useCPURendering = status
   csRenderInitialized = true
 }
@@ -78,7 +78,7 @@ function setUseCPURenderingOnlyForDebugOrTests(status: boolean): void {
  * @category Initialization
  *
  */
-function resetCPURenderingOnlyForDebugOrTests() {
+function resetUseCPURendering() {
   useCPURendering = !hasActiveWebGLContext()
 }
 
@@ -107,6 +107,6 @@ export {
   init,
   getShouldUseCPURendering,
   isCornerstoneInitialized,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
 }

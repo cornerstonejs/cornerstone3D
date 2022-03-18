@@ -2,16 +2,16 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  volumeLoader,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
   synchronizers,
-  ToolBindings,
-  BlendModes,
+  Enums as csToolsEnums,
+  WindowLevelTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -33,6 +33,9 @@ import { setCTWWWC } from './helpers/transferFunctionHelpers'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 window.cache = cache
 
@@ -118,7 +121,7 @@ class FlipViewportExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -126,7 +129,7 @@ class FlipViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -134,7 +137,7 @@ class FlipViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -143,7 +146,7 @@ class FlipViewportExample extends Component {
       // stack CT
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -160,8 +163,8 @@ class FlipViewportExample extends Component {
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewport(
-      renderingEngineUID,
-      VIEWPORT_IDS.STACK.CT
+      VIEWPORT_IDS.STACK.CT,
+      renderingEngineUID
     )
 
     addToolsToToolGroups({
@@ -208,7 +211,7 @@ class FlipViewportExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -224,13 +227,13 @@ class FlipViewportExample extends Component {
 
     ctVolume.load(onLoad)
 
-    setVolumesOnViewports(
+    setVolumesForViewports(
       renderingEngine,
       [
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
@@ -284,7 +287,7 @@ class FlipViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

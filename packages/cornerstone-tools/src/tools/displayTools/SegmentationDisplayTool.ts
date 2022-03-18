@@ -3,10 +3,8 @@ import { getEnabledElementByUIDs } from '@precisionmetrics/cornerstone-render'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
 import { LabelmapDisplay } from './Labelmap'
-import {
-  triggerSegmentationStateModified,
-  segmentationConfigController,
-} from '../../store/SegmentationModule'
+import { segmentationConfig } from '../../stateManagement/segmentation'
+import { triggerSegmentationStateModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
 import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
 import {
   ToolGroupSpecificSegmentationData,
@@ -114,7 +112,7 @@ export default class SegmentationDisplayTool extends BaseTool {
       ({ renderingEngineUID, viewportUID }) => {
         const enabledElement = getEnabledElementByUIDs(
           viewportUID,
-          renderingEngineUID,
+          renderingEngineUID
         )
 
         if (enabledElement) {
@@ -149,10 +147,9 @@ export default class SegmentationDisplayTool extends BaseTool {
 
   _getSegmentationConfig(toolGroupUID: string): SegmentationConfig {
     const toolGroupConfig =
-      segmentationConfigController.getSegmentationConfig(toolGroupUID)
+      segmentationConfig.getSegmentationConfig(toolGroupUID)
 
-    const globalConfig =
-      segmentationConfigController.getGlobalSegmentationConfig()
+    const globalConfig = segmentationConfig.getGlobalSegmentationConfig()
 
     // merge two configurations and override the global config
     const mergedConfig = deepMerge(globalConfig, toolGroupConfig)

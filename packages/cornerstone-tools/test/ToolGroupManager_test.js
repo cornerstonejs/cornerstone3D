@@ -4,19 +4,30 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  Utilities,
-  unregisterAllImageLoaders,
+  Enums,
+  utilities,
   metaData,
-  registerVolumeLoader,
+  volumeLoader,
+  imageLoader,
+  CONSTANTS,
 } = cornerstone3D
 
-const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
+const { unregisterAllImageLoaders } = imageLoader
+const { registerVolumeLoader } = volumeLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
-const { fakeMetaDataProvider, fakeVolumeLoader } = Utilities.testUtils
+const {
+  ProbeTool,
+  LengthTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = csTools3d
 
-const renderingEngineUID = Utilities.uuidv4()
+const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
+const { MouseBindings } = csToolsEnums
+
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
@@ -39,7 +50,7 @@ function createViewports(width, height) {
 
 describe('ToolGroup Manager: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('ToolGroup Manager: ', () => {
@@ -54,7 +65,7 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [
           {
-            mouseButton: ToolBindings.Mouse.Primary,
+            mouseButton: MouseBindings.Primary,
           },
         ],
       })
@@ -87,7 +98,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -96,7 +107,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -124,7 +135,7 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [
           {
-            mouseButton: ToolBindings.Mouse.Primary,
+            mouseButton: MouseBindings.Primary,
           },
         ],
       })
@@ -157,7 +168,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -166,7 +177,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -202,7 +213,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -211,7 +222,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -248,7 +259,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -257,7 +268,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -285,7 +296,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -294,7 +305,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background

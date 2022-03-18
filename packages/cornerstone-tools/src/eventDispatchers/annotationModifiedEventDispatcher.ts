@@ -2,7 +2,7 @@ import {
   eventTarget,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
-import EVENTS from '../enums/CornerstoneTools3DEvents'
+import Events from '../enums/Events'
 import triggerAnnotationRenderForViewportUIDs from '../utilities/triggerAnnotationRenderForViewportUIDs'
 import { AnnotationModifiedEventType } from '../types/EventTypes'
 
@@ -25,12 +25,12 @@ const onAnnotationModified = function (evt: AnnotationModifiedEventType) {
 }
 
 const enable = function () {
-  eventTarget.addEventListener(EVENTS.ANNOTATION_MODIFIED, onAnnotationModified)
+  eventTarget.addEventListener(Events.ANNOTATION_MODIFIED, onAnnotationModified)
 }
 
 const disable = function () {
   eventTarget.removeEventListener(
-    EVENTS.ANNOTATION_MODIFIED,
+    Events.ANNOTATION_MODIFIED,
     onAnnotationModified
   )
 }

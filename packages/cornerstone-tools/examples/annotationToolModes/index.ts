@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -11,8 +11,10 @@ import {
 } from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 
-const { LengthTool, ToolGroupManager, ToolBindings, ToolModes } =
-  cornerstoneTools
+const { LengthTool, ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools
+
+const { MouseBindings, ToolModes } = csToolsEnums
+const { ViewportType } = Enums
 
 // ======== Set up page ======== //
 setTitleAndDescription('Annotation Tool Modes', 'Annotation tools mode')
@@ -62,7 +64,7 @@ addDropdownToToolbar(
     toolGroup[`setTool${newToolMode}`](LengthTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary, // Left Click (only applies if active)
+          mouseButton: MouseBindings.Primary, // Left Click (only applies if active)
         },
       ],
     })
@@ -93,7 +95,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -116,7 +118,7 @@ async function run() {
   const viewportUID = 'CT_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

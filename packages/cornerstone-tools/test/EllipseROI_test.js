@@ -4,36 +4,37 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  EVENTS,
-  Utilities,
-  registerImageLoader,
-  unregisterAllImageLoaders,
+  Enums,
+  utilities,
+  imageLoader,
   metaData,
-  getEnabledElement,
   eventTarget,
-  createAndCacheVolume,
-  registerVolumeLoader,
-  setVolumesOnViewports,
+  volumeLoader,
+  setVolumesForViewports,
+  CONSTANTS,
 } = cornerstone3D
+
+const { Events, ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   EllipticalRoiTool,
   ToolGroupManager,
-  AnnotationState,
-  CornerstoneTools3DEvents,
   cancelActiveManipulations,
+  annotation,
+  Enums: csToolsEnums,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID = 'VIEWPORT'
 
@@ -64,7 +65,7 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`
 
 describe('Ellipse Tool: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Ellipse Tool: ', () => {
@@ -83,8 +84,8 @@ describe('Ellipse Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -95,7 +96,7 @@ describe('Ellipse Tool: ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -107,7 +108,7 @@ describe('Ellipse Tool: ', () => {
     it('Should successfully create a ellipse tool on a canvas with mouse drag - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -117,44 +118,41 @@ describe('Ellipse Tool: ', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const ellipseAnnotations = AnnotationState.getAnnotations(
-              element,
-              EllipticalRoiTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(ellipseAnnotations).toBeDefined()
-            expect(ellipseAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const ellipseAnnotations = annotation.state.getAnnotations(
+            element,
+            EllipticalRoiTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(ellipseAnnotations).toBeDefined()
+          expect(ellipseAnnotations.length).toBe(1)
 
-            const ellipseAnnotation = ellipseAnnotations[0]
-            expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-              imageId1.split(':')[1]
-            )
+          const ellipseAnnotation = ellipseAnnotations[0]
+          expect(ellipseAnnotation.metadata.referencedImageId).toBe(
+            imageId1.split(':')[1]
+          )
 
-            expect(ellipseAnnotation.metadata.toolName).toBe(
-              EllipticalRoiTool.toolName
-            )
-            expect(ellipseAnnotation.invalidated).toBe(false)
+          expect(ellipseAnnotation.metadata.toolName).toBe(
+            EllipticalRoiTool.toolName
+          )
+          expect(ellipseAnnotation.invalidated).toBe(false)
 
-            const data = ellipseAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = ellipseAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            // the rectangle is drawn on the strip
-            expect(data[targets[0]].mean).toBe(255)
+          // the rectangle is drawn on the strip
+          expect(data[targets[0]].mean).toBe(255)
 
-            AnnotationState.removeAnnotation(
-              element,
-              ellipseAnnotation.annotationUID
-            )
-            done()
-          }
-        )
+          annotation.state.removeAnnotation(
+            element,
+            ellipseAnnotation.annotationUID
+          )
+          done()
+        })
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         // Since ellipse draws from center to out, we are picking a very center
         // point in the image  (strip is 255 from 10-15 in X and from 0-64 in Y)
         const index1 = [12, 30, 0]
@@ -220,7 +218,7 @@ describe('Ellipse Tool: ', () => {
     it('Should successfully create a ellipse tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.ORTHOGRAPHIC,
+        ViewportType.ORTHOGRAPHIC,
         512,
         128
       )
@@ -229,40 +227,37 @@ describe('Ellipse Tool: ', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(
-          CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-          () => {
-            const ellipseAnnotations = AnnotationState.getAnnotations(
-              element,
-              EllipticalRoiTool.toolName
-            )
-            // Can successfully add Length tool to annotationManager
-            expect(ellipseAnnotations).toBeDefined()
-            expect(ellipseAnnotations.length).toBe(1)
+        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+          const ellipseAnnotations = annotation.state.getAnnotations(
+            element,
+            EllipticalRoiTool.toolName
+          )
+          // Can successfully add Length tool to annotationManager
+          expect(ellipseAnnotations).toBeDefined()
+          expect(ellipseAnnotations.length).toBe(1)
 
-            const ellipseAnnotation = ellipseAnnotations[0]
-            expect(ellipseAnnotation.metadata.toolName).toBe(
-              EllipticalRoiTool.toolName
-            )
-            expect(ellipseAnnotation.invalidated).toBe(false)
+          const ellipseAnnotation = ellipseAnnotations[0]
+          expect(ellipseAnnotation.metadata.toolName).toBe(
+            EllipticalRoiTool.toolName
+          )
+          expect(ellipseAnnotation.invalidated).toBe(false)
 
-            const data = ellipseAnnotation.data.cachedStats
-            const targets = Array.from(Object.keys(data))
-            expect(targets.length).toBe(1)
+          const data = ellipseAnnotation.data.cachedStats
+          const targets = Array.from(Object.keys(data))
+          expect(targets.length).toBe(1)
 
-            expect(data[targets[0]].mean).toBe(255)
-            expect(data[targets[0]].stdDev).toBe(0)
+          expect(data[targets[0]].mean).toBe(255)
+          expect(data[targets[0]].stdDev).toBe(0)
 
-            AnnotationState.removeAnnotation(
-              element,
-              ellipseAnnotation.annotationUID
-            )
-            done()
-          }
-        )
+          annotation.state.removeAnnotation(
+            element,
+            ellipseAnnotation.annotationUID
+          )
+          done()
+        })
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [60, 50, 2]
         const index2 = [65, 60, 2]
 
@@ -315,14 +310,16 @@ describe('Ellipse Tool: ', () => {
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
-            this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID]
-          )
-          vp.render()
-        })
+        volumeLoader
+          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .then(() => {
+            setVolumesForViewports(
+              this.renderingEngine,
+              [{ volumeUID: volumeId }],
+              [viewportUID]
+            )
+            vp.render()
+          })
       } catch (e) {
         done.fail(e)
       }
@@ -345,8 +342,8 @@ describe('Ellipse Tool: ', () => {
       })
 
       this.renderingEngine = new RenderingEngine(renderingEngineUID)
-      registerImageLoader('fakeImageLoader', fakeImageLoader)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
 
@@ -356,7 +353,7 @@ describe('Ellipse Tool: ', () => {
       cache.purgeCache()
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
+      imageLoader.unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
 
       this.DOMElements.forEach((el) => {
@@ -369,7 +366,7 @@ describe('Ellipse Tool: ', () => {
     it('Should cancel drawing of a EllipseTool annotation', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -378,7 +375,7 @@ describe('Ellipse Tool: ', () => {
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         // Since ellipse draws from center to out, we are picking a very center
         // point in the image  (strip is 255 from 10-15 in X and from 0-64 in Y)
         const index1 = [12, 30, 0]
@@ -445,7 +442,7 @@ describe('Ellipse Tool: ', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const ellipseAnnotations = AnnotationState.getAnnotations(
+          const ellipseAnnotations = annotation.state.getAnnotations(
             element,
             EllipticalRoiTool.toolName
           )
@@ -471,7 +468,7 @@ describe('Ellipse Tool: ', () => {
           // the rectangle is drawn on the strip
           expect(data[targets[0]].mean).toBe(255)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             ellipseAnnotation.annotationUID
           )
@@ -481,10 +478,7 @@ describe('Ellipse Tool: ', () => {
 
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
-      element.addEventListener(
-        CornerstoneTools3DEvents.KEY_DOWN,
-        cancelToolDrawing
-      )
+      element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
       try {
         vp.setStack([imageId1], 0)

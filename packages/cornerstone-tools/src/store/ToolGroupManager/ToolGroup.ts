@@ -1,4 +1,4 @@
-import { ToolBindings, ToolModes } from '../../enums'
+import { MouseBindings, ToolModes } from '../../enums'
 import {
   getRenderingEngine,
   getRenderingEngines,
@@ -251,7 +251,7 @@ export default class ToolGroup implements IToolGroup {
 
     // Remove the primary button bindings if they exist
     toolOptions.bindings = toolOptions.bindings.filter(
-      (binding) => binding.mouseButton !== ToolBindings.Mouse.Primary
+      (binding) => binding.mouseButton !== MouseBindings.Primary
     )
 
     // If there are other bindings, set the tool to be active
@@ -383,7 +383,7 @@ export default class ToolGroup implements IToolGroup {
   private _hasMousePrimaryButtonBinding(toolOptions) {
     return toolOptions?.bindings?.some(
       (binding) =>
-        binding.mouseButton === ToolBindings.Mouse.Primary &&
+        binding.mouseButton === MouseBindings.Primary &&
         binding.modifierKey === undefined
     )
   }

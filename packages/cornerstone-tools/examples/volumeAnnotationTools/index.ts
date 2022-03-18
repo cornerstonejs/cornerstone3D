@@ -1,10 +1,10 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
-  setVolumesOnViewports,
+  Enums,
+  setVolumesForViewports,
+  volumeLoader,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -19,8 +19,13 @@ const {
   LengthTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
+const { MouseBindings } = csToolsEnums
+
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
@@ -89,7 +94,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -121,7 +126,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
@@ -130,7 +135,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -139,7 +144,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
         orientation: {
@@ -164,14 +169,14 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
     imageIds,
   })
 
   // Set the volume to load
   volume.load()
 
-  setVolumesOnViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
 
   // // Set the volume on the viewport
   // viewport.setVolumes([{ volumeUID }])

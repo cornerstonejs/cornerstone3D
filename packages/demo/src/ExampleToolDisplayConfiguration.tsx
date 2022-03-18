@@ -4,19 +4,23 @@ import {
   Settings,
   getRenderingEngines,
   RenderingEngine,
-  createAndCacheVolume,
+  volumeLoader,
   metaData,
   eventTarget,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  CornerstoneTools3DEvents,
-  ToolBindings,
-  annotationLocking,
-  annotationSelection,
+  Enums as csToolsEnums,
+  annotation as csToolsAnnotation,
+  WindowLevelTool,
+  LengthTool,
+  BidirectionalTool,
+  RectangleRoiTool,
+  ProbeTool,
+  EllipticalRoiTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
@@ -41,6 +45,8 @@ const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup
 
@@ -139,7 +145,7 @@ class ToolDisplayConfigurationExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -147,7 +153,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -156,7 +162,7 @@ class ToolDisplayConfigurationExample extends Component {
       // stack CT
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -165,7 +171,7 @@ class ToolDisplayConfigurationExample extends Component {
       // dx
       {
         viewportUID: VIEWPORT_IDS.STACK.DX,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -219,7 +225,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -235,7 +241,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     ctVolume.load(onLoad)
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -263,13 +269,13 @@ class ToolDisplayConfigurationExample extends Component {
 
     // Register for annotation Selection Event
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_SELECTION_CHANGE,
+      csToolsEnums.Events.ANNOTATION_SELECTION_CHANGE,
       onAnnotationSelectionChange
     )
 
     // Register for annotation Locking Event
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_LOCK_CHANGE,
+      csToolsEnums.Events.ANNOTATION_LOCK_CHANGE,
       onLockedAnnotationChange
     )
 
@@ -280,7 +286,7 @@ class ToolDisplayConfigurationExample extends Component {
       stackDXViewportToolGroup,
     ].forEach((toolGroup) => {
       toolGroup.setToolActive(WindowLevelTool.toolName, {
-        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+        bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
       })
     })
   }
@@ -293,13 +299,13 @@ class ToolDisplayConfigurationExample extends Component {
 
     // Remove listener for annotation Selection Event
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_SELECTION_CHANGE,
+      csToolsEnums.Events.ANNOTATION_SELECTION_CHANGE,
       onAnnotationSelectionChange
     )
 
     // Remove listener for annotation Locking Event
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_LOCK_CHANGE,
+      csToolsEnums.Events.ANNOTATION_LOCK_CHANGE,
       onLockedAnnotationChange
     )
 
@@ -328,7 +334,7 @@ class ToolDisplayConfigurationExample extends Component {
     const defaultTool = WindowLevelTool.toolName
     const activeTools = new Set()
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
 
     ;[
@@ -487,15 +493,15 @@ function onExportSettings(e: React.MouseEvent<HTMLElement>) {
 }
 
 function onLockSelected() {
-  const annotations = annotationSelection.getAnnotationsSelected()
+  const annotations = csToolsAnnotation.selection.getAnnotationsSelected()
 
   annotations.forEach((annotation) => {
-    annotationLocking.setAnnotationLocked(annotation)
+    csToolsAnnotation.locking.setAnnotationLocked(annotation)
   })
 }
 
 function onUnlockAll() {
-  annotationLocking.unlockAllAnnotations()
+  csToolsAnnotation.locking.unlockAllAnnotations()
 }
 
 function onLockedAnnotationChange(e: CustomEvent) {
@@ -603,7 +609,7 @@ function getTargetFromTargetId(id: string): unknown {
   const annotationRegex = /^annotation:(.+)$/
   let match
   if ((match = annotationRegex.exec(id)) !== null) {
-    return annotationSelection.getAnnotationSelected(match[1])
+    return csToolsAnnotation.selection.getAnnotationSelected(match[1])
   }
 }
 

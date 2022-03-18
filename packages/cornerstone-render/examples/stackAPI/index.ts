@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
 import {
@@ -11,6 +11,8 @@ import {
   addButtonToToolbar,
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
+
+const { ViewportType } = Enums
 
 // ======== Constants ======= //
 const renderingEngineUID = 'myRenderingEngine'
@@ -221,7 +223,7 @@ async function run() {
 
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

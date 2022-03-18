@@ -1,15 +1,15 @@
-// array is of type Any number array
+import type { Types } from '@precisionmetrics/cornerstone-render'
 
-type ScalingParameters = {
-  modality: string
-  rescaleSlope: number
-  rescaleIntercept: number
-  suvbw?: number
-}
-
+/**
+ * Given a pixel array, rescale the pixel values using the rescale slope and
+ * intercept and if modality is PT it uses the suv values to scale the array
+ * @param array - The array to be scaled.
+ * @param scalingParameters - The scaling parameters
+ * @returns The array is being scaled
+ */
 export default function scaleArray(
   array: Float32Array | Uint8Array,
-  scalingParameters: ScalingParameters
+  scalingParameters: Types.ScalingParameters
 ): Float32Array | Uint8Array {
   const arrayLength = array.length
   const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters

@@ -1,12 +1,14 @@
 import React, { Component } from 'react'
 import {
   RenderingEngine,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 
 const NUM_VIEWPORTS = 25
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 class TwentyFiveCanvasExample extends Component {
   state = {
@@ -47,7 +49,7 @@ class TwentyFiveCanvasExample extends Component {
       viewports.push({
         sceneUID,
         viewportUID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.containers[i].current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,

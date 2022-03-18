@@ -2,10 +2,13 @@ import React, { Component } from 'react'
 // ~~
 import {
   RenderingEngine,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
+  CONSTANTS,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
+
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 class CanvasResizeExample extends Component {
   state = {
@@ -72,7 +75,7 @@ class CanvasResizeExample extends Component {
     renderingEngine.setViewports([
       {
         viewportUID: axialCTViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.axialCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -81,7 +84,7 @@ class CanvasResizeExample extends Component {
       },
       {
         viewportUID: sagittalCTViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.sagittalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -90,7 +93,7 @@ class CanvasResizeExample extends Component {
       },
       {
         viewportUID: coronalCTViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.coronalCTContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,

@@ -2,15 +2,12 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  createAndCacheVolume,
-  ORIENTATION,
   eventTarget,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
-  CornerstoneTools3DEvents,
+  Enums as csToolsEnums,
   cancelActiveManipulations,
   removeAnnotation,
   WindowLevelTool,
@@ -36,6 +33,7 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
+const { ViewportType } = Enums
 
 let stackCTViewportToolGroup
 
@@ -110,7 +108,7 @@ class ModifierKeysExample extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
@@ -131,8 +129,8 @@ class ModifierKeysExample extends Component {
     stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
-          modifierKey: ToolBindings.Keyboard.Shift,
+          mouseButton: csToolsEnums.MouseBindings.Primary,
+          modifierKey: csToolsEnums.KeyboardBindings.Shift,
         },
       ],
     })
@@ -162,7 +160,7 @@ class ModifierKeysExample extends Component {
     ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
 
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
+      csToolsEnums.Events.KEY_DOWN,
       this.cancelToolDrawing
     )
     // Start listening for resize
@@ -216,13 +214,13 @@ class ModifierKeysExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -239,7 +237,7 @@ class ModifierKeysExample extends Component {
         mode === 'Active' &&
         bindings.some(
           (binding) =>
-            binding.mouseButton === ToolBindings.Mouse.Primary &&
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary &&
             binding.modifierKey === undefined
         )
     )
@@ -249,8 +247,8 @@ class ModifierKeysExample extends Component {
     stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
-          modifierKey: ToolBindings.Keyboard.Shift,
+          mouseButton: csToolsEnums.MouseBindings.Primary,
+          modifierKey: csToolsEnums.KeyboardBindings.Shift,
         },
       ],
     })
@@ -263,7 +261,7 @@ class ModifierKeysExample extends Component {
       bindings: [
         ...currentBindings,
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: csToolsEnums.MouseBindings.Primary,
         },
       ],
     })

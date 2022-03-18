@@ -1,11 +1,10 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
   getRenderingEngine,
-  EVENTS as RenderingEngineEvents,
+  volumeLoader,
+  Enums,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -14,11 +13,11 @@ import {
   addButtonToToolbar,
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
-const { BlendMode } = vtkConstants
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const renderingEngineUID = 'myRenderingEngine'
 const viewportUID = 'CT_SAGITTAL_STACK'
@@ -69,8 +68,7 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } =
-  RenderingEngineEvents
+const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.Events
 
 element.addEventListener(
   IMAGE_RENDERED,
@@ -196,7 +194,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,
@@ -212,7 +210,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
     imageIds,
   })
 

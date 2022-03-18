@@ -10,8 +10,7 @@ import {
 } from '../types'
 import { triggerEvent, imageIdToURI } from '../utilities'
 import eventTarget from '../eventTarget'
-import EVENTS from '../enums/events'
-import ERROR_CODES from '../enums/errorCodes'
+import Events from '../enums/Events'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
 
@@ -185,8 +184,8 @@ class Cache implements ICache {
    * Relevant events are fired for each decached image (IMAGE_CACHE_IMAGE_REMOVED) and
    * the decached volume (VOLUME_CACHE_VOLUME_REMOVED).
    *
-   * @fires EVENTS.IMAGE_CACHE_IMAGE_REMOVED
-   * @fires EVENTS.VOLUME_CACHE_VOLUME_REMOVED
+   * @fires Events.IMAGE_CACHE_IMAGE_REMOVED
+   * @fires Events.VOLUME_CACHE_VOLUME_REMOVED
    *
    * @param numBytes - number of bytes
    *
@@ -205,7 +204,7 @@ class Cache implements ICache {
 
       this.removeImageLoadObject(imageId)
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
+      triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
     }
 
     const volumeIterator = this._volumeCache.keys()
@@ -220,7 +219,7 @@ class Cache implements ICache {
 
       this.removeVolumeLoadObject(volumeId)
 
-      triggerEvent(eventTarget, EVENTS.VOLUME_CACHE_VOLUME_REMOVED, {
+      triggerEvent(eventTarget, Events.VOLUME_CACHE_VOLUME_REMOVED, {
         volumeId,
       })
     }
@@ -240,7 +239,7 @@ class Cache implements ICache {
    * re-fetched, but we must do this not to straddle over the given memory
    * limit, even for a short time, as this may crash the application.
    *
-   * @fires EVENTS.IMAGE_CACHE_IMAGE_REMOVED
+   * @fires Events.IMAGE_CACHE_IMAGE_REMOVED
    *
    * @param numBytes - Number of bytes for the image/volume that is
    * going to be stored inside the cache
@@ -293,7 +292,7 @@ class Cache implements ICache {
     for (const imageId of imageIdsToPurge) {
       this.removeImageLoadObject(imageId)
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
+      triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
 
       bytesAvailable = this.getBytesAvailable()
       if (bytesAvailable >= numBytes) {
@@ -310,7 +309,7 @@ class Cache implements ICache {
     for (const imageId of cachedImageIds) {
       this.removeImageLoadObject(imageId)
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
+      triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, { imageId })
 
       bytesAvailable = this.getBytesAvailable()
       if (bytesAvailable >= numBytes) {
@@ -334,8 +333,8 @@ class Cache implements ICache {
    * iterates over the imageCache and decache them one by one until the cache
    * size becomes less than the maximum allowed cache size
    *
-   * @fires EVENTS.IMAGE_CACHE_IMAGE_ADDED
-   * @fires EVENTS.CACHE_SIZE_EXCEEDED if the cache size exceeds the maximum
+   * @fires Events.IMAGE_CACHE_IMAGE_ADDED
+   * @fires Events.CACHE_SIZE_EXCEEDED if the cache size exceeds the maximum
    *
    * @param imageId - ImageId for the image
    * @param imageLoadObject - The object that is loading or loaded the image
@@ -401,7 +400,7 @@ class Cache implements ICache {
 
         // check if there is enough space in unallocated + image Cache
         if (!this.isCacheable(image.sizeInBytes)) {
-          throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+          throw new Error(Events.CACHE_SIZE_EXCEEDED)
         }
 
         // if there is, decache if necessary
@@ -416,7 +415,7 @@ class Cache implements ICache {
           image: cachedImage,
         }
 
-        triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_ADDED, eventDetails)
+        triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails)
 
         cachedImage.sharedCacheKey = image.sharedCacheKey
       })
@@ -513,7 +512,7 @@ class Cache implements ICache {
    * iterates over the imageCache (not volumeCache) and decache them one by one
    * until the cache size becomes less than the maximum allowed cache size
    *
-   * @fires EVENTS.VOLUME_CACHE_VOLUME_ADDED
+   * @fires Events.VOLUME_CACHE_VOLUME_ADDED
    *
    * @param volumeId - volumeId of the volume
    * @param volumeLoadObject - The object that is loading or loaded the volume
@@ -598,7 +597,7 @@ class Cache implements ICache {
 
         triggerEvent(
           eventTarget,
-          EVENTS.VOLUME_CACHE_VOLUME_ADDED,
+          Events.VOLUME_CACHE_VOLUME_ADDED,
           eventDetails
         )
       })
@@ -657,7 +656,7 @@ class Cache implements ICache {
    *
    * It increases the cache size after removing the image.
    *
-   * @fires EVENTS.IMAGE_CACHE_IMAGE_REMOVED
+   * @fires Events.IMAGE_CACHE_IMAGE_REMOVED
    *
    * @param imageId - Image ID
    */
@@ -679,7 +678,7 @@ class Cache implements ICache {
       imageId,
     }
 
-    triggerEvent(eventTarget, EVENTS.IMAGE_CACHE_IMAGE_REMOVED, eventDetails)
+    triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, eventDetails)
     this._decacheImage(imageId)
   }
 
@@ -688,7 +687,7 @@ class Cache implements ICache {
    *
    * It increases the cache size after removing the image.
    *
-   * @fires EVENTS.VOLUME_CACHE_VOLUME_REMOVED
+   * @fires Events.VOLUME_CACHE_VOLUME_REMOVED
    *
    * @param imageId - ImageId
    */
@@ -711,7 +710,7 @@ class Cache implements ICache {
       volumeId,
     }
 
-    triggerEvent(eventTarget, EVENTS.VOLUME_CACHE_VOLUME_REMOVED, eventDetails)
+    triggerEvent(eventTarget, Events.VOLUME_CACHE_VOLUME_REMOVED, eventDetails)
     this._decacheVolume(volumeId)
   }
 

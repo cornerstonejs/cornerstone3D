@@ -4,9 +4,8 @@ import {
   getEnabledElementByUIDs,
   getEnabledElement,
   RenderingEngine,
-  Utilities as csUtils,
+  utilities as csUtils,
   VolumeViewport,
-  getVolumeViewportsContainingSameVolumes,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
@@ -22,7 +21,7 @@ import {
 } from '../drawingSvg'
 import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../store'
-import { CornerstoneTools3DEvents as EVENTS } from '../enums'
+import { Events } from '../enums'
 import { getViewportUIDsWithToolToRender } from '../utilities/viewportFilters'
 import { resetElementCursor, hideElementCursor } from '../cursors/elementCursor'
 import { math } from '../utilities'
@@ -569,7 +568,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
     // AutoPan modification
     if (this.configuration.autoPan.enabled) {
-      const viewports = getVolumeViewportsContainingSameVolumes(
+      const viewports = csUtils.getVolumeViewportsContainingSameVolumes(
         viewport,
         renderingEngine.uid
       )
@@ -1809,23 +1808,23 @@ export default class CrosshairsTool extends AnnotationTool {
   _activateModify = (element) => {
     state.isInteractingWithTool = true
 
-    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false
 
-    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   _mouseUpCallback = (

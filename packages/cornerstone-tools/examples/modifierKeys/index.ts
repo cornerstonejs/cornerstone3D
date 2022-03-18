@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -16,8 +16,11 @@ const {
   RectangleRoiTool,
   BidirectionalTool,
   ToolGroupManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
+
+const { ViewportType } = Enums
+const { MouseBindings, KeyboardBindings } = csToolsEnums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -77,31 +80,31 @@ async function run() {
   toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Shift + Left Click
-        modifierKey: ToolBindings.Keyboard.Shift,
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   })
   toolGroup.setToolActive(RectangleRoiTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Ctrl + Left Click
-        modifierKey: ToolBindings.Keyboard.Ctrl,
+        mouseButton: MouseBindings.Primary, // Ctrl + Left Click
+        modifierKey: KeyboardBindings.Ctrl,
       },
     ],
   })
   toolGroup.setToolActive(BidirectionalTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Alt/Meta + Left Click
-        modifierKey: ToolBindings.Keyboard.Alt,
+        mouseButton: MouseBindings.Primary, // Alt/Meta + Left Click
+        modifierKey: KeyboardBindings.Alt,
       },
     ],
   })
@@ -124,7 +127,7 @@ async function run() {
   const viewportUID = 'CT_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

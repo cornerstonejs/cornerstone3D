@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -18,8 +18,11 @@ const {
   EllipticalRoiTool,
   BidirectionalTool,
   ToolGroupManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
+
+const { ViewportType } = Enums
+const { MouseBindings } = csToolsEnums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -65,7 +68,7 @@ addDropdownToToolbar(
     toolGroup.setToolActive(newSelectedToolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary, // Left Click
+          mouseButton: MouseBindings.Primary, // Left Click
         },
       ],
     })
@@ -107,7 +110,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -136,7 +139,7 @@ async function run() {
   const viewportUID = 'CT_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

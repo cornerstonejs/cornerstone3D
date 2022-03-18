@@ -2,15 +2,14 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
-  cpuColormaps,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -31,6 +30,7 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 const STACK = 'stack'
 
 window.cache = cache
+const { ViewportType } = Enums
 
 let stackCTViewportToolGroup
 
@@ -110,7 +110,7 @@ class OneStackExample extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
@@ -190,13 +190,13 @@ class OneStackExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -213,7 +213,8 @@ class OneStackExample extends Component {
         mode === 'Active' &&
         bindings.length &&
         bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+          (binding) =>
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary
         )
     )
 
@@ -226,7 +227,7 @@ class OneStackExample extends Component {
     stackCTViewportToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
+        { mouseButton: csToolsEnums.MouseBindings.Primary },
       ],
     })
 

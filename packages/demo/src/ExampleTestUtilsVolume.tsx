@@ -2,18 +2,16 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  registerImageLoader,
-  registerVolumeLoader,
+  volumeLoader,
   metaData,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  createAndCacheVolume,
-  Utilities,
+  Enums,
+  CONSTANTS,
+  utilities,
   init as csRenderInit,
-  setVolumesOnViewports,
+  setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   synchronizers,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -40,9 +38,11 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } =
-  Utilities.testUtils
+  utilities.testUtils
 
 let ctTestSceneToolGroup, ptTestSceneToolGroup
 
@@ -75,7 +75,7 @@ class testUtilVolume extends Component {
     this._offScreenRef = React.createRef()
     this._viewportGridRef = React.createRef()
 
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
 
     this.ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
@@ -107,7 +107,7 @@ class testUtilVolume extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -116,7 +116,7 @@ class testUtilVolume extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -125,7 +125,7 @@ class testUtilVolume extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -155,8 +155,8 @@ class testUtilVolume extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    await createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
-    await createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
+    await volumeLoader.createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
+    await volumeLoader.createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
 
     axialSync.addSource({
       renderingEngineUID: renderingEngineUID,
@@ -167,7 +167,7 @@ class testUtilVolume extends Component {
       viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
     })
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -177,7 +177,7 @@ class testUtilVolume extends Component {
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.CORONAL]
     )
 
-    await setVolumesOnViewports(
+    await setVolumesForViewports(
       renderingEngine,
       [
         {
@@ -219,7 +219,7 @@ class testUtilVolume extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

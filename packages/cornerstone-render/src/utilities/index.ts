@@ -15,6 +15,8 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir'
 import getVolumeActorCorners from './getVolumeActorCorners'
 import indexWithinDimensions from './indexWithinDimensions'
+import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes'
+import getVolumeViewportsContainingVolumeUID from './getVolumeViewportsContainingVolumeUID'
 
 // name spaces
 import * as planar from './planar'
@@ -42,4 +44,6 @@ export {
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
+  getVolumeViewportsContainingSameVolumes,
+  getVolumeViewportsContainingVolumeUID,
 }

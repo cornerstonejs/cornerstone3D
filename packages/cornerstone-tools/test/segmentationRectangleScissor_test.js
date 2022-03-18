@@ -7,34 +7,41 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor from './ground
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  unregisterAllImageLoaders,
+  Enums,
   metaData,
-  registerVolumeLoader,
-  createAndCacheVolume,
-  Utilities,
-  setVolumesOnViewports,
+  volumeLoader,
+  imageLoader,
+  utilities,
+  setVolumesForViewports,
   eventTarget,
+  CONSTANTS,
 } = cornerstone3D
+
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { unregisterAllImageLoaders } = imageLoader
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationModule,
+  segmentation,
+  Enums: csToolsEnums,
   RectangleScissorsTool,
 } = csTools3d
+
+const { Events } = csToolsEnums
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const {
   fakeVolumeLoader,
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
   compareImages,
-} = Utilities.testUtils
+} = utilities.testUtils
 
-const renderingEngineUID = Utilities.uuidv4()
+const renderingEngineUID = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'
@@ -55,7 +62,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -67,7 +74,7 @@ function createViewport(
 
 describe('Segmentation Tools --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Rectangle Scissor:', function () {
@@ -119,7 +126,7 @@ describe('Segmentation Tools --', () => {
       const vp = this.renderingEngine.getViewport(viewportUID1)
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -127,7 +134,7 @@ describe('Segmentation Tools --', () => {
       )
 
       // wait until the render loop is done before we say done
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         done()
       })
 
@@ -135,20 +142,20 @@ describe('Segmentation Tools --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -166,7 +173,7 @@ describe('Segmentation Tools --', () => {
 
       const drawRectangle = () => {
         eventTarget.addEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           compareImageCallback
         )
 
@@ -221,7 +228,7 @@ describe('Segmentation Tools --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -244,12 +251,12 @@ describe('Segmentation Tools --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -260,20 +267,20 @@ describe('Segmentation Tools --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -298,11 +305,11 @@ describe('Segmentation Tools --', () => {
 
       const drawRectangle = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           drawRectangle
         )
         eventTarget.addEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           compareImageCallback
         )
 
@@ -364,7 +371,7 @@ describe('Segmentation Tools --', () => {
         }
 
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -411,12 +418,12 @@ describe('Segmentation Tools --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -428,7 +435,7 @@ describe('Segmentation Tools --', () => {
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesOnViewports(
+          setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId }],
             [viewportUID1, viewportUID2]
@@ -436,13 +443,13 @@ describe('Segmentation Tools --', () => {
             vp1.render()
             vp2.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {

@@ -20,7 +20,7 @@ import ModifierKeysExample from './ExampleModifierKeys'
 import TestUtils from './ExampleTestUtils'
 import TestUtilsVolume from './ExampleTestUtilsVolume'
 import CalibrationExample from './ExampleCalibration'
-import { resetCPURenderingOnlyForDebugOrTests } from '@precisionmetrics/cornerstone-render'
+import { resetUseCPURendering } from '@precisionmetrics/cornerstone-render'
 import SegmentationRender from './ExampleSegmentationRender'
 import RenderToCanvasExample from './ExampleRenderToCanvas'
 import CrosshairsExample from './ExampleCrosshairs'
@@ -60,7 +60,7 @@ function Index() {
 
   // Reset the CPU rendering to whatever it should be (might've navigated from
   // A CPU demo).
-  resetCPURenderingOnlyForDebugOrTests()
+  resetUseCPURendering()
 
   const examples = [
     {

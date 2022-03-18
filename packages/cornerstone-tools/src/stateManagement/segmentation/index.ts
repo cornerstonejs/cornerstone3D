@@ -1,26 +1,26 @@
-import {
-  getGlobalSegmentationState,
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
-  getToolGroupsWithSegmentation,
-  getSegmentationDataByUID,
-} from './segmentationState'
-
-import * as SegmentationState from './segmentationState'
-
 import addSegmentationsForToolGroup from './addSegmentationsForToolGroup'
-import removeSegmentationsForToolGroup from './removeSegmentationsForToolGroup'
+import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup'
+import createNewSegmentationForToolGroup from './createNewSegmentationForToolGroup'
+
+import * as activeSegmentation from './activeSegmentation'
+import * as segmentLocking from './segmentLocking'
+import * as segmentationColor from './segmentationColor'
+import * as segmentationConfig from './segmentationConfig'
+import * as state from './segmentationState'
+import * as segmentationVisibility from './segmentationVisibility'
+import * as segmentIndex from './segmentIndex'
+import * as triggerSegmentationEvents from './triggerSegmentationEvents'
 
 export {
-  getGlobalSegmentationState,
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
-  getToolGroupsWithSegmentation,
-  getSegmentationDataByUID,
-  //
+  state,
+  activeSegmentation,
   addSegmentationsForToolGroup,
-  removeSegmentationsForToolGroup,
-  SegmentationState,
+  removeSegmentationsFromToolGroup,
+  createNewSegmentationForToolGroup,
+  segmentLocking,
+  segmentationColor,
+  segmentationConfig,
+  segmentationVisibility,
+  segmentIndex,
+  triggerSegmentationEvents,
 }

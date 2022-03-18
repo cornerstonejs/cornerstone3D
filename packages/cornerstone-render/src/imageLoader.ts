@@ -1,5 +1,5 @@
 import cache from './cache/cache'
-import EVENTS from './enums/events'
+import Events from './enums/Events'
 import eventTarget from './eventTarget'
 import { triggerEvent } from './utilities'
 import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from './types'
@@ -26,7 +26,6 @@ let unknownImageLoader
  * @param Options - to be passed to the Image Loader
  *
  * @returns - An Object which can be used to act after an image is loaded or loading fails
- * @category ImageLoader
  */
 function loadImageFromImageLoader(
   imageId: string,
@@ -47,14 +46,14 @@ function loadImageFromImageLoader(
   // Broadcast an image loaded event once the image is loaded
   imageLoadObject.promise.then(
     function (image) {
-      triggerEvent(eventTarget, EVENTS.IMAGE_LOADED, { image })
+      triggerEvent(eventTarget, Events.IMAGE_LOADED, { image })
     },
     function (error) {
       const errorObject: EventTypes.ImageLoadedFailedEventDetail = {
         imageId,
         error,
       }
-      triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_FAILED, errorObject)
+      triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorObject)
     }
   )
   return imageLoadObject
@@ -72,7 +71,6 @@ function loadImageFromImageLoader(
  * @param options - Options to be passed to the Image Loader
  *
  * @returns An Object which can be used to act after an image is loaded or loading fails
- * @category ImageLoader
  */
 function loadImageFromCacheOrVolume(
   imageId: string,
@@ -118,7 +116,6 @@ function loadImageFromCacheOrVolume(
  * @param options - Options to be passed to the Image Loader
  *
  * @returns An Object which can be used to act after an image is loaded or loading fails
- * @category ImageLoader
  */
 export function loadImage(
   imageId: string,
@@ -140,7 +137,6 @@ export function loadImage(
  * @param options - Options to be passed to the Image Loader
  *
  * @returns Image Loader Object
- * @category ImageLoader
  */
 export function loadAndCacheImage(
   imageId: string,
@@ -168,7 +164,6 @@ export function loadAndCacheImage(
  *
  * @param imageIds - list of imageIds
  * @param options - options for loader
- * @category ImageLoader
  *
  */
 export function loadAndCacheImages(
@@ -194,7 +189,6 @@ export function loadAndCacheImages(
  *
  * @param imageId - A Cornerstone Image Object's imageId
  *
- * @category ImageLoader
  */
 export function cancelLoadImage(imageId: string): void {
   const filterFunction = ({ additionalDetails }) => {
@@ -227,7 +221,6 @@ export function cancelLoadImage(imageId: string): void {
  *
  * @param imageIds - Array of Cornerstone Image Object's imageIds
  *
- * @category ImageLoader
  */
 export function cancelLoadImages(imageIds: Array<string>): void {
   imageIds.forEach((imageId) => cancelLoadImage(imageId))
@@ -237,7 +230,6 @@ export function cancelLoadImages(imageIds: Array<string>): void {
  * Removes all the ongoing image loads by calling the `cancel` method on each
  * imageLoadObject. If no `cancel` method is available, it will be ignored.
  *
- * @category ImageLoader
  */
 export function cancelLoadAll(): void {
   const requestPool = imageLoadPoolManager.getRequestPool()
@@ -272,7 +264,6 @@ export function cancelLoadAll(): void {
  *
  * @param scheme - The scheme to use for this image loader (e.g. 'dicomweb', 'wadouri', 'http')
  * @param imageLoader - A Cornerstone Image Loader function
- * @category ImageLoader
  */
 export function registerImageLoader(
   scheme: string,
@@ -286,7 +277,6 @@ export function registerImageLoader(
  * @param imageLoader - A Cornerstone Image Loader
  *
  * @returns The previous Unknown Image Loader
- * @category ImageLoader
  */
 export function registerUnknownImageLoader(
   imageLoader: ImageLoaderFn
@@ -299,7 +289,6 @@ export function registerUnknownImageLoader(
  * Removes all registered and unknown image loaders. This should be called
  * when the application is unmounted to prevent memory leaks.
  *
- * @category ImageLoader
  */
 export function unregisterAllImageLoaders(): void {
   Object.keys(imageLoaders).forEach(

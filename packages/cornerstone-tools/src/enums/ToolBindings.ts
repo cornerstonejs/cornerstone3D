@@ -4,7 +4,7 @@
  *
  * See also: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
  */
-enum Mouse {
+enum MouseBindings {
   Primary = 1,
   Secondary = 2,
   Primary_And_Secondary = 3,
@@ -16,18 +16,10 @@ enum Mouse {
   Fifth_Button = 16,
 }
 
-enum Keyboard {
+enum KeyboardBindings {
   Shift = 16,
   Ctrl = 18,
   Alt = 17,
 }
 
-enum Touch {}
-
-const enums = {
-  Mouse,
-  Keyboard,
-  Touch,
-}
-
-export default enums
+export { MouseBindings, KeyboardBindings }

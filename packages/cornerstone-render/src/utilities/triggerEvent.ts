@@ -6,7 +6,7 @@ import eventTarget from '../eventTarget'
  * @example
  *
  * ```javascript
- * triggerEvent(element, EVENTS.IMAGE_RENDERED, { element })
+ * triggerEvent(element, Events.IMAGE_RENDERED, { element })
  * ```
  * or it can trigger event on the eventTarget itself
  *
