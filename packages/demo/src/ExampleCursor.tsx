@@ -9,7 +9,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
-  Cursors,
+  cursors,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -88,7 +88,7 @@ class CursorExample extends Component {
     csTools3d.init()
     registerWebImageLoader(cs)
 
-    this.setState({ cursorNames: Cursors.CursorNames })
+    this.setState({ cursorNames: cursors.CursorNames })
     ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise
@@ -214,7 +214,7 @@ class CursorExample extends Component {
             const element = this._elementNodes.get(0)
             const cursorName = evt.target.value
             this.setState({ cursorName })
-            Cursors.setCursorForElement(element, cursorName)
+            cursors.setCursorForElement(element, cursorName)
           }}
         >
           {this.state.cursorNames.map((cursorName) => (

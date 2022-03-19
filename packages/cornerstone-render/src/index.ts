@@ -68,6 +68,8 @@ const Enums = {
   REQUEST_TYPE,
 }
 
+export type { Types }
+
 export {
   init,
   isCornerstoneInitialized,
@@ -75,7 +77,6 @@ export {
   Enums,
   EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
-  Types,
   Settings,
   // Rendering Engine
   VolumeViewport,

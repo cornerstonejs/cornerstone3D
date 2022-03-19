@@ -23,14 +23,12 @@ import {
   SegmentationModule,
 } from './store'
 
-import ToolGroup from './store/ToolGroupManager/ToolGroup'
-
 // Name spaces
 import * as synchronizers from './synchronizers'
 import * as drawing from './drawingSvg'
 import * as utilities from './utilities'
+import * as cursors from './cursors'
 import * as Types from './types'
-import * as Cursors from './cursors'
 import AnnotationState from './stateManagement/annotation'
 
 import {
@@ -65,16 +63,17 @@ import {
   BlendModes,
 } from './enums'
 
+export type { Types }
 export {
-  // LifeCycle
-  addTool,
-  removeTool,
-  cancelActiveManipulations,
+  //
   init,
   destroy,
+  addTool,
+  removeTool,
+  // Base Tools
   BaseTool,
   AnnotationTool,
-  // Tools
+  // Manipulation Tools
   PanTool,
   WindowLevelTool,
   ZoomTool,
@@ -89,46 +88,43 @@ export {
   RectangleRoiTool,
   EllipticalRoiTool,
   BidirectionalTool,
-  // Segmentation Tools
+  // Segmentation Display
+  SegmentationDisplayTool,
+  // Segmentation Editing Tools
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
-  // PET annotation
-  SegmentationDisplayTool,
   // Synchronizers
   synchronizers,
   Synchronizer,
-  // Managers
-  ToolGroupManager,
   SynchronizerManager,
-  //
-  ToolGroup,
+  // ToolGroups
+  ToolGroupManager,
   // Enums
   ToolBindings,
   BlendModes,
   ToolModes,
   CornerstoneTools3DEvents,
   SegmentationRepresentations,
-  FrameOfReferenceSpecificAnnotationManager,
-  AnnotationState,
   // Drawing API
   drawing,
-  // State
+  // annotation
+  AnnotationState,
   annotationStyle,
   annotationLocking,
   annotationSelection,
   getStyle,
   setGlobalStyle,
   setToolStyle,
-  // Utilities
-  utilities,
-  Types,
-  Cursors,
+  cancelActiveManipulations,
   // Segmentations
   SegmentationState,
   SegmentationModule,
   addSegmentationsForToolGroup,
   removeSegmentationsForToolGroup,
+  // Utilities
+  utilities,
+  cursors,
 }
