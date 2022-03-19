@@ -30,7 +30,6 @@ import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequ
 import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 
 import getEnabledElement, { getEnabledElementByUIDs } from './getEnabledElement'
-import configuration from './configuration'
 import metaData from './metaData'
 import {
   init,
@@ -76,7 +75,6 @@ export {
   Enums,
   EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
-  configuration,
   Types,
   Settings,
   // Rendering Engine
