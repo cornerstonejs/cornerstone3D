@@ -1,7 +1,7 @@
 import * as csTools from '../src/index'
 import * as cornerstone3D from '../../cornerstone-render/src/index'
 
-const annotationManager = csTools.AnnotationState.getDefaultAnnotationManager()
+const annotationManager = csTools.annotation.state.getDefaultAnnotationManager()
 
 const FrameOfReferenceUID = 'MY_FRAME_OF_REFERENCE_UID'
 

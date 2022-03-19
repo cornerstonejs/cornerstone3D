@@ -1,5 +1,5 @@
 import { Settings } from '@precisionmetrics/cornerstone-render'
-import state from '../../store/state'
+import state from '../../../store/state'
 
 /**
  * Set the style of a specific tool with the provided toolName

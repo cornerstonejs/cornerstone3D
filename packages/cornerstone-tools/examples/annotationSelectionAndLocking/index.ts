@@ -18,15 +18,14 @@ const {
   BidirectionalTool,
   ToolGroupManager,
   ToolBindings,
-  annotationLocking,
-  annotationSelection,
-  AnnotationState,
+  annotation,
 } = cornerstoneTools
 
+const { locking, selection } = annotation
 const { VIEWPORT_TYPE } = Enums
 
 const defaultFrameOfReferenceSpecificAnnotationManager =
-  AnnotationState.getDefaultAnnotationManager()
+  annotation.state.getDefaultAnnotationManager()
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -72,7 +71,7 @@ addToggleButtonToToolbar(
         bidirectionalAnnotationUID
       )
 
-    annotationLocking.setAnnotationLocked(annotation, toggle)
+    locking.setAnnotationLocked(annotation, toggle)
   }
 )
 
@@ -82,7 +81,7 @@ addButtonToToolbar('Select Length Annotation', () => {
       lengthAnnotationUID
     )
 
-  annotationSelection.setAnnotationSelected(annotation, true)
+  selection.setAnnotationSelected(annotation, true)
 
   // Render the image to see it was selected
   const renderingEngine = getRenderingEngine(renderingEngineUID)

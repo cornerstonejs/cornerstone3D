@@ -1,12 +1,5 @@
 import { Settings } from '@precisionmetrics/cornerstone-render'
-import { ToolModes, AnnotationStyleStates } from '../../enums'
-import { Annotation } from '../../types'
-import { isAnnotationLocked } from './annotationLocking'
-import { isAnnotationSelected } from './annotationSelection'
-import state from '../../store/state'
-/*
- * Initialization
- */
+import { ToolModes, AnnotationStyleStates } from '../../../enums'
 
 Settings.getDefaultSettings().set('tool.style', {
   color: 'rgb(255, 255, 0)',
@@ -125,71 +118,4 @@ function getDefaultStyleProperty(
   return getStyleProperty(Settings.getRuntimeSettings(), property, state, mode)
 }
 
-/**
- * getFont - Returns a font string of the form "{fontSize}px fontName" used by `canvas`.
- * @param settings - An optional Settings instance to read from.
- * @param state - An optional state to determine the final property name
- * @param mode - An optional mode to determine the final property name
- * @returns The font string.
- */
-function getFont(
-  settings?: Settings,
-  state?: AnnotationStyleStates,
-  mode?: ToolModes
-): string {
-  const sty = Settings.assert(settings)
-  const fontSize = getStyleProperty(sty, 'textBox.fontSize', state, mode)
-  const fontFamily = getStyleProperty(sty, 'textBox.fontFamily', state, mode)
-  return `${fontSize}px ${fontFamily}`
-}
-
-/**
- * Given a Annotation object, return the annotationStyleStates that it
- * should be in based on its data
- * @param annotation - The annotation that we want to style.
- * @returns The state of the annotation whether it is Default, Highlighted, Locked, or Selected.
- */
-function getAnnotationStyle(annotation?: Annotation): AnnotationStyleStates {
-  if (annotation) {
-    if (annotation.data && annotation.highlighted)
-      return AnnotationStyleStates.Highlighted
-    if (isAnnotationSelected(annotation)) return AnnotationStyleStates.Selected
-    if (isAnnotationLocked(annotation)) return AnnotationStyleStates.Locked
-  }
-
-  return AnnotationStyleStates.Default
-}
-
-/**
- * Set the style of an annotation object
- * @param string - toolName - The name of the tool.
- * @param annotation - The annotation object.
- * @param style - The style object to set.
- * @returns A boolean value indicating whether the style was set.
- */
-function setAnnotationStyle(
-  toolName: string,
-  annotation: Record<string, unknown>,
-  style: Record<string, unknown>
-): boolean {
-  const descriptor = state.tools[toolName]
-  if (descriptor) {
-    const { toolClass } = descriptor
-    return Settings.getObjectSettings(annotation, toolClass).set(
-      'tool.style',
-      style
-    )
-  }
-  return false
-}
-
-export {
-  initializeDefaultStyleAlternatives,
-  getStyleAlternatives,
-  getStyleProperty,
-  getDefaultStyleProperty,
-  getFont,
-  // annotation style set/get
-  getAnnotationStyle,
-  setAnnotationStyle,
-}
+export { getStyleProperty, getDefaultStyleProperty }

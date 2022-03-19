@@ -1,11 +1,4 @@
 import {
-  FrameOfReferenceSpecificAnnotationManager,
-  annotationStyle,
-  annotationLocking,
-  annotationSelection,
-  getStyle,
-  setGlobalStyle,
-  setToolStyle,
   // segmentations
   addSegmentationsForToolGroup,
   removeSegmentationsForToolGroup,
@@ -29,7 +22,7 @@ import * as drawing from './drawingSvg'
 import * as utilities from './utilities'
 import * as cursors from './cursors'
 import * as Types from './types'
-import AnnotationState from './stateManagement/annotation'
+import * as annotation from './stateManagement/annotation'
 
 import {
   BaseTool,
@@ -63,7 +56,6 @@ import {
   BlendModes,
 } from './enums'
 
-export type { Types }
 export {
   //
   init,
@@ -100,6 +92,7 @@ export {
   synchronizers,
   Synchronizer,
   SynchronizerManager,
+  Types,
   // ToolGroups
   ToolGroupManager,
   // Enums
@@ -111,13 +104,7 @@ export {
   // Drawing API
   drawing,
   // annotation
-  AnnotationState,
-  annotationStyle,
-  annotationLocking,
-  annotationSelection,
-  getStyle,
-  setGlobalStyle,
-  setToolStyle,
+  annotation,
   cancelActiveManipulations,
   // Segmentations
   SegmentationState,

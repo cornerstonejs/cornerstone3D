@@ -19,9 +19,9 @@ const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   EllipticalRoiTool,
   ToolGroupManager,
-  AnnotationState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
+  annotation,
 } = csTools3d
 
 const {
@@ -123,7 +123,7 @@ describe('EllipticalRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const ellipseAnnotations = AnnotationState.getAnnotations(
+          const ellipseAnnotations = annotation.state.getAnnotations(
             element,
             EllipticalRoiTool.toolName
           )
@@ -148,7 +148,7 @@ describe('EllipticalRoiTool (CPU):', () => {
           // the rectangle is drawn on the strip
           expect(data[targets[0]].mean).toBe(255)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             ellipseAnnotation.annotationUID
           )
@@ -301,7 +301,7 @@ describe('EllipticalRoiTool (CPU):', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const ellipseAnnotations = AnnotationState.getAnnotations(
+        const ellipseAnnotations = annotation.state.getAnnotations(
           element,
           EllipticalRoiTool.toolName
         )
@@ -327,7 +327,7 @@ describe('EllipticalRoiTool (CPU):', () => {
         // the rectangle is drawn on the strip
         expect(data[targets[0]].mean).toBe(255)
 
-        AnnotationState.removeAnnotation(
+        annotation.state.removeAnnotation(
           element,
           ellipseAnnotation.annotationUID
         )

@@ -19,9 +19,9 @@ const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   RectangleRoiTool,
   ToolGroupManager,
-  AnnotationState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
+  annotation,
 } = csTools3d
 
 const {
@@ -121,7 +121,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const rectangleAnnotations = AnnotationState.getAnnotations(
+          const rectangleAnnotations = annotation.state.getAnnotations(
             element,
             RectangleRoiTool.toolName
           )
@@ -146,7 +146,7 @@ describe('RectangleRoiTool (CPU):', () => {
           // the rectangle is drawn on the strip
           expect(data[targets[0]].mean).toBe(255)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             rectangleAnnotation.annotationUID
           )
@@ -232,7 +232,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const rectangleAnnotations = AnnotationState.getAnnotations(
+          const rectangleAnnotations = annotation.state.getAnnotations(
             element,
             RectangleRoiTool.toolName
           )
@@ -256,7 +256,7 @@ describe('RectangleRoiTool (CPU):', () => {
           expect(data[targets[0]].mean).toBe(255)
           expect(data[targets[0]].stdDev).toBe(0)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             rectangleAnnotation.annotationUID
           )
@@ -377,7 +377,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const rectangleAnnotations = AnnotationState.getAnnotations(
+          const rectangleAnnotations = annotation.state.getAnnotations(
             element,
             RectangleRoiTool.toolName
           )
@@ -401,7 +401,7 @@ describe('RectangleRoiTool (CPU):', () => {
           expect(data[targets[0]].mean).toBe(255)
           expect(data[targets[0]].stdDev).toBe(0)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             rectangleAnnotation.annotationUID
           )
@@ -515,7 +515,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const rectangleAnnotations = AnnotationState.getAnnotations(
+          const rectangleAnnotations = annotation.state.getAnnotations(
             element,
             RectangleRoiTool.toolName
           )
@@ -576,7 +576,7 @@ describe('RectangleRoiTool (CPU):', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle)
           expect(handles[3]).toEqual(afterMoveSecondHandle)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             rectangleAnnotation.annotationUID
           )
@@ -830,7 +830,7 @@ describe('RectangleRoiTool (CPU):', () => {
       expect(canceledDataUID).toBeDefined()
 
       setTimeout(() => {
-        const rectangleAnnotations = AnnotationState.getAnnotations(
+        const rectangleAnnotations = annotation.state.getAnnotations(
           element,
           RectangleRoiTool.toolName
         )
@@ -891,7 +891,7 @@ describe('RectangleRoiTool (CPU):', () => {
         expect(handles[0]).toEqual(afterMoveFirstHandle)
         expect(handles[3]).toEqual(afterMoveSecondHandle)
 
-        AnnotationState.removeAnnotation(
+        annotation.state.removeAnnotation(
           element,
           rectangleAnnotation.annotationUID
         )

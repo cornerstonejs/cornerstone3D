@@ -16,12 +16,8 @@ const {
 
 const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 
-const {
-  LengthTool,
-  ToolGroupManager,
-  AnnotationState,
-  CornerstoneTools3DEvents,
-} = csTools3d
+const { LengthTool, ToolGroupManager, CornerstoneTools3DEvents, annotation } =
+  csTools3d
 
 const {
   fakeImageLoader,
@@ -130,7 +126,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = AnnotationState.getAnnotations(
+          const lengthAnnotations = annotation.state.getAnnotations(
             element,
             LengthTool.toolName
           )
@@ -150,7 +146,7 @@ describe('Length Tool (CPU):', () => {
           expect(targets.length).toBe(1)
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             lengthAnnotation.annotationUID
           )
@@ -242,7 +238,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = AnnotationState.getAnnotations(
+          const lengthAnnotations = annotation.state.getAnnotations(
             element,
             LengthTool.toolName
           )
@@ -264,7 +260,7 @@ describe('Length Tool (CPU):', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             lengthAnnotation.annotationUID
           )
@@ -388,7 +384,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = AnnotationState.getAnnotations(
+          const lengthAnnotations = annotation.state.getAnnotations(
             element,
             LengthTool.toolName
           )
@@ -410,7 +406,7 @@ describe('Length Tool (CPU):', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             lengthAnnotation.annotationUID
           )
@@ -526,7 +522,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(
         CornerstoneTools3DEvents.ANNOTATION_RENDERED,
         () => {
-          const lengthAnnotations = AnnotationState.getAnnotations(
+          const lengthAnnotations = annotation.state.getAnnotations(
             element,
             LengthTool.toolName
           )
@@ -587,7 +583,7 @@ describe('Length Tool (CPU):', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle)
           expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             lengthAnnotation.annotationUID
           )

@@ -18,9 +18,9 @@ const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   RectangleRoiTool,
   ToolGroupManager,
-  AnnotationState,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
+  annotation,
 } = csTools3d
 
 const {
@@ -116,7 +116,7 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = AnnotationState.getAnnotations(
+            const rectangleAnnotations = annotation.state.getAnnotations(
               element,
               RectangleRoiTool.toolName
             )
@@ -141,7 +141,7 @@ describe('Rectangle Roi Tool: ', () => {
             // the rectangle is drawn on the strip
             expect(data[targets[0]].mean).toBe(255)
 
-            AnnotationState.removeAnnotation(
+            annotation.state.removeAnnotation(
               element,
               rectangleAnnotation.annotationUID
             )
@@ -226,7 +226,7 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = AnnotationState.getAnnotations(
+            const rectangleAnnotations = annotation.state.getAnnotations(
               element,
               RectangleRoiTool.toolName
             )
@@ -247,7 +247,7 @@ describe('Rectangle Roi Tool: ', () => {
             expect(data[targets[0]].mean).toBe(255)
             expect(data[targets[0]].stdDev).toBe(0)
 
-            AnnotationState.removeAnnotation(
+            annotation.state.removeAnnotation(
               element,
               rectangleAnnotation.annotationUID
             )
@@ -344,7 +344,7 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = AnnotationState.getAnnotations(
+            const rectangleAnnotations = annotation.state.getAnnotations(
               element,
               RectangleRoiTool.toolName
             )
@@ -368,7 +368,7 @@ describe('Rectangle Roi Tool: ', () => {
             expect(data[targets[0]].mean).toBe(255)
             expect(data[targets[0]].stdDev).toBe(0)
 
-            AnnotationState.removeAnnotation(
+            annotation.state.removeAnnotation(
               element,
               rectangleAnnotation.annotationUID
             )
@@ -489,7 +489,7 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = AnnotationState.getAnnotations(
+            const rectangleAnnotations = annotation.state.getAnnotations(
               element,
               RectangleRoiTool.toolName
             )
@@ -513,7 +513,7 @@ describe('Rectangle Roi Tool: ', () => {
             expect(data[targets[0]].mean).toBe(255)
             expect(data[targets[0]].stdDev).toBe(0)
 
-            AnnotationState.removeAnnotation(
+            annotation.state.removeAnnotation(
               element,
               rectangleAnnotation.annotationUID
             )
@@ -627,7 +627,7 @@ describe('Rectangle Roi Tool: ', () => {
         element.addEventListener(
           CornerstoneTools3DEvents.ANNOTATION_RENDERED,
           () => {
-            const rectangleAnnotations = AnnotationState.getAnnotations(
+            const rectangleAnnotations = annotation.state.getAnnotations(
               element,
               RectangleRoiTool.toolName
             )
@@ -688,7 +688,7 @@ describe('Rectangle Roi Tool: ', () => {
             expect(handles[0]).toEqual(afterMoveFirstHandle)
             expect(handles[3]).toEqual(afterMoveSecondHandle)
 
-            AnnotationState.removeAnnotation(
+            annotation.state.removeAnnotation(
               element,
               rectangleAnnotation.annotationUID
             )
@@ -980,7 +980,7 @@ describe('Rectangle Roi Tool: ', () => {
         expect(canceledDataUID).toBeDefined()
 
         setTimeout(() => {
-          const rectangleAnnotations = AnnotationState.getAnnotations(
+          const rectangleAnnotations = annotation.state.getAnnotations(
             element,
             RectangleRoiTool.toolName
           )
@@ -1041,7 +1041,7 @@ describe('Rectangle Roi Tool: ', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle)
           expect(handles[3]).toEqual(afterMoveSecondHandle)
 
-          AnnotationState.removeAnnotation(
+          annotation.state.removeAnnotation(
             element,
             rectangleAnnotation.annotationUID
           )
