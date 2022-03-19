@@ -3,8 +3,8 @@ import {
   addVolumesToViewports,
 } from '@precisionmetrics/cornerstone-render'
 
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
-import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations'
+import { ToolGroupSpecificSegmentationData } from '../../../types/SegmentationStateTypes'
 
 /**
  * It adds a segmentation data to the viewport's HTML Element. NOTE: This function

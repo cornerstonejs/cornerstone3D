@@ -23,11 +23,12 @@ const { VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
+  segmentation,
   CornerstoneTools3DEvents: EVENTS,
-  SegmentationModule,
   RectangleScissorsTool,
 } = csTools3d
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const {
   fakeVolumeLoader,
@@ -144,13 +145,13 @@ describe('Segmentation Tools --', () => {
           ).then(() => {
             vp.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForViewport(vp)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -269,13 +270,13 @@ describe('Segmentation Tools --', () => {
           ).then(() => {
             vp.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForViewport(vp)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -432,13 +433,13 @@ describe('Segmentation Tools --', () => {
             vp1.render()
             vp2.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForViewport(vp1)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {

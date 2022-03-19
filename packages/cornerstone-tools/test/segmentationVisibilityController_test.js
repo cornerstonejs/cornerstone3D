@@ -24,12 +24,12 @@ const { VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
+  segmentation,
   CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
-  SegmentationModule,
   RectangleScissorsTool,
 } = csTools3d
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
@@ -211,11 +211,8 @@ describe('Segmentation Controller --', () => {
                 vp1.render()
 
                 const colorLUTIndex = 1
-                SegmentationModule.segmentationColorController.addColorLut(
-                  [
-                    [0, 0, 0, 0],
-                    [245, 209, 145, 255],
-                  ],
+                segmentation.segmentationColor.addColorLUT(
+                  [[245, 209, 145, 255]],
                   colorLUTIndex
                 )
 
@@ -261,7 +258,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.SegmentationState.getSegmentationState(TOOL_GROUP_UID)
+    //       csTools3d.segmentation.state.getSegmentationState(TOOL_GROUP_UID)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].visibility).toBe(true)
@@ -300,11 +297,11 @@ describe('Segmentation Controller --', () => {
     //               },
     //             ]).then(() => {
     //               const segmentationData =
-    //                 SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+    //                 segmentation.activeSegmentation.getActiveSegmentationInfo(
     //                   TOOL_GROUP_UID
     //                 )
 
-    //               SegmentationModule.segmentationVisibilityController.setSegmentationVisibility(
+    //               segmentation.segmentationVisibility.setSegmentationVisibility(
     //                 TOOL_GROUP_UID,
     //                 segmentationData.segmentationDataUID,
     //                 false

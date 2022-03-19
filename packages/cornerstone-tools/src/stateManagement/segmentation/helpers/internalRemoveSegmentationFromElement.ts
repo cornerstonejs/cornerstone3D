@@ -2,8 +2,8 @@ import {
   getEnabledElement,
   VolumeViewport,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
+import { ToolGroupSpecificSegmentationData } from '../../../types/SegmentationStateTypes'
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations'
 
 /**
  * Remove the segmentation from the viewport's HTML Element.

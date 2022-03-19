@@ -20,12 +20,13 @@ const { VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
-  CornerstoneTools3DEvents: EVENTS,
-  SegmentationState,
-  utilities: { segmentation: segUtils },
   SegmentationRepresentations,
+  segmentation,
+  CornerstoneTools3DEvents: EVENTS,
+  utilities: { segmentation: segUtils },
 } = csTools3d
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
@@ -111,7 +112,7 @@ describe('Segmentation State -- ', () => {
         EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const globalState =
-            SegmentationState.getGlobalSegmentationDataByUID(segVolumeId)
+            segmentation.state.getGlobalSegmentationDataByUID(segVolumeId)
 
           expect(evt.detail.segmentationUID.includes(segVolumeId)).toBe(true)
 
@@ -126,7 +127,7 @@ describe('Segmentation State -- ', () => {
         EVENTS.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
           const stateManager =
-            SegmentationState.getDefaultSegmentationStateManager(segVolumeId)
+            segmentation.state.getDefaultSegmentationStateManager(segVolumeId)
 
           const state = stateManager.getState()
 
@@ -140,7 +141,7 @@ describe('Segmentation State -- ', () => {
           expect(toolGroupSegmentationState).toBeDefined()
           expect(toolGroupSegmentationState.segmentations.length).toBe(1)
 
-          const segState = SegmentationState.getSegmentationState(
+          const segState = segmentation.state.getSegmentationState(
             this.segToolGroup.uid
           )
 
@@ -196,7 +197,7 @@ describe('Segmentation State -- ', () => {
       eventTarget.addEventListener(
         EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const globalConfig = SegmentationState.getGlobalSegmentationConfig()
+          const globalConfig = segmentation.state.getGlobalSegmentationConfig()
 
           expect(globalConfig.renderInactiveSegmentations).toBe(true)
           expect(globalConfig.representations).toBeDefined()

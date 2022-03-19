@@ -1,6 +1,6 @@
-import { getActiveSegmentationInfo } from './activeSegmentationController'
-import { getGlobalSegmentationDataByUID } from '../../stateManagement/segmentation/segmentationState'
-import { triggerSegmentationGlobalStateModified } from '.'
+import { getActiveSegmentationInfo } from './activeSegmentation'
+import { getGlobalSegmentationDataByUID } from './segmentationState'
+import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'
 
 /**
  * Returns the active segment index for the active segmentation in the tool group

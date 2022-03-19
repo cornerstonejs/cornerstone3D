@@ -3,7 +3,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
 import { pointInShapeCallback } from '../../../utilities'
-import { triggerSegmentationDataModified } from '../../../store/SegmentationModule/triggerSegmentationEvents'
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
 
 type OperationData = {
   toolGroupUID: string

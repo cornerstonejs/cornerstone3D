@@ -26,12 +26,12 @@ const { VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
+  segmentation,
   CornerstoneTools3DEvents: EVENTS,
   SegmentationRepresentations,
-  SegmentationState,
-  SegmentationModule,
 } = csTools3d
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   utilities.testUtils
@@ -317,14 +317,14 @@ describe('Segmentation Render -- ', () => {
       eventTarget.addEventListener(
         EVENTS.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
-          const toolGroupState = SegmentationState.getSegmentationState(
+          const toolGroupState = segmentation.state.getSegmentationState(
             this.segToolGroup.uid
           )
 
           expect(toolGroupState).toBeDefined()
 
           const toolGroupConfig =
-            SegmentationModule.segmentationConfigController.getSegmentationConfig(
+            segmentation.segmentationConfig.getSegmentationConfig(
               this.segToolGroup.uid
             )
 

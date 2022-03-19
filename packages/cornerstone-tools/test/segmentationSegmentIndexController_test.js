@@ -24,12 +24,12 @@ const { VIEWPORT_TYPE, ORIENTATION } = Enums
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  addSegmentationsForToolGroup,
+  segmentation,
   CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
-  SegmentationModule,
   RectangleScissorsTool,
 } = csTools3d
+
+const { addSegmentationsForToolGroup } = segmentation
 
 const {
   fakeVolumeLoader,
@@ -223,13 +223,13 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForViewport(vp1)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -303,10 +303,7 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          SegmentationModule.segmentIndexController.setActiveSegmentIndex(
-            TOOL_GROUP_UID,
-            2
-          )
+          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_UID, 2)
 
           eventTarget.addEventListener(
             EVENTS.SEGMENTATION_RENDERED,
@@ -321,15 +318,13 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndex(
-            TOOL_GROUP_UID
-          )
+          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_UID)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationInfo =
-          SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+          segmentation.activeSegmentation.getActiveSegmentationInfo(
             TOOL_GROUP_UID
           )
 
@@ -337,7 +332,7 @@ describe('Segmentation Index Controller --', () => {
         expect(segmentationInfo.volumeUID).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndexForSegmentation(
+          segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
             segmentationInfo.volumeUID
           )
 
@@ -374,13 +369,13 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForViewport(vp1)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {
@@ -454,12 +449,9 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          SegmentationModule.segmentIndexController.setActiveSegmentIndex(
-            TOOL_GROUP_UID,
-            2
-          )
+          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_UID, 2)
 
-          SegmentationModule.lockedSegmentController.setSegmentIndexLocked(
+          segmentation.segmentLocking.setSegmentIndexLocked(
             TOOL_GROUP_UID,
             1,
             true
@@ -478,15 +470,13 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndex(
-            TOOL_GROUP_UID
-          )
+          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_UID)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationInfo =
-          SegmentationModule.activeSegmentationController.getActiveSegmentationInfo(
+          segmentation.activeSegmentation.getActiveSegmentationInfo(
             TOOL_GROUP_UID
           )
 
@@ -494,30 +484,29 @@ describe('Segmentation Index Controller --', () => {
         expect(segmentationInfo.volumeUID).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
-          SegmentationModule.segmentIndexController.getActiveSegmentIndexForSegmentation(
+          segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
             segmentationInfo.volumeUID
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)
 
         const locked1 =
-          SegmentationModule.lockedSegmentController.getSegmentsLockedForSegmentation(
+          segmentation.segmentLocking.getSegmentsLockedForSegmentation(
             segmentationInfo.volumeUID
           )
 
         expect(locked1.length).toBe(1)
         expect(locked1[0]).toBe(1)
 
-        const lockedStatus1 =
-          SegmentationModule.lockedSegmentController.getSegmentIndexLocked(
-            TOOL_GROUP_UID,
-            1
-          )
+        const lockedStatus1 = segmentation.segmentLocking.getSegmentIndexLocked(
+          TOOL_GROUP_UID,
+          1
+        )
 
         expect(lockedStatus1).toBe(true)
 
         const lockedStatus2 =
-          SegmentationModule.lockedSegmentController.getSegmentIndexLockedForSegmentation(
+          segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
             segmentationInfo.volumeUID,
             2
           )
@@ -554,13 +543,13 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            SegmentationModule.createNewSegmentationForViewport(vp1).then(
-              (segmentationUID) => {
+            segmentation
+              .createNewSegmentationForViewport(vp1)
+              .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
                 ])
-              }
-            )
+              })
           })
         })
       } catch (e) {

@@ -1,4 +1,4 @@
-import { getActiveSegmentationInfo } from './activeSegmentationController'
+import { getActiveSegmentationInfo } from './activeSegmentation'
 
 import { getGlobalSegmentationDataByUID } from '../../stateManagement/segmentation/segmentationState'
 import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'

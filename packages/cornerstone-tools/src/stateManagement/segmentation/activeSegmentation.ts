@@ -2,7 +2,7 @@ import {
   getActiveSegmentationData,
   setActiveSegmentationData,
   getGlobalSegmentationDataByUID,
-} from '../../stateManagement/segmentation/segmentationState'
+} from './segmentationState'
 
 /**
  * Get the active segmentation info for the first viewport in the tool group with

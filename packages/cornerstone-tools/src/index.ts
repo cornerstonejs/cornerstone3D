@@ -1,10 +1,3 @@
-import {
-  // segmentations
-  addSegmentationsForToolGroup,
-  removeSegmentationsForToolGroup,
-  SegmentationState,
-} from './stateManagement'
-
 import { init, destroy } from './init'
 import {
   addTool,
@@ -13,7 +6,6 @@ import {
   SynchronizerManager,
   Synchronizer,
   cancelActiveManipulations,
-  SegmentationModule,
 } from './store'
 
 // Name spaces
@@ -23,6 +15,7 @@ import * as utilities from './utilities'
 import * as cursors from './cursors'
 import * as Types from './types'
 import * as annotation from './stateManagement/annotation'
+import * as segmentation from './stateManagement/segmentation'
 
 import {
   BaseTool,
@@ -103,14 +96,11 @@ export {
   SegmentationRepresentations,
   // Drawing API
   drawing,
-  // annotation
+  // Annotation
   annotation,
   cancelActiveManipulations,
   // Segmentations
-  SegmentationState,
-  SegmentationModule,
-  addSegmentationsForToolGroup,
-  removeSegmentationsForToolGroup,
+  segmentation,
   // Utilities
   utilities,
   cursors,

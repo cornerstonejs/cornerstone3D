@@ -18,11 +18,11 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 import {
-  segmentationColorController,
-  lockedSegmentController,
-  segmentIndexController,
-  activeSegmentationController,
-} from '../../store/SegmentationModule'
+  segmentLocking,
+  activeSegmentation,
+  segmentIndex as segmentIndexController,
+  segmentationColor,
+} from '../../stateManagement/segmentation'
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -91,7 +91,7 @@ export default class CircleScissorsTool extends BaseTool {
     const toolGroupUID = this.toolGroupUID
 
     const activeSegmentationInfo =
-      activeSegmentationController.getActiveSegmentationInfo(toolGroupUID)
+      activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
@@ -102,8 +102,8 @@ export default class CircleScissorsTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(toolGroupUID)
     const segmentsLocked =
-      lockedSegmentController.getSegmentsLockedForSegmentation(volumeUID)
-    const segmentColor = segmentationColorController.getColorForSegmentIndex(
+      segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
+    const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupUID,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex

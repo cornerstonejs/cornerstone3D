@@ -5,7 +5,7 @@ import {
   SegmentationDataInput,
   SegmentationConfig,
 } from '../../types/SegmentationStateTypes'
-import { checkSegmentationDataIsValid } from './utils'
+import { checkSegmentationDataIsValid } from './helpers'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
 

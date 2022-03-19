@@ -1,40 +1,5 @@
 // import state, { Color, ColorLUT, getLabelmapStateForElement } from './state'
-import { ColorLUT } from '../../types/SegmentationStateTypes'
-import { addColorLut } from './segmentationState'
-
-const SEGMENTS_PER_SEGMENTATION = 65535 // Todo: max is bigger, but it seems cfun can go upto 255 anyway
-
-/**
- * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
- * If no colorLUT is provided, a new color LUT is generated.
- *
- * @param  {number} colorLUTIndex the index of the colorLUT in the state
- * @param  {number[][]} [colorLUT] An array of The colorLUT to set.
- * @returns {null}
- */
-export function addColorLUT(
-  colorLUTIndex: number,
-  colorLUT: ColorLUT = []
-): void {
-  if (colorLUT) {
-    _checkColorLUTLength(colorLUT, SEGMENTS_PER_SEGMENTATION)
-
-    if (colorLUT.length < SEGMENTS_PER_SEGMENTATION) {
-      colorLUT = [
-        ...colorLUT,
-        ..._generateNewColorLUT(SEGMENTS_PER_SEGMENTATION - colorLUT.length),
-      ]
-    }
-  } else {
-    // Auto-generates colorLUT.
-    colorLUT = colorLUT || _generateNewColorLUT(SEGMENTS_PER_SEGMENTATION)
-  }
-
-  // Append the "zero" (no label) color to the front of the LUT.
-  colorLUT.unshift([0, 0, 0, 0])
-
-  addColorLut(colorLUT, colorLUTIndex)
-}
+import { ColorLUT } from '../../../types/SegmentationStateTypes'
 
 /**
  * Checks the length of `colorLUT` compared to `SEGMENTS_PER_SEGMENTATION` and flags up any warnings.
@@ -42,7 +7,7 @@ export function addColorLUT(
  * @param  {number} SEGMENTS_PER_SEGMENTATION
  * @returns {boolean} Whether the length is valid.
  */
-function _checkColorLUTLength(
+function checkColorLUTLength(
   colorLUT: ColorLUT,
   SEGMENTS_PER_SEGMENTATION: number
 ) {
@@ -71,7 +36,7 @@ const incL = 0.07
  * @param  {Number} numberOfColors = 255 The number of colors to generate
  * @returns {Number[][]}           The array of RGB values.
  */
-function _generateNewColorLUT(numberOfColors = 255) {
+function generateNewColorLUT(numberOfColors = 255) {
   const rgbArr = []
 
   // reset every time we generate new colorLUT to be consistent between csTools initializations
@@ -139,3 +104,5 @@ function getRGBAfromHSLA(hue, s = 1, l = 0.6, alpha = 255) {
 
   return [(r + m) * 255, (g + m) * 255, (b + m) * 255, alpha]
 }
+
+export { checkColorLUTLength, generateNewColorLUT }

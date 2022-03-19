@@ -2,7 +2,7 @@ import cloneDeep from 'lodash.clonedeep'
 
 import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
 
-import { addColorLUT } from './colorLUT'
+import { addColorLUT } from './segmentationColor'
 
 import {
   SegmentationState,
@@ -265,7 +265,7 @@ export default class SegmentationStateManager {
    * @param colorLut - ColorLUT
    * @param lutIndex - The index of the color LUT table to add.
    */
-  addColorLut(colorLut: ColorLUT, lutIndex: number): void {
+  addColorLUT(colorLut: ColorLUT, lutIndex: number): void {
     if (this.state.colorLutTables[lutIndex]) {
       console.log('Color LUT table already exists, overwriting')
     }
@@ -464,7 +464,7 @@ export default class SegmentationStateManager {
       this.state.colorLutTables.length === 0 ||
       !this.state.colorLutTables[0]
     ) {
-      addColorLUT(0)
+      addColorLUT(null, 0)
     }
   }
 }

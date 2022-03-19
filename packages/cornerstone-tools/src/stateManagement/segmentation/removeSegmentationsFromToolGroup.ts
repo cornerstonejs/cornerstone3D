@@ -13,7 +13,7 @@ import {
  * containing at least volumeUID. If no representation type is provided, it will
  * assume the default labelmap representation should be removed from the viewports.
  */
-function removeSegmentationsForToolGroup(
+function removeSegmentationsFromToolGroup(
   toolGroupUID: string,
   segmentationDataUIDs?: string[] | undefined
 ): void {
@@ -64,4 +64,4 @@ function _removeSegmentation(
   }
 }
 
-export default removeSegmentationsForToolGroup
+export default removeSegmentationsFromToolGroup

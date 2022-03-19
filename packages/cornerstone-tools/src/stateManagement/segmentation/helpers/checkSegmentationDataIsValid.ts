@@ -1,4 +1,4 @@
-import { SegmentationDataInput } from '../../types/SegmentationStateTypes'
+import { SegmentationDataInput } from '../../../types/SegmentationStateTypes'
 
 /**
  * Checks if the segmentationDataArray is valid meaning it contains
@@ -22,4 +22,4 @@ function checkSegmentationDataIsValid(
   })
 }
 
-export { checkSegmentationDataIsValid }
+export default checkSegmentationDataIsValid
