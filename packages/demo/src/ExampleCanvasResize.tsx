@@ -2,10 +2,11 @@ import React, { Component } from 'react'
 // ~~
 import {
   RenderingEngine,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
+
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 class CanvasResizeExample extends Component {
   state = {

@@ -2,7 +2,7 @@ import {
   volumeLoader,
   cache,
   utilities,
-  ERROR_CODES,
+  Enums,
   Types,
 } from '@precisionmetrics/cornerstone-render'
 import { vec3 } from 'gl-matrix'
@@ -91,7 +91,7 @@ function cornerstoneStreamingImageVolumeLoader(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(sizeInBytes)
   if (!isCacheable) {
-    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    throw new Error(Enums.ERROR_CODES.CACHE_SIZE_EXCEEDED)
   }
 
   cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes)

@@ -1,8 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   volumeLoader,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
@@ -17,6 +16,7 @@ import {
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 const renderingEngineUID = 'myRenderingEngine'
 const viewportUID = 'CT_SAGITTAL_STACK'
 

@@ -8,8 +8,7 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize from './groundT
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   imageLoader,
   metaData,
   utilities,
@@ -20,6 +19,7 @@ const {
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,

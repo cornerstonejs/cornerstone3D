@@ -1,7 +1,4 @@
-import {
-  EVENTS as RenderingEngineEvents,
-  Types,
-} from '@precisionmetrics/cornerstone-render'
+import { Enums, Types } from '@precisionmetrics/cornerstone-render'
 import triggerAnnotationRender from '../utilities/triggerAnnotationRender'
 
 /**
@@ -21,17 +18,11 @@ const onImageRendered = function (evt: Types.EventTypes.ImageRenderedEvent) {
 }
 
 const enable = function (element: HTMLElement): void {
-  element.addEventListener(
-    RenderingEngineEvents.IMAGE_RENDERED,
-    onImageRendered
-  )
+  element.addEventListener(Enums.EVENTS.IMAGE_RENDERED, onImageRendered)
 }
 
 const disable = function (element: HTMLElement): void {
-  element.removeEventListener(
-    RenderingEngineEvents.IMAGE_RENDERED,
-    onImageRendered
-  )
+  element.removeEventListener(Enums.EVENTS.IMAGE_RENDERED, onImageRendered)
 }
 
 export default {

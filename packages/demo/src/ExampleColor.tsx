@@ -3,8 +3,7 @@ import React, { Component } from 'react'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
   RenderingEngine,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
   metaData,
   volumeLoader,
   init as csRenderInit,
@@ -17,6 +16,8 @@ import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-load
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { initToolGroups } from './initToolGroups'
+
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 const axialViewportID = 'AXIAL'
 const sagittalViewportID = 'SAGITTAL'

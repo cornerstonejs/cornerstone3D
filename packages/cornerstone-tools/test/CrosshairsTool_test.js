@@ -4,15 +4,15 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
   utilities,
   metaData,
-  EVENTS,
+  Enums,
   volumeLoader,
   setVolumesForViewports,
   imageLoader,
 } = cornerstone3D
+
+const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader

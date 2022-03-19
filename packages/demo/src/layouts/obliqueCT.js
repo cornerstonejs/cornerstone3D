@@ -1,12 +1,11 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import {
-  ORIENTATION,
-  VIEWPORT_TYPE,
-} from '@precisionmetrics/cornerstone-render'
+import { Enums } from '@precisionmetrics/cornerstone-render'
 import {
   setCTWWWC,
   setCTVRTransferFunction,
 } from '../helpers/transferFunctionHelpers'
+
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
   const viewportInput = [

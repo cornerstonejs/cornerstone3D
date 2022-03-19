@@ -4,8 +4,7 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   metaData,
   volumeLoader,
   utilities,
@@ -16,6 +15,7 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,

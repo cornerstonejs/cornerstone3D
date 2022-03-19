@@ -29,12 +29,12 @@ synchronization.
 
 
 ```js
-import { EVENTS as RENDERING_EVENTS } from '@ohif/cornerstone-render'
+import { Enums } from '@ohif/cornerstone-render'
 import { SynchronizerManager } from '@ohif/cornerstone-tools'
 
 const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
   synchronizerName,
-  RENDERING_EVENTS.CAMERA_MODIFIED,
+  Enums.EVENTS.CAMERA_MODIFIED,
   (
     synchronizerInstance,
     sourceViewport,

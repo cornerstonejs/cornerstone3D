@@ -15,16 +15,16 @@ import * as cpu_imageURI_256_256_100_100_1_1_0_hotIron from './groundTruth/cpu_i
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
   utilities,
   imageLoader,
   metaData,
-  EVENTS,
+  Enums,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
   cpuColormaps,
 } = cornerstone3D
 
+const { EVENTS, VIEWPORT_TYPE } = Enums
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 

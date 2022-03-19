@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
 import {
@@ -11,6 +11,8 @@ import {
   addButtonToToolbar,
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
+
+const { VIEWPORT_TYPE } = Enums
 
 // ======== Constants ======= //
 const renderingEngineUID = 'myRenderingEngine'

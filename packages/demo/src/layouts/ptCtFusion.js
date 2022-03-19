@@ -1,6 +1,5 @@
 import {
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
   cache,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -11,6 +10,8 @@ import {
   setPetTransferFunction,
   getSetPetColorMapTransferFunction,
 } from '../helpers/transferFunctionHelpers'
+
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 function setLayout(
   renderingEngine,

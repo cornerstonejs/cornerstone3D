@@ -1,11 +1,7 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import {
-  ORIENTATION,
-  VIEWPORT_TYPE,
-  getVolume,
-  utilities,
-  cache,
-} from '@precisionmetrics/cornerstone-render'
+import { Enums, utilities, cache } from '@precisionmetrics/cornerstone-render'
+
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 function setLayout(
   renderingEngine,

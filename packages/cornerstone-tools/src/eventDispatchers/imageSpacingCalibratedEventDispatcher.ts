@@ -1,7 +1,4 @@
-import {
-  EVENTS as RenderingEngineEvents,
-  Types,
-} from '@precisionmetrics/cornerstone-render'
+import { Enums, Types } from '@precisionmetrics/cornerstone-render'
 import { ToolModes } from '../enums'
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 
@@ -35,14 +32,14 @@ const onImageSpacingCalibrated = function (
 
 const enable = function (element: HTMLElement) {
   element.addEventListener(
-    RenderingEngineEvents.IMAGE_SPACING_CALIBRATED,
+    Enums.EVENTS.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated
   )
 }
 
 const disable = function (element: HTMLElement) {
   element.removeEventListener(
-    RenderingEngineEvents.IMAGE_SPACING_CALIBRATED,
+    Enums.EVENTS.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated
   )
 }

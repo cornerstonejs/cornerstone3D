@@ -1,4 +1,4 @@
-import { imageLoader, REQUEST_TYPE } from '@precisionmetrics/cornerstone-render'
+import { imageLoader, Enums } from '@precisionmetrics/cornerstone-render'
 import {
   getPixelData,
   decodeImageFrame,
@@ -67,7 +67,7 @@ function sharedArrayBufferImageLoader(
     // TODO: These probably need to be pulled from somewhere?
     // TODO: Make sure volume ID is also included?
     // TODO: Use ENUM for requestType? Or nuke the types entirely
-    const requestType = options.requestType || REQUEST_TYPE.Interaction
+    const requestType = options.requestType || Enums.REQUEST_TYPE.Interaction
     const additionalDetails = options.additionalDetails || { imageId }
     const priority = options.priority === undefined ? 5 : options.priority
 

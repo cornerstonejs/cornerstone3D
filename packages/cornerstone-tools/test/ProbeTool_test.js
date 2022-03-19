@@ -4,16 +4,16 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
   utilities,
   eventTarget,
   imageLoader,
   metaData,
-  EVENTS,
+  Enums,
   volumeLoader,
   setVolumesForViewports,
 } = cornerstone3D
+
+const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const {
   ProbeTool,

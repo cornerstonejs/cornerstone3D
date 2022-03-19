@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
@@ -28,6 +28,7 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 let stackCTViewportToolGroup
 

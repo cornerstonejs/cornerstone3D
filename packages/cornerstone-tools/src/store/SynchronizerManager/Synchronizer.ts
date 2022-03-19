@@ -1,7 +1,7 @@
 import {
   getRenderingEngine,
   getEnabledElement,
-  EVENTS as RENDERING_EVENTS,
+  Enums,
   Types,
 } from '@precisionmetrics/cornerstone-render'
 
@@ -253,14 +253,8 @@ class Synchronizer {
         vUid.renderingEngineUID
       ).getViewport(vUid.viewportUID)
 
-      element.removeEventListener(
-        RENDERING_EVENTS.ELEMENT_DISABLED,
-        disableHandler
-      )
-      element.addEventListener(
-        RENDERING_EVENTS.ELEMENT_DISABLED,
-        disableHandler
-      )
+      element.removeEventListener(Enums.EVENTS.ELEMENT_DISABLED, disableHandler)
+      element.addEventListener(Enums.EVENTS.ELEMENT_DISABLED, disableHandler)
     })
   }
 }

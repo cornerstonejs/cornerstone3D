@@ -1,9 +1,9 @@
 import { createSynchronizer } from '../../store/SynchronizerManager'
-import { EVENTS as RENDERING_EVENTS } from '@precisionmetrics/cornerstone-render'
+import { Enums } from '@precisionmetrics/cornerstone-render'
 import cameraSyncCallback from '../callbacks/cameraSyncCallback'
 import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
 
-const { CAMERA_MODIFIED } = RENDERING_EVENTS
+const { CAMERA_MODIFIED } = Enums.EVENTS
 
 /**
  * A helper that creates a new `Synchronizer` which listens to the `CAMERA_MODIFIED`

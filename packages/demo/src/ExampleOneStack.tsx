@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
@@ -31,6 +31,7 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 const STACK = 'stack'
 
 window.cache = cache
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 let stackCTViewportToolGroup
 

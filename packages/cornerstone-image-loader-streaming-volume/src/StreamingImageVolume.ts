@@ -1,5 +1,5 @@
 import {
-  EVENTS,
+  Enums,
   eventTarget,
   metaData,
   imageLoadPoolManager,
@@ -9,13 +9,11 @@ import {
   Types,
   imageLoader,
   utilities as cornerstoneUtils,
-  REQUEST_TYPE,
-  ERROR_CODES,
 } from '@precisionmetrics/cornerstone-render'
 
 import { scaleArray, autoLoad } from './helpers'
 
-const requestType = REQUEST_TYPE.Prefetch
+const requestType = Enums.REQUEST_TYPE.Prefetch
 const { getMinMax } = cornerstoneUtils
 
 // TODO James wants another layer in between ImageVolume and SliceStreamingImageVolume
@@ -294,7 +292,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageVolume: volume,
       }
 
-      triggerEvent(eventTarget, EVENTS.IMAGE_VOLUME_MODIFIED, eventDetail)
+      triggerEvent(eventTarget, Enums.EVENTS.IMAGE_VOLUME_MODIFIED, eventDetail)
 
       if (framesProcessed === numFrames) {
         loadStatus.loaded = true
@@ -358,7 +356,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageId,
       }
 
-      triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventDetail)
+      triggerEvent(eventTarget, Enums.ERROR_CODES.IMAGE_LOAD_ERROR, eventDetail)
     }
 
     const requests = imageIds.map((imageId, imageIdIndex) => {

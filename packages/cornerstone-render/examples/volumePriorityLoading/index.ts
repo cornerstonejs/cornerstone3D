@@ -1,8 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   volumeLoader,
   imageLoadPoolManager,
 } from '@precisionmetrics/cornerstone-render'
@@ -14,6 +13,8 @@ import {
 } from '../../../../utils/demo/helpers'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
+
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use

@@ -6,15 +6,15 @@ import * as windowLevel_canvas2 from './groundTruth/windowLevel_canvas2.png'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
   utilities,
   metaData,
-  EVENTS,
+  Enums,
   setVolumesForViewports,
   volumeLoader,
   imageLoader,
 } = cornerstone3D
+
+const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const { unregisterAllImageLoaders } = imageLoader
 const { createAndCacheVolume, registerVolumeLoader } = volumeLoader

@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -18,6 +18,8 @@ const {
   ToolGroupManager,
   ToolBindings,
 } = cornerstoneTools
+
+const { VIEWPORT_TYPE } = Enums
 
 // ======== Set up page ======== //
 setTitleAndDescription(

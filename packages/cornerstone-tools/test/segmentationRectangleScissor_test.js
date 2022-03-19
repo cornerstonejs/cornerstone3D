@@ -7,8 +7,7 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor from './ground
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   metaData,
   volumeLoader,
   imageLoader,
@@ -19,6 +18,7 @@ const {
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,

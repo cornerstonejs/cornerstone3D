@@ -4,8 +4,7 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   utilities,
   metaData,
   volumeLoader,
@@ -14,9 +13,9 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader } = volumeLoader
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
-
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
 const renderingEngineUID = utilities.uuidv4()

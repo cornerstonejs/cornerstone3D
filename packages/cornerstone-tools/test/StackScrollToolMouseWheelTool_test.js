@@ -7,16 +7,15 @@ import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_6
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  INTERPOLATION_TYPE,
-  EVENTS,
+  Enums,
   utilities,
   imageLoader,
   metaData,
   volumeLoader,
   setVolumesForViewports,
 } = cornerstone3D
+
+const { EVENTS, VIEWPORT_TYPE, ORIENTATION, INTERPOLATION_TYPE } = Enums
 
 const { registerVolumeLoader } = volumeLoader
 const { StackScrollMouseWheelTool, ToolGroupManager, StackScrollTool } =

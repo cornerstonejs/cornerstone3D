@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -13,6 +13,8 @@ import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 
 const { LengthTool, ToolGroupManager, ToolBindings, ToolModes } =
   cornerstoneTools
+
+const { VIEWPORT_TYPE } = Enums
 
 // ======== Set up page ======== //
 setTitleAndDescription('Annotation Tool Modes', 'Annotation tools mode')

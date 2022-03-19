@@ -3,7 +3,7 @@ import * as cornerstone from '@precisionmetrics/cornerstone-render'
 import { createFloat32SharedArray } from '../src/utilities'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const { cache, ERROR_CODES } = cornerstone
+const { cache, Enums } = cornerstone
 const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
 describe('Cache', () => {
@@ -326,7 +326,7 @@ describe('Cache', () => {
 
       await expectAsync(
         cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-      ).toBeRejectedWithError(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+      ).toBeRejectedWithError(Enums.ERROR_CODES.CACHE_SIZE_EXCEEDED)
 
       expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined()
 
@@ -655,7 +655,7 @@ describe('Cache', () => {
 
       await expectAsync(
         cache.putImageLoadObject(volume2.uid, volumeLoadObject2)
-      ).toBeRejectedWithError(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+      ).toBeRejectedWithError(Enums.ERROR_CODES.CACHE_SIZE_EXCEEDED)
 
       expect(cache.getVolumeLoadObject(volume2.uid)).not.toBeDefined()
 

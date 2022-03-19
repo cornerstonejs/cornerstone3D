@@ -16,16 +16,16 @@ import * as volumeURI_100_100_10_1_1_1_1_color_coronal_linear from './groundTrut
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
   imageLoader,
   metaData,
-  EVENTS,
+  Enums,
   volumeLoader,
   utilities,
   setVolumesForViewports,
   getVolumeViewportsContainingVolumeUID,
 } = cornerstone3D
+
+const { VIEWPORT_TYPE, ORIENTATION, EVENTS } = Enums
 
 const { registerVolumeLoader } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader

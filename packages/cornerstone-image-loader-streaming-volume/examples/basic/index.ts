@@ -1,6 +1,6 @@
 import {
   RenderingEngine,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
   Types,
 } from '@precisionmetrics/cornerstone-render'
@@ -32,7 +32,7 @@ async function setup() {
   const viewportInput = [
     {
       viewportUID: 'CT_STACK',
-      type: VIEWPORT_TYPE.STACK,
+      type: Enums.VIEWPORT_TYPE.STACK,
       element,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],

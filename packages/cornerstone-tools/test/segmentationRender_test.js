@@ -10,8 +10,7 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom from './groundTruth/volum
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   metaData,
   imageLoader,
   volumeLoader,
@@ -22,6 +21,7 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,

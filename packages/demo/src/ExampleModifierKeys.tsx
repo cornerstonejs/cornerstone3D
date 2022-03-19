@@ -2,9 +2,8 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  ORIENTATION,
   eventTarget,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
@@ -35,6 +34,7 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
+const { VIEWPORT_TYPE } = Enums
 
 let stackCTViewportToolGroup
 

@@ -1,7 +1,7 @@
 import { BaseTool } from './base'
 import {
   getEnabledElement,
-  EVENTS,
+  Enums,
   triggerEvent,
   VolumeViewport,
   StackViewport,
@@ -98,7 +98,7 @@ export default class WindowLevelTool extends BaseTool {
       range: newRange,
     }
 
-    triggerEvent(element, EVENTS.VOI_MODIFIED, eventDetail)
+    triggerEvent(element, Enums.EVENTS.VOI_MODIFIED, eventDetail)
 
     if (viewport instanceof StackViewport) {
       viewport.setProperties({

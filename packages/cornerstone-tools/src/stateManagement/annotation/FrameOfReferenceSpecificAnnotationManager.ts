@@ -7,7 +7,7 @@ import {
 import cloneDeep from 'lodash.clonedeep'
 
 import {
-  EVENTS as RENDERING_EVENTS,
+  Enums,
   eventTarget,
   Types,
   utilities,
@@ -49,7 +49,7 @@ export default class FrameOfReferenceSpecificAnnotationManager {
 
     // Listen to the IMAGE_VOLUME_MODIFIED event to invalidate data.
     eventTarget.addEventListener(
-      RENDERING_EVENTS.IMAGE_VOLUME_MODIFIED,
+      Enums.EVENTS.IMAGE_VOLUME_MODIFIED,
       this._imageVolumeModifiedHandler
     )
   }

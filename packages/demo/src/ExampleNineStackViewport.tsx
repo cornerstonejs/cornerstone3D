@@ -2,8 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
@@ -16,6 +15,7 @@ import { ctStackUID, VIEWPORT_IDS } from './constants'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 const renderingEngineUID = 'renderingEngineUID'
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 window.cache = cache
 

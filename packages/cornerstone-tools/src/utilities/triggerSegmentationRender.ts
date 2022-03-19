@@ -2,7 +2,7 @@ import {
   triggerEvent,
   eventTarget,
   getRenderingEngine,
-  EVENTS as csRenderEvents,
+  Enums,
   Types,
 } from '@precisionmetrics/cornerstone-render'
 import { CornerstoneTools3DEvents as csToolsEvents } from '../enums'
@@ -126,7 +126,7 @@ class SegmentationRenderingEngine {
       const { element, viewportUID, renderingEngineUID } = evt.detail
 
       element.removeEventListener(
-        csRenderEvents.IMAGE_RENDERED,
+        Enums.EVENTS.IMAGE_RENDERED,
         onSegmentationRender
       )
 
@@ -155,7 +155,7 @@ class SegmentationRenderingEngine {
 
     viewports.forEach(({ element }) => {
       element.addEventListener(
-        csRenderEvents.IMAGE_RENDERED,
+        Enums.EVENTS.IMAGE_RENDERED,
         onSegmentationRender
       )
     })

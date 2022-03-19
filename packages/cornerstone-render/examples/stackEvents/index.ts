@@ -1,9 +1,8 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
   getRenderingEngine,
-  EVENTS as RenderingEngineEvents,
+  Enums,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -12,6 +11,8 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers'
 import { vec3 } from 'gl-matrix'
+
+const { VIEWPORT_TYPE } = Enums
 
 // ======== Constants ======= //
 const renderingEngineUID = 'myRenderingEngine'
@@ -58,8 +59,7 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } =
-  RenderingEngineEvents
+const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.EVENTS
 
 element.addEventListener(
   IMAGE_RENDERED,

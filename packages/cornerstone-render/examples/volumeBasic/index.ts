@@ -1,8 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   volumeLoader,
 } from '@precisionmetrics/cornerstone-render'
 import {
@@ -12,6 +11,8 @@ import {
 } from '../../../../utils/demo/helpers'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
+
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 // ======== Set up page ======== //
 setTitleAndDescription(

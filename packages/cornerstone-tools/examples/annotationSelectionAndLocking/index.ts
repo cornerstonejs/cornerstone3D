@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
+  Enums,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
 import {
@@ -22,6 +22,8 @@ const {
   annotationSelection,
   AnnotationState,
 } = cornerstoneTools
+
+const { VIEWPORT_TYPE } = Enums
 
 const defaultFrameOfReferenceSpecificAnnotationManager =
   AnnotationState.getDefaultAnnotationManager()

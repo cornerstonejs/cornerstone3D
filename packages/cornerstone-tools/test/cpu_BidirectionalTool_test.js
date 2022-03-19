@@ -4,9 +4,7 @@ import * as csTools3d from '../src/index'
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
-  EVENTS,
+  Enums,
   utilities,
   imageLoader,
   metaData,
@@ -15,6 +13,8 @@ const {
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,
 } = cornerstone3D
+
+const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const {
   BidirectionalTool,

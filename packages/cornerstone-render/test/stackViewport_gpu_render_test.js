@@ -25,17 +25,10 @@ const {
   utilities: { calibrateImageSpacing },
 } = csTools3d
 
-const {
-  cache,
-  RenderingEngine,
-  VIEWPORT_TYPE,
-  INTERPOLATION_TYPE,
-  utilities,
-  imageLoader,
-  metaData,
-  EVENTS,
-} = cornerstone3D
+const { cache, RenderingEngine, utilities, imageLoader, metaData, Enums } =
+  cornerstone3D
 
+const { EVENTS, VIEWPORT_TYPE, INTERPOLATION_TYPE } = Enums
 const { calibratedPixelSpacingMetadataProvider } = utilities
 
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =

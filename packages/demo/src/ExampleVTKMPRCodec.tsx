@@ -2,9 +2,7 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  eventTarget,
   volumeLoader,
-  EVENTS as RENDERING_EVENTS,
   init as cs3dInit,
 } from '@precisionmetrics/cornerstone-render'
 import {

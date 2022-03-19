@@ -1,8 +1,7 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   volumeLoader,
   getRenderingEngine,
   utilities,
@@ -20,6 +19,7 @@ import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 const { BlendMode } = vtkConstants
 
 const renderingEngineUID = 'myRenderingEngine'

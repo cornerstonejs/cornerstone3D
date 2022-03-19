@@ -21,7 +21,7 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine'
-import cache, { Cache } from './cache'
+import cache from './cache'
 import { ImageVolume } from './cache/classes/ImageVolume'
 import { RequestPoolManager } from './requestPool/requestPoolManager'
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager'
@@ -59,8 +59,7 @@ import {
   getVolumeViewportsContainingVolumeUID,
 } from './RenderingEngine/helpers'
 
-export {
-  // enums
+const Enums = {
   ERROR_CODES,
   EVENTS,
   VIEWPORT_TYPE,
@@ -68,6 +67,14 @@ export {
   ORIENTATION,
   INTERPOLATION_TYPE,
   REQUEST_TYPE,
+}
+
+export {
+  init,
+  isCornerstoneInitialized,
+  // enums
+  Enums,
+  EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
   configuration,
   Types,
@@ -112,8 +119,6 @@ export {
   RequestPoolManager,
   setMaxSimultaneousRequests,
   // CPU Rendering
-  init,
-  isCornerstoneInitialized,
   getShouldUseCPURendering,
   setUseCPURenderingOnlyForDebugOrTests,
   resetCPURenderingOnlyForDebugOrTests,

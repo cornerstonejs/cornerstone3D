@@ -1,8 +1,7 @@
 import {
   RenderingEngine,
-  VIEWPORT_TYPE,
   Types,
-  ORIENTATION,
+  Enums,
   volumeLoader,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -26,6 +25,9 @@ const {
   synchronizers,
   SynchronizerManager,
 } = cornerstoneTools
+
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
+
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 

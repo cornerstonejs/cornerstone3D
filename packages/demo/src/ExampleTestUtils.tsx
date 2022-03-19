@@ -4,7 +4,7 @@ import {
   RenderingEngine,
   imageLoader,
   metaData,
-  VIEWPORT_TYPE,
+  Enums,
   utilities,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
@@ -32,6 +32,7 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 const { fakeImageLoader, fakeMetaDataProvider } = utilities.testUtils
 

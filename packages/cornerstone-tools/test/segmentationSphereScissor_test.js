@@ -7,8 +7,7 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR from './groundTru
 const {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
-  ORIENTATION,
+  Enums,
   metaData,
   imageLoader,
   volumeLoader,
@@ -19,13 +18,13 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
   addSegmentationsForToolGroup,
   CornerstoneTools3DEvents: EVENTS,
-  SegmentationRepresentations,
   SegmentationModule,
   SphereScissorsTool,
 } = csTools3d

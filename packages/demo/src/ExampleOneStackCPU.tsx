@@ -2,12 +2,11 @@ import React, { Component } from 'react'
 import {
   cache,
   RenderingEngine,
-  VIEWPORT_TYPE,
+  Enums,
   setUseCPURenderingOnlyForDebugOrTests,
   init as csRenderInit,
   metaData,
   cpuColormaps,
-  INTERPOLATION_TYPE,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
@@ -30,6 +29,7 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 let stackCTViewportToolGroup, stackPTViewportToolGroup
 

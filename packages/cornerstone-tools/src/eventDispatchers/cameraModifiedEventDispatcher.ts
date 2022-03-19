@@ -1,4 +1,4 @@
-import { EVENTS, Types } from '@precisionmetrics/cornerstone-render'
+import { Enums, Types } from '@precisionmetrics/cornerstone-render'
 import { ToolModes } from '../enums'
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 
@@ -28,11 +28,11 @@ const onCameraModified = function (evt: Types.EventTypes.CameraModifiedEvent) {
 }
 
 const enable = function (element) {
-  element.addEventListener(EVENTS.CAMERA_MODIFIED, onCameraModified)
+  element.addEventListener(Enums.EVENTS.CAMERA_MODIFIED, onCameraModified)
 }
 
 const disable = function (element) {
-  element.removeEventListener(EVENTS.CAMERA_MODIFIED, onCameraModified)
+  element.removeEventListener(Enums.EVENTS.CAMERA_MODIFIED, onCameraModified)
 }
 
 export default {

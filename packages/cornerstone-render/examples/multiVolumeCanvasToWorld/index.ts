@@ -1,9 +1,8 @@
 import {
   RenderingEngine,
   Types,
-  VIEWPORT_TYPE,
-  ORIENTATION,
   volumeLoader,
+  Enums,
   utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
@@ -15,6 +14,8 @@ import {
 } from '../../../../utils/demo/helpers'
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
+
+const { VIEWPORT_TYPE, ORIENTATION } = Enums
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use

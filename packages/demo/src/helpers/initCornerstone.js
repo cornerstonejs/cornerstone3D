@@ -6,7 +6,7 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader/dist/dynam
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 
-const { calibratedPixelSpacingMetadataProvider } = cornerstone.Utilities
+const { calibratedPixelSpacingMetadataProvider } = cornerstone.utilities
 
 window.cornerstone = cornerstone
 window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader
@@ -22,24 +22,22 @@ cornerstone.metaData.addProvider(
 )
 
 cornerstone.metaData.addProvider(
-  calibratedPixelSpacingMetadataProvider.get.bind(calibratedPixelSpacingMetadataProvider),
+  calibratedPixelSpacingMetadataProvider.get.bind(
+    calibratedPixelSpacingMetadataProvider
+  ),
   11000
 )
 
-const beforeSend = (xhr, imageId,
-  defaultHeaders,
-  params) => {
-
-  return { 'accept': undefined };
+const beforeSend = (xhr, imageId, defaultHeaders, params) => {
+  return { accept: undefined }
 }
-
 
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser
 cornerstoneWADOImageLoader.configure({
   useWebWorkers: true,
   decodeConfig: {
-    convertFloatPixelDataToInt: false
+    convertFloatPixelDataToInt: false,
   },
   // beforeSend
 })

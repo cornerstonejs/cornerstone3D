@@ -3,8 +3,7 @@ import {
   cache,
   RenderingEngine,
   volumeLoader,
-  ORIENTATION,
-  VIEWPORT_TYPE,
+  Enums,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -28,6 +27,7 @@ import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-load
 
 const VOLUME = 'volume'
 const STACK = 'stack'
+const { ORIENTATION, VIEWPORT_TYPE } = Enums
 
 window.cache = cache
 
