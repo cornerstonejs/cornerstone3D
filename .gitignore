@@ -24,11 +24,12 @@ yalc.lock
 package-lock.json
 
 # Example output
-static-examples
+.static-examples
 
 # Docs output
 packages/docs/dist/
-packages/docs/static/
+packages/docs/static/examples
+packages/docs/static/test-coverage
 packages/demo/dist
 dist/
 tsDist/

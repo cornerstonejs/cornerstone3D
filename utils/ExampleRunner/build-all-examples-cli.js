@@ -15,7 +15,12 @@ var webpackConfigPath = path.join(__dirname, './webpack-all-examples-AUTOGENERAT
 var buildConfig = require('./template-multiexample-config.js')
 const buildExampleIndex = require('./build-example-index.js');
 const rootPath = path.resolve(path.join(__dirname, '../..'))
-var distDir = path.join(rootPath, '/static-examples')
+var distDir = path.join(rootPath, '/.static-examples')
+
+if (!fs.existsSync(distDir)){
+  console.log('Creating directory: ' + distDir);
+  fs.mkdirSync(distDir);
+}
 
 program
   .option('--build', 'Build and write examples to disk, rather than using the Webpack Dev Server')
