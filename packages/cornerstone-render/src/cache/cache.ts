@@ -11,7 +11,6 @@ import {
 import { triggerEvent, imageIdToURI } from '../utilities'
 import eventTarget from '../eventTarget'
 import EVENTS from '../enums/events'
-import ERROR_CODES from '../enums/errorCodes'
 
 const MAX_CACHE_SIZE_1GB = 1073741824
 
@@ -401,7 +400,7 @@ class Cache implements ICache {
 
         // check if there is enough space in unallocated + image Cache
         if (!this.isCacheable(image.sizeInBytes)) {
-          throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+          throw new Error(EVENTS.CACHE_SIZE_EXCEEDED)
         }
 
         // if there is, decache if necessary

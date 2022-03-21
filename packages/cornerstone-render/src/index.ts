@@ -1,5 +1,4 @@
 import EVENTS from './enums/events'
-import ERROR_CODES from './enums/errorCodes'
 import REQUEST_TYPE from './enums/requestType'
 import VIEWPORT_TYPE from './enums/viewportType'
 import INTERPOLATION_TYPE from './enums/interpolationType'
@@ -23,7 +22,6 @@ import {
 } from './RenderingEngine/getRenderingEngine'
 import cache from './cache'
 import { ImageVolume } from './cache/classes/ImageVolume'
-import { RequestPoolManager } from './requestPool/requestPoolManager'
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager'
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
@@ -59,7 +57,6 @@ import {
 } from './RenderingEngine/helpers'
 
 const Enums = {
-  ERROR_CODES,
   EVENTS,
   VIEWPORT_TYPE,
   // constants

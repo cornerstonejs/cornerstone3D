@@ -41,7 +41,6 @@ import { getColormap } from './helpers/cpuFallback/colors/index'
 
 import { loadAndCacheImage } from '../imageLoader'
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager'
-import ERROR_CODES from '../enums/errorCodes'
 import INTERPOLATION_TYPE from '../enums/interpolationType'
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel'
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas'
@@ -1300,7 +1299,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         if (!this.suppressEvents) {
-          triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventDetail)
+          triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_ERROR, eventDetail)
         }
 
         reject(error)
@@ -1398,7 +1397,7 @@ class StackViewport extends Viewport implements IStackViewport {
           imageId,
         }
 
-        triggerEvent(eventTarget, ERROR_CODES.IMAGE_LOAD_ERROR, eventDetail)
+        triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_ERROR, eventDetail)
         reject(error)
       }
 

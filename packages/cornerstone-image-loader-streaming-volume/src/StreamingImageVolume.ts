@@ -356,7 +356,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageId,
       }
 
-      triggerEvent(eventTarget, Enums.ERROR_CODES.IMAGE_LOAD_ERROR, eventDetail)
+      triggerEvent(eventTarget, Enums.EVENTS.IMAGE_LOAD_ERROR, eventDetail)
     }
 
     const requests = imageIds.map((imageId, imageIdIndex) => {

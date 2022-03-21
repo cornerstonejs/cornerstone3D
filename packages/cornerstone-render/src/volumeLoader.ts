@@ -3,7 +3,6 @@ import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import cloneDeep from 'lodash.clonedeep'
 
 import { ImageVolume } from './cache/classes/ImageVolume'
-import ERROR_CODES from './enums/errorCodes'
 import * as Types from './types'
 import cache from './cache/cache'
 import EVENTS from './enums/events'
@@ -245,7 +244,7 @@ export function createAndCacheDerivedVolume(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(numBytes)
   if (!isCacheable) {
-    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    throw new Error(EVENTS.CACHE_SIZE_EXCEEDED)
   }
 
   const volumeScalarData = new TypedArray(scalarLength)
@@ -331,7 +330,7 @@ export function createLocalVolume(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(numBytes)
   if (!isCacheable) {
-    throw new Error(ERROR_CODES.CACHE_SIZE_EXCEEDED)
+    throw new Error(EVENTS.CACHE_SIZE_EXCEEDED)
   }
 
   const scalarArray = vtkDataArray.newInstance({
