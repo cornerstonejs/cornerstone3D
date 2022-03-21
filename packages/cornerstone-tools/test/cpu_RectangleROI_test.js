@@ -21,10 +21,12 @@ const { ORIENTATION } = CONSTANTS
 const {
   RectangleRoiTool,
   ToolGroupManager,
-  CornerstoneTools3DEvents,
   cancelActiveManipulations,
   annotation,
+  Enums: csToolsEnums,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
@@ -120,41 +122,38 @@ describe('RectangleRoiTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleRoiTool.toolName
-          )
-          // Can successfully add rectangleROI to annotationManager
-          expect(rectangleAnnotations).toBeDefined()
-          expect(rectangleAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const rectangleAnnotations = annotation.state.getAnnotations(
+          element,
+          RectangleRoiTool.toolName
+        )
+        // Can successfully add rectangleROI to annotationManager
+        expect(rectangleAnnotations).toBeDefined()
+        expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleAnnotation = rectangleAnnotations[0]
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
+        const rectangleAnnotation = rectangleAnnotations[0]
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
 
-          expect(rectangleAnnotation.metadata.toolName).toBe(
-            RectangleRoiTool.toolName
-          )
-          expect(rectangleAnnotation.invalidated).toBe(false)
+        expect(rectangleAnnotation.metadata.toolName).toBe(
+          RectangleRoiTool.toolName
+        )
+        expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = rectangleAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // the rectangle is drawn on the strip
-          expect(data[targets[0]].mean).toBe(255)
+        // the rectangle is drawn on the strip
+        expect(data[targets[0]].mean).toBe(255)
 
-          annotation.state.removeAnnotation(
-            element,
-            rectangleAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          rectangleAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -231,40 +230,37 @@ describe('RectangleRoiTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleRoiTool.toolName
-          )
-          // Can successfully add rectangleROI to annotationManager
-          expect(rectangleAnnotations).toBeDefined()
-          expect(rectangleAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const rectangleAnnotations = annotation.state.getAnnotations(
+          element,
+          RectangleRoiTool.toolName
+        )
+        // Can successfully add rectangleROI to annotationManager
+        expect(rectangleAnnotations).toBeDefined()
+        expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleAnnotation = rectangleAnnotations[0]
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(rectangleAnnotation.metadata.toolName).toBe(
-            RectangleRoiTool.toolName
-          )
-          expect(rectangleAnnotation.invalidated).toBe(false)
+        const rectangleAnnotation = rectangleAnnotations[0]
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(rectangleAnnotation.metadata.toolName).toBe(
+          RectangleRoiTool.toolName
+        )
+        expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = rectangleAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].mean).toBe(255)
-          expect(data[targets[0]].stdDev).toBe(0)
+        expect(data[targets[0]].mean).toBe(255)
+        expect(data[targets[0]].stdDev).toBe(0)
 
-          annotation.state.removeAnnotation(
-            element,
-            rectangleAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          rectangleAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -376,40 +372,37 @@ describe('RectangleRoiTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleRoiTool.toolName
-          )
-          // Can successfully add rectangleROI to annotationManager
-          expect(rectangleAnnotations).toBeDefined()
-          expect(rectangleAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const rectangleAnnotations = annotation.state.getAnnotations(
+          element,
+          RectangleRoiTool.toolName
+        )
+        // Can successfully add rectangleROI to annotationManager
+        expect(rectangleAnnotations).toBeDefined()
+        expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleAnnotation = rectangleAnnotations[0]
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(rectangleAnnotation.metadata.toolName).toBe(
-            RectangleRoiTool.toolName
-          )
-          expect(rectangleAnnotation.invalidated).toBe(false)
+        const rectangleAnnotation = rectangleAnnotations[0]
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(rectangleAnnotation.metadata.toolName).toBe(
+          RectangleRoiTool.toolName
+        )
+        expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = rectangleAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].mean).toBe(255)
-          expect(data[targets[0]].stdDev).toBe(0)
+        expect(data[targets[0]].mean).toBe(255)
+        expect(data[targets[0]].stdDev).toBe(0)
 
-          annotation.state.removeAnnotation(
-            element,
-            rectangleAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          rectangleAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -514,77 +507,74 @@ describe('RectangleRoiTool (CPU):', () => {
     let p1, p2, p3, p4
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleRoiTool.toolName
-          )
-          // Can successfully add rectangleROI to annotationManager
-          expect(rectangleAnnotations).toBeDefined()
-          expect(rectangleAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const rectangleAnnotations = annotation.state.getAnnotations(
+          element,
+          RectangleRoiTool.toolName
+        )
+        // Can successfully add rectangleROI to annotationManager
+        expect(rectangleAnnotations).toBeDefined()
+        expect(rectangleAnnotations.length).toBe(1)
 
-          const rectangleAnnotation = rectangleAnnotations[0]
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(rectangleAnnotation.metadata.toolName).toBe(
-            RectangleRoiTool.toolName
-          )
-          expect(rectangleAnnotation.invalidated).toBe(false)
+        const rectangleAnnotation = rectangleAnnotations[0]
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(rectangleAnnotation.metadata.toolName).toBe(
+          RectangleRoiTool.toolName
+        )
+        expect(rectangleAnnotation.invalidated).toBe(false)
 
-          const data = rectangleAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = rectangleAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // We expect the mean to not be 255 as it has been moved
-          expect(data[targets[0]].mean).not.toBe(255)
-          expect(data[targets[0]].stdDev).not.toBe(0)
+        // We expect the mean to not be 255 as it has been moved
+        expect(data[targets[0]].mean).not.toBe(255)
+        expect(data[targets[0]].stdDev).not.toBe(0)
 
-          const handles = rectangleAnnotation.data.handles.points
+        const handles = rectangleAnnotation.data.handles.points
 
-          const preMoveFirstHandle = p1
-          const preMoveSecondHandle = p2
-          const preMoveCenter = p3
+        const preMoveFirstHandle = p1
+        const preMoveSecondHandle = p2
+        const preMoveCenter = p3
 
-          const centerToHandle1 = [
-            preMoveCenter[0] - preMoveFirstHandle[0],
-            preMoveCenter[1] - preMoveFirstHandle[1],
-            preMoveCenter[2] - preMoveFirstHandle[2],
-          ]
+        const centerToHandle1 = [
+          preMoveCenter[0] - preMoveFirstHandle[0],
+          preMoveCenter[1] - preMoveFirstHandle[1],
+          preMoveCenter[2] - preMoveFirstHandle[2],
+        ]
 
-          const centerToHandle2 = [
-            preMoveCenter[0] - preMoveSecondHandle[0],
-            preMoveCenter[1] - preMoveSecondHandle[1],
-            preMoveCenter[2] - preMoveSecondHandle[2],
-          ]
+        const centerToHandle2 = [
+          preMoveCenter[0] - preMoveSecondHandle[0],
+          preMoveCenter[1] - preMoveSecondHandle[1],
+          preMoveCenter[2] - preMoveSecondHandle[2],
+        ]
 
-          const afterMoveCenter = p4
+        const afterMoveCenter = p4
 
-          const afterMoveFirstHandle = [
-            afterMoveCenter[0] - centerToHandle1[0],
-            afterMoveCenter[1] - centerToHandle1[1],
-            afterMoveCenter[2] - centerToHandle1[2],
-          ]
+        const afterMoveFirstHandle = [
+          afterMoveCenter[0] - centerToHandle1[0],
+          afterMoveCenter[1] - centerToHandle1[1],
+          afterMoveCenter[2] - centerToHandle1[2],
+        ]
 
-          const afterMoveSecondHandle = [
-            afterMoveCenter[0] - centerToHandle2[0],
-            afterMoveCenter[1] - centerToHandle2[1],
-            afterMoveCenter[2] - centerToHandle2[2],
-          ]
+        const afterMoveSecondHandle = [
+          afterMoveCenter[0] - centerToHandle2[0],
+          afterMoveCenter[1] - centerToHandle2[1],
+          afterMoveCenter[2] - centerToHandle2[2],
+        ]
 
-          // Expect handles are moved accordingly
-          expect(handles[0]).toEqual(afterMoveFirstHandle)
-          expect(handles[3]).toEqual(afterMoveSecondHandle)
+        // Expect handles are moved accordingly
+        expect(handles[0]).toEqual(afterMoveFirstHandle)
+        expect(handles[3]).toEqual(afterMoveSecondHandle)
 
-          annotation.state.removeAnnotation(
-            element,
-            rectangleAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          rectangleAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -903,10 +893,7 @@ describe('RectangleRoiTool (CPU):', () => {
 
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
-    element.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
-      cancelToolDrawing
-    )
+    element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
     try {
       vp.setStack([imageId1], 0)

@@ -1,5 +1,5 @@
 import { eventTarget, triggerEvent } from '@precisionmetrics/cornerstone-render'
-import { CornerstoneTools3DEvents } from '../../enums'
+import { Events } from '../../enums'
 import { Annotation } from '../../types'
 import { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes'
 
@@ -156,11 +156,7 @@ function publish(
 ) {
   if (detail.added.length > 0 || detail.removed.length > 0) {
     selectionSet.forEach((item) => void detail.selection.push(item))
-    triggerEvent(
-      eventTarget,
-      CornerstoneTools3DEvents.ANNOTATION_SELECTION_CHANGE,
-      detail
-    )
+    triggerEvent(eventTarget, Events.ANNOTATION_SELECTION_CHANGE, detail)
   }
 }
 

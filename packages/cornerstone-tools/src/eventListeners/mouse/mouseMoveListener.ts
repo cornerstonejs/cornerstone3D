@@ -2,11 +2,11 @@ import {
   getEnabledElement,
   triggerEvent,
 } from '@precisionmetrics/cornerstone-render'
-import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
+import Events from '../../enums/Events'
 import getMouseEventPoints from './getMouseEventPoints'
 import { MouseMoveEventDetail } from '../../types/EventTypes'
 
-const eventName = CornerstoneTools3DEvents.MOUSE_MOVE
+const eventName = Events.MOUSE_MOVE
 
 /**
  * Captures and normalizes the mouse move event. Emits as a cornerstoneTools3D

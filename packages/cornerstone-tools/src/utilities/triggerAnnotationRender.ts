@@ -3,7 +3,7 @@ import {
   triggerEvent,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
-import { CornerstoneTools3DEvents as Events, ToolModes } from '../enums'
+import { Events, ToolModes } from '../enums'
 import { draw as drawSvg } from '../drawingSvg'
 import getToolsWithModesForElement from './getToolsWithModesForElement'
 import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'

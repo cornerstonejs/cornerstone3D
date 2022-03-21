@@ -45,7 +45,7 @@ import {
   MouseBindings,
   KeyboardBindings,
   ToolModes,
-  CornerstoneTools3DEvents,
+  Events,
   SegmentationRepresentations,
   BlendModes,
 } from './enums'
@@ -54,12 +54,9 @@ const Enums = {
   MouseBindings,
   KeyboardBindings,
   ToolModes,
-  EVENTS: CornerstoneTools3DEvents,
+  Events,
   SegmentationRepresentations,
   // BlendModes,
-  // ToolModes,
-  // CornerstoneTools3DEvents,
-  // SegmentationRepresentations,
 }
 
 export {

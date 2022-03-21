@@ -21,10 +21,12 @@ const { ORIENTATION } = CONSTANTS
 const {
   EllipticalRoiTool,
   ToolGroupManager,
-  CornerstoneTools3DEvents,
+  Enums: csToolsEnums,
   cancelActiveManipulations,
   annotation,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
@@ -122,41 +124,38 @@ describe('EllipticalRoiTool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportUID)
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const ellipseAnnotations = annotation.state.getAnnotations(
-            element,
-            EllipticalRoiTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(ellipseAnnotations).toBeDefined()
-          expect(ellipseAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const ellipseAnnotations = annotation.state.getAnnotations(
+          element,
+          EllipticalRoiTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(ellipseAnnotations).toBeDefined()
+        expect(ellipseAnnotations.length).toBe(1)
 
-          const ellipseAnnotation = ellipseAnnotations[0]
-          expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
+        const ellipseAnnotation = ellipseAnnotations[0]
+        expect(ellipseAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
 
-          expect(ellipseAnnotation.metadata.toolName).toBe(
-            EllipticalRoiTool.toolName
-          )
-          expect(ellipseAnnotation.invalidated).toBe(false)
+        expect(ellipseAnnotation.metadata.toolName).toBe(
+          EllipticalRoiTool.toolName
+        )
+        expect(ellipseAnnotation.invalidated).toBe(false)
 
-          const data = ellipseAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = ellipseAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // the rectangle is drawn on the strip
-          expect(data[targets[0]].mean).toBe(255)
+        // the rectangle is drawn on the strip
+        expect(data[targets[0]].mean).toBe(255)
 
-          annotation.state.removeAnnotation(
-            element,
-            ellipseAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          ellipseAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -339,10 +338,7 @@ describe('EllipticalRoiTool (CPU):', () => {
 
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
-    element.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
-      cancelToolDrawing
-    )
+    element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
     try {
       vp.setStack([imageId1], 0)

@@ -11,7 +11,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { addAnnotation, getAnnotations } from '../../stateManagement'
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 
 import {
   drawHandles as drawHandlesSvg,

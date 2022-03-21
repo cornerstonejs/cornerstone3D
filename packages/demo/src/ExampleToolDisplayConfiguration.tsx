@@ -13,7 +13,6 @@ import {
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  CornerstoneTools3DEvents,
   Enums as csToolsEnums,
   annotation as csToolsAnnotation
   WindowLevelTool,
@@ -270,13 +269,13 @@ class ToolDisplayConfigurationExample extends Component {
 
     // Register for annotation Selection Event
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_SELECTION_CHANGE,
+      csToolsEnums.Events.ANNOTATION_SELECTION_CHANGE,
       onAnnotationSelectionChange
     )
 
     // Register for annotation Locking Event
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_LOCK_CHANGE,
+      csToolsEnums.Events.ANNOTATION_LOCK_CHANGE,
       onLockedAnnotationChange
     )
 
@@ -300,13 +299,13 @@ class ToolDisplayConfigurationExample extends Component {
 
     // Remove listener for annotation Selection Event
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_SELECTION_CHANGE,
+      csToolsEnums.Events.ANNOTATION_SELECTION_CHANGE,
       onAnnotationSelectionChange
     )
 
     // Remove listener for annotation Locking Event
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_LOCK_CHANGE,
+      csToolsEnums.Events.ANNOTATION_LOCK_CHANGE,
       onLockedAnnotationChange
     )
 

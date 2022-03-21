@@ -13,7 +13,6 @@ import {
 import {
   Enums as csToolsEnums,
   synchronizers,
-  CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeAnnotation,
   destroy as CS3dToolsDestroy,
@@ -359,19 +358,19 @@ class StackViewportExample extends Component {
 
     // add event listeners for tools
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_ADDED,
+      csToolsEnums.Events.ANNOTATION_ADDED,
       this.updateAnnotationAdded
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_MODIFIED,
+      csToolsEnums.Events.ANNOTATION_MODIFIED,
       this.updateAnnotationModified
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.ANNOTATION_REMOVED,
+      csToolsEnums.Events.ANNOTATION_REMOVED,
       this.updateAnnotationRemoved
     )
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
+      csToolsEnums.Events.KEY_DOWN,
       this.cancelToolDrawing
     )
 

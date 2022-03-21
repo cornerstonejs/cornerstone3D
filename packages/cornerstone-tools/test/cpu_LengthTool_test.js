@@ -18,8 +18,14 @@ const {
 const { Events, ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
-const { LengthTool, ToolGroupManager, CornerstoneTools3DEvents, annotation } =
-  csTools3d
+const {
+  LengthTool,
+  ToolGroupManager,
+  annotation,
+  Enums: csToolsEnums,
+} = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
@@ -125,36 +131,33 @@ describe('Length Tool (CPU):', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            element,
-            LengthTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined()
-          expect(lengthAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          element,
+          LengthTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined()
+        expect(lengthAnnotations.length).toBe(1)
 
-          const lengthAnnotation = lengthAnnotations[0]
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-          expect(lengthAnnotation.invalidated).toBe(false)
+        const lengthAnnotation = lengthAnnotations[0]
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+        expect(lengthAnnotation.invalidated).toBe(false)
 
-          const data = lengthAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = lengthAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
-          annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        annotation.state.removeAnnotation(
+          element,
+          lengthAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -237,38 +240,35 @@ describe('Length Tool (CPU):', () => {
     let p2, p3
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            element,
-            LengthTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined()
-          expect(lengthAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          element,
+          LengthTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined()
+        expect(lengthAnnotations.length).toBe(1)
 
-          const lengthAnnotation = lengthAnnotations[0]
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-          expect(lengthAnnotation.invalidated).toBe(false)
-          expect(lengthAnnotation.highlighted).toBe(false)
+        const lengthAnnotation = lengthAnnotations[0]
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+        expect(lengthAnnotation.invalidated).toBe(false)
+        expect(lengthAnnotation.highlighted).toBe(false)
 
-          const data = lengthAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = lengthAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          lengthAnnotation.annotationUID
+        )
+        done()
+      })
     }
     element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [50, 50, 0]
@@ -383,38 +383,35 @@ describe('Length Tool (CPU):', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            element,
-            LengthTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined()
-          expect(lengthAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          element,
+          LengthTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined()
+        expect(lengthAnnotations.length).toBe(1)
 
-          const lengthAnnotation = lengthAnnotations[0]
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-          expect(lengthAnnotation.invalidated).toBe(false)
-          expect(lengthAnnotation.highlighted).toBe(false)
+        const lengthAnnotation = lengthAnnotations[0]
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+        expect(lengthAnnotation.invalidated).toBe(false)
+        expect(lengthAnnotation.highlighted).toBe(false)
 
-          const data = lengthAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = lengthAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          lengthAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -521,77 +518,71 @@ describe('Length Tool (CPU):', () => {
     let p1, p2, p3, p4
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            element,
-            LengthTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined()
-          expect(lengthAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          element,
+          LengthTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined()
+        expect(lengthAnnotations.length).toBe(1)
 
-          const lengthAnnotation = lengthAnnotations[0]
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-          expect(lengthAnnotation.invalidated).toBe(false)
+        const lengthAnnotation = lengthAnnotations[0]
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
+        expect(lengthAnnotation.invalidated).toBe(false)
 
-          const data = lengthAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = lengthAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // We don't expect the length to change on tool move
-          expect(data[targets[0]].length).toBeCloseTo(
-            calculateLength(p1, p2),
-            6
-          )
+        // We don't expect the length to change on tool move
+        expect(data[targets[0]].length).toBeCloseTo(calculateLength(p1, p2), 6)
 
-          const handles = lengthAnnotation.data.handles.points
+        const handles = lengthAnnotation.data.handles.points
 
-          const preMoveFirstHandle = p1
-          const preMoveSecondHandle = p2
-          const preMoveCenter = p3
+        const preMoveFirstHandle = p1
+        const preMoveSecondHandle = p2
+        const preMoveCenter = p3
 
-          const centerToHandle1 = [
-            preMoveCenter[0] - preMoveFirstHandle[0],
-            preMoveCenter[1] - preMoveFirstHandle[1],
-            preMoveCenter[2] - preMoveFirstHandle[2],
-          ]
+        const centerToHandle1 = [
+          preMoveCenter[0] - preMoveFirstHandle[0],
+          preMoveCenter[1] - preMoveFirstHandle[1],
+          preMoveCenter[2] - preMoveFirstHandle[2],
+        ]
 
-          const centerToHandle2 = [
-            preMoveCenter[0] - preMoveSecondHandle[0],
-            preMoveCenter[1] - preMoveSecondHandle[1],
-            preMoveCenter[2] - preMoveSecondHandle[2],
-          ]
+        const centerToHandle2 = [
+          preMoveCenter[0] - preMoveSecondHandle[0],
+          preMoveCenter[1] - preMoveSecondHandle[1],
+          preMoveCenter[2] - preMoveSecondHandle[2],
+        ]
 
-          const afterMoveCenter = p4
+        const afterMoveCenter = p4
 
-          const afterMoveFirstHandle = [
-            afterMoveCenter[0] - centerToHandle1[0],
-            afterMoveCenter[1] - centerToHandle1[1],
-            afterMoveCenter[2] - centerToHandle1[2],
-          ]
+        const afterMoveFirstHandle = [
+          afterMoveCenter[0] - centerToHandle1[0],
+          afterMoveCenter[1] - centerToHandle1[1],
+          afterMoveCenter[2] - centerToHandle1[2],
+        ]
 
-          const afterMoveSecondHandle = [
-            afterMoveCenter[0] - centerToHandle2[0],
-            afterMoveCenter[1] - centerToHandle2[1],
-            afterMoveCenter[2] - centerToHandle2[2],
-          ]
+        const afterMoveSecondHandle = [
+          afterMoveCenter[0] - centerToHandle2[0],
+          afterMoveCenter[1] - centerToHandle2[1],
+          afterMoveCenter[2] - centerToHandle2[2],
+        ]
 
-          // Expect handles are moved accordingly
-          expect(handles[0]).toEqual(afterMoveFirstHandle)
-          expect(handles[1]).toEqual(afterMoveSecondHandle)
+        // Expect handles are moved accordingly
+        expect(handles[0]).toEqual(afterMoveFirstHandle)
+        expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          lengthAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {

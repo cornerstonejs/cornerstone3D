@@ -5,7 +5,7 @@ import {
   Enums,
   Types,
 } from '@precisionmetrics/cornerstone-render'
-import { CornerstoneTools3DEvents as csToolsEvents } from '../enums'
+import { Events as csToolsEvents } from '../enums'
 import {
   getToolGroupByToolGroupUID,
   getToolGroup,

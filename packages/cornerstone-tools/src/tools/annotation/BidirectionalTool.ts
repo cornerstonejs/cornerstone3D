@@ -24,7 +24,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import lineSegment from '../../utilities/math/line'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'

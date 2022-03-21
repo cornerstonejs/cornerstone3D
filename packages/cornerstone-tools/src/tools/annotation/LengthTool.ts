@@ -1,4 +1,4 @@
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import {
   getEnabledElement,
   cache,

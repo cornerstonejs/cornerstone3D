@@ -4,7 +4,7 @@
  *  allows us to handle events consistently across different browsers.
  *
  */
-enum CornerstoneTools3DEvents {
+enum Events {
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////
@@ -214,4 +214,4 @@ enum CornerstoneTools3DEvents {
   */
 }
 
-export default CornerstoneTools3DEvents
+export default Events

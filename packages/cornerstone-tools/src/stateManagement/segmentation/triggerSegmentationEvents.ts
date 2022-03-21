@@ -1,6 +1,6 @@
 import { triggerEvent, eventTarget } from '@precisionmetrics/cornerstone-render'
 
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import {
   getToolGroupsWithSegmentation,
   getToolGroups,

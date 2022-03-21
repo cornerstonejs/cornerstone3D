@@ -8,7 +8,6 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import {
   Enums as csToolsEnums,
-  CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeAnnotation,
   WindowLevelTool,
@@ -161,7 +160,7 @@ class ModifierKeysExample extends Component {
     ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
 
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
+      csToolsEnums.Events.KEY_DOWN,
       this.cancelToolDrawing
     )
     // Start listening for resize

@@ -9,7 +9,7 @@ import { BaseTool } from '../base'
 import { PublicToolProps, ToolProps, EventTypes } from '../../types'
 
 import { fillInsideCircle } from './strategies/fillCircle'
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import { drawCircle as drawCircleSvg } from '../../drawingSvg'
 import {
   resetElementCursor,

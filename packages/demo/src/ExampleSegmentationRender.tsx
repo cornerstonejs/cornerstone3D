@@ -13,7 +13,6 @@ import {
   // Segmentation
   synchronizers,
   Enums as csToolsEnums,
-  CornerstoneTools3DEvents,
   annotation,
   utilities as csToolsUtils,
   segmentation,
@@ -302,34 +301,34 @@ class SegmentationExample extends Component {
 
   _removeEventListeners() {
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_STATE_MODIFIED,
       this.onSegmentationStateModified
     )
 
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
       this.onGlobalSegmentationStateUpdated
     )
 
     eventTarget.removeEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_REMOVED,
+      csToolsEnums.Events.SEGMENTATION_REMOVED,
       this.onSegmentationRemoved
     )
   }
 
   _addEventListeners() {
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_STATE_MODIFIED,
       this.onSegmentationStateModified
     )
 
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+      csToolsEnums.Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
       this.onGlobalSegmentationStateUpdated
     )
 
     eventTarget.addEventListener(
-      CornerstoneTools3DEvents.SEGMENTATION_REMOVED,
+      csToolsEnums.Events.SEGMENTATION_REMOVED,
       this.onSegmentationRemoved
     )
   }

@@ -22,9 +22,11 @@ const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 const {
   CrosshairsTool,
   ToolGroupManager,
-  CornerstoneTools3DEvents,
+  Enums: csToolsEnums,
   annotation,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
   utilities.testUtils
@@ -195,15 +197,15 @@ describe('Cornerstone Tools: ', () => {
       }
 
       element1.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element2.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element3.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
 
@@ -281,15 +283,15 @@ describe('Cornerstone Tools: ', () => {
 
     const attachCrosshairsHandler = () => {
       element1.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element2.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
       element3.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
+        csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
       )
     }

@@ -1,7 +1,7 @@
 import { MouseBindings, KeyboardBindings } from './ToolBindings'
 import ToolModes from './ToolModes'
 import AnnotationStyleStates from './AnnotationStyleStates'
-import CornerstoneTools3DEvents from './CornerstoneTools3DEvents'
+import Events from './Events'
 import SegmentationRepresentations from './SegmentationRepresentations'
 import BlendModes from './BlendModes'
 
@@ -10,7 +10,7 @@ export {
   KeyboardBindings,
   ToolModes,
   AnnotationStyleStates,
-  CornerstoneTools3DEvents,
+  Events,
   SegmentationRepresentations,
   BlendModes,
 }

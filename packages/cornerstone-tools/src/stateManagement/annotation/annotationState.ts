@@ -4,7 +4,7 @@ import {
   eventTarget,
   utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import { Types } from '@precisionmetrics/cornerstone-render'
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager'
 import { Annotations, Annotation } from '../../types/AnnotationTypes'

@@ -12,7 +12,7 @@ import { fillInsideRectangle } from './strategies/fillRectangle'
 import { eraseInsideRectangle } from './strategies/eraseRectangle'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
 import { drawRect as drawRectSvg } from '../../drawingSvg'
 import {

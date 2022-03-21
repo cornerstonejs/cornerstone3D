@@ -1,7 +1,7 @@
 import { eventTarget, Enums } from '@precisionmetrics/cornerstone-render'
 import { getDefaultAnnotationManager } from './stateManagement/annotation/annotationState'
 import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState'
-import { CornerstoneTools3DEvents as TOOLS_EVENTS } from './enums'
+import { Events as TOOLS_EVENTS } from './enums'
 import { addEnabledElement, removeEnabledElement } from './store'
 import { resetCornerstoneToolsState } from './store/state'
 import {

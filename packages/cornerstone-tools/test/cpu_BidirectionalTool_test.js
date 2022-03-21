@@ -21,10 +21,12 @@ const { ORIENTATION } = CONSTANTS
 const {
   BidirectionalTool,
   ToolGroupManager,
-  CornerstoneTools3DEvents,
+  Enums: csToolsEnums,
   cancelActiveManipulations,
   annotation,
 } = csTools3d
+
+const { Events: csToolsEvents } = csToolsEnums
 
 const {
   fakeImageLoader,
@@ -130,36 +132,33 @@ describe('Bidirectional Tool (CPU): ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = annotation.state.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          annotation.state.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -240,39 +239,36 @@ describe('Bidirectional Tool (CPU): ', () => {
     let p2, p3
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = annotation.state.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p3, p2))
 
-          annotation.state.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -388,39 +384,36 @@ describe('Bidirectional Tool (CPU): ', () => {
     let p1, p2
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = annotation.state.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-          annotation.state.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -526,79 +519,73 @@ describe('Bidirectional Tool (CPU): ', () => {
     let p1, p2, p3, p4
 
     const addEventListenerForAnnotationRendered = () => {
-      element.addEventListener(
-        CornerstoneTools3DEvents.ANNOTATION_RENDERED,
-        () => {
-          const bidirectionalAnnotations = annotation.state.getAnnotations(
-            element,
-            BidirectionalTool.toolName
-          )
-          // Can successfully add Length tool to annotationManager
-          expect(bidirectionalAnnotations).toBeDefined()
-          expect(bidirectionalAnnotations.length).toBe(1)
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const bidirectionalAnnotations = annotation.state.getAnnotations(
+          element,
+          BidirectionalTool.toolName
+        )
+        // Can successfully add Length tool to annotationManager
+        expect(bidirectionalAnnotations).toBeDefined()
+        expect(bidirectionalAnnotations.length).toBe(1)
 
-          const bidirectionalAnnotation = bidirectionalAnnotations[0]
-          expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          )
-          expect(bidirectionalAnnotation.metadata.toolName).toBe(
-            BidirectionalTool.toolName
-          )
-          expect(bidirectionalAnnotation.invalidated).toBe(false)
+        const bidirectionalAnnotation = bidirectionalAnnotations[0]
+        expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
+          imageId1.split(':')[1]
+        )
+        expect(bidirectionalAnnotation.metadata.toolName).toBe(
+          BidirectionalTool.toolName
+        )
+        expect(bidirectionalAnnotation.invalidated).toBe(false)
 
-          const data = bidirectionalAnnotation.data.cachedStats
-          const targets = Array.from(Object.keys(data))
-          expect(targets.length).toBe(1)
+        const data = bidirectionalAnnotation.data.cachedStats
+        const targets = Array.from(Object.keys(data))
+        expect(targets.length).toBe(1)
 
-          // We don't expect the length to change on tool move
-          expect(data[targets[0]].length).toBeCloseTo(
-            calculateLength(p1, p2),
-            6
-          )
+        // We don't expect the length to change on tool move
+        expect(data[targets[0]].length).toBeCloseTo(calculateLength(p1, p2), 6)
 
-          const handles = bidirectionalAnnotation.data.handles.points
+        const handles = bidirectionalAnnotation.data.handles.points
 
-          const preMoveFirstHandle = p1
-          const preMoveSecondHandle = p2
-          const preMoveCenter = p3
+        const preMoveFirstHandle = p1
+        const preMoveSecondHandle = p2
+        const preMoveCenter = p3
 
-          const centerToHandle1 = [
-            preMoveCenter[0] - preMoveFirstHandle[0],
-            preMoveCenter[1] - preMoveFirstHandle[1],
-            preMoveCenter[2] - preMoveFirstHandle[2],
-          ]
+        const centerToHandle1 = [
+          preMoveCenter[0] - preMoveFirstHandle[0],
+          preMoveCenter[1] - preMoveFirstHandle[1],
+          preMoveCenter[2] - preMoveFirstHandle[2],
+        ]
 
-          const centerToHandle2 = [
-            preMoveCenter[0] - preMoveSecondHandle[0],
-            preMoveCenter[1] - preMoveSecondHandle[1],
-            preMoveCenter[2] - preMoveSecondHandle[2],
-          ]
+        const centerToHandle2 = [
+          preMoveCenter[0] - preMoveSecondHandle[0],
+          preMoveCenter[1] - preMoveSecondHandle[1],
+          preMoveCenter[2] - preMoveSecondHandle[2],
+        ]
 
-          const afterMoveCenter = p4
+        const afterMoveCenter = p4
 
-          const afterMoveFirstHandle = [
-            afterMoveCenter[0] - centerToHandle1[0],
-            afterMoveCenter[1] - centerToHandle1[1],
-            afterMoveCenter[2] - centerToHandle1[2],
-          ]
+        const afterMoveFirstHandle = [
+          afterMoveCenter[0] - centerToHandle1[0],
+          afterMoveCenter[1] - centerToHandle1[1],
+          afterMoveCenter[2] - centerToHandle1[2],
+        ]
 
-          const afterMoveSecondHandle = [
-            afterMoveCenter[0] - centerToHandle2[0],
-            afterMoveCenter[1] - centerToHandle2[1],
-            afterMoveCenter[2] - centerToHandle2[2],
-          ]
+        const afterMoveSecondHandle = [
+          afterMoveCenter[0] - centerToHandle2[0],
+          afterMoveCenter[1] - centerToHandle2[1],
+          afterMoveCenter[2] - centerToHandle2[2],
+        ]
 
-          // Expect handles are moved accordingly
-          expect(handles[0]).toEqual(afterMoveFirstHandle)
-          expect(handles[1]).toEqual(afterMoveSecondHandle)
+        // Expect handles are moved accordingly
+        expect(handles[0]).toEqual(afterMoveFirstHandle)
+        expect(handles[1]).toEqual(afterMoveSecondHandle)
 
-          annotation.state.removeAnnotation(
-            element,
-            bidirectionalAnnotation.annotationUID
-          )
-          done()
-        }
-      )
+        annotation.state.removeAnnotation(
+          element,
+          bidirectionalAnnotation.annotationUID
+        )
+        done()
+      })
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -826,10 +813,7 @@ describe('Bidirectional Tool (CPU): ', () => {
     }
 
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
-    element.addEventListener(
-      CornerstoneTools3DEvents.KEY_DOWN,
-      cancelToolDrawing
-    )
+    element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
     try {
       vp.setStack([imageId1], 0)

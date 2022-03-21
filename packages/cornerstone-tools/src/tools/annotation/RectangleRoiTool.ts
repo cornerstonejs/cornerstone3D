@@ -26,7 +26,7 @@ import {
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import rectangle from '../../utilities/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'

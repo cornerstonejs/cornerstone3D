@@ -24,7 +24,7 @@ import {
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { CornerstoneTools3DEvents as Events } from '../../enums'
+import { Events } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import {
   resetElementCursor,

@@ -2,7 +2,7 @@ import {
   getEnabledElement,
   triggerEvent,
 } from '@precisionmetrics/cornerstone-render'
-import CornerstoneTools3DEvents from '../../enums/CornerstoneTools3DEvents'
+import Events from '../../enums/Events'
 import getMouseEventPoints from './getMouseEventPoints'
 import { EventTypes, IPoints } from '../../types'
 
@@ -27,7 +27,7 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
 
   const eventDetail: EventTypes.MouseDoubleClickEventDetail = {
     event: evt,
-    eventName: CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK,
+    eventName: Events.MOUSE_DOUBLE_CLICK,
     viewportUID,
     renderingEngineUID,
     camera: {},
@@ -38,11 +38,7 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
     deltaPoints,
   }
 
-  triggerEvent(
-    element,
-    CornerstoneTools3DEvents.MOUSE_DOUBLE_CLICK,
-    eventDetail
-  )
+  triggerEvent(element, Events.MOUSE_DOUBLE_CLICK, eventDetail)
 }
 
 export default mouseDoubleClickListener

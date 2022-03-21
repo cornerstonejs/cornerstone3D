@@ -22,7 +22,7 @@ import {
 } from '../drawingSvg'
 import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../store'
-import { CornerstoneTools3DEvents as Events } from '../enums'
+import { Events } from '../enums'
 import { getViewportUIDsWithToolToRender } from '../utilities/viewportFilters'
 import { resetElementCursor, hideElementCursor } from '../cursors/elementCursor'
 import { math } from '../utilities'

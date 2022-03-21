@@ -25,11 +25,13 @@ const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,
+  Enums: csToolsEnums,
   SegmentationDisplayTool,
   segmentation,
-  CornerstoneTools3DEvents: Events,
   RectangleScissorsTool,
 } = csTools3d
+
+const { Events } = csToolsEnums
 
 const { addSegmentationsForToolGroup } = segmentation
 

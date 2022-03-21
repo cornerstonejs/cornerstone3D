@@ -27,9 +27,11 @@ const {
   ToolGroupManager,
   SegmentationDisplayTool,
   segmentation,
-  CornerstoneTools3DEvents: Events,
+  Enums: csToolsEnums,
   RectangleScissorsTool,
 } = csTools3d
+
+const { Events } = csToolsEnums
 
 const { addSegmentationsForToolGroup } = segmentation
 
