@@ -1,4 +1,5 @@
 import * as cornerstone from '@precisionmetrics/cornerstone-render'
+
 const canvas = document.createElement('canvas')
 let lastImageIdDrawn
 

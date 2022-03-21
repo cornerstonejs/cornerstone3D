@@ -6,7 +6,6 @@ import {
   RenderingEngine,
   utilities as csUtils,
   VolumeViewport,
-  getVolumeViewportsContainingSameVolumes,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
@@ -569,7 +568,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
     // AutoPan modification
     if (this.configuration.autoPan.enabled) {
-      const viewports = getVolumeViewportsContainingSameVolumes(
+      const viewports = csUtils.getVolumeViewportsContainingSameVolumes(
         viewport,
         renderingEngine.uid
       )

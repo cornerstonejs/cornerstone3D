@@ -4,8 +4,6 @@ import getOrCreateCanvas from './getOrCreateCanvas'
 import renderToCanvas from './renderToCanvas'
 import setVolumesForViewports from './setVolumesForViewports'
 import addVolumesToViewports from './addVolumesToViewports'
-import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes'
-import getVolumeViewportsContainingVolumeUID from './getVolumeViewportsContainingVolumeUID'
 
 export {
   createVolumeActor,
@@ -14,6 +12,4 @@ export {
   renderToCanvas,
   setVolumesForViewports,
   addVolumesToViewports,
-  getVolumeViewportsContainingSameVolumes,
-  getVolumeViewportsContainingVolumeUID,
 }

@@ -8,7 +8,6 @@ import {
   utilities,
   cache,
   Types,
-  getVolumeViewportsContainingVolumeUID,
 } from '@precisionmetrics/cornerstone-render'
 
 // Todo: should move to configuration
@@ -58,10 +57,11 @@ export default class WindowLevelTool extends BaseTool {
       volumeUID = this.getTargetUID(viewport as VolumeViewport)
       ;({ volumeActor } = viewport.getActor(volumeUID))
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
-      viewportsContainingVolumeUID = getVolumeViewportsContainingVolumeUID(
-        volumeUID,
-        renderingEngine.uid
-      )
+      viewportsContainingVolumeUID =
+        utilities.getVolumeViewportsContainingVolumeUID(
+          volumeUID,
+          renderingEngine.uid
+        )
       ;[lower, upper] = rgbTransferFunction.getRange()
       modality = cache.getVolume(volumeUID).metadata.Modality
       useDynamicRange = true

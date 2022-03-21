@@ -1,5 +1,8 @@
-import VolumeViewport from '../VolumeViewport'
-import { getRenderingEngines, getRenderingEngine } from '../getRenderingEngine'
+import { IVolumeViewport } from '../types'
+import {
+  getRenderingEngines,
+  getRenderingEngine,
+} from '../RenderingEngine/getRenderingEngine'
 
 /**
  * Similar to {@link getVolumeViewportsContainingSameVolumes}, but uses the volumeUID
@@ -10,7 +13,7 @@ import { getRenderingEngines, getRenderingEngine } from '../getRenderingEngine'
 function getVolumeViewportsContainingVolumeUID(
   uid: string,
   renderingEngineUID?: string
-): Array<VolumeViewport> {
+): Array<IVolumeViewport> {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines
   if (renderingEngineUID) {

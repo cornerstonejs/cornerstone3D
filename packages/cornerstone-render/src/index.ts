@@ -53,8 +53,6 @@ import triggerEvent from './utilities/triggerEvent'
 import {
   setVolumesForViewports,
   addVolumesToViewports,
-  getVolumeViewportsContainingSameVolumes,
-  getVolumeViewportsContainingVolumeUID,
 } from './RenderingEngine/helpers'
 
 const Enums = {
@@ -95,8 +93,6 @@ export {
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
-  getVolumeViewportsContainingSameVolumes,
-  getVolumeViewportsContainingVolumeUID,
   renderToCanvas,
   // cache
   cache,

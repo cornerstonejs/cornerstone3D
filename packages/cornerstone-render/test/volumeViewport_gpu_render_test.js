@@ -22,7 +22,6 @@ const {
   volumeLoader,
   utilities,
   setVolumesForViewports,
-  getVolumeViewportsContainingVolumeUID,
   CONSTANTS,
 } = cornerstone3D
 
@@ -439,7 +438,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const viewport = this.renderingEngine.getViewport(viewportUID)
-        const viewports = getVolumeViewportsContainingVolumeUID(
+        const viewports = utilities.getVolumeViewportsContainingVolumeUID(
           volumeId,
           this.renderingEngine.uid
         )

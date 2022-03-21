@@ -13,7 +13,7 @@ import {
 import { Enums as csToolsEnums } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
-import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+import { registerWebImageLoader } from './helpers/registerWebImageLoader'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { initToolGroups } from './initToolGroups'

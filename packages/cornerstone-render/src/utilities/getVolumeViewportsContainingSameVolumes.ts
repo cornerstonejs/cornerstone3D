@@ -1,5 +1,8 @@
-import VolumeViewport from '../VolumeViewport'
-import { getRenderingEngines, getRenderingEngine } from '../getRenderingEngine'
+import { IVolumeViewport } from '../types'
+import {
+  getRenderingEngines,
+  getRenderingEngine,
+} from '../RenderingEngine/getRenderingEngine'
 
 /**
  * Returns the viewports containing the same volume actors (all actors) the same
@@ -14,9 +17,9 @@ import { getRenderingEngines, getRenderingEngine } from '../getRenderingEngine'
  * @returns array of viewports that have the same volume actor as the target viewport
  */
 function getVolumeViewportsContainingSameVolumes(
-  targetViewport: VolumeViewport,
+  targetViewport: IVolumeViewport,
   renderingEngineUID?: string
-): Array<VolumeViewport> {
+): Array<IVolumeViewport> {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines
   if (renderingEngineUID) {

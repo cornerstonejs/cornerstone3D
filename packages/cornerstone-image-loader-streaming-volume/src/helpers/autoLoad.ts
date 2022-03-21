@@ -1,7 +1,7 @@
 import {
   getRenderingEngines,
   RenderingEngine,
-  getVolumeViewportsContainingVolumeUID,
+  utilities,
 } from '@precisionmetrics/cornerstone-render'
 
 type RenderingEngineAndViewportUIDs = {
@@ -38,7 +38,7 @@ function getRenderingEngineAndViewportsContainingVolume(
 
   for (let i = 0; i < renderingEnginesArray.length; i++) {
     const renderingEngine = renderingEnginesArray[i]
-    const viewports = getVolumeViewportsContainingVolumeUID(
+    const viewports = utilities.getVolumeViewportsContainingVolumeUID(
       volumeUID,
       renderingEngine.uid
     )
